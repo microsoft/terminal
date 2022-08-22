@@ -7,7 +7,6 @@
 #include <shader_ps.h>
 #include <shader_vs.h>
 
-#include "../base/FontCache.h"
 #include "../../interactivity/win32/CustomWindowMessages.h"
 
 // #### NOTE ####
@@ -192,47 +191,63 @@ try
             const auto nothingInvalid = _api.invalidatedRows.x == _api.invalidatedRows.y;
             const auto offset = static_cast<ptrdiff_t>(_api.scrollOffset) * _api.cellCount.x;
             auto count = _r.cells.size();
-            ptrdiff_t srcOffset = 0;
-            ptrdiff_t dstOffset = 0;
 
             if (_api.scrollOffset < 0)
             {
                 // Scroll up (for instance when new text is being written at the end of the buffer).
-                srcOffset = -offset;
-                dstOffset = 0;
-                count += offset;
-
                 const u16 endRow = _api.cellCount.y + _api.scrollOffset;
                 _api.invalidatedRows.x = nothingInvalid ? endRow : std::min<u16>(_api.invalidatedRows.x, endRow);
                 _api.invalidatedRows.y = _api.cellCount.y;
+
+                // scrollOffset/offset = -1
+                // +----------+    +----------+
+                // |          |    | xxxxxxxxx|         + dst  < beg
+                // | xxxxxxxxx| -> |xxxxxxx   |  + src  |      < beg - offset
+                // |xxxxxxx   |    |          |  |      v
+                // +----------+    +----------+  v             < end
+                {
+                    const auto beg = _r.cells.begin();
+                    const auto end = beg + count;
+                    std::move(beg - offset, end, beg);
+                }
+                {
+                    const auto beg = _r.cellGlyphMapping.begin();
+                    const auto end = beg + count;
+                    std::move(beg - offset, end, beg);
+                }
             }
             else
             {
                 // Scroll down.
-                srcOffset = 0;
-                dstOffset = offset;
-                count -= offset;
-
                 _api.invalidatedRows.x = 0;
                 _api.invalidatedRows.y = nothingInvalid ? _api.scrollOffset : std::max<u16>(_api.invalidatedRows.y, _api.scrollOffset);
-            }
 
-            {
-                const auto beg = _r.cells.begin();
-                const auto src = beg + srcOffset;
-                const auto dst = beg + dstOffset;
-                std::move(src, src + count, dst);
-            }
-            {
-                const auto beg = _r.cellGlyphMapping.begin();
-                const auto src = beg + srcOffset;
-                const auto dst = beg + dstOffset;
-                std::move(src, src + count, dst);
+                // scrollOffset/offset = 1
+                // +----------+    +----------+
+                // | xxxxxxxxx|    |          |  + src         < beg
+                // |xxxxxxx   | -> | xxxxxxxxx|  |      ^
+                // |          |    |xxxxxxx   |  v      |      < end - offset
+                // +----------+    +----------+         + dst  < end
+                {
+                    const auto beg = _r.cells.begin();
+                    const auto end = beg + count;
+                    std::move_backward(beg, end - offset, end);
+                }
+                {
+                    const auto beg = _r.cellGlyphMapping.begin();
+                    const auto end = beg + count;
+                    std::move_backward(beg, end - offset, end);
+                }
             }
         }
     }
 
     if constexpr (debugGlyphGenerationPerformance)
+    {
+        _r.glyphs = {};
+        _r.tileAllocator = TileAllocator{ _api.fontMetrics.cellSize, _api.sizeInPixel };
+    }
+    if constexpr (debugTextParsingPerformance)
     {
         _api.dirtyRect = til::rect{ 0, 0, _api.cellCount.x, _api.cellCount.y };
     }
@@ -686,7 +701,7 @@ void AtlasEngine::_createSwapChain()
         // * If our background is opaque we can enable "independent" flips by setting DXGI_SWAP_EFFECT_FLIP_DISCARD and DXGI_ALPHA_MODE_IGNORE.
         //   As our swap chain won't have to compose with DWM anymore it reduces the display latency dramatically.
         desc.AlphaMode = _api.hwnd || _api.backgroundOpaqueMixin ? DXGI_ALPHA_MODE_IGNORE : DXGI_ALPHA_MODE_PREMULTIPLIED;
-        desc.Flags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
+        desc.Flags = debugGeneralPerformance ? 0 : DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
 
         wil::com_ptr<IDXGIFactory2> dxgiFactory;
         THROW_IF_FAILED(CreateDXGIFactory1(IID_PPV_ARGS(dxgiFactory.addressof())));
@@ -708,6 +723,7 @@ void AtlasEngine::_createSwapChain()
             THROW_IF_FAILED(dxgiFactory.query<IDXGIFactoryMedia>()->CreateSwapChainForCompositionSurfaceHandle(_r.device.get(), _api.swapChainHandle.get(), &desc, nullptr, _r.swapChain.put()));
         }
 
+        if constexpr (!debugGeneralPerformance)
         {
             const auto swapChain2 = _r.swapChain.query<IDXGISwapChain2>();
             _r.frameLatencyWaitableObject.reset(swapChain2->GetFrameLatencyWaitableObject());

@@ -1615,7 +1615,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         auto lock = _terminal->LockForReading();
-        return _terminal->GetCursorPosition().to_core_point();
+        return _terminal->GetViewportRelativeCursorPosition().to_core_point();
     }
 
     // This one's really pushing the boundary of what counts as "encapsulation".

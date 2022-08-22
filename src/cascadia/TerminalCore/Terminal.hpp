@@ -85,6 +85,8 @@ public:
     bool IsXtermBracketedPasteModeEnabled() const;
     std::wstring_view GetWorkingDirectory();
 
+    til::point GetViewportRelativeCursorPosition() const noexcept;
+
     // Write comes from the PTY and goes to our parser to be stored in the output buffer
     void Write(std::wstring_view stringView);
 

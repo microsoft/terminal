@@ -1674,3 +1674,12 @@ void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Termi
         CATCH_LOG();
     }
 }
+
+// Method Description:
+// - Returns the position of the cursor relative to the active viewport
+til::point Terminal::GetViewportRelativeCursorPosition() const noexcept
+{
+    const auto absoluteCursorPosition{ GetCursorPosition() };
+    const auto viewport{ _GetMutableViewport() };
+    return absoluteCursorPosition - viewport.Origin();
+}
