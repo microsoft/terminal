@@ -427,6 +427,13 @@ void InteractivityFactory::SetPseudoWindowCallback(std::function<void(bool)> fun
 // - 0 if we processed this message. See details on how a WindowProc is implemented.
 [[nodiscard]] LRESULT CALLBACK InteractivityFactory::PseudoWindowProc(_In_ HWND hWnd, _In_ UINT Message, _In_ WPARAM wParam, _In_ LPARAM lParam)
 {
+    auto style = GetWindowLongPtr(hWnd, GWL_STYLE);
+    const auto isVisible = WI_IsFlagSet(style, WS_VISIBLE);
+    if (isVisible)
+    {
+        SetWindowLongPtr(hWnd, GWL_STYLE, WI_ClearFlag(style, WS_VISIBLE));
+    }
+
     switch (Message)
     {
     // NOTE: To the future reader, all window messages that are talked about but unused were tested
