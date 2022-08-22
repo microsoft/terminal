@@ -1662,7 +1662,7 @@ void AppHost::_AppInitializedHandler(const winrt::Windows::Foundation::IInspecta
     // match the initial settings, and then call ShowWindow to finally make us
     // visible.
 
-    auto nCmdShow = SW_SHOWDEFAULT;
+    auto nCmdShow = SW_SHOW;
     if (WI_IsFlagSet(_launchMode, LaunchMode::MaximizedMode))
     {
         nCmdShow = SW_MAXIMIZE;
