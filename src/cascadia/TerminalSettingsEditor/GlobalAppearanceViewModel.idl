@@ -12,7 +12,7 @@ namespace Microsoft.Terminal.Settings.Editor
         GlobalAppearanceViewModel(Microsoft.Terminal.Settings.Model.GlobalAppSettings globalSettings);
 
         static String LanguageDisplayConverter(String tag);
-        Boolean LanguageSelectorAvailable { get; };
+        Boolean LanguageSelectorAvailable { get; } ;
         Windows.Foundation.Collections.IObservableVector<String> LanguageList { get; };
         IInspectable CurrentLanguage;
 
@@ -27,6 +27,8 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> TabWidthModeList { get; };
 
         Boolean InvertedDisableAnimations;
+
+        static void ShowTitlebarToggled(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs args);
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AlwaysShowTabs);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ShowTabsInTitlebar);
