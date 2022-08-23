@@ -349,8 +349,8 @@ namespace Microsoft::Console::Render
 
             SmallObjectOptimizer& operator=(SmallObjectOptimizer&& other) noexcept
             {
-                this->~SmallObjectOptimizer();
-                return *new (this) SmallObjectOptimizer(other);
+                std::destroy_at(this);
+                return *std::construct_at(this, std::move(other));
             }
 
             ~SmallObjectOptimizer()

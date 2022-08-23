@@ -62,7 +62,7 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT AtlasEngine::Present() noexcept
 try
 {
-    if (_r.d2dMode)
+    if (_r.d2dMode) [[unlikely]]
     {
         _d2dPresent();
         return S_OK;
@@ -689,39 +689,37 @@ void AtlasEngine::_d2dPresent()
 
     if (dirtyRectInPx)
     {
+        RECT scrollRect{};
+        POINT scrollOffset{};
+        DXGI_PRESENT_PARAMETERS params{
+            .DirtyRectsCount = 1,
+            .pDirtyRects = dirtyRectInPx.as_win32_rect(),
+        };
+
+        if (_r.scrollOffset)
         {
-            RECT scrollRect{};
-            POINT scrollOffset{};
-            DXGI_PRESENT_PARAMETERS params{
-                .DirtyRectsCount = 1,
-                .pDirtyRects = dirtyRectInPx.as_win32_rect(),
+            scrollRect = {
+                0,
+                std::max<til::CoordType>(0, _r.scrollOffset),
+                _r.cellCount.x,
+                _r.cellCount.y + std::min<til::CoordType>(0, _r.scrollOffset),
+            };
+            scrollOffset = {
+                0,
+                _r.scrollOffset,
             };
 
-            if (_r.scrollOffset)
-            {
-                scrollRect = {
-                    0,
-                    std::max<til::CoordType>(0, _r.scrollOffset),
-                    _r.cellCount.x,
-                    _r.cellCount.y + std::min<til::CoordType>(0, _r.scrollOffset),
-                };
-                scrollOffset = {
-                    0,
-                    _r.scrollOffset,
-                };
+            scrollRect.top *= _r.fontMetrics.cellSize.y;
+            scrollRect.right *= _r.fontMetrics.cellSize.x;
+            scrollRect.bottom *= _r.fontMetrics.cellSize.y;
 
-                scrollRect.top *= _r.fontMetrics.cellSize.y;
-                scrollRect.right *= _r.fontMetrics.cellSize.x;
-                scrollRect.bottom *= _r.fontMetrics.cellSize.y;
+            scrollOffset.y *= _r.fontMetrics.cellSize.y;
 
-                scrollOffset.y *= _r.fontMetrics.cellSize.y;
-
-                params.pScrollRect = &scrollRect;
-                params.pScrollOffset = &scrollOffset;
-            }
-
-            THROW_IF_FAILED(_r.swapChain->Present1(1, 0, &params));
+            params.pScrollRect = &scrollRect;
+            params.pScrollOffset = &scrollOffset;
         }
+
+        THROW_IF_FAILED(_r.swapChain->Present1(1, 0, &params));
     }
     else
     {

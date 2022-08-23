@@ -324,7 +324,7 @@ void AtlasEngine::WaitUntilCanRender() noexcept
 {
     if constexpr (!debugGeneralPerformance)
     {
-        WaitForSingleObjectEx(_r.frameLatencyWaitableObject.get(), INFINITE, true);
+        WaitForSingleObjectEx(_r.frameLatencyWaitableObject.get(), 100, true);
 #ifndef NDEBUG
         _r.frameLatencyWaitableObjectUsed = true;
 #endif
@@ -837,9 +837,6 @@ void AtlasEngine::_recreateSizeDependentResources()
 
         // Tell D3D which parts of the render target will be visible.
         // Everything outside of the viewport will be black.
-        //
-        // In the future this should cover the entire _api.sizeInPixel.x/_api.sizeInPixel.y.
-        // The pixel shader should draw the remaining content in the configured background color.
         {
             D3D11_VIEWPORT viewport{};
             viewport.Width = static_cast<float>(_api.sizeInPixel.x);
