@@ -47,24 +47,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 #define THEME_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
     WINRT_PROPERTY(type, name, ##__VA_ARGS__)
 
-#define THEME_SETTINGS_COPY(type, name, jsonKey, ...) \
-    result->_##name = _##name;
-
-#define COPY_THEME_OBJECT(T, macro)           \
-    winrt::com_ptr<T> Copy()                  \
-    {                                         \
-        auto result{ winrt::make_self<T>() }; \
-        macro(THEME_SETTINGS_COPY);           \
-        return result;                        \
-    }
-
 #define THEME_OBJECT(className, macro)         \
     struct className : className##T<className> \
     {                                          \
-        macro(THEME_SETTINGS_INITIALIZE);      \
+        winrt::com_ptr<className> Copy();      \
+        Json::Value ToJson();                  \
                                                \
-    public:                                    \
-        COPY_THEME_OBJECT(className, macro);   \
+        macro(THEME_SETTINGS_INITIALIZE);      \
     };
 
     THEME_OBJECT(WindowTheme, MTSM_THEME_WINDOW_SETTINGS);
@@ -74,7 +63,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct Theme : ThemeT<Theme>
     {
     public:
-        Theme() noexcept;
+        Theme() = default;
         Theme(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) noexcept;
 
         com_ptr<Theme> Copy() const;
@@ -95,8 +84,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     };
 
 #undef THEME_SETTINGS_INITIALIZE
-#undef THEME_SETTINGS_COPY
-#undef COPY_THEME_OBJECT
 #undef THEME_OBJECT
 }
 
