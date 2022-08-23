@@ -160,88 +160,6 @@ try
     }
 #endif
 
-    if (_api.invalidatedRows == invalidatedRowsAll)
-    {
-        // Skip all the partial updates, since we redraw everything anyways.
-        _api.invalidatedCursorArea = invalidatedAreaNone;
-        _api.invalidatedRows = { 0, _api.cellCount.y };
-        _api.scrollOffset = 0;
-    }
-    else
-    {
-        // Clamp invalidation rects into valid value ranges.
-        {
-            _api.invalidatedCursorArea.left = std::min(_api.invalidatedCursorArea.left, _api.cellCount.x);
-            _api.invalidatedCursorArea.top = std::min(_api.invalidatedCursorArea.top, _api.cellCount.y);
-            _api.invalidatedCursorArea.right = clamp(_api.invalidatedCursorArea.right, _api.invalidatedCursorArea.left, _api.cellCount.x);
-            _api.invalidatedCursorArea.bottom = clamp(_api.invalidatedCursorArea.bottom, _api.invalidatedCursorArea.top, _api.cellCount.y);
-        }
-        {
-            _api.invalidatedRows.x = std::min(_api.invalidatedRows.x, _api.cellCount.y);
-            _api.invalidatedRows.y = clamp(_api.invalidatedRows.y, _api.invalidatedRows.x, _api.cellCount.y);
-        }
-        {
-            const auto limit = gsl::narrow_cast<i16>(_api.cellCount.y & 0x7fff);
-            _api.scrollOffset = gsl::narrow_cast<i16>(clamp<int>(_api.scrollOffset, -limit, limit));
-        }
-
-        // Scroll the buffer by the given offset and mark the newly uncovered rows as "invalid".
-        if (_api.scrollOffset != 0)
-        {
-            const auto nothingInvalid = _api.invalidatedRows.x == _api.invalidatedRows.y;
-            const auto offset = static_cast<ptrdiff_t>(_api.scrollOffset) * _api.cellCount.x;
-            auto count = _r.cells.size();
-
-            if (_api.scrollOffset < 0)
-            {
-                // Scroll up (for instance when new text is being written at the end of the buffer).
-                const u16 endRow = _api.cellCount.y + _api.scrollOffset;
-                _api.invalidatedRows.x = nothingInvalid ? endRow : std::min<u16>(_api.invalidatedRows.x, endRow);
-                _api.invalidatedRows.y = _api.cellCount.y;
-
-                // scrollOffset/offset = -1
-                // +----------+    +----------+
-                // |          |    | xxxxxxxxx|         + dst  < beg
-                // | xxxxxxxxx| -> |xxxxxxx   |  + src  |      < beg - offset
-                // |xxxxxxx   |    |          |  |      v
-                // +----------+    +----------+  v             < end
-                {
-                    const auto beg = _r.cells.begin();
-                    const auto end = beg + count;
-                    std::move(beg - offset, end, beg);
-                }
-                {
-                    const auto beg = _r.cellGlyphMapping.begin();
-                    const auto end = beg + count;
-                    std::move(beg - offset, end, beg);
-                }
-            }
-            else
-            {
-                // Scroll down.
-                _api.invalidatedRows.x = 0;
-                _api.invalidatedRows.y = nothingInvalid ? _api.scrollOffset : std::max<u16>(_api.invalidatedRows.y, _api.scrollOffset);
-
-                // scrollOffset/offset = 1
-                // +----------+    +----------+
-                // | xxxxxxxxx|    |          |  + src         < beg
-                // |xxxxxxx   | -> | xxxxxxxxx|  |      ^
-                // |          |    |xxxxxxx   |  v      |      < end - offset
-                // +----------+    +----------+         + dst  < end
-                {
-                    const auto beg = _r.cells.begin();
-                    const auto end = beg + count;
-                    std::move_backward(beg, end - offset, end);
-                }
-                {
-                    const auto beg = _r.cellGlyphMapping.begin();
-                    const auto end = beg + count;
-                    std::move_backward(beg, end - offset, end);
-                }
-            }
-        }
-    }
-
     if constexpr (debugGlyphGenerationPerformance)
     {
         _r.glyphs = {};
@@ -249,11 +167,98 @@ try
     }
     if constexpr (debugTextParsingPerformance)
     {
-        _api.dirtyRect = til::rect{ 0, 0, _api.cellCount.x, _api.cellCount.y };
+        _api.invalidatedRows = invalidatedRowsAll;
+        _api.scrollOffset = 0;
+    }
+
+    // Clamp invalidation rects into valid value ranges.
+    {
+        _api.invalidatedCursorArea.left = std::min(_api.invalidatedCursorArea.left, _api.cellCount.x);
+        _api.invalidatedCursorArea.top = std::min(_api.invalidatedCursorArea.top, _api.cellCount.y);
+        _api.invalidatedCursorArea.right = clamp(_api.invalidatedCursorArea.right, _api.invalidatedCursorArea.left, _api.cellCount.x);
+        _api.invalidatedCursorArea.bottom = clamp(_api.invalidatedCursorArea.bottom, _api.invalidatedCursorArea.top, _api.cellCount.y);
+    }
+    {
+        _api.invalidatedRows.x = std::min(_api.invalidatedRows.x, _api.cellCount.y);
+        _api.invalidatedRows.y = clamp(_api.invalidatedRows.y, _api.invalidatedRows.x, _api.cellCount.y);
+    }
+    {
+        const auto limit = gsl::narrow_cast<i16>(_api.cellCount.y & 0x7fff);
+        _api.scrollOffset = gsl::narrow_cast<i16>(clamp<int>(_api.scrollOffset, -limit, limit));
+    }
+
+    // Scroll the buffer by the given offset and mark the newly uncovered rows as "invalid".
+    if (_api.scrollOffset != 0)
+    {
+        const auto nothingInvalid = _api.invalidatedRows.x == _api.invalidatedRows.y;
+        const auto offset = static_cast<ptrdiff_t>(_api.scrollOffset) * _api.cellCount.x;
+
+        if (_api.scrollOffset < 0)
+        {
+            // Scroll up (for instance when new text is being written at the end of the buffer).
+            const u16 endRow = _api.cellCount.y + _api.scrollOffset;
+            _api.invalidatedRows.x = nothingInvalid ? endRow : std::min<u16>(_api.invalidatedRows.x, endRow);
+            _api.invalidatedRows.y = _api.cellCount.y;
+
+            // scrollOffset/offset = -1
+            // +----------+    +----------+
+            // |          |    | xxxxxxxxx|         + dst  < beg
+            // | xxxxxxxxx| -> |xxxxxxx   |  + src  |      < beg - offset
+            // |xxxxxxx   |    |          |  |      v
+            // +----------+    +----------+  v             < end
+            {
+                const auto beg = _r.cells.begin();
+                const auto end = _r.cells.end();
+                std::move(beg - offset, end, beg);
+            }
+            {
+                const auto beg = _r.cellGlyphMapping.begin();
+                const auto end = _r.cellGlyphMapping.end();
+                std::move(beg - offset, end, beg);
+            }
+        }
+        else
+        {
+            // Scroll down.
+            _api.invalidatedRows.x = 0;
+            _api.invalidatedRows.y = nothingInvalid ? _api.scrollOffset : std::max<u16>(_api.invalidatedRows.y, _api.scrollOffset);
+
+            // scrollOffset/offset = 1
+            // +----------+    +----------+
+            // | xxxxxxxxx|    |          |  + src         < beg
+            // |xxxxxxx   | -> | xxxxxxxxx|  |      ^
+            // |          |    |xxxxxxx   |  v      |      < end - offset
+            // +----------+    +----------+         + dst  < end
+            {
+                const auto beg = _r.cells.begin();
+                const auto end = _r.cells.end();
+                std::move_backward(beg, end - offset, end);
+            }
+            {
+                const auto beg = _r.cellGlyphMapping.begin();
+                const auto end = _r.cellGlyphMapping.end();
+                std::move_backward(beg, end - offset, end);
+            }
+        }
+    }
+
+    _api.dirtyRect = til::rect{ 0, _api.invalidatedRows.x, _api.cellCount.x, _api.invalidatedRows.y };
+
+    // Skip partial updates in the renderer if we redraw everything.
+    if (_api.invalidatedRows == u16x2{ 0, _r.cellCount.y })
+    {
+        _r.dirtyRect = {};
+        _r.scrollOffset = 0;
     }
     else
     {
-        _api.dirtyRect = til::rect{ 0, _api.invalidatedRows.x, _api.cellCount.x, _api.invalidatedRows.y };
+        _r.dirtyRect = _api.dirtyRect | til::rect{
+            _api.invalidatedCursorArea.left,
+            _api.invalidatedCursorArea.top,
+            _api.invalidatedCursorArea.right,
+            _api.invalidatedCursorArea.bottom,
+        };
+        _r.scrollOffset = _api.scrollOffset;
     }
 
     // This is an important block of code for our TileHashMap.
@@ -319,7 +324,7 @@ void AtlasEngine::WaitUntilCanRender() noexcept
 {
     if constexpr (!debugGeneralPerformance)
     {
-        WaitForSingleObjectEx(_r.frameLatencyWaitableObject.get(), 100, true);
+        WaitForSingleObjectEx(_r.frameLatencyWaitableObject.get(), INFINITE, true);
 #ifndef NDEBUG
         _r.frameLatencyWaitableObjectUsed = true;
 #endif
@@ -636,6 +641,13 @@ void AtlasEngine::_createResources()
         _r.deviceContext = deviceContext.query<ID3D11DeviceContext1>();
     }
 
+    // > You should not use GetSystemMetrics(SM_REMOTESESSION) to determine if your application is running
+    // > in a remote session in Windows 8 and later or Windows Server 2012 and later if the remote session
+    // > may also be using the RemoteFX vGPU improvements to the Microsoft Remote Display Protocol (RDP).
+    // > In this case, GetSystemMetrics(SM_REMOTESESSION) will identify the remote session as a local session.
+    // This actually sounds great for us. The non-d2dMode of AtlasEngine has more features, but requires a GPU.
+    _r.d2dMode = debugForceD2DMode || GetSystemMetrics(SM_REMOTESESSION);
+
 #ifndef NDEBUG
     // D3D debug messages
     if (deviceFlags & D3D11_CREATE_DEVICE_DEBUG)
@@ -648,17 +660,20 @@ void AtlasEngine::_createResources()
     }
 #endif // NDEBUG
 
-    // Our constant buffer will never get resized
+    if (!_r.d2dMode)
     {
-        D3D11_BUFFER_DESC desc{};
-        desc.ByteWidth = sizeof(ConstBuffer);
-        desc.Usage = D3D11_USAGE_DEFAULT;
-        desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-        THROW_IF_FAILED(_r.device->CreateBuffer(&desc, nullptr, _r.constantBuffer.put()));
-    }
+        // Our constant buffer will never get resized
+        {
+            D3D11_BUFFER_DESC desc{};
+            desc.ByteWidth = sizeof(ConstBuffer);
+            desc.Usage = D3D11_USAGE_DEFAULT;
+            desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+            THROW_IF_FAILED(_r.device->CreateBuffer(&desc, nullptr, _r.constantBuffer.put()));
+        }
 
-    THROW_IF_FAILED(_r.device->CreateVertexShader(&shader_vs[0], sizeof(shader_vs), nullptr, _r.vertexShader.put()));
-    THROW_IF_FAILED(_r.device->CreatePixelShader(&shader_ps[0], sizeof(shader_ps), nullptr, _r.pixelShader.put()));
+        THROW_IF_FAILED(_r.device->CreateVertexShader(&shader_vs[0], sizeof(shader_vs), nullptr, _r.vertexShader.put()));
+        THROW_IF_FAILED(_r.device->CreatePixelShader(&shader_ps[0], sizeof(shader_ps), nullptr, _r.pixelShader.put()));
+    }
 
     WI_ClearFlag(_api.invalidations, ApiInvalidations::Device);
     WI_SetAllFlags(_api.invalidations, ApiInvalidations::SwapChain);
@@ -673,6 +688,10 @@ void AtlasEngine::_releaseSwapChain()
     //   no views are bound to pipeline state), and then call Flush on the immediate context.
     if (_r.swapChain && _r.deviceContext)
     {
+        if (_r.d2dMode)
+        {
+            _r.d2dRenderTarget.reset();
+        }
         _r.frameLatencyWaitableObject.reset();
         _r.swapChain.reset();
         _r.renderTargetView.reset();
@@ -694,9 +713,9 @@ void AtlasEngine::_createSwapChain()
         desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
         desc.SampleDesc.Count = 1;
         desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-        desc.BufferCount = 2; // TODO: 3?
+        desc.BufferCount = 2;
         desc.Scaling = DXGI_SCALING_NONE;
-        desc.SwapEffect = _sr.isWindows10OrGreater ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+        desc.SwapEffect = _sr.isWindows10OrGreater && !_r.d2dMode ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
         // * HWND swap chains can't do alpha.
         // * If our background is opaque we can enable "independent" flips by setting DXGI_SWAP_EFFECT_FLIP_DISCARD and DXGI_ALPHA_MODE_IGNORE.
         //   As our swap chain won't have to compose with DWM anymore it reduces the display latency dramatically.
@@ -754,43 +773,29 @@ void AtlasEngine::_recreateSizeDependentResources()
     // ResizeBuffer() docs:
     //   Before you call ResizeBuffers, ensure that the application releases all references [...].
     //   You can use ID3D11DeviceContext::ClearState to ensure that all [internal] references are released.
-    if (_r.renderTargetView)
+    // The _r.cells check exists simply to prevent us from calling ResizeBuffers() on startup (i.e. when `_r` is empty).
+    if (_r.cells)
     {
+        if (_r.d2dMode)
+        {
+            _r.d2dRenderTarget.reset();
+        }
         _r.renderTargetView.reset();
         _r.deviceContext->ClearState();
         _r.deviceContext->Flush();
-        THROW_IF_FAILED(_r.swapChain->ResizeBuffers(0, _api.sizeInPixel.x, _api.sizeInPixel.y, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT));
+        THROW_IF_FAILED(_r.swapChain->ResizeBuffers(0, _api.sizeInPixel.x, _api.sizeInPixel.y, DXGI_FORMAT_UNKNOWN, debugGeneralPerformance ? 0 : DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT));
     }
 
-    // The RenderTargetView is later used with OMSetRenderTargets
-    // to tell D3D where stuff is supposed to be rendered at.
-    {
-        wil::com_ptr<ID3D11Texture2D> buffer;
-        THROW_IF_FAILED(_r.swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), buffer.put_void()));
-        THROW_IF_FAILED(_r.device->CreateRenderTargetView(buffer.get(), nullptr, _r.renderTargetView.put()));
-    }
+    const auto totalCellCount = static_cast<size_t>(_api.cellCount.x) * static_cast<size_t>(_api.cellCount.y);
+    const auto resize = _api.cellCount != _r.cellCount;
 
-    // Tell D3D which parts of the render target will be visible.
-    // Everything outside of the viewport will be black.
-    //
-    // In the future this should cover the entire _api.sizeInPixel.x/_api.sizeInPixel.y.
-    // The pixel shader should draw the remaining content in the configured background color.
+    if (resize)
     {
-        D3D11_VIEWPORT viewport{};
-        viewport.Width = static_cast<float>(_api.sizeInPixel.x);
-        viewport.Height = static_cast<float>(_api.sizeInPixel.y);
-        _r.deviceContext->RSSetViewports(1, &viewport);
-    }
-
-    if (_api.cellCount != _r.cellCount)
-    {
-        const auto totalCellCount = static_cast<size_t>(_api.cellCount.x) * static_cast<size_t>(_api.cellCount.y);
         // Let's guess that every cell consists of a surrogate pair.
         const auto projectedTextSize = static_cast<size_t>(_api.cellCount.x) * 2;
         // IDWriteTextAnalyzer::GetGlyphs says:
         //   The recommended estimate for the per-glyph output buffers is (3 * textLength / 2 + 16).
-        // We already set the textLength to twice the cell count.
-        const auto projectedGlyphSize = 3 * projectedTextSize + 16;
+        const auto projectedGlyphSize = 3 * projectedTextSize / 2 + 16;
 
         // This buffer is a bit larger than the others (multiple MB).
         // Prevent a memory usage spike, by first deallocating and then allocating.
@@ -818,21 +823,47 @@ void AtlasEngine::_recreateSizeDependentResources()
         _api.glyphProps = Buffer<DWRITE_SHAPING_GLYPH_PROPERTIES>{ projectedGlyphSize };
         _api.glyphAdvances = Buffer<f32>{ projectedGlyphSize };
         _api.glyphOffsets = Buffer<DWRITE_GLYPH_OFFSET>{ projectedGlyphSize };
-
-        D3D11_BUFFER_DESC desc;
-        desc.ByteWidth = gsl::narrow<u32>(totalCellCount * sizeof(Cell)); // totalCellCount can theoretically be UINT32_MAX!
-        desc.Usage = D3D11_USAGE_DYNAMIC;
-        desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-        desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-        desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-        desc.StructureByteStride = sizeof(Cell);
-        THROW_IF_FAILED(_r.device->CreateBuffer(&desc, nullptr, _r.cellBuffer.put()));
-        THROW_IF_FAILED(_r.device->CreateShaderResourceView(_r.cellBuffer.get(), nullptr, _r.cellView.put()));
     }
 
-    // We have called _r.deviceContext->ClearState() in the beginning and lost all D3D state.
-    // This forces us to set up everything up from scratch again.
-    _setShaderResources();
+    if (!_r.d2dMode)
+    {
+        // The RenderTargetView is later used with OMSetRenderTargets
+        // to tell D3D where stuff is supposed to be rendered at.
+        {
+            wil::com_ptr<ID3D11Texture2D> buffer;
+            THROW_IF_FAILED(_r.swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), buffer.put_void()));
+            THROW_IF_FAILED(_r.device->CreateRenderTargetView(buffer.get(), nullptr, _r.renderTargetView.put()));
+        }
+
+        // Tell D3D which parts of the render target will be visible.
+        // Everything outside of the viewport will be black.
+        //
+        // In the future this should cover the entire _api.sizeInPixel.x/_api.sizeInPixel.y.
+        // The pixel shader should draw the remaining content in the configured background color.
+        {
+            D3D11_VIEWPORT viewport{};
+            viewport.Width = static_cast<float>(_api.sizeInPixel.x);
+            viewport.Height = static_cast<float>(_api.sizeInPixel.y);
+            _r.deviceContext->RSSetViewports(1, &viewport);
+        }
+
+        if (resize)
+        {
+            D3D11_BUFFER_DESC desc;
+            desc.ByteWidth = gsl::narrow<u32>(totalCellCount * sizeof(Cell)); // totalCellCount can theoretically be UINT32_MAX!
+            desc.Usage = D3D11_USAGE_DYNAMIC;
+            desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+            desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+            desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+            desc.StructureByteStride = sizeof(Cell);
+            THROW_IF_FAILED(_r.device->CreateBuffer(&desc, nullptr, _r.cellBuffer.put()));
+            THROW_IF_FAILED(_r.device->CreateShaderResourceView(_r.cellBuffer.get(), nullptr, _r.cellView.put()));
+        }
+
+        // We have called _r.deviceContext->ClearState() in the beginning and lost all D3D state.
+        // This forces us to set up everything up from scratch again.
+        _setShaderResources();
+    }
 
     WI_ClearFlag(_api.invalidations, ApiInvalidations::Size);
     WI_SetAllFlags(_r.invalidations, RenderInvalidations::ConstBuffer);
@@ -1387,7 +1418,7 @@ bool AtlasEngine::_emplaceGlyph(IDWriteFontFace* fontFace, size_t bufferPos1, si
         }
 
         it = _r.glyphs.insert(std::move(key), std::move(value));
-        _r.glyphQueue.emplace_back(&it->first, &it->second);
+        _r.glyphQueue.emplace_back(it);
     }
 
     const auto valueData = it->second.data();
