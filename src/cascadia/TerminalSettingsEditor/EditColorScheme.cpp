@@ -45,7 +45,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (_ViewModel.IsInBoxScheme())
         {
             // load disclaimer for in-box profiles
-            disclaimer = RS_(L"ColorScheme_DeleteButtonDisclaimerInBox");
+            disclaimer = RS_(L"ColorScheme_RenameDisclaimerInBox");
         }
         RenameContainer().HelpText(disclaimer);
 

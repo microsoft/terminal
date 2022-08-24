@@ -202,7 +202,8 @@
                                     StartExpanded="True"
                                     Style="{StaticResource ExpanderSettingContainerStyle}">
                 <Grid x:Name="ColorTableGrid"
-                      Style="{StaticResource ColorTableGridStyle}">
+                      Style="{StaticResource ColorTableGridStyle}"
+                      XYFocusKeyboardNavigation="Enabled">
                     <Grid.ColumnDefinitions>
                         <!--  Labels  -->
                         <ColumnDefinition Width="Auto" />
@@ -418,7 +419,8 @@
                                     x:Uid="ColorScheme_Rename"
                                     IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.IsInBoxScheme), Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyle}">
-                <StackPanel Orientation="Horizontal">
+                <StackPanel Orientation="Horizontal"
+                            XYFocusKeyboardNavigation="Enabled">
                     <!--  Shown when color scheme name is already in use  -->
                     <muxc:TeachingTip x:Name="RenameErrorTip"
                                       x:Uid="ColorScheme_RenameErrorTip" />

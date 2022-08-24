@@ -1477,4 +1477,12 @@
     <value>If enabled, the window will be hidden as soon as it loses focus.</value>
     <comment>A description for what the "Automatically hide window" setting does.</comment>
   </data>
+  <data name="ColorScheme_DeleteDisclaimerInBox" xml:space="preserve">
+    <value>This color scheme cannot be deleted because it is included by default.</value>
+    <comment>Disclaimer presented near the controls to delete the selected color scheme when that functionality is disabled.</comment>
+  </data>
+  <data name="ColorScheme_RenameDisclaimerInBox" xml:space="preserve">
+    <value>This color scheme cannot be renamed because it is included by default.</value>
+    <comment>Disclaimer presented near the controls to rename the color scheme when that functionality is disabled.</comment>
+  </data>
 </root>

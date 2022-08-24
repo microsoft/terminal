@@ -88,4 +88,25 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             e.Handled(true);
         }
     }
+
+    void ColorSchemes::ListView_SelectionChanged(const IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs& e)
+    {
+        if (const auto addedItems{ e.AddedItems() }; addedItems && addedItems.Size() > 0)
+        {
+            if (const auto selectedScheme{ addedItems.GetAt(0).try_as<Editor::ColorSchemeViewModel>() })
+            {
+                if (selectedScheme.IsInBoxScheme())
+                {
+                    // display disclaimer that this scheme can't be deleted
+                    SelectedSchemeDisclaimer().Text(RS_(L"ColorScheme_DeleteDisclaimerInBox"));
+                    SelectedSchemeDisclaimer().Visibility(Visibility::Visible);
+                }
+                else
+                {
+                    // hide the disclaimer
+                    SelectedSchemeDisclaimer().Visibility(Visibility::Collapsed);
+                }
+            }
+        }
+    }
 }

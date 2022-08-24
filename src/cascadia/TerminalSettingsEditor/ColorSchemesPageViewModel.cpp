@@ -24,7 +24,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _viewModelToSchemeMap{ winrt::single_threaded_map<Editor::ColorSchemeViewModel, Model::ColorScheme>() }
     {
         _MakeColorSchemeVMsHelper();
-        CurrentScheme(_AllColorSchemes.GetAt(0));
     }
 
     void ColorSchemesPageViewModel::UpdateSettings(const Model::CascadiaSettings& settings)
@@ -54,8 +53,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         if (!it.HasCurrent())
         {
-            // we didn't find the previously selected scheme, just select the first one
-            CurrentScheme(_AllColorSchemes.GetAt(0));
+            // we didn't find the previously selected scheme
+            CurrentScheme(nullptr);
         }
     }
 
