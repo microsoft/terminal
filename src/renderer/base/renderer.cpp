@@ -283,7 +283,8 @@ void Renderer::TriggerRedrawCursor(const til::point* const pcoord)
         auto view = _pData->GetViewport();
         if (view.IsInBounds(cursorView))
         {
-            const auto updateRect = view.ConvertToOrigin(cursorView).ToExclusive();
+            auto updateRect = view.ConvertToOrigin(cursorView).ToExclusive();
+            updateRect.top = (view.Height() - 1) - updateRect.top;
             FOREACH_ENGINE(pEngine)
             {
                 LOG_IF_FAILED(pEngine->InvalidateCursor(&updateRect));
@@ -404,7 +405,7 @@ bool Renderer::_CheckViewportAndScroll()
 
     til::point coordDelta;
     coordDelta.X = srOldViewport.Left - srNewViewport.Left;
-    coordDelta.Y = srOldViewport.Top - srNewViewport.Top;
+    coordDelta.Y = -(srOldViewport.Top - srNewViewport.Top);
 
     FOREACH_ENGINE(engine)
     {
@@ -442,12 +443,13 @@ void Renderer::TriggerScroll()
 // - <none>
 void Renderer::TriggerScroll(const til::point* const pcoordDelta)
 {
+    const til::point inverted{ pcoordDelta->X, -pcoordDelta->Y };
     FOREACH_ENGINE(pEngine)
     {
-        LOG_IF_FAILED(pEngine->InvalidateScroll(pcoordDelta));
+        LOG_IF_FAILED(pEngine->InvalidateScroll(&inverted));
     }
 
-    _ScrollPreviousSelection(*pcoordDelta);
+    _ScrollPreviousSelection(inverted);
 
     NotifyPaintFrame();
 }
@@ -731,7 +733,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             // For example, the screen might say we need to paint line 1 because it is dirty but the viewport
             // is actually looking at line 26 relative to the buffer. This means that we need line 27 out
             // of the backing buffer to fill in line 1 of the screen.
-            const auto screenPosition = bufferLine.Origin() - til::point{ 0, view.Top() };
+            const auto screenPosition = til::point{ bufferLine.Origin().X, (view.Height() - 1) - (bufferLine.Origin().Y - view.Top()) };
 
             // Retrieve the cell information iterator limited to just this line we want to redraw.
             auto it = buffer.GetCellDataAt(bufferLine.Origin(), bufferLine);
@@ -789,7 +791,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
         {
             // Hold onto the current run color right here for the length of the outer loop.
             // We'll be changing the persistent one as we run through the inner loops to detect
-            // when a run changes, but we will still need to know this color at the bottom
+            // when a run chcranges, but we will still need to know this color at the bottom
             // when we go to draw gridlines for the length of the run.
             const auto currentRunColor = color;
 
