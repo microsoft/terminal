@@ -1057,7 +1057,7 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
 
             // Build up the cursor parameters including position, color, and drawing options
             CursorOptions options;
-            options.coordCursor = coordCursor;
+            options.coordCursor = til::point{ coordCursor.X, (view.Bottom-view.Top) - coordCursor.Y };
             options.viewportLeft = _pData->GetViewport().Left();
             options.lineRendition = lineRendition;
             options.ulCursorHeightPercent = _pData->GetCursorHeight();
