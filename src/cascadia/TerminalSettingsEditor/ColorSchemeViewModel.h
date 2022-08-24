@@ -28,15 +28,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         Editor::ColorTableEntry ColorEntryAt(uint32_t index);
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        // DON'T YOU DARE ADD A `WINRT_CALLBACK(PropertyChanged` TO A CLASS DERIVED FROM ViewModelHelper. Do this instead:
+        using ViewModelHelper<ColorSchemeViewModel>::PropertyChanged;
 
         WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Editor::ColorTableEntry>, NonBrightColorTable, nullptr);
         WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Editor::ColorTableEntry>, BrightColorTable, nullptr);
 
-        WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, ForegroundColor, _PropertyChangedHandlers, nullptr);
-        WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, BackgroundColor, _PropertyChangedHandlers, nullptr);
-        WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, CursorColor, _PropertyChangedHandlers, nullptr);
-        WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, SelectionBackgroundColor, _PropertyChangedHandlers, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, ForegroundColor, _propertyChangedHandlers, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, BackgroundColor, _propertyChangedHandlers, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, CursorColor, _propertyChangedHandlers, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, SelectionBackgroundColor, _propertyChangedHandlers, nullptr);
 
     private:
         winrt::hstring _Name;
