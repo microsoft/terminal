@@ -65,16 +65,14 @@
 
             <!--  Show Titlebar  -->
             <local:SettingContainer x:Uid="Globals_ShowTitlebar">
-                <ToggleSwitch x:Name="ShowTitlebarToggleSwitch"
-                              IsOn="{x:Bind ViewModel.ShowTabsInTitlebar, Mode=TwoWay}"
+                <ToggleSwitch IsOn="{x:Bind ViewModel.ShowTabsInTitlebar, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}"
-                              Toggled="{x:Bind local:GlobalAppearanceViewModel.ShowTitlebarToggled}" />
+                              Toggled="{x:Bind ViewModel.ShowTitlebarToggled}" />
             </local:SettingContainer>
 
             <!--  Always show tabs  -->
             <local:SettingContainer x:Uid="Globals_AlwaysShowTabs">
-                <ToggleSwitch x:Name="AlwaysShowTabsToggleSwitch"
-                              IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.ShowTabsInTitlebar), Mode=OneWay}"
+                <ToggleSwitch IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.ShowTabsInTitlebar), Mode=OneWay}"
                               IsOn="{x:Bind ViewModel.AlwaysShowTabs, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>

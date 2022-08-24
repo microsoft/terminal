@@ -263,9 +263,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void GlobalAppearanceViewModel::ShowTitlebarToggled(const winrt::Windows::Foundation::IInspectable& /* sender */, const RoutedEventArgs& /* args */)
     {
-        /*if (ShowTabsInTitlebar())
+        if (ShowTabsInTitlebar())
         {
             AlwaysShowTabs(true);
-        }*/
+        }
     }
 }
