@@ -22,7 +22,6 @@
                           x:DataType="local:ColorTableEntry">
                 <Border Width="15"
                         Height="15"
-                        Margin="2"
                         Background="{x:Bind local:Converters.ColorToBrush(Color)}"
                         CornerRadius="2" />
             </DataTemplate>
@@ -63,7 +62,9 @@
                                        Style="{StaticResource SettingsPageItemHeaderStyle}"
                                        Text="{x:Bind Name, Mode=OneWay}" />
                             <Grid Grid.Column="1"
-                                  VerticalAlignment="Center">
+                                  VerticalAlignment="Center"
+                                  ColumnSpacing="4"
+                                  RowSpacing="4">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
