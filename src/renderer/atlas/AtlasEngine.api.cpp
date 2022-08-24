@@ -606,21 +606,22 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     // Point sizes are commonly treated at a 72 DPI scale
     // (including by OpenType), whereas DirectWrite uses 96 DPI.
     // Since we want the height in px we multiply by the display's DPI.
-    const auto fontSize = std::ceilf(requestedSize.Y / 72.0f * _api.dpi);
+    const auto fontSizeInPx = std::roundf(requestedSize.Y / 72.0f * _api.dpi);
 
-    const auto designUnitsPerPx = fontSize / static_cast<float>(metrics.designUnitsPerEm);
+    const auto designUnitsPerPx = fontSizeInPx / static_cast<float>(metrics.designUnitsPerEm);
     const auto ascent = static_cast<float>(metrics.ascent) * designUnitsPerPx;
     const auto descent = static_cast<float>(metrics.descent) * designUnitsPerPx;
     const auto lineGap = static_cast<float>(metrics.lineGap) * designUnitsPerPx;
-    const auto advanceWidth = static_cast<float>(glyphMetrics.advanceWidth) * designUnitsPerPx;
     const auto underlinePosition = static_cast<float>(-metrics.underlinePosition) * designUnitsPerPx;
     const auto underlineThickness = static_cast<float>(metrics.underlineThickness) * designUnitsPerPx;
     const auto strikethroughPosition = static_cast<float>(-metrics.strikethroughPosition) * designUnitsPerPx;
     const auto strikethroughThickness = static_cast<float>(metrics.strikethroughThickness) * designUnitsPerPx;
 
+    const auto advanceWidth = static_cast<float>(glyphMetrics.advanceWidth) * designUnitsPerPx;
+
     const auto halfGap = lineGap / 2.0f;
-    const auto baseline = std::ceilf(ascent + halfGap);
-    const auto lineHeight = std::ceilf(baseline + descent + halfGap);
+    const auto baseline = std::roundf(ascent + halfGap);
+    const auto lineHeight = std::roundf(baseline + descent + halfGap);
     const auto underlinePos = std::roundf(baseline + underlinePosition);
     const auto underlineWidth = std::max(1.0f, std::roundf(underlineThickness));
     const auto strikethroughPos = std::roundf(baseline + strikethroughPosition);
@@ -649,7 +650,7 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     // Our cells can't overlap each other so we additionally clamp the bottom line to be inside the cell boundaries.
     doubleUnderlinePosBottom = std::min(doubleUnderlinePosBottom, lineHeight - thinLineWidth);
 
-    const auto cellWidth = gsl::narrow<u16>(std::ceilf(advanceWidth));
+    const auto cellWidth = gsl::narrow<u16>(std::roundf(advanceWidth));
     const auto cellHeight = gsl::narrow<u16>(lineHeight);
 
     {
@@ -686,7 +687,7 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
 
         fontMetrics->fontCollection = std::move(fontCollection);
         fontMetrics->fontName = std::move(fontName);
-        fontMetrics->fontSizeInDIP = fontSize / static_cast<float>(_api.dpi) * 96.0f;
+        fontMetrics->fontSizeInDIP = fontSizeInPx / static_cast<float>(_api.dpi) * 96.0f;
         fontMetrics->baselineInDIP = baseline / static_cast<float>(_api.dpi) * 96.0f;
         fontMetrics->advanceScale = cellWidth / advanceWidth;
         fontMetrics->cellSize = { cellWidth, cellHeight };
