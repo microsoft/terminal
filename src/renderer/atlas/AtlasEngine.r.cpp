@@ -443,14 +443,14 @@ void AtlasEngine::_drawGlyph(const AtlasQueueItem& item) const
         offset.x = clampedOverhang.left - clampedOverhang.right;
         offset.y = clampedOverhang.top - clampedOverhang.bottom;
 
-        if (actualSize.x > layoutBox.x)
+        if ((actualSize.x - layoutBox.x) > _r.dipPerPixel)
         {
             scalingRequired = true;
             offset.x = (overhang.left - overhang.right) * 0.5f;
             scale.x = layoutBox.x / actualSize.x;
             scale.y = scale.x;
         }
-        if (actualSize.y > layoutBox.y)
+        if ((actualSize.y - layoutBox.y) > _r.dipPerPixel)
         {
             scalingRequired = true;
             offset.y = (overhang.top - overhang.bottom) * 0.5f;

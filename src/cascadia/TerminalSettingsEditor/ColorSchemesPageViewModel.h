@@ -28,10 +28,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         bool CanDeleteCurrentScheme() const;
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        // DON'T YOU DARE ADD A `WINRT_CALLBACK(PropertyChanged` TO A CLASS DERIVED FROM ViewModelHelper. Do this instead:
+        using ViewModelHelper<ColorSchemesPageViewModel>::PropertyChanged;
 
-        WINRT_OBSERVABLE_PROPERTY(ColorSchemesSubPage, CurrentPage, _PropertyChangedHandlers, ColorSchemesSubPage::Base);
-        WINRT_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel>, AllColorSchemes, _PropertyChangedHandlers, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(ColorSchemesSubPage, CurrentPage, _propertyChangedHandlers, ColorSchemesSubPage::Base);
+        WINRT_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel>, AllColorSchemes, _propertyChangedHandlers, nullptr);
 
     private:
         Editor::ColorSchemeViewModel _CurrentScheme{ nullptr };
