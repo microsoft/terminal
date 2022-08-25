@@ -257,10 +257,10 @@ bool VtIo::IsUsingVt() const
             g.pRender->AddRenderEngine(_pVtRenderEngine.get());
             g.getConsoleInformation().GetActiveOutputBuffer().SetTerminalConnection(_pVtRenderEngine.get());
             g.getConsoleInformation().GetActiveInputBuffer()->SetTerminalConnection(_pVtRenderEngine.get());
-            ServiceLocator::SetPseudoWindowCallback([&](bool showOrHide) -> void {
-                // Set the remote window visibility to the request
-                LOG_IF_FAILED(_pVtRenderEngine->SetWindowVisibility(showOrHide));
-            });
+
+            // Force the whole window to be put together first.
+            // We don't really need the handle, we just want to leverage the setup steps.
+            ServiceLocator::LocatePseudoWindow();
         }
         CATCH_RETURN();
     }
@@ -326,6 +326,26 @@ bool VtIo::IsUsingVt() const
 void VtIo::CreatePseudoWindow()
 {
     _pPtySignalInputThread->CreatePseudoWindow();
+}
+
+void VtIo::SetWindowVisibility(bool showOrHide) noexcept
+{
+    // MSFT:40853556 Grab the shutdown lock here, so that another
+    // thread can't trigger a CloseOutput and release the
+    // _pVtRenderEngine out from underneath us.
+    std::lock_guard<std::mutex> lk(_shutdownLock);
+
+    if (!_pVtRenderEngine)
+    {
+        return;
+    }
+
+    auto& gci = ::Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    gci.LockConsole();
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    LOG_IF_FAILED(_pVtRenderEngine->SetWindowVisibility(showOrHide));
 }
 
 // Method Description:
