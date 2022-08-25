@@ -63,9 +63,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const auto settingName{ args.PropertyName() };
             if (settingName == L"CurrentPage")
             {
-                const auto currentPage = _colorSchemesPageVM.CurrentPage();
                 const auto currentScheme = _colorSchemesPageVM.CurrentScheme();
-                if (currentPage == ColorSchemesSubPage::EditColorScheme)
+                if (_colorSchemesPageVM.CurrentPage() == ColorSchemesSubPage::EditColorScheme && currentScheme)
                 {
                     contentFrame().Navigate(xaml_typename<Editor::EditColorScheme>(), currentScheme);
                     const auto crumb = winrt::make<Breadcrumb>(box_value(colorSchemesTag), currentScheme.Name(), BreadcrumbSubPage::ColorSchemes_Edit);
