@@ -336,6 +336,13 @@ jobs:
           ${{ windowsVersion }}:
             TerminalTargetWindowsVersion: ${{ windowsVersion }}
     displayName: Create and sign AppX/MSIX bundles
+    variables:
+      ${{ if eq(parameters.branding, 'Release') }}:
+        BundleStemName: Microsoft.WindowsTerminal
+      ${{ elseif eq(parameters.branding, 'Preview') }}:
+        BundleStemName: Microsoft.WindowsTerminalPreview
+      ${{ else }}:
+        BundleStemName: WindowsTerminalDev
     dependsOn: Build
     steps:
     - checkout: self
@@ -360,14 +367,15 @@ jobs:
         $Components = "$(XES_APPXMANIFESTVERSION)" -Split "\."
         $Components[0] = ([int]$Components[0] + $VersionEpoch)
         $BundleVersion = $Components -Join "."
-        .\build\scripts\Create-AppxBundle.ps1 -InputPath "$(System.ArtifactsDirectory)" -ProjectName CascadiaPackage -BundleVersion $BundleVersion -OutputPath "$(System.ArtifactsDirectory)\Microsoft.WindowsTerminal_$(TerminalTargetWindowsVersion)_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
+        New-Item -Type Directory "$(System.ArtifactsDirectory)\bundle"
+        .\build\scripts\Create-AppxBundle.ps1 -InputPath "$(System.ArtifactsDirectory)" -ProjectName CascadiaPackage -BundleVersion $BundleVersion -OutputPath "$(System.ArtifactsDirectory)\bundle\$(BundleStemName)_$(TerminalTargetWindowsVersion)_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
       displayName: Create WindowsTerminal*.msixbundle
     - task: EsrpCodeSigning@1
       displayName: Submit *.msixbundle to ESRP for code signing
       inputs:
         ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
-        FolderPath: $(System.ArtifactsDirectory)
-        Pattern: Microsoft.WindowsTerminal*.msixbundle
+        FolderPath: $(System.ArtifactsDirectory)\bundle
+        Pattern: $(BundleStemName)*.msixbundle
         UseMinimatch: true
         signConfigType: inlineSignParams
         inlineOperation: >-
@@ -400,7 +408,7 @@ jobs:
     - task: PublishBuildArtifacts@1
       displayName: 'Publish Artifact: appxbundle-signed'
       inputs:
-        PathtoPublish: $(System.ArtifactsDirectory)
+        PathtoPublish: $(System.ArtifactsDirectory)\bundle
         ArtifactName: appxbundle-signed-$(TerminalTargetWindowsVersion)
 
 - ${{ if eq(parameters.buildConPTY, true) }}:
