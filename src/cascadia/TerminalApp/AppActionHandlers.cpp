@@ -203,10 +203,11 @@ namespace winrt::TerminalApp::implementation
                 }
             }
 
+            const auto newPane{ _MakePane(newTerminalArgs, realArgs.SplitMode() == SplitType::Duplicate) };
             _SplitPane(realArgs.SplitDirection(),
                        // This is safe, we're already filtering so the value is (0, 1)
                        ::base::saturated_cast<float>(realArgs.SplitSize()),
-                       _MakePane(newTerminalArgs, realArgs.SplitMode() == SplitType::Duplicate));
+                       newPane);
 
             if (!_processingCommandlineArgs)
             {
@@ -215,7 +216,7 @@ namespace winrt::TerminalApp::implementation
                     autoPeer.RaiseNotificationEvent(
                         Automation::Peers::AutomationNotificationKind::ActionCompleted,
                         Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
-                        fmt::format(std::wstring_view{ RS_(L"SplitPaneAnnouncement") }, _settings.GetProfileForArgs(newTerminalArgs).Name()),
+                        fmt::format(std::wstring_view{ RS_(L"SplitPaneAnnouncement") }, newPane->GetProfile().Name()),
                         L"NewSplitPane" /* unique name for this notification category */);
                 }
             }
@@ -392,21 +393,7 @@ namespace winrt::TerminalApp::implementation
                 }
             }
 
-            const auto& newTerminalArgs = realArgs.TerminalArgs();
-            LOG_IF_FAILED(_OpenNewTab(newTerminalArgs));
-            if (!_processingCommandlineArgs)
-            {
-                if (auto autoPeer = Automation::Peers::FrameworkElementAutomationPeer::FromElement(*this))
-                {
-                    // we can't check if this is a leaf pane,
-                    // but getting the profile returns null if we aren't, so that works!
-                    autoPeer.RaiseNotificationEvent(
-                        Automation::Peers::AutomationNotificationKind::ActionCompleted,
-                        Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
-                        fmt::format(std::wstring_view{ RS_(L"NewTabAnnouncement") }, _settings.GetProfileForArgs(newTerminalArgs).Name()),
-                        L"NewTab" /* unique name for this notification category */);
-                }
-            }
+            LOG_IF_FAILED(_OpenNewTab(realArgs.TerminalArgs()));
             args.Handled(true);
         }
     }

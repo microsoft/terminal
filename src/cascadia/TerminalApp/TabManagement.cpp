@@ -85,7 +85,21 @@ namespace winrt::TerminalApp::implementation
         //
         // This call to _MakePane won't return nullptr, we already checked that
         // case above with the _maybeElevate call.
-        _CreateNewTabFromPane(_MakePane(newTerminalArgs, false, existingConnection));
+        const auto newPane{ _MakePane(newTerminalArgs, false, existingConnection) };
+        _CreateNewTabFromPane(newPane);
+        if (!_processingCommandlineArgs)
+        {
+            if (auto autoPeer = Automation::Peers::FrameworkElementAutomationPeer::FromElement(*this))
+            {
+                // we can't check if this is a leaf pane,
+                // but getting the profile returns null if we aren't, so that works!
+                autoPeer.RaiseNotificationEvent(
+                    Automation::Peers::AutomationNotificationKind::ActionCompleted,
+                    Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
+                    fmt::format(std::wstring_view{ RS_(L"NewTabAnnouncement") }, newPane->GetProfile().Name()),
+                    L"NewTab" /* unique name for this notification category */);
+            }
+        }
 
         const auto tabCount = _tabs.Size();
         const auto usedManualProfile = (newTerminalArgs != nullptr) &&
