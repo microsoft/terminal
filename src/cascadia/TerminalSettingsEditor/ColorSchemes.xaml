@@ -183,6 +183,7 @@
                         XYFocusKeyboardNavigation="Enabled">
                 <Button x:Name="EditButton"
                         Click="{x:Bind ViewModel.Edit_Click}"
+                        IsEnabled="{x:Bind ViewModel.HasCurrentScheme, Mode=OneWay}"
                         Style="{StaticResource BrowseButtonStyle}">
                     <TextBlock x:Uid="ColorScheme_EditButton"
                                Style="{StaticResource IconButtonTextBlockStyle}" />

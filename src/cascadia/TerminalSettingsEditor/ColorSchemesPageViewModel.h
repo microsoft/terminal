@@ -19,6 +19,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void CurrentScheme(const Editor::ColorSchemeViewModel& newSelectedScheme);
         Editor::ColorSchemeViewModel CurrentScheme();
+        bool HasCurrentScheme() const noexcept;
 
         Editor::ColorSchemeViewModel RequestAddNew();
         bool RequestRenameCurrentScheme(winrt::hstring newName);

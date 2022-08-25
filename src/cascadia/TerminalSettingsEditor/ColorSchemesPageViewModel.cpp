@@ -63,14 +63,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (_CurrentScheme != newSelectedScheme)
         {
             _CurrentScheme = newSelectedScheme;
-            _propertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"CurrentScheme" });
-            _propertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"CanDeleteCurrentScheme" });
+            _NotifyChanges(L"CurrentScheme", L"CanDeleteCurrentScheme", L"HasCurrentScheme");
         }
     }
 
     Editor::ColorSchemeViewModel ColorSchemesPageViewModel::CurrentScheme()
     {
         return _CurrentScheme;
+    }
+
+    bool ColorSchemesPageViewModel::HasCurrentScheme() const noexcept
+    {
+        return _CurrentScheme != nullptr;
     }
 
     void ColorSchemesPageViewModel::Edit_Click(const IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::RoutedEventArgs& /*e*/)
@@ -97,7 +101,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         _AllColorSchemes = single_threaded_observable_vector<Editor::ColorSchemeViewModel>(std::move(allColorSchemes));
-        _propertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"AllColorSchemes" });
+        _NotifyChanges(L"AllColorSchemes");
     }
 
     Editor::ColorSchemeViewModel ColorSchemesPageViewModel::RequestAddNew()
@@ -132,7 +136,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _settings.UpdateColorSchemeReferences(oldName, newName);
 
             // We need to let MainPage know so the BreadcrumbBarItem can be updated
-            _propertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"CurrentSchemeName" });
+            _NotifyChanges(L"CurrentSchemeName");
             return true;
         }
     }
