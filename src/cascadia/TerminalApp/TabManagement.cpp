@@ -768,19 +768,26 @@ namespace winrt::TerminalApp::implementation
     // - bool indicating whether the (read-only) pane can be closed.
     winrt::Windows::Foundation::IAsyncOperation<bool> TerminalPage::_PaneConfirmCloseReadOnly(std::shared_ptr<Pane> pane)
     {
-        if (const auto control{ pane->GetTerminalControl() })
+        if (pane->ContainsReadOnly())
         {
-            if (control.ReadOnly())
-            {
-                auto warningResult = co_await _ShowCloseReadOnlyDialog();
+            auto warningResult = co_await _ShowCloseReadOnlyDialog();
 
-                // If the user didn't explicitly click on close tab - leave
-                if (warningResult != ContentDialogResult::Primary)
-                {
-                    co_return false;
-                }
-                control.ToggleReadOnly();
+            // If the user didn't explicitly click on close tab - leave
+            if (warningResult != ContentDialogResult::Primary)
+            {
+                co_return false;
             }
+
+            // Clean read-only mode to prevent additional prompt if closing the pane triggers closing of a hosting tab
+            pane->WalkTree([](auto p) {
+                if (const auto control{ p->GetTerminalControl() })
+                {
+                    if (control.ReadOnly())
+                    {
+                        control.ToggleReadOnly();
+                    }
+                }
+            });
         }
         co_return true;
     }
