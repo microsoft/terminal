@@ -3321,7 +3321,7 @@ namespace winrt::TerminalApp::implementation
                 }
             });
 
-            auto newTabImpl = winrt::make_self<SettingsTab>(sui);
+            auto newTabImpl = winrt::make_self<SettingsTab>(sui, _settings.GlobalSettings().CurrentTheme().RequestedTheme());
 
             // Add the new tab to the list of our tabs.
             _tabs.Append(*newTabImpl);

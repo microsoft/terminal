@@ -23,9 +23,11 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    SettingsTab::SettingsTab(MainPage settingsUI)
+    SettingsTab::SettingsTab(MainPage settingsUI,
+                             winrt::Windows::UI::Xaml::ElementTheme requestedTheme)
     {
         Content(settingsUI);
+        _requestedTheme = requestedTheme;
 
         _MakeTabViewItem();
         _CreateContextMenu();
