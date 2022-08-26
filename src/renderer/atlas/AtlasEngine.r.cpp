@@ -741,15 +741,14 @@ void AtlasEngine::_d2dPresent()
         }
 
         THROW_IF_FAILED(_r.swapChain->Present1(1, 0, &params));
-        _r.waitForPresentation = true;
     }
     else
     {
         THROW_IF_FAILED(_r.swapChain->Present(1, 0));
-        _r.waitForPresentation = true;
     }
 
     _r.previousDirtyRectInPx = dirtyRectInPx;
+    _r.waitForPresentation = true;
     WI_ClearAllFlags(_r.invalidations, RenderInvalidations::Cursor | RenderInvalidations::ConstBuffer);
 }
 
