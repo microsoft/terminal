@@ -49,7 +49,8 @@ void SystemConfigurationProvider::GetSettingsFromLink(
     _Inout_updates_bytes_(*pdwTitleLength) LPWSTR /*pwszTitle*/,
     _Inout_ PDWORD /*pdwTitleLength*/,
     _In_ PCWSTR /*pwszCurrDir*/,
-    _In_ PCWSTR /*pwszAppName*/)
+    _In_ PCWSTR /*pwszAppName*/,
+    _Inout_opt_ IconInfo* /*iconInfo*/)
 {
     // While both OneCore console renderers use TrueType fonts, there is no
     // advanced font support on that platform. Namely, there is no way to pick
