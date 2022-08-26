@@ -107,7 +107,6 @@ namespace Microsoft.Terminal.Control
         Microsoft.Terminal.Core.Point CursorPosition { get; };
         void ResumeRendering();
         void BlinkAttributeTick();
-        void UpdatePatternLocations();
         void Search(String text, Boolean goForward, Boolean caseSensitive);
         Microsoft.Terminal.Core.Color BackgroundColor { get; };
 
