@@ -46,7 +46,7 @@ Terminal::Terminal() :
     _altGrAliasing{ true },
     _blockSelection{ false },
     _selectionMode{ SelectionInteractionMode::None },
-    _isTargetingUrl{ false },
+    _selectionIsTargetingUrl{ false },
     _selection{ std::nullopt },
     _selectionEndpoint{ static_cast<SelectionEndpoint>(0) },
     _anchorInactiveSelectionEndpoint{ false },
@@ -587,24 +587,53 @@ std::wstring Terminal::GetHyperlinkAtViewportPosition(const til::point viewportP
 
 std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
 {
-    auto attr = _activeBuffer().GetCellDataAt(bufferPos)->TextAttr();
+    // Case 1: buffer position has a hyperlink stored in the buffer
+    const auto attr = _activeBuffer().GetCellDataAt(bufferPos)->TextAttr();
     if (attr.IsHyperlink())
     {
-        auto uri = _activeBuffer().GetHyperlinkUriFromId(attr.GetHyperlinkId());
-        return uri;
+        return _activeBuffer().GetHyperlinkUriFromId(attr.GetHyperlinkId());
     }
-    // also look through our known pattern locations in our pattern interval tree
-    auto viewportPos = bufferPos;
-    _GetVisibleViewport().ConvertToOrigin(&viewportPos);
-    const auto result = GetHyperlinkIntervalFromViewportPosition(viewportPos);
+
+    // Case 2: buffer position may point to an auto-detected hyperlink
+    // Case 2 - Step 1: get the auto-detected hyperlink
+    std::optional<interval_tree::Interval<til::point, size_t>> result;
+    const auto visibleViewport = _GetVisibleViewport();
+    if (visibleViewport.IsInBounds(bufferPos))
+    {
+        // Hyperlink is in the current view, so let's just get it
+        auto viewportPos = bufferPos;
+        visibleViewport.ConvertToOrigin(&viewportPos);
+        result = GetHyperlinkIntervalFromViewportPosition(viewportPos);
+        if (result.has_value())
+        {
+            result->start = _ConvertToBufferCell(result->start);
+            result->stop = _ConvertToBufferCell(result->stop);
+        }
+    }
+    else
+    {
+        // Hyperlink is outside of the current view.
+        // We need to find if there's a pattern at that location.
+        const auto patterns = _activeBuffer().GetPatterns(bufferPos.y, bufferPos.y);
+
+        // NOTE: patterns is stored with top y-position being 0,
+        //       so we need to cleverly set the y-pos to 0.
+        const til::point viewportPos{ bufferPos.x, 0 };
+        const auto results = patterns.findOverlapping(viewportPos, viewportPos);
+        if (!results.empty())
+        {
+            result = results.front();
+            result->start.y += bufferPos.y;
+            result->stop.y += bufferPos.y;
+        }
+    }
+
+    // Case 2 - Step 2: get the auto-detected hyperlink
     if (result.has_value() && result->value == _hyperlinkPatternId)
     {
-        const auto start = result->start;
-        const auto end = result->stop;
         std::wstring uri;
-
-        const auto startIter = _activeBuffer().GetCellDataAt(_ConvertToBufferCell(start));
-        const auto endIter = _activeBuffer().GetCellDataAt(_ConvertToBufferCell(end));
+        const auto startIter = _activeBuffer().GetCellDataAt(result->start);
+        const auto endIter = _activeBuffer().GetCellDataAt(result->stop);
         for (auto iter = startIter; iter != endIter; ++iter)
         {
             uri += iter->Chars();
@@ -1637,4 +1666,13 @@ til::color Terminal::GetColorForMark(const Microsoft::Console::VirtualTerminal::
         return _renderSettings.GetColorAlias(ColorAlias::DefaultForeground);
     }
     }
+}
+
+// Method Description:
+// - Returns the position of the cursor relative to the active viewport
+til::point Terminal::GetViewportRelativeCursorPosition() const noexcept
+{
+    const auto absoluteCursorPosition{ GetCursorPosition() };
+    const auto viewport{ _GetMutableViewport() };
+    return absoluteCursorPosition - viewport.Origin();
 }
