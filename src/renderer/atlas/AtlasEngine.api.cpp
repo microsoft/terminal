@@ -606,7 +606,8 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     // Point sizes are commonly treated at a 72 DPI scale
     // (including by OpenType), whereas DirectWrite uses 96 DPI.
     // Since we want the height in px we multiply by the display's DPI.
-    const auto fontSizeInPx = std::roundf(requestedSize.Y / 72.0f * _api.dpi);
+    const auto fontSizeInDIP = requestedSize.Y / 72.0f * 96.0f;
+    const auto fontSizeInPx = requestedSize.Y / 72.0f * _api.dpi;
 
     const auto designUnitsPerPx = fontSizeInPx / static_cast<float>(metrics.designUnitsPerEm);
     const auto ascent = static_cast<float>(metrics.ascent) * designUnitsPerPx;
@@ -687,7 +688,7 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
 
         fontMetrics->fontCollection = std::move(fontCollection);
         fontMetrics->fontName = std::move(fontName);
-        fontMetrics->fontSizeInDIP = fontSizeInPx / static_cast<float>(_api.dpi) * 96.0f;
+        fontMetrics->fontSizeInDIP = fontSizeInDIP;
         fontMetrics->baselineInDIP = baseline / static_cast<float>(_api.dpi) * 96.0f;
         fontMetrics->advanceScale = cellWidth / advanceWidth;
         fontMetrics->cellSize = { cellWidth, cellHeight };
