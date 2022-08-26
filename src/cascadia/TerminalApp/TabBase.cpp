@@ -379,8 +379,12 @@ namespace winrt::TerminalApp::implementation
         // Start with the current tab color, set to Opacity=.3
         til::color deselectedTabColor{ color };
         deselectedTabColor = deselectedTabColor.with_alpha(77); // 255 * .3 = 77
-        // If we have a unfocused color in the theme:
-        if (_unfocusedThemeColor != nullptr)
+
+        // If we DON'T have a color set from the color picker, or the profile's
+        // tabColor, but we do have a unfocused color in the theme, use the
+        // unfocused theme color here instead.
+        if (!GetTabColor().has_value() &&
+            _unfocusedThemeColor != nullptr)
         {
             // Safely get the active control's brush.
             Media::Brush terminalBrush{ _BackgroundBrush() };
