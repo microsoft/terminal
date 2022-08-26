@@ -747,6 +747,7 @@ void AtlasEngine::_d2dPresent()
         THROW_IF_FAILED(_r.swapChain->Present(1, 0));
     }
 
+    _r.glyphQueue.clear();
     _r.previousDirtyRectInPx = dirtyRectInPx;
     _r.waitForPresentation = true;
     WI_ClearAllFlags(_r.invalidations, RenderInvalidations::Cursor | RenderInvalidations::ConstBuffer);
