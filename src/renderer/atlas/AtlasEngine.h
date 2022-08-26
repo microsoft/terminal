@@ -960,6 +960,9 @@ namespace Microsoft::Console::Render
 
         struct Resources
         {
+            // DXGI resources
+            wil::com_ptr<IDXGIFactory1> dxgiFactory;
+
             // D3D resources
             wil::com_ptr<ID3D11Device> device;
             wil::com_ptr<ID3D11DeviceContext1> deviceContext;
@@ -1009,6 +1012,7 @@ namespace Microsoft::Console::Render
             til::rect dirtyRect;
             i16 scrollOffset = 0;
             bool d2dMode = false;
+            bool waitForPresentation = false;
 
 #ifndef NDEBUG
             // See documentation for IDXGISwapChain2::GetFrameLatencyWaitableObject method:

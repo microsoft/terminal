@@ -110,6 +110,7 @@ try
         {
             _r.selectionColor = _api.selectionColor;
             WI_SetFlag(_r.invalidations, RenderInvalidations::ConstBuffer);
+            WI_ClearFlag(_api.invalidations, ApiInvalidations::Settings);
         }
 
         // Equivalent to InvalidateAll().
@@ -243,23 +244,8 @@ try
     }
 
     _api.dirtyRect = til::rect{ 0, _api.invalidatedRows.x, _api.cellCount.x, _api.invalidatedRows.y };
-
-    // Skip partial updates in the renderer if we redraw everything.
-    if (_api.invalidatedRows == u16x2{ 0, _r.cellCount.y })
-    {
-        _r.dirtyRect = {};
-        _r.scrollOffset = 0;
-    }
-    else
-    {
-        _r.dirtyRect = _api.dirtyRect | til::rect{
-            _api.invalidatedCursorArea.left,
-            _api.invalidatedCursorArea.top,
-            _api.invalidatedCursorArea.right,
-            _api.invalidatedCursorArea.bottom,
-        };
-        _r.scrollOffset = _api.scrollOffset;
-    }
+    _r.dirtyRect = _api.dirtyRect;
+    _r.scrollOffset = _api.scrollOffset;
 
     // This is an important block of code for our TileHashMap.
     // We only process glyphs within the dirtyRect, but glyphs outside of the
@@ -322,7 +308,10 @@ CATCH_RETURN()
 
 void AtlasEngine::WaitUntilCanRender() noexcept
 {
-    if constexpr (!debugGeneralPerformance)
+    // IDXGISwapChain2::GetFrameLatencyWaitableObject returns an auto-reset event.
+    // Once we've waited on the event, waiting on it again will block until the timeout elapses.
+    // _r.waitForPresentation guards against this.
+    if (!debugGeneralPerformance && std::exchange(_r.waitForPresentation, false))
     {
         WaitForSingleObjectEx(_r.frameLatencyWaitableObject.get(), 100, true);
 #ifndef NDEBUG
@@ -439,6 +428,7 @@ try
         rect.narrow_bottom<u16>(),
     };
     _setCellFlags(u16rect, CellFlags::Selected, CellFlags::Selected);
+    _r.dirtyRect |= rect;
     return S_OK;
 }
 CATCH_RETURN()
@@ -465,9 +455,10 @@ try
     }
 
     // Clear the previous cursor
-    if (_api.invalidatedCursorArea.non_empty())
+    if (const auto r = _api.invalidatedCursorArea; r.non_empty())
     {
-        _setCellFlags(_api.invalidatedCursorArea, CellFlags::Cursor, CellFlags::None);
+        _setCellFlags(r, CellFlags::Cursor, CellFlags::None);
+        _r.dirtyRect |= til::rect{ r.left, r.top, r.right, r.bottom };
     }
 
     if (options.isOn)
@@ -481,6 +472,7 @@ try
         const auto right = gsl::narrow_cast<uint16_t>(clamp(x + cursorWidth, 0, _r.cellCount.x - 0));
         const auto bottom = gsl::narrow_cast<uint16_t>(y + 1);
         _setCellFlags({ x, y, right, bottom }, CellFlags::Cursor, CellFlags::Cursor);
+        _r.dirtyRect |= til::rect{ x, y, right, bottom };
     }
 
     return S_OK;
@@ -641,12 +633,15 @@ void AtlasEngine::_createResources()
         _r.deviceContext = deviceContext.query<ID3D11DeviceContext1>();
     }
 
-    // > You should not use GetSystemMetrics(SM_REMOTESESSION) to determine if your application is running
-    // > in a remote session in Windows 8 and later or Windows Server 2012 and later if the remote session
-    // > may also be using the RemoteFX vGPU improvements to the Microsoft Remote Display Protocol (RDP).
-    // > In this case, GetSystemMetrics(SM_REMOTESESSION) will identify the remote session as a local session.
-    // This actually sounds great for us. The non-d2dMode of AtlasEngine has more features, but requires a GPU.
-    _r.d2dMode = debugForceD2DMode || GetSystemMetrics(SM_REMOTESESSION);
+    {
+        wil::com_ptr<IDXGIAdapter1> dxgiAdapter;
+        THROW_IF_FAILED(_r.device.query<IDXGIObject>()->GetParent(__uuidof(dxgiAdapter), dxgiAdapter.put_void()));
+        THROW_IF_FAILED(dxgiAdapter->GetParent(__uuidof(_r.dxgiFactory), _r.dxgiFactory.put_void()));
+
+        DXGI_ADAPTER_DESC1 desc;
+        THROW_IF_FAILED(dxgiAdapter->GetDesc1(&desc));
+        _r.d2dMode = debugForceD2DMode || WI_IsAnyFlagSet(desc.Flags, DXGI_ADAPTER_FLAG_REMOTE | DXGI_ADAPTER_FLAG_SOFTWARE);
+    }
 
 #ifndef NDEBUG
     // D3D debug messages
@@ -753,6 +748,7 @@ void AtlasEngine::_createSwapChain()
     // See documentation for IDXGISwapChain2::GetFrameLatencyWaitableObject method:
     // > For every frame it renders, the app should wait on this handle before starting any rendering operations.
     // > Note that this requirement includes the first frame the app renders with the swap chain.
+    _r.waitForPresentation = true;
     WaitUntilCanRender();
 
     if (_api.swapChainChangedCallback)

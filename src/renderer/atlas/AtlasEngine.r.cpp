@@ -62,45 +62,53 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT AtlasEngine::Present() noexcept
 try
 {
-    if (_r.d2dMode) [[unlikely]]
-    {
-        _d2dPresent();
-        return S_OK;
-    }
-
-    _adjustAtlasSize();
-    _processGlyphQueue();
-
-    // The values the constant buffer depends on are potentially updated after BeginPaint().
-    if (WI_IsFlagSet(_r.invalidations, RenderInvalidations::ConstBuffer))
-    {
-        _updateConstantBuffer();
-        WI_ClearFlag(_r.invalidations, RenderInvalidations::ConstBuffer);
-    }
-
-    {
-#pragma warning(suppress : 26494) // Variable 'mapped' is uninitialized. Always initialize an object (type.5).
-        D3D11_MAPPED_SUBRESOURCE mapped;
-        THROW_IF_FAILED(_r.deviceContext->Map(_r.cellBuffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
-        assert(mapped.RowPitch >= _r.cells.size() * sizeof(Cell));
-        memcpy(mapped.pData, _r.cells.data(), _r.cells.size() * sizeof(Cell));
-        _r.deviceContext->Unmap(_r.cellBuffer.get(), 0);
-    }
-
-    // After Present calls, the back buffer needs to explicitly be
-    // re-bound to the D3D11 immediate context before it can be used again.
-    _r.deviceContext->OMSetRenderTargets(1, _r.renderTargetView.addressof(), nullptr);
-    _r.deviceContext->Draw(3, 0);
-
     // See documentation for IDXGISwapChain2::GetFrameLatencyWaitableObject method:
     // > For every frame it renders, the app should wait on this handle before starting any rendering operations.
     // > Note that this requirement includes the first frame the app renders with the swap chain.
     assert(debugGeneralPerformance || _r.frameLatencyWaitableObjectUsed);
 
-    // > IDXGISwapChain::Present: Partial Presentation (using a dirty rects or scroll) is not supported
-    // > for SwapChains created with DXGI_SWAP_EFFECT_DISCARD or DXGI_SWAP_EFFECT_FLIP_DISCARD.
-    // ---> No need to call IDXGISwapChain1::Present1.
-    THROW_IF_FAILED(_r.swapChain->Present(1, 0));
+    if (_r.d2dMode) [[unlikely]]
+    {
+        // TODO gutters
+        _d2dPresent();
+    }
+    else
+    {
+        _adjustAtlasSize();
+        _processGlyphQueue();
+
+        // The values the constant buffer depends on are potentially updated after BeginPaint().
+        if (WI_IsFlagSet(_r.invalidations, RenderInvalidations::ConstBuffer))
+        {
+            _updateConstantBuffer();
+            WI_ClearFlag(_r.invalidations, RenderInvalidations::ConstBuffer);
+        }
+
+        {
+#pragma warning(suppress : 26494) // Variable 'mapped' is uninitialized. Always initialize an object (type.5).
+            D3D11_MAPPED_SUBRESOURCE mapped;
+            THROW_IF_FAILED(_r.deviceContext->Map(_r.cellBuffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
+            assert(mapped.RowPitch >= _r.cells.size() * sizeof(Cell));
+            memcpy(mapped.pData, _r.cells.data(), _r.cells.size() * sizeof(Cell));
+            _r.deviceContext->Unmap(_r.cellBuffer.get(), 0);
+        }
+
+        // After Present calls, the back buffer needs to explicitly be
+        // re-bound to the D3D11 immediate context before it can be used again.
+        _r.deviceContext->OMSetRenderTargets(1, _r.renderTargetView.addressof(), nullptr);
+        _r.deviceContext->Draw(3, 0);
+
+        // > IDXGISwapChain::Present: Partial Presentation (using a dirty rects or scroll) is not supported
+        // > for SwapChains created with DXGI_SWAP_EFFECT_DISCARD or DXGI_SWAP_EFFECT_FLIP_DISCARD.
+        // ---> No need to call IDXGISwapChain1::Present1.
+        THROW_IF_FAILED(_r.swapChain->Present(1, 0));
+        _r.waitForPresentation = true;
+    }
+
+    if (!_r.dxgiFactory->IsCurrent())
+    {
+        WI_SetFlag(_api.invalidations, ApiInvalidations::Device);
+    }
 
     return S_OK;
 }
@@ -656,6 +664,19 @@ void AtlasEngine::CachedGlyphLayout::undoScaling(ID2D1RenderTarget* d2dRenderTar
 
 void AtlasEngine::_d2dPresent()
 {
+    const til::rect fullRect{ 0, 0, _r.cellCount.x, _r.cellCount.y };
+
+    // A change in the selection or background color (etc.) forces a full redraw.
+    if (WI_IsFlagSet(_r.invalidations, RenderInvalidations::ConstBuffer))
+    {
+        _r.dirtyRect = fullRect;
+    }
+
+    if (!_r.dirtyRect)
+    {
+        return;
+    }
+
     auto dirtyRectInPx = _r.dirtyRect;
     dirtyRectInPx.left *= _r.fontMetrics.cellSize.x;
     dirtyRectInPx.top *= _r.fontMetrics.cellSize.y;
@@ -687,7 +708,7 @@ void AtlasEngine::_d2dPresent()
     // > Note that this requirement includes the first frame the app renders with the swap chain.
     assert(debugGeneralPerformance || _r.frameLatencyWaitableObjectUsed);
 
-    if (dirtyRectInPx)
+    if (_r.dirtyRect != fullRect)
     {
         RECT scrollRect{};
         POINT scrollOffset{};
@@ -720,13 +741,16 @@ void AtlasEngine::_d2dPresent()
         }
 
         THROW_IF_FAILED(_r.swapChain->Present1(1, 0, &params));
+        _r.waitForPresentation = true;
     }
     else
     {
         THROW_IF_FAILED(_r.swapChain->Present(1, 0));
+        _r.waitForPresentation = true;
     }
 
     _r.previousDirtyRectInPx = dirtyRectInPx;
+    WI_ClearAllFlags(_r.invalidations, RenderInvalidations::Cursor | RenderInvalidations::ConstBuffer);
 }
 
 void AtlasEngine::_d2dCreateRenderTarget()
@@ -779,32 +803,67 @@ void AtlasEngine::_d2dDrawDirtyArea()
         CellFlagHandler{ CellFlags::Selected, &AtlasEngine::_d2dCellFlagRendererSelected },
     };
 
-    u16 left = 0;
-    u16 top = 0;
-    u16 right = _r.cellCount.x;
-    u16 bottom = _r.cellCount.y;
-    if (_r.dirtyRect)
+    auto left = gsl::narrow<u16>(_r.dirtyRect.left);
+    auto top = gsl::narrow<u16>(_r.dirtyRect.top);
+    auto right = gsl::narrow<u16>(_r.dirtyRect.right);
+    auto bottom = gsl::narrow<u16>(_r.dirtyRect.bottom);
+    if constexpr (debugGlyphGenerationPerformance)
     {
-        left = gsl::narrow<u16>(_r.dirtyRect.left);
-        top = gsl::narrow<u16>(_r.dirtyRect.top);
-        right = gsl::narrow<u16>(_r.dirtyRect.right);
-        bottom = gsl::narrow<u16>(_r.dirtyRect.bottom);
+        left = 0;
+        top = 0;
+        right = _r.cellCount.x;
+        bottom = _r.cellCount.y;
     }
 
     _r.d2dRenderTarget->BeginDraw();
+
+    if (WI_IsFlagSet(_r.invalidations, RenderInvalidations::ConstBuffer))
+    {
+        _r.d2dRenderTarget->Clear(colorFromU32(_r.backgroundColor));
+    }
 
     for (u16 y = top; y < bottom; ++y)
     {
         const Cell* cells = _getCell(0, y);
         const TileHashMap::iterator* cellGlyphMappings = _getCellGlyphMapping(0, y);
 
+        // left/right might intersect a wide glyph. We have to extend left/right
+        // to include the entire glyph so that we can properly render it.
+        // Since a series of identical narrow glyphs (2 spaces for instance) are stored in cellGlyphMappings
+        // just like a single wide glyph (2 references to the same glyph in a row), the only way for us to
+        // know where wide glyphs begin and end is to iterate the entire row and use the stored `cellCount`.
+        u16 beg = 0;
+        for (;;)
+        {
+            const auto cellCount = cellGlyphMappings[beg]->first.data()->attributes.cellCount;
+            const auto begNext = gsl::narrow_cast<u16>(beg + cellCount);
+
+            if (begNext > left)
+            {
+                break;
+            }
+
+            beg = begNext;
+        }
+        auto end = beg;
+        for (;;)
+        {
+            const auto cellCount = cellGlyphMappings[end]->first.data()->attributes.cellCount;
+            end += cellCount;
+
+            if (end >= right)
+            {
+                break;
+            }
+        }
+
         // Draw background.
         {
-            auto x1 = left;
+            auto x1 = beg;
             auto x2 = gsl::narrow_cast<u16>(x1 + 1);
             auto currentColor = cells[x1].color.y;
 
-            for (; x2 < right; ++x2)
+            for (; x2 < end; ++x2)
             {
                 const auto color = cells[x2].color.y;
 
@@ -824,21 +883,21 @@ void AtlasEngine::_d2dDrawDirtyArea()
         }
 
         // Draw text.
-        for (u16 x = left, cellCount = 0; x < right; x += cellCount)
+        for (auto x = beg; x < end;)
         {
             const auto& it = cellGlyphMappings[x];
             const u16x2 coord{ x, y };
             const auto color = cells[x].color.x;
-            cellCount = _d2dDrawGlyph(it, coord, color);
+            x += _d2dDrawGlyph(it, coord, color);
         }
 
         // Draw underlines, cursors, selections, etc.
         for (const auto& handler : cellFlagHandlers)
         {
-            auto x1 = left;
+            auto x1 = beg;
             auto currentFlags = CellFlags::None;
 
-            for (u16 x2 = left; x2 < right; ++x2)
+            for (auto x2 = beg; x2 < end; ++x2)
             {
                 const auto flags = cells[x2].flags & handler.filter;
 
