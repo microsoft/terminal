@@ -3093,11 +3093,18 @@ namespace winrt::TerminalApp::implementation
         _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonBackgroundPressed"), backgroundPressedBrush);
 
         _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonForeground"), foregroundBrush);
+        _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonForegroundSecondary"), foregroundBrush);
         _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonForegroundPointerOver"), foregroundBrush);
         _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonForegroundPressed"), foregroundBrush);
+        _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonForegroundSecondaryPressed"), foregroundBrush);
 
+        _newTabButton.IsEnabled(false);
         _newTabButton.Background(backgroundBrush);
         _newTabButton.Foreground(foregroundBrush);
+
+        VisualStateManager::GoToState(_newTabButton, L"FlyoutOpen", true);
+        VisualStateManager::GoToState(_newTabButton, L"Normal", true);
+        _newTabButton.IsEnabled(true);
     }
 
     // Method Description:
@@ -3117,8 +3124,10 @@ namespace winrt::TerminalApp::implementation
             L"SplitButtonBackgroundPointerOver",
             L"SplitButtonBackgroundPressed",
             L"SplitButtonForeground",
+            L"SplitButtonForegroundSecondary",
             L"SplitButtonForegroundPointerOver",
-            L"SplitButtonForegroundPressed"
+            L"SplitButtonForegroundPressed",
+            L"SplitButtonForegroundSecondaryPressed"
         };
 
         // simply clear any of the colors in the split button's dict
