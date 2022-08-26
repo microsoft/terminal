@@ -67,8 +67,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (_CurrentScheme != newSelectedScheme)
         {
             _CurrentScheme = newSelectedScheme;
-            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"CurrentScheme" });
-            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"CanDeleteCurrentScheme" });
+            _propertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"CurrentScheme" });
+            _propertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"CanDeleteCurrentScheme" });
         }
     }
 
@@ -100,7 +100,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         _AllColorSchemes = single_threaded_observable_vector<Editor::ColorSchemeViewModel>(std::move(allColorSchemes));
-        _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"AllColorSchemes" });
+        _propertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"AllColorSchemes" });
     }
 
     void ColorSchemesPageViewModel::RequestEnterRename()

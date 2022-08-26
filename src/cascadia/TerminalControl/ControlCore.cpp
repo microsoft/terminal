@@ -421,7 +421,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _updateSelectionUI();
                 return true;
             }
-            else if (vkey == VK_RETURN && mods.IsCtrlPressed() && _terminal->IsTargetingUrl())
+            else if (vkey == VK_RETURN && mods.IsCtrlPressed() && !mods.IsAltPressed() && !mods.IsShiftPressed() && _terminal->SelectionIsTargetingUrl())
             {
                 // Ctrl + Enter --> Open URL
                 auto lock = _terminal->LockForReading();

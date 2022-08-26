@@ -53,6 +53,7 @@ namespace Microsoft::Console::VirtualTerminal
         [[nodiscard]] HRESULT ManuallyClearScrollback() const noexcept;
 
         void CreatePseudoWindow();
+        void SetWindowVisibility(bool showOrHide) noexcept;
 
     private:
         // After CreateIoHandlers is called, these will be invalid.

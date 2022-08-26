@@ -1764,6 +1764,9 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         remainingChild->_firstChild = nullptr;
         remainingChild->_secondChild = nullptr;
     }
+
+    // Notify the discarded child that it was closed by its parent
+    closedChild->_ClosedByParentHandlers();
 }
 
 winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)

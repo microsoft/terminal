@@ -991,31 +991,41 @@ std::wstring UiaTextRangeBase::_getTextValue(til::CoordType maxLength) const
         const auto& buffer = _pData->GetTextBuffer();
         const auto bufferSize = buffer.GetSize();
 
+        // -1 is supposed to be interpreted as "no limit",
+        // so leverage size_t(-1) being converted to 0xffff...
+        const auto maxLengthAsSize = gsl::narrow_cast<size_t>(maxLength);
+
         // TODO GH#5406: create a different UIA parent object for each TextBuffer
         // nvaccess/nvda#11428: Ensure our endpoints are in bounds
-        // otherwise, we'll FailFast catastrophically
         THROW_HR_IF(E_FAIL, !bufferSize.IsInBounds(_start) || !bufferSize.IsInBounds(_end));
 
         // convert _end to be inclusive
         auto inclusiveEnd = _end;
         bufferSize.DecrementInBounds(inclusiveEnd, true);
 
+        // reserve size in accordance to extracted text
         const auto textRects = buffer.GetTextRects(_start, inclusiveEnd, _blockRange, true);
         const auto bufferData = buffer.GetText(true,
                                                false,
                                                textRects);
-
         const size_t textDataSize = bufferData.text.size() * bufferSize.Width();
         textData.reserve(textDataSize);
         for (const auto& text : bufferData.text)
         {
+            if (textData.size() >= maxLengthAsSize)
+            {
+                // early exit; we're already at/past max length
+                break;
+            }
             textData += text;
         }
-    }
 
-    if (maxLength >= 0)
-    {
-        textData.resize(maxLength);
+        // only use maxLength to resize down.
+        // if maxLength > size, we don't want to resize and append unnecessary L'\0'.
+        if (textData.size() > maxLengthAsSize)
+        {
+            textData.resize(maxLengthAsSize);
+        }
     }
 
     return textData;
