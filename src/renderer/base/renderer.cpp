@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
 #include "renderer.hpp"
 
 #pragma hdrstop
@@ -16,6 +15,12 @@ static constexpr auto maxRetriesForRenderEngine = 3;
 // The renderer will wait this number of milliseconds * how many tries have elapsed before trying again.
 static constexpr auto renderBackoffBaseTimeMilliseconds{ 150 };
 
+#define FOREACH_ENGINE(var)   \
+    for (auto var : _engines) \
+        if (!var)             \
+            break;            \
+        else
+
 // Routine Description:
 // - Creates a new renderer controller for a console.
 // Arguments:
@@ -23,22 +28,18 @@ static constexpr auto renderBackoffBaseTimeMilliseconds{ 150 };
 // - pEngine - The output engine for targeting each rendering frame
 // Return Value:
 // - An instance of a Renderer.
-// NOTE: CAN THROW IF MEMORY ALLOCATION FAILS.
-Renderer::Renderer(IRenderData* pData,
+Renderer::Renderer(const RenderSettings& renderSettings,
+                   IRenderData* pData,
                    _In_reads_(cEngines) IRenderEngine** const rgpEngines,
                    const size_t cEngines,
-                   std::unique_ptr<IRenderThread> thread) :
-    _pData(THROW_HR_IF_NULL(E_INVALIDARG, pData)),
-    _pThread{ std::move(thread) },
-    _destructing{ false },
-    _clusterBuffer{},
-    _viewport{ pData->GetViewport() }
+                   std::unique_ptr<RenderThread> thread) :
+    _renderSettings(renderSettings),
+    _pData(pData),
+    _pThread{ std::move(thread) }
 {
     for (size_t i = 0; i < cEngines; i++)
     {
-        IRenderEngine* engine = rgpEngines[i];
-        // NOTE: THIS CAN THROW IF MEMORY ALLOCATION FAILS.
-        AddRenderEngine(engine);
+        AddRenderEngine(rgpEngines[i]);
     }
 }
 
@@ -50,6 +51,7 @@ Renderer::Renderer(IRenderData* pData,
 // - <none>
 Renderer::~Renderer()
 {
+    // RenderThread blocks until it has shut down.
     _destructing = true;
     _pThread.reset();
 }
@@ -62,12 +64,7 @@ Renderer::~Renderer()
 // - HRESULT S_OK, GDI error, Safe Math error, or state/argument errors.
 [[nodiscard]] HRESULT Renderer::PaintFrame()
 {
-    if (_destructing)
-    {
-        return S_FALSE;
-    }
-
-    for (IRenderEngine* const pEngine : _rgpEngines)
+    FOREACH_ENGINE(pEngine)
     {
         auto tries = maxRetriesForRenderEngine;
         while (tries > 0)
@@ -93,6 +90,7 @@ Renderer::~Renderer()
                     // abort applications that host us.
                     return S_FALSE;
                 }
+
                 // Add a bit of backoff.
                 // Sleep 150ms, 300ms, 450ms before failing out and disabling the renderer.
                 Sleep(renderBackoffBaseTimeMilliseconds * (maxRetriesForRenderEngine - tries));
@@ -120,7 +118,7 @@ try
     _CheckViewportAndScroll();
 
     // Try to start painting a frame
-    HRESULT const hr = pEngine->StartPaint();
+    const auto hr = pEngine->StartPaint();
     RETURN_IF_FAILED(hr);
 
     // Return early if there's nothing to paint.
@@ -139,12 +137,12 @@ try
         // at the next opportunity.
         if (pEngine->RequiresContinuousRedraw())
         {
-            _NotifyPaintFrame();
+            NotifyPaintFrame();
         }
     });
 
     // A. Prep Colors
-    RETURN_IF_FAILED(_UpdateDrawingBrushes(pEngine, _pData->GetDefaultBrushColors(), true));
+    RETURN_IF_FAILED(_UpdateDrawingBrushes(pEngine, {}, false, true));
 
     // B. Perform Scroll Operations
     RETURN_IF_FAILED(_PerformScrolling(pEngine));
@@ -184,7 +182,7 @@ try
 }
 CATCH_RETURN()
 
-void Renderer::_NotifyPaintFrame()
+void Renderer::NotifyPaintFrame() noexcept
 {
     // If we're running in the unittests, we might not have a render thread.
     if (_pThread)
@@ -200,13 +198,14 @@ void Renderer::_NotifyPaintFrame()
 // - <none>
 // Return Value:
 // - <none>
-void Renderer::TriggerSystemRedraw(const RECT* const prcDirtyClient)
+void Renderer::TriggerSystemRedraw(const til::rect* const prcDirtyClient)
 {
-    std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
+    FOREACH_ENGINE(pEngine)
+    {
         LOG_IF_FAILED(pEngine->InvalidateSystem(prcDirtyClient));
-    });
+    }
 
-    _NotifyPaintFrame();
+    NotifyPaintFrame();
 }
 
 // Routine Description:
@@ -217,17 +216,30 @@ void Renderer::TriggerSystemRedraw(const RECT* const prcDirtyClient)
 // - <none>
 void Renderer::TriggerRedraw(const Viewport& region)
 {
-    Viewport view = _viewport;
-    SMALL_RECT srUpdateRegion = region.ToExclusive();
+    auto view = _viewport;
+    auto srUpdateRegion = region.ToExclusive();
+
+    // If the dirty region has double width lines, we need to double the size of
+    // the right margin to make sure all the affected cells are invalidated.
+    const auto& buffer = _pData->GetTextBuffer();
+    for (auto row = srUpdateRegion.Top; row < srUpdateRegion.Bottom; row++)
+    {
+        if (buffer.IsDoubleWidthLine(row))
+        {
+            srUpdateRegion.Right *= 2;
+            break;
+        }
+    }
 
     if (view.TrimToViewport(&srUpdateRegion))
     {
         view.ConvertToOrigin(&srUpdateRegion);
-        std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
+        FOREACH_ENGINE(pEngine)
+        {
             LOG_IF_FAILED(pEngine->Invalidate(&srUpdateRegion));
-        });
+        }
 
-        _NotifyPaintFrame();
+        NotifyPaintFrame();
     }
 }
 
@@ -237,7 +249,7 @@ void Renderer::TriggerRedraw(const Viewport& region)
 // - pcoord: The buffer-space coordinate that has changed.
 // Return Value:
 // - <none>
-void Renderer::TriggerRedraw(const COORD* const pcoord)
+void Renderer::TriggerRedraw(const til::point* const pcoord)
 {
     TriggerRedraw(Viewport::FromCoord(*pcoord)); // this will notify to paint if we need it.
 }
@@ -251,27 +263,34 @@ void Renderer::TriggerRedraw(const COORD* const pcoord)
 // - pcoord: The buffer-space position of the cursor.
 // Return Value:
 // - <none>
-void Renderer::TriggerRedrawCursor(const COORD* const pcoord)
+void Renderer::TriggerRedrawCursor(const til::point* const pcoord)
 {
-    Viewport view = _pData->GetViewport();
-    COORD updateCoord = *pcoord;
-
-    if (view.IsInBounds(updateCoord))
+    // We first need to make sure the cursor position is within the buffer,
+    // otherwise testing for a double width character can throw an exception.
+    const auto& buffer = _pData->GetTextBuffer();
+    if (buffer.GetSize().IsInBounds(*pcoord))
     {
-        view.ConvertToOrigin(&updateCoord);
-        for (IRenderEngine* pEngine : _rgpEngines)
+        // We then calculate the region covered by the cursor. This requires
+        // converting the buffer coordinates to an equivalent range of screen
+        // cells for the cursor, taking line rendition into account.
+        const auto lineRendition = buffer.GetLineRendition(pcoord->Y);
+        const auto cursorWidth = _pData->IsCursorDoubleWidth() ? 2 : 1;
+        const til::inclusive_rect cursorRect = { pcoord->X, pcoord->Y, pcoord->X + cursorWidth - 1, pcoord->Y };
+        auto cursorView = Viewport::FromInclusive(BufferToScreenLine(cursorRect, lineRendition));
+
+        // The region is clamped within the viewport boundaries and we only
+        // trigger a redraw if the region is not empty.
+        auto view = _pData->GetViewport();
+        if (view.IsInBounds(cursorView))
         {
-            LOG_IF_FAILED(pEngine->InvalidateCursor(&updateCoord));
-
-            // Double-wide cursors need to invalidate the right half as well.
-            if (_pData->IsCursorDoubleWidth())
+            const auto updateRect = view.ConvertToOrigin(cursorView).ToExclusive();
+            FOREACH_ENGINE(pEngine)
             {
-                updateCoord.X++;
-                LOG_IF_FAILED(pEngine->InvalidateCursor(&updateCoord));
+                LOG_IF_FAILED(pEngine->InvalidateCursor(&updateRect));
             }
-        }
 
-        _NotifyPaintFrame();
+            NotifyPaintFrame();
+        }
     }
 }
 
@@ -279,16 +298,28 @@ void Renderer::TriggerRedrawCursor(const COORD* const pcoord)
 // - Called when something that changes the output state has occurred and the entire frame is now potentially invalid.
 // - NOTE: Use sparingly. Try to reduce the refresh region where possible. Only use when a global state change has occurred.
 // Arguments:
-// - <none>
+// - backgroundChanged - Set to true if the background color has changed.
+// - frameChanged - Set to true if the frame colors have changed.
 // Return Value:
 // - <none>
-void Renderer::TriggerRedrawAll()
+void Renderer::TriggerRedrawAll(const bool backgroundChanged, const bool frameChanged)
 {
-    std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
+    FOREACH_ENGINE(pEngine)
+    {
         LOG_IF_FAILED(pEngine->InvalidateAll());
-    });
+    }
 
-    _NotifyPaintFrame();
+    NotifyPaintFrame();
+
+    if (backgroundChanged && _pfnBackgroundColorChanged)
+    {
+        _pfnBackgroundColorChanged();
+    }
+
+    if (frameChanged && _pfnFrameColorChanged)
+    {
+        _pfnFrameColorChanged();
+    }
 }
 
 // Method Description:
@@ -298,16 +329,16 @@ void Renderer::TriggerRedrawAll()
 // - <none>
 // Return Value:
 // - <none>
-void Renderer::TriggerTeardown()
+void Renderer::TriggerTeardown() noexcept
 {
     // We need to shut down the paint thread on teardown.
     _pThread->WaitForPaintCompletionAndDisable(INFINITE);
 
     // Then walk through and do one final paint on the caller's thread.
-    for (IRenderEngine* const pEngine : _rgpEngines)
+    FOREACH_ENGINE(pEngine)
     {
-        bool fEngineRequestsRepaint = false;
-        HRESULT hr = pEngine->PrepareForTeardown(&fEngineRequestsRepaint);
+        auto fEngineRequestsRepaint = false;
+        auto hr = pEngine->PrepareForTeardown(&fEngineRequestsRepaint);
         LOG_IF_FAILED(hr);
 
         if (SUCCEEDED(hr) && fEngineRequestsRepaint)
@@ -328,32 +359,26 @@ void Renderer::TriggerSelection()
     try
     {
         // Get selection rectangles
-        const auto rects = _GetSelectionRects();
+        auto rects = _GetSelectionRects();
+
+        // Make a viewport representing the coordinates that are currently presentable.
+        const til::rect viewport{ _pData->GetViewport().Dimensions() };
 
         // Restrict all previous selection rectangles to inside the current viewport bounds
         for (auto& sr : _previousSelection)
         {
-            // Make the exclusive SMALL_RECT into a til::rectangle.
-            til::rectangle rc{ Viewport::FromExclusive(sr).ToInclusive() };
-
-            // Make a viewport representing the coordinates that are currently presentable.
-            const til::rectangle viewport{ til::size{ _pData->GetViewport().Dimensions() } };
-
-            // Intersect them so we only invalidate things that are still visible.
-            rc &= viewport;
-
-            // Convert back into the exclusive SMALL_RECT and store in the vector.
-            sr = Viewport::FromInclusive(rc).ToExclusive();
+            sr &= viewport;
         }
 
-        std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
+        FOREACH_ENGINE(pEngine)
+        {
             LOG_IF_FAILED(pEngine->InvalidateSelection(_previousSelection));
             LOG_IF_FAILED(pEngine->InvalidateSelection(rects));
-        });
+        }
 
-        _previousSelection = rects;
+        _previousSelection = std::move(rects);
 
-        _NotifyPaintFrame();
+        NotifyPaintFrame();
     }
     CATCH_LOG();
 }
@@ -366,39 +391,29 @@ void Renderer::TriggerSelection()
 // - True if something changed and we scrolled. False otherwise.
 bool Renderer::_CheckViewportAndScroll()
 {
-    SMALL_RECT const srOldViewport = _viewport.ToInclusive();
-    SMALL_RECT const srNewViewport = _pData->GetViewport().ToInclusive();
+    const auto srOldViewport = _viewport.ToInclusive();
+    const auto srNewViewport = _pData->GetViewport().ToInclusive();
 
-    COORD coordDelta;
-    coordDelta.X = srOldViewport.Left - srNewViewport.Left;
-    coordDelta.Y = srOldViewport.Top - srNewViewport.Top;
-
-    for (auto engine : _rgpEngines)
+    if (!_forceUpdateViewport && srOldViewport == srNewViewport)
     {
-        LOG_IF_FAILED(engine->UpdateViewport(srNewViewport));
+        return false;
     }
 
     _viewport = Viewport::FromInclusive(srNewViewport);
+    _forceUpdateViewport = false;
 
-    // If we're keeping some buffers between calls, let them know about the viewport size
-    // so they can prepare the buffers for changes to either preallocate memory at once
-    // (instead of growing naturally) or shrink down to reduce usage as appropriate.
-    const size_t lineLength = gsl::narrow_cast<size_t>(til::rectangle{ srNewViewport }.width());
-    til::manage_vector(_clusterBuffer, lineLength, _shrinkThreshold);
+    til::point coordDelta;
+    coordDelta.X = srOldViewport.Left - srNewViewport.Left;
+    coordDelta.Y = srOldViewport.Top - srNewViewport.Top;
 
-    if (coordDelta.X != 0 || coordDelta.Y != 0)
+    FOREACH_ENGINE(engine)
     {
-        for (auto engine : _rgpEngines)
-        {
-            LOG_IF_FAILED(engine->InvalidateScroll(&coordDelta));
-        }
-
-        _ScrollPreviousSelection(coordDelta);
-
-        return true;
+        LOG_IF_FAILED(engine->UpdateViewport(srNewViewport));
+        LOG_IF_FAILED(engine->InvalidateScroll(&coordDelta));
     }
 
-    return false;
+    _ScrollPreviousSelection(coordDelta);
+    return true;
 }
 
 // Routine Description:
@@ -412,7 +427,7 @@ void Renderer::TriggerScroll()
 {
     if (_CheckViewportAndScroll())
     {
-        _NotifyPaintFrame();
+        NotifyPaintFrame();
     }
 }
 
@@ -425,15 +440,16 @@ void Renderer::TriggerScroll()
 // - <none>
 // Return Value:
 // - <none>
-void Renderer::TriggerScroll(const COORD* const pcoordDelta)
+void Renderer::TriggerScroll(const til::point* const pcoordDelta)
 {
-    std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
+    FOREACH_ENGINE(pEngine)
+    {
         LOG_IF_FAILED(pEngine->InvalidateScroll(pcoordDelta));
-    });
+    }
 
     _ScrollPreviousSelection(*pcoordDelta);
 
-    _NotifyPaintFrame();
+    NotifyPaintFrame();
 }
 
 // Routine Description:
@@ -443,13 +459,17 @@ void Renderer::TriggerScroll(const COORD* const pcoordDelta)
 // - <none>
 // Return Value:
 // - <none>
-void Renderer::TriggerCircling()
+void Renderer::TriggerFlush(const bool circling)
 {
-    for (IRenderEngine* const pEngine : _rgpEngines)
+    const auto rects = _GetSelectionRects();
+
+    FOREACH_ENGINE(pEngine)
     {
-        bool fEngineRequestsRepaint = false;
-        HRESULT hr = pEngine->InvalidateCircling(&fEngineRequestsRepaint);
+        auto fEngineRequestsRepaint = false;
+        auto hr = pEngine->InvalidateFlush(circling, &fEngineRequestsRepaint);
         LOG_IF_FAILED(hr);
+
+        LOG_IF_FAILED(pEngine->InvalidateSelection(rects));
 
         if (SUCCEEDED(hr) && fEngineRequestsRepaint)
         {
@@ -467,12 +487,20 @@ void Renderer::TriggerCircling()
 // - <none>
 void Renderer::TriggerTitleChange()
 {
-    const std::wstring newTitle = _pData->GetConsoleTitle();
-    for (IRenderEngine* const pEngine : _rgpEngines)
+    const auto newTitle = _pData->GetConsoleTitle();
+    FOREACH_ENGINE(pEngine)
     {
         LOG_IF_FAILED(pEngine->InvalidateTitle(newTitle));
     }
-    _NotifyPaintFrame();
+    NotifyPaintFrame();
+}
+
+void Renderer::TriggerNewTextNotification(const std::wstring_view newText)
+{
+    FOREACH_ENGINE(pEngine)
+    {
+        LOG_IF_FAILED(pEngine->NotifyNewText(newText));
+    }
 }
 
 // Routine Description:
@@ -483,7 +511,7 @@ void Renderer::TriggerTitleChange()
 // - the HRESULT of the underlying engine's UpdateTitle call.
 HRESULT Renderer::_PaintTitle(IRenderEngine* const pEngine)
 {
-    const std::wstring newTitle = _pData->GetConsoleTitle();
+    const auto newTitle = _pData->GetConsoleTitle();
     return pEngine->UpdateTitle(newTitle);
 }
 
@@ -497,12 +525,45 @@ HRESULT Renderer::_PaintTitle(IRenderEngine* const pEngine)
 // - <none>
 void Renderer::TriggerFontChange(const int iDpi, const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo)
 {
-    std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
+    FOREACH_ENGINE(pEngine)
+    {
         LOG_IF_FAILED(pEngine->UpdateDpi(iDpi));
         LOG_IF_FAILED(pEngine->UpdateFont(FontInfoDesired, FontInfo));
-    });
+    }
 
-    _NotifyPaintFrame();
+    NotifyPaintFrame();
+}
+
+// Routine Description:
+// - Called when the active soft font has been updated.
+// Arguments:
+// - bitPattern - An array of scanlines representing all the glyphs in the font.
+// - cellSize - The cell size for an individual glyph.
+// - centeringHint - The horizontal extent that glyphs are offset from center.
+// Return Value:
+// - <none>
+void Renderer::UpdateSoftFont(const gsl::span<const uint16_t> bitPattern, const til::size cellSize, const size_t centeringHint)
+{
+    // We reserve PUA code points U+EF20 to U+EF7F for soft fonts, but the range
+    // that we test for in _IsSoftFontChar will depend on the size of the active
+    // bitPattern. If it's empty (i.e. no soft font is set), then nothing will
+    // match, and those code points will be treated the same as everything else.
+    const auto softFontCharCount = cellSize.cy ? bitPattern.size() / cellSize.cy : 0;
+    _lastSoftFontChar = _firstSoftFontChar + softFontCharCount - 1;
+
+    FOREACH_ENGINE(pEngine)
+    {
+        LOG_IF_FAILED(pEngine->UpdateSoftFont(bitPattern, cellSize, centeringHint));
+    }
+    TriggerRedrawAll();
+}
+
+// We initially tried to have a "_isSoftFontChar" member function, but MSVC
+// failed to inline it at _all_ call sites (check invocations inside loops).
+// This issue strangely doesn't occur with static functions.
+bool Renderer::s_IsSoftFontChar(const std::wstring_view& v, const size_t firstSoftFontChar, const size_t lastSoftFontChar)
+{
+    return v.size() == 1 && v[0] >= firstSoftFontChar && v[0] <= lastSoftFontChar;
 }
 
 // Routine Description:
@@ -516,29 +577,19 @@ void Renderer::TriggerFontChange(const int iDpi, const FontInfoDesired& FontInfo
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]] HRESULT Renderer::GetProposedFont(const int iDpi, const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo)
 {
-    // If there's no head, return E_FAIL. The caller should decide how to
-    //      handle this.
-    // Currently, the only caller is the WindowProc:WM_GETDPISCALEDSIZE handler.
-    //      It will assume that the proposed font is 1x1, regardless of DPI.
-    if (_rgpEngines.size() < 1)
-    {
-        return E_FAIL;
-    }
-
     // There will only every really be two engines - the real head and the VT
     //      renderer. We won't know which is which, so iterate over them.
     //      Only return the result of the successful one if it's not S_FALSE (which is the VT renderer)
     // TODO: 14560740 - The Window might be able to get at this info in a more sane manner
-    FAIL_FAST_IF(!(_rgpEngines.size() <= 2));
-    for (IRenderEngine* const pEngine : _rgpEngines)
+    FOREACH_ENGINE(pEngine)
     {
-        const HRESULT hr = LOG_IF_FAILED(pEngine->GetProposedFont(FontInfoDesired, FontInfo, iDpi));
+        const auto hr = LOG_IF_FAILED(pEngine->GetProposedFont(FontInfoDesired, FontInfo, iDpi));
         // We're looking for specifically S_OK, S_FALSE is not good enough.
         if (hr == S_OK)
         {
             return hr;
         }
-    };
+    }
 
     return E_FAIL;
 }
@@ -555,20 +606,19 @@ void Renderer::TriggerFontChange(const int iDpi, const FontInfoDesired& FontInfo
 // - True if the codepoint is full-width (two wide), false if it is half-width (one wide).
 bool Renderer::IsGlyphWideByFont(const std::wstring_view glyph)
 {
-    bool fIsFullWidth = false;
+    auto fIsFullWidth = false;
 
     // There will only every really be two engines - the real head and the VT
     //      renderer. We won't know which is which, so iterate over them.
     //      Only return the result of the successful one if it's not S_FALSE (which is the VT renderer)
     // TODO: 14560740 - The Window might be able to get at this info in a more sane manner
-    FAIL_FAST_IF(!(_rgpEngines.size() <= 2));
-    for (IRenderEngine* const pEngine : _rgpEngines)
+    FOREACH_ENGINE(pEngine)
     {
-        const HRESULT hr = LOG_IF_FAILED(pEngine->IsGlyphWideByFont(glyph, &fIsFullWidth));
+        const auto hr = LOG_IF_FAILED(pEngine->IsGlyphWideByFont(glyph, &fIsFullWidth));
         // We're looking for specifically S_OK, S_FALSE is not good enough.
         if (hr == S_OK)
         {
-            return fIsFullWidth;
+            break;
         }
     }
 
@@ -583,7 +633,15 @@ bool Renderer::IsGlyphWideByFont(const std::wstring_view glyph)
 // - <none>
 void Renderer::EnablePainting()
 {
-    _pThread->EnablePainting();
+    // When the renderer is constructed, the initial viewport won't be available yet,
+    // but once EnablePainting is called it should be safe to retrieve.
+    _viewport = _pData->GetViewport();
+
+    // When running the unit tests, we may be using a render without a render thread.
+    if (_pThread)
+    {
+        _pThread->EnablePainting();
+    }
 }
 
 // Routine Description:
@@ -627,11 +685,22 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 
     // This is effectively the number of cells on the visible screen that need to be redrawn.
     // The origin is always 0, 0 because it represents the screen itself, not the underlying buffer.
-    const auto dirtyAreas = pEngine->GetDirtyArea();
+    gsl::span<const til::rect> dirtyAreas;
+    LOG_IF_FAILED(pEngine->GetDirtyArea(dirtyAreas));
 
-    for (const auto dirtyRect : dirtyAreas)
+    // This is to make sure any transforms are reset when this paint is finished.
+    auto resetLineTransform = wil::scope_exit([&]() {
+        LOG_IF_FAILED(pEngine->ResetLineTransform());
+    });
+
+    for (const auto& dirtyRect : dirtyAreas)
     {
-        auto dirty = Viewport::FromInclusive(dirtyRect);
+        if (!dirtyRect)
+        {
+            continue;
+        }
+
+        auto dirty = Viewport::FromExclusive(dirtyRect);
 
         // Shift the origin of the dirty region to match the underlying buffer so we can
         // compare the two regions directly for intersection.
@@ -642,39 +711,43 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
         // we need to walk through line-by-line and repaint onto the screen.
         const auto redraw = Viewport::Intersect(dirty, view);
 
-        // Shortcut: don't bother redrawing if the width is 0.
-        if (redraw.Width() > 0)
+        // Retrieve the text buffer so we can read information out of it.
+        const auto& buffer = _pData->GetTextBuffer();
+
+        // Now walk through each row of text that we need to redraw.
+        for (auto row = redraw.Top(); row < redraw.BottomExclusive(); row++)
         {
-            // Retrieve the text buffer so we can read information out of it.
-            const auto& buffer = _pData->GetTextBuffer();
+            // Calculate the boundaries of a single line. This is from the left to right edge of the dirty
+            // area in width and exactly 1 tall.
+            const auto screenLine = til::inclusive_rect{ redraw.Left(), row, redraw.RightInclusive(), row };
 
-            // Now walk through each row of text that we need to redraw.
-            for (auto row = redraw.Top(); row < redraw.BottomExclusive(); row++)
-            {
-                // Calculate the boundaries of a single line. This is from the left to right edge of the dirty
-                // area in width and exactly 1 tall.
-                const auto bufferLine = Viewport::FromDimensions({ redraw.Left(), row }, { redraw.Width(), 1 });
+            // Convert the screen coordinates of the line to an equivalent
+            // range of buffer cells, taking line rendition into account.
+            const auto lineRendition = buffer.GetLineRendition(row);
+            const auto bufferLine = Viewport::FromInclusive(ScreenToBufferLine(screenLine, lineRendition));
 
-                // Find where on the screen we should place this line information. This requires us to re-map
-                // the buffer-based origin of the line back onto the screen-based origin of the line
-                // For example, the screen might say we need to paint 1,1 because it is dirty but the viewport is actually looking
-                // at 13,26 relative to the buffer.
-                // This means that we need 14,27 out of the backing buffer to fill in the 1,1 cell of the screen.
-                const auto screenLine = Viewport::Offset(bufferLine, -view.Origin());
+            // Find where on the screen we should place this line information. This requires us to re-map
+            // the buffer-based origin of the line back onto the screen-based origin of the line.
+            // For example, the screen might say we need to paint line 1 because it is dirty but the viewport
+            // is actually looking at line 26 relative to the buffer. This means that we need line 27 out
+            // of the backing buffer to fill in line 1 of the screen.
+            const auto screenPosition = bufferLine.Origin() - til::point{ 0, view.Top() };
 
-                // Retrieve the cell information iterator limited to just this line we want to redraw.
-                auto it = buffer.GetCellDataAt(bufferLine.Origin(), bufferLine);
+            // Retrieve the cell information iterator limited to just this line we want to redraw.
+            auto it = buffer.GetCellDataAt(bufferLine.Origin(), bufferLine);
 
-                // Calculate if two things are true:
-                // 1. this row wrapped
-                // 2. We're painting the last col of the row.
-                // In that case, set lineWrapped=true for the _PaintBufferOutputHelper call.
-                const auto lineWrapped = (buffer.GetRowByOffset(bufferLine.Origin().Y).WasWrapForced()) &&
-                                         (bufferLine.RightExclusive() == buffer.GetSize().Width());
+            // Calculate if two things are true:
+            // 1. this row wrapped
+            // 2. We're painting the last col of the row.
+            // In that case, set lineWrapped=true for the _PaintBufferOutputHelper call.
+            const auto lineWrapped = (buffer.GetRowByOffset(bufferLine.Origin().Y).WasWrapForced()) &&
+                                     (bufferLine.RightExclusive() == buffer.GetSize().Width());
 
-                // Ask the helper to paint through this specific line.
-                _PaintBufferOutputHelper(pEngine, it, screenLine.Origin(), lineWrapped);
-            }
+            // Prepare the appropriate line transform for the current row and viewport offset.
+            LOG_IF_FAILED(pEngine->PrepareLineTransform(lineRendition, screenPosition.Y, view.Left()));
+
+            // Ask the helper to paint through this specific line.
+            _PaintBufferOutputHelper(pEngine, it, screenPosition, lineWrapped);
         }
     }
 }
@@ -682,15 +755,15 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 static bool _IsAllSpaces(const std::wstring_view v)
 {
     // first non-space char is not found (is npos)
-    return v.find_first_not_of(L" ") == decltype(v)::npos;
+    return v.find_first_not_of(L' ') == decltype(v)::npos;
 }
 
 void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                                         TextBufferCellIterator it,
-                                        const COORD target,
+                                        const til::point target,
                                         const bool lineWrapped)
 {
-    auto globalInvert{ _pData->IsScreenReversed() };
+    auto globalInvert{ _renderSettings.GetRenderMode(RenderSettings::Mode::ScreenReversed) };
 
     // If we have valid data, let's figure out how to draw it.
     if (it)
@@ -699,12 +772,14 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
         // we should have an iterator/view adapter for the rendering.
         // That would probably also eliminate the RenderData needing to give us the entire TextBuffer as well...
         // Retrieve the iterator for one line of information.
-        size_t cols = 0;
+        til::CoordType cols = 0;
 
         // Retrieve the first color.
         auto color = it->TextAttr();
         // Retrieve the first pattern id
         auto patternIds = _pData->GetPatternId(target);
+        // Determine whether we're using a soft font.
+        auto usingSoftFont = s_IsSoftFontChar(it->Chars(), _firstSoftFontChar, _lastSoftFontChar);
 
         // And hold the point where we should start drawing.
         auto screenPoint = target;
@@ -721,11 +796,11 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             // Hold onto the current pattern id as well
             const auto currentPatternId = patternIds;
 
-            // Update the drawing brushes with our color.
-            THROW_IF_FAILED(_UpdateDrawingBrushes(pEngine, currentRunColor, false));
+            // Update the drawing brushes with our color and font usage.
+            THROW_IF_FAILED(_UpdateDrawingBrushes(pEngine, currentRunColor, usingSoftFont, false));
 
             // Advance the point by however many columns we've just outputted and reset the accumulator.
-            screenPoint.X += gsl::narrow<SHORT>(cols);
+            screenPoint.X += cols;
             cols = 0;
 
             // Hold onto the start of this run iterator and the target location where we started
@@ -739,34 +814,37 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             // Reset our flag to know when we're in the special circumstance
             // of attempting to draw only the right-half of a two-column character
             // as the first item in our run.
-            bool trimLeft = false;
+            auto trimLeft = false;
 
             // Run contains wide character (>1 columns)
-            bool containsWideCharacter = false;
+            auto containsWideCharacter = false;
 
             // This inner loop will accumulate clusters until the color changes.
             // When the color changes, it will save the new color off and break.
             // We also accumulate clusters according to regex patterns
             do
             {
-                COORD thisPoint{ screenPoint.X + gsl::narrow<SHORT>(cols), screenPoint.Y };
+                til::point thisPoint{ screenPoint.X + cols, screenPoint.Y };
                 const auto thisPointPatterns = _pData->GetPatternId(thisPoint);
-                if (color != it->TextAttr() || patternIds != thisPointPatterns)
+                const auto thisUsingSoftFont = s_IsSoftFontChar(it->Chars(), _firstSoftFontChar, _lastSoftFontChar);
+                const auto changedPatternOrFont = patternIds != thisPointPatterns || usingSoftFont != thisUsingSoftFont;
+                if (color != it->TextAttr() || changedPatternOrFont)
                 {
                     auto newAttr{ it->TextAttr() };
                     // foreground doesn't matter for runs of spaces (!)
                     // if we trick it . . . we call Paint far fewer times for cmatrix
-                    if (!_IsAllSpaces(it->Chars()) || !newAttr.HasIdenticalVisualRepresentationForBlankSpace(color, globalInvert) || patternIds != thisPointPatterns)
+                    if (!_IsAllSpaces(it->Chars()) || !newAttr.HasIdenticalVisualRepresentationForBlankSpace(color, globalInvert) || changedPatternOrFont)
                     {
                         color = newAttr;
                         patternIds = thisPointPatterns;
+                        usingSoftFont = thisUsingSoftFont;
                         break; // vend this run
                     }
                 }
 
                 // Walk through the text data and turn it into rendering clusters.
                 // Keep the columnCount as we go to improve performance over digging it out of the vector at the end.
-                size_t columnCount = 0;
+                auto columnCount = it->Columns();
 
                 // If we're on the first cluster to be added and it's marked as "trailing"
                 // (a.k.a. the right half of a two column character), then we need some special handling.
@@ -777,14 +855,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                     // And tell the next function to trim off the left half of it.
                     trimLeft = true;
                     // And add one to the number of columns we expect it to take as we insert it.
-                    columnCount = it->Columns() + 1;
-                    _clusterBuffer.emplace_back(it->Chars(), columnCount);
-                }
-                // Otherwise if it's not a special case, just insert it as is.
-                else
-                {
-                    columnCount = it->Columns();
-                    _clusterBuffer.emplace_back(it->Chars(), columnCount);
+                    ++columnCount;
                 }
 
                 if (columnCount > 1)
@@ -793,7 +864,8 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                 }
 
                 // Advance the cluster and column counts.
-                it += std::max<size_t>(it->Columns(), 1); // prevent infinite loop for no visible columns
+                _clusterBuffer.emplace_back(it->Chars(), columnCount);
+                it += std::max(it->Columns(), 1); // prevent infinite loop for no visible columns
                 cols += columnCount;
 
             } while (it);
@@ -822,7 +894,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                     // We could theoretically pre-pass for this in the loop above to be more efficient about walking
                     // the iterator, but I fear it would make the code even more confusing than it already is.
                     // Do that in the future if some WPR trace points you to this spot as super bad.
-                    for (auto colsPainted = 0u; colsPainted < cols; ++colsPainted, ++lineIt, ++lineTarget.X)
+                    for (til::CoordType colsPainted = 0; colsPainted < cols; ++colsPainted, ++lineIt, ++lineTarget.X)
                     {
                         auto lines = lineIt->TextAttr();
                         _PaintBufferOutputGridLineHelper(pEngine, lines, 1, lineTarget);
@@ -844,50 +916,50 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
 // Arguments:
 // - textAttribute: the TextAttribute to generate GridLines from.
 // Return Value:
-// - a GridLines containing all the gridline info from the TextAttribute
-IRenderEngine::GridLines Renderer::s_GetGridlines(const TextAttribute& textAttribute) noexcept
+// - a GridLineSet containing all the gridline info from the TextAttribute
+IRenderEngine::GridLineSet Renderer::s_GetGridlines(const TextAttribute& textAttribute) noexcept
 {
     // Convert console grid line representations into rendering engine enum representations.
-    IRenderEngine::GridLines lines = IRenderEngine::GridLines::None;
+    IRenderEngine::GridLineSet lines;
 
     if (textAttribute.IsTopHorizontalDisplayed())
     {
-        lines |= IRenderEngine::GridLines::Top;
+        lines.set(IRenderEngine::GridLines::Top);
     }
 
     if (textAttribute.IsBottomHorizontalDisplayed())
     {
-        lines |= IRenderEngine::GridLines::Bottom;
+        lines.set(IRenderEngine::GridLines::Bottom);
     }
 
     if (textAttribute.IsLeftVerticalDisplayed())
     {
-        lines |= IRenderEngine::GridLines::Left;
+        lines.set(IRenderEngine::GridLines::Left);
     }
 
     if (textAttribute.IsRightVerticalDisplayed())
     {
-        lines |= IRenderEngine::GridLines::Right;
+        lines.set(IRenderEngine::GridLines::Right);
     }
 
     if (textAttribute.IsCrossedOut())
     {
-        lines |= IRenderEngine::GridLines::Strikethrough;
+        lines.set(IRenderEngine::GridLines::Strikethrough);
     }
 
     if (textAttribute.IsUnderlined())
     {
-        lines |= IRenderEngine::GridLines::Underline;
+        lines.set(IRenderEngine::GridLines::Underline);
     }
 
     if (textAttribute.IsDoublyUnderlined())
     {
-        lines |= IRenderEngine::GridLines::DoubleUnderline;
+        lines.set(IRenderEngine::GridLines::DoubleUnderline);
     }
 
     if (textAttribute.IsHyperlink())
     {
-        lines |= IRenderEngine::GridLines::HyperlinkUnderline;
+        lines.set(IRenderEngine::GridLines::HyperlinkUnderline);
     }
     return lines;
 }
@@ -905,10 +977,10 @@ IRenderEngine::GridLines Renderer::s_GetGridlines(const TextAttribute& textAttri
 void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine,
                                                 const TextAttribute textAttribute,
                                                 const size_t cchLine,
-                                                const COORD coordTarget)
+                                                const til::point coordTarget)
 {
     // Convert console grid line representations into rendering engine enum representations.
-    IRenderEngine::GridLines lines = Renderer::s_GetGridlines(textAttribute);
+    auto lines = Renderer::s_GetGridlines(textAttribute);
 
     // For now, we dash underline patterns and switch to regular underline on hover
     // Since we're only rendering pattern links on *hover*, there's no point in checking
@@ -921,16 +993,16 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
         {
             if (_pData->GetPatternId(coordTarget).size() > 0)
             {
-                lines |= IRenderEngine::GridLines::Underline;
+                lines.set(IRenderEngine::GridLines::Underline);
             }
         }
     }
 
     // Return early if there are no lines to paint.
-    if (lines != IRenderEngine::GridLines::None)
+    if (lines.any())
     {
         // Get the current foreground color to render the lines.
-        const COLORREF rgb = _pData->GetAttributeColors(textAttribute).first;
+        const auto rgb = _renderSettings.GetAttributeColors(textAttribute).first;
         // Draw the lines
         LOG_IF_FAILED(pEngine->PaintBufferGridLines(lines, rgb, cchLine, coordTarget));
     }
@@ -951,25 +1023,41 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
     if (_pData->IsCursorVisible())
     {
         // Get cursor position in buffer
-        COORD coordCursor = _pData->GetCursorPosition();
+        auto coordCursor = _pData->GetCursorPosition();
 
         // GH#3166: Only draw the cursor if it's actually in the viewport. It
         // might be on the line that's in that partially visible row at the
         // bottom of the viewport, the space that's not quite a full line in
         // height. Since we don't draw that text, we shouldn't draw the cursor
         // there either.
-        Viewport view = _pData->GetViewport();
-        if (view.IsInBounds(coordCursor))
-        {
-            // Adjust cursor to viewport
-            view.ConvertToOrigin(&coordCursor);
 
-            COLORREF cursorColor = _pData->GetCursorColor();
-            bool useColor = cursorColor != INVALID_COLOR;
+        // The cursor is never rendered as double height, so we don't care about
+        // the exact line rendition - only whether it's double width or not.
+        const auto doubleWidth = _pData->GetTextBuffer().IsDoubleWidthLine(coordCursor.Y);
+        const auto lineRendition = doubleWidth ? LineRendition::DoubleWidth : LineRendition::SingleWidth;
+
+        // We need to convert the screen coordinates of the viewport to an
+        // equivalent range of buffer cells, taking line rendition into account.
+        const auto view = ScreenToBufferLine(_pData->GetViewport().ToInclusive(), lineRendition);
+
+        // Note that we allow the X coordinate to be outside the left border by 1 position,
+        // because the cursor could still be visible if the focused character is double width.
+        const auto xInRange = coordCursor.X >= view.Left - 1 && coordCursor.X <= view.Right;
+        const auto yInRange = coordCursor.Y >= view.Top && coordCursor.Y <= view.Bottom;
+        if (xInRange && yInRange)
+        {
+            // Adjust cursor Y offset to viewport.
+            // The viewport X offset is saved in the options and handled with a transform.
+            coordCursor.Y -= view.Top;
+
+            auto cursorColor = _renderSettings.GetColorTableEntry(TextColor::CURSOR_COLOR);
+            auto useColor = cursorColor != INVALID_COLOR;
 
             // Build up the cursor parameters including position, color, and drawing options
             CursorOptions options;
             options.coordCursor = coordCursor;
+            options.viewportLeft = _pData->GetViewport().Left();
+            options.lineRendition = lineRendition;
             options.ulCursorHeightPercent = _pData->GetCursorHeight();
             options.cursorPixelWidth = _pData->GetCursorPixelWidth();
             options.fIsDoubleWidth = _pData->IsCursorDoubleWidth();
@@ -1030,33 +1118,23 @@ void Renderer::_PaintOverlay(IRenderEngine& engine,
 {
     try
     {
-        // First get the screen buffer's viewport.
-        Viewport view = _pData->GetViewport();
-
         // Now get the overlay's viewport and adjust it to where it is supposed to be relative to the window.
-
-        SMALL_RECT srCaView = overlay.region.ToInclusive();
+        auto srCaView = overlay.region.ToExclusive();
         srCaView.Top += overlay.origin.Y;
         srCaView.Bottom += overlay.origin.Y;
         srCaView.Left += overlay.origin.X;
         srCaView.Right += overlay.origin.X;
 
-        // Set it up in a Viewport helper structure and trim it the IME viewport to be within the full console viewport.
-        Viewport viewConv = Viewport::FromInclusive(srCaView);
+        gsl::span<const til::rect> dirtyAreas;
+        LOG_IF_FAILED(engine.GetDirtyArea(dirtyAreas));
 
-        for (SMALL_RECT srDirty : engine.GetDirtyArea())
+        for (const auto& rect : dirtyAreas)
         {
-            // Dirty is an inclusive rectangle, but oddly enough the IME was an exclusive one, so correct it.
-            srDirty.Bottom++;
-            srDirty.Right++;
-
-            if (viewConv.TrimToViewport(&srDirty))
+            if (const auto viewDirty = rect & srCaView)
             {
-                Viewport viewDirty = Viewport::FromInclusive(srDirty);
-
-                for (SHORT iRow = viewDirty.Top(); iRow < viewDirty.BottomInclusive(); iRow++)
+                for (auto iRow = viewDirty.Top; iRow < viewDirty.Bottom; iRow++)
                 {
-                    const COORD target{ viewDirty.Left(), iRow };
+                    const til::point target{ viewDirty.Left, iRow };
                     const auto source = target - overlay.origin;
 
                     auto it = overlay.buffer.GetCellLineDataAt(source);
@@ -1101,19 +1179,16 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 {
     try
     {
-        auto dirtyAreas = pEngine->GetDirtyArea();
+        gsl::span<const til::rect> dirtyAreas;
+        LOG_IF_FAILED(pEngine->GetDirtyArea(dirtyAreas));
 
         // Get selection rectangles
         const auto rectangles = _GetSelectionRects();
-        for (auto rect : rectangles)
+        for (const auto& rect : rectangles)
         {
-            for (auto dirtyRect : dirtyAreas)
+            for (auto& dirtyRect : dirtyAreas)
             {
-                // Make a copy as `TrimToViewport` will manipulate it and
-                // can destroy it for the next dirtyRect to test against.
-                auto rectCopy = rect;
-                Viewport dirtyView = Viewport::FromInclusive(dirtyRect);
-                if (dirtyView.TrimToViewport(&rectCopy))
+                if (const auto rectCopy = rect & dirtyRect)
                 {
                     LOG_IF_FAILED(pEngine->PaintSelection(rectCopy));
                 }
@@ -1128,17 +1203,21 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 // Arguments:
 // - pEngine - Which engine is being updated
 // - textAttributes - The 16 color foreground/background combination to set
+// - usingSoftFont - Whether we're rendering characters from a soft font
 // - isSettingDefaultBrushes - Alerts that the default brushes are being set which will
 //                             impact whether or not to include the hung window/erase window brushes in this operation
 //                             and can affect other draw state that wants to know the default color scheme.
 //                             (Usually only happens when the default is changed, not when each individual color is swapped in a multi-color run.)
 // Return Value:
 // - <none>
-[[nodiscard]] HRESULT Renderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute textAttributes, const bool isSettingDefaultBrushes)
+[[nodiscard]] HRESULT Renderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine,
+                                                      const TextAttribute textAttributes,
+                                                      const bool usingSoftFont,
+                                                      const bool isSettingDefaultBrushes)
 {
     // The last color needs to be each engine's responsibility. If it's local to this function,
     //      then on the next engine we might not update the color.
-    return pEngine->UpdateDrawingBrushes(textAttributes, _pData, isSettingDefaultBrushes);
+    return pEngine->UpdateDrawingBrushes(textAttributes, _renderSettings, _pData, usingSoftFont, isSettingDefaultBrushes);
 }
 
 // Routine Description:
@@ -1158,23 +1237,23 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 // - Helper to determine the selected region of the buffer.
 // Return Value:
 // - A vector of rectangles representing the regions to select, line by line.
-std::vector<SMALL_RECT> Renderer::_GetSelectionRects() const
+std::vector<til::rect> Renderer::_GetSelectionRects() const
 {
+    const auto& buffer = _pData->GetTextBuffer();
     auto rects = _pData->GetSelectionRects();
     // Adjust rectangles to viewport
-    Viewport view = _pData->GetViewport();
+    auto view = _pData->GetViewport();
 
-    std::vector<SMALL_RECT> result;
+    std::vector<til::rect> result;
+    result.reserve(rects.size());
 
-    for (auto& rect : rects)
+    for (auto rect : rects)
     {
-        auto sr = view.ConvertToOrigin(rect).ToInclusive();
-
-        // hopefully temporary, we should be receiving the right selection sizes without correction.
-        sr.Right++;
-        sr.Bottom++;
-
-        result.emplace_back(sr);
+        // Convert buffer offsets to the equivalent range of screen cells
+        // expected by callers, taking line rendition into account.
+        const auto lineRendition = buffer.GetLineRendition(rect.Top());
+        rect = Viewport::FromInclusive(BufferToScreenLine(rect.ToInclusive(), lineRendition));
+        result.emplace_back(view.ConvertToOrigin(rect).ToExclusive());
     }
 
     return result;
@@ -1193,16 +1272,9 @@ void Renderer::_ScrollPreviousSelection(const til::point delta)
 {
     if (delta != til::point{ 0, 0 })
     {
-        for (auto& sr : _previousSelection)
+        for (auto& rc : _previousSelection)
         {
-            // Get a rectangle representing this piece of the selection.
-            til::rectangle rc = Viewport::FromExclusive(sr).ToInclusive();
-
-            // Offset the entire existing rectangle by the delta.
             rc += delta;
-
-            // Store it back into the vector.
-            sr = Viewport::FromInclusive(rc).ToExclusive();
         }
     }
 }
@@ -1219,7 +1291,39 @@ void Renderer::_ScrollPreviousSelection(const til::point delta)
 void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
 {
     THROW_HR_IF_NULL(E_INVALIDARG, pEngine);
-    _rgpEngines.push_back(pEngine);
+
+    for (auto& p : _engines)
+    {
+        if (!p)
+        {
+            p = pEngine;
+            return;
+        }
+    }
+
+    THROW_HR_MSG(E_UNEXPECTED, "engines array is full");
+}
+
+// Method Description:
+// - Registers a callback for when the background color is changed
+// Arguments:
+// - pfn: the callback
+// Return Value:
+// - <none>
+void Renderer::SetBackgroundColorChangedCallback(std::function<void()> pfn)
+{
+    _pfnBackgroundColorChanged = std::move(pfn);
+}
+
+// Method Description:
+// - Registers a callback for when the frame colors have changed
+// Arguments:
+// - pfn: the callback
+// Return Value:
+// - <none>
+void Renderer::SetFrameColorChangedCallback(std::function<void()> pfn)
+{
+    _pfnFrameColorChanged = std::move(pfn);
 }
 
 // Method Description:
@@ -1251,7 +1355,7 @@ void Renderer::UpdateLastHoveredInterval(const std::optional<PointTree::interval
 // - Blocks until the engines are able to render without blocking.
 void Renderer::WaitUntilCanRender()
 {
-    for (const auto pEngine : _rgpEngines)
+    FOREACH_ENGINE(pEngine)
     {
         pEngine->WaitUntilCanRender();
     }

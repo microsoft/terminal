@@ -1,4 +1,4 @@
-﻿//
+//
 // Copyright (C) Microsoft.  All rights reserved.
 // Licensed under the terms described in the LICENSE file in the root of this project.
 //
@@ -36,34 +36,41 @@ namespace ColorTool.ConsoleTargets
             8+7, // Bright White
         };
 
-        public void ApplyColorScheme(ColorScheme colorScheme, bool quietMode)
+        public void ApplyColorScheme(ColorScheme colorScheme, bool quietMode, bool compactColortable)
         {
-            IntPtr hOut = GetStdOutputHandle();
-            uint originalMode;
-            uint requestedMode;
-            bool succeeded = GetConsoleMode(hOut, out originalMode);
-            if (succeeded)
+            Program.DoInVTMode(() =>
             {
-                requestedMode = originalMode | (uint)ConsoleAPI.ConsoleOutputModes.ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-                SetConsoleMode(hOut, requestedMode);
-            }
+                if (colorScheme.ConsoleAttributes.Foreground.HasValue)
+                {
+                    Color color = colorScheme.Foreground;
+                    string s = $"\x1b]10;rgb:{color.R:X2}/{color.G:X2}/{color.B:X2}\x1b\\";
+                    Console.Write(s);
+                }
+                if (colorScheme.ConsoleAttributes.Background.HasValue)
+                {
+                    Color color = colorScheme.Background;
+                    string s = $"\x1b]11;rgb:{color.R:X2}/{color.G:X2}/{color.B:X2}\x1b\\";
+                    Console.Write(s);
+                }
+                if (colorScheme.ConsoleAttributes.Cursor.HasValue)
+                {
+                    Color color = colorScheme.Cursor;
+                    string s = $"\x1b]12;rgb:{color.R:X2}/{color.G:X2}/{color.B:X2}\x1b\\";
+                    Console.Write(s);
+                }
+                for (int i = 0; i < colorScheme.ColorTable.Length; i++)
+                {
+                    int vtIndex = VirtualTerminalIndices[i];
+                    Color color = colorScheme[i];
+                    string s = $"\x1b]4;{vtIndex};rgb:{color.R:X2}/{color.G:X2}/{color.B:X2}\x7";
+                    Console.Write(s);
+                }
 
-            for (int i = 0; i < colorScheme.ColorTable.Length; i++)
-            {
-                int vtIndex = VirtualTerminalIndices[i];
-                Color color = colorScheme[i];
-                string s = $"\x1b]4;{vtIndex};rgb:{color.R:X}/{color.G:X}/{color.B:X}\x7";
-                Console.Write(s);
-            }
-            if (!quietMode)
-            {
-                ColorTable.PrintTableWithVt();
-            }
-
-            if (succeeded)
-            {
-                SetConsoleMode(hOut, originalMode);
-            }
+                if (!quietMode)
+                {
+                    ColorTable.PrintTableWithVt(compactColortable);
+                }
+            });
         }
     }
 }

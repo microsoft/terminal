@@ -8,6 +8,7 @@ namespace TerminalApp
         PaletteItemTemplateSelector();
 
         Windows.UI.Xaml.DataTemplate TabItemTemplate;
+        Windows.UI.Xaml.DataTemplate NestedItemTemplate;
         Windows.UI.Xaml.DataTemplate GeneralItemTemplate;
     }
 }

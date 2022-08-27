@@ -5,16 +5,15 @@
 
 #include "PaletteItem.h"
 #include "ActionPaletteItem.g.h"
-#include "inc/cppwinrt_utils.h"
 
 namespace winrt::TerminalApp::implementation
 {
     struct ActionPaletteItem : ActionPaletteItemT<ActionPaletteItem, PaletteItem>
     {
         ActionPaletteItem() = default;
-        ActionPaletteItem(Microsoft::Terminal::Settings::Model::Command const& command);
+        ActionPaletteItem(const Microsoft::Terminal::Settings::Model::Command& command);
 
-        GETSET_PROPERTY(Microsoft::Terminal::Settings::Model::Command, Command, nullptr);
+        WINRT_PROPERTY(Microsoft::Terminal::Settings::Model::Command, Command, nullptr);
 
     private:
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _commandChangedRevoker;

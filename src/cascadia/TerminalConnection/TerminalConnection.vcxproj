@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA5CAD1A-C46D-4588-B1C0-40F31AE9100B}</ProjectGuid>
     <ProjectName>TerminalConnection</ProjectName>
@@ -7,14 +7,24 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <SubSystem>Console</SubSystem>
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+    <PgoTarget>true</PgoTarget>
+  </PropertyGroup>
+  <PropertyGroup Label="NuGet Dependencies">
+    <TerminalCppWinrt>true</TerminalCppWinrt>
+    <TerminalCppRestSDK>true</TerminalCppRestSDK>
   </PropertyGroup>
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
   <ItemGroup>
     <ClInclude Include="AzureClientID.h" />
+    <ClInclude Include="ConnectionInformation.h">
+      <DependentUpon>ConnectionInformation.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="AzureConnection.h">
       <DependentUpon>AzureConnection.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="CTerminalHandoff.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="ConptyConnection.h">
       <DependentUpon>ConptyConnection.idl</DependentUpon>
@@ -24,7 +34,11 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CTerminalHandoff.cpp" />
     <ClCompile Include="init.cpp" />
+    <ClCompile Include="ConnectionInformation.cpp">
+      <DependentUpon>ConnectionInformation.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="AzureConnection.cpp">
       <DependentUpon>AzureConnection.idl</DependentUpon>
     </ClCompile>
@@ -40,15 +54,17 @@
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Midl Include="ConnectionInformation.idl" />
     <Midl Include="ITerminalConnection.idl" />
     <Midl Include="ConptyConnection.idl" />
     <Midl Include="EchoConnection.idl" />
     <Midl Include="AzureConnection.idl" />
   </ItemGroup>
   <ItemGroup>
-    <PRIResource Include="Resources\en-US\Resources.resw" />
+    <PRIResource Include="Resources\en-US\Resources.resw">
+      <SubType>Designer</SubType>
+    </PRIResource>
     <OCResourceDirectory Include="Resources" />
-    <None Include="packages.config" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
@@ -69,17 +85,53 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
-  <Import Project="..\..\..\packages\vcpkg-cpprestsdk.2.10.14\build\native\vcpkg-cpprestsdk.targets" Condition="Exists('..\..\..\packages\vcpkg-cpprestsdk.2.10.14\build\native\vcpkg-cpprestsdk.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\packages\vcpkg-cpprestsdk.2.10.14\build\native\vcpkg-cpprestsdk.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\vcpkg-cpprestsdk.2.10.14\build\native\vcpkg-cpprestsdk.targets'))" />
-  </Target>
   <ItemDefinitionGroup>
+    <ClCompile>
+      <!-- By defining this here, we ensure that we don't try to dllimport conpty -->
+      <PreprocessorDefinitions>CONPTY_IMPEXP=;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(IntDir)..\OpenConsoleProxy;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
     <Link>
       <AdditionalDependencies>$(OpenConsoleCommonOutDir)\conptylib.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
+
+  <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
+
+  <!--
+  BODGY:
+
+  We depend on `cpprest142*.dll`, which comes from our vcpkg dependency. As a
+  part of the vcpkg dependency restore, msbuild will call the `deployBinary()`
+  function in
+  `packages\vcpkg-cpprestsdk.2.10.14\scripts\BuildSystems\msbuild\AppLocal.ps1`.
+  That function does the actual job of copying the file. It copies it outside of
+  MsBuild. MsBuild then, in the `_CopyFilesMarkedCopyLocal` target, determines
+  that it needs to copy `cpprest142*.dll`, because that dll is a member of
+  `@(ReferencesCopiedInThisBuild)`. However, the file's already been copied, so
+  MsBuild never copies it. But that also prevents MsBuild from setting
+  `WroteAtLeastOneFile`, which then means that MsBuild will never create the
+  .CopyComplete file for this project.
+
+  Because that file is missing, MsBuild will never think the project is up to
+  date, and the FastUpToDate check in VS will always force MsBuild to run a pass
+  on this project.
+
+  To mitigate this, we're adding this other target here, which runs after
+  _CopyFilesMarkedCopyLocal, and always creates the CopyUpToDateMarker. This
+  makes the FastUpToDate check succeed.
+  -->
+
+  <Target
+      Name="_Post_CopyFilesMarkedCopyLocal"
+      AfterTargets="_CopyFilesMarkedCopyLocal"
+      Condition="'@(ReferenceCopyLocalPaths)' != ''">
+
+    <Touch Files="@(CopyUpToDateMarker)"
+      AlwaysCreate="true" />
+  </Target>
+
+
 </Project>

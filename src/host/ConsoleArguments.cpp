@@ -14,6 +14,7 @@ const std::wstring_view ConsoleArguments::SIGNAL_HANDLE_ARG = L"--signal";
 const std::wstring_view ConsoleArguments::HANDLE_PREFIX = L"0x";
 const std::wstring_view ConsoleArguments::CLIENT_COMMANDLINE_ARG = L"--";
 const std::wstring_view ConsoleArguments::FORCE_V1_ARG = L"-ForceV1";
+const std::wstring_view ConsoleArguments::FORCE_NO_HANDOFF_ARG = L"-ForceNoHandoff";
 const std::wstring_view ConsoleArguments::FILEPATH_LEADER_PREFIX = L"\\??\\";
 const std::wstring_view ConsoleArguments::WIDTH_ARG = L"--width";
 const std::wstring_view ConsoleArguments::HEIGHT_ARG = L"--height";
@@ -22,6 +23,14 @@ const std::wstring_view ConsoleArguments::RESIZE_QUIRK = L"--resizeQuirk";
 const std::wstring_view ConsoleArguments::WIN32_INPUT_MODE = L"--win32input";
 const std::wstring_view ConsoleArguments::FEATURE_ARG = L"--feature";
 const std::wstring_view ConsoleArguments::FEATURE_PTY_ARG = L"pty";
+const std::wstring_view ConsoleArguments::COM_SERVER_ARG = L"-Embedding";
+const std::wstring_view ConsoleArguments::PASSTHROUGH_ARG = L"--passthrough";
+// NOTE: Thinking about adding more commandline args that control conpty, for
+// the Terminal? Make sure you add them to the commandline in
+// ConsoleEstablishHandoff. We use that to initialize the ConsoleArguments for a
+// defterm handoff s.t. they behave like a conpty connection that was started by
+// the terminal. If you forget them there, the conpty won't obey them, only for
+// defterm.
 
 std::wstring EscapeArgument(std::wstring_view ac)
 {
@@ -29,7 +38,7 @@ std::wstring EscapeArgument(std::wstring_view ac)
     {
         return L"\"\"";
     }
-    bool hasSpace = false;
+    auto hasSpace = false;
     auto n = ac.size();
     for (auto c : ac)
     {
@@ -101,18 +110,17 @@ ConsoleArguments::ConsoleArguments(const std::wstring& commandline,
                                    const HANDLE hStdOut) :
     _commandline(commandline),
     _vtInHandle(hStdIn),
-    _vtOutHandle(hStdOut),
-    _receivedEarlySizeChange{ false },
-    _originalWidth{ -1 },
-    _originalHeight{ -1 }
+    _vtOutHandle(hStdOut)
 {
     _clientCommandline = L"";
     _vtMode = L"";
     _headless = false;
+    _runAsComServer = false;
     _createServerHandle = true;
     _serverHandle = 0;
     _signalHandle = 0;
     _forceV1 = false;
+    _forceNoHandoff = false;
     _width = 0;
     _height = 0;
     _inheritCursor = false;
@@ -140,7 +148,8 @@ ConsoleArguments& ConsoleArguments::operator=(const ConsoleArguments& other)
         _width = other._width;
         _height = other._height;
         _inheritCursor = other._inheritCursor;
-        _receivedEarlySizeChange = other._receivedEarlySizeChange;
+        _runAsComServer = other._runAsComServer;
+        _forceNoHandoff = other._forceNoHandoff;
     }
 
     return *this;
@@ -184,7 +193,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
                                                            _Inout_ size_t& index,
                                                            _Out_opt_ std::wstring* const pSetting)
 {
-    bool hasNext = (index + 1) < args.size();
+    auto hasNext = (index + 1) < args.size();
     if (hasNext)
     {
         s_ConsumeArg(args, index);
@@ -213,12 +222,12 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
 //      failure.
 [[nodiscard]] HRESULT ConsoleArguments::s_HandleFeatureValue(_Inout_ std::vector<std::wstring>& args, _Inout_ size_t& index)
 {
-    HRESULT hr = E_INVALIDARG;
-    bool hasNext = (index + 1) < args.size();
+    auto hr = E_INVALIDARG;
+    auto hasNext = (index + 1) < args.size();
     if (hasNext)
     {
         s_ConsumeArg(args, index);
-        std::wstring value = args[index];
+        auto value = args[index];
         if (value == FEATURE_PTY_ARG)
         {
             hr = S_OK;
@@ -245,7 +254,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
                                                            _Inout_ size_t& index,
                                                            _Out_opt_ short* const pSetting)
 {
-    bool succeeded = (index + 1) < args.size();
+    auto succeeded = (index + 1) < args.size();
     if (succeeded)
     {
         s_ConsumeArg(args, index);
@@ -254,7 +263,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
             try
             {
                 size_t pos = 0;
-                int value = std::stoi(args[index], &pos);
+                auto value = std::stoi(args[index], &pos);
                 // If the entire string was a number, pos will be equal to the
                 //      length of the string. Otherwise, a string like 8foo will
                 //       be parsed as "8"
@@ -289,7 +298,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
 //                if the handle value was already filled.
 [[nodiscard]] HRESULT ConsoleArguments::s_ParseHandleArg(const std::wstring& handleAsText, _Inout_ DWORD& handleAsVal)
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
 
     // The handle should have a valid prefix.
     if (handleAsText.substr(0, HANDLE_PREFIX.length()) != HANDLE_PREFIX)
@@ -376,18 +385,18 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
     }
 
     std::vector<std::wstring> args;
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
 
     // Make a mutable copy of the commandline for tokenizing
-    std::wstring copy = _commandline;
+    auto copy = _commandline;
 
     // Tokenize the commandline
-    int argc = 0;
+    auto argc = 0;
     wil::unique_hlocal_ptr<PWSTR[]> argv;
     argv.reset(CommandLineToArgvW(copy.c_str(), &argc));
     RETURN_LAST_ERROR_IF(argv == nullptr);
 
-    for (int i = 1; i < argc; ++i)
+    for (auto i = 1; i < argc; ++i)
     {
         args.push_back(argv[i]);
     }
@@ -399,7 +408,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
     {
         hr = E_INVALIDARG;
 
-        std::wstring arg = args[i];
+        auto arg = args[i];
 
         if (arg.substr(0, HANDLE_PREFIX.length()) == HANDLE_PREFIX ||
             arg == SERVER_HANDLE_ARG)
@@ -408,7 +417,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
             // --server 0x4 (new method)
             // 0x4 (legacy method)
             // If we see >1 of these, it's invalid.
-            std::wstring serverHandleVal = arg;
+            auto serverHandleVal = arg;
 
             if (arg == SERVER_HANDLE_ARG)
             {
@@ -443,6 +452,25 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
         {
             // -ForceV1 command line switch for NTVDM support
             _forceV1 = true;
+            s_ConsumeArg(args, i);
+            hr = S_OK;
+        }
+        else if (arg == FORCE_NO_HANDOFF_ARG)
+        {
+            // Prevent default application handoff to a different console/terminal
+            _forceNoHandoff = true;
+            s_ConsumeArg(args, i);
+            hr = S_OK;
+        }
+        else if (arg == COM_SERVER_ARG)
+        {
+            _runAsComServer = true;
+            s_ConsumeArg(args, i);
+            hr = S_OK;
+        }
+        else if (arg == PASSTHROUGH_ARG)
+        {
+            _passthroughMode = true;
             s_ConsumeArg(args, i);
             hr = S_OK;
         }
@@ -576,6 +604,16 @@ bool ConsoleArguments::ShouldCreateServerHandle() const
     return _createServerHandle;
 }
 
+bool ConsoleArguments::ShouldRunAsComServer() const
+{
+    return _runAsComServer;
+}
+
+bool ConsoleArguments::IsPassthroughMode() const noexcept
+{
+    return _passthroughMode;
+}
+
 HANDLE ConsoleArguments::GetServerHandle() const
 {
     return ULongToHandle(_serverHandle);
@@ -596,6 +634,11 @@ HANDLE ConsoleArguments::GetVtOutHandle() const
     return _vtOutHandle;
 }
 
+std::wstring ConsoleArguments::GetOriginalCommandLine() const
+{
+    return _commandline;
+}
+
 std::wstring ConsoleArguments::GetClientCommandline() const
 {
     return _clientCommandline;
@@ -609,6 +652,11 @@ std::wstring ConsoleArguments::GetVtMode() const
 bool ConsoleArguments::GetForceV1() const
 {
     return _forceV1;
+}
+
+bool ConsoleArguments::GetForceNoHandoff() const
+{
+    return _forceNoHandoff;
 }
 
 short ConsoleArguments::GetWidth() const
@@ -634,37 +682,10 @@ bool ConsoleArguments::IsWin32InputModeEnabled() const
     return _win32InputMode;
 }
 
-// Method Description:
-// - Tell us to use a different size than the one parsed as the size of the
-//      console. This is called by the PtySignalInputThread when it receives a
-//      resize before the first client has connected. Because there's no client,
-//      there's also no buffer yet, so it has nothing to resize.
-//      However, we shouldn't just discard that first resize message. Instead,
-//      store it in here, so we can use the value when the first client does connect.
-// Arguments:
-// - dimensions: the new size in characters of the conpty buffer & viewport.
-// Return Value:
-// - <none>
-void ConsoleArguments::SetExpectedSize(COORD dimensions) noexcept
-{
-    _width = dimensions.X;
-    _height = dimensions.Y;
-    // Stash away the original values we parsed when this is called.
-    // This is to help debugging - if the signal thread DOES change these values,
-    //      we can still recover what was given to us on the commandline.
-    if (!_receivedEarlySizeChange)
-    {
-        _originalWidth = _width;
-        _originalHeight = _height;
-        // Mark that we've changed size from what our commandline values were
-        _receivedEarlySizeChange = true;
-    }
-}
-
 #ifdef UNIT_TESTING
 // Method Description:
 // - This is a test helper method. It can be used to trick us into thinking
-//   we're headless (in conpty mode), even without parsing any arguments.
+//   we're in conpty mode, even without parsing any arguments.
 // Arguments:
 // - <none>
 // Return Value:
@@ -672,5 +693,7 @@ void ConsoleArguments::SetExpectedSize(COORD dimensions) noexcept
 void ConsoleArguments::EnableConptyModeForTests()
 {
     _headless = true;
+    _vtInHandle = GetStdHandle(STD_INPUT_HANDLE);
+    _vtOutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 }
 #endif

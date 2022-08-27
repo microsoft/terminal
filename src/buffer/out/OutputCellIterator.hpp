@@ -29,7 +29,7 @@ class OutputCellIterator final
 public:
     using iterator_category = std::input_iterator_tag;
     using value_type = OutputCellView;
-    using difference_type = ptrdiff_t;
+    using difference_type = til::CoordType;
     using pointer = OutputCellView*;
     using reference = OutputCellView&;
 
@@ -38,7 +38,7 @@ public:
     OutputCellIterator(const wchar_t& wch, const TextAttribute& attr, const size_t fillLimit = 0) noexcept;
     OutputCellIterator(const CHAR_INFO& charInfo, const size_t fillLimit = 0) noexcept;
     OutputCellIterator(const std::wstring_view utf16Text);
-    OutputCellIterator(const std::wstring_view utf16Text, const TextAttribute attribute);
+    OutputCellIterator(const std::wstring_view utf16Text, const TextAttribute& attribute, const size_t fillLimit = 0);
     OutputCellIterator(const gsl::span<const WORD> legacyAttributes) noexcept;
     OutputCellIterator(const gsl::span<const CHAR_INFO> charInfos) noexcept;
     OutputCellIterator(const gsl::span<const OutputCell> cells);
@@ -48,9 +48,9 @@ public:
 
     operator bool() const noexcept;
 
-    ptrdiff_t GetCellDistance(OutputCellIterator other) const noexcept;
-    ptrdiff_t GetInputDistance(OutputCellIterator other) const noexcept;
-    friend ptrdiff_t operator-(OutputCellIterator one, OutputCellIterator two) = delete;
+    til::CoordType GetCellDistance(OutputCellIterator other) const noexcept;
+    til::CoordType GetInputDistance(OutputCellIterator other) const noexcept;
+    friend til::CoordType operator-(OutputCellIterator one, OutputCellIterator two) = delete;
 
     OutputCellIterator& operator++();
     OutputCellIterator operator++(int);

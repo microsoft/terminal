@@ -463,16 +463,16 @@ template <> inline void reset_color<wchar_t>(FILE* stream) FMT_NOEXCEPT {
 }
 
 template <typename Char>
-inline void reset_color(basic_memory_buffer<Char>& buffer) FMT_NOEXCEPT {
+inline void reset_color(buffer<Char>& buffer) FMT_NOEXCEPT {
   const char* begin = data::reset_color;
   const char* end = begin + sizeof(data::reset_color) - 1;
   buffer.append(begin, end);
 }
 
 template <typename Char>
-void vformat_to(basic_memory_buffer<Char>& buf, const text_style& ts,
+void vformat_to(buffer<Char>& buf, const text_style& ts,
                 basic_string_view<Char> format_str,
-                basic_format_args<buffer_context<Char>> args) {
+                basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   bool has_style = false;
   if (ts.has_emphasis()) {
     has_style = true;
@@ -496,7 +496,7 @@ void vformat_to(basic_memory_buffer<Char>& buf, const text_style& ts,
 
 template <typename S, typename Char = char_t<S>>
 void vprint(std::FILE* f, const text_style& ts, const S& format,
-            basic_format_args<buffer_context<Char>> args) {
+            basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   basic_memory_buffer<Char> buf;
   detail::vformat_to(buf, ts, to_string_view(format), args);
   buf.push_back(Char(0));
@@ -504,20 +504,22 @@ void vprint(std::FILE* f, const text_style& ts, const S& format,
 }
 
 /**
+  \rst
   Formats a string and prints it to the specified file stream using ANSI
   escape sequences to specify text formatting.
-  Example:
+
+  **Example**::
+
     fmt::print(fmt::emphasis::bold | fg(fmt::color::red),
                "Elapsed time: {0:.2f} seconds", 1.23);
+  \endrst
  */
 template <typename S, typename... Args,
           FMT_ENABLE_IF(detail::is_string<S>::value)>
 void print(std::FILE* f, const text_style& ts, const S& format_str,
            const Args&... args) {
-  detail::check_format_string<Args...>(format_str);
-  using context = buffer_context<char_t<S>>;
-  format_arg_store<context, Args...> as{args...};
-  vprint(f, ts, format_str, basic_format_args<context>(as));
+  vprint(f, ts, format_str,
+         fmt::make_args_checked<Args...>(format_str, args...));
 }
 
 /**
@@ -558,7 +560,42 @@ template <typename S, typename... Args, typename Char = char_t<S>>
 inline std::basic_string<Char> format(const text_style& ts, const S& format_str,
                                       const Args&... args) {
   return vformat(ts, to_string_view(format_str),
-                 detail::make_args_checked<Args...>(format_str, args...));
+                 fmt::make_args_checked<Args...>(format_str, args...));
+}
+
+/**
+  Formats a string with the given text_style and writes the output to ``out``.
+ */
+template <typename OutputIt, typename Char,
+          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value)>
+OutputIt vformat_to(
+    OutputIt out, const text_style& ts, basic_string_view<Char> format_str,
+    basic_format_args<buffer_context<type_identity_t<Char>>> args) {
+  decltype(detail::get_buffer<Char>(out)) buf(detail::get_buffer_init(out));
+  detail::vformat_to(buf, ts, format_str, args);
+  return detail::get_iterator(buf);
+}
+
+/**
+  \rst
+  Formats arguments with the given text_style, writes the result to the output
+  iterator ``out`` and returns the iterator past the end of the output range.
+
+  **Example**::
+
+    std::vector<char> out;
+    fmt::format_to(std::back_inserter(out),
+                   fmt::emphasis::bold | fg(fmt::color::red), "{}", 42);
+  \endrst
+*/
+template <typename OutputIt, typename S, typename... Args,
+          bool enable = detail::is_output_iterator<OutputIt, char_t<S>>::value&&
+              detail::is_string<S>::value>
+inline auto format_to(OutputIt out, const text_style& ts, const S& format_str,
+                      Args&&... args) ->
+    typename std::enable_if<enable, OutputIt>::type {
+  return vformat_to(out, ts, to_string_view(format_str),
+                    fmt::make_args_checked<Args...>(format_str, args...));
 }
 
 FMT_END_NAMESPACE

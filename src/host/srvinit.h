@@ -28,4 +28,10 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
 
 [[nodiscard]] bool ConsoleConnectionDeservesVisibleWindow(PCONSOLE_API_CONNECTINFO p);
 
+[[nodiscard]] HRESULT ConsoleEstablishHandoff(_In_ HANDLE Server,
+                                              HANDLE driverInputEvent,
+                                              HANDLE hostSignalPipe,
+                                              HANDLE hostProcessHandle,
+                                              PCONSOLE_API_MSG connectMessage);
+
 void ConsoleCheckDebug();

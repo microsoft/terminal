@@ -18,7 +18,6 @@ Revision History:
 
 #pragma once
 
-#include "inputReadHandleData.h"
 #include "readData.hpp"
 #include "../types/inc/IInputEvent.hpp"
 
@@ -27,6 +26,12 @@ Revision History:
 #include "../terminal/input/terminalInput.hpp"
 
 #include <deque>
+
+namespace Microsoft::Console::Render
+{
+    class Renderer;
+    class VtEngine;
+}
 
 class InputBuffer final : public ConsoleObjectHeader
 {
@@ -75,12 +80,15 @@ public:
 
     bool IsInVirtualTerminalInputMode() const;
     Microsoft::Console::VirtualTerminal::TerminalInput& GetTerminalInput();
+    void SetTerminalConnection(_In_ Microsoft::Console::Render::VtEngine* const pTtyConnection);
+    void PassThroughWin32MouseRequest(bool enable);
 
 private:
     std::deque<std::unique_ptr<IInputEvent>> _storage;
     std::unique_ptr<IInputEvent> _readPartialByteSequence;
     std::unique_ptr<IInputEvent> _writePartialByteSequence;
     Microsoft::Console::VirtualTerminal::TerminalInput _termInput;
+    Microsoft::Console::Render::VtEngine* _pTtyConnection;
 
     // This flag is used in _HandleTerminalInputCallback
     // If the InputBuffer leads to a _HandleTerminalInputCallback call,

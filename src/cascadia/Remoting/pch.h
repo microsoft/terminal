@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 //
 // pch.h
@@ -7,10 +7,16 @@
 
 #pragma once
 
+// Block minwindef.h min/max macros to prevent <algorithm> conflict
+#define NOMINMAX
+
 #define WIN32_LEAN_AND_MEAN
 #define NOMCX
 #define NOHELP
 #define NOCOMM
+
+#include <unknwn.h>
+#include <ShObjIdl.h>
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #define BLOCK_TIL
@@ -24,8 +30,6 @@
 #endif
 
 #include <wil/cppwinrt.h>
-
-#include <unknwn.h>
 
 #include <hstring.h>
 
@@ -46,3 +50,5 @@ TRACELOGGING_DECLARE_PROVIDER(g_hRemotingProvider);
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"
+
+#include <cppwinrt_utils.h>

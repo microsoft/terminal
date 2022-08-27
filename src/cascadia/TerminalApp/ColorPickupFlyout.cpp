@@ -31,11 +31,10 @@ namespace winrt::TerminalApp::implementation
     // - sender: the rectangle that got clicked
     // Return Value:
     // - <none>
-    void ColorPickupFlyout::ColorButton_Click(IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const&)
+    void ColorPickupFlyout::ColorButton_Click(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs&)
     {
         auto button{ sender.as<Windows::UI::Xaml::Controls::Button>() };
-        auto rectangle{ button.Content().as<Windows::UI::Xaml::Shapes::Rectangle>() };
-        auto rectClr{ rectangle.Fill().as<Windows::UI::Xaml::Media::SolidColorBrush>() };
+        auto rectClr{ button.Background().as<Windows::UI::Xaml::Media::SolidColorBrush>() };
         _ColorSelectedHandlers(rectClr.Color());
         Hide();
     }
@@ -47,7 +46,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void ColorPickupFlyout::ClearColorButton_Click(IInspectable const&, Windows::UI::Xaml::RoutedEventArgs const&)
+    void ColorPickupFlyout::ClearColorButton_Click(const IInspectable&, const Windows::UI::Xaml::RoutedEventArgs&)
     {
         _ColorClearedHandlers();
         Hide();
@@ -61,25 +60,17 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void ColorPickupFlyout::ShowColorPickerButton_Click(Windows::Foundation::IInspectable const&, Windows::UI::Xaml::RoutedEventArgs const&)
+    void ColorPickupFlyout::ShowColorPickerButton_Click(const Windows::Foundation::IInspectable&, const Windows::UI::Xaml::RoutedEventArgs&)
     {
-        auto targetType = this->FlyoutPresenterStyle().TargetType();
-        auto s = Windows::UI::Xaml::Style{};
-        s.TargetType(targetType);
         auto visibility = customColorPanel().Visibility();
         if (visibility == winrt::Windows::UI::Xaml::Visibility::Collapsed)
         {
             customColorPanel().Visibility(winrt::Windows::UI::Xaml::Visibility::Visible);
-            auto setter = Windows::UI::Xaml::Setter(Windows::UI::Xaml::FrameworkElement::MinWidthProperty(), winrt::box_value(540));
-            s.Setters().Append(setter);
         }
         else
         {
             customColorPanel().Visibility(winrt::Windows::UI::Xaml::Visibility::Collapsed);
-            auto setter = Windows::UI::Xaml::Setter(Windows::UI::Xaml::FrameworkElement::MinWidthProperty(), winrt::box_value(0));
-            s.Setters().Append(setter);
         }
-        this->FlyoutPresenterStyle(s);
     }
 
     // Method Description:
@@ -89,14 +80,14 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void ColorPickupFlyout::CustomColorButton_Click(Windows::Foundation::IInspectable const&, Windows::UI::Xaml::RoutedEventArgs const&)
+    void ColorPickupFlyout::CustomColorButton_Click(const Windows::Foundation::IInspectable&, const Windows::UI::Xaml::RoutedEventArgs&)
     {
         auto color = customColorPicker().Color();
         _ColorSelectedHandlers(color);
         Hide();
     }
 
-    void ColorPickupFlyout::ColorPicker_ColorChanged(const Windows::UI::Xaml::Controls::ColorPicker&, const Windows::UI::Xaml::Controls::ColorChangedEventArgs& args)
+    void ColorPickupFlyout::ColorPicker_ColorChanged(const Microsoft::UI::Xaml::Controls::ColorPicker&, const Microsoft::UI::Xaml::Controls::ColorChangedEventArgs& args)
     {
         _ColorSelectedHandlers(args.NewColor());
     }

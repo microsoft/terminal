@@ -13,6 +13,10 @@
 #include <Windows.ApplicationModel.h>
 #include <Windows.ApplicationModel.AppExtensions.h>
 
+#include "../inc/conint.h"
+
+#include <initguid.h>
+
 using namespace Microsoft::WRL;
 using namespace Microsoft::WRL::Wrappers;
 using namespace ABI::Windows::Foundation;
@@ -28,13 +32,8 @@ using namespace ABI::Windows::ApplicationModel::AppExtensions;
 #define DELEGATION_CONSOLE_EXTENSION_NAME L"com.microsoft.windows.console.host"
 #define DELEGATION_TERMINAL_EXTENSION_NAME L"com.microsoft.windows.terminal.host"
 
-template<typename T, typename std::enable_if<std::is_base_of<DelegationConfig::DelegationBase, T>::value>::type* = nullptr>
-HRESULT _lookupCatalog(PCWSTR extensionName, std::vector<T>& vec) noexcept
+static [[nodiscard]] HRESULT _lookupCatalog(PCWSTR extensionName, std::vector<DelegationConfig::DelegationBase>& vec) noexcept
 {
-    vec.clear();
-
-    auto coinit = wil::CoInitializeEx(COINIT_MULTITHREADED);
-
     ComPtr<IAppExtensionCatalogStatics> catalogStatics;
     RETURN_IF_FAILED(Windows::Foundation::GetActivationFactory(HStringReference(RuntimeClass_Windows_ApplicationModel_AppExtensions_AppExtensionCatalog).Get(), &catalogStatics));
 
@@ -51,7 +50,7 @@ HRESULT _lookupCatalog(PCWSTR extensionName, std::vector<T>& vec) noexcept
     RETURN_IF_FAILED(extensionList->get_Size(&extensionCount));
     for (UINT index = 0; index < extensionCount; index++)
     {
-        T extensionMetadata;
+        DelegationConfig::PackageInfo extensionMetadata;
 
         ComPtr<IAppExtension> extension;
         RETURN_IF_FAILED(extensionList->GetAt(index, &extension));
@@ -59,23 +58,46 @@ HRESULT _lookupCatalog(PCWSTR extensionName, std::vector<T>& vec) noexcept
         ComPtr<IPackage> extensionPackage;
         RETURN_IF_FAILED(extension->get_Package(&extensionPackage));
 
+        ComPtr<IPackage2> extensionPackage2;
+        RETURN_IF_FAILED(extensionPackage.As(&extensionPackage2));
+
         ComPtr<IPackageId> extensionPackageId;
         RETURN_IF_FAILED(extensionPackage->get_Id(&extensionPackageId));
 
         HString publisherId;
         RETURN_IF_FAILED(extensionPackageId->get_PublisherId(publisherId.GetAddressOf()));
 
-        // PackageId.Name
         HString name;
-        RETURN_IF_FAILED(extensionPackageId->get_Name(name.GetAddressOf()));
-
+        RETURN_IF_FAILED(extensionPackage2->get_DisplayName(name.GetAddressOf()));
         extensionMetadata.name = std::wstring{ name.GetRawBuffer(nullptr) };
 
-        // PackageId.Version
         HString publisher;
-        RETURN_IF_FAILED(extensionPackageId->get_Publisher(publisher.GetAddressOf()));
-
+        RETURN_IF_FAILED(extensionPackage2->get_PublisherDisplayName(publisher.GetAddressOf()));
         extensionMetadata.author = std::wstring{ publisher.GetRawBuffer(nullptr) };
+
+        // Try to get the logo. Don't completely bail if we fail to get it. It's non-critical.
+        ComPtr<IUriRuntimeClass> logoUri;
+        LOG_IF_FAILED(extensionPackage2->get_Logo(logoUri.GetAddressOf()));
+
+        // If we did manage to get one, extract the string and store in the structure
+        if (logoUri)
+        {
+            HString logo;
+
+            RETURN_IF_FAILED(logoUri->get_AbsoluteUri(logo.GetAddressOf()));
+            extensionMetadata.logo = std::wstring{ logo.GetRawBuffer(nullptr) };
+        }
+
+        HString pfn;
+        RETURN_IF_FAILED(extensionPackageId->get_FamilyName(pfn.GetAddressOf()));
+        extensionMetadata.pfn = std::wstring{ pfn.GetRawBuffer(nullptr) };
+
+        PackageVersion version;
+        RETURN_IF_FAILED(extensionPackageId->get_Version(&version));
+        extensionMetadata.version.major = version.Major;
+        extensionMetadata.version.minor = version.Minor;
+        extensionMetadata.version.build = version.Build;
+        extensionMetadata.version.revision = version.Revision;
 
         // Fetch the custom properties XML out of the extension information
         ComPtr<IAsyncOperation<IPropertySet*>> propertiesOperation;
@@ -127,103 +149,200 @@ HRESULT _lookupCatalog(PCWSTR extensionName, std::vector<T>& vec) noexcept
         IID iid;
         RETURN_IF_FAILED(IIDFromString(value.GetRawBuffer(nullptr), &iid));
 
-        extensionMetadata.clsid = iid;
-
-        vec.emplace_back(std::move(extensionMetadata));
+        vec.push_back({ iid, extensionMetadata });
     }
 
     return S_OK;
 }
 
-[[nodiscard]] HRESULT DelegationConfig::s_GetAvailableConsoles(std::vector<DelegationConsole>& consoles) noexcept
+[[nodiscard]] HRESULT DelegationConfig::s_GetAvailablePackages(std::vector<DelegationPackage>& packages, DelegationPackage& def) noexcept
 try
 {
-    return _lookupCatalog(DELEGATION_CONSOLE_EXTENSION_NAME, consoles);
-}
-CATCH_RETURN()
+    auto coinit = wil::CoInitializeEx(COINIT_APARTMENTTHREADED);
 
-[[nodiscard]] HRESULT DelegationConfig::s_GetAvailableTerminals(std::vector<DelegationTerminal>& terminals) noexcept
-try
-{
-    return _lookupCatalog(DELEGATION_TERMINAL_EXTENSION_NAME, terminals);
-}
-CATCH_RETURN()
+    packages.clear();
+    packages.push_back({ DefaultDelegationPair });
+    packages.push_back({ ConhostDelegationPair });
 
-[[nodiscard]] HRESULT DelegationConfig::s_SetConsole(const DelegationConsole& console) noexcept
-{
-    return s_Set(DELEGATION_CONSOLE_KEY_NAME, console.clsid);
-}
+    // Get consoles and terminals.
+    // If we fail to look up any, we should still have ONE come back to us as the hardcoded default console host.
+    // The errors aren't really useful except for debugging, so log only.
+    std::vector<DelegationBase> consoles;
+    LOG_IF_FAILED(_lookupCatalog(DELEGATION_CONSOLE_EXTENSION_NAME, consoles));
 
-[[nodiscard]] HRESULT DelegationConfig::s_SetTerminal(const DelegationTerminal& terminal) noexcept
-{
-    return s_Set(DELEGATION_TERMINAL_KEY_NAME, terminal.clsid);
-}
+    std::vector<DelegationBase> terminals;
+    LOG_IF_FAILED(_lookupCatalog(DELEGATION_TERMINAL_EXTENSION_NAME, terminals));
 
-[[nodiscard]] HRESULT DelegationConfig::s_GetConsole(IID& iid) noexcept
-{
-    return s_Get(DELEGATION_CONSOLE_KEY_NAME, iid);
-}
-
-[[nodiscard]] HRESULT DelegationConfig::s_GetTerminal(IID& iid) noexcept
-{
-    return s_Get(DELEGATION_TERMINAL_KEY_NAME, iid);
-}
-
-[[nodiscard]] HRESULT DelegationConfig::s_Get(PCWSTR value, IID& iid) noexcept
-{
-    wil::unique_hkey currentUserKey;
-    wil::unique_hkey consoleKey;
-
-    RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_OpenConsoleKey(&currentUserKey, &consoleKey));
-
-    wil::unique_hkey startupKey;
-    RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_OpenKey(consoleKey.get(), L"%%Startup", &startupKey));
-
-    DWORD bytesNeeded = 0;
-    NTSTATUS result = RegistrySerialization::s_QueryValue(startupKey.get(),
-                                                          value,
-                                                          0,
-                                                          REG_SZ,
-                                                          nullptr,
-                                                          &bytesNeeded);
-
-    if (NTSTATUS_FROM_WIN32(ERROR_SUCCESS) != result)
+    // TODO: I hate this algorithm (it's bad performance), but I couldn't
+    // find an AppModel interface that would let me look up all the extensions
+    // in one package.
+    for (const auto& term : terminals)
     {
-        RETURN_NTSTATUS(result);
+        for (const auto& con : consoles)
+        {
+            if (term.info.IsFromSamePackage(con.info))
+            {
+                DelegationPackage package;
+                package.pair = { DelegationPairKind::Custom, con.clsid, term.clsid };
+                package.info = term.info;
+                packages.push_back(std::move(package));
+                break;
+            }
+        }
     }
 
-    auto buffer = std::make_unique<wchar_t[]>(bytesNeeded / sizeof(wchar_t));
+    // We should find at least one package.
+    RETURN_HR_IF(E_FAIL, packages.empty());
 
-    DWORD bytesUsed = 0;
+    // Get the currently set default console/terminal.
+    // Then, search through and find a package that matches.
+    // If we find one, then return it.
+    const auto delegationPair = s_GetDelegationPair();
+    for (auto& pkg : packages)
+    {
+        if (pkg.pair == delegationPair)
+        {
+            def = pkg;
+            return S_OK;
+        }
+    }
 
-    RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_QueryValue(startupKey.get(),
-                                                                  value,
-                                                                  bytesNeeded,
-                                                                  REG_SZ,
-                                                                  reinterpret_cast<BYTE*>(buffer.get()),
-                                                                  &bytesUsed));
+    // The default is DefaultDelegationPair ("Let Windows decide").
+    def = packages.at(0);
+    return S_OK;
+}
+CATCH_RETURN()
 
-    RETURN_IF_FAILED(IIDFromString(buffer.get(), &iid));
+[[nodiscard]] HRESULT DelegationConfig::s_SetDefaultConsoleById(const IID& iid, const bool useRegExe) noexcept
+{
+    return s_Set(DELEGATION_CONSOLE_KEY_NAME, iid, useRegExe);
+}
 
+[[nodiscard]] HRESULT DelegationConfig::s_SetDefaultTerminalById(const IID& iid, const bool useRegExe) noexcept
+{
+    return s_Set(DELEGATION_TERMINAL_KEY_NAME, iid, useRegExe);
+}
+
+[[nodiscard]] HRESULT DelegationConfig::s_SetDefaultByPackage(const DelegationPackage& package, const bool useRegExe) noexcept
+{
+    RETURN_IF_FAILED(s_SetDefaultConsoleById(package.pair.console, useRegExe));
+    RETURN_IF_FAILED(s_SetDefaultTerminalById(package.pair.terminal, useRegExe));
     return S_OK;
 }
 
-[[nodiscard]] HRESULT DelegationConfig::s_Set(PCWSTR value, const CLSID clsid) noexcept
-try
+[[nodiscard]] DelegationConfig::DelegationPair DelegationConfig::s_GetDelegationPair() noexcept
 {
     wil::unique_hkey currentUserKey;
     wil::unique_hkey consoleKey;
-
-    RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_OpenConsoleKey(&currentUserKey, &consoleKey));
-
     wil::unique_hkey startupKey;
-    RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_OpenKey(consoleKey.get(), L"%%Startup", &startupKey));
+    if (FAILED_NTSTATUS_LOG(RegistrySerialization::s_OpenConsoleKey(&currentUserKey, &consoleKey)) ||
+        FAILED_NTSTATUS_LOG(RegistrySerialization::s_OpenKey(consoleKey.get(), L"%%Startup", &startupKey)))
+    {
+        return DefaultDelegationPair;
+    }
 
-    wil::unique_cotaskmem_string str;
-    RETURN_IF_FAILED(StringFromCLSID(clsid, &str));
+    static constexpr const wchar_t* keys[2]{ DELEGATION_CONSOLE_KEY_NAME, DELEGATION_TERMINAL_KEY_NAME };
+    // values[0]/[1] will contain the delegation console/terminal
+    // respectively if set to a valid value within the registry.
+    IID values[2]{ CLSID_Default, CLSID_Default };
 
-    RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_SetValue(startupKey.get(), value, REG_SZ, reinterpret_cast<BYTE*>(str.get()), gsl::narrow<DWORD>(wcslen(str.get() + 1) * sizeof(wchar_t))));
+    for (size_t i = 0; i < 2; ++i)
+    {
+        // The GUID is stored as: {00000000-0000-0000-0000-000000000000}
+        // = 38 characters + trailing null terminator.
+        wchar_t buffer[39];
+        DWORD bytesUsed = 0;
+        const auto result = RegistrySerialization::s_QueryValue(startupKey.get(), keys[i], sizeof(buffer), REG_SZ, reinterpret_cast<BYTE*>(&buffer[0]), &bytesUsed);
+        if (result != S_OK)
+        {
+            // Don't log the more common key-not-found error.
+            if (result != NTSTATUS_FROM_WIN32(ERROR_FILE_NOT_FOUND))
+            {
+                LOG_NTSTATUS(result);
+            }
+            continue;
+        }
 
-    return S_OK;
+        if (bytesUsed == sizeof(buffer))
+        {
+            // RegQueryValueExW docs:
+            // If the data has the REG_SZ, REG_MULTI_SZ or REG_EXPAND_SZ type, the string may not have been stored with the
+            // proper terminating null characters. Therefore, even if the function returns ERROR_SUCCESS, the application
+            // should ensure that the string is properly terminated before using it; otherwise, it may overwrite a buffer.
+            buffer[std::size(buffer) - 1] = 0;
+            LOG_IF_FAILED(IIDFromString(&buffer[0], &values[i]));
+        }
+    }
+
+    if (values[0] == CLSID_Default || values[1] == CLSID_Default)
+    {
+        return DefaultDelegationPair;
+    }
+    if (values[0] == CLSID_Conhost || values[1] == CLSID_Conhost)
+    {
+        return ConhostDelegationPair;
+    }
+    return { DelegationPairKind::Custom, values[0], values[1] };
+}
+
+[[nodiscard]] HRESULT DelegationConfig::s_Set(PCWSTR value, const CLSID clsid, const bool useRegExe) noexcept
+try
+{
+    // BODGY
+    // A Centennial application is not allowed to write the system registry and is redirected
+    // to a per-package copy-on-write hive.
+    // The restricted capability "unvirtualizedResources" can be combined with
+    // desktop6:RegistryWriteVirtualization to opt-out... but...
+    // - It will no longer be possible to double-click install through the App Installer
+    // - It requires a special exception to submit to the store
+    // - There MAY be some cleanup logic where the app catalog may try to undo
+    //   whatever the package did.
+    // This works around it by shelling out to reg.exe because somehow that's just peachy.
+    if (useRegExe)
+    {
+        wil::unique_cotaskmem_string str;
+        RETURN_IF_FAILED(StringFromCLSID(clsid, &str));
+
+        auto regExePath = wil::ExpandEnvironmentStringsW<std::wstring>(L"%WINDIR%\\System32\\reg.exe");
+
+        auto command = wil::str_printf<std::wstring>(L"%s ADD HKCU\\Console\\%%%%Startup /v %s /t REG_SZ /d %s /f", regExePath.c_str(), value, str.get());
+
+        wil::unique_process_information pi;
+        STARTUPINFOEX siEx{ 0 };
+        siEx.StartupInfo.cb = sizeof(siEx);
+
+        RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(
+            nullptr,
+            command.data(),
+            nullptr, // lpProcessAttributes
+            nullptr, // lpThreadAttributes
+            false, // bInheritHandles
+            EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT | CREATE_NO_WINDOW, // dwCreationFlags
+            nullptr, // lpEnvironment
+            nullptr,
+            &siEx.StartupInfo, // lpStartupInfo
+            &pi // lpProcessInformation
+            ));
+
+        return S_OK;
+    }
+    else
+    {
+        wil::unique_hkey currentUserKey;
+        wil::unique_hkey consoleKey;
+
+        RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_OpenConsoleKey(&currentUserKey, &consoleKey));
+
+        // Create method for registry is a "create if not exists, otherwise open" function.
+        wil::unique_hkey startupKey;
+        RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_CreateKey(consoleKey.get(), L"%%Startup", &startupKey));
+
+        wil::unique_cotaskmem_string str;
+        RETURN_IF_FAILED(StringFromCLSID(clsid, &str));
+
+        RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_SetValue(startupKey.get(), value, REG_SZ, reinterpret_cast<BYTE*>(str.get()), gsl::narrow<DWORD>(wcslen(str.get()) * sizeof(wchar_t))));
+
+        return S_OK;
+    }
 }
 CATCH_RETURN()

@@ -20,27 +20,6 @@ Author(s):
 #include "SettingContainer.g.h"
 #include "Utils.h"
 
-// This macro defines a dependency property for a WinRT class.
-// Use this in your class' header file after declaring it in the idl.
-// Remember to register your dependency property in the respective cpp file.
-#define DEPENDENCY_PROPERTY(type, name)                                  \
-public:                                                                  \
-    static winrt::Windows::UI::Xaml::DependencyProperty name##Property() \
-    {                                                                    \
-        return _##name##Property;                                        \
-    }                                                                    \
-    type name() const                                                    \
-    {                                                                    \
-        return winrt::unbox_value<type>(GetValue(_##name##Property));    \
-    }                                                                    \
-    void name(type const& value)                                         \
-    {                                                                    \
-        SetValue(_##name##Property, winrt::box_value(value));            \
-    }                                                                    \
-                                                                         \
-private:                                                                 \
-    static winrt::Windows::UI::Xaml::DependencyProperty _##name##Property;
-
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     struct SettingContainer : SettingContainerT<SettingContainer>
@@ -52,13 +31,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         DEPENDENCY_PROPERTY(Windows::Foundation::IInspectable, Header);
         DEPENDENCY_PROPERTY(hstring, HelpText);
+        DEPENDENCY_PROPERTY(hstring, CurrentValue);
         DEPENDENCY_PROPERTY(bool, HasSettingValue);
+        DEPENDENCY_PROPERTY(IInspectable, SettingOverrideSource);
         TYPED_EVENT(ClearSettingValue, Editor::SettingContainer, Windows::Foundation::IInspectable);
 
     private:
         static void _InitializeProperties();
-        static void _OnHasSettingValueChanged(Windows::UI::Xaml::DependencyObject const& d, Windows::UI::Xaml::DependencyPropertyChangedEventArgs const& e);
-        hstring _GenerateOverrideMessageText();
+        static void _OnHasSettingValueChanged(const Windows::UI::Xaml::DependencyObject& d, const Windows::UI::Xaml::DependencyPropertyChangedEventArgs& e);
+        static hstring _GenerateOverrideMessage(const IInspectable& settingOrigin);
+        void _UpdateOverrideSystem();
     };
 }
 

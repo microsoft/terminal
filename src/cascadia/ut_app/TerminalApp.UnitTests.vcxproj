@@ -1,5 +1,5 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ProjectGuid>{CA5CAD1A-9333-4D05-B12A-1905CBF112F9}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -7,13 +7,12 @@
     <ProjectName>UnitTests_TerminalApp</ProjectName>
     <TargetName>Terminal.App.Unit.Tests</TargetName>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <WindowsTargetPlatformMinVersion>10.0.18362.0</WindowsTargetPlatformMinVersion>
-    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
     <OpenConsoleCppWinRTProject>true</OpenConsoleCppWinRTProject>
   </PropertyGroup>
 
   <Import Project="$(SolutionDir)\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)\src\common.build.pre.props" />
+  <Import Project="$(SolutionDir)\src\common.nugetversions.props" />
 
   <ItemDefinitionGroup>
     <ClCompile>
@@ -31,9 +30,9 @@
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
     <ClCompile Include="ColorHelperTests.cpp" />
-    <ClCompile Include="JsonTests.cpp" />
+
     <ClCompile Include="JsonUtilsTests.cpp" />
-    <ClCompile Include="DynamicProfileTests.cpp" />
+
     <ClCompile Include="precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -52,6 +51,7 @@
     <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalApp\TerminalAppLib.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalSettingsModel\Microsoft.Terminal.Settings.ModelLib.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)\src\types\lib\types.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\propslib\propslib.vcxproj" />
   </ItemGroup>
 
   <!-- ========================= Globals ======================== -->
@@ -59,18 +59,22 @@
   <!-- ====================== Compiler & Linker Flags ===================== -->
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..;$(OpenConsoleDir)\dep\jsoncpp\json;$(OpenConsoleDir)src\inc;$(OpenConsoleDir)src\inc\test;$(WinRT_IncludePath)\..\cppwinrt\winrt;"$(OpenConsoleDir)\src\cascadia\TerminalApp\Generated Files";"$(OpenConsoleDir)\src\cascadia\TerminalSettingsModel\Generated Files";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..;$(OpenConsoleDir)src\cascadia\inc;$(OpenConsoleDir)\dep\jsoncpp\json;$(OpenConsoleDir)src\inc;$(OpenConsoleDir)src\inc\test;$(WinRT_IncludePath)\..\cppwinrt\winrt;"$(OpenConsoleDir)\src\cascadia\TerminalApp\Generated Files";"$(OpenConsoleDir)\src\cascadia\TerminalSettingsModel\Generated Files";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
-
+      <!-- Required for JsonUtils.h. -->
+      <AdditionalOptions>%(AdditionalOptions) /Zc:twoPhase-</AdditionalOptions>
       <!-- Manually disable unreachable code warning, because jconcpp has a ton of that. -->
       <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-
-      <!-- Many of our projects use XAML, which cannot handle make detection.
-      We cannot link static libs with differing values of WINRT_NO_MAKE_DETECTION, so let's force it for everyone. -->
-      <PreprocessorDefinitions>WINRT_NO_MAKE_DETECTION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <!--
+      SettingsModelLib contains a DllMain that we need to force the use of.
+      If you don't have this, then you'll see an error like
+      "(init.obj) : error LNK2005: DllMain already defined in MSVCRTD.lib(dll_dllmain_stub.obj)"
+      -->
+      <AdditionalOptions Condition="'$(Platform)'=='Win32'">%(AdditionalOptions) /INCLUDE:_DllMain@12</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Platform)'!='Win32'">%(AdditionalOptions) /INCLUDE:DllMain</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
 
@@ -85,12 +89,13 @@
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\common.build.tests.props" />
+  <Import Project="$(SolutionDir)src\common.nugetversions.targets" />
 
   <PropertyGroup>
     <!-- From Microsoft.UI.Xaml.targets -->
     <Native-Platform Condition="'$(Platform)' == 'Win32'">x86</Native-Platform>
     <Native-Platform Condition="'$(Platform)' != 'Win32'">$(Platform)</Native-Platform>
-    <_MUXBinRoot>&quot;$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\runtimes\win10-$(Native-Platform)\native\&quot;</_MUXBinRoot>
+    <_MUXBinRoot>&quot;$(OpenConsoleDir)packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\runtimes\win10-$(Native-Platform)\native\&quot;</_MUXBinRoot>
   </PropertyGroup>
 
   <ItemDefinitionGroup>
@@ -121,9 +126,5 @@
       </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
-
-  <!-- Import this set of targets that fixes a VS bug that manifests when using
-  the TerminalAppLib project -->
-  <Import Project="../TerminalApp/dll/FixVisualStudioBug.targets" />
 
 </Project>

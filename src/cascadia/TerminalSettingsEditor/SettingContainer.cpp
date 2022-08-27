@@ -12,7 +12,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     DependencyProperty SettingContainer::_HeaderProperty{ nullptr };
     DependencyProperty SettingContainer::_HelpTextProperty{ nullptr };
+    DependencyProperty SettingContainer::_CurrentValueProperty{ nullptr };
     DependencyProperty SettingContainer::_HasSettingValueProperty{ nullptr };
+    DependencyProperty SettingContainer::_SettingOverrideSourceProperty{ nullptr };
 
     SettingContainer::SettingContainer()
     {
@@ -42,6 +44,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     xaml_typename<Editor::SettingContainer>(),
                     PropertyMetadata{ box_value(L"") });
         }
+        if (!_CurrentValueProperty)
+        {
+            _CurrentValueProperty =
+                DependencyProperty::Register(
+                    L"CurrentValue",
+                    xaml_typename<hstring>(),
+                    xaml_typename<Editor::SettingContainer>(),
+                    PropertyMetadata{ box_value(L"") });
+        }
         if (!_HasSettingValueProperty)
         {
             _HasSettingValueProperty =
@@ -51,37 +62,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     xaml_typename<Editor::SettingContainer>(),
                     PropertyMetadata{ box_value(false), PropertyChangedCallback{ &SettingContainer::_OnHasSettingValueChanged } });
         }
+        if (!_SettingOverrideSourceProperty)
+        {
+            _SettingOverrideSourceProperty =
+                DependencyProperty::Register(
+                    L"SettingOverrideSource",
+                    xaml_typename<IInspectable>(),
+                    xaml_typename<Editor::SettingContainer>(),
+                    PropertyMetadata{ nullptr, PropertyChangedCallback{ &SettingContainer::_OnHasSettingValueChanged } });
+        }
     }
 
-    void SettingContainer::_OnHasSettingValueChanged(DependencyObject const& d, DependencyPropertyChangedEventArgs const& args)
+    void SettingContainer::_OnHasSettingValueChanged(const DependencyObject& d, const DependencyPropertyChangedEventArgs& /*args*/)
     {
+        // update visibility for override message and reset button
         const auto& obj{ d.try_as<Editor::SettingContainer>() };
-        const auto& newVal{ unbox_value<bool>(args.NewValue()) };
-
-        // update visibility for reset button
-        if (const auto& resetButton{ obj.GetTemplateChild(L"ResetButton") })
-        {
-            if (const auto& elem{ resetButton.try_as<UIElement>() })
-            {
-                elem.Visibility(newVal ? Visibility::Visible : Visibility::Collapsed);
-            }
-        }
-
-        // update visibility for override message
-        if (const auto& overrideMsg{ obj.GetTemplateChild(L"OverrideMessage") })
-        {
-            if (const auto& elem{ overrideMsg.try_as<UIElement>() })
-            {
-                elem.Visibility(newVal ? Visibility::Visible : Visibility::Collapsed);
-            }
-        }
+        get_self<SettingContainer>(obj)->_UpdateOverrideSystem();
     }
 
     void SettingContainer::OnApplyTemplate()
     {
-        // This message is only populated if `HasSettingValue` is true.
-        const auto& overrideMsg{ _GenerateOverrideMessageText() };
-
         if (const auto& child{ GetTemplateChild(L"ResetButton") })
         {
             if (const auto& button{ child.try_as<Controls::Button>() })
@@ -115,69 +115,122 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     }
                 });
 
-                // apply tooltip and name (automation property)
-                const auto& name{ RS_(L"SettingContainer_ResetButtonHelpText") };
-                Controls::ToolTipService::SetToolTip(child, box_value(name));
-                Automation::AutomationProperties::SetName(child, name);
-                Automation::AutomationProperties::SetHelpText(child, overrideMsg);
-
-                // initialize visibility for reset button
-                button.Visibility(HasSettingValue() ? Visibility::Visible : Visibility::Collapsed);
+                // apply name (automation property)
+                Automation::AutomationProperties::SetName(child, RS_(L"SettingContainer_OverrideMessageBaseLayer"));
             }
         }
 
-        if (const auto& child{ GetTemplateChild(L"OverrideMessage") })
+        _UpdateOverrideSystem();
+
+        // Get the correct base to apply automation properties to
+        DependencyObject base{ nullptr };
+        if (const auto& child{ GetTemplateChild(L"Expander") })
         {
-            if (const auto& tb{ child.try_as<Controls::TextBlock>() })
+            if (const auto& expander{ child.try_as<Microsoft::UI::Xaml::Controls::Expander>() })
             {
-                if (!overrideMsg.empty())
-                {
-                    // Create the override message
-                    // TODO GH#6800: the override target will be replaced with hyperlink/text directing the user to another profile.
-                    tb.Text(overrideMsg);
-
-                    // initialize visibility for reset button
-                    tb.Visibility(Visibility::Visible);
-                }
-                else
-                {
-                    // we have no message to render
-                    tb.Visibility(Visibility::Collapsed);
-                }
+                base = child;
             }
         }
-
-        if (const auto& content{ Content() })
+        else if (const auto& content{ Content() })
         {
             if (const auto& obj{ content.try_as<DependencyObject>() })
             {
-                // apply header text as name (automation property)
-                if (const auto& header{ Header() })
-                {
-                    const auto headerText{ header.try_as<hstring>() };
-                    if (headerText && !headerText->empty())
-                    {
-                        Automation::AutomationProperties::SetName(obj, *headerText);
-                    }
-                }
+                base = obj;
+            }
+        }
 
-                // apply help text as tooltip and full description (automation property)
-                const auto& helpText{ HelpText() };
-                if (!helpText.empty())
+        if (base)
+        {
+            // apply header as name (automation property)
+            if (const auto& header{ Header() })
+            {
+                if (const auto headerText{ header.try_as<hstring>() })
                 {
-                    Controls::ToolTipService::SetToolTip(obj, box_value(helpText));
-                    Automation::AutomationProperties::SetFullDescription(obj, helpText);
+                    Automation::AutomationProperties::SetName(base, *headerText);
+                }
+            }
+
+            // apply help text as tooltip and full description (automation property)
+            if (const auto& helpText{ HelpText() }; !helpText.empty())
+            {
+                Controls::ToolTipService::SetToolTip(base, box_value(helpText));
+                Automation::AutomationProperties::SetFullDescription(base, helpText);
+            }
+        }
+
+        if (HelpText().empty())
+        {
+            if (const auto& child{ GetTemplateChild(L"HelpTextBlock") })
+            {
+                if (const auto& textBlock{ child.try_as<Controls::TextBlock>() })
+                {
+                    textBlock.Visibility(Visibility::Collapsed);
                 }
             }
         }
     }
 
-    hstring SettingContainer::_GenerateOverrideMessageText()
+    // Method Description:
+    // - Updates the override system visibility and text
+    // Arguments:
+    // - <none>
+    void SettingContainer::_UpdateOverrideSystem()
     {
-        if (HasSettingValue())
+        if (const auto& child{ GetTemplateChild(L"ResetButton") })
         {
-            return hstring{ fmt::format(std::wstring_view{ RS_(L"SettingContainer_OverrideIntro") }, RS_(L"SettingContainer_OverrideTarget")) };
+            if (const auto& button{ child.try_as<Controls::Button>() })
+            {
+                if (HasSettingValue())
+                {
+                    // We want to be smart about showing the override system.
+                    // Don't just show it if the user explicitly set the setting.
+                    // If the tooltip is empty, we'll hide the entire override system.
+
+                    const auto& settingSrc{ SettingOverrideSource() };
+                    const auto tooltip{ _GenerateOverrideMessage(settingSrc) };
+
+                    Controls::ToolTipService::SetToolTip(button, box_value(tooltip));
+                    button.Visibility(tooltip.empty() ? Visibility::Collapsed : Visibility::Visible);
+                }
+                else
+                {
+                    // a value is not being overridden; hide the override system
+                    button.Visibility(Visibility::Collapsed);
+                }
+            }
         }
-        return {};
+    }
+
+    // Method Description:
+    // - Helper function for generating the override message
+    // Arguments:
+    // - profile: the profile that defines the setting (aka SettingOverrideSource)
+    // Return Value:
+    // - text specifying where the setting was defined. If empty, we don't want to show the system.
+    hstring SettingContainer::_GenerateOverrideMessage(const IInspectable& settingOrigin)
+    {
+        // We only get here if the user had an override in place.
+        auto originTag{ Model::OriginTag::None };
+        winrt::hstring source;
+
+        if (const auto& profile{ settingOrigin.try_as<Model::Profile>() })
+        {
+            source = profile.Source();
+            originTag = profile.Origin();
+        }
+        else if (const auto& appearanceConfig{ settingOrigin.try_as<Model::AppearanceConfig>() })
+        {
+            const auto profile = appearanceConfig.SourceProfile();
+            source = profile.Source();
+            originTag = profile.Origin();
+        }
+
+        // We will display arrows for all origins, and informative tooltips for Fragments and Generated
+        if (originTag == Model::OriginTag::Fragment || originTag == Model::OriginTag::Generated)
+        {
+            // from a fragment extension or generated profile
+            return hstring{ fmt::format(std::wstring_view{ RS_(L"SettingContainer_OverrideMessageFragmentExtension") }, source) };
+        }
+        return RS_(L"SettingContainer_OverrideMessageBaseLayer");
     }
 }

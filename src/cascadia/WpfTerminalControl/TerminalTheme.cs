@@ -1,11 +1,10 @@
-﻿// <copyright file="TerminalTheme.cs" company="Microsoft Corporation">
+// <copyright file="TerminalTheme.cs" company="Microsoft Corporation">
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 // </copyright>
 
 namespace Microsoft.Terminal.Wpf
 {
-    using System;
     using System.Runtime.InteropServices;
 
     /// <summary>

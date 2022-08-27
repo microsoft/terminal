@@ -15,50 +15,52 @@ Author(s):
 
 --*/
 #pragma once
+
 #include "../../inc/conattrs.hpp"
-#include "inc/cppwinrt_utils.h"
+#include "DefaultSettings.h"
 
 #include "ColorScheme.g.h"
-
-// fwdecl unittest classes
-namespace SettingsModelLocalTests
-{
-    class SettingsTests;
-    class ColorSchemeTests;
-};
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     struct ColorScheme : ColorSchemeT<ColorScheme>
     {
+        // A ColorScheme constructed with uninitialized_t
+        // leaves _table uninitialized.
+        struct uninitialized_t
+        {
+        };
+
     public:
-        ColorScheme();
-        ColorScheme(hstring name);
-        ColorScheme(hstring name, COLORREF defaultFg, COLORREF defaultBg, COLORREF cursorColor);
+        ColorScheme() noexcept;
+        explicit ColorScheme(uninitialized_t) noexcept {}
+        explicit ColorScheme(const winrt::hstring& name) noexcept;
+
         com_ptr<ColorScheme> Copy() const;
 
-        static com_ptr<ColorScheme> FromJson(const Json::Value& json);
-        bool ShouldBeLayered(const Json::Value& json) const;
-        void LayerJson(const Json::Value& json);
+        hstring ToString()
+        {
+            return Name();
+        }
 
+        static com_ptr<ColorScheme> FromJson(const Json::Value& json);
         Json::Value ToJson() const;
 
-        static std::optional<std::wstring> GetNameFromJson(const Json::Value& json);
+        winrt::Microsoft::Terminal::Core::Scheme ToCoreScheme() const noexcept;
 
-        com_array<Windows::UI::Color> Table() const noexcept;
-        void SetColorTableEntry(uint8_t index, const winrt::Windows::UI::Color& value) noexcept;
+        com_array<Core::Color> Table() const noexcept;
+        void SetColorTableEntry(uint8_t index, const Core::Color& value) noexcept;
 
-        GETSET_PROPERTY(winrt::hstring, Name);
-        GETSET_COLORPROPERTY(Foreground); // defined in constructor
-        GETSET_COLORPROPERTY(Background); // defined in constructor
-        GETSET_COLORPROPERTY(SelectionBackground); // defined in constructor
-        GETSET_COLORPROPERTY(CursorColor); // defined in constructor
+        WINRT_PROPERTY(winrt::hstring, Name);
+        WINRT_PROPERTY(Core::Color, Foreground, static_cast<Core::Color>(DEFAULT_FOREGROUND));
+        WINRT_PROPERTY(Core::Color, Background, static_cast<Core::Color>(DEFAULT_BACKGROUND));
+        WINRT_PROPERTY(Core::Color, SelectionBackground, static_cast<Core::Color>(DEFAULT_FOREGROUND));
+        WINRT_PROPERTY(Core::Color, CursorColor, static_cast<Core::Color>(DEFAULT_CURSOR_COLOR));
 
     private:
-        std::array<til::color, COLOR_TABLE_SIZE> _table;
+        bool _layerJson(const Json::Value& json);
 
-        friend class SettingsModelLocalTests::SettingsTests;
-        friend class SettingsModelLocalTests::ColorSchemeTests;
+        std::array<Core::Color, COLOR_TABLE_SIZE> _table;
     };
 }
 

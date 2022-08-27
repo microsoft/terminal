@@ -5,7 +5,7 @@
 #include <WexTestClass.h>
 
 #include "../cascadia/TerminalCore/Terminal.hpp"
-#include "../renderer/inc/DummyRenderTarget.hpp"
+#include "../renderer/inc/DummyRenderer.hpp"
 #include "consoletaeftemplates.hpp"
 
 using namespace WEX::Logging;
@@ -21,18 +21,17 @@ namespace TerminalCoreUnitTests
         TEST_CLASS(InputTest);
         TEST_CLASS_SETUP(ClassSetup)
         {
-            DummyRenderTarget emptyRT;
-            term.Create({ 100, 100 }, 0, emptyRT);
+            DummyRenderer renderer;
+            term.Create({ 100, 100 }, 0, renderer);
             auto inputFn = std::bind(&InputTest::_VerifyExpectedInput, this, std::placeholders::_1);
             term.SetWriteInputCallback(inputFn);
             return true;
         };
 
         TEST_METHOD(AltShiftKey);
-        TEST_METHOD(AltSpace);
         TEST_METHOD(InvalidKeyEvent);
 
-        void _VerifyExpectedInput(std::wstring& actualInput)
+        void _VerifyExpectedInput(std::wstring_view actualInput)
         {
             VERIFY_ARE_EQUAL(expectedinput.size(), actualInput.size());
             VERIFY_ARE_EQUAL(expectedinput, actualInput);
@@ -55,16 +54,6 @@ namespace TerminalCoreUnitTests
         expectedinput = L"\x1b"
                         "A";
         VERIFY_IS_TRUE(term.SendCharEvent(L'A', 0, ControlKeyStates::LeftAltPressed | ControlKeyStates::ShiftPressed));
-    }
-
-    void InputTest::AltSpace()
-    {
-        // Make sure we don't handle Alt+Space. The system will use this to
-        // bring up the system menu for restore, min/maximize, size, move,
-        // close
-        VERIFY_IS_FALSE(term.SendKeyEvent(L' ', 0, ControlKeyStates::LeftAltPressed, true));
-        VERIFY_IS_FALSE(term.SendKeyEvent(L' ', 0, ControlKeyStates::LeftAltPressed, false));
-        VERIFY_IS_FALSE(term.SendCharEvent(L' ', 0, ControlKeyStates::LeftAltPressed));
     }
 
     void InputTest::InvalidKeyEvent()

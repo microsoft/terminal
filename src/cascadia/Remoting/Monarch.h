@@ -5,7 +5,8 @@
 
 #include "Monarch.g.h"
 #include "Peasant.h"
-#include "../cascadia/inc/cppwinrt_utils.h"
+#include "WindowActivatedArgs.h"
+#include <atomic>
 
 // We sure different GUIDs here depending on whether we're running a Release,
 // Preview, or Dev build. This ensures that different installs don't
@@ -26,14 +27,8 @@ constexpr GUID Monarch_clsid
         0x7eb1,
         0x4f3e,
     {
-        0x85, 0xf5, 0x8b, 0xdd, 0x73, 0x86, 0xcc, 0xe3
+        0x85, 0xf5, 0x8b, 0xdd, 0x73, 0x86, 0xcc, 0xe4
     }
-};
-
-enum class WindowingBehavior : uint64_t
-{
-    UseNew = 0,
-    UseExisting = 1,
 };
 
 namespace RemotingUnitTests
@@ -46,34 +41,148 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     struct Monarch : public MonarchT<Monarch>
     {
         Monarch();
+        Monarch(const uint64_t testPID);
         ~Monarch();
 
         uint64_t GetPID();
 
         uint64_t AddPeasant(winrt::Microsoft::Terminal::Remoting::IPeasant peasant);
+        void SignalClose(const uint64_t peasantId);
+
+        uint64_t GetNumberOfPeasants();
 
         winrt::Microsoft::Terminal::Remoting::ProposeCommandlineResult ProposeCommandline(const winrt::Microsoft::Terminal::Remoting::CommandlineArgs& args);
         void HandleActivatePeasant(const winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs& args);
+        void SummonWindow(const Remoting::SummonWindowSelectionArgs& args);
+
+        void SummonAllWindows();
+        bool DoesQuakeWindowExist();
+        Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> GetPeasantInfos();
+        Windows::Foundation::Collections::IVector<winrt::hstring> GetAllWindowLayouts();
 
         TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
+        TYPED_EVENT(ShowNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(HideNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(WindowCreated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(WindowClosed, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs);
 
     private:
-        Monarch(const uint64_t testPID);
         uint64_t _ourPID;
 
-        uint64_t _nextPeasantID{ 1 };
-        uint64_t _thisPeasantID{ 0 };
-        uint64_t _mostRecentPeasant{ 0 };
-        winrt::Windows::Foundation::DateTime _lastActivatedTime{};
+        std::atomic<uint64_t> _nextPeasantID{ 1 };
+        uint64_t _ourPeasantId{ 0 };
 
-        WindowingBehavior _windowingBehavior{ WindowingBehavior::UseNew };
+        // When we're quitting we do not care as much about handling some events that we know will be triggered
+        std::atomic<bool> _quitting{ false };
+
+        winrt::com_ptr<IVirtualDesktopManager> _desktopManager{ nullptr };
+
         std::unordered_map<uint64_t, winrt::Microsoft::Terminal::Remoting::IPeasant> _peasants;
+        std::vector<Remoting::WindowActivatedArgs> _mruPeasants;
+        // These should not be locked at the same time to prevent deadlocks
+        // unless they are both shared_locks.
+        std::shared_mutex _peasantsMutex{};
+        std::shared_mutex _mruPeasantsMutex{};
 
-        winrt::Microsoft::Terminal::Remoting::IPeasant _getPeasant(uint64_t peasantID);
-        uint64_t _getMostRecentPeasantID();
+        winrt::Microsoft::Terminal::Remoting::IPeasant _getPeasant(uint64_t peasantID, bool clearMruPeasantOnFailure = true);
+        uint64_t _getMostRecentPeasantID(bool limitToCurrentDesktop, const bool ignoreQuakeWindow);
+        uint64_t _lookupPeasantIdForName(std::wstring_view name);
 
         void _peasantWindowActivated(const winrt::Windows::Foundation::IInspectable& sender,
                                      const winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs& args);
+        void _doHandleActivatePeasant(const winrt::com_ptr<winrt::Microsoft::Terminal::Remoting::implementation::WindowActivatedArgs>& args);
+        void _clearOldMruEntries(const std::unordered_set<uint64_t>& peasantIds);
+
+        void _forAllPeasantsIgnoringTheDead(std::function<void(const winrt::Microsoft::Terminal::Remoting::IPeasant&, const uint64_t)> callback,
+                                            std::function<void(const uint64_t)> errorCallback);
+
+        void _identifyWindows(const winrt::Windows::Foundation::IInspectable& sender,
+                              const winrt::Windows::Foundation::IInspectable& args);
+
+        void _renameRequested(const winrt::Windows::Foundation::IInspectable& sender,
+                              const winrt::Microsoft::Terminal::Remoting::RenameRequestArgs& args);
+
+        winrt::fire_and_forget _handleQuitAll(const winrt::Windows::Foundation::IInspectable& sender,
+                                              const winrt::Windows::Foundation::IInspectable& args);
+
+        // Method Description:
+        // - Helper for doing something on each and every peasant.
+        // - We'll try calling func on every peasant.
+        // - If the return type of func is void, it will perform it for all peasants.
+        // - If the return type is a boolean, we'll break out of the loop once func
+        //   returns false.
+        // - If any single peasant is dead, then we'll call onError and then add it to a
+        //   list of peasants to clean up once the loop ends.
+        // - NB: this (separately) takes unique locks on _peasantsMutex and
+        //   _mruPeasantsMutex.
+        // Arguments:
+        // - func: The function to call on each peasant
+        // - onError: The function to call if a peasant is dead.
+        // Return Value:
+        // - <none>
+        template<typename F, typename T>
+        void _forEachPeasant(F&& func, T&& onError)
+        {
+            using Map = decltype(_peasants);
+            using R = std::invoke_result_t<F, Map::key_type, Map::mapped_type>;
+            static constexpr auto IsVoid = std::is_void_v<R>;
+
+            std::unordered_set<uint64_t> peasantsToErase;
+            {
+                std::shared_lock lock{ _peasantsMutex };
+
+                for (const auto& [id, p] : _peasants)
+                {
+                    try
+                    {
+                        if constexpr (IsVoid)
+                        {
+                            func(id, p);
+                        }
+                        else
+                        {
+                            if (!func(id, p))
+                            {
+                                break;
+                            }
+                        }
+                    }
+                    catch (const winrt::hresult_error& exception)
+                    {
+                        onError(id);
+
+                        if (exception.code() == 0x800706ba) // The RPC server is unavailable.
+                        {
+                            peasantsToErase.emplace(id);
+                        }
+                        else
+                        {
+                            LOG_CAUGHT_EXCEPTION();
+                            throw;
+                        }
+                    }
+                }
+            }
+
+            if (peasantsToErase.size() > 0)
+            {
+                // Don't hold a lock on _peasants and _mruPeasants at the same
+                // time to avoid deadlocks.
+                {
+                    std::unique_lock lock{ _peasantsMutex };
+                    for (const auto& id : peasantsToErase)
+                    {
+                        _peasants.erase(id);
+                    }
+                }
+                _clearOldMruEntries(peasantsToErase);
+
+                // A peasant died, let the app host know that the number of
+                // windows has changed.
+                _WindowClosedHandlers(nullptr, nullptr);
+            }
+        }
 
         friend class RemotingUnitTests::RemotingTests;
     };

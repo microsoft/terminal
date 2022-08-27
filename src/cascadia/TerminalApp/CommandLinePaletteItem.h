@@ -5,16 +5,15 @@
 
 #include "PaletteItem.h"
 #include "CommandLinePaletteItem.g.h"
-#include "inc/cppwinrt_utils.h"
 
 namespace winrt::TerminalApp::implementation
 {
     struct CommandLinePaletteItem : CommandLinePaletteItemT<CommandLinePaletteItem, PaletteItem>
     {
         CommandLinePaletteItem() = default;
-        CommandLinePaletteItem(winrt::hstring const& commandLine);
+        CommandLinePaletteItem(const winrt::hstring& commandLine);
 
-        GETSET_PROPERTY(winrt::hstring, CommandLine);
+        WINRT_PROPERTY(winrt::hstring, CommandLine);
     };
 }
 

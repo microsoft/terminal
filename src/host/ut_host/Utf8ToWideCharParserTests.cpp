@@ -38,8 +38,8 @@ class Utf8ToWideCharParserTests
         VERIFY_ARE_EQUAL(generated, (unsigned int)5);
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
 
-        unsigned char* pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
-        for (int i = 0; i < ARRAYSIZE(wideHello); ++i)
+        auto pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
+        for (auto i = 0; i < ARRAYSIZE(wideHello); ++i)
         {
             VERIFY_ARE_EQUAL(wideHello[i], pReturnedBytes[i]);
         }
@@ -62,8 +62,8 @@ class Utf8ToWideCharParserTests
         VERIFY_ARE_EQUAL(generated, (unsigned int)2);
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
 
-        unsigned char* pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
-        for (int i = 0; i < ARRAYSIZE(wideSushi); ++i)
+        auto pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
+        for (auto i = 0; i < ARRAYSIZE(wideSushi); ++i)
         {
             VERIFY_ARE_EQUAL(wideSushi[i], pReturnedBytes[i]);
         }
@@ -81,7 +81,7 @@ class Utf8ToWideCharParserTests
         unsigned int generated = 0;
         unique_ptr<wchar_t[]> output{ nullptr };
 
-        for (int i = 0; i < 2; ++i)
+        for (auto i = 0; i < 2; ++i)
         {
             VERIFY_SUCCEEDED(parser.Parse(shi + i, count, consumed, output, generated));
             VERIFY_ARE_EQUAL(consumed, (unsigned int)1);
@@ -95,8 +95,8 @@ class Utf8ToWideCharParserTests
         VERIFY_ARE_EQUAL(generated, (unsigned int)1);
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
 
-        unsigned char* pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
-        for (int i = 0; i < ARRAYSIZE(wideShi); ++i)
+        auto pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
+        for (auto i = 0; i < ARRAYSIZE(wideShi); ++i)
         {
             VERIFY_ARE_EQUAL(wideShi[i], pReturnedBytes[i]);
         }
@@ -120,8 +120,8 @@ class Utf8ToWideCharParserTests
         VERIFY_ARE_EQUAL(generated, (unsigned int)1);
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
 
-        unsigned char* pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
-        for (int i = 0; i < 2; ++i)
+        auto pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
+        for (auto i = 0; i < 2; ++i)
         {
             VERIFY_ARE_EQUAL(wideSushi[i], pReturnedBytes[i]);
         }
@@ -147,7 +147,7 @@ class Utf8ToWideCharParserTests
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
 
         pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
-        for (int i = 0; i < 2; ++i)
+        for (auto i = 0; i < 2; ++i)
         {
             VERIFY_ARE_EQUAL(wideSushi[i + 2], pReturnedBytes[i]);
         }
@@ -193,8 +193,8 @@ class Utf8ToWideCharParserTests
         VERIFY_ARE_EQUAL(generated, (unsigned int)1);
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
 
-        unsigned char* pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
-        for (int i = 0; i < 2; ++i)
+        auto pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
+        for (auto i = 0; i < 2; ++i)
         {
             VERIFY_ARE_EQUAL(wideDoomoArigatoo[i], pReturnedBytes[i]);
         }
@@ -210,7 +210,7 @@ class Utf8ToWideCharParserTests
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
 
         pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
-        for (int i = 0; i < 10; ++i)
+        for (auto i = 0; i < 10; ++i)
         {
             VERIFY_ARE_EQUAL(wideDoomoArigatoo[i + 2], pReturnedBytes[i]);
         }
@@ -226,7 +226,7 @@ class Utf8ToWideCharParserTests
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
 
         pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
-        for (int i = 0; i < 4; ++i)
+        for (auto i = 0; i < 4; ++i)
         {
             VERIFY_ARE_EQUAL(wideDoomoArigatoo[i + 12], pReturnedBytes[i]);
         }
@@ -257,8 +257,8 @@ class Utf8ToWideCharParserTests
         VERIFY_ARE_EQUAL(generated, (unsigned int)2);
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
 
-        unsigned char* pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
-        for (int i = 0; i < ARRAYSIZE(wideSushi); ++i)
+        auto pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
+        for (auto i = 0; i < ARRAYSIZE(wideSushi); ++i)
         {
             VERIFY_ARE_EQUAL(wideSushi[i], pReturnedBytes[i]);
         }
@@ -294,8 +294,8 @@ class Utf8ToWideCharParserTests
 
         // clang-format on
 
-        const unsigned int count = gsl::narrow_cast<unsigned int>(ARRAYSIZE(data));
-        const unsigned int wideCount = gsl::narrow_cast<unsigned int>(ARRAYSIZE(wideData));
+        const auto count = gsl::narrow_cast<unsigned int>(ARRAYSIZE(data));
+        const auto wideCount = gsl::narrow_cast<unsigned int>(ARRAYSIZE(wideData));
         unsigned int consumed = 0;
         unsigned int generated = 0;
         unique_ptr<wchar_t[]> output{ nullptr };
@@ -318,7 +318,7 @@ class Utf8ToWideCharParserTests
         // 2 bytes of a 4 byte sequence
         const unsigned int inputSize = 2;
         const unsigned char partialSequence[inputSize] = { 0xF0, 0x80 };
-        unsigned int count = inputSize;
+        auto count = inputSize;
         unsigned int consumed = 0;
         unsigned int generated = 0;
         unique_ptr<wchar_t[]> output{ nullptr };

@@ -1,4 +1,4 @@
-﻿/*++
+/*++
 Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
@@ -18,7 +18,7 @@ Abstract:
 #include "JsonUtils.h"
 #include "SettingsTypes.h"
 
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::CursorStyle)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::CursorStyle)
 {
     static constexpr std::array<pair_type, 6> mappings = {
         pair_type{ "bar", ValueType::Bar },
@@ -28,6 +28,34 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::CursorStyle)
         pair_type{ "filledBox", ValueType::FilledBox },
         pair_type{ "emptyBox", ValueType::EmptyBox }
     };
+};
+
+// Type Description:
+// - Helper for converting a user-specified adjustTextMode value to its corresponding enum
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::AdjustTextMode)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "never", ValueType::Never },
+        pair_type{ "indexed", ValueType::Indexed },
+        pair_type{ "always", ValueType::Always },
+    };
+
+    // Override mapping parser to add boolean parsing
+    ::winrt::Microsoft::Terminal::Core::AdjustTextMode FromJson(const Json::Value& json)
+    {
+        if (json.isBool())
+        {
+            return json.asBool() ? ValueType::Indexed : ValueType::Never;
+        }
+        return EnumMapper::FromJson(json);
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        return EnumMapper::CanConvert(json) || json.isBool();
+    }
+
+    using EnumMapper::TypeDescription;
 };
 
 JSON_ENUM_MAPPER(::winrt::Windows::UI::Xaml::Media::Stretch)
@@ -40,7 +68,7 @@ JSON_ENUM_MAPPER(::winrt::Windows::UI::Xaml::Media::Stretch)
     };
 };
 
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::ScrollbarState)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ScrollbarState)
 {
     static constexpr std::array<pair_type, 2> mappings = {
         pair_type{ "visible", ValueType::Visible },
@@ -50,10 +78,12 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::ScrollbarState)
 
 JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::BellStyle)
 {
-    static constexpr std::array<pair_type, 4> mappings = {
+    static constexpr std::array<pair_type, 6> mappings = {
         pair_type{ "none", AllClear },
         pair_type{ "audible", ValueType::Audible },
-        pair_type{ "visual", ValueType::Visual },
+        pair_type{ "visual", ValueType::Window | ValueType::Taskbar },
+        pair_type{ "window", ValueType::Window },
+        pair_type{ "taskbar", ValueType::Taskbar },
         pair_type{ "all", AllSet },
     };
 
@@ -93,7 +123,7 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::ConvergedAlignme
     };
 };
 
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::TextAntialiasingMode)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::TextAntialiasingMode)
 {
     static constexpr std::array<pair_type, 3> mappings = {
         pair_type{ "grayscale", ValueType::Grayscale },
@@ -106,10 +136,11 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::TextAntialiasing
 // - Helper for converting a user-specified closeOnExit value to its corresponding enum
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode)
 {
-    JSON_MAPPINGS(3) = {
+    JSON_MAPPINGS(4) = {
         pair_type{ "always", ValueType::Always },
         pair_type{ "graceful", ValueType::Graceful },
         pair_type{ "never", ValueType::Never },
+        pair_type{ "automatic", ValueType::Automatic },
     };
 
     // Override mapping parser to add boolean parsing
@@ -131,7 +162,7 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode)
 };
 
 // This specialization isn't using JSON_ENUM_MAPPER because we need to have a different
-// value type (unsinged int) and return type (FontWeight struct). JSON_ENUM_MAPPER
+// value type (unsigned int) and return type (FontWeight struct). JSON_ENUM_MAPPER
 // expects that the value type _is_ the return type.
 template<>
 struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winrt::Windows::UI::Text::FontWeight> :
@@ -207,14 +238,33 @@ JSON_ENUM_MAPPER(::winrt::Windows::UI::Xaml::ElementTheme)
     };
 };
 
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::NewTabPosition)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "afterLastTab", ValueType::AfterLastTab },
+        pair_type{ "afterCurrentTab", ValueType::AfterCurrentTab },
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FirstWindowPreference)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "defaultProfile", ValueType::DefaultProfile },
+        pair_type{ "persistedWindowLayout", ValueType::PersistedWindowLayout },
+    };
+};
+
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::LaunchMode)
 {
-    JSON_MAPPINGS(5) = {
+    JSON_MAPPINGS(8) = {
         pair_type{ "default", ValueType::DefaultMode },
         pair_type{ "maximized", ValueType::MaximizedMode },
         pair_type{ "fullscreen", ValueType::FullscreenMode },
+        pair_type{ "maximizedFullscreen", ValueType::MaximizedMode | ValueType::FullscreenMode },
         pair_type{ "focus", ValueType::FocusMode },
         pair_type{ "maximizedFocus", ValueType::MaximizedFocusMode },
+        pair_type{ "fullscreenFocus", ValueType::FullscreenMode | ValueType::FocusMode },
+        pair_type{ "maximizedFullscreenFocus", ValueType::MaximizedMode | ValueType::FullscreenMode | ValueType::FocusMode },
     };
 };
 
@@ -235,7 +285,7 @@ JSON_ENUM_MAPPER(winrt::Microsoft::Terminal::Settings::Model::ExpandCommandType)
     };
 };
 
-JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::CopyFormat)
+JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Control::CopyFormat)
 {
     JSON_MAPPINGS(4) = {
         pair_type{ "none", AllClear },
@@ -274,8 +324,8 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
     ::winrt::Microsoft::Terminal::Settings::Model::LaunchPosition FromJson(const Json::Value& json)
     {
         ::winrt::Microsoft::Terminal::Settings::Model::LaunchPosition ret;
-        std::string initialPosition{ json.asString() };
-        static constexpr char singleCharDelim = ',';
+        auto initialPosition{ json.asString() };
+        static constexpr auto singleCharDelim = ',';
         std::stringstream tokenStream(initialPosition);
         std::string token;
         uint8_t initialPosIndex = 0;
@@ -332,15 +382,48 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
     }
 };
 
+struct IntAsFloatPercentConversionTrait : ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<double>
+{
+    double FromJson(const Json::Value& json)
+    {
+        return ::base::saturated_cast<double>(json.asUInt()) / 100.0;
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        if (!json.isUInt())
+        {
+            return false;
+        }
+        const auto value = json.asUInt();
+        return value >= 0 && value <= 100;
+    }
+
+    Json::Value ToJson(const double& val)
+    {
+        return std::clamp(::base::saturated_cast<uint32_t>(std::round(val * 100.0)), 0u, 100u);
+    }
+
+    std::string TypeDescription() const
+    {
+        return "number (>= 0, <=100)";
+    }
+};
+
 // Possible FocusDirection values
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FocusDirection)
 {
-    JSON_MAPPINGS(5) = {
+    JSON_MAPPINGS(10) = {
         pair_type{ "left", ValueType::Left },
         pair_type{ "right", ValueType::Right },
         pair_type{ "up", ValueType::Up },
         pair_type{ "down", ValueType::Down },
         pair_type{ "previous", ValueType::Previous },
+        pair_type{ "previousInOrder", ValueType::PreviousInOrder },
+        pair_type{ "nextInOrder", ValueType::NextInOrder },
+        pair_type{ "first", ValueType::First },
+        pair_type{ "parent", ValueType::Parent },
+        pair_type{ "child", ValueType::Child },
     };
 };
 
@@ -356,19 +439,24 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::ResizeDirection)
 };
 
 // Possible SplitState values
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::SplitState)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::SplitDirection)
 {
-    JSON_MAPPINGS(3) = {
-        pair_type{ "vertical", ValueType::Vertical },
-        pair_type{ "horizontal", ValueType::Horizontal },
+    JSON_MAPPINGS(7) = {
         pair_type{ "auto", ValueType::Automatic },
+        pair_type{ "up", ValueType::Up },
+        pair_type{ "right", ValueType::Right },
+        pair_type{ "down", ValueType::Down },
+        pair_type{ "left", ValueType::Left },
+        pair_type{ "vertical", ValueType::Right },
+        pair_type{ "horizontal", ValueType::Down },
     };
 };
 
 // Possible SplitType values
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::SplitType)
 {
-    JSON_MAPPINGS(1) = {
+    JSON_MAPPINGS(2) = {
+        pair_type{ "manual", ValueType::Manual },
         pair_type{ "duplicate", ValueType::Duplicate },
     };
 };
@@ -429,5 +517,165 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::CommandPaletteLa
     JSON_MAPPINGS(2) = {
         pair_type{ "action", ValueType::Action },
         pair_type{ "commandLine", ValueType::CommandLine },
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FindMatchDirection)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "next", ValueType::Next },
+        pair_type{ "prev", ValueType::Previous },
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::WindowingMode)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "useNew", ValueType::UseNew },
+        pair_type{ "useAnyExisting", ValueType::UseAnyExisting },
+        pair_type{ "useExisting", ValueType::UseExisting },
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::DesktopBehavior)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "any", ValueType::Any },
+        pair_type{ "toCurrent", ValueType::ToCurrent },
+        pair_type{ "onCurrent", ValueType::OnCurrent },
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::MonitorBehavior)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "any", ValueType::Any },
+        pair_type{ "toCurrent", ValueType::ToCurrent },
+        pair_type{ "toMouse", ValueType::ToMouse },
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ClearBufferType)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "all", ValueType::All },
+        pair_type{ "screen", ValueType::Screen },
+        pair_type{ "scrollback", ValueType::Scrollback },
+    };
+};
+
+JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::IntenseStyle)
+{
+    static constexpr std::array<pair_type, 4> mappings = {
+        pair_type{ "none", AllClear },
+        pair_type{ "bold", ValueType::Bold },
+        pair_type{ "bright", ValueType::Bright },
+        pair_type{ "all", AllSet },
+
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "closeOnExitInfo", ValueType::CloseOnExitInfo },
+        pair_type{ "keyboardServiceWarning", ValueType::KeyboardServiceWarning },
+        pair_type{ "setAsDefault", ValueType::SetAsDefault },
+    };
+};
+
+template<>
+struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt::Microsoft::Terminal::Settings::Model::ThemeColor>
+{
+    static constexpr std::string_view accentString{ "accent" };
+    static constexpr std::string_view terminalBackgroundString{ "terminalBackground" };
+
+    winrt::Microsoft::Terminal::Settings::Model::ThemeColor FromJson(const Json::Value& json)
+    {
+        if (json == Json::Value::null)
+        {
+            return nullptr;
+        }
+        const auto string{ Detail::GetStringView(json) };
+        if (string == accentString)
+        {
+            return winrt::Microsoft::Terminal::Settings::Model::ThemeColor::FromAccent();
+        }
+        else if (string == terminalBackgroundString)
+        {
+            return winrt::Microsoft::Terminal::Settings::Model::ThemeColor::FromTerminalBackground();
+        }
+        else
+        {
+            return winrt::Microsoft::Terminal::Settings::Model::ThemeColor::FromColor(::Microsoft::Console::Utils::ColorFromHexString(string));
+        }
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        if (json == Json::Value::null)
+        {
+            return true;
+        }
+        if (!json.isString())
+        {
+            return false;
+        }
+
+        const auto string{ Detail::GetStringView(json) };
+        const auto isColorSpec = (string.length() == 9 || string.length() == 7 || string.length() == 4) && string.front() == '#';
+        const auto isAccent = string == accentString;
+        const auto isTerminalBackground = string == terminalBackgroundString;
+        return isColorSpec || isAccent || isTerminalBackground;
+    }
+
+    Json::Value ToJson(const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& val)
+    {
+        if (val == nullptr)
+        {
+            return Json::Value::null;
+        }
+
+        switch (val.ColorType())
+        {
+        case winrt::Microsoft::Terminal::Settings::Model::ThemeColorType::Accent:
+        {
+            return "accent";
+        }
+        case winrt::Microsoft::Terminal::Settings::Model::ThemeColorType::Color:
+        {
+            return til::u16u8(til::color{ val.Color() }.ToHexString(false));
+        }
+        case winrt::Microsoft::Terminal::Settings::Model::ThemeColorType::TerminalBackground:
+        {
+            return "terminalBackground";
+        }
+        }
+        return til::u16u8(til::color{ val.Color() }.ToHexString(false));
+    }
+
+    std::string TypeDescription() const
+    {
+        return "ThemeColor (#rrggbb, #rgb, #rrggbbaa, accent, terminalBackground)";
+    }
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "always", ValueType::Always },
+        pair_type{ "hover", ValueType::Hover },
+        pair_type{ "never", ValueType::Never },
+    };
+};
+
+// Possible ScrollToMarkDirection values
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ScrollToMarkDirection)
+{
+    JSON_MAPPINGS(4) = {
+        pair_type{ "previous", ValueType::Previous },
+        pair_type{ "next", ValueType::Next },
+        pair_type{ "first", ValueType::First },
+        pair_type{ "last", ValueType::Last },
     };
 };

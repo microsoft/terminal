@@ -13,13 +13,14 @@ using namespace Microsoft::Console::Types;
 // Routine Description:
 // - Gets the size in characters of the current dirty portion of the frame.
 // Arguments:
-// - <none>
+// - area - The character dimensions of the current dirty area of the frame.
+//          This is an Inclusive rect.
 // Return Value:
-// - The character dimensions of the current dirty area of the frame.
-//      This is an Inclusive rect.
-std::vector<til::rectangle> VtEngine::GetDirtyArea()
+// - S_OK.
+[[nodiscard]] HRESULT VtEngine::GetDirtyArea(gsl::span<const til::rect>& area) noexcept
 {
-    return _invalidMap.runs();
+    area = _invalidMap.runs();
+    return S_OK;
 }
 
 // Routine Description:
@@ -44,7 +45,7 @@ std::vector<til::rectangle> VtEngine::GetDirtyArea()
 // - pRectToOr - Add this rectangle to the existing one.
 // Return Value:
 // - <none>
-void VtEngine::_OrRect(_Inout_ SMALL_RECT* const pRectExisting, const SMALL_RECT* const pRectToOr) const
+void VtEngine::_OrRect(_Inout_ til::inclusive_rect* const pRectExisting, const til::inclusive_rect* const pRectToOr) const
 {
     pRectExisting->Left = std::min(pRectExisting->Left, pRectToOr->Left);
     pRectExisting->Top = std::min(pRectExisting->Top, pRectToOr->Top);
@@ -81,8 +82,8 @@ bool VtEngine::_WillWriteSingleChar() const
     // Either the next character to the right or the immediately previous
     //      character should follow this code path
     //      (The immediate previous character would suggest a backspace)
-    bool invalidIsNext = invalidPoint == til::point{ _lastText };
-    bool invalidIsLast = invalidPoint == til::point{ _lastText.X - 1, _lastText.Y };
+    auto invalidIsNext = invalidPoint == _lastText;
+    auto invalidIsLast = invalidPoint == til::point{ _lastText.X - 1, _lastText.Y };
 
     return invalidIsNext || invalidIsLast;
 }

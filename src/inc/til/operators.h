@@ -9,47 +9,47 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
 #pragma region POINT VS SIZE
     // This is a convenience and will take X vs WIDTH and Y vs HEIGHT.
-    _TIL_INLINEPREFIX point operator+(const point& lhs, const size& rhs)
+    constexpr point operator+(const point lhs, const size rhs)
     {
-        return lhs + til::point{ rhs.width(), rhs.height() };
+        return lhs + til::point{ rhs.width, rhs.height };
     }
 
-    _TIL_INLINEPREFIX point operator-(const point& lhs, const size& rhs)
+    constexpr point operator-(const point lhs, const size rhs)
     {
-        return lhs - til::point{ rhs.width(), rhs.height() };
+        return lhs - til::point{ rhs.width, rhs.height };
     }
 
-    _TIL_INLINEPREFIX point operator*(const point& lhs, const size& rhs)
+    constexpr point operator*(const point lhs, const size rhs)
     {
-        return lhs * til::point{ rhs.width(), rhs.height() };
+        return lhs * til::point{ rhs.width, rhs.height };
     }
 
-    _TIL_INLINEPREFIX point operator/(const point& lhs, const size& rhs)
+    constexpr point operator/(const point lhs, const size rhs)
     {
-        return lhs / til::point{ rhs.width(), rhs.height() };
+        return lhs / til::point{ rhs.width, rhs.height };
     }
 #pragma endregion
 
 #pragma region SIZE VS POINT
     // This is a convenience and will take WIDTH vs X and HEIGHT vs Y.
-    _TIL_INLINEPREFIX size operator+(const size& lhs, const point& rhs)
+    constexpr size operator+(const size lhs, const point rhs)
     {
-        return lhs + til::size(rhs.x(), rhs.y());
+        return lhs + til::size(rhs.x, rhs.y);
     }
 
-    _TIL_INLINEPREFIX size operator-(const size& lhs, const point& rhs)
+    constexpr size operator-(const size lhs, const point rhs)
     {
-        return lhs - til::size(rhs.x(), rhs.y());
+        return lhs - til::size(rhs.x, rhs.y);
     }
 
-    _TIL_INLINEPREFIX size operator*(const size& lhs, const point& rhs)
+    constexpr size operator*(const size lhs, const point rhs)
     {
-        return lhs * til::size(rhs.x(), rhs.y());
+        return lhs * til::size(rhs.x, rhs.y);
     }
 
-    _TIL_INLINEPREFIX size operator/(const size& lhs, const point& rhs)
+    constexpr size operator/(const size lhs, const point rhs)
     {
-        return lhs / til::size(rhs.x(), rhs.y());
+        return lhs / til::size(rhs.x, rhs.y);
     }
 #pragma endregion
 }

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "precomp.h"
@@ -17,43 +17,21 @@ using namespace Microsoft::Console::Render;
 // Routine Description:
 // - Creates a CustomTextLayout object for calculating which glyphs should be placed and where
 // Arguments:
-// - factory - DirectWrite factory reference in case we need other DirectWrite objects for our layout
-// - analyzer - DirectWrite text analyzer from the factory that has been cached at a level above this layout (expensive to create)
-// - format - The DirectWrite format object representing the size and other text properties to be applied (by default) to a layout
-// - formatItalic - The italic variant of the format object representing the size and other text properties for italic text
-// - font - The DirectWrite font face to use while calculating layout (by default, will fallback if necessary)
-// - fontItalic - The italic variant of the font face to use while calculating layout for italic text
-// - width - The count of pixels available per column (the expected pixel width of every column)
-// - boxEffect - Box drawing scaling effects that are cached for the base font across layouts.
-CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory,
-                                   gsl::not_null<IDWriteTextAnalyzer1*> const analyzer,
-                                   gsl::not_null<IDWriteTextFormat*> const format,
-                                   gsl::not_null<IDWriteTextFormat*> const formatItalic,
-                                   gsl::not_null<IDWriteFontFace1*> const font,
-                                   gsl::not_null<IDWriteFontFace1*> const fontItalic,
-                                   size_t const width,
-                                   IBoxDrawingEffect* const boxEffect) :
-    _factory{ factory.get() },
-    _analyzer{ analyzer.get() },
-    _format{ format.get() },
-    _formatItalic{ formatItalic.get() },
-    _formatInUse{ format.get() },
-    _font{ font.get() },
-    _fontItalic{ fontItalic.get() },
-    _fontInUse{ font.get() },
-    _boxDrawingEffect{ boxEffect },
-    _localeName{},
+// - dxFontRenderData - The DirectWrite font render data for our layout
+CustomTextLayout::CustomTextLayout(const gsl::not_null<DxFontRenderData*> fontRenderData) :
+    _fontRenderData{ fontRenderData },
+    _formatInUse{ fontRenderData->DefaultTextFormat().Get() },
+    _fontInUse{ fontRenderData->DefaultFontFace().Get() },
     _numberSubstitution{},
     _readingDirection{ DWRITE_READING_DIRECTION_LEFT_TO_RIGHT },
     _runs{},
     _breakpoints{},
     _runIndex{ 0 },
-    _width{ width },
+    _width{ gsl::narrow_cast<size_t>(fontRenderData->GlyphCell().width) },
     _isEntireTextSimple{ false }
 {
-    // Fetch the locale name out once now from the format
-    _localeName.resize(gsl::narrow_cast<size_t>(format->GetLocaleNameLength()) + 1); // +1 for null
-    THROW_IF_FAILED(format->GetLocaleName(_localeName.data(), gsl::narrow<UINT32>(_localeName.size())));
+    _localeName.resize(gsl::narrow_cast<size_t>(fontRenderData->DefaultTextFormat()->GetLocaleNameLength()) + 1); // +1 for null
+    THROW_IF_FAILED(fontRenderData->DefaultTextFormat()->GetLocaleName(_localeName.data(), gsl::narrow<UINT32>(_localeName.size())));
 }
 
 //Routine Description:
@@ -122,8 +100,8 @@ CATCH_RETURN()
     RETURN_HR_IF_NULL(E_INVALIDARG, columns);
     *columns = 0;
 
-    _formatInUse = _format.Get();
-    _fontInUse = _font.Get();
+    _formatInUse = _fontRenderData->DefaultTextFormat().Get();
+    _fontInUse = _fontRenderData->DefaultFontFace().Get();
 
     RETURN_IF_FAILED(_AnalyzeTextComplexity());
     RETURN_IF_FAILED(_AnalyzeRuns());
@@ -155,10 +133,34 @@ CATCH_RETURN()
                                                                _In_ IDWriteTextRenderer* renderer,
                                                                FLOAT originX,
                                                                FLOAT originY) noexcept
+try
 {
     const auto drawingContext = static_cast<const DrawingContext*>(clientDrawingContext);
-    _formatInUse = drawingContext->useItalicFont ? _formatItalic.Get() : _format.Get();
-    _fontInUse = drawingContext->useItalicFont ? _fontItalic.Get() : _font.Get();
+
+    auto weight = _fontRenderData->DefaultFontWeight();
+    auto style = _fontRenderData->DefaultFontStyle();
+    const auto stretch = _fontRenderData->DefaultFontStretch();
+
+    if (drawingContext->useBoldFont)
+    {
+        // TODO: "relative" bold?
+        weight = DWRITE_FONT_WEIGHT_BOLD;
+        // Since we are setting the font weight according to the text attribute,
+        // make sure to tell the text format to ignore the user set font weight
+        _fontRenderData->InhibitUserWeight(true);
+    }
+    else
+    {
+        _fontRenderData->InhibitUserWeight(false);
+    }
+
+    if (drawingContext->useItalicFont || _fontRenderData->DidUserSetItalic())
+    {
+        style = DWRITE_FONT_STYLE_ITALIC;
+    }
+
+    _formatInUse = _fontRenderData->TextFormatWithAttribute(weight, style, stretch).Get();
+    _fontInUse = _fontRenderData->FontFaceWithAttribute(weight, style, stretch).Get();
 
     RETURN_IF_FAILED(_AnalyzeTextComplexity());
     RETURN_IF_FAILED(_AnalyzeRuns());
@@ -173,6 +175,7 @@ CATCH_RETURN()
 
     return S_OK;
 }
+CATCH_RETURN()
 
 // Routine Description:
 // - Uses the internal text information and the analyzers/font information from construction
@@ -188,7 +191,7 @@ CATCH_RETURN()
     {
         const auto textLength = gsl::narrow<UINT32>(_text.size());
 
-        BOOL isTextSimple = FALSE;
+        auto isTextSimple = FALSE;
         UINT32 uiLengthRead = 0;
 
         // Start from the beginning.
@@ -196,7 +199,7 @@ CATCH_RETURN()
 
         _glyphIndices.resize(textLength);
 
-        const HRESULT hr = _analyzer->GetTextComplexity(
+        const auto hr = _fontRenderData->Analyzer()->GetTextComplexity(
             _text.c_str(),
             textLength,
             _fontInUse,
@@ -240,13 +243,13 @@ CATCH_RETURN()
         // Allocate enough room to have one breakpoint per code unit.
         _breakpoints.resize(_text.size());
 
-        if (!_isEntireTextSimple)
+        if (!_isEntireTextSimple || _fontRenderData->DidUserSetAxes())
         {
             // Call each of the analyzers in sequence, recording their results.
-            RETURN_IF_FAILED(_analyzer->AnalyzeLineBreakpoints(this, 0, textLength, this));
-            RETURN_IF_FAILED(_analyzer->AnalyzeBidi(this, 0, textLength, this));
-            RETURN_IF_FAILED(_analyzer->AnalyzeScript(this, 0, textLength, this));
-            RETURN_IF_FAILED(_analyzer->AnalyzeNumberSubstitution(this, 0, textLength, this));
+            RETURN_IF_FAILED(_fontRenderData->Analyzer()->AnalyzeLineBreakpoints(this, 0, textLength, this));
+            RETURN_IF_FAILED(_fontRenderData->Analyzer()->AnalyzeBidi(this, 0, textLength, this));
+            RETURN_IF_FAILED(_fontRenderData->Analyzer()->AnalyzeScript(this, 0, textLength, this));
+            RETURN_IF_FAILED(_fontRenderData->Analyzer()->AnalyzeNumberSubstitution(this, 0, textLength, this));
             // Perform our custom font fallback analyzer that mimics the pattern of the real analyzers.
             RETURN_IF_FAILED(_AnalyzeFontFallback(this, 0, textLength));
         }
@@ -282,7 +285,7 @@ CATCH_RETURN()
         const auto textLength = gsl::narrow<UINT32>(_text.size());
 
         // Estimate the maximum number of glyph indices needed to hold a string.
-        const UINT32 estimatedGlyphCount = _EstimateGlyphCount(textLength);
+        const auto estimatedGlyphCount = _EstimateGlyphCount(textLength);
 
         _glyphIndices.resize(estimatedGlyphCount);
         _glyphOffsets.resize(estimatedGlyphCount);
@@ -334,9 +337,9 @@ CATCH_RETURN()
         // will shape as if the line is not broken.
 
         Run& run = _runs.at(runIndex);
-        const UINT32 textStart = run.textStart;
-        const UINT32 textLength = run.textLength;
-        UINT32 maxGlyphCount = gsl::narrow<UINT32>(_glyphIndices.size() - glyphStart);
+        const auto textStart = run.textStart;
+        const auto textLength = run.textLength;
+        auto maxGlyphCount = gsl::narrow<UINT32>(_glyphIndices.size() - glyphStart);
         UINT32 actualGlyphCount = 0;
 
         run.glyphStart = glyphStart;
@@ -357,11 +360,11 @@ CATCH_RETURN()
         if (textLength > maxGlyphCount)
         {
             maxGlyphCount = _EstimateGlyphCount(textLength);
-            const UINT32 totalGlyphsArrayCount = glyphStart + maxGlyphCount;
+            const auto totalGlyphsArrayCount = glyphStart + maxGlyphCount;
             _glyphIndices.resize(totalGlyphsArrayCount);
         }
 
-        if (_isEntireTextSimple)
+        if (_isEntireTextSimple && !_fontRenderData->DidUserSetFeatures())
         {
             // When the entire text is simple, we can skip GetGlyphs and directly retrieve glyph indices and
             // advances(in font design unit). With the help of font metrics, we can calculate the actual glyph
@@ -374,7 +377,7 @@ CATCH_RETURN()
             _glyphDesignUnitAdvances.resize(textLength);
             _glyphAdvances.resize(textLength);
 
-            USHORT designUnitsPerEm = metrics.designUnitsPerEm;
+            auto designUnitsPerEm = metrics.designUnitsPerEm;
 
             RETURN_IF_FAILED(_fontInUse->GetDesignGlyphAdvances(
                 textLength,
@@ -400,14 +403,22 @@ CATCH_RETURN()
         std::vector<DWRITE_SHAPING_TEXT_PROPERTIES> textProps(textLength);
         std::vector<DWRITE_SHAPING_GLYPH_PROPERTIES> glyphProps(maxGlyphCount);
 
+        // Get the features to apply to the font
+        const auto& features = _fontRenderData->DefaultFontFeatures();
+#pragma warning(suppress : 26492) // Don't use const_cast to cast away const or volatile (type.3).
+        DWRITE_TYPOGRAPHIC_FEATURES typographicFeatures = { const_cast<DWRITE_FONT_FEATURE*>(features.data()), gsl::narrow<uint32_t>(features.size()) };
+        DWRITE_TYPOGRAPHIC_FEATURES const* typographicFeaturesPointer = &typographicFeatures;
+        const uint32_t fontFeatureLengths[] = { textLength };
+
         // Get the glyphs from the text, retrying if needed.
 
-        int tries = 0;
+        auto tries = 0;
 
-        HRESULT hr = S_OK;
+#pragma warning(suppress : 26485) // so we can pass in the fontFeatureLengths to GetGlyphs without the analyzer complaining
+        auto hr = S_OK;
         do
         {
-            hr = _analyzer->GetGlyphs(
+            hr = _fontRenderData->Analyzer()->GetGlyphs(
                 &_text.at(textStart),
                 textLength,
                 run.fontFace.Get(),
@@ -416,9 +427,9 @@ CATCH_RETURN()
                 &run.script,
                 _localeName.data(),
                 (run.isNumberSubstituted) ? _numberSubstitution.Get() : nullptr,
-                nullptr, // features
-                nullptr, // featureLengths
-                0, // featureCount
+                &typographicFeaturesPointer, // features
+                &fontFeatureLengths[0], // featureLengths
+                1, // featureCount
                 maxGlyphCount, // maxGlyphCount
                 &_glyphClusters.at(textStart),
                 &textProps.at(0),
@@ -431,7 +442,7 @@ CATCH_RETURN()
             {
                 // Try again using a larger buffer.
                 maxGlyphCount = _EstimateGlyphCount(maxGlyphCount);
-                const UINT32 totalGlyphsArrayCount = glyphStart + maxGlyphCount;
+                const auto totalGlyphsArrayCount = glyphStart + maxGlyphCount;
 
                 glyphProps.resize(maxGlyphCount);
                 _glyphIndices.resize(totalGlyphsArrayCount);
@@ -452,7 +463,7 @@ CATCH_RETURN()
         const auto fontSizeFormat = _formatInUse->GetFontSize();
         const auto fontSize = fontSizeFormat * run.fontScale;
 
-        hr = _analyzer->GetGlyphPlacements(
+        hr = _fontRenderData->Analyzer()->GetGlyphPlacements(
             &_text.at(textStart),
             &_glyphClusters.at(textStart),
             &textProps.at(0),
@@ -466,9 +477,9 @@ CATCH_RETURN()
             (run.bidiLevel & 1), // isRightToLeft
             &run.script,
             _localeName.data(),
-            nullptr, // features
-            nullptr, // featureRangeLengths
-            0, // featureRanges
+            &typographicFeaturesPointer, // features
+            &fontFeatureLengths[0], // featureLengths
+            1, // featureCount
             &_glyphAdvances.at(glyphStart),
             &_glyphOffsets.at(glyphStart));
 
@@ -863,7 +874,7 @@ CATCH_RETURN();
         auto mutableOrigin = origin;
 
         // Draw each run separately.
-        for (INT32 runIndex = 0; runIndex < gsl::narrow<INT32>(_runs.size()); ++runIndex)
+        for (auto runIndex = 0; runIndex < gsl::narrow<INT32>(_runs.size()); ++runIndex)
         {
             // Get the run
             const Run& run = _runs.at(runIndex);
@@ -878,8 +889,8 @@ CATCH_RETURN();
             // Then we will draw them in the order abcdGFEh
             else
             {
-                const INT32 originalRunIndex = runIndex;
-                INT32 lastIndexRTL = runIndex;
+                const auto originalRunIndex = runIndex;
+                auto lastIndexRTL = runIndex;
 
                 // Step 1: Get to the last contiguous RTL run from here
                 while (lastIndexRTL < gsl::narrow<INT32>(_runs.size()) - 1) // only could ever advance if there's something left
@@ -1073,7 +1084,7 @@ CATCH_RETURN();
 // - S_OK or appropriate STL/GSL failure code.
 [[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::GetLocaleName(UINT32 textPosition,
                                                                         _Out_ UINT32* textLength,
-                                                                        _Outptr_result_z_ WCHAR const** localeName) noexcept
+                                                                        _Outptr_result_z_ const WCHAR** localeName) noexcept
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, textLength);
     RETURN_HR_IF_NULL(E_INVALIDARG, localeName);
@@ -1120,7 +1131,7 @@ CATCH_RETURN();
 // - S_OK or appropriate STL/GSL failure code.
 [[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::SetScriptAnalysis(UINT32 textPosition,
                                                                             UINT32 textLength,
-                                                                            _In_ DWRITE_SCRIPT_ANALYSIS const* scriptAnalysis)
+                                                                            _In_ const DWRITE_SCRIPT_ANALYSIS* scriptAnalysis)
 {
     try
     {
@@ -1265,34 +1276,74 @@ CATCH_RETURN();
 
         if (!fallback)
         {
-            ::Microsoft::WRL::ComPtr<IDWriteFactory2> factory2;
-            RETURN_IF_FAILED(_factory.As(&factory2));
-            factory2->GetSystemFontFallback(&fallback);
+            fallback = _fontRenderData->SystemFontFallback();
         }
 
-        // Walk through and analyze the entire string
-        while (textLength > 0)
+        ::Microsoft::WRL::ComPtr<IDWriteFontFallback1> fallback1;
+        ::Microsoft::WRL::ComPtr<IDWriteTextFormat3> format3;
+
+        // If the OS supports IDWriteFontFallback1 and IDWriteTextFormat3, we can use the
+        // newer MapCharacters to apply axes of variation to the font
+        if (!FAILED(_formatInUse->QueryInterface(IID_PPV_ARGS(&format3))) && !FAILED(fallback->QueryInterface(IID_PPV_ARGS(&fallback1))))
         {
-            UINT32 mappedLength = 0;
-            ::Microsoft::WRL::ComPtr<IDWriteFont> mappedFont;
-            FLOAT scale = 0.0f;
+            const auto axesVector = _fontRenderData->GetAxisVector(weight, stretch, style, format3.Get());
+            // Walk through and analyze the entire string
+            while (textLength > 0)
+            {
+                UINT32 mappedLength = 0;
+                ::Microsoft::WRL::ComPtr<IDWriteFontFace5> mappedFont;
+                auto scale = 0.0f;
 
-            fallback->MapCharacters(source,
-                                    textPosition,
-                                    textLength,
-                                    collection.Get(),
-                                    familyName.data(),
-                                    weight,
-                                    style,
-                                    stretch,
-                                    &mappedLength,
-                                    &mappedFont,
-                                    &scale);
+                fallback1->MapCharacters(source,
+                                         textPosition,
+                                         textLength,
+                                         collection.Get(),
+                                         familyName.data(),
+                                         axesVector.data(),
+                                         gsl::narrow<uint32_t>(axesVector.size()),
+                                         &mappedLength,
+                                         &scale,
+                                         &mappedFont);
 
-            RETURN_IF_FAILED(_SetMappedFont(textPosition, mappedLength, mappedFont.Get(), scale));
+                RETURN_IF_FAILED(_SetMappedFontFace(textPosition, mappedLength, mappedFont, scale));
 
-            textPosition += mappedLength;
-            textLength -= mappedLength;
+                textPosition += mappedLength;
+                textLength -= mappedLength;
+            }
+        }
+        else
+        {
+            // The chunk of code below is very similar to the one above, unfortunately this needs
+            // to stay for Win7 compatibility reasons. It is also not possible to combine the two
+            // because they call different versions of MapCharacters
+
+            // Walk through and analyze the entire string
+            while (textLength > 0)
+            {
+                UINT32 mappedLength = 0;
+                ::Microsoft::WRL::ComPtr<IDWriteFont> mappedFont;
+                auto scale = 0.0f;
+
+                fallback->MapCharacters(source,
+                                        textPosition,
+                                        textLength,
+                                        collection.Get(),
+                                        familyName.data(),
+                                        weight,
+                                        style,
+                                        stretch,
+                                        &mappedLength,
+                                        &mappedFont,
+                                        &scale);
+
+                RETURN_LAST_ERROR_IF(!mappedFont);
+                ::Microsoft::WRL::ComPtr<IDWriteFontFace> face;
+                RETURN_IF_FAILED(mappedFont->CreateFontFace(&face));
+                RETURN_IF_FAILED(_SetMappedFontFace(textPosition, mappedLength, face, scale));
+
+                textPosition += mappedLength;
+                textLength -= mappedLength;
+            }
         }
     }
     CATCH_RETURN();
@@ -1306,14 +1357,14 @@ CATCH_RETURN();
 // Arguments:
 // - textPosition - the index to start the substring operation
 // - textLength - the length of the substring operation
-// - font - the font that applies to the substring range
+// - fontFace - the fontFace that applies to the substring range
 // - scale - the scale of the font to apply
 // Return Value:
 // - S_OK or appropriate STL/GSL failure code.
-[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::_SetMappedFont(UINT32 textPosition,
-                                                                         UINT32 textLength,
-                                                                         _In_ IDWriteFont* const font,
-                                                                         FLOAT const scale)
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::_SetMappedFontFace(UINT32 textPosition,
+                                                                             UINT32 textLength,
+                                                                             const ::Microsoft::WRL::ComPtr<IDWriteFontFace>& fontFace,
+                                                                             FLOAT const scale)
 {
     try
     {
@@ -1323,14 +1374,9 @@ CATCH_RETURN();
         {
             auto& run = _FetchNextRun(textLength);
 
-            if (font != nullptr)
+            if (fontFace != nullptr)
             {
-                // Get font face from font metadata
-                ::Microsoft::WRL::ComPtr<IDWriteFontFace> face;
-                RETURN_IF_FAILED(font->CreateFontFace(&face));
-
-                // QI for Face5 interface from base face interface, store into run
-                RETURN_IF_FAILED(face.As(&run.fontFace));
+                RETURN_IF_FAILED(fontFace.As(&run.fontFace));
             }
             else
             {
@@ -1392,7 +1438,7 @@ CATCH_RETURN();
 // - textLength - the length of the substring operation
 // Result:
 // - S_OK, STL/GSL errors, or an E_ABORT from mathematical failures.
-[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::_AnalyzeBoxDrawing(gsl::not_null<IDWriteTextAnalysisSource*> const source,
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::_AnalyzeBoxDrawing(const gsl::not_null<IDWriteTextAnalysisSource*> source,
                                                                              UINT32 textPosition,
                                                                              UINT32 textLength)
 try
@@ -1467,14 +1513,14 @@ try
     {
         auto& run = _FetchNextRun(textLength);
 
-        if (run.fontFace == _font)
+        if (run.fontFace == _fontRenderData->DefaultFontFace())
         {
-            run.drawingEffect = _boxDrawingEffect;
+            run.drawingEffect = _fontRenderData->DefaultBoxDrawingEffect();
         }
         else
         {
             ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> eff;
-            RETURN_IF_FAILED(s_CalculateBoxEffect(_formatInUse, _width, run.fontFace.Get(), run.fontScale, &eff));
+            RETURN_IF_FAILED(DxFontRenderData::s_CalculateBoxEffect(_formatInUse, _width, run.fontFace.Get(), run.fontScale, &eff));
 
             // store data in the run
             run.drawingEffect = std::move(eff);
@@ -1484,247 +1530,6 @@ try
     return S_OK;
 }
 CATCH_RETURN();
-
-// Routine Description:
-// - Calculates the box drawing scale/translate matrix values to fit a box glyph into the cell as perfectly as possible.
-// Arguments:
-// - format - Text format used to determine line spacing (height including ascent & descent) as calculated from the base font.
-// - widthPixels - The pixel width of the available cell.
-// - face - The font face that is currently being used, may differ from the base font from the layout.
-// - fontScale -  if the given font face is going to be scaled versus the format, we need to know so we can compensate for that. pass 1.0f for no scaling.
-// - effect - Receives the effect to apply to box drawing characters. If no effect is received, special treatment isn't required.
-// Return Value:
-// - S_OK, GSL/WIL errors, DirectWrite errors, or math errors.
-[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::s_CalculateBoxEffect(IDWriteTextFormat* format, size_t widthPixels, IDWriteFontFace1* face, float fontScale, IBoxDrawingEffect** effect) noexcept
-try
-{
-    // Check for bad in parameters.
-    RETURN_HR_IF(E_INVALIDARG, !format);
-    RETURN_HR_IF(E_INVALIDARG, !face);
-
-    // Check the out parameter and fill it up with null.
-    RETURN_HR_IF(E_INVALIDARG, !effect);
-    *effect = nullptr;
-
-    // The format is based around the main font that was specified by the user.
-    // We need to know its size as well as the final spacing that was calculated around
-    // it when it was first selected to get an idea of how large the bounding box is.
-    const auto fontSize = format->GetFontSize();
-
-    DWRITE_LINE_SPACING_METHOD spacingMethod;
-    float lineSpacing; // total height of the cells
-    float baseline; // vertical position counted down from the top where the characters "sit"
-    RETURN_IF_FAILED(format->GetLineSpacing(&spacingMethod, &lineSpacing, &baseline));
-
-    const float ascentPixels = baseline;
-    const float descentPixels = lineSpacing - baseline;
-
-    // We need this for the designUnitsPerEm which will be required to move back and forth between
-    // Design Units and Pixels. I'll elaborate below.
-    DWRITE_FONT_METRICS1 fontMetrics;
-    face->GetMetrics(&fontMetrics);
-
-    // If we had font fallback occur, the size of the font given to us (IDWriteFontFace1) can be different
-    // than the font size used for the original format (IDWriteTextFormat).
-    const auto scaledFontSize = fontScale * fontSize;
-
-    // This is Unicode FULL BLOCK U+2588.
-    // We presume that FULL BLOCK should be filling its entire cell in all directions so it should provide a good basis
-    // in knowing exactly where to touch every single edge.
-    // We're also presuming that the other box/line drawing glyphs were authored in this font to perfectly inscribe
-    // inside of FULL BLOCK, with the same left/top/right/bottom bearings so they would look great when drawn adjacent.
-    const UINT32 blockCodepoint = L'\x2588';
-
-    // Get the index of the block out of the font.
-    UINT16 glyphIndex;
-    RETURN_IF_FAILED(face->GetGlyphIndicesW(&blockCodepoint, 1, &glyphIndex));
-
-    // If it was 0, it wasn't found in the font. We're going to try again with
-    // Unicode BOX DRAWINGS LIGHT VERTICAL AND HORIZONTAL U+253C which should be touching
-    // all the edges of the possible rectangle, much like a full block should.
-    if (glyphIndex == 0)
-    {
-        const UINT32 alternateCp = L'\x253C';
-        RETURN_IF_FAILED(face->GetGlyphIndicesW(&alternateCp, 1, &glyphIndex));
-    }
-
-    // If we still didn't find the glyph index, we haven't implemented any further logic to figure out the box dimensions.
-    // So we're just going to leave successfully as is and apply no scaling factor. It might look not-right, but it won't
-    // stop the rendering pipeline.
-    RETURN_HR_IF(S_FALSE, glyphIndex == 0);
-
-    // Get the metrics of the given glyph, which we're going to treat as the outline box in which all line/block drawing
-    // glyphs will be inscribed within, perfectly touching each edge as to align when two cells meet.
-    DWRITE_GLYPH_METRICS boxMetrics = { 0 };
-    RETURN_IF_FAILED(face->GetDesignGlyphMetrics(&glyphIndex, 1, &boxMetrics));
-
-    // NOTE: All metrics we receive from DWRITE are going to be in "design units" which are a somewhat agnostic
-    //       way of describing proportions.
-    //       Converting back and forth between real pixels and design units is possible using
-    //       any font's specific fontSize and the designUnitsPerEm FONT_METRIC value.
-    //
-    // Here's what to know about the boxMetrics:
-    //
-    //
-    //
-    //   topLeft --> +--------------------------------+    ---
-    //               |         ^                      |     |
-    //               |         |  topSide             |     |
-    //               |         |  Bearing             |     |
-    //               |         v                      |     |
-    //               |      +-----------------+       |     |
-    //               |      |                 |       |     |
-    //               |      |                 |       |     | a
-    //               |      |                 |       |     | d
-    //               |      |                 |       |     | v
-    //               +<---->+                 |       |     | a
-    //               |      |                 |       |     | n
-    //               | left |                 |       |     | c
-    //               | Side |                 |       |     | e
-    //               | Bea- |                 |       |     | H
-    //               | ring |                 | right |     | e
-    //  vertical     |      |                 | Side  |     | i
-    //  OriginY -->  x      |                 | Bea-  |     | g
-    //               |      |                 | ring  |     | h
-    //               |      |                 |       |     | t
-    //               |      |                 +<----->+     |
-    //               |      +-----------------+       |     |
-    //               |                     ^          |     |
-    //               |       bottomSide    |          |     |
-    //               |          Bearing    |          |     |
-    //               |                     v          |     |
-    //               +--------------------------------+    ---
-    //
-    //
-    //               |                                |
-    //               +--------------------------------+
-    //               |         advanceWidth           |
-    //
-    //
-    // NOTE: The bearings can be negative, in which case it is specifying that the glyphs overhang the box
-    // as defined by the advanceHeight/width.
-    // See also: https://docs.microsoft.com/en-us/windows/win32/api/dwrite/ns-dwrite-dwrite_glyph_metrics
-
-    // The scale is a multiplier and the translation is addition. So *1 and +0 will mean nothing happens.
-    const float defaultBoxVerticalScaleFactor = 1.0f;
-    float boxVerticalScaleFactor = defaultBoxVerticalScaleFactor;
-    const float defaultBoxVerticalTranslation = 0.0f;
-    float boxVerticalTranslation = defaultBoxVerticalTranslation;
-    {
-        // First, find the dimensions of the glyph representing our fully filled box.
-
-        // Ascent is how far up from the baseline we'll draw.
-        // verticalOriginY is the measure from the topLeft corner of the bounding box down to where
-        // the glyph's version of the baseline is.
-        // topSideBearing is how much "gap space" is left between that topLeft and where the glyph
-        // starts drawing. Subtract the gap space to find how far is drawn upward from baseline.
-        const auto boxAscentDesignUnits = boxMetrics.verticalOriginY - boxMetrics.topSideBearing;
-
-        // Descent is how far down from the baseline we'll draw.
-        // advanceHeight is the total height of the drawn bounding box.
-        // verticalOriginY is how much was given to the ascent, so subtract that out.
-        // What remains is then the descent value. Remove the
-        // bottomSideBearing as the "gap space" on the bottom to find how far is drawn downward from baseline.
-        const auto boxDescentDesignUnits = boxMetrics.advanceHeight - boxMetrics.verticalOriginY - boxMetrics.bottomSideBearing;
-
-        // The height, then, of the entire box is just the sum of the ascent above the baseline and the descent below.
-        const auto boxHeightDesignUnits = boxAscentDesignUnits + boxDescentDesignUnits;
-
-        // Second, find the dimensions of the cell we're going to attempt to fit within.
-        // We know about the exact ascent/descent units in pixels as calculated when we chose a font and
-        // adjusted the ascent/descent for a nice perfect baseline and integer total height.
-        // All we need to do is adapt it into Design Units so it meshes nicely with the Design Units above.
-        // Use the formula: Pixels * Design Units Per Em / Font Size = Design Units
-        const auto cellAscentDesignUnits = ascentPixels * fontMetrics.designUnitsPerEm / scaledFontSize;
-        const auto cellDescentDesignUnits = descentPixels * fontMetrics.designUnitsPerEm / scaledFontSize;
-        const auto cellHeightDesignUnits = cellAscentDesignUnits + cellDescentDesignUnits;
-
-        // OK, now do a few checks. If the drawn box touches the top and bottom of the cell
-        // and the box is overall tall enough, then we'll not bother adjusting.
-        // We will presume the font author has set things as they wish them to be.
-        const auto boxTouchesCellTop = boxAscentDesignUnits >= cellAscentDesignUnits;
-        const auto boxTouchesCellBottom = boxDescentDesignUnits >= cellDescentDesignUnits;
-        const auto boxIsTallEnoughForCell = boxHeightDesignUnits >= cellHeightDesignUnits;
-
-        // If not...
-        if (!(boxTouchesCellTop && boxTouchesCellBottom && boxIsTallEnoughForCell))
-        {
-            // Find a scaling factor that will make the total height drawn of this box
-            // perfectly fit the same number of design units as the cell.
-            // Since scale factor is a multiplier, it doesn't matter that this is design units.
-            // The fraction between the two heights in pixels should be exactly the same
-            // (which is what will matter when we go to actually render it... the pixels that is.)
-            // Don't scale below 1.0. If it'd shrink, just center it at the prescribed scale.
-            boxVerticalScaleFactor = std::max(cellHeightDesignUnits / boxHeightDesignUnits, 1.0f);
-
-            // The box as scaled might be hanging over the top or bottom of the cell (or both).
-            // We find out the amount of overhang/underhang on both the top and the bottom.
-            const auto extraAscent = boxAscentDesignUnits * boxVerticalScaleFactor - cellAscentDesignUnits;
-            const auto extraDescent = boxDescentDesignUnits * boxVerticalScaleFactor - cellDescentDesignUnits;
-
-            // This took a bit of time and effort and it's difficult to put into words, but here goes.
-            // We want the average of the two magnitudes to find out how much to "take" from one and "give"
-            // to the other such that both are equal. We presume the glyphs are designed to be drawn
-            // centered in their box vertically to look good.
-            // The ordering around subtraction is required to ensure that the direction is correct with a negative
-            // translation moving up (taking excess descent and adding to ascent) and positive is the opposite.
-            const auto boxVerticalTranslationDesignUnits = (extraAscent - extraDescent) / 2;
-
-            // The translation is just a raw movement of pixels up or down. Since we were working in Design Units,
-            // we need to run the opposite algorithm shown above to go from Design Units to Pixels.
-            boxVerticalTranslation = boxVerticalTranslationDesignUnits * scaledFontSize / fontMetrics.designUnitsPerEm;
-        }
-    }
-
-    // The horizontal adjustments follow the exact same logic as the vertical ones.
-    const float defaultBoxHorizontalScaleFactor = 1.0f;
-    float boxHorizontalScaleFactor = defaultBoxHorizontalScaleFactor;
-    const float defaultBoxHorizontalTranslation = 0.0f;
-    float boxHorizontalTranslation = defaultBoxHorizontalTranslation;
-    {
-        // This is the only difference. We don't have a horizontalOriginX from the metrics.
-        // However, https://docs.microsoft.com/en-us/windows/win32/api/dwrite/ns-dwrite-dwrite_glyph_metrics says
-        // the X coordinate is specified by half the advanceWidth to the right of the horizontalOrigin.
-        // So we'll use that as the "center" and apply it the role that verticalOriginY had above.
-
-        const auto boxCenterDesignUnits = boxMetrics.advanceWidth / 2;
-        const auto boxLeftDesignUnits = boxCenterDesignUnits - boxMetrics.leftSideBearing;
-        const auto boxRightDesignUnits = boxMetrics.advanceWidth - boxMetrics.rightSideBearing - boxCenterDesignUnits;
-        const auto boxWidthDesignUnits = boxLeftDesignUnits + boxRightDesignUnits;
-
-        const auto cellWidthDesignUnits = widthPixels * fontMetrics.designUnitsPerEm / scaledFontSize;
-        const auto cellLeftDesignUnits = cellWidthDesignUnits / 2;
-        const auto cellRightDesignUnits = cellLeftDesignUnits;
-
-        const auto boxTouchesCellLeft = boxLeftDesignUnits >= cellLeftDesignUnits;
-        const auto boxTouchesCellRight = boxRightDesignUnits >= cellRightDesignUnits;
-        const auto boxIsWideEnoughForCell = boxWidthDesignUnits >= cellWidthDesignUnits;
-
-        if (!(boxTouchesCellLeft && boxTouchesCellRight && boxIsWideEnoughForCell))
-        {
-            boxHorizontalScaleFactor = std::max(cellWidthDesignUnits / boxWidthDesignUnits, 1.0f);
-            const auto extraLeft = boxLeftDesignUnits * boxHorizontalScaleFactor - cellLeftDesignUnits;
-            const auto extraRight = boxRightDesignUnits * boxHorizontalScaleFactor - cellRightDesignUnits;
-
-            const auto boxHorizontalTranslationDesignUnits = (extraLeft - extraRight) / 2;
-
-            boxHorizontalTranslation = boxHorizontalTranslationDesignUnits * scaledFontSize / fontMetrics.designUnitsPerEm;
-        }
-    }
-
-    // If we set anything, make a drawing effect. Otherwise, there isn't one.
-    if (defaultBoxVerticalScaleFactor != boxVerticalScaleFactor ||
-        defaultBoxVerticalTranslation != boxVerticalTranslation ||
-        defaultBoxHorizontalScaleFactor != boxHorizontalScaleFactor ||
-        defaultBoxHorizontalTranslation != boxHorizontalTranslation)
-    {
-        // OK, make the object that will represent our effect, stuff the metrics into it, and return it.
-        RETURN_IF_FAILED(WRL::MakeAndInitialize<BoxDrawingEffect>(effect, boxVerticalScaleFactor, boxVerticalTranslation, boxHorizontalScaleFactor, boxHorizontalTranslation));
-    }
-
-    return S_OK;
-}
-CATCH_RETURN()
 
 #pragma endregion
 
@@ -1743,14 +1548,14 @@ CATCH_RETURN()
     const auto originalRunIndex = _runIndex;
 
     auto& run = _runs.at(originalRunIndex);
-    UINT32 runTextLength = run.textLength;
+    auto runTextLength = run.textLength;
 
     // Split the tail if needed (the length remaining is less than the
     // current run's size).
     if (textLength < runTextLength)
     {
         runTextLength = textLength; // Limit to what's actually left.
-        const UINT32 runTextStart = run.textStart;
+        const auto runTextStart = run.textStart;
 
         _SplitCurrentRun(runTextStart + runTextLength);
     }
@@ -1773,7 +1578,7 @@ CATCH_RETURN()
 // Arguments:
 // - <none>
 // Return Value:
-// - Mutable reference ot the current run.
+// - Mutable reference of the current run.
 [[nodiscard]] CustomTextLayout::LinkedRun& CustomTextLayout::_GetCurrentRun()
 {
     return _runs.at(_runIndex);
@@ -1807,13 +1612,13 @@ void CustomTextLayout::_SetCurrentRun(const UINT32 textPosition)
 // - <none> - Updates internal state, the back half will be selected after running
 void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
 {
-    const UINT32 runTextStart = _runs.at(_runIndex).textStart;
+    const auto runTextStart = _runs.at(_runIndex).textStart;
 
     if (splitPosition <= runTextStart)
         return; // no change
 
     // Grow runs by one.
-    const size_t totalRuns = _runs.size();
+    const auto totalRuns = _runs.size();
     try
     {
         _runs.resize(totalRuns + 1);
@@ -1824,12 +1629,12 @@ void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
     }
 
     // Copy the old run to the end.
-    LinkedRun& frontHalf = _runs.at(_runIndex);
-    LinkedRun& backHalf = _runs.back();
+    auto& frontHalf = _runs.at(_runIndex);
+    auto& backHalf = _runs.back();
     backHalf = frontHalf;
 
     // Adjust runs' text positions and lengths.
-    const UINT32 splitPoint = splitPosition - runTextStart;
+    const auto splitPoint = splitPosition - runTextStart;
     backHalf.textStart += splitPoint;
     backHalf.textLength -= splitPoint;
     frontHalf.textLength = splitPoint;

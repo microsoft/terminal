@@ -6,9 +6,9 @@ Adding a setting to Windows Terminal is fairly straightforward. This guide serve
 
 The Terminal Settings Model (`Microsoft.Terminal.Settings.Model`) is responsible for (de)serializing and exposing settings.
 
-### `GETSET_SETTING` macro
+### `INHERITABLE_SETTING` macro
 
-The `GETSET_SETTING` macro can be used to implement inheritance for your new setting and store the setting in the settings model. It takes three parameters:
+The `INHERITABLE_SETTING` macro can be used to implement inheritance for your new setting and store the setting in the settings model. It takes three parameters:
 - `type`: the type that the setting will be stored as
 - `name`: the name of the variable for storage
 - `defaultValue`: the value to use if the user does not define the setting anywhere
@@ -20,7 +20,7 @@ This tutorial will add `CloseOnExitMode CloseOnExit` as a profile setting.
 1. In `Profile.h`, declare/define the setting:
 
 ```c++
-GETSET_SETTING(CloseOnExitMode, CloseOnExit, CloseOnExitMode::Graceful)
+INHERITABLE_SETTING(CloseOnExitMode, CloseOnExit, CloseOnExitMode::Graceful)
 ```
 
 2. In `Profile.idl`, expose the setting via WinRT:
@@ -141,7 +141,7 @@ struct OpenSettingsArgs : public OpenSettingsArgsT<OpenSettingsArgs>
     OpenSettingsArgs() = default;
 
     // adds a getter/setter for your argument, and defines the json key
-    GETSET_PROPERTY(SettingsTarget, Target, SettingsTarget::SettingsFile);
+    WINRT_PROPERTY(SettingsTarget, Target, SettingsTarget::SettingsFile);
     static constexpr std::string_view TargetKey{ "target" };
 
     public:
@@ -213,9 +213,9 @@ Terminal-level settings are settings that affect a shell session. Generally, the
 - Declare the setting in `IControlSettings.idl` or `ICoreSettings.idl` (whichever is relevant to your setting). If your setting is an enum setting, declare the enum here instead of in the `TerminalSettingsModel` project.
 - In `TerminalSettings.h`, declare/define the setting...
 ```c++
-// The GETSET_PROPERTY macro declares/defines a getter setter for the setting.
-// Like GETSET_SETTING, it takes in a type, name, and defaultValue.
-GETSET_PROPERTY(bool, UseAcrylic, false);
+// The WINRT_PROPERTY macro declares/defines a getter setter for the setting.
+// Like INHERITABLE_SETTING, it takes in a type, name, and defaultValue.
+WINRT_PROPERTY(bool, UseAcrylic, false);
 ```
 - In `TerminalSettings.cpp`...
   - update `_ApplyProfileSettings` for profile settings

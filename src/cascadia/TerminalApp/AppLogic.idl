@@ -10,7 +10,29 @@ namespace TerminalApp
         Int64 Y;
     };
 
-    [default_interface] runtimeclass AppLogic : IDirectKeyListener, IDialogPresenter
+    [default_interface] runtimeclass FindTargetWindowResult
+    {
+        Int32 WindowId { get; };
+        String WindowName { get; };
+    };
+
+    delegate void SystemMenuItemHandler();
+
+    enum SystemMenuChangeAction
+    {
+        Add = 0,
+        Remove = 1
+    };
+
+    [default_interface] runtimeclass SystemMenuChangeArgs {
+        String Name { get; };
+        SystemMenuChangeAction Action { get; };
+        SystemMenuItemHandler Handler { get; };
+    };
+
+    // See IDialogPresenter and TerminalPage's DialogPresenter for more
+    // information.
+    [default_interface] runtimeclass AppLogic : IDirectKeyListener, IDialogPresenter, Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         AppLogic();
 
@@ -25,21 +47,39 @@ namespace TerminalApp
         void RunAsUwp();
         Boolean IsElevated();
 
+        Boolean HasCommandlineArguments();
+        Boolean HasSettingsStartupActions();
         Int32 SetStartupCommandline(String[] commands);
         Int32 ExecuteCommandline(String[] commands, String cwd);
         String ParseCommandlineMessage { get; };
         Boolean ShouldExitEarly { get; };
 
+        void Quit();
+
         void LoadSettings();
         Windows.UI.Xaml.UIElement GetRoot();
+
+        void SetInboundListener();
 
         String Title { get; };
 
         Boolean FocusMode { get; };
         Boolean Fullscreen { get; };
+        void Maximized(Boolean newMaximized); 
         Boolean AlwaysOnTop { get; };
+        Boolean AutoHideWindow { get; };
+
+        void IdentifyWindow();
+        String WindowName;
+        UInt64 WindowId;
+        void SetPersistedLayoutIdx(UInt32 idx);
+        void SetNumberOfOpenWindows(UInt64 num);
+        void RenameFailed();
+        void RequestExitFullscreen();
+        Boolean IsQuakeWindow();
 
         Windows.Foundation.Size GetLaunchDimensions(UInt32 dpi);
+        Boolean CenterOnLaunch { get; };
 
         InitialPosition GetInitialPosition(Int64 defaultInitialX, Int64 defaultInitialY);
         Windows.UI.Xaml.ElementTheme GetRequestedTheme();
@@ -48,25 +88,53 @@ namespace TerminalApp
         Boolean GetInitialAlwaysOnTop();
         Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
         void TitlebarClicked();
-        void WindowCloseButtonClicked();
+        void CloseWindow(Microsoft.Terminal.Settings.Model.LaunchPosition position);
+        void WindowVisibilityChanged(Boolean showOrHide);
 
-        UInt64 GetLastActiveControlTaskbarState();
-        UInt64 GetLastActiveControlTaskbarProgress();
+        TaskbarState TaskbarState{ get; };
+        Windows.UI.Xaml.Media.Brush TitlebarBrush { get; };
+        void WindowActivated(Boolean activated);
 
-        Int32 FindTargetWindow(String[] args);
+        Boolean ShouldUsePersistedLayout();
+        Boolean ShouldImmediatelyHandoffToElevated();
+        void HandoffToElevated();
+        String GetWindowLayoutJson(Microsoft.Terminal.Settings.Model.LaunchPosition position);
+        void SaveWindowLayoutJsons(Windows.Foundation.Collections.IVector<String> layouts);
+
+        Boolean GetMinimizeToNotificationArea();
+        Boolean GetAlwaysShowNotificationIcon();
+        Boolean GetShowTitleInTitlebar();
+
+        Microsoft.Terminal.Settings.Model.Theme Theme { get; };
+
+        FindTargetWindowResult FindTargetWindow(String[] args);
+
+        Windows.Foundation.Collections.IMapView<Microsoft.Terminal.Control.KeyChord, Microsoft.Terminal.Settings.Model.Command> GlobalHotkeys();
 
         // See IDialogPresenter and TerminalPage's DialogPresenter for more
         // information.
         Windows.Foundation.IAsyncOperation<Windows.UI.Xaml.Controls.ContentDialogResult> ShowDialog(Windows.UI.Xaml.Controls.ContentDialog dialog);
+        void DismissDialog();
 
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
-        event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.ElementTheme> RequestedThemeChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.Theme> RequestedThemeChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusModeChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> FullscreenChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> ChangeMaximizeRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> AlwaysOnTopChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> RaiseVisualBell;
         event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
+        event Windows.Foundation.TypedEventHandler<Object, Object> IdentifyWindowsRequested;
+        event Windows.Foundation.TypedEventHandler<Object, RenameWindowRequestedArgs> RenameWindowRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> SettingsChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> IsQuakeWindowChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> SummonWindowRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> CloseRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> OpenSystemMenu;
+        event Windows.Foundation.TypedEventHandler<Object, Object> QuitRequested;
+        event Windows.Foundation.TypedEventHandler<Object, TerminalApp.SystemMenuChangeArgs> SystemMenuChangeRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Control.ShowWindowArgs> ShowWindowChanged;
     }
 }

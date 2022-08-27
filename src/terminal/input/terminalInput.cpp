@@ -10,16 +10,10 @@
 #define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
 #include <wil/Common.h>
 
-#ifdef BUILD_ONECORE_INTERACTIVITY
-#include "../../interactivity/inc/VtApiRedirection.hpp"
-#endif
-
 #include "../../inc/unicode.hpp"
 #include "../../types/inc/Utf16Parser.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
-
-DWORD const dwAltGrFlags = LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED;
 
 TerminalInput::TerminalInput(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn) :
     _leadingSurrogate{}
@@ -252,25 +246,32 @@ const wchar_t* const CTRL_QUESTIONMARK_SEQUENCE = L"\x7F";
 const wchar_t* const CTRL_ALT_SLASH_SEQUENCE = L"\x1b\x1f";
 const wchar_t* const CTRL_ALT_QUESTIONMARK_SEQUENCE = L"\x1b\x7F";
 
-void TerminalInput::ChangeAnsiMode(const bool ansiMode) noexcept
+void TerminalInput::SetInputMode(const Mode mode, const bool enabled) noexcept
 {
-    _ansiMode = ansiMode;
+    // If we're changing a tracking mode, we always clear other tracking modes first.
+    // We also clear out the last saved mouse position & button.
+    if (mode == Mode::DefaultMouseTracking || mode == Mode::ButtonEventMouseTracking || mode == Mode::AnyEventMouseTracking)
+    {
+        _inputMode.reset(Mode::DefaultMouseTracking, Mode::ButtonEventMouseTracking, Mode::AnyEventMouseTracking);
+        _mouseInputState.lastPos = { -1, -1 };
+        _mouseInputState.lastButton = 0;
+    }
+
+    // But if we're changing the encoding, we only clear out the other encoding modes
+    // when enabling a new encoding - not when disabling.
+    if ((mode == Mode::Utf8MouseEncoding || mode == Mode::SgrMouseEncoding) && enabled)
+    {
+        _inputMode.reset(Mode::Utf8MouseEncoding, Mode::SgrMouseEncoding);
+    }
+
+    _inputMode.set(mode, enabled);
 }
 
-void TerminalInput::ChangeKeypadMode(const bool applicationMode) noexcept
+bool TerminalInput::GetInputMode(const Mode mode) const noexcept
 {
-    _keypadApplicationMode = applicationMode;
+    return _inputMode.test(mode);
 }
 
-void TerminalInput::ChangeCursorKeysMode(const bool applicationMode) noexcept
-{
-    _cursorApplicationMode = applicationMode;
-}
-
-void TerminalInput::ChangeWin32InputMode(const bool win32InputMode) noexcept
-{
-    _win32InputMode = win32InputMode;
-}
 void TerminalInput::ForceDisableWin32InputMode(const bool win32InputMode) noexcept
 {
     _forceDisableWin32InputMode = win32InputMode;
@@ -339,7 +340,7 @@ static std::optional<const TermKeyMap> _searchKeyMapping(const KeyEvent& keyEven
             // However, if there are modifiers set, then we only want to match
             //      if the key's modifiers are the same as the modifiers in the
             //      mapping.
-            bool modifiersMatch = WI_AreAllFlagsClear(map.modifiers, MOD_PRESSED);
+            auto modifiersMatch = WI_AreAllFlagsClear(map.modifiers, MOD_PRESSED);
             if (!modifiersMatch)
             {
                 // The modifier mapping expects certain modifier keys to be
@@ -372,7 +373,7 @@ typedef std::function<void(const std::wstring_view)> InputSender;
 // - True if there was a match to a key translation, and we successfully modified and sent it to the input
 static bool _searchWithModifier(const KeyEvent& keyEvent, InputSender sender)
 {
-    bool success = false;
+    auto success = false;
 
     const auto match = _searchKeyMapping(keyEvent,
                                          { s_modifierKeyMapping.data(), s_modifierKeyMapping.size() });
@@ -382,9 +383,9 @@ static bool _searchWithModifier(const KeyEvent& keyEvent, InputSender sender)
         if (!v.sequence.empty())
         {
             std::wstring modified{ v.sequence }; // Make a copy so we can modify it.
-            const bool shift = keyEvent.IsShiftPressed();
-            const bool alt = keyEvent.IsAltPressed();
-            const bool ctrl = keyEvent.IsCtrlPressed();
+            const auto shift = keyEvent.IsShiftPressed();
+            const auto alt = keyEvent.IsAltPressed();
+            const auto ctrl = keyEvent.IsCtrlPressed();
             modified.at(modified.size() - 2) = L'1' + (shift ? 1 : 0) + (alt ? 2 : 0) + (ctrl ? 4 : 0);
             sender(modified);
             success = true;
@@ -435,7 +436,7 @@ static bool _searchWithModifier(const KeyEvent& keyEvent, InputSender sender)
 
             const auto ctrl = keyEvent.IsCtrlPressed();
             const auto alt = keyEvent.IsAltPressed();
-            const bool shift = keyEvent.IsShiftPressed();
+            const auto shift = keyEvent.IsShiftPressed();
 
             // From the KeyEvent we're translating, synthesize the equivalent VkKeyScan result
             const auto vkey = keyEvent.GetVirtualKeyCode();
@@ -448,8 +449,8 @@ static bool _searchWithModifier(const KeyEvent& keyEvent, InputSender sender)
             // bits also match. This handles the hypothetical case we get a
             // keyscan back that's ctrl+alt+some_random_VK, and some_random_VK
             // has bits that are a superset of the bits set for question mark.
-            const bool wasQuestionMark = vkey == questionMarkVkey && WI_AreAllFlagsSet(keyScanFromEvent, questionMarkKeyScan);
-            const bool wasSlash = vkey == slashVkey && WI_AreAllFlagsSet(keyScanFromEvent, slashKeyScan);
+            const auto wasQuestionMark = vkey == questionMarkVkey && WI_AreAllFlagsSet(keyScanFromEvent, questionMarkKeyScan);
+            const auto wasSlash = vkey == slashVkey && WI_AreAllFlagsSet(keyScanFromEvent, slashKeyScan);
 
             // If the key pressed was exactly the ? key, then try to send the
             // appropriate sequence for a modified '?'. Otherwise, check if this
@@ -521,6 +522,22 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
         return false;
     }
 
+    // GH#11682: If this was a focus event, we can handle this. Steal the
+    // focused state, and return true if we're actually in focus event mode.
+    if (pInEvent->EventType() == InputEventType::FocusEvent)
+    {
+        const auto& focusEvent = *static_cast<const FocusEvent* const>(pInEvent);
+
+        // BODGY
+        // GH#13238 - Filter out focus events that came from the API.
+        if (focusEvent.CameFromApi())
+        {
+            return false;
+        }
+
+        return HandleFocus(focusEvent.GetFocus());
+    }
+
     // On key presses, prepare to translate to VT compatible sequences
     if (pInEvent->EventType() != InputEventType::KeyEvent)
     {
@@ -532,7 +549,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
     // GH#4999 - If we're in win32-input mode, skip straight to doing that.
     // Since this mode handles all types of key events, do nothing else.
     // Only do this if win32-input-mode support isn't manually disabled.
-    if (_win32InputMode && !_forceDisableWin32InputMode)
+    if (_inputMode.test(Mode::Win32) && !_forceDisableWin32InputMode)
     {
         const auto seq = _GenerateWin32KeySequence(keyEvent);
         _SendInputSequence(seq);
@@ -657,7 +674,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
     // Check any other key mappings (like those for the F1-F12 keys).
     // These mappings will kick in no matter which modifiers are pressed and as such
     // must be checked last, or otherwise we'd override more complex key combinations.
-    const auto mapping = _getKeyMapping(keyEvent, _ansiMode, _cursorApplicationMode, _keypadApplicationMode);
+    const auto mapping = _getKeyMapping(keyEvent, _inputMode.test(Mode::Ansi), _inputMode.test(Mode::CursorKey), _inputMode.test(Mode::Keypad));
     if (_translateDefaultMapping(keyEvent, mapping, senderFunc))
     {
         return true;
@@ -671,6 +688,16 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
     }
 
     return false;
+}
+
+bool TerminalInput::HandleFocus(const bool focused) noexcept
+{
+    const auto enabled{ _inputMode.test(Mode::FocusEvent) };
+    if (enabled)
+    {
+        _SendInputSequence(focused ? L"\x1b[I" : L"\x1b[O");
+    }
+    return enabled;
 }
 
 // Routine Description:
@@ -784,7 +811,7 @@ std::wstring TerminalInput::_GenerateWin32KeySequence(const KeyEvent& key)
     //      Kd: the value of bKeyDown - either a '0' or '1'. If omitted, defaults to '0'.
     //      Cs: the value of dwControlKeyState - any number. If omitted, defaults to '0'.
     //      Rc: the value of wRepeatCount - any number. If omitted, defaults to '1'.
-    return fmt::format(L"\x1b[{};{};{};{};{};{}_",
+    return fmt::format(FMT_COMPILE(L"\x1b[{};{};{};{};{};{}_"),
                        key.GetVirtualKeyCode(),
                        key.GetVirtualScanCode(),
                        static_cast<int>(key.GetCharData()),

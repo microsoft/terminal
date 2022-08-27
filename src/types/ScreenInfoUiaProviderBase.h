@@ -48,7 +48,7 @@ namespace Microsoft::Console::Types
         ~ScreenInfoUiaProviderBase() = default;
 
         [[nodiscard]] HRESULT Signal(_In_ EVENTID id);
-        virtual void ChangeViewport(const SMALL_RECT NewWindow) = 0;
+        virtual void ChangeViewport(const til::inclusive_rect& NewWindow) = 0;
 
         // IRawElementProviderSimple methods
         IFACEMETHODIMP get_ProviderOptions(_Out_ ProviderOptions* pOptions) noexcept override;
@@ -93,8 +93,8 @@ namespace Microsoft::Console::Types
 
         // specific endpoint range
         virtual HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                        const COORD start,
-                                        const COORD end,
+                                        const til::point start,
+                                        const til::point end,
                                         const std::wstring_view wordDelimiters,
                                         _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr) = 0;
 
@@ -123,9 +123,9 @@ namespace Microsoft::Console::Types
         // mechanism for multi-threaded code.
         std::unordered_map<EVENTID, bool> _signalFiringMapping{};
 
-        const COORD _getScreenBufferCoords() const noexcept;
+        til::size _getScreenBufferCoords() const noexcept;
         const TextBuffer& _getTextBuffer() const noexcept;
-        const Viewport _getViewport() const noexcept;
+        Viewport _getViewport() const noexcept;
         void _LockConsole() noexcept;
         void _UnlockConsole() noexcept;
     };

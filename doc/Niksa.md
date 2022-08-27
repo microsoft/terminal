@@ -163,7 +163,7 @@ Given that we're using Xaml islands to host a modern UI and stitching a DirectX 
 
 Now, the obvious followup question is _"why can't you have one elevated connection in a tab next to a non-elevated connection?"_ This is where @sba923 should pick up reading (:smile:). I'm probably going to cover some things that you (@robomac) know already.
 
-[2] When you have two windows on the same desktop in the same window station, they can communicate with eachother. I can use `SendKeys` easily through `WScript.Shell` to send keyboard input to any window that the shell can see.
+[2] When you have two windows on the same desktop in the same window station, they can communicate with each other. I can use `SendKeys` easily through `WScript.Shell` to send keyboard input to any window that the shell can see.
 
 Running a process elevated _severs_ that connection. The shell can't see the elevated window. No other program at the same integrity level as the shell can see the elevated window. Even if it has its window handle, it can't really interact with it. This is also why you can't drag/drop from explorer into notepad if notepad is running elevated. Only another elevated process can interact with another elevated window.
 
@@ -189,7 +189,7 @@ I think there might be a bit of a misunderstanding here - there are two differen
 * shell applications, like `cmd.exe`, `powershell`, `zsh`, etc. These are text-only applications that emit streams of characters. They don't care at all about how they're eventually rendered to the user. These are also sometimes referred to as "commandline client" applications.
 * terminal applications, like the Windows Terminal, gnome-terminal, xterm, iterm2, hyper. These are graphical applications that can be used to render the output of commandline clients. 
 
-On Windows, if you just run `cmd.exe` directly, the OS will create an instance of `conhost.exe` as the _terminal_ for `cmd.exe`. The same thing happens for `powershell.exe`, the system will creates a new conhost window for any client that's not already connected to a terminal of some sort. This has lead to an enormous amount of confusion for people thinking that a conhost window is actually a "`cmd` window". `cmd` can't have a window, it's just a commandline application. Its window is always some other terminal.
+On Windows, if you just run `cmd.exe` directly, the OS will create an instance of `conhost.exe` as the _terminal_ for `cmd.exe`. The same thing happens for `powershell.exe`, the system will create a new conhost window for any client that's not already connected to a terminal of some sort. This has lead to an enormous amount of confusion for people thinking that a conhost window is actually a "`cmd` window". `cmd` can't have a window, it's just a commandline application. Its window is always some other terminal.
 
 Any terminal can run any commandline client application. So you can use the Windows Terminal to run whatever shell you want. I use mine for both `cmd` and `powershell`, and also WSL:
 

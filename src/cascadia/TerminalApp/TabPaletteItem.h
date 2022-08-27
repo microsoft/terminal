@@ -5,21 +5,20 @@
 
 #include "PaletteItem.h"
 #include "TabPaletteItem.g.h"
-#include "inc/cppwinrt_utils.h"
 
 namespace winrt::TerminalApp::implementation
 {
     struct TabPaletteItem : TabPaletteItemT<TabPaletteItem, PaletteItem>
     {
         TabPaletteItem() = default;
-        TabPaletteItem(winrt::TerminalApp::TabBase const& tab);
+        TabPaletteItem(const winrt::TerminalApp::TabBase& tab);
 
         winrt::TerminalApp::TabBase Tab() const noexcept
         {
             return _tab.get();
         }
 
-        OBSERVABLE_GETSET_PROPERTY(winrt::TerminalApp::TerminalTabStatus, TabStatus, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(winrt::TerminalApp::TerminalTabStatus, TabStatus, _PropertyChangedHandlers);
 
     private:
         winrt::weak_ref<winrt::TerminalApp::TabBase> _tab;

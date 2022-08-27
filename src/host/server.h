@@ -28,7 +28,7 @@ Revision History:
 #include "../server/WaitQueue.h"
 
 #include "../host/RenderData.hpp"
-#include "../renderer/inc/BlinkingState.hpp"
+#include "../audio/midi/MidiAudio.hpp"
 
 // clang-format off
 // Flags flags
@@ -78,7 +78,6 @@ class CONSOLE_INFORMATION :
 {
 public:
     CONSOLE_INFORMATION();
-    ~CONSOLE_INFORMATION();
     CONSOLE_INFORMATION(const CONSOLE_INFORMATION& c) = delete;
     CONSOLE_INFORMATION& operator=(const CONSOLE_INFORMATION& c) = delete;
 
@@ -104,16 +103,16 @@ public:
 
     ConsoleImeInfo ConsoleIme;
 
-    void LockConsole();
-    bool TryLockConsole();
-    void UnlockConsole();
-    bool IsConsoleLocked() const;
-    ULONG GetCSRecursionCount();
+    static void LockConsole();
+    static void UnlockConsole();
+    static bool IsConsoleLocked();
+    static ULONG GetCSRecursionCount();
 
     Microsoft::Console::VirtualTerminal::VtIo* GetVtIo();
 
     SCREEN_INFORMATION& GetActiveOutputBuffer() override;
     const SCREEN_INFORMATION& GetActiveOutputBuffer() const override;
+    void SetActiveOutputBuffer(SCREEN_INFORMATION& screenBuffer);
     bool HasActiveOutputBuffer() const;
 
     InputBuffer* const GetActiveInputBuffer() const;
@@ -124,18 +123,14 @@ public:
     COOKED_READ_DATA& CookedReadData() noexcept;
     void SetCookedReadData(COOKED_READ_DATA* readData) noexcept;
 
-    COLORREF GetDefaultForeground() const noexcept;
-    COLORREF GetDefaultBackground() const noexcept;
-    std::pair<COLORREF, COLORREF> LookupAttributeColors(const TextAttribute& attr) const noexcept;
-
     void SetTitle(const std::wstring_view newTitle);
-    void SetTitlePrefix(const std::wstring& newTitlePrefix);
-    void SetOriginalTitle(const std::wstring& originalTitle);
-    void SetLinkTitle(const std::wstring& linkTitle);
-    const std::wstring& GetTitle() const noexcept;
-    const std::wstring& GetOriginalTitle() const noexcept;
-    const std::wstring& GetLinkTitle() const noexcept;
-    const std::wstring GetTitleAndPrefix() const;
+    void SetTitlePrefix(const std::wstring_view newTitlePrefix);
+    void SetOriginalTitle(const std::wstring_view originalTitle);
+    void SetLinkTitle(const std::wstring_view linkTitle);
+    const std::wstring_view GetTitle() const noexcept;
+    const std::wstring_view GetOriginalTitle() const noexcept;
+    const std::wstring_view GetLinkTitle() const noexcept;
+    const std::wstring_view GetTitleAndPrefix() const;
 
     [[nodiscard]] static NTSTATUS AllocateConsole(const std::wstring_view title);
     // MSFT:16886775 : get rid of friends
@@ -143,16 +138,18 @@ public:
     friend class SCREEN_INFORMATION;
     friend class CommonState;
     Microsoft::Console::CursorBlinker& GetCursorBlinker() noexcept;
-    Microsoft::Console::Render::BlinkingState& GetBlinkingState() const noexcept;
+
+    MidiAudio& GetMidiAudio();
+    void ShutdownMidiAudio();
 
     CHAR_INFO AsCharInfo(const OutputCellView& cell) const noexcept;
 
     RenderData renderData;
 
 private:
-    CRITICAL_SECTION _csConsoleLock; // serialize input and output using this
     std::wstring _Title;
-    std::wstring _TitlePrefix; // Eg Select, Mark - things that we manually prepend to the title.
+    std::wstring _Prefix; // Eg Select, Mark - things that we manually prepend to the title.
+    std::wstring _TitleAndPrefix;
     std::wstring _OriginalTitle;
     std::wstring _LinkTitle; // Path to .lnk file
     SCREEN_INFORMATION* pCurrentScreenBuffer;
@@ -160,7 +157,7 @@ private:
 
     Microsoft::Console::VirtualTerminal::VtIo _vtIo;
     Microsoft::Console::CursorBlinker _blinker;
-    mutable Microsoft::Console::Render::BlinkingState _blinkingState;
+    std::unique_ptr<MidiAudio> _midiAudio;
 };
 
 #define ConsoleLocked() (ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleLock.OwningThread == NtCurrentTeb()->ClientId.UniqueThread)

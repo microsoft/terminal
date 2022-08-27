@@ -9,7 +9,7 @@
 #include "../TerminalApp/ShortcutActionDispatch.h"
 #include "../TerminalApp/TerminalTab.h"
 #include "../TerminalApp/CommandPalette.h"
-#include "../CppWinrtTailored.h"
+#include "CppWinrtTailored.h"
 
 using namespace Microsoft::Console;
 using namespace TerminalApp;
@@ -82,8 +82,19 @@ namespace TerminalAppLocalTests
         TEST_METHOD(MoveFocusFromZoomedPane);
         TEST_METHOD(CloseZoomedPane);
 
+        TEST_METHOD(SwapPanes);
+
         TEST_METHOD(NextMRUTab);
         TEST_METHOD(VerifyCommandPaletteTabSwitcherOrder);
+
+        TEST_METHOD(TestWindowRenameSuccessful);
+        TEST_METHOD(TestWindowRenameFailure);
+
+        TEST_METHOD(TestPreviewCommitScheme);
+        TEST_METHOD(TestPreviewDismissScheme);
+        TEST_METHOD(TestPreviewSchemeWhilePreviewing);
+
+        TEST_METHOD(TestClampSwitchToTab);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -122,10 +133,6 @@ namespace TerminalAppLocalTests
         // Just creating it is enough to know that everything is working.
         TerminalSettings settings;
         VERIFY_IS_NOT_NULL(settings);
-        auto oldFontSize = settings.FontSize();
-        settings.FontSize(oldFontSize + 5);
-        auto newFontSize = settings.FontSize();
-        VERIFY_ARE_NOT_EQUAL(oldFontSize, newFontSize);
     }
 
     void TabTests::TryCreateConnectionType()
@@ -260,6 +267,15 @@ namespace TerminalAppLocalTests
             page->Create();
             Log::Comment(L"Create()'d the page successfully");
 
+            // Build a NewTab action, to make sure we start with one. The real
+            // Terminal will always get one from AppCommandlineArgs.
+            NewTerminalArgs newTerminalArgs{};
+            NewTabArgs args{ newTerminalArgs };
+            ActionAndArgs newTabAction{ ShortcutAction::NewTab, args };
+            // push the arg onto the front
+            page->_startupActions.Append(newTabAction);
+            Log::Comment(L"Added a single newTab action");
+
             auto app = ::winrt::Windows::UI::Xaml::Application::Current();
 
             winrt::TerminalApp::TerminalPage pp = *page;
@@ -276,9 +292,10 @@ namespace TerminalAppLocalTests
             // In the real app, this isn't a problem, but doesn't happen
             // reliably in the unit tests.
             Log::Comment(L"Ensure we set the first tab as the selected one.");
-            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
-            page->_tabView.SelectedItem(tab->TabViewItem());
-            page->_UpdatedSelectedTab(0);
+            auto tab = page->_tabs.GetAt(0);
+            auto tabImpl = page->_GetTerminalTabImpl(tab);
+            page->_tabView.SelectedItem(tabImpl->TabViewItem());
+            page->_UpdatedSelectedTab(tab);
         });
         VERIFY_SUCCEEDED(result);
     }
@@ -289,7 +306,7 @@ namespace TerminalAppLocalTests
         // TerminalPage and not only create them successfully, but also create a
         // tab using those settings successfully.
 
-        const std::string settingsJson0{ R"(
+        static constexpr std::wstring_view settingsJson0{ LR"(
         {
             "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -306,7 +323,7 @@ namespace TerminalAppLocalTests
             ]
         })" };
 
-        CascadiaSettings settings0{ til::u8u16(settingsJson0) };
+        CascadiaSettings settings0{ settingsJson0, {} };
         VERIFY_IS_NOT_NULL(settings0);
 
         // This is super wacky, but we can't just initialize the
@@ -330,12 +347,12 @@ namespace TerminalAppLocalTests
     {
         // * Create a tab with a profile with GUID 1
         // * Reload the settings so that GUID 1 is no longer in the list of profiles
-        // * Try calling _DuplicateTabViewItem on tab 1
+        // * Try calling _DuplicateFocusedTab on tab 1
         // * No new tab should be created (and more importantly, the app should not crash)
         //
         // Created to test GH#2455
 
-        const std::string settingsJson0{ R"(
+        static constexpr std::wstring_view settingsJson0{ LR"(
         {
             "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -352,7 +369,7 @@ namespace TerminalAppLocalTests
             ]
         })" };
 
-        const std::string settingsJson1{ R"(
+        static constexpr std::wstring_view settingsJson1{ LR"(
         {
             "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -364,10 +381,10 @@ namespace TerminalAppLocalTests
             ]
         })" };
 
-        CascadiaSettings settings0{ til::u8u16(settingsJson0) };
+        CascadiaSettings settings0{ settingsJson0, {} };
         VERIFY_IS_NOT_NULL(settings0);
 
-        CascadiaSettings settings1{ til::u8u16(settingsJson1) };
+        CascadiaSettings settings1{ settingsJson1, {} };
         VERIFY_IS_NOT_NULL(settings1);
 
         const auto guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
@@ -392,7 +409,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"Duplicate the first tab");
         result = RunOnUIThread([&page]() {
-            page->_DuplicateTabViewItem();
+            page->_DuplicateFocusedTab();
             VERIFY_ARE_EQUAL(2u, page->_tabs.Size());
         });
         VERIFY_SUCCEEDED(result);
@@ -407,8 +424,8 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"Duplicate the tab, and don't crash");
         result = RunOnUIThread([&page]() {
-            page->_DuplicateTabViewItem();
-            VERIFY_ARE_EQUAL(2u, page->_tabs.Size(), L"We should gracefully do nothing here - the profile no longer exists.");
+            page->_DuplicateFocusedTab();
+            VERIFY_ARE_EQUAL(3u, page->_tabs.Size(), L"We should successfully duplicate a tab hosting a deleted profile.");
         });
         VERIFY_SUCCEEDED(result);
     }
@@ -422,7 +439,7 @@ namespace TerminalAppLocalTests
         //
         // Created to test GH#2455
 
-        const std::string settingsJson0{ R"(
+        static constexpr std::wstring_view settingsJson0{ LR"(
         {
             "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -439,7 +456,7 @@ namespace TerminalAppLocalTests
             ]
         })" };
 
-        const std::string settingsJson1{ R"(
+        static constexpr std::wstring_view settingsJson1{ LR"(
         {
             "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -451,10 +468,10 @@ namespace TerminalAppLocalTests
             ]
         })" };
 
-        CascadiaSettings settings0{ til::u8u16(settingsJson0) };
+        CascadiaSettings settings0{ settingsJson0, {} };
         VERIFY_IS_NOT_NULL(settings0);
 
-        CascadiaSettings settings1{ til::u8u16(settingsJson1) };
+        CascadiaSettings settings1{ settingsJson1, {} };
         VERIFY_IS_NOT_NULL(settings1);
 
         const auto guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
@@ -486,7 +503,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(NoThrowString().Format(L"Duplicate the first pane"));
         result = RunOnUIThread([&page]() {
-            page->_SplitPane(SplitState::Automatic, SplitType::Duplicate, 0.5f, nullptr);
+            page->_SplitPane(SplitDirection::Automatic, 0.5f, page->_MakePane(nullptr, true, nullptr));
 
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
             auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
@@ -504,13 +521,13 @@ namespace TerminalAppLocalTests
 
         Log::Comment(NoThrowString().Format(L"Duplicate the pane, and don't crash"));
         result = RunOnUIThread([&page]() {
-            page->_SplitPane(SplitState::Automatic, SplitType::Duplicate, 0.5f, nullptr);
+            page->_SplitPane(SplitDirection::Automatic, 0.5f, page->_MakePane(nullptr, true, nullptr));
 
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
             auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
-            VERIFY_ARE_EQUAL(2,
+            VERIFY_ARE_EQUAL(3,
                              tab->GetLeafPaneCount(),
-                             L"We should gracefully do nothing here - the profile no longer exists.");
+                             L"We should successfully duplicate a pane hosting a deleted profile.");
         });
         VERIFY_SUCCEEDED(result);
 
@@ -536,7 +553,7 @@ namespace TerminalAppLocalTests
     // - The initialized TerminalPage, ready to use.
     winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> TabTests::_commonSetup()
     {
-        const std::string settingsJson0{ R"(
+        static constexpr std::wstring_view settingsJson0{ LR"(
         {
             "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
             "showTabsInTitlebar": false,
@@ -565,10 +582,79 @@ namespace TerminalAppLocalTests
                     "tabTitle" : "Profile 3",
                     "historySize": 4
                 }
+            ],
+            "schemes":
+            [
+                {
+                    "name": "Campbell",
+                    "foreground": "#CCCCCC",
+                    "background": "#0C0C0C",
+                    "cursorColor": "#FFFFFF",
+                    "black": "#0C0C0C",
+                    "red": "#C50F1F",
+                    "green": "#13A10E",
+                    "yellow": "#C19C00",
+                    "blue": "#0037DA",
+                    "purple": "#881798",
+                    "cyan": "#3A96DD",
+                    "white": "#CCCCCC",
+                    "brightBlack": "#767676",
+                    "brightRed": "#E74856",
+                    "brightGreen": "#16C60C",
+                    "brightYellow": "#F9F1A5",
+                    "brightBlue": "#3B78FF",
+                    "brightPurple": "#B4009E",
+                    "brightCyan": "#61D6D6",
+                    "brightWhite": "#F2F2F2"
+                },
+                {
+                    "name": "Vintage",
+                    "foreground": "#C0C0C0",
+                    "background": "#000000",
+                    "cursorColor": "#FFFFFF",
+                    "black": "#000000",
+                    "red": "#800000",
+                    "green": "#008000",
+                    "yellow": "#808000",
+                    "blue": "#000080",
+                    "purple": "#800080",
+                    "cyan": "#008080",
+                    "white": "#C0C0C0",
+                    "brightBlack": "#808080",
+                    "brightRed": "#FF0000",
+                    "brightGreen": "#00FF00",
+                    "brightYellow": "#FFFF00",
+                    "brightBlue": "#0000FF",
+                    "brightPurple": "#FF00FF",
+                    "brightCyan": "#00FFFF",
+                    "brightWhite": "#FFFFFF"
+                },
+                {
+                    "name": "One Half Light",
+                    "foreground": "#383A42",
+                    "background": "#FAFAFA",
+                    "cursorColor": "#4F525D",
+                    "black": "#383A42",
+                    "red": "#E45649",
+                    "green": "#50A14F",
+                    "yellow": "#C18301",
+                    "blue": "#0184BC",
+                    "purple": "#A626A4",
+                    "cyan": "#0997B3",
+                    "white": "#FAFAFA",
+                    "brightBlack": "#4F525D",
+                    "brightRed": "#DF6C75",
+                    "brightGreen": "#98C379",
+                    "brightYellow": "#E4C07A",
+                    "brightBlue": "#61AFEF",
+                    "brightPurple": "#C577DD",
+                    "brightCyan": "#56B5C1",
+                    "brightWhite": "#FFFFFF"
+                }
             ]
         })" };
 
-        CascadiaSettings settings0{ til::u8u16(settingsJson0) };
+        CascadiaSettings settings0{ settingsJson0, {} };
         VERIFY_IS_NOT_NULL(settings0);
 
         const auto guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
@@ -595,13 +681,16 @@ namespace TerminalAppLocalTests
 
     void TabTests::TryZoomPane()
     {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+        END_TEST_METHOD_PROPERTIES()
+
         auto page = _commonSetup();
 
         Log::Comment(L"Create a second pane");
         auto result = RunOnUIThread([&page]() {
             SplitPaneArgs args{ SplitType::Duplicate };
             ActionEventArgs eventArgs{ args };
-            // eventArgs.Args(args);
             page->_HandleSplitPane(nullptr, eventArgs);
             auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
 
@@ -661,7 +750,7 @@ namespace TerminalAppLocalTests
         });
         VERIFY_SUCCEEDED(result);
 
-        Log::Comment(L"Move focus. This will cause us to un-zoom.");
+        Log::Comment(L"Move focus. We should still be zoomed.");
         result = RunOnUIThread([&page]() {
             // Set up action
             MoveFocusArgs args{ FocusDirection::Left };
@@ -671,7 +760,7 @@ namespace TerminalAppLocalTests
 
             auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
-            VERIFY_IS_FALSE(firstTab->IsZoomed());
+            VERIFY_IS_TRUE(firstTab->IsZoomed());
         });
         VERIFY_SUCCEEDED(result);
     }
@@ -731,6 +820,212 @@ namespace TerminalAppLocalTests
         VERIFY_SUCCEEDED(result);
     }
 
+    void TabTests::SwapPanes()
+    {
+        auto page = _commonSetup();
+
+        Log::Comment(L"Setup 4 panes.");
+        // Create the following layout
+        // -------------------
+        // |   1    |   2    |
+        // |        |        |
+        // -------------------
+        // |   3    |   4    |
+        // |        |        |
+        // -------------------
+        uint32_t firstId = 0, secondId = 0, thirdId = 0, fourthId = 0;
+        TestOnUIThread([&]() {
+            VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
+            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            firstId = tab->_activePane->Id().value();
+            // We start with 1 tab, split vertically to get
+            // -------------------
+            // |   1    |   2    |
+            // |        |        |
+            // -------------------
+            page->_SplitPane(SplitDirection::Right, 0.5f, page->_MakePane(nullptr, true, nullptr));
+            secondId = tab->_activePane->Id().value();
+        });
+        Sleep(250);
+        TestOnUIThread([&]() {
+            // After this the `2` pane is focused, go back to `1` being focused
+            page->_MoveFocus(FocusDirection::Left);
+        });
+        Sleep(250);
+        TestOnUIThread([&]() {
+            // Split again to make the 3rd tab
+            // -------------------
+            // |   1    |        |
+            // |        |        |
+            // ---------|   2    |
+            // |   3    |        |
+            // |        |        |
+            // -------------------
+            page->_SplitPane(SplitDirection::Down, 0.5f, page->_MakePane(nullptr, true, nullptr));
+            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            // Split again to make the 3rd tab
+            thirdId = tab->_activePane->Id().value();
+        });
+        Sleep(250);
+        TestOnUIThread([&]() {
+            // After this the `3` pane is focused, go back to `2` being focused
+            page->_MoveFocus(FocusDirection::Right);
+        });
+        Sleep(250);
+        TestOnUIThread([&]() {
+            // Split to create the final pane
+            // -------------------
+            // |   1    |   2    |
+            // |        |        |
+            // -------------------
+            // |   3    |   4    |
+            // |        |        |
+            // -------------------
+            page->_SplitPane(SplitDirection::Down, 0.5f, page->_MakePane(nullptr, true, nullptr));
+            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            fourthId = tab->_activePane->Id().value();
+        });
+
+        Sleep(250);
+        TestOnUIThread([&]() {
+            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            VERIFY_ARE_EQUAL(4, tab->GetLeafPaneCount());
+            // just to be complete, make sure we actually have 4 different ids
+            VERIFY_ARE_NOT_EQUAL(firstId, fourthId);
+            VERIFY_ARE_NOT_EQUAL(secondId, fourthId);
+            VERIFY_ARE_NOT_EQUAL(thirdId, fourthId);
+            VERIFY_ARE_NOT_EQUAL(firstId, thirdId);
+            VERIFY_ARE_NOT_EQUAL(secondId, thirdId);
+            VERIFY_ARE_NOT_EQUAL(firstId, secondId);
+        });
+
+        // Gratuitous use of sleep to make sure that the UI has updated properly
+        // after each operation.
+        Sleep(250);
+        // Now try to move the pane through the tree
+        Log::Comment(L"Move pane to the left. This should swap panes 3 and 4");
+        // -------------------
+        // |   1    |   2    |
+        // |        |        |
+        // -------------------
+        // |   4    |   3    |
+        // |        |        |
+        // -------------------
+        TestOnUIThread([&]() {
+            // Set up action
+            SwapPaneArgs args{ FocusDirection::Left };
+            ActionEventArgs eventArgs{ args };
+
+            page->_HandleSwapPane(nullptr, eventArgs);
+        });
+
+        Sleep(250);
+
+        TestOnUIThread([&]() {
+            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            VERIFY_ARE_EQUAL(4, tab->GetLeafPaneCount());
+            // Our currently focused pane should be `4`
+            VERIFY_ARE_EQUAL(fourthId, tab->_activePane->Id().value());
+
+            // Inspect the tree to make sure we swapped
+            VERIFY_ARE_EQUAL(fourthId, tab->_rootPane->_firstChild->_secondChild->Id().value());
+            VERIFY_ARE_EQUAL(thirdId, tab->_rootPane->_secondChild->_secondChild->Id().value());
+        });
+
+        Sleep(250);
+
+        Log::Comment(L"Move pane to up. This should swap panes 1 and 4");
+        // -------------------
+        // |   4    |   2    |
+        // |        |        |
+        // -------------------
+        // |   1    |   3    |
+        // |        |        |
+        // -------------------
+        TestOnUIThread([&]() {
+            // Set up action
+            SwapPaneArgs args{ FocusDirection::Up };
+            ActionEventArgs eventArgs{ args };
+
+            page->_HandleSwapPane(nullptr, eventArgs);
+        });
+
+        Sleep(250);
+
+        TestOnUIThread([&]() {
+            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            VERIFY_ARE_EQUAL(4, tab->GetLeafPaneCount());
+            // Our currently focused pane should be `4`
+            VERIFY_ARE_EQUAL(fourthId, tab->_activePane->Id().value());
+
+            // Inspect the tree to make sure we swapped
+            VERIFY_ARE_EQUAL(fourthId, tab->_rootPane->_firstChild->_firstChild->Id().value());
+            VERIFY_ARE_EQUAL(firstId, tab->_rootPane->_firstChild->_secondChild->Id().value());
+        });
+
+        Sleep(250);
+
+        Log::Comment(L"Move pane to the right. This should swap panes 2 and 4");
+        // -------------------
+        // |   2    |   4    |
+        // |        |        |
+        // -------------------
+        // |   1    |   3    |
+        // |        |        |
+        // -------------------
+        TestOnUIThread([&]() {
+            // Set up action
+            SwapPaneArgs args{ FocusDirection::Right };
+            ActionEventArgs eventArgs{ args };
+
+            page->_HandleSwapPane(nullptr, eventArgs);
+        });
+
+        Sleep(250);
+
+        TestOnUIThread([&]() {
+            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            VERIFY_ARE_EQUAL(4, tab->GetLeafPaneCount());
+            // Our currently focused pane should be `4`
+            VERIFY_ARE_EQUAL(fourthId, tab->_activePane->Id().value());
+
+            // Inspect the tree to make sure we swapped
+            VERIFY_ARE_EQUAL(fourthId, tab->_rootPane->_secondChild->_firstChild->Id().value());
+            VERIFY_ARE_EQUAL(secondId, tab->_rootPane->_firstChild->_firstChild->Id().value());
+        });
+
+        Sleep(250);
+
+        Log::Comment(L"Move pane down. This should swap panes 3 and 4");
+        // -------------------
+        // |   2    |   3    |
+        // |        |        |
+        // -------------------
+        // |   1    |   4    |
+        // |        |        |
+        // -------------------
+        TestOnUIThread([&]() {
+            // Set up action
+            SwapPaneArgs args{ FocusDirection::Down };
+            ActionEventArgs eventArgs{ args };
+
+            page->_HandleSwapPane(nullptr, eventArgs);
+        });
+
+        Sleep(250);
+
+        TestOnUIThread([&]() {
+            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            VERIFY_ARE_EQUAL(4, tab->GetLeafPaneCount());
+            // Our currently focused pane should be `4`
+            VERIFY_ARE_EQUAL(fourthId, tab->_activePane->Id().value());
+
+            // Inspect the tree to make sure we swapped
+            VERIFY_ARE_EQUAL(fourthId, tab->_rootPane->_secondChild->_secondChild->Id().value());
+            VERIFY_ARE_EQUAL(thirdId, tab->_rootPane->_secondChild->_firstChild->Id().value());
+        });
+    }
+
     void TabTests::NextMRUTab()
     {
         // This is a test for GH#8025 - we want to make sure that we can do both
@@ -761,7 +1056,7 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(4u, page->_tabs.Size());
 
         TestOnUIThread([&page]() {
-            uint32_t focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
+            auto focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
             VERIFY_ARE_EQUAL(3u, focusedIndex, L"Verify the fourth tab is the focused one");
         });
 
@@ -771,7 +1066,7 @@ namespace TerminalAppLocalTests
         });
 
         TestOnUIThread([&page]() {
-            uint32_t focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
+            auto focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
             VERIFY_ARE_EQUAL(1u, focusedIndex, L"Verify the second tab is the focused one");
         });
 
@@ -782,8 +1077,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"Switch to the next MRU tab, which is the fourth tab");
         TestOnUIThread([&page]() {
-            ActionEventArgs eventArgs{};
-            page->_HandleNextTab(nullptr, eventArgs);
+            page->_SelectNextTab(true, nullptr);
         });
 
         Log::Comment(L"Sleep to let events propagate");
@@ -798,14 +1092,13 @@ namespace TerminalAppLocalTests
         });
 
         TestOnUIThread([&page]() {
-            uint32_t focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
+            auto focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
             VERIFY_ARE_EQUAL(3u, focusedIndex, L"Verify the fourth tab is the focused one");
         });
 
         Log::Comment(L"Switch to the next MRU tab, which is the second tab");
         TestOnUIThread([&page]() {
-            ActionEventArgs eventArgs{};
-            page->_HandleNextTab(nullptr, eventArgs);
+            page->_SelectNextTab(true, nullptr);
         });
 
         Log::Comment(L"Sleep to let events propagate");
@@ -820,7 +1113,7 @@ namespace TerminalAppLocalTests
         });
 
         TestOnUIThread([&page]() {
-            uint32_t focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
+            auto focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
             VERIFY_ARE_EQUAL(1u, focusedIndex, L"Verify the second tab is the focused one");
         });
 
@@ -829,11 +1122,10 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"Switch to the next in-order tab, which is the third tab");
         TestOnUIThread([&page]() {
-            ActionEventArgs eventArgs{};
-            page->_HandleNextTab(nullptr, eventArgs);
+            page->_SelectNextTab(true, nullptr);
         });
         TestOnUIThread([&page]() {
-            uint32_t focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
+            auto focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
             VERIFY_ARE_EQUAL(2u, focusedIndex, L"Verify the third tab is the focused one");
         });
 
@@ -842,11 +1134,10 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"Switch to the next in-order tab, which is the fourth tab");
         TestOnUIThread([&page]() {
-            ActionEventArgs eventArgs{};
-            page->_HandleNextTab(nullptr, eventArgs);
+            page->_SelectNextTab(true, nullptr);
         });
         TestOnUIThread([&page]() {
-            uint32_t focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
+            auto focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
             VERIFY_ARE_EQUAL(3u, focusedIndex, L"Verify the fourth tab is the focused one");
         });
     }
@@ -868,11 +1159,31 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(4u, page->_mruTabs.Size());
 
         Log::Comment(L"give alphabetical names to all switch tab actions");
-        RunOnUIThread([&page]() {
+        TestOnUIThread([&page]() {
             page->_GetTerminalTabImpl(page->_tabs.GetAt(0))->Title(L"a");
+        });
+        TestOnUIThread([&page]() {
             page->_GetTerminalTabImpl(page->_tabs.GetAt(1))->Title(L"b");
+        });
+        TestOnUIThread([&page]() {
             page->_GetTerminalTabImpl(page->_tabs.GetAt(2))->Title(L"c");
+        });
+        TestOnUIThread([&page]() {
             page->_GetTerminalTabImpl(page->_tabs.GetAt(3))->Title(L"d");
+        });
+
+        TestOnUIThread([&page]() {
+            Log::Comment(L"Sanity check the titles of our tabs are what we set them to.");
+
+            VERIFY_ARE_EQUAL(L"a", page->_tabs.GetAt(0).Title());
+            VERIFY_ARE_EQUAL(L"b", page->_tabs.GetAt(1).Title());
+            VERIFY_ARE_EQUAL(L"c", page->_tabs.GetAt(2).Title());
+            VERIFY_ARE_EQUAL(L"d", page->_tabs.GetAt(3).Title());
+
+            VERIFY_ARE_EQUAL(L"d", page->_mruTabs.GetAt(0).Title());
+            VERIFY_ARE_EQUAL(L"c", page->_mruTabs.GetAt(1).Title());
+            VERIFY_ARE_EQUAL(L"b", page->_mruTabs.GetAt(2).Title());
+            VERIFY_ARE_EQUAL(L"a", page->_mruTabs.GetAt(3).Title());
         });
 
         Log::Comment(L"Change the tab switch order to MRU switching");
@@ -882,10 +1193,10 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"Select the tabs from 0 to 3");
         RunOnUIThread([&page]() {
-            page->_UpdatedSelectedTab(0);
-            page->_UpdatedSelectedTab(1);
-            page->_UpdatedSelectedTab(2);
-            page->_UpdatedSelectedTab(3);
+            page->_UpdatedSelectedTab(page->_tabs.GetAt(0));
+            page->_UpdatedSelectedTab(page->_tabs.GetAt(1));
+            page->_UpdatedSelectedTab(page->_tabs.GetAt(2));
+            page->_UpdatedSelectedTab(page->_tabs.GetAt(3));
         });
 
         VERIFY_ARE_EQUAL(4u, page->_mruTabs.Size());
@@ -896,19 +1207,341 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"Switch to the next MRU tab, which is the third tab");
         RunOnUIThread([&page]() {
-            page->_SelectNextTab(true);
+            page->_SelectNextTab(true, nullptr);
+            // In the course of a single tick, the Command Palette will:
+            // * open
+            // * select the proper tab from the mru's list
+            // * raise an event for _filteredActionsView().SelectionChanged to
+            //   immediately preview the new tab
+            // * raise a _SwitchToTabRequestedHandlers event
+            // * then dismiss itself, because we can't fake holing down an
+            //   anchor key in the tests
+        });
+
+        TestOnUIThread([&page]() {
+            VERIFY_ARE_EQUAL(L"c", page->_mruTabs.GetAt(0).Title());
+            VERIFY_ARE_EQUAL(L"d", page->_mruTabs.GetAt(1).Title());
+            VERIFY_ARE_EQUAL(L"b", page->_mruTabs.GetAt(2).Title());
+            VERIFY_ARE_EQUAL(L"a", page->_mruTabs.GetAt(3).Title());
         });
 
         const auto palette = winrt::get_self<winrt::TerminalApp::implementation::CommandPalette>(page->CommandPalette());
 
-        VERIFY_ARE_EQUAL(1u, palette->_switcherStartIdx, L"Verify the index is 1 as we went right");
         VERIFY_ARE_EQUAL(winrt::TerminalApp::implementation::CommandPaletteMode::TabSwitchMode, palette->_currentMode, L"Verify we are in the tab switcher mode");
-
-        Log::Comment(L"Verify command palette preserves MRU order of tabs");
-        VERIFY_ARE_EQUAL(4u, palette->_filteredActions.Size());
-        VERIFY_ARE_EQUAL(L"d", palette->_filteredActions.GetAt(0).Item().Name());
-        VERIFY_ARE_EQUAL(L"c", palette->_filteredActions.GetAt(1).Item().Name());
-        VERIFY_ARE_EQUAL(L"b", palette->_filteredActions.GetAt(2).Item().Name());
-        VERIFY_ARE_EQUAL(L"a", palette->_filteredActions.GetAt(3).Item().Name());
+        // At this point, the contents of the command palette's _mruTabs list is
+        // still the _old_ ordering (d, c, b, a). The ordering is only updated
+        // in TerminalPage::_SelectNextTab, but as we saw before, the palette
+        // will also dismiss itself immediately when that's called. So we can't
+        // really inspect the contents of the list in this test, unfortunately.
     }
+
+    void TabTests::TestWindowRenameSuccessful()
+    {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+        END_TEST_METHOD_PROPERTIES()
+
+        auto page = _commonSetup();
+        page->RenameWindowRequested([&page](auto&&, const winrt::TerminalApp::RenameWindowRequestedArgs args) {
+            // In the real terminal, this would bounce up to the monarch and
+            // come back down. Instead, immediately call back and set the name.
+            page->WindowName(args.ProposedName());
+        });
+
+        auto windowNameChanged = false;
+        page->PropertyChanged([&page, &windowNameChanged](auto&&, const winrt::WUX::Data::PropertyChangedEventArgs& args) mutable {
+            if (args.PropertyName() == L"WindowNameForDisplay")
+            {
+                windowNameChanged = true;
+            }
+        });
+
+        TestOnUIThread([&page]() {
+            page->_RequestWindowRename(winrt::hstring{ L"Foo" });
+        });
+        TestOnUIThread([&]() {
+            VERIFY_ARE_EQUAL(L"Foo", page->_WindowName);
+            VERIFY_IS_TRUE(windowNameChanged,
+                           L"The window name should have changed, and we should have raised a notification that WindowNameForDisplay changed");
+        });
+    }
+    void TabTests::TestWindowRenameFailure()
+    {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+        END_TEST_METHOD_PROPERTIES()
+
+        auto page = _commonSetup();
+        page->RenameWindowRequested([&page](auto&&, auto&&) {
+            // In the real terminal, this would bounce up to the monarch and
+            // come back down. Instead, immediately call back to tell the terminal it failed.
+            page->RenameFailed();
+        });
+
+        auto windowNameChanged = false;
+
+        page->PropertyChanged([&page, &windowNameChanged](auto&&, const winrt::WUX::Data::PropertyChangedEventArgs& args) mutable {
+            if (args.PropertyName() == L"WindowNameForDisplay")
+            {
+                windowNameChanged = true;
+            }
+        });
+
+        TestOnUIThread([&page]() {
+            page->_RequestWindowRename(winrt::hstring{ L"Foo" });
+        });
+        TestOnUIThread([&]() {
+            VERIFY_IS_FALSE(windowNameChanged,
+                            L"The window name should not have changed, we should have rejected the change.");
+        });
+    }
+
+    void TabTests::TestPreviewCommitScheme()
+    {
+        Log::Comment(L"Preview a color scheme. Make sure it's applied, then committed accordingly");
+
+        auto page = _commonSetup();
+        VERIFY_IS_NOT_NULL(page);
+
+        TestOnUIThread([&page]() {
+            const auto& activeControl{ page->_GetActiveControl() };
+            VERIFY_IS_NOT_NULL(activeControl);
+
+            const auto& controlSettings = activeControl.Settings();
+            VERIFY_IS_NOT_NULL(controlSettings);
+
+            VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, controlSettings.DefaultBackground());
+        });
+
+        TestOnUIThread([&page]() {
+            Log::Comment(L"Emulate previewing the SetColorScheme action");
+            SetColorSchemeArgs args{ L"Vintage" };
+            ActionAndArgs actionAndArgs{ ShortcutAction::SetColorScheme, args };
+            page->_PreviewAction(actionAndArgs);
+        });
+
+        TestOnUIThread([&page]() {
+            const auto& activeControl{ page->_GetActiveControl() };
+            VERIFY_IS_NOT_NULL(activeControl);
+
+            const auto& controlSettings = activeControl.Settings();
+            VERIFY_IS_NOT_NULL(controlSettings);
+
+            Log::Comment(L"Color should be changed to the preview");
+            VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, controlSettings.DefaultBackground());
+
+            // And we should have stored a function to revert the change.
+            VERIFY_ARE_EQUAL(1u, page->_restorePreviewFuncs.size());
+        });
+
+        TestOnUIThread([&page]() {
+            Log::Comment(L"Emulate committing the SetColorScheme action");
+
+            SetColorSchemeArgs args{ L"Vintage" };
+            page->_EndPreview();
+            page->_HandleSetColorScheme(nullptr, ActionEventArgs{ args });
+        });
+
+        TestOnUIThread([&page]() {
+            const auto& activeControl{ page->_GetActiveControl() };
+            VERIFY_IS_NOT_NULL(activeControl);
+
+            const auto& controlSettings = activeControl.Settings();
+            VERIFY_IS_NOT_NULL(controlSettings);
+
+            Log::Comment(L"Color should be changed");
+            VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, controlSettings.DefaultBackground());
+
+            // After preview there should be no more restore functions to execute.
+            VERIFY_ARE_EQUAL(0u, page->_restorePreviewFuncs.size());
+        });
+
+        Log::Comment(L"Sleep to let events propagate");
+        // If you don't do this, we will _sometimes_ crash as we're tearing down
+        // the control from this test as we start the next one. We crash
+        // somewhere in the CursorPositionChanged handler. It's annoying, but
+        // this works.
+        Sleep(250);
+    }
+
+    void TabTests::TestPreviewDismissScheme()
+    {
+        Log::Comment(L"Preview a color scheme. Make sure it's applied, then dismissed accordingly");
+
+        auto page = _commonSetup();
+        VERIFY_IS_NOT_NULL(page);
+
+        TestOnUIThread([&page]() {
+            const auto& activeControl{ page->_GetActiveControl() };
+            VERIFY_IS_NOT_NULL(activeControl);
+
+            const auto& controlSettings = activeControl.Settings();
+            VERIFY_IS_NOT_NULL(controlSettings);
+
+            VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, controlSettings.DefaultBackground());
+        });
+
+        TestOnUIThread([&page]() {
+            Log::Comment(L"Emulate previewing the SetColorScheme action");
+            SetColorSchemeArgs args{ L"Vintage" };
+            ActionAndArgs actionAndArgs{ ShortcutAction::SetColorScheme, args };
+            page->_PreviewAction(actionAndArgs);
+        });
+
+        TestOnUIThread([&page]() {
+            const auto& activeControl{ page->_GetActiveControl() };
+            VERIFY_IS_NOT_NULL(activeControl);
+
+            const auto& controlSettings = activeControl.Settings();
+            VERIFY_IS_NOT_NULL(controlSettings);
+
+            Log::Comment(L"Color should be changed to the preview");
+            VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, controlSettings.DefaultBackground());
+        });
+
+        TestOnUIThread([&page]() {
+            Log::Comment(L"Emulate dismissing the SetColorScheme action");
+            page->_EndPreview();
+        });
+
+        TestOnUIThread([&page]() {
+            const auto& activeControl{ page->_GetActiveControl() };
+            VERIFY_IS_NOT_NULL(activeControl);
+
+            const auto& controlSettings = activeControl.Settings();
+            VERIFY_IS_NOT_NULL(controlSettings);
+
+            Log::Comment(L"Color should be the same as it originally was");
+            VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, controlSettings.DefaultBackground());
+        });
+        Log::Comment(L"Sleep to let events propagate");
+        Sleep(250);
+    }
+
+    void TabTests::TestPreviewSchemeWhilePreviewing()
+    {
+        Log::Comment(L"Preview a color scheme, then preview another scheme. ");
+
+        Log::Comment(L"Preview a color scheme. Make sure it's applied, then committed accordingly");
+
+        auto page = _commonSetup();
+        VERIFY_IS_NOT_NULL(page);
+
+        TestOnUIThread([&page]() {
+            const auto& activeControl{ page->_GetActiveControl() };
+            VERIFY_IS_NOT_NULL(activeControl);
+
+            const auto& controlSettings = activeControl.Settings();
+            VERIFY_IS_NOT_NULL(controlSettings);
+
+            VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, controlSettings.DefaultBackground());
+        });
+
+        TestOnUIThread([&page]() {
+            Log::Comment(L"Emulate previewing the SetColorScheme action");
+            SetColorSchemeArgs args{ L"Vintage" };
+            page->_PreviewColorScheme(args);
+        });
+
+        TestOnUIThread([&page]() {
+            const auto& activeControl{ page->_GetActiveControl() };
+            VERIFY_IS_NOT_NULL(activeControl);
+
+            const auto& controlSettings = activeControl.Settings();
+            VERIFY_IS_NOT_NULL(controlSettings);
+
+            Log::Comment(L"Color should be changed to the preview");
+            VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, controlSettings.DefaultBackground());
+        });
+
+        TestOnUIThread([&page]() {
+            Log::Comment(L"Now, preview another scheme");
+            SetColorSchemeArgs args{ L"One Half Light" };
+            page->_PreviewColorScheme(args);
+        });
+
+        TestOnUIThread([&page]() {
+            const auto& activeControl{ page->_GetActiveControl() };
+            VERIFY_IS_NOT_NULL(activeControl);
+
+            const auto& controlSettings = activeControl.Settings();
+            VERIFY_IS_NOT_NULL(controlSettings);
+
+            Log::Comment(L"Color should be changed to the preview");
+            VERIFY_ARE_EQUAL(til::color{ 0xffFAFAFA }, controlSettings.DefaultBackground());
+        });
+
+        TestOnUIThread([&page]() {
+            Log::Comment(L"Emulate committing the SetColorScheme action");
+
+            SetColorSchemeArgs args{ L"One Half Light" };
+            page->_EndPreview();
+            page->_HandleSetColorScheme(nullptr, ActionEventArgs{ args });
+        });
+
+        TestOnUIThread([&page]() {
+            const auto& activeControl{ page->_GetActiveControl() };
+            VERIFY_IS_NOT_NULL(activeControl);
+
+            const auto& controlSettings = activeControl.Settings();
+            VERIFY_IS_NOT_NULL(controlSettings);
+
+            Log::Comment(L"Color should be changed");
+            VERIFY_ARE_EQUAL(til::color{ 0xffFAFAFA }, controlSettings.DefaultBackground());
+        });
+        Log::Comment(L"Sleep to let events propagate");
+        Sleep(250);
+    }
+
+    void TabTests::TestClampSwitchToTab()
+    {
+        Log::Comment(L"Test that switching to a tab index higher than the number of tabs just clamps to the last tab.");
+
+        auto page = _commonSetup();
+        VERIFY_IS_NOT_NULL(page);
+
+        Log::Comment(L"Create a second tab");
+        TestOnUIThread([&page]() {
+            NewTerminalArgs newTerminalArgs{ 1 };
+            page->_OpenNewTab(newTerminalArgs);
+        });
+        VERIFY_ARE_EQUAL(2u, page->_tabs.Size());
+
+        Log::Comment(L"Create a third tab");
+        TestOnUIThread([&page]() {
+            NewTerminalArgs newTerminalArgs{ 2 };
+            page->_OpenNewTab(newTerminalArgs);
+        });
+        VERIFY_ARE_EQUAL(3u, page->_tabs.Size());
+
+        TestOnUIThread([&page]() {
+            auto focusedTabIndexOpt{ page->_GetFocusedTabIndex() };
+            VERIFY_IS_TRUE(focusedTabIndexOpt.has_value());
+            VERIFY_ARE_EQUAL(2u, focusedTabIndexOpt.value());
+        });
+
+        TestOnUIThread([&page]() {
+            Log::Comment(L"Switch to the first tab");
+            page->_SelectTab(0);
+        });
+
+        TestOnUIThread([&page]() {
+            auto focusedTabIndexOpt{ page->_GetFocusedTabIndex() };
+
+            VERIFY_IS_TRUE(focusedTabIndexOpt.has_value());
+            VERIFY_ARE_EQUAL(0u, focusedTabIndexOpt.value());
+        });
+
+        TestOnUIThread([&page]() {
+            Log::Comment(L"Switch to the tab 6, which is greater than number of tabs. This should switch to the third tab");
+            page->_SelectTab(6);
+        });
+
+        TestOnUIThread([&page]() {
+            auto focusedTabIndexOpt{ page->_GetFocusedTabIndex() };
+            VERIFY_IS_TRUE(focusedTabIndexOpt.has_value());
+            VERIFY_ARE_EQUAL(2u, focusedTabIndexOpt.value());
+        });
+    }
+
 }

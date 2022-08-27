@@ -40,15 +40,16 @@ class CommandLineTests
 
     TEST_METHOD_SETUP(MethodSetup)
     {
-        m_state->PrepareGlobalScreenBuffer();
         m_state->PrepareGlobalInputBuffer();
+        m_state->PrepareGlobalScreenBuffer();
         m_state->PrepareReadHandle();
-        m_state->PrepareCookedReadData();
         m_pHistory = CommandHistory::s_Allocate(L"cmd.exe", nullptr);
         if (!m_pHistory)
         {
             return false;
         }
+        // History must be prepared before COOKED_READ (as it uses s_Find to get at it)
+        m_state->PrepareCookedReadData();
         return true;
     }
 
@@ -225,7 +226,7 @@ class CommandLineTests
         // set current cursor position somewhere in the middle of the prompt
         MoveCursor(cookedReadData, 5);
         auto& commandLine = CommandLine::Instance();
-        const COORD cursorPos = commandLine._deletePromptBeforeCursor(cookedReadData);
+        const auto cursorPos = commandLine._deletePromptBeforeCursor(cookedReadData);
         cookedReadData._currentPosition = cursorPos.X;
         VerifyPromptText(cookedReadData, L"word blah");
     }
@@ -253,8 +254,8 @@ class CommandLineTests
         MoveCursor(cookedReadData, 0);
 
         auto& commandLine = CommandLine::Instance();
-        const COORD cursorPos = commandLine._moveCursorToEndOfPrompt(cookedReadData);
-        VERIFY_ARE_EQUAL(cursorPos.X, gsl::narrow<short>(expectedCursorPos));
+        const auto cursorPos = commandLine._moveCursorToEndOfPrompt(cookedReadData);
+        VERIFY_ARE_EQUAL(cursorPos.X, gsl::narrow<til::CoordType>(expectedCursorPos));
         VERIFY_ARE_EQUAL(cookedReadData._currentPosition, expectedCursorPos);
         VERIFY_ARE_EQUAL(cookedReadData._bufPtr, expectedBufferPos);
     }
@@ -276,7 +277,7 @@ class CommandLineTests
         VERIFY_ARE_NOT_EQUAL(cookedReadData._bufPtr, cookedReadData._backupLimit);
 
         auto& commandLine = CommandLine::Instance();
-        const COORD cursorPos = commandLine._moveCursorToStartOfPrompt(cookedReadData);
+        const auto cursorPos = commandLine._moveCursorToStartOfPrompt(cookedReadData);
         VERIFY_ARE_EQUAL(cursorPos.X, 0);
         VERIFY_ARE_EQUAL(cookedReadData._currentPosition, 0u);
         VERIFY_ARE_EQUAL(cookedReadData._bufPtr, cookedReadData._backupLimit);
@@ -296,8 +297,8 @@ class CommandLineTests
 
         auto& commandLine = CommandLine::Instance();
         // cursor position at beginning of "blah"
-        short expectedPos = 10;
-        COORD cursorPos = commandLine._moveCursorLeftByWord(cookedReadData);
+        til::CoordType expectedPos = 10;
+        auto cursorPos = commandLine._moveCursorLeftByWord(cookedReadData);
         VERIFY_ARE_EQUAL(cursorPos.X, expectedPos);
         VERIFY_ARE_EQUAL(cookedReadData._currentPosition, gsl::narrow<size_t>(expectedPos));
         VERIFY_ARE_EQUAL(cookedReadData._bufPtr, cookedReadData._backupLimit + expectedPos);
@@ -339,7 +340,7 @@ class CommandLineTests
         auto& commandLine = CommandLine::Instance();
         for (auto it = expected.crbegin(); it != expected.crend(); ++it)
         {
-            const COORD cursorPos = commandLine._moveCursorLeft(cookedReadData);
+            const auto cursorPos = commandLine._moveCursorLeft(cookedReadData);
             VERIFY_ARE_EQUAL(*cookedReadData._bufPtr, *it);
         }
         // should now be at the start of the prompt
@@ -347,7 +348,7 @@ class CommandLineTests
         VERIFY_ARE_EQUAL(cookedReadData._bufPtr, cookedReadData._backupLimit);
 
         // try to move left a final time, nothing should change
-        const COORD cursorPos = commandLine._moveCursorLeft(cookedReadData);
+        const auto cursorPos = commandLine._moveCursorLeft(cookedReadData);
         VERIFY_ARE_EQUAL(cursorPos.X, 0);
         VERIFY_ARE_EQUAL(cookedReadData._currentPosition, 0u);
         VERIFY_ARE_EQUAL(cookedReadData._bufPtr, cookedReadData._backupLimit);
@@ -373,8 +374,8 @@ class CommandLineTests
         // NOTE: need to initialize the actually cursor and keep it up to date with the changes here. remove
         once functions are fixed
         // try to move right, nothing should happen
-        short expectedPos = gsl::narrow<short>(endCursorPos);
-        COORD cursorPos = MoveCursorRightByWord(cookedReadData);
+        auto expectedPos = endCursorPos;
+        auto cursorPos = MoveCursorRightByWord(cookedReadData);
         VERIFY_ARE_EQUAL(cursorPos.X, expectedPos);
         VERIFY_ARE_EQUAL(cookedReadData._currentPosition, expectedPos);
         VERIFY_ARE_EQUAL(cookedReadData._bufPtr, endBufferPos);
@@ -449,20 +450,21 @@ class CommandLineTests
         VERIFY_SUCCEEDED(m_pHistory->Add(L"I'm a little teapot", false));
         VERIFY_SUCCEEDED(m_pHistory->Add(L"short and stout", false));
         VERIFY_SUCCEEDED(m_pHistory->Add(L"inflammable", false));
+        VERIFY_SUCCEEDED(m_pHistory->Add(L"Indestructible", false));
 
-        SetPrompt(cookedReadData, L"i");
+        SetPrompt(cookedReadData, L"I");
 
         auto& commandLine = CommandLine::Instance();
         commandLine._cycleMatchingCommandHistoryToPrompt(cookedReadData);
-        VerifyPromptText(cookedReadData, L"inflammable");
+        VerifyPromptText(cookedReadData, L"Indestructible");
 
-        // make sure we skip to the next "i" history item
+        // make sure we skip to the next "I" history item
         commandLine._cycleMatchingCommandHistoryToPrompt(cookedReadData);
         VerifyPromptText(cookedReadData, L"I'm a little teapot");
 
         // should cycle back to the start of the command history
         commandLine._cycleMatchingCommandHistoryToPrompt(cookedReadData);
-        VerifyPromptText(cookedReadData, L"inflammable");
+        VerifyPromptText(cookedReadData, L"Indestructible");
     }
 
     TEST_METHOD(CmdlineCtrlHomeFullwidthChars)

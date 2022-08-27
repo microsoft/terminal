@@ -33,4 +33,4 @@ BOOL WINAPI DllMain(HINSTANCE hInstDll, DWORD reason, LPVOID /*reserved*/)
     return TRUE;
 }
 
-UTILS_DEFINE_LIBRARY_RESOURCE_SCOPE(L"Microsoft.Terminal.TerminalControl/Resources");
+UTILS_DEFINE_LIBRARY_RESOURCE_SCOPE(L"Microsoft.Terminal.Control/Resources");

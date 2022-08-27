@@ -1,0 +1,86 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Control
+{
+    delegate void FontSizeChangedEventArgs(Int32 width, Int32 height, Boolean isInitialChange);
+    delegate void ScrollPositionChangedEventArgs(Int32 viewTop, Int32 viewHeight, Int32 bufferLength);
+
+    [flags]
+    enum CopyFormat
+    {
+        HTML = 0x1,
+        RTF = 0x2,
+        All = 0xffffffff
+    };
+
+    runtimeclass CopyToClipboardEventArgs
+    {
+        String Text { get; };
+        String Html { get; };
+        String Rtf { get; };
+        Windows.Foundation.IReference<CopyFormat> Formats { get; };
+    }
+
+    runtimeclass TitleChangedEventArgs
+    {
+        String Title;
+    }
+
+    runtimeclass PasteFromClipboardEventArgs
+    {
+        void HandleClipboardData(String data);
+        Boolean BracketedPasteEnabled { get; };
+    }
+
+    runtimeclass OpenHyperlinkEventArgs
+    {
+        String Uri { get; };
+    }
+
+    enum NoticeLevel
+    {
+        Debug = 10,
+        Info = 20,
+        Warning = 30,
+        Error = 40,
+    };
+
+    runtimeclass NoticeEventArgs
+    {
+        NoticeLevel Level { get; };
+        String Message { get; };
+    }
+
+    runtimeclass ScrollPositionChangedArgs
+    {
+        Int32 ViewTop { get; };
+        Int32 ViewHeight { get; };
+        Int32 BufferSize { get; };
+    }
+
+    runtimeclass RendererWarningArgs
+    {
+        UInt64 Result { get; };
+    }
+
+    runtimeclass TransparencyChangedEventArgs
+    {
+        Double Opacity { get; };
+    }
+
+    runtimeclass FoundResultsArgs
+    {
+        Boolean FoundMatch { get; };
+    }
+
+    runtimeclass ShowWindowArgs
+    {
+        Boolean ShowOrHide { get; };
+    }
+    
+    runtimeclass UpdateSelectionMarkersEventArgs
+    {
+        Boolean ClearMarkers { get; };
+    }
+}

@@ -1,104 +1,67 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-
-namespace Microsoft.Terminal.TerminalControl
+namespace Microsoft.Terminal.Control
 {
-    delegate void TitleChangedEventArgs(String newTitle);
-    delegate void FontSizeChangedEventArgs(Int32 width, Int32 height, Boolean isInitialChange);
-    delegate void ScrollPositionChangedEventArgs(Int32 viewTop, Int32 viewHeight, Int32 bufferLength);
 
-    // C++/winrt makes it difficult to share this idl between two projects,
-    // Instead, we just pin the uuid and include it in both TermControl and App
-    // If you update this one, please update TerminalApp\IDirectKeyListener.idl.
-    // If you change this interface, please update the guid.
-    // If you press F7 or Alt and get a runtime error, go make sure both copies are the same.
-    [uuid("0ddf4edc-3fda-4dee-97ca-a417ee3dd510")] interface IDirectKeyListener {
-        Boolean OnDirectKeyEvent(UInt32 vkey, UInt8 scanCode, Boolean down);
-    };
-
-    [flags]
-    enum CopyFormat
+    [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl,
+                                                   IDirectKeyListener,
+                                                   IMouseWheelListener,
+                                                   ICoreState,
+                                                   Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
-        HTML = 0x1,
-        RTF = 0x2,
-        All = 0xffffffff
-    };
+        TermControl(IControlSettings settings,
+                    IControlAppearance unfocusedAppearance,
+                    Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
-    runtimeclass CopyToClipboardEventArgs
-    {
-        String Text { get; };
-        String Html { get; };
-        String Rtf { get; };
-        Windows.Foundation.IReference<CopyFormat> Formats { get; };
-    }
+        static Windows.Foundation.Size GetProposedDimensions(IControlSettings settings, UInt32 dpi);
 
-    runtimeclass PasteFromClipboardEventArgs
-    {
-        void HandleClipboardData(String data);
-    }
+        void UpdateControlSettings(IControlSettings settings);
+        void UpdateControlSettings(IControlSettings settings, IControlAppearance unfocusedAppearance);
 
-    runtimeclass OpenHyperlinkEventArgs
-    {
-        String Uri { get; };
-    }
+        Microsoft.Terminal.Control.IControlSettings Settings { get; };
 
-    enum NoticeLevel
-    {
-        Debug = 10,
-        Info = 20,
-        Warning = 30,
-        Error = 40,
-    };
-
-    runtimeclass NoticeEventArgs
-    {
-        NoticeLevel Level { get; };
-        String Message { get; };
-    }
-
-    [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl, IDirectKeyListener, IMouseWheelListener
-    {
-        TermControl(Microsoft.Terminal.TerminalControl.IControlSettings settings, Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
-
-        static Windows.Foundation.Size GetProposedDimensions(Microsoft.Terminal.TerminalControl.IControlSettings settings, UInt32 dpi);
-
-        void UpdateSettings();
-
-        Microsoft.Terminal.TerminalControl.IControlSettings Settings { get; };
-
-        event TitleChangedEventArgs TitleChanged;
         event FontSizeChangedEventArgs FontSizeChanged;
-        event Windows.Foundation.TypedEventHandler<TermControl, CopyToClipboardEventArgs> CopyToClipboard;
-        event Windows.Foundation.TypedEventHandler<TermControl, PasteFromClipboardEventArgs> PasteFromClipboard;
-        event Windows.Foundation.TypedEventHandler<TermControl, OpenHyperlinkEventArgs> OpenHyperlink;
-        event Windows.Foundation.TypedEventHandler<TermControl, Object> SetTaskbarProgress;
-        event Windows.Foundation.TypedEventHandler<TermControl, NoticeEventArgs> RaiseNotice;
+        event Windows.Foundation.TypedEventHandler<Object, TitleChangedEventArgs> TitleChanged;
+        event Windows.Foundation.TypedEventHandler<Object, CopyToClipboardEventArgs> CopyToClipboard;
+        event Windows.Foundation.TypedEventHandler<Object, PasteFromClipboardEventArgs> PasteFromClipboard;
+        event Windows.Foundation.TypedEventHandler<Object, OpenHyperlinkEventArgs> OpenHyperlink;
+        event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
+        event Windows.Foundation.TypedEventHandler<Object, NoticeEventArgs> RaiseNotice;
         event Windows.Foundation.TypedEventHandler<Object, Object> WarningBell;
         event Windows.Foundation.TypedEventHandler<Object, Object> HidePointerCursor;
         event Windows.Foundation.TypedEventHandler<Object, Object> RestorePointerCursor;
+        event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> ReadOnlyChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> FocusFollowMouseRequested;
 
         event Windows.Foundation.TypedEventHandler<TermControl, Windows.UI.Xaml.RoutedEventArgs> Initialized;
         // This is an event handler forwarder for the underlying connection.
         // We expose this and ConnectionState here so that it might eventually be data bound.
-        event Windows.Foundation.TypedEventHandler<TermControl, IInspectable> ConnectionStateChanged;
-        Microsoft.Terminal.TerminalConnection.ConnectionState ConnectionState { get; };
+        event Windows.Foundation.TypedEventHandler<Object, IInspectable> ConnectionStateChanged;
 
-        String Title { get; };
+        event Windows.Foundation.TypedEventHandler<Object, ShowWindowArgs> ShowWindowChanged;
 
         Boolean CopySelectionToClipboard(Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
         void PasteTextFromClipboard();
+        void SelectAll();
+        Boolean ToggleBlockSelection();
+        void ToggleMarkMode();
+        Boolean SwitchSelectionEndpoint();
+        void ClearBuffer(ClearBufferType clearType);
         void Close();
         Windows.Foundation.Size CharacterDimensions { get; };
         Windows.Foundation.Size MinimumSize { get; };
         Single SnapDimensionToGrid(Boolean widthOrHeight, Single dimension);
 
+        void WindowVisibilityChanged(Boolean showOrHide);
+
         void ScrollViewport(Int32 viewTop);
-        Int32 GetScrollOffset();
-        Int32 GetViewHeight();
-        event ScrollPositionChangedEventArgs ScrollPositionChanged;
 
         void CreateSearchBoxControl();
+        Boolean SearchBoxEditInFocus();
+
+        void SearchMatch(Boolean goForward);
 
         void AdjustFontSize(Int32 fontSizeDelta);
         void ResetFontSize();
@@ -106,17 +69,21 @@ namespace Microsoft.Terminal.TerminalControl
         void ToggleShaderEffects();
         void SendInput(String input);
 
-        void TaskbarProgressChanged();
-        UInt64 TaskbarState { get; };
-        UInt64 TaskbarProgress { get; };
-
-        String WorkingDirectory { get; };
-
-        Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
-        event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;
+        void BellLightOn();
 
         Boolean ReadOnly { get; };
         void ToggleReadOnly();
-        event Windows.Foundation.TypedEventHandler<Object, Object> ReadOnlyChanged;
+
+        String ReadEntireBuffer();
+
+        void AdjustOpacity(Double Opacity, Boolean relative);
+
+        // You'd think this should just be "Opacity", but UIElement already
+        // defines an "Opacity", which we're actually not setting at all. We're
+        // not overriding or changing _that_ value. Callers that want the
+        // opacity set by the settings should call this instead.
+        Double BackgroundOpacity { get; };
+
+        Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
     }
 }

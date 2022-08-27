@@ -13,7 +13,6 @@
 // - ulSize - The height of the cursor within this buffer
 Cursor::Cursor(const ULONG ulSize, TextBuffer& parentBuffer) noexcept :
     _parentBuffer{ parentBuffer },
-    _cPosition{ 0 },
     _fHasMoved(false),
     _fIsVisible(true),
     _fIsOn(true),
@@ -23,13 +22,10 @@ Cursor::Cursor(const ULONG ulSize, TextBuffer& parentBuffer) noexcept :
     _fIsConversionArea(false),
     _fIsPopupShown(false),
     _fDelayedEolWrap(false),
-    _coordDelayedAt{ 0 },
     _fDeferCursorRedraw(false),
     _fHaveDeferredCursorRedraw(false),
     _ulSize(ulSize),
-    _cursorType(CursorType::Legacy),
-    _fUseColor(false),
-    _color(s_InvertCursorColor)
+    _cursorType(CursorType::Legacy)
 {
 }
 
@@ -37,7 +33,7 @@ Cursor::~Cursor()
 {
 }
 
-COORD Cursor::GetPosition() const noexcept
+til::point Cursor::GetPosition() const noexcept
 {
     return _cPosition;
 }
@@ -143,10 +139,9 @@ void Cursor::SetSize(const ULONG ulSize) noexcept
     _RedrawCursor();
 }
 
-void Cursor::SetStyle(const ULONG ulSize, const COLORREF color, const CursorType type) noexcept
+void Cursor::SetStyle(const ULONG ulSize, const CursorType type) noexcept
 {
     _ulSize = ulSize;
-    _color = color;
     _cursorType = type;
 
     _RedrawCursor();
@@ -190,64 +185,63 @@ void Cursor::_RedrawCursorAlways() noexcept
 {
     try
     {
-        _parentBuffer.GetRenderTarget().TriggerRedrawCursor(&_cPosition);
+        _parentBuffer.TriggerRedrawCursor(_cPosition);
     }
     CATCH_LOG();
 }
 
-void Cursor::SetPosition(const COORD cPosition) noexcept
+void Cursor::SetPosition(const til::point cPosition) noexcept
 {
     _RedrawCursor();
-    _cPosition.X = cPosition.X;
-    _cPosition.Y = cPosition.Y;
+    _cPosition = cPosition;
     _RedrawCursor();
     ResetDelayEOLWrap();
 }
 
-void Cursor::SetXPosition(const int NewX) noexcept
+void Cursor::SetXPosition(const til::CoordType NewX) noexcept
 {
     _RedrawCursor();
-    _cPosition.X = gsl::narrow<SHORT>(NewX);
+    _cPosition.X = NewX;
     _RedrawCursor();
     ResetDelayEOLWrap();
 }
 
-void Cursor::SetYPosition(const int NewY) noexcept
+void Cursor::SetYPosition(const til::CoordType NewY) noexcept
 {
     _RedrawCursor();
-    _cPosition.Y = gsl::narrow<SHORT>(NewY);
+    _cPosition.Y = NewY;
     _RedrawCursor();
     ResetDelayEOLWrap();
 }
 
-void Cursor::IncrementXPosition(const int DeltaX) noexcept
+void Cursor::IncrementXPosition(const til::CoordType DeltaX) noexcept
 {
     _RedrawCursor();
-    _cPosition.X += gsl::narrow<SHORT>(DeltaX);
+    _cPosition.X += DeltaX;
     _RedrawCursor();
     ResetDelayEOLWrap();
 }
 
-void Cursor::IncrementYPosition(const int DeltaY) noexcept
+void Cursor::IncrementYPosition(const til::CoordType DeltaY) noexcept
 {
     _RedrawCursor();
-    _cPosition.Y += gsl::narrow<SHORT>(DeltaY);
+    _cPosition.Y += DeltaY;
     _RedrawCursor();
     ResetDelayEOLWrap();
 }
 
-void Cursor::DecrementXPosition(const int DeltaX) noexcept
+void Cursor::DecrementXPosition(const til::CoordType DeltaX) noexcept
 {
     _RedrawCursor();
-    _cPosition.X -= gsl::narrow<SHORT>(DeltaX);
+    _cPosition.X -= DeltaX;
     _RedrawCursor();
     ResetDelayEOLWrap();
 }
 
-void Cursor::DecrementYPosition(const int DeltaY) noexcept
+void Cursor::DecrementYPosition(const til::CoordType DeltaY) noexcept
 {
     _RedrawCursor();
-    _cPosition.Y -= gsl::narrow<SHORT>(DeltaY);
+    _cPosition.Y -= DeltaY;
     _RedrawCursor();
     ResetDelayEOLWrap();
 }
@@ -285,10 +279,9 @@ void Cursor::CopyProperties(const Cursor& OtherCursor) noexcept
     // Size will be handled separately in the resize operation.
     //_ulSize                       = OtherCursor._ulSize;
     _cursorType = OtherCursor._cursorType;
-    _color = OtherCursor._color;
 }
 
-void Cursor::DelayEOLWrap(const COORD coordDelayedAt) noexcept
+void Cursor::DelayEOLWrap(const til::point coordDelayedAt) noexcept
 {
     _coordDelayedAt = coordDelayedAt;
     _fDelayedEolWrap = true;
@@ -296,11 +289,11 @@ void Cursor::DelayEOLWrap(const COORD coordDelayedAt) noexcept
 
 void Cursor::ResetDelayEOLWrap() noexcept
 {
-    _coordDelayedAt = { 0 };
+    _coordDelayedAt = {};
     _fDelayedEolWrap = false;
 }
 
-COORD Cursor::GetDelayedAtPosition() const noexcept
+til::point Cursor::GetDelayedAtPosition() const noexcept
 {
     return _coordDelayedAt;
 }
@@ -313,6 +306,11 @@ bool Cursor::IsDelayedEOLWrap() const noexcept
 void Cursor::StartDeferDrawing() noexcept
 {
     _fDeferCursorRedraw = true;
+}
+
+bool Cursor::IsDeferDrawing() noexcept
+{
+    return _fDeferCursorRedraw;
 }
 
 void Cursor::EndDeferDrawing() noexcept
@@ -328,21 +326,6 @@ void Cursor::EndDeferDrawing() noexcept
 const CursorType Cursor::GetType() const noexcept
 {
     return _cursorType;
-}
-
-const bool Cursor::IsUsingColor() const noexcept
-{
-    return GetColor() != INVALID_COLOR;
-}
-
-const COLORREF Cursor::GetColor() const noexcept
-{
-    return _color;
-}
-
-void Cursor::SetColor(const unsigned int color) noexcept
-{
-    _color = gsl::narrow_cast<COLORREF>(color);
 }
 
 void Cursor::SetType(const CursorType type) noexcept

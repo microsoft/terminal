@@ -1,6 +1,17 @@
 
 # The project's root directory.
-Set-Item -force -path "env:OpenConsoleRoot" -value "$PSScriptRoot\.."
+$script:OpenConsoleFallbackRoot="$PSScriptRoot\.."
+
+#.SYNOPSIS
+# Finds the root of the current Terminal checkout.
+function Find-OpenConsoleRoot
+{
+    $root = (git rev-parse --show-toplevel 2>$null)
+    If ($?) {
+        return $root
+    }
+    return $script:OpenConsoleFallbackRoot
+}
 
 #.SYNOPSIS
 # Finds and imports a module that should be local to the project
@@ -16,7 +27,7 @@ function Import-LocalModule
 
     $ErrorActionPreference = 'Stop'
 
-    $modules_root = "$env:OpenConsoleRoot\.PowershellModules"
+    $modules_root = "$(Find-OpenConsoleRoot)\.PowershellModules"
 
     $local = $null -eq (Get-Module -Name $Name)
 
@@ -41,7 +52,7 @@ function Import-LocalModule
         Write-Verbose "$Name already downloaded"
         $versions = Get-ChildItem "$modules_root\$Name" | Sort-Object
 
-        Get-ChildItem -Path "$modules_root\$Name\$($versions[0])\$Name.psd1" | Import-Module
+        Get-ChildItem -Path "$($versions[0].FullName)\$Name.psd1" | Import-Module
     }
 }
 
@@ -74,16 +85,15 @@ function Set-MsbuildDevEnvironment
         default { throw "Unknown architecture: $switch" }
     }
 
-    $vcvarsall = "$vspath\VC\Auxiliary\Build\vcvarsall.bat"
+    $devShellModule = "$vspath\Common7\Tools\Microsoft.VisualStudio.DevShell.dll"
+
+    Import-Module -Global -Name $devShellModule
 
     Write-Verbose 'Setting up environment variables'
-    cmd /c ("`"$vcvarsall`" $arch & set") | ForEach-Object {
-        if ($_ -match '=')
-        {
-            $s = $_.Split("=");
-            Set-Item -force -path "env:\$($s[0])" -value "$($s[1])"
-        }
-    }
+    Enter-VsDevShell -VsInstallPath $vspath -SkipAutomaticLocation `
+        -devCmdArguments "-arch=$arch" | Out-Null
+
+    Set-Item -Force -path "Env:\Platform" -Value $arch
 
     Write-Host "Dev environment variables set" -ForegroundColor Green
 }
@@ -159,7 +169,7 @@ function Invoke-OpenConsoleTests()
         [switch]$FTOnly,
 
         [parameter(Mandatory=$false)]
-        [ValidateSet('host', 'interactivityWin32', 'terminal', 'adapter', 'feature', 'uia', 'textbuffer', 'til', 'types', 'terminalCore', 'terminalApp', 'localTerminalApp', 'localSettingsModel', 'unitRemoting')]
+        [ValidateSet('host', 'interactivityWin32', 'terminal', 'adapter', 'feature', 'uia', 'textbuffer', 'til', 'types', 'terminalCore', 'terminalApp', 'localTerminalApp', 'localSettingsModel', 'unitRemoting', 'unitControl')]
         [string]$Test,
 
         [parameter(Mandatory=$false)]
@@ -175,29 +185,29 @@ function Invoke-OpenConsoleTests()
 
     )
 
+    $root = Find-OpenConsoleRoot
+
     if (($AllTests -and $FTOnly) -or ($AllTests -and $Test) -or ($FTOnly -and $Test))
     {
         Write-Host "Invalid combination of flags" -ForegroundColor Red
         return
     }
     $OpenConsolePlatform = $Platform
-    $TestHostAppPath = "$env:OpenConsoleRoot\$OpenConsolePlatform\$Configuration\TestHostApp"
     if ($Platform -eq 'x86')
     {
         $OpenConsolePlatform = 'Win32'
-        $TestHostAppPath = "$env:OpenConsoleRoot\$Configuration\TestHostApp"
     }
     $OpenConsolePath = "$env:OpenConsoleroot\bin\$OpenConsolePlatform\$Configuration\OpenConsole.exe"
-    $TaefExePath = "$env:OpenConsoleRoot\packages\Taef.Redist.Wlk.10.57.200731005-develop\build\Binaries\$Platform\te.exe"
-    $BinDir = "$env:OpenConsoleRoot\bin\$OpenConsolePlatform\$Configuration"
+    $TaefExePath = "$root\packages\Microsoft.Taef.10.60.210621002\build\Binaries\$Platform\te.exe"
+    $BinDir = "$root\bin\$OpenConsolePlatform\$Configuration"
 
-    [xml]$TestConfig = Get-Content "$env:OpenConsoleRoot\tools\tests.xml"
+    [xml]$TestConfig = Get-Content "$root\tools\tests.xml"
 
     # check if WinAppDriver needs to be started
     $WinAppDriverExe = $null
     if ($AllTests -or $FtOnly -or $Test -eq "uia")
     {
-        $WinAppDriverExe = [Diagnostics.Process]::Start("$env:OpenConsoleRoot\dep\WinAppDriver\WinAppDriver.exe")
+        $WinAppDriverExe = [Diagnostics.Process]::Start("$root\dep\WinAppDriver\WinAppDriver.exe")
     }
 
     # select tests to run
@@ -224,11 +234,6 @@ function Invoke-OpenConsoleTests()
     {
         if ($t.type -eq "unit")
         {
-            if ($t.runInHostApp -eq "true")
-            {
-                & $TaefExePath "$TestHostAppPath\$($t.binary)" $TaefArgs
-            }
-
             & $TaefExePath "$BinDir\$($t.binary)" $TaefArgs
         }
         elseif ($t.type -eq "ft")
@@ -254,8 +259,10 @@ function Invoke-OpenConsoleTests()
 # Builds OpenConsole.sln using msbuild. Any arguments get passed on to msbuild.
 function Invoke-OpenConsoleBuild()
 {
-    & "$env:OpenConsoleRoot\dep\nuget\nuget.exe" restore "$env:OpenConsoleRoot\OpenConsole.sln"
-    msbuild.exe "$env:OpenConsoleRoot\OpenConsole.sln" @args
+    $root = Find-OpenConsoleRoot
+    & "$root\dep\nuget\nuget.exe" restore "$root\OpenConsole.sln"
+    & "$root\dep\nuget\nuget.exe" restore "$root\dep\nuget\packages.config"
+    msbuild.exe "$root\OpenConsole.sln" @args
 }
 
 #.SYNOPSIS
@@ -282,7 +289,7 @@ function Start-OpenConsole()
     {
         $Platform = "Win32"
     }
-    & "$env:OpenConsoleRoot\bin\$Platform\$Configuration\OpenConsole.exe"
+    & "$(Find-OpenConsoleRoot)\bin\$Platform\$Configuration\OpenConsole.exe"
 }
 
 #.SYNOPSIS
@@ -309,7 +316,7 @@ function Debug-OpenConsole()
     {
         $Platform = "Win32"
     }
-    $process = [Diagnostics.Process]::Start("$env:OpenConsoleRoot\bin\$Platform\$Configuration\OpenConsole.exe")
+    $process = [Diagnostics.Process]::Start("$(Find-OpenConsoleRoot)\bin\$Platform\$Configuration\OpenConsole.exe")
     Debug-Process -Id $process.Id
 }
 
@@ -351,14 +358,78 @@ function Invoke-ClangFormat {
 }
 
 #.SYNOPSIS
-# runs code formatting on all c++ files
-function Invoke-CodeFormat() {
-    & "$env:OpenConsoleRoot\dep\nuget\nuget.exe" restore "$env:OpenConsoleRoot\tools\packages.config"
-    $clangPackage = ([xml](Get-Content "$env:OpenConsoleRoot\tools\packages.config")).packages.package | Where-Object id -like "clang-format*"
-    $clangFormatPath = "$env:OpenConsoleRoot\packages\$($clangPackage.id).$($clangPackage.version)\tools\clang-format.exe"
-    Get-ChildItem -Recurse "$env:OpenConsoleRoot/src" -Include *.cpp, *.hpp, *.h |
-      Where FullName -NotLike "*Generated Files*" |
-      Invoke-ClangFormat -ClangFormatPath $clangFormatPath
+# Check that xaml files are formatted correctly. This won't actually
+# format the files - it'll only ensure that they're formatted correctly.
+function Test-XamlFormat() {
+    $root = Find-OpenConsoleRoot
+    & dotnet tool restore --add-source https://api.nuget.org/v3/index.json
+
+    $xamlsForStyler = (git ls-files "$root/**/*.xaml") -join ","
+    dotnet tool run xstyler -- -c "$root\XamlStyler.json" -f "$xamlsForStyler" --passive
+
+    if ($lastExitCode -eq 1) {
+        throw "Xaml formatting bad, run Invoke-XamlFormat on branch"
+    }
+
 }
 
-Export-ModuleMember -Function Set-MsbuildDevEnvironment,Invoke-OpenConsoleTests,Invoke-OpenConsoleBuild,Start-OpenConsole,Debug-OpenConsole,Invoke-CodeFormat
+#.SYNOPSIS
+# run xstyler on xaml files. Note that this will `touch` every file,
+# even if there's nothing to do for a given file.
+function Invoke-XamlFormat() {
+    $root = Find-OpenConsoleRoot
+    & dotnet tool restore --add-source https://api.nuget.org/v3/index.json
+
+    # xstyler lets you pass multiple xaml files in the -f param if they're all
+    # joined by commas. The `git ls-files` command will only get us the .xaml
+    # files actually in the git repo, ignoring ones in "Generated Files/"
+    $xamlsForStyler = (git ls-files "$root/**/*.xaml") -join ","
+    dotnet tool run xstyler -- -c "$root\XamlStyler.json" -f "$xamlsForStyler"
+
+    # Strip BOMs from all the .xaml files
+    $xamls = (git ls-files --full-name "$root/**/*.xaml")
+    foreach ($file in $xamls) {
+        $content = Get-Content "$root/$file"
+        [IO.File]::WriteAllLines("$root/$file", $content)
+    }
+}
+
+#.SYNOPSIS
+# runs code formatting on all c++ and .xaml files.
+#
+#.PARAMETER IgnoreXaml
+# When set, don't format XAML files. The CI needs this so
+# Invoke-CheckBadCodeFormatting won't touch all the .xaml files.
+function Invoke-CodeFormat() {
+
+    [CmdletBinding()]
+    Param (
+        [parameter(Mandatory=$false)]
+        [switch]$IgnoreXaml
+    )
+
+    $root = Find-OpenConsoleRoot
+    & "$root\dep\nuget\nuget.exe" restore "$root\tools\packages.config"
+    $clangPackage = ([xml](Get-Content "$root\tools\packages.config")).packages.package | Where-Object id -like "clang-format*"
+    $clangFormatPath = "$root\packages\$($clangPackage.id).$($clangPackage.version)\tools\clang-format.exe"
+    Get-ChildItem -Recurse "$root\src" -Include *.cpp, *.hpp, *.h |
+      Where FullName -NotLike "*Generated Files*" |
+      Invoke-ClangFormat -ClangFormatPath $clangFormatPath
+
+    if ($IgnoreXaml) {
+        # do nothing
+    }
+    else {
+        Invoke-XamlFormat
+    }
+}
+
+#.SYNOPSIS
+# Download clang-format.exe required for code formatting
+function Get-Format()
+{
+    $root = Find-OpenConsoleRoot
+    & "$root\dep\nuget\nuget.exe" restore "$root\tools\packages.config"
+}
+
+Export-ModuleMember -Function Set-MsbuildDevEnvironment,Invoke-OpenConsoleTests,Invoke-OpenConsoleBuild,Start-OpenConsole,Debug-OpenConsole,Invoke-CodeFormat,Invoke-XamlFormat,Test-XamlFormat,Get-Format

@@ -230,7 +230,7 @@ def cloneGraph(oldSource, newSource, visited):
         for old in oldSource.adj:
 
             # Below check is for backtracking, so new
-            # nodes don't get initialized everytime
+            # nodes don't get initialized every time
             if clone is None or(clone is not None and clone.key != old.key):
                 clone = Node(old.key, [])
             newSource.adj.append(clone)
@@ -268,7 +268,7 @@ Today, if the deserialization of `CascadiaSettings` encounters any errors, an ex
 To get around this issue, when `CascadiaSettings` encounters a serialization error, it must internally record
  any pertinent information for that error, and return the simple `CascadiaSettings` as if nothing happened.
  The consumer must then call `CascadiaSettings::GetErrors()` and `CascadiaSettings::GetWarnings()` to properly
- understand whether an error ocurred and how to present that to the user.
+ understand whether an error occurred and how to present that to the user.
 
 
 #### TerminalApp: Loading and Reloading Changes

@@ -7,6 +7,7 @@
 #include <memory>
 #pragma once
 
+const unsigned int PTY_SIGNAL_CLEAR_WINDOW = 2u;
 const unsigned int PTY_SIGNAL_RESIZE_WINDOW = 8u;
 
 HRESULT CreateConPty(const std::wstring& cmdline, // _In_

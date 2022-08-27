@@ -22,7 +22,6 @@ Revision History:
 #include "conapi.h"
 #include "settings.hpp"
 #include "outputStream.hpp"
-#include "ScreenBufferRenderTarget.hpp"
 
 #include "../buffer/out/OutputCellRect.hpp"
 #include "../buffer/out/TextAttribute.hpp"
@@ -42,8 +41,6 @@ Revision History:
 #include "../interactivity/inc/IConsoleWindow.hpp"
 #include "../interactivity/inc/IWindowMetrics.hpp"
 
-#include "../inc/ITerminalOutputConnection.hpp"
-
 #include "../renderer/inc/FontInfo.hpp"
 #include "../renderer/inc/FontInfoDesired.hpp"
 
@@ -61,9 +58,9 @@ namespace TerminalCoreUnitTests
 class SCREEN_INFORMATION : public ConsoleObjectHeader, public Microsoft::Console::IIoProvider
 {
 public:
-    [[nodiscard]] static NTSTATUS CreateInstance(_In_ COORD coordWindowSize,
+    [[nodiscard]] static NTSTATUS CreateInstance(_In_ til::size coordWindowSize,
                                                  const FontInfo fontInfo,
-                                                 _In_ COORD coordScreenBufferSize,
+                                                 _In_ til::size coordScreenBufferSize,
                                                  const TextAttribute defaultAttributes,
                                                  const TextAttribute popupAttributes,
                                                  const UINT uiCursorSize,
@@ -71,35 +68,36 @@ public:
 
     ~SCREEN_INFORMATION();
 
-    void GetScreenBufferInformation(_Out_ PCOORD pcoordSize,
-                                    _Out_ PCOORD pcoordCursorPosition,
-                                    _Out_ PSMALL_RECT psrWindow,
+    void GetScreenBufferInformation(_Out_ til::size* pcoordSize,
+                                    _Out_ til::point* pcoordCursorPosition,
+                                    _Out_ til::inclusive_rect* psrWindow,
                                     _Out_ PWORD pwAttributes,
-                                    _Out_ PCOORD pcoordMaximumWindowSize,
+                                    _Out_ til::size* pcoordMaximumWindowSize,
                                     _Out_ PWORD pwPopupAttributes,
                                     _Out_writes_(COLOR_TABLE_SIZE) LPCOLORREF lpColorTable) const;
 
-    void GetRequiredConsoleSizeInPixels(_Out_ PSIZE const pRequiredSize) const;
+    void GetRequiredConsoleSizeInPixels(_Out_ til::size* const pRequiredSize) const;
 
     void MakeCurrentCursorVisible();
 
-    void ClipToScreenBuffer(_Inout_ SMALL_RECT* const psrClip) const;
+    void ClipToScreenBuffer(_Inout_ til::inclusive_rect* const psrClip) const;
 
-    COORD GetMinWindowSizeInCharacters(const COORD coordFontSize = { 1, 1 }) const;
-    COORD GetMaxWindowSizeInCharacters(const COORD coordFontSize = { 1, 1 }) const;
-    COORD GetLargestWindowSizeInCharacters(const COORD coordFontSize = { 1, 1 }) const;
-    COORD GetScrollBarSizesInCharacters() const;
+    til::size GetMinWindowSizeInCharacters(const til::size coordFontSize = { 1, 1 }) const;
+    til::size GetMaxWindowSizeInCharacters(const til::size coordFontSize = { 1, 1 }) const;
+    til::size GetLargestWindowSizeInCharacters(const til::size coordFontSize = { 1, 1 }) const;
+    til::size GetScrollBarSizesInCharacters() const;
 
     Microsoft::Console::Types::Viewport GetBufferSize() const;
     Microsoft::Console::Types::Viewport GetTerminalBufferSize() const;
 
-    COORD GetScreenFontSize() const;
+    til::size GetScreenFontSize() const;
     void UpdateFont(const FontInfo* const pfiNewFont);
     void RefreshFontWithRenderer();
 
-    [[nodiscard]] NTSTATUS ResizeScreenBuffer(const COORD coordNewScreenSize, const bool fDoScrollBarUpdate);
+    [[nodiscard]] NTSTATUS ResizeScreenBuffer(const til::size coordNewScreenSize, const bool fDoScrollBarUpdate);
 
-    void NotifyAccessibilityEventing(const short sStartX, const short sStartY, const short sEndX, const short sEndY);
+    bool HasAccessibilityEventing() const noexcept;
+    void NotifyAccessibilityEventing(const til::CoordType sStartX, const til::CoordType sStartY, const til::CoordType sEndX, const til::CoordType sEndY);
 
     void UpdateScrollBars();
     void InternalUpdateScrollBars();
@@ -112,11 +110,11 @@ public:
     void SetViewport(const Microsoft::Console::Types::Viewport& newViewport, const bool updateBottom);
     Microsoft::Console::Types::Viewport GetVirtualViewport() const noexcept;
 
-    void ProcessResizeWindow(const RECT* const prcClientNew, const RECT* const prcClientOld);
-    void SetViewportSize(const COORD* const pcoordSize);
+    void ProcessResizeWindow(const til::rect* const prcClientNew, const til::rect* const prcClientOld);
+    void SetViewportSize(const til::size* const pcoordSize);
 
     // Forwarders to Window if we're the active buffer.
-    [[nodiscard]] NTSTATUS SetViewportOrigin(const bool fAbsolute, const COORD coordWindowOrigin, const bool updateBottom);
+    [[nodiscard]] NTSTATUS SetViewportOrigin(const bool fAbsolute, const til::point coordWindowOrigin, const bool updateBottom);
 
     bool SendNotifyBeep() const;
     bool PostUpdateWindowSize() const;
@@ -127,28 +125,28 @@ public:
 
     OutputCellRect ReadRect(const Microsoft::Console::Types::Viewport location) const;
 
-    TextBufferCellIterator GetCellDataAt(const COORD at) const;
-    TextBufferCellIterator GetCellLineDataAt(const COORD at) const;
-    TextBufferCellIterator GetCellDataAt(const COORD at, const Microsoft::Console::Types::Viewport limit) const;
-    TextBufferTextIterator GetTextDataAt(const COORD at) const;
-    TextBufferTextIterator GetTextLineDataAt(const COORD at) const;
-    TextBufferTextIterator GetTextDataAt(const COORD at, const Microsoft::Console::Types::Viewport limit) const;
+    TextBufferCellIterator GetCellDataAt(const til::point at) const;
+    TextBufferCellIterator GetCellLineDataAt(const til::point at) const;
+    TextBufferCellIterator GetCellDataAt(const til::point at, const Microsoft::Console::Types::Viewport limit) const;
+    TextBufferTextIterator GetTextDataAt(const til::point at) const;
+    TextBufferTextIterator GetTextLineDataAt(const til::point at) const;
+    TextBufferTextIterator GetTextDataAt(const til::point at, const Microsoft::Console::Types::Viewport limit) const;
 
     OutputCellIterator Write(const OutputCellIterator it);
 
     OutputCellIterator Write(const OutputCellIterator it,
-                             const COORD target,
+                             const til::point target,
                              const std::optional<bool> wrap = true);
 
     OutputCellIterator WriteRect(const OutputCellIterator it,
                                  const Microsoft::Console::Types::Viewport viewport);
 
     void WriteRect(const OutputCellRect& data,
-                   const COORD location);
+                   const til::point location);
 
     void ClearTextData();
 
-    std::pair<COORD, COORD> GetWordBoundary(const COORD position) const;
+    std::pair<til::point, til::point> GetWordBoundary(const til::point position) const;
 
     TextBuffer& GetTextBuffer() noexcept;
     const TextBuffer& GetTextBuffer() const noexcept;
@@ -188,21 +186,16 @@ public:
     void SetCursorInformation(const ULONG Size,
                               const bool Visible) noexcept;
 
-    void SetCursorColor(const unsigned int Color, const bool setMain = false) noexcept;
-
     void SetCursorType(const CursorType Type, const bool setMain = false) noexcept;
 
     void SetCursorDBMode(const bool DoubleCursor);
-    [[nodiscard]] NTSTATUS SetCursorPosition(const COORD Position, const bool TurnOn);
+    [[nodiscard]] NTSTATUS SetCursorPosition(const til::point Position, const bool TurnOn);
 
-    void MakeCursorVisible(const COORD CursorPosition, const bool updateBottom = true);
+    void MakeCursorVisible(const til::point CursorPosition);
 
     Microsoft::Console::Types::Viewport GetRelativeScrollMargins() const;
     Microsoft::Console::Types::Viewport GetAbsoluteScrollMargins() const;
     void SetScrollMargins(const Microsoft::Console::Types::Viewport margins);
-    bool AreMarginsSet() const noexcept;
-    bool IsCursorInMargins(const COORD cursorPosition) const noexcept;
-    Microsoft::Console::Types::Viewport GetScrollingRegion() const noexcept;
 
     [[nodiscard]] NTSTATUS UseAlternateScreenBuffer();
     void UseMainScreenBuffer();
@@ -221,14 +214,11 @@ public:
     void SetDefaultAttributes(const TextAttribute& attributes,
                               const TextAttribute& popupAttributes);
 
-    [[nodiscard]] HRESULT VtEraseAll();
+    [[nodiscard]] HRESULT ClearBuffer();
 
-    void SetTerminalConnection(_In_ Microsoft::Console::ITerminalOutputConnection* const pTtyConnection);
+    void SetTerminalConnection(_In_ Microsoft::Console::Render::VtEngine* const pTtyConnection);
 
     void UpdateBottom();
-    void MoveToBottom();
-
-    Microsoft::Console::Render::IRenderTarget& GetRenderTarget() noexcept;
 
     FontInfo& GetCurrentFont() noexcept;
     const FontInfo& GetCurrentFont() const noexcept;
@@ -250,22 +240,22 @@ private:
     Microsoft::Console::Interactivity::IWindowMetrics* _pConsoleWindowMetrics;
     Microsoft::Console::Interactivity::IAccessibilityNotifier* _pAccessibilityNotifier;
 
-    [[nodiscard]] HRESULT _AdjustScreenBufferHelper(const RECT* const prcClientNew,
-                                                    const COORD coordBufferOld,
-                                                    _Out_ COORD* const pcoordClientNewCharacters);
-    [[nodiscard]] HRESULT _AdjustScreenBuffer(const RECT* const prcClientNew);
-    void _CalculateViewportSize(const RECT* const prcClientArea, _Out_ COORD* const pcoordSize);
-    void _AdjustViewportSize(const RECT* const prcClientNew, const RECT* const prcClientOld, const COORD* const pcoordSize);
-    void _InternalSetViewportSize(const COORD* const pcoordSize, const bool fResizeFromTop, const bool fResizeFromLeft);
+    [[nodiscard]] HRESULT _AdjustScreenBufferHelper(const til::rect* const prcClientNew,
+                                                    const til::size coordBufferOld,
+                                                    _Out_ til::size* const pcoordClientNewCharacters);
+    [[nodiscard]] HRESULT _AdjustScreenBuffer(const til::rect* const prcClientNew);
+    void _CalculateViewportSize(const til::rect* const prcClientArea, _Out_ til::size* const pcoordSize);
+    void _AdjustViewportSize(const til::rect* const prcClientNew, const til::rect* const prcClientOld, const til::size* const pcoordSize);
+    void _InternalSetViewportSize(const til::size* pcoordSize, const bool fResizeFromTop, const bool fResizeFromLeft);
 
-    static void s_CalculateScrollbarVisibility(const RECT* const prcClientArea,
-                                               const COORD* const pcoordBufferSize,
-                                               const COORD* const pcoordFontSize,
+    static void s_CalculateScrollbarVisibility(const til::rect* const prcClientArea,
+                                               const til::size* const pcoordBufferSize,
+                                               const til::size* const pcoordFontSize,
                                                _Out_ bool* const pfIsHorizontalVisible,
                                                _Out_ bool* const pfIsVerticalVisible);
 
-    [[nodiscard]] NTSTATUS ResizeWithReflow(const COORD coordnewScreenSize);
-    [[nodiscard]] NTSTATUS ResizeTraditional(const COORD coordNewScreenSize);
+    [[nodiscard]] NTSTATUS ResizeWithReflow(const til::size coordnewScreenSize);
+    [[nodiscard]] NTSTATUS ResizeTraditional(const til::size coordNewScreenSize);
 
     [[nodiscard]] NTSTATUS _InitializeOutputStateMachine();
     void _FreeOutputStateMachine();
@@ -275,6 +265,8 @@ private:
     bool _IsAltBuffer() const;
     bool _IsInPtyMode() const;
     bool _IsInVTMode() const;
+
+    ConhostInternalGetSet _api;
 
     std::shared_ptr<Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
 
@@ -287,8 +279,8 @@ private:
     SCREEN_INFORMATION* _psiAlternateBuffer; // The VT "Alternate" screen buffer.
     SCREEN_INFORMATION* _psiMainBuffer; // A pointer to the main buffer, if this is the alternate buffer.
 
-    RECT _rcAltSavedClientNew;
-    RECT _rcAltSavedClientOld;
+    til::rect _rcAltSavedClientNew;
+    til::rect _rcAltSavedClientOld;
     bool _fAltWindowChanged;
 
     TextAttribute _PopupAttributes;
@@ -299,11 +291,13 @@ private:
     // Tracks the last virtual position the viewport was at. This is not
     //  affected by the user scrolling the viewport, only when API calls cause
     //  the viewport to move (SetBufferInfo, WriteConsole, etc)
-    short _virtualBottom;
-
-    ScreenBufferRenderTarget _renderTarget;
+    til::CoordType _virtualBottom;
 
     bool _ignoreLegacyEquivalentVTAttributes;
+
+    std::optional<til::size> _deferredPtyResize{ std::nullopt };
+
+    static void _handleDeferredResize(SCREEN_INFORMATION& siMain);
 
 #ifdef UNIT_TESTING
     friend class TextBufferIteratorTests;

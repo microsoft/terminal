@@ -19,8 +19,8 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 
 WCHAR CharToWchar(_In_reads_(cch) const char* const pch, const UINT cch)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    WCHAR wc = L'\0';
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto wc = L'\0';
 
     FAIL_FAST_IF(!(IsDBCSLeadByteConsole(*pch, &gci.OutputCPInfo) || cch == 1));
 
@@ -31,30 +31,9 @@ WCHAR CharToWchar(_In_reads_(cch) const char* const pch, const UINT cch)
 
 void SetConsoleCPInfo(const BOOL fOutput)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (fOutput)
     {
-        // If we're changing the output codepage, we want to update the font as well to give the engine an opportunity
-        // to pick a more appropriate font should the current one be unable to render in the new codepage.
-        // To do this, we create a copy of the existing font but we change the codepage value to be the new one that was just set in the global structures.
-        // NOTE: We need to do this only if everything is set up. This can get called while we're still initializing, so carefully check things for nullptr.
-        if (gci.HasActiveOutputBuffer())
-        {
-            SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
-            const FontInfo& fiOld = screenInfo.GetCurrentFont();
-
-            // Use the desired face name when updating the font.
-            // This ensures that if we had a fall back operation last time (the desired
-            // face name didn't support the code page and we have a different less-desirable font currently)
-            // that we'll now give it another shot to use the desired face name in the new code page.
-            FontInfo fiNew(screenInfo.GetDesiredFont().GetFaceName(),
-                           fiOld.GetFamily(),
-                           fiOld.GetWeight(),
-                           fiOld.GetUnscaledSize(),
-                           gci.OutputCP);
-            screenInfo.UpdateFont(&fiNew);
-        }
-
         if (!GetCPInfo(gci.OutputCP, &gci.OutputCPInfo))
         {
             gci.OutputCPInfo.LeadByte[0] = 0;
@@ -115,7 +94,7 @@ BOOL CheckBisectStringW(_In_reads_bytes_(cBytes) const WCHAR* pwchBuffer,
 // - pwchBuffer - Pointer to Unicode string buffer.
 // - cWords - Number of Unicode string.
 // - cBytes - Number of bisect position by byte counts.
-// - fEcho - TRUE if called by Read (echoing characters)
+// - fPrintableControlChars - TRUE if control characters are being expanded (to ^X)
 // Return Value:
 // - TRUE - Bisected character.
 // - FALSE - Correctly.
@@ -123,14 +102,14 @@ BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
                          _In_reads_bytes_(cBytes) const WCHAR* pwchBuffer,
                          _In_ size_t cWords,
                          _In_ size_t cBytes,
-                         _In_ SHORT sOriginalXPosition,
-                         _In_ BOOL fEcho)
+                         _In_ til::CoordType sOriginalXPosition,
+                         _In_ BOOL fPrintableControlChars)
 {
     if (WI_IsFlagSet(ScreenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT))
     {
         while (cWords && cBytes)
         {
-            WCHAR const Char = *pwchBuffer;
+            const auto Char = *pwchBuffer;
             if (Char >= UNICODE_SPACE)
             {
                 if (IsGlyphFullWidth(Char))
@@ -162,7 +141,7 @@ BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
                 switch (Char)
                 {
                 case UNICODE_BELL:
-                    if (fEcho)
+                    if (fPrintableControlChars)
                         goto CtrlChar;
                     break;
                 case UNICODE_BACKSPACE:
@@ -172,14 +151,14 @@ BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
                 case UNICODE_TAB:
                 {
                     size_t TabSize = NUMBER_OF_SPACES_IN_TAB(sOriginalXPosition);
-                    sOriginalXPosition = (SHORT)(sOriginalXPosition + TabSize);
+                    sOriginalXPosition = (til::CoordType)(sOriginalXPosition + TabSize);
                     if (cBytes < TabSize)
                         return TRUE;
                     cBytes -= TabSize;
                     break;
                 }
                 default:
-                    if (fEcho)
+                    if (fPrintableControlChars)
                     {
                     CtrlChar:
                         if (cBytes < 2)
@@ -212,24 +191,24 @@ BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
 // Note: may throw on error
 void SplitToOem(std::deque<std::unique_ptr<IInputEvent>>& events)
 {
-    const UINT codepage = ServiceLocator::LocateGlobals().getConsoleInformation().CP;
+    const auto codepage = ServiceLocator::LocateGlobals().getConsoleInformation().CP;
 
     // convert events to oem codepage
     std::deque<std::unique_ptr<IInputEvent>> convertedEvents;
     while (!events.empty())
     {
-        std::unique_ptr<IInputEvent> currentEvent = std::move(events.front());
+        auto currentEvent = std::move(events.front());
         events.pop_front();
         if (currentEvent->EventType() == InputEventType::KeyEvent)
         {
-            const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(currentEvent.get());
+            const auto pKeyEvent = static_cast<const KeyEvent* const>(currentEvent.get());
             // convert from wchar to char
             std::wstring wstr{ pKeyEvent->GetCharData() };
             const auto str = ConvertToA(codepage, wstr);
 
             for (auto& ch : str)
             {
-                std::unique_ptr<KeyEvent> tempEvent = std::make_unique<KeyEvent>(*pKeyEvent);
+                auto tempEvent = std::make_unique<KeyEvent>(*pKeyEvent);
                 tempEvent->SetCharData(ch);
                 convertedEvents.push_back(std::move(tempEvent));
             }
@@ -331,7 +310,7 @@ bool DoBuffersOverlap(const BYTE* const pBufferA,
                       const BYTE* const pBufferB,
                       const UINT cbBufferB) noexcept
 {
-    const BYTE* const pBufferAEnd = pBufferA + cbBufferA;
-    const BYTE* const pBufferBEnd = pBufferB + cbBufferB;
+    const auto pBufferAEnd = pBufferA + cbBufferA;
+    const auto pBufferBEnd = pBufferB + cbBufferB;
     return (pBufferA <= pBufferB && pBufferAEnd >= pBufferB) || (pBufferB <= pBufferA && pBufferBEnd >= pBufferA);
 }

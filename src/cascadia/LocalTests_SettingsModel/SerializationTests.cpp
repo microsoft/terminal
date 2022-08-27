@@ -8,14 +8,13 @@
 #include "JsonTestClass.h"
 #include "TestUtils.h"
 #include <defaults.h>
-#include "../ut_app/TestDynamicProfileGenerator.h"
 
 using namespace Microsoft::Console;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 
 namespace SettingsModelLocalTests
 {
@@ -39,14 +38,9 @@ namespace SettingsModelLocalTests
         TEST_METHOD(GlobalSettings);
         TEST_METHOD(Profile);
         TEST_METHOD(ColorScheme);
+        TEST_METHOD(Actions);
         TEST_METHOD(CascadiaSettings);
-
-        TEST_CLASS_SETUP(ClassSetup)
-        {
-            InitializeJsonReader();
-            InitializeJsonWriter();
-            return true;
-        }
+        TEST_METHOD(LegacyFontSettings);
 
     private:
         // Method Description:
@@ -59,7 +53,7 @@ namespace SettingsModelLocalTests
         // Return Value:
         // - the JsonObject representing this instance
         template<typename T>
-        void RoundtripTest(const std::string& jsonString)
+        void RoundtripTest(const std::string_view& jsonString)
         {
             const auto json{ VerifyParseSucceeded(jsonString) };
             const auto settings{ T::FromJson(json) };
@@ -75,7 +69,7 @@ namespace SettingsModelLocalTests
 
     void SerializationTests::GlobalSettings()
     {
-        const std::string globalsString{ R"(
+        static constexpr std::string_view globalsString{ R"(
             {
                 "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
 
@@ -84,7 +78,7 @@ namespace SettingsModelLocalTests
                 "initialPosition": ",",
                 "launchMode": "default",
                 "alwaysOnTop": false,
-
+                "inputServiceWarning": true,
                 "copyOnSelect": false,
                 "copyFormatting": "all",
                 "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",
@@ -103,15 +97,19 @@ namespace SettingsModelLocalTests
                 "confirmCloseAllTabs": true,
                 "largePasteWarning": true,
                 "multiLinePasteWarning": true,
+                "trimPaste": true,
 
                 "experimental.input.forceVT": false,
                 "experimental.rendering.forceFullRepaint": false,
-                "experimental.rendering.software": false
+                "experimental.rendering.software": false,
+
+                "actions": []
             })" };
 
-        const std::string smallGlobalsString{ R"(
+        static constexpr std::string_view smallGlobalsString{ R"(
             {
-                "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}"
+                "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+                "actions": []
             })" };
 
         RoundtripTest<implementation::GlobalAppSettings>(globalsString);
@@ -120,7 +118,7 @@ namespace SettingsModelLocalTests
 
     void SerializationTests::Profile()
     {
-        const std::string profileString{ R"(
+        static constexpr std::string_view profileString{ R"(
             {
                 "name": "Windows PowerShell",
                 "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
@@ -134,9 +132,11 @@ namespace SettingsModelLocalTests
                 "tabTitle": "Cool Tab",
                 "suppressApplicationTitle": false,
 
-                "fontFace": "Cascadia Mono",
-                "fontSize": 12,
-                "fontWeight": "normal",
+                "font": {
+                    "face": "Cascadia Mono",
+                    "size": 12,
+                    "weight": "normal"
+                },
                 "padding": "8, 8, 8, 8",
                 "antialiasingMode": "grayscale",
 
@@ -153,7 +153,7 @@ namespace SettingsModelLocalTests
                 "selectionBackground": "#CCAABB",
 
                 "useAcrylic": false,
-                "acrylicOpacity": 0.5,
+                "opacity": 50,
 
                 "backgroundImage": "made_you_look.jpeg",
                 "backgroundImageStretchMode": "uniformToFill",
@@ -168,7 +168,7 @@ namespace SettingsModelLocalTests
                 "experimental.retroTerminalEffect": false
             })" };
 
-        const std::string smallProfileString{ R"(
+        static constexpr std::string_view smallProfileString{ R"(
             {
                 "name": "Custom Profile"
             })" };
@@ -176,9 +176,11 @@ namespace SettingsModelLocalTests
         // Setting "tabColor" to null tests two things:
         // - null should count as an explicit user-set value, not falling back to the parent's value
         // - null should be acceptable even though we're working with colors
-        const std::string weirdProfileString{ R"(
+        static constexpr std::string_view weirdProfileString{ R"(
             {
+                "guid" : "{8b039d4d-77ca-5a83-88e1-dfc8e895a127}",
                 "name": "Weird Profile",
+                "hidden": false,
                 "tabColor": null,
                 "foreground": null,
                 "source": "local"
@@ -191,7 +193,7 @@ namespace SettingsModelLocalTests
 
     void SerializationTests::ColorScheme()
     {
-        const std::string schemeString{ R"({
+        static constexpr std::string_view schemeString{ R"({
                                             "name": "Campbell",
 
                                             "cursorColor": "#FFFFFF",
@@ -221,76 +223,282 @@ namespace SettingsModelLocalTests
         RoundtripTest<implementation::ColorScheme>(schemeString);
     }
 
-    void SerializationTests::CascadiaSettings()
+    void SerializationTests::Actions()
     {
-        const std::string settingsString{ R"({
-                                                "$schema": "https://aka.ms/terminal-profiles-schema",
-                                                "defaultProfile": "{61c54bbd-1111-5271-96e7-009a87ff44bf}",
-                                                "disabledProfileSources": [ "Windows.Terminal.Wsl" ],
+        // simple command
+        static constexpr std::string_view actionsString1{ R"([
+                                                { "command": "paste" }
+                                            ])" };
 
-                                                "profiles": {
-                                                    "defaults": {
-                                                        "fontFace": "Zamora Code"
-                                                    },
-                                                    "list": [
+        // complex command
+        static constexpr std::string_view actionsString2A{ R"([
+                                                { "command": { "action": "setTabColor" } }
+                                            ])" };
+        static constexpr std::string_view actionsString2B{ R"([
+                                                { "command": { "action": "setTabColor", "color": "#112233" } }
+                                            ])" };
+        static constexpr std::string_view actionsString2C{ R"([
+                                                { "command": { "action": "copy" } },
+                                                { "command": { "action": "copy", "singleLine": true, "copyFormatting": "html" } }
+                                            ])" };
+
+        // simple command with key chords
+        static constexpr std::string_view actionsString3{ R"([
+                                                { "command": "toggleAlwaysOnTop", "keys": "ctrl+a" },
+                                                { "command": "toggleAlwaysOnTop", "keys": "ctrl+b" }
+                                            ])" };
+
+        // complex command with key chords
+        static constexpr std::string_view actionsString4A{ R"([
+                                                { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+c" },
+                                                { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+d" }
+                                            ])" };
+        // GH#13323 - these can be fragile. In the past, the order these get
+        // re-serialized as has been not entirely stable. We don't really care
+        // about the order they get re-serialized in, but the tests aren't
+        // clever enough to compare the structure, only the literal string
+        // itself. Feel free to change as needed.
+        static constexpr std::string_view actionsString4B{ R"([
+                                                { "command": { "action": "findMatch", "direction": "prev" }, "keys": "ctrl+shift+r" },
+                                                { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+d" }
+                                            ])" };
+
+        // command with name and icon and multiple key chords
+        static constexpr std::string_view actionsString5{ R"([
+                                                { "icon": "image.png", "name": "Scroll To Top Name", "command": "scrollToTop", "keys": "ctrl+e" },
+                                                { "command": "scrollToTop", "keys": "ctrl+f" }
+                                            ])" };
+
+        // complex command with new terminal args
+        static constexpr std::string_view actionsString6{ R"([
+                                                { "command": { "action": "newTab", "index": 0 }, "keys": "ctrl+g" },
+                                            ])" };
+
+        // complex command with meaningful null arg
+        static constexpr std::string_view actionsString7{ R"([
+                                                { "command": { "action": "renameWindow", "name": null }, "keys": "ctrl+h" }
+                                            ])" };
+
+        // nested command
+        static constexpr std::string_view actionsString8{ R"([
+                                                {
+                                                    "name": "Change font size...",
+                                                    "commands": [
+                                                        { "command": { "action": "adjustFontSize", "delta": 1 } },
+                                                        { "command": { "action": "adjustFontSize", "delta": -1 } },
+                                                        { "command": "resetFontSize" },
+                                                    ]
+                                                }
+                                            ])" };
+
+        // iterable command
+        static constexpr std::string_view actionsString9A{ R"([
+                                                {
+                                                    "name": "New tab",
+                                                    "commands": [
                                                         {
-                                                            "fontFace": "Cascadia Code",
-                                                            "guid": "{61c54bbd-1111-5271-96e7-009a87ff44bf}",
-                                                            "name": "HowettShell"
-                                                        },
-                                                        {
-                                                            "hidden": true,
-                                                            "name": "BhojwaniShell"
-                                                        },
-                                                        {
-                                                            "antialiasingMode": "aliased",
-                                                            "name": "NiksaShell"
+                                                            "iterateOn": "profiles",
+                                                            "icon": "${profile.icon}",
+                                                            "name": "${profile.name}",
+                                                            "command": { "action": "newTab", "profile": "${profile.name}" }
                                                         }
                                                     ]
-                                                },
-                                                "schemes": [
+                                                }
+                                            ])" };
+        static constexpr std::string_view actionsString9B{ R"([
+                                                {
+                                                    "commands":
+                                                    [
+                                                        {
+                                                            "command":
+                                                            {
+                                                                "action": "sendInput",
+                                                                "input": "${profile.name}"
+                                                            },
+                                                            "iterateOn": "profiles"
+                                                        }
+                                                    ],
+                                                    "name": "Send Input ..."
+                                                }
+                                        ])" };
+        static constexpr std::string_view actionsString9C{ R""([
+                                                {
+                                                    "commands":
+                                                    [
+                                                        {
+                                                            "commands":
+                                                            [
+                                                                {
+                                                                    "command":
+                                                                    {
+                                                                        "action": "sendInput",
+                                                                        "input": "${profile.name} ${scheme.name}"
+                                                                    },
+                                                                    "iterateOn": "schemes"
+                                                                }
+                                                            ],
+                                                            "iterateOn": "profiles",
+                                                            "name": "nest level (${profile.name})"
+                                                        }
+                                                    ],
+                                                    "name": "Send Input (Evil) ..."
+                                                }
+                                            ])"" };
+        static constexpr std::string_view actionsString9D{ R""([
+                                                {
+                                                    "command":
                                                     {
-                                                        "name": "Cinnamon Roll",
+                                                        "action": "newTab",
+                                                        "profile": "${profile.name}"
+                                                    },
+                                                    "icon": "${profile.icon}",
+                                                    "iterateOn": "profiles",
+                                                    "name": "${profile.name}: New tab"
+                                                }
+                                            ])"" };
 
-                                                        "cursorColor": "#FFFFFD",
-                                                        "selectionBackground": "#FFFFFF",
+        // unbound command
+        static constexpr std::string_view actionsString10{ R"([
+                                                { "command": "unbound", "keys": "ctrl+c" }
+                                            ])" };
 
-                                                        "background": "#3C0315",
-                                                        "foreground": "#FFFFFD",
+        Log::Comment(L"simple command");
+        RoundtripTest<implementation::ActionMap>(actionsString1);
 
-                                                        "black": "#282A2E",
-                                                        "blue": "#0170C5",
-                                                        "cyan": "#3F8D83",
-                                                        "green": "#76AB23",
-                                                        "purple": "#7D498F",
-                                                        "red": "#BD0940",
-                                                        "white": "#FFFFFD",
-                                                        "yellow": "#E0DE48",
-                                                        "brightBlack": "#676E7A",
-                                                        "brightBlue": "#5C98C5",
-                                                        "brightCyan": "#8ABEB7",
-                                                        "brightGreen": "#B5D680",
-                                                        "brightPurple": "#AC79BB",
-                                                        "brightRed": "#BD6D85",
-                                                        "brightWhite": "#FFFFFD",
-                                                        "brightYellow": "#FFFD76"
-                                                    }
-                                                ],
-                                                "actions": [
-                                                    {"command": { "action": "renameTab","input": "Liang Tab" },"keys": "ctrl+t" }
-                                                ],
-                                                "keybindings": [
-                                                    { "command": { "action": "sendInput","input": "VT Griese Mode" },"keys": "ctrl+k" }
-                                                ]
-                                            })" };
+        Log::Comment(L"complex commands");
+        RoundtripTest<implementation::ActionMap>(actionsString2A);
+        RoundtripTest<implementation::ActionMap>(actionsString2B);
+        RoundtripTest<implementation::ActionMap>(actionsString2C);
 
-        auto settings{ winrt::make_self<implementation::CascadiaSettings>(false) };
-        settings->_ParseJsonString(settingsString, false);
-        settings->_ApplyDefaultsFromUserSettings();
-        settings->LayerJson(settings->_userSettings);
-        settings->_ValidateSettings();
+        Log::Comment(L"simple command with key chords");
+        RoundtripTest<implementation::ActionMap>(actionsString3);
+
+        Log::Comment(L"complex commands with key chords");
+        RoundtripTest<implementation::ActionMap>(actionsString4A);
+        RoundtripTest<implementation::ActionMap>(actionsString4B);
+
+        Log::Comment(L"command with name and icon and multiple key chords");
+        RoundtripTest<implementation::ActionMap>(actionsString5);
+
+        Log::Comment(L"complex command with new terminal args");
+        RoundtripTest<implementation::ActionMap>(actionsString6);
+
+        Log::Comment(L"complex command with meaningful null arg");
+        RoundtripTest<implementation::ActionMap>(actionsString7);
+
+        Log::Comment(L"nested command");
+        RoundtripTest<implementation::ActionMap>(actionsString8);
+
+        Log::Comment(L"iterable command");
+        RoundtripTest<implementation::ActionMap>(actionsString9A);
+        RoundtripTest<implementation::ActionMap>(actionsString9B);
+        RoundtripTest<implementation::ActionMap>(actionsString9C);
+        RoundtripTest<implementation::ActionMap>(actionsString9D);
+
+        Log::Comment(L"unbound command");
+        RoundtripTest<implementation::ActionMap>(actionsString10);
+    }
+
+    void SerializationTests::CascadiaSettings()
+    {
+        static constexpr std::string_view settingsString{ R"({
+            "$help" : "https://aka.ms/terminal-documentation",
+            "$schema" : "https://aka.ms/terminal-profiles-schema",
+            "defaultProfile": "{61c54bbd-1111-5271-96e7-009a87ff44bf}",
+            "disabledProfileSources": [ "Windows.Terminal.Wsl" ],
+            "profiles": {
+                "defaults": {
+                    "font": {
+                        "face": "Zamora Code"
+                    }
+                },
+                "list": [
+                    {
+                        "font": { "face": "Cascadia Code" },
+                        "guid": "{61c54bbd-1111-5271-96e7-009a87ff44bf}",
+                        "name": "HowettShell"
+                    },
+                    {
+                        "hidden": true,
+                        "guid": "{c08b0496-e71c-5503-b84e-3af7a7a6d2a7}",
+                        "name": "BhojwaniShell"
+                    },
+                    {
+                        "antialiasingMode": "aliased",
+                        "guid": "{fe9df758-ac22-5c20-922d-c7766cdd13af}",
+                        "name": "NiksaShell"
+                    }
+                ]
+            },
+            "schemes": [
+                {
+                    "name": "Cinnamon Roll",
+
+                    "cursorColor": "#FFFFFD",
+                    "selectionBackground": "#FFFFFF",
+
+                    "background": "#3C0315",
+                    "foreground": "#FFFFFD",
+
+                    "black": "#282A2E",
+                    "blue": "#0170C5",
+                    "cyan": "#3F8D83",
+                    "green": "#76AB23",
+                    "purple": "#7D498F",
+                    "red": "#BD0940",
+                    "white": "#FFFFFD",
+                    "yellow": "#E0DE48",
+                    "brightBlack": "#676E7A",
+                    "brightBlue": "#5C98C5",
+                    "brightCyan": "#8ABEB7",
+                    "brightGreen": "#B5D680",
+                    "brightPurple": "#AC79BB",
+                    "brightRed": "#BD6D85",
+                    "brightWhite": "#FFFFFD",
+                    "brightYellow": "#FFFD76"
+                }
+            ],
+            "actions": [
+                { "command": { "action": "sendInput", "input": "VT Griese Mode" }, "keys": "ctrl+k" }
+            ],
+            "theme": "system",
+            "themes": []
+        })" };
+
+        const auto settings{ winrt::make_self<implementation::CascadiaSettings>(settingsString) };
 
         const auto result{ settings->ToJson() };
-        VERIFY_ARE_EQUAL(toString(settings->_userSettings), toString(result));
+        VERIFY_ARE_EQUAL(toString(VerifyParseSucceeded(settingsString)), toString(result));
+    }
+
+    void SerializationTests::LegacyFontSettings()
+    {
+        static constexpr std::string_view profileString{ R"(
+            {
+                "name": "Profile with legacy font settings",
+
+                "fontFace": "Cascadia Mono",
+                "fontSize": 12,
+                "fontWeight": "normal"
+            })" };
+
+        static constexpr std::string_view expectedOutput{ R"(
+            {
+                "name": "Profile with legacy font settings",
+
+                "font": {
+                    "face": "Cascadia Mono",
+                    "size": 12,
+                    "weight": "normal"
+                }
+            })" };
+
+        const auto json{ VerifyParseSucceeded(profileString) };
+        const auto settings{ implementation::Profile::FromJson(json) };
+        const auto result{ settings->ToJson() };
+
+        const auto jsonOutput{ VerifyParseSucceeded(expectedOutput) };
+
+        VERIFY_ARE_EQUAL(toString(jsonOutput), toString(result));
     }
 }

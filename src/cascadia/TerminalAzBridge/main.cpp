@@ -9,7 +9,7 @@ using namespace winrt;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 
-static COORD GetConsoleScreenSize(HANDLE outputHandle)
+static til::point GetConsoleScreenSize(HANDLE outputHandle)
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex{};
     csbiex.cbSize = sizeof(csbiex);
@@ -76,8 +76,8 @@ int wmain(int /*argc*/, wchar_t** /*argv*/)
     winrt::init_apartment(winrt::apartment_type::single_threaded);
 
     DWORD inputMode{}, outputMode{};
-    HANDLE conIn{ GetStdHandle(STD_INPUT_HANDLE) }, conOut{ GetStdHandle(STD_OUTPUT_HANDLE) };
-    UINT codepage{ GetConsoleCP() }, outputCodepage{ GetConsoleOutputCP() };
+    auto conIn{ GetStdHandle(STD_INPUT_HANDLE) }, conOut{ GetStdHandle(STD_OUTPUT_HANDLE) };
+    auto codepage{ GetConsoleCP() }, outputCodepage{ GetConsoleOutputCP() };
 
     RETURN_IF_WIN32_BOOL_FALSE(GetConsoleMode(conIn, &inputMode));
     RETURN_IF_WIN32_BOOL_FALSE(GetConsoleMode(conOut, &outputMode));
@@ -96,7 +96,11 @@ int wmain(int /*argc*/, wchar_t** /*argv*/)
 
     const auto size = GetConsoleScreenSize(conOut);
 
-    AzureConnection azureConn{ gsl::narrow_cast<uint32_t>(size.Y), gsl::narrow_cast<uint32_t>(size.X) };
+    AzureConnection azureConn{};
+    winrt::Windows::Foundation::Collections::ValueSet vs{};
+    vs.Insert(L"initialRows", winrt::Windows::Foundation::PropertyValue::CreateUInt32(gsl::narrow_cast<uint32_t>(size.Y)));
+    vs.Insert(L"initialCols", winrt::Windows::Foundation::PropertyValue::CreateUInt32(gsl::narrow_cast<uint32_t>(size.X)));
+    azureConn.Initialize(vs);
 
     const auto state = RunConnectionToCompletion(azureConn, conOut, conIn);
 

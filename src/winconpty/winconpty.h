@@ -17,6 +17,9 @@ typedef struct _PseudoConsole
 // Signals
 // These are not defined publicly, but are used for controlling the conpty via
 //      the signal pipe.
+#define PTY_SIGNAL_SHOWHIDE_WINDOW (1u)
+#define PTY_SIGNAL_CLEAR_WINDOW (2u)
+#define PTY_SIGNAL_REPARENT_WINDOW (3u)
 #define PTY_SIGNAL_RESIZE_WINDOW (8u)
 
 // CreatePseudoConsole Flags
@@ -24,6 +27,7 @@ typedef struct _PseudoConsole
 // #define PSEUDOCONSOLE_INHERIT_CURSOR (0x1)
 #define PSEUDOCONSOLE_RESIZE_QUIRK (0x2)
 #define PSEUDOCONSOLE_WIN32_INPUT_MODE (0x4)
+#define PSEUDOCONSOLE_PASSTHROUGH_MODE (0x8)
 
 // Implementations of the various PseudoConsole functions.
 HRESULT _CreatePseudoConsole(const HANDLE hToken,
@@ -34,6 +38,9 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
                              _Inout_ PseudoConsole* pPty);
 
 HRESULT _ResizePseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const COORD size);
+HRESULT _ClearPseudoConsole(_In_ const PseudoConsole* const pPty);
+HRESULT _ShowHidePseudoConsole(_In_ const PseudoConsole* const pPty, const bool show);
+HRESULT _ReparentPseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const HWND newParent);
 void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty);
 VOID _ClosePseudoConsole(_In_ PseudoConsole* pPty);
 

@@ -40,13 +40,15 @@ namespace Microsoft::Console::Utils
     }
 
     std::wstring GuidToString(const GUID guid);
-    GUID GuidFromString(const std::wstring wstr);
+    GUID GuidFromString(_Null_terminated_ const wchar_t* str);
     GUID CreateGuid();
 
     std::string ColorToHexString(const til::color color);
     til::color ColorFromHexString(const std::string_view wstr);
     std::optional<til::color> ColorFromXTermColor(const std::wstring_view wstr) noexcept;
     std::optional<til::color> ColorFromXParseColorSpec(const std::wstring_view wstr) noexcept;
+    til::color ColorFromHLS(const int h, const int l, const int s) noexcept;
+    til::color ColorFromRGB100(const int r, const int g, const int b) noexcept;
 
     bool HexToUint(const wchar_t wch, unsigned int& value) noexcept;
     bool StringToUint(const std::wstring_view wstr, unsigned int& value);
@@ -93,5 +95,20 @@ namespace Microsoft::Console::Utils
     }
 
     GUID CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const gsl::byte> name);
+
+    bool IsElevated();
+
+    // This function is only ever used by the ConPTY connection in
+    // TerminalConnection. However, that library does not have a good system of
+    // tests set up. Since this function has a plethora of edge cases that would
+    // be beneficial to have tests for, we're hosting it in this lib, so it can
+    // be easily tested.
+    std::tuple<std::wstring, std::wstring> MangleStartingDirectoryForWSL(std::wstring_view commandLine,
+                                                                         std::wstring_view startingDirectory);
+
+    // Similar to MangleStartingDirectoryForWSL, this function is only ever used
+    // in TerminalPage::_PasteFromClipboardHandler, but putting it here makes
+    // testing easier.
+    std::wstring_view TrimPaste(std::wstring_view textView) noexcept;
 
 }

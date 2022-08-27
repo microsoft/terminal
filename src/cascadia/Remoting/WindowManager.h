@@ -24,11 +24,10 @@ Abstract:
 #include "WindowManager.g.h"
 #include "Peasant.h"
 #include "Monarch.h"
-#include "../cascadia/inc/cppwinrt_utils.h"
 
 namespace winrt::Microsoft::Terminal::Remoting::implementation
 {
-    struct WindowManager final : public WindowManagerT<WindowManager>
+    struct WindowManager : public WindowManagerT<WindowManager>
     {
         WindowManager();
         ~WindowManager();
@@ -37,14 +36,35 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         bool ShouldCreateWindow();
 
         winrt::Microsoft::Terminal::Remoting::Peasant CurrentWindow();
+        bool IsMonarch();
+        void SummonWindow(const Remoting::SummonWindowSelectionArgs& args);
+        void SignalClose();
+
+        void SummonAllWindows();
+        uint64_t GetNumberOfPeasants();
+        Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> GetPeasantInfos();
+
+        winrt::fire_and_forget RequestShowNotificationIcon();
+        winrt::fire_and_forget RequestHideNotificationIcon();
+        winrt::fire_and_forget RequestQuitAll();
+        bool DoesQuakeWindowExist();
+        void UpdateActiveTabTitle(winrt::hstring title);
+        Windows::Foundation::Collections::IVector<winrt::hstring> GetAllWindowLayouts();
 
         TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
+        TYPED_EVENT(BecameMonarch, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(WindowCreated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(WindowClosed, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(ShowNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(HideNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs);
+        TYPED_EVENT(GetWindowLayoutRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::GetWindowLayoutArgs);
 
     private:
         bool _shouldCreateWindow{ false };
         bool _isKing{ false };
         DWORD _registrationHostClass{ 0 };
-        winrt::Microsoft::Terminal::Remoting::Monarch _monarch{ nullptr };
+        winrt::Microsoft::Terminal::Remoting::IMonarch _monarch{ nullptr };
         winrt::Microsoft::Terminal::Remoting::Peasant _peasant{ nullptr };
 
         wil::unique_event _monarchWaitInterrupt;
@@ -52,15 +72,22 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         void _registerAsMonarch();
         void _createMonarch();
+        void _redundantCreateMonarch();
         void _createMonarchAndCallbacks();
+        void _createCallbacks();
         bool _areWeTheKing();
-        winrt::Microsoft::Terminal::Remoting::IPeasant _createOurPeasant(std::optional<uint64_t> givenID);
+        winrt::Microsoft::Terminal::Remoting::IPeasant _createOurPeasant(std::optional<uint64_t> givenID,
+                                                                         const winrt::hstring& givenName);
 
         bool _performElection();
         void _createPeasantThread();
         void _waitOnMonarchThread();
         void _raiseFindTargetWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                              const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args);
+
+        void _proposeToMonarch(const Remoting::CommandlineArgs& args,
+                               std::optional<uint64_t>& givenID,
+                               winrt::hstring& givenName);
     };
 }
 

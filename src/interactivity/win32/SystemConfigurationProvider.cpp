@@ -60,49 +60,57 @@ void SystemConfigurationProvider::GetSettingsFromLink(
     _Inout_updates_bytes_(*pdwTitleLength) LPWSTR pwszTitle,
     _Inout_ PDWORD pdwTitleLength,
     _In_ PCWSTR pwszCurrDir,
-    _In_ PCWSTR pwszAppName)
+    _In_ PCWSTR pwszAppName,
+    _Inout_opt_ IconInfo* iconInfo)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     WCHAR wszLinkTarget[MAX_PATH] = { 0 };
     WCHAR wszIconLocation[MAX_PATH] = { 0 };
-    int iIconIndex = 0;
+    auto iIconIndex = 0;
 
     pLinkSettings->SetCodePage(ServiceLocator::LocateGlobals().uiOEMCP);
 
     // Did we get started from a link?
     if (pLinkSettings->GetStartupFlags() & STARTF_TITLEISLINKNAME)
     {
-        if (SUCCEEDED(CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED)))
+        auto initializedCom = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+
+        // GH#9458: If it's RPC_E_CHANGED_MODE, that's okay, we're doing a
+        // defterm and have already started COM. We can continue on here.
+        if (SUCCEEDED(initializedCom) || initializedCom == RPC_E_CHANGED_MODE)
         {
-            size_t const cch = *pdwTitleLength / sizeof(wchar_t);
+            // Don't CoUninitialize if we still need COM for defterm.
+            auto unInitCom = wil::scope_exit([initializedCom]() { if (SUCCEEDED(initializedCom)){CoUninitialize();} });
+
+            const auto cch = *pdwTitleLength / sizeof(wchar_t);
 
             gci.SetLinkTitle(std::wstring(pwszTitle, cch));
 
-            wchar_t* const linkNameForCsi = new (std::nothrow) wchar_t[gci.GetLinkTitle().length() + 1]{ 0 };
+            const auto linkNameForCsi = new (std::nothrow) wchar_t[gci.GetLinkTitle().length() + 1]{ 0 };
             if (linkNameForCsi)
             {
                 gci.GetLinkTitle().copy(linkNameForCsi, gci.GetLinkTitle().length());
             }
 
-            CONSOLE_STATE_INFO csi = pLinkSettings->CreateConsoleStateInfo();
+            auto csi = pLinkSettings->CreateConsoleStateInfo();
             csi.LinkTitle = linkNameForCsi;
             WCHAR wszShortcutTitle[MAX_PATH] = L"\0";
-            BOOL fReadConsoleProperties = FALSE;
-            WORD wShowWindow = pLinkSettings->GetShowWindow();
-            DWORD dwHotKey = pLinkSettings->GetHotKey();
-            int iShowWindow = 0;
+            auto fReadConsoleProperties = FALSE;
+            auto wShowWindow = pLinkSettings->GetShowWindow();
+            auto dwHotKey = pLinkSettings->GetHotKey();
+            auto iShowWindow = 0;
             WORD wHotKey = 0;
-            NTSTATUS Status = ShortcutSerialization::s_GetLinkValues(&csi,
-                                                                     &fReadConsoleProperties,
-                                                                     wszShortcutTitle,
-                                                                     ARRAYSIZE(wszShortcutTitle),
-                                                                     wszLinkTarget,
-                                                                     ARRAYSIZE(wszLinkTarget),
-                                                                     wszIconLocation,
-                                                                     ARRAYSIZE(wszIconLocation),
-                                                                     &iIconIndex,
-                                                                     &iShowWindow,
-                                                                     &wHotKey);
+            auto Status = ShortcutSerialization::s_GetLinkValues(&csi,
+                                                                 &fReadConsoleProperties,
+                                                                 wszShortcutTitle,
+                                                                 ARRAYSIZE(wszShortcutTitle),
+                                                                 wszLinkTarget,
+                                                                 ARRAYSIZE(wszLinkTarget),
+                                                                 wszIconLocation,
+                                                                 ARRAYSIZE(wszIconLocation),
+                                                                 &iIconIndex,
+                                                                 &iShowWindow,
+                                                                 &wHotKey);
 
             if (NT_SUCCESS(Status))
             {
@@ -156,7 +164,6 @@ void SystemConfigurationProvider::GetSettingsFromLink(
                 // settings based on title.
                 pLinkSettings->UnsetStartupFlag(STARTF_TITLEISLINKNAME);
             }
-            CoUninitialize();
         }
     }
 
@@ -171,12 +178,12 @@ void SystemConfigurationProvider::GetSettingsFromLink(
         {
             // search for the application along the path so that we can load its icons (if we didn't find one explicitly in
             // the shortcut)
-            const DWORD dwLinkLen = SearchPathW(pwszCurrDir, pwszAppName, nullptr, ARRAYSIZE(wszIconLocation), wszIconLocation, nullptr);
+            const auto dwLinkLen = SearchPathW(pwszCurrDir, pwszAppName, nullptr, ARRAYSIZE(wszIconLocation), wszIconLocation, nullptr);
 
             // If we cannot find the application in the path, then try to fall back and see if the window title is a valid path and use that.
-            if (dwLinkLen <= 0 || dwLinkLen > sizeof(wszIconLocation))
+            if (dwLinkLen <= 0 || dwLinkLen > ARRAYSIZE(wszIconLocation))
             {
-                if (PathFileExistsW(pwszTitle) && (wcslen(pwszTitle) < sizeof(wszIconLocation)))
+                if (PathFileExistsW(pwszTitle) && (wcslen(pwszTitle) < ARRAYSIZE(wszIconLocation)))
                 {
                     StringCchCopyW(wszIconLocation, ARRAYSIZE(wszIconLocation), pwszTitle);
                 }
@@ -191,7 +198,19 @@ void SystemConfigurationProvider::GetSettingsFromLink(
 
     if (wszIconLocation[0] != L'\0')
     {
-        LOG_IF_FAILED(Icon::Instance().LoadIconsFromPath(wszIconLocation, iIconIndex));
+        // GH#9458, GH#13111 - when this is executed during defterm startup,
+        // we'll pass in an iconInfo pointer, which we should fill with the
+        // selected icon path and index, rather than loading the icon with our
+        // global Icon class.
+        if (iconInfo)
+        {
+            iconInfo->path = std::wstring{ wszIconLocation };
+            iconInfo->index = iIconIndex;
+        }
+        else
+        {
+            LOG_IF_FAILED(Icon::Instance().LoadIconsFromPath(wszIconLocation, iIconIndex));
+        }
     }
 
     if (!IsValidCodePage(pLinkSettings->GetCodePage()))

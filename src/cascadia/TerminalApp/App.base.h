@@ -7,32 +7,24 @@ namespace winrt::TerminalApp::implementation
     {
         using IXamlType = ::winrt::Windows::UI::Xaml::Markup::IXamlType;
 
-        IXamlType GetXamlType(::winrt::Windows::UI::Xaml::Interop::TypeName const& type)
+        IXamlType GetXamlType(const ::winrt::Windows::UI::Xaml::Interop::TypeName& type)
         {
-            return AppProvider()->GetXamlType(type);
+            return _appProvider.GetXamlType(type);
         }
 
-        IXamlType GetXamlType(::winrt::hstring const& fullName)
+        IXamlType GetXamlType(const ::winrt::hstring& fullName)
         {
-            return AppProvider()->GetXamlType(fullName);
+            return _appProvider.GetXamlType(fullName);
         }
 
         ::winrt::com_array<::winrt::Windows::UI::Xaml::Markup::XmlnsDefinition> GetXmlnsDefinitions()
         {
-            return AppProvider()->GetXmlnsDefinitions();
+            return _appProvider.GetXmlnsDefinitions();
         }
 
     private:
         bool _contentLoaded{ false };
-        std::shared_ptr<XamlMetaDataProvider> _appProvider;
-        std::shared_ptr<XamlMetaDataProvider> AppProvider()
-        {
-            if (!_appProvider)
-            {
-                _appProvider = std::make_shared<XamlMetaDataProvider>();
-            }
-            return _appProvider;
-        }
+        winrt::TerminalApp::XamlMetaDataProvider _appProvider;
     };
 
     template<typename D, typename... I>

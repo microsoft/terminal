@@ -20,40 +20,40 @@ using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::Interactivity::OneCore;
 
-BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWidth, LONG FontWidth, LONG FontHeight) :
+BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWidth, LONG FontWidth, LONG FontHeight) noexcept :
     RenderEngineBase(),
-    _sharedViewBase((ULONG_PTR)SharedViewBase),
-    _displayHeight(DisplayHeight),
-    _displayWidth(DisplayWidth),
+    _sharedViewBase(static_cast<std::byte*>(SharedViewBase)),
+    _displayHeight(gsl::narrow_cast<SIZE_T>(DisplayHeight)),
+    _displayWidth(gsl::narrow_cast<SIZE_T>(DisplayWidth)),
     _currentLegacyColorAttribute(DEFAULT_COLOR_ATTRIBUTE)
 {
     _runLength = sizeof(CD_IO_CHARACTER) * DisplayWidth;
 
-    _fontSize.X = FontWidth > SHORT_MAX ? SHORT_MAX : (SHORT)FontWidth;
-    _fontSize.Y = FontHeight > SHORT_MAX ? SHORT_MAX : (SHORT)FontHeight;
+    _fontSize.X = FontWidth > SHORT_MAX ? SHORT_MAX : gsl::narrow_cast<til::CoordType>(FontWidth);
+    _fontSize.Y = FontHeight > SHORT_MAX ? SHORT_MAX : gsl::narrow_cast<til::CoordType>(FontHeight);
 }
 
-[[nodiscard]] HRESULT BgfxEngine::Invalidate(const SMALL_RECT* const /*psrRegion*/) noexcept
+[[nodiscard]] HRESULT BgfxEngine::Invalidate(const til::rect* /*psrRegion*/) noexcept
 {
     return S_OK;
 }
 
-[[nodiscard]] HRESULT BgfxEngine::InvalidateCursor(const COORD* const /*pcoordCursor*/) noexcept
+[[nodiscard]] HRESULT BgfxEngine::InvalidateCursor(const til::rect* /*psrRegion*/) noexcept
 {
     return S_OK;
 }
 
-[[nodiscard]] HRESULT BgfxEngine::InvalidateSystem(const RECT* const /*prcDirtyClient*/) noexcept
+[[nodiscard]] HRESULT BgfxEngine::InvalidateSystem(const til::rect* /*prcDirtyClient*/) noexcept
 {
     return S_OK;
 }
 
-[[nodiscard]] HRESULT BgfxEngine::InvalidateSelection(const std::vector<SMALL_RECT>& /*rectangles*/) noexcept
+[[nodiscard]] HRESULT BgfxEngine::InvalidateSelection(const std::vector<til::rect>& /*rectangles*/) noexcept
 {
     return S_OK;
 }
 
-[[nodiscard]] HRESULT BgfxEngine::InvalidateScroll(const COORD* const /*pcoordDelta*/) noexcept
+[[nodiscard]] HRESULT BgfxEngine::InvalidateScroll(const til::point* /*pcoordDelta*/) noexcept
 {
     return S_OK;
 }
@@ -61,12 +61,6 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
 [[nodiscard]] HRESULT BgfxEngine::InvalidateAll() noexcept
 {
     return S_OK;
-}
-
-[[nodiscard]] HRESULT BgfxEngine::InvalidateCircling(_Out_ bool* const pForcePaint) noexcept
-{
-    *pForcePaint = false;
-    return S_FALSE;
 }
 
 [[nodiscard]] HRESULT BgfxEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
@@ -81,26 +75,23 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
 }
 
 [[nodiscard]] HRESULT BgfxEngine::EndPaint() noexcept
+try
 {
-    NTSTATUS Status;
-
-    PVOID OldRunBase;
-    PVOID NewRunBase;
-
-    Status = ServiceLocator::LocateInputServices<ConIoSrvComm>()->RequestUpdateDisplay(0);
+    const auto Status = ConIoSrvComm::GetConIoSrvComm()->RequestUpdateDisplay(0);
 
     if (NT_SUCCESS(Status))
     {
-        for (SHORT i = 0; i < _displayHeight; i++)
+        for (SIZE_T i = 0; i < _displayHeight; i++)
         {
-            OldRunBase = (PVOID)(_sharedViewBase + (i * 2 * _runLength));
-            NewRunBase = (PVOID)(_sharedViewBase + (i * 2 * _runLength) + _runLength);
+            const auto OldRunBase = _sharedViewBase + (i * 2 * _runLength);
+            const auto NewRunBase = OldRunBase + _runLength;
             memcpy_s(OldRunBase, _runLength, NewRunBase, _runLength);
         }
     }
 
     return HRESULT_FROM_NT(Status);
 }
+CATCH_RETURN()
 
 // Routine Description:
 // - Used to perform longer running presentation steps outside the lock so the other threads can continue.
@@ -121,21 +112,11 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
 
 [[nodiscard]] HRESULT BgfxEngine::PaintBackground() noexcept
 {
-    PVOID OldRunBase;
-    PVOID NewRunBase;
-
-    PCD_IO_CHARACTER OldRun;
-    PCD_IO_CHARACTER NewRun;
-
-    for (SHORT i = 0; i < _displayHeight; i++)
+    for (SIZE_T i = 0; i < _displayHeight; i++)
     {
-        OldRunBase = (PVOID)(_sharedViewBase + (i * 2 * _runLength));
-        NewRunBase = (PVOID)(_sharedViewBase + (i * 2 * _runLength) + _runLength);
+        const auto NewRun = reinterpret_cast<PCD_IO_CHARACTER>(_sharedViewBase + (i * 2 * _runLength) + _runLength);
 
-        OldRun = (PCD_IO_CHARACTER)OldRunBase;
-        NewRun = (PCD_IO_CHARACTER)NewRunBase;
-
-        for (SHORT j = 0; j < _displayWidth; j++)
+        for (SIZE_T j = 0; j < _displayWidth; j++)
         {
             NewRun[j].Character = L' ';
             NewRun[j].Attribute = 0;
@@ -146,16 +127,16 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
 }
 
 [[nodiscard]] HRESULT BgfxEngine::PaintBufferLine(const gsl::span<const Cluster> clusters,
-                                                  const COORD coord,
+                                                  const til::point coord,
                                                   const bool /*trimLeft*/,
                                                   const bool /*lineWrapped*/) noexcept
 {
     try
     {
-        PVOID NewRunBase = (PVOID)(_sharedViewBase + (coord.Y * 2 * _runLength) + _runLength);
-        PCD_IO_CHARACTER NewRun = (PCD_IO_CHARACTER)NewRunBase;
+        const auto y = gsl::narrow_cast<SIZE_T>(coord.Y);
+        const auto NewRun = reinterpret_cast<PCD_IO_CHARACTER>(_sharedViewBase + (y * 2 * _runLength) + _runLength);
 
-        for (size_t i = 0; i < clusters.size() && i < (size_t)_displayWidth; i++)
+        for (SIZE_T i = 0; i < clusters.size() && i < _displayWidth; i++)
         {
             NewRun[coord.X + i].Character = til::at(clusters, i).GetTextAsSingle();
             NewRun[coord.X + i].Attribute = _currentLegacyColorAttribute;
@@ -163,40 +144,44 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
 
         return S_OK;
     }
-    CATCH_RETURN();
+    CATCH_RETURN()
 }
 
-[[nodiscard]] HRESULT BgfxEngine::PaintBufferGridLines(GridLines const /*lines*/,
+[[nodiscard]] HRESULT BgfxEngine::PaintBufferGridLines(GridLineSet const /*lines*/,
                                                        COLORREF const /*color*/,
                                                        size_t const /*cchLine*/,
-                                                       COORD const /*coordTarget*/) noexcept
+                                                       const til::point /*coordTarget*/) noexcept
 {
     return S_OK;
 }
 
-[[nodiscard]] HRESULT BgfxEngine::PaintSelection(const SMALL_RECT /*rect*/) noexcept
+[[nodiscard]] HRESULT BgfxEngine::PaintSelection(const til::rect& /*rect*/) noexcept
 {
     return S_OK;
 }
 
 [[nodiscard]] HRESULT BgfxEngine::PaintCursor(const CursorOptions& options) noexcept
+try
 {
     // TODO: MSFT: 11448021 - Modify BGFX to support rendering full-width
     // characters and a full-width cursor.
     CD_IO_CURSOR_INFORMATION CursorInfo;
-    CursorInfo.Row = options.coordCursor.Y;
-    CursorInfo.Column = options.coordCursor.X;
+    CursorInfo.Row = gsl::narrow<USHORT>(options.coordCursor.Y);
+    CursorInfo.Column = gsl::narrow<USHORT>(options.coordCursor.X);
     CursorInfo.Height = options.ulCursorHeightPercent;
     CursorInfo.IsVisible = TRUE;
 
-    NTSTATUS Status = ServiceLocator::LocateInputServices<ConIoSrvComm>()->RequestSetCursor(&CursorInfo);
+    const auto Status = ConIoSrvComm::GetConIoSrvComm()->RequestSetCursor(&CursorInfo);
 
     return HRESULT_FROM_NT(Status);
 }
+CATCH_RETURN()
 
 [[nodiscard]] HRESULT BgfxEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                       const RenderSettings& /*renderSettings*/,
                                                        const gsl::not_null<IRenderData*> /*pData*/,
-                                                       bool const /*isSettingDefaultBrushes*/) noexcept
+                                                       const bool /*usingSoftFont*/,
+                                                       const bool /*isSettingDefaultBrushes*/) noexcept
 {
     _currentLegacyColorAttribute = textAttributes.GetLegacyAttributes();
 
@@ -208,7 +193,7 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
     return S_OK;
 }
 
-[[nodiscard]] HRESULT BgfxEngine::UpdateDpi(int const /*iDpi*/) noexcept
+[[nodiscard]] HRESULT BgfxEngine::UpdateDpi(const int /*iDpi*/) noexcept
 {
     return S_OK;
 }
@@ -220,28 +205,28 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
 // - srNewViewport - The bounds of the new viewport.
 // Return Value:
 // - HRESULT S_OK
-[[nodiscard]] HRESULT BgfxEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/) noexcept
+[[nodiscard]] HRESULT BgfxEngine::UpdateViewport(const til::inclusive_rect& /*srNewViewport*/) noexcept
 {
     return S_OK;
 }
 
-[[nodiscard]] HRESULT BgfxEngine::GetProposedFont(const FontInfoDesired& /*pfiFontInfoDesired*/, FontInfo& /*pfiFontInfo*/, int const /*iDpi*/) noexcept
+[[nodiscard]] HRESULT BgfxEngine::GetProposedFont(const FontInfoDesired& /*pfiFontInfoDesired*/, FontInfo& /*pfiFontInfo*/, const int /*iDpi*/) noexcept
 {
     return S_OK;
 }
 
-std::vector<til::rectangle> BgfxEngine::GetDirtyArea()
+[[nodiscard]] HRESULT BgfxEngine::GetDirtyArea(gsl::span<const til::rect>& area) noexcept
 {
-    SMALL_RECT r;
-    r.Bottom = _displayHeight > 0 ? (SHORT)(_displayHeight - 1) : 0;
-    r.Top = 0;
-    r.Left = 0;
-    r.Right = _displayWidth > 0 ? (SHORT)(_displayWidth - 1) : 0;
+    _dirtyArea.bottom = gsl::narrow_cast<til::CoordType>(std::max(static_cast<SIZE_T>(0), _displayHeight));
+    _dirtyArea.right = gsl::narrow_cast<til::CoordType>(std::max(static_cast<SIZE_T>(0), _displayWidth));
 
-    return { r };
+    area = { &_dirtyArea,
+             1 };
+
+    return S_OK;
 }
 
-[[nodiscard]] HRESULT BgfxEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept
+[[nodiscard]] HRESULT BgfxEngine::GetFontSize(_Out_ til::size* pFontSize) noexcept
 {
     *pFontSize = _fontSize;
     return S_OK;
@@ -260,7 +245,7 @@ std::vector<til::rectangle> BgfxEngine::GetDirtyArea()
 // - newTitle: the new string to use for the title of the window
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT BgfxEngine::_DoUpdateTitle(_In_ const std::wstring& /*newTitle*/) noexcept
+[[nodiscard]] HRESULT BgfxEngine::_DoUpdateTitle(_In_ const std::wstring_view /*newTitle*/) noexcept
 {
     return S_OK;
 }

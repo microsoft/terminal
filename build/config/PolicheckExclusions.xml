@@ -1,0 +1,11 @@
+<PoliCheckExclusions>
+  <!-- All strings must be UPPER CASE -->
+  <!--Each of these exclusions is a folder name -if \[name]\exists in the file path, it will be skipped -->
+  <Exclusion Type="FolderPathFull">winrt|.git|oss|packages</Exclusion>
+  <!--Each of these exclusions is a folder name -if any folder or file starts with "\[name]", it will be skipped -->
+  <!--<Exclusion Type="FolderPathStart">ABC|XYZ</Exclusion>-->
+  <!--Each of these file types will be completely skipped for the entire scan -->
+  <Exclusion Type="FileType">.PNG|.SVG|.BMP|.ICO</Exclusion>
+  <!--The specified file names will be skipped during the scan regardless which folder they are in -->
+  <!--<Exclusion Type="FileName">ABC.TXT|XYZ.CS</Exclusion>-->
+</PoliCheckExclusions>

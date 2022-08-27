@@ -20,146 +20,165 @@ Author(s):
 #include "CascadiaSettings.g.h"
 
 #include "GlobalAppSettings.h"
-#include "TerminalWarnings.h"
-#include "IDynamicProfileGenerator.h"
-
 #include "Profile.h"
-#include "ColorScheme.h"
 
-// fwdecl unittest classes
-namespace SettingsModelLocalTests
+namespace winrt::Microsoft::Terminal::Settings::Model
 {
-    class SerializationTests;
-    class DeserializationTests;
-    class ProfileTests;
-    class ColorSchemeTests;
-    class KeyBindingsTests;
-};
-namespace TerminalAppUnitTests
-{
-    class DynamicProfileTests;
-    class JsonTests;
-};
-
-namespace Microsoft::Terminal::Settings::Model
-{
-    class SettingsTypedDeserializationException;
-};
-
-class Microsoft::Terminal::Settings::Model::SettingsTypedDeserializationException final : public std::runtime_error
-{
-public:
-    SettingsTypedDeserializationException(const std::string_view description) :
-        runtime_error(description.data()) {}
-};
+    class IDynamicProfileGenerator;
+}
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
+    winrt::com_ptr<Profile> CreateChild(const winrt::com_ptr<Profile>& parent);
+
+    class SettingsTypedDeserializationException final : public std::runtime_error
+    {
+    public:
+        SettingsTypedDeserializationException(const char* message) noexcept :
+            std::runtime_error(message) {}
+    };
+
+    struct ParsedSettings
+    {
+        winrt::com_ptr<implementation::GlobalAppSettings> globals;
+        winrt::com_ptr<implementation::Profile> baseLayerProfile;
+        std::vector<winrt::com_ptr<implementation::Profile>> profiles;
+        std::unordered_map<winrt::guid, winrt::com_ptr<implementation::Profile>> profilesByGuid;
+
+        void clear();
+    };
+
+    struct SettingsLoader
+    {
+        static SettingsLoader Default(const std::string_view& userJSON, const std::string_view& inboxJSON);
+        SettingsLoader(const std::string_view& userJSON, const std::string_view& inboxJSON);
+
+        void GenerateProfiles();
+        void ApplyRuntimeInitialSettings();
+        void MergeInboxIntoUserSettings();
+        void FindFragmentsAndMergeIntoUserSettings();
+        void MergeFragmentIntoUserSettings(const winrt::hstring& source, const std::string_view& content);
+        void FinalizeLayering();
+        bool DisableDeletedProfiles();
+        bool FixupUserSettings();
+
+        ParsedSettings inboxSettings;
+        ParsedSettings userSettings;
+        bool duplicateProfile = false;
+
+    private:
+        struct JsonSettings
+        {
+            Json::Value root;
+            const Json::Value& colorSchemes;
+            const Json::Value& profileDefaults;
+            const Json::Value& profilesList;
+            const Json::Value& themes;
+        };
+
+        static std::pair<size_t, size_t> _lineAndColumnFromPosition(const std::string_view& string, const size_t position);
+        static void _rethrowSerializationExceptionWithLocationInfo(const JsonUtils::DeserializationError& e, const std::string_view& settingsString);
+        static Json::Value _parseJSON(const std::string_view& content);
+        static const Json::Value& _getJSONValue(const Json::Value& json, const std::string_view& key) noexcept;
+        gsl::span<const winrt::com_ptr<implementation::Profile>> _getNonUserOriginProfiles() const;
+        void _parse(const OriginTag origin, const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings);
+        void _parseFragment(const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings);
+        static JsonSettings _parseJson(const std::string_view& content);
+        static winrt::com_ptr<implementation::Profile> _parseProfile(const OriginTag origin, const winrt::hstring& source, const Json::Value& profileJson);
+        void _appendProfile(winrt::com_ptr<Profile>&& profile, const winrt::guid& guid, ParsedSettings& settings);
+        void _addUserProfileParent(const winrt::com_ptr<implementation::Profile>& profile);
+        void _executeGenerator(const IDynamicProfileGenerator& generator);
+
+        std::unordered_set<std::wstring_view> _ignoredNamespaces;
+        // See _getNonUserOriginProfiles().
+        size_t _userProfileCount = 0;
+    };
+
     struct CascadiaSettings : CascadiaSettingsT<CascadiaSettings>
     {
     public:
-        CascadiaSettings();
-        explicit CascadiaSettings(const bool addDynamicProfiles);
-        CascadiaSettings(hstring json);
-        Model::CascadiaSettings Copy() const;
-
         static Model::CascadiaSettings LoadDefaults();
         static Model::CascadiaSettings LoadAll();
         static Model::CascadiaSettings LoadUniversal();
 
-        Model::GlobalAppSettings GlobalSettings() const;
-        Windows::Foundation::Collections::IObservableVector<Model::Profile> AllProfiles() const noexcept;
-        Windows::Foundation::Collections::IObservableVector<Model::Profile> ActiveProfiles() const noexcept;
-        Model::KeyMapping KeyMap() const noexcept;
-
-        static com_ptr<CascadiaSettings> FromJson(const Json::Value& json);
-        void LayerJson(const Json::Value& json);
-
-        void WriteSettingsToDisk() const;
-        Json::Value ToJson() const;
-
-        static hstring SettingsPath();
-        static hstring DefaultSettingsPath();
-        Model::Profile ProfileDefaults() const;
-
+        static winrt::hstring SettingsPath();
+        static winrt::hstring DefaultSettingsPath();
         static winrt::hstring ApplicationDisplayName();
         static winrt::hstring ApplicationVersion();
+        static void ExportFile(winrt::hstring path, winrt::hstring content);
 
+        CascadiaSettings() noexcept = default;
+        CascadiaSettings(const winrt::hstring& userJSON, const winrt::hstring& inboxJSON);
+        CascadiaSettings(const std::string_view& userJSON, const std::string_view& inboxJSON = {});
+        explicit CascadiaSettings(SettingsLoader&& loader);
+
+        // user settings
+        Model::CascadiaSettings Copy() const;
+        Model::GlobalAppSettings GlobalSettings() const;
+        winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> AllProfiles() const noexcept;
+        winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> ActiveProfiles() const noexcept;
+        Model::ActionMap ActionMap() const noexcept;
+        void WriteSettingsToDisk() const;
+        Json::Value ToJson() const;
+        Model::Profile ProfileDefaults() const;
         Model::Profile CreateNewProfile();
-        Model::Profile FindProfile(guid profileGuid) const noexcept;
-        Model::ColorScheme GetColorSchemeForProfile(const guid profileGuid) const;
-        void UpdateColorSchemeReferences(const hstring oldName, const hstring newName);
+        Model::Profile FindProfile(const winrt::guid& guid) const noexcept;
+        Model::ColorScheme GetColorSchemeForProfile(const Model::Profile& profile) const;
+        void UpdateColorSchemeReferences(const winrt::hstring& oldName, const winrt::hstring& newName);
+        Model::Profile GetProfileForArgs(const Model::NewTerminalArgs& newTerminalArgs) const;
+        Model::Profile GetProfileByName(const winrt::hstring& name) const;
+        Model::Profile GetProfileByIndex(uint32_t index) const;
+        Model::Profile DuplicateProfile(const Model::Profile& source);
 
-        Windows::Foundation::Collections::IVectorView<SettingsLoadWarnings> Warnings();
-        void ClearWarnings();
-        void AppendWarning(SettingsLoadWarnings warning);
-        Windows::Foundation::IReference<SettingsLoadErrors> GetLoadingError();
-        hstring GetSerializationErrorMessage();
+        // load errors
+        winrt::Windows::Foundation::Collections::IVectorView<Model::SettingsLoadWarnings> Warnings() const;
+        winrt::Windows::Foundation::IReference<Model::SettingsLoadErrors> GetLoadingError() const;
+        winrt::hstring GetSerializationErrorMessage() const;
 
-        winrt::guid GetProfileForArgs(const Model::NewTerminalArgs& newTerminalArgs) const;
+        // defterm
+        static std::wstring NormalizeCommandLine(LPCWSTR commandLine);
+        static bool IsDefaultTerminalAvailable() noexcept;
+        static bool IsDefaultTerminalSet() noexcept;
+        winrt::Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> DefaultTerminals() noexcept;
+        Model::DefaultTerminal CurrentDefaultTerminal() noexcept;
+        void CurrentDefaultTerminal(const Model::DefaultTerminal& terminal);
 
     private:
-        com_ptr<GlobalAppSettings> _globals;
-        Windows::Foundation::Collections::IObservableVector<Model::Profile> _allProfiles;
-        Windows::Foundation::Collections::IObservableVector<Model::Profile> _activeProfiles;
-        Windows::Foundation::Collections::IVector<Model::SettingsLoadWarnings> _warnings;
-        Windows::Foundation::IReference<SettingsLoadErrors> _loadError;
-        hstring _deserializationErrorMessage;
+        static const std::filesystem::path& _settingsPath();
+        static const std::filesystem::path& _releaseSettingsPath();
 
-        std::vector<std::unique_ptr<::Microsoft::Terminal::Settings::Model::IDynamicProfileGenerator>> _profileGenerators;
+        winrt::com_ptr<implementation::Profile> _createNewProfile(const std::wstring_view& name) const;
+        Model::Profile _getProfileForCommandLine(const winrt::hstring& commandLine) const;
+        void _refreshDefaultTerminals();
 
-        std::string _userSettingsString;
-        Json::Value _userSettings;
-        Json::Value _defaultSettings;
-        winrt::com_ptr<Profile> _userDefaultProfileSettings{ nullptr };
+        void _resolveDefaultProfile() const;
 
-        void _LayerOrCreateProfile(const Json::Value& profileJson);
-        winrt::com_ptr<implementation::Profile> _FindMatchingProfile(const Json::Value& profileJson);
-        std::optional<uint32_t> _FindMatchingProfileIndex(const Json::Value& profileJson);
-        void _LayerOrCreateColorScheme(const Json::Value& schemeJson);
-        winrt::com_ptr<implementation::ColorScheme> _FindMatchingColorScheme(const Json::Value& schemeJson);
-        void _ParseJsonString(std::string_view fileData, const bool isDefaultSettings);
-        static const Json::Value& _GetProfilesJsonObject(const Json::Value& json);
-        static const Json::Value& _GetDisabledProfileSourcesJsonObject(const Json::Value& json);
-        bool _PrependSchemaDirective();
-        bool _AppendDynamicProfilesToUserSettings();
-        std::string _ApplyFirstRunChangesToSettingsTemplate(std::string_view settingsTemplate) const;
-        void _CopyProfileInheritanceTree(com_ptr<CascadiaSettings>& cloneSettings) const;
+        void _validateSettings();
+        void _validateAllSchemesExist();
+        void _validateMediaResources();
+        void _validateKeybindings() const;
+        void _validateColorSchemesInCommands() const;
+        bool _hasInvalidColorScheme(const Model::Command& command) const;
+        void _validateThemeExists();
 
-        void _ApplyDefaultsFromUserSettings();
+        // user settings
+        winrt::com_ptr<implementation::GlobalAppSettings> _globals = winrt::make_self<implementation::GlobalAppSettings>();
+        winrt::com_ptr<implementation::Profile> _baseLayerProfile = winrt::make_self<implementation::Profile>();
+        winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> _allProfiles = winrt::single_threaded_observable_vector<Model::Profile>();
+        winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> _activeProfiles = winrt::single_threaded_observable_vector<Model::Profile>();
 
-        void _LoadDynamicProfiles();
+        // load errors
+        winrt::Windows::Foundation::Collections::IVector<Model::SettingsLoadWarnings> _warnings = winrt::single_threaded_vector<Model::SettingsLoadWarnings>();
+        winrt::Windows::Foundation::IReference<Model::SettingsLoadErrors> _loadError;
+        winrt::hstring _deserializationErrorMessage;
 
-        static bool _IsPackaged();
-        static void _WriteSettings(std::string_view content, const hstring filepath);
-        static std::optional<std::string> _ReadUserSettings();
-        static std::optional<std::string> _ReadFile(HANDLE hFile);
+        // defterm
+        winrt::Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> _defaultTerminals{ nullptr };
+        Model::DefaultTerminal _currentDefaultTerminal{ nullptr };
 
-        std::optional<guid> _GetProfileGuidByName(const hstring) const;
-        std::optional<guid> _GetProfileGuidByIndex(std::optional<int> index) const;
-
-        void _ValidateSettings();
-        void _ValidateProfilesExist();
-        void _ValidateDefaultProfileExists();
-        void _ValidateNoDuplicateProfiles();
-        void _ResolveDefaultProfile();
-        void _ReorderProfilesToMatchUserSettingsOrder();
-        void _UpdateActiveProfiles();
-        void _ValidateAllSchemesExist();
-        void _ValidateMediaResources();
-        void _ValidateKeybindings();
-        void _ValidateColorSchemesInCommands();
-        void _ValidateNoGlobalsKey();
-
-        bool _HasInvalidColorScheme(const Model::Command& command);
-
-        friend class SettingsModelLocalTests::SerializationTests;
-        friend class SettingsModelLocalTests::DeserializationTests;
-        friend class SettingsModelLocalTests::ProfileTests;
-        friend class SettingsModelLocalTests::ColorSchemeTests;
-        friend class SettingsModelLocalTests::KeyBindingsTests;
-        friend class TerminalAppUnitTests::DynamicProfileTests;
-        friend class TerminalAppUnitTests::JsonTests;
+        // GetProfileForArgs cache
+        mutable std::once_flag _commandLinesCacheOnce;
+        mutable std::vector<std::pair<std::wstring, Model::Profile>> _commandLinesCache;
     };
 }
 

@@ -28,8 +28,6 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
 // Used by WriteCharsLegacy.
 #define IS_GLYPH_CHAR(wch) (((wch) >= L' ') && ((wch) != 0x007F))
 
-constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
-
 // Routine Description:
 // - This routine updates the cursor position.  Its input is the non-special
 //   cased new location of the cursor.  For example, if the cursor were being
@@ -42,18 +40,18 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 // - fKeepCursorVisible - TRUE if changing window origin desirable when hit right edge
 // Return Value:
 [[nodiscard]] NTSTATUS AdjustCursorPosition(SCREEN_INFORMATION& screenInfo,
-                                            _In_ COORD coordCursor,
+                                            _In_ til::point coordCursor,
                                             const BOOL fKeepCursorVisible,
-                                            _Inout_opt_ PSHORT psScrollY)
+                                            _Inout_opt_ til::CoordType* psScrollY)
 {
-    const bool inVtMode = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-    const COORD bufferSize = screenInfo.GetBufferSize().Dimensions();
+    const auto inVtMode = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    const auto bufferSize = screenInfo.GetBufferSize().Dimensions();
     if (coordCursor.X < 0)
     {
         if (coordCursor.Y > 0)
         {
-            coordCursor.X = (SHORT)(bufferSize.X + coordCursor.X);
-            coordCursor.Y = (SHORT)(coordCursor.Y - 1);
+            coordCursor.X = bufferSize.X + coordCursor.X;
+            coordCursor.Y = coordCursor.Y - 1;
         }
         else
         {
@@ -90,17 +88,17 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 
     const auto relativeMargins = screenInfo.GetRelativeScrollMargins();
     auto viewport = screenInfo.GetViewport();
-    SMALL_RECT srMargins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
-    const bool fMarginsSet = srMargins.Bottom > srMargins.Top;
-    COORD currentCursor = screenInfo.GetTextBuffer().GetCursor().GetPosition();
-    const int iCurrentCursorY = currentCursor.Y;
+    auto srMargins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
+    const auto fMarginsSet = srMargins.Bottom > srMargins.Top;
+    auto currentCursor = screenInfo.GetTextBuffer().GetCursor().GetPosition();
+    const auto iCurrentCursorY = currentCursor.Y;
 
-    const bool fCursorInMargins = iCurrentCursorY <= srMargins.Bottom && iCurrentCursorY >= srMargins.Top;
-    const bool cursorAboveViewport = coordCursor.Y < 0 && inVtMode;
-    const bool fScrollDown = fMarginsSet && fCursorInMargins && (coordCursor.Y > srMargins.Bottom);
-    bool fScrollUp = fMarginsSet && fCursorInMargins && (coordCursor.Y < srMargins.Top);
+    const auto fCursorInMargins = iCurrentCursorY <= srMargins.Bottom && iCurrentCursorY >= srMargins.Top;
+    const auto cursorAboveViewport = coordCursor.Y < 0 && inVtMode;
+    const auto fScrollDown = fMarginsSet && fCursorInMargins && (coordCursor.Y > srMargins.Bottom);
+    auto fScrollUp = fMarginsSet && fCursorInMargins && (coordCursor.Y < srMargins.Top);
 
-    const bool fScrollUpWithoutMargins = (!fMarginsSet) && cursorAboveViewport;
+    const auto fScrollUpWithoutMargins = (!fMarginsSet) && cursorAboveViewport;
     // if we're in VT mode, AND MARGINS AREN'T SET and a Reverse Line Feed took the cursor up past the top of the viewport,
     //   VT style scroll the contents of the screen.
     // This can happen in applications like `less`, that don't set margins, because they're going to
@@ -112,7 +110,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
         srMargins.Bottom = screenInfo.GetViewport().BottomInclusive();
     }
 
-    const bool scrollDownAtTop = fScrollDown && relativeMargins.Top() == 0;
+    const auto scrollDownAtTop = fScrollDown && relativeMargins.Top() == 0;
     if (scrollDownAtTop)
     {
         // We're trying to scroll down, and the top margin is at the top of the viewport.
@@ -121,22 +119,22 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
         // To do this, we're going to scroll everything starting at the bottom
         //  margin down, then move the viewport down.
 
-        const SHORT delta = coordCursor.Y - srMargins.Bottom;
-        SMALL_RECT scrollRect{ 0 };
+        const auto delta = coordCursor.Y - srMargins.Bottom;
+        til::inclusive_rect scrollRect;
         scrollRect.Left = 0;
         scrollRect.Top = srMargins.Bottom + 1; // One below margins
         scrollRect.Bottom = bufferSize.Y - 1; // -1, otherwise this would be an exclusive rect.
         scrollRect.Right = bufferSize.X - 1; // -1, otherwise this would be an exclusive rect.
 
         // This is the Y position we're moving the contents below the bottom margin to.
-        SHORT moveToYPosition = scrollRect.Top + delta;
+        auto moveToYPosition = scrollRect.Top + delta;
 
         // This is where the viewport will need to be to give the effect of
         //      scrolling the contents in the margins.
-        SHORT newViewTop = viewport.Top() + delta;
+        auto newViewTop = viewport.Top() + delta;
 
         // This is how many new lines need to be added to the buffer to support this operation.
-        const SHORT newRows = (viewport.BottomExclusive() + delta) - bufferSize.Y;
+        const auto newRows = (viewport.BottomExclusive() + delta) - bufferSize.Y;
 
         // If we're near the bottom of the buffer, we might need to insert some
         //      new rows at the bottom.
@@ -150,8 +148,8 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             scrollRect.Top--;
         }
 
-        const COORD newPostMarginsOrigin = { 0, moveToYPosition };
-        const COORD newViewOrigin = { 0, newViewTop };
+        const til::point newPostMarginsOrigin{ 0, moveToYPosition };
+        const til::point newViewOrigin{ 0, newViewTop };
 
         try
         {
@@ -197,8 +195,8 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             // And now we need to report that only the bottom line didn't "move" as we put the EEEE
             // back where it started, but everything else moved.
             // In this case, delta was 1. So the amount that moved is the entire viewport height minus the delta.
-            Viewport invalid = Viewport::FromDimensions(viewport.Origin(), { viewport.Width(), viewport.Height() - delta });
-            screenInfo.GetRenderTarget().TriggerRedraw(invalid);
+            auto invalid = Viewport::FromDimensions(viewport.Origin(), { viewport.Width(), viewport.Height() - delta });
+            screenInfo.GetTextBuffer().TriggerRedraw(invalid);
         }
 
         // reset where our local viewport is, and recalculate the cursor and
@@ -216,15 +214,15 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
     //      the margins content, and we can skip this.
     if (fScrollUp || (fScrollDown && !scrollDownAtTop))
     {
-        SHORT diff = coordCursor.Y - (fScrollUp ? srMargins.Top : srMargins.Bottom);
+        auto diff = coordCursor.Y - (fScrollUp ? srMargins.Top : srMargins.Bottom);
 
-        SMALL_RECT scrollRect = { 0 };
+        til::inclusive_rect scrollRect;
         scrollRect.Top = srMargins.Top;
         scrollRect.Bottom = srMargins.Bottom;
         scrollRect.Left = 0; // NOTE: Left/Right Scroll margins don't do anything currently.
         scrollRect.Right = bufferSize.X - 1; // -1, otherwise this would be an exclusive rect.
 
-        COORD dest;
+        til::point dest;
         dest.X = scrollRect.Left;
         dest.Y = scrollRect.Top - diff;
 
@@ -246,7 +244,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
         coordCursor.Y = viewport.BottomInclusive();
     }
 
-    NTSTATUS Status = STATUS_SUCCESS;
+    auto Status = STATUS_SUCCESS;
 
     if (coordCursor.Y >= bufferSize.Y)
     {
@@ -259,19 +257,19 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 
         if (nullptr != psScrollY)
         {
-            *psScrollY += (SHORT)(bufferSize.Y - coordCursor.Y - 1);
+            *psScrollY += bufferSize.Y - coordCursor.Y - 1;
         }
-        coordCursor.Y += (SHORT)(bufferSize.Y - coordCursor.Y - 1);
+        coordCursor.Y += bufferSize.Y - coordCursor.Y - 1;
     }
 
-    const bool cursorMovedPastViewport = coordCursor.Y > screenInfo.GetViewport().BottomInclusive();
-    const bool cursorMovedPastVirtualViewport = coordCursor.Y > screenInfo.GetVirtualViewport().BottomInclusive();
+    const auto cursorMovedPastViewport = coordCursor.Y > screenInfo.GetViewport().BottomInclusive();
+    const auto cursorMovedPastVirtualViewport = coordCursor.Y > screenInfo.GetVirtualViewport().BottomInclusive();
     if (NT_SUCCESS(Status))
     {
         // if at right or bottom edge of window, scroll right or down one char.
         if (cursorMovedPastViewport)
         {
-            COORD WindowOrigin;
+            til::point WindowOrigin;
             WindowOrigin.X = 0;
             WindowOrigin.Y = coordCursor.Y - screenInfo.GetViewport().BottomInclusive();
             Status = screenInfo.SetViewportOrigin(false, WindowOrigin, true);
@@ -317,9 +315,9 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 // - pcb - On input, number of bytes to write.  On output, number of bytes written.
 // - pcSpaces - On output, the number of spaces consumed by the written characters.
 // - dwFlags -
-//      WC_DESTRUCTIVE_BACKSPACE backspace overwrites characters.
-//      WC_KEEP_CURSOR_VISIBLE   change window origin desirable when hit rt. edge
-//      WC_ECHO                  if called by Read (echoing characters)
+//      WC_DESTRUCTIVE_BACKSPACE   backspace overwrites characters.
+//      WC_KEEP_CURSOR_VISIBLE     change window origin desirable when hit rt. edge
+//      WC_PRINTABLE_CONTROL_CHARS if control characters should be expanded (as in, to "^X")
 // Return Value:
 // Note:
 // - This routine does not process tabs and backspace properly.  That code will be implemented as part of the line editing services.
@@ -329,38 +327,45 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                                         _In_reads_bytes_(*pcb) const wchar_t* pwchRealUnicode,
                                         _Inout_ size_t* const pcb,
                                         _Out_opt_ size_t* const pcSpaces,
-                                        const SHORT sOriginalXPosition,
+                                        const til::CoordType sOriginalXPosition,
                                         const DWORD dwFlags,
-                                        _Inout_opt_ PSHORT const psScrollY)
+                                        _Inout_opt_ til::CoordType* const psScrollY)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    TextBuffer& textBuffer = screenInfo.GetTextBuffer();
-    Cursor& cursor = textBuffer.GetCursor();
-    COORD CursorPosition = cursor.GetPosition();
-    NTSTATUS Status = STATUS_SUCCESS;
-    SHORT XPosition;
-    WCHAR LocalBuffer[LOCAL_BUFFER_SIZE];
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& textBuffer = screenInfo.GetTextBuffer();
+    auto& cursor = textBuffer.GetCursor();
+    auto CursorPosition = cursor.GetPosition();
+    auto Status = STATUS_SUCCESS;
+    til::CoordType XPosition;
     size_t TempNumSpaces = 0;
-    const bool fUnprocessed = WI_IsFlagClear(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT);
-    const bool fWrapAtEOL = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
+    const auto fUnprocessed = WI_IsFlagClear(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT);
+    const auto fWrapAtEOL = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
 
     // Must not adjust cursor here. It has to stay on for many write scenarios. Consumers should call for the
     // cursor to be turned off if they want that.
 
-    const TextAttribute Attributes = screenInfo.GetAttributes();
-    const size_t BufferSize = *pcb;
+    const auto Attributes = screenInfo.GetAttributes();
+    const auto BufferSize = *pcb;
     *pcb = 0;
 
-    const wchar_t* lpString = pwchRealUnicode;
+    auto lpString = pwchRealUnicode;
 
-    const COORD coordScreenBufferSize = screenInfo.GetBufferSize().Dimensions();
+    auto coordScreenBufferSize = screenInfo.GetBufferSize().Dimensions();
+    // In VT mode, the width at which we wrap is determined by the line rendition attribute.
+    if (WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+    {
+        coordScreenBufferSize.X = textBuffer.GetLineWidth(CursorPosition.Y);
+    }
+
+    static constexpr til::CoordType LOCAL_BUFFER_SIZE = 1024;
+    WCHAR LocalBuffer[LOCAL_BUFFER_SIZE];
 
     while (*pcb < BufferSize)
     {
         // correct for delayed EOL
         if (cursor.IsDelayedEOLWrap() && fWrapAtEOL)
         {
-            const COORD coordDelayedAt = cursor.GetDelayedAtPosition();
+            const auto coordDelayedAt = cursor.GetDelayedAtPosition();
             cursor.ResetDelayEOLWrap();
             // Only act on a delayed EOL if we didn't move the cursor to a different position from where the EOL was marked.
             if (coordDelayedAt.X == CursorPosition.X && coordDelayedAt.Y == CursorPosition.Y)
@@ -371,20 +376,29 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                 Status = AdjustCursorPosition(screenInfo, CursorPosition, WI_IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
 
                 CursorPosition = cursor.GetPosition();
+                // In VT mode, we need to recalculate the width when moving to a new line.
+                if (WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+                {
+                    coordScreenBufferSize.X = textBuffer.GetLineWidth(CursorPosition.Y);
+                }
             }
         }
 
         // As an optimization, collect characters in buffer and print out all at once.
         XPosition = cursor.GetPosition().X;
-        size_t i = 0;
-        wchar_t* LocalBufPtr = LocalBuffer;
+        til::CoordType i = 0;
+        auto LocalBufPtr = LocalBuffer;
         while (*pcb < BufferSize && i < LOCAL_BUFFER_SIZE && XPosition < coordScreenBufferSize.X)
         {
 #pragma prefast(suppress : 26019, "Buffer is taken in multiples of 2. Validation is ok.")
-            const wchar_t Char = *lpString;
-            const wchar_t RealUnicodeChar = *pwchRealUnicode;
+            const auto Char = *lpString;
+            // WCL-NOTE: We believe RealUnicodeChar to be identical to Char, because we believe pwchRealUnicode
+            // WCL-NOTE: to be identical to lpString. They are incremented in lockstep, never separately, and lpString
+            // WCL-NOTE: is initialized from pwchRealUnicode.
+            const auto RealUnicodeChar = *pwchRealUnicode;
             if (IS_GLYPH_CHAR(RealUnicodeChar) || fUnprocessed)
             {
+                // WCL-NOTE: This operates on a single code unit instead of a whole codepoint. It will mis-measure surrogate pairs.
                 if (IsGlyphFullWidth(Char))
                 {
                     if (i < (LOCAL_BUFFER_SIZE - 1) && XPosition < (coordScreenBufferSize.X - 1))
@@ -416,7 +430,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                 switch (RealUnicodeChar)
                 {
                 case UNICODE_BELL:
-                    if (dwFlags & WC_ECHO)
+                    if (dwFlags & WC_PRINTABLE_CONTROL_CHARS)
                     {
                         goto CtrlChar;
                     }
@@ -438,14 +452,14 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                     break;
                 case UNICODE_TAB:
                 {
-                    const ULONG TabSize = NUMBER_OF_SPACES_IN_TAB(XPosition);
-                    XPosition = (SHORT)(XPosition + TabSize);
+                    const auto TabSize = NUMBER_OF_SPACES_IN_TAB(XPosition);
+                    XPosition = XPosition + TabSize;
                     if (XPosition >= coordScreenBufferSize.X)
                     {
                         goto EndWhile;
                     }
 
-                    for (ULONG j = 0; j < TabSize && i < LOCAL_BUFFER_SIZE; j++, i++)
+                    for (til::CoordType j = 0; j < TabSize && i < LOCAL_BUFFER_SIZE; j++, i++)
                     {
                         *LocalBufPtr = UNICODE_SPACE;
                         LocalBufPtr++;
@@ -460,11 +474,13 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                 default:
 
                     // if char is ctrl char, write ^char.
-                    if ((dwFlags & WC_ECHO) && (IS_CONTROL_CHAR(RealUnicodeChar)))
+                    if ((dwFlags & WC_PRINTABLE_CONTROL_CHARS) && (IS_CONTROL_CHAR(RealUnicodeChar)))
                     {
                     CtrlChar:
                         if (i < (LOCAL_BUFFER_SIZE - 1))
                         {
+                            // WCL-NOTE: We do not properly measure that there is space for two characters
+                            // WCL-NOTE: left on the screen.
                             *LocalBufPtr = (WCHAR)'^';
                             LocalBufPtr++;
                             XPosition++;
@@ -505,6 +521,10 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                             }
                             else
                             {
+                                // WCL-NOTE: We should never hit this.
+                                // WCL-NOTE: 1. Normal characters are handled via the early check for IS_GLYPH_CHAR
+                                // WCL-NOTE: 2. Control characters are handled via the CtrlChar label (if WC_PRINTABLE_CONTROL_CHARS is on)
+                                // WCL-NOTE:    And if they are control characters they will trigger the C1_CNTRL check above.
                                 *LocalBufPtr = Char;
                             }
                         }
@@ -526,9 +546,10 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             CursorPosition = cursor.GetPosition();
 
             // Make sure we don't write past the end of the buffer.
-            if (i > gsl::narrow_cast<size_t>(coordScreenBufferSize.X) - CursorPosition.X)
+            // WCL-NOTE: This check uses a code unit count instead of a column count. That is incorrect.
+            if (i > coordScreenBufferSize.X - CursorPosition.X)
             {
-                i = gsl::narrow_cast<size_t>(coordScreenBufferSize.X) - CursorPosition.X;
+                i = coordScreenBufferSize.X - CursorPosition.X;
             }
 
             // line was wrapped if we're writing up to the end of the current row
@@ -536,11 +557,17 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             const auto itEnd = screenInfo.Write(it);
 
             // Notify accessibility
-            screenInfo.NotifyAccessibilityEventing(CursorPosition.X, CursorPosition.Y, CursorPosition.X + gsl::narrow<SHORT>(i - 1), CursorPosition.Y);
+            if (screenInfo.HasAccessibilityEventing())
+            {
+                screenInfo.NotifyAccessibilityEventing(CursorPosition.X, CursorPosition.Y, CursorPosition.X + i - 1, CursorPosition.Y);
+            }
 
             // The number of "spaces" or "cells" we have consumed needs to be reported and stored for later
             // when/if we need to erase the command line.
             TempNumSpaces += itEnd.GetCellDistance(it);
+            // WCL-NOTE: We are using the "estimated" X position delta instead of the actual delta from
+            // WCL-NOTE: the iterator. It is not clear why. If they differ, the cursor ends up in the
+            // WCL-NOTE: wrong place (typically inside another character).
             CursorPosition.X = XPosition;
 
             // enforce a delayed newline if we're about to pass the end and the WC_DELAY_EOL_WRAP flag is set.
@@ -560,6 +587,8 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                 Status = AdjustCursorPosition(screenInfo, CursorPosition, WI_IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
             }
 
+            // WCL-NOTE: If we have processed the entire input string during our "fast one-line print" handler,
+            // WCL-NOTE: we are done as there is nothing more to do. Neat!
             if (*pcb == BufferSize)
             {
                 if (nullptr != pcSpaces)
@@ -572,6 +601,10 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
         }
         else if (*pcb >= BufferSize)
         {
+            // WCL-NOTE: This case looks like it is never encountered, but it *is* if WC_PRINTABLE_CONTROL_CHARS is off.
+            // WCL-NOTE: If the string is entirely nonprinting control characters, there will be
+            // WCL-NOTE: no output in the buffer (LocalBuffer; i == 0) but we will have processed
+            // WCL-NOTE: "every" character. We can just bail out and report the number of spaces consumed.
             FAIL_FAST_IF(!(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT)));
 
             // this catches the case where the number of backspaces == the number of characters.
@@ -600,7 +633,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                 wchar_t* Tmp2 = nullptr;
                 WCHAR LastChar;
 
-                const size_t bufferSize = pwchBuffer - pwchBufferBackupLimit;
+                const auto bufferSize = pwchBuffer - pwchBufferBackupLimit;
                 std::unique_ptr<wchar_t[]> buffer;
                 try
                 {
@@ -644,9 +677,9 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 
                 if (LastChar == UNICODE_TAB)
                 {
-                    CursorPosition.X -= (SHORT)(RetrieveNumberOfSpaces(sOriginalXPosition,
-                                                                       pwchBufferBackupLimit,
-                                                                       (ULONG)(pwchBuffer - pwchBufferBackupLimit - 1)));
+                    CursorPosition.X -= RetrieveNumberOfSpaces(sOriginalXPosition,
+                                                               pwchBufferBackupLimit,
+                                                               pwchBuffer - pwchBufferBackupLimit - 1);
                     if (CursorPosition.X < 0)
                     {
                         CursorPosition.X = (coordScreenBufferSize.X - 1) / TAB_SIZE;
@@ -720,10 +753,10 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                                         pwchBuffer + 1 - pwchBufferBackupLimit,
                                         gsl::narrow_cast<size_t>(coordScreenBufferSize.X) - sOriginalXPosition,
                                         sOriginalXPosition,
-                                        dwFlags & WC_ECHO))
+                                        dwFlags & WC_PRINTABLE_CONTROL_CHARS))
                 {
                     CursorPosition.X = coordScreenBufferSize.X - 1;
-                    CursorPosition.Y = (SHORT)(cursor.GetPosition().Y - 1);
+                    CursorPosition.Y = cursor.GetPosition().Y - 1;
 
                     // since you just backspaced yourself back up into the previous row, unset the wrap flag
                     // on the prev row if it was set
@@ -732,12 +765,21 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                     Status = AdjustCursorPosition(screenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
                 }
             }
+            // Notify accessibility to read the backspaced character.
+            // See GH:12735, MSFT:31748387
+            if (screenInfo.HasAccessibilityEventing())
+            {
+                if (auto pConsoleWindow = ServiceLocator::LocateConsoleWindow())
+                {
+                    LOG_IF_FAILED(pConsoleWindow->SignalUia(UIA_Text_TextChangedEventId));
+                }
+            }
             break;
         }
         case UNICODE_TAB:
         {
-            const size_t TabSize = gsl::narrow_cast<size_t>(NUMBER_OF_SPACES_IN_TAB(cursor.GetPosition().X));
-            CursorPosition.X = (SHORT)(cursor.GetPosition().X + TabSize);
+            const auto TabSize = NUMBER_OF_SPACES_IN_TAB(cursor.GetPosition().X);
+            CursorPosition.X = cursor.GetPosition().X + TabSize;
 
             // move cursor forward to next tab stop.  fill space with blanks.
             // we get here when the tab extends beyond the right edge of the
@@ -797,7 +839,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                 CursorPosition.X = 0;
             }
 
-            CursorPosition.Y = (SHORT)(cursor.GetPosition().Y + 1);
+            CursorPosition.Y = cursor.GetPosition().Y + 1;
 
             {
                 // since we explicitly just moved down a row, clear the wrap status on the row we just came from
@@ -809,15 +851,15 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
         }
         default:
         {
-            const wchar_t Char = *lpString;
+            const auto Char = *lpString;
             if (Char >= UNICODE_SPACE &&
                 IsGlyphFullWidth(Char) &&
                 XPosition >= (coordScreenBufferSize.X - 1) &&
                 fWrapAtEOL)
             {
-                const COORD TargetPoint = cursor.GetPosition();
-                ROW& Row = textBuffer.GetRowByOffset(TargetPoint.Y);
-                const CharRow& charRow = Row.GetCharRow();
+                const auto TargetPoint = cursor.GetPosition();
+                auto& Row = textBuffer.GetRowByOffset(TargetPoint.Y);
+                const auto& charRow = Row.GetCharRow();
 
                 try
                 {
@@ -841,7 +883,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                 }
 
                 CursorPosition.X = 0;
-                CursorPosition.Y = (SHORT)(TargetPoint.Y + 1);
+                CursorPosition.Y = TargetPoint.Y + 1;
 
                 // since you just moved yourself down onto the next row with 1 character, that sounds like a
                 // forced wrap so set the flag
@@ -888,9 +930,9 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 // - pcb - On input, number of bytes to write.  On output, number of bytes written.
 // - pcSpaces - On output, the number of spaces consumed by the written characters.
 // - dwFlags -
-//      WC_DESTRUCTIVE_BACKSPACE backspace overwrites characters.
-//      WC_KEEP_CURSOR_VISIBLE   change window origin (viewport) desirable when hit rt. edge
-//      WC_ECHO                  if called by Read (echoing characters)
+//      WC_DESTRUCTIVE_BACKSPACE   backspace overwrites characters.
+//      WC_KEEP_CURSOR_VISIBLE     change window origin (viewport) desirable when hit rt. edge
+//      WC_PRINTABLE_CONTROL_CHARS if control characters should be expanded (as in, to "^X")
 // Return Value:
 // Note:
 // - This routine does not process tabs and backspace properly.  That code will be implemented as part of the line editing services.
@@ -900,9 +942,9 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                                   _In_reads_bytes_(*pcb) const wchar_t* pwchRealUnicode,
                                   _Inout_ size_t* const pcb,
                                   _Out_opt_ size_t* const pcSpaces,
-                                  const SHORT sOriginalXPosition,
+                                  const til::CoordType sOriginalXPosition,
                                   const DWORD dwFlags,
-                                  _Inout_opt_ PSHORT const psScrollY)
+                                  _Inout_opt_ til::CoordType* const psScrollY)
 {
     if (!WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) ||
         !WI_IsFlagSet(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT))
@@ -918,9 +960,9 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                                 psScrollY);
     }
 
-    NTSTATUS Status = STATUS_SUCCESS;
+    auto Status = STATUS_SUCCESS;
 
-    size_t const BufferSize = *pcb;
+    const auto BufferSize = *pcb;
     *pcb = 0;
 
     {
@@ -936,8 +978,8 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                 // This is the only mode used by DoWriteConsole.
                 FAIL_FAST_IF(!(WI_IsFlagSet(dwFlags, WC_LIMIT_BACKSPACE)));
 
-                StateMachine& machine = screenInfo.GetStateMachine();
-                size_t const cch = BufferSize / sizeof(WCHAR);
+                auto& machine = screenInfo.GetStateMachine();
+                const auto cch = BufferSize / sizeof(WCHAR);
 
                 machine.ProcessString({ pwchRealUnicode, cch });
                 *pcb += BufferSize;
@@ -968,13 +1010,13 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 // - STATUS_SUCCESS if OK.
 // - CONSOLE_STATUS_WAIT if we couldn't finish now and need to be called back later (see ppWaiter).
 // - Or a suitable NTSTATUS format error code for memory/string/math failures.
-[[nodiscard]] NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PWCHAR pwchBuffer,
+[[nodiscard]] NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PCWCHAR pwchBuffer,
                                       _Inout_ size_t* const pcbBuffer,
                                       SCREEN_INFORMATION& screenInfo,
                                       bool requiresVtQuirk,
                                       std::unique_ptr<WriteData>& waiter)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (WI_IsAnyFlagSet(gci.Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
     {
         try
@@ -1048,7 +1090,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
         size_t cbTextBufferLength;
         RETURN_IF_FAILED(SizeTMult(buffer.size(), sizeof(wchar_t), &cbTextBufferLength));
 
-        NTSTATUS Status = DoWriteConsole(const_cast<wchar_t*>(buffer.data()), &cbTextBufferLength, context, requiresVtQuirk, waiter);
+        auto Status = DoWriteConsole(const_cast<wchar_t*>(buffer.data()), &cbTextBufferLength, context, requiresVtQuirk, waiter);
 
         // Convert back from bytes to characters for the resulting string length written.
         read = cbTextBufferLength / sizeof(wchar_t);
@@ -1126,7 +1168,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             // because we previously checked that buffer.size() fits into an int, +2 won't cause an overflow of size_t
             wstr.resize(buffer.size() + 2);
 
-            wchar_t* wcPtr{ wstr.data() };
+            auto wcPtr{ wstr.data() };
             auto mbPtr{ buffer.data() };
             size_t dbcsLength{};
             if (screenInfo.WriteConsoleDbcsLeadByte[0] != 0 && gsl::narrow_cast<byte>(*mbPtr) >= byte{ ' ' })
@@ -1188,7 +1230,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             wstr.resize((dbcsLength + mbPtrLength) / sizeof(wchar_t));
         }
 
-        // Hold the specific version of the waiter locally so we can tinker with it if we must to store additional context.
+        // Hold the specific version of the waiter locally so we can tinker with it if we have to store additional context.
         std::unique_ptr<WriteData> writeDataWaiter{};
 
         // Make the W version of the call

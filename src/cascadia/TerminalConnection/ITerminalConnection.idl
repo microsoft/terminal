@@ -17,6 +17,8 @@ namespace Microsoft.Terminal.TerminalConnection
 
     interface ITerminalConnection
     {
+        void Initialize(Windows.Foundation.Collections.ValueSet settings);
+
         void Start();
         void WriteInput(String data);
         void Resize(UInt32 rows, UInt32 columns);

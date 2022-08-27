@@ -15,7 +15,11 @@ Abstract:
 #include "../adapter/termDispatch.hpp"
 #include "telemetry.hpp"
 #include "IStateMachineEngine.hpp"
-#include "../../inc/ITerminalOutputConnection.hpp"
+
+namespace Microsoft::Console::Render
+{
+    class VtEngine;
+}
 
 namespace Microsoft::Console::VirtualTerminal
 {
@@ -39,6 +43,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool ActionCsiDispatch(const VTID id, const VTParameters parameters) override;
 
+        StringHandler ActionDcsDispatch(const VTID id, const VTParameters parameters) override;
+
         bool ActionClear() noexcept override;
 
         bool ActionIgnore() noexcept override;
@@ -49,12 +55,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool ActionSs3Dispatch(const wchar_t wch, const VTParameters parameters) noexcept override;
 
-        bool ParseControlSequenceAfterSs3() const noexcept override;
-        bool FlushAtEndOfString() const noexcept override;
-        bool DispatchControlCharsFromEscape() const noexcept override;
-        bool DispatchIntermediatesFromEscape() const noexcept override;
-
-        void SetTerminalConnection(Microsoft::Console::ITerminalOutputConnection* const pTtyConnection,
+        void SetTerminalConnection(Microsoft::Console::Render::VtEngine* const pTtyConnection,
                                    std::function<bool()> pfnFlushToTerminal);
 
         const ITermDispatch& Dispatch() const noexcept;
@@ -62,7 +63,7 @@ namespace Microsoft::Console::VirtualTerminal
 
     private:
         std::unique_ptr<ITermDispatch> _dispatch;
-        Microsoft::Console::ITerminalOutputConnection* _pTtyConnection;
+        Microsoft::Console::Render::VtEngine* _pTtyConnection;
         std::function<bool()> _pfnFlushToTerminal;
         wchar_t _lastPrintedChar;
 
@@ -86,6 +87,11 @@ namespace Microsoft::Console::VirtualTerminal
             LS1R_LockingShift = VTID("~"),
             LS2R_LockingShift = VTID("}"),
             LS3R_LockingShift = VTID("|"),
+            DECAC1_AcceptC1Controls = VTID(" 7"),
+            DECDHL_DoubleHeightLineTop = VTID("#3"),
+            DECDHL_DoubleHeightLineBottom = VTID("#4"),
+            DECSWL_SingleWidthLine = VTID("#5"),
+            DECDWL_DoubleWidthLine = VTID("#6"),
             DECALN_ScreenAlignmentPattern = VTID("#8")
         };
 
@@ -131,7 +137,20 @@ namespace Microsoft::Console::VirtualTerminal
             DECREQTPARM_RequestTerminalParameters = VTID("x"),
             DECSCUSR_SetCursorStyle = VTID(" q"),
             DECSTR_SoftReset = VTID("!p"),
-            DECSCPP_SetColumnsPerPage = VTID("$|")
+            XT_PushSgrAlias = VTID("#p"),
+            XT_PopSgrAlias = VTID("#q"),
+            XT_PushSgr = VTID("#{"),
+            XT_PopSgr = VTID("#}"),
+            DECSCPP_SetColumnsPerPage = VTID("$|"),
+            DECAC_AssignColor = VTID(",|"),
+            DECPS_PlaySound = VTID(",~")
+        };
+
+        enum DcsActionCodes : uint64_t
+        {
+            DECDLD_DownloadDRCS = VTID("{"),
+            DECRSTS_RestoreTerminalState = VTID("$p"),
+            DECRQSS_RequestSetting = VTID("$q")
         };
 
         enum Vt52ActionCodes : uint64_t
@@ -168,7 +187,9 @@ namespace Microsoft::Console::VirtualTerminal
             SetClipboard = 52,
             ResetForegroundColor = 110, // Not implemented
             ResetBackgroundColor = 111, // Not implemented
-            ResetCursorColor = 112
+            ResetCursorColor = 112,
+            FinalTermAction = 133,
+            ITerm2Action = 1337,
         };
 
         bool _GetOscTitle(const std::wstring_view string,
@@ -176,10 +197,10 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool _GetOscSetColorTable(const std::wstring_view string,
                                   std::vector<size_t>& tableIndexes,
-                                  std::vector<DWORD>& rgbs) const noexcept;
+                                  std::vector<DWORD>& rgbs) const;
 
         bool _GetOscSetColor(const std::wstring_view string,
-                             std::vector<DWORD>& rgbs) const noexcept;
+                             std::vector<DWORD>& rgbs) const;
 
         bool _GetOscSetClipboard(const std::wstring_view string,
                                  std::wstring& content,

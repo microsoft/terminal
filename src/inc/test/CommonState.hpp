@@ -30,10 +30,10 @@ unit testing projects in the codebase without a bunch of overhead.
 class CommonState
 {
 public:
-    static const SHORT s_csWindowWidth = 80;
-    static const SHORT s_csWindowHeight = 80;
-    static const SHORT s_csBufferWidth = 80;
-    static const SHORT s_csBufferHeight = 300;
+    static const til::CoordType s_csWindowWidth = 80;
+    static const til::CoordType s_csWindowHeight = 80;
+    static const til::CoordType s_csBufferWidth = 80;
+    static const til::CoordType s_csBufferHeight = 300;
 
     CommonState() :
         m_heap(GetProcessHeap()),
@@ -64,11 +64,8 @@ public:
         m_readHandle.reset(nullptr);
     }
 
-    void PrepareGlobalFont()
+    void PrepareGlobalFont(const til::size coordFontSize = { 8, 12 })
     {
-        COORD coordFontSize;
-        coordFontSize.X = 8;
-        coordFontSize.Y = 12;
         m_pFontInfo = new FontInfo(L"Consolas", 0, 0, coordFontSize, 0);
     }
 
@@ -80,17 +77,32 @@ public:
         }
     }
 
-    void PrepareGlobalScreenBuffer(const short viewWidth = s_csWindowWidth,
-                                   const short viewHeight = s_csWindowHeight,
-                                   const short bufferWidth = s_csBufferWidth,
-                                   const short bufferHeight = s_csBufferHeight)
+    void PrepareGlobalRenderer()
     {
-        CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
-        COORD coordWindowSize;
+        Globals& g = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals();
+        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
+        g.pRender = new Microsoft::Console::Render::Renderer(gci.GetRenderSettings(), &gci.renderData, nullptr, 0, nullptr);
+    }
+
+    void CleanupGlobalRenderer()
+    {
+        Globals& g = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals();
+        delete g.pRender;
+        g.pRender = nullptr;
+    }
+
+    void PrepareGlobalScreenBuffer(const til::CoordType viewWidth = s_csWindowWidth,
+                                   const til::CoordType viewHeight = s_csWindowHeight,
+                                   const til::CoordType bufferWidth = s_csBufferWidth,
+                                   const til::CoordType bufferHeight = s_csBufferHeight)
+    {
+        Globals& g = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals();
+        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
+        til::size coordWindowSize;
         coordWindowSize.X = viewWidth;
         coordWindowSize.Y = viewHeight;
 
-        COORD coordScreenBufferSize;
+        til::size coordScreenBufferSize;
         coordScreenBufferSize.X = bufferWidth;
         coordScreenBufferSize.Y = bufferHeight;
 
@@ -103,6 +115,18 @@ public:
                                                            TextAttribute{ FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_RED },
                                                            uiCursorSize,
                                                            &gci.pCurrentScreenBuffer));
+
+        // If we have a renderer, we need to call EnablePainting to initialize
+        // the viewport. If not, we mark the text buffer as inactive so that it
+        // doesn't try to trigger a redraw on a nonexistent renderer.
+        if (g.pRender)
+        {
+            g.pRender->EnablePainting();
+        }
+        else
+        {
+            gci.pCurrentScreenBuffer->_textBuffer->SetAsActiveBuffer(false);
+        }
     }
 
     void CleanupGlobalScreenBuffer()
@@ -132,9 +156,9 @@ public:
                                               0,
                                               nullptr,
                                               0,
-                                              nullptr,
                                               L"",
-                                              initialData);
+                                              initialData,
+                                              nullptr);
         gci.SetCookedReadData(readData);
     }
 
@@ -146,11 +170,12 @@ public:
     }
 
     void PrepareNewTextBufferInfo(const bool useDefaultAttributes = false,
-                                  const short bufferWidth = s_csBufferWidth,
-                                  const short bufferHeight = s_csBufferHeight)
+                                  const til::CoordType bufferWidth = s_csBufferWidth,
+                                  const til::CoordType bufferHeight = s_csBufferHeight)
     {
-        CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
-        COORD coordScreenBufferSize;
+        Globals& g = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals();
+        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
+        til::size coordScreenBufferSize;
         coordScreenBufferSize.X = bufferWidth;
         coordScreenBufferSize.Y = bufferHeight;
 
@@ -165,7 +190,8 @@ public:
             std::unique_ptr<TextBuffer> textBuffer = std::make_unique<TextBuffer>(coordScreenBufferSize,
                                                                                   initialAttributes,
                                                                                   uiCursorSize,
-                                                                                  gci.pCurrentScreenBuffer->GetRenderTarget());
+                                                                                  true,
+                                                                                  *g.pRender);
             if (textBuffer.get() == nullptr)
             {
                 m_hrTextBufferInfo = E_OUTOFMEMORY;
@@ -175,6 +201,18 @@ public:
                 m_hrTextBufferInfo = S_OK;
             }
             gci.pCurrentScreenBuffer->_textBuffer.swap(textBuffer);
+
+            // If we have a renderer, we need to call EnablePainting to initialize
+            // the viewport. If not, we mark the text buffer as inactive so that it
+            // doesn't try to trigger a redraw on a nonexistent renderer.
+            if (g.pRender)
+            {
+                g.pRender->EnablePainting();
+            }
+            else
+            {
+                gci.pCurrentScreenBuffer->_textBuffer->SetAsActiveBuffer(false);
+            }
         }
         catch (...)
         {
@@ -194,13 +232,13 @@ public:
     {
         CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         // fill with some assorted text that doesn't consume the whole row
-        const SHORT cRowsToFill = 4;
+        const til::CoordType cRowsToFill = 4;
 
         VERIFY_IS_TRUE(gci.HasActiveOutputBuffer());
 
         TextBuffer& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
 
-        for (SHORT iRow = 0; iRow < cRowsToFill; iRow++)
+        for (til::CoordType iRow = 0; iRow < cRowsToFill; iRow++)
         {
             ROW& row = textBuffer.GetRowByOffset(iRow);
             FillRow(&row);
@@ -213,13 +251,13 @@ public:
     {
         CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         // fill with some text that fills the whole row and has bisecting double byte characters
-        const SHORT cRowsToFill = s_csBufferHeight;
+        const auto cRowsToFill = s_csBufferHeight;
 
         VERIFY_IS_TRUE(gci.HasActiveOutputBuffer());
 
         TextBuffer& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
 
-        for (SHORT iRow = 0; iRow < cRowsToFill; iRow++)
+        for (til::CoordType iRow = 0; iRow < cRowsToFill; iRow++)
         {
             ROW& row = textBuffer.GetRowByOffset(iRow);
             FillBisect(&row);

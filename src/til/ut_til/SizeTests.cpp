@@ -9,6 +9,13 @@ using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
+// Ensure the "safety" of til::point::as_win32_size
+static_assert(
+    sizeof(til::size) == sizeof(SIZE) &&
+    alignof(til::size) == alignof(SIZE) &&
+    offsetof(til::size, width) == offsetof(SIZE, cx) &&
+    offsetof(til::size, height) == offsetof(SIZE, cy));
+
 class SizeTests
 {
     TEST_CLASS(SizeTests);
@@ -16,98 +23,41 @@ class SizeTests
     TEST_METHOD(DefaultConstruct)
     {
         const til::size sz;
-        VERIFY_ARE_EQUAL(0, sz._width);
-        VERIFY_ARE_EQUAL(0, sz._height);
+        VERIFY_ARE_EQUAL(0, sz.width);
+        VERIFY_ARE_EQUAL(0, sz.height);
     }
 
     TEST_METHOD(RawConstruct)
     {
         const til::size sz{ 5, 10 };
-        VERIFY_ARE_EQUAL(5, sz._width);
-        VERIFY_ARE_EQUAL(10, sz._height);
+        VERIFY_ARE_EQUAL(5, sz.width);
+        VERIFY_ARE_EQUAL(10, sz.height);
     }
 
     TEST_METHOD(RawFloatingConstruct)
     {
         const til::size sz{ til::math::rounding, 3.2f, 7.8f };
-        VERIFY_ARE_EQUAL(3, sz._width);
-        VERIFY_ARE_EQUAL(8, sz._height);
-    }
-
-    TEST_METHOD(UnsignedConstruct)
-    {
-        Log::Comment(L"0.) Normal unsigned construct.");
-        {
-            const size_t width = 5;
-            const size_t height = 10;
-
-            const til::size sz{ width, height };
-            VERIFY_ARE_EQUAL(5, sz._width);
-            VERIFY_ARE_EQUAL(10, sz._height);
-        }
-
-        Log::Comment(L"1.) Unsigned construct overflow on width.");
-        {
-            constexpr size_t width = std::numeric_limits<size_t>().max();
-            const size_t height = 10;
-
-            auto fn = [&]() {
-                til::size sz{ width, height };
-            };
-
-            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
-        }
-
-        Log::Comment(L"2.) Unsigned construct overflow on height.");
-        {
-            constexpr size_t height = std::numeric_limits<size_t>().max();
-            const size_t width = 10;
-
-            auto fn = [&]() {
-                til::size sz{ width, height };
-            };
-
-            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
-        }
+        VERIFY_ARE_EQUAL(3, sz.width);
+        VERIFY_ARE_EQUAL(8, sz.height);
     }
 
     TEST_METHOD(SignedConstruct)
     {
-        const ptrdiff_t width = -5;
-        const ptrdiff_t height = -10;
+        const auto width = -5;
+        const auto height = -10;
 
         const til::size sz{ width, height };
-        VERIFY_ARE_EQUAL(width, sz._width);
-        VERIFY_ARE_EQUAL(height, sz._height);
-    }
-
-    TEST_METHOD(MixedRawTypeConstruct)
-    {
-        const ptrdiff_t a = -5;
-        const int b = -10;
-
-        Log::Comment(L"Case 1: ptrdiff_t/int");
-        {
-            const til::size sz{ a, b };
-            VERIFY_ARE_EQUAL(a, sz._width);
-            VERIFY_ARE_EQUAL(b, sz._height);
-        }
-
-        Log::Comment(L"Case 2: int/ptrdiff_t");
-        {
-            const til::size sz{ b, a };
-            VERIFY_ARE_EQUAL(b, sz._width);
-            VERIFY_ARE_EQUAL(a, sz._height);
-        }
+        VERIFY_ARE_EQUAL(width, sz.width);
+        VERIFY_ARE_EQUAL(height, sz.height);
     }
 
     TEST_METHOD(CoordConstruct)
     {
         COORD coord{ -5, 10 };
 
-        const til::size sz{ coord };
-        VERIFY_ARE_EQUAL(coord.X, sz._width);
-        VERIFY_ARE_EQUAL(coord.Y, sz._height);
+        const auto sz = til::wrap_coord_size(coord);
+        VERIFY_ARE_EQUAL(coord.X, sz.width);
+        VERIFY_ARE_EQUAL(coord.Y, sz.height);
     }
 
     TEST_METHOD(SizeConstruct)
@@ -115,8 +65,8 @@ class SizeTests
         SIZE size{ 5, -10 };
 
         const til::size sz{ size };
-        VERIFY_ARE_EQUAL(size.cx, sz._width);
-        VERIFY_ARE_EQUAL(size.cy, sz._height);
+        VERIFY_ARE_EQUAL(size.cx, sz.width);
+        VERIFY_ARE_EQUAL(size.cy, sz.height);
     }
 
     TEST_METHOD(Equality)
@@ -226,35 +176,35 @@ class SizeTests
             const til::size sz{ 5, 10 };
             const til::size sz2{ 23, 47 };
 
-            const til::size expected{ sz.width() + sz2.width(), sz.height() + sz2.height() };
+            const til::size expected{ sz.width + sz2.width, sz.height + sz2.height };
 
             VERIFY_ARE_EQUAL(expected, sz + sz2);
         }
 
         Log::Comment(L"1.) Addition results in value that is too large (width).");
         {
-            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
-            const til::size sz{ bigSize, static_cast<ptrdiff_t>(0) };
+            constexpr auto bigSize = std::numeric_limits<til::CoordType>().max();
+            const til::size sz{ bigSize, static_cast<til::CoordType>(0) };
             const til::size sz2{ 1, 1 };
 
             auto fn = [&]() {
                 sz + sz2;
             };
 
-            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+            VERIFY_THROWS(fn(), gsl::narrowing_error);
         }
 
         Log::Comment(L"2.) Addition results in value that is too large (height).");
         {
-            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
-            const til::size sz{ static_cast<ptrdiff_t>(0), bigSize };
+            constexpr auto bigSize = std::numeric_limits<til::CoordType>().max();
+            const til::size sz{ static_cast<til::CoordType>(0), bigSize };
             const til::size sz2{ 1, 1 };
 
             auto fn = [&]() {
                 sz + sz2;
             };
 
-            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+            VERIFY_THROWS(fn(), gsl::narrowing_error);
         }
     }
 
@@ -265,35 +215,35 @@ class SizeTests
             const til::size sz{ 5, 10 };
             const til::size sz2{ 23, 47 };
 
-            const til::size expected{ sz.width() - sz2.width(), sz.height() - sz2.height() };
+            const til::size expected{ sz.width - sz2.width, sz.height - sz2.height };
 
             VERIFY_ARE_EQUAL(expected, sz - sz2);
         }
 
         Log::Comment(L"1.) Subtraction results in value that is too small (width).");
         {
-            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
-            const til::size sz{ bigSize, static_cast<ptrdiff_t>(0) };
+            constexpr auto bigSize = std::numeric_limits<til::CoordType>().max();
+            const til::size sz{ bigSize, static_cast<til::CoordType>(0) };
             const til::size sz2{ -2, -2 };
 
             auto fn = [&]() {
                 sz2 - sz;
             };
 
-            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+            VERIFY_THROWS(fn(), gsl::narrowing_error);
         }
 
         Log::Comment(L"2.) Subtraction results in value that is too small (height).");
         {
-            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
-            const til::size sz{ static_cast<ptrdiff_t>(0), bigSize };
+            constexpr auto bigSize = std::numeric_limits<til::CoordType>().max();
+            const til::size sz{ static_cast<til::CoordType>(0), bigSize };
             const til::size sz2{ -2, -2 };
 
             auto fn = [&]() {
                 sz2 - sz;
             };
 
-            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+            VERIFY_THROWS(fn(), gsl::narrowing_error);
         }
     }
 
@@ -304,35 +254,35 @@ class SizeTests
             const til::size sz{ 5, 10 };
             const til::size sz2{ 23, 47 };
 
-            const til::size expected{ sz.width() * sz2.width(), sz.height() * sz2.height() };
+            const til::size expected{ sz.width * sz2.width, sz.height * sz2.height };
 
             VERIFY_ARE_EQUAL(expected, sz * sz2);
         }
 
         Log::Comment(L"1.) Multiplication results in value that is too large (width).");
         {
-            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
-            const til::size sz{ bigSize, static_cast<ptrdiff_t>(0) };
+            constexpr auto bigSize = std::numeric_limits<til::CoordType>().max();
+            const til::size sz{ bigSize, static_cast<til::CoordType>(0) };
             const til::size sz2{ 10, 10 };
 
             auto fn = [&]() {
                 sz* sz2;
             };
 
-            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+            VERIFY_THROWS(fn(), gsl::narrowing_error);
         }
 
         Log::Comment(L"2.) Multiplication results in value that is too large (height).");
         {
-            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
-            const til::size sz{ static_cast<ptrdiff_t>(0), bigSize };
+            constexpr auto bigSize = std::numeric_limits<til::CoordType>().max();
+            const til::size sz{ static_cast<til::CoordType>(0), bigSize };
             const til::size sz2{ 10, 10 };
 
             auto fn = [&]() {
                 sz* sz2;
             };
 
-            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+            VERIFY_THROWS(fn(), gsl::narrowing_error);
         }
     }
 
@@ -341,9 +291,9 @@ class SizeTests
         Log::Comment(L"0.) Scale that should be in bounds.");
         {
             const til::size sz{ 5, 10 };
-            const float scale = 1.783f;
+            const auto scale = 1.783f;
 
-            const til::size expected{ static_cast<ptrdiff_t>(ceil(5 * scale)), static_cast<ptrdiff_t>(ceil(10 * scale)) };
+            const til::size expected{ static_cast<til::CoordType>(ceil(5 * scale)), static_cast<til::CoordType>(ceil(10 * scale)) };
 
             const auto actual = sz.scale(til::math::ceiling, scale);
 
@@ -353,13 +303,13 @@ class SizeTests
         Log::Comment(L"1.) Scale results in value that is too large.");
         {
             const til::size sz{ 5, 10 };
-            constexpr float scale = std::numeric_limits<float>().max();
+            constexpr auto scale = std::numeric_limits<float>().max();
 
             auto fn = [&]() {
                 sz.scale(til::math::ceiling, scale);
             };
 
-            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+            VERIFY_THROWS(fn(), gsl::narrowing_error);
         }
     }
 
@@ -370,22 +320,22 @@ class SizeTests
             const til::size sz{ 555, 510 };
             const til::size sz2{ 23, 47 };
 
-            const til::size expected{ sz.width() / sz2.width(), sz.height() / sz2.height() };
+            const til::size expected{ sz.width / sz2.width, sz.height / sz2.height };
 
             VERIFY_ARE_EQUAL(expected, sz / sz2);
         }
 
         Log::Comment(L"1.) Division by zero");
         {
-            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
-            const til::size sz{ bigSize, static_cast<ptrdiff_t>(0) };
+            constexpr auto bigSize = std::numeric_limits<til::CoordType>().max();
+            const til::size sz{ bigSize, static_cast<til::CoordType>(0) };
             const til::size sz2{ 1, 1 };
 
             auto fn = [&]() {
                 sz2 / sz;
             };
 
-            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+            VERIFY_THROWS(fn(), gsl::narrowing_error);
         }
     }
 
@@ -408,36 +358,24 @@ class SizeTests
             const til::size sz{ -10, -5 };
             const til::size divisor{ 3, 2 };
 
-            // -10 / 3 is -3.333, rounded up is -4.
-            // -5 / 2 is -2.5, rounded up is -3.
-            const til::size expected{ -4, -3 };
+            auto fn = [&]() {
+                sz.divide_ceil(divisor);
+            };
 
-            VERIFY_ARE_EQUAL(expected, sz.divide_ceil(divisor));
+            VERIFY_THROWS(fn(), std::invalid_argument);
         }
-    }
-
-    TEST_METHOD(Width)
-    {
-        const til::size sz{ 5, 10 };
-        VERIFY_ARE_EQUAL(sz._width, sz.width());
     }
 
     TEST_METHOD(WidthCast)
     {
         const til::size sz{ 5, 10 };
-        VERIFY_ARE_EQUAL(static_cast<SHORT>(sz._width), sz.width<SHORT>());
-    }
-
-    TEST_METHOD(Height)
-    {
-        const til::size sz{ 5, 10 };
-        VERIFY_ARE_EQUAL(sz._height, sz.height());
+        VERIFY_ARE_EQUAL(static_cast<SHORT>(sz.width), sz.narrow_width<SHORT>());
     }
 
     TEST_METHOD(HeightCast)
     {
         const til::size sz{ 5, 10 };
-        VERIFY_ARE_EQUAL(static_cast<SHORT>(sz._height), sz.height<SHORT>());
+        VERIFY_ARE_EQUAL(static_cast<SHORT>(sz.height), sz.narrow_height<SHORT>());
     }
 
     TEST_METHOD(Area)
@@ -445,19 +383,19 @@ class SizeTests
         Log::Comment(L"0.) Area of two things that should be in bounds.");
         {
             const til::size sz{ 5, 10 };
-            VERIFY_ARE_EQUAL(sz._width * sz._height, sz.area());
+            VERIFY_ARE_EQUAL(sz.width * sz.height, sz.area());
         }
 
         Log::Comment(L"1.) Area is out of bounds on multiplication.");
         {
-            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
+            constexpr auto bigSize = std::numeric_limits<til::CoordType>().max();
             const til::size sz{ bigSize, bigSize };
 
             auto fn = [&]() {
                 sz.area();
             };
 
-            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+            VERIFY_THROWS(fn(), gsl::narrowing_error);
         }
     }
     TEST_METHOD(AreaCast)
@@ -470,51 +408,14 @@ class SizeTests
 
         Log::Comment(L"1.) Area is out of bounds on multiplication.");
         {
-            constexpr ptrdiff_t bigSize = std::numeric_limits<SHORT>().max();
+            constexpr til::CoordType bigSize = std::numeric_limits<SHORT>().max();
             const til::size sz{ bigSize, bigSize };
 
             auto fn = [&]() {
                 sz.area<SHORT>();
             };
 
-            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
-        }
-    }
-
-    TEST_METHOD(CastToCoord)
-    {
-        Log::Comment(L"0.) Typical situation.");
-        {
-            const til::size sz{ 5, 10 };
-            COORD val = sz;
-            VERIFY_ARE_EQUAL(5, val.X);
-            VERIFY_ARE_EQUAL(10, val.Y);
-        }
-
-        Log::Comment(L"1.) Overflow on width.");
-        {
-            constexpr ptrdiff_t width = std::numeric_limits<ptrdiff_t>().max();
-            const ptrdiff_t height = 10;
-            const til::size sz{ width, height };
-
-            auto fn = [&]() {
-                COORD val = sz;
-            };
-
-            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
-        }
-
-        Log::Comment(L"2.) Overflow on height.");
-        {
-            constexpr ptrdiff_t height = std::numeric_limits<ptrdiff_t>().max();
-            const ptrdiff_t width = 10;
-            const til::size sz{ width, height };
-
-            auto fn = [&]() {
-                COORD val = sz;
-            };
-
-            VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+            VERIFY_THROWS(fn(), gsl::narrowing_error);
         }
     }
 
@@ -523,55 +424,55 @@ class SizeTests
         Log::Comment(L"0.) Typical situation.");
         {
             const til::size sz{ 5, 10 };
-            SIZE val = sz;
+            auto val = sz.to_win32_size();
             VERIFY_ARE_EQUAL(5, val.cx);
             VERIFY_ARE_EQUAL(10, val.cy);
         }
 
         Log::Comment(L"1.) Fit max width into SIZE (may overflow).");
         {
-            constexpr ptrdiff_t width = std::numeric_limits<ptrdiff_t>().max();
-            const ptrdiff_t height = 10;
+            constexpr auto width = std::numeric_limits<til::CoordType>().max();
+            const auto height = 10;
             const til::size sz{ width, height };
 
-            // On some platforms, ptrdiff_t will fit inside cx/cy
-            const bool overflowExpected = width > std::numeric_limits<decltype(SIZE::cx)>().max();
+            // On some platforms, til::CoordType will fit inside cx/cy
+            const auto overflowExpected = width > std::numeric_limits<decltype(SIZE::cx)>().max();
 
             if (overflowExpected)
             {
                 auto fn = [&]() {
-                    SIZE val = sz;
+                    auto val = sz.to_win32_size();
                 };
 
-                VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+                VERIFY_THROWS(fn(), gsl::narrowing_error);
             }
             else
             {
-                SIZE val = sz;
+                auto val = sz.to_win32_size();
                 VERIFY_ARE_EQUAL(width, val.cx);
             }
         }
 
         Log::Comment(L"2.) Fit max height into SIZE (may overflow).");
         {
-            constexpr ptrdiff_t height = std::numeric_limits<ptrdiff_t>().max();
-            const ptrdiff_t width = 10;
+            constexpr auto height = std::numeric_limits<til::CoordType>().max();
+            const auto width = 10;
             const til::size sz{ width, height };
 
-            // On some platforms, ptrdiff_t will fit inside cx/cy
-            const bool overflowExpected = height > std::numeric_limits<decltype(SIZE::cy)>().max();
+            // On some platforms, til::CoordType will fit inside cx/cy
+            const auto overflowExpected = height > std::numeric_limits<decltype(SIZE::cy)>().max();
 
             if (overflowExpected)
             {
                 auto fn = [&]() {
-                    SIZE val = sz;
+                    auto val = sz.to_win32_size();
                 };
 
-                VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+                VERIFY_THROWS(fn(), gsl::narrowing_error);
             }
             else
             {
-                SIZE val = sz;
+                auto val = sz.to_win32_size();
                 VERIFY_ARE_EQUAL(height, val.cy);
             }
         }
@@ -582,61 +483,40 @@ class SizeTests
         Log::Comment(L"0.) Typical situation.");
         {
             const til::size sz{ 5, 10 };
-            D2D1_SIZE_F val = sz;
+            auto val = sz.to_d2d_size();
             VERIFY_ARE_EQUAL(5, val.width);
             VERIFY_ARE_EQUAL(10, val.height);
         }
 
-        // All ptrdiff_ts fit into a float, so there's no exception tests.
+        // All til::CoordTypes fit into a float, so there's no exception tests.
     }
 
-    template<typename T>
-    struct SizeTypeWith_XY
-    {
-        T X, Y;
-    };
-    template<typename T>
-    struct SizeTypeWith_cxcy
-    {
-        T cx, cy;
-    };
-    template<typename T>
-    struct SizeTypeWith_WidthHeight
-    {
-        T Width, Height;
-    };
     TEST_METHOD(CastFromFloatWithMathTypes)
     {
-        SizeTypeWith_XY<float> XYFloatIntegral{ 1.f, 2.f };
-        SizeTypeWith_XY<float> XYFloat{ 1.6f, 2.4f };
-        SizeTypeWith_cxcy<double> cxcyDoubleIntegral{ 3., 4. };
-        SizeTypeWith_cxcy<double> cxcyDouble{ 3.6, 4.4 };
-        SizeTypeWith_WidthHeight<double> WHDoubleIntegral{ 5., 6. };
-        SizeTypeWith_WidthHeight<double> WHDouble{ 5.6, 6.4 };
         Log::Comment(L"0.) Ceiling");
         {
             {
-                til::size converted{ til::math::ceiling, XYFloatIntegral };
+                til::size converted{ til::math::ceiling, 1.f, 2.f };
                 VERIFY_ARE_EQUAL((til::size{ 1, 2 }), converted);
             }
             {
-                til::size converted{ til::math::ceiling, XYFloat };
+                til::size converted{ til::math::ceiling, 1.6f, 2.4f };
                 VERIFY_ARE_EQUAL((til::size{ 2, 3 }), converted);
             }
             {
-                til::size converted{ til::math::ceiling, cxcyDoubleIntegral };
+                til::size converted{ til::math::ceiling, 3., 4. };
                 VERIFY_ARE_EQUAL((til::size{ 3, 4 }), converted);
             }
             {
-                til::size converted{ til::math::ceiling, cxcyDouble };
+                til::size converted{ til::math::ceiling, 3.6, 4.4 };
                 VERIFY_ARE_EQUAL((til::size{ 4, 5 }), converted);
             }
             {
-                til::size converted{ til::math::ceiling, WHDoubleIntegral };
+                til::size converted{ til::math::ceiling, 5., 6. };
                 VERIFY_ARE_EQUAL((til::size{ 5, 6 }), converted);
             }
             {
-                til::size converted{ til::math::ceiling, WHDouble };
+                til::size converted{ til::math::ceiling, 5.6, 6.4 };
                 VERIFY_ARE_EQUAL((til::size{ 6, 7 }), converted);
             }
         }
@@ -644,27 +524,27 @@ class SizeTests
         Log::Comment(L"1.) Flooring");
         {
             {
-                til::size converted{ til::math::flooring, XYFloatIntegral };
+                til::size converted{ til::math::flooring, 1.f, 2.f };
                 VERIFY_ARE_EQUAL((til::size{ 1, 2 }), converted);
             }
             {
-                til::size converted{ til::math::flooring, XYFloat };
+                til::size converted{ til::math::flooring, 1.6f, 2.4f };
                 VERIFY_ARE_EQUAL((til::size{ 1, 2 }), converted);
             }
             {
-                til::size converted{ til::math::flooring, cxcyDoubleIntegral };
+                til::size converted{ til::math::flooring, 3., 4. };
                 VERIFY_ARE_EQUAL((til::size{ 3, 4 }), converted);
             }
             {
-                til::size converted{ til::math::flooring, cxcyDouble };
+                til::size converted{ til::math::flooring, 3.6, 4.4 };
                 VERIFY_ARE_EQUAL((til::size{ 3, 4 }), converted);
             }
             {
-                til::size converted{ til::math::flooring, WHDoubleIntegral };
+                til::size converted{ til::math::flooring, 5., 6. };
                 VERIFY_ARE_EQUAL((til::size{ 5, 6 }), converted);
             }
             {
-                til::size converted{ til::math::flooring, WHDouble };
+                til::size converted{ til::math::flooring, 5.6, 6.4 };
                 VERIFY_ARE_EQUAL((til::size{ 5, 6 }), converted);
             }
         }
@@ -672,56 +552,28 @@ class SizeTests
         Log::Comment(L"2.) Rounding");
         {
             {
-                til::size converted{ til::math::rounding, XYFloatIntegral };
+                til::size converted{ til::math::rounding, 1.f, 2.f };
                 VERIFY_ARE_EQUAL((til::size{ 1, 2 }), converted);
             }
             {
-                til::size converted{ til::math::rounding, XYFloat };
+                til::size converted{ til::math::rounding, 1.6f, 2.4f };
                 VERIFY_ARE_EQUAL((til::size{ 2, 2 }), converted);
             }
             {
-                til::size converted{ til::math::rounding, cxcyDoubleIntegral };
+                til::size converted{ til::math::rounding, 3., 4. };
                 VERIFY_ARE_EQUAL((til::size{ 3, 4 }), converted);
             }
             {
-                til::size converted{ til::math::rounding, cxcyDouble };
+                til::size converted{ til::math::rounding, 3.6, 4.4 };
                 VERIFY_ARE_EQUAL((til::size{ 4, 4 }), converted);
             }
             {
-                til::size converted{ til::math::rounding, WHDoubleIntegral };
+                til::size converted{ til::math::rounding, 5., 6. };
                 VERIFY_ARE_EQUAL((til::size{ 5, 6 }), converted);
             }
             {
-                til::size converted{ til::math::rounding, WHDouble };
+                til::size converted{ til::math::rounding, 5.6, 6.4 };
                 VERIFY_ARE_EQUAL((til::size{ 6, 6 }), converted);
-            }
-        }
-
-        Log::Comment(L"3.) Truncating");
-        {
-            {
-                til::size converted{ til::math::truncating, XYFloatIntegral };
-                VERIFY_ARE_EQUAL((til::size{ 1, 2 }), converted);
-            }
-            {
-                til::size converted{ til::math::truncating, XYFloat };
-                VERIFY_ARE_EQUAL((til::size{ 1, 2 }), converted);
-            }
-            {
-                til::size converted{ til::math::truncating, cxcyDoubleIntegral };
-                VERIFY_ARE_EQUAL((til::size{ 3, 4 }), converted);
-            }
-            {
-                til::size converted{ til::math::truncating, cxcyDouble };
-                VERIFY_ARE_EQUAL((til::size{ 3, 4 }), converted);
-            }
-            {
-                til::size converted{ til::math::truncating, WHDoubleIntegral };
-                VERIFY_ARE_EQUAL((til::size{ 5, 6 }), converted);
-            }
-            {
-                til::size converted{ til::math::truncating, WHDouble };
-                VERIFY_ARE_EQUAL((til::size{ 5, 6 }), converted);
             }
         }
     }

@@ -1,0 +1,54 @@
+:: Uses Unicode Block Element Shade Characters to show a dithered mix of foreground and background colors
+__DATA__
+__TABLE__
+SET "UTF8.REQUIRED=#TRUE#"
+:: The test text
+REM SET "CELL= ░▒▓█"
+SET "CELL=░▒▓"
+SET "STUBHEAD=plaid"
+:: Separator characters for cells and headers
+SET "SEPARATOR.STUBHEAD_BOXHEAD=│"
+SET "SEPARATOR.STUBHEAD_STUB=─"
+SET "SEPARATOR.INTERSECT=┘"
+__TABLE:END__
+
+:: Background
+__COLS__
+40m
+41m
+42m
+43m
+44m
+45m
+46m
+47m
+100m
+101m
+102m
+103m
+104m
+105m
+106m
+107m
+__COLS:END__
+
+:: [Intensity;][Attribute;]Foreground
+__ROWS__
+30m
+31m
+32m
+33m
+34m
+35m
+36m
+37m
+90m
+91m
+92m
+93m
+94m
+95m
+96m
+97m
+__ROWS:END__
+__DATA:END__

@@ -56,15 +56,24 @@ Abstract:
 #include <windows.ui.xaml.hosting.desktopwindowxamlsource.h>
 
 // Additional headers for various xaml features. We need:
+//  * Core so we can resume_foreground with CoreDispatcher
 //  * Controls for grid
 //  * Media for ScaleTransform
+//  * ApplicationModel for finding the path to wt.exe
+//  * Primitives for Popup (used by GetOpenPopupsForXamlRoot)
+#include <winrt/Windows.UI.Core.h>
 #include <winrt/Windows.UI.Xaml.Controls.h>
+#include <winrt/Windows.UI.Xaml.Controls.Primitives.h>
+#include <winrt/Windows.UI.Xaml.Data.h>
 #include <winrt/Windows.ui.xaml.media.h>
+#include <winrt/Windows.ApplicationModel.h>
+#include <winrt/Windows.ApplicationModel.Resources.Core.h>
+#include <winrt/Windows.UI.Composition.h>
 
 #include <winrt/TerminalApp.h>
 #include <winrt/Microsoft.Terminal.Settings.Model.h>
 #include <winrt/Microsoft.Terminal.Remoting.h>
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
+#include <winrt/Microsoft.Terminal.Control.h>
 
 #include <wil/resource.h>
 #include <wil/win32_helpers.h>
@@ -81,3 +90,6 @@ TRACELOGGING_DECLARE_PROVIDER(g_hWindowsTerminalProvider);
 #include <processenv.h>
 #include <WinUser.h>
 #include "til.h"
+
+#include <cppwinrt_utils.h>
+#include <wil/cppwinrt_helpers.h> // must go after the CoreDispatcher type is defined

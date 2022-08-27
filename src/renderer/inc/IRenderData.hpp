@@ -27,9 +27,9 @@ namespace Microsoft::Console::Render
         // This is where the data is stored
         const TextBuffer& buffer;
 
-        // This is where the top left of the stored buffer should be overlayed on the screen
+        // This is where the top left of the stored buffer should be overlaid on the screen
         // (relative to the current visible viewport)
-        const COORD origin;
+        const til::point origin;
 
         // This is the area of the buffer that is actually used for overlay.
         // Anything outside of this is considered empty by the overlay and shouldn't be used
@@ -46,30 +46,23 @@ namespace Microsoft::Console::Render
         IRenderData& operator=(const IRenderData&) = default;
         IRenderData& operator=(IRenderData&&) = default;
 
-        virtual const TextAttribute GetDefaultBrushColors() noexcept = 0;
-
-        virtual std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept = 0;
-
-        virtual COORD GetCursorPosition() const noexcept = 0;
+        virtual til::point GetCursorPosition() const noexcept = 0;
         virtual bool IsCursorVisible() const noexcept = 0;
         virtual bool IsCursorOn() const noexcept = 0;
         virtual ULONG GetCursorHeight() const noexcept = 0;
         virtual CursorType GetCursorStyle() const noexcept = 0;
         virtual ULONG GetCursorPixelWidth() const noexcept = 0;
-        virtual COLORREF GetCursorColor() const noexcept = 0;
         virtual bool IsCursorDoubleWidth() const = 0;
-
-        virtual bool IsScreenReversed() const noexcept = 0;
 
         virtual const std::vector<RenderOverlay> GetOverlays() const noexcept = 0;
 
         virtual const bool IsGridLineDrawingAllowed() noexcept = 0;
-        virtual const std::wstring GetConsoleTitle() const noexcept = 0;
+        virtual const std::wstring_view GetConsoleTitle() const noexcept = 0;
 
         virtual const std::wstring GetHyperlinkUri(uint16_t id) const noexcept = 0;
         virtual const std::wstring GetHyperlinkCustomId(uint16_t id) const noexcept = 0;
 
-        virtual const std::vector<size_t> GetPatternId(const COORD location) const noexcept = 0;
+        virtual const std::vector<size_t> GetPatternId(const til::point location) const noexcept = 0;
 
     protected:
         IRenderData() = default;

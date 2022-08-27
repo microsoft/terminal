@@ -1,10 +1,9 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #pragma once
 
 #include "PaletteItemTemplateSelector.g.h"
-#include "inc/cppwinrt_utils.h"
 
 namespace winrt::TerminalApp::implementation
 {
@@ -12,11 +11,12 @@ namespace winrt::TerminalApp::implementation
     {
         PaletteItemTemplateSelector() = default;
 
-        Windows::UI::Xaml::DataTemplate SelectTemplateCore(winrt::Windows::Foundation::IInspectable const&, winrt::Windows::UI::Xaml::DependencyObject const&);
-        Windows::UI::Xaml::DataTemplate SelectTemplateCore(winrt::Windows::Foundation::IInspectable const&);
+        Windows::UI::Xaml::DataTemplate SelectTemplateCore(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::UI::Xaml::DependencyObject&);
+        Windows::UI::Xaml::DataTemplate SelectTemplateCore(const winrt::Windows::Foundation::IInspectable&);
 
-        GETSET_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, TabItemTemplate);
-        GETSET_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, GeneralItemTemplate);
+        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, TabItemTemplate);
+        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, NestedItemTemplate);
+        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, GeneralItemTemplate);
     };
 }
 

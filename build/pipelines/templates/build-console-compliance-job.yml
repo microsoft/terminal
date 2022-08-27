@@ -1,0 +1,203 @@
+jobs:
+- job: Compliance
+  # We don't *need* a matrix but there's no other way to set parameters on a "job"
+  # in the AzDO YAML syntax. It would have to be a "stage" or a "template".
+  # Doesn't matter. We're going to do compliance on Release x64 because
+  # that's the one all the tooling works against for sure.
+  strategy:
+    matrix:
+      Release_x64:
+        BuildConfiguration: Release
+        BuildPlatform: x64
+  displayName: Validate Security and Compliance
+  timeoutInMinutes: 240
+  steps:
+  - checkout: self
+    clean: true
+    submodules: true
+    persistCredentials: True
+  - task: PkgESSetupBuild@12
+    displayName: Package ES - Setup Build
+    inputs:
+      disableOutputRedirect: true
+  - task: PowerShell@2
+    displayName: Rationalize Build Platform
+    inputs:
+      targetType: inline
+      script: >-
+        $Arch = "$(BuildPlatform)"
+
+        If ($Arch -Eq "x86") { $Arch = "Win32" }
+
+        Write-Host "##vso[task.setvariable variable=RationalizedBuildPlatform]${Arch}"
+  - template: restore-nuget-steps.yml
+  - task: UniversalPackages@0
+    displayName: Download terminal-internal Universal Package
+    inputs:
+      feedListDownload: 2b3f8893-a6e8-411f-b197-a9e05576da48
+      packageListDownload: e82d490c-af86-4733-9dc4-07b772033204
+      versionListDownload: $(TerminalInternalPackageVersion)
+  - task: TouchdownBuildTask@1
+    displayName: Download Localization Files
+    inputs:
+      teamId: 7105
+      authId: $(TouchdownAppId)
+      authKey: $(TouchdownAppKey)
+      resourceFilePath: >-
+        src\cascadia\TerminalApp\Resources\en-US\Resources.resw
+
+        src\cascadia\TerminalControl\Resources\en-US\Resources.resw
+
+        src\cascadia\TerminalConnection\Resources\en-US\Resources.resw
+
+        src\cascadia\TerminalSettingsModel\Resources\en-US\Resources.resw
+
+        src\cascadia\TerminalSettingsEditor\Resources\en-US\Resources.resw
+
+        src\cascadia\CascadiaPackage\Resources\en-US\Resources.resw
+      appendRelativeDir: true
+      localizationTarget: false
+      pseudoSetting: Included
+  - task: PowerShell@2
+    displayName: Move Loc files one level up
+    inputs:
+      targetType: inline
+      script: >-
+        $Files = Get-ChildItem . -R -Filter 'Resources.resw' | ? FullName -Like '*en-US\*\Resources.resw'
+
+        $Files | % { Move-Item -Verbose $_.Directory $_.Directory.Parent.Parent -EA:Ignore }
+      pwsh: true
+
+  # 1ES Component Governance onboarding (Detects open source components). See https://docs.opensource.microsoft.com/tools/cg.html
+  - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
+    displayName: Component Detection
+
+  # # PREfast and PoliCheck need Node. Install that first.
+  - task: NodeTool@0
+
+  # !!! NOTE !!! Run PREfast first. Some of the other tasks are going to run on a completed build.
+  # PREfast is going to build the code as a part of its analysis and the generated sources
+  # and output binaries will be sufficient for the rest of the analysis.
+  # If you disable this, the other tasks won't likely work. You would have to add a build
+  # step instead that builds the code normally before calling them.
+  # Also... PREfast will rebuild anyway so that's why we're not running a normal build first.
+  # Waste of time to build twice.
+  # PREfast. See https://www.1eswiki.com/wiki/SDL_Native_Rules_Build_Task
+
+  # The following 1ES tasks all operate completely differently and have a different syntax for usage.
+  # Most notable is every one of them has a different way of excluding things.
+  # Go see their 1eswiki.com pages to figure out how to exclude things.
+  # When writing exclusions, try to make them narrow so when new projects/binaries are added, they
+  # cause an error here and have to be explicitly pulled out. Don't write an exclusion so broad
+  # that it will catch other new stuff.
+
+  # https://www.1eswiki.com/wiki/PREfast_Build_Task
+  # Builds the project with C/C++ static analysis tools to find coding flaws and vulnerabilities
+  # !!! WARNING !!! It doesn't work with WAPPROJ packaging projects. Build the sub-projects instead.
+  - task: securedevelopmentteam.vss-secure-development-tools.build-task-prefast.SDLNativeRules@3
+    displayName: 'Run the PREfast SDL Native Rules for MSBuild'
+    condition: succeededOrFailed()
+    inputs:
+      setupCommandlines: '"C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsMSBuildCmd.bat"'
+      msBuildCommandline: msbuild.exe /nologo /m /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }} /p:WindowsTerminalReleaseBuild=true /p:platform=$(BuildPlatform) /p:configuration=$(BuildConfiguration) /t:Terminal\Window\WindowsTerminal /p:VisualStudioVersion=17.0 $(Build.SourcesDirectory)\OpenConsole.sln
+      msBuildVersion: "17.0"
+
+  # Copies output from PREfast SDL Native Rules task to expected location for consumption by PkgESSecComp
+  - task: CopyFiles@1
+    displayName: 'Copy PREfast xml files to SDLNativeRulesDir'
+    inputs:
+      SourceFolder: '$(Agent.BuildDirectory)'
+      Contents: |
+        **\*.nativecodeanalysis.xml
+      TargetFolder: '$(Agent.BuildDirectory)\_sdt\logs\SDLNativeRules'
+
+  # https://www.1eswiki.com/index.php?title=PoliCheck_Build_Task
+  # Scans the text of source code, comments, and content for terminology that could be sensitive for legal, cultural, or geopolitical reasons.
+  # (Also finds vulgarities... takes all the fun out of everything.)
+  - task: securedevelopmentteam.vss-secure-development-tools.build-task-policheck.PoliCheck@2
+    displayName: 'Run PoliCheck'
+    inputs:
+      targetType: F
+      targetArgument: $(Build.SourcesDirectory)
+      result: PoliCheck.xml
+      optionsFC: 1
+      optionsXS: 1
+      optionsUEPath: $(Build.SourcesDirectory)\build\config\PolicheckExclusions.xml
+      optionsHMENABLE: 0
+    continueOnError: true
+
+  # https://www.1eswiki.com/wiki/CredScan_Azure_DevOps_Build_Task
+  # Searches through source code and build outputs for a credential left behind in the open
+  - task: securedevelopmentteam.vss-secure-development-tools.build-task-credscan.CredScan@3
+    displayName: 'Run CredScan'
+    inputs:
+      outputFormat: pre
+      # suppressionsFile: LocalSuppressions.json
+      batchSize: 20
+      debugMode: false
+    continueOnError: true
+
+  # https://www.1eswiki.com/wiki/BinSkim_Build_Task
+  # Searches managed and unmanaged binaries for known security vulnerabilities.
+  - task: securedevelopmentteam.vss-secure-development-tools.build-task-binskim.BinSkim@4
+    displayName: 'Run BinSkim'
+    inputs:
+      TargetPattern: guardianGlob
+      # See https://aka.ms/gdn-globs for how to do match patterns
+      AnalyzeTargetGlob: $(Build.SourcesDirectory)\bin\**\*.dll;$(Build.SourcesDirectory)\bin\**\*.exe;-:file|**\Microsoft.UI.Xaml.dll;-:file|**\Microsoft.Toolkit.Win32.UI.XamlHost.dll;-:file|**\vcruntime*.dll;-:file|**\vcomp*.dll;-:file|**\vccorlib*.dll;-:file|**\vcamp*.dll;-:file|**\msvcp*.dll;-:file|**\concrt*.dll;-:file|**\TerminalThemeHelpers*.dll;-:file|**\cpprest*.dll
+    continueOnError: true
+
+  # Set XES_SERIALPOSTBUILDREADY to run Security and Compliance task once per build
+  - powershell: Write-Host "##vso[task.setvariable variable=XES_SERIALPOSTBUILDREADY;]true"
+    displayName: 'Set XES_SERIALPOSTBUILDREADY Vars'
+
+  # https://www.osgwiki.com/wiki/Package_ES_Security_and_Compliance
+  # Does a few things:
+  # - Ensures that Windows-required compliance tasks are run either inside this task
+  #   or were run as a previous step prior to this one
+  #   (PREfast, PoliCheck, Credscan)
+  # - Runs Windows-specific compliance tasks inside the task
+  #   + CheckCFlags - ensures that compiler and linker flags meet Windows standards
+  #   + CFGCheck/XFGCheck - ensures that Control Flow Guard (CFG) or
+  #                         eXtended Flow Guard (XFG) are enabled on binaries
+  #                         NOTE: CFG is deprecated and XFG isn't fully ready yet.
+  #                         NOTE2: CFG fails on an XFG'd binary
+  # - Brokers all security/compliance task logs to "Trust Services Automation (TSA)" (https://aka.ms/tsa)
+  #   which is a system that maps all errors into the appropriate bug database
+  #   template for each organization since they all vary. It should also suppress
+  #   new bugs when one already exists for the product.
+  #   This one is set up to go to the OS repository and use the given parameters
+  #   to file bugs to our AzDO product path.
+  #   If we don't use PkgESSecComp to do this for us, we need to install the TSA task
+  #   ourselves in this pipeline to finalize data upload and bug creation.
+  # !!! NOTE !!! This task goes *LAST* after any other compliance tasks so it catches their logs
+  - task: PkgESSecComp@10
+    displayName: 'Security and Compliance tasks'
+    inputs:
+      fileNewBugs: false
+      areaPath: 'OS\WDX\DXP\WinDev\Terminal'
+      teamProject: 'OS'
+      iterationPath: 'OS\Future'
+      bugTags: 'TerminalReleaseCompliance'
+      scanAll: true
+      errOnBugs: false
+      failOnStdErr: true
+      taskLogVerbosity: Diagnostic
+      secCompConfigFromTask: |
+        # Overrides default build sources directory
+        sourceTargetOverrideAll: $(Build.SourcesDirectory)
+        # Overrides default build binaries directory when "Scan all" option is specified
+        binariesTargetOverrideAll: $(Build.SourcesDirectory)\bin
+
+        # Set the tools to false if they should not run in the build
+        tools:
+            - toolName: CheckCFlags
+              enable: true
+            - toolName: CFGCheck
+              enable: true
+            - toolName: Policheck
+              enable: false
+            - toolName: CredScan
+              enable: false
+            - toolName: XFGCheck
+              enable: false

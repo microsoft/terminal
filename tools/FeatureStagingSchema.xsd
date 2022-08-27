@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema targetNamespace="http://microsoft.com/TilFeatureStaging-Schema.xsd"
+    elementFormDefault="qualified"
+    xmlns="http://microsoft.com/TilFeatureStaging-Schema.xsd"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:til="http://microsoft.com/TilFeatureStaging-Schema.xsd"
+    version="1.0"
+>
+    <xs:element name="featureStaging">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="feature" minOccurs="0" maxOccurs="unbounded">
+                    <xs:complexType>
+                        <xs:all>
+                            <!-- Required -->
+                            <xs:element name="name" type="til:featureNameType" />
+                            <xs:element name="description" type="til:stringNoEmpty" />
+                            <xs:element name="stage" type="til:stageType" />
+
+                            <!-- Optional -->
+                            <xs:element name="id" type="xs:positiveInteger" minOccurs="0" />
+                            <xs:element name="alwaysDisabledBranchTokens" type="til:branchTokenListType" minOccurs="0" />
+                            <xs:element name="alwaysEnabledBranchTokens" type="til:branchTokenListType" minOccurs="0" />
+
+                            <xs:element name="alwaysDisabledReleaseTokens" type="til:releaseTokenListType" minOccurs="0" />
+
+                            <xs:element name="alwaysEnabledBrandingTokens" type="til:brandingTokenListType" minOccurs="0" />
+                            <xs:element name="alwaysDisabledBrandingTokens" type="til:brandingTokenListType" minOccurs="0" />
+                        </xs:all>
+                    </xs:complexType>
+
+                    <xs:key name="featureBranchOverridesKey">
+                        <xs:selector xpath="*/til:branchToken"/>
+                        <xs:field xpath="."/>
+                    </xs:key>
+
+                    <xs:key name="featureBrandingOverridesKey">
+                        <xs:selector xpath="*/til:brandingToken"/>
+                        <xs:field xpath="."/>
+                    </xs:key>
+                </xs:element>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <!-- Definitions -->
+    <xs:simpleType name="stringNoEmpty">
+        <xs:restriction base="xs:string">
+            <xs:pattern value=".+" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="featureNameType">
+        <xs:restriction base="til:stringNoEmpty">
+            <xs:pattern value="^Feature_[a-zA-Z0-9_]+" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="stageType">
+        <xs:restriction base="til:stringNoEmpty">
+            <xs:pattern value="AlwaysDisabled|AlwaysEnabled" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="brandingType">
+        <xs:restriction base="til:stringNoEmpty">
+            <xs:pattern value="Dev|Preview|Release|WindowsInbox" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:complexType name="brandingTokenListType">
+        <xs:sequence>
+            <xs:element name="brandingToken" type="til:brandingType" minOccurs="1" maxOccurs="unbounded" />
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="branchTokenListType">
+        <xs:sequence>
+            <xs:element name="branchToken" type="til:stringNoEmpty" minOccurs="1" maxOccurs="unbounded" />
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="releaseTokenListType">
+        <xs:sequence>
+            <xs:element name="exceptToken" type="til:stringNoEmpty" minOccurs="0" maxOccurs="unbounded" />
+        </xs:sequence>
+    </xs:complexType>
+</xs:schema>
+

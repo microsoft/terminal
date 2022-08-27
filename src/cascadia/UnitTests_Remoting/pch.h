@@ -5,6 +5,17 @@ Licensed under the MIT license.
 
 #pragma once
 
+// Block minwindef.h min/max macros to prevent <algorithm> conflict
+#define NOMINMAX
+
+#define WIN32_LEAN_AND_MEAN
+#define NOMCX
+#define NOHELP
+#define NOCOMM
+
+#include <unknwn.h>
+#include <ShObjIdl.h>
+
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #define BLOCK_TIL
 // This includes support libraries from the CRT, STL, WIL, and GSL
@@ -33,7 +44,8 @@ Licensed under the MIT license.
 #include "til.h"
 
 // Common includes for most tests:
-#include "../../inc/argb.h"
 #include "../../inc/conattrs.hpp"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/DefaultSettings.h"
+
+#include <cppwinrt_utils.h>

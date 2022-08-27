@@ -15,11 +15,11 @@ using namespace Microsoft::Console::Render;
 //      client rectangle should be redrawn. (On WM_PAINT)
 //  For VT, this doesn't mean anything. So do nothing.
 // Arguments:
-// - prcDirtyClient - Pointer to pixel area (RECT) of client region the system
+// - prcDirtyClient - Pointer to pixel area (til::rect) of client region the system
 //      believes is dirty
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT VtEngine::InvalidateSystem(const RECT* const /*prcDirtyClient*/) noexcept
+[[nodiscard]] HRESULT VtEngine::InvalidateSystem(const til::rect* const /*prcDirtyClient*/) noexcept
 {
     return S_OK;
 }
@@ -31,7 +31,7 @@ using namespace Microsoft::Console::Render;
 // - rectangles - Vector of rectangles to draw, line by line
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT VtEngine::InvalidateSelection(const std::vector<SMALL_RECT>& /*rectangles*/) noexcept
+[[nodiscard]] HRESULT VtEngine::InvalidateSelection(const std::vector<til::rect>& /*rectangles*/) noexcept
 {
     // Selection shouldn't be handled bt the VT Renderer Host, it should be
     //      handled by the client.
@@ -43,15 +43,14 @@ using namespace Microsoft::Console::Render;
 // - Notifies us that the console has changed the character region specified.
 // - NOTE: This typically triggers on cursor or text buffer changes
 // Arguments:
-// - psrRegion - Character region (SMALL_RECT) that has been changed
+// - psrRegion - Character region (til::rect) that has been changed
 // Return Value:
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::Invalidate(const SMALL_RECT* const psrRegion) noexcept
+[[nodiscard]] HRESULT VtEngine::Invalidate(const til::rect* const psrRegion) noexcept
 try
 {
-    const til::rectangle rect{ Viewport::FromExclusive(*psrRegion).ToInclusive() };
-    _trace.TraceInvalidate(rect);
-    _invalidMap.set(rect);
+    _trace.TraceInvalidate(*psrRegion);
+    _invalidMap.set(*psrRegion);
     return S_OK;
 }
 CATCH_RETURN();
@@ -59,10 +58,10 @@ CATCH_RETURN();
 // Routine Description:
 // - Notifies us that the console has changed the position of the cursor.
 // Arguments:
-// - pcoordCursor - the new position of the cursor
+// - psrRegion - the region covered by the cursor
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT VtEngine::InvalidateCursor(const COORD* const pcoordCursor) noexcept
+[[nodiscard]] HRESULT VtEngine::InvalidateCursor(const til::rect* const psrRegion) noexcept
 {
     // If we just inherited the cursor, we're going to get an InvalidateCursor
     //      for both where the old cursor was, and where the new cursor is
@@ -70,9 +69,9 @@ CATCH_RETURN();
     // We should ignore the first one, but after that, if the client application
     //      is moving the cursor around in the viewport, move our virtual top
     //      up to meet their changes.
-    if (!_skipCursor && _virtualTop > pcoordCursor->Y)
+    if (!_skipCursor && _virtualTop > psrRegion->Top)
     {
-        _virtualTop = pcoordCursor->Y;
+        _virtualTop = psrRegion->Top;
     }
     _skipCursor = false;
 
@@ -91,7 +90,7 @@ CATCH_RETURN();
 [[nodiscard]] HRESULT VtEngine::InvalidateAll() noexcept
 try
 {
-    _trace.TraceInvalidateAll(_lastViewport.ToOrigin().ToInclusive());
+    _trace.TraceInvalidateAll(_lastViewport.ToOrigin().ToExclusive());
     _invalidMap.set_all();
     return S_OK;
 }
@@ -105,7 +104,7 @@ CATCH_RETURN();
 // - Receives a bool indicating if we should force the repaint.
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT VtEngine::InvalidateCircling(_Out_ bool* const pForcePaint) noexcept
+[[nodiscard]] HRESULT VtEngine::InvalidateFlush(_In_ const bool circled, _Out_ bool* const pForcePaint) noexcept
 {
     // If we're in the middle of a resize request, don't try to immediately start a frame.
     if (_inResizeRequest)
@@ -118,7 +117,7 @@ CATCH_RETURN();
 
         // Keep track of the fact that we circled, we'll need to do some work on
         //      end paint to specifically handle this.
-        _circled = true;
+        _circled = circled;
     }
 
     _trace.TraceTriggerCircling(*pForcePaint);

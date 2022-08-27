@@ -1,0 +1,25 @@
+parameters:
+  configuration: 'Release'
+  platform: ''
+  minimumExpectedTestsExecutedCount: 10  # Sanity check for minimum expected tests to be reported
+  rerunPassesRequiredToAvoidFailure: 5
+
+jobs:
+- template: helix-runtests-job.yml
+  parameters:
+    name: 'RunTestsInHelix'
+    # We're not setting dependsOn as we want to rely on the "stage" dependency above us
+    testSuite: 'DevTestSuite'
+    platform: ${{ parameters.platform }}
+    configuration: ${{ parameters.configuration }}
+    rerunPassesRequiredToAvoidFailure: ${{ parameters.rerunPassesRequiredToAvoidFailure }}
+    
+- template: helix-processtestresults-job.yml
+  parameters:
+    dependsOn:
+    - RunTestsInHelix
+    # the default condition is succeededOrFailed(), and the "stage" condition ensures we only run as needed
+    platform: ${{ parameters.platform }}
+    configuration: ${{ parameters.configuration }}
+    rerunPassesRequiredToAvoidFailure: ${{ parameters.rerunPassesRequiredToAvoidFailure }}
+    minimumExpectedTestsExecutedCount: ${{ parameters.minimumExpectedTestsExecutedCount }}

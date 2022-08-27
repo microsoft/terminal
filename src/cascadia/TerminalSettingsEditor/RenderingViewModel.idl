@@ -1,0 +1,15 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#include "ViewModelHelpers.idl.h"
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    runtimeclass RenderingViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        RenderingViewModel(Microsoft.Terminal.Settings.Model.GlobalAppSettings globalSettings);
+
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ForceFullRepaintRendering);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, SoftwareRendering);
+    }
+}

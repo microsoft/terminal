@@ -2,19 +2,16 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
-#include "stateMachine.hpp"
 #include "OutputStateMachineEngine.hpp"
-#include "base64.hpp"
 
 #include "ascii.hpp"
+#include "base64.hpp"
+#include "stateMachine.hpp"
 #include "../../types/inc/utils.hpp"
+#include "../renderer/vt/vtrenderer.hpp"
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::VirtualTerminal;
-
-// the console uses 0xffffffff as an "invalid color" value
-constexpr COLORREF INVALID_COLOR = 0xffffffff;
 
 // takes ownership of pDispatch
 OutputStateMachineEngine::OutputStateMachineEngine(std::unique_ptr<ITermDispatch> pDispatch) :
@@ -142,7 +139,7 @@ bool OutputStateMachineEngine::ActionPrintString(const std::wstring_view string)
     }
 
     // Stash the last character of the string, if it's a graphical character
-    const wchar_t wch = string.back();
+    const auto wch = string.back();
     if (wch >= AsciiChars::SPC)
     {
         _lastPrintedChar = wch;
@@ -167,7 +164,7 @@ bool OutputStateMachineEngine::ActionPrintString(const std::wstring_view string)
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionPassThroughString(const std::wstring_view string)
 {
-    bool success = true;
+    auto success = true;
     if (_pTtyConnection != nullptr)
     {
         const auto hr = _pTtyConnection->WriteTerminalW(string);
@@ -189,7 +186,7 @@ bool OutputStateMachineEngine::ActionPassThroughString(const std::wstring_view s
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
 {
-    bool success = false;
+    auto success = false;
 
     switch (id)
     {
@@ -265,6 +262,26 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
         success = _dispatch->LockingShiftRight(3);
         TermTelemetry::Instance().Log(TermTelemetry::Codes::LS3R);
         break;
+    case EscActionCodes::DECAC1_AcceptC1Controls:
+        success = _dispatch->AcceptC1Controls(true);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECAC1);
+        break;
+    case EscActionCodes::DECDHL_DoubleHeightLineTop:
+        success = _dispatch->SetLineRendition(LineRendition::DoubleHeightTop);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECDHL);
+        break;
+    case EscActionCodes::DECDHL_DoubleHeightLineBottom:
+        success = _dispatch->SetLineRendition(LineRendition::DoubleHeightBottom);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECDHL);
+        break;
+    case EscActionCodes::DECSWL_SingleWidthLine:
+        success = _dispatch->SetLineRendition(LineRendition::SingleWidth);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSWL);
+        break;
+    case EscActionCodes::DECDWL_DoubleWidthLine:
+        success = _dispatch->SetLineRendition(LineRendition::DoubleWidth);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECDWL);
+        break;
     case EscActionCodes::DECALN_ScreenAlignmentPattern:
         success = _dispatch->ScreenAlignmentPattern();
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECALN);
@@ -336,7 +353,7 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionVt52EscDispatch(const VTID id, const VTParameters parameters)
 {
-    bool success = false;
+    auto success = false;
 
     switch (id)
     {
@@ -409,7 +426,7 @@ bool OutputStateMachineEngine::ActionVt52EscDispatch(const VTID id, const VTPara
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameters parameters)
 {
-    bool success = false;
+    auto success = false;
 
     switch (id)
     {
@@ -589,6 +606,24 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         success = _dispatch->SoftReset();
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSTR);
         break;
+    case CsiActionCodes::XT_PushSgr:
+    case CsiActionCodes::XT_PushSgrAlias:
+        success = _dispatch->PushGraphicsRendition(parameters);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::XTPUSHSGR);
+        break;
+    case CsiActionCodes::XT_PopSgr:
+    case CsiActionCodes::XT_PopSgrAlias:
+        success = _dispatch->PopGraphicsRendition();
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::XTPOPSGR);
+        break;
+    case CsiActionCodes::DECAC_AssignColor:
+        success = _dispatch->AssignColor(parameters.at(0), parameters.at(1).value_or(0), parameters.at(2).value_or(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECAC);
+        break;
+    case CsiActionCodes::DECPS_PlaySound:
+        success = _dispatch->PlaySounds(parameters);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECPS);
+        break;
     default:
         // If no functions to call, overall dispatch was a failure.
         success = false;
@@ -605,6 +640,47 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
     _ClearLastChar();
 
     return success;
+}
+
+// Routine Description:
+// - Triggers the DcsDispatch action to indicate that the listener should handle
+//      a control sequence. Returns the handler function that is to be used to
+//      process the subsequent data string characters in the sequence.
+// Arguments:
+// - id - Identifier of the control sequence to dispatch.
+// - parameters - set of numeric parameters collected while parsing the sequence.
+// Return Value:
+// - the data string handler function or nullptr if the sequence is not supported
+IStateMachineEngine::StringHandler OutputStateMachineEngine::ActionDcsDispatch(const VTID id, const VTParameters parameters)
+{
+    StringHandler handler = nullptr;
+
+    switch (id)
+    {
+    case DcsActionCodes::DECDLD_DownloadDRCS:
+        handler = _dispatch->DownloadDRCS(parameters.at(0),
+                                          parameters.at(1),
+                                          parameters.at(2),
+                                          parameters.at(3),
+                                          parameters.at(4),
+                                          parameters.at(5),
+                                          parameters.at(6),
+                                          parameters.at(7));
+        break;
+    case DcsActionCodes::DECRSTS_RestoreTerminalState:
+        handler = _dispatch->RestoreTerminalState(parameters.at(0));
+        break;
+    case DcsActionCodes::DECRQSS_RequestSetting:
+        handler = _dispatch->RequestSetting();
+        break;
+    default:
+        handler = nullptr;
+        break;
+    }
+
+    _ClearLastChar();
+
+    return handler;
 }
 
 // Routine Description:
@@ -646,7 +722,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
                                                  const size_t parameter,
                                                  const std::wstring_view string)
 {
-    bool success = false;
+    auto success = false;
 
     switch (parameter)
     {
@@ -682,7 +758,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         success = _GetOscSetColor(string, colors);
         if (success)
         {
-            size_t commandIndex = parameter;
+            auto commandIndex = parameter;
             size_t colorIndex = 0;
 
             if (commandIndex == OscActionCodes::SetForegroundColor && colors.size() > colorIndex)
@@ -726,7 +802,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
     case OscActionCodes::SetClipboard:
     {
         std::wstring setClipboardContent;
-        bool queryClipboard = false;
+        auto queryClipboard = false;
         success = _GetOscSetClipboard(string, setClipboardContent, queryClipboard);
         if (success && !queryClipboard)
         {
@@ -759,6 +835,16 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
     case OscActionCodes::ConEmuAction:
     {
         success = _dispatch->DoConEmuAction(string);
+        break;
+    }
+    case OscActionCodes::ITerm2Action:
+    {
+        success = _dispatch->DoITerm2Action(string);
+        break;
+    }
+    case OscActionCodes::FinalTermAction:
+    {
+        success = _dispatch->DoFinalTermAction(string);
         break;
     }
     default:
@@ -810,57 +896,6 @@ bool OutputStateMachineEngine::_GetOscTitle(const std::wstring_view string,
     return !string.empty();
 }
 
-// Method Description:
-// - Returns true if the engine should attempt to parse a control sequence
-//      following an SS3 escape prefix.
-//   If this is false, an SS3 escape sequence should be dispatched as soon
-//      as it is encountered.
-// Return Value:
-// - True iff we should parse a control sequence following an SS3.
-bool OutputStateMachineEngine::ParseControlSequenceAfterSs3() const noexcept
-{
-    return false;
-}
-
-// Routine Description:
-// - Returns true if the engine should dispatch on the last character of a string
-//      always, even if the sequence hasn't normally dispatched.
-//   If this is false, the engine will persist its state across calls to
-//      ProcessString, and dispatch only at the end of the sequence.
-// Return Value:
-// - True iff we should manually dispatch on the last character of a string.
-bool OutputStateMachineEngine::FlushAtEndOfString() const noexcept
-{
-    return false;
-}
-
-// Routine Description:
-// - Returns true if the engine should dispatch control characters in the Escape
-//      state. Typically, control characters are immediately executed in the
-//      Escape state without returning to ground. If this returns true, the
-//      state machine will instead call ActionExecuteFromEscape and then enter
-//      the Ground state when a control character is encountered in the escape
-//      state.
-// Return Value:
-// - True iff we should return to the Ground state when the state machine
-//      encounters a Control (C0) character in the Escape state.
-bool OutputStateMachineEngine::DispatchControlCharsFromEscape() const noexcept
-{
-    return false;
-}
-
-// Routine Description:
-// - Returns false if the engine wants to be able to collect intermediate
-//   characters in the Escape state. We do want to buffer characters as
-//   intermediates. We need them for things like Designate G0 Character Set
-// Return Value:
-// - True iff we should dispatch in the Escape state when we encounter a
-//   Intermediate character.
-bool OutputStateMachineEngine::DispatchIntermediatesFromEscape() const noexcept
-{
-    return false;
-}
-
 // Routine Description:
 // - OSC 4 ; c ; spec ST
 //      c: the index of the ansi color table
@@ -876,8 +911,7 @@ bool OutputStateMachineEngine::DispatchIntermediatesFromEscape() const noexcept
 // - True if at least one table index and color was parsed successfully. False otherwise.
 bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view string,
                                                     std::vector<size_t>& tableIndexes,
-                                                    std::vector<DWORD>& rgbs) const noexcept
-try
+                                                    std::vector<DWORD>& rgbs) const
 {
     const auto parts = Utils::SplitString(string, L';');
     if (parts.size() < 2)
@@ -891,7 +925,7 @@ try
     for (size_t i = 0, j = 1; j < parts.size(); i += 2, j += 2)
     {
         unsigned int tableIndex = 0;
-        const bool indexSuccess = Utils::StringToUint(til::at(parts, i), tableIndex);
+        const auto indexSuccess = Utils::StringToUint(til::at(parts, i), tableIndex);
         const auto colorOptional = Utils::ColorFromXTermColor(til::at(parts, j));
         if (indexSuccess && colorOptional.has_value())
         {
@@ -905,7 +939,6 @@ try
 
     return tableIndexes.size() > 0 && rgbs.size() > 0;
 }
-CATCH_LOG_RETURN_FALSE()
 
 #pragma warning(push)
 #pragma warning(disable : 26445) // Suppress lifetime check for a reference to gsl::span or std::string_view
@@ -937,7 +970,7 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
         return true;
     }
 
-    const size_t midPos = string.find(';');
+    const auto midPos = string.find(';');
     if (midPos != std::wstring::npos)
     {
         uri = string.substr(midPos + 1);
@@ -972,8 +1005,7 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
 // Return Value:
 // - True if at least one color was parsed successfully. False otherwise.
 bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
-                                               std::vector<DWORD>& rgbs) const noexcept
-try
+                                               std::vector<DWORD>& rgbs) const
 {
     const auto parts = Utils::SplitString(string, L';');
     if (parts.size() < 1)
@@ -999,7 +1031,6 @@ try
 
     return rgbs.size() > 0;
 }
-CATCH_LOG_RETURN_FALSE()
 
 // Method Description:
 // - Sets us up to have another terminal acting as the tty instead of conhost.
@@ -1014,7 +1045,7 @@ CATCH_LOG_RETURN_FALSE()
 //      currently processing.
 // Return Value:
 // - <none>
-void OutputStateMachineEngine::SetTerminalConnection(ITerminalOutputConnection* const pTtyConnection,
+void OutputStateMachineEngine::SetTerminalConnection(Render::VtEngine* const pTtyConnection,
                                                      std::function<bool()> pfnFlushToTerminal)
 {
     this->_pTtyConnection = pTtyConnection;
@@ -1034,22 +1065,22 @@ bool OutputStateMachineEngine::_GetOscSetClipboard(const std::wstring_view strin
                                                    std::wstring& content,
                                                    bool& queryClipboard) const noexcept
 {
-    const size_t pos = string.find(';');
-    if (pos != std::wstring_view::npos)
+    const auto pos = string.find(L';');
+    if (pos == std::wstring_view::npos)
     {
-        const std::wstring_view substr = string.substr(pos + 1);
-        if (substr == L"?")
-        {
-            queryClipboard = true;
-            return true;
-        }
-        else
-        {
-            return Base64::s_Decode(substr, content);
-        }
+        return false;
     }
 
-    return false;
+    const auto substr = string.substr(pos + 1);
+    if (substr == L"?")
+    {
+        queryClipboard = true;
+        return true;
+    }
+
+// Log_IfFailed has the following description: "Should be decorated WI_NOEXCEPT, but conflicts with forceinline."
+#pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function 'Log_IfFailed()' which may throw exceptions (f.6).
+    return SUCCEEDED_LOG(Base64::Decode(substr, content));
 }
 
 // Method Description:

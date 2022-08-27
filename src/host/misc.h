@@ -35,8 +35,8 @@ BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
                          _In_reads_bytes_(cBytes) const WCHAR* pwchBuffer,
                          _In_ size_t cWords,
                          _In_ size_t cBytes,
-                         _In_ SHORT sOriginalXPosition,
-                         _In_ BOOL fEcho);
+                         _In_ til::CoordType sOriginalXPosition,
+                         _In_ BOOL fPrintableControlChars);
 
 int ConvertToOem(const UINT uiCodePage,
                  _In_reads_(cchSource) const WCHAR* const pwchSource,

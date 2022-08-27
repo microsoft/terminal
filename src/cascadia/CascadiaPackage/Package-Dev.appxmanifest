@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 
 <Package
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
@@ -12,7 +12,7 @@
   xmlns:desktop5="http://schemas.microsoft.com/appx/manifest/desktop/windows10/5"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5"
-  IgnorableNamespaces="uap mp rescap">
+  IgnorableNamespaces="uap mp rescap uap3">
 
   <Identity
     Name="WindowsTerminalDev"
@@ -20,17 +20,17 @@
     Version="0.0.1.0" />
 
   <Properties>
-    <DisplayName>Windows Terminal Dev</DisplayName>
+    <DisplayName>ms-resource:AppStoreNameDev</DisplayName>
     <PublisherDisplayName>A Lone Developer</PublisherDisplayName>
     <Logo>Images\StoreLogo.png</Logo>
   </Properties>
 
   <Dependencies>
-    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.18362.0" MaxVersionTested="10.0.18362.0" />
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.22000.0" />
   </Dependencies>
 
   <Resources>
-    <Resource Language="x-generate"/>
+    <Resource Language="EN-US" />
   </Resources>
 
   <Applications>
@@ -54,7 +54,6 @@
             <uap:ShowOn Tile="square310x310Logo"/>
           </uap:ShowNameOnTiles>
         </uap:DefaultTile>
-        <uap:SplashScreen Image="Images\SplashScreen.png"/>
       </uap:VisualElements>
 
       <Extensions>
@@ -69,22 +68,63 @@
             Enabled="false"
             DisplayName="ms-resource:AppNameDev" />
         </uap5:Extension>
-
+        <uap3:Extension Category="windows.appExtensionHost">
+              <uap3:AppExtensionHost>
+                <uap3:Name>com.microsoft.windows.terminal.settings</uap3:Name>
+              </uap3:AppExtensionHost>
+        </uap3:Extension>
+        <uap3:Extension Category="windows.appExtension">
+            <uap3:AppExtension Name="com.microsoft.windows.console.host"
+                Id="OpenConsole-Dev"
+                DisplayName="OpenConsole Dev"
+                Description="Console host built from microsoft/terminal open source repository"
+                PublicFolder="Public">
+                <uap3:Properties>
+                    <Clsid>{1F9F2BF5-5BC3-4F17-B0E6-912413F1F451}</Clsid>
+                </uap3:Properties>
+            </uap3:AppExtension>
+        </uap3:Extension>
+        <uap3:Extension Category="windows.appExtension">
+            <uap3:AppExtension Name="com.microsoft.windows.terminal.host"
+                Id="Terminal-Dev"
+                DisplayName="Terminal Dev"
+                Description="Terminal host built from microsoft/terminal open source repository"
+                PublicFolder="Public">
+                <uap3:Properties>
+                    <Clsid>{051F34EE-C1FD-4B19-AF75-9BA54648434C}</Clsid>
+                </uap3:Properties>
+            </uap3:AppExtension>
+        </uap3:Extension>
+        <com:Extension Category="windows.comInterface">
+            <com:ComInterface>
+                <com:ProxyStub Id="DEC4804D-56D1-4F73-9FBE-6828E7C85C56" DisplayName="OpenConsoleHandoffProxy" Path="OpenConsoleProxy.dll"/>
+                <com:Interface Id="E686C757-9A35-4A1C-B3CE-0BCC8B5C69F4" ProxyStubClsid="DEC4804D-56D1-4F73-9FBE-6828E7C85C56"/>
+                <com:Interface Id="59D55CCE-FC8A-48B4-ACE8-0A9286C6557F" ProxyStubClsid="DEC4804D-56D1-4F73-9FBE-6828E7C85C56"/> <!-- ITerminalHandoff -->
+                <com:Interface Id="AA6B364F-4A50-4176-9002-0AE755E7B5EF" ProxyStubClsid="DEC4804D-56D1-4F73-9FBE-6828E7C85C56"/> <!-- ITerminalHandoff2 -->
+                <com:Interface Id="746E6BC0-AB05-4E38-AB14-71E86763141F" ProxyStubClsid="DEC4804D-56D1-4F73-9FBE-6828E7C85C56"/>
+            </com:ComInterface>
+        </com:Extension>
         <com:Extension Category="windows.comServer">
             <com:ComServer>
+                <com:ExeServer DisplayName="OpenConsole" Executable="OpenConsole.exe">
+                    <com:Class Id="1F9F2BF5-5BC3-4F17-B0E6-912413F1F451"/>
+                </com:ExeServer>
+                <com:ExeServer DisplayName="WindowsTerminal" Executable="WindowsTerminal.exe">
+                    <com:Class Id="051F34EE-C1FD-4B19-AF75-9BA54648434C"/>
+                </com:ExeServer>
                 <com:SurrogateServer DisplayName="WindowsTerminalShellExt">
-                    <com:Class Id="9f156763-7844-4dc4-b2b1-901f640f5155" Path="WindowsTerminalShellExt.dll" ThreadingModel="STA"/>
+                    <com:Class Id="52065414-e077-47ec-a3ac-1cc5455e1b54" Path="WindowsTerminalShellExt.dll" ThreadingModel="STA"/>
                 </com:SurrogateServer>
             </com:ComServer>
         </com:Extension>
         <desktop4:Extension Category="windows.fileExplorerContextMenus">
             <desktop4:FileExplorerContextMenus>
                 <desktop5:ItemType Type="Directory">
-                    <desktop5:Verb Id="Command1" Clsid="9f156763-7844-4dc4-b2b1-901f640f5155" />
+                    <desktop5:Verb Id="OpenTerminalDev" Clsid="52065414-e077-47ec-a3ac-1cc5455e1b54" />
                 </desktop5:ItemType>
                 <desktop5:ItemType Type="Directory\Background">
-                  <desktop5:Verb Id="Command2" Clsid="9f156763-7844-4dc4-b2b1-901f640f5155" />
-                </desktop5:ItemType>                
+                  <desktop5:Verb Id="OpenTerminalDev" Clsid="52065414-e077-47ec-a3ac-1cc5455e1b54" />
+                </desktop5:ItemType>
             </desktop4:FileExplorerContextMenus>
         </desktop4:Extension>
 

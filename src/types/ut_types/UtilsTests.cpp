@@ -20,12 +20,18 @@ class UtilsTests
     TEST_CLASS(UtilsTests);
 
     TEST_METHOD(TestClampToShortMax);
-    TEST_METHOD(TestSwapColorPalette);
     TEST_METHOD(TestGuidToString);
     TEST_METHOD(TestSplitString);
     TEST_METHOD(TestFilterStringForPaste);
     TEST_METHOD(TestStringToUint);
     TEST_METHOD(TestColorFromXTermColor);
+
+#if !__INSIDE_WINDOWS
+    TEST_METHOD(TestMangleWSLPaths);
+#endif
+
+    TEST_METHOD(TestTrimTrailingWhitespace);
+    TEST_METHOD(TestDontTrimTrailingWhitespace);
 
     void _VerifyXTermColorResult(const std::wstring_view wstr, DWORD colorValue);
     void _VerifyXTermColorInvalid(const std::wstring_view wstr);
@@ -36,12 +42,12 @@ void UtilsTests::TestClampToShortMax()
     const short min = 1;
 
     // Test outside the lower end of the range
-    const short minExpected = min;
+    const auto minExpected = min;
     auto minActual = ClampToShortMax(0, min);
     VERIFY_ARE_EQUAL(minExpected, minActual);
 
     // Test negative numbers
-    const short negativeExpected = min;
+    const auto negativeExpected = min;
     auto negativeActual = ClampToShortMax(-1, min);
     VERIFY_ARE_EQUAL(negativeExpected, negativeActual);
 
@@ -54,35 +60,6 @@ void UtilsTests::TestClampToShortMax()
     const short withinRangeExpected = 100;
     auto withinRangeActual = ClampToShortMax(withinRangeExpected, min);
     VERIFY_ARE_EQUAL(withinRangeExpected, withinRangeActual);
-}
-void UtilsTests::TestSwapColorPalette()
-{
-    std::array<COLORREF, COLOR_TABLE_SIZE> terminalTable;
-    std::array<COLORREF, COLOR_TABLE_SIZE> consoleTable;
-
-    gsl::span<COLORREF> terminalTableView = { &terminalTable[0], terminalTable.size() };
-    gsl::span<COLORREF> consoleTableView = { &consoleTable[0], consoleTable.size() };
-
-    // First set up the colors
-    InitializeCampbellColorTable(terminalTableView);
-    InitializeCampbellColorTableForConhost(consoleTableView);
-
-    VERIFY_ARE_EQUAL(terminalTable[0], consoleTable[0]);
-    VERIFY_ARE_EQUAL(terminalTable[1], consoleTable[4]);
-    VERIFY_ARE_EQUAL(terminalTable[2], consoleTable[2]);
-    VERIFY_ARE_EQUAL(terminalTable[3], consoleTable[6]);
-    VERIFY_ARE_EQUAL(terminalTable[4], consoleTable[1]);
-    VERIFY_ARE_EQUAL(terminalTable[5], consoleTable[5]);
-    VERIFY_ARE_EQUAL(terminalTable[6], consoleTable[3]);
-    VERIFY_ARE_EQUAL(terminalTable[7], consoleTable[7]);
-    VERIFY_ARE_EQUAL(terminalTable[8], consoleTable[8]);
-    VERIFY_ARE_EQUAL(terminalTable[9], consoleTable[12]);
-    VERIFY_ARE_EQUAL(terminalTable[10], consoleTable[10]);
-    VERIFY_ARE_EQUAL(terminalTable[11], consoleTable[14]);
-    VERIFY_ARE_EQUAL(terminalTable[12], consoleTable[9]);
-    VERIFY_ARE_EQUAL(terminalTable[13], consoleTable[13]);
-    VERIFY_ARE_EQUAL(terminalTable[14], consoleTable[11]);
-    VERIFY_ARE_EQUAL(terminalTable[15], consoleTable[15]);
 }
 
 void UtilsTests::TestGuidToString()
@@ -216,7 +193,7 @@ void UtilsTests::TestFilterStringForPaste()
 
 void UtilsTests::TestStringToUint()
 {
-    bool success = false;
+    auto success = false;
     unsigned int value = 0;
     success = StringToUint(L"", value);
     VERIFY_IS_FALSE(success);
@@ -352,13 +329,220 @@ void UtilsTests::TestColorFromXTermColor()
 
 void UtilsTests::_VerifyXTermColorResult(const std::wstring_view wstr, DWORD colorValue)
 {
-    std::optional<til::color> color = ColorFromXTermColor(wstr);
+    auto color = ColorFromXTermColor(wstr);
     VERIFY_IS_TRUE(color.has_value());
     VERIFY_ARE_EQUAL(colorValue, (COLORREF)color.value());
 }
 
 void UtilsTests::_VerifyXTermColorInvalid(const std::wstring_view wstr)
 {
-    std::optional<til::color> color = ColorFromXTermColor(wstr);
+    auto color = ColorFromXTermColor(wstr);
     VERIFY_IS_FALSE(color.has_value());
+}
+
+#if !__INSIDE_WINDOWS
+// Windows' compiler dislikes these raw strings...
+void UtilsTests::TestMangleWSLPaths()
+{
+    // Continue on failures
+    const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
+
+    const auto startingDirectory{ L"SENTINEL" };
+    // MUST MANGLE
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"("wsl" --cd "SENTINEL" )", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl -d X)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"("wsl" --cd "SENTINEL" -d X)", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl -d X ~/bin/sh)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"("wsl" --cd "SENTINEL" -d X ~/bin/sh)", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl.exe)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"("wsl.exe" --cd "SENTINEL" )", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl.exe -d X)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"("wsl.exe" --cd "SENTINEL" -d X)", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl.exe -d X ~/bin/sh)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"("wsl.exe" --cd "SENTINEL" -d X ~/bin/sh)", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"("wsl")", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"("wsl" --cd "SENTINEL" )", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"("wsl.exe")", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"("wsl.exe" --cd "SENTINEL" )", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"("wsl" -d X)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"("wsl" --cd "SENTINEL"  -d X)", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"("wsl.exe" -d X)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"("wsl.exe" --cd "SENTINEL"  -d X)", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"("C:\Windows\system32\wsl.exe" -d X)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"("C:\Windows\system32\wsl.exe" --cd "SENTINEL"  -d X)", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"("C:\windows\system32\wsl" -d X)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"("C:\windows\system32\wsl" --cd "SENTINEL"  -d X)", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl ~/bin)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"("wsl" --cd "SENTINEL" ~/bin)", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+
+    // MUST NOT MANGLE
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"("C:\wsl.exe" -d X)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"("C:\wsl.exe" -d X)", commandline);
+        VERIFY_ARE_EQUAL(startingDirectory, path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(C:\wsl.exe)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"(C:\wsl.exe)", commandline);
+        VERIFY_ARE_EQUAL(startingDirectory, path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl --cd C:\)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"(wsl --cd C:\)", commandline);
+        VERIFY_ARE_EQUAL(startingDirectory, path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl ~)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"(wsl ~)", commandline);
+        VERIFY_ARE_EQUAL(startingDirectory, path);
+    }
+
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl ~ -d Ubuntu)", startingDirectory);
+        VERIFY_ARE_EQUAL(LR"(wsl ~ -d Ubuntu)", commandline);
+        VERIFY_ARE_EQUAL(startingDirectory, path);
+    }
+
+    {
+        // Test for GH#11994 - make sure `//wsl$/` paths get mangled back to
+        // `\\wsl$\`, to workaround a potential bug in `wsl --cd`
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl -d Ubuntu)", LR"(//wsl$/Ubuntu/home/user)");
+        VERIFY_ARE_EQUAL(LR"("wsl" --cd "\\wsl$\Ubuntu\home\user" -d Ubuntu)", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl -d Ubuntu)", LR"(\\wsl$\Ubuntu\home\user)");
+        VERIFY_ARE_EQUAL(LR"("wsl" --cd "\\wsl$\Ubuntu\home\user" -d Ubuntu)", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+
+    {
+        // Same, but with `wsl.localhost`
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl -d Ubuntu)", LR"(//wsl.localhost/Ubuntu/home/user)");
+        VERIFY_ARE_EQUAL(LR"("wsl" --cd "\\wsl.localhost\Ubuntu\home\user" -d Ubuntu)", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl -d Ubuntu)", LR"(\\wsl.localhost\Ubuntu\home\user)");
+        VERIFY_ARE_EQUAL(LR"("wsl" --cd "\\wsl.localhost\Ubuntu\home\user" -d Ubuntu)", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+
+    /// Tests for GH #12353
+
+    const auto expectedUserProfilePath = wil::ExpandEnvironmentStringsW<std::wstring>(L"%USERPROFILE%");
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl -d Ubuntu)", L"~");
+        VERIFY_ARE_EQUAL(LR"("wsl" --cd "~" -d Ubuntu)", commandline);
+        VERIFY_ARE_EQUAL(L"", path);
+    }
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(wsl ~ -d Ubuntu)", L"~");
+        VERIFY_ARE_EQUAL(LR"(wsl ~ -d Ubuntu)", commandline);
+        VERIFY_ARE_EQUAL(expectedUserProfilePath, path);
+    }
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(ubuntu ~ -d Ubuntu)", L"~");
+        VERIFY_ARE_EQUAL(LR"(ubuntu ~ -d Ubuntu)", commandline);
+        VERIFY_ARE_EQUAL(expectedUserProfilePath, path);
+    }
+    {
+        auto [commandline, path] = MangleStartingDirectoryForWSL(LR"(powershell.exe)", L"~");
+        VERIFY_ARE_EQUAL(LR"(powershell.exe)", commandline);
+        VERIFY_ARE_EQUAL(expectedUserProfilePath, path);
+    }
+}
+#endif
+
+void UtilsTests::TestTrimTrailingWhitespace()
+{
+    // Continue on failures
+    const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
+
+    // Tests for GH #11473
+    VERIFY_ARE_EQUAL(L"Foo", TrimPaste(L"Foo   "));
+    VERIFY_ARE_EQUAL(L"Foo", TrimPaste(L"Foo\n"));
+    VERIFY_ARE_EQUAL(L"Foo", TrimPaste(L"Foo\n\n"));
+    VERIFY_ARE_EQUAL(L"Foo", TrimPaste(L"Foo\r\n"));
+    VERIFY_ARE_EQUAL(L"Foo Bar", TrimPaste(L"Foo Bar\n"));
+    VERIFY_ARE_EQUAL(L"Foo\tBar", TrimPaste(L"Foo\tBar\n"));
+
+    VERIFY_ARE_EQUAL(L"Foo Bar", TrimPaste(L"Foo Bar\t"), L"Trim when there is a tab at the end.");
+    VERIFY_ARE_EQUAL(L"Foo Bar", TrimPaste(L"Foo Bar\t\t"), L"Trim when there are tabs at the end.");
+    VERIFY_ARE_EQUAL(L"Foo Bar", TrimPaste(L"Foo Bar\t\n"), L"Trim when there are tabs at the start of the whitespace at the end.");
+    VERIFY_ARE_EQUAL(L"Foo\tBar", TrimPaste(L"Foo\tBar\t\n"), L"Trim when there are tabs in the middle of the string, and in the whitespace at the end.");
+    VERIFY_ARE_EQUAL(L"Foo\tBar", TrimPaste(L"Foo\tBar\n\t"), L"Trim when there are tabs in the middle of the string, and in the whitespace at the end.");
+    VERIFY_ARE_EQUAL(L"Foo\tBar", TrimPaste(L"Foo\tBar\t\n\t"), L"Trim when there are tabs in the middle of the string, and in the whitespace at the end.");
+}
+void UtilsTests::TestDontTrimTrailingWhitespace()
+{
+    // Continue on failures
+    const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
+
+    VERIFY_ARE_EQUAL(L"Foo\tBar", TrimPaste(L"Foo\tBar"));
+
+    // Tests for GH #12387
+    VERIFY_ARE_EQUAL(L"Foo\nBar\n", TrimPaste(L"Foo\nBar\n"));
+    VERIFY_ARE_EQUAL(L"Foo  Baz\nBar\n", TrimPaste(L"Foo  Baz\nBar\n"));
+    VERIFY_ARE_EQUAL(L"Foo\tBaz\nBar\n", TrimPaste(L"Foo\tBaz\nBar\n"), L"Don't trim when there's a trailing newline, and tabs in the middle");
+    VERIFY_ARE_EQUAL(L"Foo\tBaz\nBar\t\n", TrimPaste(L"Foo\tBaz\nBar\t\n"), L"Don't trim when there's a trailing newline, and tabs in the middle");
+
+    // We need to both
+    // * trim when there's a tab followed by only whitespace
+    // * not trim then there's a tab in the middle, and the string ends in whitespace
 }

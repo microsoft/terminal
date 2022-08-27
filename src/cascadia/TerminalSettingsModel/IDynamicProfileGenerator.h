@@ -20,18 +20,16 @@ Author(s):
 --*/
 
 #pragma once
+
 #include "Profile.h"
 
-namespace Microsoft::Terminal::Settings::Model
+namespace winrt::Microsoft::Terminal::Settings::Model
 {
-    class IDynamicProfileGenerator;
+    class IDynamicProfileGenerator
+    {
+    public:
+        virtual ~IDynamicProfileGenerator(){};
+        virtual std::wstring_view GetNamespace() const noexcept = 0;
+        virtual void GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const = 0;
+    };
 };
-
-class Microsoft::Terminal::Settings::Model::IDynamicProfileGenerator
-{
-public:
-    virtual ~IDynamicProfileGenerator() = 0;
-    virtual std::wstring_view GetNamespace() = 0;
-    virtual std::vector<winrt::Microsoft::Terminal::Settings::Model::Profile> GenerateProfiles() = 0;
-};
-inline Microsoft::Terminal::Settings::Model::IDynamicProfileGenerator::~IDynamicProfileGenerator() {}

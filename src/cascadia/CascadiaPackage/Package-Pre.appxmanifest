@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 
 <Package
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
@@ -13,7 +13,7 @@
   xmlns:desktop4="http://schemas.microsoft.com/appx/manifest/desktop/windows10/4"
   xmlns:desktop5="http://schemas.microsoft.com/appx/manifest/desktop/windows10/5"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
-  IgnorableNamespaces="uap mp rescap">
+  IgnorableNamespaces="uap mp rescap uap3">
 
   <Identity
     Name="Microsoft.WindowsTerminalPreview"
@@ -21,17 +21,105 @@
     Version="0.5.0.0" />
 
   <Properties>
-    <DisplayName>Windows Terminal Preview</DisplayName>
+    <DisplayName>ms-resource:AppStoreNamePre</DisplayName>
     <PublisherDisplayName>Microsoft Corporation</PublisherDisplayName>
     <Logo>Images\StoreLogo.png</Logo>
   </Properties>
 
   <Dependencies>
-    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.18362.0" MaxVersionTested="10.0.18362.0" />
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.22000.0" />
   </Dependencies>
 
   <Resources>
-    <Resource Language="x-generate"/>
+    <Resource Language="EN-US" />
+    <Resource Language="EN-GB" />
+    <Resource Language="AF-ZA" />
+    <Resource Language="AM-ET" />
+    <Resource Language="AR-SA" />
+    <Resource Language="AS-IN" />
+    <Resource Language="AZ-LATN-AZ" />
+    <Resource Language="BG-BG" />
+    <Resource Language="BN-IN" />
+    <Resource Language="BS-LATN-BA" />
+    <Resource Language="CA-ES" />
+    <Resource Language="CA-ES-VALENCIA" />
+    <Resource Language="CS-CZ" />
+    <Resource Language="CY-GB" />
+    <Resource Language="DA-DK" />
+    <Resource Language="DE-DE" />
+    <Resource Language="EL-GR" />
+    <Resource Language="ES-ES" />
+    <Resource Language="ES-MX" />
+    <Resource Language="ET-EE" />
+    <Resource Language="EU-ES" />
+    <Resource Language="FA-IR" />
+    <Resource Language="FI-FI" />
+    <Resource Language="FIL-PH" />
+    <Resource Language="FR-CA" />
+    <Resource Language="FR-FR" />
+    <Resource Language="GA-IE" />
+    <Resource Language="GD-GB" />
+    <Resource Language="GL-ES" />
+    <Resource Language="GU-IN" />
+    <Resource Language="HE-IL" />
+    <Resource Language="HI-IN" />
+    <Resource Language="HR-HR" />
+    <Resource Language="HU-HU" />
+    <Resource Language="HY-AM" />
+    <Resource Language="ID-ID" />
+    <Resource Language="IS-IS" />
+    <Resource Language="IT-IT" />
+    <Resource Language="JA-JP" />
+    <Resource Language="KA-GE" />
+    <Resource Language="KK-KZ" />
+    <Resource Language="KM-KH" />
+    <Resource Language="KN-IN" />
+    <Resource Language="KO-KR" />
+    <Resource Language="KOK-IN" />
+    <Resource Language="LB-LU" />
+    <Resource Language="LO-LA" />
+    <Resource Language="LT-LT" />
+    <Resource Language="LV-LV" />
+    <Resource Language="MI-NZ" />
+    <Resource Language="MK-MK" />
+    <Resource Language="ML-IN" />
+    <Resource Language="MR-IN" />
+    <Resource Language="MS-MY" />
+    <Resource Language="MT-MT" />
+    <Resource Language="NB-NO" />
+    <Resource Language="NE-NP" />
+    <Resource Language="NL-NL" />
+    <Resource Language="NN-NO" />
+    <Resource Language="OR-IN" />
+    <Resource Language="PA-IN" />
+    <Resource Language="PL-PL" />
+    <Resource Language="PT-BR" />
+    <Resource Language="PT-PT" />
+    <Resource Language="QPS-PLOC" />
+    <Resource Language="QPS-PLOCA" />
+    <Resource Language="QPS-PLOCM" />
+    <Resource Language="QUZ-PE" />
+    <Resource Language="RO-RO" />
+    <Resource Language="RU-RU" />
+    <Resource Language="SK-SK" />
+    <Resource Language="SL-SI" />
+    <Resource Language="SQ-AL" />
+    <Resource Language="SR-CYRL-BA" />
+    <Resource Language="SR-CYRL-RS" />
+    <Resource Language="SR-LATN-RS" />
+    <Resource Language="SV-SE" />
+    <Resource Language="TA-IN" />
+    <Resource Language="TE-IN" />
+    <Resource Language="TH-TH" />
+    <Resource Language="TR-TR" />
+    <Resource Language="TT-RU" />
+    <Resource Language="UG-CN" />
+    <Resource Language="UK-UA" />
+    <Resource Language="UR-PK" />
+    <Resource Language="UZ-LATN-UZ" />
+    <Resource Language="VI-VN" />
+    <Resource Language="ZH-CN" />
+    <Resource Language="ZH-TW" />
   </Resources>
 
   <Applications>
@@ -55,7 +143,6 @@
             <uap:ShowOn Tile="square310x310Logo"/>
           </uap:ShowNameOnTiles>
         </uap:DefaultTile>
-        <uap:SplashScreen Image="Images\SplashScreen.png"/>
       </uap:VisualElements>
 
       <Extensions>
@@ -64,26 +151,68 @@
             <desktop:ExecutionAlias Alias="wt.exe" />
           </uap3:AppExecutionAlias>
         </uap3:Extension>
+        <uap3:Extension Category="windows.appExtensionHost">
+          <uap3:AppExtensionHost>
+            <uap3:Name>com.microsoft.windows.terminal.settings</uap3:Name>
+          </uap3:AppExtensionHost>
+        </uap3:Extension>
         <uap5:Extension Category="windows.startupTask">
           <uap5:StartupTask
             TaskId="StartTerminalOnLoginTask"
             Enabled="false"
             DisplayName="ms-resource:AppNamePre" />
         </uap5:Extension>
+        <uap3:Extension Category="windows.appExtension">
+            <uap3:AppExtension Name="com.microsoft.windows.console.host"
+                Id="OpenConsole-Pre"
+                DisplayName="OpenConsole Preview"
+                Description="Console host built from microsoft/terminal open source repository"
+                PublicFolder="Public">
+                <uap3:Properties>
+                    <Clsid>{06EC847C-C0A5-46B8-92CB-7C92F6E35CD5}</Clsid>
+                </uap3:Properties>
+            </uap3:AppExtension>
+        </uap3:Extension>
+        <uap3:Extension Category="windows.appExtension">
+            <uap3:AppExtension Name="com.microsoft.windows.terminal.host"
+                Id="Terminal-Pre"
+                DisplayName="Terminal Preview"
+                Description="Terminal host built from microsoft/terminal open source repository"
+                PublicFolder="Public">
+                <uap3:Properties>
+                    <Clsid>{86633F1F-6454-40EC-89CE-DA4EBA977EE2}</Clsid>
+                </uap3:Properties>
+            </uap3:AppExtension>
+        </uap3:Extension>
+        <com:Extension Category="windows.comInterface">
+            <com:ComInterface>
+                <com:ProxyStub Id="1833E661-CC81-4DD0-87C6-C2F74BD39EFA" DisplayName="OpenConsoleHandoffProxy" Path="OpenConsoleProxy.dll"/>
+                <com:Interface Id="E686C757-9A35-4A1C-B3CE-0BCC8B5C69F4" ProxyStubClsid="1833E661-CC81-4DD0-87C6-C2F74BD39EFA"/>
+                <com:Interface Id="59D55CCE-FC8A-48B4-ACE8-0A9286C6557F" ProxyStubClsid="1833E661-CC81-4DD0-87C6-C2F74BD39EFA"/> <!-- ITerminalHandoff -->
+                <com:Interface Id="AA6B364F-4A50-4176-9002-0AE755E7B5EF" ProxyStubClsid="1833E661-CC81-4DD0-87C6-C2F74BD39EFA"/> <!-- ITerminalHandoff2 -->
+                <com:Interface Id="746E6BC0-AB05-4E38-AB14-71E86763141F" ProxyStubClsid="1833E661-CC81-4DD0-87C6-C2F74BD39EFA"/>
+            </com:ComInterface>
+        </com:Extension>
         <com:Extension Category="windows.comServer">
             <com:ComServer>
+                <com:ExeServer DisplayName="OpenConsole" Executable="OpenConsole.exe">
+                    <com:Class Id="06EC847C-C0A5-46B8-92CB-7C92F6E35CD5"/>
+                </com:ExeServer>
+                <com:ExeServer DisplayName="WindowsTerminal" Executable="WindowsTerminal.exe">
+                    <com:Class Id="86633F1F-6454-40EC-89CE-DA4EBA977EE2"/>
+                </com:ExeServer>
                 <com:SurrogateServer DisplayName="WindowsTerminalShellExt">
-                    <com:Class Id="9f156763-7844-4dc4-b2b1-901f640f5155" Path="WindowsTerminalShellExt.dll" ThreadingModel="STA"/>
+                    <com:Class Id="02db545a-3e20-46de-83a5-1329b1e88b6b" Path="WindowsTerminalShellExt.dll" ThreadingModel="STA"/>
                 </com:SurrogateServer>
             </com:ComServer>
         </com:Extension>
         <desktop4:Extension Category="windows.fileExplorerContextMenus">
             <desktop4:FileExplorerContextMenus>
                 <desktop5:ItemType Type="Directory">
-                    <desktop5:Verb Id="Command1" Clsid="9f156763-7844-4dc4-b2b1-901f640f5155" />
+                    <desktop5:Verb Id="OpenTerminalPre" Clsid="02db545a-3e20-46de-83a5-1329b1e88b6b" />
                 </desktop5:ItemType>
                 <desktop5:ItemType Type="Directory\Background">
-                  <desktop5:Verb Id="Command2" Clsid="9f156763-7844-4dc4-b2b1-901f640f5155" />
+                  <desktop5:Verb Id="OpenTerminalPre" Clsid="02db545a-3e20-46de-83a5-1329b1e88b6b" />
                 </desktop5:ItemType>
             </desktop4:FileExplorerContextMenus>
         </desktop4:Extension>
@@ -101,9 +230,16 @@
   <Extensions>
     <uap7:Extension Category="windows.sharedFonts">
       <uap7:SharedFonts>
-        <uap4:Font File="Cascadia.ttf" />
+        <uap4:Font File="CascadiaCode.ttf" />
+        <uap4:Font File="CascadiaCodeItalic.ttf" />
         <uap4:Font File="CascadiaMono.ttf" />
+        <uap4:Font File="CascadiaMonoItalic.ttf" />
       </uap7:SharedFonts>
     </uap7:Extension>
   </Extensions>
+
+  <mp:PhoneIdentity
+    PhoneProductId="43878781-e1d0-4e2e-ae17-c4b63c8fb084"
+    PhonePublisherId="95d94207-0c7c-47ed-82db-d75c81153c35" />
+
 </Package>

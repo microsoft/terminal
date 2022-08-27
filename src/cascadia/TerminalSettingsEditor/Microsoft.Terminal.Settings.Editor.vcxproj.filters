@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
@@ -14,17 +14,25 @@
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="Utils.h" />
+    <ClInclude Include="PreviewConnection.h" />
   </ItemGroup>
   <ItemGroup>
+    <Midl Include="ProfileViewModel.idl" />
+    <Midl Include="ColorSchemeViewModel.idl" />
+    <Midl Include="ColorSchemesPageViewModel.idl" />
+    <Midl Include="RenderingViewModel.idl" />
+    <Midl Include="InteractionViewModel.idl" />
+    <Midl Include="GlobalAppearanceViewModel.idl" />
+    <Midl Include="LaunchViewModel.idl" />
     <Midl Include="EnumEntry.idl" />
     <Midl Include="Converters.idl">
       <Filter>Converters</Filter>
     </Midl>
+    <Midl Include="SettingContainer.idl" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="TerminalSettingsEditor.def" />
     <None Include="packages.config" />
-    <None Include="PropertySheet.props" />
+    <None Include="$(ProjectName).def" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="CommonResources.xaml" />
@@ -33,12 +41,14 @@
     <Page Include="Interaction.xaml" />
     <Page Include="Launch.xaml" />
     <Page Include="MainPage.xaml" />
-    <Page Include="Profiles.xaml" />
+    <Page Include="Profiles_Base.xaml" />
+    <Page Include="Profiles_Advanced.xaml" />
+    <Page Include="Profiles_Appearance.xaml" />
+    <Page Include="Appearances.xaml" />
     <Page Include="Rendering.xaml" />
-  </ItemGroup>
-  <ItemGroup>
-    <Filter Include="Converters">
-      <UniqueIdentifier>{00f725c8-41b4-40a8-995e-8ee2e49a4a4c}</UniqueIdentifier>
-    </Filter>
+    <Page Include="Actions.xaml" />
+    <Page Include="SettingContainerStyle.xaml" />
+    <Page Include="AddProfile.xaml" />
+    <Page Include="KeyChordListener.xaml" />
   </ItemGroup>
 </Project>

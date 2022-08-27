@@ -30,15 +30,19 @@ namespace Microsoft::Console::Interactivity
     class ServiceLocator final
     {
     public:
-        static void RundownAndExit(const HRESULT hr);
+        static void SetOneCoreTeardownFunction(void (*pfn)()) noexcept;
+
+        [[noreturn]] static void RundownAndExit(const HRESULT hr);
 
         // N.B.: Location methods without corresponding creation methods
         //       automatically create the singleton object on demand.
         //       In case the on-demand creation fails, the return value
         //       is nullptr and a message is logged.
 
+        [[nodiscard]] static HRESULT CreateAccessibilityNotifier();
         static IAccessibilityNotifier* LocateAccessibilityNotifier();
 
+        [[nodiscard]] static NTSTATUS SetConsoleControlInstance(_In_ std::unique_ptr<IConsoleControl>&& control);
         static IConsoleControl* LocateConsoleControl();
         template<typename T>
         static T* LocateConsoleControl()
@@ -59,7 +63,7 @@ namespace Microsoft::Console::Interactivity
         template<typename T>
         static T* LocateConsoleWindow()
         {
-            return static_cast<T*>(s_consoleWindow);
+            return static_cast<T*>(s_consoleWindow.get());
         }
 
         static IWindowMetrics* LocateWindowMetrics();
@@ -76,22 +80,15 @@ namespace Microsoft::Console::Interactivity
             return static_cast<T*>(LocateHighDpiApi());
         }
 
-        static IInputServices* LocateInputServices();
-        template<typename T>
-        static T* LocateInputServices()
-        {
-            return static_cast<T*>(LocateInputServices());
-        }
-
         static ISystemConfigurationProvider* LocateSystemConfigurationProvider();
 
         static Globals& LocateGlobals();
 
-        static HWND LocatePseudoWindow();
+        static HWND LocatePseudoWindow(const HWND owner = nullptr /*HWND_DESKTOP = 0*/);
 
     protected:
-        ServiceLocator(ServiceLocator const&) = delete;
-        ServiceLocator& operator=(ServiceLocator const&) = delete;
+        ServiceLocator(const ServiceLocator&) = delete;
+        ServiceLocator& operator=(const ServiceLocator&) = delete;
 
     private:
         [[nodiscard]] static NTSTATUS LoadInteractivityFactory();
@@ -104,14 +101,18 @@ namespace Microsoft::Console::Interactivity
         // TODO: MSFT 15344939 - some implementations of IConsoleWindow are currently singleton
         // classes so we can't own a pointer to them here. fix this so s_consoleWindow can follow the
         // pattern of the rest of the service interface pointers.
-        static IConsoleWindow* s_consoleWindow;
+        static std::unique_ptr<IConsoleWindow> s_consoleWindow;
         static std::unique_ptr<IWindowMetrics> s_windowMetrics;
         static std::unique_ptr<IHighDpiApi> s_highDpiApi;
         static std::unique_ptr<ISystemConfigurationProvider> s_systemConfigurationProvider;
-        static std::unique_ptr<IInputServices> s_inputServices;
+
+        // See the big block comment in RundownAndExit for more info.
+        static void (*s_oneCoreTeardownFunction)();
 
         static Globals s_globals;
         static bool s_pseudoWindowInitialized;
         static wil::unique_hwnd s_pseudoWindow;
+
+        static inline SRWLOCK s_shutdownLock = SRWLOCK_INIT;
     };
 }

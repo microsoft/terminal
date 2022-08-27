@@ -70,7 +70,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
         }
 
-        operator COLORREF() const noexcept
+        constexpr operator COLORREF() const noexcept
         {
             return static_cast<COLORREF>(abgr & 0x00FFFFFFu);
         }
@@ -147,14 +147,21 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
         }
 
-        operator winrt::Windows::UI::Color() const
+        constexpr operator winrt::Windows::UI::Color() const
         {
-            winrt::Windows::UI::Color ret;
-            ret.R = r;
-            ret.G = g;
-            ret.B = b;
-            ret.A = a;
-            return ret;
+            return { a, r, g, b };
+        }
+#endif
+
+#ifdef WINRT_Microsoft_Terminal_Core_H
+        constexpr color(const winrt::Microsoft::Terminal::Core::Color& coreColor) :
+            color(coreColor.R, coreColor.G, coreColor.B, coreColor.A)
+        {
+        }
+
+        constexpr operator winrt::Microsoft::Terminal::Core::Color() const noexcept
+        {
+            return { r, g, b, a };
         }
 #endif
 
@@ -180,14 +187,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             wss << L"#" << std::uppercase << std::setfill(L'0') << std::hex;
             // Force the compiler to promote from byte to int. Without it, the
             // stringstream will try to write the components as chars
+            wss << std::setw(2) << static_cast<int>(r);
+            wss << std::setw(2) << static_cast<int>(g);
+            wss << std::setw(2) << static_cast<int>(b);
             if (!omitAlpha)
             {
                 wss << std::setw(2) << static_cast<int>(a);
             }
-            wss << std::setw(2) << static_cast<int>(r);
-            wss << std::setw(2) << static_cast<int>(g);
-            wss << std::setw(2) << static_cast<int>(b);
-
             return wss.str();
         }
     };

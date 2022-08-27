@@ -11,7 +11,6 @@
 #include <mutex>
 #include <condition_variable>
 
-#include "../cascadia/inc/cppwinrt_utils.h"
 #include "ConnectionStateHolder.h"
 #include "AzureClient.h"
 
@@ -21,18 +20,20 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         static winrt::guid ConnectionType() noexcept;
         static bool IsAzureConnectionAvailable() noexcept;
-        AzureConnection(const uint32_t rows, const uint32_t cols);
+
+        AzureConnection() = default;
+        void Initialize(const Windows::Foundation::Collections::ValueSet& settings);
 
         void Start();
-        void WriteInput(hstring const& data);
+        void WriteInput(const hstring& data);
         void Resize(uint32_t rows, uint32_t columns);
         void Close();
 
         WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
 
     private:
-        uint32_t _initialRows{};
-        uint32_t _initialCols{};
+        til::CoordType _initialRows{};
+        til::CoordType _initialCols{};
 
         enum class AzureState
         {
@@ -102,7 +103,5 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::factory_implementation
 {
-    struct AzureConnection : AzureConnectionT<AzureConnection, implementation::AzureConnection>
-    {
-    };
+    BASIC_FACTORY(AzureConnection);
 }

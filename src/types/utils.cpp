@@ -5,6 +5,9 @@
 #include "inc/utils.hpp"
 #include "inc/colorTable.hpp"
 
+#include <wil/token_helpers.h>
+#include <til/string.h>
+
 using namespace Microsoft::Console;
 
 // Routine Description:
@@ -39,10 +42,10 @@ std::wstring Utils::GuidToString(const GUID guid)
 // Return Value:
 // - A GUID if the string could successfully be parsed. On failure, throws the
 //      failing HRESULT.
-GUID Utils::GuidFromString(const std::wstring wstr)
+GUID Utils::GuidFromString(_Null_terminated_ const wchar_t* str)
 {
-    GUID result{};
-    THROW_IF_FAILED(IIDFromString(wstr.c_str(), &result));
+    GUID result;
+    THROW_IF_FAILED(IIDFromString(str, &result));
     return result;
 }
 
@@ -84,31 +87,43 @@ std::string Utils::ColorToHexString(const til::color color)
 //      the correct format, throws E_INVALIDARG
 til::color Utils::ColorFromHexString(const std::string_view str)
 {
-    THROW_HR_IF(E_INVALIDARG, str.size() != 7 && str.size() != 4);
+    THROW_HR_IF(E_INVALIDARG, str.size() != 9 && str.size() != 7 && str.size() != 4);
     THROW_HR_IF(E_INVALIDARG, str.at(0) != '#');
 
     std::string rStr;
     std::string gStr;
     std::string bStr;
+    std::string aStr;
 
     if (str.size() == 4)
     {
         rStr = std::string(2, str.at(1));
         gStr = std::string(2, str.at(2));
         bStr = std::string(2, str.at(3));
+        aStr = "ff";
     }
-    else
+    else if (str.size() == 7)
     {
         rStr = std::string(&str.at(1), 2);
         gStr = std::string(&str.at(3), 2);
         bStr = std::string(&str.at(5), 2);
+        aStr = "ff";
+    }
+    else if (str.size() == 9)
+    {
+        // #rrggbbaa
+        rStr = std::string(&str.at(1), 2);
+        gStr = std::string(&str.at(3), 2);
+        bStr = std::string(&str.at(5), 2);
+        aStr = std::string(&str.at(7), 2);
     }
 
-    const BYTE r = gsl::narrow_cast<BYTE>(std::stoul(rStr, nullptr, 16));
-    const BYTE g = gsl::narrow_cast<BYTE>(std::stoul(gStr, nullptr, 16));
-    const BYTE b = gsl::narrow_cast<BYTE>(std::stoul(bStr, nullptr, 16));
+    const auto r = gsl::narrow_cast<BYTE>(std::stoul(rStr, nullptr, 16));
+    const auto g = gsl::narrow_cast<BYTE>(std::stoul(gStr, nullptr, 16));
+    const auto b = gsl::narrow_cast<BYTE>(std::stoul(bStr, nullptr, 16));
+    const auto a = gsl::narrow_cast<BYTE>(std::stoul(aStr, nullptr, 16));
 
-    return til::color{ r, g, b };
+    return til::color{ r, g, b, a };
 }
 
 // Routine Description:
@@ -147,10 +162,10 @@ std::optional<til::color> Utils::ColorFromXTermColor(const std::wstring_view str
 std::optional<til::color> Utils::ColorFromXParseColorSpec(const std::wstring_view string) noexcept
 try
 {
-    bool foundXParseColorSpec = false;
-    bool foundValidColorSpec = false;
+    auto foundXParseColorSpec = false;
+    auto foundValidColorSpec = false;
 
-    bool isSharpSignFormat = false;
+    auto isSharpSignFormat = false;
     size_t rgbHexDigitCount = 0;
     std::array<unsigned int, 3> colorValues = { 0 };
     std::array<unsigned int, 3> parameterValues = { 0 };
@@ -223,14 +238,14 @@ try
     // Try to parse the actual color value of each component.
     for (size_t component = 0; component < 3; component++)
     {
-        bool foundColor = false;
+        auto foundColor = false;
         auto& parameterValue = til::at(parameterValues, component);
         // For "sharp sign" format, the rgbHexDigitCount is known.
         // For "rgb:" format, colorspecs are up to hhhh/hhhh/hhhh, for 1-4 h's
         const auto iteration = isSharpSignFormat ? rgbHexDigitCount : 4;
         for (size_t i = 0; i < iteration && curr < string.cend(); i++)
         {
-            const wchar_t wch = *curr++;
+            const auto wch = *curr++;
 
             parameterValue *= 16;
             unsigned int intVal = 0;
@@ -316,6 +331,84 @@ catch (...)
 }
 
 // Routine Description:
+// - Constructs a til::color value from RGB percentage components.
+// Arguments:
+// - r - The red component of the color (0-100%).
+// - g - The green component of the color (0-100%).
+// - b - The blue component of the color (0-100%).
+// Return Value:
+// - The color defined by the given components.
+til::color Utils::ColorFromRGB100(const int r, const int g, const int b) noexcept
+{
+    // The color class is expecting components in the range 0 to 255,
+    // so we need to scale our percentage values by 255/100. We can
+    // optimise this conversion with a pre-created lookup table.
+    static constexpr auto scale100To255 = [] {
+        std::array<uint8_t, 101> lut{};
+        for (size_t i = 0; i < std::size(lut); i++)
+        {
+            lut.at(i) = gsl::narrow_cast<uint8_t>((i * 255 + 50) / 100);
+        }
+        return lut;
+    }();
+
+    const auto red = til::at(scale100To255, std::min<unsigned>(r, 100u));
+    const auto green = til::at(scale100To255, std::min<unsigned>(g, 100u));
+    const auto blue = til::at(scale100To255, std::min<unsigned>(b, 100u));
+    return { red, green, blue };
+}
+
+// Routine Description:
+// - Constructs a til::color value from HLS components.
+// Arguments:
+// - h - The hue component of the color (0-360°).
+// - l - The luminosity component of the color (0-100%).
+// - s - The saturation component of the color (0-100%).
+// Return Value:
+// - The color defined by the given components.
+til::color Utils::ColorFromHLS(const int h, const int l, const int s) noexcept
+{
+    const auto hue = h % 360;
+    const auto lum = gsl::narrow_cast<float>(std::min(l, 100));
+    const auto sat = gsl::narrow_cast<float>(std::min(s, 100));
+
+    // This calculation is based on the HSL to RGB algorithm described in
+    // Wikipedia: https://en.wikipedia.org/wiki/HSL_and_HSV#HSL_to_RGB
+    // We start by calculating the chroma value, and the point along the bottom
+    // faces of the RGB cube with the same hue and chroma as our color (x).
+    const auto chroma = (50.f - abs(lum - 50.f)) * sat / 50.f;
+    const auto x = chroma * (60 - abs(hue % 120 - 60)) / 60.f;
+
+    // We'll also need an offset added to each component to match lightness.
+    const auto lightness = lum - chroma / 2.0f;
+
+    // We use the chroma value for the brightest component, x for the second
+    // brightest, and 0 for the last. The values  are scaled by 255/100 to get
+    // them in the range 0 to 255, as required by the color class.
+    constexpr auto scale = 255.f / 100.f;
+    const auto comp1 = gsl::narrow_cast<uint8_t>((chroma + lightness) * scale + 0.5f);
+    const auto comp2 = gsl::narrow_cast<uint8_t>((x + lightness) * scale + 0.5f);
+    const auto comp3 = gsl::narrow_cast<uint8_t>((0 + lightness) * scale + 0.5f);
+
+    // Finally we order the components based on the given hue. But note that the
+    // DEC terminals used a different mapping for hue than is typical for modern
+    // color models. Blue is at 0°, red is at 120°, and green is at 240°.
+    // See DEC STD 070, ReGIS Graphics Extension, § 8.6.2.2.2, Color by Value.
+    if (hue < 60)
+        return { comp2, comp3, comp1 }; // blue to magenta
+    else if (hue < 120)
+        return { comp1, comp3, comp2 }; // magenta to red
+    else if (hue < 180)
+        return { comp1, comp2, comp3 }; // red to yellow
+    else if (hue < 240)
+        return { comp2, comp1, comp3 }; // yellow to green
+    else if (hue < 300)
+        return { comp3, comp1, comp2 }; // green to cyan
+    else
+        return { comp3, comp2, comp1 }; // cyan to blue
+}
+
+// Routine Description:
 // - Converts a hex character to its equivalent integer value.
 // Arguments:
 // - wch - Character to convert.
@@ -326,7 +419,7 @@ bool Utils::HexToUint(const wchar_t wch,
                       unsigned int& value) noexcept
 {
     value = 0;
-    bool success = false;
+    auto success = false;
     if (wch >= L'0' && wch <= L'9')
     {
         value = wch - L'0';
@@ -364,7 +457,7 @@ bool Utils::StringToUint(const std::wstring_view wstr,
     size_t current = 0;
     while (current < wstr.size())
     {
-        const wchar_t wch = wstr.at(current);
+        const auto wch = wstr.at(current);
         if (_isNumber(wch))
         {
             result *= 10;
@@ -462,7 +555,7 @@ std::wstring Utils::FilterStringForPaste(const std::wstring_view wstr, const Fil
 
     while (pos < wstr.size())
     {
-        const wchar_t c = til::at(wstr, pos);
+        const auto c = til::at(wstr, pos);
 
         if (WI_IsFlagSet(option, FilterOption::CarriageReturnNewline) && c == L'\n')
         {
@@ -558,4 +651,149 @@ GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const gsl::b
     GUID newGuid{ 0 };
     ::memcpy_s(&newGuid, sizeof(GUID), buffer.data(), sizeof(GUID));
     return EndianSwap(newGuid);
+}
+
+bool Utils::IsElevated()
+{
+    static auto isElevated = []() {
+        try
+        {
+            wil::unique_handle processToken{ GetCurrentProcessToken() };
+            const auto elevationType = wil::get_token_information<TOKEN_ELEVATION_TYPE>(processToken.get());
+            const auto elevationState = wil::get_token_information<TOKEN_ELEVATION>(processToken.get());
+            if (elevationType == TokenElevationTypeDefault && elevationState.TokenIsElevated)
+            {
+                // In this case, the user has UAC entirely disabled. This is sort of
+                // weird, we treat this like the user isn't an admin at all. There's no
+                // separation of powers, so the things we normally want to gate on
+                // "having special powers" doesn't apply.
+                //
+                // See GH#7754, GH#11096
+                return false;
+            }
+
+            return wil::test_token_membership(nullptr, SECURITY_NT_AUTHORITY, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS);
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+            return false;
+        }
+    }();
+    return isElevated;
+}
+
+// Function Description:
+// - Promotes a starting directory provided to a WSL invocation to a commandline argument.
+//   This is necessary because WSL has some modicum of support for linux-side directories (!) which
+//   CreateProcess never will.
+std::tuple<std::wstring, std::wstring> Utils::MangleStartingDirectoryForWSL(std::wstring_view commandLine,
+                                                                            std::wstring_view startingDirectory)
+{
+    do
+    {
+        if (startingDirectory.size() > 0 && commandLine.size() >= 3)
+        { // "wsl" is three characters; this is a safe bet. no point in doing it if there's no starting directory though!
+            // Find the first space, quote or the end of the string -- we'll look for wsl before that.
+            const auto terminator{ commandLine.find_first_of(LR"(" )", 1) }; // look past the first character in case it starts with "
+            const auto start{ til::at(commandLine, 0) == L'"' ? 1 : 0 };
+            const std::filesystem::path executablePath{ commandLine.substr(start, terminator - start) };
+            const auto executableFilename{ executablePath.filename().wstring() };
+            if (executableFilename == L"wsl" || executableFilename == L"wsl.exe")
+            {
+                // We've got a WSL -- let's just make sure it's the right one.
+                if (executablePath.has_parent_path())
+                {
+                    std::wstring systemDirectory{};
+                    if (FAILED(wil::GetSystemDirectoryW(systemDirectory)))
+                    {
+                        break; // just bail out.
+                    }
+
+                    if (!til::equals_insensitive_ascii(executablePath.parent_path().c_str(), systemDirectory))
+                    {
+                        break; // it wasn't in system32!
+                    }
+                }
+                else
+                {
+                    // assume that unqualified WSL is the one in system32 (minor danger)
+                }
+
+                const auto arguments{ terminator == std::wstring_view::npos ? std::wstring_view{} : commandLine.substr(terminator + 1) };
+                if (arguments.find(L"--cd") != std::wstring_view::npos)
+                {
+                    break; // they've already got a --cd!
+                }
+
+                const auto tilde{ arguments.find_first_of(L'~') };
+                if (tilde != std::wstring_view::npos)
+                {
+                    if (tilde + 1 == arguments.size() || til::at(arguments, tilde + 1) == L' ')
+                    {
+                        // We want to suppress --cd if they have added a bare ~ to their commandline (they conflict).
+                        break;
+                    }
+                    // Tilde followed by non-space should be okay (like, wsl -d Debian ~/blah.sh)
+                }
+
+                // GH#11994 - If the path starts with //wsl$, then the user is
+                // likely passing a Windows-style path to the WSL filesystem,
+                // but with forward slashes instead of backslashes.
+                // Unfortunately, `wsl --cd` will try to treat this as a
+                // linux-relative path, which will fail to do the expected
+                // thing.
+                //
+                // In that case, manually mangle the startingDirectory to use
+                // backslashes as the path separator instead.
+                std::wstring mangledDirectory{ startingDirectory };
+                if (til::starts_with(mangledDirectory, L"//wsl$") || til::starts_with(mangledDirectory, L"//wsl.localhost"))
+                {
+                    mangledDirectory = std::filesystem::path{ startingDirectory }.make_preferred().wstring();
+                }
+
+                return {
+                    fmt::format(LR"("{}" --cd "{}" {})", executablePath.wstring(), mangledDirectory, arguments),
+                    std::wstring{}
+                };
+            }
+        }
+    } while (false);
+
+    // GH #12353: `~` is never a valid windows path. We can only accept that as
+    // a startingDirectory when the exe is specifically wsl.exe, because that
+    // can override the real startingDirectory. If the user set the
+    // startingDirectory to ~, but the commandline to something like pwsh.exe,
+    // that won't actually work. In that case, mangle the startingDirectory to
+    // %userprofile%, so it's at least something reasonable.
+    return {
+        std::wstring{ commandLine },
+        startingDirectory == L"~" ? wil::ExpandEnvironmentStringsW<std::wstring>(L"%USERPROFILE%") :
+                                    std::wstring{ startingDirectory }
+    };
+}
+
+std::wstring_view Utils::TrimPaste(std::wstring_view textView) noexcept
+{
+    const auto lastNonSpace = textView.find_last_not_of(L"\t\n\v\f\r ");
+    const auto firstNewline = textView.find_first_of(L"\n\v\f\r");
+
+    const bool isOnlyWhitespace = lastNonSpace == textView.npos;
+    const bool isMultiline = firstNewline < lastNonSpace;
+
+    if (isOnlyWhitespace)
+    {
+        // Text is all white space, nothing to paste
+        return L"";
+    }
+
+    if (isMultiline)
+    {
+        // In this case, the user totally wanted to paste multiple lines of text,
+        // and that likely includes the trailing newline.
+        // DON'T trim it in this case.
+        return textView;
+    }
+
+    return textView.substr(0, lastNonSpace + 1);
 }

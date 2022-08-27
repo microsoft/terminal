@@ -1,0 +1,43 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    enum InfoBarMessage
+    {
+        CloseOnExitInfo = 0,
+        KeyboardServiceWarning,
+        SetAsDefault,
+    };
+
+    runtimeclass WindowLayout
+    {
+        WindowLayout();
+
+        static String ToJson(WindowLayout layout);
+        static WindowLayout FromJson(String json);
+
+        Windows.Foundation.Collections.IVector<ActionAndArgs> TabLayout;
+        Windows.Foundation.IReference<LaunchPosition> InitialPosition;
+        Windows.Foundation.IReference<Windows.Foundation.Size> InitialSize;
+        Windows.Foundation.IReference<LaunchMode> LaunchMode;
+    };
+
+    [default_interface] runtimeclass ApplicationState {
+        static ApplicationState SharedInstance();
+
+        void Reload();
+        void Reset();
+
+        Boolean IsStatePath(String filename);
+
+        Windows.Foundation.Collections.IVector<WindowLayout> PersistedWindowLayouts { get; set; };
+
+        Windows.Foundation.Collections.IVector<String> RecentCommands { get; set; };
+
+        Windows.Foundation.Collections.IVector<InfoBarMessage> DismissedMessages { get; set; };
+
+        Windows.Foundation.Collections.IVector<String> AllowedCommandlines { get; set; };
+
+    }
+}

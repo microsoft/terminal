@@ -4,13 +4,13 @@
 #include "pch.h"
 #include <WexTestClass.h>
 
-#include "../renderer/inc/DummyRenderTarget.hpp"
+#include "../renderer/inc/DummyRenderer.hpp"
 #include "../cascadia/TerminalCore/Terminal.hpp"
 #include "MockTermSettings.h"
 #include "consoletaeftemplates.hpp"
-#include "TestUtils.h"
+#include "../../inc/TestUtils.h"
 
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Core;
 using namespace Microsoft::Terminal::Core;
 
 using namespace WEX::Common;
@@ -28,9 +28,9 @@ class TerminalCoreUnitTests::TerminalBufferTests final
     // !!! DANGER: Many tests in this class expect the Terminal buffer
     // to be 80x32. If you change these, you'll probably inadvertently break a
     // bunch of tests !!!
-    static const SHORT TerminalViewWidth = 80;
-    static const SHORT TerminalViewHeight = 32;
-    static const SHORT TerminalHistoryLength = 100;
+    static const til::CoordType TerminalViewWidth = 80;
+    static const til::CoordType TerminalViewHeight = 32;
+    static const til::CoordType TerminalHistoryLength = 100;
 
     TEST_CLASS(TerminalBufferTests);
 
@@ -41,28 +41,45 @@ class TerminalCoreUnitTests::TerminalBufferTests final
 
     TEST_METHOD(DontSnapToOutputTest);
 
+    TEST_METHOD(TestResetClearTabStops);
+
+    TEST_METHOD(TestAddTabStop);
+
+    TEST_METHOD(TestClearTabStop);
+
+    TEST_METHOD(TestGetForwardTab);
+
+    TEST_METHOD(TestGetReverseTab);
+
+    TEST_METHOD(TestCursorNotifications);
+
     TEST_METHOD_SETUP(MethodSetup)
     {
         // STEP 1: Set up the Terminal
         term = std::make_unique<Terminal>();
-        term->Create({ TerminalViewWidth, TerminalViewHeight }, TerminalHistoryLength, emptyRT);
+        emptyRenderer = std::make_unique<DummyRenderer>(term.get());
+        term->Create({ TerminalViewWidth, TerminalViewHeight }, TerminalHistoryLength, *emptyRenderer);
         return true;
     }
 
     TEST_METHOD_CLEANUP(MethodCleanup)
     {
+        emptyRenderer = nullptr;
         term = nullptr;
         return true;
     }
 
 private:
-    DummyRenderTarget emptyRT;
+    void _SetTabStops(std::list<til::CoordType> columns, bool replace);
+    std::list<til::CoordType> _GetTabStops();
+
+    std::unique_ptr<DummyRenderer> emptyRenderer;
     std::unique_ptr<Terminal> term;
 };
 
 void TerminalBufferTests::TestSimpleBufferWriting()
 {
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
     auto& termSm = *term->_stateMachine;
     const auto initialView = term->GetViewport();
 
@@ -81,12 +98,12 @@ void TerminalBufferTests::TestSimpleBufferWriting()
 
 void TerminalBufferTests::TestWrappingCharByChar()
 {
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
     auto& termSm = *term->_stateMachine;
     const auto initialView = term->GetViewport();
     auto& cursor = termTb.GetCursor();
 
-    const auto charsToWrite = gsl::narrow_cast<short>(TestUtils::Test100CharsString.size());
+    const auto charsToWrite = gsl::narrow_cast<til::CoordType>(TestUtils::Test100CharsString.size());
 
     VERIFY_ARE_EQUAL(0, initialView.Top());
     VERIFY_ARE_EQUAL(32, initialView.BottomExclusive());
@@ -95,7 +112,7 @@ void TerminalBufferTests::TestWrappingCharByChar()
     {
         // This is a handy way of just printing the printable characters that
         // _aren't_ the space character.
-        const wchar_t wch = static_cast<wchar_t>(33 + (i % 94));
+        const auto wch = static_cast<wchar_t>(33 + (i % 94));
         termSm.ProcessCharacter(wch);
     }
 
@@ -120,12 +137,12 @@ void TerminalBufferTests::TestWrappingCharByChar()
 
 void TerminalBufferTests::TestWrappingALongString()
 {
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
     auto& termSm = *term->_stateMachine;
     const auto initialView = term->GetViewport();
     auto& cursor = termTb.GetCursor();
 
-    const auto charsToWrite = gsl::narrow_cast<short>(TestUtils::Test100CharsString.size());
+    const auto charsToWrite = gsl::narrow_cast<til::CoordType>(TestUtils::Test100CharsString.size());
     VERIFY_ARE_EQUAL(100, charsToWrite);
 
     VERIFY_ARE_EQUAL(0, initialView.Top());
@@ -154,7 +171,7 @@ void TerminalBufferTests::TestWrappingALongString()
 
 void TerminalBufferTests::DontSnapToOutputTest()
 {
-    auto& termTb = *term->_buffer;
+    auto& termTb = *term->_mainBuffer;
     auto& termSm = *term->_stateMachine;
     const auto initialView = term->GetViewport();
 
@@ -163,7 +180,7 @@ void TerminalBufferTests::DontSnapToOutputTest()
     VERIFY_ARE_EQUAL(0, term->_scrollOffset);
 
     // -1 so that we don't print the last \n
-    for (int i = 0; i < TerminalViewHeight + 8 - 1; i++)
+    for (auto i = 0; i < TerminalViewHeight + 8 - 1; i++)
     {
         termSm.ProcessString(L"x\n");
     }
@@ -183,7 +200,7 @@ void TerminalBufferTests::DontSnapToOutputTest()
     VERIFY_ARE_EQUAL(1, term->_scrollOffset);
 
     Log::Comment(L"Print a few lines, to see that the viewport stays where it was");
-    for (int i = 0; i < 8; i++)
+    for (auto i = 0; i < 8; i++)
     {
         termSm.ProcessString(L"x\n");
     }
@@ -209,7 +226,7 @@ void TerminalBufferTests::DontSnapToOutputTest()
 
     Log::Comment(L"Print 3 more lines, and see that we stick to where the old "
                  L"rows now are in the buffer (after circling)");
-    for (int i = 0; i < 3; i++)
+    for (auto i = 0; i < 3; i++)
     {
         termSm.ProcessString(L"x\n");
         Log::Comment(NoThrowString().Format(
@@ -222,7 +239,7 @@ void TerminalBufferTests::DontSnapToOutputTest()
 
     Log::Comment(L"Print 8 more lines, and see that we're now just stuck at the"
                  L"top of the buffer");
-    for (int i = 0; i < 8; i++)
+    for (auto i = 0; i < 8; i++)
     {
         termSm.ProcessString(L"x\n");
         Log::Comment(NoThrowString().Format(
@@ -232,4 +249,390 @@ void TerminalBufferTests::DontSnapToOutputTest()
     VERIFY_ARE_EQUAL(0, seventhView.Top());
     VERIFY_ARE_EQUAL(TerminalViewHeight, seventhView.BottomExclusive());
     VERIFY_ARE_EQUAL(TerminalHistoryLength, term->_scrollOffset);
+}
+
+void TerminalBufferTests::_SetTabStops(std::list<til::CoordType> columns, bool replace)
+{
+    auto& termTb = *term->_mainBuffer;
+    auto& termSm = *term->_stateMachine;
+    auto& cursor = termTb.GetCursor();
+
+    const auto clearTabStops = L"\033[3g";
+    const auto addTabStop = L"\033H";
+
+    if (replace)
+    {
+        termSm.ProcessString(clearTabStops);
+    }
+
+    for (auto column : columns)
+    {
+        cursor.SetXPosition(column);
+        termSm.ProcessString(addTabStop);
+    }
+}
+
+std::list<til::CoordType> TerminalBufferTests::_GetTabStops()
+{
+    std::list<til::CoordType> columns;
+    auto& termTb = *term->_mainBuffer;
+    auto& termSm = *term->_stateMachine;
+    const auto initialView = term->GetViewport();
+    const auto lastColumn = initialView.RightInclusive();
+    auto& cursor = termTb.GetCursor();
+
+    cursor.SetPosition({ 0, 0 });
+    for (;;)
+    {
+        termSm.ProcessCharacter(L'\t');
+        auto column = cursor.GetPosition().X;
+        if (column >= lastColumn)
+        {
+            break;
+        }
+        columns.push_back(column);
+    }
+
+    return columns;
+}
+
+void TerminalBufferTests::TestResetClearTabStops()
+{
+    auto& termSm = *term->_stateMachine;
+    const auto initialView = term->GetViewport();
+
+    const auto clearTabStops = L"\033[3g";
+    const auto resetToInitialState = L"\033c";
+
+    Log::Comment(L"Default tabs every 8 columns.");
+    std::list<til::CoordType> expectedStops{ 8, 16, 24, 32, 40, 48, 56, 64, 72 };
+    VERIFY_ARE_EQUAL(expectedStops, _GetTabStops());
+
+    Log::Comment(L"Clear all tabs.");
+    termSm.ProcessString(clearTabStops);
+    expectedStops = {};
+    VERIFY_ARE_EQUAL(expectedStops, _GetTabStops());
+
+    Log::Comment(L"RIS resets tabs to defaults.");
+    termSm.ProcessString(resetToInitialState);
+    expectedStops = { 8, 16, 24, 32, 40, 48, 56, 64, 72 };
+    VERIFY_ARE_EQUAL(expectedStops, _GetTabStops());
+}
+
+void TerminalBufferTests::TestAddTabStop()
+{
+    auto& termTb = *term->_mainBuffer;
+    auto& termSm = *term->_stateMachine;
+    auto& cursor = termTb.GetCursor();
+
+    const auto clearTabStops = L"\033[3g";
+    const auto addTabStop = L"\033H";
+
+    Log::Comment(L"Clear all tabs.");
+    termSm.ProcessString(clearTabStops);
+    std::list<til::CoordType> expectedStops{};
+    VERIFY_ARE_EQUAL(expectedStops, _GetTabStops());
+
+    Log::Comment(L"Add tab to empty list.");
+    cursor.SetXPosition(12);
+    termSm.ProcessString(addTabStop);
+    expectedStops.push_back(12);
+    VERIFY_ARE_EQUAL(expectedStops, _GetTabStops());
+
+    Log::Comment(L"Add tab to head of existing list.");
+    cursor.SetXPosition(4);
+    termSm.ProcessString(addTabStop);
+    expectedStops.push_front(4);
+    VERIFY_ARE_EQUAL(expectedStops, _GetTabStops());
+
+    Log::Comment(L"Add tab to tail of existing list.");
+    cursor.SetXPosition(30);
+    termSm.ProcessString(addTabStop);
+    expectedStops.push_back(30);
+    VERIFY_ARE_EQUAL(expectedStops, _GetTabStops());
+
+    Log::Comment(L"Add tab to middle of existing list.");
+    cursor.SetXPosition(24);
+    termSm.ProcessString(addTabStop);
+    expectedStops.push_back(24);
+    expectedStops.sort();
+    VERIFY_ARE_EQUAL(expectedStops, _GetTabStops());
+
+    Log::Comment(L"Add tab that duplicates an item in the existing list.");
+    cursor.SetXPosition(24);
+    termSm.ProcessString(addTabStop);
+    VERIFY_ARE_EQUAL(expectedStops, _GetTabStops());
+}
+
+void TerminalBufferTests::TestClearTabStop()
+{
+    auto& termTb = *term->_mainBuffer;
+    auto& termSm = *term->_stateMachine;
+    auto& cursor = termTb.GetCursor();
+
+    const auto clearTabStops = L"\033[3g";
+    const auto clearTabStop = L"\033[0g";
+    const auto addTabStop = L"\033H";
+
+    Log::Comment(L"Start with all tabs cleared.");
+    {
+        termSm.ProcessString(clearTabStops);
+
+        VERIFY_IS_TRUE(_GetTabStops().empty());
+    }
+
+    Log::Comment(L"Try to clear nonexistent list.");
+    {
+        cursor.SetXPosition(0);
+        termSm.ProcessString(clearTabStop);
+
+        VERIFY_IS_TRUE(_GetTabStops().empty(), L"List should remain empty");
+    }
+
+    Log::Comment(L"Allocate 1 list item and clear it.");
+    {
+        cursor.SetXPosition(0);
+        termSm.ProcessString(addTabStop);
+        termSm.ProcessString(clearTabStop);
+
+        VERIFY_IS_TRUE(_GetTabStops().empty());
+    }
+
+    Log::Comment(L"Allocate 1 list item and clear nonexistent.");
+    {
+        cursor.SetXPosition(1);
+        termSm.ProcessString(addTabStop);
+
+        Log::Comment(L"Free greater");
+        cursor.SetXPosition(2);
+        termSm.ProcessString(clearTabStop);
+        VERIFY_IS_FALSE(_GetTabStops().empty());
+
+        Log::Comment(L"Free less than");
+        cursor.SetXPosition(0);
+        termSm.ProcessString(clearTabStop);
+        VERIFY_IS_FALSE(_GetTabStops().empty());
+
+        // clear all tab stops
+        termSm.ProcessString(clearTabStops);
+    }
+
+    Log::Comment(L"Allocate many (5) list items and clear head.");
+    {
+        std::list<til::CoordType> inputData = { 3, 5, 6, 10, 15, 17 };
+        _SetTabStops(inputData, false);
+        cursor.SetXPosition(inputData.front());
+        termSm.ProcessString(clearTabStop);
+
+        inputData.pop_front();
+        VERIFY_ARE_EQUAL(inputData, _GetTabStops());
+
+        // clear all tab stops
+        termSm.ProcessString(clearTabStops);
+    }
+
+    Log::Comment(L"Allocate many (5) list items and clear middle.");
+    {
+        std::list<til::CoordType> inputData = { 3, 5, 6, 10, 15, 17 };
+        _SetTabStops(inputData, false);
+        cursor.SetXPosition(*std::next(inputData.begin()));
+        termSm.ProcessString(clearTabStop);
+
+        inputData.erase(std::next(inputData.begin()));
+        VERIFY_ARE_EQUAL(inputData, _GetTabStops());
+
+        // clear all tab stops
+        termSm.ProcessString(clearTabStops);
+    }
+
+    Log::Comment(L"Allocate many (5) list items and clear tail.");
+    {
+        std::list<til::CoordType> inputData = { 3, 5, 6, 10, 15, 17 };
+        _SetTabStops(inputData, false);
+        cursor.SetXPosition(inputData.back());
+        termSm.ProcessString(clearTabStop);
+
+        inputData.pop_back();
+        VERIFY_ARE_EQUAL(inputData, _GetTabStops());
+
+        // clear all tab stops
+        termSm.ProcessString(clearTabStops);
+    }
+
+    Log::Comment(L"Allocate many (5) list items and clear nonexistent item.");
+    {
+        std::list<til::CoordType> inputData = { 3, 5, 6, 10, 15, 17 };
+        _SetTabStops(inputData, false);
+        cursor.SetXPosition(0);
+        termSm.ProcessString(clearTabStop);
+
+        VERIFY_ARE_EQUAL(inputData, _GetTabStops());
+
+        // clear all tab stops
+        termSm.ProcessString(clearTabStops);
+    }
+}
+
+void TerminalBufferTests::TestGetForwardTab()
+{
+    auto& termTb = *term->_mainBuffer;
+    auto& termSm = *term->_stateMachine;
+    const auto initialView = term->GetViewport();
+    auto& cursor = termTb.GetCursor();
+
+    const auto nextForwardTab = L"\033[I";
+
+    std::list<til::CoordType> inputData = { 3, 5, 6, 10, 15, 17 };
+    _SetTabStops(inputData, true);
+
+    const auto coordScreenBufferSize = initialView.Dimensions();
+
+    Log::Comment(L"Find next tab from before front.");
+    {
+        cursor.SetXPosition(0);
+
+        auto coordCursorExpected = cursor.GetPosition();
+        coordCursorExpected.X = inputData.front();
+
+        termSm.ProcessString(nextForwardTab);
+        const auto coordCursorResult = cursor.GetPosition();
+        VERIFY_ARE_EQUAL(coordCursorExpected,
+                         coordCursorResult,
+                         L"Cursor advanced to first tab stop from sample list.");
+    }
+
+    Log::Comment(L"Find next tab from in the middle.");
+    {
+        cursor.SetXPosition(6);
+
+        auto coordCursorExpected = cursor.GetPosition();
+        coordCursorExpected.X = *std::next(inputData.begin(), 3);
+
+        termSm.ProcessString(nextForwardTab);
+        const auto coordCursorResult = cursor.GetPosition();
+        VERIFY_ARE_EQUAL(coordCursorExpected,
+                         coordCursorResult,
+                         L"Cursor advanced to middle tab stop from sample list.");
+    }
+
+    Log::Comment(L"Find next tab from end.");
+    {
+        cursor.SetXPosition(30);
+
+        auto coordCursorExpected = cursor.GetPosition();
+        coordCursorExpected.X = coordScreenBufferSize.X - 1;
+
+        termSm.ProcessString(nextForwardTab);
+        const auto coordCursorResult = cursor.GetPosition();
+        VERIFY_ARE_EQUAL(coordCursorExpected,
+                         coordCursorResult,
+                         L"Cursor advanced to end of screen buffer.");
+    }
+
+    Log::Comment(L"Find next tab from rightmost column.");
+    {
+        cursor.SetXPosition(coordScreenBufferSize.X - 1);
+
+        auto coordCursorExpected = cursor.GetPosition();
+
+        termSm.ProcessString(nextForwardTab);
+        const auto coordCursorResult = cursor.GetPosition();
+        VERIFY_ARE_EQUAL(coordCursorExpected,
+                         coordCursorResult,
+                         L"Cursor remains in rightmost column.");
+    }
+}
+
+void TerminalBufferTests::TestGetReverseTab()
+{
+    auto& termTb = *term->_mainBuffer;
+    auto& termSm = *term->_stateMachine;
+    auto& cursor = termTb.GetCursor();
+
+    const auto nextReverseTab = L"\033[Z";
+
+    std::list<til::CoordType> inputData = { 3, 5, 6, 10, 15, 17 };
+    _SetTabStops(inputData, true);
+
+    Log::Comment(L"Find previous tab from before front.");
+    {
+        cursor.SetXPosition(1);
+
+        auto coordCursorExpected = cursor.GetPosition();
+        coordCursorExpected.X = 0;
+
+        termSm.ProcessString(nextReverseTab);
+        const auto coordCursorResult = cursor.GetPosition();
+        VERIFY_ARE_EQUAL(coordCursorExpected,
+                         coordCursorResult,
+                         L"Cursor adjusted to beginning of the buffer when it started before sample list.");
+    }
+
+    Log::Comment(L"Find previous tab from in the middle.");
+    {
+        cursor.SetXPosition(6);
+
+        auto coordCursorExpected = cursor.GetPosition();
+        coordCursorExpected.X = *std::next(inputData.begin());
+
+        termSm.ProcessString(nextReverseTab);
+        const auto coordCursorResult = cursor.GetPosition();
+        VERIFY_ARE_EQUAL(coordCursorExpected,
+                         coordCursorResult,
+                         L"Cursor adjusted back one tab spot from middle of sample list.");
+    }
+
+    Log::Comment(L"Find next tab from end.");
+    {
+        cursor.SetXPosition(30);
+
+        auto coordCursorExpected = cursor.GetPosition();
+        coordCursorExpected.X = inputData.back();
+
+        termSm.ProcessString(nextReverseTab);
+        const auto coordCursorResult = cursor.GetPosition();
+        VERIFY_ARE_EQUAL(coordCursorExpected,
+                         coordCursorResult,
+                         L"Cursor adjusted to last item in the sample list from position beyond end.");
+    }
+}
+
+void TerminalBufferTests::TestCursorNotifications()
+{
+    // Test for GH#11170
+
+    // Suppress test exceptions. If they occur in the lambda, they'll just crash
+    // TAEF, which is annoying.
+    const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
+
+    auto callbackWasCalled = false;
+    auto expectedCallbacks = 0;
+    auto cb = [&expectedCallbacks, &callbackWasCalled]() mutable {
+        Log::Comment(L"Callback triggered");
+        callbackWasCalled = true;
+        expectedCallbacks--;
+        VERIFY_IS_GREATER_THAN_OR_EQUAL(expectedCallbacks, 0);
+    };
+    term->_pfnCursorPositionChanged = cb;
+
+    // The exact number of callbacks here is fungible, if need be.
+
+    expectedCallbacks = 1;
+    callbackWasCalled = false;
+    term->Write(L"Foo");
+    VERIFY_ARE_EQUAL(0, expectedCallbacks);
+    VERIFY_IS_TRUE(callbackWasCalled);
+
+    expectedCallbacks = 1;
+    callbackWasCalled = false;
+    term->Write(L"Foo\r\nBar");
+    VERIFY_ARE_EQUAL(0, expectedCallbacks);
+    VERIFY_IS_TRUE(callbackWasCalled);
+
+    expectedCallbacks = 2; // One for each Write
+    callbackWasCalled = false;
+    term->Write(L"Foo\r\nBar");
+    term->Write(L"Foo\r\nBar");
+    VERIFY_ARE_EQUAL(0, expectedCallbacks);
+    VERIFY_IS_TRUE(callbackWasCalled);
 }

@@ -10,8 +10,11 @@
 
 #include "../renderer/base/renderer.hpp"
 #include "../types/inc/utils.hpp"
+#include "handle.h" // LockConsole
 #include "input.h" // ProcessCtrlEvents
 #include "output.h" // CloseConsoleProcessState
+
+#include "VtApiRoutines.h"
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
@@ -70,6 +73,7 @@ VtIo::VtIo() :
     _lookingForCursorPosition = pArgs->GetInheritCursor();
     _resizeQuirk = pArgs->IsResizeQuirkEnabled();
     _win32InputMode = pArgs->IsWin32InputModeEnabled();
+    _passthroughMode = pArgs->IsPassthroughMode();
 
     // If we were already given VT handles, set up the VT IO engine to use those.
     if (pArgs->InConptyMode())
@@ -136,8 +140,9 @@ VtIo::VtIo() :
     {
         return S_FALSE;
     }
+    auto& globals = ServiceLocator::LocateGlobals();
 
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = globals.getConsoleInformation();
 
     try
     {
@@ -148,27 +153,65 @@ VtIo::VtIo() :
 
         if (IsValidHandle(_hOutput.get()))
         {
-            Viewport initialViewport = Viewport::FromDimensions({ 0, 0 },
-                                                                gci.GetWindowSize().X,
-                                                                gci.GetWindowSize().Y);
+            auto initialViewport = Viewport::FromDimensions({ 0, 0 },
+                                                            gci.GetWindowSize().X,
+                                                            gci.GetWindowSize().Y);
             switch (_IoMode)
             {
             case VtIoMode::XTERM_256:
-                _pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(_hOutput),
-                                                                    initialViewport);
+            {
+                auto xterm256Engine = std::make_unique<Xterm256Engine>(std::move(_hOutput),
+                                                                       initialViewport);
+                if constexpr (Feature_VtPassthroughMode::IsEnabled())
+                {
+                    if (_passthroughMode)
+                    {
+                        auto vtapi = new VtApiRoutines();
+                        vtapi->m_pVtEngine = xterm256Engine.get();
+                        vtapi->m_pUsualRoutines = globals.api;
+
+                        xterm256Engine->SetPassthroughMode(true);
+
+                        if (_pVtInputThread)
+                        {
+                            auto pfnSetListenForDSR = std::bind(&VtInputThread::SetLookingForDSR, _pVtInputThread.get(), std::placeholders::_1);
+                            xterm256Engine->SetLookingForDSRCallback(pfnSetListenForDSR);
+                        }
+
+                        globals.api = vtapi;
+                    }
+                }
+
+                _pVtRenderEngine = std::move(xterm256Engine);
                 break;
+            }
             case VtIoMode::XTERM:
+            {
                 _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput),
                                                                  initialViewport,
                                                                  false);
+                if (_passthroughMode)
+                {
+                    return E_NOTIMPL;
+                }
                 break;
+            }
             case VtIoMode::XTERM_ASCII:
+            {
                 _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput),
                                                                  initialViewport,
                                                                  true);
+
+                if (_passthroughMode)
+                {
+                    return E_NOTIMPL;
+                }
                 break;
+            }
             default:
+            {
                 return E_FAIL;
+            }
             }
             if (_pVtRenderEngine)
             {
@@ -205,7 +248,7 @@ bool VtIo::IsUsingVt() const
     {
         return S_FALSE;
     }
-    Globals& g = ServiceLocator::LocateGlobals();
+    auto& g = ServiceLocator::LocateGlobals();
 
     if (_pVtRenderEngine)
     {
@@ -213,6 +256,11 @@ bool VtIo::IsUsingVt() const
         {
             g.pRender->AddRenderEngine(_pVtRenderEngine.get());
             g.getConsoleInformation().GetActiveOutputBuffer().SetTerminalConnection(_pVtRenderEngine.get());
+            g.getConsoleInformation().GetActiveInputBuffer()->SetTerminalConnection(_pVtRenderEngine.get());
+
+            // Force the whole window to be put together first.
+            // We don't really need the handle, we just want to leverage the setup steps.
+            ServiceLocator::LocatePseudoWindow();
         }
         CATCH_RETURN();
     }
@@ -252,11 +300,52 @@ bool VtIo::IsUsingVt() const
 
     if (_pPtySignalInputThread)
     {
-        // Let the signal thread know that the console is connected
+        // Let the signal thread know that the console is connected.
+        //
+        // By this point, the pseudo window should have already been created, by
+        // ConsoleInputThreadProcWin32. That thread has a message pump, which is
+        // needed to ensure that DPI change messages to the owning terminal
+        // window don't end up hanging because the pty didn't also process it.
         _pPtySignalInputThread->ConnectConsole();
     }
 
     return S_OK;
+}
+
+// Method Description:
+// - Create our pseudo window. This is exclusively called by
+//   ConsoleInputThreadProcWin32 on the console input thread.
+//    * It needs to be called on that thread, before any other calls to
+//      LocatePseudoWindow, to make sure that the input thread is the HWND's
+//      message thread.
+//    * It needs to be plumbed through the signal thread, because the signal
+//      thread knows if someone should be marked as the window's owner. It's
+//      VERY IMPORTANT that any initial owners are set up when the window is
+//      first created.
+// - Refer to GH#13066 for details.
+void VtIo::CreatePseudoWindow()
+{
+    _pPtySignalInputThread->CreatePseudoWindow();
+}
+
+void VtIo::SetWindowVisibility(bool showOrHide) noexcept
+{
+    // MSFT:40853556 Grab the shutdown lock here, so that another
+    // thread can't trigger a CloseOutput and release the
+    // _pVtRenderEngine out from underneath us.
+    std::lock_guard<std::mutex> lk(_shutdownLock);
+
+    if (!_pVtRenderEngine)
+    {
+        return;
+    }
+
+    auto& gci = ::Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    gci.LockConsole();
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    LOG_IF_FAILED(_pVtRenderEngine->SetWindowVisibility(showOrHide));
 }
 
 // Method Description:
@@ -305,7 +394,7 @@ bool VtIo::IsUsingVt() const
 //      appropriate HRESULT indicating failure.
 [[nodiscard]] HRESULT VtIo::SuppressResizeRepaint()
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
     if (_pVtRenderEngine)
     {
         hr = _pVtRenderEngine->SuppressResizeRepaint();
@@ -321,9 +410,9 @@ bool VtIo::IsUsingVt() const
 // Return Value:
 // - S_OK if we successfully inherited the cursor or did nothing, else an
 //      appropriate HRESULT
-[[nodiscard]] HRESULT VtIo::SetCursorPosition(const COORD coordCursor)
+[[nodiscard]] HRESULT VtIo::SetCursorPosition(const til::point coordCursor)
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
     if (_lookingForCursorPosition)
     {
         if (_pVtRenderEngine)
@@ -332,6 +421,16 @@ bool VtIo::IsUsingVt() const
         }
 
         _lookingForCursorPosition = false;
+    }
+    return hr;
+}
+
+[[nodiscard]] HRESULT VtIo::SwitchScreenBuffer(const bool useAltBuffer)
+{
+    auto hr = S_OK;
+    if (_pVtRenderEngine)
+    {
+        hr = _pVtRenderEngine->SwitchScreenBuffer(useAltBuffer);
     }
     return hr;
 }
@@ -349,7 +448,7 @@ void VtIo::CloseOutput()
     // This will release the lock when it goes out of scope
     std::lock_guard<std::mutex> lk(_shutdownLock);
 
-    Globals& g = ServiceLocator::LocateGlobals();
+    auto& g = ServiceLocator::LocateGlobals();
     // DON'T RemoveRenderEngine, as that requires the engine list lock, and this
     // is usually being triggered on a paint operation, when the lock is already
     // owned by the paint.
@@ -382,6 +481,7 @@ void VtIo::_ShutdownIfNeeded()
         //      happens if this method is called outside of lock, but if we're
         //      currently locked, we want to make sure ctrl events are handled
         //      _before_ we RundownAndExit.
+        LockConsole();
         ProcessCtrlEvents();
 
         // Make sure we terminate.

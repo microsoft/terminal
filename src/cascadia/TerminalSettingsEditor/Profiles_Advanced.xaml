@@ -1,0 +1,142 @@
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<Page x:Class="Microsoft.Terminal.Settings.Editor.Profiles_Advanced"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:model="using:Microsoft.Terminal.Settings.Model"
+      xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+      mc:Ignorable="d">
+
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="CommonResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <DataTemplate x:Key="EnumComboBoxTemplate"
+                          x:DataType="local:EnumEntry">
+                <TextBlock Text="{x:Bind EnumName, Mode=OneWay}" />
+            </DataTemplate>
+        </ResourceDictionary>
+    </Page.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <TextBlock x:Uid="Profile_BaseLayerDisclaimer"
+                   Grid.Row="0"
+                   Margin="{StaticResource StandardIndentMargin}"
+                   Style="{StaticResource DisclaimerStyle}"
+                   Visibility="{x:Bind Profile.IsBaseLayer}" />
+        <ScrollViewer Grid.Row="1"
+                      ViewChanging="ViewChanging">
+            <StackPanel Style="{StaticResource SettingsStackStyle}">
+                <!--  Suppress Application Title  -->
+                <local:SettingContainer x:Uid="Profile_SuppressApplicationTitle"
+                                        ClearSettingValue="{x:Bind Profile.ClearSuppressApplicationTitle}"
+                                        HasSettingValue="{x:Bind Profile.HasSuppressApplicationTitle, Mode=OneWay}"
+                                        SettingOverrideSource="{x:Bind Profile.SuppressApplicationTitleOverrideSource, Mode=OneWay}">
+                    <ToggleSwitch IsOn="{x:Bind Profile.SuppressApplicationTitle, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                </local:SettingContainer>
+
+                <!--  Antialiasing Mode  -->
+                <local:SettingContainer x:Uid="Profile_AntialiasingMode"
+                                        ClearSettingValue="{x:Bind Profile.ClearAntialiasingMode}"
+                                        HasSettingValue="{x:Bind Profile.HasAntialiasingMode, Mode=OneWay}"
+                                        SettingOverrideSource="{x:Bind Profile.AntialiasingModeOverrideSource, Mode=OneWay}">
+                    <ComboBox AutomationProperties.AccessibilityView="Content"
+                              ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                              ItemsSource="{x:Bind Profile.AntiAliasingModeList, Mode=OneWay}"
+                              SelectedItem="{x:Bind Profile.CurrentAntiAliasingMode, Mode=TwoWay}"
+                              Style="{StaticResource ComboBoxSettingStyle}" />
+                </local:SettingContainer>
+
+                <!--  AltGr Aliasing  -->
+                <local:SettingContainer x:Uid="Profile_AltGrAliasing"
+                                        ClearSettingValue="{x:Bind Profile.ClearAltGrAliasing}"
+                                        HasSettingValue="{x:Bind Profile.HasAltGrAliasing, Mode=OneWay}"
+                                        SettingOverrideSource="{x:Bind Profile.AltGrAliasingOverrideSource, Mode=OneWay}">
+                    <ToggleSwitch IsOn="{x:Bind Profile.AltGrAliasing, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                </local:SettingContainer>
+
+                <!--  Snap On Input  -->
+                <local:SettingContainer x:Uid="Profile_SnapOnInput"
+                                        ClearSettingValue="{x:Bind Profile.ClearSnapOnInput}"
+                                        HasSettingValue="{x:Bind Profile.HasSnapOnInput, Mode=OneWay}"
+                                        SettingOverrideSource="{x:Bind Profile.SnapOnInputOverrideSource, Mode=OneWay}">
+                    <ToggleSwitch IsOn="{x:Bind Profile.SnapOnInput, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                </local:SettingContainer>
+
+                <!--  History Size  -->
+                <local:SettingContainer x:Uid="Profile_HistorySize"
+                                        ClearSettingValue="{x:Bind Profile.ClearHistorySize}"
+                                        HasSettingValue="{x:Bind Profile.HasHistorySize, Mode=OneWay}"
+                                        SettingOverrideSource="{x:Bind Profile.HistorySizeOverrideSource, Mode=OneWay}">
+                    <muxc:NumberBox x:Uid="Profile_HistorySizeBox"
+                                    LargeChange="100"
+                                    Minimum="0"
+                                    SmallChange="10"
+                                    Style="{StaticResource NumberBoxSettingStyle}"
+                                    Value="{x:Bind Profile.HistorySize, Mode=TwoWay}" />
+                </local:SettingContainer>
+
+                <!--  Close On Exit  -->
+                <local:SettingContainer x:Uid="Profile_CloseOnExit"
+                                        ClearSettingValue="{x:Bind Profile.ClearCloseOnExit}"
+                                        HasSettingValue="{x:Bind Profile.HasCloseOnExit, Mode=OneWay}"
+                                        SettingOverrideSource="{x:Bind Profile.CloseOnExitOverrideSource, Mode=OneWay}">
+                    <ComboBox AutomationProperties.AccessibilityView="Content"
+                              ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                              ItemsSource="{x:Bind Profile.CloseOnExitModeList, Mode=OneWay}"
+                              SelectedItem="{x:Bind Profile.CurrentCloseOnExitMode, Mode=TwoWay}"
+                              Style="{StaticResource ComboBoxSettingStyle}" />
+                </local:SettingContainer>
+
+                <!--  Bell Style  -->
+                <local:SettingContainer x:Uid="Profile_BellStyle"
+                                        ClearSettingValue="{x:Bind Profile.ClearBellStyle}"
+                                        HasSettingValue="{x:Bind Profile.HasBellStyle, Mode=OneWay}"
+                                        SettingOverrideSource="{x:Bind Profile.BellStyleOverrideSource, Mode=OneWay}"
+                                        Style="{StaticResource ExpanderSettingContainerStyle}">
+                    <StackPanel>
+                        <CheckBox x:Uid="Profile_BellStyleAudible"
+                                  IsChecked="{x:Bind Profile.IsBellStyleFlagSet(1), BindBack=Profile.SetBellStyleAudible, Mode=TwoWay}" />
+                        <CheckBox x:Uid="Profile_BellStyleWindow"
+                                  IsChecked="{x:Bind Profile.IsBellStyleFlagSet(2), BindBack=Profile.SetBellStyleWindow, Mode=TwoWay}" />
+                        <CheckBox x:Uid="Profile_BellStyleTaskbar"
+                                  IsChecked="{x:Bind Profile.IsBellStyleFlagSet(4), BindBack=Profile.SetBellStyleTaskbar, Mode=TwoWay}" />
+                    </StackPanel>
+                </local:SettingContainer>
+
+                <!--  AtlasEngine  -->
+                <local:SettingContainer x:Uid="Profile_UseAtlasEngine"
+                                        ClearSettingValue="{x:Bind Profile.ClearUseAtlasEngine}"
+                                        HasSettingValue="{x:Bind Profile.HasUseAtlasEngine, Mode=OneWay}"
+                                        SettingOverrideSource="{x:Bind Profile.UseAtlasEngineOverrideSource, Mode=OneWay}">
+                    <ToggleSwitch IsOn="{x:Bind Profile.UseAtlasEngine, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                </local:SettingContainer>
+
+                <!--  VtPassthrough  -->
+                <local:SettingContainer x:Uid="Profile_VtPassthrough"
+                                        ClearSettingValue="{x:Bind Profile.ClearVtPassthrough}"
+                                        HasSettingValue="{x:Bind Profile.HasVtPassthrough, Mode=OneWay}"
+                                        SettingOverrideSource="{x:Bind Profile.VtPassthroughOverrideSource, Mode=OneWay}"
+                                        Visibility="{x:Bind Profile.VtPassthroughAvailable}">
+                    <ToggleSwitch IsOn="{x:Bind Profile.VtPassthrough, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                </local:SettingContainer>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>

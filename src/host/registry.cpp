@@ -33,7 +33,7 @@ Registry::~Registry()
 // - <none>
 void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     NTSTATUS Status;
     HKEY hCurrentUserKey = nullptr;
     if (hConsoleKey == nullptr)
@@ -99,7 +99,7 @@ void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
         {
             // we read something, set it as the word delimiters
             const std::wstring regWordDelimiters{ awchBuffer, cbWritten / sizeof(wchar_t) };
-            for (const wchar_t wch : regWordDelimiters)
+            for (const auto wch : regWordDelimiters)
             {
                 if (wch == '\0')
                 {
@@ -130,9 +130,9 @@ void Registry::_LoadMappedProperties(_In_reads_(cPropertyMappings) const Registr
     // Iterate through properties table and load each setting for common property types
     for (UINT iMapping = 0; iMapping < cPropertyMappings; iMapping++)
     {
-        const RegistrySerialization::RegPropertyMap* const pPropMap = &(rgPropertyMappings[iMapping]);
+        const auto pPropMap = &(rgPropertyMappings[iMapping]);
 
-        NTSTATUS Status = STATUS_SUCCESS;
+        auto Status = STATUS_SUCCESS;
 
         switch (pPropMap->propertyType)
         {
@@ -170,7 +170,7 @@ void Registry::LoadGlobalsFromRegistry()
 {
     HKEY hCurrentUserKey;
     HKEY hConsoleKey;
-    NTSTATUS status = RegistrySerialization::s_OpenConsoleKey(&hCurrentUserKey, &hConsoleKey);
+    auto status = RegistrySerialization::s_OpenConsoleKey(&hCurrentUserKey, &hConsoleKey);
 
     if (NT_SUCCESS(status))
     {
@@ -202,14 +202,14 @@ void Registry::LoadFromRegistry(_In_ PCWSTR const pwszConsoleTitle)
 {
     HKEY hCurrentUserKey;
     HKEY hConsoleKey;
-    NTSTATUS Status = RegistrySerialization::s_OpenConsoleKey(&hCurrentUserKey, &hConsoleKey);
+    auto Status = RegistrySerialization::s_OpenConsoleKey(&hCurrentUserKey, &hConsoleKey);
     if (!NT_SUCCESS(Status))
     {
         return;
     }
 
     // Open the console title subkey.
-    LPWSTR TranslatedConsoleTitle = TranslateConsoleTitle(pwszConsoleTitle, TRUE, TRUE);
+    auto TranslatedConsoleTitle = TranslateConsoleTitle(pwszConsoleTitle, TRUE, TRUE);
     if (TranslatedConsoleTitle == nullptr)
     {
         RegCloseKey(hConsoleKey);
@@ -250,17 +250,14 @@ void Registry::LoadFromRegistry(_In_ PCWSTR const pwszConsoleTitle)
 
     // Now load complex properties
     // Some properties shouldn't be filled by the registry if a copy already exists from the process start information.
-    DWORD dwValue;
+    const auto loadDWORD = [=](const auto valueName) {
+        DWORD value;
+        const auto status = RegistrySerialization::s_QueryValue(hTitleKey, valueName, sizeof(value), REG_DWORD, (PBYTE)&value, nullptr);
+        return NT_SUCCESS(status) ? std::optional{ value } : std::nullopt;
+    };
 
     // Window Origin Autopositioning Setting
-    Status = RegistrySerialization::s_QueryValue(hTitleKey,
-                                                 CONSOLE_REGISTRY_WINDOWPOS,
-                                                 sizeof(dwValue),
-                                                 REG_DWORD,
-                                                 (PBYTE)&dwValue,
-                                                 nullptr);
-
-    if (NT_SUCCESS(Status))
+    if (const auto windowPos = loadDWORD(CONSOLE_REGISTRY_WINDOWPOS))
     {
         // The presence of a position key means autopositioning is false.
         _pSettings->SetAutoPosition(FALSE);
@@ -269,15 +266,9 @@ void Registry::LoadFromRegistry(_In_ PCWSTR const pwszConsoleTitle)
     //      HOWEVER, the defaults might not have been auto-pos, so don't assume that they are.
 
     // Code Page
-    Status = RegistrySerialization::s_QueryValue(hTitleKey,
-                                                 CONSOLE_REGISTRY_CODEPAGE,
-                                                 sizeof(dwValue),
-                                                 REG_DWORD,
-                                                 (PBYTE)&dwValue,
-                                                 nullptr);
-    if (NT_SUCCESS(Status))
+    if (const auto codePage = loadDWORD(CONSOLE_REGISTRY_CODEPAGE))
     {
-        _pSettings->SetCodePage(dwValue);
+        _pSettings->SetCodePage(codePage.value());
 
         // If this routine specified default settings for console property,
         // then make sure code page value when East Asian environment.
@@ -302,16 +293,23 @@ void Registry::LoadFromRegistry(_In_ PCWSTR const pwszConsoleTitle)
     {
         WCHAR awchBuffer[64];
         StringCchPrintfW(awchBuffer, ARRAYSIZE(awchBuffer), CONSOLE_REGISTRY_COLORTABLE, i);
-        Status = RegistrySerialization::s_QueryValue(hTitleKey,
-                                                     awchBuffer,
-                                                     sizeof(dwValue),
-                                                     REG_DWORD,
-                                                     (PBYTE)&dwValue,
-                                                     nullptr);
-        if (NT_SUCCESS(Status))
+        if (const auto color = loadDWORD(awchBuffer))
         {
-            _pSettings->SetColorTableEntry(i, dwValue);
+            _pSettings->SetLegacyColorTableEntry(i, color.value());
         }
+    }
+
+    if (const auto color = loadDWORD(CONSOLE_REGISTRY_DEFAULTFOREGROUND))
+    {
+        _pSettings->SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, color.value());
+    }
+    if (const auto color = loadDWORD(CONSOLE_REGISTRY_DEFAULTBACKGROUND))
+    {
+        _pSettings->SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, color.value());
+    }
+    if (const auto color = loadDWORD(CONSOLE_REGISTRY_CURSORCOLOR))
+    {
+        _pSettings->SetColorTableEntry(TextColor::CURSOR_COLOR, color.value());
     }
 
     GetEditKeys(hConsoleKey);
