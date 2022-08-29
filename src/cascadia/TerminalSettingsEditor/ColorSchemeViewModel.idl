@@ -7,8 +7,6 @@ namespace Microsoft.Terminal.Settings.Editor
 {
     runtimeclass ColorSchemeViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged, Windows.Foundation.IStringable
     {
-        ColorSchemeViewModel(Microsoft.Terminal.Settings.Model.ColorScheme scheme, ColorSchemesPageViewModel parentPageVM);
-
         String Name;
         Boolean IsInBoxScheme;
 

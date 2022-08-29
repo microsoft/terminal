@@ -24,8 +24,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Editor::ColorSchemeViewModel RequestAddNew();
         bool RequestRenameCurrentScheme(winrt::hstring newName);
         void RequestDeleteCurrentScheme();
-
-        void Edit_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+        void RequestEditSelectedScheme();
 
         bool CanDeleteCurrentScheme() const;
 

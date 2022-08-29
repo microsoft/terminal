@@ -19,13 +19,12 @@ namespace Microsoft.Terminal.Settings.Editor
         ColorSchemeViewModel RequestAddNew();
         Boolean RequestRenameCurrentScheme(String newName);
         void RequestDeleteCurrentScheme();
+        void RequestEditSelectedScheme();
 
         ColorSchemeViewModel CurrentScheme;
         Boolean HasCurrentScheme { get; };
         Boolean CanDeleteCurrentScheme { get; };
         ColorSchemesSubPage CurrentPage;
         Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> AllColorSchemes { get; };
-
-        void Edit_Click(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs e);
     }
 }

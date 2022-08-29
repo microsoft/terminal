@@ -51,7 +51,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool ColorSchemeViewModel::RequestRename(winrt::hstring newName)
     {
-        return _parentPageVM.RequestRenameCurrentScheme(newName);
+        if (const auto parentPageVM{ _parentPageVM.get() })
+        {
+            return parentPageVM.RequestRenameCurrentScheme(newName);
+        }
+        return false;
     }
 
     void ColorSchemeViewModel::Name(winrt::hstring newName)

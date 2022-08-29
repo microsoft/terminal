@@ -31,7 +31,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         InitializeComponent();
 
         Automation::AutomationProperties::SetName(AddNewButton(), RS_(L"ColorScheme_AddNewButton/Text"));
-        Automation::AutomationProperties::SetName(DeleteButton(), RS_(L"ColorScheme_DeleteButton/Text"));
     }
 
     void ColorSchemes::OnNavigatedTo(const NavigationEventArgs& e)
@@ -64,7 +63,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         itemContainer.as<ContentControl>().Focus(FocusState::Programmatic);
     }
 
-    void ColorSchemes::AddNew_Click(const IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::RoutedEventArgs& /*e*/)
+    void ColorSchemes::AddNew_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         if (const auto newSchemeVM{ _ViewModel.RequestAddNew() })
         {
@@ -73,12 +72,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    void ColorSchemes::Edit_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    {
+        _ViewModel.RequestEditSelectedScheme();
+    }
+
     void ColorSchemes::ListView_PreviewKeyDown(const IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
     {
         if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Enter)
         {
             // Treat this as if 'edit' was clicked
-            _ViewModel.Edit_Click(nullptr, nullptr);
+            _ViewModel.RequestEditSelectedScheme();
             e.Handled(true);
         }
         else if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Delete)

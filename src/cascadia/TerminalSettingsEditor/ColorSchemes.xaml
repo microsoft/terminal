@@ -182,28 +182,23 @@
                         Orientation="Horizontal"
                         XYFocusKeyboardNavigation="Enabled">
                 <Button x:Name="EditButton"
-                        Click="{x:Bind ViewModel.Edit_Click}"
+                        Click="Edit_Click"
                         IsEnabled="{x:Bind ViewModel.HasCurrentScheme, Mode=OneWay}"
                         Style="{StaticResource BrowseButtonStyle}">
-                    <TextBlock x:Uid="ColorScheme_EditButton"
-                               Style="{StaticResource IconButtonTextBlockStyle}" />
+                    <TextBlock x:Uid="ColorScheme_EditButton" />
                 </Button>
 
                 <Button x:Name="AddNewButton"
                         Click="AddNew_Click"
                         Style="{StaticResource BrowseButtonStyle}">
-                    <TextBlock x:Uid="ColorScheme_AddNewButton"
-                               Style="{StaticResource IconButtonTextBlockStyle}" />
+                    <TextBlock x:Uid="ColorScheme_AddNewButton" />
                 </Button>
 
                 <Button x:Name="DeleteButton"
+                        x:Uid="ColorScheme_DeleteButton"
                         Margin="10,0,0,0"
                         IsEnabled="{x:Bind ViewModel.CanDeleteCurrentScheme, Mode=OneWay}"
                         Style="{StaticResource DeleteButtonStyle}">
-                    <Button.Content>
-                        <TextBlock x:Uid="ColorScheme_DeleteButton"
-                                   Style="{StaticResource IconButtonTextBlockStyle}" />
-                    </Button.Content>
                     <Button.Flyout>
                         <Flyout>
                             <StackPanel>

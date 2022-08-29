@@ -77,11 +77,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _CurrentScheme != nullptr;
     }
 
-    void ColorSchemesPageViewModel::Edit_Click(const IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::RoutedEventArgs& /*e*/)
-    {
-        CurrentPage(ColorSchemesSubPage::EditColorScheme);
-    }
-
     void ColorSchemesPageViewModel::_MakeColorSchemeVMsHelper()
     {
         std::vector<Editor::ColorSchemeViewModel> allColorSchemes;
@@ -90,7 +85,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         for (const auto& pair : colorSchemeMap)
         {
             const auto scheme = pair.Value();
-            Editor::ColorSchemeViewModel viewModel{ scheme, *this };
+            auto viewModel{ winrt::make<ColorSchemeViewModel>(scheme, *this) };
             viewModel.IsInBoxScheme(std::find(std::begin(InBoxSchemes), std::end(InBoxSchemes), scheme.Name()) != std::end(InBoxSchemes));
             allColorSchemes.emplace_back(viewModel);
 
@@ -113,7 +108,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _settings.GlobalSettings().AddColorScheme(scheme);
 
         // Construct the new color scheme VM
-        const Editor::ColorSchemeViewModel schemeVM{ scheme, *this };
+        const auto schemeVM{ winrt::make<ColorSchemeViewModel>(scheme, *this) };
         _AllColorSchemes.Append(schemeVM);
         _viewModelToSchemeMap.Insert(schemeVM, scheme);
         return schemeVM;
@@ -173,12 +168,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _settings.UpdateColorSchemeReferences(name, L"Campbell");
     }
 
+    void ColorSchemesPageViewModel::RequestEditSelectedScheme()
+    {
+        if (_CurrentScheme)
+        {
+            CurrentPage(ColorSchemesSubPage::EditColorScheme);
+        }
+    }
+
     bool ColorSchemesPageViewModel::CanDeleteCurrentScheme() const
     {
         if (_CurrentScheme)
         {
             // Only allow this color scheme to be deleted if it's not provided in-box
-            return std::find(std::begin(InBoxSchemes), std::end(InBoxSchemes), _CurrentScheme.Name()) == std::end(InBoxSchemes);
+            return !_CurrentScheme.IsInBoxScheme();
         }
         return false;
     }

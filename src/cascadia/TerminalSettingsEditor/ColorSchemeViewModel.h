@@ -49,7 +49,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     private:
         winrt::hstring _Name;
         Model::ColorScheme _scheme;
-        Editor::ColorSchemesPageViewModel _parentPageVM{ nullptr };
+        weak_ref<Editor::ColorSchemesPageViewModel> _parentPageVM{ nullptr };
 
         void _ColorEntryChangedHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
     };
@@ -69,8 +69,3 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::UI::Color _color;
     };
 };
-
-namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
-{
-    BASIC_FACTORY(ColorSchemeViewModel);
-}
