@@ -64,8 +64,7 @@ namespace SettingsModelLocalTests
             },
             "window":
             {
-                "applicationTheme": "light",
-                "useMica": true
+                "applicationTheme": "light"
             }
         })" };
 
@@ -81,7 +80,6 @@ namespace SettingsModelLocalTests
 
         VERIFY_IS_NOT_NULL(theme->Window());
         VERIFY_ARE_EQUAL(winrt::Windows::UI::Xaml::ElementTheme::Light, theme->Window().RequestedTheme());
-        VERIFY_ARE_EQUAL(true, theme->Window().UseMica());
     }
 
     void ThemeTests::ParseEmptyTheme()
@@ -163,8 +161,7 @@ namespace SettingsModelLocalTests
                     },
                     "window":
                     {
-                        "applicationTheme": "light",
-                        "useMica": true
+                        "applicationTheme": "light"
                     }
                 },
                 {
@@ -175,16 +172,14 @@ namespace SettingsModelLocalTests
                     },
                     "window":
                     {
-                        "applicationTheme": "light",
-                        "useMica": true
+                        "applicationTheme": "light"
                     }
                 },
                 {
                     "name": "backgroundOmittedEntirely",
                     "window":
                     {
-                        "applicationTheme": "light",
-                        "useMica": true
+                        "applicationTheme": "light"
                     }
                 }
             ]
@@ -239,8 +234,7 @@ namespace SettingsModelLocalTests
                     "tabRow": {},
                     "window":
                     {
-                        "applicationTheme": "light",
-                        "useMica": true
+                        "applicationTheme": "light"
                     }
                 }
             ]
