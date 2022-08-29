@@ -911,6 +911,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void ControlCore::_refreshSizeUnderLock()
     {
+        if (_IsClosing())
+        {
+            return;
+        }
+
         auto cx = gsl::narrow_cast<til::CoordType>(_panelWidth * _compositionScale);
         auto cy = gsl::narrow_cast<til::CoordType>(_panelHeight * _compositionScale);
 
