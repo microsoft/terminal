@@ -67,10 +67,10 @@ static constexpr bool IsReadable(std::wstring_view text)
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    TermControlAutomationPeer::TermControlAutomationPeer(TermControl* owner,
+    TermControlAutomationPeer::TermControlAutomationPeer(winrt::weak_ref<TermControl> owner,
                                                          const Core::Padding padding,
                                                          Control::InteractivityAutomationPeer impl) :
-        TermControlAutomationPeerT<TermControlAutomationPeer>(*owner), // pass owner to FrameworkElementAutomationPeer
+        TermControlAutomationPeerT<TermControlAutomationPeer>(*owner.get()), // pass owner to FrameworkElementAutomationPeer
         _termControl{ owner },
         _contentAutomationPeer{ impl }
     {
@@ -134,8 +134,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         dispatcher.RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [weakThis{ get_weak() }]() {
             if (auto strongThis{ weakThis.get() })
             {
-                // The event that is raised when the text selection is modified.
-                strongThis->RaiseAutomationEvent(AutomationEvents::TextPatternOnTextSelectionChanged);
+                if (auto control{ strongThis->_termControl.get() })
+                {
+                    // The event that is raised when the text selection is modified.
+                    strongThis->RaiseAutomationEvent(AutomationEvents::TextPatternOnTextSelectionChanged);
+                }
             }
         });
     }
@@ -157,8 +160,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         dispatcher.RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [weakThis{ get_weak() }]() {
             if (auto strongThis{ weakThis.get() })
             {
-                // The event that is raised when textual content is modified.
-                strongThis->RaiseAutomationEvent(AutomationEvents::TextPatternOnTextChanged);
+                if (auto control{ strongThis->_termControl.get() })
+                {
+                    // The event that is raised when textual content is modified.
+                    strongThis->RaiseAutomationEvent(AutomationEvents::TextPatternOnTextChanged);
+                }
             }
         });
     }
@@ -180,13 +186,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         dispatcher.RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [weakThis{ get_weak() }]() {
             if (auto strongThis{ weakThis.get() })
             {
-                // The event that is raised when the text was changed in an edit control.
-                // Do NOT fire a TextEditTextChanged. Generally, an app on the other side
-                //    will expect more information. Though you can dispatch that event
-                //    on its own, it may result in a nullptr exception on the other side
-                //    because no additional information was provided. Crashing the screen
-                //    reader.
-                strongThis->RaiseAutomationEvent(AutomationEvents::TextPatternOnTextSelectionChanged);
+                if (auto control{ strongThis->_termControl.get() })
+                {
+                    // The event that is raised when the text was changed in an edit control.
+                    // Do NOT fire a TextEditTextChanged. Generally, an app on the other side
+                    //    will expect more information. Though you can dispatch that event
+                    //    on its own, it may result in a nullptr exception on the other side
+                    //    because no additional information was provided. Crashing the screen
+                    //    reader.
+                    strongThis->RaiseAutomationEvent(AutomationEvents::TextPatternOnTextSelectionChanged);
+                }
             }
         });
     }
@@ -236,14 +245,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         dispatcher.RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [weakThis{ get_weak() }, sanitizedCopy{ hstring{ sanitized } }]() {
             if (auto strongThis{ weakThis.get() })
             {
-                try
+                if (auto control{ strongThis->_termControl.get() })
                 {
-                    strongThis->RaiseNotificationEvent(AutomationNotificationKind::ActionCompleted,
-                                                       AutomationNotificationProcessing::All,
-                                                       sanitizedCopy,
-                                                       L"TerminalTextOutput");
+                    try
+                    {
+                        strongThis->RaiseNotificationEvent(AutomationNotificationKind::ActionCompleted,
+                                                           AutomationNotificationProcessing::All,
+                                                           sanitizedCopy,
+                                                           L"TerminalTextOutput");
+                    }
+                    CATCH_LOG();
                 }
-                CATCH_LOG();
             }
         });
     }
@@ -284,17 +296,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     hstring TermControlAutomationPeer::GetNameCore() const
     {
         // fallback to title if profile name is empty
-        auto profileName = _termControl->GetProfileName();
-        if (profileName.empty())
+        if (auto control{ _termControl.get() })
         {
-            return _termControl->Title();
+            auto profileName = control->GetProfileName();
+            if (profileName.empty())
+            {
+                return control->Title();
+            }
+            else
+                return profileName;
         }
-        return profileName;
+
+        return L"";
     }
 
     hstring TermControlAutomationPeer::GetHelpTextCore() const
     {
-        return _termControl->Title();
+        if (auto control{ _termControl.get() })
+        {
+            return control->Title();
+        }
+        return L"";
     }
 
     AutomationLiveSetting TermControlAutomationPeer::GetLiveSettingCore() const
