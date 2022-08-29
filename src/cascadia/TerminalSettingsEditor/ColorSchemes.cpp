@@ -30,7 +30,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         InitializeComponent();
 
+        Automation::AutomationProperties::SetName(EditButton(), RS_(L"ColorScheme_EditButton/Text"));
         Automation::AutomationProperties::SetName(AddNewButton(), RS_(L"ColorScheme_AddNewButton/Text"));
+        Automation::AutomationProperties::SetName(DeleteButton(), RS_(L"ColorScheme_DeleteButton2/Text"));
     }
 
     void ColorSchemes::OnNavigatedTo(const NavigationEventArgs& e)

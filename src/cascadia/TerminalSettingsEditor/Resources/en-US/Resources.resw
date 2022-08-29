@@ -1169,11 +1169,15 @@
     <value>Add new</value>
     <comment>Button label that creates a new color scheme.</comment>
   </data>
+  <data name="ColorScheme_DeleteButton.Text" xml:space="preserve">
+    <value>Delete color scheme</value>
+    <comment>Button label that deletes the selected color scheme.</comment>
+  </data>
   <data name="ColorScheme_EditButton.Text" xml:space="preserve">
     <value>Edit</value>
     <comment>Button label that edits the currently selected color scheme.</comment>
   </data>
-  <data name="ColorScheme_DeleteButton.Content" xml:space="preserve">
+  <data name="ColorScheme_DeleteButton2.Text" xml:space="preserve">
     <value>Delete</value>
     <comment>Button label that deletes the selected color scheme.</comment>
   </data>
@@ -1492,5 +1496,9 @@
   <data name="ColorScheme_RenameDisclaimerInBox" xml:space="preserve">
     <value>This color scheme cannot be renamed because it is included by default.</value>
     <comment>Disclaimer presented near the controls to rename the color scheme when that functionality is disabled.</comment>
+  </data>
+  <data name="ColorSchemes_TextPreview.Text" xml:space="preserve">
+    <value>Text</value>
+    <comment>Displayed text used to demonstrate the styling of an associated color scheme.</comment>
   </data>
 </root>

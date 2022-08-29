@@ -82,14 +82,14 @@
                                 </Grid.RowDefinitions>
                                 <Border Grid.RowSpan="2"
                                         Grid.Column="0"
-                                        Width="45"
                                         Background="{x:Bind local:Converters.ColorToBrush(BackgroundColor.Color), Mode=OneWay}"
                                         CornerRadius="2">
-                                    <TextBlock HorizontalAlignment="Center"
+                                    <TextBlock x:Uid="ColorSchemes_TextPreview"
+                                               Padding="10,0,10,0"
+                                               HorizontalAlignment="Center"
                                                VerticalAlignment="Center"
                                                FontFamily="Cascadia Code"
-                                               Foreground="{x:Bind local:Converters.ColorToBrush(ForegroundColor.Color), Mode=OneWay}"
-                                               Text="Text" />
+                                               Foreground="{x:Bind local:Converters.ColorToBrush(ForegroundColor.Color), Mode=OneWay}" />
                                 </Border>
                                 <ContentControl Grid.Row="0"
                                                 Grid.Column="1"
@@ -185,20 +185,37 @@
                         Click="Edit_Click"
                         IsEnabled="{x:Bind ViewModel.HasCurrentScheme, Mode=OneWay}"
                         Style="{StaticResource BrowseButtonStyle}">
-                    <TextBlock x:Uid="ColorScheme_EditButton" />
+                    <StackPanel Orientation="Horizontal">
+                        <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                  Glyph="&#xE70F;" />
+                        <TextBlock x:Uid="ColorScheme_EditButton"
+                                   Margin="10,0,0,0" />
+                    </StackPanel>
                 </Button>
 
                 <Button x:Name="AddNewButton"
                         Click="AddNew_Click"
                         Style="{StaticResource BrowseButtonStyle}">
-                    <TextBlock x:Uid="ColorScheme_AddNewButton" />
+                    <StackPanel Orientation="Horizontal">
+                        <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                  Glyph="&#xE710;" />
+                        <TextBlock x:Uid="ColorScheme_AddNewButton"
+                                   Margin="10,0,0,0" />
+                    </StackPanel>
                 </Button>
 
                 <Button x:Name="DeleteButton"
-                        x:Uid="ColorScheme_DeleteButton"
                         Margin="10,0,0,0"
                         IsEnabled="{x:Bind ViewModel.CanDeleteCurrentScheme, Mode=OneWay}"
                         Style="{StaticResource DeleteButtonStyle}">
+                    <Button.Content>
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                      Glyph="&#xE74D;" />
+                            <TextBlock x:Uid="ColorScheme_DeleteButton2"
+                                       Margin="10,0,0,0" />
+                        </StackPanel>
+                    </Button.Content>
                     <Button.Flyout>
                         <Flyout>
                             <StackPanel>
