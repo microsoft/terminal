@@ -36,7 +36,6 @@ namespace Microsoft.Terminal.Settings.Model
 
     runtimeclass WindowTheme {
         Windows.UI.Xaml.ElementTheme RequestedTheme { get; };
-        Boolean UseMica { get; };
     }
 
     runtimeclass TabRowTheme {
