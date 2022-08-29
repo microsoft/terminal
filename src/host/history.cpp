@@ -370,7 +370,7 @@ CommandHistory* CommandHistory::s_Allocate(const std::wstring_view appName, cons
 
     // If we have no candidate already and we need one,
     // take the LRU (which is the back/last one) which isn't allocated
-    // and if posible the one with empty commands list.
+    // and if possible the one with empty commands list.
     if (!BestCandidate.has_value())
     {
         auto BestCandidateIt = s_historyLists.cend();
