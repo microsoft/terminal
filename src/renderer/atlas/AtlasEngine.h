@@ -1104,7 +1104,7 @@ namespace Microsoft::Console::Render
             bool enableTransparentBackground = false;
 
             std::wstring customPixelShaderPath; // changes are flagged as ApiInvalidations::Device
-            bool useRetroTerminalEffect = true; // changes are flagged as ApiInvalidations::Device
+            bool useRetroTerminalEffect = false; // changes are flagged as ApiInvalidations::Device
 
             ApiInvalidations invalidations = ApiInvalidations::Device;
         } _api;
