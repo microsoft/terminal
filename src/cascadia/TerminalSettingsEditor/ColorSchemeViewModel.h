@@ -21,7 +21,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct ColorSchemeViewModel : ColorSchemeViewModelT<ColorSchemeViewModel>, ViewModelHelper<ColorSchemeViewModel>
     {
     public:
-        ColorSchemeViewModel(const Model::ColorScheme scheme, const Editor::ColorSchemesPageViewModel parentPageVM);
+        ColorSchemeViewModel(const Model::ColorScheme scheme, const Editor::ColorSchemesPageViewModel parentPageVM, const Model::CascadiaSettings& settings);
 
         winrt::hstring Name();
         void Name(winrt::hstring newName);
@@ -33,6 +33,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool RequestRename(winrt::hstring newName);
 
         Editor::ColorTableEntry ColorEntryAt(uint32_t index);
+        bool IsDefaultScheme();
+        void RefreshIsDefault();
 
         // DON'T YOU DARE ADD A `WINRT_CALLBACK(PropertyChanged` TO A CLASS DERIVED FROM ViewModelHelper. Do this instead:
         using ViewModelHelper<ColorSchemeViewModel>::PropertyChanged;
@@ -49,6 +51,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     private:
         winrt::hstring _Name;
         Model::ColorScheme _scheme;
+        Model::CascadiaSettings _settings;
         weak_ref<Editor::ColorSchemesPageViewModel> _parentPageVM{ nullptr };
 
         void _ColorEntryChangedHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);

@@ -25,6 +25,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool RequestRenameCurrentScheme(winrt::hstring newName);
         void RequestDeleteCurrentScheme();
         void RequestEditSelectedScheme();
+        void RequestSetSelectedSchemeAsDefault();
 
         bool CanDeleteCurrentScheme() const;
 

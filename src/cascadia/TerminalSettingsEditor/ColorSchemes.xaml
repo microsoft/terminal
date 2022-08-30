@@ -54,6 +54,7 @@
                               Margin="0,2,0,2"
                               Style="{StaticResource SchemeGridStyle}">
                             <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
@@ -61,7 +62,21 @@
                                        VerticalAlignment="Center"
                                        Style="{StaticResource SettingsPageItemHeaderStyle}"
                                        Text="{x:Bind Name, Mode=OneWay}" />
-                            <Grid Grid.Column="1"
+                            <Border Grid.Column="1"
+                                    Margin="10,0,0,0"
+                                    Padding="2,0,2,0"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Center"
+                                    Background="{ThemeResource SystemAltMediumLowColor}"
+                                    BorderBrush="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="1"
+                                    Visibility="{x:Bind IsDefaultScheme, Mode=OneWay}">
+                                <TextBlock x:Uid="ColorScheme_DefaultTag"
+                                           Grid.Column="1"
+                                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                            </Border>
+                            <Grid Grid.Column="2"
                                   VerticalAlignment="Center"
                                   ColumnSpacing="4"
                                   RowSpacing="4">
@@ -228,11 +243,18 @@
                     </Button.Flyout>
                 </Button>
 
-                <TextBlock x:Name="SelectedSchemeDisclaimer"
-                           Margin="10,0,0,0"
-                           VerticalAlignment="Center"
-                           Style="{StaticResource DisclaimerStyle}" />
+                <Button x:Name="SetAsDefaultButton"
+                        x:Uid="ColorScheme_SetAsDefaultButton"
+                        Margin="10,0,0,0"
+                        Click="SetAsDefault_Click"
+                        IsEnabled="{x:Bind ViewModel.HasCurrentScheme, Mode=OneWay}"
+                        Style="{StaticResource BrowseButtonStyle}" />
             </StackPanel>
+
+            <TextBlock x:Name="SelectedSchemeDisclaimer"
+                       Margin="10,8,0,0"
+                       VerticalAlignment="Center"
+                       Style="{StaticResource DisclaimerStyle}" />
         </StackPanel>
     </ScrollViewer>
 </Page>

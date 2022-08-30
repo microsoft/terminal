@@ -20,6 +20,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean RequestRenameCurrentScheme(String newName);
         void RequestDeleteCurrentScheme();
         void RequestEditSelectedScheme();
+        void RequestSetSelectedSchemeAsDefault();
 
         ColorSchemeViewModel CurrentScheme;
         Boolean HasCurrentScheme { get; };

@@ -10,8 +10,9 @@
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    ColorSchemeViewModel::ColorSchemeViewModel(const Model::ColorScheme scheme, const Editor::ColorSchemesPageViewModel parentPageVM) :
+    ColorSchemeViewModel::ColorSchemeViewModel(const Model::ColorScheme scheme, const Editor::ColorSchemesPageViewModel parentPageVM, const Model::CascadiaSettings& settings) :
         _scheme{ scheme },
+        _settings{ settings },
         _NonBrightColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() },
         _BrightColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() },
         _parentPageVM{ parentPageVM }
@@ -47,6 +48,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     winrt::hstring ColorSchemeViewModel::Name()
     {
         return _Name;
+    }
+
+    bool ColorSchemeViewModel::IsDefaultScheme()
+    {
+        return _Name == _settings.ProfileDefaults().DefaultAppearance().ColorSchemeName();
+    }
+
+    void ColorSchemeViewModel::RefreshIsDefault()
+    {
+        _NotifyChanges(L"IsDefaultScheme");
     }
 
     bool ColorSchemeViewModel::RequestRename(winrt::hstring newName)

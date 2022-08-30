@@ -1501,4 +1501,12 @@
     <value>Text</value>
     <comment>Displayed text used to demonstrate the styling of an associated color scheme.</comment>
   </data>
+  <data name="ColorScheme_DefaultTag.Text" xml:space="preserve">
+    <value>default</value>
+    <comment>Text label displayed adjacent to a "color scheme" entry signifying that it is currently set as the default color scheme to be used.</comment>
+  </data>
+  <data name="ColorScheme_SetAsDefaultButton.Content" xml:space="preserve">
+    <value>Set as default</value>
+    <comment>Text label for a button that, when invoked, sets the selected color scheme as the default scheme to use.</comment>
+  </data>
 </root>

@@ -9,6 +9,7 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         String Name;
         Boolean IsInBoxScheme;
+        Boolean IsDefaultScheme { get; };
 
         Boolean RequestRename(String newName);
 

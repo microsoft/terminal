@@ -85,7 +85,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         for (const auto& pair : colorSchemeMap)
         {
             const auto scheme = pair.Value();
-            auto viewModel{ winrt::make<ColorSchemeViewModel>(scheme, *this) };
+            auto viewModel{ winrt::make<ColorSchemeViewModel>(scheme, *this, _settings) };
             viewModel.IsInBoxScheme(std::find(std::begin(InBoxSchemes), std::end(InBoxSchemes), scheme.Name()) != std::end(InBoxSchemes));
             allColorSchemes.emplace_back(viewModel);
 
@@ -108,7 +108,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _settings.GlobalSettings().AddColorScheme(scheme);
 
         // Construct the new color scheme VM
-        const auto schemeVM{ winrt::make<ColorSchemeViewModel>(scheme, *this) };
+        const auto schemeVM{ winrt::make<ColorSchemeViewModel>(scheme, *this, _settings) };
         _AllColorSchemes.Append(schemeVM);
         _viewModelToSchemeMap.Insert(schemeVM, scheme);
         return schemeVM;
@@ -173,6 +173,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (_CurrentScheme)
         {
             CurrentPage(ColorSchemesSubPage::EditColorScheme);
+        }
+    }
+
+    void ColorSchemesPageViewModel::RequestSetSelectedSchemeAsDefault()
+    {
+        if (_CurrentScheme)
+        {
+            _settings.ProfileDefaults().DefaultAppearance().ColorSchemeName(_CurrentScheme.Name());
+            for (const auto scheme : _AllColorSchemes)
+            {
+                auto schemeImpl{ get_self<ColorSchemeViewModel>(scheme) };
+                schemeImpl->RefreshIsDefault();
+            }
         }
     }
 
