@@ -1,13 +1,15 @@
-{"Registrations":[ 
+{
+  "$schema": "https://json.schemastore.org/component-detection-manifest.json",
+  "Registrations": [
     {
-      "component": { 
-       "type": "git",
+      "component": {
+        "type": "git",
         "git": {
           "repositoryUrl": "https://github.com/ekg/intervaltree",
           "commitHash": "b90527f9e6d51cd36ecbb50429e4524d3a418ea5"
         }
-       }
+      }
     }
- ],
- "Version": 1
+  ],
+  "Version": 1
 }
