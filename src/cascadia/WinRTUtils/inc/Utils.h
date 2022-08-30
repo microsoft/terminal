@@ -82,7 +82,7 @@ winrt::Windows::Foundation::IInspectable ThemeLookup(const auto& res,
     static const auto darkKey = winrt::box_value(L"Dark");
     // There isn't an ElementTheme::HighContrast.
 
-    auto requestedThemeKey = requestedTheme == winrt::Windows::UI::Xaml::ElementTheme::Dark ? darkKey : lightKey;
+    const auto requestedThemeKey = requestedTheme == winrt::Windows::UI::Xaml::ElementTheme::Dark ? darkKey : lightKey;
     for (const auto& dictionary : res.MergedDictionaries())
     {
         // Don't look in the MUX resources. They come first. A person

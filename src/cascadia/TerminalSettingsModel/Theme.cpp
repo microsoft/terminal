@@ -199,13 +199,24 @@ winrt::WUX::Media::Brush ThemeColor::Evaluate(const winrt::WUX::ResourceDictiona
     return nullptr;
 }
 
+// Method Description:
+// - This is not an actual property on a theme color setting, but rather
+//   something derived from the value itself. This is "the opacity we should use
+//   for this ThemeColor should it be used as a unfocusedTab color". Basically,
+//   terminalBackground and accent use 30% opacity when set, to match the how
+//   inactive tabs were colorized before themes existed.
+// Arguments:
+// - <none>
+// Return Value:
+// - the opacity that should be used if this color is being applied to a
+//   tab.unfocusedBackground property.
 uint8_t ThemeColor::UnfocusedTabOpacity() const noexcept
 {
     switch (ColorType())
     {
     case ThemeColorType::Accent:
     case ThemeColorType::TerminalBackground:
-        return 77;
+        return 77; // 77 = .3 * 256
     case ThemeColorType::Color:
         return _Color.a;
     }

@@ -4131,8 +4131,6 @@ namespace winrt::TerminalApp::implementation
                 }
                 else if (auto settingsTab = _GetFocusedTab().try_as<TerminalApp::SettingsTab>())
                 {
-                    // static Media::SolidColorBrush campbellBg{ winrt::Windows::UI::Color{ 0x0c, 0x0c, 0x0c } };
-                    // return campbellBg; //
                     return settingsTab.Content().try_as<Settings::Editor::MainPage>().BackgroundBrush();
                 }
                 return nullptr;
@@ -4158,8 +4156,8 @@ namespace winrt::TerminalApp::implementation
         //
         // Do this second, so that we already know the bgColor of the titlebar.
         {
-            auto tabBackground = theme.Tab() ? theme.Tab().Background() : nullptr;
-            auto tabUnfocusedBackground = theme.Tab() ? theme.Tab().UnfocusedBackground() : nullptr;
+            const auto tabBackground = theme.Tab() ? theme.Tab().Background() : nullptr;
+            const auto tabUnfocusedBackground = theme.Tab() ? theme.Tab().UnfocusedBackground() : nullptr;
             for (const auto& tab : _tabs)
             {
                 winrt::com_ptr<TabBase> tabImpl;
