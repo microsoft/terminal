@@ -73,7 +73,7 @@ namespace winrt::TerminalApp::implementation
         void _UpdateToolTip();
 
         void _RecalculateAndApplyTabColor();
-        void _ApplyTabColor(const winrt::Windows::UI::Color& color);
+        void _ApplyTabColorOnUIThread(const winrt::Windows::UI::Color& color);
         void _ClearTabBackgroundColor();
         void _RefreshVisualState();
         virtual winrt::Windows::UI::Xaml::Media::Brush _BackgroundBrush() = 0;

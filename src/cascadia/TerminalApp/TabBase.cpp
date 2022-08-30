@@ -285,7 +285,9 @@ namespace winrt::TerminalApp::implementation
         TabViewItem().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis]() {
             auto ptrTab = weakThis.get();
             if (!ptrTab)
+            {
                 return;
+            }
 
             auto tab{ ptrTab };
 
@@ -293,15 +295,15 @@ namespace winrt::TerminalApp::implementation
             // color specified in the profile. If neither of those were set,
             // then look to _themeColor to see if there's a value there.
             // Otherwise, clear our color, falling back to the TabView defaults.
-            auto currentColor = tab->GetTabColor();
+            const auto currentColor = tab->GetTabColor();
             if (currentColor.has_value())
             {
-                tab->_ApplyTabColor(currentColor.value());
+                tab->_ApplyTabColorOnUIThread(currentColor.value());
             }
             else if (tab->_themeColor != nullptr)
             {
                 // Safely get the active control's brush.
-                Media::Brush terminalBrush{ tab->_BackgroundBrush() };
+                const Media::Brush terminalBrush{ tab->_BackgroundBrush() };
 
                 if (const auto themeBrush{ tab->_themeColor.Evaluate(Application::Current().Resources(), terminalBrush, false) })
                 {
@@ -309,7 +311,7 @@ namespace winrt::TerminalApp::implementation
                     // TermControl could have an acrylic BG, for example). Take
                     // that brush, and get the color out of it. We don't really
                     // want to have the tab items themselves be acrylic.
-                    tab->_ApplyTabColor(til::color{ ThemeColor::ColorFromBrush(themeBrush) });
+                    tab->_ApplyTabColorOnUIThread(til::color{ ThemeColor::ColorFromBrush(themeBrush) });
                 }
                 else
                 {
@@ -332,7 +334,7 @@ namespace winrt::TerminalApp::implementation
     // - color: the color the user picked for their tab
     // Return Value:
     // - <none>
-    void TabBase::_ApplyTabColor(const winrt::Windows::UI::Color& color)
+    void TabBase::_ApplyTabColorOnUIThread(const winrt::Windows::UI::Color& color)
     {
         Media::SolidColorBrush selectedTabBrush{};
         Media::SolidColorBrush deselectedTabBrush{};
@@ -387,7 +389,7 @@ namespace winrt::TerminalApp::implementation
             _unfocusedThemeColor != nullptr)
         {
             // Safely get the active control's brush.
-            Media::Brush terminalBrush{ _BackgroundBrush() };
+            const Media::Brush terminalBrush{ _BackgroundBrush() };
 
             // Get the color of the brush.
             if (const auto themeBrush{ _unfocusedThemeColor.Evaluate(Application::Current().Resources(), terminalBrush, false) })
@@ -419,7 +421,7 @@ namespace winrt::TerminalApp::implementation
         //
         // We don't want that to result in white text on a white tab row for
         // inactive tabs.
-        auto deselectedActualColor = deselectedTabColor.blend_with(_tabRowColor);
+        const auto deselectedActualColor = deselectedTabColor.blend_with(_tabRowColor);
         if (TerminalApp::ColorHelper::IsBrightColor(deselectedActualColor))
         {
             deselectedFontBrush.Color(winrt::Windows::UI::Colors::Black());
@@ -501,7 +503,7 @@ namespace winrt::TerminalApp::implementation
         };
 
         // simply clear any of the colors in the tab's dict
-        for (auto keyString : keys)
+        for (const auto& keyString : keys)
         {
             auto key = winrt::box_value(keyString);
             if (TabViewItem().Resources().HasKey(key))

@@ -18,6 +18,7 @@
 #include "../server/Entrypoints.h"
 #include "../server/IoSorter.h"
 
+#include "../interactivity/inc/ISystemConfigurationProvider.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../interactivity/base/ApiDetector.hpp"
 #include "../interactivity/base/RemoteConsoleControl.hpp"
@@ -179,7 +180,7 @@ static bool s_IsOnDesktop()
 
         // We need to see if we were spawned from a link. If we were, we need to
         // call back into the shell to try to get all the console information from the link.
-        ServiceLocator::LocateSystemConfigurationProvider()->GetSettingsFromLink(&settings, Title, &TitleLength, CurDir, AppName);
+        ServiceLocator::LocateSystemConfigurationProvider()->GetSettingsFromLink(&settings, Title, &TitleLength, CurDir, AppName, nullptr);
 
         // If we weren't started from a link, this will already be set.
         // If LoadLinkInfo couldn't find anything, it will remove the flag so we can dig in the registry.
@@ -198,6 +199,22 @@ static bool s_IsOnDesktop()
         // strong nudge in that direction. If an application _doesn't_ want VT
         // processing, it's free to disable this setting, even in conpty mode.
         settings.SetVirtTermLevel(1);
+
+        // GH#9458 - In the case of a DefTerm handoff, the OriginalTitle might
+        // be stashed in the lnk. We want to crack that lnk open, so we can get
+        // that title from it, but we want to discard everything else. So build
+        // a dummy Settings object here, and read the link settings into it.
+        // `Title` will get filled with the title from the lnk, which we'll use
+        // below.
+
+        Settings temp;
+        // We're not gonna copy over StartupFlags to the main gci settings,
+        // because we generally don't think those are valuable in ConPTY mode.
+        // However, we do need to apply them to the temp we've created, so that
+        // GetSettingsFromLink will actually look for the link settings (it will
+        // skip that if STARTF_TITLEISLINKNAME is not set).
+        temp.SetStartupFlags(pStartupSettings->GetStartupFlags());
+        ServiceLocator::LocateSystemConfigurationProvider()->GetSettingsFromLink(&temp, Title, &TitleLength, CurDir, AppName, nullptr);
     }
 
     // 1. The settings we were passed contains STARTUPINFO structure settings to be applied last.
@@ -494,7 +511,7 @@ try
 
     const auto serverProcess = GetCurrentProcess();
 
-    ::Microsoft::WRL::ComPtr<ITerminalHandoff> handoff;
+    ::Microsoft::WRL::ComPtr<ITerminalHandoff2> handoff;
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "SrvInit_PrepareToCreateDelegationTerminal",
@@ -509,12 +526,71 @@ try
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
+    // As a part of defterm handoff, we're gonna try to pull a lot of
+    // information out of the link and startup info, so we can let the terminal
+    // know these things as well.
+    //
+    // To let the terminal know these things, we have to look them up now,
+    // before we normally would.
+    //
+    // Typically, we'll just go into `ConsoleCreateIoThread` below, which will
+    // pull out the CONSOLE_API_CONNECTINFO from this connect message, and then
+    // get the link properties out of the title later. Below are elements of
+    // ConsoleAllocateConsole and SetUpConsole that get the bits of STARTUP_INFO
+    // we care about for defterm handoffs.
+
+    // A placeholder that we'll read icon information into, instead of setting
+    // the globals icon state.
+    Microsoft::Console::Interactivity::IconInfo icon;
+
+    // To be able to actually process this connect message into a
+    // CONSOLE_API_CONNECTINFO, we need to hook up the ConDrvDeviceComm to the
+    // message. Usually, we'd create the ConDrvDeviceComm later, in
+    // ConsoleServerInitialization, but we can set it up early here.
+    // ConsoleServerInitialization will safely no-op if it already finds one.
+    g.pDeviceComm = new ConDrvDeviceComm(Server);
+    // load bearing: if you don't set this, the ConsoleInitializeConnectInfo will fail.
+    connectMessage->_pDeviceComm = g.pDeviceComm;
+    CONSOLE_API_CONNECTINFO Cac;
+    RETURN_IF_NTSTATUS_FAILED(ConsoleInitializeConnectInfo(connectMessage, &Cac));
+
+    // BEGIN code from SetUpConsole
+    // Create a temporary Settings object to parse the settings into, rather
+    // than parsing them into the global settings object (gci).
+    Settings settings{};
+    // We need to see if we were spawned from a link. If we were, we need to
+    // call back into the OS shell to try to get all the console information from the link.
+    //
+    // load bearing: if you don't pass the StartupFlags, then
+    // GetSettingsFromLink might not even bother attempting to check the lnk.
+    settings.SetStartupFlags(Cac.ConsoleInfo.GetStartupFlags());
+    ServiceLocator::LocateSystemConfigurationProvider()->GetSettingsFromLink(&settings,
+                                                                             Cac.Title,
+                                                                             &Cac.TitleLength,
+                                                                             Cac.CurDir,
+                                                                             Cac.AppName,
+                                                                             &icon);
+
+    // 1. The settings we were passed contains STARTUPINFO structure settings to be applied last.
+    settings.ApplyStartupInfo(&Cac.ConsoleInfo);
+    // END code from SetUpConsole
+
+    // Take what we've collected, and bundle it up for handoff.
+    auto title = wil::make_bstr(Cac.Title);
+    auto iconPath = wil::make_bstr(icon.path.data());
+    TERMINAL_STARTUP_INFO myStartupInfo{
+        title.get(),
+        iconPath.get(),
+        icon.index
+    };
+
     RETURN_IF_FAILED(handoff->EstablishPtyHandoff(inPipeTheirSide.get(),
                                                   outPipeTheirSide.get(),
                                                   signalPipeTheirSide.get(),
                                                   refHandle.get(),
                                                   serverProcess,
-                                                  clientProcess.get()));
+                                                  clientProcess.get(),
+                                                  myStartupInfo));
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "SrvInit_DelegateToTerminalSucceeded",
