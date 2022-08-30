@@ -1038,6 +1038,9 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
     case DispatchTypes::ModeParams::XTERM_EnableDECCOLMSupport:
         success = EnableDECCOLMSupport(enable);
         break;
+    case DispatchTypes::ModeParams::DECBKM_BackarrowKeyMode:
+        success = _SetInputMode(TerminalInput::Mode::BackarrowKey, enable);
+        break;
     case DispatchTypes::ModeParams::VT200_MOUSE_MODE:
         success = EnableVT200MouseMode(enable);
         break;
