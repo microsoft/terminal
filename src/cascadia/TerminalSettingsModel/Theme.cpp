@@ -204,7 +204,7 @@ winrt::WUX::Media::Brush ThemeColor::Evaluate(const winrt::WUX::ResourceDictiona
 //   something derived from the value itself. This is "the opacity we should use
 //   for this ThemeColor should it be used as a unfocusedTab color". Basically,
 //   terminalBackground and accent use 30% opacity when set, to match the how
-//   inactive tabs were colorized before themes existed.
+//   inactive tabs were colored before themes existed.
 // Arguments:
 // - <none>
 // Return Value:
