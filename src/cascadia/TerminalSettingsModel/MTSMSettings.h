@@ -122,9 +122,8 @@ Author(s):
     X(winrt::Microsoft::Terminal::Settings::Model::TabRowTheme, TabRow, "tabRow", nullptr) \
     X(winrt::Microsoft::Terminal::Settings::Model::TabTheme, Tab, "tab", nullptr)
 
-#define MTSM_THEME_WINDOW_SETTINGS(X)                                                                                              \
-    X(winrt::Windows::UI::Xaml::ElementTheme, RequestedTheme, "applicationTheme", winrt::Windows::UI::Xaml::ElementTheme::Default) \
-    X(bool, UseMica, "useMica", false)
+#define MTSM_THEME_WINDOW_SETTINGS(X) \
+    X(winrt::Windows::UI::Xaml::ElementTheme, RequestedTheme, "applicationTheme", winrt::Windows::UI::Xaml::ElementTheme::Default)
 
 #define MTSM_THEME_TABROW_SETTINGS(X)                                                             \
     X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, Background, "background", nullptr) \

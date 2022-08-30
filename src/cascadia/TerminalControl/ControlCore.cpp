@@ -421,7 +421,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _updateSelectionUI();
                 return true;
             }
-            else if (vkey == VK_RETURN && mods.IsCtrlPressed() && _terminal->IsTargetingUrl())
+            else if (vkey == VK_RETURN && mods.IsCtrlPressed() && !mods.IsAltPressed() && !mods.IsShiftPressed() && _terminal->SelectionIsTargetingUrl())
             {
                 // Ctrl + Enter --> Open URL
                 auto lock = _terminal->LockForReading();
@@ -911,6 +911,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void ControlCore::_refreshSizeUnderLock()
     {
+        if (_IsClosing())
+        {
+            return;
+        }
+
         auto cx = gsl::narrow_cast<til::CoordType>(_panelWidth * _compositionScale);
         auto cy = gsl::narrow_cast<til::CoordType>(_panelHeight * _compositionScale);
 
