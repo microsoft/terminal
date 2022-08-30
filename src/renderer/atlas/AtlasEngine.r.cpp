@@ -44,7 +44,8 @@ constexpr bool isInInversionList(const std::array<wchar_t, N>& ranges, wchar_t n
     return (idx & 1) != 0;
 }
 
-constexpr D2D1_COLOR_F colorFromU32(uint32_t rgba)
+template<typename T = D2D1_COLOR_F>
+constexpr T colorFromU32(uint32_t rgba)
 {
     const auto r = static_cast<float>((rgba >> 0) & 0xff) / 255.0f;
     const auto g = static_cast<float>((rgba >> 8) & 0xff) / 255.0f;
@@ -93,10 +94,15 @@ try
             _r.deviceContext->Unmap(_r.cellBuffer.get(), 0);
         }
 
-        // After Present calls, the back buffer needs to explicitly be
-        // re-bound to the D3D11 immediate context before it can be used again.
-        _r.deviceContext->OMSetRenderTargets(1, _r.renderTargetView.addressof(), nullptr);
-        _r.deviceContext->Draw(3, 0);
+        if (_r.customPixelShader) [[unlikely]]
+        {
+            _renderWithCustomShader();
+        }
+        else
+        {
+            _r.deviceContext->OMSetRenderTargets(1, _r.renderTargetView.addressof(), nullptr);
+            _r.deviceContext->Draw(3, 0);
+        }
 
         // > IDXGISwapChain::Present: Partial Presentation (using a dirty rects or scroll) is not supported
         // > for SwapChains created with DXGI_SWAP_EFFECT_DISCARD or DXGI_SWAP_EFFECT_FLIP_DISCARD.
@@ -119,23 +125,103 @@ catch (const wil::ResultException& exception)
 }
 CATCH_RETURN()
 
+[[nodiscard]] bool AtlasEngine::RequiresContinuousRedraw() noexcept
+{
+    return debugGeneralPerformance || _r.requiresContinuousRedraw;
+}
+
+void AtlasEngine::WaitUntilCanRender() noexcept
+{
+    // IDXGISwapChain2::GetFrameLatencyWaitableObject returns an auto-reset event.
+    // Once we've waited on the event, waiting on it again will block until the timeout elapses.
+    // _r.waitForPresentation guards against this.
+    if (!debugGeneralPerformance && std::exchange(_r.waitForPresentation, false))
+    {
+        WaitForSingleObjectEx(_r.frameLatencyWaitableObject.get(), 100, true);
+#ifndef NDEBUG
+        _r.frameLatencyWaitableObjectUsed = true;
+#endif
+    }
+}
+
 #pragma endregion
+
+void AtlasEngine::_renderWithCustomShader() const
+{
+    // Render with our main shader just like Present().
+    {
+        // OM: Output Merger
+        _r.deviceContext->OMSetRenderTargets(1, _r.customOffscreenTextureTargetView.addressof(), nullptr);
+        _r.deviceContext->Draw(3, 0);
+    }
+
+    // Update the custom shader's constant buffer.
+    {
+        CustomConstBuffer data;
+        data.time = std::chrono::duration<float>(std::chrono::steady_clock::now() - _r.customShaderStartTime).count();
+        data.scale = _r.pixelPerDIP;
+        data.resolution.x = static_cast<float>(_r.cellCount.x * _r.fontMetrics.cellSize.x);
+        data.resolution.y = static_cast<float>(_r.cellCount.y * _r.fontMetrics.cellSize.y);
+        data.background = colorFromU32<f32x4>(_r.backgroundColor);
+
+#pragma warning(suppress : 26494) // Variable 'mapped' is uninitialized. Always initialize an object (type.5).
+        D3D11_MAPPED_SUBRESOURCE mapped;
+        THROW_IF_FAILED(_r.deviceContext->Map(_r.customShaderConstantBuffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
+        assert(mapped.RowPitch >= sizeof(data));
+        memcpy(mapped.pData, &data, sizeof(data));
+        _r.deviceContext->Unmap(_r.customShaderConstantBuffer.get(), 0);
+    }
+
+    // Render with the custom shader.
+    {
+        // OM: Output Merger
+        // customOffscreenTextureView was just rendered to via customOffscreenTextureTargetView and is
+        // set as the output target. Before we can use it as an input we have to remove it as an output.
+        _r.deviceContext->OMSetRenderTargets(1, _r.renderTargetView.addressof(), nullptr);
+
+        // VS: Vertex Shader
+        _r.deviceContext->VSSetShader(_r.customVertexShader.get(), nullptr, 0);
+
+        // PS: Pixel Shader
+        _r.deviceContext->PSSetShader(_r.customPixelShader.get(), nullptr, 0);
+        _r.deviceContext->PSSetConstantBuffers(0, 1, _r.customShaderConstantBuffer.addressof());
+        _r.deviceContext->PSSetShaderResources(0, 1, _r.customOffscreenTextureView.addressof());
+        _r.deviceContext->PSSetSamplers(0, 1, _r.customShaderSamplerState.addressof());
+
+        _r.deviceContext->Draw(4, 0);
+    }
+
+    // For the next frame we need to restore our context state.
+    {
+        // VS: Vertex Shader
+        _r.deviceContext->VSSetShader(_r.vertexShader.get(), nullptr, 0);
+
+        // PS: Pixel Shader
+        _r.deviceContext->PSSetShader(_r.pixelShader.get(), nullptr, 0);
+        _r.deviceContext->PSSetConstantBuffers(0, 1, _r.constantBuffer.addressof());
+        const std::array resources{ _r.cellView.get(), _r.atlasView.get() };
+        _r.deviceContext->PSSetShaderResources(0, gsl::narrow_cast<UINT>(resources.size()), resources.data());
+        _r.deviceContext->PSSetSamplers(0, 0, nullptr);
+    }
+}
 
 void AtlasEngine::_setShaderResources() const
 {
-    _r.deviceContext->VSSetShader(_r.vertexShader.get(), nullptr, 0);
-    _r.deviceContext->PSSetShader(_r.pixelShader.get(), nullptr, 0);
-
+    // IA: Input Assembler
     // Our vertex shader uses a trick from Bill Bilodeau published in
     // "Vertex Shader Tricks" at GDC14 to draw a fullscreen triangle
     // without vertex/index buffers. This prepares our context for this.
     _r.deviceContext->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
     _r.deviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
     _r.deviceContext->IASetInputLayout(nullptr);
-    _r.deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    _r.deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
+    // VS: Vertex Shader
+    _r.deviceContext->VSSetShader(_r.vertexShader.get(), nullptr, 0);
+
+    // PS: Pixel Shader
+    _r.deviceContext->PSSetShader(_r.pixelShader.get(), nullptr, 0);
     _r.deviceContext->PSSetConstantBuffers(0, 1, _r.constantBuffer.addressof());
-
     const std::array resources{ _r.cellView.get(), _r.atlasView.get() };
     _r.deviceContext->PSSetShaderResources(0, gsl::narrow_cast<UINT>(resources.size()), resources.data());
 }

@@ -7,6 +7,9 @@
 #include <shader_ps.h>
 #include <shader_vs.h>
 
+#include <custom_shader_ps.h>
+#include <custom_shader_vs.h>
+
 #include "../../interactivity/win32/CustomWindowMessages.h"
 
 // #### NOTE ####
@@ -300,25 +303,6 @@ try
     return S_OK;
 }
 CATCH_RETURN()
-
-[[nodiscard]] bool AtlasEngine::RequiresContinuousRedraw() noexcept
-{
-    return debugGeneralPerformance;
-}
-
-void AtlasEngine::WaitUntilCanRender() noexcept
-{
-    // IDXGISwapChain2::GetFrameLatencyWaitableObject returns an auto-reset event.
-    // Once we've waited on the event, waiting on it again will block until the timeout elapses.
-    // _r.waitForPresentation guards against this.
-    if (!debugGeneralPerformance && std::exchange(_r.waitForPresentation, false))
-    {
-        WaitForSingleObjectEx(_r.frameLatencyWaitableObject.get(), 100, true);
-#ifndef NDEBUG
-        _r.frameLatencyWaitableObjectUsed = true;
-#endif
-    }
-}
 
 [[nodiscard]] HRESULT AtlasEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
 {
@@ -668,6 +652,85 @@ void AtlasEngine::_createResources()
 
         THROW_IF_FAILED(_r.device->CreateVertexShader(&shader_vs[0], sizeof(shader_vs), nullptr, _r.vertexShader.put()));
         THROW_IF_FAILED(_r.device->CreatePixelShader(&shader_ps[0], sizeof(shader_ps), nullptr, _r.pixelShader.put()));
+
+        if (!_api.customPixelShaderPath.empty())
+        {
+            const auto target = _r.device->GetFeatureLevel() == D3D_FEATURE_LEVEL_10_1 ? "ps_4_1" : "ps_5_0";
+            static constexpr auto flags = D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR | D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_WARNINGS_ARE_ERRORS
+#ifdef NDEBUG
+                                          | D3DCOMPILE_OPTIMIZATION_LEVEL3;
+#else
+                                          | D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+#endif
+
+            wil::com_ptr<ID3DBlob> error;
+            wil::com_ptr<ID3DBlob> blob;
+            const auto hr = D3DCompileFromFile(
+                /* pFileName   */ _api.customPixelShaderPath.c_str(),
+                /* pDefines    */ nullptr,
+                /* pInclude    */ D3D_COMPILE_STANDARD_FILE_INCLUDE,
+                /* pEntrypoint */ "main",
+                /* pTarget     */ target,
+                /* Flags1      */ flags,
+                /* Flags2      */ 0,
+                /* ppCode      */ blob.addressof(),
+                /* ppErrorMsgs */ error.addressof());
+
+            if (SUCCEEDED(hr))
+            {
+                THROW_IF_FAILED(_r.device->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, _r.customPixelShader.put()));
+            }
+            else
+            {
+                if (error)
+                {
+                    LOG_HR_MSG(hr, "%*hs", error->GetBufferSize(), error->GetBufferPointer());
+                }
+                else
+                {
+                    LOG_HR(hr);
+                }
+
+                if (_api.warningCallback)
+                {
+                    _api.warningCallback(D2DERR_SHADER_COMPILE_FAILED);
+                }
+            }
+
+            _r.requiresContinuousRedraw = true;
+        }
+        else if (_api.useRetroTerminalEffect)
+        {
+            THROW_IF_FAILED(_r.device->CreatePixelShader(&custom_shader_ps[0], sizeof(custom_shader_ps), nullptr, _r.customPixelShader.put()));
+        }
+
+        if (_r.customPixelShader)
+        {
+            THROW_IF_FAILED(_r.device->CreateVertexShader(&custom_shader_vs[0], sizeof(custom_shader_vs), nullptr, _r.customVertexShader.put()));
+
+            {
+                D3D11_BUFFER_DESC desc{};
+                desc.ByteWidth = sizeof(CustomConstBuffer);
+                desc.Usage = D3D11_USAGE_DYNAMIC;
+                desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+                desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+                THROW_IF_FAILED(_r.device->CreateBuffer(&desc, nullptr, _r.customShaderConstantBuffer.put()));
+            }
+
+            {
+                D3D11_SAMPLER_DESC desc{};
+                desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+                desc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+                desc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+                desc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+                desc.MaxAnisotropy = 1;
+                desc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+                desc.MaxLOD = D3D11_FLOAT32_MAX;
+                THROW_IF_FAILED(_r.device->CreateSamplerState(&desc, _r.customShaderSamplerState.put()));
+            }
+
+            _r.customShaderStartTime = std::chrono::steady_clock::now();
+        }
     }
 
     WI_ClearFlag(_api.invalidations, ApiInvalidations::Device);
@@ -711,10 +774,9 @@ void AtlasEngine::_createSwapChain()
         desc.BufferCount = 2;
         desc.Scaling = DXGI_SCALING_NONE;
         desc.SwapEffect = _sr.isWindows10OrGreater && !_r.d2dMode ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-        // * HWND swap chains can't do alpha.
-        // * If our background is opaque we can enable "independent" flips by setting DXGI_SWAP_EFFECT_FLIP_DISCARD and DXGI_ALPHA_MODE_IGNORE.
-        //   As our swap chain won't have to compose with DWM anymore it reduces the display latency dramatically.
-        desc.AlphaMode = _api.hwnd || _api.backgroundOpaqueMixin ? DXGI_ALPHA_MODE_IGNORE : DXGI_ALPHA_MODE_PREMULTIPLIED;
+        // If our background is opaque we can enable "independent" flips by setting DXGI_SWAP_EFFECT_FLIP_DISCARD and DXGI_ALPHA_MODE_IGNORE.
+        // As our swap chain won't have to compose with DWM anymore it reduces the display latency dramatically.
+        desc.AlphaMode = _api.backgroundOpaqueMixin ? DXGI_ALPHA_MODE_IGNORE : DXGI_ALPHA_MODE_PREMULTIPLIED;
         desc.Flags = debugGeneralPerformance ? 0 : DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
 
         wil::com_ptr<IDXGIFactory2> dxgiFactory;
@@ -829,6 +891,20 @@ void AtlasEngine::_recreateSizeDependentResources()
             wil::com_ptr<ID3D11Texture2D> buffer;
             THROW_IF_FAILED(_r.swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), buffer.put_void()));
             THROW_IF_FAILED(_r.device->CreateRenderTargetView(buffer.get(), nullptr, _r.renderTargetView.put()));
+        }
+        if (_r.customPixelShader)
+        {
+            D3D11_TEXTURE2D_DESC desc{};
+            desc.Width = _api.sizeInPixel.x;
+            desc.Height = _api.sizeInPixel.y;
+            desc.MipLevels = 1;
+            desc.ArraySize = 1;
+            desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+            desc.SampleDesc = { 1, 0 };
+            desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+            THROW_IF_FAILED(_r.device->CreateTexture2D(&desc, nullptr, _r.customOffscreenTexture.addressof()));
+            THROW_IF_FAILED(_r.device->CreateShaderResourceView(_r.customOffscreenTexture.get(), nullptr, _r.customOffscreenTextureView.addressof()));
+            THROW_IF_FAILED(_r.device->CreateRenderTargetView(_r.customOffscreenTexture.get(), nullptr, _r.customOffscreenTextureTargetView.addressof()));
         }
 
         // Tell D3D which parts of the render target will be visible.

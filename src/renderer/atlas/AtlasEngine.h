@@ -114,6 +114,16 @@ namespace Microsoft::Console::Render
         };
 
         template<typename T>
+        struct vec3
+        {
+            T x{};
+            T y{};
+            T z{};
+
+            ATLAS_POD_OPS(vec3)
+        };
+
+        template<typename T>
         struct vec4
         {
             T x{};
@@ -155,6 +165,7 @@ namespace Microsoft::Console::Render
 
         using f32 = float;
         using f32x2 = vec2<f32>;
+        using f32x3 = vec3<f32>;
         using f32x4 = vec4<f32>;
 
         struct TextAnalyzerResult
@@ -857,6 +868,16 @@ namespace Microsoft::Console::Render
 #pragma warning(suppress : 4324) // 'ConstBuffer': structure was padded due to alignment specifier
         };
 
+        struct alignas(16) CustomConstBuffer
+        {
+            // WARNING: Same rules as for ConstBuffer above apply.
+            alignas(sizeof(f32)) f32 time = 0;
+            alignas(sizeof(f32)) f32 scale = 0;
+            alignas(sizeof(f32x2)) f32x2 resolution;
+            alignas(sizeof(f32x4)) f32x4 background;
+#pragma warning(suppress : 4324) // 'CustomConstBuffer': structure was padded due to alignment specifier
+        };
+
         // Handled in BeginPaint()
         enum class ApiInvalidations : u8
         {
@@ -904,11 +925,12 @@ namespace Microsoft::Console::Render
         bool _emplaceGlyph(IDWriteFontFace* fontFace, size_t bufferPos1, size_t bufferPos2);
 
         // AtlasEngine.api.cpp
-        void _resolveAntialiasingMode() noexcept;
+        void _resolveTransparencySettings() noexcept;
         void _updateFont(const wchar_t* faceName, const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes);
         void _resolveFontMetrics(const wchar_t* faceName, const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, FontMetrics* fontMetrics = nullptr) const;
 
         // AtlasEngine.r.cpp
+        void _renderWithCustomShader() const;
         void _setShaderResources() const;
         void _updateConstantBuffer() const noexcept;
         void _adjustAtlasSize();
@@ -974,6 +996,14 @@ namespace Microsoft::Console::Render
             wil::com_ptr<ID3D11Buffer> constantBuffer;
             wil::com_ptr<ID3D11Buffer> cellBuffer;
             wil::com_ptr<ID3D11ShaderResourceView> cellView;
+            wil::com_ptr<ID3D11Texture2D> customOffscreenTexture;
+            wil::com_ptr<ID3D11ShaderResourceView> customOffscreenTextureView;
+            wil::com_ptr<ID3D11RenderTargetView> customOffscreenTextureTargetView;
+            wil::com_ptr<ID3D11VertexShader> customVertexShader;
+            wil::com_ptr<ID3D11PixelShader> customPixelShader;
+            wil::com_ptr<ID3D11Buffer> customShaderConstantBuffer;
+            wil::com_ptr<ID3D11SamplerState> customShaderSamplerState;
+            std::chrono::steady_clock::time_point customShaderStartTime;
 
             // D2D resources
             wil::com_ptr<ID3D11Texture2D> atlasBuffer;
@@ -1013,6 +1043,7 @@ namespace Microsoft::Console::Render
             i16 scrollOffset = 0;
             bool d2dMode = false;
             bool waitForPresentation = false;
+            bool requiresContinuousRedraw = false;
 
 #ifndef NDEBUG
             // See documentation for IDXGISwapChain2::GetFrameLatencyWaitableObject method:
@@ -1045,7 +1076,7 @@ namespace Microsoft::Console::Render
             u16x2 sizeInPixel; // changes are flagged as ApiInvalidations::Size
 
             // UpdateDrawingBrushes()
-            u32 backgroundOpaqueMixin = 0xff000000; // changes are flagged as ApiInvalidations::Device
+            u32 backgroundOpaqueMixin = 0xff000000; // changes are flagged as ApiInvalidations::SwapChain
             u32x2 currentColor;
             AtlasKeyAttributes attributes{};
             u16x2 lastPaintBufferLineCoord;
@@ -1069,7 +1100,11 @@ namespace Microsoft::Console::Render
             HWND hwnd = nullptr;
             u16 dpi = USER_DEFAULT_SCREEN_DPI; // changes are flagged as ApiInvalidations::Font|Size
             u8 antialiasingMode = D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE; // changes are flagged as ApiInvalidations::Font
-            u8 realizedAntialiasingMode = D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE; // caches antialiasingMode, depends on antialiasingMode and backgroundOpaqueMixin, see _resolveAntialiasingMode
+            u8 realizedAntialiasingMode = D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE; // caches antialiasingMode, depends on antialiasingMode and backgroundOpaqueMixin, see _resolveTransparencySettings
+            bool enableTransparentBackground = false;
+
+            std::wstring customPixelShaderPath; // changes are flagged as ApiInvalidations::Device
+            bool useRetroTerminalEffect = true; // changes are flagged as ApiInvalidations::Device
 
             ApiInvalidations invalidations = ApiInvalidations::Device;
         } _api;
