@@ -69,7 +69,6 @@ try
 
     if (_r.d2dMode) [[unlikely]]
     {
-        // TODO gutters
         _d2dPresent();
     }
     else
