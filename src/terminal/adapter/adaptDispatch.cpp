@@ -1861,6 +1861,9 @@ bool AdaptDispatch::HardReset()
     EnableSGRExtendedMouseMode(false);
     EnableAnyEventMouseMode(false);
 
+    // Reset the Backarrow Key mode
+    _SetInputMode(TerminalInput::Mode::BackarrowKey, false);
+
     // Delete all current tab stops and reapply
     _ResetTabStops();
 
