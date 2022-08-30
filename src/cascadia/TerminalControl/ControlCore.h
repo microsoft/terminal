@@ -95,7 +95,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void AdjustOpacity(const double adjustment);
         void ResumeRendering();
 
-        void UpdatePatternLocations();
         void SetHoveredCell(Core::Point terminalPosition);
         void ClearHoveredCell();
         winrt::hstring GetHyperlink(const Core::Point position) const;
@@ -230,7 +229,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::com_ptr<ControlSettings> _settings{ nullptr };
 
-        std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal{ nullptr };
+        std::shared_ptr<::Microsoft::Terminal::Core::Terminal> _terminal{ nullptr };
 
         // NOTE: _renderEngine must be ordered before _renderer.
         //
