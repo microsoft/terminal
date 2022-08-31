@@ -398,6 +398,11 @@ void AtlasEngine::SetSelectionBackground(const COLORREF color, const float alpha
 
 void AtlasEngine::SetSoftwareRendering(bool enable) noexcept
 {
+    if (_api.useSoftwareRendering != enable)
+    {
+        _api.useSoftwareRendering = enable;
+        WI_SetFlag(_api.invalidations, ApiInvalidations::Device);
+    }
 }
 
 void AtlasEngine::SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept

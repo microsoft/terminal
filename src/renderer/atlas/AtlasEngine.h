@@ -1105,6 +1105,7 @@ namespace Microsoft::Console::Render
 
             std::wstring customPixelShaderPath; // changes are flagged as ApiInvalidations::Device
             bool useRetroTerminalEffect = false; // changes are flagged as ApiInvalidations::Device
+            bool useSoftwareRendering = false; // changes are flagged as ApiInvalidations::Device
 
             ApiInvalidations invalidations = ApiInvalidations::Device;
         } _api;

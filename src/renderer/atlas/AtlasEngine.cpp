@@ -577,15 +577,6 @@ void AtlasEngine::_createResources()
     {
         wil::com_ptr<ID3D11DeviceContext> deviceContext;
 
-        // Why D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS:
-        // This flag prevents the driver from creating a large thread pool for things like shader computations
-        // that would be advantageous for games. For us this has only a minimal performance benefit,
-        // but comes with a large memory usage overhead. At the time of writing the Nvidia
-        // driver launches $cpu_thread_count more worker threads without this flag.
-        static constexpr std::array driverTypes{
-            std::pair{ D3D_DRIVER_TYPE_HARDWARE, D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS },
-            std::pair{ D3D_DRIVER_TYPE_WARP, static_cast<D3D11_CREATE_DEVICE_FLAG>(0) },
-        };
         static constexpr std::array featureLevels{
             D3D_FEATURE_LEVEL_11_1,
             D3D_FEATURE_LEVEL_11_0,
@@ -593,24 +584,40 @@ void AtlasEngine::_createResources()
             D3D_FEATURE_LEVEL_10_0,
         };
 
-        auto hr = S_OK;
-        for (const auto& [driverType, additionalFlags] : driverTypes)
+        auto hr = E_UNEXPECTED;
+
+        if (!_api.useSoftwareRendering)
         {
+            // Why D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS:
+            // This flag prevents the driver from creating a large thread pool for things like shader computations
+            // that would be advantageous for games. For us this has only a minimal performance benefit,
+            // but comes with a large memory usage overhead. At the time of writing the Nvidia
+            // driver launches $cpu_thread_count more worker threads without this flag.
             hr = D3D11CreateDevice(
                 /* pAdapter */ nullptr,
-                /* DriverType */ driverType,
+                /* DriverType */ D3D_DRIVER_TYPE_HARDWARE,
                 /* Software */ nullptr,
-                /* Flags */ deviceFlags | additionalFlags,
+                /* Flags */ deviceFlags | D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS,
                 /* pFeatureLevels */ featureLevels.data(),
                 /* FeatureLevels */ gsl::narrow_cast<UINT>(featureLevels.size()),
                 /* SDKVersion */ D3D11_SDK_VERSION,
                 /* ppDevice */ _r.device.put(),
                 /* pFeatureLevel */ nullptr,
                 /* ppImmediateContext */ deviceContext.put());
-            if (SUCCEEDED(hr))
-            {
-                break;
-            }
+        }
+        if (FAILED(hr))
+        {
+            hr = D3D11CreateDevice(
+                /* pAdapter */ nullptr,
+                /* DriverType */ D3D_DRIVER_TYPE_WARP,
+                /* Software */ nullptr,
+                /* Flags */ deviceFlags,
+                /* pFeatureLevels */ featureLevels.data(),
+                /* FeatureLevels */ gsl::narrow_cast<UINT>(featureLevels.size()),
+                /* SDKVersion */ D3D11_SDK_VERSION,
+                /* ppDevice */ _r.device.put(),
+                /* pFeatureLevel */ nullptr,
+                /* ppImmediateContext */ deviceContext.put());
         }
         THROW_IF_FAILED(hr);
 
