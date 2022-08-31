@@ -3092,12 +3092,24 @@ namespace winrt::TerminalApp::implementation
         _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonBackgroundPointerOver"), backgroundHoverBrush);
         _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonBackgroundPressed"), backgroundPressedBrush);
 
+        // Load bearing: The SplitButton uses SplitButtonForegroundSecondary for
+        // the secondary button, but {TemplateBinding Foreground} for the
+        // primary button.
         _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonForeground"), foregroundBrush);
         _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonForegroundPointerOver"), foregroundBrush);
         _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonForegroundPressed"), foregroundBrush);
+        _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonForegroundSecondary"), foregroundBrush);
+        _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonForegroundSecondaryPressed"), foregroundBrush);
 
         _newTabButton.Background(backgroundBrush);
         _newTabButton.Foreground(foregroundBrush);
+
+        // This is just like what we do in TabBase::_RefreshVisualState. We need
+        // to manually toggle the visual state, so the setters in the visual
+        // state group will re-apply, and set our currently selected colors in
+        // the resources.
+        VisualStateManager::GoToState(_newTabButton, L"FlyoutOpen", true);
+        VisualStateManager::GoToState(_newTabButton, L"Normal", true);
     }
 
     // Method Description:
@@ -3117,8 +3129,10 @@ namespace winrt::TerminalApp::implementation
             L"SplitButtonBackgroundPointerOver",
             L"SplitButtonBackgroundPressed",
             L"SplitButtonForeground",
+            L"SplitButtonForegroundSecondary",
             L"SplitButtonForegroundPointerOver",
-            L"SplitButtonForegroundPressed"
+            L"SplitButtonForegroundPressed",
+            L"SplitButtonForegroundSecondaryPressed"
         };
 
         // simply clear any of the colors in the split button's dict
