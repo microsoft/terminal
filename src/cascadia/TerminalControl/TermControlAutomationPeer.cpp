@@ -298,13 +298,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // fallback to title if profile name is empty
         if (auto control{ _termControl.get() })
         {
-            auto profileName = control->GetProfileName();
+            const auto profileName = control->GetProfileName();
             if (profileName.empty())
             {
                 return control->Title();
             }
             else
+            {
                 return profileName;
+            }
         }
 
         return L"";
@@ -312,7 +314,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     hstring TermControlAutomationPeer::GetHelpTextCore() const
     {
-        if (auto control{ _termControl.get() })
+        if (const auto control{ _termControl.get() })
         {
             return control->Title();
         }

@@ -707,7 +707,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                              margins.Top,
                                              margins.Right,
                                              margins.Bottom };
-                auto foo = get_weak();
                 _automationPeer = winrt::make<implementation::TermControlAutomationPeer>(get_weak(), padding, interactivityAutoPeer);
                 return _automationPeer;
             }
