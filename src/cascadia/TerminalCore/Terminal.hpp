@@ -281,6 +281,7 @@ public:
     void SelectAll();
     SelectionInteractionMode SelectionMode() const noexcept;
     void SwitchSelectionEndpoint();
+    void ExpandSelectionToWord();
     void ToggleMarkMode();
     void SelectHyperlink(const SearchDirection dir);
     bool SelectionIsTargetingUrl() const noexcept;

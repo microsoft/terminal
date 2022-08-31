@@ -87,6 +87,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ToggleMarkMode();
         Control::SelectionInteractionMode SelectionMode() const;
         bool SwitchSelectionEndpoint();
+        bool ExpandSelectionToWord();
         bool TryMarkModeKeybinding(const WORD vkey,
                                    const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
 

@@ -1147,6 +1147,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return false;
     }
 
+    bool ControlCore::ExpandSelectionToWord()
+    {
+        if (_terminal->IsSelectionActive())
+        {
+            _terminal->ExpandSelectionToWord();
+            _updateSelectionUI();
+            return true;
+        }
+        return false;
+    }
+
     // Method Description:
     // - Pre-process text pasted (presumably from the clipboard)
     //   before sending it over the terminal's connection.
