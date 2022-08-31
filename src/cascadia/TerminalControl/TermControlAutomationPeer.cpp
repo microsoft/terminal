@@ -67,7 +67,7 @@ static constexpr bool IsReadable(std::wstring_view text)
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    TermControlAutomationPeer::TermControlAutomationPeer(winrt::weak_ref<TermControl> owner,
+    TermControlAutomationPeer::TermControlAutomationPeer(winrt::com_ptr<TermControl> owner,
                                                          const Core::Padding padding,
                                                          Control::InteractivityAutomationPeer impl) :
         TermControlAutomationPeerT<TermControlAutomationPeer>(*owner.get()), // pass owner to FrameworkElementAutomationPeer

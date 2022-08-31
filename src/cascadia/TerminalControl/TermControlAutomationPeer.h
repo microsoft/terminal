@@ -42,7 +42,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ::Microsoft::Console::Types::IUiaEventDispatcher
     {
     public:
-        TermControlAutomationPeer(winrt::weak_ref<Microsoft::Terminal::Control::implementation::TermControl> owner,
+        TermControlAutomationPeer(winrt::com_ptr<Microsoft::Terminal::Control::implementation::TermControl> owner,
                                   const Core::Padding padding,
                                   Control::InteractivityAutomationPeer implementation);
 
