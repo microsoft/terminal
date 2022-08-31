@@ -655,7 +655,7 @@ void AtlasEngine::_createResources()
 
         if (!_api.customPixelShaderPath.empty())
         {
-            const char* target;
+            const char* target = nullptr;
             switch (_r.device->GetFeatureLevel())
             {
             case D3D_FEATURE_LEVEL_10_0:
