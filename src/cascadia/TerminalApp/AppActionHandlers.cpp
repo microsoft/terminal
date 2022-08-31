@@ -1157,6 +1157,21 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleColorSelection(const IInspectable& /*sender*/,
+                                             const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<ColorSelectionArgs>())
+            {
+                const auto res = _ApplyToActiveControls([&](auto& control) {
+                    control.ColorSelection(realArgs.Foreground(), realArgs.Background(), realArgs.MatchMode());
+                });
+                args.Handled(res);
+            }
+        }
+    }
+
     void TerminalPage::_HandleExpandSelectionToWord(const IInspectable& /*sender*/,
                                                     const ActionEventArgs& args)
     {

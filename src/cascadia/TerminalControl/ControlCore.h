@@ -16,11 +16,13 @@
 #pragma once
 
 #include "ControlCore.g.h"
+#include "SelectionColor.g.h"
 #include "ControlSettings.h"
 #include "../../audio/midi/MidiAudio.hpp"
 #include "../../renderer/base/Renderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "../buffer/out/search.h"
+#include "../buffer/out/TextColor.h"
 
 #include <til/ticket_lock.h>
 
@@ -40,6 +42,14 @@ public:                                                           \
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
+    struct SelectionColor : SelectionColorT<SelectionColor>
+    {
+        TextColor AsTextColor() const noexcept;
+
+        WINRT_PROPERTY(til::color, Color);
+        WINRT_PROPERTY(bool, IsIndex16);
+    };
+
     struct ControlCore : ControlCoreT<ControlCore>
     {
     public:
@@ -105,6 +115,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Windows::Foundation::IReference<Core::Point> HoveredCell() const;
 
         ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
+
+        void ColorSelection(const Control::SelectionColor& fg, const Control::SelectionColor& bg, Core::MatchMode matchMode);
 
         void Close();
 
@@ -341,4 +353,5 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 namespace winrt::Microsoft::Terminal::Control::factory_implementation
 {
     BASIC_FACTORY(ControlCore);
+    BASIC_FACTORY(SelectionColor);
 }

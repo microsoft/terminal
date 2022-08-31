@@ -567,6 +567,94 @@
   <data name="SwitchSelectionEndpointCommandKey" xml:space="preserve">
     <value>Switch selection endpoint</value>
   </data>
+  <data name="ColorSelection_allMatches" xml:space="preserve">
+    <value>all matches</value>
+    <comment>This is used in the description of an action which changes the color of selected text, to indicate that not only the selected text will be colored, but also all matching text.</comment>
+  </data>
+  <data name="ColorSelection_fg_action" xml:space="preserve">
+    <value>Color selection, foreground: {0}{1}</value>
+    <comment>This is the description of an action which changes the color of selected text. {0}: the color. {1}: empty string OR a clause indicating that all matching text will be colored (ColorSelection_allMatches).</comment>
+  </data>
+  <data name="ColorSelection_bg_action" xml:space="preserve">
+    <value>Color selection, background: {0}{1}</value>
+    <comment>This is the description of an action which changes the background color of selected text. {0}: the color. {1}: empty string OR a clause indicating that all matching text will be colored (ColorSelection_allMatches).</comment>
+  </data>
+  <data name="ColorSelection_fg_bg_action" xml:space="preserve">
+    <value>Color selection, foreground: {0}, background: {1}{2}</value>
+    <comment>This is the description of an action which changes the color of selected text and the background. {0}: the foreground color. {1}: the background color. {2}: empty string OR a clause indicating that all matching text will be colored (ColorSelection_allMatches).</comment>
+  </data>
+  <data name="ColorSelection_default_action" xml:space="preserve">
+    <value>Color selection, (default foreground/background){0}</value>
+    <comment>This is the description of an action which changes the color of selected text and the background to the default colors. {0}: empty string OR a clause indicating that all matching text will be colored (ColorSelection_allMatches).</comment>
+  </data>
+  <data name="ColorSelection_defaultColor" xml:space="preserve">
+    <value>[default]</value>
+    <comment>This is used in the description of an action which changes the color of selected text, as a placeholder for a color, to indicate that the default (foreground or background) color will be used.</comment>
+  </data>
+  <data name="ColorSelection_Black" xml:space="preserve">
+    <value>black</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_Red" xml:space="preserve">
+    <value>red</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_Green" xml:space="preserve">
+    <value>green</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_Yellow" xml:space="preserve">
+    <value>yellow</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_Blue" xml:space="preserve">
+    <value>blue</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_Purple" xml:space="preserve">
+    <value>purple</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_Cyan" xml:space="preserve">
+    <value>cyan</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_White" xml:space="preserve">
+    <value>white</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightBlack" xml:space="preserve">
+    <value>bright black</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightRed" xml:space="preserve">
+    <value>bright red</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightGreen" xml:space="preserve">
+    <value>bright green</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightYellow" xml:space="preserve">
+    <value>bright yellow</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightBlue" xml:space="preserve">
+    <value>bright blue</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightPurple" xml:space="preserve">
+    <value>bright purple</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightCyan" xml:space="preserve">
+    <value>bright cyan</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightWhite" xml:space="preserve">
+    <value>bright white</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
   <data name="ExpandSelectionToWordCommandKey" xml:space="preserve">
     <value>Expand selection to word</value>
   </data>

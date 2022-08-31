@@ -60,7 +60,8 @@ Author(s):
     X(bool, AlwaysShowNotificationIcon, "alwaysShowNotificationIcon", false)                                                                               \
     X(winrt::Windows::Foundation::Collections::IVector<winrt::hstring>, DisabledProfileSources, "disabledProfileSources", nullptr)                         \
     X(bool, ShowAdminShield, "showAdminShield", true)                                                                                                      \
-    X(bool, TrimPaste, "trimPaste", true)
+    X(bool, TrimPaste, "trimPaste", true)                                                                                                                  \
+    X(bool, EnableColorSelection, "experimental.enableColorSelection", false)
 
 #define MTSM_PROFILE_SETTINGS(X)                                                                                                                               \
     X(int32_t, HistorySize, "historySize", DEFAULT_HISTORY_SIZE)                                                                                               \

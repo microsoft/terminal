@@ -49,6 +49,15 @@ namespace Microsoft.Terminal.Control
         Boolean EndAtRightBoundary;
     };
 
+    [default_interface] runtimeclass SelectionColor
+    {
+        SelectionColor();
+        Microsoft.Terminal.Core.Color Color;
+        // If true, color.R is a value between 0 and 15, indicating an indexed color.
+        // This mirrors how TextColor works internally, which is the primary target of this interface.
+        Boolean IsIndex16;
+    };
+
     [default_interface] runtimeclass ControlCore : ICoreState
     {
         ControlCore(IControlSettings settings,
@@ -129,6 +138,8 @@ namespace Microsoft.Terminal.Control
 
         void AdjustOpacity(Double Opacity, Boolean relative);
         void WindowVisibilityChanged(Boolean showOrHide);
+
+        void ColorSelection(SelectionColor fg, SelectionColor bg, Microsoft.Terminal.Core.MatchMode matchMode);
 
         event FontSizeChangedEventArgs FontSizeChanged;
 

@@ -17,6 +17,7 @@
 #include "../../renderer/dx/DxRenderer.hpp"
 
 #include "ControlCore.g.cpp"
+#include "SelectionColor.g.cpp"
 
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Console::VirtualTerminal;
@@ -76,6 +77,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return true;
         }();
         return initialized;
+    }
+
+    TextColor SelectionColor::AsTextColor() const noexcept
+    {
+        if (_IsIndex16)
+        {
+            return { _Color.r, false };
+        }
+        else
+        {
+            return { static_cast<COLORREF>(_Color) };
+        }
     }
 
     ControlCore::ControlCore(Control::IControlSettings settings,
@@ -2161,6 +2174,42 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 UserScrollViewport(0);
                 _terminalScrollPositionChanged(0, viewHeight, bufferSize);
+            }
+        }
+    }
+
+    void ControlCore::ColorSelection(const Control::SelectionColor& fg, const Control::SelectionColor& bg, Core::MatchMode matchMode)
+    {
+        if (HasSelection())
+        {
+            const auto pForeground = winrt::get_self<implementation::SelectionColor>(fg);
+            const auto pBackground = winrt::get_self<implementation::SelectionColor>(bg);
+
+            TextColor foregroundAsTextColor;
+            TextColor backgroundAsTextColor;
+
+            if (pForeground)
+            {
+                foregroundAsTextColor = pForeground->AsTextColor();
+            }
+
+            if (pBackground)
+            {
+                backgroundAsTextColor = pBackground->AsTextColor();
+            }
+
+            TextAttribute attr;
+            attr.SetForeground(foregroundAsTextColor);
+            attr.SetBackground(backgroundAsTextColor);
+
+            _terminal->ColorSelection(attr, matchMode);
+            _terminal->ClearSelection();
+            if (matchMode != Core::MatchMode::None)
+            {
+                // ClearSelection will invalidate the selection area... but if we are
+                // coloring other matches, then we need to make sure those get redrawn,
+                // too.
+                _renderer->TriggerRedrawAll();
             }
         }
     }

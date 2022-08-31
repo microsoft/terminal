@@ -8,6 +8,7 @@
 #include "../../inc/unicode.hpp"
 #include "../../types/inc/utils.hpp"
 #include "../../types/inc/colorTable.hpp"
+#include "../../buffer/out/search.h"
 
 #include <winrt/Microsoft.Terminal.Core.h>
 
@@ -1665,6 +1666,41 @@ til::color Terminal::GetColorForMark(const Microsoft::Console::VirtualTerminal::
     {
         return _renderSettings.GetColorAlias(ColorAlias::DefaultForeground);
     }
+    }
+}
+
+void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode)
+{
+    for (const auto [start, end] : _GetSelectionSpans())
+    {
+        try
+        {
+            if (matchMode == winrt::Microsoft::Terminal::Core::MatchMode::None)
+            {
+                ColorSelection(start, end, attr);
+            }
+            else if (matchMode == winrt::Microsoft::Terminal::Core::MatchMode::All)
+            {
+                const auto textBuffer = _activeBuffer().GetPlainText(start, end);
+                std::wstring_view text{ textBuffer };
+
+                if (IsBlockSelection())
+                {
+                    text = Utils::TrimPaste(text);
+                }
+
+                if (!text.empty())
+                {
+                    Search search(*this, text, Search::Direction::Forward, Search::Sensitivity::CaseInsensitive, { 0, 0 });
+
+                    while (search.FindNext())
+                    {
+                        search.Color(attr);
+                    }
+                }
+            }
+        }
+        CATCH_LOG();
     }
 }
 

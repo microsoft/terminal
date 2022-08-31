@@ -295,6 +295,10 @@
   <Target Name="_TerminalAppGenerateUserSettingsH" Inputs="userDefaults.json" Outputs="Generated Files\userDefaults.h" BeforeTargets="BeforeClCompile">
     <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1&quot; -JsonFile userDefaults.json -OutPath &quot;Generated Files\userDefaults.h&quot; -VariableName UserSettingsJson" />
   </Target>
+  <!-- Same as above, but for the enableColorSelection actions -->
+  <Target Name="_TerminalAppGenerateEnableColorSelectionSettingsH" Inputs="enableColorSelection.json" Outputs="Generated Files\enableColorSelection.h" BeforeTargets="BeforeClCompile">
+    <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1&quot; -JsonFile enableColorSelection.json -OutPath &quot;Generated Files\enableColorSelection.h&quot; -VariableName EnableColorSelectionSettingsJson" />
+  </Target>
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 
 </Project>
