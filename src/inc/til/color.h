@@ -137,22 +137,23 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // source-over alpha blending/composition.
         // `this` (source/top) will be blended "over" `destination` (bottom).
         // `this` and `destination` are expected to be in straight alpha.
-        constexpr color blend_with(const color& destination)
+        // See https://en.wikipedia.org/wiki/Alpha_compositing#Description
+        constexpr color layer_over(const color& destination) const
         {
-            const auto aa = a / 255.0f;
-            const auto ab = destination.a / 255.0f;
-            const auto aai = 1.0f - aa;
+            const auto sourceAlpha = a / 255.0f;
+            const auto destinationAlpha = destination.a / 255.0f;
+            const auto aInverse = 1.0f - sourceAlpha;
 
-            const auto ra = a + destination.a * aai;
-            const auto rr = (r * aa + other.r * ab * aai) / ra;
-            const auto rg = (g * aa + other.g * ab * aai) / ra;
-            const auto rb = (b * aa + other.b * ab * aai) / ra;
+            const auto resultA = a + destination.a * aInverse;
+            const auto resultR = (r * sourceAlpha + destination.r * destinationAlpha * aInverse) / resultA;
+            const auto resultG = (g * sourceAlpha + destination.g * destinationAlpha * aInverse) / resultA;
+            const auto resultB = (b * sourceAlpha + destination.b * destinationAlpha * aInverse) / resultA;
 
             return {
-                static_cast<uint8_t>(rr + 0.5f),
-                static_cast<uint8_t>(rg + 0.5f),
-                static_cast<uint8_t>(rb + 0.5f),
-                static_cast<uint8_t>(ra + 0.5f),
+                static_cast<uint8_t>(resultR + 0.5f),
+                static_cast<uint8_t>(resultG + 0.5f),
+                static_cast<uint8_t>(resultB + 0.5f),
+                static_cast<uint8_t>(resultA + 0.5f),
             };
         }
 
