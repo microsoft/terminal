@@ -135,6 +135,10 @@
     <value>Duplicate</value>
     <comment>Button label that duplicates the selected profile and navigates to the duplicate's page.</comment>
   </data>
+  <data name="ColorScheme_Rename.Header" xml:space="preserve">
+    <value>Rename color scheme</value>
+    <comment>This is the header for a control that allows the user to rename the currently selected color scheme.</comment>
+  </data>
   <data name="ColorScheme_Background.Text" xml:space="preserve">
     <value>Background</value>
     <comment>This is the header for a control that lets the user select the background color for text displayed on the screen.</comment>
@@ -1169,6 +1173,14 @@
     <value>Delete color scheme</value>
     <comment>Button label that deletes the selected color scheme.</comment>
   </data>
+  <data name="ColorScheme_EditButton.Text" xml:space="preserve">
+    <value>Edit</value>
+    <comment>Button label that edits the currently selected color scheme.</comment>
+  </data>
+  <data name="ColorScheme_DeleteButton2.Text" xml:space="preserve">
+    <value>Delete</value>
+    <comment>Button label that deletes the selected color scheme.</comment>
+  </data>
   <data name="ColorScheme_Name.Header" xml:space="preserve">
     <value>Name</value>
     <comment>The name of the color scheme. Used as a label on the name control.</comment>
@@ -1345,6 +1357,10 @@
     <value>System colors</value>
     <comment>A header for a grouping of colors in the color scheme. These colors are used for functional parts of the terminal.</comment>
   </data>
+  <data name="ColorScheme_ColorsHeader.Header" xml:space="preserve">
+    <value>Colors</value>
+    <comment>A header for the grouping of colors in the color scheme.</comment>
+  </data>
   <data name="SettingContainer_OverrideMessageFragmentExtension" xml:space="preserve">
     <value>Reset to value from: {}</value>
     <comment>{} is replaced by the name of another profile or generator. This is a text label on a button that is dynamically generated and provides more context in the {}.</comment>
@@ -1472,5 +1488,21 @@
   <data name="Globals_AutoHideWindow.HelpText" xml:space="preserve">
     <value>If enabled, the window will be hidden as soon as it loses focus.</value>
     <comment>A description for what the "Automatically hide window" setting does.</comment>
+  </data>
+  <data name="ColorScheme_DeleteDisclaimerInBox" xml:space="preserve">
+    <value>This color scheme cannot be deleted because it is included by default.</value>
+    <comment>Disclaimer presented near the controls to delete the selected color scheme when that functionality is disabled.</comment>
+  </data>
+  <data name="ColorScheme_RenameDisclaimerInBox" xml:space="preserve">
+    <value>This color scheme cannot be renamed because it is included by default.</value>
+    <comment>Disclaimer presented near the controls to rename the color scheme when that functionality is disabled.</comment>
+  </data>
+  <data name="ColorScheme_DefaultTag.Text" xml:space="preserve">
+    <value>default</value>
+    <comment>Text label displayed adjacent to a "color scheme" entry signifying that it is currently set as the default color scheme to be used.</comment>
+  </data>
+  <data name="ColorScheme_SetAsDefaultButton.Content" xml:space="preserve">
+    <value>Set as default</value>
+    <comment>Text label for a button that, when invoked, sets the selected color scheme as the default scheme to use.</comment>
   </data>
 </root>

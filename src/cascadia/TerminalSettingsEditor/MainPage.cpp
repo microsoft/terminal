@@ -59,6 +59,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _InitializeProfilesList();
 
         _colorSchemesPageVM = winrt::make<ColorSchemesPageViewModel>(_settingsClone);
+        _colorSchemesPageViewModelChangedRevoker = _colorSchemesPageVM.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
+            const auto settingName{ args.PropertyName() };
+            if (settingName == L"CurrentPage")
+            {
+                const auto currentScheme = _colorSchemesPageVM.CurrentScheme();
+                if (_colorSchemesPageVM.CurrentPage() == ColorSchemesSubPage::EditColorScheme && currentScheme)
+                {
+                    contentFrame().Navigate(xaml_typename<Editor::EditColorScheme>(), currentScheme);
+                    const auto crumb = winrt::make<Breadcrumb>(box_value(colorSchemesTag), currentScheme.Name(), BreadcrumbSubPage::ColorSchemes_Edit);
+                    _breadcrumbs.Append(crumb);
+                }
+            }
+            else if (settingName == L"CurrentSchemeName")
+            {
+                // this is not technically a setting, it is the ColorSchemesPageVM telling us the breadcrumb item needs to be updated because of a rename
+                _breadcrumbs.RemoveAtEnd();
+                const auto crumb = winrt::make<Breadcrumb>(box_value(colorSchemesTag), _colorSchemesPageVM.CurrentScheme().Name(), BreadcrumbSubPage::ColorSchemes_Edit);
+                _breadcrumbs.Append(crumb);
+            }
+        });
 
         Automation::AutomationProperties::SetHelpText(SaveButton(), RS_(L"Settings_SaveSettingsButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
         Automation::AutomationProperties::SetHelpText(ResetButton(), RS_(L"Settings_ResetSettingsButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
@@ -393,6 +413,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), _colorSchemesPageVM);
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_ColorSchemes/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
+
+            if (subPage == BreadcrumbSubPage::ColorSchemes_Edit)
+            {
+                _colorSchemesPageVM.CurrentPage(ColorSchemesSubPage::EditColorScheme);
+            }
         }
         else if (clickedItemTag == globalAppearanceTag)
         {
