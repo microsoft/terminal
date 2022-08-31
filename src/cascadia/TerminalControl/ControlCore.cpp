@@ -89,7 +89,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _settings = winrt::make_self<implementation::ControlSettings>(settings, unfocusedAppearance);
 
-        _terminal = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
+        _terminal = std::make_shared<::Microsoft::Terminal::Core::Terminal>();
 
         // Subscribe to the connection's disconnected event and call our connection closed handlers.
         _connectionStateChangedRevoker = _connection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
@@ -199,10 +199,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // thread is a workaround for us to hit GH#12607 less often.
         _updatePatternLocations = std::make_unique<til::throttled_func_trailing<>>(
             UpdatePatternLocationsInterval,
-            [weakThis = get_weak()]() {
-                if (auto core{ weakThis.get() })
+            [weakTerminal = std::weak_ptr{ _terminal }]() {
+                if (const auto t = weakTerminal.lock())
                 {
-                    core->UpdatePatternLocations();
+                    auto lock = t->LockForWriting();
+                    t->UpdatePatternsUnderLock();
                 }
             });
 
@@ -421,7 +422,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _updateSelectionUI();
                 return true;
             }
-            else if (vkey == VK_RETURN && mods.IsCtrlPressed() && _terminal->IsTargetingUrl())
+            else if (vkey == VK_RETURN && mods.IsCtrlPressed() && !mods.IsAltPressed() && !mods.IsShiftPressed() && _terminal->SelectionIsTargetingUrl())
             {
                 // Ctrl + Enter --> Open URL
                 auto lock = _terminal->LockForReading();
@@ -604,16 +605,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Always redraw after toggling effects. This way even if the control
         // does not have focus it will update immediately.
         _renderer->TriggerRedrawAll();
-    }
-
-    // Method Description:
-    // - Tell TerminalCore to update its knowledge about the locations of visible regex patterns
-    // - We should call this (through the throttled function) when something causes the visible
-    //   region to change, such as when new text enters the buffer or the viewport is scrolled
-    void ControlCore::UpdatePatternLocations()
-    {
-        auto lock = _terminal->LockForWriting();
-        _terminal->UpdatePatternsUnderLock();
     }
 
     // Method description:
@@ -911,6 +902,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void ControlCore::_refreshSizeUnderLock()
     {
+        if (_IsClosing())
+        {
+            return;
+        }
+
         auto cx = gsl::narrow_cast<til::CoordType>(_panelWidth * _compositionScale);
         auto cy = gsl::narrow_cast<til::CoordType>(_panelHeight * _compositionScale);
 

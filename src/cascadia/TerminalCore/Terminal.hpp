@@ -284,7 +284,7 @@ public:
     void ExpandSelectionToWord();
     void ToggleMarkMode();
     void SelectHyperlink(const SearchDirection dir);
-    bool IsTargetingUrl() const noexcept;
+    bool SelectionIsTargetingUrl() const noexcept;
 
     using UpdateSelectionParams = std::optional<std::pair<SelectionDirection, SelectionExpansion>>;
     UpdateSelectionParams ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const;
@@ -361,7 +361,7 @@ private:
     std::wstring _wordDelimiters;
     SelectionExpansion _multiClickSelectionMode;
     SelectionInteractionMode _selectionMode;
-    bool _isTargetingUrl;
+    bool _selectionIsTargetingUrl;
     SelectionEndpoint _selectionEndpoint;
     bool _anchorInactiveSelectionEndpoint;
 #pragma endregion

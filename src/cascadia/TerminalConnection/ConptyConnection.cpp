@@ -203,7 +203,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                        const HANDLE hOut,
                                        const HANDLE hRef,
                                        const HANDLE hServerProcess,
-                                       const HANDLE hClientProcess) :
+                                       const HANDLE hClientProcess,
+                                       TERMINAL_STARTUP_INFO startupInfo) :
         _initialRows{ 25 },
         _initialCols{ 80 },
         _guid{ Utils::CreateGuid() },
@@ -212,6 +213,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         THROW_IF_FAILED(ConptyPackPseudoConsole(hServerProcess, hRef, hSig, &_hPC));
         _piClient.hProcess = hClientProcess;
+
+        _startupInfo.title = winrt::hstring{ startupInfo.pszTitle, SysStringLen(startupInfo.pszTitle) };
+        SysFreeString(startupInfo.pszTitle);
+        _startupInfo.iconPath = winrt::hstring{ startupInfo.pszIconPath, SysStringLen(startupInfo.pszIconPath) };
+        SysFreeString(startupInfo.pszIconPath);
+        _startupInfo.iconIndex = startupInfo.iconIndex;
 
         try
         {
@@ -286,6 +293,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     winrt::hstring ConptyConnection::Commandline() const
     {
         return _commandline;
+    }
+
+    winrt::hstring ConptyConnection::StartingTitle() const
+    {
+        return _startupInfo.title;
     }
 
     void ConptyConnection::Start()
@@ -667,10 +679,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     winrt::event_token ConptyConnection::NewConnection(const NewConnectionHandler& handler) { return _newConnectionHandlers.add(handler); };
     void ConptyConnection::NewConnection(const winrt::event_token& token) { _newConnectionHandlers.remove(token); };
 
-    HRESULT ConptyConnection::NewHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE ref, HANDLE server, HANDLE client) noexcept
+    HRESULT ConptyConnection::NewHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE ref, HANDLE server, HANDLE client, TERMINAL_STARTUP_INFO startupInfo) noexcept
     try
     {
-        _newConnectionHandlers(winrt::make<ConptyConnection>(signal, in, out, ref, server, client));
+        _newConnectionHandlers(winrt::make<ConptyConnection>(signal, in, out, ref, server, client, startupInfo));
 
         return S_OK;
     }
