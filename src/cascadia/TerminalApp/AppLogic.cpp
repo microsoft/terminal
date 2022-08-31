@@ -297,6 +297,11 @@ namespace winrt::TerminalApp::implementation
             {
                 _root->SetFullscreen(true);
             }
+
+            // Both LoadSettings and ReloadSettings are supposed to call this function,
+            // but LoadSettings skips it, so that the UI starts up faster.
+            // Now that the UI is present we can do them with a less significant UX impact.
+            _ProcessLazySettingsChanges();
         });
         _root->Create();
 
@@ -886,8 +891,27 @@ namespace winrt::TerminalApp::implementation
 
         // Register for directory change notification.
         _RegisterSettingsChange();
+    }
+
+    // Call this function after loading your _settings.
+    // It handles any CPU intensive settings updates (like updating the Jumplist)
+    // which should thus only occur if the settings file actually changed.
+    void AppLogic::_ProcessLazySettingsChanges()
+    {
+        const auto hash = _settings.Hash();
+        const auto applicationState = ApplicationState::SharedInstance();
+        const auto cachedHash = applicationState.SettingsHash();
+
+        // The hash might be empty if LoadAll() failed and we're dealing with the defaults settings object.
+        // In that case we can just wait until the user fixed their settings or CascadiaSettings fixed
+        // itself and either will soon trigger a settings reload.
+        if (hash.empty() || hash == cachedHash)
+        {
+            return;
+        }
 
         Jumplist::UpdateJumplist(_settings);
+        applicationState.SettingsHash(hash);
     }
 
     // Method Description:
@@ -1058,8 +1082,7 @@ namespace winrt::TerminalApp::implementation
         _ApplyLanguageSettingChange();
         _RefreshThemeRoutine();
         _ApplyStartupTaskStateChange();
-
-        Jumplist::UpdateJumplist(_settings);
+        _ProcessLazySettingsChanges();
 
         _SettingsChangedHandlers(*this, nullptr);
     }
