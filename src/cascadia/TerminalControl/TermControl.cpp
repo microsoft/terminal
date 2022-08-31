@@ -1981,6 +1981,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.SwitchSelectionEndpoint();
     }
 
+    bool TermControl::ExpandSelectionToWord()
+    {
+        return _core.ExpandSelectionToWord();
+    }
+
     void TermControl::Close()
     {
         if (!_IsClosing())
