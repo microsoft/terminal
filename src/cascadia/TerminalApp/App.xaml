@@ -149,10 +149,13 @@
                                 See GH #12356 for more history on the subject.
                             -->
                             <SolidColorBrush x:Key="TabViewBackground"
-                                             Color="#0a0a0a" />
+                                             Color="#2e2e2e" />
 
                             <StaticResource x:Key="UnfocusedBorderBrush"
                                             ResourceKey="ApplicationPageBackgroundThemeBrush" />
+
+                            <SolidColorBrush x:Key="SettingsUiTabBrush"
+                                             Color="#0c0c0c" />
                         </ResourceDictionary>
 
                         <ResourceDictionary x:Key="Light">
@@ -162,10 +165,13 @@
                                 GH #12398 has more history on this value, as well as GH #12400
                             -->
                             <SolidColorBrush x:Key="TabViewBackground"
-                                             Color="#dadada" />
+                                             Color="#e8e8e8" />
 
                             <StaticResource x:Key="UnfocusedBorderBrush"
                                             ResourceKey="ApplicationPageBackgroundThemeBrush" />
+
+                            <SolidColorBrush x:Key="SettingsUiTabBrush"
+                                             Color="#ffffff" />
                         </ResourceDictionary>
 
                         <ResourceDictionary x:Key="HighContrast">
@@ -183,6 +189,9 @@
                             -->
                             <StaticResource x:Key="TabViewBackground"
                                             ResourceKey="SystemColorButtonFaceColorBrush" />
+
+                            <StaticResource x:Key="SettingsUiTabBrush"
+                                            ResourceKey="SystemControlBackgroundBaseLowBrush" />
                         </ResourceDictionary>
 
                     </ResourceDictionary.ThemeDictionaries>

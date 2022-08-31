@@ -55,6 +55,7 @@ namespace Microsoft.Terminal.Control
         Boolean ToggleBlockSelection();
         void ToggleMarkMode();
         Boolean SwitchSelectionEndpoint();
+        Boolean ExpandSelectionToWord();
         void ClearBuffer(ClearBufferType clearType);
         void Close();
         Windows.Foundation.Size CharacterDimensions { get; };

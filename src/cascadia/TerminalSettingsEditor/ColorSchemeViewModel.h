@@ -21,26 +21,38 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct ColorSchemeViewModel : ColorSchemeViewModelT<ColorSchemeViewModel>, ViewModelHelper<ColorSchemeViewModel>
     {
     public:
-        ColorSchemeViewModel(const Model::ColorScheme scheme);
+        ColorSchemeViewModel(const Model::ColorScheme scheme, const Editor::ColorSchemesPageViewModel parentPageVM, const Model::CascadiaSettings& settings);
 
         winrt::hstring Name();
         void Name(winrt::hstring newName);
+        hstring ToString()
+        {
+            return Name();
+        }
+
+        bool RequestRename(winrt::hstring newName);
 
         Editor::ColorTableEntry ColorEntryAt(uint32_t index);
+        bool IsDefaultScheme();
+        void RefreshIsDefault();
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        // DON'T YOU DARE ADD A `WINRT_CALLBACK(PropertyChanged` TO A CLASS DERIVED FROM ViewModelHelper. Do this instead:
+        using ViewModelHelper<ColorSchemeViewModel>::PropertyChanged;
 
+        WINRT_PROPERTY(bool, IsInBoxScheme);
         WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Editor::ColorTableEntry>, NonBrightColorTable, nullptr);
         WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Editor::ColorTableEntry>, BrightColorTable, nullptr);
 
-        WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, ForegroundColor, _PropertyChangedHandlers, nullptr);
-        WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, BackgroundColor, _PropertyChangedHandlers, nullptr);
-        WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, CursorColor, _PropertyChangedHandlers, nullptr);
-        WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, SelectionBackgroundColor, _PropertyChangedHandlers, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, ForegroundColor, _propertyChangedHandlers, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, BackgroundColor, _propertyChangedHandlers, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, CursorColor, _propertyChangedHandlers, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, SelectionBackgroundColor, _propertyChangedHandlers, nullptr);
 
     private:
         winrt::hstring _Name;
         Model::ColorScheme _scheme;
+        Model::CascadiaSettings _settings;
+        weak_ref<Editor::ColorSchemesPageViewModel> _parentPageVM{ nullptr };
 
         void _ColorEntryChangedHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
     };
@@ -60,8 +72,3 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::UI::Color _color;
     };
 };
-
-namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
-{
-    BASIC_FACTORY(ColorSchemeViewModel);
-}

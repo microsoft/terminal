@@ -238,6 +238,7 @@ void Terminal::SetSelectionEnd(const til::point viewportPos, std::optional<Selec
         std::tie(_selection->start, _selection->end) = expandedAnchors;
     }
     _selectionMode = SelectionInteractionMode::Mouse;
+    _selectionIsTargetingUrl = false;
 }
 
 // Method Description:
@@ -328,7 +329,7 @@ void Terminal::ToggleMarkMode()
         _ScrollToPoint(cursorPos);
         _selectionMode = SelectionInteractionMode::Mark;
         _blockSelection = false;
-        _isTargetingUrl = false;
+        _selectionIsTargetingUrl = false;
         WI_SetAllFlags(_selectionEndpoint, SelectionEndpoint::Start | SelectionEndpoint::End);
     }
 }
@@ -360,6 +361,16 @@ void Terminal::SwitchSelectionEndpoint()
     }
 }
 
+void Terminal::ExpandSelectionToWord()
+{
+    if (IsSelectionActive())
+    {
+        const auto& buffer = _activeBuffer();
+        _selection->start = buffer.GetWordStart(_selection->start, _wordDelimiters);
+        _selection->end = buffer.GetWordEnd(_selection->end, _wordDelimiters);
+    }
+}
+
 // Method Description:
 // - selects the next/previous hyperlink, if one is available
 // Arguments:
@@ -371,7 +382,7 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
     if (_selectionMode != SelectionInteractionMode::Mark)
     {
         // This feature only works in mark mode
-        _isTargetingUrl = false;
+        _selectionIsTargetingUrl = false;
         return;
     }
 
@@ -401,7 +412,7 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
                 // pattern tree includes the currently selected range when going forward,
                 // so we need to check if we're pointing to that one before returning it.
                 auto range = list.front();
-                if (_isTargetingUrl && range.start == selectionStartInSearchArea)
+                if (_selectionIsTargetingUrl && range.start == selectionStartInSearchArea)
                 {
                     if (list.size() > 1)
                     {
@@ -499,16 +510,16 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
     _selection->pivot = result->first;
     _selection->end = result->second;
     bufferSize.DecrementInBounds(_selection->end);
-    _isTargetingUrl = true;
+    _selectionIsTargetingUrl = true;
     _selectionEndpoint = SelectionEndpoint::End;
 
     // 3. Scroll to the selected area (if necessary)
     _ScrollToPoint(_selection->end);
 }
 
-bool Terminal::IsTargetingUrl() const noexcept
+bool Terminal::SelectionIsTargetingUrl() const noexcept
 {
-    return _isTargetingUrl;
+    return _selectionIsTargetingUrl;
 }
 
 Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const
@@ -612,7 +623,7 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
     }
 
     // 3. Actually modify the selection state
-    _isTargetingUrl = false;
+    _selectionIsTargetingUrl = false;
     _selectionMode = std::max(_selectionMode, SelectionInteractionMode::Keyboard);
     if (shouldMoveBothEndpoints)
     {
@@ -646,6 +657,7 @@ void Terminal::SelectAll()
     _selection->end = { bufferSize.RightInclusive(), _GetMutableViewport().BottomInclusive() };
     _selection->pivot = _selection->end;
     _selectionMode = SelectionInteractionMode::Keyboard;
+    _selectionIsTargetingUrl = false;
     _ScrollToPoint(_selection->start);
 }
 
@@ -792,7 +804,7 @@ void Terminal::ClearSelection()
 {
     _selection = std::nullopt;
     _selectionMode = SelectionInteractionMode::None;
-    _isTargetingUrl = false;
+    _selectionIsTargetingUrl = false;
     _selectionEndpoint = static_cast<SelectionEndpoint>(0);
     _anchorInactiveSelectionEndpoint = false;
 }

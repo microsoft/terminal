@@ -97,7 +97,9 @@
     ON_ALL_ACTIONS(MarkMode)                \
     ON_ALL_ACTIONS(ToggleBlockSelection)    \
     ON_ALL_ACTIONS(SwitchSelectionEndpoint) \
-    ON_ALL_ACTIONS(ColorSelection)
+    ON_ALL_ACTIONS(ColorSelection)          \
+    ON_ALL_ACTIONS(ExpandSelectionToWord)   \
+    ON_ALL_ACTIONS(CloseOtherPanes)
 
 #define ALL_SHORTCUT_ACTIONS_WITH_ARGS             \
     ON_ALL_ACTIONS_WITH_ARGS(AdjustFontSize)       \

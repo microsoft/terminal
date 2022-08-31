@@ -5,11 +5,13 @@ import "ColorSchemes.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
-    runtimeclass ColorSchemeViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    runtimeclass ColorSchemeViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged, Windows.Foundation.IStringable
     {
-        ColorSchemeViewModel(Microsoft.Terminal.Settings.Model.ColorScheme scheme);
-
         String Name;
+        Boolean IsInBoxScheme;
+        Boolean IsDefaultScheme { get; };
+
+        Boolean RequestRename(String newName);
 
         // Terminal Colors
         Windows.Foundation.Collections.IVector<ColorTableEntry> NonBrightColorTable;

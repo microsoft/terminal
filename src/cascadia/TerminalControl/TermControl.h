@@ -41,6 +41,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool ToggleBlockSelection();
         void ToggleMarkMode();
         bool SwitchSelectionEndpoint();
+        bool ExpandSelectionToWord();
         void Close();
         Windows::Foundation::Size CharacterDimensions() const;
         Windows::Foundation::Size MinimumSize();
