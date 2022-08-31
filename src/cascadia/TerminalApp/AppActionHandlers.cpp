@@ -1171,7 +1171,7 @@ namespace winrt::TerminalApp::implementation
             }
         }
     }
-    
+
     void TerminalPage::_HandleExpandSelectionToWord(const IInspectable& /*sender*/,
                                                     const ActionEventArgs& args)
     {
