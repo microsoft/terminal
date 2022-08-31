@@ -321,16 +321,25 @@ void Terminal::ToggleMarkMode()
         // Enter Mark Mode
         // NOTE: directly set cursor state. We already should have locked before calling this function.
         _activeBuffer().GetCursor().SetIsOn(false);
-        const auto cursorPos{ _activeBuffer().GetCursor().GetPosition() };
-        _selection = SelectionAnchors{};
-        _selection->start = cursorPos;
-        _selection->end = cursorPos;
-        _selection->pivot = cursorPos;
-        _ScrollToPoint(cursorPos);
+        if (!IsSelectionActive())
+        {
+            // No selection --> start one at the cursor
+            const auto cursorPos{ _activeBuffer().GetCursor().GetPosition() };
+            _selection = SelectionAnchors{};
+            _selection->start = cursorPos;
+            _selection->end = cursorPos;
+            _selection->pivot = cursorPos;
+            _blockSelection = false;
+            WI_SetAllFlags(_selectionEndpoint, SelectionEndpoint::Start | SelectionEndpoint::End);
+        }
+        else if (WI_AreAllFlagsClear(_selectionEndpoint, SelectionEndpoint::Start | SelectionEndpoint::End))
+        {
+            // Selection already existed
+            WI_SetFlag(_selectionEndpoint, SelectionEndpoint::End);
+        }
+        _ScrollToPoint(_selection->start);
         _selectionMode = SelectionInteractionMode::Mark;
-        _blockSelection = false;
         _selectionIsTargetingUrl = false;
-        WI_SetAllFlags(_selectionEndpoint, SelectionEndpoint::Start | SelectionEndpoint::End);
     }
 }
 
