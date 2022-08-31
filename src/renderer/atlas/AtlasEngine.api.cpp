@@ -293,7 +293,7 @@ HRESULT AtlasEngine::Enable() noexcept
 
 [[nodiscard]] bool AtlasEngine::GetRetroTerminalEffect() const noexcept
 {
-    return false;
+    return _api.useRetroTerminalEffect;
 }
 
 [[nodiscard]] float AtlasEngine::GetScaling() const noexcept
@@ -332,7 +332,7 @@ void AtlasEngine::SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasin
     if (_api.antialiasingMode != mode)
     {
         _api.antialiasingMode = mode;
-        _resolveAntialiasingMode();
+        _resolveTransparencySettings();
         WI_SetFlag(_api.invalidations, ApiInvalidations::Font);
     }
 }
@@ -344,11 +344,10 @@ void AtlasEngine::SetCallback(std::function<void()> pfn) noexcept
 
 void AtlasEngine::EnableTransparentBackground(const bool isTransparent) noexcept
 {
-    const auto mixin = !isTransparent ? 0xff000000 : 0x00000000;
-    if (_api.backgroundOpaqueMixin != mixin)
+    if (_api.enableTransparentBackground != isTransparent)
     {
-        _api.backgroundOpaqueMixin = mixin;
-        _resolveAntialiasingMode();
+        _api.enableTransparentBackground = isTransparent;
+        _resolveTransparencySettings();
         WI_SetFlag(_api.invalidations, ApiInvalidations::SwapChain);
     }
 }
@@ -369,10 +368,22 @@ void AtlasEngine::SetForceFullRepaintRendering(bool enable) noexcept
 
 void AtlasEngine::SetPixelShaderPath(std::wstring_view value) noexcept
 {
+    if (_api.customPixelShaderPath != value)
+    {
+        _api.customPixelShaderPath = value;
+        _resolveTransparencySettings();
+        WI_SetFlag(_api.invalidations, ApiInvalidations::Device);
+    }
 }
 
 void AtlasEngine::SetRetroTerminalEffect(bool enable) noexcept
 {
+    if (_api.useRetroTerminalEffect != enable)
+    {
+        _api.useRetroTerminalEffect = enable;
+        _resolveTransparencySettings();
+        WI_SetFlag(_api.invalidations, ApiInvalidations::Device);
+    }
 }
 
 void AtlasEngine::SetSelectionBackground(const COLORREF color, const float alpha) noexcept
@@ -451,13 +462,15 @@ void AtlasEngine::UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept
 
 #pragma endregion
 
-void AtlasEngine::_resolveAntialiasingMode() noexcept
+void AtlasEngine::_resolveTransparencySettings() noexcept
 {
     // If the user asks for ClearType, but also for a transparent background
     // (which our ClearType shader doesn't simultaneously support)
     // then we need to sneakily force the renderer to grayscale AA.
-    const auto forceGrayscaleAA = _api.antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE && !_api.backgroundOpaqueMixin;
-    _api.realizedAntialiasingMode = forceGrayscaleAA ? D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE : _api.antialiasingMode;
+    _api.realizedAntialiasingMode = _api.enableTransparentBackground && _api.antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE ? D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE : _api.antialiasingMode;
+    // An opaque background allows us to use true "independent" flips. See AtlasEngine::_createSwapChain().
+    // We can't enable them if custom shaders are specified, because it's unknown, whether they support opaque inputs.
+    _api.backgroundOpaqueMixin = _api.enableTransparentBackground || !_api.customPixelShaderPath.empty() || _api.useRetroTerminalEffect ? 0x00000000 : 0xff000000;
 }
 
 void AtlasEngine::_updateFont(const wchar_t* faceName, const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes)
