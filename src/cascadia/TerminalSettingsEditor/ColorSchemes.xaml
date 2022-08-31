@@ -205,7 +205,7 @@
                         <FontIcon FontSize="{StaticResource StandardIconSize}"
                                   Glyph="&#xE70F;" />
                         <TextBlock x:Uid="ColorScheme_EditButton"
-                                   Margin="10,0,0,0" />
+                                   Style="{StaticResource IconButtonTextBlockStyle}" />
                     </StackPanel>
                 </Button>
 
@@ -216,7 +216,7 @@
                         <FontIcon FontSize="{StaticResource StandardIconSize}"
                                   Glyph="&#xE710;" />
                         <TextBlock x:Uid="ColorScheme_AddNewButton"
-                                   Margin="10,0,0,0" />
+                                   Style="{StaticResource IconButtonTextBlockStyle}" />
                     </StackPanel>
                 </Button>
 
@@ -229,7 +229,7 @@
                             <FontIcon FontSize="{StaticResource StandardIconSize}"
                                       Glyph="&#xE74D;" />
                             <TextBlock x:Uid="ColorScheme_DeleteButton2"
-                                       Margin="10,0,0,0" />
+                                       Style="{StaticResource IconButtonTextBlockStyle}" />
                         </StackPanel>
                     </Button.Content>
                     <Button.Flyout>

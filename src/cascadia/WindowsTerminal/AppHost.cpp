@@ -145,17 +145,6 @@ AppHost::~AppHost()
 
     _showHideWindowThrottler.reset();
 
-    // From a mail thread: Should a UnhandledException be raised by XAML, while
-    // we're tearing down, let's eat it, log it, and just die immediately. This
-    // will prevent unhandled XAML exceptions from crashing with a dump bucket
-    // when the window has already been closed.. We feel this is okay though,
-    // because WE'RE ALREADY IN TEARDOWN! The app is exiting. We don't want a
-    // XAML bug here to create a crash bucket.
-    _app.UnhandledException([](auto&& /*sender*/, const UnhandledExceptionEventArgs& args) {
-        LOG_HR_MSG(args.Exception(), winrt::to_string(args.Message()).c_str());
-        std::exit(0);
-    });
-
     _window = nullptr;
     _app.Close();
     _app = nullptr;
