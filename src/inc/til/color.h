@@ -134,17 +134,27 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             };
         }
 
-        // Do a simple linear blend with `other`, taking a% of us and (1-a)% of
-        // other. The result will retain our original alpha channel value
-        constexpr color blend_with(const color& other)
+        // source-over alpha blending/composition.
+        // `this` (source/top) will be blended "over" `destination` (bottom).
+        // `this` and `destination` are expected to be in straight alpha.
+        // See https://en.wikipedia.org/wiki/Alpha_compositing#Description
+        constexpr color layer_over(const color& destination) const
         {
-            auto result = *this;
-            const float a1 = a / 255.0f;
-            const float a2 = 1.0f - a1;
-            result.r = static_cast<uint8_t>((a1 * r) + (a2 * other.r));
-            result.g = static_cast<uint8_t>((a1 * g) + (a2 * other.g));
-            result.b = static_cast<uint8_t>((a1 * b) + (a2 * other.b));
-            return result;
+            const auto sourceAlpha = a / 255.0f;
+            const auto destinationAlpha = destination.a / 255.0f;
+            const auto aInverse = 1.0f - sourceAlpha;
+
+            const auto resultA = a + destination.a * aInverse;
+            const auto resultR = (r * sourceAlpha + destination.r * destinationAlpha * aInverse) / resultA;
+            const auto resultG = (g * sourceAlpha + destination.g * destinationAlpha * aInverse) / resultA;
+            const auto resultB = (b * sourceAlpha + destination.b * destinationAlpha * aInverse) / resultA;
+
+            return {
+                static_cast<uint8_t>(resultR + 0.5f),
+                static_cast<uint8_t>(resultG + 0.5f),
+                static_cast<uint8_t>(resultB + 0.5f),
+                static_cast<uint8_t>(resultA + 0.5f),
+            };
         }
 
 #ifdef D3DCOLORVALUE_DEFINED
