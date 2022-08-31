@@ -654,9 +654,11 @@
   <data name="ColorSelection_BrightWhite" xml:space="preserve">
     <value>bright white</value>
     <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
   <data name="ExpandSelectionToWordCommandKey" xml:space="preserve">
     <value>Expand selection to word</value>
   </data>
   <data name="CloseOtherPanesCommandKey" xml:space="preserve">
+    <value>Close all other panes</value>
   </data>
 </root>
