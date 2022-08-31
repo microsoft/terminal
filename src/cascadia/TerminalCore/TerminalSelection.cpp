@@ -376,7 +376,14 @@ void Terminal::ExpandSelectionToWord()
     {
         const auto& buffer = _activeBuffer();
         _selection->start = buffer.GetWordStart(_selection->start, _wordDelimiters);
+        _selection->pivot = _selection->start;
         _selection->end = buffer.GetWordEnd(_selection->end, _wordDelimiters);
+
+        // if we're targetting both endpoints, instead just target "end"
+        if (WI_IsFlagSet(_selectionEndpoint, SelectionEndpoint::Start) && WI_IsFlagSet(_selectionEndpoint, SelectionEndpoint::End))
+        {
+            _selectionEndpoint = SelectionEndpoint::End;
+        }
     }
 }
 
