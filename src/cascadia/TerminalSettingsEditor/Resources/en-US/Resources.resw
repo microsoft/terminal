@@ -1497,10 +1497,6 @@
     <value>This color scheme cannot be renamed because it is included by default.</value>
     <comment>Disclaimer presented near the controls to rename the color scheme when that functionality is disabled.</comment>
   </data>
-  <data name="ColorSchemes_TextPreview.Text" xml:space="preserve">
-    <value>Text</value>
-    <comment>Displayed text used to demonstrate the styling of an associated color scheme.</comment>
-  </data>
   <data name="ColorScheme_DefaultTag.Text" xml:space="preserve">
     <value>default</value>
     <comment>Text label displayed adjacent to a "color scheme" entry signifying that it is currently set as the default color scheme to be used.</comment>

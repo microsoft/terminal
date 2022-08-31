@@ -65,11 +65,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         itemContainer.as<ContentControl>().Focus(FocusState::Programmatic);
     }
 
-    void ColorSchemes::SetAsDefault_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
-    {
-        _ViewModel.RequestSetSelectedSchemeAsDefault();
-    }
-
     void ColorSchemes::AddNew_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         if (const auto newSchemeVM{ _ViewModel.RequestAddNew() })

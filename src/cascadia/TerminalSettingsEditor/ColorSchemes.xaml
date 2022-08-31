@@ -99,12 +99,13 @@
                                         Grid.Column="0"
                                         Background="{x:Bind local:Converters.ColorToBrush(BackgroundColor.Color), Mode=OneWay}"
                                         CornerRadius="2">
-                                    <TextBlock x:Uid="ColorSchemes_TextPreview"
-                                               Padding="10,0,10,0"
+                                    <TextBlock Padding="10,0,10,0"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"
+                                               AutomationProperties.AccessibilityView="Raw"
                                                FontFamily="Cascadia Code"
-                                               Foreground="{x:Bind local:Converters.ColorToBrush(ForegroundColor.Color), Mode=OneWay}" />
+                                               Foreground="{x:Bind local:Converters.ColorToBrush(ForegroundColor.Color), Mode=OneWay}"
+                                               Text="AaBbCc" />
                                 </Border>
                                 <ContentControl Grid.Row="0"
                                                 Grid.Column="1"
@@ -197,7 +198,7 @@
                         Orientation="Horizontal"
                         XYFocusKeyboardNavigation="Enabled">
                 <Button x:Name="EditButton"
-                        Click="Edit_Click"
+                        Click="{x:Bind ViewModel.RequestEditSelectedScheme}"
                         IsEnabled="{x:Bind ViewModel.HasCurrentScheme, Mode=OneWay}"
                         Style="{StaticResource BrowseButtonStyle}">
                     <StackPanel Orientation="Horizontal">
@@ -243,10 +244,9 @@
                     </Button.Flyout>
                 </Button>
 
-                <Button x:Name="SetAsDefaultButton"
-                        x:Uid="ColorScheme_SetAsDefaultButton"
+                <Button x:Uid="ColorScheme_SetAsDefaultButton"
                         Margin="10,0,0,0"
-                        Click="SetAsDefault_Click"
+                        Click="{x:Bind ViewModel.RequestSetSelectedSchemeAsDefault}"
                         IsEnabled="{x:Bind ViewModel.HasCurrentScheme, Mode=OneWay}"
                         Style="{StaticResource BrowseButtonStyle}" />
             </StackPanel>
