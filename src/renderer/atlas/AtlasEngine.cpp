@@ -4,11 +4,10 @@
 #include "pch.h"
 #include "AtlasEngine.h"
 
-#include <shader_ps.h>
-#include <shader_vs.h>
-
 #include <custom_shader_ps.h>
 #include <custom_shader_vs.h>
+#include <shader_ps.h>
+#include <shader_vs.h>
 
 #include "../../interactivity/win32/CustomWindowMessages.h"
 
@@ -591,6 +590,7 @@ void AtlasEngine::_createResources()
             D3D_FEATURE_LEVEL_11_1,
             D3D_FEATURE_LEVEL_11_0,
             D3D_FEATURE_LEVEL_10_1,
+            D3D_FEATURE_LEVEL_10_0,
         };
 
         auto hr = S_OK;
@@ -655,7 +655,20 @@ void AtlasEngine::_createResources()
 
         if (!_api.customPixelShaderPath.empty())
         {
-            const auto target = _r.device->GetFeatureLevel() == D3D_FEATURE_LEVEL_10_1 ? "ps_4_1" : "ps_5_0";
+            const char* target;
+            switch (_r.device->GetFeatureLevel())
+            {
+            case D3D_FEATURE_LEVEL_10_0:
+                target = "ps_4_0";
+                break;
+            case D3D_FEATURE_LEVEL_10_1:
+                target = "ps_4_1";
+                break;
+            default:
+                target = "ps_5_0";
+                break;
+            }
+
             static constexpr auto flags = D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR | D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_WARNINGS_ARE_ERRORS
 #ifdef NDEBUG
                                           | D3DCOMPILE_OPTIMIZATION_LEVEL3;
