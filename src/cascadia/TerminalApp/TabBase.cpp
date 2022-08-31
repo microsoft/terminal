@@ -421,7 +421,7 @@ namespace winrt::TerminalApp::implementation
         //
         // We don't want that to result in white text on a white tab row for
         // inactive tabs.
-        const auto deselectedActualColor = deselectedTabColor.blend_with(_tabRowColor);
+        const auto deselectedActualColor = deselectedTabColor.layer_over(_tabRowColor);
         if (TerminalApp::ColorHelper::IsBrightColor(deselectedActualColor))
         {
             deselectedFontBrush.Color(winrt::Windows::UI::Colors::Black());
@@ -480,7 +480,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TabBase::_ClearTabBackgroundColor()
     {
-        winrt::hstring keys[] = {
+        static const winrt::hstring keys[] = {
             L"TabViewItemHeaderBackground",
             L"TabViewItemHeaderBackgroundSelected",
             L"TabViewItemHeaderBackgroundPointerOver",

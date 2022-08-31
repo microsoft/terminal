@@ -283,44 +283,38 @@
     "themes": [
         {
             "name": "light",
-            "window":
-            {
+            "window": {
                 "applicationTheme": "light"
             },
-            "tab":
-            {
+            "tab": {
                 "background": "terminalBackground",
                 "unfocusedBackground": "#00000000"
             },
-            "tabRow":
-            {
+            "tabRow": {
                 "unfocusedBackground": "#FFFFFFFF"
             }
         },
         {
             "name": "dark",
-            "window":
-            {
+            "window": {
                 "applicationTheme": "dark"
             },
-            "tab":
-            {
+            "tab": {
                 "background": "terminalBackground",
-                "unfocusedBackground": "#00000000",
+                "unfocusedBackground": "#00000000"
             },
-            "tabRow":
-            {
+            "tabRow": {
                 "unfocusedBackground": "#333333FF"
             }
         },
         {
             "name": "system",
-            "window":{
+            "window": {
                 "applicationTheme": "system"
             },
-            "tab":{
+            "tab": {
                 "background": "terminalBackground",
-                "unfocusedBackground": "#00000000",
+                "unfocusedBackground": "#00000000"
             }
         }
     ],
