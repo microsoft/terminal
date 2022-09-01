@@ -30,6 +30,7 @@ namespace winrt::Microsoft::Terminal::Core
     struct ICoreSettings;
     struct ICoreAppearance;
     struct Scheme;
+    enum class MatchMode;
 }
 
 namespace Microsoft::Console::VirtualTerminal
@@ -83,6 +84,8 @@ public:
     void EraseScrollback();
     bool IsXtermBracketedPasteModeEnabled() const;
     std::wstring_view GetWorkingDirectory();
+
+    til::point GetViewportRelativeCursorPosition() const noexcept;
 
     // Write comes from the PTY and goes to our parser to be stored in the output buffer
     void Write(std::wstring_view stringView);
@@ -162,9 +165,10 @@ public:
 
     void FocusChanged(const bool focused) noexcept override;
 
-    std::wstring GetHyperlinkAtPosition(const til::point position);
-    uint16_t GetHyperlinkIdAtPosition(const til::point position);
-    std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> GetHyperlinkIntervalFromPosition(const til::point position);
+    std::wstring GetHyperlinkAtViewportPosition(const til::point viewportPos);
+    std::wstring GetHyperlinkAtBufferPosition(const til::point bufferPos);
+    uint16_t GetHyperlinkIdAtViewportPosition(const til::point viewportPos);
+    std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> GetHyperlinkIntervalFromViewportPosition(const til::point viewportPos);
 #pragma endregion
 
 #pragma region IBaseData(base to IRenderData and IUiaData)
@@ -231,6 +235,8 @@ public:
     const size_t GetTaskbarState() const noexcept;
     const size_t GetTaskbarProgress() const noexcept;
 
+    void ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode);
+
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
     enum class SelectionInteractionMode
@@ -247,6 +253,12 @@ public:
         Right,
         Up,
         Down
+    };
+
+    enum class SearchDirection
+    {
+        Forward,
+        Backward
     };
 
     enum class SelectionExpansion
@@ -272,7 +284,10 @@ public:
     void SelectAll();
     SelectionInteractionMode SelectionMode() const noexcept;
     void SwitchSelectionEndpoint();
+    void ExpandSelectionToWord();
     void ToggleMarkMode();
+    void SelectHyperlink(const SearchDirection dir);
+    bool SelectionIsTargetingUrl() const noexcept;
 
     using UpdateSelectionParams = std::optional<std::pair<SelectionDirection, SelectionExpansion>>;
     UpdateSelectionParams ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const;
@@ -349,6 +364,7 @@ private:
     std::wstring _wordDelimiters;
     SelectionExpansion _multiClickSelectionMode;
     SelectionInteractionMode _selectionMode;
+    bool _selectionIsTargetingUrl;
     SelectionEndpoint _selectionEndpoint;
     bool _anchorInactiveSelectionEndpoint;
 #pragma endregion
@@ -421,9 +437,11 @@ private:
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
     std::vector<til::inclusive_rect> _GetSelectionRects() const noexcept;
+    std::vector<til::point_span> _GetSelectionSpans() const noexcept;
     std::pair<til::point, til::point> _PivotSelection(const til::point targetPos, bool& targetStart) const;
     std::pair<til::point, til::point> _ExpandSelectionAnchors(std::pair<til::point, til::point> anchors) const;
     til::point _ConvertToBufferCell(const til::point viewportPos) const;
+    void _ScrollToPoint(const til::point pos);
     void _MoveByChar(SelectionDirection direction, til::point& pos);
     void _MoveByWord(SelectionDirection direction, til::point& pos);
     void _MoveByViewport(SelectionDirection direction, til::point& pos);

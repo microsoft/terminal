@@ -16,6 +16,7 @@ namespace Microsoft.Terminal.Settings.Model
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.TabSwitcherMode> TabSwitcherMode { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Control.CopyFormat> CopyFormat { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.WindowingMode> WindowingMode { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Core.MatchMode> MatchMode { get; };
 
         // Profile Settings
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.CloseOnExitMode> CloseOnExitMode { get; };
@@ -23,6 +24,7 @@ namespace Microsoft.Terminal.Settings.Model
         static Windows.Foundation.Collections.IMap<String, Windows.UI.Xaml.Media.Stretch> BackgroundImageStretchMode { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Control.TextAntialiasingMode> TextAntialiasingMode { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Core.CursorStyle> CursorStyle { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Core.AdjustTextMode> AdjustIndistinguishableColors { get; };
         static Windows.Foundation.Collections.IMap<String, UInt16> FontWeight { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.IntenseStyle> IntenseTextStyle { get; };
     }

@@ -8,9 +8,12 @@
 #include <dwrite_3.h>
 
 #include "../../renderer/inc/IRenderEngine.hpp"
+#include "DWriteTextAnalysis.h"
 
 namespace Microsoft::Console::Render
 {
+    struct TextAnalysisSinkResult;
+
     class AtlasEngine final : public IRenderEngine
     {
     public:
@@ -96,8 +99,10 @@ namespace Microsoft::Console::Render
     friend constexpr type operator~(type v) noexcept { return static_cast<type>(~static_cast<underlying>(v)); }                                             \
     friend constexpr type operator|(type lhs, type rhs) noexcept { return static_cast<type>(static_cast<underlying>(lhs) | static_cast<underlying>(rhs)); } \
     friend constexpr type operator&(type lhs, type rhs) noexcept { return static_cast<type>(static_cast<underlying>(lhs) & static_cast<underlying>(rhs)); } \
+    friend constexpr type operator^(type lhs, type rhs) noexcept { return static_cast<type>(static_cast<underlying>(lhs) ^ static_cast<underlying>(rhs)); } \
     friend constexpr void operator|=(type& lhs, type rhs) noexcept { lhs = lhs | rhs; }                                                                     \
-    friend constexpr void operator&=(type& lhs, type rhs) noexcept { lhs = lhs & rhs; }
+    friend constexpr void operator&=(type& lhs, type rhs) noexcept { lhs = lhs & rhs; }                                                                     \
+    friend constexpr void operator^=(type& lhs, type rhs) noexcept { lhs = lhs ^ rhs; }
 
         template<typename T>
         struct vec2
@@ -106,6 +111,16 @@ namespace Microsoft::Console::Render
             T y{};
 
             ATLAS_POD_OPS(vec2)
+        };
+
+        template<typename T>
+        struct vec3
+        {
+            T x{};
+            T y{};
+            T z{};
+
+            ATLAS_POD_OPS(vec3)
         };
 
         template<typename T>
@@ -129,7 +144,7 @@ namespace Microsoft::Console::Render
 
             ATLAS_POD_OPS(rect)
 
-            constexpr bool non_empty() noexcept
+            constexpr bool non_empty() const noexcept
             {
                 return (left < right) & (top < bottom);
             }
@@ -150,6 +165,7 @@ namespace Microsoft::Console::Render
 
         using f32 = float;
         using f32x2 = vec2<f32>;
+        using f32x3 = vec3<f32>;
         using f32x4 = vec4<f32>;
 
         struct TextAnalyzerResult
@@ -166,6 +182,12 @@ namespace Microsoft::Console::Render
         };
 
     private:
+        // I wrote `Buffer` instead of using `std::vector`, because I want to convey that these things
+        // explicitly _don't_ hold resizeable contents, but rather plain content of a fixed size.
+        // For instance I didn't want a resizeable vector with a `push_back` method for my fixed-size
+        // viewport arrays - that doesn't make sense after all. `Buffer` also doesn't initialize
+        // contents to zero, allowing rapid creation/destruction and you can easily specify a custom
+        // (over-)alignment which can improve rendering perf by up to ~20% over `std::vector`.
         template<typename T, size_t Alignment = alignof(T)>
         struct Buffer
         {
@@ -175,19 +197,24 @@ namespace Microsoft::Console::Render
                 _data{ allocate(size) },
                 _size{ size }
             {
+                std::uninitialized_default_construct_n(_data, size);
             }
 
             Buffer(const T* data, size_t size) :
                 _data{ allocate(size) },
                 _size{ size }
             {
-                static_assert(std::is_trivially_copyable_v<T>);
-                memcpy(_data, data, size * sizeof(T));
+                // Changing the constructor arguments to accept std::span might
+                // be a good future extension, but not to improve security here.
+                // You can trivially construct std::span's from invalid ranges.
+                // Until then the raw-pointer style is more practical.
+#pragma warning(suppress : 26459) // You called an STL function '...' with a raw pointer parameter at position '3' that may be unsafe [...].
+                std::uninitialized_copy_n(data, size, _data);
             }
 
             ~Buffer()
             {
-                deallocate(_data);
+                destroy();
             }
 
             Buffer(Buffer&& other) noexcept :
@@ -199,7 +226,7 @@ namespace Microsoft::Console::Render
 #pragma warning(suppress : 26432) // If you define or delete any default operation in the type '...', define or delete them all (c.21).
             Buffer& operator=(Buffer&& other) noexcept
             {
-                deallocate(_data);
+                destroy();
                 _data = std::exchange(other._data, nullptr);
                 _size = std::exchange(other._size, 0);
                 return *this;
@@ -288,6 +315,12 @@ namespace Microsoft::Console::Render
             }
 #pragma warning(pop)
 
+            void destroy() noexcept
+            {
+                std::destroy_n(_data, _size);
+                deallocate(_data);
+            }
+
             T* _data = nullptr;
             size_t _size = 0;
         };
@@ -327,7 +360,8 @@ namespace Microsoft::Console::Render
 
             SmallObjectOptimizer& operator=(SmallObjectOptimizer&& other) noexcept
             {
-                return *new (this) SmallObjectOptimizer(other);
+                std::destroy_at(this);
+                return *std::construct_at(this, std::move(other));
             }
 
             ~SmallObjectOptimizer()
@@ -377,14 +411,18 @@ namespace Microsoft::Console::Render
         struct FontMetrics
         {
             wil::com_ptr<IDWriteFontCollection> fontCollection;
-            wil::unique_process_heap_string fontName;
+            std::wstring fontName;
             float baselineInDIP = 0.0f;
             float fontSizeInDIP = 0.0f;
+            f32 advanceScale = 0;
             u16x2 cellSize;
             u16 fontWeight = 0;
             u16 underlinePos = 0;
+            u16 underlineWidth = 0;
             u16 strikethroughPos = 0;
-            u16 lineThickness = 0;
+            u16 strikethroughWidth = 0;
+            u16x2 doubleUnderlinePos;
+            u16 thinLineWidth = 0;
         };
 
         // These flags are shared with shader_ps.hlsl.
@@ -483,6 +521,21 @@ namespace Microsoft::Console::Render
             }
         };
 
+        struct CachedGlyphLayout
+        {
+            wil::com_ptr<IDWriteTextLayout> textLayout;
+            f32x2 halfSize;
+            f32x2 offset;
+            f32x2 scale;
+            D2D1_DRAW_TEXT_OPTIONS options = D2D1_DRAW_TEXT_OPTIONS_NONE;
+            bool scalingRequired = false;
+
+            explicit operator bool() const noexcept;
+            void reset() noexcept;
+            void applyScaling(ID2D1RenderTarget* d2dRenderTarget, D2D1_POINT_2F origin) const noexcept;
+            void undoScaling(ID2D1RenderTarget* d2dRenderTarget) const noexcept;
+        };
+
         struct AtlasValueData
         {
             CellFlags flags = CellFlags::None;
@@ -506,6 +559,8 @@ namespace Microsoft::Console::Render
                 return _data.data();
             }
 
+            CachedGlyphLayout cachedLayout;
+
         private:
             SmallObjectOptimizer<AtlasValueData> _data;
 
@@ -513,12 +568,6 @@ namespace Microsoft::Console::Render
             {
                 return sizeof(AtlasValueData) - sizeof(AtlasValueData::coords) + static_cast<size_t>(coordCount) * sizeof(AtlasValueData::coords[0]);
             }
-        };
-
-        struct AtlasQueueItem
-        {
-            const AtlasKey* key;
-            const AtlasValue* value;
         };
 
         struct AtlasKeyHasher
@@ -553,21 +602,28 @@ namespace Microsoft::Console::Render
 
         struct TileHashMap
         {
+            using iterator = std::list<std::pair<AtlasKey, AtlasValue>>::iterator;
+
             TileHashMap() noexcept = default;
 
-            AtlasValue* find(const AtlasKey& key)
+            iterator end() noexcept
+            {
+                return _lru.end();
+            }
+
+            iterator find(const AtlasKey& key)
             {
                 const auto it = _map.find(key);
                 if (it != _map.end())
                 {
                     // Move the key to the head of the LRU queue.
-                    _lru.splice(_lru.begin(), _lru, *it);
-                    return &(*it)->second;
+                    makeNewest(*it);
+                    return *it;
                 }
-                return nullptr;
+                return end();
             }
 
-            std::list<std::pair<AtlasKey, AtlasValue>>::iterator insert(AtlasKey&& key, AtlasValue&& value)
+            iterator insert(AtlasKey&& key, AtlasValue&& value)
             {
                 // Insert the key/value right at the head of the LRU queue, just like find().
                 //
@@ -577,6 +633,11 @@ namespace Microsoft::Console::Render
                 auto it = _lru.begin();
                 _map.emplace(it);
                 return it;
+            }
+
+            void makeNewest(const iterator& it)
+            {
+                _lru.splice(_lru.begin(), _lru, it);
             }
 
             void popOldestTiles(std::vector<u16x2>& out) noexcept
@@ -602,7 +663,7 @@ namespace Microsoft::Console::Render
             // If you need a LRU hash-map, write a custom one with an intrusive
             // prev/next linked list (it's easier than you might think!).
             std::list<std::pair<AtlasKey, AtlasValue>> _lru;
-            std::unordered_set<std::list<std::pair<AtlasKey, AtlasValue>>::iterator, AtlasKeyHasher, AtlasKeyEq> _map;
+            std::unordered_set<iterator, AtlasKeyHasher, AtlasKeyEq> _map;
         };
 
         // TileAllocator yields `tileSize`-sized tiles for our texture atlas.
@@ -794,13 +855,27 @@ namespace Microsoft::Console::Render
             alignas(sizeof(f32)) f32 enhancedContrast = 0;
             alignas(sizeof(u32)) u32 cellCountX = 0;
             alignas(sizeof(u32x2)) u32x2 cellSize;
-            alignas(sizeof(u32x2)) u32x2 underlinePos;
-            alignas(sizeof(u32x2)) u32x2 strikethroughPos;
+            alignas(sizeof(u32)) u32 underlinePos = 0;
+            alignas(sizeof(u32)) u32 underlineWidth = 0;
+            alignas(sizeof(u32)) u32 strikethroughPos = 0;
+            alignas(sizeof(u32)) u32 strikethroughWidth = 0;
+            alignas(sizeof(u32x2)) u32x2 doubleUnderlinePos;
+            alignas(sizeof(u32)) u32 thinLineWidth = 0;
             alignas(sizeof(u32)) u32 backgroundColor = 0;
             alignas(sizeof(u32)) u32 cursorColor = 0;
             alignas(sizeof(u32)) u32 selectionColor = 0;
             alignas(sizeof(u32)) u32 useClearType = 0;
 #pragma warning(suppress : 4324) // 'ConstBuffer': structure was padded due to alignment specifier
+        };
+
+        struct alignas(16) CustomConstBuffer
+        {
+            // WARNING: Same rules as for ConstBuffer above apply.
+            alignas(sizeof(f32)) f32 time = 0;
+            alignas(sizeof(f32)) f32 scale = 0;
+            alignas(sizeof(f32x2)) f32x2 resolution;
+            alignas(sizeof(f32x4)) f32x4 background;
+#pragma warning(suppress : 4324) // 'CustomConstBuffer': structure was padded due to alignment specifier
         };
 
         // Handled in BeginPaint()
@@ -844,27 +919,43 @@ namespace Microsoft::Console::Render
         IDWriteTextFormat* _getTextFormat(bool bold, bool italic) const noexcept;
         const Buffer<DWRITE_FONT_AXIS_VALUE>& _getTextFormatAxis(bool bold, bool italic) const noexcept;
         Cell* _getCell(u16 x, u16 y) noexcept;
+        TileHashMap::iterator* _getCellGlyphMapping(u16 x, u16 y) noexcept;
         void _setCellFlags(u16r coords, CellFlags mask, CellFlags bits) noexcept;
         void _flushBufferLine();
-        void _emplaceGlyph(IDWriteFontFace* fontFace, size_t bufferPos1, size_t bufferPos2);
+        bool _emplaceGlyph(IDWriteFontFace* fontFace, size_t bufferPos1, size_t bufferPos2);
 
         // AtlasEngine.api.cpp
-        void _resolveAntialiasingMode() noexcept;
+        void _resolveTransparencySettings() noexcept;
         void _updateFont(const wchar_t* faceName, const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes);
         void _resolveFontMetrics(const wchar_t* faceName, const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, FontMetrics* fontMetrics = nullptr) const;
 
         // AtlasEngine.r.cpp
+        void _renderWithCustomShader() const;
         void _setShaderResources() const;
         void _updateConstantBuffer() const noexcept;
         void _adjustAtlasSize();
-        void _reserveScratchpadSize(u16 minWidth);
         void _processGlyphQueue();
-        void _drawGlyph(const AtlasQueueItem& item) const;
-        void _drawCursor();
-        void _copyScratchpadTile(uint32_t scratchpadIndex, u16x2 target, uint32_t copyFlags = 0) const noexcept;
+        void _drawGlyph(const TileHashMap::iterator& it) const;
+        CachedGlyphLayout _getCachedGlyphLayout(const wchar_t* chars, u16 charsLength, u16 cellCount, IDWriteTextFormat* textFormat, bool coloredGlyph) const;
+        void _drawCursor(u16r rect, u32 color, bool clear);
+        ID2D1Brush* _brushWithColor(u32 color);
+        void _d2dPresent();
+        void _d2dCreateRenderTarget();
+        void _d2dDrawDirtyArea();
+        u16 _d2dDrawGlyph(const TileHashMap::iterator& it, u16x2 coord, u32 color);
+        void _d2dDrawLine(u16r rect, u16 pos, u16 width, u32 color, ID2D1StrokeStyle* strokeStyle = nullptr);
+        void _d2dFillRectangle(u16r rect, u32 color);
+        void _d2dCellFlagRendererCursor(u16r rect, u32 color);
+        void _d2dCellFlagRendererSelected(u16r rect, u32 color);
+        void _d2dCellFlagRendererUnderline(u16r rect, u32 color);
+        void _d2dCellFlagRendererUnderlineDotted(u16r rect, u32 color);
+        void _d2dCellFlagRendererUnderlineDouble(u16r rect, u32 color);
+        void _d2dCellFlagRendererStrikethrough(u16r rect, u32 color);
 
+        static constexpr bool debugForceD2DMode = false;
         static constexpr bool debugGlyphGenerationPerformance = false;
-        static constexpr bool debugGeneralPerformance = false || debugGlyphGenerationPerformance;
+        static constexpr bool debugTextParsingPerformance = false || debugGlyphGenerationPerformance;
+        static constexpr bool debugGeneralPerformance = false || debugTextParsingPerformance;
 
         static constexpr u16 u16min = 0x0000;
         static constexpr u16 u16max = 0xffff;
@@ -891,6 +982,9 @@ namespace Microsoft::Console::Render
 
         struct Resources
         {
+            // DXGI resources
+            wil::com_ptr<IDXGIFactory1> dxgiFactory;
+
             // D3D resources
             wil::com_ptr<ID3D11Device> device;
             wil::com_ptr<ID3D11DeviceContext1> deviceContext;
@@ -902,40 +996,54 @@ namespace Microsoft::Console::Render
             wil::com_ptr<ID3D11Buffer> constantBuffer;
             wil::com_ptr<ID3D11Buffer> cellBuffer;
             wil::com_ptr<ID3D11ShaderResourceView> cellView;
+            wil::com_ptr<ID3D11Texture2D> customOffscreenTexture;
+            wil::com_ptr<ID3D11ShaderResourceView> customOffscreenTextureView;
+            wil::com_ptr<ID3D11RenderTargetView> customOffscreenTextureTargetView;
+            wil::com_ptr<ID3D11VertexShader> customVertexShader;
+            wil::com_ptr<ID3D11PixelShader> customPixelShader;
+            wil::com_ptr<ID3D11Buffer> customShaderConstantBuffer;
+            wil::com_ptr<ID3D11SamplerState> customShaderSamplerState;
+            std::chrono::steady_clock::time_point customShaderStartTime;
 
             // D2D resources
             wil::com_ptr<ID3D11Texture2D> atlasBuffer;
             wil::com_ptr<ID3D11ShaderResourceView> atlasView;
-            wil::com_ptr<ID3D11Texture2D> atlasScratchpad;
             wil::com_ptr<ID2D1RenderTarget> d2dRenderTarget;
-            wil::com_ptr<ID2D1Brush> brush;
+            wil::com_ptr<ID2D1SolidColorBrush> brush;
             wil::com_ptr<IDWriteTextFormat> textFormats[2][2];
             Buffer<DWRITE_FONT_AXIS_VALUE> textFormatAxes[2][2];
             wil::com_ptr<IDWriteTypography> typography;
+            wil::com_ptr<ID2D1StrokeStyle> dottedStrokeStyle;
 
             Buffer<Cell, 32> cells; // invalidated by ApiInvalidations::Size
+            Buffer<TileHashMap::iterator> cellGlyphMapping; // invalidated by ApiInvalidations::Size
             f32x2 cellSizeDIP; // invalidated by ApiInvalidations::Font, caches _api.cellSize but in DIP
-            u16x2 cellSize; // invalidated by ApiInvalidations::Font, caches _api.cellSize
             u16x2 cellCount; // invalidated by ApiInvalidations::Font|Size, caches _api.cellCount
-            u16 underlinePos = 0;
-            u16 strikethroughPos = 0;
-            u16 lineThickness = 0;
             u16 dpi = USER_DEFAULT_SCREEN_DPI; // invalidated by ApiInvalidations::Font, caches _api.dpi
-            u16 maxEncounteredCellCount = 0;
-            u16 scratchpadCellWidth = 0;
+            FontMetrics fontMetrics; // invalidated by ApiInvalidations::Font, cached _api.fontMetrics
+            f32 dipPerPixel = 1.0f; // invalidated by ApiInvalidations::Font, caches USER_DEFAULT_SCREEN_DPI / _api.dpi
+            f32 pixelPerDIP = 1.0f; // invalidated by ApiInvalidations::Font, caches _api.dpi / USER_DEFAULT_SCREEN_DPI
             u16x2 atlasSizeInPixel; // invalidated by ApiInvalidations::Font
             TileHashMap glyphs;
             TileAllocator tileAllocator;
-            std::vector<AtlasQueueItem> glyphQueue;
+            std::vector<TileHashMap::iterator> glyphQueue;
 
             f32 gamma = 0;
             f32 cleartypeEnhancedContrast = 0;
             f32 grayscaleEnhancedContrast = 0;
             u32 backgroundColor = 0xff000000;
             u32 selectionColor = 0x7fffffff;
+            u32 brushColor = 0xffffffff;
 
             CachedCursorOptions cursorOptions;
             RenderInvalidations invalidations = RenderInvalidations::None;
+
+            til::rect previousDirtyRectInPx;
+            til::rect dirtyRect;
+            i16 scrollOffset = 0;
+            bool d2dMode = false;
+            bool waitForPresentation = false;
+            bool requiresContinuousRedraw = false;
 
 #ifndef NDEBUG
             // See documentation for IDXGISwapChain2::GetFrameLatencyWaitableObject method:
@@ -953,7 +1061,7 @@ namespace Microsoft::Console::Render
             std::vector<wchar_t> bufferLine;
             std::vector<u16> bufferLineColumn;
             Buffer<BufferLineMetadata> bufferLineMetadata;
-            std::vector<TextAnalyzerResult> analysisResults;
+            std::vector<TextAnalysisSinkResult> analysisResults;
             Buffer<u16> clusterMap;
             Buffer<DWRITE_SHAPING_TEXT_PROPERTIES> textProps;
             Buffer<u16> glyphIndices;
@@ -968,7 +1076,7 @@ namespace Microsoft::Console::Render
             u16x2 sizeInPixel; // changes are flagged as ApiInvalidations::Size
 
             // UpdateDrawingBrushes()
-            u32 backgroundOpaqueMixin = 0xff000000; // changes are flagged as ApiInvalidations::Device
+            u32 backgroundOpaqueMixin = 0xff000000; // changes are flagged as ApiInvalidations::SwapChain
             u32x2 currentColor;
             AtlasKeyAttributes attributes{};
             u16x2 lastPaintBufferLineCoord;
@@ -992,7 +1100,12 @@ namespace Microsoft::Console::Render
             HWND hwnd = nullptr;
             u16 dpi = USER_DEFAULT_SCREEN_DPI; // changes are flagged as ApiInvalidations::Font|Size
             u8 antialiasingMode = D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE; // changes are flagged as ApiInvalidations::Font
-            u8 realizedAntialiasingMode = D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE; // caches antialiasingMode, depends on antialiasingMode and backgroundOpaqueMixin, see _resolveAntialiasingMode
+            u8 realizedAntialiasingMode = D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE; // caches antialiasingMode, depends on antialiasingMode and backgroundOpaqueMixin, see _resolveTransparencySettings
+            bool enableTransparentBackground = false;
+
+            std::wstring customPixelShaderPath; // changes are flagged as ApiInvalidations::Device
+            bool useRetroTerminalEffect = false; // changes are flagged as ApiInvalidations::Device
+            bool useSoftwareRendering = false; // changes are flagged as ApiInvalidations::Device
 
             ApiInvalidations invalidations = ApiInvalidations::Device;
         } _api;

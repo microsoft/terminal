@@ -474,7 +474,13 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        auto focusedElementOrAncestor = Input::FocusManager::GetFocusedElement(this->XamlRoot()).try_as<DependencyObject>();
+        auto root = this->XamlRoot();
+        if (!root)
+        {
+            return;
+        }
+
+        auto focusedElementOrAncestor = Input::FocusManager::GetFocusedElement(root).try_as<DependencyObject>();
         while (focusedElementOrAncestor)
         {
             if (focusedElementOrAncestor == *this)
@@ -524,10 +530,38 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void CommandPalette::_listItemSelectionChanged(const Windows::Foundation::IInspectable& /*sender*/, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& e)
+    {
+        // We don't care about...
+        // - CommandlineMode: it doesn't have any selectable items in the list view
+        // - TabSwitchMode: focus and selected item are in sync
+        if (_currentMode == CommandPaletteMode::ActionMode || _currentMode == CommandPaletteMode::TabSearchMode)
+        {
+            if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(_searchBox()) })
+            {
+                if (const auto selectedList = e.AddedItems(); selectedList.Size() > 0)
+                {
+                    const auto selectedCommand = selectedList.GetAt(0);
+                    if (const auto filteredCmd = selectedCommand.try_as<TerminalApp::FilteredCommand>())
+                    {
+                        if (const auto paletteItem = filteredCmd.Item().try_as<TerminalApp::PaletteItem>())
+                        {
+                            automationPeer.RaiseNotificationEvent(
+                                Automation::Peers::AutomationNotificationKind::ItemAdded,
+                                Automation::Peers::AutomationNotificationProcessing::MostRecent,
+                                paletteItem.Name() + L" " + paletteItem.KeyChordText(),
+                                L"CommandPaletteSelectedItemChanged" /* unique name for this notification category */);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // Method Description:
-    // This event is called when the user clicks on an ChevronLeft button right
+    // This event is called when the user clicks on a ChevronLeft button right
     // next to the ParentCommandName (e.g. New Tab...) above the subcommands list.
-    // It'll go up a level when the users click the button.
+    // It'll go up a single level when the user clicks the button.
     // Arguments:
     // - sender: the button that got clicked
     // Return Value:
@@ -536,12 +570,32 @@ namespace winrt::TerminalApp::implementation
                                                 const Windows::UI::Xaml::RoutedEventArgs&)
     {
         _PreviewActionHandlers(*this, nullptr);
-        _nestedActionStack.Clear();
-        ParentCommandName(L"");
-        _currentNestedCommands.Clear();
         _searchBox().Focus(FocusState::Programmatic);
+
+        const auto previousAction{ _nestedActionStack.GetAt(_nestedActionStack.Size() - 1) };
+        _nestedActionStack.RemoveAtEnd();
+
+        // Repopulate nested commands when the root has not been reached yet
+        if (_nestedActionStack.Size() > 0)
+        {
+            const auto newPreviousAction{ _nestedActionStack.GetAt(_nestedActionStack.Size() - 1) };
+            const auto actionPaletteItem{ newPreviousAction.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() };
+
+            ParentCommandName(actionPaletteItem.Command().Name());
+            _updateCurrentNestedCommands(actionPaletteItem.Command());
+        }
+        else
+        {
+            ParentCommandName(L"");
+            _currentNestedCommands.Clear();
+        }
         _updateFilteredActions();
-        _filteredActionsView().SelectedIndex(0);
+
+        const auto lastSelectedIt = std::find_if(begin(_filteredActions), end(_filteredActions), [&](const auto& filteredCommand) {
+            return filteredCommand.Item().Name() == previousAction.Item().Name();
+        });
+        const auto lastSelectedIndex = static_cast<int32_t>(std::distance(begin(_filteredActions), lastSelectedIt));
+        _scrollToIndex(lastSelectedIt != end(_filteredActions) ? lastSelectedIndex : 0);
     }
 
     // Method Description:
@@ -639,14 +693,7 @@ namespace winrt::TerminalApp::implementation
                     // to pick from.
                     _nestedActionStack.Append(filteredCommand);
                     ParentCommandName(actionPaletteItem.Command().Name());
-                    _currentNestedCommands.Clear();
-                    for (const auto& nameAndCommand : actionPaletteItem.Command().NestedCommands())
-                    {
-                        const auto action = nameAndCommand.Value();
-                        auto nestedActionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action) };
-                        auto nestedFilteredCommand{ winrt::make<FilteredCommand>(nestedActionPaletteItem) };
-                        _currentNestedCommands.Append(nestedFilteredCommand);
-                    }
+                    _updateCurrentNestedCommands(actionPaletteItem.Command());
 
                     _updateUIForStackChange();
                 }
@@ -1105,6 +1152,25 @@ namespace winrt::TerminalApp::implementation
         while (_filteredActions.Size() < actions.size())
         {
             _filteredActions.Append(actions[_filteredActions.Size()]);
+        }
+    }
+
+    // Method Description:
+    // - Update the list of current nested commands to match that of the
+    //   given parent command.
+    // Arguments:
+    // - parentCommand: the command with an optional list of nested commands.
+    // Return Value:
+    // - <none>
+    void CommandPalette::_updateCurrentNestedCommands(const winrt::Microsoft::Terminal::Settings::Model::Command& parentCommand)
+    {
+        _currentNestedCommands.Clear();
+        for (const auto& nameAndCommand : parentCommand.NestedCommands())
+        {
+            const auto action = nameAndCommand.Value();
+            auto nestedActionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action) };
+            auto nestedFilteredCommand{ winrt::make<FilteredCommand>(nestedActionPaletteItem) };
+            _currentNestedCommands.Append(nestedFilteredCommand);
         }
     }
 

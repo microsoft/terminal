@@ -424,10 +424,15 @@ using namespace Microsoft::Console::Types;
     // the inbox telnet client doesn't understand the Erase Character sequence,
     // and it uses xterm-ascii. This ensures that xterm and -256color consumers
     // get the enhancements, and telnet isn't broken.
+    //
+    // GH#13229: ECH and EL don't fill the space with "meta" attributes like
+    // underline, reverse video, hyperlinks, etc. If these spaces had those
+    // attrs, then don't try and optimize them out.
     const auto optimalToUseECH = numSpaces > ERASE_CHARACTER_STRING_LENGTH;
     const auto useEraseChar = (optimalToUseECH) &&
                               (!_newBottomLine) &&
-                              (!_clearedAllThisFrame);
+                              (!_clearedAllThisFrame) &&
+                              (!_lastTextAttributes.HasAnyExtendedAttributes());
     const auto printingBottomLine = coord.Y == _lastViewport.BottomInclusive();
 
     // GH#5502 - If the background color of the "new bottom line" is different
@@ -448,9 +453,10 @@ using namespace Microsoft::Console::Types;
     // the lines _wrapped_. It doesn't care to manually break the lines, but if
     // we trimmed the spaces off here, we'd print all the "~"s one after another
     // on the same line.
-    const auto removeSpaces = !lineWrapped && (useEraseChar ||
-                                               _clearedAllThisFrame ||
-                                               (_newBottomLine && printingBottomLine && bgMatched));
+    static const TextAttribute defaultAttrs{};
+    const auto removeSpaces = !lineWrapped && (useEraseChar // we determined earlier that ECH is optimal
+                                               || (_clearedAllThisFrame && _lastTextAttributes == defaultAttrs) // OR we cleared the last frame to the default attributes (specifically)
+                                               || (_newBottomLine && printingBottomLine && bgMatched)); // OR we just scrolled a new line onto the bottom of the screen with the correct attributes
     const auto cchActual = removeSpaces ? nonSpaceLength : cchLine;
 
     const auto columnsActual = removeSpaces ?

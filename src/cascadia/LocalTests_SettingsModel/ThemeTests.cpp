@@ -47,6 +47,10 @@ namespace SettingsModelLocalTests
         {
             return Core::Color{ r, g, b, 255 };
         }
+        static Core::Color rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a) noexcept
+        {
+            return Core::Color{ r, g, b, a };
+        }
     };
 
     void ThemeTests::ParseSimpleTheme()
@@ -56,12 +60,11 @@ namespace SettingsModelLocalTests
             "tabRow":
             {
                 "background": "#FFFF8800",
-                "unfocusedBackground": "#FF884400"
+                "unfocusedBackground": "#FF8844"
             },
             "window":
             {
-                "applicationTheme": "light",
-                "useMica": true
+                "applicationTheme": "light"
             }
         })" };
 
@@ -72,11 +75,11 @@ namespace SettingsModelLocalTests
         VERIFY_IS_NOT_NULL(theme->TabRow());
         VERIFY_IS_NOT_NULL(theme->TabRow().Background());
         VERIFY_ARE_EQUAL(Settings::Model::ThemeColorType::Color, theme->TabRow().Background().ColorType());
-        VERIFY_ARE_EQUAL(rgb(0xff, 0x88, 0x00), theme->TabRow().Background().Color());
+        VERIFY_ARE_EQUAL(rgba(0xff, 0xff, 0x88, 0x00), theme->TabRow().Background().Color());
+        VERIFY_ARE_EQUAL(rgba(0xff, 0x88, 0x44, 0xff), theme->TabRow().UnfocusedBackground().Color());
 
         VERIFY_IS_NOT_NULL(theme->Window());
         VERIFY_ARE_EQUAL(winrt::Windows::UI::Xaml::ElementTheme::Light, theme->Window().RequestedTheme());
-        VERIFY_ARE_EQUAL(true, theme->Window().UseMica());
     }
 
     void ThemeTests::ParseEmptyTheme()
@@ -101,7 +104,7 @@ namespace SettingsModelLocalTests
             "name": "noWindow",
             "tabRow":
             {
-                "background": "#FF112233",
+                "background": "#112233",
                 "unfocusedBackground": "#FF884400"
             },
         })" };
@@ -126,7 +129,7 @@ namespace SettingsModelLocalTests
             "name": "nullWindow",
             "tabRow":
             {
-                "background": "#FF112233",
+                "background": "#112233",
                 "unfocusedBackground": "#FF884400"
             },
             "window": null
@@ -158,8 +161,7 @@ namespace SettingsModelLocalTests
                     },
                     "window":
                     {
-                        "applicationTheme": "light",
-                        "useMica": true
+                        "applicationTheme": "light"
                     }
                 },
                 {
@@ -170,16 +172,14 @@ namespace SettingsModelLocalTests
                     },
                     "window":
                     {
-                        "applicationTheme": "light",
-                        "useMica": true
+                        "applicationTheme": "light"
                     }
                 },
                 {
                     "name": "backgroundOmittedEntirely",
                     "window":
                     {
-                        "applicationTheme": "light",
-                        "useMica": true
+                        "applicationTheme": "light"
                     }
                 }
             ]
@@ -234,8 +234,7 @@ namespace SettingsModelLocalTests
                     "tabRow": {},
                     "window":
                     {
-                        "applicationTheme": "light",
-                        "useMica": true
+                        "applicationTheme": "light"
                     }
                 }
             ]

@@ -62,7 +62,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     template<typename TIconSource>
     TIconSource _getColoredBitmapIcon(const winrt::hstring& path)
     {
-        if (!path.empty())
+        // FontIcon uses glyphs in the private use area, whereas valid URIs only contain ASCII characters.
+        // To skip throwing on Uri construction, we can quickly check if the first character is ASCII.
+        if (!path.empty() && path.front() < 128)
         {
             try
             {

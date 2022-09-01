@@ -19,6 +19,7 @@
 #include "DebugTapConnection.h"
 #include "SettingsTab.h"
 #include "TabRowControl.h"
+#include "Utils.h"
 
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal::Control;
@@ -224,6 +225,26 @@ namespace winrt::TerminalApp::implementation
             _tabRow.Background(transparent);
         }
         _updateThemeColors();
+
+        // Initialize the state of the CloseButtonOverlayMode property of
+        // our TabView, to match the tab.showCloseButton property in the theme.
+        if (const auto theme = _settings.GlobalSettings().CurrentTheme())
+        {
+            const auto visibility = theme.Tab() ? theme.Tab().ShowCloseButton() : Settings::Model::TabCloseButtonVisibility::Always;
+
+            switch (visibility)
+            {
+            case Settings::Model::TabCloseButtonVisibility::Never:
+                _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::Auto);
+                break;
+            case Settings::Model::TabCloseButtonVisibility::Hover:
+                _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::OnPointerOver);
+                break;
+            default:
+                _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::Always);
+                break;
+            }
+        }
 
         // Hookup our event handlers to the ShortcutActionDispatch
         _RegisterActionCallbacks();
@@ -693,8 +714,8 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Show a dialog with "About" information. Displays the app's Display
-    //   Name, version, getting started link, documentation link, release
-    //   Notes link, and privacy policy link.
+    //   Name, version, getting started link, source code link, documentation link, release
+    //   Notes link, send feedback link and privacy policy link.
     void TerminalPage::_ShowAboutDialog()
     {
         _ShowDialogHelper(L"AboutDialog");
@@ -708,6 +729,15 @@ namespace winrt::TerminalApp::implementation
     winrt::hstring TerminalPage::ApplicationVersion()
     {
         return CascadiaSettings::ApplicationVersion();
+    }
+
+    void TerminalPage::_SendFeedbackOnClick(const IInspectable& /*sender*/, const Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs& /*eventArgs*/)
+    {
+#if defined(WT_BRANDING_RELEASE)
+        ShellExecute(nullptr, nullptr, L"https://go.microsoft.com/fwlink/?linkid=2125419", nullptr, nullptr, SW_SHOW);
+#else
+        ShellExecute(nullptr, nullptr, L"https://go.microsoft.com/fwlink/?linkid=2204904", nullptr, nullptr, SW_SHOW);
+#endif
     }
 
     void TerminalPage::_ThirdPartyNoticesOnClick(const IInspectable& /*sender*/, const Windows::UI::Xaml::RoutedEventArgs& /*eventArgs*/)
@@ -1484,6 +1514,20 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        hostingTab.ColorPickerRequested([weakTab, weakThis]() {
+            auto page{ weakThis.get() };
+            auto tab{ weakTab.get() };
+            if (page && tab)
+            {
+                if (!page->_tabColorPicker)
+                {
+                    page->_tabColorPicker = winrt::make<ColorPickupFlyout>();
+                }
+
+                tab->AttachColorPicker(page->_tabColorPicker);
+            }
+        });
+
         // Add an event handler for when the terminal or tab wants to set a
         // progress indicator on the taskbar
         hostingTab.TaskbarProgressChanged({ get_weak(), &TerminalPage::_SetTaskbarProgressHandler });
@@ -2124,17 +2168,11 @@ namespace winrt::TerminalApp::implementation
 
             if (_settings.GlobalSettings().TrimPaste())
             {
-                std::wstring_view textView{ text };
-                const auto pos = textView.find_last_not_of(L"\t\n\v\f\r ");
-                if (pos == textView.npos)
+                text = { Utils::TrimPaste(text) };
+                if (text.empty())
                 {
                     // Text is all white space, nothing to paste
                     co_return;
-                }
-                else if (const auto toRemove = textView.size() - 1 - pos; toRemove > 0)
-                {
-                    textView.remove_suffix(toRemove);
-                    text = { textView };
                 }
             }
 
@@ -2703,6 +2741,48 @@ namespace winrt::TerminalApp::implementation
         ////////////////////////////////////////////////////////////////////////
         // Begin Theme handling
         _updateThemeColors();
+
+        // Update the state of the CloseButtonOverlayMode property of
+        // our TabView, to match the tab.showCloseButton property in the theme.
+        //
+        // Also update every tab's individual IsClosable to match.
+        //
+        // This is basically the same as _updateTabCloseButton, but with some
+        // code moved around to better facilitate updating every tab view item
+        // at once
+        if (const auto theme = _settings.GlobalSettings().CurrentTheme())
+        {
+            const auto visibility = theme.Tab() ? theme.Tab().ShowCloseButton() : Settings::Model::TabCloseButtonVisibility::Always;
+
+            for (const auto& tab : _tabs)
+            {
+                switch (visibility)
+                {
+                case Settings::Model::TabCloseButtonVisibility::Never:
+                    tab.TabViewItem().IsClosable(false);
+                    break;
+                case Settings::Model::TabCloseButtonVisibility::Hover:
+                    tab.TabViewItem().IsClosable(true);
+                    break;
+                default:
+                    tab.TabViewItem().IsClosable(true);
+                    break;
+                }
+            }
+
+            switch (visibility)
+            {
+            case Settings::Model::TabCloseButtonVisibility::Never:
+                _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::Auto);
+                break;
+            case Settings::Model::TabCloseButtonVisibility::Hover:
+                _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::OnPointerOver);
+                break;
+            default:
+                _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::Always);
+                break;
+            }
+        }
     }
 
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
@@ -3012,12 +3092,24 @@ namespace winrt::TerminalApp::implementation
         _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonBackgroundPointerOver"), backgroundHoverBrush);
         _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonBackgroundPressed"), backgroundPressedBrush);
 
+        // Load bearing: The SplitButton uses SplitButtonForegroundSecondary for
+        // the secondary button, but {TemplateBinding Foreground} for the
+        // primary button.
         _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonForeground"), foregroundBrush);
         _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonForegroundPointerOver"), foregroundBrush);
         _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonForegroundPressed"), foregroundBrush);
+        _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonForegroundSecondary"), foregroundBrush);
+        _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonForegroundSecondaryPressed"), foregroundBrush);
 
         _newTabButton.Background(backgroundBrush);
         _newTabButton.Foreground(foregroundBrush);
+
+        // This is just like what we do in TabBase::_RefreshVisualState. We need
+        // to manually toggle the visual state, so the setters in the visual
+        // state group will re-apply, and set our currently selected colors in
+        // the resources.
+        VisualStateManager::GoToState(_newTabButton, L"FlyoutOpen", true);
+        VisualStateManager::GoToState(_newTabButton, L"Normal", true);
     }
 
     // Method Description:
@@ -3037,8 +3129,10 @@ namespace winrt::TerminalApp::implementation
             L"SplitButtonBackgroundPointerOver",
             L"SplitButtonBackgroundPressed",
             L"SplitButtonForeground",
+            L"SplitButtonForegroundSecondary",
             L"SplitButtonForegroundPointerOver",
-            L"SplitButtonForegroundPressed"
+            L"SplitButtonForegroundPressed",
+            L"SplitButtonForegroundSecondaryPressed"
         };
 
         // simply clear any of the colors in the split button's dict
@@ -3191,13 +3285,18 @@ namespace winrt::TerminalApp::implementation
         {
             NewTerminalArgs newTerminalArgs;
             newTerminalArgs.Commandline(connection.Commandline());
+            newTerminalArgs.TabTitle(connection.StartingTitle());
             // GH #12370: We absolutely cannot allow a defterm connection to
             // auto-elevate. Defterm doesn't work for elevated scenarios in the
             // first place. If we try accepting the connection, the spawning an
             // elevated version of the Terminal with that profile... that's a
             // recipe for disaster. We won't ever open up a tab in this window.
             newTerminalArgs.Elevate(false);
-            _CreateNewTabFromPane(_MakePane(newTerminalArgs, false, connection));
+            const auto newPane = _MakePane(newTerminalArgs, false, connection);
+            newPane->WalkTree([](auto pane) {
+                pane->FinalizeConfigurationGivenDefault();
+            });
+            _CreateNewTabFromPane(newPane);
 
             // Request a summon of this window to the foreground
             _SummonWindowRequestedHandlers(*this, nullptr);
@@ -3237,7 +3336,7 @@ namespace winrt::TerminalApp::implementation
                 }
             });
 
-            auto newTabImpl = winrt::make_self<SettingsTab>(sui);
+            auto newTabImpl = winrt::make_self<SettingsTab>(sui, _settings.GlobalSettings().CurrentTheme().RequestedTheme());
 
             // Add the new tab to the list of our tabs.
             _tabs.Append(*newTabImpl);
@@ -3255,6 +3354,9 @@ namespace winrt::TerminalApp::implementation
 
             auto tabViewItem = newTabImpl->TabViewItem();
             _tabView.TabItems().Append(tabViewItem);
+
+            // Update the state of the close button to match the current theme
+            _updateTabCloseButton(tabViewItem);
 
             tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
 
@@ -4014,85 +4116,16 @@ namespace winrt::TerminalApp::implementation
         const auto theme = _settings.GlobalSettings().CurrentTheme();
         auto requestedTheme{ theme.RequestedTheme() };
 
-        // First: Update the colors of our individual TabViewItems. This applies tab.background to the tabs via TerminalTab::ThemeColor
-        {
-            auto tabBackground = theme.Tab() ? theme.Tab().Background() : nullptr;
-            for (const auto& tab : _tabs)
-            {
-                if (const auto& terminalTabImpl{ _GetTerminalTabImpl(tab) })
-                {
-                    terminalTabImpl->ThemeColor(tabBackground);
-                }
-            }
-        }
-
         const auto res = Application::Current().Resources();
-
-        // XAML Hacks:
-        //
-        // the App is always in the OS theme, so the
-        // App::Current().Resources() lookup will always get the value for the
-        // OS theme, not the requested theme.
-        //
-        // This helper allows us to instead lookup the value of a resource
-        // specified by `key` for the given `requestedTheme`, from the
-        // dictionaries in App.xaml. Make sure the value is actually there!
-        // Otherwise this'll throw like any other Lookup for a resource that
-        // isn't there.
-        static const auto lookup = [](auto& res, auto& requestedTheme, auto& key) {
-            // You want the Default version of the resource? Great, the App is
-            // always in the OS theme. Just look it up and be done.
-            if (requestedTheme == ElementTheme::Default)
-            {
-                return res.Lookup(key);
-            }
-            static const auto lightKey = winrt::box_value(L"Light");
-            static const auto darkKey = winrt::box_value(L"Dark");
-            // There isn't an ElementTheme::HighContrast.
-
-            auto requestedThemeKey = requestedTheme == ElementTheme::Dark ? darkKey : lightKey;
-            for (const auto& dictionary : res.MergedDictionaries())
-            {
-                // Don't look in the MUX resources. They come first. A person
-                // with more patience than me may find a way to look through our
-                // dictionaries first, then the MUX ones, but that's not needed
-                // currently
-                if (dictionary.Source())
-                {
-                    continue;
-                }
-                // Look through the theme dictionaries we defined:
-                for (const auto& [dictionaryKey, dict] : dictionary.ThemeDictionaries())
-                {
-                    // Does the key for this dict match the theme we're looking for?
-                    if (winrt::unbox_value<winrt::hstring>(dictionaryKey) !=
-                        winrt::unbox_value<winrt::hstring>(requestedThemeKey))
-                    {
-                        // No? skip it.
-                        continue;
-                    }
-                    // Look for the requested resource in this dict.
-                    const auto themeDictionary = dict.as<winrt::Windows::UI::Xaml::ResourceDictionary>();
-                    if (themeDictionary.HasKey(key))
-                    {
-                        return themeDictionary.Lookup(key);
-                    }
-                }
-            }
-
-            // We didn't find it in the requested dict, fall back to the default dictionary.
-            return res.Lookup(key);
-        };
 
         // Use our helper to lookup the theme-aware version of the resource.
         const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
-        const auto backgroundSolidBrush = lookup(res, requestedTheme, tabViewBackgroundKey).as<Media::SolidColorBrush>();
+        const auto backgroundSolidBrush = ThemeLookup(res, requestedTheme, tabViewBackgroundKey).as<Media::SolidColorBrush>();
 
         til::color bgColor = backgroundSolidBrush.Color();
 
         if (_settings.GlobalSettings().UseAcrylicInTabRow())
         {
-            const til::color backgroundColor = backgroundSolidBrush.Color();
             const auto acrylicBrush = Media::AcrylicBrush();
             acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
             acrylicBrush.FallbackColor(bgColor);
@@ -4101,27 +4134,25 @@ namespace winrt::TerminalApp::implementation
 
             TitlebarBrush(acrylicBrush);
         }
-        else if (theme.TabRow())
+        else if (auto tabRowBg{ theme.TabRow() ? (_activated ? theme.TabRow().Background() :
+                                                               theme.TabRow().UnfocusedBackground()) :
+                                                 ThemeColor{ nullptr } })
         {
-            if (const auto tabRowBg{ _activated ? theme.TabRow().Background() :
-                                                  theme.TabRow().UnfocusedBackground() })
-            {
-                const auto terminalBrush = [this]() -> Media::Brush {
-                    if (const auto& control{ _GetActiveControl() })
-                    {
-                        return control.BackgroundBrush();
-                    }
-                    else if (auto settingsTab = _GetFocusedTab().try_as<TerminalApp::SettingsTab>())
-                    {
-                        return settingsTab.Content().try_as<Settings::Editor::MainPage>().BackgroundBrush();
-                    }
-                    return nullptr;
-                }();
+            const auto terminalBrush = [this]() -> Media::Brush {
+                if (const auto& control{ _GetActiveControl() })
+                {
+                    return control.BackgroundBrush();
+                }
+                else if (auto settingsTab = _GetFocusedTab().try_as<TerminalApp::SettingsTab>())
+                {
+                    return settingsTab.Content().try_as<Settings::Editor::MainPage>().BackgroundBrush();
+                }
+                return nullptr;
+            }();
 
-                const auto themeBrush{ tabRowBg.Evaluate(res, terminalBrush, true) };
-                bgColor = ThemeColor::ColorFromBrush(themeBrush);
-                TitlebarBrush(themeBrush);
-            }
+            const auto themeBrush{ tabRowBg.Evaluate(res, terminalBrush, true) };
+            bgColor = ThemeColor::ColorFromBrush(themeBrush);
+            TitlebarBrush(themeBrush);
         }
         else
         {
@@ -4134,10 +4165,57 @@ namespace winrt::TerminalApp::implementation
             _tabRow.Background(TitlebarBrush());
         }
 
+        // Second: Update the colors of our individual TabViewItems. This
+        // applies tab.background to the tabs via TerminalTab::ThemeColor.
+        //
+        // Do this second, so that we already know the bgColor of the titlebar.
+        {
+            const auto tabBackground = theme.Tab() ? theme.Tab().Background() : nullptr;
+            const auto tabUnfocusedBackground = theme.Tab() ? theme.Tab().UnfocusedBackground() : nullptr;
+            for (const auto& tab : _tabs)
+            {
+                winrt::com_ptr<TabBase> tabImpl;
+                tabImpl.copy_from(winrt::get_self<TabBase>(tab));
+                tabImpl->ThemeColor(tabBackground, tabUnfocusedBackground, bgColor);
+            }
+        }
+
         // Update the new tab button to have better contrast with the new color.
         // In theory, it would be convenient to also change these for the
         // inactive tabs as well, but we're leaving that as a follow up.
         _SetNewTabButtonColor(bgColor, bgColor);
+    }
+
+    void TerminalPage::_updateTabCloseButton(const winrt::Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem)
+    {
+        // Update the state of the close button to match the current theme.
+        // IMPORTANT: Should be called AFTER the tab view item is added to the TabView.
+        if (const auto theme = _settings.GlobalSettings().CurrentTheme())
+        {
+            const auto visibility = theme.Tab() ? theme.Tab().ShowCloseButton() : Settings::Model::TabCloseButtonVisibility::Always;
+
+            // Update both the tab item's IsClosable, but also the TabView's
+            // CloseButtonOverlayMode here. Because the TabViewItem was created
+            // outside the context of the TabView, it doesn't get the
+            // CloseButtonOverlayMode assigned on creation. We have to update
+            // that property again here, when we add the tab, so that the
+            // TabView will re-apply the value.
+            switch (visibility)
+            {
+            case Settings::Model::TabCloseButtonVisibility::Never:
+                tabViewItem.IsClosable(false);
+                _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::Auto);
+                break;
+            case Settings::Model::TabCloseButtonVisibility::Hover:
+                tabViewItem.IsClosable(true);
+                _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::OnPointerOver);
+                break;
+            default:
+                tabViewItem.IsClosable(true);
+                _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::Always);
+                break;
+            }
+        }
     }
 
     void TerminalPage::WindowActivated(const bool activated)
