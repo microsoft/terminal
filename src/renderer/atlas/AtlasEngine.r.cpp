@@ -63,6 +63,19 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT AtlasEngine::Present() noexcept
 try
 {
+    const til::rect fullRect{ 0, 0, _r.cellCount.x, _r.cellCount.y };
+
+    // A change in the selection or background color (etc.) forces a full redraw.
+    if (WI_IsFlagSet(_r.invalidations, RenderInvalidations::ConstBuffer))
+    {
+        _r.dirtyRect = fullRect;
+    }
+
+    if (!_r.dirtyRect)
+    {
+        return S_OK;
+    }
+
     // See documentation for IDXGISwapChain2::GetFrameLatencyWaitableObject method:
     // > For every frame it renders, the app should wait on this handle before starting any rendering operations.
     // > Note that this requirement includes the first frame the app renders with the swap chain.
@@ -102,13 +115,59 @@ try
             _r.deviceContext->OMSetRenderTargets(1, _r.renderTargetView.addressof(), nullptr);
             _r.deviceContext->Draw(3, 0);
         }
-
-        // > IDXGISwapChain::Present: Partial Presentation (using a dirty rects or scroll) is not supported
-        // > for SwapChains created with DXGI_SWAP_EFFECT_DISCARD or DXGI_SWAP_EFFECT_FLIP_DISCARD.
-        // ---> No need to call IDXGISwapChain1::Present1.
-        THROW_IF_FAILED(_r.swapChain->Present(1, 0));
-        _r.waitForPresentation = true;
     }
+
+    // See documentation for IDXGISwapChain2::GetFrameLatencyWaitableObject method:
+    // > For every frame it renders, the app should wait on this handle before starting any rendering operations.
+    // > Note that this requirement includes the first frame the app renders with the swap chain.
+    assert(debugGeneralPerformance || _r.frameLatencyWaitableObjectUsed);
+
+    if (_r.dirtyRect != fullRect)
+    {
+        auto dirtyRectInPx = _r.dirtyRect;
+        dirtyRectInPx.left *= _r.fontMetrics.cellSize.x;
+        dirtyRectInPx.top *= _r.fontMetrics.cellSize.y;
+        dirtyRectInPx.right *= _r.fontMetrics.cellSize.x;
+        dirtyRectInPx.bottom *= _r.fontMetrics.cellSize.y;
+
+        RECT scrollRect{};
+        POINT scrollOffset{};
+        DXGI_PRESENT_PARAMETERS params{
+            .DirtyRectsCount = 1,
+            .pDirtyRects = dirtyRectInPx.as_win32_rect(),
+        };
+
+        if (_r.scrollOffset)
+        {
+            scrollRect = {
+                0,
+                std::max<til::CoordType>(0, _r.scrollOffset),
+                _r.cellCount.x,
+                _r.cellCount.y + std::min<til::CoordType>(0, _r.scrollOffset),
+            };
+            scrollOffset = {
+                0,
+                _r.scrollOffset,
+            };
+
+            scrollRect.top *= _r.fontMetrics.cellSize.y;
+            scrollRect.right *= _r.fontMetrics.cellSize.x;
+            scrollRect.bottom *= _r.fontMetrics.cellSize.y;
+
+            scrollOffset.y *= _r.fontMetrics.cellSize.y;
+
+            params.pScrollRect = &scrollRect;
+            params.pScrollOffset = &scrollOffset;
+        }
+
+        THROW_IF_FAILED(_r.swapChain->Present1(1, 0, &params));
+    }
+    else
+    {
+        THROW_IF_FAILED(_r.swapChain->Present(1, 0));
+    }
+
+    _r.waitForPresentation = true;
 
     if (!_r.dxgiFactory->IsCurrent())
     {
@@ -307,7 +366,9 @@ void AtlasEngine::_adjustAtlasSize()
         props.pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED };
         props.dpiX = static_cast<float>(_r.dpi);
         props.dpiY = static_cast<float>(_r.dpi);
-        THROW_IF_FAILED(_sr.d2dFactory->CreateDxgiSurfaceRenderTarget(surface.get(), &props, _r.d2dRenderTarget.put()));
+        wil::com_ptr<ID2D1RenderTarget> renderTarget;
+        THROW_IF_FAILED(_sr.d2dFactory->CreateDxgiSurfaceRenderTarget(surface.get(), &props, renderTarget.addressof()));
+        _r.d2dRenderTarget = renderTarget.query<ID2D1DeviceContext>();
 
         // We don't really use D2D for anything except DWrite, but it
         // can't hurt to ensure that everything it does is pixel aligned.
@@ -749,102 +810,19 @@ void AtlasEngine::CachedGlyphLayout::undoScaling(ID2D1RenderTarget* d2dRenderTar
 
 void AtlasEngine::_d2dPresent()
 {
-    const til::rect fullRect{ 0, 0, _r.cellCount.x, _r.cellCount.y };
-
-    // A change in the selection or background color (etc.) forces a full redraw.
-    if (WI_IsFlagSet(_r.invalidations, RenderInvalidations::ConstBuffer))
+    if (!_r.d2dRenderTarget)
     {
-        _r.dirtyRect = fullRect;
+        _d2dCreateRenderTarget();
     }
 
-    if (!_r.dirtyRect)
-    {
-        return;
-    }
-
-    auto dirtyRectInPx = _r.dirtyRect;
-    dirtyRectInPx.left *= _r.fontMetrics.cellSize.x;
-    dirtyRectInPx.top *= _r.fontMetrics.cellSize.y;
-    dirtyRectInPx.right *= _r.fontMetrics.cellSize.x;
-    dirtyRectInPx.bottom *= _r.fontMetrics.cellSize.y;
-
-    if (const auto intersection = _r.previousDirtyRectInPx & dirtyRectInPx)
-    {
-        wil::com_ptr<ID3D11Resource> backBuffer;
-        wil::com_ptr<ID3D11Resource> frontBuffer;
-        THROW_IF_FAILED(_r.swapChain->GetBuffer(0, __uuidof(backBuffer), backBuffer.put_void()));
-        THROW_IF_FAILED(_r.swapChain->GetBuffer(1, __uuidof(frontBuffer), frontBuffer.put_void()));
-
-        D3D11_BOX intersectBox;
-        intersectBox.left = intersection.left;
-        intersectBox.top = intersection.top;
-        intersectBox.front = 0;
-        intersectBox.right = intersection.right;
-        intersectBox.bottom = intersection.bottom;
-        intersectBox.back = 1;
-        _r.deviceContext->CopySubresourceRegion1(backBuffer.get(), 0, intersection.left, intersection.top, 0, frontBuffer.get(), 0, &intersectBox, 0);
-    }
-
-    _d2dCreateRenderTarget();
     _d2dDrawDirtyArea();
 
-    // See documentation for IDXGISwapChain2::GetFrameLatencyWaitableObject method:
-    // > For every frame it renders, the app should wait on this handle before starting any rendering operations.
-    // > Note that this requirement includes the first frame the app renders with the swap chain.
-    assert(debugGeneralPerformance || _r.frameLatencyWaitableObjectUsed);
-
-    if (_r.dirtyRect != fullRect)
-    {
-        RECT scrollRect{};
-        POINT scrollOffset{};
-        DXGI_PRESENT_PARAMETERS params{
-            .DirtyRectsCount = 1,
-            .pDirtyRects = dirtyRectInPx.as_win32_rect(),
-        };
-
-        if (_r.scrollOffset)
-        {
-            scrollRect = {
-                0,
-                std::max<til::CoordType>(0, _r.scrollOffset),
-                _r.cellCount.x,
-                _r.cellCount.y + std::min<til::CoordType>(0, _r.scrollOffset),
-            };
-            scrollOffset = {
-                0,
-                _r.scrollOffset,
-            };
-
-            scrollRect.top *= _r.fontMetrics.cellSize.y;
-            scrollRect.right *= _r.fontMetrics.cellSize.x;
-            scrollRect.bottom *= _r.fontMetrics.cellSize.y;
-
-            scrollOffset.y *= _r.fontMetrics.cellSize.y;
-
-            params.pScrollRect = &scrollRect;
-            params.pScrollOffset = &scrollOffset;
-        }
-
-        THROW_IF_FAILED(_r.swapChain->Present1(1, 0, &params));
-    }
-    else
-    {
-        THROW_IF_FAILED(_r.swapChain->Present(1, 0));
-    }
-
     _r.glyphQueue.clear();
-    _r.previousDirtyRectInPx = dirtyRectInPx;
-    _r.waitForPresentation = true;
     WI_ClearAllFlags(_r.invalidations, RenderInvalidations::Cursor | RenderInvalidations::ConstBuffer);
 }
 
 void AtlasEngine::_d2dCreateRenderTarget()
 {
-    if (_r.d2dRenderTarget)
-    {
-        return;
-    }
-
     {
         wil::com_ptr<ID3D11Texture2D> buffer;
         THROW_IF_FAILED(_r.swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), buffer.put_void()));
@@ -856,7 +834,9 @@ void AtlasEngine::_d2dCreateRenderTarget()
         props.pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED };
         props.dpiX = static_cast<float>(_r.dpi);
         props.dpiY = static_cast<float>(_r.dpi);
-        THROW_IF_FAILED(_sr.d2dFactory->CreateDxgiSurfaceRenderTarget(surface.get(), &props, _r.d2dRenderTarget.put()));
+        wil::com_ptr<ID2D1RenderTarget> renderTarget;
+        THROW_IF_FAILED(_sr.d2dFactory->CreateDxgiSurfaceRenderTarget(surface.get(), &props, renderTarget.addressof()));
+        _r.d2dRenderTarget = renderTarget.query<ID2D1DeviceContext>();
 
         // In case _api.realizedAntialiasingMode is D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE we'll
         // continuously adjust it in AtlasEngine::_drawGlyph. See _drawGlyph.
@@ -944,6 +924,8 @@ void AtlasEngine::_d2dDrawDirtyArea()
 
         // Draw background.
         {
+            _r.d2dRenderTarget->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_COPY);
+
             auto x1 = beg;
             auto x2 = gsl::narrow_cast<u16>(x1 + 1);
             auto currentColor = cells[x1].color.y;
@@ -965,6 +947,8 @@ void AtlasEngine::_d2dDrawDirtyArea()
                 const u16r rect{ x1, y, x2, gsl::narrow_cast<u16>(y + 1) };
                 _d2dFillRectangle(rect, currentColor);
             }
+
+            _r.d2dRenderTarget->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
         }
 
         // Draw text.
@@ -1072,6 +1056,7 @@ void AtlasEngine::_d2dFillRectangle(u16r rect, u32 color)
         .bottom = static_cast<float>(rect.bottom) * _r.cellSizeDIP.y,
     };
     const auto brush = _brushWithColor(color);
+    // TODO: This does blending, it should do copy
     _r.d2dRenderTarget->FillRectangle(r, brush);
 }
 

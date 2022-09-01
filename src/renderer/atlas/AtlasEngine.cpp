@@ -582,6 +582,9 @@ void AtlasEngine::_createResources()
             D3D_FEATURE_LEVEL_11_0,
             D3D_FEATURE_LEVEL_10_1,
             D3D_FEATURE_LEVEL_10_0,
+            D3D_FEATURE_LEVEL_9_3,
+            D3D_FEATURE_LEVEL_9_2,
+            D3D_FEATURE_LEVEL_9_1,
         };
 
         auto hr = E_UNEXPECTED;
@@ -624,16 +627,6 @@ void AtlasEngine::_createResources()
         _r.deviceContext = deviceContext.query<ID3D11DeviceContext1>();
     }
 
-    {
-        wil::com_ptr<IDXGIAdapter1> dxgiAdapter;
-        THROW_IF_FAILED(_r.device.query<IDXGIObject>()->GetParent(__uuidof(dxgiAdapter), dxgiAdapter.put_void()));
-        THROW_IF_FAILED(dxgiAdapter->GetParent(__uuidof(_r.dxgiFactory), _r.dxgiFactory.put_void()));
-
-        DXGI_ADAPTER_DESC1 desc;
-        THROW_IF_FAILED(dxgiAdapter->GetDesc1(&desc));
-        _r.d2dMode = debugForceD2DMode || WI_IsAnyFlagSet(desc.Flags, DXGI_ADAPTER_FLAG_REMOTE | DXGI_ADAPTER_FLAG_SOFTWARE);
-    }
-
 #ifndef NDEBUG
     // D3D debug messages
     if (deviceFlags & D3D11_CREATE_DEVICE_DEBUG)
@@ -645,6 +638,18 @@ void AtlasEngine::_createResources()
         }
     }
 #endif // NDEBUG
+
+    const auto featureLevel = _r.device->GetFeatureLevel();
+
+    {
+        wil::com_ptr<IDXGIAdapter1> dxgiAdapter;
+        THROW_IF_FAILED(_r.device.query<IDXGIObject>()->GetParent(__uuidof(dxgiAdapter), dxgiAdapter.put_void()));
+        THROW_IF_FAILED(dxgiAdapter->GetParent(__uuidof(_r.dxgiFactory), _r.dxgiFactory.put_void()));
+
+        DXGI_ADAPTER_DESC1 desc;
+        THROW_IF_FAILED(dxgiAdapter->GetDesc1(&desc));
+        _r.d2dMode = debugForceD2DMode || featureLevel < D3D_FEATURE_LEVEL_10_0 || WI_IsAnyFlagSet(desc.Flags, DXGI_ADAPTER_FLAG_REMOTE | DXGI_ADAPTER_FLAG_SOFTWARE);
+    }
 
     if (!_r.d2dMode)
     {
@@ -663,7 +668,7 @@ void AtlasEngine::_createResources()
         if (!_api.customPixelShaderPath.empty())
         {
             const char* target = nullptr;
-            switch (_r.device->GetFeatureLevel())
+            switch (featureLevel)
             {
             case D3D_FEATURE_LEVEL_10_0:
                 target = "ps_4_0";
@@ -791,10 +796,19 @@ void AtlasEngine::_createSwapChain()
         desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
         desc.SampleDesc.Count = 1;
         desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-        desc.BufferCount = 2;
+        // Sometimes up to 2 buffers are locked, for instance during screen capture or when moving the window.
+        // 3 buffers seems to guarantee a stable framerate at display frequency at all times.
+        desc.BufferCount = 3;
         desc.Scaling = DXGI_SCALING_NONE;
-        desc.SwapEffect = _sr.isWindows10OrGreater && !_r.d2dMode ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-        // If our background is opaque we can enable "independent" flips by setting DXGI_SWAP_EFFECT_FLIP_DISCARD and DXGI_ALPHA_MODE_IGNORE.
+        // DXGI_SWAP_EFFECT_FLIP_DISCARD is a mode that was created at a time were display drivers
+        // lacked support for Multiplane Overlays (MPO) and were copying buffers was expensive.
+        // This allowed DWM to quickly draw overlays (like gamebars) on top of rendered content.
+        // With faster GPU memory in general and with support for MPO in particular this isn't
+        // really an advantage anymore. Instead DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL allows for a
+        // more "intelligent" composition and display updates to occur like Panel Self Refresh
+        // (PSR) which requires dirty rectangles (Present1 API) to work correctly.
+        desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+        // If our background is opaque we can enable "independent" flips by setting DXGI_ALPHA_MODE_IGNORE.
         // As our swap chain won't have to compose with DWM anymore it reduces the display latency dramatically.
         desc.AlphaMode = _api.backgroundOpaqueMixin ? DXGI_ALPHA_MODE_IGNORE : DXGI_ALPHA_MODE_PREMULTIPLIED;
         desc.Flags = debugGeneralPerformance ? 0 : DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
@@ -837,7 +851,7 @@ void AtlasEngine::_createSwapChain()
     {
         try
         {
-            _api.swapChainChangedCallback();
+            _api.swapChainChangedCallback(_api.swapChainHandle.get());
         }
         CATCH_LOG();
     }
