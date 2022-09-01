@@ -533,11 +533,6 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
     _ScrollToPoint(_selection->end);
 }
 
-bool Terminal::SelectionIsTargetingUrl() const noexcept
-{
-    return _selectionIsTargetingUrl;
-}
-
 Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const
 {
     if ((_selectionMode == SelectionInteractionMode::Mark || mods.IsShiftPressed()) && !mods.IsAltPressed())

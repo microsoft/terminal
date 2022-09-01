@@ -287,7 +287,6 @@ public:
     void ExpandSelectionToWord();
     void ToggleMarkMode();
     void SelectHyperlink(const SearchDirection dir);
-    bool SelectionIsTargetingUrl() const noexcept;
 
     using UpdateSelectionParams = std::optional<std::pair<SelectionDirection, SelectionExpansion>>;
     UpdateSelectionParams ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const;
