@@ -40,7 +40,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _MakeColorSchemeVMsHelper();
 
         // Re-select the previously selected scheme if it exists
-        if (currentSchemeName)
+        if (!currentSchemeName.empty())
         {
             const auto it = _AllColorSchemes.First();
             while (it.HasCurrent())
