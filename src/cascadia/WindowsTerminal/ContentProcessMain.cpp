@@ -76,6 +76,8 @@ private:
     winrt::guid _guid;
 };
 
+static winrt::com_ptr<ContentProcessFactory> g_contentProcFactory{ nullptr };
+
 static bool checkIfContentProcess(winrt::guid& contentProcessGuid, HANDLE& eventHandle)
 {
     std::vector<std::wstring> args;
@@ -120,8 +122,9 @@ static void doContentProcessThing(const winrt::guid& contentProcessGuid, const H
     // !! LOAD BEARING !! - important to be a MTA for these COM calls.
     winrt::init_apartment();
     DWORD registrationHostClass{};
+    g_contentProcFactory = make_self<ContentProcessFactory>(contentProcessGuid);
     check_hresult(CoRegisterClassObject(contentProcessGuid,
-                                        make<ContentProcessFactory>(contentProcessGuid).get(),
+                                        g_contentProcFactory.get(),
                                         CLSCTX_LOCAL_SERVER,
                                         REGCLS_MULTIPLEUSE,
                                         &registrationHostClass));
