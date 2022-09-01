@@ -962,7 +962,7 @@ namespace fuzz
         __inline virtual _Type** operator&() throw()
         {
             m_ftEffectiveTraits |= TRAIT_TRANSFER_ALLOCATION;
-            return (this->m_fFuzzed) ? &(this->m_t) : &CFuzzType<_Type, _Args...>::m_tInit;
+            return (this->m_fFuzzed) ? &(this->m_t) : &(this->m_tInit);
         }
 
     private:

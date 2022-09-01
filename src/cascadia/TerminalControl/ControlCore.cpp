@@ -17,6 +17,7 @@
 #include "../../renderer/dx/DxRenderer.hpp"
 
 #include "ControlCore.g.cpp"
+#include "SelectionColor.g.cpp"
 
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Console::VirtualTerminal;
@@ -78,6 +79,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return initialized;
     }
 
+    TextColor SelectionColor::AsTextColor() const noexcept
+    {
+        if (_IsIndex16)
+        {
+            return { _Color.r, false };
+        }
+        else
+        {
+            return { static_cast<COLORREF>(_Color) };
+        }
+    }
+
     ControlCore::ControlCore(Control::IControlSettings settings,
                              Control::IControlAppearance unfocusedAppearance,
                              TerminalConnection::ITerminalConnection connection) :
@@ -89,7 +102,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _settings = winrt::make_self<implementation::ControlSettings>(settings, unfocusedAppearance);
 
-        _terminal = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
+        _terminal = std::make_shared<::Microsoft::Terminal::Core::Terminal>();
 
         // Subscribe to the connection's disconnected event and call our connection closed handlers.
         _connectionStateChangedRevoker = _connection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
@@ -195,13 +208,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             });
 
-        _updatePatternLocations = std::make_shared<ThrottledFuncTrailing<>>(
-            _dispatcher,
+        // NOTE: Calling UpdatePatternLocations from a background
+        // thread is a workaround for us to hit GH#12607 less often.
+        _updatePatternLocations = std::make_unique<til::throttled_func_trailing<>>(
             UpdatePatternLocationsInterval,
-            [weakThis = get_weak()]() {
-                if (auto core{ weakThis.get() }; !core->_IsClosing())
+            [weakTerminal = std::weak_ptr{ _terminal }]() {
+                if (const auto t = weakTerminal.lock())
                 {
-                    core->UpdatePatternLocations();
+                    auto lock = t->LockForWriting();
+                    t->UpdatePatternsUnderLock();
                 }
             });
 
@@ -256,7 +271,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 return false;
             }
 
-            if (Feature_AtlasEngine::IsEnabled() && _settings->UseAtlasEngine())
+            if (_settings->UseAtlasEngine())
             {
                 _renderEngine = std::make_unique<::Microsoft::Console::Render::AtlasEngine>();
             }
@@ -389,6 +404,72 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _terminal->SendCharEvent(ch, scanCode, modifiers);
     }
 
+    bool ControlCore::_shouldTryUpdateSelection(const WORD vkey)
+    {
+        // GH#6423 - don't update selection if the key that was pressed was a
+        // modifier key. We'll wait for a real keystroke to dismiss the
+        // GH #7395 - don't update selection when taking PrintScreen
+        // selection.
+        return HasSelection() && !KeyEvent::IsModifierKey(vkey) && vkey != VK_SNAPSHOT;
+    }
+
+    bool ControlCore::TryMarkModeKeybinding(const WORD vkey,
+                                            const ::Microsoft::Terminal::Core::ControlKeyStates mods)
+    {
+        if (_shouldTryUpdateSelection(vkey) && _terminal->SelectionMode() == ::Terminal::SelectionInteractionMode::Mark)
+        {
+            if (vkey == 'A' && !mods.IsAltPressed() && !mods.IsShiftPressed() && mods.IsCtrlPressed())
+            {
+                // Ctrl + A --> Select all
+                auto lock = _terminal->LockForWriting();
+                _terminal->SelectAll();
+                _updateSelectionUI();
+                return true;
+            }
+            else if (vkey == VK_TAB && !mods.IsAltPressed() && !mods.IsCtrlPressed() && _settings->DetectURLs())
+            {
+                // [Shift +] Tab --> next/previous hyperlink
+                auto lock = _terminal->LockForWriting();
+                const auto direction = mods.IsShiftPressed() ? ::Terminal::SearchDirection::Backward : ::Terminal::SearchDirection::Forward;
+                _terminal->SelectHyperlink(direction);
+                _updateSelectionUI();
+                return true;
+            }
+            else if (vkey == VK_RETURN && mods.IsCtrlPressed() && !mods.IsAltPressed() && !mods.IsShiftPressed() && _terminal->SelectionIsTargetingUrl())
+            {
+                // Ctrl + Enter --> Open URL
+                auto lock = _terminal->LockForReading();
+                const auto uri = _terminal->GetHyperlinkAtBufferPosition(_terminal->GetSelectionAnchor());
+                _OpenHyperlinkHandlers(*this, winrt::make<OpenHyperlinkEventArgs>(winrt::hstring{ uri }));
+                return true;
+            }
+            else if (vkey == VK_RETURN && !mods.IsCtrlPressed() && !mods.IsAltPressed())
+            {
+                // [Shift +] Enter --> copy text
+                // Don't lock here! CopySelectionToClipboard already locks for you!
+                CopySelectionToClipboard(mods.IsShiftPressed(), nullptr);
+                _terminal->ClearSelection();
+                _updateSelectionUI();
+                return true;
+            }
+            else if (vkey == VK_ESCAPE)
+            {
+                _terminal->ClearSelection();
+                _updateSelectionUI();
+                return true;
+            }
+            else if (const auto updateSlnParams{ _terminal->ConvertKeyEventToUpdateSelectionParams(mods, vkey) })
+            {
+                // try to update the selection
+                auto lock = _terminal->LockForWriting();
+                _terminal->UpdateSelection(updateSlnParams->first, updateSlnParams->second, mods);
+                _updateSelectionUI();
+                return true;
+            }
+        }
+        return false;
+    }
+
     // Method Description:
     // - Send this particular key event to the terminal.
     //   See Terminal::SendKeyEvent for more information.
@@ -405,57 +486,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                       const bool keyDown)
     {
         // Update the selection, if it's present
-        // GH#6423 - don't dismiss selection if the key that was pressed was a
-        // modifier key. We'll wait for a real keystroke to dismiss the
-        // GH #7395 - don't dismiss selection when taking PrintScreen
-        // selection.
         // GH#8522, GH#3758 - Only modify the selection on key _down_. If we
         // modify on key up, then there's chance that we'll immediately dismiss
         // a selection created by an action bound to a keydown.
-        if (HasSelection() &&
-            !KeyEvent::IsModifierKey(vkey) &&
-            vkey != VK_SNAPSHOT &&
-            keyDown)
+        if (_shouldTryUpdateSelection(vkey) && keyDown)
         {
-            const auto isInMarkMode = _terminal->SelectionMode() == ::Terminal::SelectionInteractionMode::Mark;
-            if (isInMarkMode)
-            {
-                if (modifiers.IsCtrlPressed() && vkey == 'A')
-                {
-                    // Ctrl + A --> Select all
-                    auto lock = _terminal->LockForWriting();
-                    _terminal->SelectAll();
-                    _updateSelectionUI();
-                    return true;
-                }
-                else if (vkey == VK_TAB && _settings->DetectURLs())
-                {
-                    // [Shift +] Tab --> next/previous hyperlink
-                    auto lock = _terminal->LockForWriting();
-                    const auto direction = modifiers.IsShiftPressed() ? ::Terminal::SearchDirection::Backward : ::Terminal::SearchDirection::Forward;
-                    _terminal->SelectHyperlink(direction);
-                    _updateSelectionUI();
-                    return true;
-                }
-                else if (vkey == VK_RETURN && modifiers.IsCtrlPressed() && _terminal->IsTargetingUrl())
-                {
-                    // Ctrl + Enter --> Open URL
-                    auto lock = _terminal->LockForReading();
-                    const auto uri = _terminal->GetHyperlinkAtBufferPosition(_terminal->GetSelectionAnchor());
-                    _OpenHyperlinkHandlers(*this, winrt::make<OpenHyperlinkEventArgs>(winrt::hstring{ uri }));
-                    return true;
-                }
-                else if (vkey == VK_RETURN)
-                {
-                    // [Shift +] Enter --> copy text
-                    // Don't lock here! CopySelectionToClipboard already locks for you!
-                    CopySelectionToClipboard(modifiers.IsShiftPressed(), nullptr);
-                    _terminal->ClearSelection();
-                    _updateSelectionUI();
-                    return true;
-                }
-            }
-
             // try to update the selection
             if (const auto updateSlnParams{ _terminal->ConvertKeyEventToUpdateSelectionParams(modifiers, vkey) })
             {
@@ -509,7 +544,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //      itself - it was initiated by the mouse wheel, or the scrollbar.
         _terminal->UserScrollViewport(viewTop);
 
-        _updatePatternLocations->Run();
+        (*_updatePatternLocations)();
     }
 
     void ControlCore::AdjustOpacity(const double adjustment)
@@ -583,16 +618,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Always redraw after toggling effects. This way even if the control
         // does not have focus it will update immediately.
         _renderer->TriggerRedrawAll();
-    }
-
-    // Method Description:
-    // - Tell TerminalCore to update its knowledge about the locations of visible regex patterns
-    // - We should call this (through the throttled function) when something causes the visible
-    //   region to change, such as when new text enters the buffer or the viewport is scrolled
-    void ControlCore::UpdatePatternLocations()
-    {
-        auto lock = _terminal->LockForWriting();
-        _terminal->UpdatePatternsUnderLock();
     }
 
     // Method description:
@@ -890,6 +915,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void ControlCore::_refreshSizeUnderLock()
     {
+        if (_IsClosing())
+        {
+            return;
+        }
+
         auto cx = gsl::narrow_cast<til::CoordType>(_panelWidth * _compositionScale);
         auto cy = gsl::narrow_cast<til::CoordType>(_panelHeight * _compositionScale);
 
@@ -1130,6 +1160,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return false;
     }
 
+    bool ControlCore::ExpandSelectionToWord()
+    {
+        if (_terminal->IsSelectionActive())
+        {
+            _terminal->ExpandSelectionToWord();
+            _updateSelectionUI();
+            return true;
+        }
+        return false;
+    }
+
     // Method Description:
     // - Pre-process text pasted (presumably from the clipboard)
     //   before sending it over the terminal's connection.
@@ -1311,7 +1352,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // Additionally, start the throttled update of where our links are.
-        _updatePatternLocations->Run();
+        (*_updatePatternLocations)();
     }
 
     void ControlCore::_terminalCursorPositionChanged()
@@ -1372,7 +1413,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (!_midiAudio)
         {
-            _midiAudio = std::make_unique<MidiAudio>();
+            const auto windowHandle = reinterpret_cast<HWND>(_owningHwnd);
+            _midiAudio = std::make_unique<MidiAudio>(windowHandle);
             _midiAudio->Initialize();
         }
         return *_midiAudio;
@@ -1600,7 +1642,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         auto lock = _terminal->LockForReading();
-        return _terminal->GetCursorPosition().to_core_point();
+        return _terminal->GetViewportRelativeCursorPosition().to_core_point();
     }
 
     // This one's really pushing the boundary of what counts as "encapsulation".
@@ -1704,7 +1746,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->Write(hstr);
 
             // Start the throttled update of where our hyperlinks are.
-            _updatePatternLocations->Run();
+            (*_updatePatternLocations)();
         }
         catch (...)
         {
@@ -2137,6 +2179,42 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 UserScrollViewport(0);
                 _terminalScrollPositionChanged(0, viewHeight, bufferSize);
+            }
+        }
+    }
+
+    void ControlCore::ColorSelection(const Control::SelectionColor& fg, const Control::SelectionColor& bg, Core::MatchMode matchMode)
+    {
+        if (HasSelection())
+        {
+            const auto pForeground = winrt::get_self<implementation::SelectionColor>(fg);
+            const auto pBackground = winrt::get_self<implementation::SelectionColor>(bg);
+
+            TextColor foregroundAsTextColor;
+            TextColor backgroundAsTextColor;
+
+            if (pForeground)
+            {
+                foregroundAsTextColor = pForeground->AsTextColor();
+            }
+
+            if (pBackground)
+            {
+                backgroundAsTextColor = pBackground->AsTextColor();
+            }
+
+            TextAttribute attr;
+            attr.SetForeground(foregroundAsTextColor);
+            attr.SetBackground(backgroundAsTextColor);
+
+            _terminal->ColorSelection(attr, matchMode);
+            _terminal->ClearSelection();
+            if (matchMode != Core::MatchMode::None)
+            {
+                // ClearSelection will invalidate the selection area... but if we are
+                // coloring other matches, then we need to make sure those get redrawn,
+                // too.
+                _renderer->TriggerRedrawAll();
             }
         }
     }

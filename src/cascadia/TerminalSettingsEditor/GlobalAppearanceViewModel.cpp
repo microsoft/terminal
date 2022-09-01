@@ -260,4 +260,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _GlobalSettings.DisableAnimations(!value);
     }
+
+    void GlobalAppearanceViewModel::ShowTitlebarToggled(const winrt::Windows::Foundation::IInspectable& /* sender */, const RoutedEventArgs& /* args */)
+    {
+        // Set AlwaysShowTabs to true if ShowTabsInTitlebar was toggled OFF -> ON
+        if (!ShowTabsInTitlebar())
+        {
+            AlwaysShowTabs(true);
+        }
+    }
 }

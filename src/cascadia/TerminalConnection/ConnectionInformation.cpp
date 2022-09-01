@@ -25,6 +25,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     TerminalConnection::ITerminalConnection ConnectionInformation::CreateConnection(TerminalConnection::ConnectionInformation info)
     try
     {
+        // pilfered from `winrt_get_activation_factory` in module.g.cpp. Does a
+        // reverse string match, so that we check the classname first, skipping
+        // the namespace prefixes.
+        static auto requal = [](std::wstring_view const& left, std::wstring_view const& right) noexcept -> bool {
+            return std::equal(left.rbegin(), left.rend(), right.rbegin(), right.rend());
+        };
+
         Windows::Foundation::IInspectable inspectable{};
 
         const auto name = static_cast<HSTRING>(winrt::get_abi(info.ClassName()));
@@ -40,8 +47,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         // A couple short-circuits, for connections that _we_ implement.
         // Sometimes, RoActivateInstance is weird and fails with errors like the
-        // following
-        //
+        // following:
         //
         /*
         onecore\com\combase\inc\RegistryKey.hpp(527)\combase.dll!01234:
@@ -58,15 +64,15 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         */
         //
         // So to avoid those, we'll manually instantiate these
-        if (info.ClassName() == winrt::name_of<TerminalConnection::ConptyConnection>())
+        if (requal(info.ClassName(), winrt::name_of<TerminalConnection::ConptyConnection>()))
         {
             connection = TerminalConnection::ConptyConnection();
         }
-        else if (info.ClassName() == winrt::name_of<TerminalConnection::AzureConnection>())
+        else if (requal(info.ClassName(), winrt::name_of<TerminalConnection::AzureConnection>()))
         {
             connection = TerminalConnection::AzureConnection();
         }
-        else if (info.ClassName() == winrt::name_of<TerminalConnection::EchoConnection>())
+        else if (requal(info.ClassName(), winrt::name_of<TerminalConnection::EchoConnection>()))
         {
             connection = TerminalConnection::EchoConnection();
         }

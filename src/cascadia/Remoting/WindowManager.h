@@ -72,7 +72,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         void _registerAsMonarch();
         void _createMonarch();
+        void _redundantCreateMonarch();
         void _createMonarchAndCallbacks();
+        void _createCallbacks();
         bool _areWeTheKing();
         winrt::Microsoft::Terminal::Remoting::IPeasant _createOurPeasant(std::optional<uint64_t> givenID,
                                                                          const winrt::hstring& givenName);

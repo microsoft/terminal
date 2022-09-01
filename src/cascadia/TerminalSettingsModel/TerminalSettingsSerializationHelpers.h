@@ -30,6 +30,34 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::CursorStyle)
     };
 };
 
+// Type Description:
+// - Helper for converting a user-specified adjustTextMode value to its corresponding enum
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::AdjustTextMode)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "never", ValueType::Never },
+        pair_type{ "indexed", ValueType::Indexed },
+        pair_type{ "always", ValueType::Always },
+    };
+
+    // Override mapping parser to add boolean parsing
+    ::winrt::Microsoft::Terminal::Core::AdjustTextMode FromJson(const Json::Value& json)
+    {
+        if (json.isBool())
+        {
+            return json.asBool() ? ValueType::Indexed : ValueType::Never;
+        }
+        return EnumMapper::FromJson(json);
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        return EnumMapper::CanConvert(json) || json.isBool();
+    }
+
+    using EnumMapper::TypeDescription;
+};
+
 JSON_ENUM_MAPPER(::winrt::Windows::UI::Xaml::Media::Stretch)
 {
     static constexpr std::array<pair_type, 4> mappings = {
@@ -45,6 +73,14 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ScrollbarState)
     static constexpr std::array<pair_type, 2> mappings = {
         pair_type{ "visible", ValueType::Visible },
         pair_type{ "hidden", ValueType::Hidden }
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::MatchMode)
+{
+    static constexpr std::array<pair_type, 2> mappings = {
+        pair_type{ "none", ValueType::None },
+        pair_type{ "all", ValueType::All }
     };
 };
 
@@ -108,10 +144,11 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::TextAntialiasingMode)
 // - Helper for converting a user-specified closeOnExit value to its corresponding enum
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode)
 {
-    JSON_MAPPINGS(3) = {
+    JSON_MAPPINGS(4) = {
         pair_type{ "always", ValueType::Always },
         pair_type{ "graceful", ValueType::Graceful },
         pair_type{ "never", ValueType::Never },
+        pair_type{ "automatic", ValueType::Automatic },
     };
 
     // Override mapping parser to add boolean parsing
@@ -212,7 +249,7 @@ JSON_ENUM_MAPPER(::winrt::Windows::UI::Xaml::ElementTheme)
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::NewTabPosition)
 {
     JSON_MAPPINGS(2) = {
-        pair_type{ "atTheEnd", ValueType::AtTheEnd },
+        pair_type{ "afterLastTab", ValueType::AfterLastTab },
         pair_type{ "afterCurrentTab", ValueType::AfterCurrentTab },
     };
 };
@@ -631,6 +668,15 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt:
     }
 };
 
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "always", ValueType::Always },
+        pair_type{ "hover", ValueType::Hover },
+        pair_type{ "never", ValueType::Never },
+    };
+};
+
 // Possible ScrollToMarkDirection values
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ScrollToMarkDirection)
 {
@@ -640,4 +686,62 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ScrollToMarkDirection)
         pair_type{ "first", ValueType::First },
         pair_type{ "last", ValueType::Last },
     };
+};
+
+template<>
+struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winrt::Microsoft::Terminal::Control::SelectionColor>
+{
+    ::winrt::Microsoft::Terminal::Control::SelectionColor FromJson(const Json::Value& json)
+    {
+        const auto string = Detail::GetStringView(json);
+        const auto isIndexed16 = string.size() == 3 && string.front() == 'i';
+        til::color color;
+
+        if (isIndexed16)
+        {
+            const auto indexStr = string.substr(1);
+            const auto idx = til::to_ulong(indexStr, 16);
+            color.r = gsl::narrow_cast<uint8_t>(std::min(idx, 15ul));
+        }
+        else
+        {
+            color = ::Microsoft::Console::Utils::ColorFromHexString(string);
+        }
+
+        winrt::Microsoft::Terminal::Control::SelectionColor selection;
+        selection.Color(color);
+        selection.IsIndex16(isIndexed16);
+        return selection;
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        if (!json.isString())
+        {
+            return false;
+        }
+
+        const auto string = Detail::GetStringView(json);
+        const auto isColorSpec = (string.length() == 9 || string.length() == 7 || string.length() == 4) && string.front() == '#';
+        const auto isIndexedColor = string.size() == 3 && string.front() == 'i';
+        return isColorSpec || isIndexedColor;
+    }
+
+    Json::Value ToJson(const ::winrt::Microsoft::Terminal::Control::SelectionColor& val)
+    {
+        const auto color = val.Color();
+        if (val.IsIndex16())
+        {
+            return fmt::format("i{:02x}", color.R);
+        }
+        else
+        {
+            return ::Microsoft::Console::Utils::ColorToHexString(color);
+        }
+    }
+
+    std::string TypeDescription() const
+    {
+        return "SelectionColor (#rrggbb, #rgb, #rrggbbaa, iNN)";
+    }
 };

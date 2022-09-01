@@ -44,7 +44,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     enum NewTabPosition
     {
-        AtTheEnd,
+        AfterLastTab,
         AfterCurrentTab,
     };
 
@@ -82,6 +82,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, DebugFeaturesEnabled);
         INHERITABLE_SETTING(Boolean, StartOnUserLogin);
         INHERITABLE_SETTING(Boolean, AlwaysOnTop);
+        INHERITABLE_SETTING(Boolean, AutoHideWindow);
         INHERITABLE_SETTING(TabSwitcherMode, TabSwitcherMode);
         INHERITABLE_SETTING(Boolean, DisableAnimations);
         INHERITABLE_SETTING(String, StartupActions);
@@ -93,6 +94,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, AlwaysShowNotificationIcon);
         INHERITABLE_SETTING(IVector<String>, DisabledProfileSources);
         INHERITABLE_SETTING(Boolean, ShowAdminShield);
+        INHERITABLE_SETTING(Boolean, EnableColorSelection);
 
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);

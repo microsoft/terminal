@@ -23,7 +23,7 @@ using namespace Microsoft::Console::Types;
 // - direction - The direction to search (upward or downward)
 // - sensitivity - Whether or not you care about case
 Search::Search(IUiaData& uiaData,
-               const std::wstring& str,
+               const std::wstring_view str,
                const Direction direction,
                const Sensitivity sensitivity) :
     _direction(direction),
@@ -47,7 +47,7 @@ Search::Search(IUiaData& uiaData,
 // - sensitivity - Whether or not you care about case
 // - anchor - starting search location in screenInfo
 Search::Search(IUiaData& uiaData,
-               const std::wstring& str,
+               const std::wstring_view str,
                const Direction direction,
                const Sensitivity sensitivity,
                const til::point anchor) :
@@ -106,14 +106,13 @@ void Search::Select() const
 }
 
 // Routine Description:
-// - In console host, we take the found word and apply the given color to it in the screen buffer
-// - In Windows Terminal, we just select the found word, but we do not modify the buffer
+// - Applies the supplied TextAttribute to the current search result.
 // Arguments:
-// - ulAttr - The legacy color attribute to apply to the word
+// - attr - The attribute to apply to the result
 void Search::Color(const TextAttribute attr) const
 {
     // Only select if we've found something.
-    if (_coordSelStart != _coordSelEnd)
+    if (_coordSelEnd >= _coordSelStart)
     {
         _uiaData.ColorSelection(_coordSelStart, _coordSelEnd, attr);
     }
@@ -330,7 +329,7 @@ void Search::_UpdateNextPosition()
 // - wstr - String that will be our search term
 // Return Value:
 // - Structured text data for comparison to screen buffer text data.
-std::vector<std::vector<wchar_t>> Search::s_CreateNeedleFromString(const std::wstring& wstr)
+std::vector<std::vector<wchar_t>> Search::s_CreateNeedleFromString(const std::wstring_view wstr)
 {
     const auto charData = Utf16Parser::Parse(wstr);
     std::vector<std::vector<wchar_t>> cells;

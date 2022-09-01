@@ -103,6 +103,7 @@ AppHost::AppHost() noexcept :
     _window->ShouldExitFullscreen({ &_logic, &winrt::TerminalApp::AppLogic::RequestExitFullscreen });
 
     _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
+    _window->SetAutoHideWindow(_logic.AutoHideWindow());
 
     _window->MakeWindow();
 
@@ -403,6 +404,12 @@ void AppHost::Initialize()
         {
             _logic.Maximized(newMaximize);
         }
+    });
+
+    _window->AutomaticShutdownRequested([this]() {
+        // Raised when the OS is beginning an update of the app. We will quit,
+        // to save our state, before the OS manually kills us.
+        _windowManager.RequestQuitAll();
     });
 
     // Load bearing: make sure the PropertyChanged handler is added before we
@@ -1393,6 +1400,7 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
     }
 
     _window->SetMinimizeToNotificationAreaBehavior(_logic.GetMinimizeToNotificationArea());
+    _window->SetAutoHideWindow(_logic.AutoHideWindow());
     _updateTheme();
 }
 
@@ -1621,7 +1629,10 @@ void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspect
 {
     if (e.PropertyName() == L"TitlebarBrush")
     {
-        auto nonClientWindow{ static_cast<NonClientIslandWindow*>(_window.get()) };
-        nonClientWindow->SetTitlebarBackground(_logic.TitlebarBrush());
+        if (_useNonClientArea)
+        {
+            auto nonClientWindow{ static_cast<NonClientIslandWindow*>(_window.get()) };
+            nonClientWindow->SetTitlebarBackground(_logic.TitlebarBrush());
+        }
     }
 }

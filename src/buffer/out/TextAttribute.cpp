@@ -357,11 +357,6 @@ void TextAttribute::SetReverseVideo(bool isReversed) noexcept
     WI_UpdateFlag(_wAttrLegacy, COMMON_LVB_REVERSE_VIDEO, isReversed);
 }
 
-ExtendedAttributes TextAttribute::GetExtendedAttributes() const noexcept
-{
-    return _extendedAttrs;
-}
-
 // Routine Description:
 // - swaps foreground and background color
 void TextAttribute::Invert() noexcept

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA5CAD1A-082C-4476-9F33-94B339494076}</ProjectGuid>
     <ProjectName>Microsoft.Terminal.Settings.Model</ProjectName>
@@ -14,6 +14,7 @@
   </PropertyGroup>
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
+    <TerminalMUX>true</TerminalMUX>
   </PropertyGroup>
   <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
@@ -104,14 +105,6 @@
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
   </ItemGroup>
-
-  <Import Project="$(OpenConsoleDir)packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('$(OpenConsoleDir)packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets'))" />
-  </Target>
 
   <ItemDefinitionGroup>
     <ClCompile>

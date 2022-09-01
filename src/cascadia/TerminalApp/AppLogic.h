@@ -79,6 +79,7 @@ namespace winrt::TerminalApp::implementation
         bool Fullscreen() const;
         void Maximized(bool newMaximized);
         bool AlwaysOnTop() const;
+        bool AutoHideWindow();
 
         bool ShouldUsePersistedLayout();
         bool ShouldImmediatelyHandoffToElevated();
@@ -191,6 +192,7 @@ namespace winrt::TerminalApp::implementation
         void _OnLoaded(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
         [[nodiscard]] HRESULT _TryLoadSettings() noexcept;
+        void _ProcessLazySettingsChanges();
         void _RegisterSettingsChange();
         fire_and_forget _DispatchReloadSettings();
         void _ReloadSettings();

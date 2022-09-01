@@ -30,6 +30,29 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         return visualize_control_codes(std::wstring{ str });
     }
 
+    _TIL_INLINEPREFIX std::wstring clean_filename(std::wstring str) noexcept
+    {
+        static constexpr std::array<bool, 128> filter{ {
+            // clang-format off
+            0 /* NUL */, 0 /* SOH */, 0 /* STX */, 0 /* ETX */, 0 /* EOT */, 0 /* ENQ */, 0 /* ACK */, 0 /* BEL */, 0 /* BS  */, 0 /* HT  */, 0 /* LF  */, 0 /* VT  */, 0 /* FF  */, 0 /* CR  */, 0 /* SO  */, 0 /* SI  */,
+            0 /* DLE */, 0 /* DC1 */, 0 /* DC2 */, 0 /* DC3 */, 0 /* DC4 */, 0 /* NAK */, 0 /* SYN */, 0 /* ETB */, 0 /* CAN */, 0 /* EM  */, 0 /* SUB */, 0 /* ESC */, 0 /* FS  */, 0 /* GS  */, 0 /* RS  */, 0 /* US  */,
+            0 /* SP  */, 0 /* !   */, 1 /* "   */, 0 /* #   */, 0 /* $   */, 0 /* %   */, 0 /* &   */, 0 /* '   */, 0 /* (   */, 0 /* )   */, 1 /* *   */, 0 /* +   */, 0 /* ,   */, 0 /* -   */, 0 /* .   */, 1 /* /   */,
+            0 /* 0   */, 0 /* 1   */, 0 /* 2   */, 0 /* 3   */, 0 /* 4   */, 0 /* 5   */, 0 /* 6   */, 0 /* 7   */, 0 /* 8   */, 0 /* 9   */, 1 /* :   */, 0 /* ;   */, 1 /* <   */, 0 /* =   */, 1 /* >   */, 1 /* ?   */,
+            0 /* @   */, 0 /* A   */, 0 /* B   */, 0 /* C   */, 0 /* D   */, 0 /* E   */, 0 /* F   */, 0 /* G   */, 0 /* H   */, 0 /* I   */, 0 /* J   */, 0 /* K   */, 0 /* L   */, 0 /* M   */, 0 /* N   */, 0 /* O   */,
+            0 /* P   */, 0 /* Q   */, 0 /* R   */, 0 /* S   */, 0 /* T   */, 0 /* U   */, 0 /* V   */, 0 /* W   */, 0 /* X   */, 0 /* Y   */, 0 /* Z   */, 0 /* [   */, 1 /* \   */, 0 /* ]   */, 0 /* ^   */, 0 /* _   */,
+            0 /* `   */, 0 /* a   */, 0 /* b   */, 0 /* c   */, 0 /* d   */, 0 /* e   */, 0 /* f   */, 0 /* g   */, 0 /* h   */, 0 /* i   */, 0 /* j   */, 0 /* k   */, 0 /* l   */, 0 /* m   */, 0 /* n   */, 0 /* o   */,
+            0 /* p   */, 0 /* q   */, 0 /* r   */, 0 /* s   */, 0 /* t   */, 0 /* u   */, 0 /* v   */, 0 /* w   */, 0 /* x   */, 0 /* y   */, 0 /* z   */, 0 /* {   */, 1 /* |   */, 0 /* }   */, 0 /* ~   */, 0 /* DEL */,
+            // clang-format on
+        } };
+
+        std::erase_if(str, [](auto ch) {
+            // This lookup is branchless: It always checks the filter, but throws
+            // away the result if ch >= 128. This is faster than using `&&` (branchy).
+            return til::at(filter, ch & 127) & (ch < 128);
+        });
+        return str;
+    }
+
     // std::string_view::starts_with support for C++17.
     template<typename T, typename Traits>
     constexpr bool starts_with(const std::basic_string_view<T, Traits>& str, const std::basic_string_view<T, Traits>& prefix) noexcept
@@ -65,11 +88,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         return ends_with<>(str, prefix);
     }
 
-    inline constexpr unsigned long from_wchars_error = ULONG_MAX;
+    inline constexpr unsigned long to_ulong_error = ULONG_MAX;
 
     // Just like std::wcstoul, but without annoying locales and null-terminating strings.
     // It has been fuzz-tested against clang's strtoul implementation.
-    _TIL_INLINEPREFIX unsigned long from_wchars(const std::wstring_view& str) noexcept
+    template<typename T, typename Traits>
+    _TIL_INLINEPREFIX constexpr unsigned long to_ulong(const std::basic_string_view<T, Traits>& str, unsigned long base = 0) noexcept
     {
         static constexpr unsigned long maximumValue = ULONG_MAX / 16;
 
@@ -81,51 +105,55 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead
         auto ptr = str.data();
         const auto end = ptr + str.length();
-        unsigned long base = 10;
         unsigned long accumulator = 0;
         unsigned long value = ULONG_MAX;
 
-        if (str.length() > 1 && *ptr == L'0')
+        if (!base)
         {
-            base = 8;
-            ptr++;
+            base = 10;
 
-            if (str.length() > 2 && (*ptr == L'x' || *ptr == L'X'))
+            if (str.length() > 1 && *ptr == '0')
             {
-                base = 16;
-                ptr++;
+                base = 8;
+                ++ptr;
+
+                if (str.length() > 2 && (*ptr == 'x' || *ptr == 'X'))
+                {
+                    base = 16;
+                    ++ptr;
+                }
             }
         }
 
         if (ptr == end)
         {
-            return from_wchars_error;
+            return to_ulong_error;
         }
 
         for (;; accumulator *= base)
         {
             value = ULONG_MAX;
-            if (*ptr >= L'0' && *ptr <= L'9')
+            if (*ptr >= '0' && *ptr <= '9')
             {
-                value = *ptr - L'0';
+                value = *ptr - '0';
             }
-            else if (*ptr >= L'A' && *ptr <= L'F')
+            else if (*ptr >= 'A' && *ptr <= 'F')
             {
-                value = *ptr - L'A' + 10;
+                value = *ptr - 'A' + 10;
             }
-            else if (*ptr >= L'a' && *ptr <= L'f')
+            else if (*ptr >= 'a' && *ptr <= 'f')
             {
-                value = *ptr - L'a' + 10;
+                value = *ptr - 'a' + 10;
             }
             else
             {
-                return from_wchars_error;
+                return to_ulong_error;
             }
 
             accumulator += value;
             if (accumulator >= maximumValue)
             {
-                return from_wchars_error;
+                return to_ulong_error;
             }
 
             if (++ptr == end)
@@ -134,6 +162,16 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
         }
 #pragma warning(pop)
+    }
+
+    constexpr unsigned long to_ulong(const std::string_view& str, unsigned long base = 0) noexcept
+    {
+        return to_ulong<>(str, base);
+    }
+
+    constexpr unsigned long to_ulong(const std::wstring_view& str, unsigned long base = 0) noexcept
+    {
+        return to_ulong<>(str, base);
     }
 
     // Just like std::tolower, but without annoying locales.
