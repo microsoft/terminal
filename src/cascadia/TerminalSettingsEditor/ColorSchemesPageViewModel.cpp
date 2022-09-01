@@ -34,14 +34,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // we still have the same CurrentScheme as before (if that scheme still exists)
 
         // Store the name of the current scheme
-        const auto hasCurrentScheme = HasCurrentScheme();
-        const auto currentSchemeName = hasCurrentScheme ? CurrentScheme().Name() : hstring{ L"" };
+        const auto currentSchemeName = HasCurrentScheme() ? CurrentScheme().Name() : hstring{};
 
         // Re-initialize the color scheme list
         _MakeColorSchemeVMsHelper();
 
         // Re-select the previously selected scheme if it exists
-        if (hasCurrentScheme)
+        if (currentSchemeName)
         {
             const auto it = _AllColorSchemes.First();
             while (it.HasCurrent())
