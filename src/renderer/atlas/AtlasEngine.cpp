@@ -705,14 +705,14 @@ void AtlasEngine::_createResources()
 
                 // Try to determine whether the shader uses the Time variable
                 wil::com_ptr<ID3D11ShaderReflection> reflector;
-                if (SUCCEEDED(D3DReflect(blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(reflector.put()))))
+                if (SUCCEEDED_LOG(D3DReflect(blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(reflector.put()))))
                 {
                     if (ID3D11ShaderReflectionConstantBuffer* constantBufferReflector = reflector->GetConstantBufferByIndex(0)) // shader buffer
                     {
                         if (ID3D11ShaderReflectionVariable* variableReflector = constantBufferReflector->GetVariableByIndex(0)) // time
                         {
                             D3D11_SHADER_VARIABLE_DESC variableDescriptor;
-                            if (SUCCEEDED(variableReflector->GetDesc(&variableDescriptor)))
+                            if (SUCCEEDED_LOG(variableReflector->GetDesc(&variableDescriptor)))
                             {
                                 // only if time is used
                                 _r.requiresContinuousRedraw = WI_IsFlagSet(variableDescriptor.uFlags, D3D_SVF_USED);
