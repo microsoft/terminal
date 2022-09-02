@@ -3,6 +3,7 @@
 
 namespace Microsoft.Terminal.Settings.Model
 {
+    runtimeclass Command;
     // This interface ensures that no changes are made to ActionMap
     interface IActionMapView
     {
