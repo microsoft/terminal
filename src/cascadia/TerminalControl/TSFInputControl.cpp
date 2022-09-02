@@ -5,8 +5,6 @@
 #include "TSFInputControl.h"
 #include "TSFInputControl.g.cpp"
 
-#include <Utils.h>
-
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Graphics::Display;
 using namespace winrt::Windows::UI::Core;
@@ -16,17 +14,7 @@ using namespace winrt::Windows::UI::Xaml;
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    TSFInputControl::TSFInputControl() :
-        _editContext{ nullptr },
-        _inComposition{ false },
-        _activeTextStart{ 0 },
-        _focused{ false },
-        _currentTerminalCursorPos{ 0, 0 },
-        _currentCanvasWidth{ 0.0 },
-        _currentTextBlockHeight{ 0.0 },
-        _currentTextBounds{ 0, 0, 0, 0 },
-        _currentControlBounds{ 0, 0, 0, 0 },
-        _currentWindowBounds{ 0, 0, 0, 0 }
+    TSFInputControl::TSFInputControl()
     {
         InitializeComponent();
 
@@ -83,11 +71,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void TSFInputControl::NotifyFocusEnter()
     {
-        if (_editContext != nullptr)
-        {
-            _editContext.NotifyFocusEnter();
-            _focused = true;
-        }
+        _editContext.NotifyFocusEnter();
+        _focused = true;
     }
 
     // Method Description:
@@ -99,11 +84,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void TSFInputControl::NotifyFocusLeave()
     {
-        if (_editContext != nullptr)
-        {
-            _editContext.NotifyFocusLeave();
-            _focused = false;
-        }
+        _editContext.NotifyFocusLeave();
+        _focused = false;
     }
 
     // Method Description:
@@ -117,14 +99,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (!_inputBuffer.empty())
         {
-            TextBlock().Text(L"");
-            const auto bufLen = ::base::ClampedNumeric<int32_t>(_inputBuffer.length());
             _inputBuffer.clear();
-            _editContext.NotifyFocusLeave();
-            _editContext.NotifyTextChanged({ 0, bufLen }, 0, { 0, 0 });
-            _editContext.NotifyFocusEnter();
+            _selection = {};
             _activeTextStart = 0;
-            _inComposition = false;
+            _editContext.NotifyTextChanged({ 0, INT32_MAX }, 0, _selection);
+            TextBlock().Text({});
         }
     }
 
@@ -303,12 +282,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TSFInputControl::_compositionCompletedHandler(CoreTextEditContext sender, const CoreTextCompositionCompletedEventArgs& /*args*/)
     {
         _inComposition = false;
-
-        // only need to do work if the current buffer has text
-        if (!_inputBuffer.empty())
-        {
-            _SendAndClearText();
-        }
+        _SendAndClearText();
     }
 
     // Method Description:
@@ -336,16 +310,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void TSFInputControl::_textRequestedHandler(CoreTextEditContext sender, const CoreTextTextRequestedEventArgs& args)
     {
-        // the range the TSF wants to know about
-        const auto range = args.Request().Range();
-
         try
         {
-            const auto textEnd = ::base::ClampMin<size_t>(range.EndCaretPosition, _inputBuffer.length());
-            const auto length = ::base::ClampSub<size_t>(textEnd, range.StartCaretPosition);
-            const auto textRequested = _inputBuffer.substr(range.StartCaretPosition, length);
-
-            args.Request().Text(textRequested);
+            const auto range = args.Request().Range();
+            const auto text = _inputBuffer.substr(
+                range.StartCaretPosition,
+                range.EndCaretPosition - range.StartCaretPosition);
+            args.Request().Text(text);
         }
         CATCH_LOG();
     }
@@ -360,8 +331,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - args: CoreTextSelectionRequestedEventArgs for providing data for the SelectionRequested event. Not used in method.
     // Return Value:
     // - <none>
-    void TSFInputControl::_selectionRequestedHandler(CoreTextEditContext sender, const CoreTextSelectionRequestedEventArgs& /*args*/)
+    void TSFInputControl::_selectionRequestedHandler(CoreTextEditContext sender, const CoreTextSelectionRequestedEventArgs& args)
     {
+        args.Request().Selection(_selection);
     }
 
     // Method Description:
@@ -374,8 +346,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - args: CoreTextSelectionUpdatingEventArgs for providing data for the SelectionUpdating event. Not used in method.
     // Return Value:
     // - <none>
-    void TSFInputControl::_selectionUpdatingHandler(CoreTextEditContext sender, const CoreTextSelectionUpdatingEventArgs& /*args*/)
+    void TSFInputControl::_selectionUpdatingHandler(CoreTextEditContext sender, const CoreTextSelectionUpdatingEventArgs& args)
     {
+        _selection = args.Selection();
+        args.Result(CoreTextSelectionUpdatingResult::Succeeded);
     }
 
     // Method Description:
@@ -388,24 +362,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void TSFInputControl::_textUpdatingHandler(CoreTextEditContext sender, const CoreTextTextUpdatingEventArgs& args)
     {
-        const auto incomingText = args.Text();
-        const auto range = args.Range();
-
         try
         {
-            // When a user deletes the last character in their current composition, some machines
-            // will fire a CompositionCompleted before firing a TextUpdating event that deletes the last character.
-            // The TextUpdating will have a lower StartCaretPosition, so in this scenario, _activeTextStart
-            // needs to update to be the StartCaretPosition.
-            // A known issue related to this behavior is that the last character that's deleted from a composition
-            // will get sent to the terminal before we receive the TextUpdate to delete the character.
-            // See GH #5054.
-            _activeTextStart = ::base::ClampMin(_activeTextStart, ::base::ClampedNumeric<size_t>(range.StartCaretPosition));
+            const auto incomingText = args.Text();
+            const auto range = args.Range();
 
             _inputBuffer = _inputBuffer.replace(
                 range.StartCaretPosition,
-                ::base::ClampSub<size_t>(range.EndCaretPosition, range.StartCaretPosition),
+                range.EndCaretPosition - range.StartCaretPosition,
                 incomingText);
+            _selection = args.NewSelection();
+            // GH#5054: Pressing backspace might move the caret before the _activeTextStart.
+            _activeTextStart = std::min(_activeTextStart, _inputBuffer.size());
 
             // Emojis/Kaomojis/Symbols chosen through the IME without starting composition
             // will be sent straight through to the terminal.
@@ -432,22 +400,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    // Method Description:
-    // - Send the portion of the textBuffer starting at _activeTextStart to the end of the buffer.
-    //   Then clear the TextBlock and hide it until the next time text is received.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
     void TSFInputControl::_SendAndClearText()
     {
         const auto text = _inputBuffer.substr(_activeTextStart);
+        if (text.empty())
+        {
+            return;
+        }
 
         _CompositionCompletedHandlers(text);
 
-        _activeTextStart = _inputBuffer.length();
+        _activeTextStart = _inputBuffer.size();
 
-        TextBlock().Text(L"");
+        TextBlock().Text({});
 
         // After we reset the TextBlock to empty string, we want to make sure
         // ActualHeight reflects the respective height. It seems that ActualHeight

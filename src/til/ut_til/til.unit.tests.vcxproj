@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ProjectGuid>{767268EE-174A-46FE-96F0-EEE698A1BBC9}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -19,6 +19,7 @@
     <ClCompile Include="CoalesceTests.cpp" />
     <ClCompile Include="ColorTests.cpp" />
     <ClCompile Include="EnumSetTests.cpp" />
+    <ClCompile Include="HashTests.cpp" />
     <ClCompile Include="MathTests.cpp" />
     <ClCompile Include="mutex.cpp" />
     <ClCompile Include="OperatorTests.cpp" />
@@ -35,6 +36,32 @@
     <ClCompile Include="u8u16convertTests.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\inc\til\at.h" />
+    <ClInclude Include="..\..\inc\til\atomic.h" />
+    <ClInclude Include="..\..\inc\til\bit.h" />
+    <ClInclude Include="..\..\inc\til\bitmap.h" />
+    <ClInclude Include="..\..\inc\til\coalesce.h" />
+    <ClInclude Include="..\..\inc\til\color.h" />
+    <ClInclude Include="..\..\inc\til\enumset.h" />
+    <ClInclude Include="..\..\inc\til\hash.h" />
+    <ClInclude Include="..\..\inc\til\latch.h" />
+    <ClInclude Include="..\..\inc\til\math.h" />
+    <ClInclude Include="..\..\inc\til\mutex.h" />
+    <ClInclude Include="..\..\inc\til\operators.h" />
+    <ClInclude Include="..\..\inc\til\pmr.h" />
+    <ClInclude Include="..\..\inc\til\point.h" />
+    <ClInclude Include="..\..\inc\til\rand.h" />
+    <ClInclude Include="..\..\inc\til\rect.h" />
+    <ClInclude Include="..\..\inc\til\replace.h" />
+    <ClInclude Include="..\..\inc\til\rle.h" />
+    <ClInclude Include="..\..\inc\til\size.h" />
+    <ClInclude Include="..\..\inc\til\some.h" />
+    <ClInclude Include="..\..\inc\til\spsc.h" />
+    <ClInclude Include="..\..\inc\til\static_map.h" />
+    <ClInclude Include="..\..\inc\til\string.h" />
+    <ClInclude Include="..\..\inc\til\throttled_func.h" />
+    <ClInclude Include="..\..\inc\til\ticket_lock.h" />
+    <ClInclude Include="..\..\inc\til\u8u16convert.h" />
     <ClInclude Include="..\precomp.h" />
   </ItemGroup>
   <ItemDefinitionGroup>

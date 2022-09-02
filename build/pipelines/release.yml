@@ -2,9 +2,9 @@
 trigger: none
 pr: none
 
-pool: 
+pool:
   name: WinDevPool-L
-  demands: ImageOverride -equals WinDevVS16-latest
+  demands: ImageOverride -equals WinDevVS17-latest
 
 parameters:
   - name: branding
@@ -134,8 +134,6 @@ jobs:
 
         Write-Host "##vso[task.setvariable variable=RationalizedBuildPlatform]${Arch}"
   - template: .\templates\restore-nuget-steps.yml
-  # Pull the Windows SDK for the developer tools like the debuggers so we can index sources later
-  - template: .\templates\install-winsdk-steps.yml
   - task: UniversalPackages@0
     displayName: Download terminal-internal Universal Package
     inputs:
@@ -195,7 +193,6 @@ jobs:
       condition: true
       inputs:
         solution: '**\OpenConsole.sln'
-        vsVersion: 16.0
         msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /t:Terminal\CascadiaPackage /p:WindowsTerminalReleaseBuild=true /bl:$(Build.SourcesDirectory)\msbuild.binlog
         platform: $(BuildPlatform)
         configuration: $(BuildConfiguration)
@@ -222,7 +219,6 @@ jobs:
       displayName: Build solution **\OpenConsole.sln for PublicTerminalCore
       inputs:
         solution: '**\OpenConsole.sln'
-        vsVersion: 16.0
         msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /p:WindowsTerminalReleaseBuild=true /t:Terminal\wpf\PublicTerminalCore
         platform: $(BuildPlatform)
         configuration: $(BuildConfiguration)
@@ -231,7 +227,6 @@ jobs:
       displayName: Build solution **\OpenConsole.sln for ConPTY
       inputs:
         solution: '**\OpenConsole.sln'
-        vsVersion: 16.0
         msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /p:WindowsTerminalReleaseBuild=true /t:Conhost\Host_EXE;Conhost\winconpty_DLL
         platform: $(BuildPlatform)
         configuration: $(BuildConfiguration)
@@ -241,6 +236,7 @@ jobs:
       filePath: build\scripts\Index-Pdbs.ps1
       arguments: -SearchDir '$(Build.SourcesDirectory)' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
       errorActionPreference: silentlyContinue
+      pwsh: true
   - task: PowerShell@2
     displayName: Run Unit Tests
     condition: and(succeeded(), or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
@@ -303,8 +299,6 @@ jobs:
       inputs:
         Contents: >-
           **/PublicTerminalCore.dll
-
-          **/api-ms-win-core-synch-l1-2-0.dll
         TargetFolder: $(Build.ArtifactStagingDirectory)/wpf
         OverWrite: true
         flattenFolders: true
@@ -327,7 +321,7 @@ jobs:
 
 - ${{ if eq(parameters.runCompliance, true) }}:
   - template: ./templates/build-console-compliance-job.yml
-  
+
 - ${{ if eq(parameters.buildTerminal, true) }}:
   - job: BundleAndSign
     strategy:
@@ -336,6 +330,13 @@ jobs:
           ${{ windowsVersion }}:
             TerminalTargetWindowsVersion: ${{ windowsVersion }}
     displayName: Create and sign AppX/MSIX bundles
+    variables:
+      ${{ if eq(parameters.branding, 'Release') }}:
+        BundleStemName: Microsoft.WindowsTerminal
+      ${{ elseif eq(parameters.branding, 'Preview') }}:
+        BundleStemName: Microsoft.WindowsTerminalPreview
+      ${{ else }}:
+        BundleStemName: WindowsTerminalDev
     dependsOn: Build
     steps:
     - checkout: self
@@ -360,14 +361,15 @@ jobs:
         $Components = "$(XES_APPXMANIFESTVERSION)" -Split "\."
         $Components[0] = ([int]$Components[0] + $VersionEpoch)
         $BundleVersion = $Components -Join "."
-        .\build\scripts\Create-AppxBundle.ps1 -InputPath "$(System.ArtifactsDirectory)" -ProjectName CascadiaPackage -BundleVersion $BundleVersion -OutputPath "$(System.ArtifactsDirectory)\Microsoft.WindowsTerminal_$(TerminalTargetWindowsVersion)_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
+        New-Item -Type Directory "$(System.ArtifactsDirectory)\bundle"
+        .\build\scripts\Create-AppxBundle.ps1 -InputPath "$(System.ArtifactsDirectory)" -ProjectName CascadiaPackage -BundleVersion $BundleVersion -OutputPath "$(System.ArtifactsDirectory)\bundle\$(BundleStemName)_$(TerminalTargetWindowsVersion)_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
       displayName: Create WindowsTerminal*.msixbundle
     - task: EsrpCodeSigning@1
       displayName: Submit *.msixbundle to ESRP for code signing
       inputs:
         ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
-        FolderPath: $(System.ArtifactsDirectory)
-        Pattern: Microsoft.WindowsTerminal*.msixbundle
+        FolderPath: $(System.ArtifactsDirectory)\bundle
+        Pattern: $(BundleStemName)*.msixbundle
         UseMinimatch: true
         signConfigType: inlineSignParams
         inlineOperation: >-
@@ -400,7 +402,7 @@ jobs:
     - task: PublishBuildArtifacts@1
       displayName: 'Publish Artifact: appxbundle-signed'
       inputs:
-        PathtoPublish: $(System.ArtifactsDirectory)
+        PathtoPublish: $(System.ArtifactsDirectory)\bundle
         ArtifactName: appxbundle-signed-$(TerminalTargetWindowsVersion)
 
 - ${{ if eq(parameters.buildConPTY, true) }}:
@@ -546,7 +548,6 @@ jobs:
       displayName: Build solution **\OpenConsole.sln for WPF Control
       inputs:
         solution: '**\OpenConsole.sln'
-        vsVersion: 16.0
         msbuildArgs: /p:WindowsTerminalReleaseBuild=$(UseReleaseBranding);Version=$(XES_PACKAGEVERSIONNUMBER) /t:Pack
         platform: Any CPU
         configuration: $(BuildConfiguration)
@@ -612,6 +613,8 @@ jobs:
     - task: PkgESSetupBuild@12
       displayName: Package ES - Setup Build
 
+    - template: .\templates\restore-nuget-steps.yml
+
     # Download the appx-PLATFORM-CONFIG-VERSION artifact for every platform/version combo
     - ${{ each platform in parameters.buildPlatforms }}:
       - ${{ each windowsVersion in parameters.buildWindowsVersions }}:
@@ -634,13 +637,12 @@ jobs:
         }
       displayName: Extract symbols for public consumption
 
-    # Pull the Windows SDK for the developer tools like the debuggers so we can index sources later
-    - template: .\templates\install-winsdk-steps.yml
     - task: PowerShell@2
       displayName: Source Index PDBs (the public ones)
       inputs:
         filePath: build\scripts\Index-Pdbs.ps1
         arguments: -SearchDir '$(Build.SourcesDirectory)/appxsym-temp' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
+        pwsh: true
 
     # Publish the app symbols to the public MSDL symbol server
     # accessible via https://msdl.microsoft.com/download/symbols

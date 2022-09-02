@@ -87,31 +87,43 @@ std::string Utils::ColorToHexString(const til::color color)
 //      the correct format, throws E_INVALIDARG
 til::color Utils::ColorFromHexString(const std::string_view str)
 {
-    THROW_HR_IF(E_INVALIDARG, str.size() != 7 && str.size() != 4);
+    THROW_HR_IF(E_INVALIDARG, str.size() != 9 && str.size() != 7 && str.size() != 4);
     THROW_HR_IF(E_INVALIDARG, str.at(0) != '#');
 
     std::string rStr;
     std::string gStr;
     std::string bStr;
+    std::string aStr;
 
     if (str.size() == 4)
     {
         rStr = std::string(2, str.at(1));
         gStr = std::string(2, str.at(2));
         bStr = std::string(2, str.at(3));
+        aStr = "ff";
     }
-    else
+    else if (str.size() == 7)
     {
         rStr = std::string(&str.at(1), 2);
         gStr = std::string(&str.at(3), 2);
         bStr = std::string(&str.at(5), 2);
+        aStr = "ff";
+    }
+    else if (str.size() == 9)
+    {
+        // #rrggbbaa
+        rStr = std::string(&str.at(1), 2);
+        gStr = std::string(&str.at(3), 2);
+        bStr = std::string(&str.at(5), 2);
+        aStr = std::string(&str.at(7), 2);
     }
 
     const auto r = gsl::narrow_cast<BYTE>(std::stoul(rStr, nullptr, 16));
     const auto g = gsl::narrow_cast<BYTE>(std::stoul(gStr, nullptr, 16));
     const auto b = gsl::narrow_cast<BYTE>(std::stoul(bStr, nullptr, 16));
+    const auto a = gsl::narrow_cast<BYTE>(std::stoul(aStr, nullptr, 16));
 
-    return til::color{ r, g, b };
+    return til::color{ r, g, b, a };
 }
 
 // Routine Description:
@@ -759,4 +771,29 @@ std::tuple<std::wstring, std::wstring> Utils::MangleStartingDirectoryForWSL(std:
         startingDirectory == L"~" ? wil::ExpandEnvironmentStringsW<std::wstring>(L"%USERPROFILE%") :
                                     std::wstring{ startingDirectory }
     };
+}
+
+std::wstring_view Utils::TrimPaste(std::wstring_view textView) noexcept
+{
+    const auto lastNonSpace = textView.find_last_not_of(L"\t\n\v\f\r ");
+    const auto firstNewline = textView.find_first_of(L"\n\v\f\r");
+
+    const bool isOnlyWhitespace = lastNonSpace == textView.npos;
+    const bool isMultiline = firstNewline < lastNonSpace;
+
+    if (isOnlyWhitespace)
+    {
+        // Text is all white space, nothing to paste
+        return L"";
+    }
+
+    if (isMultiline)
+    {
+        // In this case, the user totally wanted to paste multiple lines of text,
+        // and that likely includes the trailing newline.
+        // DON'T trim it in this case.
+        return textView;
+    }
+
+    return textView.substr(0, lastNonSpace + 1);
 }

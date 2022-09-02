@@ -8,6 +8,7 @@
 #include "../../inc/unicode.hpp"
 #include "../../types/inc/utils.hpp"
 #include "../../types/inc/colorTable.hpp"
+#include "../../buffer/out/search.h"
 
 #include <winrt/Microsoft.Terminal.Core.h>
 
@@ -46,6 +47,7 @@ Terminal::Terminal() :
     _altGrAliasing{ true },
     _blockSelection{ false },
     _selectionMode{ SelectionInteractionMode::None },
+    _selectionIsTargetingUrl{ false },
     _selection{ std::nullopt },
     _selectionEndpoint{ static_cast<SelectionEndpoint>(0) },
     _anchorInactiveSelectionEndpoint{ false },
@@ -167,7 +169,22 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
 {
     _renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBold, appearance.IntenseIsBold());
     _renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBright, appearance.IntenseIsBright());
-    _renderSettings.SetRenderMode(RenderSettings::Mode::DistinguishableColors, appearance.AdjustIndistinguishableColors());
+
+    switch (appearance.AdjustIndistinguishableColors())
+    {
+    case AdjustTextMode::Always:
+        _renderSettings.SetRenderMode(RenderSettings::Mode::IndexedDistinguishableColors, false);
+        _renderSettings.SetRenderMode(RenderSettings::Mode::AlwaysDistinguishableColors, true);
+        break;
+    case AdjustTextMode::Indexed:
+        _renderSettings.SetRenderMode(RenderSettings::Mode::IndexedDistinguishableColors, true);
+        _renderSettings.SetRenderMode(RenderSettings::Mode::AlwaysDistinguishableColors, false);
+        break;
+    case AdjustTextMode::Never:
+        _renderSettings.SetRenderMode(RenderSettings::Mode::IndexedDistinguishableColors, false);
+        _renderSettings.SetRenderMode(RenderSettings::Mode::AlwaysDistinguishableColors, false);
+        break;
+    }
 
     const til::color newBackgroundColor{ appearance.DefaultBackground() };
     _renderSettings.SetColorAlias(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND, newBackgroundColor);
@@ -563,25 +580,61 @@ bool Terminal::ShouldSendAlternateScroll(const unsigned int uiButton,
 // Method Description:
 // - Given a coord, get the URI at that location
 // Arguments:
-// - The position
-std::wstring Terminal::GetHyperlinkAtPosition(const til::point position)
+// - The position relative to the viewport
+std::wstring Terminal::GetHyperlinkAtViewportPosition(const til::point viewportPos)
 {
-    auto attr = _activeBuffer().GetCellDataAt(_ConvertToBufferCell(position))->TextAttr();
+    return GetHyperlinkAtBufferPosition(_ConvertToBufferCell(viewportPos));
+}
+
+std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
+{
+    // Case 1: buffer position has a hyperlink stored in the buffer
+    const auto attr = _activeBuffer().GetCellDataAt(bufferPos)->TextAttr();
     if (attr.IsHyperlink())
     {
-        auto uri = _activeBuffer().GetHyperlinkUriFromId(attr.GetHyperlinkId());
-        return uri;
+        return _activeBuffer().GetHyperlinkUriFromId(attr.GetHyperlinkId());
     }
-    // also look through our known pattern locations in our pattern interval tree
-    const auto result = GetHyperlinkIntervalFromPosition(position);
+
+    // Case 2: buffer position may point to an auto-detected hyperlink
+    // Case 2 - Step 1: get the auto-detected hyperlink
+    std::optional<interval_tree::Interval<til::point, size_t>> result;
+    const auto visibleViewport = _GetVisibleViewport();
+    if (visibleViewport.IsInBounds(bufferPos))
+    {
+        // Hyperlink is in the current view, so let's just get it
+        auto viewportPos = bufferPos;
+        visibleViewport.ConvertToOrigin(&viewportPos);
+        result = GetHyperlinkIntervalFromViewportPosition(viewportPos);
+        if (result.has_value())
+        {
+            result->start = _ConvertToBufferCell(result->start);
+            result->stop = _ConvertToBufferCell(result->stop);
+        }
+    }
+    else
+    {
+        // Hyperlink is outside of the current view.
+        // We need to find if there's a pattern at that location.
+        const auto patterns = _activeBuffer().GetPatterns(bufferPos.y, bufferPos.y);
+
+        // NOTE: patterns is stored with top y-position being 0,
+        //       so we need to cleverly set the y-pos to 0.
+        const til::point viewportPos{ bufferPos.x, 0 };
+        const auto results = patterns.findOverlapping(viewportPos, viewportPos);
+        if (!results.empty())
+        {
+            result = results.front();
+            result->start.y += bufferPos.y;
+            result->stop.y += bufferPos.y;
+        }
+    }
+
+    // Case 2 - Step 2: get the auto-detected hyperlink
     if (result.has_value() && result->value == _hyperlinkPatternId)
     {
-        const auto start = result->start;
-        const auto end = result->stop;
         std::wstring uri;
-
-        const auto startIter = _activeBuffer().GetCellDataAt(_ConvertToBufferCell(start));
-        const auto endIter = _activeBuffer().GetCellDataAt(_ConvertToBufferCell(end));
+        const auto startIter = _activeBuffer().GetCellDataAt(result->start);
+        const auto endIter = _activeBuffer().GetCellDataAt(result->stop);
         for (auto iter = startIter; iter != endIter; ++iter)
         {
             uri += iter->Chars();
@@ -594,23 +647,23 @@ std::wstring Terminal::GetHyperlinkAtPosition(const til::point position)
 // Method Description:
 // - Gets the hyperlink ID of the text at the given terminal position
 // Arguments:
-// - The position of the text
+// - The position of the text relative to the viewport
 // Return value:
 // - The hyperlink ID
-uint16_t Terminal::GetHyperlinkIdAtPosition(const til::point position)
+uint16_t Terminal::GetHyperlinkIdAtViewportPosition(const til::point viewportPos)
 {
-    return _activeBuffer().GetCellDataAt(_ConvertToBufferCell(position))->TextAttr().GetHyperlinkId();
+    return _activeBuffer().GetCellDataAt(_ConvertToBufferCell(viewportPos))->TextAttr().GetHyperlinkId();
 }
 
 // Method description:
 // - Given a position in a URI pattern, gets the start and end coordinates of the URI
 // Arguments:
-// - The position
+// - The position relative to the viewport
 // Return value:
 // - The interval representing the start and end coordinates
-std::optional<PointTree::interval> Terminal::GetHyperlinkIntervalFromPosition(const til::point position)
+std::optional<PointTree::interval> Terminal::GetHyperlinkIntervalFromViewportPosition(const til::point viewportPos)
 {
-    const auto results = _patternIntervalTree.findOverlapping({ position.X + 1, position.Y }, position);
+    const auto results = _patternIntervalTree.findOverlapping({ viewportPos.X + 1, viewportPos.Y }, viewportPos);
     if (results.size() > 0)
     {
         for (const auto& result : results)
@@ -987,7 +1040,7 @@ WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
 }
 
 // Method Description:
-// - Get a reference to the the terminal's read/write lock.
+// - Get a reference to the terminal's read/write lock.
 // Return Value:
 // - a ticket_lock which can be used to manually lock or unlock the terminal.
 til::ticket_lock& Terminal::GetReadWriteLock() noexcept
@@ -1614,4 +1667,48 @@ til::color Terminal::GetColorForMark(const Microsoft::Console::VirtualTerminal::
         return _renderSettings.GetColorAlias(ColorAlias::DefaultForeground);
     }
     }
+}
+
+void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode)
+{
+    for (const auto [start, end] : _GetSelectionSpans())
+    {
+        try
+        {
+            if (matchMode == winrt::Microsoft::Terminal::Core::MatchMode::None)
+            {
+                ColorSelection(start, end, attr);
+            }
+            else if (matchMode == winrt::Microsoft::Terminal::Core::MatchMode::All)
+            {
+                const auto textBuffer = _activeBuffer().GetPlainText(start, end);
+                std::wstring_view text{ textBuffer };
+
+                if (IsBlockSelection())
+                {
+                    text = Utils::TrimPaste(text);
+                }
+
+                if (!text.empty())
+                {
+                    Search search(*this, text, Search::Direction::Forward, Search::Sensitivity::CaseInsensitive, { 0, 0 });
+
+                    while (search.FindNext())
+                    {
+                        search.Color(attr);
+                    }
+                }
+            }
+        }
+        CATCH_LOG();
+    }
+}
+
+// Method Description:
+// - Returns the position of the cursor relative to the active viewport
+til::point Terminal::GetViewportRelativeCursorPosition() const noexcept
+{
+    const auto absoluteCursorPosition{ GetCursorPosition() };
+    const auto viewport{ _GetMutableViewport() };
+    return absoluteCursorPosition - viewport.Origin();
 }

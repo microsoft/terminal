@@ -45,6 +45,7 @@
 #include "ClearBufferArgs.g.h"
 #include "MultipleActionsArgs.g.h"
 #include "AdjustOpacityArgs.g.h"
+#include "ColorSelectionArgs.g.h"
 
 #include "JsonUtils.h"
 #include "HashUtils.h"
@@ -236,6 +237,12 @@ private:                                                                        
     X(bool, Relative, "relative", false, true)
 
 ////////////////////////////////////////////////////////////////////////////////
+#define COLOR_SELECTION_ARGS(X)                                                                      \
+    X(winrt::Microsoft::Terminal::Control::SelectionColor, Foreground, "foreground", false, nullptr) \
+    X(winrt::Microsoft::Terminal::Control::SelectionColor, Background, "background", false, nullptr) \
+    X(winrt::Microsoft::Terminal::Core::MatchMode, MatchMode, "matchMode", false, winrt::Microsoft::Terminal::Core::MatchMode::None)
+
+////////////////////////////////////////////////////////////////////////////////
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -381,6 +388,20 @@ struct til::hash_trait<winrt::Microsoft::Terminal::Settings::Model::NewTerminalA
         if (value)
         {
             winrt::get_self<I>(value)->Hash(h);
+        }
+    }
+};
+template<>
+struct til::hash_trait<winrt::Microsoft::Terminal::Control::SelectionColor>
+{
+    using M = winrt::Microsoft::Terminal::Control::SelectionColor;
+
+    void operator()(hasher& h, const M& value) const noexcept
+    {
+        if (value)
+        {
+            h.write(value.Color());
+            h.write(value.IsIndex16());
         }
     }
 };
@@ -712,6 +733,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     };
 
     ACTION_ARGS_STRUCT(AdjustOpacityArgs, ADJUST_OPACITY_ARGS);
+
+    ACTION_ARGS_STRUCT(ColorSelectionArgs, COLOR_SELECTION_ARGS);
 
 }
 

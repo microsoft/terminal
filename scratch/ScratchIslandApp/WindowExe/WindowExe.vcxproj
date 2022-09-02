@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.3\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.3\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" />
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup Label="Globals">
     <ProjectGuid>{b4427499-9fde-4208-b456-5bc580637633}</ProjectGuid>
@@ -16,7 +15,15 @@
     <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
   </PropertyGroup>
 
+  <PropertyGroup Label="NuGet Dependencies">
+    <TerminalCppWinrt>true</TerminalCppWinrt>
+    <TerminalXamlApplicationToolkit>true</TerminalXamlApplicationToolkit>
+    <TerminalVCRTForwarders>true</TerminalVCRTForwarders>
+    <TerminalThemeHelpers>true</TerminalThemeHelpers>
+  </PropertyGroup>
+
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
 
   <ItemDefinitionGroup>
@@ -138,16 +145,11 @@
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 
   <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.7.1\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.7.1\build\native\Microsoft.UI.Xaml.targets')" />
-  <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.3\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.3\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
-  <Import Project="..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.4\build\native\Microsoft.VCRTForwarders.140.targets" Condition="Exists('..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.4\build\native\Microsoft.VCRTForwarders.140.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.7.1\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.7.1\build\native\Microsoft.UI.Xaml.targets'))" />
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.3\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.3\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props'))" />
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.3\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.3\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets'))" />
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.4\build\native\Microsoft.VCRTForwarders.140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.4\build\native\Microsoft.VCRTForwarders.140.targets'))" />
   </Target>
 
   <!-- Override GetPackagingOutputs to roll up all our dependencies.
@@ -225,13 +227,24 @@
         <TargetPath>%(Filename)%(Extension)</TargetPath>
       </PackagingOutputs>
     </ItemGroup>
+
+    <!-- Same thing AGAIN here, with OpenConsole.exe If you forget this, then
+    the scratch app will use the inbox conpty with a newer conpty lib, causing
+    us to send the inbox conhost messages that will make it explode. -->
+    <ItemGroup>
+      <_OpenConsoleExe Include="$(OpenConsoleCommonOutDir)\OpenConsole.exe" />
+
+      <PackagingOutputs Include="@(_OpenConsoleExe)">
+        <ProjectName>$(ProjectName)</ProjectName>
+        <OutputGroup>BuiltProjectOutputGroup</OutputGroup>
+        <TargetPath>%(Filename)%(Extension)</TargetPath>
+      </PackagingOutputs>
+    </ItemGroup>
   </Target>
 
-
-
-
-
   <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" />
-  <Import Project="..\..\..\packages\Terminal.ThemeHelpers.0.2.200324001\build\native\Terminal.ThemeHelpers.targets" Condition="Exists('..\..\..\packages\Terminal.ThemeHelpers.0.2.200324001\build\native\Terminal.ThemeHelpers.targets')" />
+
+  <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 </Project>
 

@@ -134,6 +134,29 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             };
         }
 
+        // source-over alpha blending/composition.
+        // `this` (source/top) will be blended "over" `destination` (bottom).
+        // `this` and `destination` are expected to be in straight alpha.
+        // See https://en.wikipedia.org/wiki/Alpha_compositing#Description
+        constexpr color layer_over(const color& destination) const
+        {
+            const auto sourceAlpha = a / 255.0f;
+            const auto destinationAlpha = destination.a / 255.0f;
+            const auto aInverse = 1.0f - sourceAlpha;
+
+            const auto resultA = a + destination.a * aInverse;
+            const auto resultR = (r * sourceAlpha + destination.r * destinationAlpha * aInverse) / resultA;
+            const auto resultG = (g * sourceAlpha + destination.g * destinationAlpha * aInverse) / resultA;
+            const auto resultB = (b * sourceAlpha + destination.b * destinationAlpha * aInverse) / resultA;
+
+            return {
+                static_cast<uint8_t>(resultR + 0.5f),
+                static_cast<uint8_t>(resultG + 0.5f),
+                static_cast<uint8_t>(resultB + 0.5f),
+                static_cast<uint8_t>(resultA + 0.5f),
+            };
+        }
+
 #ifdef D3DCOLORVALUE_DEFINED
         constexpr operator D3DCOLORVALUE() const
         {
@@ -187,14 +210,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             wss << L"#" << std::uppercase << std::setfill(L'0') << std::hex;
             // Force the compiler to promote from byte to int. Without it, the
             // stringstream will try to write the components as chars
+            wss << std::setw(2) << static_cast<int>(r);
+            wss << std::setw(2) << static_cast<int>(g);
+            wss << std::setw(2) << static_cast<int>(b);
             if (!omitAlpha)
             {
                 wss << std::setw(2) << static_cast<int>(a);
             }
-            wss << std::setw(2) << static_cast<int>(r);
-            wss << std::setw(2) << static_cast<int>(g);
-            wss << std::setw(2) << static_cast<int>(b);
-
             return wss.str();
         }
     };

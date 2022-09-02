@@ -5,10 +5,32 @@
 #include <io.h>
 #include <fcntl.h>
 #include <iostream>
-#include <iomanip>
 
-#define ENGLISH_US_CP 437u
 #define JAPANESE_CP 932u
+
+// CHAR_INFO's .Char member is a union of a wchar_t UnicodeChar and char AsciiChar.
+// If they share the same offsetof we can write the lower byte of the former to
+// overwrite the latter, while ensuring that the high byte is properly cleared to 0.
+static_assert(offsetof(CHAR_INFO, Char.UnicodeChar) == offsetof(CHAR_INFO, Char.AsciiChar));
+
+template<typename T>
+constexpr CHAR_INFO makeCharInfo(T ch, WORD attr)
+{
+    CHAR_INFO info{};
+    // If T is a char, it'll be a signed integer, whereas UnicodeChar is an unsigned one.
+    // A negative char like -1 would then result in a wchar_t of 0xffff instead of the expected 0xff.
+    // Casting ch to a unsigned integer first prevents such "sign extension".
+    info.Char.UnicodeChar = static_cast<WCHAR>(til::as_unsigned(ch));
+    info.Attributes = attr;
+    return info;
+}
+
+using CharInfoPattern = std::array<CHAR_INFO, 16>;
+
+// These two are the same strings but in different encodings.
+// Both strings are exactly 16 "cells" wide which matches the size of CharInfoPattern.
+static constexpr std::string_view dbcsInput{ "Q\x82\xA2\x82\xa9\x82\xc8ZYXWVUT\x82\xc9" }; // Shift-JIS (Codepage 932)
+static constexpr std::wstring_view unicodeInput{ L"QいかなZYXWVUTに" }; // Regular UTF-16
 
 using namespace WEX::Logging;
 using WEX::TestExecution::TestData;
@@ -30,198 +52,57 @@ namespace DbcsWriteRead
         ReadConsoleOutputCharacterFunc = 1
     };
 
-    void TestRunner(_In_ const unsigned int uiCodePage,
-                    _In_ PCSTR pszTestData,
-                    _In_opt_ WORD* const pwAttrOverride,
+    enum UnicodeMode
+    {
+        Ascii = 0,
+        UnicodeSingle,
+        UnicodeDoubled,
+    };
+
+    void TestRunner(_In_opt_ WORD* const pwAttrOverride,
                     const bool fUseTrueType,
                     const DbcsWriteRead::WriteMode WriteMode,
-                    const bool fWriteInUnicode,
+                    const UnicodeMode fWriteInUnicode,
                     const DbcsWriteRead::ReadMode ReadMode,
                     const bool fReadWithUnicode);
 
-    bool Setup(_In_ unsigned int uiCodePage,
-               _In_ bool fIsTrueType,
+    bool Setup(_In_ bool fIsTrueType,
                _Out_ HANDLE* const phOut,
                _Out_ WORD* const pwAttributes);
 
     void SendOutput(const HANDLE hOut,
-                    _In_ const unsigned int uiCodePage,
                     const WriteMode WriteMode,
-                    const bool fIsUnicode,
-                    _In_ PCSTR pszTestString,
+                    const UnicodeMode fIsUnicode,
                     const WORD wAttr);
 
     void RetrieveOutput(const HANDLE hOut,
                         const DbcsWriteRead::ReadMode ReadMode,
                         const bool fReadUnicode,
-                        _Out_writes_(cChars) CHAR_INFO* const rgChars,
-                        const SHORT cChars);
+                        CharInfoPattern& rgChars);
 
-    void Verify(_In_reads_(cExpected) CHAR_INFO* const rgExpected,
-                const size_t cExpected,
-                _In_reads_(cExpected) CHAR_INFO* const rgActual);
+    void Verify(const CharInfoPattern& rgExpected,
+                const CharInfoPattern& rgActual);
 
-    void PrepExpected(_In_ const unsigned int uiCodePage,
-                      _In_ PCSTR pszTestData,
-                      const WORD wAttrOriginal,
-                      const WORD wAttrWritten,
-                      const DbcsWriteRead::WriteMode WriteMode,
-                      const bool fWriteWithUnicode,
-                      const bool fIsTrueTypeFont,
-                      const DbcsWriteRead::ReadMode ReadMode,
-                      const bool fReadWithUnicode,
-                      _Outptr_result_buffer_(*pcExpected) CHAR_INFO** const ppciExpected,
-                      _Out_ size_t* const pcExpected);
+    void PrepExpected(
+        const WORD wAttrWritten,
+        const DbcsWriteRead::WriteMode WriteMode,
+        const DbcsWriteRead::UnicodeMode fWriteWithUnicode,
+        const bool fIsTrueTypeFont,
+        const DbcsWriteRead::ReadMode ReadMode,
+        const bool fReadWithUnicode,
+        CharInfoPattern& expected);
 
-    void PrepReadConsoleOutput(_In_ const unsigned int uiCodePage,
-                               _In_ PCSTR pszTestData,
-                               const WORD wAttrOriginal,
-                               const WORD wAttrWritten,
-                               const DbcsWriteRead::WriteMode WriteMode,
-                               const bool fWriteWithUnicode,
-                               const bool fIsTrueTypeFont,
-                               const bool fReadWithUnicode,
-                               _Inout_updates_all_(cExpectedNeeded) CHAR_INFO* const rgciExpected,
-                               const size_t cExpectedNeeded);
+    const CharInfoPattern& PrepReadConsoleOutput(
+        const DbcsWriteRead::WriteMode WriteMode,
+        const UnicodeMode fWriteWithUnicode,
+        const bool fIsTrueTypeFont,
+        const bool fReadWithUnicode);
 
-    void PrepReadConsoleOutputCharacter(_In_ const unsigned int uiCodePage,
-                                        _In_ PCSTR pszTestData,
-                                        const WORD wAttrOriginal,
-                                        const WORD wAttrWritten,
-                                        const DbcsWriteRead::WriteMode WriteMode,
-                                        const bool fWriteWithUnicode,
-                                        const bool fIsTrueTypeFont,
-                                        const bool fReadWithUnicode,
-                                        _Inout_updates_all_(cExpectedNeeded) CHAR_INFO* const rgciExpected,
-                                        const size_t cExpectedNeeded);
-
-    namespace PrepPattern
-    {
-        // There are 14 different patterns that result from the various combinations of our APIs.
-        // These patterns are simply recognized based on the existing v1 console behavior and generated
-        // here as a black box test to maintain compatibility based on the variations in API usage.
-        // It can be assumed that calling this pattern means that the combinations of APIs used for the test
-        // resulted in output that looks like this pattern on the v1 console.
-        //
-        // All patterns will be documented with their sample before and afters above the comment.
-        // We will use *KI* to represent a Japanese Hiragana character that is romanized and
-        // no * to represent US ASCII text.
-        //
-        // We don't store the Hiragana directly in this file because Visual Studio and Git fight over the
-        // proper encoding of UTF-8.
-
-        // 1
-        void SpacePaddedDedupeW(_In_ const unsigned int uiCodePage,
-                                _In_ PCSTR pszTestData,
-                                const WORD wAttrOriginal,
-                                const WORD wAttrWritten,
-                                _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                const size_t cExpected);
-
-        // 2
-        void SpacePaddedDedupeTruncatedW(_In_ const unsigned int uiCodePage,
-                                         _In_ PCSTR pszTestData,
-                                         const WORD wAttrOriginal,
-                                         const WORD wAttrWritten,
-                                         _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                         const size_t cExpected);
-
-        // 3
-        void NullPaddedDedupeW(_In_ const unsigned int uiCodePage,
-                               _In_ PCSTR pszTestData,
-                               const WORD wAttrOriginal,
-                               const WORD wAttrWritten,
-                               _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                               const size_t cExpected);
-
-        // 4
-        void DoubledWNegativeOneTrailing(_In_ const unsigned int uiCodePage,
-                                         _In_ PCSTR pszTestData,
-                                         const WORD wAttrOriginal,
-                                         const WORD wAttrWritten,
-                                         _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                         const size_t cExpected);
-
-        // 5
-        void DoubledW(_In_ const unsigned int uiCodePage,
-                      _In_ PCSTR pszTestData,
-                      const WORD wAttrOriginal,
-                      const WORD wAttrWritten,
-                      _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                      const size_t cExpected);
-
-        // 6
-        void A(_In_ const unsigned int uiCodePage,
-               _In_ PCSTR pszTestData,
-               const WORD wAttrOriginal,
-               const WORD wAttrWritten,
-               _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-               const size_t cExpected);
-
-        // 7
-        void AStompsWNegativeOnePatternTruncateSpacePadded(_In_ const unsigned int uiCodePage,
-                                                           _In_ PCSTR pszTestData,
-                                                           const WORD wAttrOriginal,
-                                                           const WORD wAttrWritten,
-                                                           _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                                           const size_t cExpected);
-
-        // 8
-        void AOnDoubledWNegativeOneTrailing(_In_ const unsigned int uiCodePage,
-                                            _In_ PCSTR pszTestData,
-                                            const WORD wAttrOriginal,
-                                            const WORD wAttrWritten,
-                                            _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                            const size_t cExpected);
-
-        // 9
-        void AOnDoubledW(_In_ const unsigned int uiCodePage,
-                         _In_ PCSTR pszTestData,
-                         const WORD wAttrOriginal,
-                         const WORD wAttrWritten,
-                         _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                         const size_t cExpected);
-
-        // 10
-        void WNullCoverAChar(_In_ const unsigned int uiCodePage,
-                             _In_ PCSTR pszTestData,
-                             const WORD wAttrOriginal,
-                             const WORD wAttrWritten,
-                             _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                             const size_t cExpected);
-
-        // 11
-        void WSpaceFill(_In_ const unsigned int uiCodePage,
-                        _In_ PCSTR pszTestData,
-                        const WORD wAttrOriginal,
-                        const WORD wAttrWritten,
-                        _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                        const size_t cExpected);
-
-        // 12
-        void ACoverAttrSpacePaddedDedupeTruncatedW(_In_ const unsigned int uiCodePage,
-                                                   _In_ PCSTR pszTestData,
-                                                   const WORD wAttrOriginal,
-                                                   const WORD wAttrWritten,
-                                                   _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                                   const size_t cExpected);
-
-        // 13
-        void SpacePaddedDedupeA(_In_ const unsigned int uiCodePage,
-                                _In_ PCSTR pszTestData,
-                                const WORD wAttrOriginal,
-                                const WORD wAttrWritten,
-                                _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                const size_t cExpected);
-
-        // 14
-        void TrueTypeCharANullWithAttrs(_In_ const unsigned int uiCodePage,
-                                        _In_ PCSTR pszTestData,
-                                        const WORD wAttrOriginal,
-                                        const WORD wAttrWritten,
-                                        _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                        const size_t cExpected);
-    };
+    const CharInfoPattern& PrepReadConsoleOutputCharacter(
+        const DbcsWriteRead::WriteMode WriteMode,
+        const UnicodeMode fWriteWithUnicode,
+        const bool fIsTrueTypeFont,
+        const bool fReadWithUnicode);
 };
 
 class DbcsTests
@@ -237,10 +118,9 @@ class DbcsTests
     TEST_METHOD(TestMultibyteInputRetrieval);
 
     BEGIN_TEST_METHOD(TestDbcsWriteRead)
-        TEST_METHOD_PROPERTY(L"Data:uiCodePage", L"{437, 932}")
         TEST_METHOD_PROPERTY(L"Data:fUseTrueTypeFont", L"{true, false}")
         TEST_METHOD_PROPERTY(L"Data:WriteMode", L"{0, 1, 2, 3}")
-        TEST_METHOD_PROPERTY(L"Data:fWriteInUnicode", L"{true, false}")
+        TEST_METHOD_PROPERTY(L"Data:fWriteInUnicode", L"{0, 1, 2}")
         TEST_METHOD_PROPERTY(L"Data:ReadMode", L"{0, 1}")
         TEST_METHOD_PROPERTY(L"Data:fReadInUnicode", L"{true, false}")
     END_TEST_METHOD()
@@ -281,16 +161,15 @@ bool DbcsTests::DbcsTestSetup()
     return true;
 }
 
-bool DbcsWriteRead::Setup(_In_ unsigned int uiCodePage,
-                          _In_ bool fIsTrueType,
+bool DbcsWriteRead::Setup(_In_ bool fIsTrueType,
                           _Out_ HANDLE* const phOut,
                           _Out_ WORD* const pwAttributes)
 {
     const auto hOut = GetStdOutputHandle();
 
     // Ensure that the console is set into the appropriate codepage for the test
-    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(SetConsoleCP(uiCodePage));
-    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(SetConsoleOutputCP(uiCodePage));
+    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(SetConsoleCP(JAPANESE_CP));
+    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(SetConsoleOutputCP(JAPANESE_CP));
 
     // Now set up the font. Many of these APIs are oddly dependent on font, so set as appropriate.
     CONSOLE_FONT_INFOEX cfiex = { 0 };
@@ -306,16 +185,7 @@ bool DbcsWriteRead::Setup(_In_ unsigned int uiCodePage,
     }
     else
     {
-        switch (uiCodePage)
-        {
-        case JAPANESE_CP:
-            wcscpy_s(cfiex.FaceName, L"MS Gothic");
-            break;
-        case ENGLISH_US_CP:
-            wcscpy_s(cfiex.FaceName, L"Consolas");
-            break;
-        }
-
+        wcscpy_s(cfiex.FaceName, L"MS Gothic");
         cfiex.dwFontSize.Y = 16;
     }
 
@@ -359,41 +229,10 @@ bool DbcsWriteRead::Setup(_In_ unsigned int uiCodePage,
 }
 
 void DbcsWriteRead::SendOutput(const HANDLE hOut,
-                               _In_ const unsigned int uiCodePage,
                                const DbcsWriteRead::WriteMode WriteMode,
-                               const bool fIsUnicode,
-                               _In_ PCSTR pszTestString,
+                               const UnicodeMode fIsUnicode,
                                const WORD wAttr)
 {
-    // DBCS is very dependent on knowing the byte length in the original codepage of the input text.
-    // Save off the original length of the string so we know what its A length was.
-    const auto cTestString = (SHORT)strlen(pszTestString);
-
-    // If we're in Unicode mode, we will need to translate the test string to Unicode before passing into the console
-    PWSTR pwszTestString = nullptr;
-    if (fIsUnicode)
-    {
-        // Use double-call pattern to find space to allocate, allocate it, then convert.
-        const auto icchNeeded = MultiByteToWideChar(uiCodePage, 0, pszTestString, -1, nullptr, 0);
-
-        pwszTestString = new WCHAR[icchNeeded];
-        VERIFY_IS_NOT_NULL(pwszTestString);
-
-        const auto iRes = MultiByteToWideChar(uiCodePage, 0, pszTestString, -1, pwszTestString, icchNeeded);
-        CheckLastErrorZeroFail(iRes, L"MultiByteToWideChar");
-    }
-
-    // Calculate the number of cells/characters/calls we will need to fill with our input depending on the mode.
-    SHORT cChars = 0;
-    if (fIsUnicode)
-    {
-        cChars = (SHORT)wcslen(pwszTestString);
-    }
-    else
-    {
-        cChars = cTestString;
-    }
-
     // These parameters will be used to print out the written rectangle if we used the console APIs (not the CRT APIs)
     // This information will be stored and printed out at the very end after we move the cursor off of the text we just printed.
     // The cursor auto-moves for CRT, but we have to manually move it for some of the Console APIs.
@@ -402,6 +241,7 @@ void DbcsWriteRead::SendOutput(const HANDLE hOut,
     SMALL_RECT srWritten = { 0 };
 
     auto fUseDwordWritten = false;
+    DWORD dwWrittenExpected = 0;
     DWORD dwWritten = 0;
 
     switch (WriteMode)
@@ -423,16 +263,16 @@ void DbcsWriteRead::SendOutput(const HANDLE hOut,
         // Write each character in the string individually out through the CRT
         if (fIsUnicode)
         {
-            for (SHORT i = 0; i < cChars; i++)
+            for (const auto& ch : unicodeInput)
             {
-                putwchar(pwszTestString[i]);
+                putwchar(ch);
             }
         }
         else
         {
-            for (SHORT i = 0; i < cChars; i++)
+            for (const auto& ch : dbcsInput)
             {
-                putchar(pszTestString[i]);
+                putchar(ch);
             }
         }
         break;
@@ -441,30 +281,45 @@ void DbcsWriteRead::SendOutput(const HANDLE hOut,
     {
         // If we're going to be using WriteConsoleOutput, we need to create up a nice
         // CHAR_INFO buffer to pass into the method containing the string and possibly attributes
-        auto rgChars = new CHAR_INFO[cChars];
-        VERIFY_IS_NOT_NULL(rgChars);
+        std::vector<CHAR_INFO> rgChars;
+        rgChars.reserve(dbcsInput.size());
 
-        for (SHORT i = 0; i < cChars; i++)
+        switch (fIsUnicode)
         {
-            rgChars[i].Attributes = wAttr;
-
-            if (fIsUnicode)
+        case UnicodeMode::UnicodeSingle:
+            for (const auto& ch : unicodeInput)
             {
-                rgChars[i].Char.UnicodeChar = pwszTestString[i];
+                rgChars.push_back(makeCharInfo(ch, wAttr));
             }
-            else
+            break;
+        case UnicodeMode::UnicodeDoubled:
+            for (const auto& ch : unicodeInput)
             {
-                // Ensure the top half of the union is filled with 0 for comparison purposes later.
-                rgChars[i].Char.UnicodeChar = 0;
-                rgChars[i].Char.AsciiChar = pszTestString[i];
+                // For the sake of this test we're going to simply assume that any non-ASCII character is wide.
+                if (ch < 0x80)
+                {
+                    rgChars.push_back(makeCharInfo(ch, wAttr));
+                }
+                else
+                {
+                    rgChars.push_back(makeCharInfo(ch, wAttr | COMMON_LVB_LEADING_BYTE));
+                    rgChars.push_back(makeCharInfo(ch, wAttr | COMMON_LVB_TRAILING_BYTE));
+                }
             }
+            break;
+        default:
+            for (const auto& ch : dbcsInput)
+            {
+                rgChars.push_back(makeCharInfo(ch, wAttr));
+            }
+            break;
         }
 
         // This is the stated size of the buffer we're passing.
         // This console API can treat the buffer as a 2D array. We're only doing 1 dimension so the Y is 1 and the X is the number of CHAR_INFO characters.
         COORD coordBufferSize = { 0 };
         coordBufferSize.Y = 1;
-        coordBufferSize.X = cChars;
+        coordBufferSize.X = gsl::narrow<SHORT>(rgChars.size());
 
         // We want to write to the coordinate 0,0 of the buffer. The test setup function has blanked out that line.
         COORD coordBufferTarget = { 0 };
@@ -473,27 +328,25 @@ void DbcsWriteRead::SendOutput(const HANDLE hOut,
         SMALL_RECT srWriteRegion = { 0 };
 
         // Since we could have full-width characters, we have to "allow" the console to write up to the entire A string length (up to double the W length)
-        srWriteRegion.Right = cTestString - 1;
+        srWriteRegion.Right = gsl::narrow<SHORT>(dbcsInput.size()) - 1;
 
         // Save the expected written rectangle for comparison after the call
         srWrittenExpected = { 0 };
-        srWrittenExpected.Right = cChars - 1; // we expect that the written report will be the number of characters inserted, not the size of buffer consumed
+        srWrittenExpected.Right = coordBufferSize.X - 1; // we expect that the written report will be the number of characters inserted, not the size of buffer consumed
 
         // NOTE: Don't VERIFY these calls or we will overwrite the text in the buffer with the log message.
         if (fIsUnicode)
         {
-            WriteConsoleOutputW(hOut, rgChars, coordBufferSize, coordBufferTarget, &srWriteRegion);
+            WriteConsoleOutputW(hOut, rgChars.data(), coordBufferSize, coordBufferTarget, &srWriteRegion);
         }
         else
         {
-            WriteConsoleOutputA(hOut, rgChars, coordBufferSize, coordBufferTarget, &srWriteRegion);
+            WriteConsoleOutputA(hOut, rgChars.data(), coordBufferSize, coordBufferTarget, &srWriteRegion);
         }
 
         // Save write region so we can print it out after we move the cursor out of the way
         srWritten = srWriteRegion;
         fUseRectWritten = true;
-
-        delete[] rgChars;
         break;
     }
     case DbcsWriteRead::WriteMode::WriteConsoleOutputCharacterFunc:
@@ -502,11 +355,13 @@ void DbcsWriteRead::SendOutput(const HANDLE hOut,
 
         if (fIsUnicode)
         {
-            WriteConsoleOutputCharacterW(hOut, pwszTestString, cChars, coordBufferTarget, &dwWritten);
+            dwWrittenExpected = gsl::narrow<DWORD>(unicodeInput.size());
+            WriteConsoleOutputCharacterW(hOut, unicodeInput.data(), dwWrittenExpected, coordBufferTarget, &dwWritten);
         }
         else
         {
-            WriteConsoleOutputCharacterA(hOut, pszTestString, cChars, coordBufferTarget, &dwWritten);
+            dwWrittenExpected = gsl::narrow<DWORD>(dbcsInput.size());
+            WriteConsoleOutputCharacterA(hOut, dbcsInput.data(), dwWrittenExpected, coordBufferTarget, &dwWritten);
         }
 
         fUseDwordWritten = true;
@@ -516,11 +371,13 @@ void DbcsWriteRead::SendOutput(const HANDLE hOut,
     {
         if (fIsUnicode)
         {
-            WriteConsoleW(hOut, pwszTestString, cChars, &dwWritten, nullptr);
+            dwWrittenExpected = gsl::narrow<DWORD>(unicodeInput.size());
+            WriteConsoleW(hOut, unicodeInput.data(), dwWrittenExpected, &dwWritten, nullptr);
         }
         else
         {
-            WriteConsoleA(hOut, pszTestString, cChars, &dwWritten, nullptr);
+            dwWrittenExpected = gsl::narrow<DWORD>(dbcsInput.size());
+            WriteConsoleA(hOut, dbcsInput.data(), dwWrittenExpected, &dwWritten, nullptr);
         }
 
         fUseDwordWritten = true;
@@ -528,12 +385,6 @@ void DbcsWriteRead::SendOutput(const HANDLE hOut,
     }
     default:
         VERIFY_FAIL(L"Unsupported write mode.");
-    }
-
-    // Free memory if appropriate (if we had to convert A to W)
-    if (nullptr != pwszTestString)
-    {
-        delete[] pwszTestString;
     }
 
     // Move the cursor down a line in case log info prints out.
@@ -551,1143 +402,821 @@ void DbcsWriteRead::SendOutput(const HANDLE hOut,
     else if (fUseDwordWritten)
     {
         Log::Comment(NoThrowString().Format(L"Chars Written: %d", dwWritten));
-        VERIFY_ARE_EQUAL((DWORD)cChars, dwWritten);
+        VERIFY_ARE_EQUAL(dwWrittenExpected, dwWritten);
     }
 }
 
-// 3
-// From Input String: "Q(Hiragana I)(Hiragana KA)(Hiragana NA)ZYXWVUT(Hiragana NI)
-// With Default Attribute 0x7 (before writing) and Applied Attribute 0x29 (written with text)
-// ...
-// Receive Output Table:
-// attr  | wchar  (char) | symbol
-// ------------------------------------
-// 0x029 | 0x0051 (0x51) | Q
-// 0x029 | 0x3044 (0x44) | Hiragana I
-// 0x029 | 0x304B (0x4B) | Hiragana KA
-// 0x029 | 0x306A (0x6A) | Hiragana NA
-// 0x029 | 0x005A (0x5A) | Z
-// 0x029 | 0x0059 (0x59) | Y
-// 0x029 | 0x0058 (0x58) | X
-// 0x029 | 0x0057 (0x57) | W
-// 0x029 | 0x0056 (0x56) | V
-// 0x029 | 0x0055 (0x55) | U
-// 0x029 | 0x0054 (0x54) | T
-// 0x029 | 0x306B (0x6B) | Hiragana NI
-// 0x000 | 0x0000 (0x00) | <null>
-// 0x000 | 0x0000 (0x00) | <null>
-// 0x000 | 0x0000 (0x00) | <null>
-// 0x000 | 0x0000 (0x00) | <null>
-// ...
-// "Null Padded" means any unused data in the buffer will be filled with null and null attribute.
-// "Dedupe" means that any full-width characters in the buffer (despite being stored doubled inside the buffer)
-//    will be returned as single copies.
-// "W" means that we intend Unicode data to be browsed in the resulting struct (even though wchar and char are unioned.)
-void DbcsWriteRead::PrepPattern::NullPaddedDedupeW(_In_ const unsigned int uiCodePage,
-                                                   _In_ PCSTR pszTestData,
-                                                   const WORD /*wAttrOriginal*/,
-                                                   const WORD wAttrWritten,
-                                                   _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                                   const size_t cExpected)
+namespace PrepPattern
 {
-    Log::Comment(L"Pattern 3");
-    const auto iwchNeeded = MultiByteToWideChar(uiCodePage, 0, pszTestData, -1, nullptr, 0);
-    auto pwszTestData = new wchar_t[iwchNeeded];
-    VERIFY_IS_NOT_NULL(pwszTestData);
-    const auto iSuccess = MultiByteToWideChar(uiCodePage, 0, pszTestData, -1, pwszTestData, iwchNeeded);
-    CheckLastErrorZeroFail(iSuccess, L"MultiByteToWideChar");
+    static constexpr WORD zeroed = 0x0000;
+    static constexpr WORD white = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+    // If the lower byte in our test data is 0xff it indicates that it's "flexible"
+    // and supposed to be replaced with whatever color attributes were written.
+    // The upper byte contains leading/trailing flags we're testing for.
+    static constexpr WORD colored = 0x00ff;
 
-    const auto cWideTestData = wcslen(pwszTestData);
-    VERIFY_IS_GREATER_THAN_OR_EQUAL(cExpected, cWideTestData);
+    static constexpr WORD leading = COMMON_LVB_LEADING_BYTE;
+    static constexpr WORD trailing = COMMON_LVB_TRAILING_BYTE;
 
-    for (size_t i = 0; i < cWideTestData; i++)
+    constexpr void replaceColorPlaceholders(CharInfoPattern& pattern, WORD attr)
     {
-        const auto pciCurrent = &pciExpected[i];
-        const auto wch = pwszTestData[i];
-
-        pciCurrent->Attributes = wAttrWritten;
-        pciCurrent->Char.UnicodeChar = wch;
-    }
-
-    delete[] pwszTestData;
-}
-
-// 1
-// From Input String: "Q(Hiragana I)(Hiragana KA)(Hiragana NA)ZYXWVUT(Hiragana NI)
-// With Default Attribute 0x7 (before writing) and Applied Attribute 0x29 (written with text)
-// ...
-// Receive Output Table:
-// attr  | wchar  (char) | symbol
-// ------------------------------------
-// 0x029 | 0x0051 (0x51) | Q
-// 0x029 | 0x3044 (0x44) | Hiragana I
-// 0x029 | 0x304B (0x4B) | Hiragana KA
-// 0x029 | 0x306A (0x6A) | Hiragana NA
-// 0x029 | 0x005A (0x5A) | Z
-// 0x029 | 0x0059 (0x59) | Y
-// 0x029 | 0x0058 (0x58) | X
-// 0x029 | 0x0057 (0x57) | W
-// 0x029 | 0x0056 (0x56) | V
-// 0x029 | 0x0055 (0x55) | U
-// 0x029 | 0x0054 (0x54) | T
-// 0x029 | 0x306B (0x6B) | Hiragana NI
-// 0x007 | 0x0020 (0x20) | <space>
-// 0x007 | 0x0020 (0x20) | <space>
-// 0x007 | 0x0020 (0x20) | <space>
-// 0x007 | 0x0020 (0x20) | <space>
-// ...
-// "Space Padded" means any unused data in the buffer will be filled with spaces and the default attribute.
-// "Dedupe" means that any full-width characters in the buffer (despite being stored doubled inside the buffer)
-//    will be returned as single copies.
-// "W" means that we intend Unicode data to be browsed in the resulting struct (even though wchar and char are unioned.)
-void DbcsWriteRead::PrepPattern::SpacePaddedDedupeW(_In_ const unsigned int uiCodePage,
-                                                    _In_ PCSTR pszTestData,
-                                                    const WORD wAttrOriginal,
-                                                    const WORD wAttrWritten,
-                                                    _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                                    const size_t cExpected)
-{
-    Log::Comment(L"Pattern 1");
-    DbcsWriteRead::PrepPattern::NullPaddedDedupeW(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, pciExpected, cExpected);
-
-    for (size_t i = 0; i < cExpected; i++)
-    {
-        const auto pciCurrent = &pciExpected[i];
-
-        if (0 == pciCurrent->Attributes && 0 == pciCurrent->Char.UnicodeChar)
+        for (auto& info : pattern)
         {
-            pciCurrent->Attributes = wAttrOriginal;
-            pciCurrent->Char.UnicodeChar = L'\x20';
-        }
-    }
-}
-
-// 2
-// From Input String: "Q(Hiragana I)(Hiragana KA)(Hiragana NA)ZYXWVUT(Hiragana NI)
-// With Default Attribute 0x7 (before writing) and Applied Attribute 0x29 (written with text)
-// ...
-// Receive Output Table:
-// attr  | wchar  (char) | symbol
-// ------------------------------------
-// 0x029 | 0x0051 (0x51) | Q
-// 0x029 | 0x3044 (0x44) | Hiragana I
-// 0x029 | 0x304B (0x4B) | Hiragana KA
-// 0x029 | 0x306A (0x6A) | Hiragana NA
-// 0x029 | 0x005A (0x5A) | Z
-// 0x029 | 0x0059 (0x59) | Y
-// 0x029 | 0x0058 (0x58) | X
-// 0x029 | 0x0057 (0x57) | W
-// 0x029 | 0x0056 (0x56) | V
-// 0x007 | 0x0020 (0x20) | <space>
-// 0x007 | 0x0020 (0x20) | <space>
-// 0x007 | 0x0020 (0x20) | <space>
-// 0x007 | 0x0020 (0x20) | <space>
-// 0x000 | 0x0000 (0x00) | <null>
-// 0x000 | 0x0000 (0x00) | <null>
-// 0x000 | 0x0000 (0x00) | <null>
-// ...
-// "Space Padded" means most of the unused data in the buffer will be filled with spaces and the default attribute.
-// "Dedupe" means that any full-width characters in the buffer (despite being stored doubled inside the buffer)
-//    will be returned as single copies.
-// "W" means that we intend Unicode data to be browsed in the resulting struct (even though wchar and char are unioned.)
-// "Truncated" means that this pattern trims off some of the end of the buffer with NULLs.
-void DbcsWriteRead::PrepPattern::SpacePaddedDedupeTruncatedW(_In_ const unsigned int uiCodePage,
-                                                             _In_ PCSTR pszTestData,
-                                                             const WORD wAttrOriginal,
-                                                             const WORD wAttrWritten,
-                                                             _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                                             const size_t cExpected)
-{
-    Log::Comment(L"Pattern 2");
-
-    const auto iwchNeeded = MultiByteToWideChar(uiCodePage, 0, pszTestData, -1, nullptr, 0);
-    auto pwszTestData = new wchar_t[iwchNeeded];
-    VERIFY_IS_NOT_NULL(pwszTestData);
-    const auto iSuccess = MultiByteToWideChar(uiCodePage, 0, pszTestData, -1, pwszTestData, iwchNeeded);
-    CheckLastErrorZeroFail(iSuccess, L"MultiByteToWideChar");
-
-    const auto cWideData = wcslen(pwszTestData);
-
-    // The maximum number of columns the console will consume is the number of wide characters there are in the string.
-    // This is whether or not the characters themselves are halfwidth or fullwidth (1 col or 2 col respectively.)
-    // This means that for 4 wide characters that are halfwidth (1 col), the console will copy out all 4 of them.
-    // For 4 wide characters that are fullwidth (2 col each), the console will copy out 2 of them (because it will count each fullwidth as 2 when filling)
-    // For a mixed string that is something like half, full, half (4 columns, 3 wchars), we will receive half, full (3 columns worth) and truncate the last half.
-
-    const auto cMaxColumns = cWideData;
-    size_t iColumnsConsumed = 0;
-
-    size_t iNarrow = 0;
-    size_t iWide = 0;
-    size_t iExpected = 0;
-
-    size_t iNulls = 0;
-
-    while (iColumnsConsumed < cMaxColumns)
-    {
-        const auto pciCurrent = &pciExpected[iExpected];
-        const auto chCurrent = pszTestData[iWide];
-        const auto wchCurrent = pwszTestData[iWide];
-
-        pciCurrent->Attributes = wAttrWritten;
-        pciCurrent->Char.UnicodeChar = wchCurrent;
-
-        if (IsDBCSLeadByteEx(uiCodePage, chCurrent))
-        {
-            iColumnsConsumed += 2;
-            iNarrow += 2;
-            iNulls++;
-        }
-        else
-        {
-            iColumnsConsumed++;
-            iNarrow++;
-        }
-
-        iWide++;
-        iExpected++;
-    }
-
-    // Fill remaining with spaces and original attribute
-    while (iExpected < cExpected - iNulls)
-    {
-        const auto pciCurrent = &pciExpected[iExpected];
-        pciCurrent->Attributes = wAttrOriginal;
-        pciCurrent->Char.UnicodeChar = L'\x20';
-
-        iExpected++;
-    }
-
-    delete[] pwszTestData;
-}
-
-// 13
-// From Input String: "Q(Hiragana I)(Hiragana KA)(Hiragana NA)ZYXWVUT(Hiragana NI)
-// With Default Attribute 0x7 (before writing) and Applied Attribute 0x29 (written with text)
-// ...
-// Receive Output Table:
-// attr  | wchar  (char) | symbol
-// ------------------------------------
-// 0x029 | 0x0051 (0x51) | Q
-// 0x129 | 0x0082 (0x82) | Hiragana I Shift-JIS Codepage 932 Lead Byte
-// 0x229 | 0x00A2 (0xA2) | Hiragana I Shift-JIS Codepage 932 Trail Byte
-// 0x129 | 0x0082 (0x82) | Hiragana KA Shift-JIS Codepage 932 Lead Byte
-// 0x229 | 0x00A9 (0xA9) | Hiragana KA Shift-JIS Codepage 932 Trail Byte
-// 0x129 | 0x0082 (0x82) | Hiragana NA Shift-JIS Codepage 932 Lead Byte
-// 0x229 | 0x00C8 (0xC8) | Hiragana NA Shift-JIS Codepage 932 Trail Byte
-// 0x029 | 0x005A (0x5A) | Z
-// 0x029 | 0x0059 (0x59) | Y
-// 0x029 | 0x0058 (0x58) | X
-// 0x029 | 0x0057 (0x57) | W
-// 0x029 | 0x0056 (0x56) | V
-// 0x007 | 0x0020 (0x20) | <space>
-// 0x007 | 0x0020 (0x20) | <space>
-// 0x007 | 0x0020 (0x20) | <space>
-// 0x007 | 0x0020 (0x20) | <space>
-// ...
-// "Space Padded" means most of the unused data in the buffer will be filled with spaces and the default attribute.
-// "Dedupe" means that any full-width characters in the buffer (despite being stored doubled inside the buffer)
-//    will be returned as single copies.
-// "A" means that we intend in-codepage (char) data to be browsed in the resulting struct (even though wchar and char are unioned.)
-void DbcsWriteRead::PrepPattern::SpacePaddedDedupeA(_In_ const unsigned int uiCodePage,
-                                                    _In_ PCSTR pszTestData,
-                                                    const WORD wAttrOriginal,
-                                                    const WORD wAttrWritten,
-                                                    _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                                    const size_t cExpected)
-{
-    Log::Comment(L"Pattern 13");
-
-    const auto iwchNeeded = MultiByteToWideChar(uiCodePage, 0, pszTestData, -1, nullptr, 0);
-    auto pwszTestData = new wchar_t[iwchNeeded];
-    VERIFY_IS_NOT_NULL(pwszTestData);
-    const auto iSuccess = MultiByteToWideChar(uiCodePage, 0, pszTestData, -1, pwszTestData, iwchNeeded);
-    CheckLastErrorZeroFail(iSuccess, L"MultiByteToWideChar");
-
-    const auto cWideData = wcslen(pwszTestData);
-
-    // The maximum number of columns the console will consume is the number of wide characters there are in the string.
-    // This is whether or not the characters themselves are halfwidth or fullwidth (1 col or 2 col respectively.)
-    // This means that for 4 wide characters that are halfwidth (1 col), the console will copy out all 4 of them.
-    // For 4 wide characters that are fullwidth (2 col each), the console will copy out 2 of them (because it will count each fullwidth as 2 when filling)
-    // For a mixed string that is something like half, full, half (4 columns, 3 wchars), we will receive half, full (3 columns worth) and truncate the last half.
-
-    const auto cMaxColumns = cWideData;
-
-    auto fIsNextTrailing = false;
-    size_t i = 0;
-    for (; i < cMaxColumns; i++)
-    {
-        const auto pciCurrent = &pciExpected[i];
-        const auto chCurrent = pszTestData[i];
-
-        pciCurrent->Attributes = wAttrWritten;
-        pciCurrent->Char.AsciiChar = chCurrent;
-
-        if (IsDBCSLeadByteEx(uiCodePage, chCurrent))
-        {
-            pciCurrent->Attributes |= COMMON_LVB_LEADING_BYTE;
-            fIsNextTrailing = true;
-        }
-        else if (fIsNextTrailing)
-        {
-            pciCurrent->Attributes |= COMMON_LVB_TRAILING_BYTE;
-            fIsNextTrailing = false;
+            if ((info.Attributes & colored) == colored)
+            {
+                info.Attributes &= 0xff00 | attr;
+            }
         }
     }
 
-    // Fill remaining with spaces and original attribute
-    while (i < cExpected)
-    {
-        const auto pciCurrent = &pciExpected[i];
-        pciCurrent->Attributes = wAttrOriginal;
-        pciCurrent->Char.UnicodeChar = L'\x20';
+    // Receive Output Table:
+    // attr  | wchar  (char) | symbol
+    // ------------------------------------
+    // 0x029 | 0x0051 (0x51) | Q
+    // 0x029 | 0x3044 (0x44) | Hiragana I
+    // 0x029 | 0x304B (0x4B) | Hiragana KA
+    // 0x029 | 0x306A (0x6A) | Hiragana NA
+    // 0x029 | 0x005A (0x5A) | Z
+    // 0x029 | 0x0059 (0x59) | Y
+    // 0x029 | 0x0058 (0x58) | X
+    // 0x029 | 0x0057 (0x57) | W
+    // 0x029 | 0x0056 (0x56) | V
+    // 0x029 | 0x0055 (0x55) | U
+    // 0x029 | 0x0054 (0x54) | T
+    // 0x029 | 0x306B (0x6B) | Hiragana NI
+    // 0x000 | 0x0000 (0x00) | <null>
+    // 0x000 | 0x0000 (0x00) | <null>
+    // 0x000 | 0x0000 (0x00) | <null>
+    // 0x000 | 0x0000 (0x00) | <null>
+    // ...
+    // "Null Padded" means any unused data in the buffer will be filled with null and null attribute.
+    // "Dedupe" means that any full-width characters in the buffer (despite being stored doubled inside the buffer)
+    //    will be returned as single copies.
+    // "W" means that we intend Unicode data to be browsed in the resulting struct (even though wchar and char are unioned.)
+    static constexpr CharInfoPattern NullPaddedDedupeW{
+        makeCharInfo(0x0051, colored),
+        makeCharInfo(0x3044, colored),
+        makeCharInfo(0x304b, colored),
+        makeCharInfo(0x306a, colored),
+        makeCharInfo(0x005a, colored),
+        makeCharInfo(0x0059, colored),
+        makeCharInfo(0x0058, colored),
+        makeCharInfo(0x0057, colored),
+        makeCharInfo(0x0056, colored),
+        makeCharInfo(0x0055, colored),
+        makeCharInfo(0x0054, colored),
+        makeCharInfo(0x306b, colored),
+        makeCharInfo(0x0000, zeroed),
+        makeCharInfo(0x0000, zeroed),
+        makeCharInfo(0x0000, zeroed),
+        makeCharInfo(0x0000, zeroed),
+    };
 
-        i++;
-    }
+    // Receive Output Table:
+    // attr  | wchar  (char) | symbol
+    // ------------------------------------
+    // 0x029 | 0x0051 (0x51) | Q
+    // 0x029 | 0x3044 (0x44) | Hiragana I
+    // 0x029 | 0x304B (0x4B) | Hiragana KA
+    // 0x029 | 0x306A (0x6A) | Hiragana NA
+    // 0x029 | 0x005A (0x5A) | Z
+    // 0x029 | 0x0059 (0x59) | Y
+    // 0x029 | 0x0058 (0x58) | X
+    // 0x029 | 0x0057 (0x57) | W
+    // 0x029 | 0x0056 (0x56) | V
+    // 0x029 | 0x0055 (0x55) | U
+    // 0x029 | 0x0054 (0x54) | T
+    // 0x029 | 0x306B (0x6B) | Hiragana NI
+    // 0x007 | 0x0020 (0x20) | <space>
+    // 0x007 | 0x0020 (0x20) | <space>
+    // 0x007 | 0x0020 (0x20) | <space>
+    // 0x007 | 0x0020 (0x20) | <space>
+    // ...
+    // "Space Padded" means any unused data in the buffer will be filled with spaces and the default attribute.
+    // "Dedupe" means that any full-width characters in the buffer (despite being stored doubled inside the buffer)
+    //    will be returned as single copies.
+    // "W" means that we intend Unicode data to be browsed in the resulting struct (even though wchar and char are unioned.)
+    static constexpr CharInfoPattern SpacePaddedDedupeW{
+        makeCharInfo(0x0051, colored),
+        makeCharInfo(0x3044, colored),
+        makeCharInfo(0x304b, colored),
+        makeCharInfo(0x306a, colored),
+        makeCharInfo(0x005a, colored),
+        makeCharInfo(0x0059, colored),
+        makeCharInfo(0x0058, colored),
+        makeCharInfo(0x0057, colored),
+        makeCharInfo(0x0056, colored),
+        makeCharInfo(0x0055, colored),
+        makeCharInfo(0x0054, colored),
+        makeCharInfo(0x306b, colored),
+        makeCharInfo(0x0020, white),
+        makeCharInfo(0x0020, white),
+        makeCharInfo(0x0020, white),
+        makeCharInfo(0x0020, white),
+    };
 
-    delete[] pwszTestData;
+    // Receive Output Table:
+    // attr  | wchar  (char) | symbol
+    // ------------------------------------
+    // 0x029 | 0x0051 (0x51) | Q
+    // 0x029 | 0x0000 (0x00) | <null>
+    // 0x029 | 0x0000 (0x00) | <null>
+    // 0x029 | 0x0000 (0x00) | <null>
+    // 0x029 | 0x005A (0x5A) | Z
+    // 0x029 | 0x0059 (0x59) | Y
+    // 0x029 | 0x0058 (0x58) | X
+    // 0x029 | 0x0057 (0x57) | W
+    // 0x029 | 0x0056 (0x56) | V
+    // 0x029 | 0x0055 (0x55) | U
+    // 0x029 | 0x0054 (0x54) | T
+    // 0x029 | 0x0000 (0x00) | <null>
+    // 0x007 | 0x0020 (0x20) | <space>
+    // 0x007 | 0x0020 (0x20) | <space>
+    // 0x007 | 0x0020 (0x20) | <space>
+    // 0x007 | 0x0020 (0x20) | <space>
+    // ...
+    // "Space Padded" means any unused data in the buffer will be filled with spaces and the default attribute.
+    // "Dedupe" means that any full-width characters in the buffer will be returned as single copies.
+    //    But due to the target being a DBCS character set that can't represent these in a single char, it's null.
+    // "A" means that we intend in-codepage (char) data to be browsed in the resulting struct
+    static constexpr CharInfoPattern SpacePaddedDedupeInvalidA{
+        makeCharInfo(0x0051, colored),
+        makeCharInfo(0x0000, colored),
+        makeCharInfo(0x0000, colored),
+        makeCharInfo(0x0000, colored),
+        makeCharInfo(0x005a, colored),
+        makeCharInfo(0x0059, colored),
+        makeCharInfo(0x0058, colored),
+        makeCharInfo(0x0057, colored),
+        makeCharInfo(0x0056, colored),
+        makeCharInfo(0x0055, colored),
+        makeCharInfo(0x0054, colored),
+        makeCharInfo(0x0000, colored),
+        makeCharInfo(0x0020, white),
+        makeCharInfo(0x0020, white),
+        makeCharInfo(0x0020, white),
+        makeCharInfo(0x0020, white),
+    };
+
+    // Receive Output Table:
+    // attr  | wchar  (char) | symbol
+    // ------------------------------------
+    // 0x029 | 0x0051 (0x51) | Q
+    // 0x029 | 0x3044 (0x44) | Hiragana I
+    // 0x029 | 0x304B (0x4B) | Hiragana KA
+    // 0x029 | 0x306A (0x6A) | Hiragana NA
+    // 0x029 | 0x005A (0x5A) | Z
+    // 0x029 | 0x0059 (0x59) | Y
+    // 0x029 | 0x0058 (0x58) | X
+    // 0x029 | 0x0057 (0x57) | W
+    // 0x029 | 0x0056 (0x56) | V
+    // 0x007 | 0x0020 (0x20) | <space>
+    // 0x007 | 0x0020 (0x20) | <space>
+    // 0x007 | 0x0020 (0x20) | <space>
+    // 0x007 | 0x0020 (0x20) | <space>
+    // 0x000 | 0x0000 (0x00) | <null>
+    // 0x000 | 0x0000 (0x00) | <null>
+    // 0x000 | 0x0000 (0x00) | <null>
+    // ...
+    // "Space Padded" means most of the unused data in the buffer will be filled with spaces and the default attribute.
+    // "Dedupe" means that any full-width characters in the buffer (despite being stored doubled inside the buffer)
+    //    will be returned as single copies.
+    // "W" means that we intend Unicode data to be browsed in the resulting struct (even though wchar and char are unioned.)
+    // "Truncated" means that this pattern trims off some of the end of the buffer with NULLs.
+    static constexpr CharInfoPattern SpacePaddedDedupeTruncatedW{
+        makeCharInfo(0x0051, colored),
+        makeCharInfo(0x3044, colored),
+        makeCharInfo(0x304b, colored),
+        makeCharInfo(0x306a, colored),
+        makeCharInfo(0x005a, colored),
+        makeCharInfo(0x0059, colored),
+        makeCharInfo(0x0058, colored),
+        makeCharInfo(0x0057, colored),
+        makeCharInfo(0x0056, colored),
+        makeCharInfo(0x0020, white),
+        makeCharInfo(0x0020, white),
+        makeCharInfo(0x0020, white),
+        makeCharInfo(0x0020, white),
+        makeCharInfo(0x0000, zeroed),
+        makeCharInfo(0x0000, zeroed),
+        makeCharInfo(0x0000, zeroed),
+    };
+
+    // Receive Output Table:
+    // attr  | wchar  (char) | symbol
+    // ------------------------------------
+    // 0x029 | 0x0051 (0x51) | Q
+    // 0x029 | 0x3044 (0x44) | Hiragana I
+    // 0x029 | 0x3044 (0x44) | Hiragana I
+    // 0x029 | 0x304B (0x4B) | Hiragana KA
+    // 0x029 | 0x304B (0x4B) | Hiragana KA
+    // 0x029 | 0x306A (0x6A) | Hiragana NA
+    // 0x029 | 0x306A (0x6A) | Hiragana NA
+    // 0x029 | 0x005A (0x5A) | Z
+    // 0x029 | 0x0059 (0x59) | Y
+    // 0x029 | 0x0058 (0x58) | X
+    // 0x000 | 0x0000 (0x00) | <null>
+    // 0x000 | 0x0000 (0x00) | <null>
+    // 0x000 | 0x0000 (0x00) | <null>
+    // 0x000 | 0x0000 (0x00) | <null>
+    // 0x000 | 0x0000 (0x00) | <null>
+    // 0x000 | 0x0000 (0x00) | <null>
+    // ...
+    // "Doubled" means that any full-width characters in the buffer are returned twice.
+    // "Truncated" means that this pattern trims off some of the end of the buffer with NULLs.
+    // "W" means that we intend Unicode data to be browsed in the resulting struct (even though wchar and char are unioned.)
+    static constexpr CharInfoPattern DoubledTruncatedW{
+        makeCharInfo(0x0051, colored),
+        makeCharInfo(0x3044, colored),
+        makeCharInfo(0x3044, colored),
+        makeCharInfo(0x304b, colored),
+        makeCharInfo(0x304b, colored),
+        makeCharInfo(0x306a, colored),
+        makeCharInfo(0x306a, colored),
+        makeCharInfo(0x005a, colored),
+        makeCharInfo(0x0059, colored),
+        makeCharInfo(0x0058, colored),
+        makeCharInfo(0x0000, zeroed),
+        makeCharInfo(0x0000, zeroed),
+        makeCharInfo(0x0000, zeroed),
+        makeCharInfo(0x0000, zeroed),
+        makeCharInfo(0x0000, zeroed),
+        makeCharInfo(0x0000, zeroed),
+    };
+
+    // Receive Output Table:
+    // attr  | wchar  (char) | symbol
+    // ------------------------------------
+    // 0x029 | 0x0051 (0x51) | Q
+    // 0x129 | 0x0082 (0x82) | Hiragana I Shift-JIS Codepage 932 Lead Byte
+    // 0x229 | 0x00A2 (0xA2) | Hiragana I Shift-JIS Codepage 932 Trail Byte
+    // 0x129 | 0x0082 (0x82) | Hiragana KA Shift-JIS Codepage 932 Lead Byte
+    // 0x229 | 0x00A9 (0xA9) | Hiragana KA Shift-JIS Codepage 932 Trail Byte
+    // 0x129 | 0x0082 (0x82) | Hiragana NA Shift-JIS Codepage 932 Lead Byte
+    // 0x229 | 0x00C8 (0xC8) | Hiragana NA Shift-JIS Codepage 932 Trail Byte
+    // 0x029 | 0x005A (0x5A) | Z
+    // 0x029 | 0x0059 (0x59) | Y
+    // 0x029 | 0x0058 (0x58) | X
+    // 0x029 | 0x0057 (0x57) | W
+    // 0x029 | 0x0056 (0x56) | V
+    // 0x007 | 0x0020 (0x20) | <space>
+    // 0x007 | 0x0020 (0x20) | <space>
+    // 0x007 | 0x0020 (0x20) | <space>
+    // 0x007 | 0x0020 (0x20) | <space>
+    // ...
+    // "Space Padded" means most of the unused data in the buffer will be filled with spaces and the default attribute.
+    // "Dedupe" means that any full-width characters in the buffer (despite being stored doubled inside the buffer)
+    //    will be returned as single copies.
+    // "A" means that we intend in-codepage (char) data to be browsed in the resulting struct (even though wchar and char are unioned.)
+    static constexpr CharInfoPattern SpacePaddedDedupeA{
+        makeCharInfo(0x0051, colored),
+        makeCharInfo(0x0082, colored | leading),
+        makeCharInfo(0x00a2, colored | trailing),
+        makeCharInfo(0x0082, colored | leading),
+        makeCharInfo(0x00a9, colored | trailing),
+        makeCharInfo(0x0082, colored | leading),
+        makeCharInfo(0x00c8, colored | trailing),
+        makeCharInfo(0x005a, colored),
+        makeCharInfo(0x0059, colored),
+        makeCharInfo(0x0058, colored),
+        makeCharInfo(0x0057, colored),
+        makeCharInfo(0x0056, colored),
+        makeCharInfo(0x0020, white),
+        makeCharInfo(0x0020, white),
+        makeCharInfo(0x0020, white),
+        makeCharInfo(0x0020, white),
+    };
+
+    // Receive Output Table:
+    // attr  | wchar  (char) | symbol
+    // ------------------------------------
+    // 0x029 | 0x0051 (0x51) | Q
+    // 0x129 | 0x3044 (0x44) | Hiragana I
+    // 0x229 | 0x3044 (0x44) | Hiragana I
+    // 0x129 | 0x304B (0x4B) | Hiragana KA
+    // 0x229 | 0x304B (0x4B) | Hiragana KA
+    // 0x129 | 0x306A (0x6A) | Hiragana NA
+    // 0x229 | 0x306A (0x6A) | Hiragana NA
+    // 0x029 | 0x005A (0x5A) | Z
+    // 0x029 | 0x0059 (0x59) | Y
+    // 0x029 | 0x0058 (0x58) | X
+    // 0x029 | 0x0057 (0x57) | W
+    // 0x029 | 0x0056 (0x56) | V
+    // 0x029 | 0x0055 (0x55) | U
+    // 0x029 | 0x0054 (0x54) | T
+    // 0x129 | 0x306B (0x6B) | Hiragana NI
+    // 0x229 | 0x306B (0x6B) | Hiragana NI
+    // ...
+    // "Doubled" means that any full-width characters in the buffer are returned twice with a leading and trailing byte marker.
+    // "W" means that we intend Unicode data to be browsed in the resulting struct (even though wchar and char are unioned.)
+    static constexpr CharInfoPattern DoubledW{
+        makeCharInfo(0x0051, colored),
+        makeCharInfo(0x3044, colored | leading),
+        makeCharInfo(0x3044, colored | trailing),
+        makeCharInfo(0x304b, colored | leading),
+        makeCharInfo(0x304b, colored | trailing),
+        makeCharInfo(0x306a, colored | leading),
+        makeCharInfo(0x306a, colored | trailing),
+        makeCharInfo(0x005a, colored),
+        makeCharInfo(0x0059, colored),
+        makeCharInfo(0x0058, colored),
+        makeCharInfo(0x0057, colored),
+        makeCharInfo(0x0056, colored),
+        makeCharInfo(0x0055, colored),
+        makeCharInfo(0x0054, colored),
+        makeCharInfo(0x306b, colored | leading),
+        makeCharInfo(0x306b, colored | trailing),
+    };
+
+    // Receive Output Table:
+    // attr  | wchar  (char) | symbol
+    // ------------------------------------
+    // 0x029 | 0x0051 (0x51) | Q
+    // 0x129 | 0x0082 (0x82) | Hiragana I Shift-JIS Codepage 932 Lead Byte
+    // 0x229 | 0x00A2 (0xA2) | Hiragana I Shift-JIS Codepage 932 Trail Byte
+    // 0x129 | 0x0082 (0x82) | Hiragana KA Shift-JIS Codepage 932 Lead Byte
+    // 0x229 | 0x00A9 (0xA9) | Hiragana KA Shift-JIS Codepage 932 Trail Byte
+    // 0x129 | 0x0082 (0x82) | Hiragana NA Shift-JIS Codepage 932 Lead Byte
+    // 0x229 | 0x00C8 (0xC8) | Hiragana NA Shift-JIS Codepage 932 Trail Byte
+    // 0x029 | 0x005A (0x5A) | Z
+    // 0x029 | 0x0059 (0x59) | Y
+    // 0x029 | 0x0058 (0x58) | X
+    // 0x029 | 0x0057 (0x57) | W
+    // 0x029 | 0x0056 (0x56) | V
+    // 0x029 | 0x0055 (0x55) | U
+    // 0x029 | 0x0054 (0x54) | T
+    // 0x129 | 0x0082 (0x82) | Hiragana NI Shift-JIS Codepage 932 Lead Byte
+    // 0x229 | 0x00C9 (0xC9) | Hiragana NI Shift-JIS Codepage 932 Trail Byte
+    // ...
+    // "A" means that we intend in-codepage (char) data to be browsed in the resulting struct.
+    // This one returns pretty much exactly as expected.
+    static constexpr CharInfoPattern A{
+        makeCharInfo(0x0051, colored),
+        makeCharInfo(0x0082, colored | leading),
+        makeCharInfo(0x00a2, colored | trailing),
+        makeCharInfo(0x0082, colored | leading),
+        makeCharInfo(0x00a9, colored | trailing),
+        makeCharInfo(0x0082, colored | leading),
+        makeCharInfo(0x00c8, colored | trailing),
+        makeCharInfo(0x005a, colored),
+        makeCharInfo(0x0059, colored),
+        makeCharInfo(0x0058, colored),
+        makeCharInfo(0x0057, colored),
+        makeCharInfo(0x0056, colored),
+        makeCharInfo(0x0055, colored),
+        makeCharInfo(0x0054, colored),
+        makeCharInfo(0x0082, colored | leading),
+        makeCharInfo(0x00c9, colored | trailing),
+    };
+
+    // Receive Output Table:
+    // attr  | wchar  (char) | symbol
+    // ------------------------------------
+    // 0x029 | 0x0051 (0x51) | Q
+    // 0x129 | 0x0082 (0x82) | Hiragana I Shift-JIS Codepage 932 Lead Byte
+    // 0x229 | 0x00A2 (0xA2) | Hiragana I Shift-JIS Codepage 932 Trail Byte
+    // 0x129 | 0x0082 (0x82) | Hiragana I Shift-JIS Codepage 932 Lead Byte
+    // 0x229 | 0x00A2 (0xA2) | Hiragana I Shift-JIS Codepage 932 Trail Byte
+    // 0x129 | 0x0082 (0x82) | Hiragana KA Shift-JIS Codepage 932 Lead Byte
+    // 0x229 | 0x00A9 (0xA9) | Hiragana KA Shift-JIS Codepage 932 Trail Byte
+    // 0x129 | 0x0082 (0x82) | Hiragana KA Shift-JIS Codepage 932 Lead Byte
+    // 0x229 | 0x00A9 (0xA9) | Hiragana KA Shift-JIS Codepage 932 Trail Byte
+    // 0x129 | 0x0082 (0x82) | Hiragana NA Shift-JIS Codepage 932 Lead Byte
+    // 0x229 | 0x00C8 (0xC8) | Hiragana NA Shift-JIS Codepage 932 Trail Byte
+    // 0x129 | 0x0082 (0x82) | Hiragana NA Shift-JIS Codepage 932 Lead Byte
+    // 0x229 | 0x00C8 (0xC8) | Hiragana NA Shift-JIS Codepage 932 Trail Byte
+    // 0x029 | 0x005A (0x5A) | Z
+    // 0x029 | 0x0059 (0x59) | Y
+    // 0x029 | 0x0058 (0x58) | X
+    // ...
+    // "Doubled" means that any full-width characters in the buffer are returned twice.
+    // "A" means that we intend in-codepage (char) data to be browsed in the resulting struct.
+    static constexpr CharInfoPattern DoubledA{
+        makeCharInfo(0x0051, colored),
+        makeCharInfo(0x0082, colored | leading),
+        makeCharInfo(0x00a2, colored | trailing),
+        makeCharInfo(0x0082, colored | leading),
+        makeCharInfo(0x00a2, colored | trailing),
+        makeCharInfo(0x0082, colored | leading),
+        makeCharInfo(0x00a9, colored | trailing),
+        makeCharInfo(0x0082, colored | leading),
+        makeCharInfo(0x00a9, colored | trailing),
+        makeCharInfo(0x0082, colored | leading),
+        makeCharInfo(0x00c8, colored | trailing),
+        makeCharInfo(0x0082, colored | leading),
+        makeCharInfo(0x00c8, colored | trailing),
+        makeCharInfo(0x005a, colored),
+        makeCharInfo(0x0059, colored),
+        makeCharInfo(0x0058, colored),
+    };
+
+    // Receive Output Table:
+    // attr  | wchar  (char) | symbol
+    // ------------------------------------
+    // 0x029 | 0x0051 (0x51) | Q
+    // 0x129 | 0x3044 (0x44) | Hiragana I
+    // 0x229 | 0x304B (0x4B) | Hiragana KA
+    // 0x129 | 0x306A (0x6A) | Hiragana NA
+    // 0x229 | 0x005A (0x5A) | Z
+    // 0x129 | 0x0059 (0x59) | Y
+    // 0x229 | 0x0058 (0x58) | X
+    // 0x029 | 0x0057 (0x57) | W
+    // 0x029 | 0x0056 (0x56) | V
+    // 0x029 | 0x0055 (0x55) | U
+    // 0x029 | 0x0054 (0x54) | T
+    // 0x029 | 0x306B (0x6B) | Hiragana NI
+    // 0x029 | 0x0000 (0x00) | <null>
+    // 0x029 | 0x0000 (0x00) | <null>
+    // 0x129 | 0x0000 (0x00) | <null>
+    // 0x229 | 0x0000 (0x00) | <null>
+    // ...
+    // "Null" means any unused data in the buffer will be filled with null.
+    // "CoverAChar" means that the attributes belong to the A version of the call, but we've placed de-duped W characters over the top.
+    // "W" means that we intend Unicode data to be browsed in the resulting struct (even though wchar and char are unioned.)
+    static constexpr CharInfoPattern WNullCoverAChar{
+        makeCharInfo(0x0051, colored),
+        makeCharInfo(0x3044, colored | leading),
+        makeCharInfo(0x304b, colored | trailing),
+        makeCharInfo(0x306a, colored | leading),
+        makeCharInfo(0x005a, colored | trailing),
+        makeCharInfo(0x0059, colored | leading),
+        makeCharInfo(0x0058, colored | trailing),
+        makeCharInfo(0x0057, colored),
+        makeCharInfo(0x0056, colored),
+        makeCharInfo(0x0055, colored),
+        makeCharInfo(0x0054, colored),
+        makeCharInfo(0x306b, colored),
+        makeCharInfo(0x0000, colored),
+        makeCharInfo(0x0000, colored),
+        makeCharInfo(0x0000, colored | leading),
+        makeCharInfo(0x0000, colored | trailing),
+    };
+
+    // Receive Output Table:
+    // attr  | wchar  (char) | symbol
+    // ------------------------------------
+    // 0x029 | 0x0051 (0x51) | Q
+    // 0x129 | 0x3044 (0x44) | Hiragana I
+    // 0x229 | 0x3044 (0x44) | Hiragana I
+    // 0x129 | 0x304B (0x4B) | Hiragana KA
+    // 0x229 | 0x304B (0x4B) | Hiragana KA
+    // 0x129 | 0x306A (0x6A) | Hiragana NA
+    // 0x229 | 0x306A (0x6A) | Hiragana NA
+    // 0x129 | 0x005A (0x5A) | Z
+    // 0x229 | 0x0059 (0x59) | Y
+    // 0x129 | 0x0058 (0x58) | X
+    // 0x229 | 0x0000 (0x00) | <null>
+    // 0x129 | 0x0000 (0x00) | <null>
+    // 0x229 | 0x0000 (0x00) | <null>
+    // 0x029 | 0x0000 (0x00) | <null>
+    // 0x029 | 0x0000 (0x00) | <null>
+    // 0x029 | 0x0000 (0x00) | <null>
+    // ...
+    // "Doubled" means that any full-width characters in the buffer are returned twice.
+    // "Truncated" means that this pattern trims off some of the end of the buffer with NULLs.
+    // "W" means that we intend Unicode data to be browsed in the resulting struct (even though wchar and char are unioned.)
+    static constexpr CharInfoPattern DoubledTruncatedCoverAChar{
+        makeCharInfo(0x0051, colored),
+        makeCharInfo(0x3044, colored | leading),
+        makeCharInfo(0x3044, colored | trailing),
+        makeCharInfo(0x304b, colored | leading),
+        makeCharInfo(0x304b, colored | trailing),
+        makeCharInfo(0x306a, colored | leading),
+        makeCharInfo(0x306a, colored | trailing),
+        makeCharInfo(0x005a, colored | leading),
+        makeCharInfo(0x0059, colored | trailing),
+        makeCharInfo(0x0058, colored | leading),
+        makeCharInfo(0x0000, colored | trailing),
+        makeCharInfo(0x0000, colored | leading),
+        makeCharInfo(0x0000, colored | trailing),
+        makeCharInfo(0x0000, colored),
+        makeCharInfo(0x0000, colored),
+        makeCharInfo(0x0000, colored),
+    };
+
+    // Receive Output Table:
+    // attr  | wchar  (char) | symbol
+    // ------------------------------------
+    // 0x029 | 0x0051 (0x51) | Q
+    // 0x129 | 0x3044 (0x44) | Hiragana I
+    // 0x229 | 0x304B (0x4B) | Hiragana KA
+    // 0x129 | 0x306A (0x6A) | Hiragana NA
+    // 0x229 | 0x005A (0x5A) | Z
+    // 0x129 | 0x0059 (0x59) | Y
+    // 0x229 | 0x0058 (0x58) | X
+    // 0x029 | 0x0057 (0x57) | W
+    // 0x029 | 0x0056 (0x56) | V
+    // 0x029 | 0x0020 (0x20) | <space>
+    // 0x029 | 0x0020 (0x20) | <space>
+    // 0x029 | 0x0020 (0x20) | <space>
+    // 0x007 | 0x0020 (0x20) | <space>
+    // 0x007 | 0x0000 (0x00) | <null>
+    // 0x007 | 0x0000 (0x00) | <null>
+    // 0x007 | 0x0000 (0x00) | <null>
+    // ...
+    // "Space Padded" means most of the unused data in the buffer will be filled with spaces and the default attribute.
+    // "Dedupe" means that any full-width characters in the buffer (despite being stored doubled inside the buffer)
+    //    will be returned as single copies.
+    // "W" means that we intend Unicode data to be browsed in the resulting struct (even though wchar and char are unioned.)
+    // "Truncated" means that this pattern trims off some of the end of the buffer with NULLs.
+    // "A Cover Attr" means that after all the other operations, we will finally run through and cover up the attributes
+    //     again with what they would have been for multi-byte data (leading and trailing flags)
+    static constexpr CharInfoPattern ACoverAttrSpacePaddedDedupeTruncatedW{
+        makeCharInfo(0x0051, colored),
+        makeCharInfo(0x3044, colored | leading),
+        makeCharInfo(0x304b, colored | trailing),
+        makeCharInfo(0x306a, colored | leading),
+        makeCharInfo(0x005a, colored | trailing),
+        makeCharInfo(0x0059, colored | leading),
+        makeCharInfo(0x0058, colored | trailing),
+        makeCharInfo(0x0057, colored),
+        makeCharInfo(0x0056, colored),
+        makeCharInfo(0x0020, colored),
+        makeCharInfo(0x0020, colored),
+        makeCharInfo(0x0020, colored),
+        makeCharInfo(0x0020, white),
+        makeCharInfo(0x0000, white),
+        makeCharInfo(0x0000, white),
+        makeCharInfo(0x0000, white),
+    };
+
+    // Receive Output Table:
+    // attr  | wchar  (char) | symbol
+    // ------------------------------------
+    // 0x029 | 0x0000 (0x00) | <null>
+    // 0x029 | 0x0000 (0x00) | <null>
+    // 0x029 | 0x0000 (0x00) | <null>
+    // 0x029 | 0x0000 (0x00) | <null>
+    // 0x029 | 0x0000 (0x00) | <null>
+    // 0x029 | 0x0000 (0x00) | <null>
+    // 0x029 | 0x0000 (0x00) | <null>
+    // 0x029 | 0x0000 (0x00) | <null>
+    // 0x029 | 0x0000 (0x00) | <null>
+    // 0x029 | 0x0000 (0x00) | <null>
+    // 0x029 | 0x0000 (0x00) | <null>
+    // 0x029 | 0x0000 (0x00) | <null>
+    // 0x007 | 0x0000 (0x00) | <null>
+    // 0x007 | 0x0000 (0x00) | <null>
+    // 0x007 | 0x0000 (0x00) | <null>
+    // 0x007 | 0x0000 (0x00) | <null>
+    // ...
+    // "Space Padded" means most of the unused data in the buffer will be filled with spaces and the default attribute.
+    // "Dedupe" means that any full-width characters in the buffer (despite being stored doubled inside the buffer)
+    //    will be returned as single copies.
+    // "W" means that we intend Unicode data to be browsed in the resulting struct (even though wchar and char are unioned.)
+    // "Truncated" means that this pattern trims off some of the end of the buffer with NULLs.
+    // "A Cover Attr" means that after all the other operations, we will finally run through and cover up the attributes
+    //     again with what they would have been for multi-byte data (leading and trailing flags)
+    static constexpr CharInfoPattern TrueTypeCharANullWithAttrs{
+        makeCharInfo(0x0000, colored),
+        makeCharInfo(0x0000, colored),
+        makeCharInfo(0x0000, colored),
+        makeCharInfo(0x0000, colored),
+        makeCharInfo(0x0000, colored),
+        makeCharInfo(0x0000, colored),
+        makeCharInfo(0x0000, colored),
+        makeCharInfo(0x0000, colored),
+        makeCharInfo(0x0000, colored),
+        makeCharInfo(0x0000, colored),
+        makeCharInfo(0x0000, colored),
+        makeCharInfo(0x0000, colored),
+        makeCharInfo(0x0000, white),
+        makeCharInfo(0x0000, white),
+        makeCharInfo(0x0000, white),
+        makeCharInfo(0x0000, white),
+    };
 }
 
-// 5
-// From Input String: "Q(Hiragana I)(Hiragana KA)(Hiragana NA)ZYXWVUT(Hiragana NI)
-// With Default Attribute 0x7 (before writing) and Applied Attribute 0x29 (written with text)
-// ...
-// Receive Output Table:
-// attr  | wchar  (char) | symbol
-// ------------------------------------
-// 0x029 | 0x0051 (0x51) | Q
-// 0x129 | 0x3044 (0x44) | Hiragana I
-// 0x229 | 0x3044 (0x44) | Hiragana I
-// 0x129 | 0x304B (0x4B) | Hiragana KA
-// 0x229 | 0x304B (0x4B) | Hiragana KA
-// 0x129 | 0x306A (0x6A) | Hiragana NA
-// 0x229 | 0x306A (0x6A) | Hiragana NA
-// 0x029 | 0x005A (0x5A) | Z
-// 0x029 | 0x0059 (0x59) | Y
-// 0x029 | 0x0058 (0x58) | X
-// 0x029 | 0x0057 (0x57) | W
-// 0x029 | 0x0056 (0x56) | V
-// 0x029 | 0x0055 (0x55) | U
-// 0x029 | 0x0054 (0x54) | T
-// 0x129 | 0x306B (0x6B) | Hiragana NI
-// 0x229 | 0x306B (0x6B) | Hiragana NI
-// ...
-// "Doubled" means that any full-width characters in the buffer are returned twice with a leading and trailing byte marker.
-// "W" means that we intend Unicode data to be browsed in the resulting struct (even though wchar and char are unioned.)
-void DbcsWriteRead::PrepPattern::DoubledW(_In_ const unsigned int uiCodePage,
-                                          _In_ PCSTR pszTestData,
-                                          const WORD /*wAttrOriginal*/,
-                                          const WORD wAttrWritten,
-                                          _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                          const size_t cExpected)
-{
-    Log::Comment(L"Pattern 5");
-    const auto cTestData = strlen(pszTestData);
-    VERIFY_IS_GREATER_THAN_OR_EQUAL(cExpected, cTestData);
-
-    const auto iwchNeeded = MultiByteToWideChar(uiCodePage, 0, pszTestData, -1, nullptr, 0);
-    auto pwszTestData = new wchar_t[iwchNeeded];
-    VERIFY_IS_NOT_NULL(pwszTestData);
-    const auto iSuccess = MultiByteToWideChar(uiCodePage, 0, pszTestData, -1, pwszTestData, iwchNeeded);
-    CheckLastErrorZeroFail(iSuccess, L"MultiByteToWideChar");
-
-    size_t iWide = 0;
-    auto wchRepeat = L'\0';
-    auto fIsNextTrailing = false;
-    for (size_t i = 0; i < cTestData; i++)
-    {
-        const auto pciCurrent = &pciExpected[i];
-        const auto chTest = pszTestData[i];
-        const auto wchCopy = pwszTestData[iWide];
-
-        pciCurrent->Attributes = wAttrWritten;
-
-        if (IsDBCSLeadByteEx(uiCodePage, chTest))
-        {
-            pciCurrent->Char.UnicodeChar = wchCopy;
-            iWide++;
-
-            pciCurrent->Attributes |= COMMON_LVB_LEADING_BYTE;
-
-            wchRepeat = wchCopy;
-            fIsNextTrailing = true;
-        }
-        else if (fIsNextTrailing)
-        {
-            pciCurrent->Char.UnicodeChar = wchRepeat;
-
-            pciCurrent->Attributes |= COMMON_LVB_TRAILING_BYTE;
-
-            fIsNextTrailing = false;
-        }
-        else
-        {
-            pciCurrent->Char.UnicodeChar = wchCopy;
-            iWide++;
-        }
-    }
-
-    delete[] pwszTestData;
-}
-
-// 4
-// From Input String: "Q(Hiragana I)(Hiragana KA)(Hiragana NA)ZYXWVUT(Hiragana NI)
-// With Default Attribute 0x7 (before writing) and Applied Attribute 0x29 (written with text)
-// ...
-// Receive Output Table:
-// attr  | wchar  (char) | symbol
-// ------------------------------------
-// 0x029 | 0x0051 (0x51) | Q
-// 0x129 | 0x3044 (0x44) | Hiragana I
-// 0x229 | 0xFFFF (0xFF) | Invalid Unicode Character
-// 0x129 | 0x304B (0x4B) | Hiragana KA
-// 0x229 | 0xFFFF (0xFF) | Invalid Unicode Character
-// 0x129 | 0x306A (0x6A) | Hiragana NA
-// 0x229 | 0xFFFF (0xFF) | Invalid Unicode Character
-// 0x029 | 0x005A (0x5A) | Z
-// 0x029 | 0x0059 (0x59) | Y
-// 0x029 | 0x0058 (0x58) | X
-// 0x029 | 0x0057 (0x57) | W
-// 0x029 | 0x0056 (0x56) | V
-// 0x029 | 0x0055 (0x55) | U
-// 0x029 | 0x0054 (0x54) | T
-// 0x129 | 0x306B (0x6B) | Hiragana NI
-// 0x229 | 0xFFFF (0xFF) | Invalid Unicode Character
-// ...
-// "Doubled" means that any full-width characters in the buffer are returned twice with a leading and trailing byte marker.
-// "W" means that we intend Unicode data to be browsed in the resulting struct (even though wchar and char are unioned.)
-// "NegativeOneTrailing" means that all trailing bytes have their character replaced with the value -1 or 0xFFFF
-void DbcsWriteRead::PrepPattern::DoubledWNegativeOneTrailing(_In_ const unsigned int uiCodePage,
-                                                             _In_ PCSTR pszTestData,
-                                                             const WORD wAttrOriginal,
-                                                             const WORD wAttrWritten,
-                                                             _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                                             const size_t cExpected)
-{
-    Log::Comment(L"Pattern 4");
-    DbcsWriteRead::PrepPattern::DoubledW(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, pciExpected, cExpected);
-
-    for (size_t i = 0; i < cExpected; i++)
-    {
-        auto pciCurrent = &pciExpected[i];
-
-        if (WI_IsFlagSet(pciCurrent->Attributes, COMMON_LVB_TRAILING_BYTE))
-        {
-            pciCurrent->Char.UnicodeChar = 0xFFFF;
-        }
-    }
-}
-
-// 7
-// From Input String: "Q(Hiragana I)(Hiragana KA)(Hiragana NA)ZYXWVUT(Hiragana NI)
-// With Default Attribute 0x7 (before writing) and Applied Attribute 0x29 (written with text)
-// ...
-// Receive Output Table:
-// attr  | wchar  (char) | symbol
-// ------------------------------------
-// 0x029 | 0x0051 (0x51) | Q
-// 0x129 | 0x3082 (0x82) | Hiragana I Unicode 0x3044 with the lower byte covered by Shift-JIS Codepage 932 Lead Byte 0x82.
-// 0x229 | 0xFFA2 (0xA2) | Invalid Unicode Character 0xFFFF with the lower byte covered by Shift-JIS Codepage 932 Trail Byte 0xA2
-// 0x129 | 0x3082 (0x82) | Hiragana KA Unicode 0x304B with the lower byte covered by Shift-JIS Codepage 932 Lead Byte 0x82.
-// 0x229 | 0xFFA9 (0xA9) | Invalid Unicode Character 0xFFFF with the lower byte covered by Shift-JIS Codepage 932 Trail Byte 0xA9
-// 0x129 | 0x3082 (0x82) | Hiragana NA 0x306A with the lower byte covered by Shift-JIS Codepage 932 Lead Byte 0x82.
-// 0x229 | 0xFFC8 (0xC8) | Invalid Unicode Character 0xFFFF with the lower byte covered by Shift-JIS Codepage 932 Trail Byte 0xC8
-// 0x029 | 0x005A (0x5A) | Z
-// 0x029 | 0x0059 (0x59) | Y
-// 0x029 | 0x0058 (0x58) | X
-// 0x029 | 0x0057 (0x57) | W
-// 0x029 | 0x0056 (0x56) | V
-// 0x007 | 0x0020 (0x20) | <space>
-// 0x007 | 0x0020 (0x20) | <space>
-// 0x007 | 0x0020 (0x20) | <space>
-// 0x007 | 0x0020 (0x20) | <space>
-// ...
-// "AStompsW" means that the Unicode characters were fit into the result buffer first, then the Multibyte conversion
-//     was written over the top of the lower byte. This makes an invalid Unicode character, but can be understood
-//     as in-codepage from the char portion of the union.
-// "NegativeOnePattern" means that every trailing byte started as -1 or 0xFFFF
-// "TruncateSpacePadded" means that we only allowed ourselves to return as many characters as is in the unicode length
-//     of the string and then filled the rest of the buffer after that with spaces.
-void DbcsWriteRead::PrepPattern::AStompsWNegativeOnePatternTruncateSpacePadded(_In_ const unsigned int uiCodePage,
-                                                                               _In_ PCSTR pszTestData,
-                                                                               const WORD wAttrOriginal,
-                                                                               const WORD wAttrWritten,
-                                                                               _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                                                               const size_t cExpected)
-{
-    Log::Comment(L"Pattern 7");
-    DbcsWriteRead::PrepPattern::DoubledWNegativeOneTrailing(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, pciExpected, cExpected);
-
-    // Stomp all A portions of the structure from the existing pattern with the A characters
-    const auto cTestData = strlen(pszTestData);
-    for (size_t i = 0; i < cTestData; i++)
-    {
-        const auto pciCurrent = &pciExpected[i];
-        pciCurrent->Char.AsciiChar = pszTestData[i];
-    }
-
-    // Now truncate down and space fill the space based on the max column count.
-    const auto iwchNeeded = MultiByteToWideChar(uiCodePage, 0, pszTestData, -1, nullptr, 0);
-    auto pwszTestData = new wchar_t[iwchNeeded];
-    VERIFY_IS_NOT_NULL(pwszTestData);
-    const auto iSuccess = MultiByteToWideChar(uiCodePage, 0, pszTestData, -1, pwszTestData, iwchNeeded);
-    CheckLastErrorZeroFail(iSuccess, L"MultiByteToWideChar");
-
-    const auto cWideData = wcslen(pwszTestData);
-
-    // The maximum number of columns the console will consume is the number of wide characters there are in the string.
-    // This is whether or not the characters themselves are halfwidth or fullwidth (1 col or 2 col respectively.)
-    // This means that for 4 wide characters that are halfwidth (1 col), the console will copy out all 4 of them.
-    // For 4 wide characters that are fullwidth (2 col each), the console will copy out 2 of them (because it will count each fullwidth as 2 when filling)
-    // For a mixed string that is something like half, full, half (4 columns, 3 wchars), we will receive half, full (3 columns worth) and truncate the last half.
-
-    const auto cMaxColumns = cWideData;
-
-    for (auto i = cMaxColumns; i < cExpected; i++)
-    {
-        const auto pciCurrent = &pciExpected[i];
-        pciCurrent->Char.UnicodeChar = L'\x20';
-        pciCurrent->Attributes = wAttrOriginal;
-    }
-
-    delete[] pwszTestData;
-}
-
-// 6
-// From Input String: "Q(Hiragana I)(Hiragana KA)(Hiragana NA)ZYXWVUT(Hiragana NI)
-// With Default Attribute 0x7 (before writing) and Applied Attribute 0x29 (written with text)
-// ...
-// Receive Output Table:
-// attr  | wchar  (char) | symbol
-// ------------------------------------
-// 0x029 | 0x0051 (0x51) | Q
-// 0x129 | 0x0082 (0x82) | Hiragana I Shift-JIS Codepage 932 Lead Byte
-// 0x229 | 0x00A2 (0xA2) | Hiragana I Shift-JIS Codepage 932 Trail Byte
-// 0x129 | 0x0082 (0x82) | Hiragana KA Shift-JIS Codepage 932 Lead Byte
-// 0x229 | 0x00A9 (0xA9) | Hiragana KA Shift-JIS Codepage 932 Trail Byte
-// 0x129 | 0x0082 (0x82) | Hiragana NA Shift-JIS Codepage 932 Lead Byte
-// 0x229 | 0x00C8 (0xC8) | Hiragana NA Shift-JIS Codepage 932 Trail Byte
-// 0x029 | 0x005A (0x5A) | Z
-// 0x029 | 0x0059 (0x59) | Y
-// 0x029 | 0x0058 (0x58) | X
-// 0x029 | 0x0057 (0x57) | W
-// 0x029 | 0x0056 (0x56) | V
-// 0x029 | 0x0055 (0x55) | U
-// 0x029 | 0x0054 (0x54) | T
-// 0x129 | 0x0082 (0x82) | Hiragana NI Shift-JIS Codepage 932 Lead Byte
-// 0x229 | 0x00C9 (0xC9) | Hiragana NI Shift-JIS Codepage 932 Trail Byte
-// ...
-// "A" means that we intend in-codepage (char) data to be browsed in the resulting struct.
-// This one returns pretty much exactly as expected.
-void DbcsWriteRead::PrepPattern::A(_In_ const unsigned int uiCodePage,
-                                   _In_ PCSTR pszTestData,
-                                   const WORD /*wAttrOriginal*/,
-                                   const WORD wAttrWritten,
-                                   _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                   const size_t cExpected)
-{
-    Log::Comment(L"Pattern 6");
-    const auto cTestData = strlen(pszTestData);
-    VERIFY_IS_GREATER_THAN_OR_EQUAL(cExpected, cTestData);
-
-    auto fIsNextTrailing = false;
-    for (size_t i = 0; i < cTestData; i++)
-    {
-        const auto pciCurrent = &pciExpected[i];
-        const auto ch = pszTestData[i];
-
-        pciCurrent->Attributes = wAttrWritten;
-        pciCurrent->Char.AsciiChar = ch;
-
-        if (IsDBCSLeadByteEx(uiCodePage, ch))
-        {
-            pciCurrent->Attributes |= COMMON_LVB_LEADING_BYTE;
-            fIsNextTrailing = true;
-        }
-        else if (fIsNextTrailing)
-        {
-            pciCurrent->Attributes |= COMMON_LVB_TRAILING_BYTE;
-            fIsNextTrailing = false;
-        }
-    }
-}
-
-// 10
-// From Input String: "Q(Hiragana I)(Hiragana KA)(Hiragana NA)ZYXWVUT(Hiragana NI)
-// With Default Attribute 0x7 (before writing) and Applied Attribute 0x29 (written with text)
-// ...
-// Receive Output Table:
-// attr  | wchar  (char) | symbol
-// ------------------------------------
-// 0x029 | 0x0051 (0x51) | Q
-// 0x129 | 0x3044 (0x44) | Hiragana I
-// 0x229 | 0x304B (0x4B) | Hiragana KA
-// 0x129 | 0x306A (0x6A) | Hiragana NA
-// 0x229 | 0x005A (0x5A) | Z
-// 0x129 | 0x0059 (0x59) | Y
-// 0x229 | 0x0058 (0x58) | X
-// 0x029 | 0x0057 (0x57) | W
-// 0x029 | 0x0056 (0x56) | V
-// 0x029 | 0x0055 (0x55) | U
-// 0x029 | 0x0054 (0x54) | T
-// 0x029 | 0x306B (0x6B) | Hiragana NI
-// 0x029 | 0x0000 (0x00) | <null>
-// 0x029 | 0x0000 (0x00) | <null>
-// 0x129 | 0x0000 (0x00) | <null>
-// 0x229 | 0x0000 (0x00) | <null>
-// ...
-// "Null" means any unused data in the buffer will be filled with null and null attribute.
-// "CoverAChar" means that the attributes belong to the A version of the call, but we've placed de-duped W characters over the top.
-// "W" means that we intend Unicode data to be browsed in the resulting struct (even though wchar and char are unioned.)
-void DbcsWriteRead::PrepPattern::WNullCoverAChar(_In_ const unsigned int uiCodePage,
-                                                 _In_ PCSTR pszTestData,
-                                                 const WORD wAttrOriginal,
-                                                 const WORD wAttrWritten,
-                                                 _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                                 const size_t cExpected)
-{
-    Log::Comment(L"Pattern 10");
-    DbcsWriteRead::PrepPattern::A(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, pciExpected, cExpected);
-
-    const auto iwchNeeded = MultiByteToWideChar(uiCodePage, 0, pszTestData, -1, nullptr, 0);
-    auto pwszTestData = new wchar_t[iwchNeeded];
-    VERIFY_IS_NOT_NULL(pwszTestData);
-    const auto iSuccess = MultiByteToWideChar(uiCodePage, 0, pszTestData, -1, pwszTestData, iwchNeeded);
-    CheckLastErrorZeroFail(iSuccess, L"MultiByteToWideChar");
-    const auto cWideData = wcslen(pwszTestData);
-
-    size_t i = 0;
-    for (; i < cWideData; i++)
-    {
-        pciExpected[i].Char.UnicodeChar = pwszTestData[i];
-    }
-
-    for (; i < cExpected; i++)
-    {
-        pciExpected[i].Char.UnicodeChar = L'\0';
-    }
-
-    delete[] pwszTestData;
-}
-
-// 11
-// From Input String: "Q(Hiragana I)(Hiragana KA)(Hiragana NA)ZYXWVUT(Hiragana NI)
-// With Default Attribute 0x7 (before writing) and Applied Attribute 0x29 (written with text)
-// ...
-// Receive Output Table:
-// attr  | wchar  (char) | symbol
-// ------------------------------------
-// 0x029 | 0x0051 (0x51) | Q
-// 0x029 | 0x3044 (0x44) | Hiragana I
-// 0x029 | 0x304B (0x4B) | Hiragana KA
-// 0x029 | 0x306A (0x6A) | Hiragana NA
-// 0x029 | 0x005A (0x5A) | Z
-// 0x029 | 0x0059 (0x59) | Y
-// 0x029 | 0x0058 (0x58) | X
-// 0x029 | 0x0057 (0x57) | W
-// 0x029 | 0x0056 (0x56) | V
-// 0x029 | 0x0055 (0x55) | U
-// 0x029 | 0x0054 (0x54) | T
-// 0x029 | 0x306B (0x6B) | Hiragana NI
-// 0x007 | 0x0020 (0x20) | <space>
-// 0x007 | 0x0020 (0x20) | <space>
-// 0x007 | 0x0020 (0x20) | <space>
-// 0x007 | 0x0020 (0x20) | <space>
-// ...
-// "Space fill" means any unused data in the buffer will be filled with space and default attribute
-// "W" means that we intend Unicode data to be browsed in the resulting struct (even though wchar and char are unioned.)
-void DbcsWriteRead::PrepPattern::WSpaceFill(_In_ const unsigned int uiCodePage,
-                                            _In_ PCSTR pszTestData,
-                                            const WORD wAttrOriginal,
-                                            const WORD wAttrWritten,
-                                            _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                            const size_t cExpected)
-{
-    Log::Comment(L"Pattern 11");
-    DbcsWriteRead::PrepPattern::WNullCoverAChar(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, pciExpected, cExpected);
-
-    const auto iwchNeeded = MultiByteToWideChar(uiCodePage, 0, pszTestData, -1, nullptr, 0);
-    auto pwszTestData = new wchar_t[iwchNeeded];
-    VERIFY_IS_NOT_NULL(pwszTestData);
-    const auto iSuccess = MultiByteToWideChar(uiCodePage, 0, pszTestData, -1, pwszTestData, iwchNeeded);
-    CheckLastErrorZeroFail(iSuccess, L"MultiByteToWideChar");
-    const auto cWideData = wcslen(pwszTestData);
-
-    size_t i = 0;
-    for (; i < cWideData; i++)
-    {
-        pciExpected[i].Attributes = wAttrWritten;
-    }
-
-    for (; i < cExpected; i++)
-    {
-        pciExpected[i].Char.UnicodeChar = L'\x20';
-        pciExpected[i].Attributes = wAttrOriginal;
-    }
-
-    delete[] pwszTestData;
-}
-
-//8
-// From Input String: "Q(Hiragana I)(Hiragana KA)(Hiragana NA)ZYXWVUT(Hiragana NI)
-// With Default Attribute 0x7 (before writing) and Applied Attribute 0x29 (written with text)
-// ...
-// Receive Output Table:
-// attr  | wchar  (char) | symbol
-// ------------------------------------
-// 0x029 | 0x0051 (0x51) | Q
-// 0x129 | 0x3082 (0x82) | Hiragana I Unicode 0x3044 with the lower byte covered by Shift-JIS Codepage 932 Lead Byte 0x82.
-// 0x229 | 0xFFA2 (0xA2) | Invalid Unicode Character 0xFFFF with the lower byte covered by Shift-JIS Codepage 932 Trail Byte 0xA2
-// 0x129 | 0x3082 (0x82) | Hiragana KA Unicode 0x304B with the lower byte covered by Shift-JIS Codepage 932 Lead Byte 0x82.
-// 0x229 | 0xFFA9 (0xA9) | Invalid Unicode Character 0xFFFF with the lower byte covered by Shift-JIS Codepage 932 Trail Byte 0xA9
-// 0x129 | 0x3082 (0x82) | Hiragana NA 0x306A with the lower byte covered by Shift-JIS Codepage 932 Lead Byte 0x82.
-// 0x229 | 0xFFC8 (0xC8) | Invalid Unicode Character 0xFFFF with the lower byte covered by Shift-JIS Codepage 932 Trail Byte 0xC8
-// 0x029 | 0x005A (0x5A) | Z
-// 0x029 | 0x0059 (0x59) | Y
-// 0x029 | 0x0058 (0x58) | X
-// 0x029 | 0x0057 (0x57) | W
-// 0x029 | 0x0056 (0x56) | V
-// 0x029 | 0x0055 (0x55) | U
-// 0x029 | 0x0054 (0x54) | T
-// 0x129 | 0x3082 (0x30) | Hiragana NI 0x306B with the lower byte covered by Shift-JIS Codepage 932 Lead Byte 0x82.
-// 0x229 | 0xFFC9 (0xC9) | Invalid Unicode Character 0xFFFF with the lower byte covered by Shift-JIS Codepage 932 Trail Byte 0xC9
-// ...
-// "AOn" means that the Unicode characters were fit into the result buffer first, then the Multibyte conversion
-//     was written over the top of the lower byte. This makes an invalid Unicode character, but can be understood
-//     as in-codepage from the char portion of the union.
-// "DoubledW" means that the full-width Unicode characters were inserted twice into the buffer (and marked lead/trailing)
-// "NegativeOneTrailing" means that every trailing byte started as -1 or 0xFFFF
-void DbcsWriteRead::PrepPattern::AOnDoubledWNegativeOneTrailing(_In_ const unsigned int uiCodePage,
-                                                                _In_ PCSTR pszTestData,
-                                                                const WORD wAttrOriginal,
-                                                                const WORD wAttrWritten,
-                                                                _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                                                const size_t cExpected)
-{
-    Log::Comment(L"Pattern 8");
-
-    DbcsWriteRead::PrepPattern::DoubledWNegativeOneTrailing(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, pciExpected, cExpected);
-
-    // Stomp all A portions of the structure from the existing pattern with the A characters
-    const auto cTestData = strlen(pszTestData);
-    VERIFY_IS_GREATER_THAN_OR_EQUAL(cExpected, cTestData);
-    for (size_t i = 0; i < cTestData; i++)
-    {
-        const auto pciCurrent = &pciExpected[i];
-        pciCurrent->Char.AsciiChar = pszTestData[i];
-    }
-}
-
-// 9
-// From Input String: "Q(Hiragana I)(Hiragana KA)(Hiragana NA)ZYXWVUT(Hiragana NI)
-// With Default Attribute 0x7 (before writing) and Applied Attribute 0x29 (written with text)
-// ...
-// Receive Output Table:
-// attr  | wchar  (char) | symbol
-// ------------------------------------
-// 0x029 | 0x0051 (0x51) | Q
-// 0x129 | 0x3082 (0x82) | Hiragana I Unicode 0x3044 with the lower byte covered by Shift-JIS Codepage 932 Lead Byte 0x82.
-// 0x229 | 0x30A2 (0xA2) | Hiragana I Unicode 0x3044 with the lower byte covered by Shift-JIS Codepage 932 Trail Byte 0xA2
-// 0x129 | 0x3082 (0x82) | Hiragana KA Unicode 0x304B with the lower byte covered by Shift-JIS Codepage 932 Lead Byte 0x82.
-// 0x229 | 0x30A9 (0xA9) | Hiragana KA Unicode 0x304B with the lower byte covered by Shift-JIS Codepage 932 Trail Byte 0xA9
-// 0x129 | 0x3082 (0x82) | Hiragana NA 0x306A with the lower byte covered by Shift-JIS Codepage 932 Lead Byte 0x82.
-// 0x229 | 0x39C8 (0xC8) | Hiragana NA 0x306A with the lower byte covered by Shift-JIS Codepage 932 Trail Byte 0xC8
-// 0x029 | 0x005A (0x5A) | Z
-// 0x029 | 0x0059 (0x59) | Y
-// 0x029 | 0x0058 (0x58) | X
-// 0x029 | 0x0057 (0x57) | W
-// 0x029 | 0x0056 (0x56) | V
-// 0x029 | 0x0055 (0x55) | U
-// 0x029 | 0x0054 (0x54) | T
-// 0x129 | 0x3082 (0x30) | Hiragana NI 0x306B with the lower byte covered by Shift-JIS Codepage 932 Lead Byte 0x82.
-// 0x229 | 0x30C9 (0xC9) | Hiragana NI 0x306B with the lower byte covered by Shift-JIS Codepage 932 Trail Byte 0xC9
-// ...
-// "AOn" means that the Unicode characters were fit into the result buffer first, then the Multibyte conversion
-//     was written over the top of the lower byte. This makes an invalid Unicode character, but can be understood
-//     as in-codepage from the char portion of the union.
-// "DoubledW" means that the full-width Unicode characters were inserted twice into the buffer (and marked lead/trailing)
-// "NegativeOneTrailing" means that every trailing byte started as -1 or 0xFFFF
-void DbcsWriteRead::PrepPattern::AOnDoubledW(_In_ const unsigned int uiCodePage,
-                                             _In_ PCSTR pszTestData,
-                                             const WORD wAttrOriginal,
-                                             const WORD wAttrWritten,
-                                             _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                             const size_t cExpected)
-{
-    Log::Comment(L"Pattern 9");
-
-    DbcsWriteRead::PrepPattern::DoubledW(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, pciExpected, cExpected);
-
-    // Stomp all A portions of the structure from the existing pattern with the A characters
-    const auto cTestData = strlen(pszTestData);
-    VERIFY_IS_GREATER_THAN_OR_EQUAL(cExpected, cTestData);
-    for (size_t i = 0; i < cTestData; i++)
-    {
-        const auto pciCurrent = &pciExpected[i];
-        pciCurrent->Char.AsciiChar = pszTestData[i];
-    }
-}
-
-// 12
-// From Input String: "Q(Hiragana I)(Hiragana KA)(Hiragana NA)ZYXWVUT(Hiragana NI)
-// With Default Attribute 0x7 (before writing) and Applied Attribute 0x29 (written with text)
-// ...
-// Receive Output Table:
-// attr  | wchar  (char) | symbol
-// ------------------------------------
-// 0x029 | 0x0051 (0x51) | Q
-// 0x129 | 0x3044 (0x44) | Hiragana I
-// 0x229 | 0x304B (0x4B) | Hiragana KA
-// 0x129 | 0x306A (0x6A) | Hiragana NA
-// 0x229 | 0x005A (0x5A) | Z
-// 0x129 | 0x0059 (0x59) | Y
-// 0x229 | 0x0058 (0x58) | X
-// 0x029 | 0x0057 (0x57) | W
-// 0x029 | 0x0056 (0x56) | V
-// 0x029 | 0x0020 (0x20) | <space>
-// 0x029 | 0x0020 (0x20) | <space>
-// 0x029 | 0x0020 (0x20) | <space>
-// 0x007 | 0x0020 (0x20) | <space>
-// 0x007 | 0x0000 (0x00) | <null>
-// 0x007 | 0x0000 (0x00) | <null>
-// 0x007 | 0x0000 (0x00) | <null>
-// ...
-// "Space Padded" means most of the unused data in the buffer will be filled with spaces and the default attribute.
-// "Dedupe" means that any full-width characters in the buffer (despite being stored doubled inside the buffer)
-//    will be returned as single copies.
-// "W" means that we intend Unicode data to be browsed in the resulting struct (even though wchar and char are unioned.)
-// "Truncated" means that this pattern trims off some of the end of the buffer with NULLs.
-// "A Cover Attr" means that after all the other operations, we will finally run through and cover up the attributes
-//     again with what they would have been for multi-byte data (leading and trailing flags)
-void DbcsWriteRead::PrepPattern::ACoverAttrSpacePaddedDedupeTruncatedW(_In_ const unsigned int uiCodePage,
-                                                                       _In_ PCSTR pszTestData,
-                                                                       const WORD wAttrOriginal,
-                                                                       const WORD wAttrWritten,
-                                                                       _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                                                       const size_t cExpected)
-{
-    Log::Comment(L"Pattern 12");
-    DbcsWriteRead::PrepPattern::SpacePaddedDedupeTruncatedW(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, pciExpected, cExpected);
-
-    const auto iwchNeeded = MultiByteToWideChar(uiCodePage, 0, pszTestData, -1, nullptr, 0);
-    auto pwszTestData = new wchar_t[iwchNeeded];
-    VERIFY_IS_NOT_NULL(pwszTestData);
-    const auto iSuccess = MultiByteToWideChar(uiCodePage, 0, pszTestData, -1, pwszTestData, iwchNeeded);
-    CheckLastErrorZeroFail(iSuccess, L"MultiByteToWideChar");
-    const auto cWideData = wcslen(pwszTestData);
-
-    size_t i = 0;
-    auto fIsNextTrailing = false;
-    for (; i < cWideData; i++)
-    {
-        pciExpected[i].Attributes = wAttrWritten;
-
-        if (IsDBCSLeadByteEx(uiCodePage, pszTestData[i]))
-        {
-            pciExpected[i].Attributes |= COMMON_LVB_LEADING_BYTE;
-            fIsNextTrailing = true;
-        }
-        else if (fIsNextTrailing)
-        {
-            pciExpected[i].Attributes |= COMMON_LVB_TRAILING_BYTE;
-            fIsNextTrailing = false;
-        }
-    }
-
-    for (; i < cExpected; i++)
-    {
-        pciExpected[i].Attributes = wAttrOriginal;
-    }
-
-    delete[] pwszTestData;
-}
-
-// 14
-// From Input String: "Q(Hiragana I)(Hiragana KA)(Hiragana NA)ZYXWVUT(Hiragana NI)
-// With Default Attribute 0x7 (before writing) and Applied Attribute 0x29 (written with text)
-// ...
-// Receive Output Table:
-// attr  | wchar  (char) | symbol
-// ------------------------------------
-// 0x029 | 0x0000 (0x00) | <null>
-// 0x029 | 0x0000 (0x00) | <null>
-// 0x029 | 0x0000 (0x00) | <null>
-// 0x029 | 0x0000 (0x00) | <null>
-// 0x029 | 0x0000 (0x00) | <null>
-// 0x029 | 0x0000 (0x00) | <null>
-// 0x029 | 0x0000 (0x00) | <null>
-// 0x029 | 0x0000 (0x00) | <null>
-// 0x029 | 0x0000 (0x00) | <null>
-// 0x029 | 0x0000 (0x00) | <null>
-// 0x029 | 0x0000 (0x00) | <null>
-// 0x029 | 0x0000 (0x00) | <null>
-// 0x007 | 0x0000 (0x00) | <null>
-// 0x007 | 0x0000 (0x00) | <null>
-// 0x007 | 0x0000 (0x00) | <null>
-// 0x007 | 0x0000 (0x00) | <null>
-// ...
-// "Space Padded" means most of the unused data in the buffer will be filled with spaces and the default attribute.
-// "Dedupe" means that any full-width characters in the buffer (despite being stored doubled inside the buffer)
-//    will be returned as single copies.
-// "W" means that we intend Unicode data to be browsed in the resulting struct (even though wchar and char are unioned.)
-// "Truncated" means that this pattern trims off some of the end of the buffer with NULLs.
-// "A Cover Attr" means that after all the other operations, we will finally run through and cover up the attributes
-//     again with what they would have been for multi-byte data (leading and trailing flags)
-void DbcsWriteRead::PrepPattern::TrueTypeCharANullWithAttrs(_In_ const unsigned int uiCodePage,
-                                                            _In_ PCSTR pszTestData,
-                                                            const WORD wAttrOriginal,
-                                                            const WORD wAttrWritten,
-                                                            _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                                            const size_t cExpected)
-{
-    Log::Comment(L"Pattern 14");
-    const auto iwchNeeded = MultiByteToWideChar(uiCodePage, 0, pszTestData, -1, nullptr, 0);
-    auto pwszTestData = new wchar_t[iwchNeeded];
-    VERIFY_IS_NOT_NULL(pwszTestData);
-    const auto iSuccess = MultiByteToWideChar(uiCodePage, 0, pszTestData, -1, pwszTestData, iwchNeeded);
-    CheckLastErrorZeroFail(iSuccess, L"MultiByteToWideChar");
-    const auto cWideData = wcslen(pwszTestData);
-
-    // Fill the number of columns worth of wide characters with the write attribute. The rest get the original attribute.
-    size_t i;
-    for (i = 0; i < cWideData; i++)
-    {
-        pciExpected[i].Attributes = wAttrWritten;
-    }
-
-    for (; i < cExpected; i++)
-    {
-        pciExpected[i].Attributes = wAttrOriginal;
-    }
-
-    // For characters, if the string contained NO double-byte characters, it will return. Otherwise, it won't return due to
-    // a long standing bug in the console's way it calls RtlUnicodeToOemN
-    const auto cTestData = strlen(pszTestData);
-    if (cWideData == cTestData)
-    {
-        for (i = 0; i < cTestData; i++)
-        {
-            pciExpected[i].Char.AsciiChar = pszTestData[i];
-        }
-    }
-
-    delete[] pwszTestData;
-}
-
-void DbcsWriteRead::PrepReadConsoleOutput(_In_ const unsigned int uiCodePage,
-                                          _In_ PCSTR pszTestData,
-                                          const WORD wAttrOriginal,
-                                          const WORD wAttrWritten,
-                                          const DbcsWriteRead::WriteMode WriteMode,
-                                          const bool fWriteWithUnicode,
-                                          const bool fIsTrueTypeFont,
-                                          const bool fReadWithUnicode,
-                                          _Inout_updates_all_(cExpectedNeeded) CHAR_INFO* const rgciExpected,
-                                          const size_t cExpectedNeeded)
+const CharInfoPattern& DbcsWriteRead::PrepReadConsoleOutput(
+    const DbcsWriteRead::WriteMode WriteMode,
+    const UnicodeMode fWriteWithUnicode,
+    const bool fIsTrueTypeFont,
+    const bool fReadWithUnicode)
 {
     switch (WriteMode)
     {
     case DbcsWriteRead::WriteMode::WriteConsoleOutputFunc:
-    {
-        // If we wrote with WriteConsoleOutput*, things are going to be munged depending on the font and the A/W status of both the write and the read.
-        if (!fReadWithUnicode)
+        switch (fWriteWithUnicode)
         {
-            // If we read it back with the A functions, the font might matter.
-            // We will get different results dependent on whether the original text was written with the W or A method.
-            if (fWriteWithUnicode)
+        case UnicodeMode::UnicodeSingle:
+            if (fReadWithUnicode)
             {
                 if (fIsTrueTypeFont)
                 {
-                    // When written with WriteConsoleOutputW and read back with ReadConsoleOutputA under TT font, we will get a deduplicated
-                    // set of Unicode characters (YES. Unicode characters despite calling the A API to read back) that is space padded out
-                    // There will be no lead/trailing markings.
-                    DbcsWriteRead::PrepPattern::SpacePaddedDedupeW(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
+                    // When written with WriteConsoleOutputW and read back with ReadConsoleOutputW when the font is TrueType,
+                    // we will get a deduplicated set of Unicode characters with no lead/trailing markings and space padded at the end.
+                    return PrepPattern::SpacePaddedDedupeW;
+                }
+                else
+                {
+                    // When written with WriteConsoleOutputW and read back with ReadConsoleOutputW when the font is Raster,
+                    // we will get a deduplicated set of Unicode characters with no lead/trailing markings and space padded at the end...
+                    // ... except something weird happens with truncation (TODO figure out what)
+                    return PrepPattern::SpacePaddedDedupeTruncatedW;
+                }
+            }
+            else
+            {
+                if (fIsTrueTypeFont)
+                {
+                    // Normally this would be SpacePaddedDedupeA (analogous to the SpacePaddedDedupeW above), but since the narrow
+                    // unicode chars can't be represented as narrow DBCS (since those don't exist) we get SpacePaddedDedupeInvalidA.
+                    return PrepPattern::SpacePaddedDedupeInvalidA;
                 }
                 else
                 {
                     // When written with WriteConsoleOutputW and read back with ReadConsoleOutputA under Raster font, we will get the
                     // double-byte sequences stomped on top of a Unicode filled CHAR_INFO structure that used -1 for trailing bytes.
-                    DbcsWriteRead::PrepPattern::AStompsWNegativeOnePatternTruncateSpacePadded(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
+                    return PrepPattern::SpacePaddedDedupeA;
+                }
+            }
+            break;
+        case UnicodeMode::UnicodeDoubled:
+            if (fReadWithUnicode)
+            {
+                if (fIsTrueTypeFont)
+                {
+                    // In a TrueType font, we will get back Unicode characters doubled up and marked with leading and trailing bytes.
+                    return PrepPattern::DoubledW;
+                }
+                else
+                {
+                    // We get the same as SpacePaddedDedupeTruncatedW above, but due to the unicode chars being doubled, we get DoubledTruncatedW.
+                    return PrepPattern::DoubledTruncatedW;
+                }
+            }
+            else
+            {
+                if (fIsTrueTypeFont)
+                {
+                    // In a TrueType font, we will get back Unicode characters doubled up and marked with leading and trailing bytes.
+                    return PrepPattern::A;
+                }
+                else
+                {
+                    // When written with WriteConsoleOutputW and read back with ReadConsoleOutputA under Raster font,
+                    // we will get the double-byte sequences doubled up, because each narrow cell is written as a DBCS separately.
+                    return PrepPattern::DoubledA;
+                }
+            }
+            break;
+        default:
+            if (fReadWithUnicode)
+            {
+                if (fIsTrueTypeFont)
+                {
+                    // When written with WriteConsoleOutputW and read back with ReadConsoleOutputA when the font is TrueType,
+                    // we will get back Unicode characters doubled up and marked with leading and trailing bytes.
+                    return PrepPattern::DoubledW;
+                }
+                else
+                {
+                    // When written with WriteConsoleOutputA and read back with ReadConsoleOutputW when the font is Raster,
+                    // we will get back de-duplicated Unicode characters with no lead / trail markings.The extra array space will remain null.
+                    return PrepPattern::NullPaddedDedupeW;
                 }
             }
             else
             {
                 // When written with WriteConsoleOutputA and read back with ReadConsoleOutputA,
                 // we will get back the double-byte sequences appropriately labeled with leading/trailing bytes.
-                //DbcsWriteRead::PrepPattern::A(pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
-                DbcsWriteRead::PrepPattern::AOnDoubledWNegativeOneTrailing(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
+                return PrepPattern::A;
             }
-        }
-        else
-        {
-            // If we read it back with the W functions, both the font and the original write mode (A vs. W) matter
-            if (fIsTrueTypeFont)
-            {
-                if (fWriteWithUnicode)
-                {
-                    // When written with WriteConsoleOutputW and read back with ReadConsoleOutputW when the font is TrueType,
-                    // we will get a deduplicated set of Unicode characters with no lead/trailing markings and space padded at the end.
-                    DbcsWriteRead::PrepPattern::SpacePaddedDedupeW(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
-                }
-                else
-                {
-                    // When written with WriteConsoleOutputW and read back with ReadConsoleOutputA when the font is TrueType,
-                    // we will get back Unicode characters doubled up and marked with leading and trailing bytes...
-                    // ... except all the trailing bytes character values will be -1.
-                    DbcsWriteRead::PrepPattern::DoubledWNegativeOneTrailing(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
-                }
-            }
-            else
-            {
-                if (fWriteWithUnicode)
-                {
-                    // When written with WriteConsoleOutputW and read back with ReadConsoleOutputW when the font is Raster,
-                    // we will get a deduplicated set of Unicode characters with no lead/trailing markings and space padded at the end...
-                    // ... except something weird happens with truncation (TODO figure out what)
-                    DbcsWriteRead::PrepPattern::SpacePaddedDedupeTruncatedW(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
-                }
-                else
-                {
-                    // When written with WriteConsoleOutputA and read back with ReadConsoleOutputW when the font is Raster,
-                    // we will get back de-duplicated Unicode characters with no lead / trail markings.The extra array space will remain null.
-                    DbcsWriteRead::PrepPattern::NullPaddedDedupeW(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
-                }
-            }
+            break;
         }
         break;
-    }
     case DbcsWriteRead::WriteMode::CrtWrite:
     case DbcsWriteRead::WriteMode::WriteConsoleOutputCharacterFunc:
     case DbcsWriteRead::WriteMode::WriteConsoleFunc:
-    {
         // Writing with the CRT down here.
-        if (!fReadWithUnicode)
-        {
-            // If we wrote with the CRT and are reading with A functions, the font doesn't matter.
-            // We will always get back the double-byte sequences appropriately labeled with leading/trailing bytes.
-            //DbcsWriteRead::PrepPattern::(pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
-            DbcsWriteRead::PrepPattern::AOnDoubledW(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
-        }
-        else
+        if (fReadWithUnicode)
         {
             // If we wrote with the CRT and are reading back with the W functions, the font does matter.
             if (fIsTrueTypeFont)
             {
                 // In a TrueType font, we will get back Unicode characters doubled up and marked with leading and trailing bytes.
-                DbcsWriteRead::PrepPattern::DoubledW(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
+                return PrepPattern::DoubledW;
             }
             else
             {
                 // In a Raster font, we will get back de-duplicated Unicode characters with no lead/trail markings. The extra array space will remain null.
-                DbcsWriteRead::PrepPattern::NullPaddedDedupeW(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
-            }
-        }
-        break;
-    }
-    default:
-        VERIFY_FAIL(L"Unsupported write mode");
-    }
-}
-
-void DbcsWriteRead::PrepReadConsoleOutputCharacter(_In_ const unsigned int uiCodePage,
-                                                   _In_ PCSTR pszTestData,
-                                                   const WORD wAttrOriginal,
-                                                   const WORD wAttrWritten,
-                                                   const DbcsWriteRead::WriteMode WriteMode,
-                                                   const bool fWriteWithUnicode,
-                                                   const bool fIsTrueTypeFont,
-                                                   const bool fReadWithUnicode,
-                                                   _Inout_updates_all_(cExpectedNeeded) CHAR_INFO* const rgciExpected,
-                                                   const size_t cExpectedNeeded)
-{
-    if (DbcsWriteRead::WriteMode::WriteConsoleOutputFunc == WriteMode && fWriteWithUnicode)
-    {
-        if (fIsTrueTypeFont)
-        {
-            if (fReadWithUnicode)
-            {
-                DbcsWriteRead::PrepPattern::WSpaceFill(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
-            }
-            else
-            {
-                DbcsWriteRead::PrepPattern::TrueTypeCharANullWithAttrs(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
+                return PrepPattern::NullPaddedDedupeW;
             }
         }
         else
         {
+            // If we wrote with the CRT and are reading with A functions, the font doesn't matter.
+            // We will always get back the double-byte sequences appropriately labeled with leading/trailing bytes.
+            return PrepPattern::A;
+        }
+        break;
+    default:
+        VERIFY_FAIL(L"Unsupported write mode");
+        std::terminate();
+    }
+}
+
+const CharInfoPattern& DbcsWriteRead::PrepReadConsoleOutputCharacter(
+    const DbcsWriteRead::WriteMode WriteMode,
+    const UnicodeMode fWriteWithUnicode,
+    const bool fIsTrueTypeFont,
+    const bool fReadWithUnicode)
+{
+    if (DbcsWriteRead::WriteMode::WriteConsoleOutputFunc == WriteMode)
+    {
+        switch (fWriteWithUnicode)
+        {
+        case UnicodeMode::UnicodeSingle:
             if (fReadWithUnicode)
             {
-                DbcsWriteRead::PrepPattern::ACoverAttrSpacePaddedDedupeTruncatedW(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
+                if (fIsTrueTypeFont)
+                {
+                    return PrepPattern::SpacePaddedDedupeW;
+                }
+                else
+                {
+                    return PrepPattern::ACoverAttrSpacePaddedDedupeTruncatedW;
+                }
             }
             else
             {
-                DbcsWriteRead::PrepPattern::SpacePaddedDedupeA(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
+                if (fIsTrueTypeFont)
+                {
+                    return PrepPattern::TrueTypeCharANullWithAttrs;
+                }
+                else
+                {
+                    return PrepPattern::SpacePaddedDedupeA;
+                }
             }
+            break;
+        case UnicodeMode::UnicodeDoubled:
+            if (fReadWithUnicode)
+            {
+                if (fIsTrueTypeFont)
+                {
+                    return PrepPattern::WNullCoverAChar;
+                }
+                else
+                {
+                    return PrepPattern::DoubledTruncatedCoverAChar;
+                }
+            }
+            else
+            {
+                if (fIsTrueTypeFont)
+                {
+                    return PrepPattern::A;
+                }
+                else
+                {
+                    return PrepPattern::DoubledA;
+                }
+            }
+            break;
+        default:
+            if (fReadWithUnicode)
+            {
+                return PrepPattern::WNullCoverAChar;
+            }
+            else
+            {
+                return PrepPattern::A;
+            }
+            break;
         }
     }
     else
     {
-        if (!fReadWithUnicode)
+        if (fReadWithUnicode)
         {
-            DbcsWriteRead::PrepPattern::A(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
+            return PrepPattern::WNullCoverAChar;
         }
         else
         {
-            DbcsWriteRead::PrepPattern::WNullCoverAChar(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
+            return PrepPattern::A;
         }
     }
 }
 
-void DbcsWriteRead::PrepExpected(_In_ const unsigned int uiCodePage,
-                                 _In_ PCSTR pszTestData,
-                                 const WORD wAttrOriginal,
-                                 const WORD wAttrWritten,
+void DbcsWriteRead::PrepExpected(const WORD wAttrWritten,
                                  const DbcsWriteRead::WriteMode WriteMode,
-                                 const bool fWriteWithUnicode,
+                                 const DbcsWriteRead::UnicodeMode fWriteWithUnicode,
                                  const bool fIsTrueTypeFont,
                                  const DbcsWriteRead::ReadMode ReadMode,
                                  const bool fReadWithUnicode,
-                                 _Outptr_result_buffer_(*pcExpected) CHAR_INFO** const ppciExpected,
-                                 _Out_ size_t* const pcExpected)
+                                 CharInfoPattern& expected)
 {
-    // We will expect to read back one CHAR_INFO for every A character we sent to the console using the assumption above.
-    // We expect that reading W characters will always be less than or equal to that.
-    const auto cExpectedNeeded = strlen(pszTestData);
-
-    // Allocate and zero out the space so comparisons don't fail from garbage bytes.
-    auto rgciExpected = new CHAR_INFO[cExpectedNeeded];
-    VERIFY_IS_NOT_NULL(rgciExpected);
-    ZeroMemory(rgciExpected, sizeof(CHAR_INFO) * cExpectedNeeded);
-
     switch (ReadMode)
     {
     case DbcsWriteRead::ReadMode::ReadConsoleOutputFunc:
     {
-        DbcsWriteRead::PrepReadConsoleOutput(uiCodePage,
-                                             pszTestData,
-                                             wAttrOriginal,
-                                             wAttrWritten,
-                                             WriteMode,
-                                             fWriteWithUnicode,
-                                             fIsTrueTypeFont,
-                                             fReadWithUnicode,
-                                             rgciExpected,
-                                             cExpectedNeeded);
+        expected = DbcsWriteRead::PrepReadConsoleOutput(WriteMode, fWriteWithUnicode, fIsTrueTypeFont, fReadWithUnicode);
         break;
     }
     case DbcsWriteRead::ReadMode::ReadConsoleOutputCharacterFunc:
     {
-        DbcsWriteRead::PrepReadConsoleOutputCharacter(uiCodePage,
-                                                      pszTestData,
-                                                      wAttrOriginal,
-                                                      wAttrWritten,
-                                                      WriteMode,
-                                                      fWriteWithUnicode,
-                                                      fIsTrueTypeFont,
-                                                      fReadWithUnicode,
-                                                      rgciExpected,
-                                                      cExpectedNeeded);
+        expected = DbcsWriteRead::PrepReadConsoleOutputCharacter(WriteMode, fWriteWithUnicode, fIsTrueTypeFont, fReadWithUnicode);
         break;
     }
     default:
@@ -1697,16 +1226,13 @@ void DbcsWriteRead::PrepExpected(_In_ const unsigned int uiCodePage,
     }
     }
 
-    // Return the expected array and the length that should be used for comparison at the end of the test.
-    *ppciExpected = rgciExpected;
-    *pcExpected = cExpectedNeeded;
+    PrepPattern::replaceColorPlaceholders(expected, wAttrWritten);
 }
 
 void DbcsWriteRead::RetrieveOutput(const HANDLE hOut,
                                    const DbcsWriteRead::ReadMode ReadMode,
                                    const bool fReadUnicode,
-                                   _Out_writes_(cChars) CHAR_INFO* const rgChars,
-                                   const SHORT cChars)
+                                   CharInfoPattern& rgChars)
 {
     COORD coordBufferTarget = { 0 };
 
@@ -1717,21 +1243,21 @@ void DbcsWriteRead::RetrieveOutput(const HANDLE hOut,
         // Since we wrote (in SendOutput function) to the 0,0 line, we need to read back the same width from that line.
         COORD coordBufferSize = { 0 };
         coordBufferSize.Y = 1;
-        coordBufferSize.X = cChars;
+        coordBufferSize.X = gsl::narrow<SHORT>(rgChars.size());
 
         SMALL_RECT srReadRegion = { 0 }; // inclusive rectangle (bottom and right are INSIDE the read area. usually are exclusive.)
-        srReadRegion.Right = cChars - 1;
+        srReadRegion.Right = coordBufferSize.X - 1;
 
         // return value for read region shouldn't change
         const auto srReadRegionExpected = srReadRegion;
 
         if (!fReadUnicode)
         {
-            VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(ReadConsoleOutputA(hOut, rgChars, coordBufferSize, coordBufferTarget, &srReadRegion));
+            VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(ReadConsoleOutputA(hOut, rgChars.data(), coordBufferSize, coordBufferTarget, &srReadRegion));
         }
         else
         {
-            VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(ReadConsoleOutputW(hOut, rgChars, coordBufferSize, coordBufferTarget, &srReadRegion));
+            VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(ReadConsoleOutputW(hOut, rgChars.data(), coordBufferSize, coordBufferTarget, &srReadRegion));
         }
 
         Log::Comment(NoThrowString().Format(L"ReadRegion T: %d L: %d B: %d R: %d", srReadRegion.Top, srReadRegion.Left, srReadRegion.Bottom, srReadRegion.Right));
@@ -1740,6 +1266,7 @@ void DbcsWriteRead::RetrieveOutput(const HANDLE hOut,
     }
     case DbcsWriteRead::ReadMode::ReadConsoleOutputCharacterFunc:
     {
+        const auto cChars = gsl::narrow<DWORD>(rgChars.size());
         DWORD dwRead = 0;
         if (!fReadUnicode)
         {
@@ -1786,12 +1313,11 @@ void DbcsWriteRead::RetrieveOutput(const HANDLE hOut,
     }
 }
 
-void DbcsWriteRead::Verify(_In_reads_(cExpected) CHAR_INFO* const rgExpected,
-                           const size_t cExpected,
-                           _In_reads_(cExpected) CHAR_INFO* const rgActual)
+void DbcsWriteRead::Verify(const CharInfoPattern& rgExpected,
+                           const CharInfoPattern& rgActual)
 {
     // We will walk through for the number of CHAR_INFOs expected.
-    for (size_t i = 0; i < cExpected; i++)
+    for (size_t i = 0; i < rgExpected.size(); i++)
     {
         // Uncomment these lines for help debugging the verification.
         /*
@@ -1804,12 +1330,10 @@ void DbcsWriteRead::Verify(_In_reads_(cExpected) CHAR_INFO* const rgExpected,
     }
 }
 
-void DbcsWriteRead::TestRunner(_In_ const unsigned int uiCodePage,
-                               _In_ PCSTR pszTestData,
-                               _In_opt_ WORD* const pwAttrOverride,
+void DbcsWriteRead::TestRunner(_In_opt_ WORD* const pwAttrOverride,
                                const bool fUseTrueType,
                                const DbcsWriteRead::WriteMode WriteMode,
-                               const bool fWriteInUnicode,
+                               const UnicodeMode fWriteInUnicode,
                                const DbcsWriteRead::ReadMode ReadMode,
                                const bool fReadWithUnicode)
 {
@@ -1818,13 +1342,11 @@ void DbcsWriteRead::TestRunner(_In_ const unsigned int uiCodePage,
     // used by default in the buffer (set during clearing as well).
     HANDLE hOut;
     WORD wAttributes;
-    if (!DbcsWriteRead::Setup(uiCodePage, fUseTrueType, &hOut, &wAttributes))
+    if (!DbcsWriteRead::Setup(fUseTrueType, &hOut, &wAttributes))
     {
         // If we can't set up (setup will detect systems where this test cannot operate) then return early.
         return;
     }
-
-    const auto wAttrOriginal = wAttributes;
 
     // Some tests might want to override the colors applied to ensure both parts of the CHAR_INFO union
     // work for methods that support sending that union. (i.e. not the CRT path)
@@ -1833,38 +1355,24 @@ void DbcsWriteRead::TestRunner(_In_ const unsigned int uiCodePage,
         wAttributes = *pwAttrOverride;
     }
 
-    // The console bases the space it walks for DBCS conversions on the length of the A version of the text.
-    // Store that length now so we have it for our read/write operations.
-    const auto cTestData = strlen(pszTestData);
-
     // Write the string under test into the appropriate WRITE API for this test.
-    DbcsWriteRead::SendOutput(hOut, uiCodePage, WriteMode, fWriteInUnicode, pszTestData, wAttributes);
+    DbcsWriteRead::SendOutput(hOut, WriteMode, fWriteInUnicode, wAttributes);
 
     // Prepare the array of CHAR_INFO structs that we expect to receive back when we will call read in a moment.
     // This can vary based on font, unicode/non-unicode (when reading AND writing), and codepage.
-    CHAR_INFO* pciExpected;
-    size_t cExpected;
-    DbcsWriteRead::PrepExpected(uiCodePage, pszTestData, wAttrOriginal, wAttributes, WriteMode, fWriteInUnicode, fUseTrueType, ReadMode, fReadWithUnicode, &pciExpected, &cExpected);
+    CharInfoPattern pciExpected;
+    DbcsWriteRead::PrepExpected(wAttributes, WriteMode, fWriteInUnicode, fUseTrueType, ReadMode, fReadWithUnicode, pciExpected);
 
     // Now call the appropriate READ API for this test.
-    auto pciActual = new CHAR_INFO[cTestData];
-    VERIFY_IS_NOT_NULL(pciActual);
-    ZeroMemory(pciActual, sizeof(CHAR_INFO) * cTestData);
-    DbcsWriteRead::RetrieveOutput(hOut, ReadMode, fReadWithUnicode, pciActual, (SHORT)cTestData);
+    CharInfoPattern pciActual{};
+    DbcsWriteRead::RetrieveOutput(hOut, ReadMode, fReadWithUnicode, pciActual);
 
     // Loop through and verify that our expected array matches what was actually returned by the given API.
-    DbcsWriteRead::Verify(pciExpected, cExpected, pciActual);
-
-    // Free allocated structures
-    delete[] pciActual;
-    delete[] pciExpected;
+    DbcsWriteRead::Verify(pciExpected, pciActual);
 }
 
 void DbcsTests::TestDbcsWriteRead()
 {
-    unsigned int uiCodePage;
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L"uiCodePage", uiCodePage));
-
     bool fUseTrueTypeFont;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"fUseTrueTypeFont", fUseTrueTypeFont));
 
@@ -1872,8 +1380,9 @@ void DbcsTests::TestDbcsWriteRead()
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"WriteMode", iWriteMode));
     auto WriteMode = (DbcsWriteRead::WriteMode)iWriteMode;
 
-    bool fWriteInUnicode;
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L"fWriteInUnicode", fWriteInUnicode));
+    int iWriteInUnicode;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"fWriteInUnicode", iWriteInUnicode));
+    auto fWriteInUnicode = (DbcsWriteRead::UnicodeMode)iWriteInUnicode;
 
     int iReadMode;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"ReadMode", iReadMode));
@@ -1881,6 +1390,12 @@ void DbcsTests::TestDbcsWriteRead()
 
     bool fReadInUnicode;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"fReadInUnicode", fReadInUnicode));
+
+    // UnicodeDoubled is only relevant for WriteConsoleOutputW
+    if (fWriteInUnicode == DbcsWriteRead::UnicodeMode::UnicodeDoubled && WriteMode != DbcsWriteRead::WriteMode::WriteConsoleOutputFunc)
+    {
+        return;
+    }
 
     auto pwszWriteMode = L"";
     switch (WriteMode)
@@ -1914,30 +1429,16 @@ void DbcsTests::TestDbcsWriteRead()
         VERIFY_FAIL(L"Read mode not supported");
     }
 
-    auto testInfo = NoThrowString().Format(L"\r\n\r\n\r\nUse '%ls' font. Write with %ls '%ls'. Check Read with %ls '%ls' API. Use %d codepage.\r\n",
+    auto testInfo = NoThrowString().Format(L"\r\n\r\n\r\nUse '%s' font. Write with %s '%s'%s. Check Read with %s '%s' API. Use %d codepage.\r\n",
                                            fUseTrueTypeFont ? L"TrueType" : L"Raster",
                                            pwszWriteMode,
                                            fWriteInUnicode ? L"W" : L"A",
+                                           fWriteInUnicode == DbcsWriteRead::UnicodeMode::UnicodeDoubled ? L" (doubled)" : L"",
                                            pwszReadMode,
                                            fReadInUnicode ? L"W" : L"A",
-                                           uiCodePage);
+                                           JAPANESE_CP);
 
     Log::Comment(testInfo);
-
-    auto pszTestData = "";
-    switch (uiCodePage)
-    {
-    case ENGLISH_US_CP:
-        pszTestData = "QWERTYUIOP";
-        break;
-    case JAPANESE_CP:
-        // Q (Hiragana I) (Hiragana KA) (Hiragana NA) Z Y X W V U T (Hiragana NI) in Shift-JIS (Codepage 932)
-        pszTestData = "Q\x82\xA2\x82\xa9\x82\xc8ZYXWVUT\x82\xc9";
-        break;
-    default:
-        VERIFY_FAIL(L"No test data for this codepage");
-        break;
-    }
 
     WORD wAttributes = 0;
 
@@ -1947,9 +1448,7 @@ void DbcsTests::TestDbcsWriteRead()
         wAttributes = FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_GREEN;
     }
 
-    DbcsWriteRead::TestRunner(uiCodePage,
-                              pszTestData,
-                              wAttributes != 0 ? &wAttributes : nullptr,
+    DbcsWriteRead::TestRunner(wAttributes != 0 ? &wAttributes : nullptr,
                               fUseTrueTypeFont,
                               WriteMode,
                               fWriteInUnicode,
@@ -2234,8 +1733,7 @@ void DbcsTests::TestDbcsBisectWriteCellsBeginA()
     const auto originalReadRegion = readRegion;
     CHAR_INFO readCell;
 
-    CHAR_INFO expectedCell;
-    expectedCell.Char.UnicodeChar = L'\xffff';
+    CHAR_INFO expectedCell{};
     expectedCell.Char.AsciiChar = originalCell.Char.AsciiChar;
     expectedCell.Attributes = originalCell.Attributes;
     WI_ClearAllFlags(expectedCell.Attributes, COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE);

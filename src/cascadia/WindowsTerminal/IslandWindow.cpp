@@ -439,9 +439,19 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     case WM_ACTIVATE:
     {
         // wparam = 0 indicates the window was deactivated
-        if (LOWORD(wparam) != 0)
+        const bool activated = LOWORD(wparam) != 0;
+        _WindowActivatedHandlers(activated);
+
+        if (_autoHideWindow && !activated)
         {
-            _WindowActivatedHandlers();
+            if (_isQuakeWindow || _minimizeToNotificationArea)
+            {
+                HideWindow();
+            }
+            else
+            {
+                ShowWindow(GetHandle(), SW_MINIMIZE);
+            }
         }
 
         break;
@@ -648,6 +658,43 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         }
         break;
     }
+    case WM_ENDSESSION:
+    {
+        // For WM_QUERYENDSESSION and WM_ENDSESSION, refer to:
+        //
+        // https://docs.microsoft.com/en-us/windows/win32/rstmgr/guidelines-for-applications
+        //
+        // The OS will send us a WM_QUERYENDSESSION when it's preparing an
+        // update for our app. It will then send us a WM_ENDSESSION, which gives
+        // us a small timeout (~30s) to actually shut down gracefully. After
+        // that timeout, it will send us a WM_CLOSE. If we still don't close
+        // after the WM_CLOSE, it'll force-kill us (causing a crash which will be
+        // bucketed to MoAppHang).
+        //
+        // If we need to do anything to prepare for being told to shutdown,
+        // start it in WM_QUERYENDSESSION. If (in the future) we need to prevent
+        // logoff, we can return false there. (DefWindowProc returns true)
+        //
+        // The OS is going to shut us down here. We will manually start a quit,
+        // so that we can persist the state. If we refuse to gracefully shut
+        // down here, the OS will crash us to forcefully terminate us. We choose
+        // to quit here, rather than just close, to skip over any warning
+        // dialogs (e.g. "Are you sure you want to close all tabs?") which might
+        // prevent a WM_CLOSE from cleanly closing the window.
+        //
+        // This will cause a appHost._RequestQuitAll, which will notify the
+        // monarch to collect up all the window state and save it.
+
+        TraceLoggingWrite(
+            g_hWindowsTerminalProvider,
+            "EndSession",
+            TraceLoggingDescription("Emitted when the OS has sent a WM_ENDSESSION"),
+            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+            TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+        _AutomaticShutdownRequestedHandlers();
+        return true;
+    }
     default:
         // We'll want to receive this message when explorer.exe restarts
         // so that we can re-add our icon to the notification area.
@@ -834,10 +881,20 @@ void IslandWindow::SetAlwaysOnTop(const bool alwaysOnTop)
 // - <none>
 void IslandWindow::ShowWindowChanged(const bool showOrHide)
 {
-    const auto hwnd = GetHandle();
-    if (hwnd)
+    if (const auto hwnd = GetHandle())
     {
-        PostMessage(hwnd, WM_SYSCOMMAND, showOrHide ? SC_RESTORE : SC_MINIMIZE, 0);
+        // IMPORTANT!
+        //
+        // ONLY "restore" if already minimized. If the window is maximized or
+        // snapped, a restore will restore-down the window instead.
+        if (showOrHide == true && ::IsIconic(hwnd))
+        {
+            ::PostMessage(hwnd, WM_SYSCOMMAND, SC_RESTORE, 0);
+        }
+        else if (showOrHide == false)
+        {
+            ::PostMessage(hwnd, WM_SYSCOMMAND, SC_MINIMIZE, 0);
+        }
     }
 }
 
@@ -1626,6 +1683,11 @@ void IslandWindow::IsQuakeWindow(bool isQuakeWindow) noexcept
             _enterQuakeMode();
         }
     }
+}
+
+void IslandWindow::SetAutoHideWindow(bool autoHideWindow) noexcept
+{
+    _autoHideWindow = autoHideWindow;
 }
 
 // Method Description:
