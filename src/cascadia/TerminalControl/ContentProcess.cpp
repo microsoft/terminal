@@ -32,25 +32,32 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // See https://docs.microsoft.com/en-us/windows/uwp/cpp-and-winrt-apis/details-about-destructors#deferred-destruction
     winrt::fire_and_forget ContentProcess::final_release(std::unique_ptr<ContentProcess> ptr) noexcept
     {
-        winrt::com_ptr<ControlCore> coreImpl;
-        coreImpl.copy_from(winrt::get_self<ControlCore>(ptr->_interactivity.Core()));
-        if (coreImpl)
         {
-            // Close() requires that it is called on the "main" thread. So we
-            // need to switch over to the DIspatcher thread, before calling
-            // Close.
-            co_await wil::resume_foreground(coreImpl->Dispatcher(), winrt::Windows::System::DispatcherQueuePriority::Normal);
+            winrt::com_ptr<ControlCore> coreImpl;
+            coreImpl.copy_from(winrt::get_self<ControlCore>(ptr->_interactivity.Core()));
+            if (coreImpl)
+            {
+                // Close() requires that it is called on the "main" thread. So we
+                // need to switch over to the DIspatcher thread, before calling
+                // Close.
+                co_await wil::resume_foreground(coreImpl->Dispatcher(), winrt::Windows::System::DispatcherQueuePriority::Normal);
 
-            // Typically, Close() runs async, closing the connection on a BG
-            // thread, so that the UI doesn't hang while waiting for the client
-            // process to exit. When we're running as a content process, that's
-            // not relevant. In that case, we need to close the connection NOW,
-            // because we're about to exit the whole process. If we close the
-            // process asynchronously (on a bg thread), then we might
-            // accidentally leak it as we exit() before the thread gets a time
-            // slice.
-            coreImpl->Close(false);
+                // Typically, Close() runs async, closing the connection on a BG
+                // thread, so that the UI doesn't hang while waiting for the client
+                // process to exit. When we're running as a content process, that's
+                // not relevant. In that case, we need to close the connection NOW,
+                // because we're about to exit the whole process. If we close the
+                // process asynchronously (on a bg thread), then we might
+                // accidentally leak it as we exit() before the thread gets a time
+                // slice.
+                coreImpl->Close(false);
+            }
         }
+
+        // Manually null out the ContentProc to release it, so d3d debug doesn't
+        // complain. It will break in the debugger with a warning for resources
+        // we didn't release if you close a content proc tab.
+        ptr = nullptr;
 
         // DANGER - We're straight up going to EXIT THE ENTIRE PROCESS when we
         // get destructed. This eliminates the need to do any sort of
