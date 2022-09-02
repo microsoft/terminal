@@ -66,7 +66,7 @@ try
     const til::rect fullRect{ 0, 0, _r.cellCount.x, _r.cellCount.y };
 
     // A change in the selection or background color (etc.) forces a full redraw.
-    if (WI_IsFlagSet(_r.invalidations, RenderInvalidations::ConstBuffer))
+    if (WI_IsFlagSet(_r.invalidations, RenderInvalidations::ConstBuffer) || _r.customPixelShader)
     {
         _r.dirtyRect = fullRect;
     }
@@ -1056,7 +1056,6 @@ void AtlasEngine::_d2dFillRectangle(u16r rect, u32 color)
         .bottom = static_cast<float>(rect.bottom) * _r.cellSizeDIP.y,
     };
     const auto brush = _brushWithColor(color);
-    // TODO: This does blending, it should do copy
     _r.d2dRenderTarget->FillRectangle(r, brush);
 }
 
