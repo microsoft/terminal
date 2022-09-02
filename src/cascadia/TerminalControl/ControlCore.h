@@ -73,8 +73,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::Microsoft::Terminal::Core::Scheme ColorScheme() const noexcept;
         void ColorScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme);
 
-        void SizeChanged(const double width, const double height);
-        void ScaleChanged(const double scale);
+        winrt::fire_and_forget SizeChanged(const double width, const double height);
+        winrt::fire_and_forget ScaleChanged(const double scale);
         double DisplayScale() const;
         uint64_t SwapChainHandle() const;
 

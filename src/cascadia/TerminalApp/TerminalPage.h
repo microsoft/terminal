@@ -253,7 +253,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::fire_and_forget _OpenNewWindow(const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
 
-        winrt::fire_and_forget _OpenNewTerminalViaDropdown(const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
+        void _OpenNewTerminalViaDropdown(const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
 
         bool _displayingCloseDialog{ false };
         void _SettingsButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
@@ -495,9 +495,10 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Microsoft::Terminal::TerminalConnection::ConnectionInformation _CreateConnectionInfoFromSettings(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
                                                                                                                 const winrt::Microsoft::Terminal::Settings::Model::TerminalSettings& settings);
+        bool _tearOutEnabled() const { return Feature_ContentProcess::IsEnabled() && _settings.GlobalSettings().TearOut(); };
 
 #pragma region ActionHandlers
-        // These are all defined in AppActionHandlers.cpp
+            // These are all defined in AppActionHandlers.cpp
 #define ON_ALL_ACTIONS(action) DECLARE_ACTION_HANDLER(action);
         ALL_SHORTCUT_ACTIONS
 #undef ON_ALL_ACTIONS

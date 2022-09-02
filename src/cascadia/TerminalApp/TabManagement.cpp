@@ -91,7 +91,7 @@ namespace winrt::TerminalApp::implementation
         // TerminalSettingsCreateResult controlSettings{ nullptr };
         // Profile profile{ nullptr };
         // _evaluateSettings(newTerminalArgs, false /*duplicate*/, controlSettings, profile);
-        auto initContentProc = _CreateNewContentProcess(profile, controlSettings);
+        auto initContentProc = _tearOutEnabled() ? _CreateNewContentProcess(profile, controlSettings) : nullptr;
         _createNewTabFromContent(PreparedContent{ initContentProc, controlSettings, profile });
         // const auto tabCount = _tabs.Size();
         // const auto usedManualProfile = (newTerminalArgs != nullptr) &&
@@ -328,10 +328,14 @@ namespace winrt::TerminalApp::implementation
             postInitTab(newTabImpl);
         }
 
-        // TODO! Do we need both this and the resume_background in _CreateNewContentProcess
-        co_await winrt::resume_background();
-        auto content = co_await preppedContent.initContentProc;
-        co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
+        ContentProcess content{ nullptr };
+        if (preppedContent.initContentProc)
+        {
+            // TODO! Do we need both this and the resume_background in _CreateNewContentProcess
+            co_await winrt::resume_background();
+            content = co_await preppedContent.initContentProc;
+            co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
+        }
 
         auto pane = _makePaneFromContent(content, preppedContent.controlSettings, preppedContent.profile);
         newTabImpl->AttachRootPane(pane);

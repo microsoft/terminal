@@ -955,15 +955,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::SizeChanged(const double width,
+    winrt::fire_and_forget ControlCore::SizeChanged(const double width,
                                   const double height)
     {
         // _refreshSizeUnderLock redraws the entire terminal.
         // Don't call it if we don't have to.
         if (_panelWidth == width && _panelHeight == height)
         {
-            return;
+            co_return;
         }
+
+        auto weak{ get_weak() };
+        co_await wil::resume_foreground(_dispatcher);
+        auto strong{ weak.get() };
+        if (!strong) co_return;
 
         _panelWidth = width;
         _panelHeight = height;
@@ -972,18 +977,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _refreshSizeUnderLock();
     }
 
-    void ControlCore::ScaleChanged(const double scale)
+    winrt::fire_and_forget ControlCore::ScaleChanged(const double scale)
     {
         if (!_renderEngine)
         {
-            return;
+            co_return;
         }
+
+        auto weak{ get_weak() };
+        co_await wil::resume_foreground(_dispatcher);
+        auto strong{ weak.get() };
+        if (!strong) co_return;
 
         // _refreshSizeUnderLock redraws the entire terminal.
         // Don't call it if we don't have to.
         if (_compositionScale == scale)
         {
-            return;
+            co_return;
         }
 
         _compositionScale = scale;

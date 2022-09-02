@@ -992,7 +992,7 @@ namespace winrt::TerminalApp::implementation
         _newTabButton.Flyout().ShowAt(_newTabButton);
     }
 
-    winrt::fire_and_forget TerminalPage::_OpenNewTerminalViaDropdown(const NewTerminalArgs newTerminalArgs)
+    void TerminalPage::_OpenNewTerminalViaDropdown(const NewTerminalArgs newTerminalArgs)
     {
         // if alt is pressed, open a pane
         const auto window = CoreWindow::GetForCurrentThread();
@@ -1058,9 +1058,6 @@ namespace winrt::TerminalApp::implementation
             {
                 _createNewTabFromContent(preppedContent);
             }
-
-            // TODO! just change the signature you lazy
-            co_await resume_foreground(Dispatcher());
         }
     }
 
@@ -2049,13 +2046,23 @@ namespace winrt::TerminalApp::implementation
         // unzoom
         _UnZoomIfNeeded();
 
-        co_await winrt::resume_background();
-
-        auto content = co_await preppedContent.initContentProc;
-
-        co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
-
-        auto pane = _makePaneFromContent(content, preppedContent.controlSettings, preppedContent.profile);
+        std::shared_ptr<Pane> pane{ nullptr };
+        if (preppedContent.initContentProc)
+        {
+            co_await winrt::resume_background();
+            auto content = co_await preppedContent.initContentProc;
+            co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
+            pane = _makePaneFromContent(content, preppedContent.controlSettings, preppedContent.profile);
+        }
+        else
+        {
+            // _prepareContentProc will leave the .initContentProc member null
+            // if the settings have disabled tear-out.
+            //
+            // In that case, _makePaneFromContent is prepared to be able to
+            // instantiate an in-proc control and connection.
+            pane = _makePaneFromContent(nullptr, preppedContent.controlSettings, preppedContent.profile);
+        }
 
         tab->SplitPane(*realSplitType, splitSize, pane);
 
@@ -2672,7 +2679,7 @@ namespace winrt::TerminalApp::implementation
     {
         PreparedContent preppedContent;
         _evaluateSettings(newTerminalArgs, duplicate, preppedContent.controlSettings, preppedContent.profile);
-        preppedContent.initContentProc = _CreateNewContentProcess(preppedContent.profile, preppedContent.controlSettings);
+        preppedContent.initContentProc = _tearOutEnabled() ? _CreateNewContentProcess(preppedContent.profile, preppedContent.controlSettings) : nullptr;
         return preppedContent;
     }
 
@@ -2735,9 +2742,22 @@ namespace winrt::TerminalApp::implementation
                                                              TerminalSettingsCreateResult controlSettings,
                                                              Profile profile)
     {
-        // Create the XAML control that will be attached to the content process.
-        // We're not passing in a connection, because the contentGuid will be used instead
-        const auto control = _InitControl(controlSettings, content.Guid());
+        TermControl control{ nullptr };
+        if (content)
+        {
+            // Create the XAML control that will be attached to the content process.
+            // We're not passing in a connection, because the contentGuid will be used instead
+            control = _InitControl(controlSettings, content.Guid());
+        }
+        else
+        {
+            // We weren't passed a ContentProcess. That indicates that we were
+            // instead requested in-proc. That's fine! Create the connection and
+            // control in-proc.
+            auto connection = _CreateConnectionFromSettings(profile, controlSettings.DefaultSettings());
+            control = _InitControl(controlSettings, connection);
+        }
+
         _RegisterTerminalEvents(control);
 
         return std::make_shared<Pane>(profile, control);
