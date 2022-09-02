@@ -291,6 +291,11 @@ HRESULT AtlasEngine::Enable() noexcept
     return S_OK;
 }
 
+[[nodiscard]] std::wstring_view AtlasEngine::GetPixelShaderPath() noexcept
+{
+    return _api.customPixelShaderPath;
+}
+
 [[nodiscard]] bool AtlasEngine::GetRetroTerminalEffect() const noexcept
 {
     return _api.useRetroTerminalEffect;
@@ -299,17 +304,6 @@ HRESULT AtlasEngine::Enable() noexcept
 [[nodiscard]] float AtlasEngine::GetScaling() const noexcept
 {
     return static_cast<float>(_api.dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
-}
-
-[[nodiscard]] HANDLE AtlasEngine::GetSwapChainHandle()
-{
-    if (WI_IsFlagSet(_api.invalidations, ApiInvalidations::Device))
-    {
-        _createResources();
-        WI_ClearFlag(_api.invalidations, ApiInvalidations::Device);
-    }
-
-    return _api.swapChainHandle.get();
 }
 
 [[nodiscard]] Microsoft::Console::Types::Viewport AtlasEngine::GetViewportInCharacters(const Types::Viewport& viewInPixels) const noexcept
@@ -337,7 +331,7 @@ void AtlasEngine::SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasin
     }
 }
 
-void AtlasEngine::SetCallback(std::function<void()> pfn) noexcept
+void AtlasEngine::SetCallback(std::function<void(HANDLE)> pfn) noexcept
 {
     _api.swapChainChangedCallback = std::move(pfn);
 }
@@ -426,10 +420,6 @@ void AtlasEngine::SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept
     }
 
     return S_OK;
-}
-
-void AtlasEngine::ToggleShaderEffects() noexcept
-{
 }
 
 [[nodiscard]] HRESULT AtlasEngine::UpdateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept

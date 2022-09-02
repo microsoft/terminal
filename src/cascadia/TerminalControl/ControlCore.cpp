@@ -326,7 +326,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // Tell the DX Engine to notify us when the swap chain changes.
             // We do this after we initially set the swapchain so as to avoid unnecessary callbacks (and locking problems)
-            _renderEngine->SetCallback(std::bind(&ControlCore::_renderEngineSwapChainChanged, this));
+            _renderEngine->SetCallback([this](auto handle) { _renderEngineSwapChainChanged(handle); });
 
             _renderEngine->SetRetroTerminalEffect(_settings->RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(_settings->PixelShaderPath());
@@ -596,24 +596,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::ToggleShaderEffects()
     {
+        const auto path = _settings->PixelShaderPath();
         auto lock = _terminal->LockForWriting();
         // Originally, this action could be used to enable the retro effects
         // even when they're set to `false` in the settings. If the user didn't
         // specify a custom pixel shader, manually enable the legacy retro
         // effect first. This will ensure that a toggle off->on will still work,
         // even if they currently have retro effect off.
-        if (_settings->PixelShaderPath().empty() && !_renderEngine->GetRetroTerminalEffect())
+        if (path.empty())
         {
-            // SetRetroTerminalEffect to true will enable the effect. In this
-            // case, the shader effect will already be disabled (because neither
-            // a pixel shader nor the retro effects were originally requested).
-            // So we _don't_ want to toggle it again below, because that would
-            // toggle it back off.
-            _renderEngine->SetRetroTerminalEffect(true);
+            _renderEngine->SetRetroTerminalEffect(!_renderEngine->GetRetroTerminalEffect());
         }
         else
         {
-            _renderEngine->ToggleShaderEffects();
+            _renderEngine->SetPixelShaderPath(_renderEngine->GetPixelShaderPath().empty() ? std::wstring_view{ path } : std::wstring_view{});
         }
         // Always redraw after toggling effects. This way even if the control
         // does not have focus it will update immediately.
@@ -1558,25 +1554,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    uint64_t ControlCore::SwapChainHandle() const
-    {
-        // This is called by:
-        // * TermControl::RenderEngineSwapChainChanged, who is only registered
-        //   after Core::Initialize() is called.
-        // * TermControl::_InitializeTerminal, after the call to Initialize, for
-        //   _AttachDxgiSwapChainToXaml.
-        // In both cases, we'll have a _renderEngine by then.
-        return reinterpret_cast<uint64_t>(_renderEngine->GetSwapChainHandle());
-    }
-
     void ControlCore::_rendererWarning(const HRESULT hr)
     {
         _RendererWarningHandlers(*this, winrt::make<RendererWarningArgs>(hr));
     }
 
-    void ControlCore::_renderEngineSwapChainChanged()
+    void ControlCore::_renderEngineSwapChainChanged(const HANDLE handle)
     {
-        _SwapChainChangedHandlers(*this, nullptr);
+        _SwapChainChangedHandlers(*this, winrt::box_value<uint64_t>(reinterpret_cast<uint64_t>(handle)));
     }
 
     void ControlCore::_rendererBackgroundColorChanged()

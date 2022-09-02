@@ -731,19 +731,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.ConnectionState();
     }
 
-    winrt::fire_and_forget TermControl::RenderEngineSwapChainChanged(IInspectable /*sender*/, IInspectable /*args*/)
+    winrt::fire_and_forget TermControl::RenderEngineSwapChainChanged(IInspectable /*sender*/, IInspectable args)
     {
         // This event is only registered during terminal initialization,
         // so we don't need to check _initializedTerminal.
-        // We also don't lock for things that come back from the renderer.
-        auto weakThis{ get_weak() };
+        const auto weakThis{ get_weak() };
+
+        // Create a copy of the swap chain HANDLE in args, since we don't own that parameter.
+        // By the time we return from the co_await below, it might be deleted already.
+        winrt::handle handle;
+        const auto processHandle = GetCurrentProcess();
+        const auto sourceHandle = reinterpret_cast<HANDLE>(winrt::unbox_value<uint64_t>(args));
+        THROW_IF_WIN32_BOOL_FALSE(DuplicateHandle(processHandle, sourceHandle, processHandle, handle.put(), 0, FALSE, DUPLICATE_SAME_ACCESS));
 
         co_await wil::resume_foreground(Dispatcher());
 
         if (auto control{ weakThis.get() })
         {
-            const auto chainHandle = reinterpret_cast<HANDLE>(control->_core.SwapChainHandle());
-            _AttachDxgiSwapChainToXaml(chainHandle);
+            _AttachDxgiSwapChainToXaml(handle.get());
         }
     }
 
@@ -830,21 +835,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         _interactivity.Initialize();
 
-        _AttachDxgiSwapChainToXaml(reinterpret_cast<HANDLE>(_core.SwapChainHandle()));
-
-        // Tell the DX Engine to notify us when the swap chain changes. We do
-        // this after we initially set the swapchain so as to avoid unnecessary
-        // callbacks (and locking problems)
         _core.SwapChainChanged({ get_weak(), &TermControl::RenderEngineSwapChainChanged });
-
-        // !! LOAD BEARING !!
-        // Make sure you enable painting _AFTER_ calling _AttachDxgiSwapChainToXaml
-        //
-        // If you EnablePainting first, then you almost certainly won't have any
-        // problems when running in Debug. However, in Release, you'll run into
-        // issues where the Renderer starts trying to paint before we've
-        // actually attached the swapchain to anything, and the DxEngine is not
-        // prepared to handle that.
         _core.EnablePainting();
 
         auto bufferHeight = _core.BufferHeight();

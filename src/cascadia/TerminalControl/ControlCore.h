@@ -75,7 +75,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void SizeChanged(const double width, const double height);
         void ScaleChanged(const double scale);
-        uint64_t SwapChainHandle() const;
 
         void AdjustFontSize(int fontSizeDelta);
         void ResetFontSize();
@@ -315,7 +314,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
 #pragma region RendererCallbacks
         void _rendererWarning(const HRESULT hr);
-        void _renderEngineSwapChainChanged();
+        void _renderEngineSwapChainChanged(const HANDLE handle);
         void _rendererBackgroundColorChanged();
         void _rendererTabColorChanged();
 #pragma endregion
