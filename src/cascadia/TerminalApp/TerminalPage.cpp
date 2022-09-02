@@ -717,7 +717,7 @@ namespace winrt::TerminalApp::implementation
 
     bool TerminalPage::UpdatesAvailable() const
     {
-        return _pendingUpdateVersion.size() > 0;
+        return !_pendingUpdateVersion.empty();
     }
 
     winrt::hstring TerminalPage::PendingUpdateVersion() const
@@ -747,20 +747,22 @@ namespace winrt::TerminalApp::implementation
             co_return;
         }
 
-        co_await wil::resume_foreground(strongThis->_tabView.Dispatcher());
+        co_await wil::resume_foreground(strongThis->Dispatcher());
         _SetPendingUpdateVersion({});
         CheckingForUpdates(true);
 
         try
         {
 #ifdef WT_BRANDING_DEV
+            // **DEV BRANDING**: Always sleep for three seconds and then report that
+            // there is an update available. This lets us test the system.
             co_await winrt::resume_after(std::chrono::seconds{ 3 });
-            co_await wil::resume_foreground(strongThis->_tabView.Dispatcher());
+            co_await wil::resume_foreground(strongThis->Dispatcher());
             _SetPendingUpdateVersion(L"X.Y.Z");
 #else // release build, likely has a store context
             auto storeContext = winrt::Windows::Services::Store::StoreContext::GetDefault();
             auto updates = co_await storeContext.GetAppAndOptionalStorePackageUpdatesAsync();
-            co_await wil::resume_foreground(strongThis->_tabView.Dispatcher());
+            co_await wil::resume_foreground(strongThis->Dispatcher());
             if (updates.Size() > 0)
             {
                 auto version = updates.GetAt(0).Package().Id().Version();
@@ -773,7 +775,7 @@ namespace winrt::TerminalApp::implementation
             // do nothing on failure
         }
 
-        co_await wil::resume_foreground(strongThis->_tabView.Dispatcher());
+        co_await wil::resume_foreground(strongThis->Dispatcher());
         CheckingForUpdates(false);
     }
 
