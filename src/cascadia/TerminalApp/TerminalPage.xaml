@@ -96,46 +96,8 @@
             just this weird hole that appeared in Row 0.
         -->
 
-        <ContentDialog x:Name="AboutDialog"
-                       x:Uid="AboutDialog"
-                       Grid.Row="2"
-                       x:Load="False"
-                       DefaultButton="Close"
-                       PrimaryButtonClick="_SendFeedbackOnClick">
-            <StackPanel Orientation="Vertical">
-                <TextBlock IsTextSelectionEnabled="True">
-                    <Run Text="{x:Bind ApplicationDisplayName}" /> <LineBreak />
-                    <Run x:Uid="AboutDialog_VersionLabel" />
-                    <Run Text="{x:Bind ApplicationVersion}" />
-                </TextBlock>
-
-                <StackPanel Orientation="Vertical">
-                    <StackPanel Orientation="Horizontal" Visibility="{x:Bind CheckingForUpdates, Mode=OneWay}" Padding="0,4,0,4" VerticalAlignment="Center">
-                        <mux:ProgressRing Width="16" Height="16" IsIndeterminate="True" IsActive="True" />
-                        <TextBlock x:Uid="AboutDialog_CheckingForUpdatesLabel" Padding="4,0,0,0"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Vertical" Visibility="{x:Bind UpdatesAvailable, Mode=OneWay}" Padding="0,4,0,4" VerticalAlignment="Center">
-                        <TextBlock IsTextSelectionEnabled="False">
-                            <Run x:Uid="AboutDialog_UpdateAvailableLabel"/> <LineBreak />
-                            <Run x:Uid="AboutDialog_VersionLabel" />
-                            <Run Text="{x:Bind PendingUpdateVersion, Mode=OneWay}" />
-                        </TextBlock>
-                        <Button x:Uid="AboutDialog_InstallUpdateButton" Margin="0"></Button>
-                    </StackPanel>
-                </StackPanel>
-
-                <HyperlinkButton x:Uid="AboutDialog_SourceCodeLink"
-                                 NavigateUri="https://go.microsoft.com/fwlink/?linkid=2203152" />
-                <HyperlinkButton x:Uid="AboutDialog_DocumentationLink"
-                                 NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125416" />
-                <HyperlinkButton x:Uid="AboutDialog_ReleaseNotesLink"
-                                 NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125417" />
-                <HyperlinkButton x:Uid="AboutDialog_PrivacyPolicyLink"
-                                 NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125418" />
-                <HyperlinkButton x:Uid="AboutDialog_ThirdPartyNoticesLink"
-                                 Click="_ThirdPartyNoticesOnClick" />
-            </StackPanel>
-        </ContentDialog>
+        <local:AboutDialog x:Name="AboutDialog"
+                           Grid.Row="2" />
 
         <ContentDialog x:Name="QuitDialog"
                        x:Uid="QuitDialog"
