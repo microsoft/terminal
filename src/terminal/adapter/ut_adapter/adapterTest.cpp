@@ -355,9 +355,7 @@ public:
         _expectedScrollRegion.Bottom = (bottom > 0) ? rect->Bottom - 1 : rect->Bottom;
     }
 
-    ~TestGetSet()
-    {
-    }
+    ~TestGetSet() = default;
 
     static const WCHAR s_wchErase = (WCHAR)0x20;
     static const WCHAR s_wchDefault = L'Z';

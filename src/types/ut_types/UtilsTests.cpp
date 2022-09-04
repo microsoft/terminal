@@ -329,9 +329,9 @@ void UtilsTests::TestColorFromXTermColor()
 
 void UtilsTests::_VerifyXTermColorResult(const std::wstring_view wstr, DWORD colorValue)
 {
-    auto color = ColorFromXTermColor(wstr);
+    const auto color = ColorFromXTermColor(wstr);
     VERIFY_IS_TRUE(color.has_value());
-    VERIFY_ARE_EQUAL(colorValue, (COLORREF)color.value());
+    VERIFY_ARE_EQUAL(colorValue, static_cast<COLORREF>(color.value()));
 }
 
 void UtilsTests::_VerifyXTermColorInvalid(const std::wstring_view wstr)

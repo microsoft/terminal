@@ -46,7 +46,7 @@ bool IsValidStringBuffer(_In_ bool Unicode, _In_reads_bytes_(Size) PVOID Buffer,
     while (Count > 0)
     {
         const auto StringSize = va_arg(Marker, ULONG);
-        auto StringStart = va_arg(Marker, PVOID*);
+        const auto StringStart = va_arg(Marker, PVOID*);
 
         // Make sure the string fits in the supplied buffer and that it is properly aligned.
         if (StringSize > Size)
@@ -54,7 +54,7 @@ bool IsValidStringBuffer(_In_ bool Unicode, _In_reads_bytes_(Size) PVOID Buffer,
             break;
         }
 
-        if ((Unicode != false) && ((StringSize % sizeof(WCHAR)) != 0))
+        if (Unicode && (StringSize % sizeof(WCHAR)) != 0)
         {
             break;
         }
@@ -83,7 +83,7 @@ bool IsWordDelim(const wchar_t wch)
         return true;
     }
     const auto& delimiters = ServiceLocator::LocateGlobals().WordDelimiters;
-    return std::find(delimiters.begin(), delimiters.end(), wch) != delimiters.end();
+    return std::ranges::find(delimiters, wch) != delimiters.end();
 }
 
 bool IsWordDelim(const std::wstring_view charData)
@@ -100,9 +100,7 @@ CommandLine::CommandLine() :
 {
 }
 
-CommandLine::~CommandLine()
-{
-}
+CommandLine::~CommandLine() = default;
 
 CommandLine& CommandLine::Instance()
 {
@@ -110,7 +108,7 @@ CommandLine& CommandLine::Instance()
     return c;
 }
 
-bool CommandLine::IsEditLineEmpty() const
+bool CommandLine::IsEditLineEmpty()
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
@@ -176,7 +174,7 @@ bool CommandLine::HasPopup() const noexcept
 // Arguments:
 // Return Value:
 // - ref to the topmost popup
-Popup& CommandLine::GetPopup()
+Popup& CommandLine::GetPopup() const
 {
     return *_popups.front();
 }
@@ -198,7 +196,8 @@ void CommandLine::EndAllPopups()
 {
     while (!_popups.empty())
     {
-        EndCurrentPopup();
+        _popups.front()->End();
+        _popups.pop_front();
     }
 }
 

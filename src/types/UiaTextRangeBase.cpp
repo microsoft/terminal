@@ -1249,7 +1249,7 @@ try
     const auto startScreenInfoRow = _start.Y;
     const auto endScreenInfoRow = _end.Y;
     // screen buffer rows
-    const til::CoordType topRow = 0;
+    constexpr til::CoordType topRow = 0;
     const auto bottomRow = _pData->GetTextBuffer().TotalRowCount() - 1;
 
     auto newViewport = oldViewport;

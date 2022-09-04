@@ -89,17 +89,17 @@ IFACEMETHODIMP TermControlUiaProvider::get_FragmentRoot(_COM_Outptr_result_maybe
     return S_OK;
 }
 
-const til::size TermControlUiaProvider::GetFontSize() const noexcept
+til::size TermControlUiaProvider::GetFontSize() const noexcept
 {
     return _controlInfo->GetFontSize();
 }
 
-const til::rect TermControlUiaProvider::GetPadding() const noexcept
+til::rect TermControlUiaProvider::GetPadding() const noexcept
 {
     return _controlInfo->GetPadding();
 }
 
-const double TermControlUiaProvider::GetScaleFactor() const noexcept
+double TermControlUiaProvider::GetScaleFactor() const noexcept
 {
     return _controlInfo->GetScaleFactor();
 }

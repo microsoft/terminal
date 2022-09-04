@@ -154,5 +154,5 @@ public:
 
     virtual bool PlaySounds(const VTParameters parameters) = 0; // DECPS
 };
-inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() {}
+inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() = default;
 #pragma warning(pop)

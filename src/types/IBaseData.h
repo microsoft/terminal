@@ -46,5 +46,5 @@ namespace Microsoft::Console::Types
     };
 
     // See docs/virtual-dtors.md for an explanation of why this is weird.
-    inline IBaseData::~IBaseData() {}
+    inline IBaseData::~IBaseData() = default;
 }
