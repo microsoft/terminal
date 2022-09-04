@@ -29,6 +29,8 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
                    const Viewport initialViewport) :
     RenderEngineBase(),
     _hFile(std::move(pipe)),
+    _usingLineRenditions(false),
+    _stopUsingLineRenditions(false),
     _lastTextAttributes(INVALID_COLOR, INVALID_COLOR),
     _lastViewport(initialViewport),
     _pool(til::pmr::get_default_resource()),
