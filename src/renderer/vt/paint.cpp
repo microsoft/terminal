@@ -118,8 +118,8 @@ using namespace Microsoft::Console::Types;
 }
 
 [[nodiscard]] HRESULT VtEngine::PrepareLineTransform(const LineRendition lineRendition,
-                                                     const size_t targetRow,
-                                                     const size_t /*viewportLeft*/) noexcept
+                                                     const til::CoordType targetRow,
+                                                     const til::CoordType /*viewportLeft*/) noexcept
 {
     // We don't want to waste bandwidth writing out line rendition attributes
     // until we know they're in use. But once they are in use, we have to keep
@@ -135,8 +135,7 @@ using namespace Microsoft::Console::Types;
     // character, which should preclude there being a rendition switch.
     if (_usingLineRenditions && !_quickReturn)
     {
-        const auto y = gsl::narrow_cast<til::CoordType>(targetRow);
-        RETURN_IF_FAILED(_MoveCursor({ _lastText.x, y }));
+        RETURN_IF_FAILED(_MoveCursor({ _lastText.x, targetRow }));
         switch (lineRendition)
         {
         case LineRendition::SingleWidth:
