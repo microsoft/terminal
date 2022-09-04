@@ -44,8 +44,9 @@ BOOL IsSystemKey(const WORD wVirtualKeyCode)
     case VK_NUMLOCK:
     case VK_SCROLL:
         return TRUE;
+    default:
+        return FALSE;
     }
-    return FALSE;
 }
 
 ULONG GetControlKeyState(const LPARAM lParam)

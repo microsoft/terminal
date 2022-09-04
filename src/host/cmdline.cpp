@@ -96,9 +96,7 @@ CommandLine::CommandLine() :
 {
 }
 
-CommandLine::~CommandLine()
-{
-}
+CommandLine::~CommandLine() = default;
 
 CommandLine& CommandLine::Instance()
 {
