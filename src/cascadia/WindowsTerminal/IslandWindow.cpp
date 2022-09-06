@@ -77,7 +77,7 @@ void IslandWindow::MakeWindow() noexcept
     WINRT_VERIFY(CreateWindowEx(WS_EX_NOREDIRECTIONBITMAP | (_alwaysOnTop ? WS_EX_TOPMOST : 0),
                                 wc.lpszClassName,
                                 L"Windows Terminal",
-                                WS_OVERLAPPEDWINDOW,
+                                WS_OVERLAPPEDWINDOW & (~WS_MAXIMIZE),
                                 CW_USEDEFAULT,
                                 CW_USEDEFAULT,
                                 CW_USEDEFAULT,

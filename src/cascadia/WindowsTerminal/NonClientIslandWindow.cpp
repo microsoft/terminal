@@ -452,10 +452,17 @@ til::rect NonClientIslandWindow::_GetDragAreaRect() const noexcept
         // matter, but UIA will still think its bounds can extend past the right
         // of the parent HWND.
         const auto x = gsl::narrow_cast<til::CoordType>(clientDragBarRect.X * scale);
+
+        // The size of the buttons doesn't change over the life of the application.
+        const auto buttonWidthInDips{ 45.0 /*_titlebar.CaptionButtonWidth()*/ };
+
+        // However, the DPI scaling might, so get the updated size of the buttons in pixels
+        const auto buttonWidthInPixels = gsl::narrow_cast<til::CoordType>(buttonWidthInDips * GetCurrentDpiScale());
+        buttonWidthInPixels;
         return {
             x,
             gsl::narrow_cast<til::CoordType>(clientDragBarRect.Y * scale),
-            gsl::narrow_cast<til::CoordType>((clientDragBarRect.Width + clientDragBarRect.X) * scale) - x,
+            gsl::narrow_cast<til::CoordType>((clientDragBarRect.Width + clientDragBarRect.X) * scale) - x /* - (buttonWidthInPixels * 3)*/,
             gsl::narrow_cast<til::CoordType>((clientDragBarRect.Height + clientDragBarRect.Y) * scale),
         };
     }
@@ -889,7 +896,7 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         //  bug and it's what a lot of Win32 apps that customize the title bar do
         //  so it should work fine.
         margins.cyTopHeight = -frame.top;
-        margins.cyTopHeight = 1;
+        margins.cyTopHeight = 0;
     }
 
     // Extend the frame into the client area. microsoft/terminal#2735 - Just log
