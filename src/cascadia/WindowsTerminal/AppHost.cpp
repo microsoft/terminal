@@ -1365,6 +1365,12 @@ void AppHost::_updateTheme()
     // titlebars for showing Mica currently, we're just gonna disable it
     // entirely while we sort that out.
     //
+
+    // TODO! We very well may need to implement this differently on different
+    // build numbers. I believe this API became public some time around 22523. I
+    // think there's a way to do it with a private API on 22000, but we should
+    // do that in post.
+
     const int attribute = theme.Window().UseMica() ? /*DWMSBT_MAINWINDOW*/ 2 : /*DWMSBT_NONE*/ 1;
     DwmSetWindowAttribute(_window->GetHandle(), /* DWMWA_SYSTEMBACKDROP_TYPE */ 38, &attribute, sizeof(attribute));
 }

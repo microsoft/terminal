@@ -451,18 +451,14 @@ til::rect NonClientIslandWindow::_GetDragAreaRect() const noexcept
         // hang off the right side of the root window. This normally wouldn't
         // matter, but UIA will still think its bounds can extend past the right
         // of the parent HWND.
+        //
+        // x here is the width of the tabs.
         const auto x = gsl::narrow_cast<til::CoordType>(clientDragBarRect.X * scale);
 
-        // The size of the buttons doesn't change over the life of the application.
-        const auto buttonWidthInDips{ 45.0 /*_titlebar.CaptionButtonWidth()*/ };
-
-        // However, the DPI scaling might, so get the updated size of the buttons in pixels
-        const auto buttonWidthInPixels = gsl::narrow_cast<til::CoordType>(buttonWidthInDips * GetCurrentDpiScale());
-        buttonWidthInPixels;
         return {
             x,
             gsl::narrow_cast<til::CoordType>(clientDragBarRect.Y * scale),
-            gsl::narrow_cast<til::CoordType>((clientDragBarRect.Width + clientDragBarRect.X) * scale) - x /* - (buttonWidthInPixels * 3)*/,
+            gsl::narrow_cast<til::CoordType>((clientDragBarRect.Width + clientDragBarRect.X) * scale) - x,
             gsl::narrow_cast<til::CoordType>((clientDragBarRect.Height + clientDragBarRect.Y) * scale),
         };
     }
@@ -895,7 +891,23 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         //  at the top) in the WM_PAINT handler. This eliminates the transparency
         //  bug and it's what a lot of Win32 apps that customize the title bar do
         //  so it should work fine.
-        margins.cyTopHeight = -frame.top;
+        //
+        // Note #3 (circa late 2022): It seems like we can just set this to 0,
+        //  and have it work. This is LOAD-BEARING. By having the titlebar a
+        //  totally empty rect, DWM will know that we don't have the traditional
+        //  titlebar, and will use NCHITTEST to determine where to place the
+        //  Snap Flyout. The drag rect will handle that.
+        //
+        //  FURTHERMORE: If we leave the titlebar visible AT ALL, then a
+        //  transparent titlebar (theme.tabRow.background:#ff00ff00 for example)
+        //  will allow the DWM titlebar to be visible, which will look insane.
+        //  EVEN MORE SO: Mica + "show accent color on title bars" will _always_
+        //  show the accent-colored strip of the titlebar, even on top of the
+        //  Mica.
+        //
+        //  So REAALLY REALLY get rid of the titlebar entirely.
+
+        // TODO! check how this works on Windows 10.
         margins.cyTopHeight = 0;
     }
 
