@@ -535,7 +535,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         if (_transitionToState(ConnectionState::Closing))
         {
             // EXIT POINT
-            _clientExitWait.reset(); // immediately stop waiting for the client to exit.
+
+            // _clientExitWait holds a CreateThreadpoolWait() which holds a weak reference to "this".
+            // This manual reset() ensures we wait for it to be teared down via WaitForThreadpoolWaitCallbacks().
+            _clientExitWait.reset();
 
             _hPC.reset(); // tear down the pseudoconsole (this is like clicking X on a console window)
 
@@ -544,17 +547,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
             if (_hOutputThread)
             {
-                // Tear down our output thread -- now that the output pipe was closed on the
-                // far side, we can run down our local reader.
+                // Waiting for the output thread to exit ensures that all pending _TerminalOutputHandlers()
+                // calls have returned and won't notify our caller (ControlCore) anymore. This ensures that
+                // we don't call a destroyed event handler asynchronously from a background thread (GH#13880).
                 LOG_LAST_ERROR_IF(WAIT_FAILED == WaitForSingleObject(_hOutputThread.get(), INFINITE));
                 _hOutputThread.reset();
-            }
-
-            if (_piClient.hProcess)
-            {
-                // Wait for the client to terminate (which it should do successfully)
-                LOG_LAST_ERROR_IF(WAIT_FAILED == WaitForSingleObject(_piClient.hProcess, INFINITE));
-                _piClient.reset();
             }
 
             _transitionToState(ConnectionState::Closed);

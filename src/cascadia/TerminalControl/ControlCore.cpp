@@ -1472,32 +1472,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _FoundMatchHandlers(*this, *foundResults);
     }
 
-    // Method Description:
-    // - Asynchronously close our connection. The Connection will likely wait
-    //   until the attached process terminates before Close returns. If that's
-    //   the case, we don't want to block the UI thread waiting on that process
-    //   handle.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    winrt::fire_and_forget ControlCore::_asyncCloseConnection()
-    {
-        if (auto localConnection{ std::exchange(_connection, nullptr) })
-        {
-            // Close the connection on the background thread.
-            co_await winrt::resume_background(); // ** DO NOT INTERACT WITH THE CONTROL CORE AFTER THIS LINE **
-
-            // Here, the ControlCore very well might be gone.
-            // _asyncCloseConnection is called on the dtor, so it's entirely
-            // possible that the background thread is resuming after we've been
-            // cleaned up.
-
-            localConnection.Close();
-            // connection is destroyed.
-        }
-    }
-
     void ControlCore::Close()
     {
         if (!_IsClosing())
@@ -1507,13 +1481,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Stop accepting new output and state changes before we disconnect everything.
             _connection.TerminalOutput(_connectionOutputEventToken);
             _connectionStateChangedRevoker.revoke();
-
-            // GH#1996 - Close the connection asynchronously on a background
-            // thread.
-            // Since TermControl::Close is only ever triggered by the UI, we
-            // don't really care to wait for the connection to be completely
-            // closed. We can just do it whenever.
-            _asyncCloseConnection();
+            _connection.Close();
         }
     }
 
