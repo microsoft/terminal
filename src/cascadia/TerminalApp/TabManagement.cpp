@@ -422,7 +422,7 @@ namespace winrt::TerminalApp::implementation
                     // shell32 file picker manually.
                     std::wstring filename{ tab.Title() };
                     filename = til::clean_filename(filename);
-                    path = co_await SaveFilePicker(*_hostingHwnd, [filename](auto&& dialog) {
+                    path = co_await SaveFilePicker(*_hostingHwnd, [filename = std::move(filename)](auto&& dialog) {
                         THROW_IF_FAILED(dialog->SetClientGuid(clientGuidExportFile));
                         try
                         {
