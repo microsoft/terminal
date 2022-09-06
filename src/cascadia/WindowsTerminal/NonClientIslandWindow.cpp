@@ -444,11 +444,18 @@ til::rect NonClientIslandWindow::_GetDragAreaRect() const noexcept
             static_cast<float>(_rootGrid.ActualWidth()),
             static_cast<float>(_dragBar.ActualHeight())
         };
+
         const auto clientDragBarRect = transform.TransformBounds(logicalDragBarRect);
+
+        // Make sure to trim the right side of the rectangle, so that it doesn't
+        // hang off the right side of the root window. This normally wouldn't
+        // matter, but UIA will still think its bounds can extend past the right
+        // of the parent HWND.
+        const auto x = gsl::narrow_cast<til::CoordType>(clientDragBarRect.X * scale);
         return {
-            gsl::narrow_cast<til::CoordType>(clientDragBarRect.X * scale),
+            x,
             gsl::narrow_cast<til::CoordType>(clientDragBarRect.Y * scale),
-            gsl::narrow_cast<til::CoordType>((clientDragBarRect.Width + clientDragBarRect.X) * scale),
+            gsl::narrow_cast<til::CoordType>((clientDragBarRect.Width + clientDragBarRect.X) * scale) - x,
             gsl::narrow_cast<til::CoordType>((clientDragBarRect.Height + clientDragBarRect.Y) * scale),
         };
     }
@@ -505,8 +512,8 @@ void NonClientIslandWindow::_OnMaximizeChange() noexcept
         const auto isIconified = WI_IsFlagSet(windowStyle, WS_ICONIC);
 
         const auto state = _isMaximized ? winrt::TerminalApp::WindowVisualState::WindowVisualStateMaximized :
-                           isIconified  ? winrt::TerminalApp::WindowVisualState::WindowVisualStateIconified :
-                                          winrt::TerminalApp::WindowVisualState::WindowVisualStateNormal;
+                                          isIconified ? winrt::TerminalApp::WindowVisualState::WindowVisualStateIconified :
+                                                        winrt::TerminalApp::WindowVisualState::WindowVisualStateNormal;
 
         try
         {
@@ -882,6 +889,7 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         //  bug and it's what a lot of Win32 apps that customize the title bar do
         //  so it should work fine.
         margins.cyTopHeight = -frame.top;
+        margins.cyTopHeight = 1;
     }
 
     // Extend the frame into the client area. microsoft/terminal#2735 - Just log
