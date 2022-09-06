@@ -546,6 +546,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         if (_transitionToState(ConnectionState::Closing))
         {
+            // EXIT POINT
+
             // _clientExitWait holds a CreateThreadpoolWait() which holds a weak reference to "this".
             // This manual reset() ensures we wait for it to be teared down via WaitForThreadpoolWaitCallbacks().
             _clientExitWait.reset();
