@@ -148,9 +148,10 @@ winrt::WUX::Media::Brush ThemeColor::Evaluate(const winrt::WUX::ResourceDictiona
     }
     case ThemeColorType::Color:
     {
-        return winrt::WUX::Media::SolidColorBrush{ forTitlebar ?
-                                                       Color().with_alpha(255) :
-                                                       Color() };
+        return winrt::WUX::Media::SolidColorBrush{ /*forTitlebar ?
+                                                       Color().with_alpha(255) :*/
+                                                   Color()
+        };
     }
     case ThemeColorType::TerminalBackground:
     {
@@ -188,7 +189,7 @@ winrt::WUX::Media::Brush ThemeColor::Evaluate(const winrt::WUX::ResourceDictiona
             else if (auto solidColor = terminalBackground.try_as<winrt::WUX::Media::SolidColorBrush>())
             {
                 winrt::WUX::Media::SolidColorBrush newBrush{};
-                newBrush.Color(til::color{ solidColor.Color() }.with_alpha(255));
+                newBrush.Color(til::color{ solidColor.Color() } /*.with_alpha(255)*/);
                 return newBrush;
             }
         }
