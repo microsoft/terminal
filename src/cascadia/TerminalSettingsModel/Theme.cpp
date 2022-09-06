@@ -125,10 +125,6 @@ winrt::WUX::Media::Brush ThemeColor::Evaluate(const winrt::WUX::ResourceDictiona
 {
     static const auto accentColorKey{ winrt::box_value(L"SystemAccentColor") };
 
-    // NOTE: Currently, the DWM titlebar is always drawn, underneath our XAML
-    // content. If the opacity is <1.0, then you'll be able to see it, including
-    // the original caption buttons, which we don't want.
-
     switch (ColorType())
     {
     case ThemeColorType::Accent:
@@ -148,10 +144,7 @@ winrt::WUX::Media::Brush ThemeColor::Evaluate(const winrt::WUX::ResourceDictiona
     }
     case ThemeColorType::Color:
     {
-        return winrt::WUX::Media::SolidColorBrush{ /*forTitlebar ?
-                                                       Color().with_alpha(255) :*/
-                                                   Color()
-        };
+        return winrt::WUX::Media::SolidColorBrush{ Color() };
     }
     case ThemeColorType::TerminalBackground:
     {
@@ -171,25 +164,15 @@ winrt::WUX::Media::Brush ThemeColor::Evaluate(const winrt::WUX::ResourceDictiona
                 newBrush.FallbackColor(acrylic.FallbackColor());
                 newBrush.TintLuminosityOpacity(acrylic.TintLuminosityOpacity());
 
-                // Allow acrylic opacity, but it's gotta be HostBackdrop acrylic.
-                //
-                // For now, just always use 50% opacity for this. If we do ever
-                // figure out how to get rid of our titlebar under the XAML tab
-                // row (GH#10509), we can always get rid of the HostBackdrop
-                // thing, and all this copying, and just return the
-                // terminalBackground brush directly.
-                //
-                // Because we're wholesale copying the brush, we won't be able
-                // to adjust it's opacity with the mouse wheel. This seems like
-                // an acceptable tradeoff for now.
-                newBrush.TintOpacity(.5);
+                newBrush.TintOpacity(acrylic.TintOpacity());
                 newBrush.BackgroundSource(winrt::WUX::Media::AcrylicBackgroundSource::HostBackdrop);
                 return newBrush;
             }
             else if (auto solidColor = terminalBackground.try_as<winrt::WUX::Media::SolidColorBrush>())
             {
                 winrt::WUX::Media::SolidColorBrush newBrush{};
-                newBrush.Color(til::color{ solidColor.Color() } /*.with_alpha(255)*/);
+                newBrush.Color(til::color{ solidColor.Color() });
+                newBrush.Opacity(solidColor.Opacity());
                 return newBrush;
             }
         }
