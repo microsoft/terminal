@@ -282,8 +282,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::unique_ptr<til::throttled_func_trailing<>> _updatePatternLocations;
         std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> _updateScrollBar;
 
-        winrt::fire_and_forget _asyncCloseConnection();
-
         bool _setFontSizeUnderLock(int fontSize);
         void _updateFont(const bool initialUpdate = false);
         void _refreshSizeUnderLock();
