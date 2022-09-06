@@ -148,35 +148,6 @@ winrt::WUX::Media::Brush ThemeColor::Evaluate(const winrt::WUX::ResourceDictiona
     }
     case ThemeColorType::TerminalBackground:
     {
-        // If we're evaluating this color for the tab row, there are some rules
-        // we have to follow, unfortunately. We can't allow a transparent
-        // background, so we have to make sure to fill that in with Opacity(1.0)
-        // manually.
-        //
-        // So for that case, just make a new brush with the relevant properties
-        // set.
-        if (forTitlebar)
-        {
-            if (auto acrylic = terminalBackground.try_as<winrt::WUX::Media::AcrylicBrush>())
-            {
-                winrt::WUX::Media::AcrylicBrush newBrush{};
-                newBrush.TintColor(acrylic.TintColor());
-                newBrush.FallbackColor(acrylic.FallbackColor());
-                newBrush.TintLuminosityOpacity(acrylic.TintLuminosityOpacity());
-
-                newBrush.TintOpacity(acrylic.TintOpacity());
-                newBrush.BackgroundSource(winrt::WUX::Media::AcrylicBackgroundSource::HostBackdrop);
-                return newBrush;
-            }
-            else if (auto solidColor = terminalBackground.try_as<winrt::WUX::Media::SolidColorBrush>())
-            {
-                winrt::WUX::Media::SolidColorBrush newBrush{};
-                newBrush.Color(til::color{ solidColor.Color() });
-                newBrush.Opacity(solidColor.Opacity());
-                return newBrush;
-            }
-        }
-
         return terminalBackground;
     }
     }
