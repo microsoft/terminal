@@ -978,23 +978,7 @@ bool AdaptDispatch::_SetInputMode(const TerminalInput::Mode mode, const bool ena
     // impact on the actual connected terminal. We can't remove this check,
     // because SSH <=7.7 is out in the wild on all versions of Windows <=2004.
 
-    // GH#12799 - If the app requested that we disable focus events, DON'T pass
-    // that through. ConPTY would _always_ like to know about focus events.
-
-    return !_api.IsConsolePty() ||
-           !_api.IsVtInputEnabled() ||
-           (!enable && mode == TerminalInput::Mode::FocusEvent);
-
-    // Another way of writing the above statement is:
-    //
-    // const bool inConpty = _api.IsConsolePty();
-    // const bool shouldPassthrough = inConpty && _api.IsVtInputEnabled();
-    // const bool disabledFocusEvents = inConpty && (!enable && mode == TerminalInput::Mode::FocusEvent);
-    // return !shouldPassthrough || disabledFocusEvents;
-    //
-    // It's like a "filter" left to right. Due to the early return via
-    // !IsConsolePty, once you're at the !enable part, IsConsolePty can only be
-    // true anymore.
+    return !_api.IsConsolePty() || !_api.IsVtInputEnabled();
 }
 
 // Routine Description:
@@ -1037,6 +1021,9 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         break;
     case DispatchTypes::ModeParams::XTERM_EnableDECCOLMSupport:
         success = EnableDECCOLMSupport(enable);
+        break;
+    case DispatchTypes::ModeParams::DECBKM_BackarrowKeyMode:
+        success = _SetInputMode(TerminalInput::Mode::BackarrowKey, enable);
         break;
     case DispatchTypes::ModeParams::VT200_MOUSE_MODE:
         success = EnableVT200MouseMode(enable);
@@ -1874,6 +1861,9 @@ bool AdaptDispatch::HardReset()
     EnableSGRExtendedMouseMode(false);
     EnableAnyEventMouseMode(false);
 
+    // Reset the Backarrow Key mode
+    _SetInputMode(TerminalInput::Mode::BackarrowKey, false);
+
     // Delete all current tab stops and reapply
     _ResetTabStops();
 
@@ -2088,7 +2078,9 @@ bool AdaptDispatch::EnableAnyEventMouseMode(const bool enabled)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableFocusEventMode(const bool enabled)
 {
-    return _SetInputMode(TerminalInput::Mode::FocusEvent, enabled);
+    // GH#12799 - If the app requested that we disable focus events, DON'T pass
+    // that through. ConPTY would _always_ like to know about focus events.
+    return _SetInputMode(TerminalInput::Mode::FocusEvent, enabled) || !enabled;
 }
 
 //Routine Description:
