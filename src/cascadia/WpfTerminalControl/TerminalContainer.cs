@@ -20,10 +20,10 @@ namespace Microsoft.Terminal.Wpf
     /// </remarks>
     public class TerminalContainer : HwndHost
     {
+        private readonly DispatcherTimer blinkTimer;
         private ITerminalConnection connection;
         private IntPtr hwnd;
         private IntPtr terminal;
-        private DispatcherTimer blinkTimer;
         private NativeMethods.ScrollCallback scrollCallback;
         private NativeMethods.WriteCallback writeCallback;
 
@@ -38,18 +38,20 @@ namespace Microsoft.Terminal.Wpf
 
             var blinkTime = NativeMethods.GetCaretBlinkTime();
 
-            if (blinkTime != uint.MaxValue)
+            if (blinkTime == uint.MaxValue)
             {
-                this.blinkTimer = new DispatcherTimer();
-                this.blinkTimer.Interval = TimeSpan.FromMilliseconds(blinkTime);
-                this.blinkTimer.Tick += (_, __) =>
-                {
-                    if (this.terminal != IntPtr.Zero)
-                    {
-                        NativeMethods.TerminalBlinkCursor(this.terminal);
-                    }
-                };
+                return;
             }
+
+            this.blinkTimer = new DispatcherTimer();
+            this.blinkTimer.Interval = TimeSpan.FromMilliseconds(blinkTime);
+            this.blinkTimer.Tick += (_, __) =>
+            {
+                if (this.terminal != IntPtr.Zero)
+                {
+                    NativeMethods.TerminalBlinkCursor(this.terminal);
+                }
+            };
         }
 
         /// <summary>
@@ -195,24 +197,24 @@ namespace Microsoft.Terminal.Wpf
             {
                 throw new ArgumentException("Terminal row count cannot be 0.", nameof(rows));
             }
-            else if (columns == 0)
+
+            if (columns == 0)
             {
                 throw new ArgumentException("Terminal column count cannot be 0.", nameof(columns));
             }
 
-            NativeMethods.TilSize dimensionsInPixels;
             NativeMethods.TilSize dimensions = new NativeMethods.TilSize
             {
                 X = (int)columns,
                 Y = (int)rows,
             };
 
-            NativeMethods.TerminalTriggerResizeWithDimension(this.terminal, dimensions, out dimensionsInPixels);
+            NativeMethods.TerminalTriggerResizeWithDimension(this.terminal, dimensions, out var dimensionsInPixels);
 
             this.Columns = dimensions.X;
             this.Rows = dimensions.Y;
 
-            this.TerminalRendererSize = new Size()
+            this.TerminalRendererSize = new Size
             {
                 Width = dimensionsInPixels.X,
                 Height = dimensionsInPixels.Y,
@@ -238,7 +240,7 @@ namespace Microsoft.Terminal.Wpf
         /// </summary>
         internal void RaiseResizedIfDrawSpaceIncreased()
         {
-            (var columns, var rows) = this.CalculateRowsAndColumns(this.TerminalControlSize);
+            var (columns, rows) = this.CalculateRowsAndColumns(this.TerminalControlSize);
 
             if (this.Columns < columns || this.Rows < rows)
             {
@@ -268,7 +270,7 @@ namespace Microsoft.Terminal.Wpf
             NativeMethods.TerminalRegisterWriteCallback(this.terminal, this.writeCallback);
 
             // If the saved DPI scale isn't the default scale, we push it to the terminal.
-            if (dpiScale.PixelsPerInchX != NativeMethods.USER_DEFAULT_SCREEN_DPI)
+            if ((int)dpiScale.PixelsPerInchX != (int)NativeMethods.USER_DEFAULT_SCREEN_DPI)
             {
                 NativeMethods.TerminalDpiChanged(this.terminal, (int)dpiScale.PixelsPerInchX);
             }
@@ -294,7 +296,7 @@ namespace Microsoft.Terminal.Wpf
 
         private static void UnpackKeyMessage(IntPtr wParam, IntPtr lParam, out ushort vkey, out ushort scanCode, out ushort flags)
         {
-            ulong scanCodeAndFlags = (((ulong)lParam) & 0xFFFF0000) >> 16;
+            ulong scanCodeAndFlags = ((ulong)lParam >> 16) & 0xFFFF;
             scanCode = (ushort)(scanCodeAndFlags & 0x00FFu);
             flags = (ushort)(scanCodeAndFlags & 0xFF00u);
             vkey = (ushort)wParam;
@@ -377,7 +379,7 @@ namespace Microsoft.Terminal.Wpf
                             this.Columns = dimensions.X;
                             this.Rows = dimensions.Y;
 
-                            this.TerminalRendererSize = new Size()
+                            this.TerminalRendererSize = new Size
                             {
                                 Width = windowpos.cx,
                                 Height = windowpos.cy,
@@ -407,7 +409,7 @@ namespace Microsoft.Terminal.Wpf
             var altPressed = NativeMethods.GetKeyState((int)NativeMethods.VirtualKey.VK_MENU) < 0;
             var x = lParam & 0xffff;
             var y = lParam >> 16;
-            var cursorPosition = new NativeMethods.TilPoint()
+            var cursorPosition = new NativeMethods.TilPoint
             {
                 X = x,
                 Y = y,
@@ -422,7 +424,7 @@ namespace Microsoft.Terminal.Wpf
             {
                 var x = lParam & 0xffff;
                 var y = lParam >> 16;
-                var cursorPosition = new NativeMethods.TilPoint()
+                var cursorPosition = new NativeMethods.TilPoint
                 {
                     X = x,
                     Y = y,

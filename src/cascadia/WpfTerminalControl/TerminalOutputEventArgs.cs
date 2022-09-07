@@ -10,7 +10,7 @@ namespace Microsoft.Terminal.Wpf
     /// <summary>
     /// Event args for output from the terminal backend.
     /// </summary>
-    public class TerminalOutputEventArgs : EventArgs
+    public abstract class TerminalOutputEventArgs : EventArgs
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="TerminalOutputEventArgs"/> class.
