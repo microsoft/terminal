@@ -21,6 +21,16 @@ issue id: 5916
 
 [comment]: # List off the use cases where two users might want a feature to have different behavior based on user preference. Include links to issues that might be relevant.
 
+
+TODO! Make sure all these threads are addressed:
+
+* [ ] [#5916]
+* [ ] [#8849]
+* [ ] [#7562]
+* [ ] [#8294]
+* [ ] [#2671]
+* [x] [#6969]
+
 ## Solution Design
 
 Could I be even crazier:
@@ -52,23 +62,36 @@ Could I be even crazier:
 },
 ```
 
-`triggers` is an array of things. First we try to deserialize each thing as a `Control.Trigger`. There's only a few options, and fundamentally those are basically actions`. 
+`triggers` is an array of things. First we try to deserialize each thing as a
+`Control.Trigger`. There's only a few options, and fundamentally those are
+basically actions`.
 * `addMark`
 * `sendInput`
 * `experimental.colorSelection`
 
-And we can _probably_ reuse some of the macros in `ActionArgs.h` to make deserializing to a `Control.Trigger` easy. 
+And we can _probably_ reuse some of the macros in `ActionArgs.h` to make
+deserializing to a `Control.Trigger` easy.
 
-`Control.Trigger`'s, when they are hit by the control, will be able to string replace their args themselves. The `git push` trigger above - when matched, the Core will call `Control.SendInputTrigger.Execute(ControlCore core, String[] matches)` (or something like that). `Execute` will be responsible for string-replacing anything it needs to.
+`Control.Trigger`'s, when they are hit by the control, will be able to string
+replace their args themselves. The `git push` trigger above - when matched, the
+Core will call `Control.SendInputTrigger.Execute(ControlCore core, String[]
+matches)` (or something like that). `Execute` will be responsible for
+string-replacing anything it needs to.
 
 
-If We find that the `action` is NOT a `Control.Trigger`, then we'll make it into an `Settings.Model.Trigger`. We'll hang on to the JSON. When the trigger is hit by the control, it'll raise an event. The app will recieve the event, match it up to the trigger, and call `Model.Trigger.Parse(String[] matches) -> ActionAndArgs` which will do the string replace in the JSON itself. We'll then just take the _whole json_, and try to parse it literally as an `ActionAndArgs`. 
-
-
+If We find that the `action` is NOT a `Control.Trigger`, then we'll make it into
+an `Settings.Model.Trigger`. We'll hang on to the JSON. When the trigger is hit
+by the control, it'll raise an event. The app will recieve the event, match it
+up to the trigger, and call `Model.Trigger.Parse(String[] matches) ->
+ActionAndArgs` which will do the string replace in the JSON itself. We'll then
+just take the _whole json_, and try to parse it literally as an `ActionAndArgs`.
 
 ### Turn text into clickable links
 
-A similar request from [#8849] that should also be captured. People want the ability to configure the regexes that are used for turning text into clickable links. Currently, we only match on a predefined set<sup>[[1](#footnote-1)]</sup> into clickable text.
+A similar request from [#8849] that should also be captured. People want the
+ability to configure the regexes that are used for turning text into clickable
+links. Currently, we only match on a predefined set<sup>[[1](#footnote-1)]</sup>
+into clickable text.
 
 ```jsonc
 // I did not test these regexes
@@ -90,7 +113,29 @@ A similar request from [#8849] that should also be captured. People want the abi
 ```
 
 Challenges: 
-* with hyperlink matching, we always assume that the cells themselves contain the payload to turn into a URL. We'd have to instead find that the text matched a trigger, then run it back through the regex to split into matched parts, then parse what the target is. 
+* with hyperlink matching, we always assume that the cells themselves contain
+  the payload to turn into a URL. We'd have to instead find that the text
+  matched a trigger, then run it back through the regex to split into matched
+  parts, then parse what the target is.
+
+### Disabling triggers
+
+Three main cases:
+* If we define a trigger in `defaults.json`, users should be able to disable it.
+* If a user puts a trigger into `profiles.defaults`, but doesn't want it to show up in a specific profile
+* If a fragment decides to add a trigger to a specific profile
+
+### Triggers for Terminal Control consumers
+
+Case in point: [#6969]. Visual Studio would like to supply their own trigger,
+and recieve an event with the ID of the trigger.
+
+> * Consumers of the terminal must be able to provide a pattern that will identify regions of clickable text
+> * Consumers will provide a callback that is called with the clicked text as a parameter
+
+These are addressed generally by the rest of the spec. They could provide
+`CommandTriggers` via `ICoreSettings`. When we find the match, we'd raise an
+event with the index of that trigger, and the matches for that regex.
 
 ## Potential Issues
 
@@ -131,25 +176,15 @@ pt-br:"", ...}`-style map of language->string descriptions.
 ## Implementation Plan
 
 ### 🐣 Crawl
-* [ ] The command palette needs to be able to display both the command name and a comment?
-  - This will need to be reconciled with [#7039], which tracks displaying non-localized names in the command palette
-* [ ] The command palette is refactored to allow it to interact as the Tasks panel
-* [ ] [#1595] An action for opening the tasks panel, filled with all `sendInput` commands
-* [ ] Fragments can add **actions** to a user's settings
-* [ ] [#10436] Users can manage all their fragments extensions directly in the Settings UI
+* [ ]
 
 ### 🚶 Walk
-* [ ] The terminal can look for a settings file of tasks in a profile's `startingDirectory`
-* [ ] [#5790] - profile specific actions
-* [ ] [#12927]
+* [ ]
 
 ### 🏃‍♂️ Run
-* [ ] When the user `cd`s to a directory (with shell integration enabled), the terminal can load the tasks from that directory tree
-  - Kinda dependent on [#5790] and fragment **actions**, so we understand how they should be layered.
-* [ ] Fork of [#12927] - promptable sections can accept a command to dynamically populate options
+* [ ]
 
 ### 🚀 Sprint
-* [ ]
 * [ ]
 
 
@@ -160,6 +195,41 @@ pt-br:"", ...}`-style map of language->string descriptions.
 
 ### Future Considerations
 
+
+
+## Resources
+
+### iTerm2 trigger actions
+
+The following list was taken from the [iTerm2 docs]. I've added notes on ways we could implement similar functionality.
+
+* *Annotate*: Add a bookmark? ✅
+* *Bounce Dock Icon*: Visual, window bell? We don't have a manual action for something like this
+* *Capture Output*: Not really a good analog. Maybe "add a bookmark", with a bookmark list pane.
+* *Highlight Text*: `experimental.colorSelection` above ✅
+* *Inject Data*: "Injects a string as though it had been received". This isn't `sendInput`, it's like `sendOutput`. Dangerous for the same reasons that `experimental.colorSelection` is - modifications only to the terminal-side of the conpty buffer.
+* *Invoke Script Function*: We have nothing like this. I suppose the general-purpose actions are vaguely like this?
+* *Make Hyperlink*: `clickableLink` above ✅
+* *Open Password Manager*: Nothing similar.
+* *Post Notification*: Consider [#7718] - could absolutely be done.
+* *Prompt Detected*: `addMark(prompt)`, basically. ✅
+* *Report Directory*: "Tells iTerm2 what your current directory is". Kinda like `sendOutput`, but not that dangerous IMO.
+* *Report User & Host*: Kinda the same as the above. We don't use these currently, but we may want to consider in the future.
+* *Ring Bell*: Plays the standard system bell sound once.
+* *Run Command*: This seems dangerous if misused. Basically just `ShellExecute()` the command.
+* *Run Coprocess*: Definitely no precedent we have for this, and might require its own spec.
+* *Run Silent Coprocess*: same deal.
+* *Send Text*: `sendInput` ✅
+* *Set Mark*: `addMark` ✅
+* *Set Title*: Similar to the "Report Directory" above.
+* *Set User Variable*: Specifically tied to scripting, which we don't have.
+* *Show Alert*: Show a toast? [#8592]
+* *Stop Processing Triggers*: Definitely an interesting idea. Stop processing more triggers.
+
+Almost all these could be control-level actions that don't _need_ to cross out
+of the ControlCore (outside of existing concieved notions for crossing the
+boundary, like a visual bell or a notification).
+
 ### Footnotes
 
 <a name="footnote-1"><a>[1]: The regex we currently use for URLs is `(\b(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])`.
@@ -167,3 +237,11 @@ pt-br:"", ...}`-style map of language->string descriptions.
 
 [#5916]: https://github.com/microsoft/terminal/issues/5916
 [#8849]: https://github.com/microsoft/terminal/issues/8849
+[#7718]: https://github.com/microsoft/terminal/issues/7718
+[#8592]: https://github.com/microsoft/terminal/issues/8592
+[#7562]: https://github.com/microsoft/terminal/issues/7562
+[#8294]: https://github.com/microsoft/terminal/issues/8294
+[#2671]: https://github.com/microsoft/terminal/issues/2671
+[#6969]: https://github.com/microsoft/terminal/issues/6969
+
+[iTerm2 docs]: https://iterm2.com/documentation-one-page.html#documentation-triggers.html
