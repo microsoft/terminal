@@ -33,6 +33,9 @@ TODO! Make sure all these threads are addressed:
 
 ## Solution Design
 
+
+[TODO!]: # TODO! this was a draft from a comment. Polish.
+
 Could I be even crazier:
 
 ```jsonc
@@ -124,6 +127,8 @@ Three main cases:
 * If we define a trigger in `defaults.json`, users should be able to disable it.
 * If a user puts a trigger into `profiles.defaults`, but doesn't want it to show up in a specific profile
 * If a fragment decides to add a trigger to a specific profile
+
+[TODO!]: # TODO!
 
 ### Triggers for Terminal Control consumers
 
