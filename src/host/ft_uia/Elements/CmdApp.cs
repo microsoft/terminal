@@ -410,10 +410,11 @@ namespace Conhost.UIA.Tests.Elements
 
             this.UIRoot = null;
 
-            if (this.job != IntPtr.Zero)
+            if (this.job == IntPtr.Zero)
             {
-                WinBase.TerminateJobObject(this.job, 0);
+                return;
             }
+            WinBase.TerminateJobObject(this.job, 0);
             this.job = IntPtr.Zero;
         }
 
