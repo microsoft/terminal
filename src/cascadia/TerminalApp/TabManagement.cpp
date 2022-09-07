@@ -420,7 +420,9 @@ namespace winrt::TerminalApp::implementation
                     // GH#11356 - we can't use the UWP apis for writing the file,
                     // because they don't work elevated (shocker) So just use the
                     // shell32 file picker manually.
-                    path = co_await SaveFilePicker(*_hostingHwnd, [control](auto&& dialog) {
+                    std::wstring filename{ tab.Title() };
+                    filename = til::clean_filename(filename);
+                    path = co_await SaveFilePicker(*_hostingHwnd, [filename = std::move(filename)](auto&& dialog) {
                         THROW_IF_FAILED(dialog->SetClientGuid(clientGuidExportFile));
                         try
                         {
@@ -434,8 +436,6 @@ namespace winrt::TerminalApp::implementation
                         THROW_IF_FAILED(dialog->SetDefaultExtension(L"txt"));
 
                         // Default to using the tab title as the file name
-                        std::wstring filename{ control.Title() };
-                        filename = til::clean_filename(filename);
                         THROW_IF_FAILED(dialog->SetFileName((filename + L".txt").c_str()));
                     });
                 }
