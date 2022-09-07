@@ -8,6 +8,7 @@
 #include "../WinRTUtils/inc/WtExeUtils.h"
 #include "../../types/inc/utils.hpp"
 #include "Utils.h"
+#include <LibraryResources.h>
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
@@ -223,7 +224,8 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<SplitPaneArgs>())
         {
-            if (const auto& newTerminalArgs{ realArgs.TerminalArgs() })
+            const auto& newTerminalArgs{ realArgs.TerminalArgs() };
+            if (newTerminalArgs)
             {
                 if (const auto index = realArgs.TerminalArgs().ProfileIndex())
                 {
@@ -235,10 +237,23 @@ namespace winrt::TerminalApp::implementation
                 }
             }
 
+            const auto newPane{ _MakePane(newTerminalArgs, realArgs.SplitMode() == SplitType::Duplicate) };
             _SplitPane(realArgs.SplitDirection(),
                        // This is safe, we're already filtering so the value is (0, 1)
                        ::base::saturated_cast<float>(realArgs.SplitSize()),
-                       _MakePane(realArgs.TerminalArgs(), realArgs.SplitMode() == SplitType::Duplicate));
+                       newPane);
+
+            if (!_processingCommandlineArgs)
+            {
+                if (auto autoPeer = Automation::Peers::FrameworkElementAutomationPeer::FromElement(*this))
+                {
+                    autoPeer.RaiseNotificationEvent(
+                        Automation::Peers::AutomationNotificationKind::ActionCompleted,
+                        Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
+                        fmt::format(std::wstring_view{ RS_(L"SplitPaneAnnouncement") }, newPane->GetProfile().Name()),
+                        L"NewSplitPane" /* unique name for this notification category */);
+                }
+            }
             args.Handled(true);
         }
     }

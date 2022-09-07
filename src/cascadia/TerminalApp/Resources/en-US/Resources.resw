@@ -746,4 +746,12 @@
     <value>Suggestions found: {0}</value>
     <comment>{0} will be replaced with a number.</comment>
   </data>
+  <data name="NewTabAnnouncement" xml:space="preserve">
+    <value>A new tab for the "{}" profile was created successfully</value>
+    <comment>{} will be replaced with the name of the profile (i.e. PowerShell, Command Prompt, etc.). The name may span multiple words. This announcement is read by a screen reader.</comment>
+  </data>
+  <data name="SplitPaneAnnouncement" xml:space="preserve">
+    <value>A new pane for the "{}" profile was created successfully</value>
+    <comment>{} will be replaced with the name of the profile (i.e. PowerShell, Command Prompt, etc.). The name may span multiple words. This announcement is read by a screen reader.</comment>
+  </data>
 </root>
