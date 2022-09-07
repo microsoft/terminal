@@ -119,7 +119,7 @@
                 </local:SettingContainer>
 
                 <!--  AtlasEngine  -->
-                <local:SettingContainer x:Uid="Profile_UseAtlasEngine"
+                <local:SettingContainer x:Uid="Profile_Compatibility_UseAtlasEngine"
                                         ClearSettingValue="{x:Bind Profile.ClearUseAtlasEngine}"
                                         HasSettingValue="{x:Bind Profile.HasUseAtlasEngine, Mode=OneWay}"
                                         SettingOverrideSource="{x:Bind Profile.UseAtlasEngineOverrideSource, Mode=OneWay}">
