@@ -135,6 +135,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (auto control{ weakThis.get() }; !control->_IsClosing())
         {
+            control->_closing = true;
             if (auto loadedUiElement{ FindName(L"ContentDiedNotice") })
             {
                 if (auto uiElement{ loadedUiElement.try_as<::winrt::Windows::UI::Xaml::UIElement>() })

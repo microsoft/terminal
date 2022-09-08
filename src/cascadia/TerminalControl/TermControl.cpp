@@ -2888,15 +2888,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - True if the mode is read-only
     bool TermControl::ReadOnly() const noexcept
     {
-        return _core.IsInReadOnlyMode();
+        if (!_IsClosing())
+        {
+            return _core.IsInReadOnlyMode();
+        }
+        return false;
     }
 
     // Method Description:
     // - Toggles the read-only flag, raises event describing the value change
     void TermControl::ToggleReadOnly()
     {
-        _core.ToggleReadOnlyMode();
-        _ReadOnlyChangedHandlers(*this, winrt::box_value(_core.IsInReadOnlyMode()));
+        if (!_IsClosing())
+        {
+            _core.ToggleReadOnlyMode();
+            _ReadOnlyChangedHandlers(*this, winrt::box_value(_core.IsInReadOnlyMode()));
+        }
     }
 
     // Method Description:
@@ -2908,7 +2915,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_PointerExitedHandler(const Windows::Foundation::IInspectable& /*sender*/,
                                             const Windows::UI::Xaml::Input::PointerRoutedEventArgs& /*e*/)
     {
-        _core.ClearHoveredCell();
+        if (!_IsClosing())
+        {
+            _core.ClearHoveredCell();
+        }
     }
 
     winrt::fire_and_forget TermControl::_hoveredHyperlinkChanged(IInspectable /*sender*/,
