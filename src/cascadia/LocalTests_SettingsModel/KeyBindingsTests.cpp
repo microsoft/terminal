@@ -52,6 +52,7 @@ namespace SettingsModelLocalTests
         TEST_METHOD(TestMoveTabArgs);
         TEST_METHOD(TestGetKeyBindingForAction);
         TEST_METHOD(KeybindingsWithoutVkey);
+        TEST_METHOD(TestUnbindReverseLookup);
     };
 
     void KeyBindingsTests::KeyChords()
@@ -794,5 +795,37 @@ namespace SettingsModelLocalTests
 
         const auto action = actionMap->GetActionByKeyChord({ VirtualKeyModifiers::Shift, 0, 255 });
         VERIFY_IS_NOT_NULL(action);
+    }
+
+    void KeyBindingsTests::TestUnbindReverseLookup()
+    {
+        Log::Comment(L"TODO!");
+
+        // Wrap the first one in `R"!(...)!"` because it has `()` internally.
+        const std::string bindings0String{ R"!([ { "command": { "action": "newTab", "index": 0 }, "keys":"ctrl+a" } ])!" };
+        const std::string bindings1String{ R"([ { "keys": "ctrl+a", "command": null } ])" };
+
+        const auto bindings0Json = VerifyParseSucceeded(bindings0String);
+        const auto bindings1Json = VerifyParseSucceeded(bindings1String);
+
+        auto actionMap = winrt::make_self<implementation::ActionMap>();
+        VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
+
+        actionMap->LayerJson(bindings0Json);
+        VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
+
+        NewTerminalArgs newTerminalArgs{ 0 };
+        NewTabArgs newTabArgs{ newTerminalArgs };
+        {
+            auto keyChord{ actionMap->GetKeyBindingForAction(ShortcutAction::NewTab, newTabArgs) };
+            VERIFY_IS_NOT_NULL(keyChord);
+        }
+
+        actionMap->LayerJson(bindings1Json);
+
+        {
+            auto keyChord{ actionMap->GetKeyBindingForAction(ShortcutAction::NewTab, newTabArgs) };
+            VERIFY_IS_NULL(keyChord);
+        }
     }
 }

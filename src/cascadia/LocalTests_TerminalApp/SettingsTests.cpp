@@ -71,6 +71,8 @@ namespace TerminalAppLocalTests
 
         TEST_METHOD(TestElevateArg);
 
+        TEST_METHOD(TestUnbindReverseLookup);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             return true;
@@ -1528,5 +1530,56 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(true, termSettings.Elevate());
         }
     }
+    void SettingsTests::TestUnbindReverseLookup()
+    {
+        Log::Comment(L"Test that unbinding a key also prevents us from looking it up by action");
 
+        // note: if you don't put a profile in here, we'll throw an exception during validate.
+        static constexpr std::wstring_view defaults{ LR"(
+        {
+            "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+            "profiles":[
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-c2c6-49a3-80bd-e8fdd045185c}",
+                    "commandline": "cmd.exe"
+                }
+            ],
+            "actions": [
+                { "command": { "action": "newTab", "index": 0 }, "keys": "ctrl+shift+1" }
+            ]
+        })" };
+
+        static constexpr std::wstring_view settingsJson{ LR"(
+        {
+            "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+            "profiles":[
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "commandline": "cmd.exe"
+                }
+            ],
+            "actions": [
+                { "keys": "ctrl+shift+1", "command": null }
+            ]
+        })" };
+
+        NewTerminalArgs newTerminalArgs{ 0 };
+        NewTabArgs newTabArgs{ newTerminalArgs };
+
+        {
+            Log::Comment(L"The defaults should have a keybinding for this action");
+            CascadiaSettings settings{ {}, defaults };
+            auto keyChord{ settings.ActionMap().GetKeyBindingForAction(ShortcutAction::NewTab, newTabArgs) };
+            VERIFY_IS_NOT_NULL(keyChord);
+        }
+
+        {
+            Log::Comment(L"But these settings shouldn't");
+            CascadiaSettings settings{ settingsJson, defaults };
+            auto keyChord{ settings.ActionMap().GetKeyBindingForAction(ShortcutAction::NewTab, newTabArgs) };
+            VERIFY_IS_NULL(keyChord);
+        }
+    }
 }
