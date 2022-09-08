@@ -14,14 +14,6 @@
   <Import Project="$(OpenConsoleDir)\src\common.build.pre.props" />
   <Import Project="$(SolutionDir)\src\common.nugetversions.props" />
 
-  <ItemDefinitionGroup>
-    <ClCompile>
-      <!-- For CLI11: It uses dynamic_cast to cast types around, which depends
-      on being compiled with RTTI (/GR). -->
-      <RuntimeTypeInfo>true</RuntimeTypeInfo>
-    </ClCompile>
-  </ItemDefinitionGroup>
-
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="precomp.h" />
