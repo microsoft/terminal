@@ -325,7 +325,14 @@ bool VtIo::IsUsingVt() const
 // - Refer to GH#13066 for details.
 void VtIo::CreatePseudoWindow()
 {
-    _pPtySignalInputThread->CreatePseudoWindow();
+    if (_pPtySignalInputThread)
+    {
+        _pPtySignalInputThread->CreatePseudoWindow();
+    }
+    else
+    {
+        ServiceLocator::LocatePseudoWindow();
+    }
 }
 
 void VtIo::SetWindowVisibility(bool showOrHide) noexcept
