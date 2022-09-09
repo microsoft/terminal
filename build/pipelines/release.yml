@@ -714,6 +714,7 @@ jobs:
         description: VPack for the Windows Terminal Application
         pushPkgName: WindowsTerminal.app
         owner: conhost
+        githubToken: $(GitHubTokenForVpackProvenance)
     - task: PublishPipelineArtifact@1
       displayName: 'Copy VPack Manifest to Drop'
       inputs:
