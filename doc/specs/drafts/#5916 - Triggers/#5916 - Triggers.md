@@ -30,6 +30,8 @@ TODO! Make sure all these threads are addressed:
 * [ ] [#8294]
 * [ ] [#2671]
 * [x] [#6969]
+* [ ] [#11901]
+* [ ] Probably don't do this for the alt buffer? Make it per-trigger if they work in the alt buffer?
 
 ## Solution Design
 
@@ -200,7 +202,29 @@ pt-br:"", ...}`-style map of language->string descriptions.
 
 ### Future Considerations
 
+#### Clickable sendInput
 
+There's already an existing standard for "this text is a hyperlink" - [OSC8].
+That already accepts a list of arbitrary parameters. Without even really
+_extending_ that sequence, we could accept a `input={some string of input}`
+parameter. When we see a URL that was output by a client app with that
+parameter, we could make clicking that text write that input to the terminal, as
+input, rather than using the text as a URL.
+
+We wouldn't need to worry about people sneaking tabs, enters, backspaces into
+the input via this - control characters aren't accepted as part of these params.
+We would need to figure out how `:` and `;` should be escaped. Those are
+delimiters of the sequence itself, so they would need to be escaped / translated
+somehow.
+
+We'd need to be wary of things like some of the extended unicode characters - we
+don't really want folks clicking links and having commands that do something
+like `echo foo ; rm -rf`.
+
+This seems like something that could get roped in with triggers. The [iTerm2
+docs] have a *Make Hyperlink* action, which can be used to turn regex-matched
+text into a hyperlink. We could always author our equivalent to allow for *Make
+Clickable* with a string of input instead.
 
 ## Resources
 
@@ -248,5 +272,7 @@ boundary, like a visual bell or a notification).
 [#8294]: https://github.com/microsoft/terminal/issues/8294
 [#2671]: https://github.com/microsoft/terminal/issues/2671
 [#6969]: https://github.com/microsoft/terminal/issues/6969
+[#11901]: https://github.com/microsoft/terminal/issues/11901
 
+[OSC8]: https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda
 [iTerm2 docs]: https://iterm2.com/documentation-one-page.html#documentation-triggers.html
