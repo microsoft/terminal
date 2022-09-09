@@ -1075,8 +1075,8 @@
     <comment>A description for what the "bell style" setting does. Presented near "Profile_BellStyle".{Locked="BEL"}</comment>
   </data>
   <data name="Profile_UseAtlasEngine.Header" xml:space="preserve">
-    <value>Enable experimental text rendering engine</value>
-    <comment>An option to enable an experimental text rendering engine</comment>
+    <value>Use the new text renderer ("AtlasEngine")</value>
+    <comment>{Locked="AtlasEngine"}</comment>
   </data>
   <data name="Profile_VtPassthrough.Header" xml:space="preserve">
     <value>Enable experimental virtual terminal passthrough</value>
