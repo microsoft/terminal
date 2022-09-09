@@ -140,20 +140,17 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // See https://en.wikipedia.org/wiki/Alpha_compositing#Description
         constexpr color layer_over(const color& destination) const
         {
-            const auto sourceAlpha = a / 255.0f;
-            const auto destinationAlpha = destination.a / 255.0f;
-            const auto aInverse = 1.0f - sourceAlpha;
-
-            const auto resultA = sourceAlpha + destination.a * aInverse;
-            const auto resultR = (r * sourceAlpha + destination.r * destinationAlpha * aInverse) / resultA;
-            const auto resultG = (g * sourceAlpha + destination.g * destinationAlpha * aInverse) / resultA;
-            const auto resultB = (b * sourceAlpha + destination.b * destinationAlpha * aInverse) / resultA;
+            const auto aInverse = (255 - a) / 255.0f;
+            const auto resultA = a + destination.a * aInverse;
+            const auto resultR = (r * a + destination.r * destination.a * aInverse) / resultA;
+            const auto resultG = (g * a + destination.g * destination.a * aInverse) / resultA;
+            const auto resultB = (b * a + destination.b * destination.a * aInverse) / resultA;
 
             return {
-                static_cast<uint8_t>(255.0f * (resultR + 0.5f)),
-                static_cast<uint8_t>(255.0f * (resultG + 0.5f)),
-                static_cast<uint8_t>(255.0f * (resultB + 0.5f)),
-                static_cast<uint8_t>(255.0f * (resultA + 0.5f)),
+                static_cast<uint8_t>(resultR + 0.5f),
+                static_cast<uint8_t>(resultG + 0.5f),
+                static_cast<uint8_t>(resultB + 0.5f),
+                static_cast<uint8_t>(resultA + 0.5f),
             };
         }
 
