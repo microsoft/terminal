@@ -70,7 +70,7 @@ namespace winrt::TerminalApp::implementation
                     TraceLoggingDescription("Event emitted when the Command Palette is opened"),
                     TraceLoggingWideString(L"Action", "Mode", "which mode the palette was opened in"),
                     TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                    TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
             }
             else
             {
@@ -711,7 +711,7 @@ namespace winrt::TerminalApp::implementation
                         TraceLoggingUInt32(searchTextLength, "SearchTextLength", "Number of characters in the search string"),
                         TraceLoggingUInt32(nestedCommandDepth, "NestedCommandDepth", "the depth in the tree of commands for the dispatched action"),
                         TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                        TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+                        TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
                 }
             }
         }
@@ -779,7 +779,7 @@ namespace winrt::TerminalApp::implementation
                 "CommandPaletteDispatchedCommandline",
                 TraceLoggingDescription("Event emitted when the user runs a commandline in the Command Palette"),
                 TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
             if (const auto commandLinePaletteItem{ filteredCommand.value().Item().try_as<winrt::TerminalApp::CommandLinePaletteItem>() })
             {
@@ -817,7 +817,7 @@ namespace winrt::TerminalApp::implementation
             "CommandPaletteDismissed",
             TraceLoggingDescription("Event emitted when the user dismisses the Command Palette without selecting an action"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
     // Method Description:

@@ -1253,7 +1253,6 @@ bool IslandWindow::RegisterHotKey(const int index, const winrt::Microsoft::Termi
     // TODO GH#8888: We should display a warning of some kind if this fails.
     // This can fail if something else already bound this hotkey.
     const auto result = ::RegisterHotKey(_window.get(), index, hotkeyFlags, vkey);
-    LOG_IF_WIN32_BOOL_FALSE(result);
 
     TraceLoggingWrite(g_hWindowsTerminalProvider,
                       "RegisterHotKey",
