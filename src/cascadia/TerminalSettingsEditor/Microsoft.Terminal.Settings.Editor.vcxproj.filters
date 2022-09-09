@@ -25,14 +25,13 @@
     <Midl Include="GlobalAppearanceViewModel.idl" />
     <Midl Include="LaunchViewModel.idl" />
     <Midl Include="EnumEntry.idl" />
-    <Midl Include="Converters.idl">
-      <Filter>Converters</Filter>
-    </Midl>
     <Midl Include="SettingContainer.idl" />
+    <Midl Include="Converters.idl" />
+    <Midl Include="Profiles.idl" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
     <None Include="$(ProjectName).def" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="CommonResources.xaml" />
