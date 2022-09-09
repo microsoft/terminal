@@ -828,6 +828,7 @@ namespace Microsoft::Console::Render
             u32 cursorColor = INVALID_COLOR;
             u16 cursorType = gsl::narrow_cast<u16>(CursorType::Legacy);
             u8 heightPercentage = 20;
+            u8 _padding = 0;
 
             ATLAS_POD_OPS(CachedCursorOptions)
         };
