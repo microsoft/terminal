@@ -2343,8 +2343,8 @@ CATCH_RETURN();
 // Return Value:
 // - S_OK if successful. S_FALSE if already set. E_FAIL if there was an error.
 [[nodiscard]] HRESULT DxEngine::PrepareLineTransform(const LineRendition lineRendition,
-                                                     const size_t targetRow,
-                                                     const size_t viewportLeft) noexcept
+                                                     const til::CoordType targetRow,
+                                                     const til::CoordType viewportLeft) noexcept
 {
     auto lineTransform = D2D1::Matrix3x2F{ 0, 0, 0, 0, 0, 0 };
     const auto fontSize = _fontRenderData->GlyphCell();
