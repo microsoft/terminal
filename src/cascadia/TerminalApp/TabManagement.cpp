@@ -12,7 +12,6 @@
 #include "TerminalPage.h"
 #include "Utils.h"
 #include "../../types/inc/utils.hpp"
-#include "../../inc/til/string.h"
 
 #include <LibraryResources.h>
 
@@ -379,7 +378,6 @@ namespace winrt::TerminalApp::implementation
                     // because they don't work elevated (shocker) So just use the
                     // shell32 file picker manually.
                     std::wstring filename{ tab.Title() };
-                    filename = til::clean_filename(filename);
                     path = co_await SaveFilePicker(*_hostingHwnd, [filename = std::move(filename)](auto&& dialog) {
                         THROW_IF_FAILED(dialog->SetClientGuid(clientGuidExportFile));
                         try
