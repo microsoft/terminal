@@ -35,9 +35,6 @@
     <ClInclude Include="RemainingProfilesEntry.h">
       <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="ProfilesSourceEntry.h">
-      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
-    </ClInclude>
     <ClInclude Include="ProfileCollectionEntry.h">
       <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClInclude>
@@ -197,9 +194,6 @@
       <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="RemainingProfilesEntry.cpp">
-      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="ProfilesSourceEntry.cpp">
       <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="VsDevCmdGenerator.cpp" />

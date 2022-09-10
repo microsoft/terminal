@@ -963,7 +963,6 @@ namespace winrt::TerminalApp::implementation
             // separately. This collection is stored as a map <int, Profile>, so the correct
             // profile index is already known.
             case NewTabMenuEntryType::RemainingProfiles:
-            case NewTabMenuEntryType::Source:
             {
                 const auto remainingProfilesEntry = entry.as<ProfileCollectionEntry>();
                 if (remainingProfilesEntry.Profiles() == nullptr)

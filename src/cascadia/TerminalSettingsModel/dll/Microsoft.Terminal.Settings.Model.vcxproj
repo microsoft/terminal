@@ -50,9 +50,6 @@
     <ClInclude Include="../RemainingProfilesEntry.h">
       <DependentUpon>../NewTabMenuEntry.h</DependentUpon>
     </ClInclude>
-    <ClInclude Include="../ProfilesSourceEntry.h">
-      <DependentUpon>../NewTabMenuEntry.h</DependentUpon>
-    </ClInclude>
     <ClInclude Include="../ProfileCollectionEntry.h">
       <DependentUpon>../NewTabMenuEntry.h</DependentUpon>
     </ClInclude>

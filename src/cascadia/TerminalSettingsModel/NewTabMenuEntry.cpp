@@ -6,7 +6,6 @@
 #include "FolderEntry.h"
 #include "ProfileEntry.h"
 #include "RemainingProfilesEntry.h"
-#include "ProfilesSourceEntry.h"
 
 #include "NewTabMenuEntry.g.cpp"
 
@@ -23,8 +22,7 @@ static const std::unordered_map<NewTabMenuEntryType, MenuEntryParser> typeDeseri
     { NewTabMenuEntryType::Separator, SeparatorEntry::FromJson },
     { NewTabMenuEntryType::Folder, FolderEntry::FromJson },
     { NewTabMenuEntryType::Profile, ProfileEntry::FromJson },
-    { NewTabMenuEntryType::RemainingProfiles, RemainingProfilesEntry::FromJson },
-    { NewTabMenuEntryType::Source, ProfilesSourceEntry::FromJson }
+    { NewTabMenuEntryType::RemainingProfiles, RemainingProfilesEntry::FromJson }
 };
 
 NewTabMenuEntry::NewTabMenuEntry(const NewTabMenuEntryType type) noexcept :
