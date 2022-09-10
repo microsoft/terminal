@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #include "pch.h"
 #include "RemainingProfilesEntry.h"
 #include "NewTabMenuEntry.h"
@@ -15,8 +18,7 @@ RemainingProfilesEntry::RemainingProfilesEntry() noexcept :
 
 Json::Value RemainingProfilesEntry::ToJson() const
 {
-    auto json = NewTabMenuEntry::ToJson();
-    return json;
+    return NewTabMenuEntry::ToJson();
 }
 
 winrt::com_ptr<NewTabMenuEntry> RemainingProfilesEntry::FromJson(const Json::Value&)

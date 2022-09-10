@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #include "pch.h"
 #include "NewTabMenuEntry.h"
 #include "JsonUtils.h"
@@ -44,7 +47,7 @@ Json::Value NewTabMenuEntry::ToJson() const
 // Deserialize the JSON object based on the given type. We use the map from above for that.
 winrt::com_ptr<NewTabMenuEntry> NewTabMenuEntry::FromJson(const Json::Value& json)
 {
-    auto type = JsonUtils::GetValueForKey<NewTabMenuEntryType>(json, TypeKey);
+    const auto type = JsonUtils::GetValueForKey<NewTabMenuEntryType>(json, TypeKey);
 
     const auto deserializer = typeDeserializerMap.find(type);
     if (deserializer == typeDeserializerMap.end() || !deserializer->second)

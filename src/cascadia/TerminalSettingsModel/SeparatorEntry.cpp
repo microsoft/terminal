@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #include "pch.h"
 #include "SeparatorEntry.h"
 #include "JsonUtils.h"
@@ -14,8 +17,7 @@ SeparatorEntry::SeparatorEntry() noexcept :
 
 Json::Value SeparatorEntry::ToJson() const
 {
-    auto json = NewTabMenuEntry::ToJson();
-    return json;
+    return NewTabMenuEntry::ToJson();
 }
 
 winrt::com_ptr<NewTabMenuEntry> SeparatorEntry::FromJson(const Json::Value&)
