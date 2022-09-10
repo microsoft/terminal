@@ -15,11 +15,6 @@ SeparatorEntry::SeparatorEntry() noexcept :
 {
 }
 
-Json::Value SeparatorEntry::ToJson() const
-{
-    return NewTabMenuEntry::ToJson();
-}
-
 winrt::com_ptr<NewTabMenuEntry> SeparatorEntry::FromJson(const Json::Value&)
 {
     return winrt::make_self<SeparatorEntry>();

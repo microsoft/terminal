@@ -16,11 +16,6 @@ RemainingProfilesEntry::RemainingProfilesEntry() noexcept :
 {
 }
 
-Json::Value RemainingProfilesEntry::ToJson() const
-{
-    return NewTabMenuEntry::ToJson();
-}
-
 winrt::com_ptr<NewTabMenuEntry> RemainingProfilesEntry::FromJson(const Json::Value&)
 {
     return winrt::make_self<RemainingProfilesEntry>();
