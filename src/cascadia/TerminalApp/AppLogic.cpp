@@ -10,7 +10,7 @@
 
 #include <LibraryResources.h>
 #include <WtExeUtils.h>
-#include <wil/token_helpers.h >
+#include <wil/token_helpers.h>
 
 #include "../../types/inc/utils.hpp"
 
@@ -298,6 +298,37 @@ namespace winrt::TerminalApp::implementation
             {
                 _root->SetFullscreen(true);
             }
+
+            // Both LoadSettings and ReloadSettings are supposed to call this function,
+            // but LoadSettings skips it, so that the UI starts up faster.
+            // Now that the UI is present we can do them with a less significant UX impact.
+            _ProcessLazySettingsChanges();
+
+            FILETIME creationTime, exitTime, kernelTime, userTime, now;
+            if (GetThreadTimes(GetCurrentThread(), &creationTime, &exitTime, &kernelTime, &userTime))
+            {
+                static constexpr auto asInteger = [](const FILETIME& f) {
+                    ULARGE_INTEGER i;
+                    i.LowPart = f.dwLowDateTime;
+                    i.HighPart = f.dwHighDateTime;
+                    return i.QuadPart;
+                };
+                static constexpr auto asSeconds = [](uint64_t v) {
+                    return v * 1e-7f;
+                };
+
+                GetSystemTimeAsFileTime(&now);
+
+                const auto latency = asSeconds(asInteger(now) - asInteger(creationTime));
+
+                TraceLoggingWrite(
+                    g_hTerminalAppProvider,
+                    "AppInitialized",
+                    TraceLoggingDescription("Event emitted once the app is initialized"),
+                    TraceLoggingFloat32(latency, "latency"),
+                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+            }
         });
         _root->Create();
 
@@ -314,7 +345,7 @@ namespace winrt::TerminalApp::implementation
             TraceLoggingDescription("Event emitted when the application is started"),
             TraceLoggingBool(_settings.GlobalSettings().ShowTabsInTitlebar(), "TabsInTitlebar"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
     void AppLogic::Quit()
@@ -507,25 +538,7 @@ namespace winrt::TerminalApp::implementation
             if (keyboardServiceIsDisabled)
             {
                 _root->ShowKeyboardServiceWarning();
-
-                TraceLoggingWrite(
-                    g_hTerminalAppProvider,
-                    "KeyboardServiceWasDisabled",
-                    TraceLoggingDescription("Event emitted when the keyboard service is disabled, and we warned them about it"),
-                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                    TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
             }
-        }
-        else
-        {
-            // For when the warning was disabled in the settings
-
-            TraceLoggingWrite(
-                g_hTerminalAppProvider,
-                "KeyboardServiceWarningWasDisabledBySetting",
-                TraceLoggingDescription("Event emitted when the user has disabled the KB service warning"),
-                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
         }
 
         if (FAILED(_settingsLoadedResult))
@@ -560,7 +573,7 @@ namespace winrt::TerminalApp::implementation
         // not be noisy with this dialog if we failed for some reason.
 
         // Open the service manager. This will return 0 if it failed.
-        wil::unique_schandle hManager{ OpenSCManager(nullptr, nullptr, 0) };
+        wil::unique_schandle hManager{ OpenSCManagerW(nullptr, nullptr, 0) };
 
         if (LOG_LAST_ERROR_IF(!hManager.is_valid()))
         {
@@ -568,8 +581,12 @@ namespace winrt::TerminalApp::implementation
         }
 
         // Get a handle to the keyboard service
-        wil::unique_schandle hService{ OpenService(hManager.get(), TabletInputServiceKey.data(), SERVICE_QUERY_STATUS) };
-        if (LOG_LAST_ERROR_IF(!hService.is_valid()))
+        wil::unique_schandle hService{ OpenServiceW(hManager.get(), TabletInputServiceKey.data(), SERVICE_QUERY_STATUS) };
+
+        // Windows 11 doesn't have a TabletInputService.
+        // (It was renamed to TextInputManagementService, because people kept thinking that a
+        // service called "tablet-something" is system-irrelevant on PCs and can be disabled.)
+        if (!hService.is_valid())
         {
             return true;
         }
@@ -848,15 +865,6 @@ namespace winrt::TerminalApp::implementation
     //      happening during startup, it'll need to happen on a background thread.
     void AppLogic::LoadSettings()
     {
-        auto start = std::chrono::high_resolution_clock::now();
-
-        TraceLoggingWrite(
-            g_hTerminalAppProvider,
-            "SettingsLoadStarted",
-            TraceLoggingDescription("Event emitted before loading the settings"),
-            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
-
         // Attempt to load the settings.
         // If it fails,
         //  - use Default settings,
@@ -872,23 +880,31 @@ namespace winrt::TerminalApp::implementation
             _settings = CascadiaSettings::LoadDefaults();
         }
 
-        auto end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> delta = end - start;
-
-        TraceLoggingWrite(
-            g_hTerminalAppProvider,
-            "SettingsLoadComplete",
-            TraceLoggingDescription("Event emitted when loading the settings is finished"),
-            TraceLoggingFloat64(delta.count(), "Duration"),
-            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
-
         _loadedInitialSettings = true;
 
         // Register for directory change notification.
         _RegisterSettingsChange();
+    }
+
+    // Call this function after loading your _settings.
+    // It handles any CPU intensive settings updates (like updating the Jumplist)
+    // which should thus only occur if the settings file actually changed.
+    void AppLogic::_ProcessLazySettingsChanges()
+    {
+        const auto hash = _settings.Hash();
+        const auto applicationState = ApplicationState::SharedInstance();
+        const auto cachedHash = applicationState.SettingsHash();
+
+        // The hash might be empty if LoadAll() failed and we're dealing with the defaults settings object.
+        // In that case we can just wait until the user fixed their settings or CascadiaSettings fixed
+        // itself and either will soon trigger a settings reload.
+        if (hash.empty() || hash == cachedHash)
+        {
+            return;
+        }
 
         Jumplist::UpdateJumplist(_settings);
+        applicationState.SettingsHash(hash);
     }
 
     // Method Description:
@@ -1059,8 +1075,7 @@ namespace winrt::TerminalApp::implementation
         _ApplyLanguageSettingChange();
         _RefreshThemeRoutine();
         _ApplyStartupTaskStateChange();
-
-        Jumplist::UpdateJumplist(_settings);
+        _ProcessLazySettingsChanges();
 
         _SettingsChangedHandlers(*this, nullptr);
     }

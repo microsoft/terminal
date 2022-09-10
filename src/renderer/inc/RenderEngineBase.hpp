@@ -38,8 +38,8 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT ResetLineTransform() noexcept override;
         [[nodiscard]] HRESULT PrepareLineTransform(const LineRendition lineRendition,
-                                                   const size_t targetRow,
-                                                   const size_t viewportLeft) noexcept override;
+                                                   const til::CoordType targetRow,
+                                                   const til::CoordType viewportLeft) noexcept override;
 
         [[nodiscard]] virtual bool RequiresContinuousRedraw() noexcept override;
 

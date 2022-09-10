@@ -41,12 +41,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool ToggleBlockSelection();
         void ToggleMarkMode();
         bool SwitchSelectionEndpoint();
+        bool ExpandSelectionToWord();
         void Close();
         Windows::Foundation::Size CharacterDimensions() const;
         Windows::Foundation::Size MinimumSize();
         float SnapDimensionToGrid(const bool widthOrHeight, const float dimension);
 
         void WindowVisibilityChanged(const bool showOrHide);
+
+        void ColorSelection(Control::SelectionColor fg, Control::SelectionColor bg, Core::MatchMode matchMode);
 
 #pragma region ICoreState
         const uint64_t TaskbarState() const noexcept;

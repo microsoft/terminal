@@ -19,6 +19,7 @@
 #include "DebugTapConnection.h"
 #include "SettingsTab.h"
 #include "TabRowControl.h"
+#include "Utils.h"
 
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal::Control;
@@ -495,7 +496,7 @@ namespace winrt::TerminalApp::implementation
                 "NewTabByDragDrop",
                 TraceLoggingDescription("Event emitted when the user drag&drops onto the new tab button"),
                 TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
         }
     }
 
@@ -732,7 +733,11 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::_SendFeedbackOnClick(const IInspectable& /*sender*/, const Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs& /*eventArgs*/)
     {
-        ShellExecute(nullptr, nullptr, L"https://github.com/microsoft/terminal/issues", nullptr, nullptr, SW_SHOW);
+#if defined(WT_BRANDING_RELEASE)
+        ShellExecute(nullptr, nullptr, L"https://go.microsoft.com/fwlink/?linkid=2125419", nullptr, nullptr, SW_SHOW);
+#else
+        ShellExecute(nullptr, nullptr, L"https://go.microsoft.com/fwlink/?linkid=2204904", nullptr, nullptr, SW_SHOW);
+#endif
     }
 
     void TerminalPage::_ThirdPartyNoticesOnClick(const IInspectable& /*sender*/, const Windows::UI::Xaml::RoutedEventArgs& /*eventArgs*/)
@@ -1276,7 +1281,7 @@ namespace winrt::TerminalApp::implementation
             TraceLoggingGuid(profile.Guid(), "ProfileGuid", "The profile's GUID"),
             TraceLoggingGuid(sessionGuid, "SessionGuid", "The WT_SESSION's GUID"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
         return connection;
     }
@@ -2272,17 +2277,11 @@ namespace winrt::TerminalApp::implementation
 
             if (_settings.GlobalSettings().TrimPaste())
             {
-                std::wstring_view textView{ text };
-                const auto pos = textView.find_last_not_of(L"\t\n\v\f\r ");
-                if (pos == textView.npos)
+                text = { Utils::TrimPaste(text) };
+                if (text.empty())
                 {
                     // Text is all white space, nothing to paste
                     co_return;
-                }
-                else if (const auto toRemove = textView.size() - 1 - pos; toRemove > 0)
-                {
-                    textView.remove_suffix(toRemove);
-                    text = { textView };
                 }
             }
 
@@ -3202,12 +3201,24 @@ namespace winrt::TerminalApp::implementation
         _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonBackgroundPointerOver"), backgroundHoverBrush);
         _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonBackgroundPressed"), backgroundPressedBrush);
 
+        // Load bearing: The SplitButton uses SplitButtonForegroundSecondary for
+        // the secondary button, but {TemplateBinding Foreground} for the
+        // primary button.
         _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonForeground"), foregroundBrush);
         _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonForegroundPointerOver"), foregroundBrush);
         _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonForegroundPressed"), foregroundBrush);
+        _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonForegroundSecondary"), foregroundBrush);
+        _newTabButton.Resources().Insert(winrt::box_value(L"SplitButtonForegroundSecondaryPressed"), foregroundBrush);
 
         _newTabButton.Background(backgroundBrush);
         _newTabButton.Foreground(foregroundBrush);
+
+        // This is just like what we do in TabBase::_RefreshVisualState. We need
+        // to manually toggle the visual state, so the setters in the visual
+        // state group will re-apply, and set our currently selected colors in
+        // the resources.
+        VisualStateManager::GoToState(_newTabButton, L"FlyoutOpen", true);
+        VisualStateManager::GoToState(_newTabButton, L"Normal", true);
     }
 
     // Method Description:
@@ -3227,8 +3238,10 @@ namespace winrt::TerminalApp::implementation
             L"SplitButtonBackgroundPointerOver",
             L"SplitButtonBackgroundPressed",
             L"SplitButtonForeground",
+            L"SplitButtonForegroundSecondary",
             L"SplitButtonForegroundPointerOver",
-            L"SplitButtonForegroundPressed"
+            L"SplitButtonForegroundPressed",
+            L"SplitButtonForegroundSecondaryPressed"
         };
 
         // simply clear any of the colors in the split button's dict
@@ -3381,6 +3394,7 @@ namespace winrt::TerminalApp::implementation
         {
             NewTerminalArgs newTerminalArgs;
             newTerminalArgs.Commandline(connection.Commandline());
+            newTerminalArgs.TabTitle(connection.StartingTitle());
             // GH #12370: We absolutely cannot allow a defterm connection to
             // auto-elevate. Defterm doesn't work for elevated scenarios in the
             // first place. If we try accepting the connection, the spawning an
@@ -3431,7 +3445,7 @@ namespace winrt::TerminalApp::implementation
                 }
             });
 
-            auto newTabImpl = winrt::make_self<SettingsTab>(sui);
+            auto newTabImpl = winrt::make_self<SettingsTab>(sui, _settings.GlobalSettings().CurrentTheme().RequestedTheme());
 
             // Add the new tab to the list of our tabs.
             _tabs.Append(*newTabImpl);
@@ -3581,7 +3595,6 @@ namespace winrt::TerminalApp::implementation
 
         if (const auto infoBar = FindName(L"SetAsDefaultInfoBar").try_as<MUX::Controls::InfoBar>())
         {
-            TraceLoggingWrite(g_hTerminalAppProvider, "SetAsDefaultTipPresented", TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES), TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
             infoBar.IsOpen(true);
         }
     }
@@ -3606,7 +3619,7 @@ namespace winrt::TerminalApp::implementation
             return winrt::hstring{ TabletInputServiceKey };
         }
 
-        wil::unique_schandle hManager{ OpenSCManager(nullptr, nullptr, 0) };
+        wil::unique_schandle hManager{ OpenSCManagerW(nullptr, nullptr, 0) };
 
         if (LOG_LAST_ERROR_IF(!hManager.is_valid()))
         {
@@ -3614,15 +3627,24 @@ namespace winrt::TerminalApp::implementation
         }
 
         DWORD cchBuffer = 0;
-        GetServiceDisplayName(hManager.get(), TabletInputServiceKey.data(), nullptr, &cchBuffer);
+        const auto ok = GetServiceDisplayNameW(hManager.get(), TabletInputServiceKey.data(), nullptr, &cchBuffer);
+
+        // Windows 11 doesn't have a TabletInputService.
+        // (It was renamed to TextInputManagementService, because people kept thinking that a
+        // service called "tablet-something" is system-irrelevant on PCs and can be disabled.)
+        if (ok || GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+        {
+            return winrt::hstring{ TabletInputServiceKey };
+        }
+
         std::wstring buffer;
         cchBuffer += 1; // Add space for a null
         buffer.resize(cchBuffer);
 
-        if (LOG_LAST_ERROR_IF(!GetServiceDisplayName(hManager.get(),
-                                                     TabletInputServiceKey.data(),
-                                                     buffer.data(),
-                                                     &cchBuffer)))
+        if (LOG_LAST_ERROR_IF(!GetServiceDisplayNameW(hManager.get(),
+                                                      TabletInputServiceKey.data(),
+                                                      buffer.data(),
+                                                      &cchBuffer)))
         {
             return winrt::hstring{ TabletInputServiceKey };
         }
@@ -4211,79 +4233,11 @@ namespace winrt::TerminalApp::implementation
         const auto theme = _settings.GlobalSettings().CurrentTheme();
         auto requestedTheme{ theme.RequestedTheme() };
 
-        // First: Update the colors of our individual TabViewItems. This applies tab.background to the tabs via TerminalTab::ThemeColor
-        {
-            auto tabBackground = theme.Tab() ? theme.Tab().Background() : nullptr;
-            for (const auto& tab : _tabs)
-            {
-                if (const auto& terminalTabImpl{ _GetTerminalTabImpl(tab) })
-                {
-                    terminalTabImpl->ThemeColor(tabBackground);
-                }
-            }
-        }
-
         const auto res = Application::Current().Resources();
-
-        // XAML Hacks:
-        //
-        // the App is always in the OS theme, so the
-        // App::Current().Resources() lookup will always get the value for the
-        // OS theme, not the requested theme.
-        //
-        // This helper allows us to instead lookup the value of a resource
-        // specified by `key` for the given `requestedTheme`, from the
-        // dictionaries in App.xaml. Make sure the value is actually there!
-        // Otherwise this'll throw like any other Lookup for a resource that
-        // isn't there.
-        static const auto lookup = [](auto& res, auto& requestedTheme, auto& key) {
-            // You want the Default version of the resource? Great, the App is
-            // always in the OS theme. Just look it up and be done.
-            if (requestedTheme == ElementTheme::Default)
-            {
-                return res.Lookup(key);
-            }
-            static const auto lightKey = winrt::box_value(L"Light");
-            static const auto darkKey = winrt::box_value(L"Dark");
-            // There isn't an ElementTheme::HighContrast.
-
-            auto requestedThemeKey = requestedTheme == ElementTheme::Dark ? darkKey : lightKey;
-            for (const auto& dictionary : res.MergedDictionaries())
-            {
-                // Don't look in the MUX resources. They come first. A person
-                // with more patience than me may find a way to look through our
-                // dictionaries first, then the MUX ones, but that's not needed
-                // currently
-                if (dictionary.Source())
-                {
-                    continue;
-                }
-                // Look through the theme dictionaries we defined:
-                for (const auto& [dictionaryKey, dict] : dictionary.ThemeDictionaries())
-                {
-                    // Does the key for this dict match the theme we're looking for?
-                    if (winrt::unbox_value<winrt::hstring>(dictionaryKey) !=
-                        winrt::unbox_value<winrt::hstring>(requestedThemeKey))
-                    {
-                        // No? skip it.
-                        continue;
-                    }
-                    // Look for the requested resource in this dict.
-                    const auto themeDictionary = dict.as<winrt::Windows::UI::Xaml::ResourceDictionary>();
-                    if (themeDictionary.HasKey(key))
-                    {
-                        return themeDictionary.Lookup(key);
-                    }
-                }
-            }
-
-            // We didn't find it in the requested dict, fall back to the default dictionary.
-            return res.Lookup(key);
-        };
 
         // Use our helper to lookup the theme-aware version of the resource.
         const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
-        const auto backgroundSolidBrush = lookup(res, requestedTheme, tabViewBackgroundKey).as<Media::SolidColorBrush>();
+        const auto backgroundSolidBrush = ThemeLookup(res, requestedTheme, tabViewBackgroundKey).as<Media::SolidColorBrush>();
 
         til::color bgColor = backgroundSolidBrush.Color();
 
@@ -4326,6 +4280,21 @@ namespace winrt::TerminalApp::implementation
         if (!_settings.GlobalSettings().ShowTabsInTitlebar())
         {
             _tabRow.Background(TitlebarBrush());
+        }
+
+        // Second: Update the colors of our individual TabViewItems. This
+        // applies tab.background to the tabs via TerminalTab::ThemeColor.
+        //
+        // Do this second, so that we already know the bgColor of the titlebar.
+        {
+            const auto tabBackground = theme.Tab() ? theme.Tab().Background() : nullptr;
+            const auto tabUnfocusedBackground = theme.Tab() ? theme.Tab().UnfocusedBackground() : nullptr;
+            for (const auto& tab : _tabs)
+            {
+                winrt::com_ptr<TabBase> tabImpl;
+                tabImpl.copy_from(winrt::get_self<TabBase>(tab));
+                tabImpl->ThemeColor(tabBackground, tabUnfocusedBackground, bgColor);
+            }
         }
 
         // Update the new tab button to have better contrast with the new color.
