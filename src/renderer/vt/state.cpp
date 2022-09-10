@@ -31,6 +31,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _hFile(std::move(pipe)),
     _usingLineRenditions(false),
     _stopUsingLineRenditions(false),
+    _usingSoftFont(false),
     _lastTextAttributes(INVALID_COLOR, INVALID_COLOR),
     _lastViewport(initialViewport),
     _pool(til::pmr::get_default_resource()),
@@ -204,6 +205,30 @@ CATCH_RETURN();
         // We're explicitly replacing characters outside ASCII with a ? because
         //      that's what telnet wants.
         needed.push_back((wch > L'\x7f') ? '?' : static_cast<char>(wch));
+    }
+
+    return _Write(needed);
+}
+
+// Method Description:
+// - Writes a wstring to the tty when the characters are from the DRCS soft font.
+//       It is assumed that the character set has already been designated in the
+//       client terminal, so we just need to re-map our internal representation
+//       of the characters into ASCII.
+// Arguments:
+// - wstr - wstring of text to be written
+// Return Value:
+// - S_OK or suitable HRESULT error from writing pipe.
+[[nodiscard]] HRESULT VtEngine::_WriteTerminalDrcs(const std::wstring_view wstr) noexcept
+{
+    std::string needed;
+    needed.reserve(wstr.size());
+
+    for (const auto& wch : wstr)
+    {
+        // Our DRCS characters use the range U+EF20 to U+EF7F from the Unicode
+        // Private Use Area. To map them back to ASCII we just mask with 7F.
+        needed.push_back(wch & 0x7F);
     }
 
     return _Write(needed);
