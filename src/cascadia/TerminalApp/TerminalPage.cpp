@@ -1080,7 +1080,9 @@ namespace winrt::TerminalApp::implementation
     IconElement TerminalPage::_CreateNewTabFlyoutIcon(const winrt::hstring& icon)
     {
         if (icon.empty())
+        {
             return nullptr;
+        }
 
         const auto iconSource{ IconPathConverter().IconSourceWUX(icon) };
 
