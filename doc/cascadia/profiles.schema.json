@@ -614,7 +614,7 @@
             "profile": {
               "type": "string",
               "default": "",
-              "description": "The name of GUID of the profile to show in this entry"
+              "description": "The name or GUID of the profile to show in this entry"
             }
           }
         }

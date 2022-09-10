@@ -17,7 +17,7 @@ using NewTabMenuEntryType = winrt::Microsoft::Terminal::Settings::Model::NewTabM
 static constexpr std::string_view TypeKey{ "type" };
 
 // This is a map of NewTabMenuEntryType->function<NewTabMenuEntry(Json::Value)>,
-// it allows us to choose the correct deserialisation function for a given entry type
+// it allows us to choose the correct deserialization function for a given entry type
 using MenuEntryParser = std::function<winrt::com_ptr<NewTabMenuEntry>(const Json::Value&)>;
 static const std::unordered_map<NewTabMenuEntryType, MenuEntryParser> typeDeserializerMap{
     { NewTabMenuEntryType::Separator, SeparatorEntry::FromJson },
@@ -32,7 +32,7 @@ NewTabMenuEntry::NewTabMenuEntry(const NewTabMenuEntryType type) noexcept :
 {
 }
 
-// This method will be overriden by the subclasses, which will then call this
+// This method will be overridden by the subclasses, which will then call this
 // parent implementation for a "base" json object.
 Json::Value NewTabMenuEntry::ToJson() const
 {
@@ -43,7 +43,7 @@ Json::Value NewTabMenuEntry::ToJson() const
     return json;
 }
 
-// Deserialise the JSON object based on the given type. We use the map from above for that.
+// Deserialize the JSON object based on the given type. We use the map from above for that.
 winrt::com_ptr<NewTabMenuEntry> NewTabMenuEntry::FromJson(const Json::Value& json)
 {
     auto type = JsonUtils::GetValueForKey<NewTabMenuEntryType>(json, TypeKey);

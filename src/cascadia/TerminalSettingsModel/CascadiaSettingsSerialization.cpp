@@ -1205,7 +1205,7 @@ void CascadiaSettings::_resolveNewTabMenuProfiles() const
 }
 
 // Method Description:
-// - Helper function that processes a set of tabmenu entries and resolves any profile names
+// - Helper function that processes a set of tab menu entries and resolves any profile names
 //   or source fields as necessary - see function above for a more detailed explanation.
 void CascadiaSettings::_resolveNewTabMenuProfilesSet(const IVector<Model::NewTabMenuEntry> entries, IMap<int, Model::Profile>& remainingProfiles, Model::RemainingProfilesEntry& remainingProfilesEntry) const
 {

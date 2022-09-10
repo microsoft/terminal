@@ -7,7 +7,7 @@ Module Name:
 
 Abstract:
 - An entry in the "new tab" dropdown menu that represents some collection
-    of profiles. This is an abstract class that has concretisations like
+    of profiles. This is an abstract class that has concretizations like
     "all profiles from a source" or "all remaining profiles"
 
 Author(s):

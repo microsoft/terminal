@@ -25,7 +25,7 @@ Json::Value ProfileEntry::ToJson() const
     auto json = NewTabMenuEntry::ToJson();
 
     // We always store the GUID of the profile since that is less
-    // errorprone in the long term.
+    // error prone in the long term.
     JsonUtils::SetValueForKey(json, ProfileKey, _Profile.Guid());
 
     return json;
