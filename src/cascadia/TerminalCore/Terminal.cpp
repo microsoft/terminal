@@ -91,7 +91,7 @@ void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Re
     // But if they are being accepted by conhost, there's a chance they may get
     // passed through in some situations, so it's important that our state
     // machine is always prepared to accept them.
-    _stateMachine->SetParserMode(StateMachine::Mode::AcceptC1, true);
+    _stateMachine->SetParserMode(StateMachine::Mode::AlwaysAcceptC1, true);
 }
 
 // Method Description:
