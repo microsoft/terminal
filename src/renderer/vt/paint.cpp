@@ -25,6 +25,10 @@ using namespace Microsoft::Console::Types;
         return S_FALSE;
     }
 
+    // If we're using line renditions, and this is a full screen paint, we can
+    // potentially stop using them at the end of this frame.
+    _stopUsingLineRenditions = _usingLineRenditions && _AllIsInvalid();
+
     // If there's nothing to do, quick return
     auto somethingToDo = _invalidMap.any() ||
                          _scrollDelta != til::point{ 0, 0 } ||
@@ -75,6 +79,14 @@ using namespace Microsoft::Console::Types;
     }
     _circled = false;
 
+    // If _stopUsingLineRenditions is still true at the end of the frame, that
+    // means we've refreshed the entire viewport with every line being single
+    // width, so we can safely stop using them from now on.
+    if (_stopUsingLineRenditions)
+    {
+        _usingLineRenditions = false;
+    }
+
     // If we deferred a cursor movement during the frame, make sure we put the
     //      cursor in the right place before we end the frame.
     if (_deferredCursorPos != INVALID_COORDS)
@@ -98,6 +110,45 @@ using namespace Microsoft::Console::Types;
 [[nodiscard]] HRESULT VtEngine::Present() noexcept
 {
     return S_FALSE;
+}
+
+[[nodiscard]] HRESULT VtEngine::ResetLineTransform() noexcept
+{
+    return S_FALSE;
+}
+
+[[nodiscard]] HRESULT VtEngine::PrepareLineTransform(const LineRendition lineRendition,
+                                                     const til::CoordType targetRow,
+                                                     const til::CoordType /*viewportLeft*/) noexcept
+{
+    // We don't want to waste bandwidth writing out line rendition attributes
+    // until we know they're in use. But once they are in use, we have to keep
+    // applying them on every line until we know they definitely aren't being
+    // used anymore (we check that at the end of any fullscreen paint).
+    if (lineRendition != LineRendition::SingleWidth)
+    {
+        _stopUsingLineRenditions = false;
+        _usingLineRenditions = true;
+    }
+    // One simple optimization is that we can skip sending the line attributes
+    // when _quickReturn is true. That indicates that we're writing out a single
+    // character, which should preclude there being a rendition switch.
+    if (_usingLineRenditions && !_quickReturn)
+    {
+        RETURN_IF_FAILED(_MoveCursor({ _lastText.x, targetRow }));
+        switch (lineRendition)
+        {
+        case LineRendition::SingleWidth:
+            return _Write("\x1b#5");
+        case LineRendition::DoubleWidth:
+            return _Write("\x1b#6");
+        case LineRendition::DoubleHeightTop:
+            return _Write("\x1b#3");
+        case LineRendition::DoubleHeightBottom:
+            return _Write("\x1b#4");
+        }
+    }
+    return S_OK;
 }
 
 // Routine Description:
