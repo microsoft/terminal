@@ -935,6 +935,21 @@ void AtlasEngine::_recreateSizeDependentResources()
         _api.glyphProps = Buffer<DWRITE_SHAPING_GLYPH_PROPERTIES>{ projectedGlyphSize };
         _api.glyphAdvances = Buffer<f32>{ projectedGlyphSize };
         _api.glyphOffsets = Buffer<DWRITE_GLYPH_OFFSET>{ projectedGlyphSize };
+
+        // Initialize cellGlyphMapping with valid data (whitespace), so that it can be
+        // safely used by the TileHashMap refresh logic via makeNewest() in StartPaint().
+        {
+            u16x2* coords;
+            AtlasKey key{ { .cellCount = 1 }, 1, L" " };
+            AtlasValue value{ CellFlags::None, 1, &coords };
+
+            coords[0] = _r.tileAllocator.allocate(_r.glyphs);
+
+            const auto it = _r.glyphs.insert(std::move(key), std::move(value));
+            _r.glyphQueue.emplace_back(it);
+
+            std::ranges::fill(_r.cellGlyphMapping, it);
+        }
     }
 
     if (!_r.d2dMode)
@@ -1175,6 +1190,15 @@ void AtlasEngine::_flushBufferLine()
 
     // This would seriously blow us up otherwise.
     Expects(_api.bufferLineColumn.size() == _api.bufferLine.size() + 1);
+
+    // GH#13962: With the lack of proper LineRendition support, just fill
+    // the remaining columns with whitespace to prevent any weird artifacts.
+    for (auto lastColumn = _api.bufferLineColumn.back(); lastColumn < _api.cellCount.x;)
+    {
+        ++lastColumn;
+        _api.bufferLine.emplace_back(L' ');
+        _api.bufferLineColumn.emplace_back(lastColumn);
+    }
 
     // NOTE:
     // This entire function is one huge hack to see if it works.
