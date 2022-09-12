@@ -853,23 +853,24 @@ namespace winrt::TerminalApp::implementation
             // this flyout item.
             if (!profile.Icon().empty())
             {
-                {
-                    winrt::weak_ref<WUX::Controls::MenuFlyoutItem> weakItem(profileMenuItem);
-                    Dispatcher().RunAsync(CoreDispatcherPriority::Low, [weakItem, icon = profile.Icon()]() -> winrt::fire_and_forget {
-                        auto elem = co_await IconPathConverter().IconWUX(icon);
-                        if (auto item{ weakItem.get() })
-                        {
-                            item.Icon(elem);
-                            Automation::AutomationProperties::SetAccessibilityView(elem, Automation::Peers::AccessibilityView::Raw);
-                        }
-                    });
-                }
+                // {
+                //     winrt::weak_ref<WUX::Controls::MenuFlyoutItem> weakItem(profileMenuItem);
+                //     Dispatcher().RunAsync(CoreDispatcherPriority::Low, [weakItem, icon = profile.Icon()]() -> winrt::fire_and_forget {
+                //         auto elem = co_await IconPathConverter().IconWUX(icon);
+                //         if (auto item{ weakItem.get() })
+                //         {
+                //             item.Icon(elem);
+                //             Automation::AutomationProperties::SetAccessibilityView(elem, Automation::Peers::AccessibilityView::Raw);
+                //         }
+                //     });
+                // }
                 // const auto iconElement{ IconPathConverter().IconWUX(profile.Icon()) };
 
-                // // WUX::Controls::IconSourceElement iconElement;
-                // // iconElement.IconSource(iconSource);
-                // profileMenuItem.Icon(iconElement);
-                // Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
+                const auto iconSource{ IconPathConverter().IconSourceWUX(profile.Icon()) };
+                WUX::Controls::IconSourceElement iconElement;
+                iconElement.IconSource(iconSource);
+                profileMenuItem.Icon(iconElement);
+                Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
             }
 
             if (profile.Guid() == defaultProfileGuid)
