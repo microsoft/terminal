@@ -21,6 +21,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static Windows::UI::Xaml::Controls::IconSource IconSourceWUX(hstring path);
         // static Microsoft::UI::Xaml::Controls::IconSource IconSourceMUX(hstring path);
         static winrt::Windows::Foundation::IAsyncOperation<Microsoft::UI::Xaml::Controls::IconSource> IconSourceMUX(const winrt::hstring& iconPath);
+        static winrt::Windows::Foundation::IAsyncOperation<Windows::UI::Xaml::Controls::IconElement> IconWUX(const winrt::hstring& iconPath);
     };
 }
 

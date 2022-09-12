@@ -8,6 +8,11 @@
 #include <Shlobj_core.h>
 #include <wincodec.h>
 
+namespace winrt
+{
+    namespace MUX = Microsoft::UI::Xaml;
+}
+
 using namespace winrt::Windows;
 using namespace winrt::Windows::UI::Xaml;
 
@@ -261,39 +266,42 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                         wicImagingFactory.get());
     }
 
-    winrt::Windows::Foundation::IAsyncOperation<Microsoft::UI::Xaml::Controls::IconSource> IconPathConverter::IconSourceMUX(const winrt::hstring& iconPath)
+    std::optional<int> _getIconIndex(const winrt::hstring& iconPath, std::wstring_view& iconPathWithoutIndex)
     {
-        auto index = 0;
         const auto pathView = std::wstring_view{ iconPath };
-        // Does iconPath have a comma in it?
-        // If so, we'll treat it as a path to an icon file, and the part after the comma as the index of the icon in the file.
-        // If not, we'll treat it as a path to an image file.
+        // Does iconPath have a comma in it? If so, split the string on the
+        // comma and look for the index and extension.
         const auto commaIndex = pathView.find(L',');
 
         // split the path on the comma
-        const auto iconPathWithoutIndex = pathView.substr(0, commaIndex);
+        iconPathWithoutIndex = pathView.substr(0, commaIndex);
 
-        // does iconPathWithoutIndex end in .dll or .exe?
+        // It's an exe, dll, or lnk, so we need to extract the icon from the file.
         if (!til::ends_with(iconPathWithoutIndex, L".exe") &&
             !til::ends_with(iconPathWithoutIndex, L".dll") &&
             !til::ends_with(iconPathWithoutIndex, L".lnk"))
         {
-            co_return _IconSourceMUX(iconPath);
+            return std::nullopt;
         }
 
         if (commaIndex != std::wstring::npos)
         {
-
-            // It's an exe, dll, or lnk, so we need to extract the icon from the file.
-
             // Convert the string iconIndex to an int
-            index = til::to_ulong(pathView.substr(commaIndex + 1));
+            const auto index = til::to_ulong(pathView.substr(commaIndex + 1));
             if (index == til::to_ulong_error)
             {
-                co_return _IconSourceMUX(iconPath);
+                return std::nullopt;
             }
+            return static_cast<int>(index);
         }
 
+        // We had a binary path, but no index. Default to 0.
+        return 0;
+    }
+
+    winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Media::Imaging::SoftwareBitmapSource> _getImageIconSourceForBinary(std::wstring_view iconPathWithoutIndex,
+                                                                                                             int index)
+    {
         winrt::apartment_context fg_thread;
 
         // Try:
@@ -314,13 +322,47 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::Windows::UI::Xaml::Media::Imaging::SoftwareBitmapSource bitmapSource{};
         co_await bitmapSource.SetBitmapAsync(swBitmap);
         co_await fg_thread;
+        co_return bitmapSource;
+    }
+    winrt::Windows::Foundation::IAsyncOperation<MUX::Controls::IconSource> IconPathConverter::IconSourceMUX(const winrt::hstring& iconPath)
+    {
+        std::wstring_view iconPathWithoutIndex;
+        auto indexOpt = _getIconIndex(iconPath, iconPathWithoutIndex);
+        if (!indexOpt.has_value())
+        {
+            co_return _IconSourceMUX(iconPath);
+        }
+        auto index = indexOpt.value();
 
-        winrt::Microsoft::UI::Xaml::Controls::ImageIconSource imageIconSource{};
+        auto bitmapSource = co_await _getImageIconSourceForBinary(iconPathWithoutIndex, index);
+
+        MUX::Controls::ImageIconSource imageIconSource{};
         imageIconSource.ImageSource(bitmapSource);
-        // winrt::Microsoft::UI::Xaml::Controls::ImageIcon icon{};
-        // icon.Source(bitmapSource);
-        // icon.Width(32);
-        // icon.Height(32);
+
         co_return imageIconSource;
+    }
+
+    winrt::Windows::Foundation::IAsyncOperation<Windows::UI::Xaml::Controls::IconElement> IconPathConverter::IconWUX(const winrt::hstring& iconPath)
+    {
+        std::wstring_view iconPathWithoutIndex;
+        auto indexOpt = _getIconIndex(iconPath, iconPathWithoutIndex);
+        if (!indexOpt.has_value())
+        {
+            auto source = IconPathConverter::IconSourceWUX(iconPath);
+            Controls::IconSourceElement icon;
+            icon.IconSource(source);
+            icon.Width(32);
+            icon.Height(32);
+            co_return icon;
+        }
+        auto index = indexOpt.value();
+
+        auto bitmapSource = co_await _getImageIconSourceForBinary(iconPathWithoutIndex, index);
+
+        winrt::Microsoft::UI::Xaml::Controls::ImageIcon icon{};
+        icon.Source(bitmapSource);
+        icon.Width(32);
+        icon.Height(32);
+        co_return icon;
     }
 }
