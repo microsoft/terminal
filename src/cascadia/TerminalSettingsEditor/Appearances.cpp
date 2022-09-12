@@ -137,11 +137,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         INITIALIZE_BINDABLE_ENUM_SETTING(IntenseTextStyle, IntenseTextStyle, winrt::Microsoft::Terminal::Settings::Model::IntenseStyle, L"Appearance_IntenseTextStyle", L"Content");
     }
 
-    bool Appearances::ShowIndistinguishableColorsItem() const noexcept
-    {
-        return Feature_AdjustIndistinguishableText::IsEnabled();
-    }
-
     // Method Description:
     // - Searches through our list of monospace fonts to determine if the settings model's current font face is a monospace font
     bool Appearances::UsingMonospaceFont() const noexcept
