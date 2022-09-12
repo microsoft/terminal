@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-5-13
-last updated: 2022-25-02
+last updated: 2022-12-09
 issue id: 1571
 ---
 
@@ -76,11 +76,20 @@ There are five `type`s of objects in this menu:
   - The `"entries"` property specifies a list of menu entries that will appear
     nested under this entry. This can contain other `"type":"folder"` groups as
     well!
+  - The `"expand"` property accepts two values
+    - `auto`: When the folder only has one entry in it, don't actually create a
+      nested layer to then menu. Just place the single entry in the layer that
+      folder would occupy. (Useful for dynamic profile sources with only a
+      single entry).
+    - `always`: (**default**) Always create a nested entry, even for a single
+      sub-item.
   - The `allowEmpty` property will force this entry to show up in the menu, even
     if it doesn't have any profiles in it. This defaults to `false`, meaning
     that folders without any entries in them will just be ignored when
     generating the menu. This will be more useful with the `matchProfile` entry,
     below.
+    - _This setting is probably pretty niche, and not a requirement_. More of a
+      theoretical suggestion than anything.
 * `"type":"action"`: This represents a menu entry that should execute a specific
   `ShortcutAction`.
   - the `id` property will specify the global action ID (see [#6899], [#7175])
@@ -90,12 +99,6 @@ There are five `type`s of objects in this menu:
     either provided as the `"name"` in the global list of actions, or the
     generated name if no `name` was provided)
   - The icon for this entry will similarly re-use the action's `icon`.
-* `"type": "matchProfile"`: Expands to all the profiles that match a given
-  regex. This lets the user easily specify a whole collection of profiles for a
-  folder, without needing to add them all manually.
-  - `"on"`: One of `"name"`, `"commandline"` or `"source"`, used to identify the
-    property of the profile to match against.
-  - `"match"`: a regex to string compare the given `on` with.
 * `"type":"remainingProfiles"`: This is a special type of entry that will be
   expanded to contain one `"type":"profile"` entry for every profile that was
   not already listed in the menu. This will allow users to add one entry for
@@ -108,7 +111,15 @@ There are five `type`s of objects in this menu:
     enabling all other profiles to also be accessible.
   - The "name" of these entries will simply be the name of the profile
   - The "icon" of these entries will simply be the profile's icon
-  - This won't include any profiles that have been included via `match` entries.
+  - This won't include any profiles that have been included via `matchProfile`
+    entries (below)
+* `"type": "matchProfile"`: Expands to all the profiles that match a given
+  regex, which haven't already been included. This lets the user easily specify
+  a whole collection of profiles for a folder, without needing to add them all
+  manually.
+  - `"name"`, `"commandline"` or `"source"`: These three properties are used to
+    filter the list of profiles, based on the matching property in the profile
+    itself. The value is a regex to string compare the profile's value with.
 
 The "default" new tab menu could be imagined as the following blob of json:
 
@@ -129,16 +140,16 @@ nested entries for each subsequent dynamic profile generator.
     "newTabMenu": [
         { "type":"profile", "profile": "cmd" },
         { "type":"profile", "profile": "Windows PowerShell" },
-        { "type": "matchProfile", "on": "source", "match": "Microsoft.Terminal.PowerShellCore" }
+        { "type": "matchProfile", "source": "Microsoft.Terminal.PowerShellCore" }
         {
             "type": "folder",
             "name": "WSL",
-            "entries": [ { "type": "matchProfile", "on": "source", "match": "Microsoft.Terminal.Wsl" } ]
+            "entries": [ { "type": "matchProfile", "source": "Microsoft.Terminal.Wsl" } ]
         },
         {
             "type": "folder",
             "name": "Visual Studio",
-            "entries": [ { "type": "matchProfile", "on": "source", "match": "Microsoft.Terminal.VisualStudio" } ]
+            "entries": [ { "type": "matchProfile", "source": "Microsoft.Terminal.VisualStudio" } ]
         },
         // ... etc for other profile generators
         { "type": "remainingProfiles" }
@@ -152,7 +163,7 @@ moving the user's cheese too much, if they're already using the Terminal and
 happy with their list as is. Especially consider someone who's default profile
 is a WSL distro, which would now need two clicks to get to.
 
-> _note_: We will also want to support the same `{ "key": "SomeResoureString"}`
+> _note_: We will also want to support the same `{ "key": "SomeResourceString"}`
 > syntax used by the Command Palette commands
 > for specifying localizable names, if we chose to pursue this route.
 
@@ -201,6 +212,13 @@ with the profiles.
 The design chosen in this spec more cleanly separates the responsibilities of
 the list of profiles and the contents of the new tab menu. This way, each object
 can be defined independent of the structure of the other.
+
+Regarding implementation of `matchProfile` entries: In order to build the menu,
+we'll evaluate the entries in the following order:
+
+* all explicit `profile` entries
+* then all `matchProfile` entries, using profiles not already specified
+* then expand out `remainingProfiles` with anything not found above.
 
 ## UI/UX Design
 
@@ -340,7 +358,7 @@ And assuming the user has bound:
 
 ## Updates
 
-_Feburary 2022_: Doc updated in response to some discussion in [#11326] and
+_February 2022_: Doc updated in response to some discussion in [#11326] and
 [#7774]. In those PRs, it became clear that there needs to be a simple way of
 collecting up a whole group of profiles automatically for sorting in these
 menus. Although discussion centered on how hard it would be for extensions to
