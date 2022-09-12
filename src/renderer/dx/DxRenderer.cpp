@@ -49,6 +49,14 @@ D3D11_INPUT_ELEMENT_DESC _shaderInputLayout[] = {
     { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 };
 
+namespace
+{
+    bool operator==(const D2D1::Matrix3x2F& lhs, const D2D1::Matrix3x2F& rhs) noexcept
+    {
+        return ::memcmp(&lhs.m[0][0], &rhs.m[0][0], sizeof(lhs.m)) == 0;
+    };
+}
+
 #pragma hdrstop
 
 using namespace Microsoft::Console::Render;
@@ -77,6 +85,8 @@ DxEngine::DxEngine() :
     _foregroundColor{ 0 },
     _backgroundColor{ 0 },
     _selectionBackground{},
+    _currentLineRendition{ LineRendition::SingleWidth },
+    _currentLineTransform{ D2D1::Matrix3x2F::Identity() },
     _haveDeviceResources{ false },
     _swapChainHandle{ INVALID_HANDLE_VALUE },
     _swapChainDesc{ 0 },
@@ -196,7 +206,7 @@ static Microsoft::WRL::ComPtr<ID3DBlob> _CompileShader(const std::string_view& s
     Microsoft::WRL::ComPtr<ID3DBlob> code{};
     Microsoft::WRL::ComPtr<ID3DBlob> error{};
 
-    const HRESULT hr = D3DCompile(
+    const auto hr = D3DCompile(
         source.data(),
         source.size(),
         nullptr,
@@ -232,19 +242,6 @@ static Microsoft::WRL::ComPtr<ID3DBlob> _CompileShader(const std::string_view& s
 bool DxEngine::_HasTerminalEffects() const noexcept
 {
     return _terminalEffectsEnabled && (_retroTerminalEffect || !_pixelShaderPath.empty());
-}
-
-// Routine Description:
-// - Toggles terminal effects off and on. If no terminal effect is configured has no effect
-// Arguments:
-// Return Value:
-// - Void
-void DxEngine::ToggleShaderEffects() noexcept
-{
-    _terminalEffectsEnabled = !_terminalEffectsEnabled;
-    _recreateDeviceRequested = true;
-#pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function 'Log_IfFailed()' which may throw exceptions (f.6).
-    LOG_IF_FAILED(InvalidateAll());
 }
 
 // Routine Description:
@@ -436,9 +433,9 @@ HRESULT DxEngine::_SetupTerminalEffects()
     // Sampler state is needed to use texture as input to shader.
     D3D11_SAMPLER_DESC samplerDesc{};
     samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
     samplerDesc.MipLODBias = 0.0f;
     samplerDesc.MaxAnisotropy = 1;
     samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
@@ -476,8 +473,8 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
             _pixelShaderSettings.Scale = _scale;
 
             // Set the display resolution
-            const float w = static_cast<float>(_displaySizePixels.width);
-            const float h = static_cast<float>(_displaySizePixels.height);
+            const auto w = static_cast<float>(_displaySizePixels.width);
+            const auto h = static_cast<float>(_displaySizePixels.height);
             _pixelShaderSettings.Resolution = XMFLOAT2{ w, h };
 
             // Set the background
@@ -566,7 +563,7 @@ try
     // Trying hardware first for maximum performance, then trying WARP (software) renderer second
     // in case we're running inside a downlevel VM where hardware passthrough isn't enabled like
     // for Windows 7 in a VM.
-    HRESULT hardwareResult = E_NOT_SET;
+    auto hardwareResult = E_NOT_SET;
 
     // If we're not forcing software rendering, try hardware first.
     // Otherwise, let the error state fall down and create with the software renderer directly.
@@ -630,7 +627,7 @@ try
         case SwapChainMode::ForHwnd:
         {
             // use the HWND's dimensions for the swap chain dimensions.
-            RECT rect = { 0 };
+            RECT rect{};
             RETURN_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &rect));
 
             _swapChainDesc.Width = rect.right - rect.left;
@@ -689,7 +686,7 @@ try
         if (IsWindows8Point1OrGreater())
         {
             ::Microsoft::WRL::ComPtr<IDXGISwapChain2> swapChain2;
-            const HRESULT asResult = _dxgiSwapChain.As(&swapChain2);
+            const auto asResult = _dxgiSwapChain.As(&swapChain2);
             if (SUCCEEDED(asResult))
             {
                 _swapChainFrameLatencyWaitableObject = wil::unique_handle{ swapChain2->GetFrameLatencyWaitableObject() };
@@ -702,7 +699,7 @@ try
 
         if (_HasTerminalEffects())
         {
-            const HRESULT hr = _SetupTerminalEffects();
+            const auto hr = _SetupTerminalEffects();
             if (FAILED(hr))
             {
                 LOG_HR_MSG(hr, "Failed to setup terminal effects. Disabling.");
@@ -734,7 +731,7 @@ try
     {
         try
         {
-            _pfn();
+            _pfn(_swapChainHandle.get());
         }
         CATCH_LOG(); // A failure in the notification function isn't a failure to prepare, so just log it and go on.
     }
@@ -871,6 +868,8 @@ void DxEngine::_ReleaseDeviceResources() noexcept
 
         _d2dBitmap.Reset();
 
+        _softFont.Reset();
+
         if (nullptr != _d2dDeviceContext.Get() && _isPainting)
         {
             _d2dDeviceContext->EndDraw();
@@ -924,14 +923,14 @@ void DxEngine::_ReleaseDeviceResources() noexcept
     // DANGER: Layers slow us down. Only do this in the specific case where
     // someone has chosen the slower ClearType antialiasing (versus the faster
     // grayscale antialiasing)
-    const bool usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
-    const bool usingTransparency = _defaultBackgroundIsTransparent;
+    const auto usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
+    const auto usingTransparency = _defaultBackgroundIsTransparent;
     // Another way of naming "bgIsDefault" is "bgHasTransparency"
     const auto bgIsDefault = (_backgroundColor.a == _defaultBackgroundColor.a) &&
                              (_backgroundColor.r == _defaultBackgroundColor.r) &&
                              (_backgroundColor.g == _defaultBackgroundColor.g) &&
                              (_backgroundColor.b == _defaultBackgroundColor.b);
-    const bool forceGrayscaleAA = usingCleartype &&
+    const auto forceGrayscaleAA = usingCleartype &&
                                   usingTransparency &&
                                   bgIsDefault;
 
@@ -976,15 +975,15 @@ CATCH_RETURN()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT DxEngine::SetWindowSize(const SIZE Pixels) noexcept
+[[nodiscard]] HRESULT DxEngine::SetWindowSize(const til::size Pixels) noexcept
 try
 {
-    _sizeTarget = til::size{ Pixels };
+    _sizeTarget = Pixels;
     return S_OK;
 }
 CATCH_RETURN();
 
-void DxEngine::SetCallback(std::function<void()> pfn) noexcept
+void DxEngine::SetCallback(std::function<void(const HANDLE)> pfn) noexcept
 {
     _pfn = std::move(pfn);
 }
@@ -1012,6 +1011,11 @@ try
     }
 }
 CATCH_LOG()
+
+std::wstring_view DxEngine::GetPixelShaderPath() noexcept
+{
+    return _pixelShaderPath;
+}
 
 void DxEngine::SetPixelShaderPath(std::wstring_view value) noexcept
 try
@@ -1050,23 +1054,12 @@ try
 }
 CATCH_LOG()
 
-HANDLE DxEngine::GetSwapChainHandle() noexcept
-{
-    if (!_swapChainHandle)
-    {
-#pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function 'Log_IfFailed()' which may throw exceptions (f.6).
-        LOG_IF_FAILED(_CreateDeviceResources(true));
-    }
-
-    return _swapChainHandle.get();
-}
-
 void DxEngine::_InvalidateRectangle(const til::rect& rc)
 {
     const auto size = _invalidMap.size();
-    const auto topLeft = til::point{ 0, std::min(size.height, rc.top) };
-    const auto bottomRight = til::point{ size.width, std::min(size.height, rc.bottom) };
-    _invalidMap.set(til::rect{ topLeft, bottomRight });
+    const auto topLeft = til::point{ 0, std::clamp(rc.top, 0, size.height) };
+    const auto bottomRight = til::point{ size.width, std::clamp(rc.bottom, 0, size.height) };
+    _invalidMap.set({ topLeft, bottomRight });
 }
 
 bool DxEngine::_IsAllInvalid() const noexcept
@@ -1080,14 +1073,14 @@ bool DxEngine::_IsAllInvalid() const noexcept
 // - psrRegion - Character rectangle
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT DxEngine::Invalidate(const SMALL_RECT* const psrRegion) noexcept
+[[nodiscard]] HRESULT DxEngine::Invalidate(const til::rect* const psrRegion) noexcept
 try
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, psrRegion);
 
     if (!_allInvalid)
     {
-        _InvalidateRectangle(til::rect{ Viewport::FromExclusive(*psrRegion).ToInclusive() });
+        _InvalidateRectangle(*psrRegion);
     }
 
     return S_OK;
@@ -1100,7 +1093,7 @@ CATCH_RETURN()
 // - psrRegion - the region covered by the cursor
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT DxEngine::InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept
+[[nodiscard]] HRESULT DxEngine::InvalidateCursor(const til::rect* const psrRegion) noexcept
 {
     return Invalidate(psrRegion);
 }
@@ -1111,7 +1104,7 @@ CATCH_RETURN()
 // - prcDirtyClient - pixel rectangle
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT DxEngine::InvalidateSystem(const RECT* const prcDirtyClient) noexcept
+[[nodiscard]] HRESULT DxEngine::InvalidateSystem(const til::rect* const prcDirtyClient) noexcept
 try
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, prcDirtyClient);
@@ -1120,7 +1113,7 @@ try
     {
         // Dirty client is in pixels. Use divide specialization against glyph factor to make conversion
         // to cells.
-        _InvalidateRectangle(til::rect{ *prcDirtyClient }.scale_down(_fontRenderData->GlyphCell()));
+        _InvalidateRectangle(prcDirtyClient->scale_down(_fontRenderData->GlyphCell()));
     }
 
     return S_OK;
@@ -1133,7 +1126,7 @@ CATCH_RETURN();
 // - rectangles - One or more rectangles describing character positions on the grid
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT DxEngine::InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept
+[[nodiscard]] HRESULT DxEngine::InvalidateSelection(const std::vector<til::rect>& rectangles) noexcept
 {
     if (!_allInvalid)
     {
@@ -1153,12 +1146,12 @@ CATCH_RETURN();
 //               - -Y is up, Y is down, -X is left, X is right.
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT DxEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
+[[nodiscard]] HRESULT DxEngine::InvalidateScroll(const til::point* const pcoordDelta) noexcept
 try
 {
     RETURN_HR_IF(E_INVALIDARG, !pcoordDelta);
 
-    const til::point deltaCells{ *pcoordDelta };
+    const auto deltaCells{ *pcoordDelta };
 
     if (!_allInvalid)
     {
@@ -1201,20 +1194,6 @@ try
 CATCH_RETURN();
 
 // Routine Description:
-// - This currently has no effect in this renderer.
-// Arguments:
-// - pForcePaint - Always filled with false
-// Return Value:
-// - S_FALSE because we don't use this.
-[[nodiscard]] HRESULT DxEngine::InvalidateCircling(_Out_ bool* const pForcePaint) noexcept
-{
-    RETURN_HR_IF_NULL(E_INVALIDARG, pForcePaint);
-
-    *pForcePaint = false;
-    return S_FALSE;
-}
-
-// Routine Description:
 // - Gets the area in pixels of the surface we are targeting
 // Arguments:
 // - <none>
@@ -1226,7 +1205,7 @@ CATCH_RETURN();
     {
     case SwapChainMode::ForHwnd:
     {
-        RECT clientRect = { 0 };
+        RECT clientRect{};
         LOG_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &clientRect));
 
         return til::rect{ clientRect }.size();
@@ -1248,7 +1227,7 @@ CATCH_RETURN();
 // - fontSize - scaling factors
 // Return Value:
 // - <none> - Updates reference
-void _ScaleByFont(RECT& cellsToPixels, SIZE fontSize) noexcept
+void _ScaleByFont(til::rect& cellsToPixels, til::size fontSize) noexcept
 {
     cellsToPixels.left *= fontSize.cx;
     cellsToPixels.right *= fontSize.cx;
@@ -1379,7 +1358,7 @@ try
 {
     RETURN_HR_IF(E_INVALIDARG, !_isPainting); // invalid to end paint when we're not painting
 
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
 
     if (_haveDeviceResources)
     {
@@ -1409,7 +1388,10 @@ try
                 til::rect scrollArea{ _invalidMap.size() * _fontRenderData->GlyphCell() };
 
                 // Reduce the size of the rectangle by the scroll.
-                scrollArea -= til::size{} - scrollPixels;
+                scrollArea.left = std::clamp(scrollArea.left + scrollPixels.x, scrollArea.left, scrollArea.right);
+                scrollArea.top = std::clamp(scrollArea.top + scrollPixels.y, scrollArea.top, scrollArea.bottom);
+                scrollArea.right = std::clamp(scrollArea.right + scrollPixels.x, scrollArea.left, scrollArea.right);
+                scrollArea.bottom = std::clamp(scrollArea.bottom + scrollPixels.y, scrollArea.top, scrollArea.bottom);
 
                 // Assign the area to the present storage
                 _presentScroll = scrollArea.to_win32_rect();
@@ -1531,7 +1513,7 @@ void DxEngine::WaitUntilCanRender() noexcept
     {
         if (_HasTerminalEffects() && _pixelShaderLoaded)
         {
-            const HRESULT hr2 = _PaintTerminalEffects();
+            const auto hr2 = _PaintTerminalEffects();
             if (FAILED(hr2))
             {
                 _pixelShaderLoaded = false;
@@ -1541,9 +1523,9 @@ void DxEngine::WaitUntilCanRender() noexcept
 
         try
         {
-            HRESULT hr = S_OK;
+            auto hr = S_OK;
 
-            bool recreate = false;
+            auto recreate = false;
 
             // On anything but the first frame, try partial presentation.
             // We'll do it first because if it fails, we'll try again with full presentation.
@@ -1681,21 +1663,31 @@ CATCH_RETURN()
 // - fTrimLeft - Whether or not to trim off the left half of a double wide character
 // Return Value:
 // - S_OK or relevant DirectX error
-[[nodiscard]] HRESULT DxEngine::PaintBufferLine(gsl::span<const Cluster> const clusters,
-                                                COORD const coord,
+[[nodiscard]] HRESULT DxEngine::PaintBufferLine(const gsl::span<const Cluster> clusters,
+                                                const til::point coord,
                                                 const bool /*trimLeft*/,
                                                 const bool /*lineWrapped*/) noexcept
 try
 {
     // Calculate positioning of our origin.
-    const D2D1_POINT_2F origin = (til::point{ coord } * _fontRenderData->GlyphCell()).to_d2d_point();
+    const auto origin = (coord * _fontRenderData->GlyphCell()).to_d2d_point();
 
-    // Create the text layout
-    RETURN_IF_FAILED(_customLayout->Reset());
-    RETURN_IF_FAILED(_customLayout->AppendClusters(clusters));
+    if (_usingSoftFont)
+    {
+        // We need to reset the clipping rect applied by the CustomTextRenderer,
+        // since the soft font will want to set its own clipping rect.
+        RETURN_IF_FAILED(_customRenderer->EndClip(_drawingContext.get()));
+        RETURN_IF_FAILED(_softFont.Draw(*_drawingContext, clusters, origin.x, origin.y));
+    }
+    else
+    {
+        // Create the text layout
+        RETURN_IF_FAILED(_customLayout->Reset());
+        RETURN_IF_FAILED(_customLayout->AppendClusters(clusters));
 
-    // Layout then render the text
-    RETURN_IF_FAILED(_customLayout->Draw(_drawingContext.get(), _customRenderer.Get(), origin.x, origin.y));
+        // Layout then render the text
+        RETURN_IF_FAILED(_customLayout->Draw(_drawingContext.get(), _customRenderer.Get(), origin.x, origin.y));
+    }
 
     return S_OK;
 }
@@ -1711,10 +1703,10 @@ CATCH_RETURN()
 //               - We will draw rightward (+X) from here
 // Return Value:
 // - S_OK or relevant DirectX error
-[[nodiscard]] HRESULT DxEngine::PaintBufferGridLines(GridLineSet const lines,
+[[nodiscard]] HRESULT DxEngine::PaintBufferGridLines(const GridLineSet lines,
                                                      COLORREF const color,
-                                                     size_t const cchLine,
-                                                     COORD const coordTarget) noexcept
+                                                     const size_t cchLine,
+                                                     const til::point coordTarget) noexcept
 try
 {
     const auto existingColor = _d2dBrushForeground->GetColor();
@@ -1722,7 +1714,7 @@ try
 
     _d2dBrushForeground->SetColor(_ColorFFromColorRef(color | 0xff000000));
 
-    const D2D1_SIZE_F font = _fontRenderData->GlyphCell().to_d2d_size();
+    const auto font = _fontRenderData->GlyphCell().to_d2d_size();
     const D2D_POINT_2F target = { coordTarget.X * font.width, coordTarget.Y * font.height };
     const auto fullRunWidth = font.width * gsl::narrow_cast<unsigned>(cchLine);
 
@@ -1737,7 +1729,7 @@ try
     // NOTE: Line coordinates are centered within the line, so they need to be
     // offset by half the stroke width. For the start coordinate we add half
     // the stroke width, and for the end coordinate we subtract half the width.
-    const DxFontRenderData::LineMetrics lineMetrics = _fontRenderData->GetLineMetrics();
+    const auto lineMetrics = _fontRenderData->GetLineMetrics();
     if (lines.any(GridLines::Left, GridLines::Right))
     {
         const auto halfGridlineWidth = lineMetrics.gridlineWidth / 2.0f;
@@ -1830,7 +1822,7 @@ CATCH_RETURN()
 //  - rect - Rectangle to invert or highlight to make the selection area
 // Return Value:
 // - S_OK or relevant DirectX error.
-[[nodiscard]] HRESULT DxEngine::PaintSelection(const SMALL_RECT rect) noexcept
+[[nodiscard]] HRESULT DxEngine::PaintSelection(const til::rect& rect) noexcept
 try
 {
     // If a clip rectangle is in place from drawing the text layer, remove it here.
@@ -1841,7 +1833,7 @@ try
     _d2dBrushForeground->SetColor(_selectionBackground);
     const auto resetColorOnExit = wil::scope_exit([&]() noexcept { _d2dBrushForeground->SetColor(existingColor); });
 
-    const D2D1_RECT_F draw = til::rect{ Viewport::FromExclusive(rect).ToInclusive() }.scale_up(_fontRenderData->GlyphCell()).to_d2d_rect();
+    const D2D1_RECT_F draw = rect.scale_up(_fontRenderData->GlyphCell()).to_d2d_rect();
 
     _d2dDeviceContext->FillRectangle(draw, _d2dBrushForeground.Get());
 
@@ -1934,14 +1926,15 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT DxEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
                                                      const RenderSettings& renderSettings,
                                                      const gsl::not_null<IRenderData*> /*pData*/,
-                                                     const bool /*usingSoftFont*/,
+                                                     const bool usingSoftFont,
                                                      const bool isSettingDefaultBrushes) noexcept
+try
 {
     const auto [colorForeground, colorBackground] = renderSettings.GetAttributeColorsWithAlpha(textAttributes);
 
-    const bool usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
-    const bool usingTransparency = _defaultBackgroundIsTransparent;
-    const bool forceOpaqueBG = usingCleartype && !usingTransparency;
+    const auto usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
+    const auto usingTransparency = _defaultBackgroundIsTransparent;
+    const auto forceOpaqueBG = usingCleartype && !usingTransparency;
 
     _foregroundColor = _ColorFFromColorRef(OPACITY_OPAQUE | colorForeground);
     // October 2021: small changes were made to the way BG color interacts with
@@ -1951,6 +1944,12 @@ CATCH_RETURN()
 
     _d2dBrushForeground->SetColor(_foregroundColor);
     _d2dBrushBackground->SetColor(_backgroundColor);
+
+    _usingSoftFont = usingSoftFont;
+    if (_usingSoftFont)
+    {
+        _softFont.SetColor(_foregroundColor);
+    }
 
     // If this flag is set, then we need to update the default brushes too and the swap chain background.
     if (isSettingDefaultBrushes)
@@ -1991,6 +1990,7 @@ CATCH_RETURN()
 
     return S_OK;
 }
+CATCH_RETURN();
 
 // Routine Description:
 // - Updates the font used for drawing
@@ -2022,22 +2022,23 @@ try
     // Prepare the text layout.
     _customLayout = WRL::Make<CustomTextLayout>(_fontRenderData.get());
 
-    return S_OK;
+    // Inform the soft font of the new cell size so it can scale appropriately.
+    return _softFont.SetTargetSize(_fontRenderData->GlyphCell());
 }
 CATCH_RETURN();
 
 [[nodiscard]] Viewport DxEngine::GetViewportInCharacters(const Viewport& viewInPixels) const noexcept
 {
-    const short widthInChars = base::saturated_cast<short>(viewInPixels.Width() / _fontRenderData->GlyphCell().width);
-    const short heightInChars = base::saturated_cast<short>(viewInPixels.Height() / _fontRenderData->GlyphCell().height);
+    const auto widthInChars = viewInPixels.Width() / _fontRenderData->GlyphCell().width;
+    const auto heightInChars = viewInPixels.Height() / _fontRenderData->GlyphCell().height;
 
     return Viewport::FromDimensions(viewInPixels.Origin(), { widthInChars, heightInChars });
 }
 
 [[nodiscard]] Viewport DxEngine::GetViewportInPixels(const Viewport& viewInCharacters) const noexcept
 {
-    const short widthInPixels = base::saturated_cast<short>(viewInCharacters.Width() * _fontRenderData->GlyphCell().width);
-    const short heightInPixels = base::saturated_cast<short>(viewInCharacters.Height() * _fontRenderData->GlyphCell().height);
+    const auto widthInPixels = viewInCharacters.Width() * _fontRenderData->GlyphCell().width;
+    const auto heightInPixels = viewInCharacters.Height() * _fontRenderData->GlyphCell().height;
 
     return Viewport::FromDimensions(viewInCharacters.Origin(), { widthInPixels, heightInPixels });
 }
@@ -2048,7 +2049,7 @@ CATCH_RETURN();
 // - iDpi - DPI
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT DxEngine::UpdateDpi(int const iDpi) noexcept
+[[nodiscard]] HRESULT DxEngine::UpdateDpi(const int iDpi) noexcept
 {
     _dpi = iDpi;
 
@@ -2082,7 +2083,7 @@ float DxEngine::GetScaling() const noexcept
 // - srNewViewport - The bounds of the new viewport.
 // Return Value:
 // - HRESULT S_OK
-[[nodiscard]] HRESULT DxEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/) noexcept
+[[nodiscard]] HRESULT DxEngine::UpdateViewport(const til::inclusive_rect& /*srNewViewport*/) noexcept
 {
     return S_OK;
 }
@@ -2097,7 +2098,7 @@ float DxEngine::GetScaling() const noexcept
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::GetProposedFont(const FontInfoDesired& pfiFontInfoDesired,
                                                 FontInfo& pfiFontInfo,
-                                                int const iDpi) noexcept
+                                                const int iDpi) noexcept
 try
 {
     DxFontRenderData fontRenderData(_dwriteFactory);
@@ -2125,12 +2126,10 @@ CATCH_RETURN();
 // - pFontSize - Filled with the font size.
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT DxEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept
+[[nodiscard]] HRESULT DxEngine::GetFontSize(_Out_ til::size* const pFontSize) noexcept
 try
 {
-    const auto size = _fontRenderData->GlyphCell();
-    pFontSize->X = size.narrow_width<short>();
-    pFontSize->Y = size.narrow_height<short>();
+    *pFontSize = _fontRenderData->GlyphCell();
     return S_OK;
 }
 CATCH_RETURN();
@@ -2197,7 +2196,7 @@ CATCH_RETURN();
     {
         // Get the A value we've snuck into the highest byte
         const BYTE a = ((color >> 24) & 0xFF);
-        const float aFloat = a / 255.0f;
+        const auto aFloat = a / 255.0f;
 
         return D2D1::ColorF(rgb, aFloat);
     }
@@ -2236,6 +2235,7 @@ try
     {
         _antialiasingMode = antialiasingMode;
         _recreateDeviceRequested = true;
+        LOG_IF_FAILED(_softFont.SetAntialiasing(antialiasingMode != D2D1_TEXT_ANTIALIAS_MODE_ALIASED));
         LOG_IF_FAILED(InvalidateAll());
     }
 }
@@ -2278,6 +2278,24 @@ void DxEngine::UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept
     _hyperlinkHoveredId = hoveredId;
 }
 
+// Routine Description:
+// - This method will replace the active soft font with the given bit pattern.
+// Arguments:
+// - bitPattern - An array of scanlines representing all the glyphs in the font.
+// - cellSize - The cell size for an individual glyph.
+// - centeringHint - The horizontal extent that glyphs are offset from center.
+// Return Value:
+// - S_OK if successful. E_FAIL if there was an error.
+HRESULT DxEngine::UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+                                 const til::size cellSize,
+                                 const size_t centeringHint) noexcept
+try
+{
+    _softFont.SetFont(bitPattern, cellSize, _fontRenderData->GlyphCell(), centeringHint);
+    return S_OK;
+}
+CATCH_RETURN();
+
 // Method Description:
 // - Informs this render engine about certain state for this frame at the
 //   beginning of this frame. We'll use it to get information about the cursor
@@ -2292,5 +2310,81 @@ void DxEngine::UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept
 [[nodiscard]] HRESULT DxEngine::PrepareRenderInfo(const RenderFrameInfo& info) noexcept
 {
     _drawingContext->cursorInfo = info.cursorInfo;
+    return S_OK;
+}
+
+// Routine Description
+// - Resets the world transform to the identity matrix.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if successful. S_FALSE if already reset. E_FAIL if there was an error.
+[[nodiscard]] HRESULT DxEngine::ResetLineTransform() noexcept
+{
+    // Return early if the current transform is already the identity matrix.
+    RETURN_HR_IF(S_FALSE, _currentLineTransform.IsIdentity());
+    // Reset the active transform to the identity matrix.
+    _drawingContext->renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+    // Reset the clipping offsets.
+    _drawingContext->topClipOffset = 0;
+    _drawingContext->bottomClipOffset = 0;
+    // Reset the current state.
+    _currentLineTransform = D2D1::Matrix3x2F::Identity();
+    _currentLineRendition = LineRendition::SingleWidth;
+    return S_OK;
+}
+
+// Routine Description
+// - Applies an appropriate transform for the given line rendition and viewport offset.
+// Arguments:
+// - lineRendition - The line rendition specifying the scaling of the line.
+// - targetRow - The row on which the line is expected to be rendered.
+// - viewportLeft - The left offset of the current viewport.
+// Return Value:
+// - S_OK if successful. S_FALSE if already set. E_FAIL if there was an error.
+[[nodiscard]] HRESULT DxEngine::PrepareLineTransform(const LineRendition lineRendition,
+                                                     const til::CoordType targetRow,
+                                                     const til::CoordType viewportLeft) noexcept
+{
+    auto lineTransform = D2D1::Matrix3x2F{ 0, 0, 0, 0, 0, 0 };
+    const auto fontSize = _fontRenderData->GlyphCell();
+    // The X delta is to account for the horizontal viewport offset.
+    lineTransform.dx = viewportLeft ? -1.0f * viewportLeft * fontSize.width : 0.0f;
+    switch (lineRendition)
+    {
+    case LineRendition::SingleWidth:
+        lineTransform.m11 = 1; // single width
+        lineTransform.m22 = 1; // single height
+        break;
+    case LineRendition::DoubleWidth:
+        lineTransform.m11 = 2; // double width
+        lineTransform.m22 = 1; // single height
+        break;
+    case LineRendition::DoubleHeightTop:
+        lineTransform.m11 = 2; // double width
+        lineTransform.m22 = 2; // double height
+        // The Y delta is to negate the offset caused by the scaled height.
+        lineTransform.dy = -1.0f * targetRow * fontSize.height;
+        break;
+    case LineRendition::DoubleHeightBottom:
+        lineTransform.m11 = 2; // double width
+        lineTransform.m22 = 2; // double height
+        // The Y delta is to negate the offset caused by the scaled height.
+        // An extra row is added because we need the bottom half of the line.
+        lineTransform.dy = -1.0f * (targetRow + 1) * fontSize.height;
+        break;
+    }
+    // Return early if the new matrix is the same as the current transform.
+    RETURN_HR_IF(S_FALSE, _currentLineRendition == lineRendition && _currentLineTransform == lineTransform);
+    // Set the active transform with the new matrix.
+    _drawingContext->renderTarget->SetTransform(lineTransform);
+    // If the line rendition is double height, we need to adjust the top or bottom
+    // of the clipping rect to clip half the height of the rendered characters.
+    const auto halfHeight = _drawingContext->cellSize.height / 2;
+    _drawingContext->topClipOffset = lineRendition == LineRendition::DoubleHeightBottom ? halfHeight : 0;
+    _drawingContext->bottomClipOffset = lineRendition == LineRendition::DoubleHeightTop ? halfHeight : 0;
+    // Save the current state.
+    _currentLineTransform = lineTransform;
+    _currentLineRendition = lineRendition;
     return S_OK;
 }

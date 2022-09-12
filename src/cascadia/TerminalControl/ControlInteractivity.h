@@ -123,7 +123,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // terminal.
         bool _selectionNeedsToBeCopied;
 
-        std::optional<COORD> _lastHoveredCell{ std::nullopt };
+        std::optional<til::point> _lastHoveredCell{ std::nullopt };
         // Track the last hyperlink ID we hovered over
         uint16_t _lastHoveredId{ 0 };
 
@@ -140,6 +140,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _hyperlinkHandler(const std::wstring_view uri);
         bool _canSendVTMouseInput(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
+        bool _shouldSendAlternateScroll(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const int32_t delta);
 
         void _sendPastedTextToConnection(std::wstring_view wstr);
         til::point _getTerminalPosition(const til::point pixelPosition);

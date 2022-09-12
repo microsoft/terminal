@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ProjectGuid>{71CC9D78-BA29-4D93-946F-BEF5D9A3A6EF}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -41,7 +41,6 @@
   <ItemGroup>
     <ClInclude Include="$(IntDir)\IConsoleHandoff.h" />
     <ClInclude Include="$(IntDir)\ITerminalHandoff.h" />
-    <ClInclude Include="nodefaultlib_shim.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(IntDir)\dlldata.c" />
@@ -67,27 +66,54 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>.;..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <CallingConvention Condition="'$(Platform)'!='ARM64'">StdCall</CallingConvention>
+      <AdditionalIncludeDirectories>..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <CallingConvention>StdCall</CallingConvention>
       <!-- Must be Stdcall on all platforms to resolve _ObjectStublessClient3 -->
       <PreprocessorDefinitions>REGISTER_PROXY_DLL;WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
-      <BufferSecurityCheck>false</BufferSecurityCheck>
-      <SDLCheck>false</SDLCheck>
-      <ForcedIncludeFiles>nodefaultlib_shim.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <ModuleDefinitionFile>OpenConsoleProxy.def</ModuleDefinitionFile>
-      <!--
-        Not depending on the CRT cuts binary size by half and prevents issues if this DLL
-        is copied elsewhere and executed outside of our app package without our bundled CRT present.
-      -->
-      <AdditionalDependencies />
-      <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
-      <EntryPointSymbol>DllMain</EntryPointSymbol>
     </Link>
   </ItemDefinitionGroup>
+
+  <!--
+    OpenConsoleProxy gets copied out of our app package and into a shared system store. As such, it can't take a
+    dependency on any libraries inside our package **or** inside any of our dependency packages. It has to stand
+    on its own.
+    Therefore, we're going to use the Hybrid CRT model from WinAppSDK for only OpenConsoleProxy. It statically
+    links the runtime and STL and dynamically links the UCRT instead of the VC++ CRT. The UCRT ships with Windows.
+    WinAppSDK asserts that this is "supported according to the CRT maintainer."
+  -->
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <ClCompile>
+      <!-- We use MultiThreadedDebug, rather than MultiThreadedDebugDLL, to avoid DLL dependencies on VCRUNTIME140d.dll and MSVCP140d.dll. -->
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <!-- Link statically against the runtime and STL, but link dynamically against the CRT by ignoring the static CRT
+           lib and instead linking against the Universal CRT DLL import library. This "hybrid" linking mechanism is
+           supported according to the CRT maintainer. Dynamic linking against the CRT makes the binaries a bit smaller
+           than they would otherwise be if the CRT, runtime, and STL were all statically linked in. -->
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries);libucrtd.lib</IgnoreSpecificDefaultLibraries>
+      <AdditionalOptions>%(AdditionalOptions) /defaultlib:ucrtd.lib</AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
+    <ClCompile>
+      <!-- We use MultiThreaded, rather than MultiThreadedDLL, to avoid DLL dependencies on VCRUNTIME140.dll and MSVCP140.dll. -->
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <!-- Link statically against the runtime and STL, but link dynamically against the CRT by ignoring the static CRT
+           lib and instead linking against the Universal CRT DLL import library. This "hybrid" linking mechanism is
+           supported according to the CRT maintainer. Dynamic linking against the CRT makes the binaries a bit smaller
+           than they would otherwise be if the CRT, runtime, and STL were all statically linked in. -->
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries);libucrt.lib</IgnoreSpecificDefaultLibraries>
+      <AdditionalOptions>%(AdditionalOptions) /defaultlib:ucrt.lib</AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.post.props" />
 </Project>

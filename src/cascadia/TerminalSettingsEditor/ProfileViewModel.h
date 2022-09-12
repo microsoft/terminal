@@ -72,7 +72,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool ShowUnfocusedAppearance();
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();
-        bool AtlasEngineAvailable() const noexcept;
         bool VtPassthroughAvailable() const noexcept;
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(ProfileSubPage, CurrentPage);

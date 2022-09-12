@@ -30,6 +30,9 @@ class UtilsTests
     TEST_METHOD(TestMangleWSLPaths);
 #endif
 
+    TEST_METHOD(TestTrimTrailingWhitespace);
+    TEST_METHOD(TestDontTrimTrailingWhitespace);
+
     void _VerifyXTermColorResult(const std::wstring_view wstr, DWORD colorValue);
     void _VerifyXTermColorInvalid(const std::wstring_view wstr);
 };
@@ -39,12 +42,12 @@ void UtilsTests::TestClampToShortMax()
     const short min = 1;
 
     // Test outside the lower end of the range
-    const short minExpected = min;
+    const auto minExpected = min;
     auto minActual = ClampToShortMax(0, min);
     VERIFY_ARE_EQUAL(minExpected, minActual);
 
     // Test negative numbers
-    const short negativeExpected = min;
+    const auto negativeExpected = min;
     auto negativeActual = ClampToShortMax(-1, min);
     VERIFY_ARE_EQUAL(negativeExpected, negativeActual);
 
@@ -190,7 +193,7 @@ void UtilsTests::TestFilterStringForPaste()
 
 void UtilsTests::TestStringToUint()
 {
-    bool success = false;
+    auto success = false;
     unsigned int value = 0;
     success = StringToUint(L"", value);
     VERIFY_IS_FALSE(success);
@@ -326,14 +329,14 @@ void UtilsTests::TestColorFromXTermColor()
 
 void UtilsTests::_VerifyXTermColorResult(const std::wstring_view wstr, DWORD colorValue)
 {
-    std::optional<til::color> color = ColorFromXTermColor(wstr);
+    auto color = ColorFromXTermColor(wstr);
     VERIFY_IS_TRUE(color.has_value());
     VERIFY_ARE_EQUAL(colorValue, (COLORREF)color.value());
 }
 
 void UtilsTests::_VerifyXTermColorInvalid(const std::wstring_view wstr)
 {
-    std::optional<til::color> color = ColorFromXTermColor(wstr);
+    auto color = ColorFromXTermColor(wstr);
     VERIFY_IS_FALSE(color.has_value());
 }
 
@@ -505,3 +508,41 @@ void UtilsTests::TestMangleWSLPaths()
     }
 }
 #endif
+
+void UtilsTests::TestTrimTrailingWhitespace()
+{
+    // Continue on failures
+    const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
+
+    // Tests for GH #11473
+    VERIFY_ARE_EQUAL(L"Foo", TrimPaste(L"Foo   "));
+    VERIFY_ARE_EQUAL(L"Foo", TrimPaste(L"Foo\n"));
+    VERIFY_ARE_EQUAL(L"Foo", TrimPaste(L"Foo\n\n"));
+    VERIFY_ARE_EQUAL(L"Foo", TrimPaste(L"Foo\r\n"));
+    VERIFY_ARE_EQUAL(L"Foo Bar", TrimPaste(L"Foo Bar\n"));
+    VERIFY_ARE_EQUAL(L"Foo\tBar", TrimPaste(L"Foo\tBar\n"));
+
+    VERIFY_ARE_EQUAL(L"Foo Bar", TrimPaste(L"Foo Bar\t"), L"Trim when there is a tab at the end.");
+    VERIFY_ARE_EQUAL(L"Foo Bar", TrimPaste(L"Foo Bar\t\t"), L"Trim when there are tabs at the end.");
+    VERIFY_ARE_EQUAL(L"Foo Bar", TrimPaste(L"Foo Bar\t\n"), L"Trim when there are tabs at the start of the whitespace at the end.");
+    VERIFY_ARE_EQUAL(L"Foo\tBar", TrimPaste(L"Foo\tBar\t\n"), L"Trim when there are tabs in the middle of the string, and in the whitespace at the end.");
+    VERIFY_ARE_EQUAL(L"Foo\tBar", TrimPaste(L"Foo\tBar\n\t"), L"Trim when there are tabs in the middle of the string, and in the whitespace at the end.");
+    VERIFY_ARE_EQUAL(L"Foo\tBar", TrimPaste(L"Foo\tBar\t\n\t"), L"Trim when there are tabs in the middle of the string, and in the whitespace at the end.");
+}
+void UtilsTests::TestDontTrimTrailingWhitespace()
+{
+    // Continue on failures
+    const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
+
+    VERIFY_ARE_EQUAL(L"Foo\tBar", TrimPaste(L"Foo\tBar"));
+
+    // Tests for GH #12387
+    VERIFY_ARE_EQUAL(L"Foo\nBar\n", TrimPaste(L"Foo\nBar\n"));
+    VERIFY_ARE_EQUAL(L"Foo  Baz\nBar\n", TrimPaste(L"Foo  Baz\nBar\n"));
+    VERIFY_ARE_EQUAL(L"Foo\tBaz\nBar\n", TrimPaste(L"Foo\tBaz\nBar\n"), L"Don't trim when there's a trailing newline, and tabs in the middle");
+    VERIFY_ARE_EQUAL(L"Foo\tBaz\nBar\t\n", TrimPaste(L"Foo\tBaz\nBar\t\n"), L"Don't trim when there's a trailing newline, and tabs in the middle");
+
+    // We need to both
+    // * trim when there's a tab followed by only whitespace
+    // * not trim then there's a tab in the middle, and the string ends in whitespace
+}

@@ -86,7 +86,7 @@ class Microsoft::Console::Render::VtRendererTest
     void Test16Colors(VtEngine* engine);
 
     std::deque<std::string> qExpectedInput;
-    bool WriteCallback(const char* const pch, size_t const cch);
+    bool WriteCallback(const char* const pch, const size_t cch);
     void TestPaint(VtEngine& engine, std::function<void()> pfn);
     Viewport SetUpViewport();
 
@@ -117,7 +117,7 @@ class Microsoft::Console::Render::VtRendererTest
 
 Viewport VtRendererTest::SetUpViewport()
 {
-    SMALL_RECT view = {};
+    til::inclusive_rect view;
     view.Top = view.Left = 0;
     view.Bottom = 31;
     view.Right = 79;
@@ -125,14 +125,14 @@ Viewport VtRendererTest::SetUpViewport()
     return Viewport::FromInclusive(view);
 }
 
-bool VtRendererTest::WriteCallback(const char* const pch, size_t const cch)
+bool VtRendererTest::WriteCallback(const char* const pch, const size_t cch)
 {
-    std::string actualString = std::string(pch, cch);
+    auto actualString = std::string(pch, cch);
     VERIFY_IS_GREATER_THAN(qExpectedInput.size(),
                            static_cast<size_t>(0),
                            NoThrowString().Format(L"writing=\"%hs\", expecting %u strings", actualString.c_str(), qExpectedInput.size()));
 
-    std::string first = qExpectedInput.front();
+    auto first = qExpectedInput.front();
     qExpectedInput.pop_front();
 
     Log::Comment(NoThrowString().Format(L"Expected =\t\"%hs\"", first.c_str()));
@@ -160,8 +160,8 @@ void VtRendererTest::TestPaint(VtEngine& engine, std::function<void()> pfn)
 
 void VtRendererTest::VtSequenceHelperTests()
 {
-    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
+    auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
 
     engine->SetTestCallback(pfn);
@@ -217,14 +217,14 @@ void VtRendererTest::VtSequenceHelperTests()
 
 void VtRendererTest::Xterm256TestInvalidate()
 {
-    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
+    auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
     VerifyFirstPaint(*engine);
 
-    const Viewport view = SetUpViewport();
+    const auto view = SetUpViewport();
 
     Log::Comment(NoThrowString().Format(
         L"Make sure that invalidating all invalidates the whole viewport."));
@@ -235,16 +235,16 @@ void VtRendererTest::Xterm256TestInvalidate()
 
     Log::Comment(NoThrowString().Format(
         L"Make sure that invalidating anything only invalidates that portion"));
-    SMALL_RECT invalid = { 1, 1, 2, 2 };
+    til::rect invalid = { 1, 1, 2, 2 };
     VERIFY_SUCCEEDED(engine->Invalidate(&invalid));
     TestPaint(*engine, [&]() {
         VERIFY_IS_TRUE(engine->_invalidMap.one());
-        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, *(engine->_invalidMap.begin()));
+        VERIFY_ARE_EQUAL(invalid, *(engine->_invalidMap.begin()));
     });
 
     Log::Comment(NoThrowString().Format(
         L"Make sure that scrolling only invalidates part of the viewport, and sends the right sequences"));
-    COORD scrollDelta = { 0, 1 };
+    til::point scrollDelta = { 0, 1 };
     VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
@@ -254,7 +254,7 @@ void VtRendererTest::Xterm256TestInvalidate()
 
         const auto runs = engine->_invalidMap.runs();
         VERIFY_ARE_EQUAL(1u, runs.size());
-        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, runs.front());
+        VERIFY_ARE_EQUAL(invalid, runs.front());
         qExpectedInput.push_back("\x1b[H"); // Go Home
         qExpectedInput.push_back("\x1b[L"); // insert a line
 
@@ -280,7 +280,7 @@ void VtRendererTest::Xterm256TestInvalidate()
         }
 
         // verify the rect matches the invalid one.
-        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
+        VERIFY_ARE_EQUAL(invalid, invalidRect);
         // We would expect a CUP here, but the cursor is already at the home position
         qExpectedInput.push_back("\x1b[3L"); // insert 3 lines
         VERIFY_SUCCEEDED(engine->ScrollFrame());
@@ -296,7 +296,7 @@ void VtRendererTest::Xterm256TestInvalidate()
 
         const auto runs = engine->_invalidMap.runs();
         VERIFY_ARE_EQUAL(1u, runs.size());
-        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, runs.front());
+        VERIFY_ARE_EQUAL(invalid, runs.front());
 
         qExpectedInput.push_back("\x1b[32;1H"); // Bottom of buffer
         qExpectedInput.push_back("\n"); // Scroll down once
@@ -321,7 +321,7 @@ void VtRendererTest::Xterm256TestInvalidate()
         }
 
         // verify the rect matches the invalid one.
-        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
+        VERIFY_ARE_EQUAL(invalid, invalidRect);
 
         // We would expect a CUP here, but we're already at the bottom from the last call.
         qExpectedInput.push_back("\n\n\n"); // Scroll down three times
@@ -351,7 +351,7 @@ void VtRendererTest::Xterm256TestInvalidate()
         }
 
         // verify the rect matches the invalid one.
-        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
+        VERIFY_ARE_EQUAL(invalid, invalidRect);
 
         qExpectedInput.push_back("\x1b[H"); // Go to home
         qExpectedInput.push_back("\x1b[3L"); // insert 3 lines
@@ -400,8 +400,8 @@ void VtRendererTest::Xterm256TestInvalidate()
 
 void VtRendererTest::Xterm256TestColors()
 {
-    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
+    auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
     RenderSettings renderSettings;
@@ -409,7 +409,7 @@ void VtRendererTest::Xterm256TestColors()
 
     VerifyFirstPaint(*engine);
 
-    Viewport view = SetUpViewport();
+    auto view = SetUpViewport();
 
     Log::Comment(NoThrowString().Format(
         L"Test changing the text attributes"));
@@ -580,14 +580,14 @@ void VtRendererTest::Xterm256TestColors()
 
 void VtRendererTest::Xterm256TestCursor()
 {
-    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
+    auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
     VerifyFirstPaint(*engine);
 
-    Viewport view = SetUpViewport();
+    auto view = SetUpViewport();
 
     Log::Comment(NoThrowString().Format(
         L"Test moving the cursor around. Every sequence should have both params to CUP explicitly."));
@@ -655,13 +655,13 @@ void VtRendererTest::Xterm256TestCursor()
         qExpectedInput.push_back("\x1b[1C");
         qExpectedInput.push_back("asdfghjkl");
 
-        const wchar_t* const line = L"asdfghjkl";
+        const auto line = L"asdfghjkl";
         const unsigned char rgWidths[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 
         std::vector<Cluster> clusters;
         for (size_t i = 0; i < wcslen(line); i++)
         {
-            clusters.emplace_back(std::wstring_view{ &line[i], 1 }, static_cast<size_t>(rgWidths[i]));
+            clusters.emplace_back(std::wstring_view{ &line[i], 1 }, static_cast<til::CoordType>(rgWidths[i]));
         }
 
         VERIFY_SUCCEEDED(engine->PaintBufferLine({ clusters.data(), clusters.size() }, { 1, 1 }, false, false));
@@ -756,14 +756,14 @@ void VtRendererTest::Xterm256TestExtendedAttributes()
         offSequences.push_back("\x1b[29m");
     }
 
-    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
+    auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
     VerifyFirstPaint(*engine);
 
-    Viewport view = SetUpViewport();
+    auto view = SetUpViewport();
 
     Log::Comment(NoThrowString().Format(
         L"Test changing the text attributes"));
@@ -805,8 +805,8 @@ void VtRendererTest::Xterm256TestAttributesAcrossReset()
     std::stringstream renditionSequence;
     renditionSequence << "\x1b[" << renditionAttribute << "m";
 
-    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
+    auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
     RenderSettings renderSettings;
@@ -892,14 +892,14 @@ void VtRendererTest::Xterm256TestAttributesAcrossReset()
 
 void VtRendererTest::XtermTestInvalidate()
 {
-    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), SetUpViewport(), false);
+    auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto engine = std::make_unique<XtermEngine>(std::move(hFile), SetUpViewport(), false);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
     VerifyFirstPaint(*engine);
 
-    Viewport view = SetUpViewport();
+    auto view = SetUpViewport();
 
     Log::Comment(NoThrowString().Format(
         L"Make sure that invalidating all invalidates the whole viewport."));
@@ -910,16 +910,16 @@ void VtRendererTest::XtermTestInvalidate()
 
     Log::Comment(NoThrowString().Format(
         L"Make sure that invalidating anything only invalidates that portion"));
-    SMALL_RECT invalid = { 1, 1, 2, 2 };
+    til::rect invalid = { 1, 1, 2, 2 };
     VERIFY_SUCCEEDED(engine->Invalidate(&invalid));
     TestPaint(*engine, [&]() {
         VERIFY_IS_TRUE(engine->_invalidMap.one());
-        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, *(engine->_invalidMap.begin()));
+        VERIFY_ARE_EQUAL(invalid, *(engine->_invalidMap.begin()));
     });
 
     Log::Comment(NoThrowString().Format(
         L"Make sure that scrolling only invalidates part of the viewport, and sends the right sequences"));
-    COORD scrollDelta = { 0, 1 };
+    til::point scrollDelta = { 0, 1 };
     VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
@@ -929,7 +929,7 @@ void VtRendererTest::XtermTestInvalidate()
 
         const auto runs = engine->_invalidMap.runs();
         VERIFY_ARE_EQUAL(1u, runs.size());
-        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, runs.front());
+        VERIFY_ARE_EQUAL(invalid, runs.front());
 
         qExpectedInput.push_back("\x1b[H"); // Go Home
         qExpectedInput.push_back("\x1b[L"); // insert a line
@@ -954,7 +954,7 @@ void VtRendererTest::XtermTestInvalidate()
         }
 
         // verify the rect matches the invalid one.
-        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
+        VERIFY_ARE_EQUAL(invalid, invalidRect);
         // We would expect a CUP here, but the cursor is already at the home position
         qExpectedInput.push_back("\x1b[3L"); // insert 3 lines
         VERIFY_SUCCEEDED(engine->ScrollFrame());
@@ -970,7 +970,7 @@ void VtRendererTest::XtermTestInvalidate()
 
         const auto runs = engine->_invalidMap.runs();
         VERIFY_ARE_EQUAL(1u, runs.size());
-        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, runs.front());
+        VERIFY_ARE_EQUAL(invalid, runs.front());
 
         qExpectedInput.push_back("\x1b[32;1H"); // Bottom of buffer
         qExpectedInput.push_back("\n"); // Scroll down once
@@ -995,7 +995,7 @@ void VtRendererTest::XtermTestInvalidate()
         }
 
         // verify the rect matches the invalid one.
-        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
+        VERIFY_ARE_EQUAL(invalid, invalidRect);
 
         // We would expect a CUP here, but we're already at the bottom from the last call.
         qExpectedInput.push_back("\n\n\n"); // Scroll down three times
@@ -1025,7 +1025,7 @@ void VtRendererTest::XtermTestInvalidate()
         }
 
         // verify the rect matches the invalid one.
-        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
+        VERIFY_ARE_EQUAL(invalid, invalidRect);
 
         qExpectedInput.push_back("\x1b[H"); // Go to home
         qExpectedInput.push_back("\x1b[3L"); // insert 3 lines
@@ -1074,8 +1074,8 @@ void VtRendererTest::XtermTestInvalidate()
 
 void VtRendererTest::XtermTestColors()
 {
-    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), SetUpViewport(), false);
+    auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto engine = std::make_unique<XtermEngine>(std::move(hFile), SetUpViewport(), false);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
     RenderSettings renderSettings;
@@ -1083,7 +1083,7 @@ void VtRendererTest::XtermTestColors()
 
     VerifyFirstPaint(*engine);
 
-    Viewport view = SetUpViewport();
+    auto view = SetUpViewport();
 
     Log::Comment(NoThrowString().Format(
         L"Test changing the text attributes"));
@@ -1209,14 +1209,14 @@ void VtRendererTest::XtermTestColors()
 
 void VtRendererTest::XtermTestCursor()
 {
-    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), SetUpViewport(), false);
+    auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto engine = std::make_unique<XtermEngine>(std::move(hFile), SetUpViewport(), false);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
     VerifyFirstPaint(*engine);
 
-    Viewport view = SetUpViewport();
+    auto view = SetUpViewport();
 
     Log::Comment(NoThrowString().Format(
         L"Test moving the cursor around. Every sequence should have both params to CUP explicitly."));
@@ -1284,13 +1284,13 @@ void VtRendererTest::XtermTestCursor()
         qExpectedInput.push_back("\x1b[1C");
         qExpectedInput.push_back("asdfghjkl");
 
-        const wchar_t* const line = L"asdfghjkl";
+        const auto line = L"asdfghjkl";
         const unsigned char rgWidths[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 
         std::vector<Cluster> clusters;
         for (size_t i = 0; i < wcslen(line); i++)
         {
-            clusters.emplace_back(std::wstring_view{ &line[i], 1 }, static_cast<size_t>(rgWidths[i]));
+            clusters.emplace_back(std::wstring_view{ &line[i], 1 }, static_cast<til::CoordType>(rgWidths[i]));
         }
 
         VERIFY_SUCCEEDED(engine->PaintBufferLine({ clusters.data(), clusters.size() }, { 1, 1 }, false, false));
@@ -1323,8 +1323,8 @@ void VtRendererTest::XtermTestAttributesAcrossReset()
     std::stringstream renditionSequence;
     renditionSequence << "\x1b[" << renditionAttribute << "m";
 
-    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), SetUpViewport(), false);
+    auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto engine = std::make_unique<XtermEngine>(std::move(hFile), SetUpViewport(), false);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
     RenderSettings renderSettings;
@@ -1382,14 +1382,14 @@ void VtRendererTest::XtermTestAttributesAcrossReset()
 
 void VtRendererTest::TestWrapping()
 {
-    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
+    auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
     VerifyFirstPaint(*engine);
 
-    Viewport view = SetUpViewport();
+    auto view = SetUpViewport();
 
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
@@ -1407,19 +1407,19 @@ void VtRendererTest::TestWrapping()
         qExpectedInput.push_back("\r\n");
         qExpectedInput.push_back("zxcvbnm,.");
 
-        const wchar_t* const line1 = L"asdfghjkl";
-        const wchar_t* const line2 = L"zxcvbnm,.";
+        const auto line1 = L"asdfghjkl";
+        const auto line2 = L"zxcvbnm,.";
         const unsigned char rgWidths[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 
         std::vector<Cluster> clusters1;
         for (size_t i = 0; i < wcslen(line1); i++)
         {
-            clusters1.emplace_back(std::wstring_view{ &line1[i], 1 }, static_cast<size_t>(rgWidths[i]));
+            clusters1.emplace_back(std::wstring_view{ &line1[i], 1 }, static_cast<til::CoordType>(rgWidths[i]));
         }
         std::vector<Cluster> clusters2;
         for (size_t i = 0; i < wcslen(line2); i++)
         {
-            clusters2.emplace_back(std::wstring_view{ &line2[i], 1 }, static_cast<size_t>(rgWidths[i]));
+            clusters2.emplace_back(std::wstring_view{ &line2[i], 1 }, static_cast<til::CoordType>(rgWidths[i]));
         }
 
         VERIFY_SUCCEEDED(engine->PaintBufferLine({ clusters1.data(), clusters1.size() }, { 0, 0 }, false, false));
@@ -1429,8 +1429,8 @@ void VtRendererTest::TestWrapping()
 
 void VtRendererTest::TestResize()
 {
-    Viewport view = SetUpViewport();
-    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto view = SetUpViewport();
+    auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
     auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), view);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
@@ -1468,13 +1468,13 @@ void VtRendererTest::TestResize()
 
 void VtRendererTest::TestCursorVisibility()
 {
-    Viewport view = SetUpViewport();
-    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto view = SetUpViewport();
+    auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
     auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), view);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    COORD origin{ 0, 0 };
+    til::point origin{ 0, 0 };
 
     VERIFY_ARE_NOT_EQUAL(origin, engine->_lastText);
 
@@ -1574,8 +1574,8 @@ void VtRendererTest::FormattedString()
     static const auto format = FMT_COMPILE("\x1b[{}m");
     const auto value = 12;
 
-    Viewport view = SetUpViewport();
-    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto view = SetUpViewport();
+    auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
     auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), view);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);

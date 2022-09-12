@@ -103,13 +103,13 @@ ULONG CONSOLE_INFORMATION::GetCSRecursionCount()
 // - STATUS_SUCCESS if successful.
 [[nodiscard]] NTSTATUS CONSOLE_INFORMATION::AllocateConsole(const std::wstring_view title)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // Synchronize flags
     WI_SetFlagIf(gci.Flags, CONSOLE_AUTO_POSITION, !!gci.GetAutoPosition());
     WI_SetFlagIf(gci.Flags, CONSOLE_QUICK_EDIT_MODE, !!gci.GetQuickEdit());
     WI_SetFlagIf(gci.Flags, CONSOLE_HISTORY_NODUP, !!gci.GetHistoryNoDup());
 
-    Selection* const pSelection = &Selection::Instance();
+    const auto pSelection = &Selection::Instance();
     pSelection->SetLineSelection(!!gci.GetLineSelection());
 
     SetConsoleCPInfo(TRUE);
@@ -140,7 +140,7 @@ ULONG CONSOLE_INFORMATION::GetCSRecursionCount()
         return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
 
-    NTSTATUS Status = DoCreateScreenBuffer();
+    auto Status = DoCreateScreenBuffer();
     if (!NT_SUCCESS(Status))
     {
         goto ErrorExit2;
@@ -370,6 +370,41 @@ const std::wstring_view CONSOLE_INFORMATION::GetLinkTitle() const noexcept
 Microsoft::Console::CursorBlinker& CONSOLE_INFORMATION::GetCursorBlinker() noexcept
 {
     return _blinker;
+}
+
+// Method Description:
+// - Returns the MIDI audio instance, created on demand.
+// Arguments:
+// - <none>
+// Return Value:
+// - a reference to the MidiAudio instance.
+MidiAudio& CONSOLE_INFORMATION::GetMidiAudio()
+{
+    if (!_midiAudio)
+    {
+        const auto windowHandle = ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
+        _midiAudio = std::make_unique<MidiAudio>(windowHandle);
+        _midiAudio->Initialize();
+    }
+    return *_midiAudio;
+}
+
+// Method Description:
+// - Shuts down the MIDI audio system if previously instantiated.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void CONSOLE_INFORMATION::ShutdownMidiAudio()
+{
+    if (_midiAudio)
+    {
+        // We lock the console here to make sure the shutdown promise is
+        // set before the audio is unlocked in the thread that is playing.
+        LockConsole();
+        _midiAudio->Shutdown();
+        UnlockConsole();
+    }
 }
 
 // Method Description:

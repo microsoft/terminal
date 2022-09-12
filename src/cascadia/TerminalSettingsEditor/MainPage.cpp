@@ -7,11 +7,15 @@
 #include "Launch.h"
 #include "Interaction.h"
 #include "Rendering.h"
+#include "RenderingViewModel.h"
 #include "Actions.h"
 #include "Profiles.h"
 #include "GlobalAppearance.h"
+#include "GlobalAppearanceViewModel.h"
 #include "ColorSchemes.h"
 #include "AddProfile.h"
+#include "InteractionViewModel.h"
+#include "LaunchViewModel.h"
 #include "..\types\inc\utils.hpp"
 
 #include <LibraryResources.h>
@@ -54,7 +58,27 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _InitializeProfilesList();
 
-        _colorSchemesNavState = winrt::make<ColorSchemesPageNavigationState>(_settingsClone);
+        _colorSchemesPageVM = winrt::make<ColorSchemesPageViewModel>(_settingsClone);
+        _colorSchemesPageViewModelChangedRevoker = _colorSchemesPageVM.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
+            const auto settingName{ args.PropertyName() };
+            if (settingName == L"CurrentPage")
+            {
+                const auto currentScheme = _colorSchemesPageVM.CurrentScheme();
+                if (_colorSchemesPageVM.CurrentPage() == ColorSchemesSubPage::EditColorScheme && currentScheme)
+                {
+                    contentFrame().Navigate(xaml_typename<Editor::EditColorScheme>(), currentScheme);
+                    const auto crumb = winrt::make<Breadcrumb>(box_value(colorSchemesTag), currentScheme.Name(), BreadcrumbSubPage::ColorSchemes_Edit);
+                    _breadcrumbs.Append(crumb);
+                }
+            }
+            else if (settingName == L"CurrentSchemeName")
+            {
+                // this is not technically a setting, it is the ColorSchemesPageVM telling us the breadcrumb item needs to be updated because of a rename
+                _breadcrumbs.RemoveAtEnd();
+                const auto crumb = winrt::make<Breadcrumb>(box_value(colorSchemesTag), _colorSchemesPageVM.CurrentScheme().Name(), BreadcrumbSubPage::ColorSchemes_Edit);
+                _breadcrumbs.Append(crumb);
+            }
+        });
 
         Automation::AutomationProperties::SetHelpText(SaveButton(), RS_(L"Settings_SaveSettingsButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
         Automation::AutomationProperties::SetHelpText(ResetButton(), RS_(L"Settings_ResetSettingsButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
@@ -126,7 +150,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Repopulate profile-related menu items
         _InitializeProfilesList();
         // Update the Nav State with the new version of the settings
-        _colorSchemesNavState.Settings(_settingsClone);
+        _colorSchemesPageVM.UpdateSettings(_settingsClone);
+
         // We'll update the profile in the _profilesNavState whenever we actually navigate to one
 
         // now that the menuItems are repopulated,
@@ -234,7 +259,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - <unused>
     // Return Value:
     // - <none>
-    void MainPage::SettingsNav_Loaded(IInspectable const&, RoutedEventArgs const&)
+    void MainPage::SettingsNav_Loaded(const IInspectable&, const RoutedEventArgs&)
     {
         if (SettingsNav().SelectedItem() == nullptr)
         {
@@ -255,7 +280,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - args - additional event info from invoking the NavViewItem
     // Return Value:
     // - <none>
-    void MainPage::SettingsNav_ItemInvoked(MUX::Controls::NavigationView const&, MUX::Controls::NavigationViewItemInvokedEventArgs const& args)
+    void MainPage::SettingsNav_ItemInvoked(const MUX::Controls::NavigationView&, const MUX::Controls::NavigationViewItemInvokedEventArgs& args)
     {
         if (const auto clickedItemContainer = args.InvokedItemContainer())
         {
@@ -337,19 +362,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         if (clickedItemTag == launchTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Launch>(), winrt::make<LaunchPageNavigationState>(_settingsClone));
+            contentFrame().Navigate(xaml_typename<Editor::Launch>(), winrt::make<LaunchViewModel>(_settingsClone));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Launch/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
         }
         else if (clickedItemTag == interactionTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Interaction>(), winrt::make<InteractionPageNavigationState>(_settingsClone.GlobalSettings()));
+            contentFrame().Navigate(xaml_typename<Editor::Interaction>(), winrt::make<InteractionViewModel>(_settingsClone.GlobalSettings()));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Interaction/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
         }
         else if (clickedItemTag == renderingTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Rendering>(), winrt::make<RenderingPageNavigationState>(_settingsClone.GlobalSettings()));
+            contentFrame().Navigate(xaml_typename<Editor::Rendering>(), winrt::make<RenderingViewModel>(_settingsClone));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Rendering/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
         }
@@ -385,13 +410,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == colorSchemesTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), _colorSchemesNavState);
+            contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), _colorSchemesPageVM);
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_ColorSchemes/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
+
+            if (subPage == BreadcrumbSubPage::ColorSchemes_Edit)
+            {
+                _colorSchemesPageVM.CurrentPage(ColorSchemesSubPage::EditColorScheme);
+            }
         }
         else if (clickedItemTag == globalAppearanceTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), winrt::make<GlobalAppearancePageNavigationState>(_settingsClone.GlobalSettings()));
+            contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), winrt::make<GlobalAppearanceViewModel>(_settingsClone.GlobalSettings()));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Appearance/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
         }
@@ -419,9 +449,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _PreNavigateHelper();
 
-        // Add an event handler for when the user wants to delete a profile.
-        profile.DeleteProfile({ this, &MainPage::_DeleteProfile });
-
         _SetupProfileEventHandling(state);
 
         contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), state);
@@ -444,19 +471,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void MainPage::OpenJsonTapped(IInspectable const& /*sender*/, Windows::UI::Xaml::Input::TappedRoutedEventArgs const& /*args*/)
+    void MainPage::OpenJsonTapped(const IInspectable& /*sender*/, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& /*args*/)
     {
-        const CoreWindow window = CoreWindow::GetForCurrentThread();
+        const auto window = CoreWindow::GetForCurrentThread();
         const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
         const auto lAltState = window.GetKeyState(VirtualKey::LeftMenu);
-        const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
+        const auto altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
                                 WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
         const auto target = altPressed ? SettingsTarget::DefaultsFile : SettingsTarget::SettingsFile;
         _OpenJsonHandlers(nullptr, target);
     }
 
-    void MainPage::OpenJsonKeyDown(IInspectable const& /*sender*/, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& args)
+    void MainPage::OpenJsonKeyDown(const IInspectable& /*sender*/, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& args)
     {
         if (args.Key() == VirtualKey::Enter || args.Key() == VirtualKey::Space)
         {
@@ -465,17 +492,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void MainPage::SaveButton_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*args*/)
+    void MainPage::SaveButton_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
     {
         _settingsClone.WriteSettingsToDisk();
     }
 
-    void MainPage::ResetButton_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*args*/)
+    void MainPage::ResetButton_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
     {
         UpdateSettings(_settingsSource);
     }
 
-    void MainPage::BreadcrumbBar_ItemClicked(Microsoft::UI::Xaml::Controls::BreadcrumbBar const& /*sender*/, Microsoft::UI::Xaml::Controls::BreadcrumbBarItemClickedEventArgs const& args)
+    void MainPage::BreadcrumbBar_ItemClicked(const Microsoft::UI::Xaml::Controls::BreadcrumbBar& /*sender*/, const Microsoft::UI::Xaml::Controls::BreadcrumbBarItemClickedEventArgs& args)
     {
         if (gsl::narrow_cast<uint32_t>(args.Index()) < (_breadcrumbs.Size() - 1))
         {
@@ -566,6 +593,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
             }
         });
+
+        // Add an event handler for when the user wants to delete a profile.
+        profile.DeleteProfile({ this, &MainPage::_DeleteProfile });
+
         return profileNavItem;
     }
 
@@ -593,11 +624,25 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // navigate to the profile next to this one
         const auto newSelectedItem{ menuItems.GetAt(index < menuItems.Size() - 1 ? index : index - 1) };
         SettingsNav().SelectedItem(newSelectedItem);
-        _Navigate(newSelectedItem.try_as<MUX::Controls::NavigationViewItem>().Tag().try_as<Editor::ProfileViewModel>(), BreadcrumbSubPage::None, true);
+        const auto newTag = newSelectedItem.as<MUX::Controls::NavigationViewItem>().Tag();
+        if (const auto profileViewModel = newTag.try_as<ProfileViewModel>())
+        {
+            _Navigate(*profileViewModel, BreadcrumbSubPage::None);
+        }
+        else
+        {
+            _Navigate(newTag.as<hstring>(), BreadcrumbSubPage::None);
+        }
     }
 
     IObservableVector<IInspectable> MainPage::Breadcrumbs() noexcept
     {
         return _breadcrumbs;
     }
+
+    winrt::Windows::UI::Xaml::Media::Brush MainPage::BackgroundBrush()
+    {
+        return SettingsNav().Background();
+    }
+
 }

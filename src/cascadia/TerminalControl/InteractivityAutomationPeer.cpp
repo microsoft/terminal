@@ -146,14 +146,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 #pragma endregion
 
 #pragma region IControlAccessibilityInfo
-    COORD InteractivityAutomationPeer::GetFontSize() const noexcept
+    til::size InteractivityAutomationPeer::GetFontSize() const noexcept
     {
-        return til::size{ til::math::rounding, _interactivity->Core().FontSize() }.to_win32_coord();
+        return { til::math::rounding, _interactivity->Core().FontSize() };
     }
 
-    RECT InteractivityAutomationPeer::GetBounds() const noexcept
+    til::rect InteractivityAutomationPeer::GetBounds() const noexcept
     {
-        return _controlBounds.to_win32_rect();
+        return _controlBounds;
     }
 
     HRESULT InteractivityAutomationPeer::GetHostUiaProvider(IRawElementProviderSimple** provider)
@@ -164,9 +164,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return S_OK;
     }
 
-    RECT InteractivityAutomationPeer::GetPadding() const noexcept
+    til::rect InteractivityAutomationPeer::GetPadding() const noexcept
     {
-        return _controlPadding.to_win32_rect();
+        return _controlPadding;
     }
 
     double InteractivityAutomationPeer::GetScaleFactor() const noexcept
@@ -174,7 +174,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
     }
 
-    void InteractivityAutomationPeer::ChangeViewport(const SMALL_RECT NewWindow)
+    void InteractivityAutomationPeer::ChangeViewport(const til::inclusive_rect& NewWindow)
     {
         _interactivity->UpdateScrollbar(NewWindow.Top);
     }
@@ -204,11 +204,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         // transfer ownership of UiaTextRanges to this new vector
         auto providers = SafeArrayToOwningVector<::Microsoft::Terminal::TermControlUiaTextRange>(textRanges);
-        int count = gsl::narrow<int>(providers.size());
+        auto count = gsl::narrow<int>(providers.size());
 
         std::vector<XamlAutomation::ITextRangeProvider> vec;
         vec.reserve(count);
-        for (int i = 0; i < count; i++)
+        for (auto i = 0; i < count; i++)
         {
             if (auto xutr = _CreateXamlUiaTextRange(providers[i].detach()))
             {

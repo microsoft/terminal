@@ -46,7 +46,7 @@ class HistoryTests
     TEST_METHOD(AllocateAndFreeOneApp)
     {
         const std::wstring app{ L"testapp1.exe" };
-        const HANDLE handle = _MakeHandle(0);
+        const auto handle = _MakeHandle(0);
 
         const auto history = CommandHistory::s_Allocate(app, handle);
         VERIFY_IS_NOT_NULL(history);
@@ -82,7 +82,7 @@ class HistoryTests
 
     TEST_METHOD(EnsureHistoryRestoredAfterClientLeavesAndRejoins)
     {
-        const HANDLE h = _MakeHandle(0);
+        const auto h = _MakeHandle(0);
         Log::Comment(L"Allocate a history and fill it with items.");
         auto history = CommandHistory::s_Allocate(_manyApps[0], h);
         VERIFY_IS_NOT_NULL(history);

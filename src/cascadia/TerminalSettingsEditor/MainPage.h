@@ -28,17 +28,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void UpdateSettings(const Model::CascadiaSettings& settings);
 
-        void OpenJsonKeyDown(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& args);
-        void OpenJsonTapped(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs const& args);
-        void SettingsNav_Loaded(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
-        void SettingsNav_ItemInvoked(Microsoft::UI::Xaml::Controls::NavigationView const& sender, Microsoft::UI::Xaml::Controls::NavigationViewItemInvokedEventArgs const& args);
-        void SaveButton_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
-        void ResetButton_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
-        void BreadcrumbBar_ItemClicked(Microsoft::UI::Xaml::Controls::BreadcrumbBar const& sender, Microsoft::UI::Xaml::Controls::BreadcrumbBarItemClickedEventArgs const& args);
+        void OpenJsonKeyDown(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& args);
+        void OpenJsonTapped(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& args);
+        void SettingsNav_Loaded(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
+        void SettingsNav_ItemInvoked(const Microsoft::UI::Xaml::Controls::NavigationView& sender, const Microsoft::UI::Xaml::Controls::NavigationViewItemInvokedEventArgs& args);
+        void SaveButton_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
+        void ResetButton_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
+        void BreadcrumbBar_ItemClicked(const Microsoft::UI::Xaml::Controls::BreadcrumbBar& sender, const Microsoft::UI::Xaml::Controls::BreadcrumbBarItemClickedEventArgs& args);
 
         void SetHostingWindow(uint64_t hostingWindow) noexcept;
         bool TryPropagateHostingWindow(IInspectable object) noexcept;
         uint64_t GetHostingWindow() const noexcept;
+
+        winrt::Windows::UI::Xaml::Media::Brush BackgroundBrush();
 
         Windows::Foundation::Collections::IObservableVector<IInspectable> Breadcrumbs() noexcept;
 
@@ -63,9 +65,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _Navigate(hstring clickedItemTag, BreadcrumbSubPage subPage);
         void _Navigate(const Editor::ProfileViewModel& profile, BreadcrumbSubPage subPage, const bool focusDeleteButton = false);
 
-        winrt::Microsoft::Terminal::Settings::Editor::ColorSchemesPageNavigationState _colorSchemesNavState{ nullptr };
+        winrt::Microsoft::Terminal::Settings::Editor::ColorSchemesPageViewModel _colorSchemesPageVM{ nullptr };
 
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _profileViewModelChangedRevoker;
+        Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _colorSchemesPageViewModelChangedRevoker;
     };
 }
 

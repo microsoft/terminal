@@ -16,7 +16,7 @@
 // - pParent - the text buffer that this row belongs to
 // Return Value:
 // - constructed object
-ROW::ROW(const SHORT rowId, const unsigned short rowWidth, const TextAttribute fillAttribute, TextBuffer* const pParent) :
+ROW::ROW(const til::CoordType rowId, const til::CoordType rowWidth, const TextAttribute fillAttribute, TextBuffer* const pParent) :
     _id{ rowId },
     _rowWidth{ rowWidth },
     _charRow{ rowWidth, this },
@@ -58,7 +58,7 @@ bool ROW::Reset(const TextAttribute Attr)
 // - width - the new width, in cells
 // Return Value:
 // - S_OK if successful, otherwise relevant error
-[[nodiscard]] HRESULT ROW::Resize(const unsigned short width)
+[[nodiscard]] HRESULT ROW::Resize(const til::CoordType width)
 {
     RETURN_IF_FAILED(_charRow.Resize(width));
     try
@@ -78,7 +78,7 @@ bool ROW::Reset(const TextAttribute Attr)
 // - column - 0-indexed column index
 // Return Value:
 // - <none>
-void ROW::ClearColumn(const size_t column)
+void ROW::ClearColumn(const til::CoordType column)
 {
     THROW_HR_IF(E_INVALIDARG, column >= _charRow.size());
     _charRow.ClearCell(column);
@@ -103,7 +103,7 @@ const UnicodeStorage& ROW::GetUnicodeStorage() const noexcept
 // - limitRight - right inclusive column ID for the last write in this row. (optional, will just write to the end of row if nullopt)
 // Return Value:
 // - iterator to first cell that was not written to this row.
-OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, const std::optional<bool> wrap, std::optional<size_t> limitRight)
+OutputCellIterator ROW::WriteCells(OutputCellIterator it, const til::CoordType index, const std::optional<bool> wrap, std::optional<til::CoordType> limitRight)
 {
     THROW_HR_IF(E_INVALIDARG, index >= _charRow.size());
     THROW_HR_IF(E_INVALIDARG, limitRight.value_or(0) >= _charRow.size());
@@ -113,8 +113,8 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
 
     auto currentColor = it->TextAttr();
     uint16_t colorUses = 0;
-    uint16_t colorStarts = gsl::narrow_cast<uint16_t>(index);
-    uint16_t currentIndex = colorStarts;
+    auto colorStarts = gsl::narrow_cast<uint16_t>(index);
+    auto currentIndex = colorStarts;
 
     while (it && currentIndex <= finalColumnInRow)
     {
@@ -141,7 +141,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
         // Fill the text if the behavior isn't set to saying there's only a color stored in this iterator.
         if (it->TextAttrBehavior() != TextAttributeBehavior::StoredOnly)
         {
-            const bool fillingLastColumn = currentIndex == finalColumnInRow;
+            const auto fillingLastColumn = currentIndex == finalColumnInRow;
 
             // TODO: MSFT: 19452170 - We need to ensure when writing any trailing byte that the one to the left
             // is a matching leading byte. Likewise, if we're writing a leading byte, we need to make sure we still have space in this loop

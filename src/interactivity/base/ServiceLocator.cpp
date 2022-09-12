@@ -41,6 +41,13 @@ void ServiceLocator::SetOneCoreTeardownFunction(void (*pfn)()) noexcept
 
 [[noreturn]] void ServiceLocator::RundownAndExit(const HRESULT hr)
 {
+    // MSFT:40146639
+    //   The premise of this function is that 1 thread enters and 0 threads leave alive.
+    //   We need to prevent anyone from calling us until we actually ExitProcess(),
+    //   so that we don't TriggerTeardown() twice. LockConsole() can't be used here,
+    //   because doing so would prevent the render thread from progressing.
+    AcquireSRWLockExclusive(&s_shutdownLock);
+
     // MSFT:15506250
     // In VT I/O Mode, a client application might die before we've rendered
     //      the last bit of text they've emitted. So give the VtRenderer one
@@ -50,9 +57,13 @@ void ServiceLocator::SetOneCoreTeardownFunction(void (*pfn)()) noexcept
         s_globals.pRender->TriggerTeardown();
     }
 
+    // MSFT:40226902 - HOTFIX shutdown on OneCore, by leaking the renderer, thereby
+    // reducing the change for existing race conditions to turn into deadlocks.
+#ifndef NDEBUG
     // By locking the console, we ensure no background tasks are accessing the
     // classes we're going to destruct down below (for instance: CursorBlinker).
     s_globals.getConsoleInformation().LockConsole();
+#endif
 
     // A History Lesson from MSFT: 13576341:
     // We introduced RundownAndExit to give services that hold onto important handles
@@ -71,14 +82,23 @@ void ServiceLocator::SetOneCoreTeardownFunction(void (*pfn)()) noexcept
 
     // TODO: MSFT: 14397093 - Expand graceful rundown beyond just the Hot Bug input services case.
 
+    // MSFT:40226902 - HOTFIX shutdown on OneCore, by leaking the renderer, thereby
+    // reducing the change for existing race conditions to turn into deadlocks.
+#ifndef NDEBUG
     delete s_globals.pRender;
+    s_globals.pRender = nullptr;
+#endif
 
     if (s_oneCoreTeardownFunction)
     {
         s_oneCoreTeardownFunction();
     }
 
+    // MSFT:40226902 - HOTFIX shutdown on OneCore, by leaking the renderer, thereby
+    // reducing the change for existing race conditions to turn into deadlocks.
+#ifndef NDEBUG
     s_consoleWindow.reset(nullptr);
+#endif
 
     ExitProcess(hr);
 }
@@ -87,7 +107,7 @@ void ServiceLocator::SetOneCoreTeardownFunction(void (*pfn)()) noexcept
 
 [[nodiscard]] NTSTATUS ServiceLocator::CreateConsoleInputThread(_Outptr_result_nullonfailure_ IConsoleInputThread** thread)
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     if (s_consoleInputThread)
     {
@@ -155,7 +175,7 @@ void ServiceLocator::SetOneCoreTeardownFunction(void (*pfn)()) noexcept
 
 [[nodiscard]] NTSTATUS ServiceLocator::SetConsoleWindowInstance(_In_ IConsoleWindow* window)
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     if (s_consoleWindow)
     {
@@ -184,7 +204,7 @@ IConsoleWindow* ServiceLocator::LocateConsoleWindow()
 
 IConsoleControl* ServiceLocator::LocateConsoleControl()
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     if (!s_consoleControl)
     {
@@ -211,7 +231,7 @@ IConsoleInputThread* ServiceLocator::LocateConsoleInputThread()
 
 IHighDpiApi* ServiceLocator::LocateHighDpiApi()
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     if (!s_highDpiApi)
     {
@@ -233,7 +253,7 @@ IHighDpiApi* ServiceLocator::LocateHighDpiApi()
 
 IWindowMetrics* ServiceLocator::LocateWindowMetrics()
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     if (!s_windowMetrics)
     {
@@ -260,7 +280,7 @@ IAccessibilityNotifier* ServiceLocator::LocateAccessibilityNotifier()
 
 ISystemConfigurationProvider* ServiceLocator::LocateSystemConfigurationProvider()
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     if (!s_systemConfigurationProvider)
     {
@@ -288,12 +308,13 @@ Globals& ServiceLocator::LocateGlobals()
 // Method Description:
 // - Retrieves the pseudo console window, or attempts to instantiate one.
 // Arguments:
-// - <none>
+// - owner: (defaults to 0 `HWND_DESKTOP`) the HWND that should be the initial
+//   owner of the pseudo window.
 // Return Value:
 // - a reference to the pseudoconsole window.
-HWND ServiceLocator::LocatePseudoWindow()
+HWND ServiceLocator::LocatePseudoWindow(const HWND owner)
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
     if (!s_pseudoWindowInitialized)
     {
         if (s_interactivityFactory.get() == nullptr)
@@ -304,9 +325,10 @@ HWND ServiceLocator::LocatePseudoWindow()
         if (NT_SUCCESS(status))
         {
             HWND hwnd;
-            status = s_interactivityFactory->CreatePseudoWindow(hwnd);
+            status = s_interactivityFactory->CreatePseudoWindow(hwnd, owner);
             s_pseudoWindow.reset(hwnd);
         }
+
         s_pseudoWindowInitialized = true;
     }
     LOG_IF_NTSTATUS_FAILED(status);
@@ -315,13 +337,11 @@ HWND ServiceLocator::LocatePseudoWindow()
 
 #pragma endregion
 
-#pragma endregion
-
 #pragma region Private Methods
 
 [[nodiscard]] NTSTATUS ServiceLocator::LoadInteractivityFactory()
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     if (s_interactivityFactory.get() == nullptr)
     {

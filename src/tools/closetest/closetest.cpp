@@ -300,6 +300,7 @@ static std::vector<DWORD> getConsoleProcessList()
     ret.resize(count1);
 #pragma warning(suppress : 4189) // It's used in the assert
     const DWORD count2 = GetConsoleProcessList(&ret[0], (DWORD)ret.size());
+    UNREFERENCED_PARAMETER(count2);
     assert(count1 == count2 && "GetConsoleProcessList failed");
     return ret;
 }
@@ -376,6 +377,7 @@ static void spawnChildTree(DWORD masterPid, const std::vector<std::wstring>& ext
     assert(success && "CreateProcessW failed");
 #pragma warning(suppress : 4189) // It's used in the assert
     const DWORD waitRet = WaitForSingleObject(readyEvent, INFINITE);
+    UNREFERENCED_PARAMETER(waitRet);
     assert(waitRet == WAIT_OBJECT_0 && "WaitForSingleObject failed");
     CloseHandle(readyEvent);
     CloseHandle(pi.hThread);
@@ -487,6 +489,7 @@ static HANDLE duplicateHandle(HANDLE srcProc, HANDLE srcHandle)
 #pragma warning(suppress : 4189) // It's used in the assert
     const auto success =
         DuplicateHandle(srcProc, srcHandle, GetCurrentProcess(), &ret, 0, FALSE, DUPLICATE_SAME_ACCESS);
+    UNREFERENCED_PARAMETER(success);
     assert(success && "DuplicateHandle failed");
     return ret;
 }
@@ -608,6 +611,7 @@ static int doChild(std::deque<std::wstring> argv)
 #pragma warning(suppress : 4189) // It's used in the assert
         const BOOL success =
             AssignProcessToJobObject(jobHandle, GetCurrentProcess());
+        UNREFERENCED_PARAMETER(success);
         assert(success && "AssignProcessToJobObject failed");
         CloseHandle(jobHandle);
         jobHandle = nullptr;

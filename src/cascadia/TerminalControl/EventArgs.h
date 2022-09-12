@@ -12,6 +12,8 @@
 #include "RendererWarningArgs.g.h"
 #include "TransparencyChangedEventArgs.g.h"
 #include "FoundResultsArgs.g.h"
+#include "ShowWindowArgs.g.h"
+#include "UpdateSelectionMarkersEventArgs.g.h"
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
@@ -144,5 +146,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         WINRT_PROPERTY(bool, FoundMatch);
+    };
+
+    struct ShowWindowArgs : public ShowWindowArgsT<ShowWindowArgs>
+    {
+    public:
+        ShowWindowArgs(const bool showOrHide) :
+            _ShowOrHide(showOrHide)
+        {
+        }
+
+        WINRT_PROPERTY(bool, ShowOrHide);
+    };
+
+    struct UpdateSelectionMarkersEventArgs : public UpdateSelectionMarkersEventArgsT<UpdateSelectionMarkersEventArgs>
+    {
+    public:
+        UpdateSelectionMarkersEventArgs(const bool clearMarkers) :
+            _ClearMarkers(clearMarkers)
+        {
+        }
+
+        WINRT_PROPERTY(bool, ClearMarkers, false);
     };
 }

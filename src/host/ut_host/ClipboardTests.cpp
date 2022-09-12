@@ -37,8 +37,8 @@ class ClipboardTests
         m_state = new CommonState();
 
         m_state->PrepareGlobalFont();
-        m_state->PrepareGlobalScreenBuffer();
         m_state->PrepareGlobalInputBuffer();
+        m_state->PrepareGlobalScreenBuffer();
 
         return true;
     }
@@ -65,7 +65,7 @@ class ClipboardTests
 
     const UINT cRectsSelected = 4;
 
-    std::vector<std::wstring> SetupRetrieveFromBuffers(bool fLineSelection, std::vector<SMALL_RECT>& selection)
+    std::vector<std::wstring> SetupRetrieveFromBuffers(bool fLineSelection, std::vector<til::inclusive_rect>& selection)
     {
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
@@ -75,10 +75,10 @@ class ClipboardTests
         const auto& screenInfo = gci.GetActiveOutputBuffer();
 
         selection.clear();
-        selection.emplace_back(SMALL_RECT{ 0, 0, 8, 0 });
-        selection.emplace_back(SMALL_RECT{ 0, 1, 14, 1 });
-        selection.emplace_back(SMALL_RECT{ 0, 2, 14, 2 });
-        selection.emplace_back(SMALL_RECT{ 0, 3, 8, 3 });
+        selection.emplace_back(til::inclusive_rect{ 0, 0, 8, 0 });
+        selection.emplace_back(til::inclusive_rect{ 0, 1, 14, 1 });
+        selection.emplace_back(til::inclusive_rect{ 0, 2, 14, 2 });
+        selection.emplace_back(til::inclusive_rect{ 0, 3, 8, 3 });
 
         const auto& buffer = screenInfo.GetTextBuffer();
         return buffer.GetText(true, fLineSelection, selection).text;
@@ -91,16 +91,16 @@ class ClipboardTests
         // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
         // Please see CommonState.hpp for information on the buffer state per row, the row contents, etc.
 
-        std::vector<SMALL_RECT> selection;
+        std::vector<til::inclusive_rect> selection;
         const auto text = SetupRetrieveFromBuffers(false, selection);
 
         // verify trailing bytes were trimmed
         // there are 2 double-byte characters in our sample string (see CommonState.hpp for sample)
         // the width is right - left
-        VERIFY_ARE_EQUAL((short)wcslen(text[0].data()), selection[0].Right - selection[0].Left + 1);
+        VERIFY_ARE_EQUAL((til::CoordType)wcslen(text[0].data()), selection[0].Right - selection[0].Left + 1);
 
         // since we're not in line selection, the line should be \r\n terminated
-        PCWCHAR tempPtr = text[0].data();
+        auto tempPtr = text[0].data();
         tempPtr += text[0].size();
         tempPtr -= 2;
         VERIFY_ARE_EQUAL(String(tempPtr), String(L"\r\n"));
@@ -124,12 +124,12 @@ class ClipboardTests
         // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
         // Please see CommonState.hpp for information on the buffer state per row, the row contents, etc.
 
-        std::vector<SMALL_RECT> selection;
+        std::vector<til::inclusive_rect> selection;
         const auto text = SetupRetrieveFromBuffers(true, selection);
 
         // row 2, no wrap
         // no wrap row before the end should have CR/LF
-        PCWCHAR tempPtr = text[2].data();
+        auto tempPtr = text[2].data();
         tempPtr += text[2].size();
         tempPtr -= 2;
         VERIFY_ARE_EQUAL(String(tempPtr), String(L"\r\n"));
@@ -147,29 +147,29 @@ class ClipboardTests
 
         // wrap row should have spaces at the end
         tempPtr = text[1].data();
-        const wchar_t* ptr = wcsrchr(tempPtr, L' ');
+        auto ptr = wcsrchr(tempPtr, L' ');
         VERIFY_IS_NOT_NULL(ptr);
     }
 
     TEST_METHOD(CanConvertTextToInputEvents)
     {
         std::wstring wstr = L"hello world";
-        std::deque<std::unique_ptr<IInputEvent>> events = Clipboard::Instance().TextToKeyEvents(wstr.c_str(),
-                                                                                                wstr.size());
+        auto events = Clipboard::Instance().TextToKeyEvents(wstr.c_str(),
+                                                            wstr.size());
         VERIFY_ARE_EQUAL(wstr.size() * 2, events.size());
-        for (wchar_t wch : wstr)
+        for (auto wch : wstr)
         {
             std::deque<bool> keydownPattern{ true, false };
-            for (bool isKeyDown : keydownPattern)
+            for (auto isKeyDown : keydownPattern)
             {
                 VERIFY_ARE_EQUAL(InputEventType::KeyEvent, events.front()->EventType());
                 std::unique_ptr<KeyEvent> keyEvent;
                 keyEvent.reset(static_cast<KeyEvent* const>(events.front().release()));
                 events.pop_front();
 
-                const short keyState = VkKeyScanW(wch);
+                const auto keyState = VkKeyScanW(wch);
                 VERIFY_ARE_NOT_EQUAL(-1, keyState);
-                const WORD virtualScanCode = static_cast<WORD>(MapVirtualKeyW(LOBYTE(keyState), MAPVK_VK_TO_VSC));
+                const auto virtualScanCode = static_cast<WORD>(MapVirtualKeyW(LOBYTE(keyState), MAPVK_VK_TO_VSC));
 
                 VERIFY_ARE_EQUAL(wch, keyEvent->GetCharData());
                 VERIFY_ARE_EQUAL(isKeyDown, keyEvent->IsKeyDown());
@@ -185,18 +185,18 @@ class ClipboardTests
     {
         std::wstring wstr = L"HeLlO WoRlD";
         size_t uppercaseCount = 0;
-        for (wchar_t wch : wstr)
+        for (auto wch : wstr)
         {
             std::isupper(wch) ? ++uppercaseCount : 0;
         }
-        std::deque<std::unique_ptr<IInputEvent>> events = Clipboard::Instance().TextToKeyEvents(wstr.c_str(),
-                                                                                                wstr.size());
+        auto events = Clipboard::Instance().TextToKeyEvents(wstr.c_str(),
+                                                            wstr.size());
 
         VERIFY_ARE_EQUAL((wstr.size() + uppercaseCount) * 2, events.size());
-        for (wchar_t wch : wstr)
+        for (auto wch : wstr)
         {
             std::deque<bool> keydownPattern{ true, false };
-            for (bool isKeyDown : keydownPattern)
+            for (auto isKeyDown : keydownPattern)
             {
                 Log::Comment(NoThrowString().Format(L"testing char: %C; keydown: %d", wch, isKeyDown));
 
@@ -206,9 +206,9 @@ class ClipboardTests
                 events.pop_front();
 
                 const short keyScanError = -1;
-                const short keyState = VkKeyScanW(wch);
+                const auto keyState = VkKeyScanW(wch);
                 VERIFY_ARE_NOT_EQUAL(keyScanError, keyState);
-                const WORD virtualScanCode = static_cast<WORD>(MapVirtualKeyW(LOBYTE(keyState), MAPVK_VK_TO_VSC));
+                const auto virtualScanCode = static_cast<WORD>(MapVirtualKeyW(LOBYTE(keyState), MAPVK_VK_TO_VSC));
 
                 if (std::isupper(wch))
                 {
@@ -222,9 +222,9 @@ class ClipboardTests
                     keyEvent2.reset(static_cast<KeyEvent* const>(events.front().release()));
                     events.pop_front();
 
-                    const short keyState2 = VkKeyScanW(wch);
+                    const auto keyState2 = VkKeyScanW(wch);
                     VERIFY_ARE_NOT_EQUAL(keyScanError, keyState2);
-                    const WORD virtualScanCode2 = static_cast<WORD>(MapVirtualKeyW(LOBYTE(keyState2), MAPVK_VK_TO_VSC));
+                    const auto virtualScanCode2 = static_cast<WORD>(MapVirtualKeyW(LOBYTE(keyState2), MAPVK_VK_TO_VSC));
 
                     if (isKeyDown)
                     {
@@ -258,9 +258,9 @@ class ClipboardTests
     {
         const std::wstring wstr = L"\x20ac"; // € char U+20AC
 
-        const short keyState = VkKeyScanW(wstr[0]);
+        const auto keyState = VkKeyScanW(wstr[0]);
         const WORD virtualKeyCode = LOBYTE(keyState);
-        const WORD virtualScanCode = static_cast<WORD>(MapVirtualKeyW(virtualKeyCode, MAPVK_VK_TO_VSC));
+        const auto virtualScanCode = static_cast<WORD>(MapVirtualKeyW(virtualKeyCode, MAPVK_VK_TO_VSC));
 
         if (keyState == -1 || HIBYTE(keyState) == 0 /* no modifiers required */)
         {
@@ -269,8 +269,8 @@ class ClipboardTests
             return;
         }
 
-        std::deque<std::unique_ptr<IInputEvent>> events = Clipboard::Instance().TextToKeyEvents(wstr.c_str(),
-                                                                                                wstr.size());
+        auto events = Clipboard::Instance().TextToKeyEvents(wstr.c_str(),
+                                                            wstr.size());
 
         std::deque<KeyEvent> expectedEvents;
         // should be converted to:
@@ -287,7 +287,7 @@ class ClipboardTests
 
         for (size_t i = 0; i < events.size(); ++i)
         {
-            const KeyEvent currentKeyEvent = *reinterpret_cast<const KeyEvent* const>(events[i].get());
+            const auto currentKeyEvent = *reinterpret_cast<const KeyEvent* const>(events[i].get());
             VERIFY_ARE_EQUAL(expectedEvents[i], currentKeyEvent, NoThrowString().Format(L"i == %d", i));
         }
     }
@@ -297,8 +297,8 @@ class ClipboardTests
         const std::wstring wstr = L"\xbc"; // ¼ char U+00BC
         const UINT outputCodepage = CP_JAPANESE;
         ServiceLocator::LocateGlobals().getConsoleInformation().OutputCP = outputCodepage;
-        std::deque<std::unique_ptr<IInputEvent>> events = Clipboard::Instance().TextToKeyEvents(wstr.c_str(),
-                                                                                                wstr.size());
+        auto events = Clipboard::Instance().TextToKeyEvents(wstr.c_str(),
+                                                            wstr.size());
 
         std::deque<KeyEvent> expectedEvents;
         if constexpr (Feature_UseNumpadEventsForClipboardInput::IsEnabled())
@@ -329,7 +329,7 @@ class ClipboardTests
 
         for (size_t i = 0; i < events.size(); ++i)
         {
-            const KeyEvent currentKeyEvent = *reinterpret_cast<const KeyEvent* const>(events[i].get());
+            const auto currentKeyEvent = *reinterpret_cast<const KeyEvent* const>(events[i].get());
             VERIFY_ARE_EQUAL(expectedEvents[i], currentKeyEvent, NoThrowString().Format(L"i == %d", i));
         }
     }

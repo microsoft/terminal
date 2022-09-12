@@ -110,7 +110,7 @@ namespace winrt::TerminalApp::implementation
     // - Removes the bell indicator from the tab header
     // Arguments:
     // - sender, e: not used
-    void TerminalTab::_BellIndicatorTimerTick(Windows::Foundation::IInspectable const& /*sender*/, Windows::Foundation::IInspectable const& /*e*/)
+    void TerminalTab::_BellIndicatorTimerTick(const Windows::Foundation::IInspectable& /*sender*/, const Windows::Foundation::IInspectable& /*e*/)
     {
         ShowBellIndicator(false);
         // Just do a sanity check that the timer still exists before we stop it
@@ -649,6 +649,46 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Attaches the given color picker to ourselves
+    // - Typically will be called after we have sent a request for the color picker
+    // Arguments:
+    // - colorPicker: The color picker that we should attach to ourselves
+    // Return Value:
+    // - <none>
+    void TerminalTab::AttachColorPicker(TerminalApp::ColorPickupFlyout& colorPicker)
+    {
+        auto weakThis{ get_weak() };
+
+        _tabColorPickup = colorPicker;
+
+        _colorSelectedToken = _tabColorPickup.ColorSelected([weakThis](auto newTabColor) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->SetRuntimeTabColor(newTabColor);
+            }
+        });
+
+        _colorClearedToken = _tabColorPickup.ColorCleared([weakThis]() {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->ResetRuntimeTabColor();
+            }
+        });
+
+        _pickerClosedToken = _tabColorPickup.Closed([weakThis](auto&&, auto&&) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_tabColorPickup.ColorSelected(tab->_colorSelectedToken);
+                tab->_tabColorPickup.ColorCleared(tab->_colorClearedToken);
+                tab->_tabColorPickup.Closed(tab->_pickerClosedToken);
+                tab->_tabColorPickup = nullptr;
+            }
+        });
+
+        _tabColorPickup.ShowAt(TabViewItem());
+    }
+
+    // Method Description:
     // - Find the currently active pane, and then switch the split direction of
     //   its parent. E.g. switch from Horizontal to Vertical.
     // Return Value:
@@ -864,7 +904,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        events.taskbarToken = control.SetTaskbarProgress([dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
+        events.taskbarToken = control.SetTaskbarProgress([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(dispatcher);
             // Check if Tab's lifetime has expired
             if (auto tab{ weakThis.get() })
@@ -1069,7 +1109,7 @@ namespace winrt::TerminalApp::implementation
         // Add a Closed event handler to the Pane. If the pane closes out from
         // underneath us, and it's zoomed, we want to be able to make sure to
         // update our state accordingly to un-zoom that pane. See GH#7252.
-        auto closedToken = pane->Closed([weakThis, weakPane](auto&& /*s*/, auto && /*e*/) -> winrt::fire_and_forget {
+        auto closedToken = pane->Closed([weakThis, weakPane](auto&& /*s*/, auto&& /*e*/) -> winrt::fire_and_forget {
             if (auto tab{ weakThis.get() })
             {
                 if (tab->_zoomedPane)
@@ -1184,26 +1224,11 @@ namespace winrt::TerminalApp::implementation
         chooseColorMenuItem.Click([weakThis](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
-                tab->ActivateColorPicker();
+                tab->RequestColorPicker();
             }
         });
         chooseColorMenuItem.Text(RS_(L"TabColorChoose"));
         chooseColorMenuItem.Icon(colorPickSymbol);
-
-        // Color Picker (it's convenient to have it here)
-        _tabColorPickup.ColorSelected([weakThis](auto newTabColor) {
-            if (auto tab{ weakThis.get() })
-            {
-                tab->SetRuntimeTabColor(newTabColor);
-            }
-        });
-
-        _tabColorPickup.ColorCleared([weakThis]() {
-            if (auto tab{ weakThis.get() })
-            {
-                tab->ResetRuntimeTabColor();
-            }
-        });
 
         Controls::MenuFlyoutItem renameTabMenuItem;
         {
@@ -1273,6 +1298,23 @@ namespace winrt::TerminalApp::implementation
             exportTabMenuItem.Icon(exportTabSymbol);
         }
 
+        Controls::MenuFlyoutItem findMenuItem;
+        {
+            // "Split Tab"
+            Controls::FontIcon findSymbol;
+            findSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
+            findSymbol.Glyph(L"\xF78B"); // SearchMedium
+
+            findMenuItem.Click([weakThis](auto&&, auto&&) {
+                if (auto tab{ weakThis.get() })
+                {
+                    tab->_FindRequestedHandlers();
+                }
+            });
+            findMenuItem.Text(RS_(L"FindText"));
+            findMenuItem.Icon(findSymbol);
+        }
+
         // Build the menu
         Controls::MenuFlyout contextMenuFlyout;
         Controls::MenuFlyoutSeparator menuSeparator;
@@ -1281,6 +1323,7 @@ namespace winrt::TerminalApp::implementation
         contextMenuFlyout.Items().Append(duplicateTabMenuItem);
         contextMenuFlyout.Items().Append(splitTabMenuItem);
         contextMenuFlyout.Items().Append(exportTabMenuItem);
+        contextMenuFlyout.Items().Append(findMenuItem);
         contextMenuFlyout.Items().Append(menuSeparator);
 
         // GH#5750 - When the context menu is dismissed with ESC, toss the focus
@@ -1291,7 +1334,7 @@ namespace winrt::TerminalApp::implementation
                 // GH#10112 - if we're opening the tab renamer, don't
                 // immediately toss focus to the control. We don't want to steal
                 // focus from the tab renamer.
-                if (!tab->_headerControl.InRename())
+                if (!tab->_headerControl.InRename() && !tab->GetActiveTerminalControl().SearchBoxEditInFocus())
                 {
                     tab->_RequestFocusActiveControlHandlers();
                 }
@@ -1325,7 +1368,7 @@ namespace winrt::TerminalApp::implementation
         // -------------------- | --          | --
         // Runtime Color        | _optional_  | Color Picker / `setTabColor` action
         // Control Tab Color    | _optional_  | Profile's `tabColor`, or a color set by VT
-        // Theme Tab Background | _optional_  | `tab.backgroundColor` in the theme
+        // Theme Tab Background | _optional_  | `tab.backgroundColor` in the theme (handled in _RecalculateAndApplyTabColor)
         // Tab Default Color    | **default** | TabView in XAML
         //
         // coalesce will get us the first of these values that's
@@ -1334,7 +1377,6 @@ namespace winrt::TerminalApp::implementation
 
         return til::coalesce(_runtimeTabColor,
                              controlTabColor,
-                             _themeTabColor,
                              std::optional<Windows::UI::Color>(std::nullopt));
     }
 
@@ -1353,108 +1395,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - This function dispatches a function to the UI thread to recalculate
-    //   what this tab's current background color should be. If a color is set,
-    //   it will apply the given color to the tab's background. Otherwise, it
-    //   will clear the tab's background color.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TerminalTab::_RecalculateAndApplyTabColor()
-    {
-        auto weakThis{ get_weak() };
-
-        TabViewItem().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis]() {
-            auto ptrTab = weakThis.get();
-            if (!ptrTab)
-                return;
-
-            auto tab{ ptrTab };
-
-            std::optional<winrt::Windows::UI::Color> currentColor = tab->GetTabColor();
-            if (currentColor.has_value())
-            {
-                tab->_ApplyTabColor(currentColor.value());
-            }
-            else
-            {
-                tab->_ClearTabBackgroundColor();
-            }
-        });
-    }
-
-    // Method Description:
-    // - Applies the given color to the background of this tab's TabViewItem.
-    // - Sets the tab foreground color depending on the luminance of
-    // the background color
-    // - This method should only be called on the UI thread.
-    // Arguments:
-    // - color: the color the user picked for their tab
-    // Return Value:
-    // - <none>
-    void TerminalTab::_ApplyTabColor(const winrt::Windows::UI::Color& color)
-    {
-        Media::SolidColorBrush selectedTabBrush{};
-        Media::SolidColorBrush deselectedTabBrush{};
-        Media::SolidColorBrush fontBrush{};
-        Media::SolidColorBrush hoverTabBrush{};
-        // calculate the luminance of the current color and select a font
-        // color based on that
-        // see https://www.w3.org/TR/WCAG20/#relativeluminancedef
-        if (TerminalApp::ColorHelper::IsBrightColor(color))
-        {
-            fontBrush.Color(winrt::Windows::UI::Colors::Black());
-        }
-        else
-        {
-            fontBrush.Color(winrt::Windows::UI::Colors::White());
-        }
-
-        hoverTabBrush.Color(TerminalApp::ColorHelper::GetAccentColor(color));
-        selectedTabBrush.Color(color);
-
-        // currently if a tab has a custom color, a deselected state is
-        // signified by using the same color with a bit of transparency
-        auto deselectedTabColor = color;
-        deselectedTabColor.A = 64;
-        deselectedTabBrush.Color(deselectedTabColor);
-
-        // currently if a tab has a custom color, a deselected state is
-        // signified by using the same color with a bit of transparency
-        //
-        // Prior to MUX 2.7, we set TabViewItemHeaderBackground, but now we can
-        // use TabViewItem().Background() for that. HOWEVER,
-        // TabViewItem().Background() only sets the color of the tab background
-        // when the TabViewItem is unselected. So we still need to set the other
-        // properties ourselves.
-        //
-        // In GH#11294 we thought we'd still need to set
-        // TabViewItemHeaderBackground manually, but GH#11382 discovered that
-        // Background() was actually okay after all.
-        TabViewItem().Background(deselectedTabBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
-
-        // TabViewItem().Foreground() unfortunately does not work for us. It
-        // sets the color for the text when the TabViewItem isn't selected, but
-        // not when it is hovered, pressed, dragged, or selected, so we'll need
-        // to just set them all anyways.
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForeground"), fontBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundSelected"), fontBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPointerOver"), fontBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPressed"), fontBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewButtonForegroundActiveTab"), fontBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewButtonForegroundPressed"), fontBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewButtonForegroundPointerOver"), fontBrush);
-
-        _RefreshVisualState();
-
-        _ColorSelectedHandlers(color);
-    }
-
-    // Method Description:
     // - Clear the custom runtime color of the tab, if any color is set. This
     //   will re-apply whatever the tab's base color should be (either the color
     //   from the control, the theme, or the default tab color.)
@@ -1468,76 +1408,26 @@ namespace winrt::TerminalApp::implementation
         _RecalculateAndApplyTabColor();
     }
 
-    // Method Description:
-    // - Clear out any color we've set for the TabViewItem.
-    // - This method should only be called on the UI thread.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TerminalTab::_ClearTabBackgroundColor()
+    winrt::Windows::UI::Xaml::Media::Brush TerminalTab::_BackgroundBrush()
     {
-        winrt::hstring keys[] = {
-            L"TabViewItemHeaderBackground",
-            L"TabViewItemHeaderBackgroundSelected",
-            L"TabViewItemHeaderBackgroundPointerOver",
-            L"TabViewItemHeaderForeground",
-            L"TabViewItemHeaderForegroundSelected",
-            L"TabViewItemHeaderForegroundPointerOver",
-            L"TabViewItemHeaderBackgroundPressed",
-            L"TabViewItemHeaderForegroundPressed",
-            L"TabViewButtonForegroundActiveTab"
-        };
-
-        // simply clear any of the colors in the tab's dict
-        for (auto keyString : keys)
+        Media::Brush terminalBrush{ nullptr };
+        if (const auto& c{ GetActiveTerminalControl() })
         {
-            auto key = winrt::box_value(keyString);
-            if (TabViewItem().Resources().HasKey(key))
-            {
-                TabViewItem().Resources().Remove(key);
-            }
+            terminalBrush = c.BackgroundBrush();
         }
-
-        // GH#11382 DON'T set the background to null. If you do that, then the
-        // tab won't be hit testable at all. Transparent, however, is a totally
-        // valid hit test target. That makes sense.
-        TabViewItem().Background(WUX::Media::SolidColorBrush{ Windows::UI::Colors::Transparent() });
-
-        _RefreshVisualState();
-        _ColorClearedHandlers();
+        return terminalBrush;
     }
 
     // Method Description:
-    // - Display the tab color picker at the location of the TabViewItem for this tab.
+    // - Send an event to request for the color picker
+    // - The listener should attach the color picker via AttachColorPicker()
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalTab::ActivateColorPicker()
+    void TerminalTab::RequestColorPicker()
     {
-        _tabColorPickup.ShowAt(TabViewItem());
-    }
-
-    // Method Description:
-    // Toggles the visual state of the tab view item,
-    // so that changes to the tab color are reflected immediately
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TerminalTab::_RefreshVisualState()
-    {
-        if (TabViewItem().IsSelected())
-        {
-            VisualStateManager::GoToState(TabViewItem(), L"Normal", true);
-            VisualStateManager::GoToState(TabViewItem(), L"Selected", true);
-        }
-        else
-        {
-            VisualStateManager::GoToState(TabViewItem(), L"Selected", true);
-            VisualStateManager::GoToState(TabViewItem(), L"Normal", true);
-        }
+        _ColorPickerRequestedHandlers();
     }
 
     // - Get the total number of leaf panes in this tab. This will be the number

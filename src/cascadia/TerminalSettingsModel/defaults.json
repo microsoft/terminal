@@ -26,7 +26,7 @@
     // Miscellaneous
     "confirmCloseAllTabs": true,
     "startOnUserLogin": false,
-    "theme": "system",
+    "theme": "dark",
     "snapToGridOnResize": true,
     "disableAnimations": false,
     "startupActions": "",
@@ -43,7 +43,7 @@
             "icon": "ms-appx:///ProfileIcons/{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.png",
             "colorScheme": "Campbell",
             "antialiasingMode": "grayscale",
-            "closeOnExit": "graceful",
+            "closeOnExit": "automatic",
             "cursorShape": "bar",
             "fontFace": "Cascadia Mono",
             "fontSize": 12,
@@ -62,7 +62,7 @@
             "icon": "ms-appx:///ProfileIcons/{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.png",
             "colorScheme": "Campbell",
             "antialiasingMode": "grayscale",
-            "closeOnExit": "graceful",
+            "closeOnExit": "automatic",
             "cursorShape": "bar",
             "fontFace": "Cascadia Mono",
             "fontSize": 12,
@@ -280,6 +280,44 @@
             "brightWhite": "#EEEEEC"
         }
     ],
+    "themes": [
+        {
+            "name": "light",
+            "window": {
+                "applicationTheme": "light"
+            },
+            "tab": {
+                "background": "terminalBackground",
+                "unfocusedBackground": "#00000000"
+            },
+            "tabRow": {
+                "unfocusedBackground": "#FFFFFFFF"
+            }
+        },
+        {
+            "name": "dark",
+            "window": {
+                "applicationTheme": "dark"
+            },
+            "tab": {
+                "background": "terminalBackground",
+                "unfocusedBackground": "#00000000"
+            },
+            "tabRow": {
+                "unfocusedBackground": "#333333FF"
+            }
+        },
+        {
+            "name": "system",
+            "window": {
+                "applicationTheme": "system"
+            },
+            "tab": {
+                "background": "terminalBackground",
+                "unfocusedBackground": "#00000000"
+            }
+        }
+    ],
     "actions":
     [
         // Application-level Keys
@@ -339,6 +377,7 @@
         { "command": { "action": "switchToTab", "index": 4294967295 }, "keys": "ctrl+alt+9" },
 
         // Pane Management
+        { "command": "closeOtherPanes" },
         { "command": "closePane", "keys": "ctrl+shift+w" },
         { "command": { "action": "splitPane", "split": "up" } },
         { "command": { "action": "splitPane", "split": "down" }, "keys": "alt+shift+-" },
@@ -382,8 +421,14 @@
         // Clipboard Integration
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+shift+c" },
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+insert" },
+        { "command": { "action": "copy", "singleLine": false }, "keys": "enter" },
         { "command": "paste", "keys": "ctrl+shift+v" },
         { "command": "paste", "keys": "shift+insert" },
+        { "command": "selectAll", "keys": "ctrl+shift+a" },
+        { "command": "markMode", "keys": "ctrl+shift+m" },
+        { "command": "toggleBlockSelection" },
+        { "command": "switchSelectionEndpoint" },
+        { "command": "expandSelectionToWord" },
 
         // Scrollback
         { "command": "scrollDown", "keys": "ctrl+shift+down" },
@@ -465,6 +510,6 @@
                 { "command": { "action": "adjustOpacity", "opacity": 75, "relative": false } },
                 { "command": { "action": "adjustOpacity", "opacity": 100, "relative": false } }
             ]
-        },
+        }
     ]
 }

@@ -14,6 +14,7 @@ Author(s):
 #pragma once
 
 #include "../inc/IConsoleControl.hpp"
+#include "../win32/ConsoleControl.hpp"
 
 namespace Microsoft::Console::Interactivity
 {
@@ -25,9 +26,11 @@ namespace Microsoft::Console::Interactivity
         // IConsoleControl Members
         [[nodiscard]] NTSTATUS NotifyConsoleApplication(_In_ DWORD dwProcessId);
         [[nodiscard]] NTSTATUS SetForeground(_In_ HANDLE hProcess, _In_ BOOL fForeground);
-        [[nodiscard]] NTSTATUS EndTask(_In_ HANDLE hProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags);
+        [[nodiscard]] NTSTATUS EndTask(_In_ DWORD dwProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags);
 
     private:
         wil::unique_handle _pipe;
+
+        Win32::ConsoleControl _control;
     };
 }

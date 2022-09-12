@@ -57,10 +57,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         com_ptr<ActionMap> Copy() const;
 
         // queries
-        Model::Command GetActionByKeyChord(Control::KeyChord const& keys) const;
-        bool IsKeyChordExplicitlyUnbound(Control::KeyChord const& keys) const;
-        Control::KeyChord GetKeyBindingForAction(ShortcutAction const& action) const;
-        Control::KeyChord GetKeyBindingForAction(ShortcutAction const& action, IActionArgs const& actionArgs) const;
+        Model::Command GetActionByKeyChord(const Control::KeyChord& keys) const;
+        bool IsKeyChordExplicitlyUnbound(const Control::KeyChord& keys) const;
+        Control::KeyChord GetKeyBindingForAction(const ShortcutAction& action) const;
+        Control::KeyChord GetKeyBindingForAction(const ShortcutAction& action, const IActionArgs& actionArgs) const;
 
         // population
         void AddAction(const Model::Command& cmd);
@@ -71,8 +71,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Json::Value ToJson() const;
 
         // modification
-        bool RebindKeys(Control::KeyChord const& oldKeys, Control::KeyChord const& newKeys);
-        void DeleteKeyBinding(Control::KeyChord const& keys);
+        bool RebindKeys(const Control::KeyChord& oldKeys, const Control::KeyChord& newKeys);
+        void DeleteKeyBinding(const Control::KeyChord& keys);
         void RegisterKeyBinding(Control::KeyChord keys, Model::ActionAndArgs action);
 
     private:

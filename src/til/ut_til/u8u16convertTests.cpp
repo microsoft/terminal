@@ -43,7 +43,7 @@ void Utf8Utf16ConvertTests::TestU8ToU16()
     };
 
     std::wstring u16Out{};
-    const HRESULT hRes{ til::u8u16(u8String, u16Out) };
+    const auto hRes{ til::u8u16(u8String, u16Out) };
     VERIFY_ARE_EQUAL(S_OK, hRes);
     VERIFY_ARE_EQUAL(u16StringComp, u16Out);
 }
@@ -72,7 +72,7 @@ void Utf8Utf16ConvertTests::TestU16ToU8()
     };
 
     std::string u8Out{};
-    const HRESULT hRes{ til::u16u8(u16String, u8Out) };
+    const auto hRes{ til::u16u8(u16String, u8Out) };
     VERIFY_ARE_EQUAL(S_OK, hRes);
     VERIFY_ARE_EQUAL(u8StringComp, u8Out);
 }
@@ -115,22 +115,22 @@ void Utf8Utf16ConvertTests::TestU8ToU16Partials()
     til::u8state state{};
 
     std::wstring u16Out1{};
-    const HRESULT hRes1{ til::u8u16(u8String1, u16Out1, state) };
+    const auto hRes1{ til::u8u16(u8String1, u16Out1, state) };
     VERIFY_ARE_EQUAL(S_OK, hRes1);
     VERIFY_ARE_EQUAL(u16StringComp1, u16Out1);
 
     std::wstring u16Out2{};
-    const HRESULT hRes2{ til::u8u16(u8String2, u16Out2, state) };
+    const auto hRes2{ til::u8u16(u8String2, u16Out2, state) };
     VERIFY_ARE_EQUAL(S_OK, hRes2);
     VERIFY_ARE_EQUAL(u16StringComp1, u16Out2);
 
     std::wstring u16Out3{};
-    const HRESULT hRes3{ til::u8u16(u8String3, u16Out3, state) };
+    const auto hRes3{ til::u8u16(u8String3, u16Out3, state) };
     VERIFY_ARE_EQUAL(S_OK, hRes3);
     VERIFY_ARE_EQUAL(std::wstring{}, u16Out3);
 
     std::wstring u16Out4{};
-    const HRESULT hRes4{ til::u8u16(u8String4, u16Out4, state) };
+    const auto hRes4{ til::u8u16(u8String4, u16Out4, state) };
     VERIFY_ARE_EQUAL(S_OK, hRes4);
     VERIFY_ARE_EQUAL(u16StringComp2, u16Out4);
 }
@@ -157,12 +157,12 @@ void Utf8Utf16ConvertTests::TestU16ToU8Partials()
     til::u16state state{};
 
     std::string u8Out1{};
-    const HRESULT hRes1{ til::u16u8(u16String1, u8Out1, state) };
+    const auto hRes1{ til::u16u8(u16String1, u8Out1, state) };
     VERIFY_ARE_EQUAL(S_OK, hRes1);
     VERIFY_ARE_EQUAL(u8StringComp, u8Out1);
 
     std::string u8Out2{};
-    const HRESULT hRes2{ til::u16u8(u16String2, u8Out2, state) };
+    const auto hRes2{ til::u16u8(u16String2, u8Out2, state) };
     VERIFY_ARE_EQUAL(S_OK, hRes2);
     VERIFY_ARE_EQUAL(u8StringComp, u8Out2);
 }

@@ -19,7 +19,7 @@ using namespace Microsoft::Console::Types;
 // Arguments:
 // - buffer - Text buffer to seek through
 // - pos - Starting position to retrieve text data from (within screen buffer bounds)
-TextBufferCellIterator::TextBufferCellIterator(const TextBuffer& buffer, COORD pos) :
+TextBufferCellIterator::TextBufferCellIterator(const TextBuffer& buffer, til::point pos) :
     TextBufferCellIterator(buffer, pos, buffer.GetSize())
 {
 }
@@ -30,7 +30,7 @@ TextBufferCellIterator::TextBufferCellIterator(const TextBuffer& buffer, COORD p
 // - buffer - Pointer to screen buffer to seek through
 // - pos - Starting position to retrieve text data from (within screen buffer bounds)
 // - limits - Viewport limits to restrict the iterator within the buffer bounds (smaller than the buffer itself)
-TextBufferCellIterator::TextBufferCellIterator(const TextBuffer& buffer, COORD pos, const Viewport limits) :
+TextBufferCellIterator::TextBufferCellIterator(const TextBuffer& buffer, til::point pos, const Viewport limits) :
     _buffer(buffer),
     _pos(pos),
     _pRow(s_GetRow(buffer, pos)),
@@ -96,7 +96,7 @@ TextBufferCellIterator& TextBufferCellIterator::operator+=(const ptrdiff_t& move
 {
     // Note that this method is called intensively when the terminal is under heavy load.
     // We need to aggressively optimize it, comparing to the -= operator.
-    ptrdiff_t move = movement;
+    auto move = movement;
     if (move < 0)
     {
         // Early branching to leave the rare case to -= operator.
@@ -126,7 +126,7 @@ TextBufferCellIterator& TextBufferCellIterator::operator+=(const ptrdiff_t& move
     const auto oldX = _pos.X;
     const auto oldY = _pos.Y;
 
-    // Under MSVC writing the individual members of a COORD generates worse assembly
+    // Under MSVC writing the individual members of a til::point generates worse assembly
     // compared to having them be local variables. This causes a performance impact.
     auto newX = oldX;
     auto newY = oldY;
@@ -165,7 +165,7 @@ TextBufferCellIterator& TextBufferCellIterator::operator+=(const ptrdiff_t& move
         _attrIter += diff;
         _view.UpdateTextAttribute(*_attrIter);
 
-        const CharRow& charRow = _pRow->GetCharRow();
+        const auto& charRow = _pRow->GetCharRow();
         _view.UpdateText(charRow.GlyphAt(newX));
         _view.UpdateDbcsAttribute(charRow.DbcsAttrAt(newX));
         _pos.X = newX;
@@ -191,7 +191,7 @@ TextBufferCellIterator& TextBufferCellIterator::operator+=(const ptrdiff_t& move
 // - Reference to self after movement.
 TextBufferCellIterator& TextBufferCellIterator::operator-=(const ptrdiff_t& movement)
 {
-    ptrdiff_t move = movement;
+    auto move = movement;
     if (move < 0)
     {
         return (*this) += (-move);
@@ -233,7 +233,7 @@ TextBufferCellIterator& TextBufferCellIterator::operator--()
 // - Value with previous position prior to movement.
 TextBufferCellIterator TextBufferCellIterator::operator++(int)
 {
-    auto temp(*this);
+    auto temp = *this;
     operator++();
     return temp;
 }
@@ -244,7 +244,7 @@ TextBufferCellIterator TextBufferCellIterator::operator++(int)
 // - Value with previous position prior to movement.
 TextBufferCellIterator TextBufferCellIterator::operator--(int)
 {
-    auto temp(*this);
+    auto temp = *this;
     operator--();
     return temp;
 }
@@ -257,7 +257,7 @@ TextBufferCellIterator TextBufferCellIterator::operator--(int)
 // - Value with previous position prior to movement.
 TextBufferCellIterator TextBufferCellIterator::operator+(const ptrdiff_t& movement)
 {
-    auto temp(*this);
+    auto temp = *this;
     temp += movement;
     return temp;
 }
@@ -270,7 +270,7 @@ TextBufferCellIterator TextBufferCellIterator::operator+(const ptrdiff_t& moveme
 // - Value with previous position prior to movement.
 TextBufferCellIterator TextBufferCellIterator::operator-(const ptrdiff_t& movement)
 {
-    auto temp(*this);
+    auto temp = *this;
     temp -= movement;
     return temp;
 }
@@ -289,7 +289,7 @@ ptrdiff_t TextBufferCellIterator::operator-(const TextBufferCellIterator& it)
 // - Sets the coordinate position that this iterator will inspect within the text buffer on dereference.
 // Arguments:
 // - newPos - The new coordinate position.
-void TextBufferCellIterator::_SetPos(const COORD newPos)
+void TextBufferCellIterator::_SetPos(const til::point newPos)
 {
     if (newPos.Y != _pos.Y)
     {
@@ -317,7 +317,7 @@ void TextBufferCellIterator::_SetPos(const COORD newPos)
 // - pos - Position inside screen buffer bounds to retrieve row
 // Return Value:
 // - Pointer to the underlying CharRow structure
-const ROW* TextBufferCellIterator::s_GetRow(const TextBuffer& buffer, const COORD pos)
+const ROW* TextBufferCellIterator::s_GetRow(const TextBuffer& buffer, const til::point pos) noexcept
 {
     return &buffer.GetRowByOffset(pos.Y);
 }
@@ -354,7 +354,7 @@ const OutputCellView* TextBufferCellIterator::operator->() const noexcept
     return &_view;
 }
 
-COORD TextBufferCellIterator::Pos() const noexcept
+til::point TextBufferCellIterator::Pos() const noexcept
 {
     return _pos;
 }

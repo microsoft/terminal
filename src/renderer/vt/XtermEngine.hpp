@@ -43,15 +43,17 @@ namespace Microsoft::Console::Render
                                                            const gsl::not_null<IRenderData*> pData,
                                                            const bool usingSoftFont,
                                                            const bool isSettingDefaultBrushes) noexcept override;
-        [[nodiscard]] HRESULT PaintBufferLine(gsl::span<const Cluster> const clusters,
-                                              const COORD coord,
+        [[nodiscard]] HRESULT PaintBufferLine(const gsl::span<const Cluster> clusters,
+                                              const til::point coord,
                                               const bool trimLeft,
                                               const bool lineWrapped) noexcept override;
         [[nodiscard]] HRESULT ScrollFrame() noexcept override;
 
-        [[nodiscard]] HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept override;
+        [[nodiscard]] HRESULT InvalidateScroll(const til::point* const pcoordDelta) noexcept override;
 
         [[nodiscard]] HRESULT WriteTerminalW(const std::wstring_view str) noexcept override;
+
+        [[nodiscard]] HRESULT SetWindowVisibility(const bool showOrHide) noexcept override;
 
     protected:
         // I'm using a non-class enum here, so that the values
@@ -68,7 +70,7 @@ namespace Microsoft::Console::Render
         Tribool _lastCursorIsVisible;
         bool _nextCursorIsVisible;
 
-        [[nodiscard]] HRESULT _MoveCursor(const COORD coord) noexcept override;
+        [[nodiscard]] HRESULT _MoveCursor(const til::point coord) noexcept override;
 
         [[nodiscard]] HRESULT _DoUpdateTitle(const std::wstring_view newTitle) noexcept override;
 

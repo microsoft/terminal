@@ -38,7 +38,7 @@ static bool _IsGlyphWideForceNarrowFallback(const std::wstring_view /* glyph */)
 static bool _EnsureStaticInitialization()
 {
     // use C++11 magic statics to make sure we only do this once.
-    static bool initialized = []() {
+    static auto initialized = []() {
         // *** THIS IS A SINGLETON ***
         SetGlyphWidthFallback(_IsGlyphWideForceNarrowFallback);
 
@@ -55,7 +55,7 @@ LRESULT CALLBACK HwndTerminal::HwndTerminalWndProc(
 try
 {
 #pragma warning(suppress : 26490) // Win32 APIs can only store void*, have to use reinterpret_cast
-    HwndTerminal* terminal = reinterpret_cast<HwndTerminal*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+    auto terminal = reinterpret_cast<HwndTerminal*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
 
     if (terminal)
     {
@@ -178,7 +178,7 @@ HwndTerminal::HwndTerminal(HWND parentHwnd) :
 {
     _EnsureStaticInitialization();
 
-    HINSTANCE hInstance = wil::GetModuleInstanceHandle();
+    auto hInstance = wil::GetModuleInstanceHandle();
 
     if (RegisterTermClass(hInstance))
     {
@@ -214,7 +214,9 @@ HRESULT HwndTerminal::Initialize()
     _terminal = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
     auto renderThread = std::make_unique<::Microsoft::Console::Render::RenderThread>();
     auto* const localPointerToThread = renderThread.get();
-    const auto& renderSettings = _terminal->GetRenderSettings();
+    auto& renderSettings = _terminal->GetRenderSettings();
+    renderSettings.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, RGB(12, 12, 12));
+    renderSettings.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, RGB(204, 204, 204));
     _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(renderSettings, _terminal.get(), nullptr, 0, std::move(renderThread));
     RETURN_HR_IF_NULL(E_POINTER, localPointerToThread);
     RETURN_IF_FAILED(localPointerToThread->Initialize(_renderer.get()));
@@ -228,7 +230,7 @@ HRESULT HwndTerminal::Initialize()
     RECT windowRect;
     GetWindowRect(_hwnd.get(), &windowRect);
 
-    const COORD windowSize{ gsl::narrow<short>(windowRect.right - windowRect.left), gsl::narrow<short>(windowRect.bottom - windowRect.top) };
+    const til::size windowSize{ windowRect.right - windowRect.left, windowRect.bottom - windowRect.top };
 
     // Fist set up the dx engine with the window size in pixels.
     // Then, using the font, get the number of characters that can fit.
@@ -237,11 +239,7 @@ HRESULT HwndTerminal::Initialize()
 
     _renderEngine = std::move(dxEngine);
 
-    _terminal->SetBackgroundCallback([](auto) {});
-
-    _terminal->Create(COORD{ 80, 25 }, 1000, *_renderer);
-    _terminal->SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, RGB(12, 12, 12));
-    _terminal->SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, RGB(204, 204, 204));
+    _terminal->Create({ 80, 25 }, 1000, *_renderer);
     _terminal->SetWriteInputCallback([=](std::wstring_view input) noexcept { _WriteTextToConnection(input); });
     localPointerToThread->EnablePainting();
 
@@ -345,7 +343,7 @@ IRawElementProviderSimple* HwndTerminal::_GetUiaProvider() noexcept
     return _uiaProvider.Get();
 }
 
-HRESULT HwndTerminal::Refresh(const SIZE windowSize, _Out_ COORD* dimensions)
+HRESULT HwndTerminal::Refresh(const til::size windowSize, _Out_ til::size* dimensions)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, dimensions);
 
@@ -359,8 +357,7 @@ HRESULT HwndTerminal::Refresh(const SIZE windowSize, _Out_ COORD* dimensions)
     _renderer->TriggerRedrawAll();
 
     // Convert our new dimensions to characters
-    const auto viewInPixels = Viewport::FromDimensions({ 0, 0 },
-                                                       { gsl::narrow<short>(windowSize.cx), gsl::narrow<short>(windowSize.cy) });
+    const auto viewInPixels = Viewport::FromDimensions(windowSize);
     const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
 
     // If this function succeeds with S_FALSE, then the terminal didn't
@@ -437,7 +434,7 @@ void _stdcall TerminalSendOutput(void* terminal, LPCWSTR data)
 /// <param name="height">New height of the terminal in pixels</param>
 /// <param name="dimensions">Out parameter containing the columns and rows that fit the new size.</param>
 /// <returns>HRESULT of the attempted resize.</returns>
-HRESULT _stdcall TerminalTriggerResize(_In_ void* terminal, _In_ short width, _In_ short height, _Out_ COORD* dimensions)
+HRESULT _stdcall TerminalTriggerResize(_In_ void* terminal, _In_ til::CoordType width, _In_ til::CoordType height, _Out_ til::size* dimensions)
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
 
@@ -450,7 +447,7 @@ HRESULT _stdcall TerminalTriggerResize(_In_ void* terminal, _In_ short width, _I
         static_cast<int>(height),
         0));
 
-    const SIZE windowSize{ width, height };
+    const til::size windowSize{ width, height };
     return publicTerminal->Refresh(windowSize, dimensions);
 }
 
@@ -461,19 +458,19 @@ HRESULT _stdcall TerminalTriggerResize(_In_ void* terminal, _In_ short width, _I
 /// <param name="dimensionsInCharacters">New terminal size in row and column count.</param>
 /// <param name="dimensionsInPixels">Out parameter with the new size of the renderer.</param>
 /// <returns>HRESULT of the attempted resize.</returns>
-HRESULT _stdcall TerminalTriggerResizeWithDimension(_In_ void* terminal, _In_ COORD dimensionsInCharacters, _Out_ SIZE* dimensionsInPixels)
+HRESULT _stdcall TerminalTriggerResizeWithDimension(_In_ void* terminal, _In_ til::size dimensionsInCharacters, _Out_ til::size* dimensionsInPixels)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, dimensionsInPixels);
 
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
 
-    const auto viewInCharacters = Viewport::FromDimensions({ 0, 0 }, { (dimensionsInCharacters.X), (dimensionsInCharacters.Y) });
+    const auto viewInCharacters = Viewport::FromDimensions(dimensionsInCharacters);
     const auto viewInPixels = publicTerminal->_renderEngine->GetViewportInPixels(viewInCharacters);
 
     dimensionsInPixels->cx = viewInPixels.Width();
     dimensionsInPixels->cy = viewInPixels.Height();
 
-    COORD unused{ 0, 0 };
+    til::size unused;
 
     return TerminalTriggerResize(terminal, viewInPixels.Width(), viewInPixels.Height(), &unused);
 }
@@ -486,7 +483,7 @@ HRESULT _stdcall TerminalTriggerResizeWithDimension(_In_ void* terminal, _In_ CO
 /// <param name="height">Height of the terminal area to calculate.</param>
 /// <param name="dimensions">Out parameter containing the columns and rows that fit the new size.</param>
 /// <returns>HRESULT of the calculation.</returns>
-HRESULT _stdcall TerminalCalculateResize(_In_ void* terminal, _In_ short width, _In_ short height, _Out_ COORD* dimensions)
+HRESULT _stdcall TerminalCalculateResize(_In_ void* terminal, _In_ til::CoordType width, _In_ til::CoordType height, _Out_ til::size* dimensions)
 {
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
 
@@ -536,7 +533,7 @@ try
     };
 
     auto lock = _terminal->LockForWriting();
-    const bool altPressed = GetKeyState(VK_MENU) < 0;
+    const auto altPressed = GetKeyState(VK_MENU) < 0;
     const til::size fontSize{ this->_actualFont.GetSize() };
 
     this->_terminal->SetBlockSelection(altPressed);
@@ -550,11 +547,11 @@ try
 
     if (multiClickMapper == 3)
     {
-        _terminal->MultiClickSelection((cursorPosition / fontSize).to_win32_coord(), ::Terminal::SelectionExpansion::Line);
+        _terminal->MultiClickSelection(cursorPosition / fontSize, ::Terminal::SelectionExpansion::Line);
     }
     else if (multiClickMapper == 2)
     {
-        _terminal->MultiClickSelection((cursorPosition / fontSize).to_win32_coord(), ::Terminal::SelectionExpansion::Word);
+        _terminal->MultiClickSelection(cursorPosition / fontSize, ::Terminal::SelectionExpansion::Word);
     }
     else
     {
@@ -595,13 +592,13 @@ try
 
         if (distanceSquared >= maxDistanceSquared)
         {
-            _terminal->SetSelectionAnchor((touchdownPoint / fontSize).to_win32_coord());
+            _terminal->SetSelectionAnchor(touchdownPoint / fontSize);
             // stop tracking the touchdown point
             _singleClickTouchdownPos = std::nullopt;
         }
     }
 
-    this->_terminal->SetSelectionEnd((cursorPosition / fontSize).to_win32_coord());
+    this->_terminal->SetSelectionEnd(cursorPosition / fontSize);
     this->_renderer->TriggerSelection();
 
     return S_OK;
@@ -626,7 +623,7 @@ void _stdcall TerminalClearSelection(void* terminal)
 bool _stdcall TerminalIsSelectionActive(void* terminal)
 {
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-    const bool selectionActive = publicTerminal->_terminal->IsSelectionActive();
+    const auto selectionActive = publicTerminal->_terminal->IsSelectionActive();
     return selectionActive;
 }
 
@@ -684,7 +681,7 @@ static ControlKeyStates getControlKeyState() noexcept
 bool HwndTerminal::_CanSendVTMouseInput() const noexcept
 {
     // Only allow the transit of mouse events if shift isn't pressed.
-    const bool shiftPressed = GetKeyState(VK_SHIFT) < 0;
+    const auto shiftPressed = GetKeyState(VK_SHIFT) < 0;
     return !shiftPressed && _focused && _terminal->IsTrackingMouseInput();
 }
 
@@ -703,9 +700,7 @@ try
         wheelDelta = HIWORD(wParam);
 
         // If it's a *WHEEL event, it's in screen coordinates, not window (?!)
-        POINT coordsToTransform = cursorPosition.to_win32_point();
-        ScreenToClient(_hwnd.get(), &coordsToTransform);
-        cursorPosition = til::point{ coordsToTransform };
+        ScreenToClient(_hwnd.get(), cursorPosition.as_win32_point());
     }
 
     const TerminalInput::MouseButtonState state{
@@ -714,7 +709,7 @@ try
         WI_IsFlagSet(GetKeyState(VK_RBUTTON), KeyPressed)
     };
 
-    return _terminal->SendMouseEvent((cursorPosition / fontSize).to_win32_coord(), uMsg, getControlKeyState(), wheelDelta, state);
+    return _terminal->SendMouseEvent(cursorPosition / fontSize, uMsg, getControlKeyState(), wheelDelta, state);
 }
 catch (...)
 {
@@ -782,21 +777,23 @@ void _stdcall DestroyTerminal(void* terminal)
 }
 
 // Updates the terminal font type, size, color, as well as the background/foreground colors to a specified theme.
-void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, short fontSize, int newDpi)
+void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, til::CoordType fontSize, int newDpi)
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
     {
         auto lock = publicTerminal->_terminal->LockForWriting();
 
-        publicTerminal->_terminal->SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, theme.DefaultForeground);
-        publicTerminal->_terminal->SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, theme.DefaultBackground);
+        auto& renderSettings = publicTerminal->_terminal->GetRenderSettings();
+        renderSettings.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, theme.DefaultForeground);
+        renderSettings.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, theme.DefaultBackground);
+
         publicTerminal->_renderEngine->SetSelectionBackground(theme.DefaultSelectionBackground, theme.SelectionBackgroundAlpha);
 
         // Set the font colors
         for (size_t tableIndex = 0; tableIndex < 16; tableIndex++)
         {
             // It's using gsl::at to check the index is in bounds, but the analyzer still calls this array-to-pointer-decay
-            [[gsl::suppress(bounds .3)]] publicTerminal->_terminal->SetColorTableEntry(tableIndex, gsl::at(theme.ColorTable, tableIndex));
+            [[gsl::suppress(bounds .3)]] renderSettings.SetColorTableEntry(tableIndex, gsl::at(theme.ColorTable, tableIndex));
         }
     }
 
@@ -810,8 +807,8 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
     RECT windowRect;
     GetWindowRect(publicTerminal->_hwnd.get(), &windowRect);
 
-    COORD dimensions = {};
-    const SIZE windowSize{ windowRect.right - windowRect.left, windowRect.bottom - windowRect.top };
+    til::size dimensions;
+    const til::size windowSize{ windowRect.right - windowRect.left, windowRect.bottom - windowRect.top };
     publicTerminal->Refresh(windowSize, &dimensions);
 }
 
@@ -849,7 +846,7 @@ void __stdcall TerminalKillFocus(void* terminal)
 // Arguments:
 // - rows - Rows of text data to copy
 // - fAlsoCopyFormatting - true if the color and formatting should also be copied, false otherwise
-HRESULT HwndTerminal::_CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, bool const fAlsoCopyFormatting)
+HRESULT HwndTerminal::_CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, const bool fAlsoCopyFormatting)
 try
 {
     std::wstring finalString;
@@ -861,17 +858,17 @@ try
     }
 
     // allocate the final clipboard data
-    const size_t cchNeeded = finalString.size() + 1;
-    const size_t cbNeeded = sizeof(wchar_t) * cchNeeded;
+    const auto cchNeeded = finalString.size() + 1;
+    const auto cbNeeded = sizeof(wchar_t) * cchNeeded;
     wil::unique_hglobal globalHandle(GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, cbNeeded));
     RETURN_LAST_ERROR_IF_NULL(globalHandle.get());
 
-    PWSTR pwszClipboard = static_cast<PWSTR>(GlobalLock(globalHandle.get()));
+    auto pwszClipboard = static_cast<PWSTR>(GlobalLock(globalHandle.get()));
     RETURN_LAST_ERROR_IF_NULL(pwszClipboard);
 
     // The pattern gets a bit strange here because there's no good wil built-in for global lock of this type.
     // Try to copy then immediately unlock. Don't throw until after (so the hglobal won't be freed until we unlock).
-    const HRESULT hr = StringCchCopyW(pwszClipboard, cchNeeded, finalString.data());
+    const auto hr = StringCchCopyW(pwszClipboard, cchNeeded, finalString.data());
     GlobalUnlock(globalHandle.get());
     RETURN_IF_FAILED(hr);
 
@@ -889,13 +886,13 @@ try
         if (fAlsoCopyFormatting)
         {
             const auto& fontData = _actualFont;
-            int const iFontHeightPoints = fontData.GetUnscaledSize().Y; // this renderer uses points already
-            const COLORREF bgColor = _terminal->GetAttributeColors({}).second;
+            const int iFontHeightPoints = fontData.GetUnscaledSize().Y; // this renderer uses points already
+            const auto bgColor = _terminal->GetAttributeColors({}).second;
 
-            std::string HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
+            auto HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
             _CopyToSystemClipboard(HTMLToPlaceOnClip, L"HTML Format");
 
-            std::string RTFToPlaceOnClip = TextBuffer::GenRTF(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
+            auto RTFToPlaceOnClip = TextBuffer::GenRTF(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
             _CopyToSystemClipboard(RTFToPlaceOnClip, L"Rich Text Format");
         }
     }
@@ -916,22 +913,22 @@ CATCH_RETURN()
 // - lpszFormat - the name of the format
 HRESULT HwndTerminal::_CopyToSystemClipboard(std::string stringToCopy, LPCWSTR lpszFormat)
 {
-    const size_t cbData = stringToCopy.size() + 1; // +1 for '\0'
+    const auto cbData = stringToCopy.size() + 1; // +1 for '\0'
     if (cbData)
     {
         wil::unique_hglobal globalHandleData(GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, cbData));
         RETURN_LAST_ERROR_IF_NULL(globalHandleData.get());
 
-        PSTR pszClipboardHTML = static_cast<PSTR>(GlobalLock(globalHandleData.get()));
+        auto pszClipboardHTML = static_cast<PSTR>(GlobalLock(globalHandleData.get()));
         RETURN_LAST_ERROR_IF_NULL(pszClipboardHTML);
 
         // The pattern gets a bit strange here because there's no good wil built-in for global lock of this type.
         // Try to copy then immediately unlock. Don't throw until after (so the hglobal won't be freed until we unlock).
-        const HRESULT hr2 = StringCchCopyA(pszClipboardHTML, cbData, stringToCopy.data());
+        const auto hr2 = StringCchCopyA(pszClipboardHTML, cbData, stringToCopy.data());
         GlobalUnlock(globalHandleData.get());
         RETURN_IF_FAILED(hr2);
 
-        UINT const CF_FORMAT = RegisterClipboardFormatW(lpszFormat);
+        const auto CF_FORMAT = RegisterClipboardFormatW(lpszFormat);
         RETURN_LAST_ERROR_IF(0 == CF_FORMAT);
 
         RETURN_LAST_ERROR_IF_NULL(SetClipboardData(CF_FORMAT, globalHandleData.get()));
@@ -953,14 +950,14 @@ void HwndTerminal::_PasteTextFromClipboard() noexcept
         return;
     }
 
-    HANDLE ClipboardDataHandle = GetClipboardData(CF_UNICODETEXT);
+    auto ClipboardDataHandle = GetClipboardData(CF_UNICODETEXT);
     if (ClipboardDataHandle == nullptr)
     {
         CloseClipboard();
         return;
     }
 
-    PCWCH pwstr = static_cast<PCWCH>(GlobalLock(ClipboardDataHandle));
+    auto pwstr = static_cast<PCWCH>(GlobalLock(ClipboardDataHandle));
 
     _StringPaste(pwstr);
 
@@ -984,21 +981,21 @@ void HwndTerminal::_StringPaste(const wchar_t* const pData) noexcept
     CATCH_LOG();
 }
 
-COORD HwndTerminal::GetFontSize() const noexcept
+til::size HwndTerminal::GetFontSize() const noexcept
 {
     return _actualFont.GetSize();
 }
 
-RECT HwndTerminal::GetBounds() const noexcept
+til::rect HwndTerminal::GetBounds() const noexcept
 {
-    RECT windowRect;
-    GetWindowRect(_hwnd.get(), &windowRect);
+    til::rect windowRect;
+    GetWindowRect(_hwnd.get(), windowRect.as_win32_rect());
     return windowRect;
 }
 
-RECT HwndTerminal::GetPadding() const noexcept
+til::rect HwndTerminal::GetPadding() const noexcept
 {
-    return { 0 };
+    return {};
 }
 
 double HwndTerminal::GetScaleFactor() const noexcept
@@ -1006,7 +1003,7 @@ double HwndTerminal::GetScaleFactor() const noexcept
     return static_cast<double>(_currentDpi) / static_cast<double>(USER_DEFAULT_SCREEN_DPI);
 }
 
-void HwndTerminal::ChangeViewport(const SMALL_RECT NewWindow)
+void HwndTerminal::ChangeViewport(const til::inclusive_rect& NewWindow)
 {
     _terminal->UserScrollViewport(NewWindow.Top);
 }

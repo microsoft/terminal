@@ -16,7 +16,7 @@ using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
-const COORD VtEngine::INVALID_COORDS = { -1, -1 };
+constexpr til::point VtEngine::INVALID_COORDS = { -1, -1 };
 
 // Routine Description:
 // - Creates a new VT-based rendering engine
@@ -29,11 +29,12 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
                    const Viewport initialViewport) :
     RenderEngineBase(),
     _hFile(std::move(pipe)),
+    _usingLineRenditions(false),
+    _stopUsingLineRenditions(false),
     _lastTextAttributes(INVALID_COLOR, INVALID_COLOR),
     _lastViewport(initialViewport),
     _pool(til::pmr::get_default_resource()),
-    _invalidMap(til::size{ initialViewport.Dimensions() }, false, &_pool),
-    _lastText({ 0 }),
+    _invalidMap(initialViewport.Dimensions(), false, &_pool),
     _scrollDelta(0, 0),
     _quickReturn(false),
     _clearedAllThisFrame(false),
@@ -147,7 +148,7 @@ CATCH_RETURN();
 
     if (!_pipeBroken)
     {
-        bool fSuccess = !!WriteFile(_hFile.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), nullptr, nullptr);
+        auto fSuccess = !!WriteFile(_hFile.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), nullptr, nullptr);
         _buffer.clear();
         if (!fSuccess)
         {
@@ -243,21 +244,44 @@ CATCH_RETURN();
 // - srNewViewport - The bounds of the new viewport.
 // Return Value:
 // - HRESULT S_OK
-[[nodiscard]] HRESULT VtEngine::UpdateViewport(const SMALL_RECT srNewViewport) noexcept
+[[nodiscard]] HRESULT VtEngine::UpdateViewport(const til::inclusive_rect& srNewViewport) noexcept
 {
-    HRESULT hr = S_OK;
-    const Viewport oldView = _lastViewport;
-    const Viewport newView = Viewport::FromInclusive(srNewViewport);
+    auto hr = S_OK;
+    const auto newView = Viewport::FromInclusive(srNewViewport);
+    const auto oldSize = _lastViewport.Dimensions();
+    const auto newSize = newView.Dimensions();
 
-    _lastViewport = newView;
-
-    if ((oldView.Height() != newView.Height()) || (oldView.Width() != newView.Width()))
+    if (oldSize != newSize)
     {
         // Don't emit a resize event if we've requested it be suppressed
         if (!_suppressResizeRepaint)
         {
-            hr = _ResizeWindow(newView.Width(), newView.Height());
+            hr = _ResizeWindow(newSize.X, newSize.Y);
         }
+
+        if (_resizeQuirk)
+        {
+            // GH#3490 - When the viewport width changed, don't do anything extra here.
+            // If the buffer had areas that were invalid due to the resize, then the
+            // buffer will have triggered it's own invalidations for what it knows is
+            // invalid. Previously, we'd invalidate everything if the width changed,
+            // because we couldn't be sure if lines were reflowed.
+            _invalidMap.resize(newSize);
+        }
+        else
+        {
+            if (SUCCEEDED(hr))
+            {
+                _invalidMap.resize(newSize, true); // resize while filling in new space with repaint requests.
+
+                // Viewport is smaller now - just update it all.
+                if (oldSize.Y > newSize.Y || oldSize.X > newSize.X)
+                {
+                    hr = InvalidateAll();
+                }
+            }
+        }
+
         _resized = true;
     }
 
@@ -269,29 +293,7 @@ CATCH_RETURN();
     // If we only clear the flag when the new viewport is different, this can
     //      lead to the first _actual_ resize being suppressed.
     _suppressResizeRepaint = false;
-
-    if (_resizeQuirk)
-    {
-        // GH#3490 - When the viewport width changed, don't do anything extra here.
-        // If the buffer had areas that were invalid due to the resize, then the
-        // buffer will have triggered it's own invalidations for what it knows is
-        // invalid. Previously, we'd invalidate everything if the width changed,
-        // because we couldn't be sure if lines were reflowed.
-        _invalidMap.resize(til::size{ newView.Dimensions() });
-    }
-    else
-    {
-        if (SUCCEEDED(hr))
-        {
-            _invalidMap.resize(til::size{ newView.Dimensions() }, true); // resize while filling in new space with repaint requests.
-
-            // Viewport is smaller now - just update it all.
-            if (oldView.Height() > newView.Height() || oldView.Width() > newView.Width())
-            {
-                hr = InvalidateAll();
-            }
-        }
-    }
+    _lastViewport = newView;
 
     return hr;
 }
@@ -321,9 +323,9 @@ CATCH_RETURN();
 // - pFontSize - receives the current X by Y size of the font.
 // Return Value:
 // - S_FALSE: This is unsupported by the VT Renderer and should use another engine's value.
-[[nodiscard]] HRESULT VtEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept
+[[nodiscard]] HRESULT VtEngine::GetFontSize(_Out_ til::size* const pFontSize) noexcept
 {
-    *pFontSize = COORD({ 1, 1 });
+    *pFontSize = { 1, 1 };
     return S_FALSE;
 }
 
@@ -381,7 +383,7 @@ bool VtEngine::_AllIsInvalid() const
 // - coordCursor: The cursor position to inherit from.
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT VtEngine::InheritCursor(const COORD coordCursor) noexcept
+[[nodiscard]] HRESULT VtEngine::InheritCursor(const til::point coordCursor) noexcept
 {
     _virtualTop = coordCursor.Y;
     _lastText = coordCursor;
@@ -490,7 +492,7 @@ void VtEngine::SetLookingForDSRCallback(std::function<void(bool)> pfnLooking) no
     _pfnSetLookingForDSR = pfnLooking;
 }
 
-void VtEngine::SetTerminalCursorTextPosition(const COORD cursor) noexcept
+void VtEngine::SetTerminalCursorTextPosition(const til::point cursor) noexcept
 {
     _lastText = cursor;
 }
@@ -524,6 +526,14 @@ void VtEngine::SetTerminalCursorTextPosition(const COORD cursor) noexcept
 HRESULT VtEngine::RequestWin32Input() noexcept
 {
     RETURN_IF_FAILED(_RequestWin32Input());
+    RETURN_IF_FAILED(_RequestFocusEventMode());
+    RETURN_IF_FAILED(_Flush());
+    return S_OK;
+}
+
+HRESULT VtEngine::SwitchScreenBuffer(const bool useAltBuffer) noexcept
+{
+    RETURN_IF_FAILED(_SwitchScreenBuffer(useAltBuffer));
     RETURN_IF_FAILED(_Flush());
     return S_OK;
 }

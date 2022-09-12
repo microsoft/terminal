@@ -21,12 +21,12 @@ namespace winrt::TerminalApp::implementation
         void PressButton(CaptionButton button);
         void ReleaseButtons();
 
-        void _MinimizeClick(winrt::Windows::Foundation::IInspectable const& sender,
-                            winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
-        void _MaximizeClick(winrt::Windows::Foundation::IInspectable const& sender,
-                            winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
-        void _CloseClick(winrt::Windows::Foundation::IInspectable const& sender,
-                         winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
+        void _MinimizeClick(const winrt::Windows::Foundation::IInspectable& sender,
+                            const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+        void _MaximizeClick(const winrt::Windows::Foundation::IInspectable& sender,
+                            const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+        void _CloseClick(const winrt::Windows::Foundation::IInspectable& sender,
+                         const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
 
         TYPED_EVENT(MinimizeClick, TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs);
         TYPED_EVENT(MaximizeClick, TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs);

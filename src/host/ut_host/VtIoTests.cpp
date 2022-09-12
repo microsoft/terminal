@@ -80,7 +80,7 @@ void VtIoTests::ModeParsingTest()
 
 Viewport SetUpViewport()
 {
-    SMALL_RECT view = {};
+    til::inclusive_rect view;
     view.Top = view.Left = 0;
     view.Bottom = 31;
     view.Right = 79;
@@ -98,7 +98,7 @@ void VtIoTests::DtorTestJustEngine()
 
     Log::Comment(NoThrowString().Format(
         L"New some engines and delete them"));
-    for (int i = 0; i < 25; ++i)
+    for (auto i = 0; i < 25; ++i)
     {
         Log::Comment(NoThrowString().Format(
             L"New/Delete loop #%d", i));
@@ -136,16 +136,16 @@ void VtIoTests::DtorTestDeleteVtio()
 
     Log::Comment(NoThrowString().Format(
         L"New some engines and delete them"));
-    for (int i = 0; i < 25; ++i)
+    for (auto i = 0; i < 25; ++i)
     {
         Log::Comment(NoThrowString().Format(
             L"New/Delete loop #%d", i));
 
-        wil::unique_hfile hOutputFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+        auto hOutputFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
 
         hOutputFile.reset(INVALID_HANDLE_VALUE);
 
-        VtIo* vtio = new VtIo();
+        auto vtio = new VtIo();
         Log::Comment(NoThrowString().Format(L"Made VtIo"));
         vtio->_pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hOutputFile),
                                                                   SetUpViewport());
@@ -185,7 +185,7 @@ void VtIoTests::DtorTestStackAlloc()
 
     Log::Comment(NoThrowString().Format(
         L"make some engines and let them fall out of scope"));
-    for (int i = 0; i < 25; ++i)
+    for (auto i = 0; i < 25; ++i)
     {
         Log::Comment(NoThrowString().Format(
             L"Scope Exit Auto cleanup #%d", i));
@@ -227,7 +227,7 @@ void VtIoTests::DtorTestStackAllocMany()
 
     Log::Comment(NoThrowString().Format(
         L"Try an make a whole bunch all at once, and have them all fall out of scope at once."));
-    for (int i = 0; i < 25; ++i)
+    for (auto i = 0; i < 25; ++i)
     {
         Log::Comment(NoThrowString().Format(
             L"Multiple engines, one scope loop #%d", i));
@@ -262,17 +262,17 @@ public:
         return Microsoft::Console::Types::Viewport{};
     }
 
-    COORD GetTextBufferEndPosition() const noexcept override
+    til::point GetTextBufferEndPosition() const noexcept override
     {
-        return COORD{};
+        return {};
     }
 
-    const TextBuffer& GetTextBuffer() noexcept override
+    const TextBuffer& GetTextBuffer() const noexcept override
     {
         FAIL_FAST_HR(E_NOTIMPL);
     }
 
-    const FontInfo& GetFontInfo() noexcept override
+    const FontInfo& GetFontInfo() const noexcept override
     {
         FAIL_FAST_HR(E_NOTIMPL);
     }
@@ -295,9 +295,9 @@ public:
         return std::make_pair(COLORREF{}, COLORREF{});
     }
 
-    COORD GetCursorPosition() const noexcept override
+    til::point GetCursorPosition() const noexcept override
     {
-        return COORD{};
+        return {};
     }
 
     bool IsCursorVisible() const noexcept override
@@ -359,21 +359,21 @@ public:
     {
     }
 
-    void SelectNewRegion(const COORD /*coordStart*/, const COORD /*coordEnd*/) override
+    void SelectNewRegion(const til::point /*coordStart*/, const til::point /*coordEnd*/) override
     {
     }
 
-    const COORD GetSelectionAnchor() const noexcept
+    const til::point GetSelectionAnchor() const noexcept
     {
-        return COORD{};
+        return {};
     }
 
-    const COORD GetSelectionEnd() const noexcept
+    const til::point GetSelectionEnd() const noexcept
     {
-        return COORD{};
+        return {};
     }
 
-    void ColorSelection(const COORD /*coordSelectionStart*/, const COORD /*coordSelectionEnd*/, const TextAttribute /*attr*/)
+    void ColorSelection(const til::point /*coordSelectionStart*/, const til::point /*coordSelectionEnd*/, const TextAttribute /*attr*/)
     {
     }
 
@@ -392,7 +392,7 @@ public:
         return {};
     }
 
-    const std::vector<size_t> GetPatternId(const COORD /*location*/) const noexcept
+    const std::vector<size_t> GetPatternId(const til::point /*location*/) const noexcept
     {
         return {};
     }
@@ -403,7 +403,7 @@ void VtIoTests::RendererDtorAndThread()
     Log::Comment(NoThrowString().Format(
         L"Test deleting a Renderer a bunch of times"));
 
-    for (int i = 0; i < 16; ++i)
+    for (auto i = 0; i < 16; ++i)
     {
         auto data = std::make_unique<MockRenderData>();
         auto thread = std::make_unique<Microsoft::Console::Render::RenderThread>();
@@ -429,7 +429,7 @@ void VtIoTests::RendererDtorAndThreadAndDx()
     Log::Comment(NoThrowString().Format(
         L"Test deleting a Renderer a bunch of times"));
 
-    for (int i = 0; i < 16; ++i)
+    for (auto i = 0; i < 16; ++i)
     {
         auto data = std::make_unique<MockRenderData>();
         auto thread = std::make_unique<Microsoft::Console::Render::RenderThread>();

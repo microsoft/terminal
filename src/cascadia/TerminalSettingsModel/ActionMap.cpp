@@ -196,7 +196,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         // Update NameMap with our parents.
         // Starting with this means we're doing a top-down approach.
-        assert(_parents.size() <= 1);
         for (const auto& parent : _parents)
         {
             parent->_PopulateNameMapWithSpecialCommands(nameMap);
@@ -274,7 +273,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         });
 
         // Now, add the accumulated actions from our parents
-        assert(_parents.size() <= 1);
         for (const auto& parent : _parents)
         {
             const auto parentActions{ parent->_GetCumulativeActions() };
@@ -367,7 +365,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         // Update keyBindingsMap and unboundKeys with our parents
-        assert(_parents.size() <= 1);
         for (const auto& parent : _parents)
         {
             parent->_PopulateKeyBindingMapWithStandardCommands(keyBindingsMap, unboundKeys);
@@ -408,7 +405,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             actionMap->_IterableCommands.emplace_back(*winrt::get_self<Command>(cmd)->Copy());
         }
 
-        assert(_parents.size() <= 1);
         actionMap->_parents.reserve(_parents.size());
         for (const auto& parent : _parents)
         {
@@ -518,7 +514,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         if (maskingActionPair == _MaskingActions.end())
         {
             // Check if we need to add this to our list of masking commands.
-            FAIL_FAST_IF(_parents.size() > 1);
             for (const auto& parent : _parents)
             {
                 // NOTE: This only checks the layer above us, but that's ok.
@@ -696,7 +691,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Return value:
     // - true if the keychord is explicitly unbound
     // - false if either the keychord is bound, or not bound at all
-    bool ActionMap::IsKeyChordExplicitlyUnbound(Control::KeyChord const& keys) const
+    bool ActionMap::IsKeyChordExplicitlyUnbound(const Control::KeyChord& keys) const
     {
         // We use the fact that the ..Internal call returns nullptr for explicitly unbound
         // key chords, and nullopt for keychord that are not bound - it allows us to distinguish
@@ -711,7 +706,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Return Value:
     // - the command with the given key chord
     // - nullptr if the key chord doesn't exist
-    Model::Command ActionMap::GetActionByKeyChord(Control::KeyChord const& keys) const
+    Model::Command ActionMap::GetActionByKeyChord(const Control::KeyChord& keys) const
     {
         return _GetActionByKeyChordInternal(keys).value_or(nullptr);
     }
@@ -737,7 +732,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // the command was not bound in this layer,
         // ask my parents
-        assert(_parents.size() <= 1);
         for (const auto& parent : _parents)
         {
             const auto& inheritedCmd{ parent->_GetActionByKeyChordInternal(keys) };
@@ -758,7 +752,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Return Value:
     // - the key chord that executes the given action
     // - nullptr if the action is not bound to a key chord
-    Control::KeyChord ActionMap::GetKeyBindingForAction(ShortcutAction const& action) const
+    Control::KeyChord ActionMap::GetKeyBindingForAction(const ShortcutAction& action) const
     {
         return GetKeyBindingForAction(action, nullptr);
     }
@@ -771,7 +765,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Return Value:
     // - the key chord that executes the given action
     // - nullptr if the action is not bound to a key chord
-    Control::KeyChord ActionMap::GetKeyBindingForAction(ShortcutAction const& myAction, IActionArgs const& myArgs) const
+    Control::KeyChord ActionMap::GetKeyBindingForAction(const ShortcutAction& myAction, const IActionArgs& myArgs) const
     {
         if (myAction == ShortcutAction::Invalid)
         {
@@ -787,7 +781,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         // Check our parents
-        assert(_parents.size() <= 1);
         for (const auto& parent : _parents)
         {
             if (const auto& keys{ parent->GetKeyBindingForAction(myAction, myArgs) })
@@ -807,7 +800,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - newKeys: the new key chord that is being used to replace oldKeys
     // Return Value:
     // - true, if successful. False, otherwise.
-    bool ActionMap::RebindKeys(Control::KeyChord const& oldKeys, Control::KeyChord const& newKeys)
+    bool ActionMap::RebindKeys(const Control::KeyChord& oldKeys, const Control::KeyChord& newKeys)
     {
         const auto& cmd{ GetActionByKeyChord(oldKeys) };
         if (!cmd)
@@ -836,7 +829,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - keys: the key chord that is being unbound
     // Return Value:
     // - <none>
-    void ActionMap::DeleteKeyBinding(KeyChord const& keys)
+    void ActionMap::DeleteKeyBinding(const KeyChord& keys)
     {
         // create an "unbound" command
         // { "command": "unbound", "keys": <keys> }

@@ -22,6 +22,7 @@
 #include <LegacyProfileGeneratorNamespaces.h>
 
 #include "userDefaults.h"
+#include "enableColorSelection.h"
 
 #include "ApplicationState.h"
 #include "DefaultTerminal.h"
@@ -39,6 +40,11 @@ static constexpr std::string_view ProfilesKey{ "profiles" };
 static constexpr std::string_view DefaultSettingsKey{ "defaults" };
 static constexpr std::string_view ProfilesListKey{ "list" };
 static constexpr std::string_view SchemesKey{ "schemes" };
+static constexpr std::string_view ThemesKey{ "themes" };
+
+constexpr std::wstring_view systemThemeName{ L"system" };
+constexpr std::wstring_view darkThemeName{ L"dark" };
+constexpr std::wstring_view lightThemeName{ L"light" };
 
 static constexpr std::wstring_view jsonExtension{ L".json" };
 static constexpr std::wstring_view FragmentsSubDirectory{ L"\\Fragments" };
@@ -61,9 +67,11 @@ static auto extractValueFromTaskWithoutMainThreadAwait(TTask&& task) -> decltype
     til::latch latch{ 1 };
 
     const auto _ = [&]() -> winrt::fire_and_forget {
+        const auto cleanup = wil::scope_exit([&]() {
+            latch.count_down();
+        });
         co_await winrt::resume_background();
         finalVal.emplace(co_await task);
-        latch.count_down();
     }();
 
     latch.wait();
@@ -306,6 +314,16 @@ void SettingsLoader::FinalizeLayering()
 {
     // Layer default globals -> user globals
     userSettings.globals->AddLeastImportantParent(inboxSettings.globals);
+
+    // Actions are currently global, so if we want to conditionally light up a bunch of
+    // actions, this is the time to do it.
+    if (userSettings.globals->EnableColorSelection())
+    {
+        const auto json = _parseJson(EnableColorSelectionSettingsJson);
+        const auto globals = GlobalAppSettings::FromJson(json.root);
+        userSettings.globals->AddLeastImportantParent(globals);
+    }
+
     userSettings.globals->_FinalizeInheritance();
     // Layer default profile defaults -> user profile defaults
     userSettings.baseLayerProfile->AddLeastImportantParent(inboxSettings.baseLayerProfile);
@@ -334,11 +352,14 @@ void SettingsLoader::FinalizeLayering()
 // This section of code recognizes if a profile was seen before and marks it as
 // `"hidden": true` by default and thus ensures the behavior the user expects:
 // Profiles won't show up again after they've been removed from settings.json.
+//
+// Returns true if something got changed and
+// the settings need to be saved to disk.
 bool SettingsLoader::DisableDeletedProfiles()
 {
     const auto& state = winrt::get_self<ApplicationState>(ApplicationState::SharedInstance());
     auto generatedProfileIds = state->GeneratedProfiles();
-    bool newGeneratedProfiles = false;
+    auto newGeneratedProfiles = false;
 
     for (const auto& profile : _getNonUserOriginProfiles())
     {
@@ -359,6 +380,56 @@ bool SettingsLoader::DisableDeletedProfiles()
     }
 
     return newGeneratedProfiles;
+}
+
+// Runs migrations and fixups on user settings.
+// Returns true if something got changed and
+// the settings need to be saved to disk.
+bool SettingsLoader::FixupUserSettings()
+{
+    struct CommandlinePatch
+    {
+        winrt::guid guid;
+        std::wstring_view before;
+        std::wstring_view after;
+    };
+
+    static constexpr std::array commandlinePatches{
+        CommandlinePatch{ DEFAULT_COMMAND_PROMPT_GUID, L"cmd.exe", L"%SystemRoot%\\System32\\cmd.exe" },
+        CommandlinePatch{ DEFAULT_WINDOWS_POWERSHELL_GUID, L"powershell.exe", L"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" },
+    };
+
+    auto fixedUp = false;
+
+    for (const auto& profile : userSettings.profiles)
+    {
+        if (!profile->HasCommandline())
+        {
+            continue;
+        }
+
+        for (const auto& patch : commandlinePatches)
+        {
+            if (profile->Guid() == patch.guid && til::equals_insensitive_ascii(profile->Commandline(), patch.before))
+            {
+                profile->ClearCommandline();
+
+                // GH#12842:
+                // With the commandline field on the user profile gone, it's actually unknown what
+                // commandline it'll inherit, since a user profile can have multiple parents. We have to
+                // make sure we restore the correct commandline in case we don't inherit the expected one.
+                if (profile->Commandline() != patch.after)
+                {
+                    profile->Commandline(winrt::hstring{ patch.after });
+                }
+
+                fixedUp = true;
+                break;
+            }
+        }
+    }
+
+    return fixedUp;
 }
 
 // Give a string of length N and a position of [0,N) this function returns
@@ -477,6 +548,25 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
     }
 
     {
+        for (const auto& themeJson : json.themes)
+        {
+            if (const auto theme = Theme::FromJson(themeJson))
+            {
+                if (origin != OriginTag::InBox &&
+                    (theme->Name() == systemThemeName || theme->Name() == lightThemeName || theme->Name() == darkThemeName))
+                {
+                    // If the theme didn't come from the in-box themes, and its
+                    // name was one of the reserved names, then just ignore it.
+                    // Themes don't support layering - we don't want the user
+                    // versions of these themes overriding the built-in ones.
+                    continue;
+                }
+                settings.globals->AddTheme(*theme);
+            }
+        }
+    }
+
+    {
         settings.baseLayerProfile = Profile::FromJson(json.profileDefaults);
         // Remove the `guid` member from the default settings.
         // That will hyper-explode, so just don't let them do that.
@@ -574,10 +664,11 @@ SettingsLoader::JsonSettings SettingsLoader::_parseJson(const std::string_view& 
 {
     auto root = content.empty() ? Json::Value{ Json::ValueType::objectValue } : _parseJSON(content);
     const auto& colorSchemes = _getJSONValue(root, SchemesKey);
+    const auto& themes = _getJSONValue(root, ThemesKey);
     const auto& profilesObject = _getJSONValue(root, ProfilesKey);
     const auto& profileDefaults = _getJSONValue(profilesObject, DefaultSettingsKey);
     const auto& profilesList = profilesObject.isArray() ? profilesObject : _getJSONValue(profilesObject, ProfilesListKey);
-    return JsonSettings{ std::move(root), colorSchemes, profileDefaults, profilesList };
+    return JsonSettings{ std::move(root), colorSchemes, profileDefaults, profilesList, themes };
 }
 
 // Just a common helper function between _parse and _parseFragment.
@@ -713,8 +804,29 @@ void SettingsLoader::_executeGenerator(const IDynamicProfileGenerator& generator
 Model::CascadiaSettings CascadiaSettings::LoadAll()
 try
 {
-    const auto settingsString = ReadUTF8FileIfExists(_settingsPath()).value_or(std::string{});
-    const auto firstTimeSetup = settingsString.empty();
+    FILETIME lastWriteTime{};
+    auto settingsString = ReadUTF8FileIfExists(_settingsPath(), false, &lastWriteTime).value_or(std::string{});
+    auto firstTimeSetup = settingsString.empty();
+
+    // If it's the firstTimeSetup and a preview build, then try to
+    // read settings.json from the Release stable file path if it exists.
+    // Otherwise use default settings file provided from original settings file
+    bool releaseSettingExists = false;
+    if (firstTimeSetup)
+    {
+#if defined(WT_BRANDING_PREVIEW)
+        {
+            try
+            {
+                settingsString = ReadUTF8FileIfExists(_releaseSettingsPath()).value_or(std::string{});
+                releaseSettingExists = settingsString.empty() ? false : true;
+            }
+            catch (...)
+            {
+            }
+        }
+#endif
+    }
 
     // GH#11119: If we find that the settings file doesn't exist, or is empty,
     // then let's quick delete the state file as well. If the user does have a
@@ -727,7 +839,9 @@ try
         ApplicationState::SharedInstance().Reset();
     }
 
-    const auto settingsStringView = firstTimeSetup ? UserSettingsJson : settingsString;
+    // Only uses default settings when firstTimeSetup is true and releaseSettingExists is false
+    // Otherwise use existing settingsString
+    const auto settingsStringView = (firstTimeSetup && !releaseSettingExists) ? UserSettingsJson : settingsString;
     auto mustWriteToDisk = firstTimeSetup;
 
     SettingsLoader loader{ settingsStringView, DefaultJson };
@@ -738,7 +852,8 @@ try
 
     // ApplyRuntimeInitialSettings depends on generated profiles.
     // --> ApplyRuntimeInitialSettings must be called after GenerateProfiles.
-    if (firstTimeSetup)
+    // Doesn't run when there is a Release settings.json that exists
+    if (firstTimeSetup && !releaseSettingExists)
     {
         loader.ApplyRuntimeInitialSettings();
     }
@@ -750,9 +865,9 @@ try
     loader.FinalizeLayering();
 
     // DisableDeletedProfiles returns true whenever we encountered any new generated/dynamic profiles.
-    // Coincidentally this is also the time we should write the new settings.json
-    // to disk (so that it contains the new profiles for manual editing by the user).
+    // Similarly FixupUserSettings returns true, when it encountered settings that were patched up.
     mustWriteToDisk |= loader.DisableDeletedProfiles();
+    mustWriteToDisk |= loader.FixupUserSettings();
 
     // If this throws, the app will catch it and use the default settings.
     const auto settings = winrt::make_self<CascadiaSettings>(std::move(loader));
@@ -770,6 +885,31 @@ try
             LOG_CAUGHT_EXCEPTION();
             settings->_warnings.Append(SettingsLoadWarnings::FailedToWriteToSettings);
         }
+    }
+    else
+    {
+        // lastWriteTime is only valid if mustWriteToDisk is false.
+        // Additionally WriteSettingsToDisk() updates the _hash for us already.
+        settings->_hash = _calculateHash(settingsString, lastWriteTime);
+    }
+
+    // GH#13936: We're interested in how many users opt out of useAtlasEngine,
+    // indicating major issues that would require us to disable it by default again.
+    {
+        size_t enabled[2]{};
+        for (const auto& profile : settings->_activeProfiles)
+        {
+            enabled[profile.UseAtlasEngine()]++;
+        }
+
+        TraceLoggingWrite(
+            g_hSettingsModelProvider,
+            "AtlasEngine_Usage",
+            TraceLoggingDescription("Event emitted upon settings load, containing the number of profiles opted-in/out of useAtlasEngine"),
+            TraceLoggingUIntPtr(enabled[0], "UseAtlasEngineDisabled", "Number of profiles for which AtlasEngine is disabled"),
+            TraceLoggingUIntPtr(enabled[1], "UseAtlasEngineEnabled", "Number of profiles for which AtlasEngine is enabled"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
     return *settings;
@@ -900,6 +1040,27 @@ const std::filesystem::path& CascadiaSettings::_settingsPath()
     return path;
 }
 
+// Method Description:
+// - Returns the path of the settings.json file from stable file path
+// Arguments:
+// - <none>
+// Return Value:
+// - Path to stable settings
+const std::filesystem::path& CascadiaSettings::_releaseSettingsPath()
+{
+    static const auto path = GetReleaseSettingsPath() / SettingsFilename;
+    return path;
+}
+
+// Returns a has (approximately) uniquely identifying the settings.json contents on disk.
+winrt::hstring CascadiaSettings::_calculateHash(std::string_view settings, const FILETIME& lastWriteTime)
+{
+    const auto fileHash = til::hash(settings);
+    const ULARGE_INTEGER fileTime{ lastWriteTime.dwLowDateTime, lastWriteTime.dwHighDateTime };
+    const auto hash = fmt::format(L"{:016x}-{:016x}", fileHash, fileTime.QuadPart);
+    return winrt::hstring{ hash };
+}
+
 // function Description:
 // - Returns the full path to the settings file, either within the application
 //   package, or in its unpackaged location. This path is under the "Local
@@ -943,7 +1104,7 @@ winrt::hstring CascadiaSettings::DefaultSettingsPath()
 // - <none>
 // Return Value:
 // - <none>
-void CascadiaSettings::WriteSettingsToDisk() const
+void CascadiaSettings::WriteSettingsToDisk()
 {
     const auto settingsPath = _settingsPath();
 
@@ -952,8 +1113,11 @@ void CascadiaSettings::WriteSettingsToDisk() const
     wbuilder.settings_["indentation"] = "    ";
     wbuilder.settings_["enableYAMLCompatibility"] = true; // suppress spaces around colons
 
+    FILETIME lastWriteTime{};
     const auto styledString{ Json::writeString(wbuilder, ToJson()) };
-    WriteUTF8FileAtomic(settingsPath, styledString);
+    WriteUTF8FileAtomic(settingsPath, styledString, &lastWriteTime);
+
+    _hash = _calculateHash(styledString, lastWriteTime);
 
     // Persists the default terminal choice
     // GH#10003 - Only do this if _currentDefaultTerminal was actually initialized.
@@ -972,7 +1136,7 @@ void CascadiaSettings::WriteSettingsToDisk() const
 Json::Value CascadiaSettings::ToJson() const
 {
     // top-level json object
-    Json::Value json{ _globals->ToJson() };
+    auto json{ _globals->ToJson() };
     json["$help"] = "https://aka.ms/terminal-documentation";
     json["$schema"] = "https://aka.ms/terminal-profiles-schema";
 
@@ -1002,6 +1166,20 @@ Json::Value CascadiaSettings::ToJson() const
     }
     json[JsonKey(SchemesKey)] = schemes;
 
+    Json::Value themes{ Json::ValueType::arrayValue };
+    for (const auto& entry : _globals->Themes())
+    {
+        // Ignore the built in themes, when serializing the themes back out. We
+        // don't want to re-include them in the user settings file.
+        const auto theme{ winrt::get_self<Theme>(entry.Value()) };
+        if (theme->Name() == systemThemeName || theme->Name() == lightThemeName || theme->Name() == darkThemeName)
+        {
+            continue;
+        }
+        themes.append(theme->ToJson());
+    }
+    json[JsonKey(ThemesKey)] = themes;
+
     return json;
 }
 
@@ -1023,21 +1201,4 @@ void CascadiaSettings::_resolveDefaultProfile() const
 
     // Use the first profile as the new default.
     GlobalSettings().DefaultProfile(_allProfiles.GetAt(0).Guid());
-}
-
-void CascadiaSettings::_validateCorrectDefaultShellPaths() const
-{
-    for (auto profile : _allProfiles)
-    {
-        if (profile.Guid() == DEFAULT_COMMAND_PROMPT_GUID &&
-            profile.Commandline() == L"cmd.exe")
-        {
-            profile.ClearCommandline();
-        }
-        else if (profile.Guid() == DEFAULT_WINDOWS_POWERSHELL_GUID &&
-                 profile.Commandline() == L"powershell.exe")
-        {
-            profile.ClearCommandline();
-        }
-    }
 }

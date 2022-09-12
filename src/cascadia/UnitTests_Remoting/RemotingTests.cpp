@@ -1527,8 +1527,8 @@ namespace RemotingUnitTests
 
         VERIFY_ARE_EQUAL(2u, m0->_peasants.size());
 
-        bool p1ExpectedToBeSummoned = false;
-        bool p2ExpectedToBeSummoned = false;
+        auto p1ExpectedToBeSummoned = false;
+        auto p2ExpectedToBeSummoned = false;
 
         p1->SummonRequested([&](auto&&, auto&&) {
             Log::Comment(L"p1 summoned");
@@ -1606,8 +1606,8 @@ namespace RemotingUnitTests
 
         VERIFY_ARE_EQUAL(2u, m0->_peasants.size());
 
-        bool p1ExpectedToBeSummoned = false;
-        bool p2ExpectedToBeSummoned = false;
+        auto p1ExpectedToBeSummoned = false;
+        auto p2ExpectedToBeSummoned = false;
 
         p1->SummonRequested([&](auto&&, auto&&) {
             Log::Comment(L"p1 summoned");
@@ -1668,8 +1668,8 @@ namespace RemotingUnitTests
 
         VERIFY_ARE_EQUAL(2u, m0->_peasants.size());
 
-        bool p1ExpectedToBeSummoned = false;
-        bool p2ExpectedToBeSummoned = false;
+        auto p1ExpectedToBeSummoned = false;
+        auto p2ExpectedToBeSummoned = false;
 
         p1->SummonRequested([&](auto&&, auto&&) {
             Log::Comment(L"p1 summoned");
@@ -1736,8 +1736,8 @@ namespace RemotingUnitTests
 
         VERIFY_ARE_EQUAL(2u, m0->_peasants.size());
 
-        bool p1ExpectedToBeSummoned = false;
-        bool p2ExpectedToBeSummoned = false;
+        auto p1ExpectedToBeSummoned = false;
+        auto p2ExpectedToBeSummoned = false;
 
         p1->SummonRequested([&](auto&&, auto&&) {
             Log::Comment(L"p1 summoned");
@@ -1833,9 +1833,9 @@ namespace RemotingUnitTests
 
         VERIFY_ARE_EQUAL(3u, m0->_peasants.size());
 
-        bool p1ExpectedToBeSummoned = false;
-        bool p2ExpectedToBeSummoned = false;
-        bool p3ExpectedToBeSummoned = false;
+        auto p1ExpectedToBeSummoned = false;
+        auto p2ExpectedToBeSummoned = false;
+        auto p3ExpectedToBeSummoned = false;
 
         p1->SummonRequested([&](auto&&, auto&&) {
             Log::Comment(L"p1 summoned");
@@ -1882,7 +1882,7 @@ namespace RemotingUnitTests
         auto firstCallback = [&](HWND h, BOOL* result) -> HRESULT {
             Log::Comment(L"firstCallback: Checking if window is on desktop 1");
 
-            const uint64_t hwnd = reinterpret_cast<uint64_t>(h);
+            const auto hwnd = reinterpret_cast<uint64_t>(h);
             if (hwnd == peasant1PID || hwnd == peasant3PID)
             {
                 *result = true;
@@ -1929,7 +1929,7 @@ namespace RemotingUnitTests
 
         auto secondCallback = [&](HWND h, BOOL* result) -> HRESULT {
             Log::Comment(L"secondCallback: Checking if window is on desktop 2");
-            const uint64_t hwnd = reinterpret_cast<uint64_t>(h);
+            const auto hwnd = reinterpret_cast<uint64_t>(h);
             if (hwnd == peasant1PID || hwnd == peasant3PID)
             {
                 *result = false;
@@ -1966,7 +1966,7 @@ namespace RemotingUnitTests
 
         auto thirdCallback = [&](HWND h, BOOL* result) -> HRESULT {
             Log::Comment(L"thirdCallback: Checking if window is on desktop 2. (windows 2 and 3 are)");
-            const uint64_t hwnd = reinterpret_cast<uint64_t>(h);
+            const auto hwnd = reinterpret_cast<uint64_t>(h);
             if (hwnd == peasant1PID)
             {
                 *result = false;
@@ -1996,7 +1996,7 @@ namespace RemotingUnitTests
 
         auto fourthCallback = [&](HWND h, BOOL* result) -> HRESULT {
             Log::Comment(L"fourthCallback: Checking if window is on desktop 1. (window 1 is)");
-            const uint64_t hwnd = reinterpret_cast<uint64_t>(h);
+            const auto hwnd = reinterpret_cast<uint64_t>(h);
             if (hwnd == peasant1PID)
             {
                 *result = true;
@@ -2026,7 +2026,7 @@ namespace RemotingUnitTests
 
         auto fifthCallback = [&](HWND h, BOOL* result) -> HRESULT {
             Log::Comment(L"fifthCallback: Checking if window is on desktop 3. (none are)");
-            const uint64_t hwnd = reinterpret_cast<uint64_t>(h);
+            const auto hwnd = reinterpret_cast<uint64_t>(h);
             if (hwnd == peasant1PID || hwnd == peasant2PID || hwnd == peasant3PID)
             {
                 *result = false;
@@ -2084,9 +2084,9 @@ namespace RemotingUnitTests
 
         VERIFY_ARE_EQUAL(3u, m0->_peasants.size());
 
-        bool p1ExpectedToBeSummoned = false;
-        bool p2ExpectedToBeSummoned = false;
-        bool p3ExpectedToBeSummoned = false;
+        auto p1ExpectedToBeSummoned = false;
+        auto p2ExpectedToBeSummoned = false;
+        auto p3ExpectedToBeSummoned = false;
 
         p1->SummonRequested([&](auto&&, auto&&) {
             Log::Comment(L"p1 summoned");
@@ -2133,7 +2133,7 @@ namespace RemotingUnitTests
         auto firstCallback = [&](HWND h, BOOL* result) -> HRESULT {
             Log::Comment(L"firstCallback: Checking if window is on desktop 1");
 
-            const uint64_t hwnd = reinterpret_cast<uint64_t>(h);
+            const auto hwnd = reinterpret_cast<uint64_t>(h);
             if (hwnd == peasant1PID || hwnd == peasant3PID)
             {
                 *result = true;
@@ -2225,9 +2225,9 @@ namespace RemotingUnitTests
 
         VERIFY_ARE_EQUAL(3u, m0->_peasants.size());
 
-        bool p1ExpectedToBeSummoned = false;
-        bool p2ExpectedToBeSummoned = false;
-        bool p3ExpectedToBeSummoned = false;
+        auto p1ExpectedToBeSummoned = false;
+        auto p2ExpectedToBeSummoned = false;
+        auto p3ExpectedToBeSummoned = false;
 
         p1->SummonRequested([&](auto&&, auto&&) {
             Log::Comment(L"p1 summoned");
@@ -2274,7 +2274,7 @@ namespace RemotingUnitTests
         auto firstCallback = [&](HWND h, BOOL* result) -> HRESULT {
             Log::Comment(L"firstCallback: Checking if window is on desktop 1");
 
-            const uint64_t hwnd = reinterpret_cast<uint64_t>(h);
+            const auto hwnd = reinterpret_cast<uint64_t>(h);
             if (hwnd == peasant1PID || hwnd == peasant3PID)
             {
                 *result = true;
@@ -2341,8 +2341,8 @@ namespace RemotingUnitTests
 
         VERIFY_ARE_EQUAL(2u, m0->_peasants.size());
 
-        bool p1ExpectedToBeSummoned = false;
-        bool p2ExpectedToBeSummoned = false;
+        auto p1ExpectedToBeSummoned = false;
+        auto p2ExpectedToBeSummoned = false;
 
         p1->SummonRequested([&](auto&&, auto&&) {
             Log::Comment(L"p1 summoned");
@@ -2353,8 +2353,8 @@ namespace RemotingUnitTests
             VERIFY_IS_TRUE(p2ExpectedToBeSummoned);
         });
 
-        bool p1ExpectedCommandline = false;
-        bool p2ExpectedCommandline = false;
+        auto p1ExpectedCommandline = false;
+        auto p2ExpectedCommandline = false;
         p1->ExecuteCommandlineRequested([&](auto&&, const Remoting::CommandlineArgs& /*cmdlineArgs*/) {
             Log::Comment(L"Commandline dispatched to p1");
             VERIFY_IS_TRUE(p1ExpectedCommandline);
@@ -2468,9 +2468,9 @@ namespace RemotingUnitTests
 
         VERIFY_ARE_EQUAL(3u, m0->_peasants.size());
 
-        bool p1ExpectedToBeSummoned = false;
-        bool p2ExpectedToBeSummoned = false;
-        bool p3ExpectedToBeSummoned = false;
+        auto p1ExpectedToBeSummoned = false;
+        auto p2ExpectedToBeSummoned = false;
+        auto p3ExpectedToBeSummoned = false;
 
         p1->SummonRequested([&](auto&&, auto&&) {
             Log::Comment(L"p1 summoned");
@@ -2517,7 +2517,7 @@ namespace RemotingUnitTests
         auto firstCallback = [&](HWND h, BOOL* result) -> HRESULT {
             Log::Comment(L"firstCallback: Checking if window is on desktop 1");
 
-            const uint64_t hwnd = reinterpret_cast<uint64_t>(h);
+            const auto hwnd = reinterpret_cast<uint64_t>(h);
             if (hwnd == peasant1PID || hwnd == peasant3PID)
             {
                 *result = true;
@@ -2588,8 +2588,8 @@ namespace RemotingUnitTests
             catch (const winrt::hresult_error& e)
             {
                 // these two errors are Win32 errors, convert them to HRESULTS so we can actually compare here.
-                constexpr HRESULT RPC_SERVER_UNAVAILABLE_HR = HRESULT_FROM_WIN32(RPC_S_SERVER_UNAVAILABLE);
-                constexpr HRESULT RPC_CALL_FAILED_HR = HRESULT_FROM_WIN32(RPC_S_CALL_FAILED);
+                constexpr auto RPC_SERVER_UNAVAILABLE_HR = HRESULT_FROM_WIN32(RPC_S_SERVER_UNAVAILABLE);
+                constexpr auto RPC_CALL_FAILED_HR = HRESULT_FROM_WIN32(RPC_S_CALL_FAILED);
 
                 // This is the same check in WindowManager::_proposeToMonarch.
                 VERIFY_IS_TRUE(e.code() == RPC_SERVER_UNAVAILABLE_HR || e.code() == RPC_CALL_FAILED_HR);

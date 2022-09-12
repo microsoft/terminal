@@ -75,6 +75,7 @@ namespace winrt::TerminalApp::implementation
         hstring Title();
 
         void TitlebarClicked();
+        void WindowVisibilityChanged(const bool showOrHide);
 
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
 
@@ -133,6 +134,7 @@ namespace winrt::TerminalApp::implementation
         bool IsElevated() const noexcept;
 
         void OpenSettingsUI();
+        void WindowActivated(const bool activated);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
@@ -154,6 +156,9 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(CloseRequested, IInspectable, IInspectable);
         TYPED_EVENT(OpenSystemMenu, IInspectable, IInspectable);
         TYPED_EVENT(QuitRequested, IInspectable, IInspectable);
+        TYPED_EVENT(ShowWindowChanged, IInspectable, winrt::Microsoft::Terminal::Control::ShowWindowArgs)
+
+        WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, TitlebarBrush, _PropertyChangedHandlers, nullptr);
 
     private:
         friend struct TerminalPageT<TerminalPage>; // for Xaml to bind events
@@ -169,6 +174,7 @@ namespace winrt::TerminalApp::implementation
         TerminalApp::TabRowControl _tabRow{ nullptr };
         Windows::UI::Xaml::Controls::Grid _tabContent{ nullptr };
         Microsoft::UI::Xaml::Controls::SplitButton _newTabButton{ nullptr };
+        winrt::TerminalApp::ColorPickupFlyout _tabColorPicker{ nullptr };
 
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
 
@@ -195,6 +201,9 @@ namespace winrt::TerminalApp::implementation
         std::optional<int> _rearrangeTo{};
         bool _removing{ false };
 
+        bool _activated{ false };
+        bool _visible{ true };
+
         std::vector<std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>> _previouslyClosedPanesAndTabs{};
 
         uint32_t _systemRowsToScroll{ DefaultRowsToScroll };
@@ -215,6 +224,10 @@ namespace winrt::TerminalApp::implementation
         std::shared_ptr<Toast> _windowIdToast{ nullptr };
         std::shared_ptr<Toast> _windowRenameFailedToast{ nullptr };
 
+        winrt::Windows::UI::Xaml::Controls::TextBox::LayoutUpdated_revoker _renamerLayoutUpdatedRevoker;
+        int _renamerLayoutCount{ 0 };
+        bool _renamerPressedEnter{ false };
+
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowDialogHelper(const std::wstring_view& name);
 
         void _ShowAboutDialog();
@@ -223,7 +236,6 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowCloseReadOnlyDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowMultiLinePasteWarningDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowLargePasteWarningDialog();
-        void _DialogCloseClick(const IInspectable& sender, const Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs& eventArgs);
 
         void _CreateNewTabFlyout();
         void _OpenNewTabDropdown();
@@ -240,8 +252,9 @@ namespace winrt::TerminalApp::implementation
         void _CommandPaletteButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _AboutButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _ThirdPartyNoticesOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
+        void _SendFeedbackOnClick(const IInspectable& sender, const Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs& eventArgs);
 
-        void _KeyDownHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
+        void _KeyDownHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
         static ::Microsoft::Terminal::Core::ControlKeyStates _GetPressedModifierKeys() noexcept;
         static void _ClearKeyboardState(const WORD vkey, const WORD scanCode) noexcept;
         void _HookupKeyBindings(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap) noexcept;
@@ -252,6 +265,7 @@ namespace winrt::TerminalApp::implementation
         void _UpdateTabView();
         void _UpdateTabWidthMode();
         void _UpdateCommandsForPalette();
+        void _SetBackgroundImage(const winrt::Microsoft::Terminal::Settings::Model::IAppearanceConfig& newAppearance);
 
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, Microsoft::Terminal::Settings::Model::Command> _ExpandCommands(Windows::Foundation::Collections::IMapView<winrt::hstring, Microsoft::Terminal::Settings::Model::Command> commandsToExpand,
                                                                                                                                             Windows::Foundation::Collections::IVectorView<Microsoft::Terminal::Settings::Model::Profile> profiles,
@@ -309,8 +323,11 @@ namespace winrt::TerminalApp::implementation
         winrt::com_ptr<TerminalTab> _GetFocusedTabImpl() const noexcept;
         TerminalApp::TabBase _GetTabByTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem) const noexcept;
 
+        void _HandleClosePaneRequested(std::shared_ptr<Pane> pane);
         winrt::fire_and_forget _SetFocusedTab(const winrt::TerminalApp::TabBase tab);
         winrt::fire_and_forget _CloseFocusedPane();
+        void _ClosePanes(weak_ref<TerminalTab> weakTab, std::vector<uint32_t> paneIds);
+        winrt::Windows::Foundation::IAsyncOperation<bool> _PaneConfirmCloseReadOnly(std::shared_ptr<Pane> pane);
         void _AddPreviouslyClosedPaneOrTab(std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>&& args);
 
         winrt::fire_and_forget _RemoveOnCloseRoutine(Microsoft::UI::Xaml::Controls::TabViewItem tabViewItem, winrt::com_ptr<TerminalPage> page);
@@ -359,6 +376,7 @@ namespace winrt::TerminalApp::implementation
         void _OnTabCloseRequested(const IInspectable& sender, const Microsoft::UI::Xaml::Controls::TabViewTabCloseRequestedEventArgs& eventArgs);
         void _OnFirstLayout(const IInspectable& sender, const IInspectable& eventArgs);
         void _UpdatedSelectedTab(const winrt::TerminalApp::TabBase& tab);
+        void _UpdateBackground(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile);
 
         void _OnDispatchCommandRequested(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::Command& command);
         void _OnCommandLineExecutionRequested(const IInspectable& sender, const winrt::hstring& commandLine);
@@ -375,8 +393,6 @@ namespace winrt::TerminalApp::implementation
 
         void _RefreshUIForSettingsReload();
 
-        void _SetNonClientAreaColors(const Windows::UI::Color& selectedTabColor);
-        void _ClearNonClientAreaColors();
         void _SetNewTabButtonColor(const Windows::UI::Color& color, const Windows::UI::Color& accentColor);
         void _ClearNewTabButtonColor();
 
@@ -401,12 +417,13 @@ namespace winrt::TerminalApp::implementation
         void _HidePointerCursorHandler(const IInspectable& sender, const IInspectable& eventArgs);
         void _RestorePointerCursorHandler(const IInspectable& sender, const IInspectable& eventArgs);
 
+        void _PreviewAction(const Microsoft::Terminal::Settings::Model::ActionAndArgs& args);
         void _PreviewActionHandler(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::Command& args);
         void _EndPreview();
         void _RunRestorePreviews();
         void _PreviewColorScheme(const Microsoft::Terminal::Settings::Model::SetColorSchemeArgs& args);
         void _PreviewAdjustOpacity(const Microsoft::Terminal::Settings::Model::AdjustOpacityArgs& args);
-        winrt::Microsoft::Terminal::Settings::Model::Command _lastPreviewedCommand{ nullptr };
+        winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs _lastPreviewedAction{ nullptr };
         std::vector<std::function<void()>> _restorePreviewFuncs{};
 
         HRESULT _OnNewConnection(const winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection& connection);
@@ -414,7 +431,8 @@ namespace winrt::TerminalApp::implementation
 
         void _WindowRenamerActionClick(const IInspectable& sender, const IInspectable& eventArgs);
         void _RequestWindowRename(const winrt::hstring& newName);
-        void _WindowRenamerKeyUp(const IInspectable& sender, winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
+        void _WindowRenamerKeyDown(const IInspectable& sender, const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
+        void _WindowRenamerKeyUp(const IInspectable& sender, const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
 
         void _UpdateTeachingTipTheme(winrt::Windows::UI::Xaml::FrameworkElement element);
 
@@ -432,6 +450,11 @@ namespace winrt::TerminalApp::implementation
         void _SetAsDefaultOpenSettingsHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
         static bool _IsMessageDismissed(const winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage& message);
         static void _DismissMessage(const winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage& message);
+
+        void _updateThemeColors();
+        void _updateTabCloseButton(const winrt::Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem);
+
+        winrt::fire_and_forget _ShowWindowChangedHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp

@@ -35,9 +35,9 @@ namespace Microsoft::Console::Types
 
     public:
         virtual Microsoft::Console::Types::Viewport GetViewport() noexcept = 0;
-        virtual COORD GetTextBufferEndPosition() const noexcept = 0;
-        virtual const TextBuffer& GetTextBuffer() noexcept = 0;
-        virtual const FontInfo& GetFontInfo() noexcept = 0;
+        virtual til::point GetTextBufferEndPosition() const noexcept = 0;
+        virtual const TextBuffer& GetTextBuffer() const noexcept = 0;
+        virtual const FontInfo& GetFontInfo() const noexcept = 0;
 
         virtual std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept = 0;
 

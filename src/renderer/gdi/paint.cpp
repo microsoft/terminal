@@ -57,7 +57,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     _fPaintStarted = true;
 
     _psInvalidData.fErase = TRUE;
-    _psInvalidData.rcPaint = _rcInvalid;
+    _psInvalidData.rcPaint = _rcInvalid.to_win32_rect();
 
 #if DBG
     _debugContext = GetDC(_debugWindow);
@@ -88,14 +88,14 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         // We first need to apply the transform that was active at the time the cursor
         // was rendered otherwise we won't be clearing the right area of the display.
         // We don't need to do this if it was an identity transform though.
-        const bool identityTransform = cursorInvertTransform == IDENTITY_XFORM;
+        const auto identityTransform = cursorInvertTransform == IDENTITY_XFORM;
         if (!identityTransform)
         {
             LOG_HR_IF(E_FAIL, !SetWorldTransform(_hdcMemoryContext, &cursorInvertTransform));
             LOG_HR_IF(E_FAIL, !SetWorldTransform(_psInvalidData.hdc, &cursorInvertTransform));
         }
 
-        for (RECT r : cursorInvertRects)
+        for (const auto& r : cursorInvertRects)
         {
             // Clean both the in-memory and actual window context.
             LOG_HR_IF(E_FAIL, !(InvertRect(_hdcMemoryContext, &r)));
@@ -114,14 +114,14 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
 
     // We have to limit the region that can be scrolled to not include the gutters.
     // Gutters are defined as sub-character width pixels at the bottom or right of the screen.
-    COORD const coordFontSize = _GetFontSize();
+    const auto coordFontSize = _GetFontSize();
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
 
-    SIZE szGutter;
+    til::size szGutter;
     szGutter.cx = _szMemorySurface.cx % coordFontSize.X;
     szGutter.cy = _szMemorySurface.cy % coordFontSize.Y;
 
-    RECT rcScrollLimit = { 0 };
+    RECT rcScrollLimit{};
     RETURN_IF_FAILED(LongSub(_szMemorySurface.cx, szGutter.cx, &rcScrollLimit.right));
     RETURN_IF_FAILED(LongSub(_szMemorySurface.cy, szGutter.cy, &rcScrollLimit.bottom));
 
@@ -135,13 +135,13 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
                                       nullptr,
                                       0));
 
-    RECT rcUpdate = { 0 };
-    LOG_HR_IF(E_FAIL, !(ScrollDC(_hdcMemoryContext, _szInvalidScroll.cx, _szInvalidScroll.cy, &rcScrollLimit, &rcScrollLimit, nullptr, &rcUpdate)));
+    til::rect rcUpdate;
+    LOG_HR_IF(E_FAIL, !(ScrollDC(_hdcMemoryContext, _szInvalidScroll.cx, _szInvalidScroll.cy, &rcScrollLimit, &rcScrollLimit, nullptr, rcUpdate.as_win32_rect())));
 
     LOG_IF_FAILED(_InvalidCombine(&rcUpdate));
 
     // update invalid rect for the remainder of paint functions
-    _psInvalidData.rcPaint = _rcInvalid;
+    _psInvalidData.rcPaint = _rcInvalid.to_win32_rect();
 
     return S_OK;
 }
@@ -157,7 +157,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     RECT rcClient;
     RETURN_HR_IF(E_FAIL, !(GetClientRect(hwnd, &rcClient)));
 
-    SIZE const szClient = _GetRectSize(&rcClient);
+    const auto szClient = _GetRectSize(&rcClient);
 
     // Only do work if the existing memory surface is a different size from the client area.
     // Return quickly if they're the same.
@@ -225,15 +225,15 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
 
     LOG_IF_FAILED(_FlushBufferLines());
 
-    POINT const pt = _GetInvalidRectPoint();
-    SIZE const sz = _GetInvalidRectSize();
+    const auto pt = _GetInvalidRectPoint();
+    const auto sz = _GetInvalidRectSize();
 
     LOG_HR_IF(E_FAIL, !(BitBlt(_psInvalidData.hdc, pt.x, pt.y, sz.cx, sz.cy, _hdcMemoryContext, pt.x, pt.y, SRCCOPY)));
     WHEN_DBG(_DebugBltAll());
 
-    _rcInvalid = { 0 };
+    _rcInvalid = {};
     _fInvalidRectUsed = false;
-    _szInvalidScroll = { 0 };
+    _szInvalidScroll = {};
 
     LOG_HR_IF(E_FAIL, !(GdiFlush()));
     LOG_HR_IF(E_FAIL, !(ReleaseDC(_hwndTargetWindow, _psInvalidData.hdc)));
@@ -322,8 +322,8 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
 // See: Win7: 390673, 447839 and then superseded by http://osgvsowi/638274 when FE/non-FE rendering condensed.
 //#define CONSOLE_EXTTEXTOUT_FLAGS ETO_OPAQUE | ETO_CLIPPED
 //#define MAX_POLY_LINES 80
-[[nodiscard]] HRESULT GdiEngine::PaintBufferLine(gsl::span<const Cluster> const clusters,
-                                                 const COORD coord,
+[[nodiscard]] HRESULT GdiEngine::PaintBufferLine(const gsl::span<const Cluster> clusters,
+                                                 const til::point coord,
                                                  const bool trimLeft,
                                                  const bool /*lineWrapped*/) noexcept
 {
@@ -334,15 +334,14 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         // Exit early if there are no lines to draw.
         RETURN_HR_IF(S_OK, 0 == cchLine);
 
-        POINT ptDraw = { 0 };
-        RETURN_IF_FAILED(_ScaleByFont(&coord, &ptDraw));
+        const auto ptDraw = coord * _GetFontSize();
 
         const auto pPolyTextLine = &_pPolyText[_cPolyText];
 
         auto& polyString = _polyStrings.emplace_back();
         polyString.reserve(cchLine);
 
-        COORD const coordFontSize = _GetFontSize();
+        const auto coordFontSize = _GetFontSize();
 
         auto& polyWidth = _polyWidths.emplace_back();
         polyWidth.reserve(cchLine);
@@ -373,7 +372,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
             // dispatch conversion into our codepage
 
             // Find out the bytes required
-            int const cbRequired = WideCharToMultiByte(_fontCodepage, 0, polyString.data(), (int)cchLine, nullptr, 0, nullptr, nullptr);
+            const auto cbRequired = WideCharToMultiByte(_fontCodepage, 0, polyString.data(), (int)cchLine, nullptr, 0, nullptr, nullptr);
 
             if (cbRequired != 0)
             {
@@ -381,20 +380,20 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
                 auto psConverted = std::make_unique<char[]>(cbRequired);
 
                 // Attempt conversion to current codepage
-                int const cbConverted = WideCharToMultiByte(_fontCodepage, 0, polyString.data(), (int)cchLine, psConverted.get(), cbRequired, nullptr, nullptr);
+                const auto cbConverted = WideCharToMultiByte(_fontCodepage, 0, polyString.data(), (int)cchLine, psConverted.get(), cbRequired, nullptr, nullptr);
 
                 // If successful...
                 if (cbConverted != 0)
                 {
                     // Now we have to convert back to Unicode but using the system ANSI codepage. Find buffer size first.
-                    int const cchRequired = MultiByteToWideChar(CP_ACP, 0, psConverted.get(), cbRequired, nullptr, 0);
+                    const auto cchRequired = MultiByteToWideChar(CP_ACP, 0, psConverted.get(), cbRequired, nullptr, 0);
 
                     if (cchRequired != 0)
                     {
                         std::pmr::wstring polyConvert(cchRequired, UNICODE_NULL, &_pool);
 
                         // Then do the actual conversion.
-                        int const cchConverted = MultiByteToWideChar(CP_ACP, 0, psConverted.get(), cbRequired, polyConvert.data(), cchRequired);
+                        const auto cchConverted = MultiByteToWideChar(CP_ACP, 0, psConverted.get(), cbRequired, polyConvert.data(), cchRequired);
 
                         if (cchConverted != 0)
                         {
@@ -419,7 +418,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         pPolyTextLine->uiFlags = ETO_OPAQUE | ETO_CLIPPED;
         pPolyTextLine->rcl.left = pPolyTextLine->x;
         pPolyTextLine->rcl.top = pPolyTextLine->y + topOffset;
-        pPolyTextLine->rcl.right = pPolyTextLine->rcl.left + (SHORT)cchCharWidths;
+        pPolyTextLine->rcl.right = pPolyTextLine->rcl.left + (til::CoordType)cchCharWidths;
         pPolyTextLine->rcl.bottom = pPolyTextLine->y + coordFontSize.Y - bottomOffset;
         pPolyTextLine->pdx = polyWidth.data();
 
@@ -449,7 +448,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
 // - S_OK or E_FAIL if GDI failed.
 [[nodiscard]] HRESULT GdiEngine::_FlushBufferLines() noexcept
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
 
     if (_cPolyText > 0)
     {
@@ -515,13 +514,12 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
 // - coordTarget - The starting X/Y position of the first character to draw on.
 // Return Value:
 // - S_OK or suitable GDI HRESULT error or E_FAIL for GDI errors in functions that don't reliably return a specific error code.
-[[nodiscard]] HRESULT GdiEngine::PaintBufferGridLines(const GridLineSet lines, const COLORREF color, const size_t cchLine, const COORD coordTarget) noexcept
+[[nodiscard]] HRESULT GdiEngine::PaintBufferGridLines(const GridLineSet lines, const COLORREF color, const size_t cchLine, const til::point coordTarget) noexcept
 {
     LOG_IF_FAILED(_FlushBufferLines());
 
     // Convert the target from characters to pixels.
-    POINT ptTarget;
-    RETURN_IF_FAILED(_ScaleByFont(&coordTarget, &ptTarget));
+    const auto ptTarget = coordTarget * _GetFontSize();
     // Set the brush color as requested and save the previous brush to restore at the end.
     wil::unique_hbrush hbr(CreateSolidBrush(color));
     RETURN_HR_IF_NULL(E_FAIL, hbr.get());
@@ -612,26 +610,26 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     }
     LOG_IF_FAILED(_FlushBufferLines());
 
-    COORD const coordFontSize = _GetFontSize();
+    const auto coordFontSize = _GetFontSize();
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
 
     // First set up a block cursor the size of the font.
     RECT rcBoundaries;
-    RETURN_IF_FAILED(LongMult(options.coordCursor.X, coordFontSize.X, &rcBoundaries.left));
-    RETURN_IF_FAILED(LongMult(options.coordCursor.Y, coordFontSize.Y, &rcBoundaries.top));
-    RETURN_IF_FAILED(LongAdd(rcBoundaries.left, coordFontSize.X, &rcBoundaries.right));
-    RETURN_IF_FAILED(LongAdd(rcBoundaries.top, coordFontSize.Y, &rcBoundaries.bottom));
+    rcBoundaries.left = options.coordCursor.X * coordFontSize.X;
+    rcBoundaries.top = options.coordCursor.Y * coordFontSize.Y;
+    rcBoundaries.right = rcBoundaries.left + coordFontSize.X;
+    rcBoundaries.bottom = rcBoundaries.top + coordFontSize.Y;
 
     // If we're double-width cursor, make it an extra font wider.
     if (options.fIsDoubleWidth)
     {
-        RETURN_IF_FAILED(LongAdd(rcBoundaries.right, coordFontSize.X, &rcBoundaries.right));
+        rcBoundaries.right = rcBoundaries.right + coordFontSize.X;
     }
 
     // Make a set of RECTs to paint.
     cursorInvertRects.clear();
 
-    RECT rcInvert = rcBoundaries;
+    auto rcInvert = rcBoundaries;
     // depending on the cursorType, add rects to that set
     switch (options.cursorType)
     {
@@ -639,14 +637,14 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     {
         // Now adjust the cursor height
         // enforce min/max cursor height
-        ULONG ulHeight = options.ulCursorHeightPercent;
+        auto ulHeight = options.ulCursorHeightPercent;
         ulHeight = std::max(ulHeight, s_ulMinCursorHeightPercent); // No smaller than 25%
         ulHeight = std::min(ulHeight, s_ulMaxCursorHeightPercent); // No larger than 100%
 
         ulHeight = MulDiv(coordFontSize.Y, ulHeight, 100); // divide by 100 because percent.
 
         // Reduce the height of the top to be relative to the bottom by the height we want.
-        RETURN_IF_FAILED(LongSub(rcInvert.bottom, ulHeight, &rcInvert.top));
+        rcInvert.top = rcInvert.bottom - ulHeight;
 
         cursorInvertRects.push_back(rcInvert);
     }
@@ -654,7 +652,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
 
     case CursorType::VerticalBar:
         LONG proposedWidth;
-        RETURN_IF_FAILED(LongAdd(rcInvert.left, options.cursorPixelWidth, &proposedWidth));
+        proposedWidth = rcInvert.left + options.cursorPixelWidth;
         // It can't be wider than one cell or we'll have problems in invalidation, so restrict here.
         // It's either the left + the proposed width from the ease of access setting, or
         // it's the right edge of the block cursor as a maximum.
@@ -663,7 +661,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         break;
 
     case CursorType::Underscore:
-        RETURN_IF_FAILED(LongAdd(rcInvert.bottom, -1, &rcInvert.top));
+        rcInvert.top = rcInvert.bottom + -1;
         cursorInvertRects.push_back(rcInvert);
         break;
 
@@ -671,9 +669,9 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     {
         RECT top, bottom;
         top = bottom = rcBoundaries;
-        RETURN_IF_FAILED(LongAdd(bottom.bottom, -1, &bottom.top));
-        RETURN_IF_FAILED(LongAdd(top.bottom, -3, &top.top));
-        RETURN_IF_FAILED(LongAdd(top.top, 1, &top.bottom));
+        bottom.top = bottom.bottom + -1;
+        top.top = top.bottom + -3;
+        top.bottom = top.top + 1;
 
         cursorInvertRects.push_back(top);
         cursorInvertRects.push_back(bottom);
@@ -684,15 +682,15 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     {
         RECT top, left, right, bottom;
         top = left = right = bottom = rcBoundaries;
-        RETURN_IF_FAILED(LongAdd(top.top, 1, &top.bottom));
-        RETURN_IF_FAILED(LongAdd(bottom.bottom, -1, &bottom.top));
-        RETURN_IF_FAILED(LongAdd(left.left, 1, &left.right));
-        RETURN_IF_FAILED(LongAdd(right.right, -1, &right.left));
+        top.bottom = top.top + 1;
+        bottom.top = bottom.bottom + -1;
+        left.right = left.left + 1;
+        right.left = right.right + -1;
 
-        RETURN_IF_FAILED(LongAdd(top.left, 1, &top.left));
-        RETURN_IF_FAILED(LongAdd(bottom.left, 1, &bottom.left));
-        RETURN_IF_FAILED(LongAdd(top.right, -1, &top.right));
-        RETURN_IF_FAILED(LongAdd(bottom.right, -1, &bottom.right));
+        top.left = top.left + 1;
+        bottom.left = bottom.left + 1;
+        top.right = top.right + -1;
+        bottom.right = bottom.right + -1;
 
         cursorInvertRects.push_back(top);
         cursorInvertRects.push_back(left);
@@ -718,8 +716,8 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     // Either invert all the RECTs, or paint them.
     if (options.fUseColor)
     {
-        HBRUSH hCursorBrush = CreateSolidBrush(options.cursorColor);
-        for (RECT r : cursorInvertRects)
+        auto hCursorBrush = CreateSolidBrush(options.cursorColor);
+        for (auto r : cursorInvertRects)
         {
             RETURN_HR_IF(E_FAIL, !(FillRect(_hdcMemoryContext, &r, hCursorBrush)));
         }
@@ -733,9 +731,13 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         // inverted rects to hide the cursor in the ScrollFrame method.
         cursorInvertTransform = _currentLineTransform;
 
-        for (RECT r : cursorInvertRects)
+        for (auto r : cursorInvertRects)
         {
-            RETURN_HR_IF(E_FAIL, !(InvertRect(_hdcMemoryContext, &r)));
+            // Make sure the cursor is always readable (see gh-3647)
+            const auto PrevObject = SelectObject(_hdcMemoryContext, GetStockObject(LTGRAY_BRUSH));
+            const auto Result = PatBlt(_hdcMemoryContext, r.left, r.top, r.right - r.left, r.bottom - r.top, PATINVERT);
+            SelectObject(_hdcMemoryContext, PrevObject);
+            RETURN_HR_IF(E_FAIL, !Result);
         }
     }
 
@@ -750,12 +752,11 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
 //  - rect - Rectangle to invert or highlight to make the selection area
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
-[[nodiscard]] HRESULT GdiEngine::PaintSelection(const SMALL_RECT rect) noexcept
+[[nodiscard]] HRESULT GdiEngine::PaintSelection(const til::rect& rect) noexcept
 {
     LOG_IF_FAILED(_FlushBufferLines());
 
-    RECT pixelRect = { 0 };
-    RETURN_IF_FAILED(_ScaleByFont(&rect, &pixelRect));
+    const auto pixelRect = rect.scale_up(_GetFontSize()).to_win32_rect();
 
     RETURN_HR_IF(E_FAIL, !InvertRect(_hdcMemoryContext, &pixelRect));
 

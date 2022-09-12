@@ -23,7 +23,7 @@ using namespace Microsoft::Console::Types;
 // - direction - The direction to search (upward or downward)
 // - sensitivity - Whether or not you care about case
 Search::Search(IUiaData& uiaData,
-               const std::wstring& str,
+               const std::wstring_view str,
                const Direction direction,
                const Sensitivity sensitivity) :
     _direction(direction),
@@ -47,10 +47,10 @@ Search::Search(IUiaData& uiaData,
 // - sensitivity - Whether or not you care about case
 // - anchor - starting search location in screenInfo
 Search::Search(IUiaData& uiaData,
-               const std::wstring& str,
+               const std::wstring_view str,
                const Direction direction,
                const Sensitivity sensitivity,
-               const COORD anchor) :
+               const til::point anchor) :
     _direction(direction),
     _sensitivity(sensitivity),
     _needle(s_CreateNeedleFromString(str)),
@@ -106,14 +106,13 @@ void Search::Select() const
 }
 
 // Routine Description:
-// - In console host, we take the found word and apply the given color to it in the screen buffer
-// - In Windows Terminal, we just select the found word, but we do not modify the buffer
+// - Applies the supplied TextAttribute to the current search result.
 // Arguments:
-// - ulAttr - The legacy color attribute to apply to the word
+// - attr - The attribute to apply to the result
 void Search::Color(const TextAttribute attr) const
 {
     // Only select if we've found something.
-    if (_coordSelStart != _coordSelEnd)
+    if (_coordSelEnd >= _coordSelStart)
     {
         _uiaData.ColorSelection(_coordSelStart, _coordSelEnd, attr);
     }
@@ -124,7 +123,7 @@ void Search::Color(const TextAttribute attr) const
 // been called and returned true.
 // Return Value:
 // - pair containing [start, end] coord positions of text found by search
-std::pair<COORD, COORD> Search::GetFoundLocation() const noexcept
+std::pair<til::point, til::point> Search::GetFoundLocation() const noexcept
 {
     return { _coordSelStart, _coordSelEnd };
 }
@@ -140,10 +139,10 @@ std::pair<COORD, COORD> Search::GetFoundLocation() const noexcept
 // - direction - The intended direction of the search
 // Return Value:
 // - Coordinate to start the search from.
-COORD Search::s_GetInitialAnchor(IUiaData& uiaData, const Direction direction)
+til::point Search::s_GetInitialAnchor(const IUiaData& uiaData, const Direction direction)
 {
     const auto& textBuffer = uiaData.GetTextBuffer();
-    const COORD textBufferEndPosition = uiaData.GetTextBufferEndPosition();
+    const auto textBufferEndPosition = uiaData.GetTextBufferEndPosition();
     if (uiaData.IsSelectionActive())
     {
         // Convert the screen position of the selection anchor into an equivalent
@@ -187,12 +186,12 @@ COORD Search::s_GetInitialAnchor(IUiaData& uiaData, const Direction direction)
 // - end - If we found it, this is filled with the coordinate of the last character of the needle.
 // Return Value:
 // - True if we found it. False if not.
-bool Search::_FindNeedleInHaystackAt(const COORD pos, COORD& start, COORD& end) const
+bool Search::_FindNeedleInHaystackAt(const til::point pos, til::point& start, til::point& end) const
 {
-    start = { 0 };
-    end = { 0 };
+    start = {};
+    end = {};
 
-    COORD bufferPos = pos;
+    auto bufferPos = pos;
 
     for (const auto& needleCell : _needle)
     {
@@ -269,7 +268,7 @@ wchar_t Search::_ApplySensitivity(const wchar_t wch) const noexcept
 // - Helper to increment a coordinate in respect to the associated screen buffer
 // Arguments
 // - coord - Updated by function to increment one position (will wrap X and Y direction)
-void Search::_IncrementCoord(COORD& coord) const noexcept
+void Search::_IncrementCoord(til::point& coord) const noexcept
 {
     _uiaData.GetTextBuffer().GetSize().IncrementInBoundsCircular(coord);
 }
@@ -278,7 +277,7 @@ void Search::_IncrementCoord(COORD& coord) const noexcept
 // - Helper to decrement a coordinate in respect to the associated screen buffer
 // Arguments
 // - coord - Updated by function to decrement one position (will wrap X and Y direction)
-void Search::_DecrementCoord(COORD& coord) const noexcept
+void Search::_DecrementCoord(til::point& coord) const noexcept
 {
     _uiaData.GetTextBuffer().GetSize().DecrementInBoundsCircular(coord);
 }
@@ -307,14 +306,14 @@ void Search::_UpdateNextPosition()
     // We put the next position to:
     // Forward: (0, 0)
     // Backward: the position of the end of the text buffer
-    const COORD bufferEndPosition = _uiaData.GetTextBufferEndPosition();
+    const auto bufferEndPosition = _uiaData.GetTextBufferEndPosition();
 
     if (_coordNext.Y > bufferEndPosition.Y ||
         (_coordNext.Y == bufferEndPosition.Y && _coordNext.X > bufferEndPosition.X))
     {
         if (_direction == Direction::Forward)
         {
-            _coordNext = { 0 };
+            _coordNext = {};
         }
         else
         {
@@ -330,7 +329,7 @@ void Search::_UpdateNextPosition()
 // - wstr - String that will be our search term
 // Return Value:
 // - Structured text data for comparison to screen buffer text data.
-std::vector<std::vector<wchar_t>> Search::s_CreateNeedleFromString(const std::wstring& wstr)
+std::vector<std::vector<wchar_t>> Search::s_CreateNeedleFromString(const std::wstring_view wstr)
 {
     const auto charData = Utf16Parser::Parse(wstr);
     std::vector<std::vector<wchar_t>> cells;

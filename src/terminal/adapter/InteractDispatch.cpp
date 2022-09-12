@@ -3,20 +3,29 @@
 
 #include "precomp.h"
 
+// Some of the interactivity classes pulled in by ServiceLocator.hpp are not
+// yet audit-safe, so for now we'll need to disable a bunch of warnings.
+#pragma warning(disable : 26432)
+#pragma warning(disable : 26440)
+#pragma warning(disable : 26455)
+
+// We end up including ApiMessage.h somehow, which uses nameless unions
+#pragma warning(disable : 4201)
+
 #include "InteractDispatch.hpp"
-#include "conGetSet.hpp"
+#include "../../host/conddkrefs.h"
+#include "../../interactivity/inc/ServiceLocator.hpp"
 #include "../../interactivity/inc/EventSynthesis.hpp"
 #include "../../types/inc/Viewport.hpp"
 #include "../../inc/unicode.hpp"
 
+using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
-// takes ownership of pConApi
-InteractDispatch::InteractDispatch(std::unique_ptr<ConGetSet> pConApi) :
-    _pConApi(std::move(pConApi))
+InteractDispatch::InteractDispatch() :
+    _api{ ServiceLocator::LocateGlobals().getConsoleInformation() }
 {
-    THROW_HR_IF_NULL(E_INVALIDARG, _pConApi.get());
 }
 
 // Method Description:
@@ -31,8 +40,8 @@ InteractDispatch::InteractDispatch(std::unique_ptr<ConGetSet> pConApi) :
 // - True.
 bool InteractDispatch::WriteInput(std::deque<std::unique_ptr<IInputEvent>>& inputEvents)
 {
-    size_t written = 0;
-    _pConApi->WriteInput(inputEvents, written);
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.GetActiveInputBuffer()->Write(inputEvents);
     return true;
 }
 
@@ -47,7 +56,7 @@ bool InteractDispatch::WriteInput(std::deque<std::unique_ptr<IInputEvent>>& inpu
 // - True.
 bool InteractDispatch::WriteCtrlKey(const KeyEvent& event)
 {
-    _pConApi->WriteControlInput(event);
+    HandleGenericKeyEvent(event, false);
     return true;
 }
 
@@ -62,12 +71,12 @@ bool InteractDispatch::WriteString(const std::wstring_view string)
 {
     if (!string.empty())
     {
-        const auto codepage = _pConApi->GetConsoleOutputCP();
+        const auto codepage = _api.GetConsoleOutputCP();
         std::deque<std::unique_ptr<IInputEvent>> keyEvents;
 
         for (const auto& wch : string)
         {
-            std::deque<std::unique_ptr<KeyEvent>> convertedEvents = Microsoft::Console::Interactivity::CharToKeyEvents(wch, codepage);
+            auto convertedEvents = CharToKeyEvents(wch, codepage);
 
             std::move(convertedEvents.begin(),
                       convertedEvents.end(),
@@ -100,15 +109,22 @@ bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
     //  MSFT:13271146 - QueryScreenSize
     switch (function)
     {
+    case DispatchTypes::WindowManipulationType::DeIconifyWindow:
+        _api.ShowWindow(true);
+        return true;
+    case DispatchTypes::WindowManipulationType::IconifyWindow:
+        _api.ShowWindow(false);
+        return true;
     case DispatchTypes::WindowManipulationType::RefreshWindow:
-        _pConApi->RefreshWindow();
+        _api.GetTextBuffer().TriggerRedrawAll();
         return true;
     case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
         // TODO:GH#1765 We should introduce a better `ResizeConpty` function to
-        // the ConGetSet interface, that specifically handles a conpty resize.
-        if (_pConApi->ResizeWindow(parameter2.value_or(0), parameter1.value_or(0)))
+        // ConhostInternalGetSet, that specifically handles a conpty resize.
+        if (_api.ResizeWindow(parameter2.value_or(0), parameter1.value_or(0)))
         {
-            _pConApi->SuppressResizeRepaint();
+            auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+            THROW_IF_FAILED(gci.GetVtIo()->SuppressResizeRepaint());
         }
         return true;
     default:
@@ -124,38 +140,21 @@ bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
 // - col: The column to move the cursor to.
 // Return value:
 // - True.
-bool InteractDispatch::MoveCursor(const size_t row, const size_t col)
+bool InteractDispatch::MoveCursor(const VTInt row, const VTInt col)
 {
-    // The parser should never return 0 (0 maps to 1), so this is a failure condition.
-    THROW_HR_IF(E_INVALIDARG, row == 0);
-    THROW_HR_IF(E_INVALIDARG, col == 0);
+    // First retrieve some information about the buffer
+    const auto viewport = _api.GetViewport();
 
     // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
-    const size_t rowFixed = row - 1;
-    const size_t colFixed = col - 1;
-
-    // First retrieve some information about the buffer
-    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
-
-    COORD coordCursor = csbiex.dwCursorPosition;
-
-    // Safely convert the size_t positions we were given into shorts (which is the size the console deals with)
-    THROW_IF_FAILED(SizeTToShort(rowFixed, &coordCursor.Y));
-    THROW_IF_FAILED(SizeTToShort(colFixed, &coordCursor.X));
-
-    // Set the line and column values as offsets from the viewport edge. Use safe math to prevent overflow.
-    THROW_IF_FAILED(ShortAdd(coordCursor.Y, csbiex.srWindow.Top, &coordCursor.Y));
-    THROW_IF_FAILED(ShortAdd(coordCursor.X, csbiex.srWindow.Left, &coordCursor.X));
-
     // Apply boundary tests to ensure the cursor isn't outside the viewport rectangle.
-    coordCursor.Y = std::clamp(coordCursor.Y, csbiex.srWindow.Top, gsl::narrow<SHORT>(csbiex.srWindow.Bottom - 1));
-    coordCursor.X = std::clamp(coordCursor.X, csbiex.srWindow.Left, gsl::narrow<SHORT>(csbiex.srWindow.Right - 1));
+    til::point coordCursor{ col - 1 + viewport.Left, row - 1 + viewport.Top };
+    coordCursor.Y = std::clamp(coordCursor.Y, viewport.Top, viewport.Bottom);
+    coordCursor.X = std::clamp(coordCursor.X, viewport.Left, viewport.Right);
 
     // Finally, attempt to set the adjusted cursor position back into the console.
-    _pConApi->SetCursorPosition(coordCursor);
-    return true;
+    const auto api = gsl::not_null{ ServiceLocator::LocateGlobals().api };
+    auto& info = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer();
+    return SUCCEEDED(api->SetConsoleCursorPositionImpl(info, coordCursor));
 }
 
 // Routine Description:
@@ -166,5 +165,84 @@ bool InteractDispatch::MoveCursor(const size_t row, const size_t col)
 // - true if enabled (see IsInVirtualTerminalInputMode). false otherwise.
 bool InteractDispatch::IsVtInputEnabled() const
 {
-    return _pConApi->IsVtInputEnabled();
+    return _api.IsVtInputEnabled();
+}
+
+// Method Description:
+// - Inform the console that the window is focused. This is used by ConPTY.
+//   Terminals can send ConPTY a FocusIn/FocusOut sequence on the input pipe,
+//   which will end up here. This will update the console's internal tracker if
+//   it's focused or not, as to match the end-terminal's state.
+// - Used to call ConsoleControl(ConsoleSetForeground,...).
+// Arguments:
+// - focused: if the terminal is now focused
+// Return Value:
+// - true always.
+bool InteractDispatch::FocusChanged(const bool focused) const
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+
+    // This should likely always be true - we shouldn't ever have an
+    // InteractDispatch outside ConPTY mode, but just in case...
+    if (gci.IsInVtIoMode())
+    {
+        auto shouldActuallyFocus = false;
+
+        // From https://github.com/microsoft/terminal/pull/12799#issuecomment-1086289552
+        // Make sure that the process that's telling us it's focused, actually
+        // _is_ in the FG. We don't want to allow malicious.exe to say "yep I'm
+        // in the foreground, also, here's a popup" if it isn't actually in the
+        // FG.
+        if (focused)
+        {
+            if (const auto pseudoHwnd{ ServiceLocator::LocatePseudoWindow() })
+            {
+                // They want focus, we found a pseudo hwnd.
+
+                // BODGY
+                //
+                // This needs to be GA_ROOTOWNER here. Not GA_ROOT, GA_PARENT,
+                // or GetParent. The ConPTY hwnd is an owned, top-level, popup,
+                // non-parented window. It does not have a parent set. It does
+                // have an owner set. It is not a WS_CHILD window. This
+                // combination of things allows us to find the owning window
+                // with GA_ROOTOWNER. GA_ROOT will get us ourselves, and
+                // GA_PARENT will return the desktop HWND.
+                //
+                // See GH#13066
+
+                if (const auto ownerHwnd{ ::GetAncestor(pseudoHwnd, GA_ROOTOWNER) })
+                {
+                    // We have an owner from a previous call to ReparentWindow
+
+                    if (const auto currentFgWindow{ ::GetForegroundWindow() })
+                    {
+                        // There is a window in the foreground (it's possible there
+                        // isn't one)
+
+                        // Get the PID of the current FG window, and compare with our owner's PID.
+                        DWORD currentFgPid{ 0 };
+                        DWORD ownerPid{ 0 };
+                        GetWindowThreadProcessId(currentFgWindow, &currentFgPid);
+                        GetWindowThreadProcessId(ownerHwnd, &ownerPid);
+
+                        if (ownerPid == currentFgPid)
+                        {
+                            // Huzzah, the app that owns us is actually the FG
+                            // process. They're allowed to grand FG rights.
+                            shouldActuallyFocus = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        WI_UpdateFlag(gci.Flags, CONSOLE_HAS_FOCUS, shouldActuallyFocus);
+        gci.ProcessHandleList.ModifyConsoleProcessFocus(shouldActuallyFocus);
+        gci.pInputBuffer->Write(std::make_unique<FocusEvent>(focused));
+    }
+    // Does nothing outside of ConPTY. If there's a real HWND, then the HWND is solely in charge.
+
+    return true;
 }

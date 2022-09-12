@@ -90,7 +90,7 @@ namespace SettingsModelLocalTests
         }
 
         Log::Comment(L"Roundtrip Test for Color Scheme");
-        Json::Value outJson{ scheme->ToJson() };
+        auto outJson{ scheme->ToJson() };
         VERIFY_ARE_EQUAL(schemeObject, outJson);
     }
 

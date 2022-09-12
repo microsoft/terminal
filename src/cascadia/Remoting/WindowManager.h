@@ -64,7 +64,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         bool _shouldCreateWindow{ false };
         bool _isKing{ false };
         DWORD _registrationHostClass{ 0 };
-        winrt::Microsoft::Terminal::Remoting::Monarch _monarch{ nullptr };
+        winrt::Microsoft::Terminal::Remoting::IMonarch _monarch{ nullptr };
         winrt::Microsoft::Terminal::Remoting::Peasant _peasant{ nullptr };
 
         wil::unique_event _monarchWaitInterrupt;
@@ -72,7 +72,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         void _registerAsMonarch();
         void _createMonarch();
+        void _redundantCreateMonarch();
         void _createMonarchAndCallbacks();
+        void _createCallbacks();
         bool _areWeTheKing();
         winrt::Microsoft::Terminal::Remoting::IPeasant _createOurPeasant(std::optional<uint64_t> givenID,
                                                                          const winrt::hstring& givenName);

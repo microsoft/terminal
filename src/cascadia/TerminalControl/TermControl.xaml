@@ -56,6 +56,7 @@
 
         <x:Double x:Key="ScrollBarSize">16</x:Double>
         <CornerRadius x:Key="ScrollBarCornerRadius">0</CornerRadius>
+        <CornerRadius x:Key="ScrollBarThumbCornerRadius">3</CornerRadius>
 
         <Style x:Key="ForkedScrollbarTemplate"
                TargetType="ScrollBar">
@@ -351,11 +352,9 @@
                                 <ControlTemplate x:Key="VerticalThumbTemplate"
                                                  TargetType="Thumb">
                                     <Rectangle x:Name="ThumbVisual"
-                                               contract7NotPresent:RadiusX="{Binding Source={ThemeResource ScrollBarCornerRadius}, Converter={StaticResource TopLeftCornerRadiusDoubleValueConverter}}"
-                                               contract7NotPresent:RadiusY="{Binding Source={ThemeResource ScrollBarCornerRadius}, Converter={StaticResource BottomRightCornerRadiusDoubleValueConverter}}"
-                                               contract7Present:RadiusX="{Binding CornerRadius, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource TopLeftCornerRadiusDoubleValueConverter}}"
-                                               contract7Present:RadiusY="{Binding CornerRadius, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource BottomRightCornerRadiusDoubleValueConverter}}"
                                                Fill="{TemplateBinding Background}"
+                                               RadiusX="{Binding Source={ThemeResource ScrollBarThumbCornerRadius}, Converter={StaticResource TopLeftCornerRadiusDoubleValueConverter}}"
+                                               RadiusY="{Binding Source={ThemeResource ScrollBarThumbCornerRadius}, Converter={StaticResource BottomRightCornerRadiusDoubleValueConverter}}"
                                                Stroke="{TemplateBinding BorderBrush}"
                                                StrokeThickness="{ThemeResource ScrollBarThumbStrokeThickness}">
                                         <VisualStateManager.VisualStateGroups>
@@ -1214,6 +1213,16 @@
                             </ToolTipService.ToolTip>
                         </Border>
                     </Canvas>
+
+                    <Canvas x:Name="SelectionCanvas"
+                            Visibility="Visible">
+                        <Path Name="SelectionStartMarker"
+                              Data="M 0 0 L 4 5.5996094 L 4 14 L 5 14 L 5 7 L 5 4.1992188 L 5 0 L 0 0 z "
+                              Visibility="Collapsed" />
+                        <Path Name="SelectionEndMarker"
+                              Data="M 0 0 L 0 4.1992188 L 0 7 L 0 14 L 1 14 L 1 5.5996094 L 5 0 L 0 0 z "
+                              Visibility="Collapsed" />
+                    </Canvas>
                 </SwapChainPanel>
 
                 <!--
@@ -1244,6 +1253,30 @@
                        Style="{StaticResource ForkedScrollbarTemplate}"
                        ValueChanged="_ScrollbarChangeHandler"
                        ViewportSize="10" />
+
+            <Grid x:Name="ScrollMarksGrid"
+                  Grid.Column="1"
+                  Width="{StaticResource ScrollBarSize}"
+                  HorizontalAlignment="Right"
+                  VerticalAlignment="Stretch">
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0"
+                        Height="{StaticResource ScrollBarSize}" />
+                <Canvas x:Name="ScrollBarCanvas"
+                        Grid.Row="1"
+                        Width="{StaticResource ScrollBarSize}"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Stretch" />
+                <Border Grid.Row="2"
+                        Height="{StaticResource ScrollBarSize}" />
+            </Grid>
+
         </Grid>
 
         <local:TSFInputControl x:Name="TSFInputControl"

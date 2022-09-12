@@ -123,7 +123,7 @@ void Settings::ApplyDesktopSpecificDefaults()
 
 void Settings::ApplyStartupInfo(const Settings* const pStartupSettings)
 {
-    const DWORD dwFlags = pStartupSettings->_dwStartupFlags;
+    const auto dwFlags = pStartupSettings->_dwStartupFlags;
 
     // See: http://msdn.microsoft.com/en-us/library/windows/desktop/ms686331(v=vs.85).aspx
 
@@ -172,8 +172,8 @@ void Settings::ApplyStartupInfo(const Settings* const pStartupSettings)
 // - <none>
 void Settings::ApplyCommandlineArguments(const ConsoleArguments& consoleArgs)
 {
-    const short width = consoleArgs.GetWidth();
-    const short height = consoleArgs.GetHeight();
+    const auto width = consoleArgs.GetWidth();
+    const auto height = consoleArgs.GetHeight();
 
     if (width > 0 && height > 0)
     {
@@ -283,7 +283,7 @@ void Settings::Validate()
     {
         // TODO: FIX
         //// Get the font that we're going to use to convert pixels to characters.
-        //DWORD const dwFontIndexWant = FindCreateFont(_uFontFamily,
+        // const auto dwFontIndexWant = FindCreateFont(_uFontFamily,
         //                                             _FaceName,
         //                                             _dwFontSize,
         //                                             _uFontWeight,
@@ -297,7 +297,7 @@ void Settings::Validate()
     _dwScreenBufferSize.X = std::max(_dwScreenBufferSize.X, 1i16);
     _dwScreenBufferSize.Y = std::max(_dwScreenBufferSize.Y, 1i16);
 
-    // minimum window size size 1x1
+    // minimum window size 1x1
     _dwWindowSize.X = std::max(_dwWindowSize.X, 1i16);
     _dwWindowSize.Y = std::max(_dwWindowSize.Y, 1i16);
 
@@ -558,44 +558,44 @@ void Settings::SetReserved(const WORD wReserved)
     _wReserved = wReserved;
 }
 
-COORD Settings::GetScreenBufferSize() const
+til::size Settings::GetScreenBufferSize() const
 {
-    return _dwScreenBufferSize;
+    return til::wrap_coord_size(_dwScreenBufferSize);
 }
-void Settings::SetScreenBufferSize(const COORD dwScreenBufferSize)
+void Settings::SetScreenBufferSize(const til::size dwScreenBufferSize)
 {
-    _dwScreenBufferSize = dwScreenBufferSize;
+    LOG_IF_FAILED(til::unwrap_coord_size_hr(dwScreenBufferSize, _dwScreenBufferSize));
 }
 
-COORD Settings::GetWindowSize() const
+til::size Settings::GetWindowSize() const
 {
-    return _dwWindowSize;
+    return til::wrap_coord_size(_dwWindowSize);
 }
-void Settings::SetWindowSize(const COORD dwWindowSize)
+void Settings::SetWindowSize(const til::size dwWindowSize)
 {
-    _dwWindowSize = dwWindowSize;
+    LOG_IF_FAILED(til::unwrap_coord_size_hr(dwWindowSize, _dwWindowSize));
 }
 
 bool Settings::IsWindowSizePixelsValid() const
 {
     return _fUseWindowSizePixels;
 }
-COORD Settings::GetWindowSizePixels() const
+til::size Settings::GetWindowSizePixels() const
 {
-    return _dwWindowSizePixels;
+    return til::wrap_coord_size(_dwWindowSizePixels);
 }
-void Settings::SetWindowSizePixels(const COORD dwWindowSizePixels)
+void Settings::SetWindowSizePixels(const til::size dwWindowSizePixels)
 {
-    _dwWindowSizePixels = dwWindowSizePixels;
+    LOG_IF_FAILED(til::unwrap_coord_size_hr(dwWindowSizePixels, _dwWindowSizePixels));
 }
 
-COORD Settings::GetWindowOrigin() const
+til::size Settings::GetWindowOrigin() const
 {
-    return _dwWindowOrigin;
+    return til::wrap_coord_size(_dwWindowOrigin);
 }
-void Settings::SetWindowOrigin(const COORD dwWindowOrigin)
+void Settings::SetWindowOrigin(const til::size dwWindowOrigin)
 {
-    _dwWindowOrigin = dwWindowOrigin;
+    LOG_IF_FAILED(til::unwrap_coord_size_hr(dwWindowOrigin, _dwWindowOrigin));
 }
 
 DWORD Settings::GetFont() const
@@ -607,13 +607,13 @@ void Settings::SetFont(const DWORD nFont)
     _nFont = nFont;
 }
 
-COORD Settings::GetFontSize() const
+til::size Settings::GetFontSize() const
 {
-    return _dwFontSize;
+    return til::wrap_coord_size(_dwFontSize);
 }
-void Settings::SetFontSize(const COORD dwFontSize)
+void Settings::SetFontSize(const til::size dwFontSize)
 {
-    _dwFontSize = dwFontSize;
+    LOG_IF_FAILED(til::unwrap_coord_size_hr(dwFontSize, _dwFontSize));
 }
 
 UINT Settings::GetFontFamily() const

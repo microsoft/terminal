@@ -242,6 +242,10 @@
     <value>&#x2022; Found a keybinding that was missing a required parameter value. This keybinding will be ignored.</value>
     <comment>{Locked="&#x2022;"} This glyph is a bullet, used in a bulleted list.</comment>
   </data>
+  <data name="UnknownTheme" xml:space="preserve">
+    <value>&#x2022; The specified "theme" was not found in the list of themes. Temporarily falling back to the default value.</value>
+    <comment>{Locked="&#x2022;"} This glyph is a bullet, used in a bulleted list.</comment>
+  </data>
   <data name="LegacyGlobalsProperty" xml:space="preserve">
     <value>The "globals" property is deprecated - your settings might need updating. </value>
     <comment>{Locked="\"globals\""} </comment>
@@ -432,6 +436,9 @@
   <data name="AboutDialog.Title" xml:space="preserve">
     <value>About</value>
   </data>
+  <data name="AboutDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Send Feedback</value>
+  </data>
   <data name="AboutDialog.CloseButtonText" xml:space="preserve">
     <value>OK</value>
   </data>
@@ -442,6 +449,10 @@
   <data name="AboutDialog_GettingStartedLink.Content" xml:space="preserve">
     <value>Getting Started</value>
     <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
+  </data>
+  <data name="AboutDialog_SourceCodeLink.Content" xml:space="preserve">
+    <value>Source Code</value>
+    <comment>A hyperlink name for the Terminal's documentation</comment>
   </data>
   <data name="AboutDialog_DocumentationLink.Content" xml:space="preserve">
     <value>Documentation</value>
@@ -708,6 +719,9 @@
   </data>
   <data name="ExportSuccess" xml:space="preserve">
     <value>Successfully exported terminal content</value>
+  </data>
+  <data name="FindText" xml:space="preserve">
+    <value>Find</value>
   </data>
   <data name="PlainText" xml:space="preserve">
     <value>Plain Text</value>

@@ -11,12 +11,13 @@ jobs:
     BuildConfiguration: ${{ parameters.configuration }}
     BuildPlatform: ${{ parameters.platform }}
     WindowsTerminalBranding: ${{ parameters.branding }}
-  pool: 
+    EnableRichCodeNavigation: true
+  pool:
     ${{ if eq(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
       name: WinDevPoolOSS-L
     ${{ if ne(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
       name: WinDevPool-L
-    demands: ImageOverride -equals WinDevVS16-latest
+    demands: ImageOverride -equals WinDevVS17-latest
 
   steps:
   - template: build-console-steps.yml

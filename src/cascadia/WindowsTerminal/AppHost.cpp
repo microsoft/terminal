@@ -11,6 +11,8 @@
 #include "VirtualDesktopUtils.h"
 #include "icon.h"
 
+#include <TerminalThemeHelpers.h>
+
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml;
@@ -101,6 +103,7 @@ AppHost::AppHost() noexcept :
     _window->ShouldExitFullscreen({ &_logic, &winrt::TerminalApp::AppLogic::RequestExitFullscreen });
 
     _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
+    _window->SetAutoHideWindow(_logic.AutoHideWindow());
 
     _window->MakeWindow();
 
@@ -115,6 +118,19 @@ AppHost::AppHost() noexcept :
     {
         _BecomeMonarch(nullptr, nullptr);
     }
+
+    // Create a throttled function for updating the window state, to match the
+    // one requested by the pty. A 200ms delay was chosen because it's the
+    // typical animation timeout in Windows. This does result in a delay between
+    // the PTY requesting a change to the window state and the Terminal
+    // realizing it, but should mitigate issues where the Terminal and PTY get
+    // de-sync'd.
+    _showHideWindowThrottler = std::make_shared<ThrottledFuncTrailing<bool>>(
+        winrt::Windows::System::DispatcherQueue::GetForCurrentThread(),
+        std::chrono::milliseconds(200),
+        [this](const bool show) {
+            _window->ShowWindowChanged(show);
+        });
 }
 
 AppHost::~AppHost()
@@ -126,6 +142,8 @@ AppHost::~AppHost()
     // sure to revoke these first, so we won't get any more callbacks, then null
     // out the window, then close the app.
     _revokers = {};
+
+    _showHideWindowThrottler.reset();
 
     _window = nullptr;
     _app.Close();
@@ -163,7 +181,7 @@ void _buildArgsFromCommandline(std::vector<winrt::hstring>& args)
 {
     if (auto commandline{ GetCommandLineW() })
     {
-        int argc = 0;
+        auto argc = 0;
 
         // Get the argv, and turn them into a hstring array to pass to the app.
         wil::unique_any<LPWSTR*, decltype(&::LocalFree), ::LocalFree> argv{ CommandLineToArgvW(commandline, &argc) };
@@ -202,7 +220,7 @@ void AppHost::_HandleCommandlineArgs()
 {
     std::vector<winrt::hstring> args;
     _buildArgsFromCommandline(args);
-    std::wstring cwd{ wil::GetCurrentDirectoryW<std::wstring>() };
+    auto cwd{ wil::GetCurrentDirectoryW<std::wstring>() };
 
     Remoting::CommandlineArgs eventArgs{ { args }, { cwd } };
     _windowManager.ProposeCommandline(eventArgs);
@@ -371,6 +389,8 @@ void AppHost::Initialize()
     // application layer.
     _window->DragRegionClicked([this]() { _logic.TitlebarClicked(); });
 
+    _window->WindowVisibilityChanged([this](bool showOrHide) { _logic.WindowVisibilityChanged(showOrHide); });
+
     _revokers.RequestedThemeChanged = _logic.RequestedThemeChanged(winrt::auto_revoke, { this, &AppHost::_UpdateTheme });
     _revokers.FullscreenChanged = _logic.FullscreenChanged(winrt::auto_revoke, { this, &AppHost::_FullscreenChanged });
     _revokers.FocusModeChanged = _logic.FocusModeChanged(winrt::auto_revoke, { this, &AppHost::_FocusModeChanged });
@@ -386,6 +406,17 @@ void AppHost::Initialize()
         }
     });
 
+    _window->AutomaticShutdownRequested([this]() {
+        // Raised when the OS is beginning an update of the app. We will quit,
+        // to save our state, before the OS manually kills us.
+        _windowManager.RequestQuitAll();
+    });
+
+    // Load bearing: make sure the PropertyChanged handler is added before we
+    // call Create, so that when the app sets up the titlebar brush, we're
+    // already prepared to listen for the change notification
+    _revokers.PropertyChanged = _logic.PropertyChanged(winrt::auto_revoke, { this, &AppHost::_PropertyChangedHandler });
+
     _logic.Create();
 
     _revokers.TitleChanged = _logic.TitleChanged(winrt::auto_revoke, { this, &AppHost::AppTitleChanged });
@@ -398,6 +429,16 @@ void AppHost::Initialize()
     _revokers.SummonWindowRequested = _logic.SummonWindowRequested(winrt::auto_revoke, { this, &AppHost::_SummonWindowRequested });
     _revokers.OpenSystemMenu = _logic.OpenSystemMenu(winrt::auto_revoke, { this, &AppHost::_OpenSystemMenu });
     _revokers.QuitRequested = _logic.QuitRequested(winrt::auto_revoke, { this, &AppHost::_RequestQuitAll });
+    _revokers.ShowWindowChanged = _logic.ShowWindowChanged(winrt::auto_revoke, { this, &AppHost::_ShowWindowChanged });
+
+    // BODGY
+    // On certain builds of Windows, when Terminal is set as the default
+    // it will accumulate an unbounded amount of queued animations while
+    // the screen is off and it is servicing window management for console
+    // applications. This call into TerminalThemeHelpers will tell our
+    // compositor to automatically complete animations that are scheduled
+    // while the screen is off.
+    TerminalTrySetAutoCompleteAnimationsWhenOccluded(static_cast<::IUnknown*>(winrt::get_abi(_logic.GetRoot())), true);
 
     _window->UpdateTitle(_logic.Title());
 
@@ -421,7 +462,7 @@ void AppHost::Initialize()
     // time when this object would actually need to get cleaned up is _during
     // exit_. So we can safely leak this Application object, and have it just
     // get cleaned up normally when our process exits.
-    ::winrt::TerminalApp::App a{ _app };
+    auto a{ _app };
     ::winrt::detach_abi(a);
 }
 
@@ -520,21 +561,21 @@ LaunchPosition AppHost::_GetWindowLaunchPosition()
 // - launchMode: A LaunchMode enum reference that indicates the launch mode
 // Return Value:
 // - None
-void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode& launchMode)
+void AppHost::_HandleCreateWindow(const HWND hwnd, til::rect proposedRect, LaunchMode& launchMode)
 {
     launchMode = _logic.GetLaunchMode();
 
     // Acquire the actual initial position
     auto initialPos = _logic.GetInitialPosition(proposedRect.left, proposedRect.top);
     const auto centerOnLaunch = _logic.CenterOnLaunch();
-    proposedRect.left = static_cast<long>(initialPos.X);
-    proposedRect.top = static_cast<long>(initialPos.Y);
+    proposedRect.left = gsl::narrow<til::CoordType>(initialPos.X);
+    proposedRect.top = gsl::narrow<til::CoordType>(initialPos.Y);
 
     long adjustedHeight = 0;
     long adjustedWidth = 0;
 
     // Find nearest monitor.
-    HMONITOR hmon = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
+    auto hmon = MonitorFromRect(proposedRect.as_win32_rect(), MONITOR_DEFAULTTONEAREST);
 
     // Get nearest monitor information
     MONITORINFO monitorInfo;
@@ -555,7 +596,7 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
     offScreenTestRect.right = offScreenTestRect.left + 1;
     offScreenTestRect.bottom = offScreenTestRect.top + 1;
 
-    bool isTitlebarIntersectWithMonitors = false;
+    auto isTitlebarIntersectWithMonitors = false;
     EnumDisplayMonitors(
         nullptr, &offScreenTestRect, [](HMONITOR, HDC, LPRECT, LPARAM lParam) -> BOOL {
             auto intersectWithMonitor = reinterpret_cast<bool*>(lParam);
@@ -575,9 +616,9 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
 
     auto initialSize = _logic.GetLaunchDimensions(dpix);
 
-    const short islandWidth = Utils::ClampToShortMax(
+    const auto islandWidth = Utils::ClampToShortMax(
         static_cast<long>(ceil(initialSize.Width)), 1);
-    const short islandHeight = Utils::ClampToShortMax(
+    const auto islandHeight = Utils::ClampToShortMax(
         static_cast<long>(ceil(initialSize.Height)), 1);
 
     // Get the size of a window we'd need to host that client rect. This will
@@ -591,13 +632,13 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
                           Utils::ClampToShortMax(adjustedHeight, 1) };
 
     // Find nearest monitor for the position that we've actually settled on
-    HMONITOR hMonNearest = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
+    auto hMonNearest = MonitorFromRect(proposedRect.as_win32_rect(), MONITOR_DEFAULTTONEAREST);
     MONITORINFO nearestMonitorInfo;
     nearestMonitorInfo.cbSize = sizeof(MONITORINFO);
     // Get monitor dimensions:
     GetMonitorInfo(hMonNearest, &nearestMonitorInfo);
-    const til::size desktopDimensions{ gsl::narrow<short>(nearestMonitorInfo.rcWork.right - nearestMonitorInfo.rcWork.left),
-                                       gsl::narrow<short>(nearestMonitorInfo.rcWork.bottom - nearestMonitorInfo.rcWork.top) };
+    const til::size desktopDimensions{ nearestMonitorInfo.rcWork.right - nearestMonitorInfo.rcWork.left,
+                                       nearestMonitorInfo.rcWork.bottom - nearestMonitorInfo.rcWork.top };
 
     // GH#10583 - Adjust the position of the rectangle to account for the size
     // of the invisible borders on the left/right. We DON'T want to adjust this
@@ -611,13 +652,13 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
     {
         // If we just use rcWork by itself, we'll fail to account for the invisible
         // space reserved for the resize handles. So retrieve that size here.
-        const til::size availableSpace = desktopDimensions + nonClientSize;
+        const auto availableSpace = desktopDimensions + nonClientSize;
 
-        origin = til::point{
-            ::base::ClampSub(nearestMonitorInfo.rcWork.left, (nonClientSize.width / 2)),
+        origin = {
+            (nearestMonitorInfo.rcWork.left - (nonClientSize.width / 2)),
             (nearestMonitorInfo.rcWork.top)
         };
-        dimensions = til::size{
+        dimensions = {
             availableSpace.width,
             availableSpace.height / 2
         };
@@ -626,7 +667,7 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
     else if (centerOnLaunch)
     {
         // Move our proposed location into the center of that specific monitor.
-        origin = til::point{
+        origin = {
             (nearestMonitorInfo.rcWork.left + ((desktopDimensions.width / 2) - (dimensions.width / 2))),
             (nearestMonitorInfo.rcWork.top + ((desktopDimensions.height / 2) - (dimensions.height / 2)))
         };
@@ -648,13 +689,6 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
     // If we can't resize the window, that's really okay. We can just go on with
     // the originally proposed window size.
     LOG_LAST_ERROR_IF(!succeeded);
-
-    TraceLoggingWrite(
-        g_hWindowsTerminalProvider,
-        "WindowCreated",
-        TraceLoggingDescription("Event emitted upon creating the application window"),
-        TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-        TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
 }
 
 // Method Description:
@@ -669,8 +703,12 @@ void AppHost::_UpdateTitleBarContent(const winrt::Windows::Foundation::IInspecta
 {
     if (_useNonClientArea)
     {
-        (static_cast<NonClientIslandWindow*>(_window.get()))->SetTitlebarContent(arg);
+        auto nonClientWindow{ static_cast<NonClientIslandWindow*>(_window.get()) };
+        nonClientWindow->SetTitlebarContent(arg);
+        nonClientWindow->SetTitlebarBackground(_logic.TitlebarBrush());
     }
+
+    _updateTheme();
 }
 
 // Method Description:
@@ -681,9 +719,10 @@ void AppHost::_UpdateTitleBarContent(const winrt::Windows::Foundation::IInspecta
 // - arg: the ElementTheme to use as the new theme for the UI
 // Return Value:
 // - <none>
-void AppHost::_UpdateTheme(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::UI::Xaml::ElementTheme& arg)
+void AppHost::_UpdateTheme(const winrt::Windows::Foundation::IInspectable&,
+                           const winrt::Microsoft::Terminal::Settings::Model::Theme& /*arg*/)
 {
-    _window->OnApplicationThemeChanged(arg);
+    _updateTheme();
 }
 
 void AppHost::_FocusModeChanged(const winrt::Windows::Foundation::IInspectable&,
@@ -707,7 +746,7 @@ void AppHost::_ChangeMaximizeRequested(const winrt::Windows::Foundation::IInspec
         // since there doesn't seem to be another way to handle this
         POINT point1 = {};
         ::GetCursorPos(&point1);
-        const LPARAM lParam = MAKELPARAM(point1.x, point1.y);
+        const auto lParam = MAKELPARAM(point1.x, point1.y);
         WINDOWPLACEMENT placement = { sizeof(placement) };
         ::GetWindowPlacement(handle, &placement);
         if (placement.showCmd == SW_SHOWNORMAL)
@@ -777,7 +816,7 @@ void AppHost::_WindowMouseWheeled(const til::point coord, const int32_t delta)
                     const auto transform = e.TransformToVisual(nullptr);
                     const til::point controlOrigin{ til::math::flooring, transform.TransformPoint({}) };
 
-                    const til::point offsetPoint = coord - controlOrigin;
+                    const auto offsetPoint = coord - controlOrigin;
 
                     const auto lButtonDown = WI_IsFlagSet(GetKeyState(VK_LBUTTON), KeyPressed);
                     const auto mButtonDown = WI_IsFlagSet(GetKeyState(VK_MBUTTON), KeyPressed);
@@ -873,8 +912,15 @@ void AppHost::_FindTargetWindow(const winrt::Windows::Foundation::IInspectable& 
     args.ResultTargetWindowName(targetWindow.WindowName());
 }
 
-winrt::fire_and_forget AppHost::_WindowActivated()
+winrt::fire_and_forget AppHost::_WindowActivated(bool activated)
 {
+    _logic.WindowActivated(activated);
+
+    if (!activated)
+    {
+        co_return;
+    }
+
     co_await winrt::resume_background();
 
     if (auto peasant{ _windowManager.CurrentWindow() })
@@ -1034,7 +1080,7 @@ winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
     // If a hotkey with a given HWND and ID combination already exists
     // then a duplicate one will be added, which we don't want.
     // (Additionally we want to remove hotkeys that were removed from the settings.)
-    for (int i = 0, count = gsl::narrow_cast<int>(_hotkeys.size()); i < count; ++i)
+    for (auto i = 0, count = gsl::narrow_cast<int>(_hotkeys.size()); i < count; ++i)
     {
         _window->UnregisterHotKey(i);
     }
@@ -1046,8 +1092,8 @@ winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
     {
         if (auto summonArgs = cmd.ActionAndArgs().Args().try_as<Settings::Model::GlobalSummonArgs>())
         {
-            int index = gsl::narrow_cast<int>(_hotkeys.size());
-            const bool succeeded = _window->RegisterHotKey(index, keyChord);
+            auto index = gsl::narrow_cast<int>(_hotkeys.size());
+            const auto succeeded = _window->RegisterHotKey(index, keyChord);
 
             TraceLoggingWrite(g_hWindowsTerminalProvider,
                               "AppHost_setupGlobalHotkey",
@@ -1297,6 +1343,25 @@ winrt::fire_and_forget AppHost::_RenameWindowRequested(const winrt::Windows::Fou
     }
 }
 
+void AppHost::_updateTheme()
+{
+    auto theme = _logic.Theme();
+
+    _window->OnApplicationThemeChanged(theme.RequestedTheme());
+
+    // This block of code enables Mica for our window. By all accounts, this
+    // version of the code will only work on Windows 11, SV2. There's a slightly
+    // different API surface for enabling Mica on Windows 11 22000.0.
+    //
+    // This code is left here, commented out, for future enablement of Mica.
+    // We'll revisit this in GH#10509. Because we can't enable transparent
+    // titlebars for showing Mica currently, we're just gonna disable it
+    // entirely while we sort that out.
+    //
+    // const int attribute = theme.Window().UseMica() ? /*DWMSBT_MAINWINDOW*/ 2 : /*DWMSBT_NONE*/ 1;
+    // DwmSetWindowAttribute(_window->GetHandle(), /* DWMWA_SYSTEMBACKDROP_TYPE */ 38, &attribute, sizeof(attribute));
+}
+
 void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                      const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
@@ -1328,6 +1393,8 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
     }
 
     _window->SetMinimizeToNotificationAreaBehavior(_logic.GetMinimizeToNotificationArea());
+    _window->SetAutoHideWindow(_logic.AutoHideWindow());
+    _updateTheme();
 }
 
 void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable&,
@@ -1378,6 +1445,19 @@ void AppHost::_QuitAllRequested(const winrt::Windows::Foundation::IInspectable&,
     // Tell the monarch to wait for the window layouts to save before
     // everyone quits.
     args.BeforeQuitAllAction(_SaveWindowLayouts());
+}
+
+void AppHost::_ShowWindowChanged(const winrt::Windows::Foundation::IInspectable&,
+                                 const winrt::Microsoft::Terminal::Control::ShowWindowArgs& args)
+{
+    // GH#13147: Enqueue a throttled update to our window state. Throttling
+    // should prevent scenarios where the Terminal window state and PTY window
+    // state get de-sync'd, and cause the window to minimize/restore constantly
+    // in a loop.
+    if (_showHideWindowThrottler)
+    {
+        _showHideWindowThrottler->Run(args.ShowOrHide());
+    }
 }
 
 void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
@@ -1535,4 +1615,17 @@ void AppHost::_CloseRequested(const winrt::Windows::Foundation::IInspectable& /*
 {
     const auto pos = _GetWindowLaunchPosition();
     _logic.CloseWindow(pos);
+}
+
+void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                      const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& e)
+{
+    if (e.PropertyName() == L"TitlebarBrush")
+    {
+        if (_useNonClientArea)
+        {
+            auto nonClientWindow{ static_cast<NonClientIslandWindow*>(_window.get()) };
+            nonClientWindow->SetTitlebarBackground(_logic.TitlebarBrush());
+        }
+    }
 }

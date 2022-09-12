@@ -17,7 +17,7 @@ This spec will outline how various terminal frontends will be able to interact w
   Terminal component.
 * **Terminal Layer**: This is the shared core implementation of the terminal.
   This is the Terminal Connection, Parser/Adapter, Buffer, and Renderer (but not
-  the UX-dependant RenderEngine).
+  the UX-dependent RenderEngine).
 
 ## User Stories
 1. "Project Cascadia" should be able to have both global settings (such as

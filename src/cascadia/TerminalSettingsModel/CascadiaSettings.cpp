@@ -14,6 +14,7 @@
 
 #include <shellapi.h>
 #include <shlwapi.h>
+#include <til/latch.h>
 
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -40,6 +41,11 @@ winrt::com_ptr<Profile> Model::implementation::CreateChild(const winrt::com_ptr<
     profile->Hidden(parent->Hidden());
     profile->AddLeastImportantParent(parent);
     return profile;
+}
+
+winrt::hstring CascadiaSettings::Hash() const noexcept
+{
+    return _hash;
 }
 
 Model::CascadiaSettings CascadiaSettings::Copy() const
@@ -404,11 +410,11 @@ winrt::com_ptr<Profile> CascadiaSettings::_createNewProfile(const std::wstring_v
 // - <none>
 void CascadiaSettings::_validateSettings()
 {
-    _validateCorrectDefaultShellPaths();
     _validateAllSchemesExist();
     _validateMediaResources();
     _validateKeybindings();
     _validateColorSchemesInCommands();
+    _validateThemeExists();
 }
 
 // Method Description:
@@ -424,7 +430,7 @@ void CascadiaSettings::_validateSettings()
 void CascadiaSettings::_validateAllSchemesExist()
 {
     const auto colorSchemes = _globals->ColorSchemes();
-    bool foundInvalidScheme = false;
+    auto foundInvalidScheme = false;
 
     for (const auto& profile : _allProfiles)
     {
@@ -458,8 +464,8 @@ void CascadiaSettings::_validateAllSchemesExist()
 //   we find any invalid icon images.
 void CascadiaSettings::_validateMediaResources()
 {
-    bool invalidBackground{ false };
-    bool invalidIcon{ false };
+    auto invalidBackground{ false };
+    auto invalidIcon{ false };
 
     for (auto profile : _allProfiles)
     {
@@ -559,6 +565,13 @@ Model::Profile CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs&
             if (auto profile = GetProfileByIndex(gsl::narrow<uint32_t>(index.Value())))
             {
                 return profile;
+            }
+            else
+            {
+                // GH#11114 - Return NOTHING if they asked for a profile index
+                // outside the range of available profiles.
+                // Really, the caller should check this beforehand
+                return nullptr;
             }
         }
 
@@ -690,13 +703,13 @@ std::wstring CascadiaSettings::NormalizeCommandLine(LPCWSTR commandLine)
     // One of the most important things this function does is to strip quotes.
     // That way the commandLine "foo.exe -bar" and "\"foo.exe\" \"-bar\"" appear identical.
     // We'll abuse CommandLineToArgvW for that as it's close to what CreateProcessW uses.
-    int argc = 0;
+    auto argc = 0;
     wil::unique_hlocal_ptr<PWSTR[]> argv{ CommandLineToArgvW(normalized.c_str(), &argc) };
     THROW_LAST_ERROR_IF(!argc);
 
     // The index of the first argument in argv for our executable in argv[0].
     // Given {"C:\Program Files\PowerShell\7\pwsh.exe", "-WorkingDirectory", "~"} this will be 1.
-    int startOfArguments = 1;
+    auto startOfArguments = 1;
 
     // The given commandLine should start with an executable name or path.
     // For instance given the following argv arrays:
@@ -876,7 +889,7 @@ void CascadiaSettings::_validateKeybindings() const
 //   we find any command with an invalid color scheme.
 void CascadiaSettings::_validateColorSchemesInCommands() const
 {
-    bool foundInvalidScheme{ false };
+    auto foundInvalidScheme{ false };
     for (const auto& nameAndCmd : _globals->ActionMap().NameMap())
     {
         if (_hasInvalidColorScheme(nameAndCmd.Value()))
@@ -894,7 +907,7 @@ void CascadiaSettings::_validateColorSchemesInCommands() const
 
 bool CascadiaSettings::_hasInvalidColorScheme(const Model::Command& command) const
 {
-    bool invalid{ false };
+    auto invalid{ false };
     if (command.HasNestedCommands())
     {
         for (const auto& nested : command.NestedCommands())
@@ -1114,12 +1127,27 @@ void CascadiaSettings::CurrentDefaultTerminal(const Model::DefaultTerminal& term
 // but in the future it might be worthwhile to change the code to use list indices instead.
 void CascadiaSettings::_refreshDefaultTerminals()
 {
-    if (!_defaultTerminals)
+    if (_defaultTerminals)
     {
-        auto [defaultTerminals, defaultTerminal] = DefaultTerminal::Available();
-        _defaultTerminals = winrt::single_threaded_observable_vector(std::move(defaultTerminals));
-        _currentDefaultTerminal = std::move(defaultTerminal);
+        return;
     }
+
+    // This is an extract of extractValueFromTaskWithoutMainThreadAwait
+    // as DefaultTerminal::Available creates the exact same issue.
+    std::pair<std::vector<Model::DefaultTerminal>, Model::DefaultTerminal> result{ {}, nullptr };
+    til::latch latch{ 1 };
+
+    std::ignore = [&]() -> winrt::fire_and_forget {
+        const auto cleanup = wil::scope_exit([&]() {
+            latch.count_down();
+        });
+        co_await winrt::resume_background();
+        result = DefaultTerminal::Available();
+    }();
+
+    latch.wait();
+    _defaultTerminals = winrt::single_threaded_observable_vector(std::move(result.first));
+    _currentDefaultTerminal = std::move(result.second);
 }
 
 void CascadiaSettings::ExportFile(winrt::hstring path, winrt::hstring content)
@@ -1129,4 +1157,29 @@ void CascadiaSettings::ExportFile(winrt::hstring path, winrt::hstring content)
         WriteUTF8FileAtomic({ path.c_str() }, til::u16u8(content));
     }
     CATCH_LOG();
+}
+
+void CascadiaSettings::_validateThemeExists()
+{
+    if (_globals->Themes().Size() == 0)
+    {
+        // We didn't even load the default themes. This should only be possible
+        // if the defaults.json didn't include any themes, or if no
+        // defaults.json was loaded at all. The second case is especially common
+        // in tests (that don't bother with a defaults.json). No matter. Create
+        // a default theme under `system` and just stick it in there.
+
+        auto newTheme = winrt::make_self<Theme>();
+        newTheme->Name(L"system");
+        _globals->AddTheme(*newTheme);
+        _globals->Theme(L"system");
+    }
+
+    if (!_globals->Themes().HasKey(_globals->Theme()))
+    {
+        _warnings.Append(SettingsLoadWarnings::UnknownTheme);
+
+        // safely fall back to system as the theme.
+        _globals->Theme(L"system");
+    }
 }

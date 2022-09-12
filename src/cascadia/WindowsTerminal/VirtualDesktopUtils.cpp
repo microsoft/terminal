@@ -82,18 +82,18 @@ namespace VirtualDesktopUtils
         {
             return false;
         }
-        std::unique_ptr<BYTE[]> buffer = std::make_unique<BYTE[]>(bufferCapacity);
+        auto buffer = std::make_unique<BYTE[]>(bufferCapacity);
         // request regkey binary content
         if (RegQueryValueExW(hKey, NonLocalizable::RegVirtualDesktopIds, 0, nullptr, buffer.get(), &bufferCapacity) != ERROR_SUCCESS)
         {
             return false;
         }
-        const size_t guidSize = sizeof(GUID);
+        const auto guidSize = sizeof(GUID);
         std::vector<GUID> temp;
         temp.reserve(bufferCapacity / guidSize);
         for (size_t i = 0; i < bufferCapacity; i += guidSize)
         {
-            GUID* guid = reinterpret_cast<GUID*>(buffer.get() + i);
+            auto guid = reinterpret_cast<GUID*>(buffer.get() + i);
             temp.push_back(*guid);
         }
         ids = std::move(temp);

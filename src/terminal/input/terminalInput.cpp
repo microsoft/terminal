@@ -71,9 +71,8 @@ static constexpr std::array<TermKeyMap, 6> s_cursorKeysVt52Mapping{
     TermKeyMap{ VK_END, L"\033F" },
 };
 
-static constexpr std::array<TermKeyMap, 20> s_keypadNumericMapping{
+static constexpr std::array<TermKeyMap, 19> s_keypadNumericMapping{
     TermKeyMap{ VK_TAB, L"\x09" },
-    TermKeyMap{ VK_BACK, L"\x7f" },
     TermKeyMap{ VK_PAUSE, L"\x1a" },
     TermKeyMap{ VK_ESCAPE, L"\x1b" },
     TermKeyMap{ VK_INSERT, L"\x1b[2~" },
@@ -103,9 +102,8 @@ static constexpr std::array<TermKeyMap, 20> s_keypadNumericMapping{
 //It seems to me as though this was used for early numpad implementations, where presently numlock would enable
 //  "numeric" mode, outputting the numbers on the keys, while "application" mode does things like pgup/down, arrow keys, etc.
 //These keys aren't translated at all in numeric mode, so I figured I'd leave them out of the numeric table.
-static constexpr std::array<TermKeyMap, 20> s_keypadApplicationMapping{
+static constexpr std::array<TermKeyMap, 19> s_keypadApplicationMapping{
     TermKeyMap{ VK_TAB, L"\x09" },
-    TermKeyMap{ VK_BACK, L"\x7f" },
     TermKeyMap{ VK_PAUSE, L"\x1a" },
     TermKeyMap{ VK_ESCAPE, L"\x1b" },
     TermKeyMap{ VK_INSERT, L"\x1b[2~" },
@@ -153,9 +151,8 @@ static constexpr std::array<TermKeyMap, 20> s_keypadApplicationMapping{
     // TermKeyMap{ VK_TAB, L"\x1bOI" },   // So I left them here as a reference just in case.
 };
 
-static constexpr std::array<TermKeyMap, 20> s_keypadVt52Mapping{
+static constexpr std::array<TermKeyMap, 19> s_keypadVt52Mapping{
     TermKeyMap{ VK_TAB, L"\x09" },
-    TermKeyMap{ VK_BACK, L"\x7f" },
     TermKeyMap{ VK_PAUSE, L"\x1a" },
     TermKeyMap{ VK_ESCAPE, L"\x1b" },
     TermKeyMap{ VK_INSERT, L"\x1b[2~" },
@@ -211,10 +208,7 @@ static constexpr std::array<TermKeyMap, 22> s_modifierKeyMapping{
 // These sequences are not later updated to encode the modifier state in the
 //      sequence itself, they are just weird exceptional cases to the general
 //      rules above.
-static constexpr std::array<TermKeyMap, 14> s_simpleModifiedKeyMapping{
-    TermKeyMap{ VK_BACK, CTRL_PRESSED, L"\x8" },
-    TermKeyMap{ VK_BACK, ALT_PRESSED, L"\x1b\x7f" },
-    TermKeyMap{ VK_BACK, CTRL_PRESSED | ALT_PRESSED, L"\x1b\x8" },
+static constexpr std::array<TermKeyMap, 11> s_simpleModifiedKeyMapping{
     TermKeyMap{ VK_TAB, CTRL_PRESSED, L"\t" },
     TermKeyMap{ VK_TAB, SHIFT_PRESSED, L"\x1b[Z" },
     TermKeyMap{ VK_DIVIDE, CTRL_PRESSED, L"\x1F" },
@@ -340,7 +334,7 @@ static std::optional<const TermKeyMap> _searchKeyMapping(const KeyEvent& keyEven
             // However, if there are modifiers set, then we only want to match
             //      if the key's modifiers are the same as the modifiers in the
             //      mapping.
-            bool modifiersMatch = WI_AreAllFlagsClear(map.modifiers, MOD_PRESSED);
+            auto modifiersMatch = WI_AreAllFlagsClear(map.modifiers, MOD_PRESSED);
             if (!modifiersMatch)
             {
                 // The modifier mapping expects certain modifier keys to be
@@ -373,7 +367,7 @@ typedef std::function<void(const std::wstring_view)> InputSender;
 // - True if there was a match to a key translation, and we successfully modified and sent it to the input
 static bool _searchWithModifier(const KeyEvent& keyEvent, InputSender sender)
 {
-    bool success = false;
+    auto success = false;
 
     const auto match = _searchKeyMapping(keyEvent,
                                          { s_modifierKeyMapping.data(), s_modifierKeyMapping.size() });
@@ -383,9 +377,9 @@ static bool _searchWithModifier(const KeyEvent& keyEvent, InputSender sender)
         if (!v.sequence.empty())
         {
             std::wstring modified{ v.sequence }; // Make a copy so we can modify it.
-            const bool shift = keyEvent.IsShiftPressed();
-            const bool alt = keyEvent.IsAltPressed();
-            const bool ctrl = keyEvent.IsCtrlPressed();
+            const auto shift = keyEvent.IsShiftPressed();
+            const auto alt = keyEvent.IsAltPressed();
+            const auto ctrl = keyEvent.IsCtrlPressed();
             modified.at(modified.size() - 2) = L'1' + (shift ? 1 : 0) + (alt ? 2 : 0) + (ctrl ? 4 : 0);
             sender(modified);
             success = true;
@@ -436,7 +430,7 @@ static bool _searchWithModifier(const KeyEvent& keyEvent, InputSender sender)
 
             const auto ctrl = keyEvent.IsCtrlPressed();
             const auto alt = keyEvent.IsAltPressed();
-            const bool shift = keyEvent.IsShiftPressed();
+            const auto shift = keyEvent.IsShiftPressed();
 
             // From the KeyEvent we're translating, synthesize the equivalent VkKeyScan result
             const auto vkey = keyEvent.GetVirtualKeyCode();
@@ -449,8 +443,8 @@ static bool _searchWithModifier(const KeyEvent& keyEvent, InputSender sender)
             // bits also match. This handles the hypothetical case we get a
             // keyscan back that's ctrl+alt+some_random_VK, and some_random_VK
             // has bits that are a superset of the bits set for question mark.
-            const bool wasQuestionMark = vkey == questionMarkVkey && WI_AreAllFlagsSet(keyScanFromEvent, questionMarkKeyScan);
-            const bool wasSlash = vkey == slashVkey && WI_AreAllFlagsSet(keyScanFromEvent, slashKeyScan);
+            const auto wasQuestionMark = vkey == questionMarkVkey && WI_AreAllFlagsSet(keyScanFromEvent, questionMarkKeyScan);
+            const auto wasSlash = vkey == slashVkey && WI_AreAllFlagsSet(keyScanFromEvent, slashKeyScan);
 
             // If the key pressed was exactly the ? key, then try to send the
             // appropriate sequence for a modified '?'. Otherwise, check if this
@@ -522,6 +516,22 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
         return false;
     }
 
+    // GH#11682: If this was a focus event, we can handle this. Steal the
+    // focused state, and return true if we're actually in focus event mode.
+    if (pInEvent->EventType() == InputEventType::FocusEvent)
+    {
+        const auto& focusEvent = *static_cast<const FocusEvent* const>(pInEvent);
+
+        // BODGY
+        // GH#13238 - Filter out focus events that came from the API.
+        if (focusEvent.CameFromApi())
+        {
+            return false;
+        }
+
+        return HandleFocus(focusEvent.GetFocus());
+    }
+
     // On key presses, prepare to translate to VT compatible sequences
     if (pInEvent->EventType() != InputEventType::KeyEvent)
     {
@@ -544,6 +554,25 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
     if (!keyEvent.IsKeyDown())
     {
         return false;
+    }
+
+    // The VK_BACK key depends on the state of Backarrow Key mode (DECBKM).
+    // If the mode is set, we should send BS. If reset, we should send DEL.
+    if (keyEvent.GetVirtualKeyCode() == VK_BACK)
+    {
+        // The Ctrl modifier reverses the interpretation of DECBKM.
+        const auto backarrowMode = _inputMode.test(Mode::BackarrowKey) != keyEvent.IsCtrlPressed();
+        const auto seq = backarrowMode ? L'\x08' : L'\x7f';
+        // The Alt modifier adds an escape prefix.
+        if (keyEvent.IsAltPressed())
+        {
+            _SendEscapedInputSequence(seq);
+        }
+        else
+        {
+            _SendInputSequence({ &seq, 1 });
+        }
+        return true;
     }
 
     // Many keyboard layouts have an AltGr key, which makes widely used characters accessible.
@@ -672,6 +701,16 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
     }
 
     return false;
+}
+
+bool TerminalInput::HandleFocus(const bool focused) noexcept
+{
+    const auto enabled{ _inputMode.test(Mode::FocusEvent) };
+    if (enabled)
+    {
+        _SendInputSequence(focused ? L"\x1b[I" : L"\x1b[O");
+    }
+    return enabled;
 }
 
 // Routine Description:
