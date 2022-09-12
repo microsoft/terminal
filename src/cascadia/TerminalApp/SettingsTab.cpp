@@ -108,7 +108,8 @@ namespace winrt::TerminalApp::implementation
 
             // The TabViewItem Icon needs MUX while the IconSourceElement in the CommandPalette needs WUX...
             Icon(glyph);
-            TabViewItem().IconSource(IconPathConverter::IconSourceMUX(glyph));
+            // We know that passing a glyph manually to IconSourceMUX isn't going to hit the async path for looking up an icon from a dll.
+            TabViewItem().IconSource(IconPathConverter::IconSourceMUX(glyph).get());
         }
     }
 

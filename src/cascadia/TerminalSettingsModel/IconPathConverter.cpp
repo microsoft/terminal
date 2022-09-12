@@ -209,7 +209,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return _getIconSource<Windows::UI::Xaml::Controls::IconSource>(path);
     }
 
-    Microsoft::UI::Xaml::Controls::IconSource IconPathConverter::IconSourceMUX(hstring path)
+    Microsoft::UI::Xaml::Controls::IconSource _IconSourceMUX(hstring path)
     {
         return _getIconSource<Microsoft::UI::Xaml::Controls::IconSource>(path);
     }
@@ -261,13 +261,37 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                         wicImagingFactory.get());
     }
 
-    winrt::Windows::Foundation::IAsyncOperation<Microsoft::UI::Xaml::Controls::IconSource> IconPathConverter::IconSourceMUX(const winrt::hstring& iconPath,
-                                                                                                                            const int index)
+    winrt::Windows::Foundation::IAsyncOperation<Microsoft::UI::Xaml::Controls::IconSource> IconPathConverter::IconSourceMUX(const winrt::hstring& iconPath)
     {
-        if (!til::ends_with(iconPath, L".exe") &&
-            !til::ends_with(iconPath, L".dll"))
+        auto index = 0;
+        const auto pathView = std::wstring_view{ iconPath };
+        // Does iconPath have a comma in it?
+        // If so, we'll treat it as a path to an icon file, and the part after the comma as the index of the icon in the file.
+        // If not, we'll treat it as a path to an image file.
+        const auto commaIndex = pathView.find(L',');
+
+        // split the path on the comma
+        const auto iconPathWithoutIndex = pathView.substr(0, commaIndex);
+
+        // does iconPathWithoutIndex end in .dll or .exe?
+        if (!til::ends_with(iconPathWithoutIndex, L".exe") &&
+            !til::ends_with(iconPathWithoutIndex, L".dll") &&
+            !til::ends_with(iconPathWithoutIndex, L".lnk"))
         {
-            co_return IconSourceMUX(iconPath);
+            co_return _IconSourceMUX(iconPath);
+        }
+
+        if (commaIndex != std::wstring::npos)
+        {
+
+            // It's an exe, dll, or lnk, so we need to extract the icon from the file.
+
+            // Convert the string iconIndex to an int
+            index = til::to_ulong(pathView.substr(commaIndex + 1));
+            if (index == til::to_ulong_error)
+            {
+                co_return _IconSourceMUX(iconPath);
+            }
         }
 
         winrt::apartment_context fg_thread;
@@ -280,7 +304,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         co_await winrt::resume_background();
 
-        auto swBitmap{ _getBitmapFromIconFileAsync(iconPath, index, 32) };
+        auto swBitmap{ _getBitmapFromIconFileAsync(winrt::hstring{ iconPathWithoutIndex }, index, 32) };
         if (swBitmap == nullptr)
         {
             co_return nullptr;
