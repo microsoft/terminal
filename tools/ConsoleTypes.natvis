@@ -109,7 +109,7 @@
         <DisplayString>{{ size={_size} }}</DisplayString>
         <Expand>
             <Item Name="[capacity]" ExcludeView="simple">_capacity</Item>
-            <Item Name="[allocator]" ExcludeView="simple">_data</Item>
+            <Item Name="[size]" ExcludeView="simple">_size</Item>
             <ArrayItems>
                 <Size>_size</Size>
                 <ValuePointer>_data</ValuePointer>
