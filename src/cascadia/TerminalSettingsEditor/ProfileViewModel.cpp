@@ -293,11 +293,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _unfocusedAppearanceViewModel;
     }
 
-    bool ProfileViewModel::AtlasEngineAvailable() const noexcept
-    {
-        return Feature_AtlasEngine::IsEnabled();
-    }
-
     bool ProfileViewModel::VtPassthroughAvailable() const noexcept
     {
         return Feature_VtPassthroughMode::IsEnabled() && Feature_VtPassthroughModeSettingInUI::IsEnabled();

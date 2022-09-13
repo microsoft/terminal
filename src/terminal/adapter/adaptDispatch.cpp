@@ -978,23 +978,7 @@ bool AdaptDispatch::_SetInputMode(const TerminalInput::Mode mode, const bool ena
     // impact on the actual connected terminal. We can't remove this check,
     // because SSH <=7.7 is out in the wild on all versions of Windows <=2004.
 
-    // GH#12799 - If the app requested that we disable focus events, DON'T pass
-    // that through. ConPTY would _always_ like to know about focus events.
-
-    return !_api.IsConsolePty() ||
-           !_api.IsVtInputEnabled() ||
-           (!enable && mode == TerminalInput::Mode::FocusEvent);
-
-    // Another way of writing the above statement is:
-    //
-    // const bool inConpty = _api.IsConsolePty();
-    // const bool shouldPassthrough = inConpty && _api.IsVtInputEnabled();
-    // const bool disabledFocusEvents = inConpty && (!enable && mode == TerminalInput::Mode::FocusEvent);
-    // return !shouldPassthrough || disabledFocusEvents;
-    //
-    // It's like a "filter" left to right. Due to the early return via
-    // !IsConsolePty, once you're at the !enable part, IsConsolePty can only be
-    // true anymore.
+    return !_api.IsConsolePty() || !_api.IsVtInputEnabled();
 }
 
 // Routine Description:
@@ -1037,6 +1021,9 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         break;
     case DispatchTypes::ModeParams::XTERM_EnableDECCOLMSupport:
         success = EnableDECCOLMSupport(enable);
+        break;
+    case DispatchTypes::ModeParams::DECBKM_BackarrowKeyMode:
+        success = _SetInputMode(TerminalInput::Mode::BackarrowKey, enable);
         break;
     case DispatchTypes::ModeParams::VT200_MOUSE_MODE:
         success = EnableVT200MouseMode(enable);
@@ -1874,6 +1861,9 @@ bool AdaptDispatch::HardReset()
     EnableSGRExtendedMouseMode(false);
     EnableAnyEventMouseMode(false);
 
+    // Reset the Backarrow Key mode
+    _SetInputMode(TerminalInput::Mode::BackarrowKey, false);
+
     // Delete all current tab stops and reapply
     _ResetTabStops();
 
@@ -2088,7 +2078,9 @@ bool AdaptDispatch::EnableAnyEventMouseMode(const bool enabled)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableFocusEventMode(const bool enabled)
 {
-    return _SetInputMode(TerminalInput::Mode::FocusEvent, enabled);
+    // GH#12799 - If the app requested that we disable focus events, DON'T pass
+    // that through. ConPTY would _always_ like to know about focus events.
+    return _SetInputMode(TerminalInput::Mode::FocusEvent, enabled) || !enabled;
 }
 
 //Routine Description:
@@ -2593,14 +2585,6 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const VTInt fontNumber,
                                                          const VTParameter cellHeight,
                                                          const DispatchTypes::DrcsCharsetSize charsetSize)
 {
-    // If we're a conpty, we're just going to ignore the operation for now.
-    // There's no point in trying to pass it through without also being able
-    // to pass through the character set designations.
-    if (_api.IsConsolePty())
-    {
-        return nullptr;
-    }
-
     // The font buffer is created on demand.
     if (!_fontBuffer)
     {
@@ -2620,7 +2604,19 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const VTInt fontNumber,
         return nullptr;
     }
 
+    // If we're a conpty, we create a special passthrough handler that will
+    // forward the DECDLD sequence to the conpty terminal with a hardcoded ID.
+    // That ID is also pre-mapped into the G1 table, so the VT engine can just
+    // switch to G1 when it needs to output any DRCS characters. But note that
+    // we still need to process the DECDLD sequence locally, so the character
+    // set translation is correctly handled on the host side.
+    const auto conptyPassthrough = _api.IsConsolePty() ? _CreateDrcsPassthroughHandler(charsetSize) : nullptr;
+
     return [=](const auto ch) {
+        if (conptyPassthrough)
+        {
+            conptyPassthrough(ch);
+        }
         // We pass the data string straight through to the font buffer class
         // until we receive an ESC, indicating the end of the string. At that
         // point we can finalize the buffer, and if valid, update the renderer
@@ -2649,6 +2645,46 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const VTInt fontNumber,
         }
         return true;
     };
+}
+
+// Routine Description:
+// - Helper method to create a string handler that can be used to pass through
+//   DECDLD sequences when in conpty mode. This patches the original sequence
+//   with a hardcoded character set ID, and pre-maps that ID into the G1 table.
+// Arguments:
+// - <none>
+// Return value:
+// - a function to receive the data or nullptr if the initial flush fails
+ITermDispatch::StringHandler AdaptDispatch::_CreateDrcsPassthroughHandler(const DispatchTypes::DrcsCharsetSize charsetSize)
+{
+    const auto defaultPassthrough = _CreatePassthroughHandler();
+    if (defaultPassthrough)
+    {
+        auto& engine = _api.GetStateMachine().Engine();
+        return [=, &engine, gotId = false](const auto ch) mutable {
+            // The character set ID is contained in the first characters of the
+            // sequence, so we just ignore that initial content until we receive
+            // a "final" character (i.e. in range 30 to 7E). At that point we
+            // pass through a hardcoded ID of "@".
+            if (!gotId)
+            {
+                if (ch >= 0x30 && ch <= 0x7E)
+                {
+                    gotId = true;
+                    defaultPassthrough('@');
+                }
+            }
+            else if (!defaultPassthrough(ch))
+            {
+                // Once the DECDLD sequence is finished, we also output an SCS
+                // sequence to map the character set into the G1 table.
+                const auto charset96 = charsetSize == DispatchTypes::DrcsCharsetSize::Size96;
+                engine.ActionPassThroughString(charset96 ? L"\033-@" : L"\033)@");
+            }
+            return true;
+        };
+    }
+    return nullptr;
 }
 
 // Method Description:

@@ -306,27 +306,6 @@ Globals& ServiceLocator::LocateGlobals()
 }
 
 // Method Description:
-// - Installs a callback method to receive notifications when the pseudo console
-//   window is shown or hidden by an attached client application (so we can
-//   translate it and forward it to the attached terminal, in case it would like
-//   to react accordingly.)
-// Arguments:
-// - func - Callback function that takes True as Show and False as Hide.
-// Return Value:
-// - <none>
-void ServiceLocator::SetPseudoWindowCallback(std::function<void(bool)> func)
-{
-    // Force the whole window to be put together first.
-    // We don't really need the handle, we just want to leverage the setup steps.
-    (void)LocatePseudoWindow();
-
-    if (s_interactivityFactory)
-    {
-        s_interactivityFactory->SetPseudoWindowCallback(func);
-    }
-}
-
-// Method Description:
 // - Retrieves the pseudo console window, or attempts to instantiate one.
 // Arguments:
 // - owner: (defaults to 0 `HWND_DESKTOP`) the HWND that should be the initial

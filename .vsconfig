@@ -26,10 +26,10 @@
     "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
     "Microsoft.VisualStudio.Component.VC.Tools.ARM64",
     "Microsoft.VisualStudio.Component.VC.ASAN",
-    "Microsoft.VisualStudio.Component.VC.v142.x86.x64",
-    "Microsoft.VisualStudio.Component.VC.v142.ARM64",
+    "Microsoft.VisualStudio.Component.VC.v143.x86.x64",
+    "Microsoft.VisualStudio.Component.VC.v143.ARM64",
     "Microsoft.VisualStudio.ComponentGroup.UWP.VC",
-    "Microsoft.VisualStudio.ComponentGroup.UWP.VC.v142",
+    "Microsoft.VisualStudio.ComponentGroup.UWP.VC.v143",
     "Microsoft.VisualStudio.Component.UWP.VC.ARM64"
   ]
 }

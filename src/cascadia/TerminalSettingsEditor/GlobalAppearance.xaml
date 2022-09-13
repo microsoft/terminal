@@ -54,12 +54,6 @@
                 </ComboBox>
             </local:SettingContainer>
 
-            <!--  Always show tabs  -->
-            <local:SettingContainer x:Uid="Globals_AlwaysShowTabs">
-                <ToggleSwitch IsOn="{x:Bind ViewModel.AlwaysShowTabs, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-            </local:SettingContainer>
-
             <!--  Position of new tab  -->
             <local:SettingContainer x:Uid="Globals_NewTabPosition">
                 <ComboBox AutomationProperties.AccessibilityView="Content"
@@ -72,6 +66,14 @@
             <!--  Show Titlebar  -->
             <local:SettingContainer x:Uid="Globals_ShowTitlebar">
                 <ToggleSwitch IsOn="{x:Bind ViewModel.ShowTabsInTitlebar, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}"
+                              Toggled="{x:Bind ViewModel.ShowTitlebarToggled}" />
+            </local:SettingContainer>
+
+            <!--  Always show tabs  -->
+            <local:SettingContainer x:Uid="Globals_AlwaysShowTabs">
+                <ToggleSwitch IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.ShowTabsInTitlebar), Mode=OneWay}"
+                              IsOn="{x:Bind ViewModel.AlwaysShowTabs, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 

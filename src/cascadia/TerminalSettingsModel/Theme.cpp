@@ -31,6 +31,35 @@ static constexpr std::string_view NameKey{ "name" };
 static constexpr wchar_t RegKeyDwm[] = L"Software\\Microsoft\\Windows\\DWM";
 static constexpr wchar_t RegKeyAccentColor[] = L"AccentColor";
 
+#define THEME_SETTINGS_COPY(type, name, jsonKey, ...) \
+    result->_##name = _##name;
+
+#define THEME_SETTINGS_TO_JSON(type, name, jsonKey, ...) \
+    JsonUtils::SetValueForKey(json, jsonKey, _##name);
+
+#define THEME_OBJECT(className, macro)                    \
+    winrt::com_ptr<className> className::Copy()           \
+    {                                                     \
+        auto result{ winrt::make_self<className>() };     \
+        macro(THEME_SETTINGS_COPY);                       \
+        return result;                                    \
+    }                                                     \
+                                                          \
+    Json::Value className::ToJson()                       \
+    {                                                     \
+        Json::Value json{ Json::ValueType::objectValue }; \
+        macro(THEME_SETTINGS_TO_JSON);                    \
+        return json;                                      \
+    }
+
+THEME_OBJECT(WindowTheme, MTSM_THEME_WINDOW_SETTINGS);
+THEME_OBJECT(TabRowTheme, MTSM_THEME_TABROW_SETTINGS);
+THEME_OBJECT(TabTheme, MTSM_THEME_TAB_SETTINGS);
+
+#undef THEME_SETTINGS_COPY
+#undef THEME_SETTINGS_TO_JSON
+#undef THEME_OBJECT
+
 winrt::Microsoft::Terminal::Settings::Model::ThemeColor ThemeColor::FromColor(const winrt::Microsoft::Terminal::Core::Color& coreColor) noexcept
 {
     auto result = winrt::make_self<implementation::ThemeColor>();
@@ -170,6 +199,30 @@ winrt::WUX::Media::Brush ThemeColor::Evaluate(const winrt::WUX::ResourceDictiona
     return nullptr;
 }
 
+// Method Description:
+// - This is not an actual property on a theme color setting, but rather
+//   something derived from the value itself. This is "the opacity we should use
+//   for this ThemeColor should it be used as a unfocusedTab color". Basically,
+//   terminalBackground and accent use 30% opacity when set, to match the how
+//   inactive tabs were colored before themes existed.
+// Arguments:
+// - <none>
+// Return Value:
+// - the opacity that should be used if this color is being applied to a
+//   tab.unfocusedBackground property.
+uint8_t ThemeColor::UnfocusedTabOpacity() const noexcept
+{
+    switch (ColorType())
+    {
+    case ThemeColorType::Accent:
+    case ThemeColorType::TerminalBackground:
+        return 77; // 77 = .3 * 256
+    case ThemeColorType::Color:
+        return _Color.a;
+    }
+    return 0;
+}
+
 #define THEME_SETTINGS_FROM_JSON(type, name, jsonKey, ...)                    \
     {                                                                         \
         std::optional<type> _val;                                             \
@@ -177,9 +230,6 @@ winrt::WUX::Media::Brush ThemeColor::Evaluate(const winrt::WUX::ResourceDictiona
         if (_val)                                                             \
             result->name(*_val);                                              \
     }
-
-#define THEME_SETTINGS_TO_JSON(type, name, jsonKey, ...) \
-    JsonUtils::SetValueForKey(json, jsonKey, val.name());
 
 #define THEME_OBJECT_CONVERTER(nameSpace, name, macro)                                         \
     template<>                                                                                 \
@@ -201,11 +251,7 @@ winrt::WUX::Media::Brush ThemeColor::Evaluate(const winrt::WUX::ResourceDictiona
                                                                                                \
         Json::Value ToJson(const nameSpace::name& val)                                         \
         {                                                                                      \
-            if (val == nullptr)                                                                \
-                return Json::Value::null;                                                      \
-            Json::Value json{ Json::ValueType::objectValue };                                  \
-            macro(THEME_SETTINGS_TO_JSON);                                                     \
-            return json;                                                                       \
+            return val ? winrt::get_self<name>(val)->ToJson() : Json::Value::null;             \
         }                                                                                      \
                                                                                                \
         std::string TypeDescription() const                                                    \
@@ -221,11 +267,6 @@ THEME_OBJECT_CONVERTER(winrt::Microsoft::Terminal::Settings::Model, TabTheme, MT
 #undef THEME_SETTINGS_FROM_JSON
 #undef THEME_SETTINGS_TO_JSON
 #undef THEME_OBJECT_CONVERTER
-
-Theme::Theme() noexcept :
-    Theme{ winrt::WUX::ElementTheme::Default }
-{
-}
 
 Theme::Theme(const winrt::WUX::ElementTheme& requestedTheme) noexcept
 {

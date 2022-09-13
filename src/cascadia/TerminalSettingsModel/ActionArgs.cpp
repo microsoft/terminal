@@ -43,6 +43,7 @@
 #include "ClearBufferArgs.g.cpp"
 #include "MultipleActionsArgs.g.cpp"
 #include "AdjustOpacityArgs.g.cpp"
+#include "ColorSelectionArgs.g.cpp"
 
 #include <LibraryResources.h>
 #include <WtExeUtils.h>
@@ -837,6 +838,121 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return winrt::hstring{
                 fmt::format(std::wstring_view(RS_(L"AdjustOpacityCommandKey")),
                             Opacity())
+            };
+        }
+    }
+
+    static winrt::hstring _FormatColorString(const Control::SelectionColor& selectionColor)
+    {
+        if (!selectionColor)
+        {
+            return RS_(L"ColorSelection_defaultColor");
+        }
+
+        const auto color = selectionColor.Color();
+        const auto isIndexed16 = selectionColor.IsIndex16();
+        winrt::hstring colorStr;
+
+        if (isIndexed16)
+        {
+            static const std::array indexedColorNames{
+                USES_RESOURCE(L"ColorSelection_Black"),
+                USES_RESOURCE(L"ColorSelection_Red"),
+                USES_RESOURCE(L"ColorSelection_Green"),
+                USES_RESOURCE(L"ColorSelection_Yellow"),
+                USES_RESOURCE(L"ColorSelection_Blue"),
+                USES_RESOURCE(L"ColorSelection_Purple"),
+                USES_RESOURCE(L"ColorSelection_Cyan"),
+                USES_RESOURCE(L"ColorSelection_White"),
+                USES_RESOURCE(L"ColorSelection_BrightBlack"),
+                USES_RESOURCE(L"ColorSelection_BrightRed"),
+                USES_RESOURCE(L"ColorSelection_BrightGreen"),
+                USES_RESOURCE(L"ColorSelection_BrightYellow"),
+                USES_RESOURCE(L"ColorSelection_BrightBlue"),
+                USES_RESOURCE(L"ColorSelection_BrightPurple"),
+                USES_RESOURCE(L"ColorSelection_BrightCyan"),
+                USES_RESOURCE(L"ColorSelection_BrightWhite"),
+            };
+            static_assert(indexedColorNames.size() == 16);
+
+            if (color.R < indexedColorNames.size())
+            {
+                colorStr = GetLibraryResourceString(til::at(indexedColorNames, color.R));
+            }
+            else
+            {
+                wchar_t tempBuf[9] = { 0 };
+                swprintf_s(tempBuf, L"i%02i", color.R);
+                colorStr = tempBuf;
+            }
+        }
+        else
+        {
+            colorStr = til::color{ color }.ToHexString(true);
+        }
+
+        return colorStr;
+    }
+
+    static bool _isBoringColor(const Control::SelectionColor& selectionColor)
+    {
+        if (!selectionColor)
+        {
+            return true;
+        }
+
+        const til::color color{ selectionColor.Color() };
+        return color.with_alpha(0) == til::color{};
+    }
+
+    winrt::hstring ColorSelectionArgs::GenerateName() const
+    {
+        auto matchModeStr = winrt::hstring{};
+        if (MatchMode() == Core::MatchMode::All)
+        {
+            matchModeStr = fmt::format(L", {}", RS_(L"ColorSelection_allMatches")); // ", all matches"
+        }
+
+        const auto foreground = Foreground();
+        const auto background = Background();
+        const auto fgStr = _FormatColorString(foreground);
+        const auto bgStr = _FormatColorString(background);
+
+        // To try to keep things simple for the user, we'll try to show only the
+        // "interesting" color (i.e. leave off the bg or fg if it is either unspecified or
+        // black or index 0).
+        //
+        // Note that we mask off the alpha channel, which is used to indicate if it's an
+        // indexed color.
+        const auto foregroundIsBoring = _isBoringColor(foreground);
+        const auto backgroundIsBoring = _isBoringColor(background);
+
+        if (foreground && backgroundIsBoring)
+        {
+            const auto str = RS_(L"ColorSelection_fg_action"); // "Color selection, foreground: {0}{1}"
+            return winrt::hstring{
+                fmt::format(std::wstring_view{ str }, fgStr, matchModeStr)
+            };
+        }
+        else if (background && foregroundIsBoring)
+        {
+            const auto str = RS_(L"ColorSelection_bg_action"); // "Color selection, background: {0}{1}"
+            return winrt::hstring{
+                fmt::format(std::wstring_view{ str }, bgStr, matchModeStr)
+            };
+        }
+        else if (foreground && background)
+        {
+            const auto str = RS_(L"ColorSelection_fg_bg_action"); // "Color selection, foreground: {0}, background: {1}{2}"
+            return winrt::hstring{
+                fmt::format(std::wstring_view{ str }, fgStr, bgStr, matchModeStr)
+            };
+        }
+        else
+        {
+            const auto str = RS_(L"ColorSelection_default_action"); // "Color selection, (default foreground/background){0}"
+            return winrt::hstring{
+                fmt::format(std::wstring_view{ str }, matchModeStr)
             };
         }
     }

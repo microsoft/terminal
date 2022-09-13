@@ -41,6 +41,7 @@ namespace Microsoft::Console::VirtualTerminal
             Ansi,
             Keypad,
             CursorKey,
+            BackarrowKey,
             Win32,
 
             Utf8MouseEncoding,

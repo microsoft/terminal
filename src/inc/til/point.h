@@ -270,6 +270,22 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
         RETURN_WIN32(ERROR_UNHANDLED_EXCEPTION);
     }
+
+    // point_span can be pictured as a "selection" range inside our text buffer. So given
+    // a text buffer of 10x4, a start of 4,1 and end of 7,3 the span might look like this:
+    //   +----------+
+    //   |          |
+    //   |    xxxxxx|
+    //   |xxxxxxxxxx|
+    //   |xxxxxxxx  |
+    //   +----------+
+    // At the time of writing there's a push to make selections have an exclusive end coordinate,
+    // so the interpretation of end might change soon (making this comment potentially outdated).
+    struct point_span
+    {
+        til::point start;
+        til::point end;
+    };
 }
 
 #ifdef __WEX_COMMON_H__

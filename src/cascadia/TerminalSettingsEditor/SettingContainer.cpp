@@ -15,6 +15,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     DependencyProperty SettingContainer::_CurrentValueProperty{ nullptr };
     DependencyProperty SettingContainer::_HasSettingValueProperty{ nullptr };
     DependencyProperty SettingContainer::_SettingOverrideSourceProperty{ nullptr };
+    DependencyProperty SettingContainer::_StartExpandedProperty{ nullptr };
 
     SettingContainer::SettingContainer()
     {
@@ -70,6 +71,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     xaml_typename<IInspectable>(),
                     xaml_typename<Editor::SettingContainer>(),
                     PropertyMetadata{ nullptr, PropertyChangedCallback{ &SettingContainer::_OnHasSettingValueChanged } });
+        }
+        if (!_StartExpandedProperty)
+        {
+            _StartExpandedProperty =
+                DependencyProperty::Register(
+                    L"StartExpanded",
+                    xaml_typename<bool>(),
+                    xaml_typename<Editor::SettingContainer>(),
+                    PropertyMetadata{ box_value(false) });
         }
     }
 
@@ -156,16 +166,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 Controls::ToolTipService::SetToolTip(base, box_value(helpText));
                 Automation::AutomationProperties::SetFullDescription(base, helpText);
             }
+            else
+            {
+                Controls::ToolTipService::SetToolTip(base, nullptr);
+                Automation::AutomationProperties::SetFullDescription(base, L"");
+            }
         }
 
-        if (HelpText().empty())
+        const auto textBlockHidden = HelpText().empty();
+        if (const auto& child{ GetTemplateChild(L"HelpTextBlock") })
         {
-            if (const auto& child{ GetTemplateChild(L"HelpTextBlock") })
+            if (const auto& textBlock{ child.try_as<Controls::TextBlock>() })
             {
-                if (const auto& textBlock{ child.try_as<Controls::TextBlock>() })
-                {
-                    textBlock.Visibility(Visibility::Collapsed);
-                }
+                textBlock.Visibility(textBlockHidden ? Visibility::Collapsed : Visibility::Visible);
             }
         }
     }

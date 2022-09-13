@@ -14,7 +14,7 @@
         Azure DevOps builds, a NuGet Restore pipeline task is run against the [packages.config] file instead.-->
 
   <PropertyGroup>
-    <Terminal_NuGetEXE>$(SolutionDir)dep\nuget\nuget.exe</Terminal_NuGetEXE>
+    <Terminal_NuGetEXE>&quot;$(SolutionDir)dep\nuget\nuget.exe&quot;</Terminal_NuGetEXE>
     <Terminal_GlobalPackagesConfigPath>$(SolutionDir)dep\nuget\packages.config</Terminal_GlobalPackagesConfigPath>
   </PropertyGroup>
 
@@ -58,6 +58,9 @@
     <!-- VisualStudioSetup -->
     <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.VisualStudio.Setup.Configuration.Native.2.3.2262\build\native\Microsoft.VisualStudio.Setup.Configuration.Native.targets" Condition="'$(TerminalVisualStudioSetup)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.VisualStudio.Setup.Configuration.Native.2.3.2262\build\native\Microsoft.VisualStudio.Setup.Configuration.Native.targets')" />
 
+    <!-- WinUI (which depends on WebView2 as of 2.8.0) -->
+    <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets" Condition="'$(TerminalMUX)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets')" />
+
     <!-- WIL (so widely used that this one does not have a TerminalWIL opt-in property; it is automatic) -->
     <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.220201.1\build\native\Microsoft.Windows.ImplementationLibrary.targets" Condition="Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.220201.1\build\native\Microsoft.Windows.ImplementationLibrary.targets')" />
 
@@ -94,6 +97,9 @@
 
     <!-- VisualStudioSetup -->
     <Error Condition="'$(TerminalVisualStudioSetup)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.VisualStudio.Setup.Configuration.Native.2.3.2262\build\native\Microsoft.VisualStudio.Setup.Configuration.Native.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.VisualStudio.Setup.Configuration.Native.2.3.2262\build\native\Microsoft.VisualStudio.Setup.Configuration.Native.targets'))" />
+
+    <!-- WinUI (which depends on WebView2 as of 2.8.0) -->
+    <Error Condition="'$(TerminalMUX)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets'))" />
 
     <!-- WIL (so widely used that this one does not have a TerminalWIL opt-in property; it is automatic) -->
     <Error Condition="!Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.220201.1\build\native\Microsoft.Windows.ImplementationLibrary.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.220201.1\build\native\Microsoft.Windows.ImplementationLibrary.targets'))" />
