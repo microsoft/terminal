@@ -30,25 +30,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         InitializeComponent();
 
-        Automation::AutomationProperties::SetName(ColorSchemeComboBox(), RS_(L"ColorScheme_Name/Header"));
-        Automation::AutomationProperties::SetFullDescription(ColorSchemeComboBox(), RS_(L"ColorScheme_Name/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
-        ToolTipService::SetToolTip(ColorSchemeComboBox(), box_value(RS_(L"ColorScheme_Name/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip")));
-
-        Automation::AutomationProperties::SetName(RenameButton(), RS_(L"Rename/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
-
-        Automation::AutomationProperties::SetName(NameBox(), RS_(L"ColorScheme_Name/Header"));
-        Automation::AutomationProperties::SetFullDescription(NameBox(), RS_(L"ColorScheme_Name/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
-        ToolTipService::SetToolTip(NameBox(), box_value(RS_(L"ColorScheme_Name/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip")));
-
-        Automation::AutomationProperties::SetName(RenameAcceptButton(), RS_(L"RenameAccept/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
-        Automation::AutomationProperties::SetName(RenameCancelButton(), RS_(L"RenameCancel/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        Automation::AutomationProperties::SetName(EditButton(), RS_(L"ColorScheme_EditButton/Text"));
         Automation::AutomationProperties::SetName(AddNewButton(), RS_(L"ColorScheme_AddNewButton/Text"));
-        Automation::AutomationProperties::SetName(DeleteButton(), RS_(L"ColorScheme_DeleteButton/Text"));
+        Automation::AutomationProperties::SetName(DeleteButton(), RS_(L"ColorScheme_DeleteButton2/Text"));
     }
 
     void ColorSchemes::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _ViewModel = e.Parameter().as<Editor::ColorSchemesPageViewModel>();
+        _ViewModel.CurrentPage(ColorSchemesSubPage::Base);
     }
 
     void ColorSchemes::DeleteConfirmation_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
@@ -65,74 +55,64 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // an issue, we'll already correctly focus the Delete button.
         //
         // However, it seems even more useful for focus to ALWAYS land on the
-        // scheme dropdown box. This forces Narrator to read the name of the
+        // scheme list view. This forces Narrator to read the name of the
         // newly selected color scheme, which seemed more useful.
-        ColorSchemeComboBox().Focus(FocusState::Programmatic);
+
+        // For some reason, if we just call ColorSchemeListView().Focus(FocusState::Programmatic),
+        // focus always lands on the _first_ item of the list view, regardless of what the currently
+        // selected item is. So we need to grab the item container and focus that.
+        const auto itemContainer = ColorSchemeListView().ContainerFromIndex(ColorSchemeListView().SelectedIndex());
+        itemContainer.as<ContentControl>().Focus(FocusState::Programmatic);
     }
 
-    // Function Description:
-    // - Pre-populates/focuses the name TextBox, updates the UI
-    // Arguments:
-    // - <unused>
-    // Return Value:
-    // - <none>
-    void ColorSchemes::Rename_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    void ColorSchemes::AddNew_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
-        NameBox().Text(_ViewModel.CurrentScheme().Name());
-        _ViewModel.RequestEnterRename();
-        NameBox().Focus(FocusState::Programmatic);
-        NameBox().SelectAll();
+        if (const auto newSchemeVM{ _ViewModel.RequestAddNew() })
+        {
+            ColorSchemeListView().SelectedItem(newSchemeVM);
+            ColorSchemeListView().ScrollIntoView(newSchemeVM);
+        }
     }
 
-    void ColorSchemes::RenameAccept_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    void ColorSchemes::Edit_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
-        _RenameCurrentScheme(NameBox().Text());
-        RenameButton().Focus(FocusState::Programmatic);
+        _ViewModel.RequestEditSelectedScheme();
     }
 
-    void ColorSchemes::RenameCancel_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
-    {
-        _ViewModel.RequestExitRename(false, {});
-        RenameErrorTip().IsOpen(false);
-        RenameButton().Focus(FocusState::Programmatic);
-    }
-
-    void ColorSchemes::NameBox_PreviewKeyDown(const IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
+    void ColorSchemes::ListView_PreviewKeyDown(const IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
     {
         if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Enter)
         {
-            _RenameCurrentScheme(NameBox().Text());
+            // Treat this as if 'edit' was clicked
+            _ViewModel.RequestEditSelectedScheme();
             e.Handled(true);
         }
-        else if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Escape)
+        else if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Delete)
         {
-            RenameErrorTip().IsOpen(false);
+            // Treat this as if 'delete' was clicked
+            DeleteConfirmation_Click(nullptr, nullptr);
             e.Handled(true);
         }
-        ColorSchemeComboBox().Focus(FocusState::Programmatic);
     }
 
-    void ColorSchemes::_RenameCurrentScheme(hstring newName)
+    void ColorSchemes::ListView_SelectionChanged(const IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs& e)
     {
-        if (_ViewModel.RequestExitRename(true, newName))
+        if (const auto addedItems{ e.AddedItems() }; addedItems && addedItems.Size() > 0)
         {
-            // update the UI
-            RenameErrorTip().IsOpen(false);
-
-            // The color scheme is renamed appropriately, but the ComboBox still shows the old name (until you open it)
-            // We need to manually force the ComboBox to refresh itself.
-            const auto selectedIndex{ ColorSchemeComboBox().SelectedIndex() };
-            ColorSchemeComboBox().SelectedIndex((selectedIndex + 1) % ViewModel().AllColorSchemes().Size());
-            ColorSchemeComboBox().SelectedIndex(selectedIndex);
-        }
-        else
-        {
-            RenameErrorTip().Target(NameBox());
-            RenameErrorTip().IsOpen(true);
-
-            // focus the name box
-            NameBox().Focus(FocusState::Programmatic);
-            NameBox().SelectAll();
+            if (const auto selectedScheme{ addedItems.GetAt(0).try_as<Editor::ColorSchemeViewModel>() })
+            {
+                if (selectedScheme.IsInBoxScheme())
+                {
+                    // display disclaimer that this scheme can't be deleted
+                    SelectedSchemeDisclaimer().Text(RS_(L"ColorScheme_DeleteDisclaimerInBox"));
+                    SelectedSchemeDisclaimer().Visibility(Visibility::Visible);
+                }
+                else
+                {
+                    // hide the disclaimer
+                    SelectedSchemeDisclaimer().Visibility(Visibility::Collapsed);
+                }
+            }
         }
     }
 }

@@ -809,7 +809,11 @@ void AppCommandlineArgs::_addCommandsForArg(std::vector<Commandline>& commands, 
         else
         {
             // Harder case: There was a match.
-            const auto matchedFirstChar = match.position(0) == 0;
+
+            // Regex will include the last character of the string before the delimiter. (see _commandDelimiterRegex)
+            // If the match was at the beginning of the string then there is no last character
+            // so we can use the length of the match to determine if it was at the beginning.
+            const auto matchedFirstChar = match[0].length() == 1;
             // If the match was at the beginning of the string, then the
             // next arg should be "", since there was no content before the
             // delimiter. Otherwise, add one, since the regex will include

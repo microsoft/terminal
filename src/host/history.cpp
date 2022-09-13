@@ -343,7 +343,7 @@ CommandHistory* CommandHistory::s_Allocate(const std::wstring_view appName, cons
     {
         if (WI_IsFlagClear(it->Flags, CLE_ALLOCATED))
         {
-            // use LRU history buffer with same app name
+            // use MRU history buffer with same app name
             if (it->IsAppNameMatch(appName))
             {
                 BestCandidate = *it;
@@ -367,17 +367,27 @@ CommandHistory* CommandHistory::s_Allocate(const std::wstring_view appName, cons
         History._processHandle = processHandle;
         return &s_historyLists.emplace_front(History);
     }
-    else if (!BestCandidate.has_value() && s_historyLists.size() > 0)
+
+    // If we have no candidate already and we need one,
+    // take the LRU (which is the back/last one) which isn't allocated
+    // and if possible the one with empty commands list.
+    if (!BestCandidate.has_value())
     {
-        // If we have no candidate already and we need one, take the LRU (which is the back/last one) which isn't allocated.
-        for (auto it = s_historyLists.crbegin(); it != s_historyLists.crend(); it++)
+        auto BestCandidateIt = s_historyLists.cend();
+        for (auto it = s_historyLists.cbegin(); it != s_historyLists.cend(); it++)
         {
             if (WI_IsFlagClear(it->Flags, CLE_ALLOCATED))
             {
-                BestCandidate = *it;
-                s_historyLists.erase(std::next(it).base()); // trickery to turn reverse iterator into forward iterator for erase.
-                break;
+                if (it->_commands.empty() || BestCandidateIt == s_historyLists.cend() || !BestCandidateIt->_commands.empty())
+                {
+                    BestCandidateIt = it;
+                }
             }
+        }
+        if (BestCandidateIt != s_historyLists.cend())
+        {
+            BestCandidate = *BestCandidateIt;
+            s_historyLists.erase(BestCandidateIt);
         }
     }
 

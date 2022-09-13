@@ -33,6 +33,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         DEPENDENCY_PROPERTY(hstring, HelpText);
         DEPENDENCY_PROPERTY(hstring, CurrentValue);
         DEPENDENCY_PROPERTY(bool, HasSettingValue);
+        DEPENDENCY_PROPERTY(bool, StartExpanded);
         DEPENDENCY_PROPERTY(IInspectable, SettingOverrideSource);
         TYPED_EVENT(ClearSettingValue, Editor::SettingContainer, Windows::Foundation::IInspectable);
 

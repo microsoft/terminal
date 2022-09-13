@@ -76,6 +76,14 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ScrollbarState)
     };
 };
 
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::MatchMode)
+{
+    static constexpr std::array<pair_type, 2> mappings = {
+        pair_type{ "none", ValueType::None },
+        pair_type{ "all", ValueType::All }
+    };
+};
+
 JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::BellStyle)
 {
     static constexpr std::array<pair_type, 6> mappings = {
@@ -678,4 +686,62 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ScrollToMarkDirection)
         pair_type{ "first", ValueType::First },
         pair_type{ "last", ValueType::Last },
     };
+};
+
+template<>
+struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winrt::Microsoft::Terminal::Control::SelectionColor>
+{
+    ::winrt::Microsoft::Terminal::Control::SelectionColor FromJson(const Json::Value& json)
+    {
+        const auto string = Detail::GetStringView(json);
+        const auto isIndexed16 = string.size() == 3 && string.front() == 'i';
+        til::color color;
+
+        if (isIndexed16)
+        {
+            const auto indexStr = string.substr(1);
+            const auto idx = til::to_ulong(indexStr, 16);
+            color.r = gsl::narrow_cast<uint8_t>(std::min(idx, 15ul));
+        }
+        else
+        {
+            color = ::Microsoft::Console::Utils::ColorFromHexString(string);
+        }
+
+        winrt::Microsoft::Terminal::Control::SelectionColor selection;
+        selection.Color(color);
+        selection.IsIndex16(isIndexed16);
+        return selection;
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        if (!json.isString())
+        {
+            return false;
+        }
+
+        const auto string = Detail::GetStringView(json);
+        const auto isColorSpec = (string.length() == 9 || string.length() == 7 || string.length() == 4) && string.front() == '#';
+        const auto isIndexedColor = string.size() == 3 && string.front() == 'i';
+        return isColorSpec || isIndexedColor;
+    }
+
+    Json::Value ToJson(const ::winrt::Microsoft::Terminal::Control::SelectionColor& val)
+    {
+        const auto color = val.Color();
+        if (val.IsIndex16())
+        {
+            return fmt::format("i{:02x}", color.R);
+        }
+        else
+        {
+            return ::Microsoft::Console::Utils::ColorToHexString(color);
+        }
+    }
+
+    std::string TypeDescription() const
+    {
+        return "SelectionColor (#rrggbb, #rgb, #rrggbbaa, iNN)";
+    }
 };

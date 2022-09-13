@@ -14,6 +14,12 @@
       "type": "string",
       "format": "color"
     },
+    "ColorOrIndex": {
+      "default": "#",
+      "pattern": "^(?:#[A-Fa-f0-9]{3}(?:[A-Fa-f0-9]{3})?|i[A-Fa-f0-9]{2})$",
+      "type": "string",
+      "format": "color"
+    },
     "Coordinates": {
       "pattern": "^(-?\\d+)?(,\\s?(-?\\d+)?)?$",
       "type": "string"
@@ -58,20 +64,20 @@
       "default": "",
       "description": "Sets the file location of the sound played when the application emits a BEL character. If the path is invalid no sound will be played. This property also accepts an array of sounds and the terminal will pick one at random.",
       "oneOf": [
-      {
-        "type": [
-          "string",
-          "null"
-        ]
-      },
-      {
-        "type": "array",
-        "items": {
-          "type": "string"
+        {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
-      }
       ]
-    }, 
+    },
     "AppearanceConfig": {
       "properties": {
         "colorScheme": {
@@ -306,6 +312,7 @@
       "enum": [
         "adjustFontSize",
         "clearBuffer",
+        "closeOtherPanes",
         "closeOtherTabs",
         "closePane",
         "closeTab",
@@ -314,6 +321,7 @@
         "commandPalette",
         "copy",
         "duplicateTab",
+        "expandSelectionToWord",
         "exportBuffer",
         "find",
         "findMatch",
@@ -376,6 +384,7 @@
         "scrollToMark",
         "clearMark",
         "clearAllMarks",
+        "experimental.colorSelection",
         "unbound"
       ],
       "type": "string"
@@ -831,6 +840,43 @@
               "maximum": 1,
               "minimum": 0,
               "type": "number"
+            }
+          }
+        }
+      ]
+    },
+    "ColorSelectionAction": {
+      "description": "Arguments corresponding to a Color Selection Action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "experimental.colorSelection"
+            },
+            "matchMode": {
+              "type": "string",
+              "default": "none",
+              "description": "Specifies if only the selected text should be colored (0), or all instances of selected text (case-insensitive) (1).",
+              "enum": [
+                "none",
+                "all"
+              ]
+            },
+            "foreground": {
+              "$ref": "#/$defs/ColorOrIndex",
+              "type": "string",
+              "default": "",
+              "description": "The foreground color to use, as an RGB value (\"#rrggbb\"), or color index (\"iNN\"). If left unspecified it falls back to the default text foreground color."
+            },
+            "background": {
+              "$ref": "#/$defs/ColorOrIndex",
+              "type": "string",
+              "default": "",
+              "description": "The background color to use, as an RGB value (\"#rrggbb\"), or color index (\"iNN\"). If left unspecified it falls back to the default text background color."
             }
           }
         }
@@ -1612,6 +1658,9 @@
               "$ref": "#/$defs/AdjustOpacityAction"
             },
             {
+              "$ref": "#/$defs/ColorSelectionAction"
+            },
+            {
               "type": "null"
             }
           ]
@@ -1731,6 +1780,11 @@
         "experimental.detectURLs": {
           "default": true,
           "description": "When set to true, URLs will be detected by the Terminal. This will cause URLs to underline on hover and be clickable by pressing Ctrl.",
+          "type": "boolean"
+        },
+        "experimental.enableColorSelection": {
+          "default": false,
+          "description": "When set to true, adds preset \"Color Selection\" actions (keybindings) to allow colorizing selected text via keystroke, similar to the legacy conhost EnableColorSelection feature (such as alt+6 to color the selection red).",
           "type": "boolean"
         },
         "disableAnimations": {
@@ -1972,7 +2026,7 @@
             "afterLastTab",
             "afterCurrentTab"
           ],
-          "type": "string"        
+          "type": "string"
         },
         "autoHideWindow": {
           "default": false,
@@ -2183,10 +2237,10 @@
           "description": "Use to set a path to a pixel shader to use with the Terminal. Overrides `experimental.retroTerminalEffect`. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "string"
         },
-        "experimental.useAtlasEngine": {
-          "description": "Enable using the experimental new rendering engine for this profile. This is an experimental feature, and its continued existence is not guaranteed.",
+        "useAtlasEngine": {
+          "description": "Windows Terminal 1.16 and later ship with a new, performant text renderer. Set this to false to revert back to the old text renderer.",
           "type": "boolean",
-          "default": false
+          "default": true
         },
         "fontFace": {
           "default": "Cascadia Mono",
