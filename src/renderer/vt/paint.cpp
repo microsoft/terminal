@@ -535,8 +535,17 @@ using namespace Microsoft::Console::Types;
     // Move the cursor to the start of this run.
     RETURN_IF_FAILED(_MoveCursor(coord));
 
-    // Write the actual text string
-    RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8({ _bufferLine.data(), cchActual }));
+    // Write the actual text string. If we're using a soft font, the character
+    // set should have already been selected, so we just need to map our internal
+    // representation back to ASCII (handled by the _WriteTerminalDrcs method).
+    if (_usingSoftFont) [[unlikely]]
+    {
+        RETURN_IF_FAILED(VtEngine::_WriteTerminalDrcs({ _bufferLine.data(), cchActual }));
+    }
+    else
+    {
+        RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8({ _bufferLine.data(), cchActual }));
+    }
 
     // GH#4415, GH#5181
     // If the renderer told us that this was a wrapped line, then mark
