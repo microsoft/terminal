@@ -335,6 +335,10 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const til::CoordType c
                 SetWrapForced(*wrap);
             }
         }
+        else
+        {
+            ++it;
+        }
 
         // Move to the next cell for the next time through the loop.
         ++currentIndex;
