@@ -382,7 +382,8 @@ MidiAudio& CONSOLE_INFORMATION::GetMidiAudio()
 {
     if (!_midiAudio)
     {
-        _midiAudio = std::make_unique<MidiAudio>();
+        const auto windowHandle = ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
+        _midiAudio = std::make_unique<MidiAudio>(windowHandle);
         _midiAudio->Initialize();
     }
     return *_midiAudio;

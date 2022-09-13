@@ -35,6 +35,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 // It provides X with the following arguments:
 //   (source, type, function name, JSON key, ...variadic construction arguments)
 #define MTSM_APPLICATION_STATE_FIELDS(X)                                                                                                                                  \
+    X(FileSource::Shared, winrt::hstring, SettingsHash, "settingsHash")                                                                                                   \
     X(FileSource::Shared, std::unordered_set<winrt::guid>, GeneratedProfiles, "generatedProfiles")                                                                        \
     X(FileSource::Local, Windows::Foundation::Collections::IVector<Model::WindowLayout>, PersistedWindowLayouts, "persistedWindowLayouts")                                \
     X(FileSource::Shared, Windows::Foundation::Collections::IVector<hstring>, RecentCommands, "recentCommands")                                                           \

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- PGO -->
   <Import Condition="'$(PgoTarget)' == 'true' And '$(Platform)'=='x64' And '$(PGOBuildMode)'!='' And Exists('$(SolutionDir)\build\PGO\Terminal.PGO.props')" Project="$(SolutionDir)\build\PGO\Terminal.PGO.props" />
 
@@ -18,25 +18,25 @@
   <PropertyGroup>
     <AppiumWebDriverPathRoot>$(MSBuildThisFileDirectory)..\packages\Appium.WebDriver.3.0.0.2</AppiumWebDriverPathRoot>
   </PropertyGroup>
-  
+
   <!-- CastleCore -->
   <PropertyGroup>
     <CastleCorePathRoot>$(MSBuildThisFileDirectory)..\packages\Castle.Core.4.1.1</CastleCorePathRoot>
   </PropertyGroup>
-  
+
   <!-- NewtonsoftJSON -->
   <PropertyGroup>
-    <NewtonsoftJSONPathRoot>$(MSBuildThisFileDirectory)..\packages\Newtonsoft.Json.12.0.3</NewtonsoftJSONPathRoot>
+    <NewtonsoftJSONPathRoot>$(MSBuildThisFileDirectory)..\packages\Newtonsoft.Json.13.0.1</NewtonsoftJSONPathRoot>
   </PropertyGroup>
-  
+
   <!-- SeleniumWebDriver -->
   <PropertyGroup>
     <SeleniumWebDriverPathRoot>$(MSBuildThisFileDirectory)..\packages\Selenium.WebDriver.3.5.0</SeleniumWebDriverPathRoot>
   </PropertyGroup>
-  
+
   <!-- SeleniumSupport -->
   <PropertyGroup>
     <SeleniumSupportPathRoot>$(MSBuildThisFileDirectory)..\packages\Selenium.Support.3.5.0</SeleniumSupportPathRoot>
   </PropertyGroup>
-  
+
 </Project>

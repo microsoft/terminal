@@ -245,19 +245,6 @@ bool DxEngine::_HasTerminalEffects() const noexcept
 }
 
 // Routine Description:
-// - Toggles terminal effects off and on. If no terminal effect is configured has no effect
-// Arguments:
-// Return Value:
-// - Void
-void DxEngine::ToggleShaderEffects() noexcept
-{
-    _terminalEffectsEnabled = !_terminalEffectsEnabled;
-    _recreateDeviceRequested = true;
-#pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function 'Log_IfFailed()' which may throw exceptions (f.6).
-    LOG_IF_FAILED(InvalidateAll());
-}
-
-// Routine Description:
 // - Loads pixel shader source depending on _retroTerminalEffect and _pixelShaderPath
 // Arguments:
 // Return Value:
@@ -446,9 +433,9 @@ HRESULT DxEngine::_SetupTerminalEffects()
     // Sampler state is needed to use texture as input to shader.
     D3D11_SAMPLER_DESC samplerDesc{};
     samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
     samplerDesc.MipLODBias = 0.0f;
     samplerDesc.MaxAnisotropy = 1;
     samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
@@ -744,7 +731,7 @@ try
     {
         try
         {
-            _pfn();
+            _pfn(_swapChainHandle.get());
         }
         CATCH_LOG(); // A failure in the notification function isn't a failure to prepare, so just log it and go on.
     }
@@ -881,6 +868,8 @@ void DxEngine::_ReleaseDeviceResources() noexcept
 
         _d2dBitmap.Reset();
 
+        _softFont.Reset();
+
         if (nullptr != _d2dDeviceContext.Get() && _isPainting)
         {
             _d2dDeviceContext->EndDraw();
@@ -994,7 +983,7 @@ try
 }
 CATCH_RETURN();
 
-void DxEngine::SetCallback(std::function<void()> pfn) noexcept
+void DxEngine::SetCallback(std::function<void(const HANDLE)> pfn) noexcept
 {
     _pfn = std::move(pfn);
 }
@@ -1022,6 +1011,11 @@ try
     }
 }
 CATCH_LOG()
+
+std::wstring_view DxEngine::GetPixelShaderPath() noexcept
+{
+    return _pixelShaderPath;
+}
 
 void DxEngine::SetPixelShaderPath(std::wstring_view value) noexcept
 try
@@ -1059,17 +1053,6 @@ try
     }
 }
 CATCH_LOG()
-
-HANDLE DxEngine::GetSwapChainHandle() noexcept
-{
-    if (!_swapChainHandle)
-    {
-#pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function 'Log_IfFailed()' which may throw exceptions (f.6).
-        LOG_IF_FAILED(_CreateDeviceResources(true));
-    }
-
-    return _swapChainHandle.get();
-}
 
 void DxEngine::_InvalidateRectangle(const til::rect& rc)
 {
@@ -1689,12 +1672,22 @@ try
     // Calculate positioning of our origin.
     const auto origin = (coord * _fontRenderData->GlyphCell()).to_d2d_point();
 
-    // Create the text layout
-    RETURN_IF_FAILED(_customLayout->Reset());
-    RETURN_IF_FAILED(_customLayout->AppendClusters(clusters));
+    if (_usingSoftFont)
+    {
+        // We need to reset the clipping rect applied by the CustomTextRenderer,
+        // since the soft font will want to set its own clipping rect.
+        RETURN_IF_FAILED(_customRenderer->EndClip(_drawingContext.get()));
+        RETURN_IF_FAILED(_softFont.Draw(*_drawingContext, clusters, origin.x, origin.y));
+    }
+    else
+    {
+        // Create the text layout
+        RETURN_IF_FAILED(_customLayout->Reset());
+        RETURN_IF_FAILED(_customLayout->AppendClusters(clusters));
 
-    // Layout then render the text
-    RETURN_IF_FAILED(_customLayout->Draw(_drawingContext.get(), _customRenderer.Get(), origin.x, origin.y));
+        // Layout then render the text
+        RETURN_IF_FAILED(_customLayout->Draw(_drawingContext.get(), _customRenderer.Get(), origin.x, origin.y));
+    }
 
     return S_OK;
 }
@@ -1933,8 +1926,9 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT DxEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
                                                      const RenderSettings& renderSettings,
                                                      const gsl::not_null<IRenderData*> /*pData*/,
-                                                     const bool /*usingSoftFont*/,
+                                                     const bool usingSoftFont,
                                                      const bool isSettingDefaultBrushes) noexcept
+try
 {
     const auto [colorForeground, colorBackground] = renderSettings.GetAttributeColorsWithAlpha(textAttributes);
 
@@ -1950,6 +1944,12 @@ CATCH_RETURN()
 
     _d2dBrushForeground->SetColor(_foregroundColor);
     _d2dBrushBackground->SetColor(_backgroundColor);
+
+    _usingSoftFont = usingSoftFont;
+    if (_usingSoftFont)
+    {
+        _softFont.SetColor(_foregroundColor);
+    }
 
     // If this flag is set, then we need to update the default brushes too and the swap chain background.
     if (isSettingDefaultBrushes)
@@ -1990,6 +1990,7 @@ CATCH_RETURN()
 
     return S_OK;
 }
+CATCH_RETURN();
 
 // Routine Description:
 // - Updates the font used for drawing
@@ -2021,7 +2022,8 @@ try
     // Prepare the text layout.
     _customLayout = WRL::Make<CustomTextLayout>(_fontRenderData.get());
 
-    return S_OK;
+    // Inform the soft font of the new cell size so it can scale appropriately.
+    return _softFont.SetTargetSize(_fontRenderData->GlyphCell());
 }
 CATCH_RETURN();
 
@@ -2233,6 +2235,7 @@ try
     {
         _antialiasingMode = antialiasingMode;
         _recreateDeviceRequested = true;
+        LOG_IF_FAILED(_softFont.SetAntialiasing(antialiasingMode != D2D1_TEXT_ANTIALIAS_MODE_ALIASED));
         LOG_IF_FAILED(InvalidateAll());
     }
 }
@@ -2274,6 +2277,24 @@ void DxEngine::UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept
 {
     _hyperlinkHoveredId = hoveredId;
 }
+
+// Routine Description:
+// - This method will replace the active soft font with the given bit pattern.
+// Arguments:
+// - bitPattern - An array of scanlines representing all the glyphs in the font.
+// - cellSize - The cell size for an individual glyph.
+// - centeringHint - The horizontal extent that glyphs are offset from center.
+// Return Value:
+// - S_OK if successful. E_FAIL if there was an error.
+HRESULT DxEngine::UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+                                 const til::size cellSize,
+                                 const size_t centeringHint) noexcept
+try
+{
+    _softFont.SetFont(bitPattern, cellSize, _fontRenderData->GlyphCell(), centeringHint);
+    return S_OK;
+}
+CATCH_RETURN();
 
 // Method Description:
 // - Informs this render engine about certain state for this frame at the
@@ -2322,8 +2343,8 @@ void DxEngine::UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept
 // Return Value:
 // - S_OK if successful. S_FALSE if already set. E_FAIL if there was an error.
 [[nodiscard]] HRESULT DxEngine::PrepareLineTransform(const LineRendition lineRendition,
-                                                     const size_t targetRow,
-                                                     const size_t viewportLeft) noexcept
+                                                     const til::CoordType targetRow,
+                                                     const til::CoordType viewportLeft) noexcept
 {
     auto lineTransform = D2D1::Matrix3x2F{ 0, 0, 0, 0, 0, 0 };
     const auto fontSize = _fontRenderData->GlyphCell();

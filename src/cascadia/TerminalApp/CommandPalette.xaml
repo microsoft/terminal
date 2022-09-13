@@ -402,6 +402,7 @@
                       IsItemClickEnabled="True"
                       ItemClick="_listItemClicked"
                       ItemsSource="{x:Bind FilteredActions}"
+                      SelectionChanged="_listItemSelectionChanged"
                       SelectionMode="Single" />
 
         </Grid>

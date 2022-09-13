@@ -16,11 +16,13 @@
 #pragma once
 
 #include "ControlCore.g.h"
+#include "SelectionColor.g.h"
 #include "ControlSettings.h"
 #include "../../audio/midi/MidiAudio.hpp"
 #include "../../renderer/base/Renderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "../buffer/out/search.h"
+#include "../buffer/out/TextColor.h"
 
 #include <til/ticket_lock.h>
 
@@ -40,6 +42,14 @@ public:                                                           \
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
+    struct SelectionColor : SelectionColorT<SelectionColor>
+    {
+        TextColor AsTextColor() const noexcept;
+
+        WINRT_PROPERTY(til::color, Color);
+        WINRT_PROPERTY(bool, IsIndex16);
+    };
+
     struct ControlCore : ControlCoreT<ControlCore>
     {
     public:
@@ -65,7 +75,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void SizeChanged(const double width, const double height);
         void ScaleChanged(const double scale);
-        uint64_t SwapChainHandle() const;
 
         void AdjustFontSize(int fontSizeDelta);
         void ResetFontSize();
@@ -82,9 +91,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void PasteText(const winrt::hstring& hstr);
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
         void SelectAll();
+        void ClearSelection();
         bool ToggleBlockSelection();
         void ToggleMarkMode();
-        bool IsInMarkMode() const;
+        Control::SelectionInteractionMode SelectionMode() const;
+        bool SwitchSelectionEndpoint();
+        bool ExpandSelectionToWord();
+        bool TryMarkModeKeybinding(const WORD vkey,
+                                   const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
 
         void GotFocus();
         void LostFocus();
@@ -93,7 +107,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void AdjustOpacity(const double adjustment);
         void ResumeRendering();
 
-        void UpdatePatternLocations();
         void SetHoveredCell(Core::Point terminalPosition);
         void ClearHoveredCell();
         winrt::hstring GetHyperlink(const Core::Point position) const;
@@ -101,6 +114,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Windows::Foundation::IReference<Core::Point> HoveredCell() const;
 
         ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
+
+        void ColorSelection(const Control::SelectionColor& fg, const Control::SelectionColor& bg, Core::MatchMode matchMode);
 
         void Close();
 
@@ -216,6 +231,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(FoundMatch,                IInspectable, Control::FoundResultsArgs);
         TYPED_EVENT(ShowWindowChanged,         IInspectable, Control::ShowWindowArgs);
         TYPED_EVENT(UpdateSelectionMarkers,    IInspectable, Control::UpdateSelectionMarkersEventArgs);
+        TYPED_EVENT(OpenHyperlink,             IInspectable, Control::OpenHyperlinkEventArgs);
         // clang-format on
 
     private:
@@ -228,7 +244,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::com_ptr<ControlSettings> _settings{ nullptr };
 
-        std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal{ nullptr };
+        std::shared_ptr<::Microsoft::Terminal::Core::Terminal> _terminal{ nullptr };
 
         // NOTE: _renderEngine must be ordered before _renderer.
         //
@@ -263,15 +279,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };
         std::shared_ptr<ThrottledFuncTrailing<>> _tsfTryRedrawCanvas;
-        std::shared_ptr<ThrottledFuncTrailing<>> _updatePatternLocations;
+        std::unique_ptr<til::throttled_func_trailing<>> _updatePatternLocations;
         std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> _updateScrollBar;
-
-        winrt::fire_and_forget _asyncCloseConnection();
 
         bool _setFontSizeUnderLock(int fontSize);
         void _updateFont(const bool initialUpdate = false);
         void _refreshSizeUnderLock();
-        void _updateSelection();
+        void _updateSelectionUI();
+        bool _shouldTryUpdateSelection(const WORD vkey);
 
         void _sendInputToConnection(std::wstring_view wstr);
 
@@ -297,7 +312,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
 #pragma region RendererCallbacks
         void _rendererWarning(const HRESULT hr);
-        void _renderEngineSwapChainChanged();
+        void _renderEngineSwapChainChanged(const HANDLE handle);
         void _rendererBackgroundColorChanged();
         void _rendererTabColorChanged();
 #pragma endregion
@@ -309,6 +324,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _setOpacity(const double opacity);
 
         bool _isBackgroundTransparent();
+        void _focusChanged(bool focused);
 
         inline bool _IsClosing() const noexcept
         {
@@ -334,4 +350,5 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 namespace winrt::Microsoft::Terminal::Control::factory_implementation
 {
     BASIC_FACTORY(ControlCore);
+    BASIC_FACTORY(SelectionColor);
 }

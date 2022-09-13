@@ -210,8 +210,8 @@ GdiEngine::~GdiEngine()
 // Return Value:
 // - S_OK if successful. S_FALSE if already set. E_FAIL if there was an error.
 [[nodiscard]] HRESULT GdiEngine::PrepareLineTransform(const LineRendition lineRendition,
-                                                      const size_t targetRow,
-                                                      const size_t viewportLeft) noexcept
+                                                      const til::CoordType targetRow,
+                                                      const til::CoordType viewportLeft) noexcept
 {
     XFORM lineTransform = {};
     // The X delta is to account for the horizontal viewport offset.

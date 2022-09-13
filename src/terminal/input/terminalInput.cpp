@@ -72,9 +72,8 @@ static constexpr std::array<TermKeyMap, 6> s_cursorKeysVt52Mapping{
     TermKeyMap{ VK_END, L"\033F" },
 };
 
-static constexpr std::array<TermKeyMap, 20> s_keypadNumericMapping{
+static constexpr std::array<TermKeyMap, 19> s_keypadNumericMapping{
     TermKeyMap{ VK_TAB, L"\x09" },
-    TermKeyMap{ VK_BACK, L"\x7f" },
     TermKeyMap{ VK_PAUSE, L"\x1a" },
     TermKeyMap{ VK_ESCAPE, L"\x1b" },
     TermKeyMap{ VK_INSERT, L"\x1b[2~" },
@@ -104,9 +103,8 @@ static constexpr std::array<TermKeyMap, 20> s_keypadNumericMapping{
 //It seems to me as though this was used for early numpad implementations, where presently numlock would enable
 //  "numeric" mode, outputting the numbers on the keys, while "application" mode does things like pgup/down, arrow keys, etc.
 //These keys aren't translated at all in numeric mode, so I figured I'd leave them out of the numeric table.
-static constexpr std::array<TermKeyMap, 20> s_keypadApplicationMapping{
+static constexpr std::array<TermKeyMap, 19> s_keypadApplicationMapping{
     TermKeyMap{ VK_TAB, L"\x09" },
-    TermKeyMap{ VK_BACK, L"\x7f" },
     TermKeyMap{ VK_PAUSE, L"\x1a" },
     TermKeyMap{ VK_ESCAPE, L"\x1b" },
     TermKeyMap{ VK_INSERT, L"\x1b[2~" },
@@ -154,9 +152,8 @@ static constexpr std::array<TermKeyMap, 20> s_keypadApplicationMapping{
     // TermKeyMap{ VK_TAB, L"\x1bOI" },   // So I left them here as a reference just in case.
 };
 
-static constexpr std::array<TermKeyMap, 20> s_keypadVt52Mapping{
+static constexpr std::array<TermKeyMap, 19> s_keypadVt52Mapping{
     TermKeyMap{ VK_TAB, L"\x09" },
-    TermKeyMap{ VK_BACK, L"\x7f" },
     TermKeyMap{ VK_PAUSE, L"\x1a" },
     TermKeyMap{ VK_ESCAPE, L"\x1b" },
     TermKeyMap{ VK_INSERT, L"\x1b[2~" },
@@ -212,10 +209,7 @@ static constexpr std::array<TermKeyMap, 22> s_modifierKeyMapping{
 // These sequences are not later updated to encode the modifier state in the
 //      sequence itself, they are just weird exceptional cases to the general
 //      rules above.
-static constexpr std::array<TermKeyMap, 14> s_simpleModifiedKeyMapping{
-    TermKeyMap{ VK_BACK, CTRL_PRESSED, L"\x8" },
-    TermKeyMap{ VK_BACK, ALT_PRESSED, L"\x1b\x7f" },
-    TermKeyMap{ VK_BACK, CTRL_PRESSED | ALT_PRESSED, L"\x1b\x8" },
+static constexpr std::array<TermKeyMap, 11> s_simpleModifiedKeyMapping{
     TermKeyMap{ VK_TAB, CTRL_PRESSED, L"\t" },
     TermKeyMap{ VK_TAB, SHIFT_PRESSED, L"\x1b[Z" },
     TermKeyMap{ VK_DIVIDE, CTRL_PRESSED, L"\x1F" },
@@ -561,6 +555,25 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
     if (!keyEvent.IsKeyDown())
     {
         return false;
+    }
+
+    // The VK_BACK key depends on the state of Backarrow Key mode (DECBKM).
+    // If the mode is set, we should send BS. If reset, we should send DEL.
+    if (keyEvent.GetVirtualKeyCode() == VK_BACK)
+    {
+        // The Ctrl modifier reverses the interpretation of DECBKM.
+        const auto backarrowMode = _inputMode.test(Mode::BackarrowKey) != keyEvent.IsCtrlPressed();
+        const auto seq = backarrowMode ? L'\x08' : L'\x7f';
+        // The Alt modifier adds an escape prefix.
+        if (keyEvent.IsAltPressed())
+        {
+            _SendEscapedInputSequence(seq);
+        }
+        else
+        {
+            _SendInputSequence({ &seq, 1 });
+        }
+        return true;
     }
 
     // Many keyboard layouts have an AltGr key, which makes widely used characters accessible.

@@ -43,6 +43,11 @@ winrt::com_ptr<Profile> Model::implementation::CreateChild(const winrt::com_ptr<
     return profile;
 }
 
+winrt::hstring CascadiaSettings::Hash() const noexcept
+{
+    return _hash;
+}
+
 Model::CascadiaSettings CascadiaSettings::Copy() const
 {
     const auto settings{ winrt::make_self<CascadiaSettings>() };
@@ -409,6 +414,7 @@ void CascadiaSettings::_validateSettings()
     _validateMediaResources();
     _validateKeybindings();
     _validateColorSchemesInCommands();
+    _validateThemeExists();
 }
 
 // Method Description:
@@ -1151,4 +1157,29 @@ void CascadiaSettings::ExportFile(winrt::hstring path, winrt::hstring content)
         WriteUTF8FileAtomic({ path.c_str() }, til::u16u8(content));
     }
     CATCH_LOG();
+}
+
+void CascadiaSettings::_validateThemeExists()
+{
+    if (_globals->Themes().Size() == 0)
+    {
+        // We didn't even load the default themes. This should only be possible
+        // if the defaults.json didn't include any themes, or if no
+        // defaults.json was loaded at all. The second case is especially common
+        // in tests (that don't bother with a defaults.json). No matter. Create
+        // a default theme under `system` and just stick it in there.
+
+        auto newTheme = winrt::make_self<Theme>();
+        newTheme->Name(L"system");
+        _globals->AddTheme(*newTheme);
+        _globals->Theme(L"system");
+    }
+
+    if (!_globals->Themes().HasKey(_globals->Theme()))
+    {
+        _warnings.Append(SettingsLoadWarnings::UnknownTheme);
+
+        // safely fall back to system as the theme.
+        _globals->Theme(L"system");
+    }
 }

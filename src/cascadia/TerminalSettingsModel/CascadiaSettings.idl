@@ -20,11 +20,13 @@ namespace Microsoft.Terminal.Settings.Model
         static String ApplicationVersion { get; };
 
         static void ExportFile(String path, String content);
-        
+
         CascadiaSettings(String userJSON, String inboxJSON);
 
         CascadiaSettings Copy();
         void WriteSettingsToDisk();
+
+        String Hash { get; };
 
         GlobalAppSettings GlobalSettings { get; };
 

@@ -19,7 +19,7 @@ PRECOMPILED_CXX         = 1
 PRECOMPILED_INCLUDE     = ..\precomp.h
 
 SOURCES = \
-    ..\midiaudio.cpp \
+    ..\MidiAudio.cpp \
 
 INCLUDES = \
     $(INCLUDES); \

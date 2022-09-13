@@ -119,6 +119,7 @@
   </resheader>
   <data name="AppName" xml:space="preserve">
     <value>Terminal</value>
+    <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
   <data name="AppNameDev" xml:space="preserve">
     <value>Terminal Dev</value>
@@ -126,9 +127,11 @@
   </data>
   <data name="AppNamePre" xml:space="preserve">
     <value>Terminal Preview</value>
+    <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
   <data name="AppStoreName" xml:space="preserve">
     <value>Windows Terminal</value>
+    <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
   <data name="AppStoreNameDev" xml:space="preserve">
     <value>Windows Terminal Dev</value>
@@ -136,9 +139,11 @@
   </data>
   <data name="AppStoreNamePre" xml:space="preserve">
     <value>Windows Terminal Preview</value>
+    <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
   <data name="AppShortName" xml:space="preserve">
     <value>Terminal</value>
+    <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
   <data name="AppShortNameDev" xml:space="preserve">
     <value>Terminal Dev</value>
@@ -146,6 +151,7 @@
   </data>
   <data name="AppShortNamePre" xml:space="preserve">
     <value>Terminal Preview</value>
+    <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
   <data name="AppDescription" xml:space="preserve">
     <value>The New Windows Terminal</value>

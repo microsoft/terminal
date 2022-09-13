@@ -45,6 +45,7 @@ public:
     TEST_METHOD(TerminalInputNullKeyTests);
     TEST_METHOD(DifferentModifiersTest);
     TEST_METHOD(CtrlNumTest);
+    TEST_METHOD(BackarrowKeyModeTest);
 
     wchar_t GetModifierChar(const bool fShift, const bool fAlt, const bool fCtrl)
     {
@@ -789,4 +790,66 @@ void InputTest::CtrlNumTest()
     vkey = static_cast<WORD>('9');
     s_expectedInput = L"9";
     TestKey(pInput, uiKeystate, vkey);
+}
+
+void InputTest::BackarrowKeyModeTest()
+{
+    Log::Comment(L"Starting test...");
+
+    const auto pInput = new TerminalInput(s_TerminalInputTestCallback);
+    const BYTE vkey = VK_BACK;
+
+    Log::Comment(L"Sending backspace key combos with DECBKM enabled.");
+    pInput->SetInputMode(TerminalInput::Mode::BackarrowKey, true);
+
+    s_expectedInput = L"\x8";
+    TestKey(pInput, 0, vkey);
+
+    s_expectedInput = L"\x8";
+    TestKey(pInput, SHIFT_PRESSED, vkey);
+
+    s_expectedInput = L"\x7f";
+    TestKey(pInput, LEFT_CTRL_PRESSED, vkey);
+
+    s_expectedInput = L"\x7f";
+    TestKey(pInput, LEFT_CTRL_PRESSED | SHIFT_PRESSED, vkey);
+
+    s_expectedInput = L"\x1b\x8";
+    TestKey(pInput, LEFT_ALT_PRESSED, vkey);
+
+    s_expectedInput = L"\x1b\x8";
+    TestKey(pInput, LEFT_ALT_PRESSED | SHIFT_PRESSED, vkey);
+
+    s_expectedInput = L"\x1b\x7f";
+    TestKey(pInput, LEFT_ALT_PRESSED | LEFT_CTRL_PRESSED, vkey);
+
+    s_expectedInput = L"\x1b\x7f";
+    TestKey(pInput, LEFT_ALT_PRESSED | LEFT_CTRL_PRESSED | SHIFT_PRESSED, vkey);
+
+    Log::Comment(L"Sending backspace key combos with DECBKM disabled.");
+    pInput->SetInputMode(TerminalInput::Mode::BackarrowKey, false);
+
+    s_expectedInput = L"\x7f";
+    TestKey(pInput, 0, vkey);
+
+    s_expectedInput = L"\x7f";
+    TestKey(pInput, SHIFT_PRESSED, vkey);
+
+    s_expectedInput = L"\x8";
+    TestKey(pInput, LEFT_CTRL_PRESSED, vkey);
+
+    s_expectedInput = L"\x8";
+    TestKey(pInput, LEFT_CTRL_PRESSED | SHIFT_PRESSED, vkey);
+
+    s_expectedInput = L"\x1b\x7f";
+    TestKey(pInput, LEFT_ALT_PRESSED, vkey);
+
+    s_expectedInput = L"\x1b\x7f";
+    TestKey(pInput, LEFT_ALT_PRESSED | SHIFT_PRESSED, vkey);
+
+    s_expectedInput = L"\x1b\x8";
+    TestKey(pInput, LEFT_ALT_PRESSED | LEFT_CTRL_PRESSED, vkey);
+
+    s_expectedInput = L"\x1b\x8";
+    TestKey(pInput, LEFT_ALT_PRESSED | LEFT_CTRL_PRESSED | SHIFT_PRESSED, vkey);
 }

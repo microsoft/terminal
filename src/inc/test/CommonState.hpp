@@ -118,7 +118,7 @@ public:
 
         // If we have a renderer, we need to call EnablePainting to initialize
         // the viewport. If not, we mark the text buffer as inactive so that it
-        // doesn't try to trigger a redraw on a non-existent renderer.
+        // doesn't try to trigger a redraw on a nonexistent renderer.
         if (g.pRender)
         {
             g.pRender->EnablePainting();
@@ -204,7 +204,7 @@ public:
 
             // If we have a renderer, we need to call EnablePainting to initialize
             // the viewport. If not, we mark the text buffer as inactive so that it
-            // doesn't try to trigger a redraw on a non-existent renderer.
+            // doesn't try to trigger a redraw on a nonexistent renderer.
             if (g.pRender)
             {
                 g.pRender->EnablePainting();

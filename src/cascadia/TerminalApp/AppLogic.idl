@@ -35,7 +35,7 @@ namespace TerminalApp
 
     // See IDialogPresenter and TerminalPage's DialogPresenter for more
     // information.
-    [default_interface] runtimeclass AppLogic : IDirectKeyListener, IDialogPresenter
+    [default_interface] runtimeclass AppLogic : IDirectKeyListener, IDialogPresenter, Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         AppLogic();
 
@@ -70,6 +70,7 @@ namespace TerminalApp
         Boolean Fullscreen { get; };
         void Maximized(Boolean newMaximized); 
         Boolean AlwaysOnTop { get; };
+        Boolean AutoHideWindow { get; };
 
         void IdentifyWindow();
         String WindowName;
@@ -94,6 +95,8 @@ namespace TerminalApp
         void WindowVisibilityChanged(Boolean showOrHide);
 
         TaskbarState TaskbarState{ get; };
+        Windows.UI.Xaml.Media.Brush TitlebarBrush { get; };
+        void WindowActivated(Boolean activated);
 
         Boolean ShouldUsePersistedLayout();
         Boolean ShouldImmediatelyHandoffToElevated();
@@ -104,6 +107,8 @@ namespace TerminalApp
         Boolean GetMinimizeToNotificationArea();
         Boolean GetAlwaysShowNotificationIcon();
         Boolean GetShowTitleInTitlebar();
+
+        Microsoft.Terminal.Settings.Model.Theme Theme { get; };
 
         FindTargetWindowResult FindTargetWindow(String[] args);
 
@@ -117,7 +122,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
-        event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.ElementTheme> RequestedThemeChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.Theme> RequestedThemeChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusModeChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> FullscreenChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> ChangeMaximizeRequested;

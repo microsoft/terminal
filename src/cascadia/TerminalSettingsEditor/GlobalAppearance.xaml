@@ -8,6 +8,7 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:local="using:Microsoft.Terminal.Settings.Editor"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:model="using:Microsoft.Terminal.Settings.Model"
       xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
       mc:Ignorable="d">
 
@@ -28,12 +29,12 @@
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--  Language  -->
             <local:SettingContainer x:Uid="Globals_Language"
-                                    Visibility="{x:Bind LanguageSelectorAvailable}">
-                <ComboBox ItemsSource="{x:Bind LanguageList}"
-                          SelectedItem="{x:Bind CurrentLanguage, Mode=TwoWay}">
+                                    Visibility="{x:Bind ViewModel.LanguageSelectorAvailable}">
+                <ComboBox ItemsSource="{x:Bind ViewModel.LanguageList}"
+                          SelectedItem="{x:Bind ViewModel.CurrentLanguage, Mode=TwoWay}">
                     <ComboBox.ItemTemplate>
                         <DataTemplate x:DataType="x:String">
-                            <TextBlock Text="{x:Bind local:GlobalAppearance.LanguageDisplayConverter((x:String))}" />
+                            <TextBlock Text="{x:Bind local:GlobalAppearanceViewModel.LanguageDisplayConverter((x:String))}" />
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
@@ -42,39 +43,55 @@
             <!--  Theme  -->
             <local:SettingContainer x:Uid="Globals_Theme">
                 <ComboBox AutomationProperties.AccessibilityView="Content"
-                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
-                          ItemsSource="{x:Bind ThemeList, Mode=OneWay}"
-                          SelectedItem="{x:Bind CurrentTheme, Mode=TwoWay}"
-                          Style="{StaticResource ComboBoxSettingStyle}" />
+                          ItemsSource="{x:Bind ViewModel.ThemeList, Mode=OneWay}"
+                          SelectedItem="{x:Bind ViewModel.CurrentTheme, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="model:Theme">
+                            <TextBlock Text="{x:Bind local:GlobalAppearanceViewModel.ThemeNameConverter((model:Theme)), Mode=OneWay}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
             </local:SettingContainer>
 
-            <!--  Always show tabs  -->
-            <local:SettingContainer x:Uid="Globals_AlwaysShowTabs">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.AlwaysShowTabs, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            <!--  Position of new tab  -->
+            <local:SettingContainer x:Uid="Globals_NewTabPosition">
+                <ComboBox AutomationProperties.AccessibilityView="Content"
+                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                          ItemsSource="{x:Bind ViewModel.NewTabPositionList, Mode=OneWay}"
+                          SelectedItem="{x:Bind ViewModel.CurrentNewTabPosition, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
 
             <!--  Show Titlebar  -->
             <local:SettingContainer x:Uid="Globals_ShowTitlebar">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.ShowTabsInTitlebar, Mode=TwoWay}"
+                <ToggleSwitch IsOn="{x:Bind ViewModel.ShowTabsInTitlebar, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}"
+                              Toggled="{x:Bind ViewModel.ShowTitlebarToggled}" />
+            </local:SettingContainer>
+
+            <!--  Always show tabs  -->
+            <local:SettingContainer x:Uid="Globals_AlwaysShowTabs">
+                <ToggleSwitch IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.ShowTabsInTitlebar), Mode=OneWay}"
+                              IsOn="{x:Bind ViewModel.AlwaysShowTabs, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
             <!--  Show Acrylic in Tab Row  -->
             <local:SettingContainer x:Uid="Globals_AcrylicTabRow">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.UseAcrylicInTabRow, Mode=TwoWay}"
+                <ToggleSwitch IsOn="{x:Bind ViewModel.UseAcrylicInTabRow, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
             <!--  Show Title in Titlebar  -->
             <local:SettingContainer x:Uid="Globals_ShowTitleInTitlebar">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.ShowTitleInTitlebar, Mode=TwoWay}"
+                <ToggleSwitch IsOn="{x:Bind ViewModel.ShowTitleInTitlebar, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
             <!--  Always on Top  -->
             <local:SettingContainer x:Uid="Globals_AlwaysOnTop">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.AlwaysOnTop, Mode=TwoWay}"
+                <ToggleSwitch IsOn="{x:Bind ViewModel.AlwaysOnTop, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
@@ -82,27 +99,33 @@
             <local:SettingContainer x:Uid="Globals_TabWidthMode">
                 <ComboBox AutomationProperties.AccessibilityView="Content"
                           ItemTemplate="{StaticResource EnumComboBoxTemplate}"
-                          ItemsSource="{x:Bind TabWidthModeList, Mode=OneWay}"
-                          SelectedItem="{x:Bind CurrentTabWidthMode, Mode=TwoWay}"
+                          ItemsSource="{x:Bind ViewModel.TabWidthModeList, Mode=OneWay}"
+                          SelectedItem="{x:Bind ViewModel.CurrentTabWidthMode, Mode=TwoWay}"
                           Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
 
             <!--  Disable Animations  -->
             <!--  NOTE: the UID is "DisablePaneAnimationsReversed" not "DisablePaneAnimations". See GH#9124 for more details.  -->
             <local:SettingContainer x:Uid="Globals_DisableAnimationsReversed">
-                <ToggleSwitch IsOn="{x:Bind local:Converters.InvertBoolean(State.Globals.DisableAnimations), BindBack=State.Globals.SetInvertedDisableAnimationsValue, Mode=TwoWay}"
+                <ToggleSwitch IsOn="{x:Bind ViewModel.InvertedDisableAnimations, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
             <!--  Always Show Notification Icon  -->
             <local:SettingContainer x:Uid="Globals_AlwaysShowNotificationIcon">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.AlwaysShowNotificationIcon, Mode=TwoWay}"
+                <ToggleSwitch IsOn="{x:Bind ViewModel.AlwaysShowNotificationIcon, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
             <!--  Minimize To Notification Area  -->
             <local:SettingContainer x:Uid="Globals_MinimizeToNotificationArea">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.MinimizeToNotificationArea, Mode=TwoWay}"
+                <ToggleSwitch IsOn="{x:Bind ViewModel.MinimizeToNotificationArea, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Automatically hide window  -->
+            <local:SettingContainer x:Uid="Globals_AutoHideWindow">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.AutoHideWindow, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
         </StackPanel>

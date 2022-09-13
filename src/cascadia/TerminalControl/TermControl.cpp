@@ -84,6 +84,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core.HoveredHyperlinkChanged({ this, &TermControl::_hoveredHyperlinkChanged });
         _core.FoundMatch({ this, &TermControl::_coreFoundMatch });
         _core.UpdateSelectionMarkers({ this, &TermControl::_updateSelectionMarkers });
+        _core.OpenHyperlink({ this, &TermControl::_HyperlinkHandler });
         _interactivity.OpenHyperlink({ this, &TermControl::_HyperlinkHandler });
         _interactivity.ScrollPositionChanged({ this, &TermControl::_ScrollPositionChanged });
 
@@ -432,12 +433,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // achieve the intended effect.
             ScrollBar().IndicatorMode(Controls::Primitives::ScrollingIndicatorMode::None);
             ScrollBar().Visibility(Visibility::Collapsed);
+            ScrollMarksGrid().Visibility(Visibility::Collapsed);
         }
         else // (default or Visible)
         {
             // Default behavior
             ScrollBar().IndicatorMode(Controls::Primitives::ScrollingIndicatorMode::MouseIndicator);
             ScrollBar().Visibility(Visibility::Visible);
+            ScrollMarksGrid().Visibility(Visibility::Visible);
         }
 
         _interactivity.UpdateSettings();
@@ -568,6 +571,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             RootGrid().Background(solidColor);
         }
+
+        BackgroundBrush(RootGrid().Background());
     }
 
     // Method Description:
@@ -613,6 +618,31 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             solidColor.Color(bg);
         }
+
+        BackgroundBrush(RootGrid().Background());
+
+        // Don't use the normal BackgroundBrush() Observable Property setter
+        // here. (e.g. `BackgroundBrush()`). The one from the macro will
+        // automatically ignore changes where the value doesn't _actually_
+        // change. In our case, most of the time when changing the colors of the
+        // background, the _Brush_ itself doesn't change, we simply change the
+        // Color() of the brush. This results in the event not getting bubbled
+        // up.
+        //
+        // Firing it manually makes sure it does.
+        _BackgroundBrush = RootGrid().Background();
+        _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"BackgroundBrush" });
+
+        _isBackgroundLight = _isColorLight(bg);
+    }
+
+    bool TermControl::_isColorLight(til::color bg) noexcept
+    {
+        // Checks if the current background color is light enough
+        // to need a dark version of the visual bell indicator
+        // This is a poor man's Rec. 601 luma.
+        const auto l = 30 * bg.r + 59 * bg.g + 11 * bg.b;
+        return l > 12750;
     }
 
     // Method Description:
@@ -677,7 +707,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                              margins.Top,
                                              margins.Right,
                                              margins.Bottom };
-                _automationPeer = winrt::make<implementation::TermControlAutomationPeer>(this, padding, interactivityAutoPeer);
+                _automationPeer = winrt::make<implementation::TermControlAutomationPeer>(get_strong(), padding, interactivityAutoPeer);
                 return _automationPeer;
             }
         }
@@ -701,19 +731,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.ConnectionState();
     }
 
-    winrt::fire_and_forget TermControl::RenderEngineSwapChainChanged(IInspectable /*sender*/, IInspectable /*args*/)
+    winrt::fire_and_forget TermControl::RenderEngineSwapChainChanged(IInspectable /*sender*/, IInspectable args)
     {
         // This event is only registered during terminal initialization,
         // so we don't need to check _initializedTerminal.
-        // We also don't lock for things that come back from the renderer.
-        auto weakThis{ get_weak() };
+        const auto weakThis{ get_weak() };
+
+        // Create a copy of the swap chain HANDLE in args, since we don't own that parameter.
+        // By the time we return from the co_await below, it might be deleted already.
+        winrt::handle handle;
+        const auto processHandle = GetCurrentProcess();
+        const auto sourceHandle = reinterpret_cast<HANDLE>(winrt::unbox_value<uint64_t>(args));
+        THROW_IF_WIN32_BOOL_FALSE(DuplicateHandle(processHandle, sourceHandle, processHandle, handle.put(), 0, FALSE, DUPLICATE_SAME_ACCESS));
 
         co_await wil::resume_foreground(Dispatcher());
 
         if (auto control{ weakThis.get() })
         {
-            const auto chainHandle = reinterpret_cast<HANDLE>(control->_core.SwapChainHandle());
-            _AttachDxgiSwapChainToXaml(chainHandle);
+            _AttachDxgiSwapChainToXaml(handle.get());
         }
     }
 
@@ -800,21 +835,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         _interactivity.Initialize();
 
-        _AttachDxgiSwapChainToXaml(reinterpret_cast<HANDLE>(_core.SwapChainHandle()));
-
-        // Tell the DX Engine to notify us when the swap chain changes. We do
-        // this after we initially set the swapchain so as to avoid unnecessary
-        // callbacks (and locking problems)
         _core.SwapChainChanged({ get_weak(), &TermControl::RenderEngineSwapChainChanged });
-
-        // !! LOAD BEARING !!
-        // Make sure you enable painting _AFTER_ calling _AttachDxgiSwapChainToXaml
-        //
-        // If you EnablePainting first, then you almost certainly won't have any
-        // problems when running in Debug. However, in Release, you'll run into
-        // issues where the Renderer starts trying to paint before we've
-        // actually attached the swapchain to anything, and the DxEngine is not
-        // prepared to handle that.
         _core.EnablePainting();
 
         auto bufferHeight = _core.BufferHeight();
@@ -901,6 +922,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return;
         }
+
+        // GH#11479: TSF wants to be notified of any character input via ICoreTextEditContext::NotifyTextChanged().
+        // TSF is built and tested around the idea that you inform it of any text changes that happen
+        // when it doesn't currently compose characters. For instance writing "xin chaof" with the
+        // Vietnamese IME should produce "xin chào". After writing "xin" it'll emit a composition
+        // completion event and we'll write "xin" to the shell. It now has no input focus and won't know
+        // about the whitespace. If you then write "chaof", it'll emit another composition completion
+        // event for "xinchaof" and the resulting output in the shell will finally read "xinxinchaof".
+        // A composition completion event technically doesn't mean that the completed text is now
+        // immutable after all. We could (and probably should) inform TSF of any input changes,
+        // but we technically aren't a text input field. The immediate solution was
+        // to simply force TSF to clear its text whenever we have input focus.
+        TSFInputControl().ClearBuffer();
 
         _HidePointerCursorHandlers(*this, nullptr);
 
@@ -1066,7 +1100,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // keybindings on the keyUp, then we'll still send the keydown to the
         // connected terminal application, and something like ctrl+shift+T will
         // emit a ^T to the pipe.
-        if (!modifiers.IsAltGrPressed() && keyDown && _TryHandleKeyBinding(vkey, scanCode, modifiers))
+        if (!modifiers.IsAltGrPressed() &&
+            keyDown &&
+            _TryHandleKeyBinding(vkey, scanCode, modifiers))
         {
             e.Handled(true);
             return;
@@ -1092,6 +1128,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - modifiers: The ControlKeyStates representing the modifier key states.
     bool TermControl::_TryHandleKeyBinding(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers) const
     {
+        // Mark mode has a specific set of pre-defined key bindings.
+        // If we're in mark mode, we should be prioritizing those over
+        // the custom defined key bindings.
+        if (_core.TryMarkModeKeybinding(vkey, modifiers))
+        {
+            return true;
+        }
+
         // TODO: GH#5000
         // The Core owning the keybindings is weird. That's for sure. In the
         // future, we may want to pass the keybindings into the control
@@ -1163,12 +1207,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const auto window = CoreWindow::GetForCurrentThread();
 
-        if (vkey == VK_ESCAPE ||
-            vkey == VK_RETURN)
-        {
-            TSFInputControl().ClearBuffer();
-        }
-
         // If the terminal translated the key, mark the event as handled.
         // This will prevent the system from trying to get the character out
         // of it and sending us a CharacterReceived event.
@@ -1188,7 +1226,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             // Manually show the cursor when a key is pressed. Restarting
             // the timer prevents flickering.
-            _core.CursorOn(!_core.IsInMarkMode());
+            _core.CursorOn(_core.SelectionMode() != SelectionInteractionMode::Mark);
             _cursorTimer->Start();
         }
 
@@ -1659,7 +1697,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_cursorTimer)
         {
             // When the terminal focuses, show the cursor immediately
-            _core.CursorOn(!_core.IsInMarkMode());
+            _core.CursorOn(_core.SelectionMode() != SelectionInteractionMode::Mark);
             _cursorTimer->Start();
         }
 
@@ -1902,7 +1940,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return false;
         }
 
-        return _interactivity.CopySelectionToClipboard(singleLine, formats);
+        const auto successfulCopy = _interactivity.CopySelectionToClipboard(singleLine, formats);
+        _core.ClearSelection();
+        return successfulCopy;
     }
 
     // Method Description:
@@ -1925,6 +1965,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::ToggleMarkMode()
     {
         _core.ToggleMarkMode();
+    }
+
+    bool TermControl::SwitchSelectionEndpoint()
+    {
+        return _core.SwitchSelectionEndpoint();
+    }
+
+    bool TermControl::ExpandSelectionToWord()
+    {
+        return _core.ExpandSelectionToWord();
     }
 
     void TermControl::Close()
@@ -2043,7 +2093,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // GH#10211 - UNDER NO CIRCUMSTANCE should this fail. If it does, the
         // whole app will crash instantaneously on launch, which is no good.
         double scale;
-        if (Feature_AtlasEngine::IsEnabled() && settings.UseAtlasEngine())
+        if (settings.UseAtlasEngine())
         {
             auto engine = std::make_unique<::Microsoft::Console::Render::AtlasEngine>();
             LOG_IF_FAILED(engine->UpdateDpi(dpi));
@@ -2673,13 +2723,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Initialize the animation if it does not exist
         // We only initialize here instead of in the ctor because depending on the bell style setting,
         // we may never need this animation
-        if (!_bellLightAnimation)
+        if (!_bellLightAnimation && !_isBackgroundLight)
         {
             _bellLightAnimation = Window::Current().Compositor().CreateScalarKeyFrameAnimation();
             // Add key frames and a duration to our bell light animation
-            _bellLightAnimation.InsertKeyFrame(0.0, 2.0);
-            _bellLightAnimation.InsertKeyFrame(1.0, 1.0);
+            _bellLightAnimation.InsertKeyFrame(0.0, 4.0);
+            _bellLightAnimation.InsertKeyFrame(1.0, 1.9);
             _bellLightAnimation.Duration(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(TerminalWarningBellInterval)));
+        }
+
+        // Likewise, initialize the dark version of the animation only if required
+        if (!_bellDarkAnimation && _isBackgroundLight)
+        {
+            _bellDarkAnimation = Window::Current().Compositor().CreateScalarKeyFrameAnimation();
+            // reversing the order of the intensity values produces a similar effect as the light version
+            _bellDarkAnimation.InsertKeyFrame(0.0, 1.0);
+            _bellDarkAnimation.InsertKeyFrame(1.0, 2.0);
+            _bellDarkAnimation.Duration(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(TerminalWarningBellInterval)));
         }
 
         // Similar to the animation, only initialize the timer here
@@ -2700,7 +2760,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // Switch on the light and animate the intensity to fade out
             VisualBellLight::SetIsTarget(RootGrid(), true);
-            BellLight().CompositionLight().StartAnimation(L"Intensity", _bellLightAnimation);
+
+            if (_isBackgroundLight)
+            {
+                BellLight().CompositionLight().StartAnimation(L"Intensity", _bellDarkAnimation);
+            }
+            else
+            {
+                BellLight().CompositionLight().StartAnimation(L"Intensity", _bellLightAnimation);
+            }
         }
     }
 
@@ -2830,9 +2898,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
                 // show/update selection markers
                 // figure out which endpoint to move, get it and the relevant icon (hide the other icon)
-                const auto selectionAnchor{ markerData.MovingEnd ? markerData.EndPos : markerData.StartPos };
-                const auto& marker{ markerData.MovingEnd ? SelectionEndMarker() : SelectionStartMarker() };
-                const auto& otherMarker{ markerData.MovingEnd ? SelectionStartMarker() : SelectionEndMarker() };
+                const auto movingEnd{ WI_IsFlagSet(markerData.Endpoint, SelectionEndpointTarget::End) };
+                const auto selectionAnchor{ movingEnd ? markerData.EndPos : markerData.StartPos };
+                const auto& marker{ movingEnd ? SelectionEndMarker() : SelectionStartMarker() };
+                const auto& otherMarker{ movingEnd ? SelectionStartMarker() : SelectionEndMarker() };
                 if (selectionAnchor.Y < 0 || selectionAnchor.Y >= _core.ViewHeight())
                 {
                     // if the endpoint is outside of the viewport,
@@ -2841,7 +2910,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     otherMarker.Visibility(Visibility::Collapsed);
                     co_return;
                 }
-                else if (markerData.MovingCursor)
+                else if (WI_AreAllFlagsSet(markerData.Endpoint, SelectionEndpointTarget::Start | SelectionEndpointTarget::End))
                 {
                     // display both markers
                     displayMarker(true);
@@ -2851,7 +2920,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 {
                     // display one marker,
                     // but hide the other
-                    displayMarker(markerData.MovingEnd);
+                    displayMarker(movingEnd);
                     otherMarker.Visibility(Visibility::Collapsed);
                 }
             }
@@ -3036,4 +3105,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.ScrollMarks();
     }
 
+    void TermControl::ColorSelection(Control::SelectionColor fg, Control::SelectionColor bg, Core::MatchMode matchMode)
+    {
+        _core.ColorSelection(fg, bg, matchMode);
+    }
 }

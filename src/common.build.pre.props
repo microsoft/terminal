@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- By default, binplace our output under the bin/ directory in the root of
        the project. -->
   <PropertyGroup>
@@ -83,8 +83,7 @@
 
   <!-- For ALL build types-->
   <PropertyGroup Label="Configuration">
-    <PlatformToolset Condition="$(MSBuildVersion) &lt; '17.0.0'">v142</PlatformToolset>
-    <PlatformToolset Condition="$(MSBuildVersion) &gt;= '17.0.0'">v143</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <LinkIncremental>false</LinkIncremental>
     <PreferredToolArchitecture>x64</PreferredToolArchitecture>
@@ -98,16 +97,20 @@
       <!--<WarningLevel>EnableAllWarnings</WarningLevel>-->
       <TreatWarningAsError>true</TreatWarningAsError>
       <!--
-        C4103: alignment changed after including header, may be due to missing #pragma pack(pop)
-          Caused by a regression in VS 16.10, it detects the use of /pshpack[1248].h/ in system headers.
         C4201: nonstandard extension used: nameless struct/union
           Conhost code uses a lot of nameless structs/unions.
         C4312: 'type cast': conversion from 'A' to 'B' of greater size
           Conhost code converts DWORDs to HANDLEs for instance.
         C4467: usage of ATL attributes is deprecated
           Conhost code still uses ATL.
+        C26445: Do not assign gsl::span or std::string_view to a reference. They are cheap to construct and are not owners of the underlying data. (gsl.view).
+          Even for MSVC v19.32 this is actually far from true. Copying (as opposed to referencing) larger
+          than register-sized structures is fairly expensive. Example: https://godbolt.org/z/oPco88PaP
+        C26813: Use 'bitwise and' to check if a flag is set.
+          The MSVC v19.31 toolset has a bug where a pointer to an enum is incorrectly flagged with C26813.
+          It's supposed to be fixed with VS 17.2.1 and 17.3.0 and later respectively.
       -->
-      <DisableSpecificWarnings>4103;4201;4312;4467;5105;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4201;4312;4467;5105;26445;26813;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <PreprocessorDefinitions>_WINDOWS;EXTERNAL_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
@@ -118,8 +121,7 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <ConformanceMode>true</ConformanceMode>
       <UseStandardPreprocessor>true</UseStandardPreprocessor>
-      <LanguageStandard Condition="$(MSBuildVersion) &lt; '17.0.0'">stdcpp17</LanguageStandard>
-      <LanguageStandard Condition="$(MSBuildVersion) &gt;= '17.0.0'">stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <AdditionalOptions>%(AdditionalOptions) /utf-8 /Zc:externConstexpr /Zc:lambda /Zc:throwingNew</AdditionalOptions>
       <ControlFlowGuard>Guard</ControlFlowGuard>

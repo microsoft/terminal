@@ -659,7 +659,7 @@ loading until that generator is complete.
 However, if the user disables that generator entirely, we'll never display that
 profile to the user, even if they've done that setup before.
 
-So the trade-off with this design is that non-existent dynamic profiles will
+So the trade-off with this design is that nonexistent dynamic profiles will
 never roam to machines where they don't exist and aren't valid, but the
 generators _must_ be enabled to use the dynamic profiles.
 

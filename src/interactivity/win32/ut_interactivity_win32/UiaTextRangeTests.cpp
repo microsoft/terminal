@@ -1511,7 +1511,7 @@ class UiaTextRangeTests
             { L"ViewportHeight From Bottom", bufferSize.bottom - viewportSize.Height() - 1 },
             { L"ViewportHeight From Bottom + 1", bufferSize.bottom - viewportSize.Height() + 1 },
 
-            // GH#7839: ExclusiveEnd is a non-existent space,
+            // GH#7839: ExclusiveEnd is a nonexistent space,
             // so scrolling to it when !alignToTop used to crash
             { L"Exclusive End", bufferSize.bottom }
         };

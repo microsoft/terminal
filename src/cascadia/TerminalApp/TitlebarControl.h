@@ -31,6 +31,8 @@ namespace winrt::TerminalApp::implementation
     private:
         void _OnMaximizeOrRestore(byte flag);
         HWND _window{ nullptr }; // non-owning handle; should not be freed in the dtor.
+
+        void _backgroundChanged(winrt::Windows::UI::Xaml::Media::Brush brush);
     };
 }
 

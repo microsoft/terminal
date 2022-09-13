@@ -39,9 +39,6 @@
     <ProjectReference Include="$(SolutionDir)src\renderer\dx\lib\dx.vcxproj">
       <Project>{48d21369-3d7b-4431-9967-24e81292cf62}</Project>
     </ProjectReference>
-    <ProjectReference Include="$(SolutionDir)src\api-ms-win-core-synch-l1-2-0\api-ms-win-core-synch-l1-2-0.vcxproj">
-      <Project>{9CF74355-F018-4C19-81AD-9DC6B7F2C6F5}</Project>
-    </ProjectReference>
   </ItemGroup>
   <ItemDefinitionGroup>
     <ClCompile>

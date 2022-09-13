@@ -19,6 +19,12 @@ class Settings;
 
 namespace Microsoft::Console::Interactivity
 {
+    struct IconInfo
+    {
+        std::wstring path;
+        int index = 0;
+    };
+
     class ISystemConfigurationProvider
     {
     public:
@@ -36,6 +42,7 @@ namespace Microsoft::Console::Interactivity
                                          _Inout_updates_bytes_(*pdwTitleLength) LPWSTR pwszTitle,
                                          _Inout_ PDWORD pdwTitleLength,
                                          _In_ PCWSTR pwszCurrDir,
-                                         _In_ PCWSTR pwszAppName) = 0;
+                                         _In_ PCWSTR pwszAppName,
+                                         _Inout_opt_ IconInfo* iconInfo) = 0;
     };
 }
