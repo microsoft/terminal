@@ -1901,7 +1901,7 @@ std::wstring TextBuffer::GetPlainText(const til::point& start, const til::point&
     for (; it && spanLength > 0; ++it, --spanLength)
     {
         const auto& cell = *it;
-        if (!cell.DbcsAttr().IsTrailing())
+        if (cell.DbcsAttr() != DbcsAttribute::Trailing)
         {
             const auto chars = cell.Chars();
             text.append(chars);

@@ -107,18 +107,41 @@ private:
 
     // These fields are a bit "wasteful", but it makes all this a bit more robust against
     // programming errors during initial development (which is when this comment was written).
-    // * _charsHeap as unique_ptr
-    //   It can be stored in _chars and delete[] manually called if `_chars != _charsBuffer`
-    // * _chars as std::span
-    //   The size may never exceed an uint16_t anyways
-    // * _charOffsets as std::span
-    //   The length is already stored in _columns
+    // * _chars and _charsHeap are redundant
+    //   If _charsHeap is stored in _chars, we can still infer that
+    //   _chars was allocated on the heap if _chars != _charsBuffer.
+    // * _chars doesn't need a size_t size()
+    //   The size may never exceed an uint16_t anyways.
+    // * _charOffsets doesn't need a size() at all
+    //   The length is already stored in _columns.
+
+    // Most text uses only a single wchar_t per codepoint / grapheme cluster.
+    // That's why TextBuffer allocates a large blob of virtual memory which we can use as
+    // a simplified chars buffer, without having to allocate any additional heap memory.
+    // _charsBuffer fits _columnCount characters at most.
     wchar_t* _charsBuffer = nullptr;
+    // ...but if this ROW needs to store more than _columnCount characters
+    // then it will allocate a larger string on the heap and store it here.
+    // The capacity of this string on the heap is stored in _chars.size().
     std::unique_ptr<wchar_t[]> _charsHeap;
+    // _chars either refers to our _charsBuffer or _charsHeap, defaulting to the former.
+    // _chars.size() is NOT the length of the string, but rather its capacity.
+    // _charOffsets[_columnCount] stores the length.
     std::span<wchar_t> _chars;
+    // _charOffsets accelerates indexing into the above _chars string given a terminal column,
+    // by storing the character index/offset at which a column's text in _chars starts.
+    // It stores 1 more item than this row is wide, allowing it to store the
+    // past-the-end offset, which is thus equal to the length of the string.
+    // For instance given a 4 column ROW containing "abcd" it would store 01234.
+    // Given "a\u732Bd" ("\u732B" is a wide glyph) it would store 01123.
+    // Given "a\uD83D\uDE00d" ("\uD83D\uDE00" is an Emoji) it would store 01134.
     std::span<uint16_t> _charOffsets;
+    // _attr is a run-length-encoded vector of TextAttribute with a decompressed
+    // length equal to _columnCount (= 1 TextAttribute per column).
     til::small_rle<TextAttribute, uint16_t, 1> _attr;
+    // The width of the row in visual columns.
     uint16_t _columnCount = 0;
+    // Stores double-width/height (DECSWL/DECDWL/DECDHL) attributes.
     LineRendition _lineRendition = LineRendition::SingleWidth;
     // Occurs when the user runs out of text in a given row and we're forced to wrap the cursor to the next line
     bool _wrapForced = false;
