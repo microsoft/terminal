@@ -357,4 +357,15 @@ class SmallVectorTests
         VERIFY_ARE_EQUAL(v1, v1);
         VERIFY_ARE_NOT_EQUAL(v0, v1);
     }
+
+    TEST_METHOD(InsertTrivialType)
+    {
+        til::small_vector<int, 5> actual{ { 0, 1, 2, 4 } };
+        actual.insert(actual.end() - 1, 3, 3);
+        actual.insert(actual.end(), 2, 5);
+        actual.insert(actual.begin(), 2, -1);
+
+        til::small_vector<int, 5> expected{ { -1, -1, 0, 1, 2, 3, 3, 3, 4, 5, 5 } };
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
 };

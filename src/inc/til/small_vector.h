@@ -338,7 +338,7 @@ namespace til
             insert(end(), count, value);
         }
 
-        template<typename InputIt>
+        template<std::input_iterator InputIt>
         small_vector(InputIt first, InputIt last) :
             small_vector{}
         {
@@ -651,7 +651,7 @@ namespace til
         // NOTE: If the copy constructor throws, the range [pos, end()) is erased.
         iterator insert(const_iterator pos, const T& value)
         {
-            return _generic_insert(pos, 1, [&](auto&& it) {
+            return _generic_insert(pos, 1, [&](auto&& it) noexcept(std::is_nothrow_copy_constructible_v<T>) {
                 std::construct_at(&*it, value);
             });
         }
@@ -659,7 +659,9 @@ namespace til
         // NOTE: If the move constructor throws, the range [pos, end()) is erased.
         iterator insert(const_iterator pos, T&& value)
         {
-            return _generic_insert(pos, 1, [&](auto&& it) {
+            // The earlier static_assert(std::is_nothrow_move_constructible_v<T>)
+            // ensures that this lambda is noexcept.
+            return _generic_insert(pos, 1, [&](auto&& it) noexcept {
                 std::construct_at(&*it, std::move(value));
             });
         }
@@ -667,7 +669,7 @@ namespace til
         // NOTE: If the copy constructor throws, the range [pos, end()) is erased.
         iterator insert(const_iterator pos, size_type count, const T& value)
         {
-            return _generic_insert(pos, count, [&](auto&& it) {
+            return _generic_insert(pos, count, [&](auto&& it) noexcept(std::is_nothrow_copy_constructible_v<T>) {
                 std::uninitialized_fill_n(it, count, value);
             });
         }
@@ -676,7 +678,7 @@ namespace til
         template<std::input_iterator InputIt>
         iterator insert(const_iterator pos, InputIt first, InputIt last)
         {
-            return _generic_insert(pos, std::distance(first, last), [&](auto&& it) {
+            return _generic_insert(pos, std::distance(first, last), [&](auto&& it) noexcept(std::is_nothrow_constructible_v<T, decltype(*first)>) {
                 std::uninitialized_copy(first, last, it);
             });
         }
@@ -766,7 +768,9 @@ namespace til
             return new_size;
         }
 
-        void _grow(size_type min_cap)
+        // What use is a small_vector when you need it to heap allocate often?
+        // --> _grow() is noinline because we expect this to be called in slow paths only.
+        __declspec(noinline) void _grow(size_type min_cap)
         {
             const auto new_cap = std::max(min_cap, _capacity + _capacity / 2);
             // Protect against overflow in the multiplication in _allocate.
@@ -791,8 +795,7 @@ namespace til
             _capacity = new_cap;
         }
 
-        template<typename F>
-        void _generic_resize(size_type new_size, F&& func)
+        void _generic_resize(size_type new_size, auto&& func)
         {
             if (new_size < _size)
             {
@@ -807,51 +810,69 @@ namespace til
             _size = new_size;
         }
 
-        template<typename F>
-        iterator _generic_insert(const_iterator pos, size_type count, F&& func)
+        iterator _generic_insert(const_iterator pos, size_type count, auto&& func)
         {
             const auto offset = pos - cbegin();
-            const auto moveable = _size - offset;
-            const auto displacement = std::min(count, moveable);
+            const auto old_size = _size;
             const auto new_size = _ensure_fits(count);
+            const auto moveable = old_size - offset;
 
-            // The earlier static_assert(std::is_nothrow_move_assignable_v<T>)
-            // ensures that we don't exit in a weird state with invalid `_size`.
-
-            // 1. We've resized the vector to fit an additional `count` items.
-            //    Initialize the `count` items at the end by moving existing items over.
-            //
-            // This line is noexcept:
-            // It can't throw because of the earlier static_assert(std::is_nothrow_move_assignable_v<T>).
-            std::uninitialized_move(end() - displacement, end(), _uninitialized_begin() + (new_size - displacement));
-            _size = new_size;
-
-            // 2. Now that all `new_size` items are initialized we can move as many
-            //    items towards the end as we need to make space for `count` items.
-            //
-            // This line is noexcept:
-            // It can't throw because of the earlier static_assert(std::is_nothrow_move_assignable_v<T>).
-            const auto displacement_beg = begin() + offset;
-            const auto displacement_end = displacement_beg + displacement;
-            std::move_backward(displacement_beg, displacement_beg + (moveable - displacement), end() - displacement);
-
-            // 3. Destroy the displaced existing items, so that we can use
-            //    std::uninitialized_*/std::construct_* functions inside `func`.
-            //    This isn't optimal, but better than nothing.
-            std::destroy(displacement_beg, displacement_end);
-
-            try
+            // An optimization for the most common vector type which is trivially constructible, destructible and copyable.
+            // This allows us to drop exception handlers (= no need to push onto the stack) and replace two moves with just one.
+            if constexpr (noexcept(func(begin())) && std::is_trivially_destructible_v<T> && std::is_trivially_copyable_v<T>)
             {
-                func(displacement_beg);
-            }
-            catch (...)
-            {
-                std::destroy(displacement_end, end());
-                _size = offset;
-                throw;
-            }
+                _size = new_size;
 
-            return displacement_beg;
+                // Make space for `count` uninitialized items, to be filled by `func`.
+                const auto it = begin() + offset;
+                const auto dest = it + count;
+                memmove(dest._Unwrapped(), it._Unwrapped(), moveable * sizeof(T));
+
+                func(it);
+                return it;
+            }
+            else
+            {
+                // The earlier static_assert(std::is_nothrow_move_assignable_v<T>)
+                // ensures that we don't exit in a weird state with invalid `_size`.
+
+                // 1. We've resized the vector to fit an additional `count` items.
+                //    Initialize the `count` items at the end by moving existing items over.
+                //
+                // This line is noexcept:
+                // It can't throw because of the earlier static_assert(std::is_nothrow_move_assignable_v<T>).
+                const auto displacement = std::min(count, moveable);
+                std::uninitialized_move(end() - displacement, end(), _uninitialized_begin() + (new_size - displacement));
+                _size = new_size;
+
+                // 2. Now that all `new_size` items are initialized we can move as many
+                //    items towards the end as we need to make space for `count` items.
+                //
+                // This line is noexcept:
+                // It can't throw because of the earlier static_assert(std::is_nothrow_move_assignable_v<T>).
+                const auto displacement_beg = begin() + offset;
+                const auto displacement_end = displacement_beg + displacement;
+                std::move_backward(displacement_beg, displacement_beg + (moveable - displacement), end() - displacement);
+
+                // 3. Destroy the displaced existing items, so that we can use
+                //    std::uninitialized_*/std::construct_* functions inside `func`.
+                //    This isn't optimal, but better than nothing.
+                std::destroy(displacement_beg, displacement_end);
+
+                try
+                {
+                    func(displacement_beg);
+                }
+                catch (...)
+                {
+                    std::move(displacement_beg + count, end(), displacement_beg);
+                    std::destroy(displacement_end, end());
+                    _size = old_size;
+                    throw;
+                }
+
+                return displacement_beg;
+            }
         }
 
         T* _data;

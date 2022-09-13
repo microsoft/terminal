@@ -106,12 +106,22 @@
     </Type>
 
     <Type Name="til::small_vector&lt;*&gt;">
+        <DisplayString>{{ size={_size} }}</DisplayString>
         <Expand>
-            <Item Name="[size]">_size</Item>
+            <Item Name="[capacity]" ExcludeView="simple">_capacity</Item>
+            <Item Name="[allocator]" ExcludeView="simple">_data</Item>
             <ArrayItems>
                 <Size>_size</Size>
                 <ValuePointer>_data</ValuePointer>
             </ArrayItems>
+        </Expand>
+    </Type>
+
+    <Type Name="til::small_vector_iterator&lt;*&gt;">
+        <AlternativeType Name="til::small_vector_const_iterator&lt;*&gt;" />
+        <SmartPointer Usage="Indexable">_ptr,na</SmartPointer>
+        <Expand>
+            <Item Name="[ptr]">_ptr</Item>
         </Expand>
     </Type>
 </AutoVisualizer>
