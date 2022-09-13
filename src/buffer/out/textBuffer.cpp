@@ -1128,7 +1128,7 @@ til::point TextBuffer::GetWordStart(const til::point target, const std::wstring_
         // that it actually points to a space in the buffer
         copy = bufferSize.BottomRightInclusive();
     }
-    else if (target >= limit)
+    else if (bufferSize.CompareInBounds(target, limit, true) >= 0)
     {
         // if at/past the limit --> clamp to limit
         copy = limitOptional.value_or(bufferSize.BottomRightInclusive());
@@ -1244,7 +1244,7 @@ til::point TextBuffer::GetWordEnd(const til::point target, const std::wstring_vi
     // Already at/past the limit. Can't move forward.
     const auto bufferSize{ GetSize() };
     const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
-    if (target >= limit)
+    if (bufferSize.CompareInBounds(target, limit, true) >= 0)
     {
         return target;
     }
@@ -1272,7 +1272,7 @@ til::point TextBuffer::_GetWordEndForAccessibility(const til::point target, cons
     const auto bufferSize{ GetSize() };
     auto result{ target };
 
-    if (target >= limit)
+    if (bufferSize.CompareInBounds(target, limit, true) >= 0)
     {
         // if we're already on/past the last RegularChar,
         // clamp result to that position
@@ -1409,7 +1409,7 @@ bool TextBuffer::MoveToNextWord(til::point& pos, const std::wstring_view wordDel
     const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
     const auto copy{ _GetWordEndForAccessibility(pos, wordDelimiters, limit) };
 
-    if (copy >= limit)
+    if (bufferSize.CompareInBounds(copy, limit, true) >= 0)
     {
         return false;
     }
@@ -1456,7 +1456,7 @@ til::point TextBuffer::GetGlyphStart(const til::point pos, std::optional<til::po
     const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
 
     // Clamp pos to limit
-    if (resultPos > limit)
+    if (bufferSize.CompareInBounds(resultPos, limit, true) > 0)
     {
         resultPos = limit;
     }
@@ -1484,7 +1484,7 @@ til::point TextBuffer::GetGlyphEnd(const til::point pos, bool accessibilityMode,
     const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
 
     // Clamp pos to limit
-    if (resultPos > limit)
+    if (bufferSize.CompareInBounds(resultPos, limit, true) > 0)
     {
         resultPos = limit;
     }
@@ -1514,19 +1514,9 @@ til::point TextBuffer::GetGlyphEnd(const til::point pos, bool accessibilityMode,
 bool TextBuffer::MoveToNextGlyph(til::point& pos, bool allowExclusiveEnd, std::optional<til::point> limitOptional) const
 {
     const auto bufferSize = GetSize();
-    bool pastEndInclusive;
-    til::point limit;
-    {
-        // if the limit is past the end of the buffer,
-        // 1) clamp limit to end of buffer
-        // 2) set pastEndInclusive
-        const auto endInclusive{ bufferSize.BottomRightInclusive() };
-        const auto val = limitOptional.value_or(endInclusive);
-        pastEndInclusive = val > endInclusive;
-        limit = pastEndInclusive ? endInclusive : val;
-    }
+    const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
 
-    const auto distanceToLimit{ bufferSize.CompareInBounds(pos, limit) + (pastEndInclusive ? 1 : 0) };
+    const auto distanceToLimit{ bufferSize.CompareInBounds(pos, limit, true) };
     if (distanceToLimit >= 0)
     {
         // Corner Case: we're on/past the limit
@@ -1569,7 +1559,7 @@ bool TextBuffer::MoveToPreviousGlyph(til::point& pos, std::optional<til::point> 
     const auto bufferSize = GetSize();
     const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
 
-    if (pos > limit)
+    if (bufferSize.CompareInBounds(pos, limit, true) > 0)
     {
         // we're past the end
         // clamp us to the limit
@@ -1601,7 +1591,7 @@ bool TextBuffer::MoveToPreviousGlyph(til::point& pos, std::optional<til::point> 
 // - bufferCoordinates: when enabled, treat the coordinates as relative to
 //                      the buffer rather than the screen.
 // Return Value:
-// - the delimiter class for the given char
+// - One or more rects corresponding to the selection area
 const std::vector<til::inclusive_rect> TextBuffer::GetTextRects(til::point start, til::point end, bool blockSelection, bool bufferCoordinates) const
 {
     std::vector<til::inclusive_rect> textRects;
@@ -1611,7 +1601,7 @@ const std::vector<til::inclusive_rect> TextBuffer::GetTextRects(til::point start
     // (0,0) is the top-left of the screen
     // the physically "higher" coordinate is closer to the top-left
     // the physically "lower" coordinate is closer to the bottom-right
-    const auto [higherCoord, lowerCoord] = start <= end ?
+    const auto [higherCoord, lowerCoord] = bufferSize.CompareInBounds(start, end) <= 0 ?
                                                std::make_tuple(start, end) :
                                                std::make_tuple(end, start);
 
@@ -1648,6 +1638,69 @@ const std::vector<til::inclusive_rect> TextBuffer::GetTextRects(til::point start
     }
 
     return textRects;
+}
+
+// Method Description:
+// - Computes the span(s) for the given selection
+// - If not a blockSelection, returns a single span (start - end)
+// - Else if a blockSelection, returns spans corresponding to each line in the block selection
+// Arguments:
+// - start: beginning of the text region of interest (inclusive)
+// - end: the other end of the text region of interest (inclusive)
+// - blockSelection: when enabled, get spans for each line covered by the block
+// - bufferCoordinates: when enabled, treat the coordinates as relative to
+//                      the buffer rather than the screen.
+// Return Value:
+// - one or more sets of start-end coordinates, representing spans of text in the buffer
+std::vector<til::point_span> TextBuffer::GetTextSpans(til::point start, til::point end, bool blockSelection, bool bufferCoordinates) const
+{
+    std::vector<til::point_span> textSpans;
+    if (blockSelection)
+    {
+        // If blockSelection, this is effectively the same operation as GetTextRects, but
+        // expressed in til::point coordinates.
+        const auto rects = GetTextRects(start, end, /*blockSelection*/ true, bufferCoordinates);
+        textSpans.reserve(rects.size());
+
+        for (auto rect : rects)
+        {
+            const til::point first = { rect.Left, rect.Top };
+            const til::point second = { rect.Right, rect.Bottom };
+            textSpans.emplace_back(first, second);
+        }
+    }
+    else
+    {
+        const auto bufferSize = GetSize();
+
+        // (0,0) is the top-left of the screen
+        // the physically "higher" coordinate is closer to the top-left
+        // the physically "lower" coordinate is closer to the bottom-right
+        auto [higherCoord, lowerCoord] = start <= end ?
+                                             std::make_tuple(start, end) :
+                                             std::make_tuple(end, start);
+
+        textSpans.reserve(1);
+
+        // If we were passed screen coordinates, convert the given range into
+        // equivalent buffer offsets, taking line rendition into account.
+        if (!bufferCoordinates)
+        {
+            higherCoord = ScreenToBufferLine(higherCoord, GetLineRendition(higherCoord.Y));
+            lowerCoord = ScreenToBufferLine(lowerCoord, GetLineRendition(lowerCoord.Y));
+        }
+
+        til::inclusive_rect asRect = { higherCoord.X, higherCoord.Y, lowerCoord.X, lowerCoord.Y };
+        _ExpandTextRow(asRect);
+        higherCoord.X = asRect.Left;
+        higherCoord.Y = asRect.Top;
+        lowerCoord.X = asRect.Right;
+        lowerCoord.Y = asRect.Bottom;
+
+        textSpans.emplace_back(higherCoord, lowerCoord);
+    }
+
+    return textSpans;
 }
 
 // Method Description:
@@ -1764,9 +1817,8 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
                     }
                 }
             }
-#pragma warning(suppress : 26444)
-            // TODO GH 2675: figure out why there's custom construction/destruction happening here
-            it++;
+
+            ++it;
         }
 
         // We apply formatting to rows if the row was NOT wrapped or formatting of wrapped rows is allowed
@@ -1820,6 +1872,43 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
     }
 
     return data;
+}
+
+size_t TextBuffer::SpanLength(const til::point coordStart, const til::point coordEnd) const
+{
+    const auto bufferSize = GetSize();
+    // The coords are inclusive, so to get the (inclusive) length we add 1.
+    const auto length = bufferSize.CompareInBounds(coordEnd, coordStart) + 1;
+    return gsl::narrow<size_t>(length);
+}
+
+// Routine Description:
+// - Retrieves the plain text data between the specified coordinates.
+// Arguments:
+// - trimTrailingWhitespace - remove the trailing whitespace at the end of the result.
+// - start - where to start getting text (should be at or prior to "end")
+// - end - where to end getting text
+// Return Value:
+// - Just the text.
+std::wstring TextBuffer::GetPlainText(const til::point& start, const til::point& end) const
+{
+    std::wstring text;
+    auto spanLength = SpanLength(start, end);
+    text.reserve(spanLength);
+
+    auto it = GetCellDataAt(start);
+
+    for (; it && spanLength > 0; ++it, --spanLength)
+    {
+        const auto& cell = *it;
+        if (!cell.DbcsAttr().IsTrailing())
+        {
+            const auto chars = cell.Chars();
+            text.append(chars);
+        }
+    }
+
+    return text;
 }
 
 // Routine Description:

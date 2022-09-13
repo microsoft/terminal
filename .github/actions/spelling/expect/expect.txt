@@ -1,4 +1,5 @@
 ABANDONFONT
+ABCDEFGHIJKLMNOPQRSTUVWXY
 abgr
 abi
 ACCESSTOKEN
@@ -223,6 +224,7 @@ CFuzz
 cgscrn
 chafa
 changelist
+chaof
 charinfo
 charset
 CHARSETINFO
@@ -230,7 +232,6 @@ chcp
 checkbox
 checkboxes
 chh
-Childitem
 chk
 chrono
 CHT
@@ -495,6 +496,7 @@ DECALN
 DECANM
 DECAUPSS
 DECAWM
+DECBKM
 DECCKM
 DECCOLM
 DECCRA
@@ -667,6 +669,7 @@ ECH
 echokey
 ecount
 ECpp
+ect
 Edgium
 EDITKEYS
 EDITTEXT
@@ -700,6 +703,7 @@ ENUMLOGFONTEX
 enumranges
 envvar
 eol
+eplace
 EPres
 EQU
 ERASEBKGND
@@ -777,7 +781,6 @@ FIXEDCONVERTED
 FIXEDFILEINFO
 Flg
 flyout
-fmix
 fmodern
 fmtarg
 fmtid
@@ -994,6 +997,7 @@ HPR
 HProvider
 HREDRAW
 hresult
+hrottled
 HRSRC
 hscroll
 hsl
@@ -1028,6 +1032,7 @@ ICache
 icacls
 iccex
 IChar
+icket
 ico
 IComponent
 ICONERROR
@@ -1330,6 +1335,7 @@ LTLTLTLTL
 ltrim
 ltype
 LUID
+luma
 lval
 LVB
 LVERTICAL
@@ -2430,6 +2436,8 @@ uint
 uintptr
 ulcch
 ulong
+umul
+umulh
 Unadvise
 unattend
 uncomment
@@ -2734,6 +2742,9 @@ WUX
 WVerify
 WWith
 wxh
+wyhash
+wymix
+wyr
 xact
 xaml
 Xamlmeta
@@ -2755,6 +2766,9 @@ xes
 xff
 XFile
 XFORM
+xin
+xinchaof
+xinxinchaof
 XManifest
 XMath
 XMFLOAT
@@ -2796,6 +2810,7 @@ YSize
 YSubstantial
 YVIRTUALSCREEN
 YWalk
+Zabcdefghijklmnopqrstuvwxyz
 ZCmd
 ZCtrl
 zsh

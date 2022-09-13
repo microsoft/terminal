@@ -10,8 +10,8 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    RenderingViewModel::RenderingViewModel(Model::GlobalAppSettings globalSettings) :
-        _GlobalSettings{ globalSettings }
+    RenderingViewModel::RenderingViewModel(Model::CascadiaSettings settings) noexcept :
+        _settings{ std::move(settings) }
     {
     }
 }

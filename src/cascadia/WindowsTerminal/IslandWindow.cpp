@@ -881,10 +881,20 @@ void IslandWindow::SetAlwaysOnTop(const bool alwaysOnTop)
 // - <none>
 void IslandWindow::ShowWindowChanged(const bool showOrHide)
 {
-    const auto hwnd = GetHandle();
-    if (hwnd)
+    if (const auto hwnd = GetHandle())
     {
-        PostMessage(hwnd, WM_SYSCOMMAND, showOrHide ? SC_RESTORE : SC_MINIMIZE, 0);
+        // IMPORTANT!
+        //
+        // ONLY "restore" if already minimized. If the window is maximized or
+        // snapped, a restore will restore-down the window instead.
+        if (showOrHide == true && ::IsIconic(hwnd))
+        {
+            ::PostMessage(hwnd, WM_SYSCOMMAND, SC_RESTORE, 0);
+        }
+        else if (showOrHide == false)
+        {
+            ::PostMessage(hwnd, WM_SYSCOMMAND, SC_MINIMIZE, 0);
+        }
     }
 }
 
@@ -1253,7 +1263,6 @@ bool IslandWindow::RegisterHotKey(const int index, const winrt::Microsoft::Termi
     // TODO GH#8888: We should display a warning of some kind if this fails.
     // This can fail if something else already bound this hotkey.
     const auto result = ::RegisterHotKey(_window.get(), index, hotkeyFlags, vkey);
-    LOG_IF_WIN32_BOOL_FALSE(result);
 
     TraceLoggingWrite(g_hWindowsTerminalProvider,
                       "RegisterHotKey",

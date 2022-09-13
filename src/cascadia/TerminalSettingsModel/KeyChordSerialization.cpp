@@ -101,7 +101,7 @@ static int32_t parseNumericCode(const std::wstring_view& str, const std::wstring
         return 0;
     }
 
-    const auto value = til::from_wchars({ str.data() + prefix.size(), str.size() - prefix.size() - suffix.size() });
+    const auto value = til::to_ulong({ str.data() + prefix.size(), str.size() - prefix.size() - suffix.size() });
     if (value > 0 && value < 256)
     {
         return gsl::narrow_cast<int32_t>(value);

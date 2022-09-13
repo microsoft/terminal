@@ -349,6 +349,21 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL("wt.exe", commandlines.at(3).Args().at(0));
             VERIFY_ARE_EQUAL("baz", commandlines.at(3).Args().at(1));
         }
+        {
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"-p", L"u;", L"nt", L"-p", L"u" };
+
+            auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
+            VERIFY_ARE_EQUAL(2u, commandlines.size());
+            VERIFY_ARE_EQUAL(3u, commandlines.at(0).Argc());
+            VERIFY_ARE_EQUAL("wt.exe", commandlines.at(0).Args().at(0));
+            VERIFY_ARE_EQUAL("-p", commandlines.at(0).Args().at(1));
+            VERIFY_ARE_EQUAL("u", commandlines.at(0).Args().at(2));
+            VERIFY_ARE_EQUAL(4u, commandlines.at(1).Argc());
+            VERIFY_ARE_EQUAL("wt.exe", commandlines.at(1).Args().at(0));
+            VERIFY_ARE_EQUAL("nt", commandlines.at(1).Args().at(1));
+            VERIFY_ARE_EQUAL("-p", commandlines.at(1).Args().at(2));
+            VERIFY_ARE_EQUAL("u", commandlines.at(1).Args().at(3));
+        }
     }
 
     void CommandlineTest::TestEscapeDelimiters()
