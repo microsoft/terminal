@@ -939,7 +939,7 @@ void AtlasEngine::_recreateSizeDependentResources()
         // Initialize cellGlyphMapping with valid data (whitespace), so that it can be
         // safely used by the TileHashMap refresh logic via makeNewest() in StartPaint().
         {
-            u16x2* coords;
+            u16x2* coords{};
             AtlasKey key{ { .cellCount = 1 }, 1, L" " };
             AtlasValue value{ CellFlags::None, 1, &coords };
 
@@ -948,7 +948,7 @@ void AtlasEngine::_recreateSizeDependentResources()
             const auto it = _r.glyphs.insert(std::move(key), std::move(value));
             _r.glyphQueue.emplace_back(it);
 
-            std::ranges::fill(_r.cellGlyphMapping, it);
+            std::fill(_r.cellGlyphMapping.begin(), _r.cellGlyphMapping.end(), it);
         }
     }
 
