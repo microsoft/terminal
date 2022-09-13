@@ -670,6 +670,7 @@ namespace til
         iterator insert(const_iterator pos, size_type count, const T& value)
         {
             return _generic_insert(pos, count, [&](auto&& it) noexcept(std::is_nothrow_copy_constructible_v<T>) {
+#pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function '...' which may throw exceptions (f.6).
                 std::uninitialized_fill_n(it, count, value);
             });
         }
@@ -679,6 +680,7 @@ namespace til
         iterator insert(const_iterator pos, InputIt first, InputIt last)
         {
             return _generic_insert(pos, std::distance(first, last), [&](auto&& it) noexcept(std::is_nothrow_constructible_v<T, decltype(*first)>) {
+#pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function '...' which may throw exceptions (f.6).
                 std::uninitialized_copy(first, last, it);
             });
         }
