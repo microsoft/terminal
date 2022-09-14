@@ -3,7 +3,7 @@
 # - Common Project Configuration
 # -------------------------------------
 
-!include $(OSDEPENDSROOT)\OSS\gsl\3.1.0\consume.inc
+!include $(PROJECT_ROOT)\vcpkg\consume.inc
 
 # -------------------------------------
 # Preprocessor Settings
