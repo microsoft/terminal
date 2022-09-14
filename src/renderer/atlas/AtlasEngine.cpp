@@ -639,8 +639,6 @@ void AtlasEngine::_createResources()
     }
 #endif // NDEBUG
 
-    const auto featureLevel = _r.device->GetFeatureLevel();
-
     {
         wil::com_ptr<IDXGIAdapter1> dxgiAdapter;
         THROW_IF_FAILED(_r.device.query<IDXGIObject>()->GetParent(__uuidof(dxgiAdapter), dxgiAdapter.put_void()));
@@ -648,7 +646,23 @@ void AtlasEngine::_createResources()
 
         DXGI_ADAPTER_DESC1 desc;
         THROW_IF_FAILED(dxgiAdapter->GetDesc1(&desc));
-        _r.d2dMode = debugForceD2DMode || featureLevel < D3D_FEATURE_LEVEL_10_0 || WI_IsAnyFlagSet(desc.Flags, DXGI_ADAPTER_FLAG_REMOTE | DXGI_ADAPTER_FLAG_SOFTWARE);
+        _r.d2dMode = debugForceD2DMode || WI_IsAnyFlagSet(desc.Flags, DXGI_ADAPTER_FLAG_REMOTE | DXGI_ADAPTER_FLAG_SOFTWARE);
+    }
+
+    const auto featureLevel = _r.device->GetFeatureLevel();
+
+    if (featureLevel < D3D_FEATURE_LEVEL_10_0)
+    {
+        _r.d2dMode = true;
+    }
+    else if (featureLevel < D3D_FEATURE_LEVEL_11_0)
+    {
+        D3D11_FEATURE_DATA_D3D10_X_HARDWARE_OPTIONS options;
+        THROW_IF_FAILED(_r.device->CheckFeatureSupport(D3D11_FEATURE_D3D10_X_HARDWARE_OPTIONS, &options, sizeof(options)));
+        if (!options.ComputeShaders_Plus_RawAndStructuredBuffers_Via_Shader_4_x)
+        {
+            _r.d2dMode = true;
+        }
     }
 
     if (!_r.d2dMode)
