@@ -39,7 +39,7 @@ ConsoleWaitBlock::ConsoleWaitBlock(_In_ ConsoleWaitQueue* const pProcessQueue,
     // instead allocate them from small internal pools (if possible) and only heap
     // allocate (transparently) if necessary. The pointers flung to the corners of the
     // earth would be pointers (1) back into the API_MSG or (2) to a heap block owned
-    // by boost::small_vector.
+    // by til::small_vector.
     //
     // It took us months to realize that those bare pointers were being held by
     // COOKED_READ and RAW_READ and not actually being updated when the API message was
