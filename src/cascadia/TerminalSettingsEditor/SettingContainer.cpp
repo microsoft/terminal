@@ -233,6 +233,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (const auto& appearanceConfig{ settingOrigin.try_as<Model::AppearanceConfig>() })
         {
+            // TODO! this might be null
             const auto profile = appearanceConfig.SourceProfile();
             source = profile.Source();
             originTag = profile.Origin();

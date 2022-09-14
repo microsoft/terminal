@@ -13,6 +13,7 @@
 #include "WindowTheme.g.cpp"
 #include "TabRowTheme.g.cpp"
 #include "TabTheme.g.cpp"
+#include "ProfileTheme.g.cpp"
 #include "Theme.g.cpp"
 
 using namespace ::Microsoft::Console;
@@ -27,6 +28,7 @@ namespace winrt
 }
 
 static constexpr std::string_view NameKey{ "name" };
+static constexpr std::string_view ProfileKey{ "profile" };
 
 static constexpr wchar_t RegKeyDwm[] = L"Software\\Microsoft\\Windows\\DWM";
 static constexpr wchar_t RegKeyAccentColor[] = L"AccentColor";
@@ -268,6 +270,30 @@ THEME_OBJECT_CONVERTER(winrt::Microsoft::Terminal::Settings::Model, TabTheme, MT
 #undef THEME_SETTINGS_TO_JSON
 #undef THEME_OBJECT_CONVERTER
 
+template<>
+struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt::Microsoft::Terminal::Settings::Model::ProfileTheme>
+{
+    winrt::Microsoft::Terminal::Settings::Model::ProfileTheme FromJson(const Json::Value& /* json */)
+    {
+        return nullptr;
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        return json.isObject();
+    }
+
+    Json::Value ToJson(const winrt::Microsoft::Terminal::Settings::Model::ProfileTheme& val)
+    {
+        return val ? winrt::get_self<ProfileTheme>(val)->ToJson() : Json::Value::null;
+    }
+
+    std::string TypeDescription() const
+    {
+        return "ProfileTheme (You should never see this)";
+    }
+};
+
 Theme::Theme(const winrt::WUX::ElementTheme& requestedTheme) noexcept
 {
     auto window{ winrt::make_self<implementation::WindowTheme>() };
@@ -323,6 +349,22 @@ winrt::com_ptr<Theme> Theme::FromJson(const Json::Value& json)
 
     MTSM_THEME_SETTINGS(THEME_SETTINGS_LAYER_JSON)
 #undef THEME_SETTINGS_LAYER_JSON
+
+    if (json.isMember(JsonKey(ProfileKey)))
+    {
+        result->_Profile = *ProfileTheme::FromJson(json[JsonKey(ProfileKey)]);
+    }
+
+    return result;
+}
+
+winrt::com_ptr<ProfileTheme> ProfileTheme::FromJson(const Json::Value& json)
+{
+    auto result = winrt::make_self<ProfileTheme>();
+
+    result->_DefaultAppearance = winrt::make<AppearanceConfig>(nullptr);
+    auto defaultAppearanceImpl = winrt::get_self<implementation::AppearanceConfig>(result->_DefaultAppearance);
+    defaultAppearanceImpl->LayerJson(json);
 
     return result;
 }

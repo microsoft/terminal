@@ -8,6 +8,8 @@
 #include "TerminalSettings.g.cpp"
 #include "TerminalSettingsCreateResult.g.cpp"
 
+#include "AppearanceConfig.h"
+
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace Microsoft::Console::Utils;
 
@@ -57,7 +59,33 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         const auto globals = appSettings.GlobalSettings();
         settings->_ApplyProfileSettings(profile);
         settings->_ApplyGlobalSettings(globals);
-        settings->_ApplyAppearanceSettings(profile.DefaultAppearance(), globals.ColorSchemes());
+
+        bool appliedAppearance = false;
+        if (globals.CurrentTheme())
+        {
+            if (const auto& themeProfile{ globals.CurrentTheme().Profile() })
+            {
+                auto profileDefaultAppearance = profile.DefaultAppearance();
+
+                auto parentImpl = winrt::get_self<AppearanceConfig>(themeProfile.DefaultAppearance());
+                auto profileImpl = winrt::get_self<AppearanceConfig>(profile.DefaultAppearance());
+                winrt::com_ptr<AppearanceConfig> parentComPtr;
+                parentComPtr.copy_from(parentImpl);
+                // profileImpl.copy_from(profile.DefaultAppearance());
+
+                com_ptr<AppearanceConfig> profileCopyImpl = AppearanceConfig::CopyAppearance(profileImpl,
+                                                                                             winrt::make_weak<Profile>(profile));
+                profileCopyImpl->AddLeastImportantParent(parentComPtr);
+
+                settings->_ApplyAppearanceSettings(*profileCopyImpl, globals.ColorSchemes());
+
+                appliedAppearance = true;
+            }
+        }
+        if (!appliedAppearance)
+        {
+            settings->_ApplyAppearanceSettings(profile.DefaultAppearance(), globals.ColorSchemes());
+        }
 
         return settings;
     }

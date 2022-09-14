@@ -22,7 +22,9 @@ Author(s):
 #include "WindowTheme.g.h"
 #include "TabRowTheme.g.h"
 #include "TabTheme.g.h"
+#include "ProfileTheme.g.h"
 #include "Theme.g.h"
+#include "AppearanceConfig.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -60,6 +62,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     THEME_OBJECT(WindowTheme, MTSM_THEME_WINDOW_SETTINGS);
     THEME_OBJECT(TabRowTheme, MTSM_THEME_TABROW_SETTINGS);
     THEME_OBJECT(TabTheme, MTSM_THEME_TAB_SETTINGS);
+
+    struct ProfileTheme : ProfileThemeT<ProfileTheme>
+    {
+        winrt::com_ptr<ProfileTheme> Copy() { return nullptr; };
+        Json::Value ToJson() { return Json::Value::null; };
+        static winrt::com_ptr<ProfileTheme> FromJson(const Json::Value& json);
+        WINRT_PROPERTY(Model::IAppearanceConfig, DefaultAppearance, nullptr);
+    };
 
     struct Theme : ThemeT<Theme>
     {

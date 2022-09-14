@@ -1,6 +1,10 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "IAppearanceConfig.idl";
+import "FontConfig.idl";
+#include "IInheritable.idl.h"
+
 namespace Microsoft.Terminal.Settings.Model
 {
 
@@ -50,6 +54,10 @@ namespace Microsoft.Terminal.Settings.Model
         TabCloseButtonVisibility ShowCloseButton { get; };
     }
 
+    runtimeclass ProfileTheme {
+        IAppearanceConfig DefaultAppearance { get; };
+    }
+
     [default_interface] runtimeclass Theme : Windows.Foundation.IStringable {
         Theme();
         Theme(Windows.UI.Xaml.ElementTheme requestedTheme);
@@ -64,6 +72,9 @@ namespace Microsoft.Terminal.Settings.Model
 
         // tab.* Namespace
         TabTheme Tab { get; };
+
+        // profile.* Namespace
+        ProfileTheme Profile { get; };
 
         // A helper for retrieving the RequestedTheme out of the window property
         Windows.UI.Xaml.ElementTheme RequestedTheme { get; };
