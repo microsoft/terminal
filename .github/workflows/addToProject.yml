@@ -4,7 +4,7 @@ name: Add triaged bugs & tasks to project board
 on:
   issues:
     types:
-      - [labeled, unlabeled]
+      - labeled
 
 jobs:
   add-to-project:
