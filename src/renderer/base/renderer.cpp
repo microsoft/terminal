@@ -75,29 +75,25 @@ Renderer::~Renderer()
             }
 
             const auto hr = _PaintFrameForEngine(pEngine);
-            if (E_PENDING == hr)
-            {
-                if (--tries == 0)
-                {
-                    // Stop trying.
-                    _pThread->DisablePainting();
-                    if (_pfnRendererEnteredErrorState)
-                    {
-                        _pfnRendererEnteredErrorState();
-                    }
-                    // If there's no callback, we still don't want to FAIL_FAST: the renderer going black
-                    // isn't near as bad as the entire application aborting. We're a component. We shouldn't
-                    // abort applications that host us.
-                    return S_FALSE;
-                }
+            LOG_HR_IF(hr, FAILED(hr) && hr != E_PENDING);
 
-                // Add a bit of backoff.
-                // Sleep 150ms, 300ms, 450ms before failing out and disabling the renderer.
-                Sleep(renderBackoffBaseTimeMilliseconds * (maxRetriesForRenderEngine - tries));
-                continue;
+            if (--tries == 0)
+            {
+                // Stop trying.
+                _pThread->DisablePainting();
+                if (_pfnRendererEnteredErrorState)
+                {
+                    _pfnRendererEnteredErrorState();
+                }
+                // If there's no callback, we still don't want to FAIL_FAST: the renderer going black
+                // isn't near as bad as the entire application aborting. We're a component. We shouldn't
+                // abort applications that host us.
+                return S_FALSE;
             }
-            LOG_IF_FAILED(hr);
-            break;
+
+            // Add a bit of backoff.
+            // Sleep 150ms, 300ms, 450ms before failing out and disabling the renderer.
+            Sleep(renderBackoffBaseTimeMilliseconds * (maxRetriesForRenderEngine - tries));
         }
     }
 
