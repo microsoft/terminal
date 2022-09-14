@@ -681,11 +681,23 @@ void AtlasEngine::_createResources()
                 break;
             }
 
-            static constexpr auto flags = D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR | D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_WARNINGS_ARE_ERRORS
+            static constexpr auto flags =
+                    D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR
 #ifdef NDEBUG
-                                          | D3DCOMPILE_OPTIMIZATION_LEVEL3;
+                    | D3DCOMPILE_OPTIMIZATION_LEVEL3
+                    ;
 #else
-                                          | D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+                    // Only enable strictness and warnings in DEBUG mode
+                    //  as these settings makes it very difficult to develop
+                    //  shaders as windows terminal is not telling the user
+                    //  what's wrong, windows terminal just fails.
+                    //  Keep it in DEBUG mode to catch errors in shaders
+                    //  shipped with windows terminal
+                    | D3DCOMPILE_ENABLE_STRICTNESS
+                    | D3DCOMPILE_WARNINGS_ARE_ERRORS
+                    | D3DCOMPILE_DEBUG
+                    | D3DCOMPILE_SKIP_OPTIMIZATION
+                    ;
 #endif
 
             wil::com_ptr<ID3DBlob> error;
