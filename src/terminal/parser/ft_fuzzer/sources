@@ -45,6 +45,7 @@ C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE
 # Compiler Settings
 # -------------------------------------
 
+USE_STD_CPP20           = 1
 MSC_WARNING_LEVEL       = /W4 /WX
 
 # -------------------------------------

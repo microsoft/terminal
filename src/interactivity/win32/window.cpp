@@ -350,8 +350,8 @@ void Window::_UpdateSystemMetrics() const
                 status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pAtlasEngine->SetHwnd(hWnd))));
             }
             else
-            {
 #endif
+            {
                 status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pGdiEngine->SetHwnd(hWnd))));
             }
 
