@@ -14,10 +14,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         LaunchViewModel(Model::CascadiaSettings settings);
 
+        winrt::hstring LaunchParameters();
         double InitialPosX();
         double InitialPosY();
         void InitialPosX(double xCoord);
         void InitialPosY(double yCoord);
+        void UseDefaultLaunchPosition(bool useDefaultPosition);
+        bool UseDefaultLaunchPosition();
 
         IInspectable CurrentDefaultProfile();
         void CurrentDefaultProfile(const IInspectable& value);
@@ -38,6 +41,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         Model::CascadiaSettings _Settings;
+        bool _useDefaultLaunchPosition;
     };
 };
 

@@ -328,7 +328,7 @@
     <comment>Name for a control to choose the X coordinate of the terminal's starting position.</comment>
   </data>
   <data name="Globals_InitialPosXBox.PlaceholderText" xml:space="preserve">
-    <value>Undefined</value>
+    <value>X</value>
     <comment>The string to be displayed when there is no current value in this number box.</comment>
   </data>
   <data name="Globals_InitialPosYBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -336,8 +336,16 @@
     <comment>Name for a control to choose the Y coordinate of the terminal's starting position.</comment>
   </data>
   <data name="Globals_InitialPosYBox.PlaceholderText" xml:space="preserve">
-    <value>Undefined</value>
+    <value>Y</value>
     <comment>The string to be displayed when there is no current value in this number box.</comment>
+  </data>
+  <data name="Globals_DefaultLaunchPositionCheckbox.Content" xml:space="preserve">
+    <value>Use system default</value>
+    <comment>A checkbox for the "launch position" setting. Toggling this control sets the launch position to the system default.</comment>
+  </data>
+  <data name="Globals_DefaultLaunchPositionCheckbox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>If enabled, use the system default launch position.</value>
+    <comment>A description for what the "default launch position" checkbox does. Presented near "Globals_DefaultLaunchPositionCheckbox".</comment>
   </data>
   <data name="Globals_FirstWindowPreference.Header" xml:space="preserve">
     <value>When Terminal starts</value>
@@ -354,11 +362,19 @@
     <value>Open windows from a previous session</value>
     <comment>An option to choose from for the "First window preference" setting. Reopen the layouts from the last session.</comment>
   </data>
-  <data name="Globals_LaunchMode.Header" xml:space="preserve">
+  <data name="Globals_LaunchParameters.Header" xml:space="preserve">
+    <value>Launch parameters</value>
+    <comment>Header for a set of settings that determine how terminal launches.</comment>
+  </data>
+  <data name="Globals_LaunchParameters.HelpText" xml:space="preserve">
+    <value>Settings that control how the terminal launches</value>
+    <comment>A description for what the "launch parameters" expander contains. Presented near "Globals_LaunchParameters.Header".</comment>
+  </data>
+  <data name="Globals_LaunchMode.Text" xml:space="preserve">
     <value>Launch mode</value>
     <comment>Header for a control to select what mode to launch the terminal in.</comment>
   </data>
-  <data name="Globals_LaunchMode.HelpText" xml:space="preserve">
+  <data name="Globals_LaunchMode.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>How the terminal will appear on launch. Focus will hide the tabs and title bar.</value>
     <comment>'Focus' must match &lt;Globals_LaunchModeFocus.Content&gt;.</comment>
   </data>
@@ -446,11 +462,11 @@
     <value>When enabled, this enables the launch of Terminal at machine startup.</value>
     <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin.Header".</comment>
   </data>
-  <data name="Globals_CenterOnLaunch.Header" xml:space="preserve">
+  <data name="Globals_CenterOnLaunch.Text" xml:space="preserve">
     <value>Center on launch</value>
     <comment>Header for a control to toggle whether the app should launch in the center of the screen, or not.</comment>
   </data>
-  <data name="Globals_CenterOnLaunch.HelpText" xml:space="preserve">
+  <data name="Globals_CenterOnLaunch.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>When enabled, the window will be placed in the center of the screen when launched.</value>
     <comment>A description for what the "center on launch" setting does. Presented near "Globals_CenterOnLaunch.Header".</comment>
   </data>
@@ -1182,11 +1198,11 @@
     <value>The number of rows and columns displayed in the window upon first load. Measured in characters.</value>
     <comment>A description for what the "rows" and "columns" settings do. Presented near "Globals_LaunchSize.Header".</comment>
   </data>
-  <data name="Globals_LaunchPosition.Header" xml:space="preserve">
+  <data name="Globals_LaunchPosition.Text" xml:space="preserve">
     <value>Launch position</value>
     <comment>Header for a group of settings that control the launch position of the app. Presented near "Globals_InitialPosX" and "Globals_InitialPosY".</comment>
   </data>
-  <data name="Globals_LaunchPosition.HelpText" xml:space="preserve">
+  <data name="Globals_LaunchPosition.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>The initial position of the terminal window upon startup. When launching as maximized, full screen, or with "Center on launch" enabled, this is used to target the monitor of interest.</value>
     <comment>A description for what the "X position" and "Y position" settings do. Presented near "Globals_LaunchPosition.Header".</comment>
   </data>

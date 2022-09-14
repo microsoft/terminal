@@ -11,8 +11,10 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         LaunchViewModel(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
 
+        String LaunchParameters { get; };
         Double InitialPosX;
         Double InitialPosY;
+        Boolean UseDefaultLaunchPosition;
 
         IInspectable CurrentDefaultProfile;
         IObservableVector<Microsoft.Terminal.Settings.Model.Profile> DefaultProfiles { get; };

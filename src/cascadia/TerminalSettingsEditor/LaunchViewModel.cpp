@@ -15,6 +15,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     LaunchViewModel::LaunchViewModel(Model::CascadiaSettings settings) :
         _Settings{ settings }
     {
+        _useDefaultLaunchPosition = isnan(InitialPosX()) && isnan(InitialPosY());
+
         INITIALIZE_BINDABLE_ENUM_SETTING(FirstWindowPreference, FirstWindowPreference, FirstWindowPreference, L"Globals_FirstWindowPreference", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(LaunchMode, LaunchMode, LaunchMode, L"Globals_LaunchMode", L"Content");
         // More options were added to the JSON mapper when the enum was made into [Flags]
@@ -23,6 +25,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _LaunchModeList.RemoveAt(6); // fullscreenFocus
         _LaunchModeList.RemoveAt(3); // maximizedFullscreen
         INITIALIZE_BINDABLE_ENUM_SETTING(WindowingBehavior, WindowingMode, WindowingMode, L"Globals_WindowingBehavior", L"Content");
+    }
+
+    winrt::hstring LaunchViewModel::LaunchParameters()
+    {
+        // todo: get all the current values and combine them into a string
+        return L"";
     }
 
     double LaunchViewModel::InitialPosX()
@@ -65,6 +73,24 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         const LaunchPosition newPos{ _Settings.GlobalSettings().InitialPosition().X, yCoordRef };
         _Settings.GlobalSettings().InitialPosition(newPos);
+    }
+
+    void LaunchViewModel::UseDefaultLaunchPosition(bool useDefaultPosition)
+    {
+        _useDefaultLaunchPosition = useDefaultPosition;
+        if (useDefaultPosition)
+        {
+            InitialPosX(NAN);
+            InitialPosY(NAN);
+            _NotifyChanges(L"InitialPosX");
+            _NotifyChanges(L"InitialPosY");
+        }
+        _NotifyChanges(L"UseDefaultLaunchPosition");
+    }
+
+    bool LaunchViewModel::UseDefaultLaunchPosition()
+    {
+        return _useDefaultLaunchPosition;
     }
 
     winrt::Windows::Foundation::IInspectable LaunchViewModel::CurrentDefaultProfile()
