@@ -52,6 +52,7 @@ static constexpr std::string_view SwitchToTabKey{ "switchToTab" };
 static constexpr std::string_view TabSearchKey{ "tabSearch" };
 static constexpr std::string_view ToggleAlwaysOnTopKey{ "toggleAlwaysOnTop" };
 static constexpr std::string_view ToggleCommandPaletteKey{ "commandPalette" };
+static constexpr std::string_view ToggleTaskViewKey{ "tasks" };
 static constexpr std::string_view ToggleFocusModeKey{ "toggleFocusMode" };
 static constexpr std::string_view SetFocusModeKey{ "setFocusMode" };
 static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
@@ -375,6 +376,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::TabSearch, RS_(L"TabSearchCommandKey") },
                 { ShortcutAction::ToggleAlwaysOnTop, RS_(L"ToggleAlwaysOnTopCommandKey") },
                 { ShortcutAction::ToggleCommandPalette, L"" },
+                { ShortcutAction::ToggleTaskView, L"TODO! Task View" },
                 { ShortcutAction::ToggleFocusMode, RS_(L"ToggleFocusModeCommandKey") },
                 { ShortcutAction::SetFocusMode, L"" },
                 { ShortcutAction::ToggleFullscreen, RS_(L"ToggleFullscreenCommandKey") },

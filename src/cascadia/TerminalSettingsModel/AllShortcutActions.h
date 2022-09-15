@@ -71,6 +71,7 @@
     ON_ALL_ACTIONS(OpenTabRenamer)          \
     ON_ALL_ACTIONS(ExecuteCommandline)      \
     ON_ALL_ACTIONS(ToggleCommandPalette)    \
+    ON_ALL_ACTIONS(ToggleTaskView)          \
     ON_ALL_ACTIONS(CloseOtherTabs)          \
     ON_ALL_ACTIONS(CloseTabsAfter)          \
     ON_ALL_ACTIONS(TabSearch)               \
