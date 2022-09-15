@@ -72,7 +72,7 @@ class ConptyOutputTests
         gci.SetFillAttribute(0x07); // DARK_WHITE on DARK_BLACK
         gci.CalculateDefaultColorIndices();
 
-        g.pRender = new Renderer(gci.GetRenderSettings(), &gci.renderData, nullptr, 0, nullptr);
+        g.pRender = new Renderer(gci.GetRenderSettings(), &gci.renderData, nullptr, 0, std::make_unique<RenderThread>());
 
         m_state->PrepareNewTextBufferInfo(true, TerminalViewWidth, TerminalViewHeight);
         auto& currentBuffer = gci.GetActiveOutputBuffer();
