@@ -4303,7 +4303,7 @@ namespace winrt::TerminalApp::implementation
                                               const IInspectable& /*eventArgs*/)
     {
         auto prompt = SuggestionTextBox().Text();
-
+        prompt;
         // TODO! get the buffer history. An idea might be to take just the lines
         // that have prompt marks on them. That might be an easy way to fake
         // shell integration, at least for the prototype. That would probably
@@ -4311,7 +4311,20 @@ namespace winrt::TerminalApp::implementation
 
         // TODO! Take the prompt and the buffer history and plumb it into the suggestion provider. How?
 
-        SuggestionResults().Text(prompt);
+        auto control{ _GetActiveControl() };
+        if (!control)
+        {
+            // args.Handled(false);
+            return;
+        }
+
+        const auto buffer = control.ReadPromptLines();
+        buffer;
+
+        SuggestionResults().Text(buffer);
+
+        // An idea: export the text to a temp file, then run a command like `get-suggestions.py temp.txt` and read that output.
+        // CascadiaSettings::ExportFile(tempPath, buffer);
     }
 
     void TerminalPage::_SuggestionKeyDown(const IInspectable& /*sender*/,

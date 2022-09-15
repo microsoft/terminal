@@ -1797,6 +1797,36 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return hstring(ss.str());
     }
 
+    hstring ControlCore::ReadPromptLines() const
+    {
+        auto terminalLock = _terminal->LockForWriting();
+
+        const auto& textBuffer = _terminal->GetTextBuffer();
+
+        std::wstringstream ss;
+
+        // const auto lastRow = textBuffer.GetLastNonSpaceCharacter().Y;
+        for (const auto& mark : _terminal->GetScrollMarks())
+        {
+            const auto line = mark.start.y;
+            const auto& row = textBuffer.GetRowByOffset(line);
+            auto rowText = row.GetText();
+            const auto strEnd = rowText.find_last_not_of(UNICODE_SPACE);
+            if (strEnd != std::string::npos)
+            {
+                rowText.erase(strEnd + 1);
+                ss << rowText;
+            }
+
+            if (!row.WasWrapForced())
+            {
+                ss << UNICODE_CARRIAGERETURN << UNICODE_LINEFEED;
+            }
+        }
+
+        return hstring(ss.str());
+    }
+
     // Helper to check if we're on Windows 11 or not. This is used to check if
     // we need to use acrylic to achieve transparency, because vintage opacity
     // doesn't work in islands on win10.

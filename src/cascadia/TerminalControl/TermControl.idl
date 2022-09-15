@@ -84,6 +84,7 @@ namespace Microsoft.Terminal.Control
         void ToggleReadOnly();
 
         String ReadEntireBuffer();
+        String ReadPromptLines();
 
         void AdjustOpacity(Double Opacity, Boolean relative);
 

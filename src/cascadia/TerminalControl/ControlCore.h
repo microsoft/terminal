@@ -195,6 +195,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ToggleReadOnlyMode();
 
         hstring ReadEntireBuffer() const;
+        hstring ReadPromptLines() const;
 
         static bool IsVintageOpacityAvailable() noexcept;
 

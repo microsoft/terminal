@@ -3035,6 +3035,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         return _core.ReadEntireBuffer();
     }
+    hstring TermControl::ReadPromptLines() const
+    {
+        return _core.ReadPromptLines();
+    }
 
     Core::Scheme TermControl::ColorScheme() const noexcept
     {
