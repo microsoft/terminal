@@ -244,6 +244,23 @@
                          Text="{x:Bind WindowName, Mode=OneWay}" />
             </mux:TeachingTip.Content>
         </mux:TeachingTip>
+
+        <mux:TeachingTip x:Name="SuggestionTest"
+                         x:Uid="SuggestionTest"
+                         x:Load="False"
+                         ActionButtonClick="_SuggestionActionClick"
+                         ActionButtonStyle="{ThemeResource AccentButtonStyle}"
+                         IsLightDismissEnabled="False">
+            <mux:TeachingTip.Content>
+                <StackPanel Orientation="Vertical">
+                    <TextBox x:Name="SuggestionTextBox"
+                             KeyDown="_SuggestionKeyDown"
+                             KeyUp="_SuggestionKeyUp"
+                             Text="" />
+                    <TextBlock x:Name="SuggestionResults" />
+                </StackPanel>
+            </mux:TeachingTip.Content>
+        </mux:TeachingTip>
     </Grid>
 
 </Page>

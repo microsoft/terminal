@@ -746,4 +746,16 @@
     <value>Suggestions found: {0}</value>
     <comment>{0} will be replaced with a number.</comment>
   </data>
+  <data name="SuggestionTest.Title" xml:space="preserve">
+    <value>Get suggestions</value>
+  </data>
+  <data name="SuggestionTest.Subtitle" xml:space="preserve">
+    <value>Enter a prompt:</value>
+  </data>
+  <data name="SuggestionTest.ActionButtonContent" xml:space="preserve">
+    <value>Submit</value>
+  </data>
+  <data name="SuggestionTest.CloseButtonContent" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
 </root>

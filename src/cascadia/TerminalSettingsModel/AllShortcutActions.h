@@ -99,6 +99,7 @@
     ON_ALL_ACTIONS(MarkMode)                \
     ON_ALL_ACTIONS(ToggleBlockSelection)    \
     ON_ALL_ACTIONS(SwitchSelectionEndpoint) \
+    ON_ALL_ACTIONS(GetSuggestions)          \
     ON_ALL_ACTIONS(ColorSelection)          \
     ON_ALL_ACTIONS(ExpandSelectionToWord)   \
     ON_ALL_ACTIONS(CloseOtherPanes)

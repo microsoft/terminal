@@ -344,6 +344,7 @@
         { "command": "openSystemMenu", "keys": "alt+space" },
         { "command": "quit" },
         { "command": "restoreLastClosed"},
+        { "command": "getSuggestions"},
 
         // Tab Management
         // "command": "closeTab" is unbound by default.

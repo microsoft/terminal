@@ -4296,4 +4296,61 @@ namespace winrt::TerminalApp::implementation
         AutoCompleteMenu().Visibility(commandsCollection.Size() > 0 ? Visibility::Visible : Visibility::Collapsed);
     }
 
+//////////////////////////
+#pragma region SuggestionTeachingTip
+
+    void TerminalPage::_SuggestionActionClick(const IInspectable& /*sender*/,
+                                              const IInspectable& /*eventArgs*/)
+    {
+        auto prompt = SuggestionTextBox().Text();
+
+        // TODO! get the buffer history. An idea might be to take just the lines
+        // that have prompt marks on them. That might be an easy way to fake
+        // shell integration, at least for the prototype. That would probably
+        // require TermControl to expose that.
+
+        // TODO! Take the prompt and the buffer history and plumb it into the suggestion provider. How?
+
+        SuggestionResults().Text(prompt);
+    }
+
+    void TerminalPage::_SuggestionKeyDown(const IInspectable& /*sender*/,
+                                          const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& /*e*/)
+    {
+        // const auto key = e.OriginalKey();
+        // if (key == Windows::System::VirtualKey::Enter)
+        // {
+        //     _renamerPressedEnter = true;
+        // }
+    }
+
+    // Method Description:
+    // - Manually handle Enter and Escape for committing and dismissing a window
+    //   rename. This is highly similar to the TabHeaderControl's KeyUp handler.
+    // Arguments:
+    // - e: the KeyRoutedEventArgs describing the key that was released
+    // Return Value:
+    // - <none>
+    void TerminalPage::_SuggestionKeyUp(const IInspectable& /*sender*/,
+                                        const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
+    {
+        const auto key = e.OriginalKey();
+        /*if (key == Windows::System::VirtualKey::Enter && _renamerPressedEnter)
+        {
+            // User is done making changes, close the rename box
+            _WindowRenamerActionClick(sender, nullptr);
+        }
+        else */
+        if (key == Windows::System::VirtualKey::Escape)
+        {
+            // User wants to discard the changes they made
+            WindowRenamerTextBox().Text(WindowName());
+            WindowRenamer().IsOpen(false);
+            // _renamerPressedEnter = false;
+        }
+    }
+#pragma endregion
+
+    //////
+
 }

@@ -1227,6 +1227,7 @@ namespace winrt::TerminalApp::implementation
         AutoCompleteMenu().SetCommands(commandsCollection);
         AutoCompleteMenu().Visibility(commandsCollection.Size() > 0 ? Visibility::Visible : Visibility::Collapsed);
     }
+
     void TerminalPage::_HandleSaveTask(const IInspectable& /*sender*/,
                                        const ActionEventArgs& args)
     {
@@ -1249,5 +1250,24 @@ namespace winrt::TerminalApp::implementation
                 args.Handled(true);
             }
         }
+    }
+
+    void TerminalPage::_HandleGetSuggestions(const IInspectable& /*sender*/,
+                                             const ActionEventArgs& args)
+    {
+        if (SuggestionTest() == nullptr)
+        {
+            // We need to use FindName to lazy-load this object
+            if (auto tip{ FindName(L"SuggestionTest").try_as<MUX::Controls::TeachingTip>() })
+            {
+                tip.Closed({ get_weak(), &TerminalPage::_FocusActiveControl });
+            }
+        }
+        _UpdateTeachingTipTheme(SuggestionTest().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
+
+        SuggestionResults().Text(L"");
+        SuggestionTest().IsOpen(true);
+
+        args.Handled(true);
     }
 }
