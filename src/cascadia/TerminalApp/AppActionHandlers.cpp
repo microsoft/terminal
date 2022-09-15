@@ -1227,4 +1227,16 @@ namespace winrt::TerminalApp::implementation
         AutoCompleteMenu().SetCommands(commandsCollection);
         AutoCompleteMenu().Visibility(commandsCollection.Size() > 0 ? Visibility::Visible : Visibility::Collapsed);
     }
+    void TerminalPage::_HandleSaveTask(const IInspectable& /*sender*/,
+                                       const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<SaveTaskArgs>())
+            {
+                // ActionMap::RegisterKeyBinding(null, sendInput(...))
+                args.Handled(true);
+            }
+        }
+    }
 }

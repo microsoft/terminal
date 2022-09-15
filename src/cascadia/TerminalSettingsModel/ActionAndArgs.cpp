@@ -53,6 +53,7 @@ static constexpr std::string_view TabSearchKey{ "tabSearch" };
 static constexpr std::string_view ToggleAlwaysOnTopKey{ "toggleAlwaysOnTop" };
 static constexpr std::string_view ToggleCommandPaletteKey{ "commandPalette" };
 static constexpr std::string_view ToggleTaskViewKey{ "tasks" };
+static constexpr std::string_view SaveTaskKey{ "saveTask" };
 static constexpr std::string_view ToggleFocusModeKey{ "toggleFocusMode" };
 static constexpr std::string_view SetFocusModeKey{ "setFocusMode" };
 static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
@@ -328,6 +329,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     winrt::hstring ActionAndArgs::GenerateName() const
     {
+        static const winrt::hstring MUST_GENERATE = L"";
         // Use a magic static to initialize this map, because we won't be able
         // to load the resources at _init_, only at runtime.
         static const auto GeneratedActionNames = []() {
@@ -377,6 +379,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::ToggleAlwaysOnTop, RS_(L"ToggleAlwaysOnTopCommandKey") },
                 { ShortcutAction::ToggleCommandPalette, L"" },
                 { ShortcutAction::ToggleTaskView, L"TODO! Task View" },
+                { ShortcutAction::SaveTask, MUST_GENERATE },
                 { ShortcutAction::ToggleFocusMode, RS_(L"ToggleFocusModeCommandKey") },
                 { ShortcutAction::SetFocusMode, L"" },
                 { ShortcutAction::ToggleFullscreen, RS_(L"ToggleFullscreenCommandKey") },

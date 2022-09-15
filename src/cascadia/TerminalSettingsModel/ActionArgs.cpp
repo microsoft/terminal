@@ -33,6 +33,7 @@
 #include "AddMarkArgs.g.cpp"
 #include "FindMatchArgs.g.cpp"
 #include "ToggleCommandPaletteArgs.g.cpp"
+#include "SaveTaskArgs.g.cpp"
 #include "NewWindowArgs.g.cpp"
 #include "PrevTabArgs.g.cpp"
 #include "NextTabArgs.g.cpp"
@@ -955,5 +956,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 fmt::format(std::wstring_view{ str }, matchModeStr)
             };
         }
+    }
+
+    winrt::hstring SaveTaskArgs::GenerateName() const
+    {
+        return winrt::hstring{
+            fmt::format(L"Save Task commandline:{}, name: {}, description: {}", Commandline(), Name(), Description())
+        };
     }
 }

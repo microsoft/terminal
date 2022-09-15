@@ -199,6 +199,7 @@ void AppCommandlineArgs::_buildParser()
     _buildMovePaneParser();
     _buildSwapPaneParser();
     _buildFocusPaneParser();
+    _buildSaveParser();
 }
 
 // Method Description:
@@ -527,6 +528,61 @@ void AppCommandlineArgs::_buildFocusPaneParser()
     setupSubcommand(_focusPaneShort);
 }
 
+void AppCommandlineArgs::_buildSaveParser()
+{
+    _saveCommand = _app.add_subcommand("save", "TODO Desc");
+    // _newTabShort.subcommand = _app.add_subcommand("nt", RS_A(L"CmdNTDesc"));
+
+    auto setupSubcommand = [this](auto* subcommand) {
+        subcommand->add_option("command", _commandline, RS_A(L"CmdCommandArgDesc"));
+        subcommand->positionals_at_end(true);
+
+        // When ParseCommand is called, if this subcommand was provided, this
+        // callback function will be triggered on the same thread. We can be sure
+        // that `this` will still be safe - this function just lets us know this
+        // command was parsed.
+        subcommand->callback([&, this]() {
+            // Build the NewTab action from the values we've parsed on the commandline.
+            ActionAndArgs saveAction{};
+            saveAction.Action(ShortcutAction::SaveTask);
+            // _getNewTerminalArgs MUST be called before parsing any other options,
+            // as it might clear those options while finding the commandline
+            SaveTaskArgs args{};
+
+            if (!_commandline.empty())
+            {
+                std::ostringstream cmdlineBuffer;
+
+                for (const auto& arg : _commandline)
+                {
+                    if (cmdlineBuffer.tellp() != 0)
+                    {
+                        // If there's already something in here, prepend a space
+                        cmdlineBuffer << ' ';
+                    }
+
+                    if (arg.find(" ") != std::string::npos)
+                    {
+                        cmdlineBuffer << '"' << arg << '"';
+                    }
+                    else
+                    {
+                        cmdlineBuffer << arg;
+                    }
+                }
+
+                args.Commandline(winrt::to_hstring(cmdlineBuffer.str()));
+            }
+
+            saveAction.Args(args);
+            _startupActions.push_back(saveAction);
+        });
+    };
+
+    setupSubcommand(_saveCommand);
+    // setupSubcommand(_newTabShort);
+}
+
 // Method Description:
 // - Add the `NewTerminalArgs` parameters to the given subcommand. This enables
 //   that subcommand to support all the properties in a NewTerminalArgs.
@@ -670,7 +726,8 @@ bool AppCommandlineArgs::_noCommandsProvided()
              *_focusPaneCommand ||
              *_focusPaneShort ||
              *_newPaneShort.subcommand ||
-             *_newPaneCommand.subcommand);
+             *_newPaneCommand.subcommand ||
+             *_saveCommand);
 }
 
 // Method Description:

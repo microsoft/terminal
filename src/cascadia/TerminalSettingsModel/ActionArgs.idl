@@ -307,6 +307,15 @@ namespace Microsoft.Terminal.Settings.Model
         CommandPaletteLaunchMode LaunchMode { get; };
     };
 
+    [default_interface] runtimeclass SaveTaskArgs : IActionArgs
+    {
+        SaveTaskArgs();
+        SaveTaskArgs(String Name, String Commandline, String Description);
+        String Name;
+        String Commandline;
+        String Description;
+    };
+
     [default_interface] runtimeclass FindMatchArgs : IActionArgs
     {
         FindMatchArgs(FindMatchDirection direction);
