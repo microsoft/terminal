@@ -81,7 +81,7 @@ public:
     {
         Globals& g = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals();
         CONSOLE_INFORMATION& gci = g.getConsoleInformation();
-        g.pRender = new Microsoft::Console::Render::Renderer(gci.GetRenderSettings(), &gci.renderData, nullptr, 0, nullptr);
+        g.pRender = new Microsoft::Console::Render::Renderer(gci.GetRenderSettings(), &gci.renderData, nullptr, 0, std::make_unique<RenderThread>());
     }
 
     void CleanupGlobalRenderer()
