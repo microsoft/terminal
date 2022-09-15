@@ -1234,7 +1234,18 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto& realArgs = args.ActionArgs().try_as<SaveTaskArgs>())
             {
+                ActionAndArgs newAction{};
+                newAction.Action(ShortcutAction::SendInput);
+                // _getNewTerminalArgs MUST be called before parsing any other options,
+                // as it might clear those options while finding the commandline
+                SendInputArgs sendInputArgs{ realArgs.Commandline() };
+                // sendInputArgs.Input(args.Commandline());
+
+                newAction.Args(sendInputArgs);
+
                 // ActionMap::RegisterKeyBinding(null, sendInput(...))
+                _settings.GlobalSettings().ActionMap().RegisterKeyBinding(nullptr, newAction);
+
                 args.Handled(true);
             }
         }
