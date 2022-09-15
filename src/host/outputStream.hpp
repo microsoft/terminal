@@ -75,6 +75,7 @@ public:
     void NotifyAccessibilityChange(const til::rect& changedRect) override;
 
     void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) override;
+    void InvokeMenu(std::wstring_view menuJson, int32_t replaceLength) override;
 
 private:
     Microsoft::Console::IIoProvider& _io;

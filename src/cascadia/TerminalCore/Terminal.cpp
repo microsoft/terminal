@@ -1389,6 +1389,11 @@ void Microsoft::Terminal::Core::Terminal::TaskbarProgressChangedCallback(std::fu
     _pfnTaskbarProgressChanged.swap(pfn);
 }
 
+void Microsoft::Terminal::Core::Terminal::MenuChangedCallback(std::function<void(std::wstring_view, int32_t)> pfn) noexcept
+{
+    _pfnMenuChanged.swap(pfn);
+}
+
 // Method Description:
 // - Propagates an incoming set window visibility call from the PTY up into our window control layers
 // Arguments:

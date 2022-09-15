@@ -143,6 +143,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnPlayMidiNote = std::bind(&ControlCore::_terminalPlayMidiNote, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         _terminal->SetPlayMidiNoteCallback(pfnPlayMidiNote);
 
+        auto pfnMenuChanged = std::bind(&ControlCore::_terminalMenuChanged, this, std::placeholders::_1, std::placeholders::_2);
+        _terminal->MenuChangedCallback(pfnMenuChanged);
+
         // MSFT 33353327: Initialize the renderer in the ctor instead of Initialize().
         // We need the renderer to be ready to accept new engines before the SwapChainPanel is ready to go.
         // If we wait, a screen reader may try to get the AutomationPeer (aka the UIA Engine), and we won't be able to attach
@@ -229,6 +232,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     core->_ScrollPositionChangedHandlers(*core, update);
                 }
             });
+
+        // _updateMenu = std::make_shared<ThrottledFuncTrailing<winrt::hstring, int32_t>>(
+        //     _dispatcher,
+        //     UpdatePatternLocationsInterval,
+        //     [weakThis = get_weak()](const auto& menuJson, const auto& replaceLength) {
+        //         if (auto core{ weakThis.get() }; !core->_IsClosing())
+        //         {
+        //             auto args = winrt::make<MenuChangedEventArgs>(menuJson, replaceLength);
+        //             core->_MenuChangedHandlers(*core, args);
+        //         }
+        //     });
 
         UpdateSettings(settings, unfocusedAppearance);
     }
@@ -1438,6 +1452,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             auto lock = _terminal->LockForWriting();
             _midiAudio->Shutdown();
         }
+    }
+
+    void ControlCore::_terminalMenuChanged(std::wstring_view menuJson, int32_t replaceLength)
+    {
+        // _updateMenu->Run(winrt::hstring{ menuJson }, replaceLength);
+        // _MenuChangedHandlers(*this, nullptr);
+
+        auto args = winrt::make_self<MenuChangedEventArgs>(winrt::hstring{ menuJson }, replaceLength);
+        _MenuChangedHandlers(*this, *args);
     }
 
     bool ControlCore::HasSelection() const

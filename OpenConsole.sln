@@ -183,6 +183,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Microsoft.Terminal.Control.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Microsoft.Terminal.Control", "src\cascadia\TerminalControl\dll\TerminalControl.vcxproj", "{CA5CAD1A-F542-4635-A069-7CAEFB930070}"
 	ProjectSection(ProjectDependencies) = postProject
+		{3C67784E-1453-49C2-9660-483E2CC7F7AD} = {3C67784E-1453-49C2-9660-483E2CC7F7AD}
 		{CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED} = {CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED}
 	EndProjectSection
 EndProject

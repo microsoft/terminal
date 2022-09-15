@@ -287,6 +287,17 @@ namespace winrt::TerminalApp::implementation
         CommandPalette().SwitchToTabRequested({ this, &TerminalPage::_OnSwitchToTabRequested });
         CommandPalette().PreviewAction({ this, &TerminalPage::_PreviewActionHandler });
 
+        AutoCompleteMenu().PositionManually(Windows::Foundation::Point{ 0, 0 }, Windows::Foundation::Size{ 200, 300 });
+        AutoCompleteMenu().RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
+            if (AutoCompleteMenu().Visibility() == Visibility::Collapsed)
+            {
+                AutoCompletePopup().IsOpen(false);
+                _FocusActiveControl(nullptr, nullptr);
+            }
+        });
+        AutoCompleteMenu().DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
+        AutoCompleteMenu().PreviewAction({ this, &TerminalPage::_PreviewActionHandler });
+
         // Settings AllowDependentAnimations will affect whether animations are
         // enabled application-wide, so we don't need to check it each time we
         // want to create an animation.
@@ -1308,7 +1319,13 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        if (const auto p = CommandPalette(); p.Visibility() == Visibility::Visible && cmd.ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
+        if (const auto p = CommandPalette(); p.Visibility() == Visibility::Visible &&
+                                             cmd.ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
+        {
+            p.Visibility(Visibility::Collapsed);
+        }
+        if (const auto p = AutoCompleteMenu(); p.Visibility() == Visibility::Visible &&
+                                               cmd.ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
         {
             p.Visibility(Visibility::Collapsed);
         }
@@ -1476,6 +1493,8 @@ namespace winrt::TerminalApp::implementation
         });
 
         term.ShowWindowChanged({ get_weak(), &TerminalPage::_ShowWindowChangedHandler });
+
+        term.MenuChanged({ get_weak(), &TerminalPage::_ControlMenuChangedHandler });
     }
 
     // Method Description:
@@ -4233,4 +4252,49 @@ namespace winrt::TerminalApp::implementation
         _activated = activated;
         _updateThemeColors();
     }
+    winrt::fire_and_forget TerminalPage::_ControlMenuChangedHandler(const IInspectable /*sender*/,
+                                                                    const winrt::Microsoft::Terminal::Control::MenuChangedEventArgs args)
+    {
+        // co_await winrt::resume_background();
+
+        // May be able to fake this by not creating whole Commands for these
+        // actions, instead just binding them at the cmdpal layer (like tab item
+        // vs action item)
+        // auto entries = control.MenuEntries();
+
+        // parse json
+        auto commandsCollection = Command::ParsePowerShellMenuComplete(args.MenuJson(), args.ReplacementLength());
+
+        co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
+        auto control{ _GetActiveControl() };
+        if (!control)
+        {
+            co_return;
+        }
+
+        if (commandsCollection.Size() == 0)
+        {
+            AutoCompletePopup().IsOpen(false);
+            AutoCompleteMenu().Visibility(Visibility::Collapsed);
+            co_return;
+        }
+        // CommandPalette has an internal margin of 8, so set to -4,-4 to position closer to the actual line
+        AutoCompleteMenu().PositionManually(Windows::Foundation::Point{ -4, -4 }, Windows::Foundation::Size{ 300, 300 });
+
+        // CommandPalette().EnableCommandPaletteMode(CommandPaletteLaunchMode::Action);
+
+        const til::point cursorPos{ control.CursorPositionInDips() };
+        const auto characterSize{ control.CharacterDimensions() };
+
+        // Position relative to the actual term control
+        AutoCompletePopup().HorizontalOffset(cursorPos.x);
+        AutoCompletePopup().VerticalOffset(cursorPos.y + characterSize.Height);
+
+        AutoCompletePopup().IsOpen(true);
+        // ~Make visible first, then set commands. Other way around and the list
+        // doesn't actually update the first time (weird)~
+        AutoCompleteMenu().SetCommands(commandsCollection);
+        AutoCompleteMenu().Visibility(commandsCollection.Size() > 0 ? Visibility::Visible : Visibility::Collapsed);
+    }
+
 }

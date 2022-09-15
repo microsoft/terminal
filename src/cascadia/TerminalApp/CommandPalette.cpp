@@ -225,13 +225,17 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_selectedCommandChanged(const IInspectable& /*sender*/,
                                                  const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
+        const auto currentlyVisible{ Visibility() == Visibility::Visible };
+
         const auto selectedCommand = _filteredActionsView().SelectedItem();
         const auto filteredCommand{ selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>() };
         if (_currentMode == CommandPaletteMode::TabSwitchMode)
         {
             _switchToTab(filteredCommand);
         }
-        else if (_currentMode == CommandPaletteMode::ActionMode && filteredCommand != nullptr)
+        else if (_currentMode == CommandPaletteMode::ActionMode &&
+                 filteredCommand != nullptr &&
+                 currentlyVisible)
         {
             if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
             {
@@ -956,6 +960,15 @@ namespace winrt::TerminalApp::implementation
         {
             _updateFilteredActions();
         }
+        else if (_currentMode == CommandPaletteMode::ActionMode)
+        {
+            auto actions = _collectFilteredActions();
+            _filteredActions.Clear();
+            for (const auto& action : actions)
+            {
+                _filteredActions.Append(action);
+            }
+        }
     }
 
     // Method Description:
@@ -1083,7 +1096,9 @@ namespace winrt::TerminalApp::implementation
         {
             std::copy(begin(commandsToFilter), end(commandsToFilter), std::back_inserter(actions));
         }
-        else if (_currentMode == CommandPaletteMode::TabSearchMode || _currentMode == CommandPaletteMode::ActionMode || _currentMode == CommandPaletteMode::CommandlineMode)
+        else if (_currentMode == CommandPaletteMode::TabSearchMode ||
+                 _currentMode == CommandPaletteMode::ActionMode ||
+                 _currentMode == CommandPaletteMode::CommandlineMode)
         {
             for (const auto& action : commandsToFilter)
             {
@@ -1368,5 +1383,31 @@ namespace winrt::TerminalApp::implementation
         }
 
         ApplicationState::SharedInstance().RecentCommands(single_threaded_vector(std::move(newRecentCommands)));
+    }
+
+    void CommandPalette::PositionManually(Windows::Foundation::Point origin, Windows::Foundation::Size size)
+    {
+        Controls::Grid::SetRow(_backdrop(), 0);
+        Controls::Grid::SetColumn(_backdrop(), 0);
+        Controls::Grid::SetRowSpan(_backdrop(), 2);
+        Controls::Grid::SetColumnSpan(_backdrop(), 3);
+
+        // Set thie Max* versions here, otherwise when there are few results,
+        // the cmdpal will _still_ be 300x300 and filled with empty space
+        _backdrop().MaxWidth(size.Width);
+        _backdrop().MaxHeight(size.Height);
+
+        _backdrop().HorizontalAlignment(HorizontalAlignment::Stretch);
+        _backdrop().VerticalAlignment(VerticalAlignment::Stretch);
+
+        // // We can fake this. We're only using this method for the autocomplete
+        // // version of the cmdpal. Set the BG to acrylic.
+        // const auto colorControlStyle{ Resources().Lookup(winrt::box_value(L"CommandPaletteAcrylicBackground")).as<Windows::UI::Xaml::Style>() };
+        // _backdrop().Style(colorControlStyle);
+
+        Windows::UI::Xaml::Thickness margins{};
+        margins.Left = origin.X;
+        margins.Top = origin.Y;
+        _backdrop().Margin(margins);
     }
 }

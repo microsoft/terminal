@@ -215,7 +215,6 @@
 
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Dark">
-
                     <!--  KeyChordText styles  -->
                     <Style x:Key="KeyChordBorderStyle"
                            TargetType="Border">
@@ -243,7 +242,6 @@
                     </Style>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Light">
-
                     <!--  KeyChordText styles  -->
                     <Style x:Key="KeyChordBorderStyle"
                            TargetType="Border">
@@ -271,7 +269,6 @@
                     </Style>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="HighContrast">
-
                     <!--  KeyChordText styles (use XAML defaults for High Contrast theme)  -->
                     <Style x:Key="KeyChordBorderStyle"
                            TargetType="Border" />

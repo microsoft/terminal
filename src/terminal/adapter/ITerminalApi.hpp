@@ -78,5 +78,6 @@ namespace Microsoft::Console::VirtualTerminal
         virtual void NotifyAccessibilityChange(const til::rect& changedRect) = 0;
 
         virtual void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) = 0;
+        virtual void InvokeMenu(std::wstring_view menuJson, int32_t replaceLength) = 0;
     };
 }

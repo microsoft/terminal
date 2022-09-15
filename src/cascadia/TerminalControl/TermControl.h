@@ -46,6 +46,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Windows::Foundation::Size CharacterDimensions() const;
         Windows::Foundation::Size MinimumSize();
         float SnapDimensionToGrid(const bool widthOrHeight, const float dimension);
+        Microsoft::Terminal::Core::Point CursorPositionInDips();
+        void PreviewInput(const winrt::hstring& text);
 
         void WindowVisibilityChanged(const bool showOrHide);
 
@@ -77,6 +79,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ClearMark();
         void ClearAllMarks();
         void ScrollToMark(const Control::ScrollToMarkDirection& direction);
+
+        Windows::Foundation::Collections::IVector<Control::MenuEntry> MenuEntries() const;
 
 #pragma endregion
 
@@ -145,6 +149,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         PROJECTED_FORWARDED_TYPED_EVENT(SetTaskbarProgress,     IInspectable, IInspectable, _core, TaskbarProgressChanged);
         PROJECTED_FORWARDED_TYPED_EVENT(ConnectionStateChanged, IInspectable, IInspectable, _core, ConnectionStateChanged);
         PROJECTED_FORWARDED_TYPED_EVENT(ShowWindowChanged,      IInspectable, Control::ShowWindowArgs, _core, ShowWindowChanged);
+
+        PROJECTED_FORWARDED_TYPED_EVENT(MenuChanged           , IInspectable, Control::MenuChangedEventArgs, _core, MenuChanged);
+
 
         PROJECTED_FORWARDED_TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs, _interactivity, PasteFromClipboard);
 
