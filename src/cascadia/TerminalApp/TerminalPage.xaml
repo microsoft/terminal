@@ -200,6 +200,13 @@
                IsOpen="False"
                ShouldConstrainToRootBounds="False"
                VerticalOffset="200">
+            <!--
+                TODO! POpup is hacky and does weird stuff with focus
+                
+                Like, clicking on the suggest menu to focus the window doesn't focus the actual window, it focuses the popup (?)
+                
+                Also, it causes the cmdpal to be above the TeachingTip. That... doesn't make sense, I know. But it happens.
+            -->
             <local:CommandPalette x:Name="AutoCompleteMenu"
                                   VerticalAlignment="Stretch"
                                   PreviewKeyDown="_KeyDownHandler"

@@ -3718,7 +3718,6 @@ namespace winrt::TerminalApp::implementation
             }
         }
     }
-
     // WindowId is a otherwise generic WINRT_OBSERVABLE_PROPERTY, but it needs
     // to raise a PropertyChanged for WindowIdForDisplay, instead of
     // WindowId.

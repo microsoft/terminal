@@ -263,7 +263,11 @@ namespace winrt::TerminalApp::implementation
 
                 if (!cmd.Description().empty())
                 {
-                    DescriptionTip().Target(SelectedItem());
+                    // teaching tip kinda sucks. While we wait for it to not
+                    // suck, just toss it at the bottom fo the window, by not
+                    // settings a target or placement mode.
+                    DescriptionTip().Target(_searchBox());
+
                     DescriptionTip().Title(cmd.Name());
                     DescriptionTip().Subtitle(cmd.Description());
                     DescriptionTip().IsOpen(true);
