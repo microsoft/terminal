@@ -213,6 +213,21 @@ namespace winrt::TerminalApp::implementation
         _scrollToIndex(_filteredActionsView().Items().Size() - 1);
     }
 
+    Windows::UI::Xaml::FrameworkElement CommandPalette::SelectedItem()
+    {
+        // auto item = _filteredActionsView().SelectedItem();
+        // auto container = _filteredActionsView().ContainerFromItem(item);
+        // auto itemFwe = item.try_as<Windows::UI::Xaml::FrameworkElement>();
+        // auto containerFwe = container.try_as<Windows::UI::Xaml::FrameworkElement>();
+        // itemFwe;
+        // return containerFwe;
+
+        auto index = _filteredActionsView().SelectedIndex();
+        const auto container = _filteredActionsView().ContainerFromIndex(index);
+        const auto item = container.try_as<winrt::Windows::UI::Xaml::Controls::ListViewItem>();
+        return item;
+    }
+
     // Method Description:
     // - Called when the command selection changes. We'll use this in the tab
     //   switcher to "preview" tabs as the user navigates the list of tabs. To
@@ -229,6 +244,10 @@ namespace winrt::TerminalApp::implementation
 
         const auto selectedCommand = _filteredActionsView().SelectedItem();
         const auto filteredCommand{ selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>() };
+
+        DescriptionTip().IsOpen(false);
+        _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"SelectedItem" });
+
         if (_currentMode == CommandPaletteMode::TabSwitchMode)
         {
             _switchToTab(filteredCommand);
@@ -239,7 +258,20 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
             {
-                _PreviewActionHandlers(*this, actionPaletteItem.Command());
+                const auto& cmd = actionPaletteItem.Command();
+                _PreviewActionHandlers(*this, cmd);
+
+                if (!cmd.Description().empty())
+                {
+                    // DescriptionTip().Target(SelectedItem());
+                    DescriptionTip().Title(cmd.Name());
+                    DescriptionTip().Subtitle(cmd.Description());
+                    DescriptionTip().IsOpen(true);
+                }
+                // else
+                // {
+
+                // }
             }
         }
         else if (_currentMode == CommandPaletteMode::CommandlineMode)

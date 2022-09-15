@@ -48,6 +48,8 @@ namespace winrt::TerminalApp::implementation
 
         void PositionManually(Windows::Foundation::Point origin, Windows::Foundation::Size size);
 
+        Windows::UI::Xaml::FrameworkElement SelectedItem();
+
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, NoMatchesText, _PropertyChangedHandlers);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, SearchBoxPlaceholderText, _PropertyChangedHandlers);

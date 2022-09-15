@@ -33,6 +33,7 @@ namespace Microsoft.Terminal.Settings.Model
         Command();
 
         String Name;
+        String Description;
         ActionAndArgs ActionAndArgs;
         Microsoft.Terminal.Control.KeyChord Keys { get; };
         void RegisterKey(Microsoft.Terminal.Control.KeyChord keys);

@@ -402,6 +402,17 @@
                       SelectionChanged="_listItemSelectionChanged"
                       SelectionMode="Single" />
 
+            <mux:TeachingTip x:Name="DescriptionTip"
+                             Title=""
+                             IsOpen="False"
+                             PreferredPlacement="RightEdgeAlignedBottom"
+                             Subtitle=""
+                             Target="{x:Bind SelectedItem, Mode=OneWay}">
+                <!--                 <muxc:TeachingTip.IconSource>
+                    <muxc:SymbolIconSource Symbol="Refresh" />
+                </muxc:TeachingTip.IconSource>-->
+            </mux:TeachingTip>
+
         </Grid>
 
 

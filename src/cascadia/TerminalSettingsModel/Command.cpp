@@ -21,6 +21,7 @@ namespace winrt
 }
 
 static constexpr std::string_view NameKey{ "name" };
+static constexpr std::string_view DescriptionKey{ "description" };
 static constexpr std::string_view IconKey{ "icon" };
 static constexpr std::string_view ActionKey{ "command" };
 static constexpr std::string_view ArgsKey{ "args" };
@@ -42,6 +43,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         auto command{ winrt::make_self<Command>() };
         command->_name = _name;
+        command->_Description = _Description;
         command->_ActionAndArgs = *get_self<implementation::ActionAndArgs>(_ActionAndArgs)->Copy();
         command->_keyMappings = _keyMappings;
         command->_iconPath = _iconPath;
@@ -256,6 +258,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         auto nested = false;
         JsonUtils::GetValueForKey(json, IterateOnKey, result->_IterateOn);
+        JsonUtils::GetValueForKey(json, DescriptionKey, result->_Description);
 
         // For iterable commands, we'll make another pass at parsing them once
         // the json is patched. So ignore parsing sub-commands for now. Commands
@@ -408,6 +411,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             Json::Value cmdJson{ Json::ValueType::objectValue };
             JsonUtils::SetValueForKey(cmdJson, IconKey, _iconPath);
             JsonUtils::SetValueForKey(cmdJson, NameKey, _name);
+            JsonUtils::SetValueForKey(cmdJson, DescriptionKey, _Description);
 
             if (_ActionAndArgs)
             {
@@ -428,6 +432,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                     // First iteration also writes icon and name
                     JsonUtils::SetValueForKey(cmdJson, IconKey, _iconPath);
                     JsonUtils::SetValueForKey(cmdJson, NameKey, _name);
+                    JsonUtils::SetValueForKey(cmdJson, DescriptionKey, _Description);
                 }
 
                 if (_ActionAndArgs)
