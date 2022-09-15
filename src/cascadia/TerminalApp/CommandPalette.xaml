@@ -405,9 +405,8 @@
             <mux:TeachingTip x:Name="DescriptionTip"
                              Title=""
                              IsOpen="False"
-                             PreferredPlacement="RightEdgeAlignedBottom"
-                             Subtitle=""
-                             Target="{x:Bind SelectedItem, Mode=OneWay}">
+                             PreferredPlacement="Right"
+                             Subtitle="">
                 <!--                 <muxc:TeachingTip.IconSource>
                     <muxc:SymbolIconSource Symbol="Refresh" />
                 </muxc:TeachingTip.IconSource>-->

@@ -263,7 +263,7 @@ namespace winrt::TerminalApp::implementation
 
                 if (!cmd.Description().empty())
                 {
-                    // DescriptionTip().Target(SelectedItem());
+                    DescriptionTip().Target(SelectedItem());
                     DescriptionTip().Title(cmd.Name());
                     DescriptionTip().Subtitle(cmd.Description());
                     DescriptionTip().IsOpen(true);
