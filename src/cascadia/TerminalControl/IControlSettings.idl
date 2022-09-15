@@ -36,7 +36,7 @@ namespace Microsoft.Terminal.Control
         Boolean UseAtlasEngine { get; };
 
         String FontFace { get; };
-        Int32 FontSize { get; };
+        Single FontSize { get; };
         Windows.UI.Text.FontWeight FontWeight { get; };
         String Padding { get; };
         Windows.Foundation.Collections.IMap<String, UInt32> FontFeatures { get; };
