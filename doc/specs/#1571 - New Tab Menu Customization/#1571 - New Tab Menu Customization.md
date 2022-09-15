@@ -88,8 +88,22 @@ There are five `type`s of objects in this menu:
     that folders without any entries in them will just be ignored when
     generating the menu. This will be more useful with the `matchProfile` entry,
     below.
+
+    When this is true, and the folder is empty, we should add a
+    placeholder `<empty>` entry to the menu, to indicate that no profiles were
+    in that folder.
     - _This setting is probably pretty niche, and not a requirement_. More of a
       theoretical suggestion than anything.
+    - In the case of no entries for this folder, we should make sure to also
+      reflect the `expand` property:
+      - `allowEmpty:true`, `expand:auto`: just ignore the entry at all. Don't
+        add a placeholder to the parent list.
+      - `allowEmpty:true`, `expand:always`: Add a nested entry, with an
+        `<empty>` placeholder.
+      - `allowEmpty:false`, `expand:auto`: just ignore the entry at all. Don't
+        add a placeholder to the parent list.
+      - `allowEmpty:false`, `expand:always`: just ignore the entry at all. Don't
+        add a placeholder to the parent list.
 * `"type":"action"`: This represents a menu entry that should execute a specific
   `ShortcutAction`.
   - the `id` property will specify the global action ID (see [#6899], [#7175])
@@ -144,12 +158,12 @@ nested entries for each subsequent dynamic profile generator.
         {
             "type": "folder",
             "name": "WSL",
-            "entries": [ { "type": "matchProfile", "source": "Microsoft.Terminal.Wsl" } ]
+            "entries": [ { "type": "matchProfile", "source": "Microsoft\\.Terminal\\.Wsl" } ]
         },
         {
             "type": "folder",
             "name": "Visual Studio",
-            "entries": [ { "type": "matchProfile", "source": "Microsoft.Terminal.VisualStudio" } ]
+            "entries": [ { "type": "matchProfile", "source": "Microsoft\\.Terminal\\.VisualStudio" } ]
         },
         // ... etc for other profile generators
         { "type": "remainingProfiles" }
