@@ -1546,6 +1546,41 @@
         }
       ]
     },
+    "TabTheme": {
+      "additionalProperties": false,
+      "description": "A set of properties for customizing the appearance of the tab row",
+      "properties": {
+        "background": {
+          "$ref": "#/$defs/ThemeColor"
+        },
+        "unfocusedBackground": {
+          "$ref": "#/$defs/ThemeColor"
+        },
+        "showCloseButton": {
+          "$ref": "#/$defs/ShowCloseButton"
+        }
+      }
+    },
+    "Theme": {
+      "additionalProperties": false,
+      "description": "A set of properties for customizing the appearance of the window. This controls things like the titlebar, the tabs, the application theme.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the theme. This will be displayed in the settings UI.",
+          "noneOf": [ "light", "dark", "system" ]
+        },
+        "tab": {
+          "$ref": "#/$defs/TabTheme"
+        },
+        "tabRow": {
+          "$ref": "#/$defs/TabRowTheme"
+        },
+        "window": {
+          "$ref": "#/$defs/WindowTheme"
+        }
+      }
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -1930,14 +1965,16 @@
           "type": "string"
         },
         "theme": {
-          "default": "system",
-          "description": "Sets the theme of the application. The special value \"system\" refers to the active Windows system theme.",
-          "enum": [
-            "light",
-            "dark",
-            "system"
-          ],
+          "default": "dark",
+          "description": "Sets the theme of the application. This value should be the name of one of the themes defined in `themes`. The Terminal also includes the themes `dark`, `light`, and `system`.",
           "type": "string"
+        },
+        "themes": {
+          "description": "The list of available themes",
+          "items": {
+            "$ref": "#/$defs/Theme"
+          },
+          "type": "array"
         },
         "showTabsInTitlebar": {
           "default": true,
