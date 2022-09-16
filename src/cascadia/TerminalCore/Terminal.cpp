@@ -825,7 +825,7 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
         mark.category = DispatchTypes::MarkCategory::Prompt;
         // Don't set the color - we'll automatically use the DEFAULT_FOREGROUND
         // color for any MarkCategory::Prompt marks without one set.
-        AddMark(mark);
+        // AddMark(mark);
         // AddMark without explicit start/end will also set that as the _currentPrompt. That seems reasonable.
 
         // TODO! also, probably FTCS_COMMAND_EXECUTED here.
@@ -838,6 +838,17 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
         //   - Else: We don't have a prompt. We don't know anything else, but we
         //     can set the whole like as the prompt, no command, and start the
         //     command_executed now.
+
+        if (_currentPrompt)
+        {
+            OutputStart();
+        }
+        else
+        {
+            AddMark(mark);
+            _currentPrompt = &_scrollMarks.back();
+            OutputStart();
+        }
     }
 
     // Unfortunately, the UI doesn't give us both a character down and a
