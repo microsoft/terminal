@@ -94,7 +94,7 @@ public:
 private:
     void Reset() noexcept;
     void ClearCell(const til::CoordType column);
-    std::wstring GetText() const;
+    std::wstring GetText(const til::CoordType start = 0) const;
 
 protected:
     // storage for glyph data and dbcs attributes

@@ -58,7 +58,7 @@ public:
     [[nodiscard]] HRESULT Resize(const til::CoordType width);
 
     void ClearColumn(const til::CoordType column);
-    std::wstring GetText() const { return _charRow.GetText(); }
+    std::wstring GetText(const til::CoordType start = 0) const { return _charRow.GetText(start); }
 
     UnicodeStorage& GetUnicodeStorage() noexcept;
     const UnicodeStorage& GetUnicodeStorage() const noexcept;

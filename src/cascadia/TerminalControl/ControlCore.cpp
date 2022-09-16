@@ -1805,12 +1805,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         std::wstringstream ss;
 
-        // const auto lastRow = textBuffer.GetLastNonSpaceCharacter().Y;
-        for (const auto& mark : _terminal->GetScrollMarks())
-        {
-            const auto line = mark.start.y;
-            const auto& row = textBuffer.GetRowByOffset(line);
-            auto rowText = row.GetText();
+        auto addRowText = [&ss](auto&& row, std::wstring& rowText) {
             const auto strEnd = rowText.find_last_not_of(UNICODE_SPACE);
             if (strEnd != std::string::npos)
             {
@@ -1818,9 +1813,32 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 ss << rowText;
             }
 
-            if (!row.WasWrapForced())
+            auto wrapped = row.WasWrapForced();
+            if (!wrapped)
             {
                 ss << UNICODE_CARRIAGERETURN << UNICODE_LINEFEED;
+            }
+            return wrapped;
+        };
+
+        // const auto lastRow = textBuffer.GetLastNonSpaceCharacter().Y;
+        for (const auto& mark : _terminal->GetScrollMarks())
+        {
+            const bool markHasCommand = mark.start != mark.end;
+
+            auto line = markHasCommand ? mark.end.y : mark.start.y;
+
+            const auto& row = textBuffer.GetRowByOffset(line);
+
+            auto rowText = row.GetText(markHasCommand ? mark.end.x : 0);
+            auto wrapped = addRowText(row, rowText);
+
+            while (wrapped)
+            {
+                line++;
+                const auto& newRow = textBuffer.GetRowByOffset(line);
+                auto newRowText = newRow.GetText(0);
+                wrapped = addRowText(newRow, newRowText);
             }
         }
 

@@ -2553,6 +2553,21 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
         _api.AddMark(mark);
         return true;
     }
+    else if (action == L"B") // FTCS_COMMAND_START
+    {
+        _api.CommandStart();
+        return true;
+    }
+    else if (action == L"C") // FTCS_COMMAND_EXECUTED
+    {
+        // _api.CommandStart();
+        return true;
+    }
+    else if (action == L"D") // FTCS_COMMAND_FINISHED
+    {
+        // _api.CommandStart();
+        return true;
+    }
 
     // When we add the rest of the FTCS sequences (GH#11000), we should add a
     // simple state machine here to track the most recently emitted mark from

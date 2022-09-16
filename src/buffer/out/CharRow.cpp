@@ -204,12 +204,12 @@ CharRow::reference CharRow::GlyphAt(const til::CoordType column)
     return { *this, column };
 }
 
-std::wstring CharRow::GetText() const
+std::wstring CharRow::GetText(const til::CoordType start) const
 {
     std::wstring wstr;
     wstr.reserve(_data.size());
 
-    for (til::CoordType i = 0; i < gsl::narrow_cast<til::CoordType>(_data.size()); ++i)
+    for (til::CoordType i = start; i < gsl::narrow_cast<til::CoordType>(_data.size()); ++i)
     {
         const auto glyph = GlyphAt(i);
         if (!DbcsAttrAt(i).IsTrailing())
