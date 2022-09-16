@@ -149,8 +149,9 @@ CATCH_RETURN();
 
     if (!_pipeBroken)
     {
-        auto fSuccess = !!WriteFile(_hFile.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), nullptr, nullptr);
-        _buffer.clear();
+        const auto originalSize = _buffer.size();
+        const auto fSuccess = !!WriteFile(_hFile.get(), _buffer.data(), gsl::narrow_cast<DWORD>(originalSize), nullptr, nullptr);
+        _buffer.erase(0, originalSize);
         if (!fSuccess)
         {
             _exitResult = HRESULT_FROM_WIN32(GetLastError());
