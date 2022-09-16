@@ -622,7 +622,6 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     const auto designUnitsPerPx = fontSizeInPx / static_cast<float>(metrics.designUnitsPerEm);
     const auto ascent = static_cast<float>(metrics.ascent) * designUnitsPerPx;
     const auto descent = static_cast<float>(metrics.descent) * designUnitsPerPx;
-    const auto lineGap = static_cast<float>(metrics.lineGap) * designUnitsPerPx;
     const auto underlinePosition = static_cast<float>(-metrics.underlinePosition) * designUnitsPerPx;
     const auto underlineThickness = static_cast<float>(metrics.underlineThickness) * designUnitsPerPx;
     const auto strikethroughPosition = static_cast<float>(-metrics.strikethroughPosition) * designUnitsPerPx;
@@ -630,9 +629,13 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
 
     const auto advanceWidth = static_cast<float>(glyphMetrics.advanceWidth) * designUnitsPerPx;
 
-    const auto halfGap = lineGap / 2.0f;
-    const auto baseline = std::roundf(ascent + halfGap);
-    const auto lineHeight = std::roundf(baseline + descent + halfGap);
+    // NOTE: Line-gaps shouldn't be taken into account for lineHeight calculations.
+    // Terminals don't really have "gaps" between lines and instead the expectation
+    // is that two full block characters above each other don't leave any gaps
+    // between the lines. "Terminus TTF" for instance sets a line-gap of 90 units
+    // even though its font bitmap only covers the ascend/descend height.
+    const auto baseline = std::roundf(ascent);
+    const auto lineHeight = std::roundf(baseline + descent);
     const auto underlinePos = std::roundf(baseline + underlinePosition);
     const auto underlineWidth = std::max(1.0f, std::roundf(underlineThickness));
     const auto strikethroughPos = std::roundf(baseline + strikethroughPosition);
