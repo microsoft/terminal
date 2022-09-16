@@ -2570,14 +2570,14 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
         {
             const auto errorString = til::at(parts, 1);
 
-            // if errorString starts with '-', trim it.
-            // TODO! This is a bit of a hack, but we don't really care the sign
-            // or value, only if it's literally non-zero. We should probably
-            // actually parse this as a number.
-            const auto errorStringTrimmed = errorString.at(0) == L'-' ? errorString.substr(1) : errorString;
-
+            // If we fail to parse the code, then it was gibberish, or it might
+            // have just started with "-". Either way, let's just treat it as an
+            // error and move on.
+            //
+            // We know that "0" will be successfully parsed, and that's close enough.
             unsigned int parsedError = 0;
-            error = Utils::StringToUint(errorStringTrimmed, parsedError) ? std::make_optional(parsedError) : std::nullopt;
+            error = Utils::StringToUint(errorString, parsedError) ? parsedError :
+                                                                    static_cast<unsigned int>(-1);
         }
         _api.CommandFinished(error);
         return true;
