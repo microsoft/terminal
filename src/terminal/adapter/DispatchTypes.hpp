@@ -511,6 +511,10 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         std::optional<til::color> color;
         til::point start;
         til::point end; // exclusive
+
+        std::optional<til::point> commandEnd;
+        std::optional<til::point> outputEnd;
+
         MarkCategory category{ MarkCategory::Info };
         // Other things we may want to think about in the future are listed in
         // GH#11000

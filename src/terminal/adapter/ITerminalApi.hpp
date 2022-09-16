@@ -79,6 +79,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) = 0;
         virtual void CommandStart() = 0;
+        virtual void OutputStart() = 0;
+        virtual void CommandFinished(std::optional<unsigned int> error) = 0;
         virtual void InvokeMenu(std::wstring_view menuJson, int32_t replaceLength) = 0;
     };
 }

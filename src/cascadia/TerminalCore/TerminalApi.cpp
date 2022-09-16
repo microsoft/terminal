@@ -322,6 +322,29 @@ void Terminal::CommandStart()
     // CommandStart(mark, cursorPos, cursorPos);
 }
 
+void Terminal::OutputStart()
+{
+    if (_currentPrompt)
+    {
+        const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
+        _currentPrompt->commandEnd = cursorPos;
+    }
+}
+
+void Terminal::CommandFinished(std::optional<unsigned int> error)
+{
+    if (_currentPrompt)
+    {
+        const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
+        _currentPrompt->outputEnd = cursorPos;
+
+        if (error.has_value())
+        {
+            _currentPrompt->category = *error == 0u ? DispatchTypes::MarkCategory::Success : DispatchTypes::MarkCategory::Error;
+        }
+    }
+}
+
 // Method Description:
 // - Reacts to a client asking us to show or hide the window.
 // Arguments:

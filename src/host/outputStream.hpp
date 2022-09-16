@@ -76,6 +76,8 @@ public:
 
     void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) override;
     void CommandStart() override;
+    void OutputStart() override;
+    void CommandFinished(std::optional<unsigned int> error) override;
     void InvokeMenu(std::wstring_view menuJson, int32_t replaceLength) override;
 
 private:

@@ -499,6 +499,16 @@ void ConhostInternalGetSet::CommandStart()
     // Not implemented for conhost.
 }
 
+void ConhostInternalGetSet::OutputStart()
+{
+    // Not implemented for conhost.
+}
+
+void ConhostInternalGetSet::CommandFinished(std::optional<unsigned int> /*error*/)
+{
+    // Not implemented for conhost.
+}
+
 void ConhostInternalGetSet::InvokeMenu(std::wstring_view /*menuJson*/, int32_t /*replaceLength*/)
 {
     // Not implemented for conhost.

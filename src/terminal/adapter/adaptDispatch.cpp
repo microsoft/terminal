@@ -2560,12 +2560,26 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
     }
     else if (action == L"C") // FTCS_COMMAND_EXECUTED
     {
-        // _api.CommandStart();
+        _api.OutputStart();
         return true;
     }
     else if (action == L"D") // FTCS_COMMAND_FINISHED
     {
-        // _api.CommandStart();
+        std::optional<unsigned int> error = std::nullopt;
+        if (parts.size() >= 2)
+        {
+            const auto errorString = til::at(parts, 1);
+
+            // if errorString starts with '-', trim it.
+            // TODO! This is a bit of a hack, but we don't really care the sign
+            // or value, only if it's literally non-zero. We should probably
+            // actually parse this as a number.
+            const auto errorStringTrimmed = errorString.at(0) == L'-' ? errorString.substr(1) : errorString;
+
+            unsigned int parsedError = 0;
+            error = Utils::StringToUint(errorStringTrimmed, parsedError) ? std::make_optional(parsedError) : std::nullopt;
+        }
+        _api.CommandFinished(error);
         return true;
     }
 

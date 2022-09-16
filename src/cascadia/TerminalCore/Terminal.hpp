@@ -141,6 +141,8 @@ public:
 
     void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) override;
     void CommandStart() override;
+    void OutputStart() override;
+    void CommandFinished(std::optional<unsigned int> error) override;
 
     bool IsConsolePty() const override;
     bool IsVtInputEnabled() const override;
