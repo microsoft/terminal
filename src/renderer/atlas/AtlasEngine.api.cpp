@@ -561,6 +561,7 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
 {
     const auto requestedFamily = fontInfoDesired.GetFamily();
     auto requestedWeight = fontInfoDesired.GetWeight();
+    auto fontSize = fontInfoDesired.GetFontSize();
     auto requestedSize = fontInfoDesired.GetEngineSize();
 
     if (!requestedFaceName)
@@ -573,6 +574,7 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     }
     if (!requestedSize.Y)
     {
+        fontSize = 12.0f;
         requestedSize = { 0, 12 };
     }
     if (!requestedWeight)
@@ -614,8 +616,8 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     // Point sizes are commonly treated at a 72 DPI scale
     // (including by OpenType), whereas DirectWrite uses 96 DPI.
     // Since we want the height in px we multiply by the display's DPI.
-    const auto fontSizeInDIP = requestedSize.Y / 72.0f * 96.0f;
-    const auto fontSizeInPx = requestedSize.Y / 72.0f * _api.dpi;
+    const auto fontSizeInDIP = fontSize / 72.0f * 96.0f;
+    const auto fontSizeInPx = fontSize / 72.0f * _api.dpi;
 
     const auto designUnitsPerPx = fontSizeInPx / static_cast<float>(metrics.designUnitsPerEm);
     const auto ascent = static_cast<float>(metrics.ascent) * designUnitsPerPx;
@@ -662,7 +664,7 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     // Our cells can't overlap each other so we additionally clamp the bottom line to be inside the cell boundaries.
     doubleUnderlinePosBottom = std::min(doubleUnderlinePosBottom, lineHeight - thinLineWidth);
 
-    const auto cellWidth = gsl::narrow<u16>(std::roundf(advanceWidth));
+    const auto cellWidth = gsl::narrow<u16>(std::lroundf(advanceWidth));
     const auto cellHeight = gsl::narrow<u16>(lineHeight);
 
     {
@@ -675,8 +677,7 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
             // The coordSizeUnscaled parameter to SetFromEngine is used for API functions like GetConsoleFontSize.
             // Since clients expect that settings the font height to Y yields back a font height of Y,
             // we're scaling the X relative/proportional to the actual cellWidth/cellHeight ratio.
-            // The code below uses a poor form of integer rounding.
-            requestedSize.X = (requestedSize.Y * cellWidth + cellHeight / 2) / cellHeight;
+            requestedSize.X = gsl::narrow_cast<til::CoordType>(std::lroundf(fontSize / cellHeight * cellWidth));
         }
 
         fontInfo.SetFromEngine(requestedFaceName, requestedFamily, requestedWeight, false, coordSize, requestedSize);

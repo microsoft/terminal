@@ -1517,7 +1517,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Adjust the font size of the terminal control.
     // Arguments:
     // - fontSizeDelta: The amount to increase or decrease the font size by.
-    void TermControl::AdjustFontSize(int fontSizeDelta)
+    void TermControl::AdjustFontSize(float fontSizeDelta)
     {
         _core.AdjustFontSize(fontSizeDelta);
     }
@@ -2082,8 +2082,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //      The family is only used to determine if the font is truetype or
         //      not, but DX doesn't use that info at all.
         //      The Codepage is additionally not actually used by the DX engine at all.
-        FontInfo actualFont = { fontFace, 0, fontWeight.Weight, { 0, fontSize }, CP_UTF8, false };
-        FontInfoDesired desiredFont = { actualFont };
+        FontInfoDesired desiredFont{ fontFace, 0, fontWeight.Weight, fontSize, CP_UTF8 };
+        FontInfo actualFont{ fontFace, 0, fontWeight.Weight, desiredFont.GetEngineSize(), CP_UTF8, false };
 
         // Create a DX engine and initialize it with our font and DPI. We'll
         // then use it to measure how much space the requested rows and columns

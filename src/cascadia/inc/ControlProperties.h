@@ -57,7 +57,7 @@
     X(bool, UseAcrylic, false)                                                                                                                           \
     X(winrt::hstring, Padding, DEFAULT_PADDING)                                                                                                          \
     X(winrt::hstring, FontFace, L"Consolas")                                                                                                             \
-    X(int32_t, FontSize, DEFAULT_FONT_SIZE)                                                                                                              \
+    X(float, FontSize, DEFAULT_FONT_SIZE)                                                                                                                \
     X(winrt::Windows::UI::Text::FontWeight, FontWeight)                                                                                                  \
     X(IFontFeatureMap, FontFeatures)                                                                                                                     \
     X(IFontAxesMap, FontAxes)                                                                                                                            \
