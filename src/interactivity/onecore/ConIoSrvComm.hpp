@@ -41,11 +41,18 @@ namespace Microsoft::Console::Interactivity::OneCore
         [[nodiscard]] NTSTATUS RequestSetCursor(_In_ const CD_IO_CURSOR_INFORMATION* const pCdCursorInformation) const;
         [[nodiscard]] NTSTATUS RequestUpdateDisplay(_In_ til::CoordType RowIndex) const;
 
+        [[nodiscard]] NTSTATUS RequestMapVirtualKey(_In_ UINT uCode, _In_ UINT uMapType, _Out_ UINT* puReturnValue);
+        [[nodiscard]] NTSTATUS RequestVkKeyScan(_In_ WCHAR wCharacter, _Out_ SHORT* psReturnValue);
+        [[nodiscard]] NTSTATUS RequestGetKeyState(_In_ int iVirtualKey, _Out_ SHORT* psReturnValue);
         [[nodiscard]] USHORT GetDisplayMode() const noexcept;
 
         PVOID GetSharedViewBase() const noexcept;
 
         VOID CleanupForHeadless(const NTSTATUS status);
+
+        UINT ConIoMapVirtualKeyW(UINT uCode, UINT uMapType);
+        SHORT ConIoVkKeyScanW(WCHAR ch);
+        SHORT ConIoGetKeyState(int nVirtKey);
 
         [[nodiscard]] NTSTATUS InitializeBgfx();
         [[nodiscard]] NTSTATUS InitializeWddmCon();

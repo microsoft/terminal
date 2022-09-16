@@ -4,6 +4,7 @@
 #include "precomp.h"
 #include "../inc/EventSynthesis.hpp"
 #include "../../types/inc/convert.hpp"
+#include "../inc/VtApiRedirection.hpp"
 
 #pragma hdrstop
 
@@ -44,7 +45,7 @@ std::deque<std::unique_ptr<KeyEvent>> Microsoft::Console::Interactivity::CharToK
                                                                                          const unsigned int codepage)
 {
     const short invalidKey = -1;
-    auto keyState = VkKeyScanW(wch);
+    auto keyState = OneCoreSafeVkKeyScanW(wch);
 
     if (keyState == invalidKey)
     {
@@ -110,7 +111,7 @@ std::deque<std::unique_ptr<KeyEvent>> Microsoft::Console::Interactivity::Synthes
     }
 
     const auto vk = LOBYTE(keyState);
-    const auto virtualScanCode = gsl::narrow<WORD>(MapVirtualKeyW(vk, MAPVK_VK_TO_VSC));
+    const auto virtualScanCode = gsl::narrow<WORD>(OneCoreSafeMapVirtualKeyW(vk, MAPVK_VK_TO_VSC));
     KeyEvent keyEvent{ true, 1, LOBYTE(keyState), virtualScanCode, wch, 0 };
 
     // add modifier flags if necessary
@@ -200,7 +201,7 @@ std::deque<std::unique_ptr<KeyEvent>> Microsoft::Console::Interactivity::Synthes
                 break;
             }
             const WORD virtualKey = ch - '0' + VK_NUMPAD0;
-            const auto virtualScanCode = gsl::narrow<WORD>(MapVirtualKeyW(virtualKey, MAPVK_VK_TO_VSC));
+            const auto virtualScanCode = gsl::narrow<WORD>(OneCoreSafeMapVirtualKeyW(virtualKey, MAPVK_VK_TO_VSC));
 
             keyEvents.push_back(std::make_unique<KeyEvent>(true,
                                                            1ui16,
