@@ -75,7 +75,12 @@ Renderer::~Renderer()
             }
 
             const auto hr = _PaintFrameForEngine(pEngine);
-            LOG_HR_IF(hr, FAILED(hr) && hr != E_PENDING);
+            if (SUCCEEDED(hr))
+            {
+                break;
+            }
+
+            LOG_HR_IF(hr, hr != E_PENDING);
 
             if (--tries == 0)
             {
