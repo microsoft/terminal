@@ -20,6 +20,8 @@ Revision History:
 
 #pragma once
 
+#include <til/small_vector.h>
+
 #include "DbcsAttribute.hpp"
 #include "CharRowCellReference.hpp"
 #include "CharRowCell.hpp"
@@ -47,12 +49,12 @@ enum class DelimiterClass
 class CharRow final
 {
 public:
-    using glyph_type = typename wchar_t;
-    using value_type = typename CharRowCell;
-    using iterator = typename boost::container::small_vector_base<value_type>::iterator;
-    using const_iterator = typename boost::container::small_vector_base<value_type>::const_iterator;
-    using const_reverse_iterator = typename boost::container::small_vector_base<value_type>::const_reverse_iterator;
-    using reference = typename CharRowCellReference;
+    using glyph_type = wchar_t;
+    using value_type = CharRowCell;
+    using iterator = til::small_vector<value_type, 120>::iterator;
+    using const_iterator = til::small_vector<value_type, 120>::const_iterator;
+    using const_reverse_iterator = til::small_vector<value_type, 120>::const_reverse_iterator;
+    using reference = CharRowCellReference;
 
     CharRow(til::CoordType rowWidth, ROW* const pParent) noexcept;
 
@@ -96,7 +98,7 @@ private:
 
 protected:
     // storage for glyph data and dbcs attributes
-    boost::container::small_vector<value_type, 120> _data;
+    til::small_vector<value_type, 120> _data;
 
     // ROW that this CharRow belongs to
     ROW* _pParent;

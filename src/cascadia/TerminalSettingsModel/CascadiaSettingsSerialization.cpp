@@ -22,6 +22,7 @@
 #include <LegacyProfileGeneratorNamespaces.h>
 
 #include "userDefaults.h"
+#include "enableColorSelection.h"
 
 #include "ApplicationState.h"
 #include "DefaultTerminal.h"
@@ -313,6 +314,16 @@ void SettingsLoader::FinalizeLayering()
 {
     // Layer default globals -> user globals
     userSettings.globals->AddLeastImportantParent(inboxSettings.globals);
+
+    // Actions are currently global, so if we want to conditionally light up a bunch of
+    // actions, this is the time to do it.
+    if (userSettings.globals->EnableColorSelection())
+    {
+        const auto json = _parseJson(EnableColorSelectionSettingsJson);
+        const auto globals = GlobalAppSettings::FromJson(json.root);
+        userSettings.globals->AddLeastImportantParent(globals);
+    }
+
     userSettings.globals->_FinalizeInheritance();
     // Layer default profile defaults -> user profile defaults
     userSettings.baseLayerProfile->AddLeastImportantParent(inboxSettings.baseLayerProfile);
@@ -793,7 +804,8 @@ void SettingsLoader::_executeGenerator(const IDynamicProfileGenerator& generator
 Model::CascadiaSettings CascadiaSettings::LoadAll()
 try
 {
-    auto settingsString = ReadUTF8FileIfExists(_settingsPath()).value_or(std::string{});
+    FILETIME lastWriteTime{};
+    auto settingsString = ReadUTF8FileIfExists(_settingsPath(), false, &lastWriteTime).value_or(std::string{});
     auto firstTimeSetup = settingsString.empty();
 
     // If it's the firstTimeSetup and a preview build, then try to
@@ -873,6 +885,31 @@ try
             LOG_CAUGHT_EXCEPTION();
             settings->_warnings.Append(SettingsLoadWarnings::FailedToWriteToSettings);
         }
+    }
+    else
+    {
+        // lastWriteTime is only valid if mustWriteToDisk is false.
+        // Additionally WriteSettingsToDisk() updates the _hash for us already.
+        settings->_hash = _calculateHash(settingsString, lastWriteTime);
+    }
+
+    // GH#13936: We're interested in how many users opt out of useAtlasEngine,
+    // indicating major issues that would require us to disable it by default again.
+    {
+        size_t enabled[2]{};
+        for (const auto& profile : settings->_activeProfiles)
+        {
+            enabled[profile.UseAtlasEngine()]++;
+        }
+
+        TraceLoggingWrite(
+            g_hSettingsModelProvider,
+            "AtlasEngine_Usage",
+            TraceLoggingDescription("Event emitted upon settings load, containing the number of profiles opted-in/out of useAtlasEngine"),
+            TraceLoggingUIntPtr(enabled[0], "UseAtlasEngineDisabled", "Number of profiles for which AtlasEngine is disabled"),
+            TraceLoggingUIntPtr(enabled[1], "UseAtlasEngineEnabled", "Number of profiles for which AtlasEngine is enabled"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
     return *settings;
@@ -1015,6 +1052,15 @@ const std::filesystem::path& CascadiaSettings::_releaseSettingsPath()
     return path;
 }
 
+// Returns a has (approximately) uniquely identifying the settings.json contents on disk.
+winrt::hstring CascadiaSettings::_calculateHash(std::string_view settings, const FILETIME& lastWriteTime)
+{
+    const auto fileHash = til::hash(settings);
+    const ULARGE_INTEGER fileTime{ lastWriteTime.dwLowDateTime, lastWriteTime.dwHighDateTime };
+    const auto hash = fmt::format(L"{:016x}-{:016x}", fileHash, fileTime.QuadPart);
+    return winrt::hstring{ hash };
+}
+
 // function Description:
 // - Returns the full path to the settings file, either within the application
 //   package, or in its unpackaged location. This path is under the "Local
@@ -1058,17 +1104,21 @@ winrt::hstring CascadiaSettings::DefaultSettingsPath()
 // - <none>
 // Return Value:
 // - <none>
-void CascadiaSettings::WriteSettingsToDisk() const
+void CascadiaSettings::WriteSettingsToDisk()
 {
     const auto settingsPath = _settingsPath();
 
     // write current settings to current settings file
     Json::StreamWriterBuilder wbuilder;
-    wbuilder.settings_["indentation"] = "    ";
     wbuilder.settings_["enableYAMLCompatibility"] = true; // suppress spaces around colons
+    wbuilder.settings_["indentation"] = "    ";
+    wbuilder.settings_["precision"] = 6; // prevent values like 1.1000000000000001
 
+    FILETIME lastWriteTime{};
     const auto styledString{ Json::writeString(wbuilder, ToJson()) };
-    WriteUTF8FileAtomic(settingsPath, styledString);
+    WriteUTF8FileAtomic(settingsPath, styledString, &lastWriteTime);
+
+    _hash = _calculateHash(styledString, lastWriteTime);
 
     // Persists the default terminal choice
     // GH#10003 - Only do this if _currentDefaultTerminal was actually initialized.

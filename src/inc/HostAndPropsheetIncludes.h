@@ -39,6 +39,14 @@ typedef NTSTATUS *PNTSTATUS;
 
 #include <winuser.h>
 
+#define VkKeyScanW DO_NOT_USE_VkKeyScanW_USE_OneCoreSafeVkKeyScanW
+#define MapVirtualKeyW DO_NOT_USE_MapVirtualKeyW_USE_OneCoreSafeMapVirtualKeyW
+#define GetKeyState DO_NOT_USE_GetKeyState_USE_OneCoreSafeGetKeyState
+
+// This header contains some overrides for win32 APIs
+// that cannot exist on OneCore
+#include "../interactivity/inc/VtApiRedirection.hpp"
+
 #include <cwchar>
 
 // Only remaining item from w32gdip.h. There's probably a better way to do this as well.

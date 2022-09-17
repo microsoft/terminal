@@ -5,6 +5,13 @@
 #include "ColorsPage.h"
 #include "ColorControl.h"
 
+// The property sheet will never load on OneCore, so we do
+// not need to redirect users to the OneCore safe versionf
+// of these functions.
+#undef VkKeyScanW
+#undef MapVirtualKeyW
+#undef GetKeyState
+
 static BYTE ColorArray[4];
 static int iColor;
 

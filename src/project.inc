@@ -3,14 +3,14 @@
 # - Common Project Configuration
 # -------------------------------------
 
-!include $(OSDEPENDSROOT)\OSS\gsl\3.1.0\consume.inc
+!include $(PROJECT_ROOT)\vcpkg\consume.inc
 
 # -------------------------------------
 # Preprocessor Settings
 # -------------------------------------
 
 UNICODE                 = 1
-C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE -DFMT_HEADER_ONLY -D__INSIDE_WINDOWS
+C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE -DFMT_HEADER_ONLY -D__INSIDE_WINDOWS -DBUILD_ONECORE_INTERACTIVITY
 
 # -------------------------------------
 # CRT Configuration
@@ -51,7 +51,6 @@ INCLUDES= \
     $(CONSOLE_SRC_PATH)\..\oss\chromium; \
     $(CONSOLE_SRC_PATH)\..\oss\fmt\include; \
     $(CONSOLE_SRC_PATH)\..\oss\interval_tree; \
-    $(CONSOLE_SRC_PATH)\..\oss\boost\boost_1_73_0; \
     $(CONSOLE_SRC_PATH)\..\oss\pcg\include; \
     $(MINWIN_INTERNAL_PRIV_SDK_INC_PATH_L); \
     $(MINWIN_RESTRICTED_PRIV_SDK_INC_PATH_L); \

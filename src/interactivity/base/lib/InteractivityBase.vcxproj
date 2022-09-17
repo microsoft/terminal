@@ -30,6 +30,7 @@
     </ClCompile>
     <ClCompile Include="..\RemoteConsoleControl.cpp" />
     <ClCompile Include="..\ServiceLocator.cpp" />
+    <ClCompile Include="..\VtApiRedirection.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\inc\IAccessibilityNotifier.hpp" />
@@ -41,6 +42,7 @@
     <ClInclude Include="..\..\inc\ISystemConfigurationProvider.hpp" />
     <ClInclude Include="..\..\inc\IWindowMetrics.hpp" />
     <ClInclude Include="..\..\inc\Module.hpp" />
+    <ClInclude Include="..\..\inc\VtApiRedirection.hpp" />
     <ClInclude Include="..\..\inc\EventSynthesis.hpp" />
     <ClInclude Include="..\ApiDetector.hpp" />
     <ClInclude Include="..\HostSignalInputThread.hpp" />

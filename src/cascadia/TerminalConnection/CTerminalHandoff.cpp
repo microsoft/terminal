@@ -102,7 +102,7 @@ static HRESULT _duplicateHandle(const HANDLE in, HANDLE& out) noexcept
 // - E_NOT_VALID_STATE if a event handler is not registered before calling. `::DuplicateHandle`
 //   error codes if we cannot manage to make our own copy of handles to retain. Or S_OK/error
 //   from the registered handler event function.
-HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE ref, HANDLE server, HANDLE client)
+HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE ref, HANDLE server, HANDLE client, TERMINAL_STARTUP_INFO startupInfo)
 {
     try
     {
@@ -132,7 +132,7 @@ HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE in, HANDLE out, HANDLE sign
         THROW_IF_FAILED(_duplicateHandle(client, client));
 
         // Call registered handler from when we started listening.
-        THROW_IF_FAILED(localPfnHandoff(in, out, signal, ref, server, client));
+        THROW_IF_FAILED(localPfnHandoff(in, out, signal, ref, server, client, startupInfo));
 
 #pragma warning(suppress : 26477)
         TraceLoggingWrite(
