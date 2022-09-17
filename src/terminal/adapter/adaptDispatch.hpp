@@ -55,6 +55,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool SelectiveEraseInLine(const DispatchTypes::EraseType eraseType) override; // DECSEL
         bool InsertCharacter(const VTInt count) override; // ICH
         bool DeleteCharacter(const VTInt count) override; // DCH
+        bool FillRectangularArea(const VTParameter ch, const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) override; // DECFRA
         bool SetGraphicsRendition(const VTParameters options) override; // SGR
         bool SetLineRendition(const LineRendition rendition) override; // DECSWL, DECDWL, DECDHL
         bool SetCharacterProtectionAttribute(const VTParameters options) override; // DECSCA
@@ -184,6 +185,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _ApplyCursorMovementFlags(Cursor& cursor) noexcept;
         void _FillRect(TextBuffer& textBuffer, const til::rect& fillRect, const wchar_t fillChar, const TextAttribute fillAttrs);
         void _SelectiveEraseRect(TextBuffer& textBuffer, const til::rect& eraseRect);
+        til::rect _CalculateRectArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const til::size bufferSize);
         void _EraseScrollback();
         void _EraseAll();
         void _ScrollRectVertically(TextBuffer& textBuffer, const til::rect& scrollRect, const VTInt delta);

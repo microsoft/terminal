@@ -784,6 +784,82 @@ bool AdaptDispatch::SelectiveEraseInLine(const DispatchTypes::EraseType eraseTyp
 }
 
 // Routine Description:
+// - Helper method to caculate the applicable buffer coordinates for use with
+//   the various rectangular area operations.
+// Arguments:
+// - top - The first row of the area.
+// - left - The first column of the area.
+// - bottom - The last row of the area (inclusive).
+// - right - The last column of the area (inclusive).
+// - bufferSize - The size of the target buffer.
+// Return value:
+// - An exclusive rect with the absolute buffer coordinates.
+til::rect AdaptDispatch::_CalculateRectArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const til::size bufferSize)
+{
+    const auto viewport = _api.GetViewport();
+
+    // We start by calculating the margin offsets and maximum dimensions.
+    // If the origin mode isn't set, we use the viewport extent.
+    const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, false);
+    const auto yOffset = _isOriginModeRelative ? topMargin : 0;
+    const auto yMaximum = _isOriginModeRelative ? bottomMargin + 1 : viewport.height();
+    const auto xMaximum = bufferSize.width;
+
+    auto fillRect = til::inclusive_rect{};
+    fillRect.left = left;
+    fillRect.top = top + yOffset;
+    // Right and bottom default to the maximum dimensions.
+    fillRect.right = (right ? right : xMaximum);
+    fillRect.bottom = (bottom ? bottom + yOffset : yMaximum);
+
+    // We also clamp everything to the maximum dimensions, and subtract 1
+    // to convert from VT coordinates which have an origin of 1;1.
+    fillRect.left = std::min(fillRect.left, xMaximum) - 1;
+    fillRect.right = std::min(fillRect.right, xMaximum) - 1;
+    fillRect.top = std::min(fillRect.top, yMaximum) - 1;
+    fillRect.bottom = std::min(fillRect.bottom, yMaximum) - 1;
+
+    // To get absolute coordinates we offset with the viewport top.
+    fillRect.top += viewport.top;
+    fillRect.bottom += viewport.top;
+
+    return til::rect{ fillRect };
+}
+
+// Routine Description:
+// - DECFRA - Fills a rectangular area with the given character and using the
+//     currently active rendition attributes.
+// Arguments:
+// - ch - The ordinal value of the character used to fill the area.
+// - top - The first row of the area.
+// - left - The first column of the area.
+// - bottom - The last row of the area (inclusive).
+// - right - The last column of the area (inclusive).
+// Return Value:
+// - True.
+bool AdaptDispatch::FillRectangularArea(const VTParameter ch, const VTInt top, const VTInt left, const VTInt bottom, const VTInt right)
+{
+    auto& textBuffer = _api.GetTextBuffer();
+    const auto fillRect = _CalculateRectArea(top, left, bottom, right, textBuffer.GetSize().Dimensions());
+
+    // The standard only allows for characters in the range of the GL and GR
+    // character set tables, but we also support additional Unicode characters
+    // from the BMP if the code page is UTF-8. Default and 0 are treated as 32.
+    const auto charValue = !ch.has_value() || ch.value() == 0 ? 32 : ch.value();
+    const auto glChar = (charValue >= 32 && charValue <= 126);
+    const auto grChar = (charValue >= 160 && charValue <= 255);
+    const auto unicodeChar = (charValue >= 256 && charValue <= 65535 && _api.GetConsoleOutputCP() == CP_UTF8);
+    if (glChar || grChar || unicodeChar)
+    {
+        const auto fillChar = _termOutput.TranslateKey(gsl::narrow_cast<wchar_t>(charValue));
+        const auto fillAttributes = textBuffer.GetCurrentAttributes();
+        _FillRect(textBuffer, fillRect, fillChar, fillAttributes);
+    }
+
+    return true;
+}
+
+// Routine Description:
 // - DECSWL/DECDWL/DECDHL - Sets the line rendition attribute for the current line.
 // Arguments:
 // - rendition - Determines whether the line will be rendered as single width, double

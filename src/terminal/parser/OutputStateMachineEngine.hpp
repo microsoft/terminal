@@ -146,6 +146,7 @@ namespace Microsoft::Console::VirtualTerminal
             XT_PopSgrAlias = VTID("#q"),
             XT_PushSgr = VTID("#{"),
             XT_PopSgr = VTID("#}"),
+            DECFRA_FillRectangularArea = VTID("$x"),
             DECSCPP_SetColumnsPerPage = VTID("$|"),
             DECAC_AssignColor = VTID(",|"),
             DECPS_PlaySound = VTID(",~")

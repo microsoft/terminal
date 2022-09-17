@@ -632,6 +632,10 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         success = _dispatch->PopGraphicsRendition();
         TermTelemetry::Instance().Log(TermTelemetry::Codes::XTPOPSGR);
         break;
+    case CsiActionCodes::DECFRA_FillRectangularArea:
+        success = _dispatch->FillRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2), parameters.at(3).value_or(0), parameters.at(4).value_or(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECFRA);
+        break;
     case CsiActionCodes::DECAC_AssignColor:
         success = _dispatch->AssignColor(parameters.at(0), parameters.at(1).value_or(0), parameters.at(2).value_or(0));
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECAC);
