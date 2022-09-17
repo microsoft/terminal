@@ -85,7 +85,7 @@ bool AdaptDispatch::SetGraphicsRendition(const VTParameters options)
         case Off:
             attr.SetDefaultForeground();
             attr.SetDefaultBackground();
-            attr.SetDefaultMetaAttrs();
+            attr.SetDefaultRenditionAttributes();
             break;
         case ForegroundDefault:
             attr.SetDefaultForeground();
