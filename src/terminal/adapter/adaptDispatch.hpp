@@ -56,6 +56,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool InsertCharacter(const VTInt count) override; // ICH
         bool DeleteCharacter(const VTInt count) override; // DCH
         bool FillRectangularArea(const VTParameter ch, const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) override; // DECFRA
+        bool EraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) override; // DECERA
         bool SetGraphicsRendition(const VTParameters options) override; // SGR
         bool SetLineRendition(const LineRendition rendition) override; // DECSWL, DECDWL, DECDHL
         bool SetCharacterProtectionAttribute(const VTParameters options) override; // DECSCA

@@ -94,6 +94,7 @@ public:
     virtual bool SelectiveEraseInLine(const DispatchTypes::EraseType eraseType) = 0; // DECSEL
 
     virtual bool FillRectangularArea(const VTParameter ch, const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) = 0; // DECFRA
+    virtual bool EraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) = 0; // DECERA
 
     virtual bool SetGraphicsRendition(const VTParameters options) = 0; // SGR
     virtual bool SetLineRendition(const LineRendition rendition) = 0; // DECSWL, DECDWL, DECDHL
