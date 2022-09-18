@@ -2791,11 +2791,14 @@ ITermDispatch::StringHandler AdaptDispatch::RequestSetting()
             const auto id = idBuilder->Finalize(ch);
             switch (id)
             {
-            case VTID('m'):
+            case VTID("m"):
                 _ReportSGRSetting();
                 break;
-            case VTID('r'):
+            case VTID("r"):
                 _ReportDECSTBMSetting();
+                break;
+            case VTID("\"q"):
+                _ReportDECSCASetting();
                 break;
             default:
                 _api.ReturnResponse(L"\033P0$r\033\\");
@@ -2900,6 +2903,28 @@ void AdaptDispatch::_ReportDECSTBMSetting()
 
     // The 'r' indicates this is an DECSTBM response, and ST ends the sequence.
     response.append(L"r\033\\"sv);
+    _api.ReturnResponse({ response.data(), response.size() });
+}
+
+// Method Description:
+// - Reports the DECSCA protected attribute in response to a DECRQSS query.
+// Arguments:
+// - None
+// Return Value:
+// - None
+void AdaptDispatch::_ReportDECSCASetting() const
+{
+    using namespace std::string_view_literals;
+
+    // A valid response always starts with DCS 1 $ r.
+    fmt::basic_memory_buffer<wchar_t, 64> response;
+    response.append(L"\033P1$r"sv);
+
+    const auto attr = _api.GetTextBuffer().GetCurrentAttributes();
+    response.append(attr.IsProtected() ? L"1"sv : L"0"sv);
+
+    // The '"q' indicates this is an DECSCA response, and ST ends the sequence.
+    response.append(L"\"q\033\\"sv);
     _api.ReturnResponse({ response.data(), response.size() });
 }
 
