@@ -494,11 +494,23 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         });
         TermTelemetry::Instance().Log(TermTelemetry::Codes::ED);
         break;
+    case CsiActionCodes::DECSED_SelectiveEraseDisplay:
+        success = parameters.for_each([&](const auto eraseType) {
+            return _dispatch->SelectiveEraseInDisplay(eraseType);
+        });
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSED);
+        break;
     case CsiActionCodes::EL_EraseLine:
         success = parameters.for_each([&](const auto eraseType) {
             return _dispatch->EraseInLine(eraseType);
         });
         TermTelemetry::Instance().Log(TermTelemetry::Codes::EL);
+        break;
+    case CsiActionCodes::DECSEL_SelectiveEraseLine:
+        success = parameters.for_each([&](const auto eraseType) {
+            return _dispatch->SelectiveEraseInLine(eraseType);
+        });
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSEL);
         break;
     case CsiActionCodes::DECSET_PrivateModeSet:
         success = parameters.for_each([&](const auto mode) {

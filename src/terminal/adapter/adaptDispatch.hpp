@@ -51,6 +51,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool EraseInDisplay(const DispatchTypes::EraseType eraseType) override; // ED
         bool EraseInLine(const DispatchTypes::EraseType eraseType) override; // EL
         bool EraseCharacters(const VTInt numChars) override; // ECH
+        bool SelectiveEraseInDisplay(const DispatchTypes::EraseType eraseType) override; // DECSED
+        bool SelectiveEraseInLine(const DispatchTypes::EraseType eraseType) override; // DECSEL
         bool InsertCharacter(const VTInt count) override; // ICH
         bool DeleteCharacter(const VTInt count) override; // DCH
         bool SetGraphicsRendition(const VTParameters options) override; // SGR
@@ -181,6 +183,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins);
         void _ApplyCursorMovementFlags(Cursor& cursor) noexcept;
         void _FillRect(TextBuffer& textBuffer, const til::rect& fillRect, const wchar_t fillChar, const TextAttribute fillAttrs);
+        void _SelectiveEraseRect(TextBuffer& textBuffer, const til::rect& eraseRect);
         void _EraseScrollback();
         void _EraseAll();
         void _ScrollRectVertically(TextBuffer& textBuffer, const til::rect& scrollRect, const VTInt delta);
