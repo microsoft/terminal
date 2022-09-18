@@ -472,10 +472,10 @@ void AtlasEngine::_drawGlyph(const TileHashMap::iterator& it) const
 AtlasEngine::CachedGlyphLayout AtlasEngine::_getCachedGlyphLayout(const wchar_t* chars, u16 charsLength, u16 cellCount, IDWriteTextFormat* textFormat, bool coloredGlyph) const
 {
     const f32x2 layoutBox{ cellCount * _r.cellSizeDIP.x, _r.cellSizeDIP.y };
-    const f32x2 halfSize{ layoutBox.x * 0.5f, layoutBox.y * 0.5f };
     bool scalingRequired = false;
     f32x2 offset{ 0, 0 };
     f32x2 scale{ 1, 1 };
+    f32x2 scaleCenter;
 
     // See D2DFactory::DrawText
     wil::com_ptr<IDWriteTextLayout> textLayout;
@@ -550,12 +550,18 @@ AtlasEngine::CachedGlyphLayout AtlasEngine::_getCachedGlyphLayout(const wchar_t*
                 static_cast<f32>(glyphMetrics.advanceHeight) / static_cast<f32>(metrics.designUnitsPerEm) * _r.fontMetrics.fontSizeInDIP,
             };
 
-            // We always want box drawing glyphs to exactly match the size of a terminal cell.
-            // So for safe measure we'll always scale them to the exact size.
-            // But add 1px to the destination size, so that we don't end up with fractional pixels.
             scalingRequired = true;
-            scale.x = layoutBox.x / boxSize.x;
-            scale.y = layoutBox.y / boxSize.y;
+            // We always want box drawing glyphs to be centered in their cell.
+            offset.x = (layoutBox.x - boxSize.x) * 0.5f;
+            offset.y = (layoutBox.y - boxSize.y) * 0.5f;
+            // We always want box drawing glyphs to exactly match the size of a terminal cell.
+            // But add 1px to the destination size, so that we don't end up with fractional pixels.
+            scale.x = (layoutBox.x + _r.dipPerPixel) / boxSize.x;
+            scale.y = (layoutBox.y + _r.dipPerPixel) / boxSize.y;
+            // Now that the glyph is in the center of the cell thanks
+            // to the offset, the scaleCenter is center of the cell.
+            scaleCenter.x = layoutBox.x * 0.5f;
+            scaleCenter.y = layoutBox.y * 0.5f;
         }
     }
     else
@@ -563,16 +569,7 @@ AtlasEngine::CachedGlyphLayout AtlasEngine::_getCachedGlyphLayout(const wchar_t*
         DWRITE_OVERHANG_METRICS overhang;
         THROW_IF_FAILED(textLayout->GetOverhangMetrics(&overhang));
 
-        const DWRITE_OVERHANG_METRICS clampedOverhang{
-            std::max(0.0f, overhang.left),
-            std::max(0.0f, overhang.top),
-            std::max(0.0f, overhang.right),
-            std::max(0.0f, overhang.bottom),
-        };
-        f32x2 actualSize{
-            layoutBox.x + overhang.left + overhang.right,
-            layoutBox.y + overhang.top + overhang.bottom,
-        };
+        auto actualSizeX = layoutBox.x + overhang.left + overhang.right;
 
         // Long glyphs should be drawn with their proper design size, even if that makes them a bit blurry,
         // because otherwise we fail to support "pseudo" block characters like the "===" ligature in Cascadia Code.
@@ -585,8 +582,7 @@ AtlasEngine::CachedGlyphLayout AtlasEngine::_getCachedGlyphLayout(const wchar_t*
             const auto advanceScale = _r.fontMetrics.advanceScale;
             scalingRequired = true;
             scale = { advanceScale, advanceScale };
-            actualSize.x *= advanceScale;
-            actualSize.y *= advanceScale;
+            actualSizeX *= advanceScale;
         }
 
         // We need to offset glyphs that are simply outside of our layout box (layoutBox.x/.y)
@@ -627,34 +623,27 @@ AtlasEngine::CachedGlyphLayout AtlasEngine::_getCachedGlyphLayout(const wchar_t*
         //   --> offsetY = 0
         //   --> scale   = layoutBox.y / (layoutBox.y + left + right)
         //               = 0.69f
-        offset.x = clampedOverhang.left - clampedOverhang.right;
-        offset.y = clampedOverhang.top - clampedOverhang.bottom;
+        offset.x = std::max(0.0f, overhang.left) - std::max(0.0f, overhang.right);
+        scaleCenter.x = offset.x;
+        scaleCenter.y = _r.fontMetrics.baselineInDIP;
 
-        if ((actualSize.x - layoutBox.x) > _r.dipPerPixel)
+        if ((actualSizeX - layoutBox.x) > _r.dipPerPixel)
         {
             scalingRequired = true;
             offset.x = (overhang.left - overhang.right) * 0.5f;
-            scale.x = layoutBox.x / actualSize.x;
+            scale.x = layoutBox.x / actualSizeX;
             scale.y = scale.x;
+            scaleCenter.x = layoutBox.x * 0.5f;
         }
-        if ((actualSize.y - layoutBox.y) > _r.dipPerPixel)
+        if (overhang.top > _r.dipPerPixel || overhang.bottom > _r.dipPerPixel)
         {
+            const auto descend = _r.cellSizeDIP.y - _r.fontMetrics.baselineInDIP;
+            const auto scaleTop = _r.fontMetrics.baselineInDIP / (_r.fontMetrics.baselineInDIP + overhang.top);
+            const auto scaleBottom = descend / (descend + overhang.bottom);
             scalingRequired = true;
-            offset.y = (overhang.top - overhang.bottom) * 0.5f;
-            scale.x = std::min(scale.x, layoutBox.y / actualSize.y);
+            scale.x = std::min(scale.x, std::min(scaleTop, scaleBottom));
             scale.y = scale.x;
         }
-
-        // As explained below, we use D2D1_DRAW_TEXT_OPTIONS_NO_SNAP to prevent a weird issue with baseline snapping.
-        // But we do want it technically, so this re-implements baseline snapping... I think?
-        // It calculates the new `baseline` height after transformation by `scale.y` relative to the center point `halfSize.y`.
-        //
-        // This works even if `scale.y == 1`, because then `baseline == baselineInDIP + offset.y` and `baselineInDIP`
-        // is always measured in full pixels. So rounding it will be equivalent to just rounding `offset.y` itself.
-        const auto baseline = halfSize.y + (_r.fontMetrics.baselineInDIP + offset.y - halfSize.y) * scale.y;
-        // This rounds to the nearest multiple of _r.dipPerPixel.
-        const auto baselineFixed = roundf(baseline * _r.pixelPerDIP) * _r.dipPerPixel;
-        offset.y += (baselineFixed - baseline) / scale.y;
     }
 
     auto options = D2D1_DRAW_TEXT_OPTIONS_NONE;
@@ -672,11 +661,19 @@ AtlasEngine::CachedGlyphLayout AtlasEngine::_getCachedGlyphLayout(const wchar_t*
     // where every single "=" might be blatantly misaligned vertically (same for any box drawings).
     WI_SetFlagIf(options, D2D1_DRAW_TEXT_OPTIONS_NO_SNAP, scalingRequired);
 
+    // ClearType basically has a 3x higher horizontal resolution. To make our glyphs render the same everywhere,
+    // it's probably for the best to ensure we initially rasterize them on a whole pixel boundary.
+    // (https://en.wikipedia.org/wiki/ClearType#How_ClearType_works)
+    offset.x = roundf(offset.x * _r.pixelPerDIP) * _r.dipPerPixel;
+    // As explained below, we use D2D1_DRAW_TEXT_OPTIONS_NO_SNAP to prevent a weird issue with baseline snapping.
+    // But we do want it technically, so this re-implements baseline snapping... I think?
+    offset.y = roundf(offset.y * _r.pixelPerDIP) * _r.dipPerPixel;
+
     return CachedGlyphLayout{
         .textLayout = textLayout,
-        .halfSize = halfSize,
         .offset = offset,
         .scale = scale,
+        .scaleCenter = scaleCenter,
         .options = options,
         .scalingRequired = scalingRequired,
     };
@@ -790,8 +787,8 @@ void AtlasEngine::CachedGlyphLayout::applyScaling(ID2D1RenderTarget* d2dRenderTa
             0,
             0,
             scale.y,
-            (origin.x + halfSize.x) * (1.0f - scale.x),
-            (origin.y + halfSize.y) * (1.0f - scale.y),
+            (origin.x + scaleCenter.x) * (1.0f - scale.x),
+            (origin.y + scaleCenter.y) * (1.0f - scale.y),
         };
         d2dRenderTarget->SetTransform(&transform);
     }
