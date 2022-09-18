@@ -148,6 +148,7 @@ namespace Microsoft::Console::VirtualTerminal
             XT_PopSgr = VTID("#}"),
             DECFRA_FillRectangularArea = VTID("$x"),
             DECERA_EraseRectangularArea = VTID("$z"),
+            DECSERA_SelectiveEraseRectangularArea = VTID("${"),
             DECSCPP_SetColumnsPerPage = VTID("$|"),
             DECAC_AssignColor = VTID(",|"),
             DECPS_PlaySound = VTID(",~")

@@ -880,6 +880,24 @@ bool AdaptDispatch::EraseRectangularArea(const VTInt top, const VTInt left, cons
 }
 
 // Routine Description:
+// - DECSERA - Selectively erases a rectangular area, replacing unprotected
+//     cells with a space character, but retaining the rendition attributes.
+// Arguments:
+// - top - The first row of the area.
+// - left - The first column of the area.
+// - bottom - The last row of the area (inclusive).
+// - right - The last column of the area (inclusive).
+// Return Value:
+// - True.
+bool AdaptDispatch::SelectiveEraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right)
+{
+    auto& textBuffer = _api.GetTextBuffer();
+    const auto eraseRect = _CalculateRectArea(top, left, bottom, right, textBuffer.GetSize().Dimensions());
+    _SelectiveEraseRect(textBuffer, eraseRect);
+    return true;
+}
+
+// Routine Description:
 // - DECSWL/DECDWL/DECDHL - Sets the line rendition attribute for the current line.
 // Arguments:
 // - rendition - Determines whether the line will be rendered as single width, double

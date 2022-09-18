@@ -640,6 +640,10 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         success = _dispatch->EraseRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0));
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECERA);
         break;
+    case CsiActionCodes::DECSERA_SelectiveEraseRectangularArea:
+        success = _dispatch->SelectiveEraseRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSERA);
+        break;
     case CsiActionCodes::DECAC_AssignColor:
         success = _dispatch->AssignColor(parameters.at(0), parameters.at(1).value_or(0), parameters.at(2).value_or(0));
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECAC);
