@@ -86,6 +86,7 @@ public:
 
     bool SetGraphicsRendition(const VTParameters /*options*/) override { return false; } // SGR
     bool SetLineRendition(const LineRendition /*rendition*/) override { return false; } // DECSWL, DECDWL, DECDHL
+    bool SetCharacterProtectionAttribute(const VTParameters /*options*/) { return false; } // DECSCA
 
     bool PushGraphicsRendition(const VTParameters /*options*/) override { return false; } // XTPUSHSGR
     bool PopGraphicsRendition() override { return false; } // XTPOPSGR

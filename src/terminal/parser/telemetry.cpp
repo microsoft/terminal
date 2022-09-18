@@ -265,6 +265,7 @@ void TermTelemetry::WriteFinalTraceLog() const
                                       TraceLoggingUInt32(_uiTimesUsed[DECSTR], "DECSTR"),
                                       TraceLoggingUInt32(_uiTimesUsed[RIS], "RIS"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECSCUSR], "DECSCUSR"),
+                                      TraceLoggingUInt32(_uiTimesUsed[DECSCA], "DECSCA"),
                                       TraceLoggingUInt32(_uiTimesUsed[DTTERM_WM], "DTTERM_WM"),
                                       TraceLoggingUInt32(_uiTimesUsed[OSCCT], "OscColorTable"),
                                       TraceLoggingUInt32(_uiTimesUsed[OSCSCC], "OscSetCursorColor"),

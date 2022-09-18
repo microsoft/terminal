@@ -606,6 +606,10 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         success = _dispatch->SoftReset();
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSTR);
         break;
+    case CsiActionCodes::DECSCA_SetCharacterProtectionAttribute:
+        success = _dispatch->SetCharacterProtectionAttribute(parameters);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSCA);
+        break;
     case CsiActionCodes::XT_PushSgr:
     case CsiActionCodes::XT_PushSgrAlias:
         success = _dispatch->PushGraphicsRendition(parameters);

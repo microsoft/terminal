@@ -55,6 +55,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool DeleteCharacter(const VTInt count) override; // DCH
         bool SetGraphicsRendition(const VTParameters options) override; // SGR
         bool SetLineRendition(const LineRendition rendition) override; // DECSWL, DECDWL, DECDHL
+        bool SetCharacterProtectionAttribute(const VTParameters options) override; // DECSCA
         bool PushGraphicsRendition(const VTParameters options) override; // XTPUSHSGR
         bool PopGraphicsRendition() override; // XTPOPSGR
         bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) override; // DSR, DSR-OS, DSR-CPR

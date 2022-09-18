@@ -92,6 +92,7 @@ namespace Microsoft::Console::VirtualTerminal
             DECSTR,
             RIS,
             DECSCUSR,
+            DECSCA,
             DTTERM_WM,
             OSCCT,
             OSCSCC,

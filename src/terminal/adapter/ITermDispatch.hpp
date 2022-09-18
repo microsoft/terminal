@@ -93,6 +93,7 @@ public:
 
     virtual bool SetGraphicsRendition(const VTParameters options) = 0; // SGR
     virtual bool SetLineRendition(const LineRendition rendition) = 0; // DECSWL, DECDWL, DECDHL
+    virtual bool SetCharacterProtectionAttribute(const VTParameters options) = 0; // DECSCA
 
     virtual bool PushGraphicsRendition(const VTParameters options) = 0; // XTPUSHSGR
     virtual bool PopGraphicsRendition() = 0; // XTPOPSGR

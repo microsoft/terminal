@@ -1768,7 +1768,7 @@ bool AdaptDispatch::AcceptC1Controls(const bool enabled)
 //  X All character sets          G0, G1, G2, Default settings.
 //                                G3, GL, GR
 //  X Select graphic rendition    SGR         Normal rendition.
-//    Select character attribute  DECSCA      Normal (erasable by DECSEL and DECSED).
+//  X Select character attribute  DECSCA      Normal (erasable by DECSEL and DECSED).
 //  X Save cursor state           DECSC       Home position.
 //    Assign user preference      DECAUPSS    Set selected in Set-Up.
 //        supplemental set
@@ -1802,6 +1802,7 @@ bool AdaptDispatch::SoftReset()
     AcceptC1Controls(false);
 
     SetGraphicsRendition({}); // Normal rendition.
+    SetCharacterProtectionAttribute({}); // Default (unprotected)
 
     // Reset the saved cursor state.
     // Note that XTerm only resets the main buffer state, but that

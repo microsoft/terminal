@@ -137,6 +137,7 @@ namespace Microsoft::Console::VirtualTerminal
             DECREQTPARM_RequestTerminalParameters = VTID("x"),
             DECSCUSR_SetCursorStyle = VTID(" q"),
             DECSTR_SoftReset = VTID("!p"),
+            DECSCA_SetCharacterProtectionAttribute = VTID("\"q"),
             XT_PushSgrAlias = VTID("#p"),
             XT_PopSgrAlias = VTID("#q"),
             XT_PushSgr = VTID("#{"),
