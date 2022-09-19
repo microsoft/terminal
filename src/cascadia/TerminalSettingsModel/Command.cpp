@@ -680,38 +680,45 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         std::wstring cdText = directories ? L"cd " : L"";
         auto result = winrt::single_threaded_vector<Model::Command>();
+
+        // Use this map to discard duplicates.
+        std::unordered_map<std::wstring_view, bool> foundCommands{};
+
         auto backspaces = std::wstring(::base::saturated_cast<size_t>(0), L'\x7f');
 
-        // split `history` on ";"
-        std::wstringstream ss{ history.c_str() };
-        std::wstring line;
-
-        while (std::getline(ss, line))
-        {
+        auto createAction = [&](std::wstring_view line) {
             if (line.empty())
             {
-                continue;
+                return;
             }
-            Model::SendInputArgs args{ winrt::hstring{ fmt::format(L"{}{}{}", cdText, backspaces, line.c_str()) } };
+            if (foundCommands.contains(line))
+            {
+                return;
+            }
+            Model::SendInputArgs args{ winrt::hstring{ fmt::format(L"{}{}{}", cdText, backspaces, line) } };
             Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, args };
             Model::Command command{};
             command.ActionAndArgs(actionAndArgs);
-            command.Name(line);
+            command.Name(winrt::hstring{ line });
             result.Append(command);
+            foundCommands[line] = true;
+            // foundCommands.insert(line, true);
+        };
+
+        std::wstring lineBreak = L"\r\n";
+
+        std::wstring_view historyView{ history };
+        size_t start = 0u;
+        auto end = historyView.find(lineBreak);
+        while (end != std::string::npos)
+        {
+            auto line = historyView.substr(start, end - start);
+            createAction(line);
+            start = end + lineBreak.length();
+            end = historyView.find(lineBreak, start);
         }
+        createAction(historyView.substr(start, end));
 
-
-
-        // for (const auto& line : lines)
-        // {
-        //     Model::SendInputArgs args{ winrt::hstring{ fmt::format(L"{}{}{}", backspaces, cdText, line.c_str()) } };
-        //     Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, args };
-        //     Model::Command command{};
-        //     command.ActionAndArgs(actionAndArgs);
-        //     command.Name(line);
-
-        //     result.Append(command);
-        // }
         return result;
     }
 }
