@@ -99,7 +99,6 @@
     ON_ALL_ACTIONS(MarkMode)                \
     ON_ALL_ACTIONS(ToggleBlockSelection)    \
     ON_ALL_ACTIONS(SwitchSelectionEndpoint) \
-    ON_ALL_ACTIONS(GetSuggestions)          \
     ON_ALL_ACTIONS(ColorSelection)          \
     ON_ALL_ACTIONS(ExpandSelectionToWord)   \
     ON_ALL_ACTIONS(CloseOtherPanes)
@@ -138,6 +137,7 @@
     ON_ALL_ACTIONS_WITH_ARGS(SplitPane)            \
     ON_ALL_ACTIONS_WITH_ARGS(SwitchToTab)          \
     ON_ALL_ACTIONS_WITH_ARGS(ToggleCommandPalette) \
+    ON_ALL_ACTIONS_WITH_ARGS(ToggleTaskView)       \
     ON_ALL_ACTIONS_WITH_ARGS(SaveTask)             \
     ON_ALL_ACTIONS_WITH_ARGS(FocusPane)            \
     ON_ALL_ACTIONS_WITH_ARGS(ExportBuffer)         \

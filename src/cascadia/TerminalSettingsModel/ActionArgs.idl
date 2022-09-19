@@ -107,6 +107,14 @@ namespace Microsoft.Terminal.Settings.Model
         ToMouse,
     };
 
+    enum TaskSource
+    {
+        Prompt,
+        CommandHistory,
+        DirectoryHistory,
+        Suggestions,
+    };
+
     [default_interface] runtimeclass NewTerminalArgs {
         NewTerminalArgs();
         NewTerminalArgs(Int32 profileIndex);
@@ -305,6 +313,13 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass ToggleCommandPaletteArgs : IActionArgs
     {
         CommandPaletteLaunchMode LaunchMode { get; };
+    };
+
+    [default_interface] runtimeclass ToggleTaskViewArgs : IActionArgs
+    {
+        ToggleTaskViewArgs();
+        ToggleTaskViewArgs(TaskSource source);
+        TaskSource Source { get; };
     };
 
     [default_interface] runtimeclass SaveTaskArgs : IActionArgs

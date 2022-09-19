@@ -462,6 +462,8 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget _ShowWindowChangedHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
 
         winrt::fire_and_forget _ControlMenuChangedHandler(const winrt::Windows::Foundation::IInspectable sender, const winrt::Microsoft::Terminal::Control::MenuChangedEventArgs args);
+        void _openSuggestionsPrompt();
+        void _openTaskView(const Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::Command>& commandSource);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp

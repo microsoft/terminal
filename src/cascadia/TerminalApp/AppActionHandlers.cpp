@@ -1185,47 +1185,40 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleToggleTaskView(const IInspectable& /*sender*/,
                                              const ActionEventArgs& args)
     {
-        // if (const auto& control{ _GetActiveControl() })
-        // {
-        //     const auto handled = control.ExpandSelectionToWord();
-        //     args.Handled(handled);
-        // }
+        if (args)
 
-        auto commandsCollection = _settings.GlobalSettings().ActionMap().FilterToSendInput();
-
-        auto control{ _GetActiveControl() };
-        if (!control)
         {
-            args.Handled(false);
-            return;
+            if (const auto& realArgs = args.ActionArgs().try_as<ToggleTaskViewArgs>())
+            {
+                auto source = realArgs.Source();
+
+                switch (source)
+                {
+                case TaskSource::Prompt:
+                {
+                    auto commandsCollection = _settings.GlobalSettings().ActionMap().FilterToSendInput();
+                    _openTaskView(commandsCollection);
+                    args.Handled(true);
+                }
+                break;
+                case TaskSource::CommandHistory:
+                {
+                }
+                break;
+                case TaskSource::DirectoryHistory:
+                {
+                }
+                break;
+
+                case TaskSource::Suggestions:
+                {
+                    _openSuggestionsPrompt();
+                    args.Handled(true);
+                }
+                break;
+                }
+            }
         }
-
-        if (commandsCollection.Size() == 0)
-        {
-            AutoCompletePopup().IsOpen(false);
-            AutoCompleteMenu().Visibility(Visibility::Collapsed);
-
-            args.Handled(false);
-            return;
-        }
-
-        // CommandPalette has an internal margin of 8, so set to -4,-4 to position closer to the actual line
-        AutoCompleteMenu().PositionManually(Windows::Foundation::Point{ -4, -4 }, Windows::Foundation::Size{ 300, 300 });
-
-        // CommandPalette().EnableCommandPaletteMode(CommandPaletteLaunchMode::Action);
-
-        const til::point cursorPos{ control.CursorPositionInDips() };
-        const auto characterSize{ control.CharacterDimensions() };
-
-        // Position relative to the actual term control
-        AutoCompletePopup().HorizontalOffset(cursorPos.x);
-        AutoCompletePopup().VerticalOffset(cursorPos.y + characterSize.Height);
-
-        AutoCompletePopup().IsOpen(true);
-        // ~Make visible first, then set commands. Other way around and the list
-        // doesn't actually update the first time (weird)~
-        AutoCompleteMenu().SetCommands(commandsCollection);
-        AutoCompleteMenu().Visibility(commandsCollection.Size() > 0 ? Visibility::Visible : Visibility::Collapsed);
     }
 
     void TerminalPage::_HandleSaveTask(const IInspectable& /*sender*/,
@@ -1252,22 +1245,4 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_HandleGetSuggestions(const IInspectable& /*sender*/,
-                                             const ActionEventArgs& args)
-    {
-        if (SuggestionTest() == nullptr)
-        {
-            // We need to use FindName to lazy-load this object
-            if (auto tip{ FindName(L"SuggestionTest").try_as<MUX::Controls::TeachingTip>() })
-            {
-                tip.Closed({ get_weak(), &TerminalPage::_FocusActiveControl });
-            }
-        }
-        _UpdateTeachingTipTheme(SuggestionTest().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
-
-        SuggestionResults().Text(L"");
-        SuggestionTest().IsOpen(true);
-
-        args.Handled(true);
-    }
 }

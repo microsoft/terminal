@@ -528,6 +528,17 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::CommandPaletteLa
     };
 };
 
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::TaskSource)
+{
+    JSON_MAPPINGS(4) = {
+
+        pair_type{ "prompt", ValueType::Prompt },
+        pair_type{ "commandHistory", ValueType::CommandHistory },
+        pair_type{ "directoryHistory", ValueType::DirectoryHistory },
+        pair_type{ "suggestions", ValueType::Suggestions },
+    };
+};
+
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FindMatchDirection)
 {
     JSON_MAPPINGS(2) = {

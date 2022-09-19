@@ -33,6 +33,7 @@
 #include "AddMarkArgs.g.cpp"
 #include "FindMatchArgs.g.cpp"
 #include "ToggleCommandPaletteArgs.g.cpp"
+#include "ToggleTaskViewArgs.g.cpp"
 #include "SaveTaskArgs.g.cpp"
 #include "NewWindowArgs.g.cpp"
 #include "PrevTabArgs.g.cpp"
@@ -672,6 +673,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return RS_(L"ToggleCommandPaletteCommandLineModeCommandKey");
         }
         return RS_(L"ToggleCommandPaletteCommandKey");
+    }
+
+    winrt::hstring ToggleTaskViewArgs::GenerateName() const
+    {
+        switch (Source())
+        {
+        case TaskSource::Prompt:
+            return L"Open tasks...";
+        case TaskSource::CommandHistory:
+            return L"Recent commands...";
+        case TaskSource::DirectoryHistory:
+            return L"Recent directories...";
+        case TaskSource::Suggestions:
+            return L"Get suggestions...";
+        }
+        return L"TODO!";
     }
 
     winrt::hstring FindMatchArgs::GenerateName() const

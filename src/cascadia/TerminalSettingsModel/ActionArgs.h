@@ -34,6 +34,7 @@
 #include "AddMarkArgs.g.h"
 #include "MoveTabArgs.g.h"
 #include "ToggleCommandPaletteArgs.g.h"
+#include "ToggleTaskViewArgs.g.h"
 #include "SaveTaskArgs.g.h"
 #include "FindMatchArgs.g.h"
 #include "NewWindowArgs.g.h"
@@ -195,6 +196,10 @@ private:                                                                        
 ////////////////////////////////////////////////////////////////////////////////
 #define TOGGLE_COMMAND_PALETTE_ARGS(X) \
     X(CommandPaletteLaunchMode, LaunchMode, "launchMode", false, CommandPaletteLaunchMode::Action)
+
+////////////////////////////////////////////////////////////////////////////////
+#define TOGGLE_TASK_VIEW_ARGS(X) \
+    X(TaskSource, Source, "source", false, TaskSource::Prompt)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SAVE_TASK_ARGS(X)                                                           \
@@ -656,6 +661,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     ACTION_ARGS_STRUCT(ToggleCommandPaletteArgs, TOGGLE_COMMAND_PALETTE_ARGS);
 
+    ACTION_ARGS_STRUCT(ToggleTaskViewArgs, TOGGLE_TASK_VIEW_ARGS);
+
     ACTION_ARGS_STRUCT(SaveTaskArgs, SAVE_TASK_ARGS);
 
     ACTION_ARGS_STRUCT(FindMatchArgs, FIND_MATCH_ARGS);
@@ -771,6 +778,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(CloseTabArgs);
     BASIC_FACTORY(MoveTabArgs);
     BASIC_FACTORY(OpenSettingsArgs);
+    BASIC_FACTORY(ToggleTaskViewArgs);
     BASIC_FACTORY(SaveTaskArgs);
     BASIC_FACTORY(FindMatchArgs);
     BASIC_FACTORY(NewWindowArgs);
