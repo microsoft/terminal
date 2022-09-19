@@ -23,8 +23,8 @@ namespace Microsoft.Terminal.Control
 
         static Windows.Foundation.Size GetProposedDimensions(IControlSettings settings,
                                                              UInt32 dpi,
-                                                             Int32 commandlineInitialRows,
-                                                             Int32 commandlineInitialCols);
+                                                             Int32 commandlineCols,
+                                                             Int32 commandlineRows);
 
         void UpdateControlSettings(IControlSettings settings);
         void UpdateControlSettings(IControlSettings settings, IControlAppearance unfocusedAppearance);

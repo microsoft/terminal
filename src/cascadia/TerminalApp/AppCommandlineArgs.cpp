@@ -184,12 +184,14 @@ void AppCommandlineArgs::_buildParser()
     maximized->excludes(fullscreen);
     focus->excludes(fullscreen);
 
-    auto initialPositionCallback = [this](std::string string) {
-        _initialPosition = LaunchPositionFromString(string);
+    auto positionCallback = [this](std::string string) {
+        _position = LaunchPositionFromString(string);
     };
-    _app.add_option_function<std::string>("--initialPosition", initialPositionCallback, RS_A(L"CmdInitialPositionDesc"));
-    _app.add_option("--initialRows", _initialRows, RS_A(L"CmdInitialRowsDesc"));
-    _app.add_option("--initialCols", _initialCols, RS_A(L"CmdInitialColsDesc"));
+    _app.add_option_function<std::string>("--pos", positionCallback, RS_A(L"CmdPositionDesc"));
+    auto sizeCallback = [this](std::string string) {
+        _size = SizeFromString(string);
+    };
+    _app.add_option_function<std::string>("--size", sizeCallback, RS_A(L"CmdSizeDesc"));
 
     _app.add_option("-w,--window",
                     _windowTarget,
@@ -717,7 +719,7 @@ void AppCommandlineArgs::_resetStateToDefault()
     // DON'T clear _launchMode here! This will get called once for every
     // subcommand, so we don't want `wt -F new-tab ; split-pane` clearing out
     // the "global" fullscreen flag (-F).
-    // Same with _windowTarget, _initialPosition, _initialRows and _initialCols.
+    // Same with _windowTarget, _position and _size.
 }
 
 // Function Description:
@@ -944,19 +946,14 @@ std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchMode> AppComman
     return _launchMode;
 }
 
-std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchPosition> AppCommandlineArgs::GetInitialPosition() const noexcept
+std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchPosition> AppCommandlineArgs::GetPosition() const noexcept
 {
-    return _initialPosition;
+    return _position;
 }
 
-int32_t AppCommandlineArgs::GetInitialRows() const noexcept
+std::optional<til::size> AppCommandlineArgs::GetSize() const noexcept
 {
-    return _initialRows;
-}
-
-int32_t AppCommandlineArgs::GetInitialCols() const noexcept
-{
-    return _initialCols;
+    return _size;
 }
 
 // Method Description:

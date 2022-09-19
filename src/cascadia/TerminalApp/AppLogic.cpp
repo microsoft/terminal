@@ -633,15 +633,17 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        if (proposedSize.Width == 0 && proposedSize.Height == 0)
+        if (_appArgs.GetSize().has_value() || (proposedSize.Width == 0 && proposedSize.Height == 0))
         {
             // Use the default profile to determine how big of a window we need.
             const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, nullptr, nullptr) };
 
+            const til::size emptySize{};
+            const auto commandlineSize = _appArgs.GetSize().value_or(emptySize);
             proposedSize = TermControl::GetProposedDimensions(settings.DefaultSettings(),
                                                               dpi,
-                                                              _appArgs.GetInitialRows(),
-                                                              _appArgs.GetInitialCols());
+                                                              commandlineSize.width,
+                                                              commandlineSize.height);
         }
 
         // GH#2061 - If the global setting "Always show tab bar" is
@@ -742,9 +744,9 @@ namespace winrt::TerminalApp::implementation
         }
 
         // Commandline args trump everything else
-        if (_appArgs.GetInitialPosition().has_value())
+        if (_appArgs.GetPosition().has_value())
         {
-            initialPosition = _appArgs.GetInitialPosition().value();
+            initialPosition = _appArgs.GetPosition().value();
         }
 
         return {

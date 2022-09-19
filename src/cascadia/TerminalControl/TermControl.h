@@ -116,8 +116,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         static Windows::Foundation::Size GetProposedDimensions(const IControlSettings& settings,
                                                                const uint32_t dpi,
-                                                               int32_t commandlineInitialRows,
-                                                               int32_t commandlineInitialCols);
+                                                               int32_t commandlineCols,
+                                                               int32_t commandlineRows);
         static Windows::Foundation::Size GetProposedDimensions(const IControlSettings& settings, const uint32_t dpi, const winrt::Windows::Foundation::Size& initialSizeInChars);
 
         void BellLightOn();
