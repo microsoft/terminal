@@ -94,6 +94,7 @@
                                     SettingOverrideSource="{x:Bind Appearance.FontSizeOverrideSource, Mode=OneWay}"
                                     Visibility="{x:Bind Appearance.IsDefault, Mode=OneWay}">
                 <muxc:NumberBox x:Uid="Profile_FontSizeBox"
+                                x:Name="_fontSizeBox"
                                 AcceptsExpression="False"
                                 LargeChange="10"
                                 Maximum="128"
