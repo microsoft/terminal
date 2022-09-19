@@ -235,7 +235,12 @@ private:
     bool _isActiveBuffer;
     Microsoft::Console::Render::Renderer& _renderer;
 
-    std::unordered_map<uint16_t, std::wstring> _hyperlinkMap;
+    struct Clickable
+    {
+        std::wstring uri;
+        std::wstring params;
+    };
+    std::unordered_map<uint16_t, Clickable> _hyperlinkMap;
     std::unordered_map<std::wstring, uint16_t> _hyperlinkCustomIdMap;
     uint16_t _currentHyperlinkId;
 

@@ -979,16 +979,16 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
     if (midPos != std::wstring::npos)
     {
         uri = string.substr(midPos + 1);
-        const auto paramStr = string.substr(0, midPos);
-        const auto paramParts = Utils::SplitString(paramStr, ':');
-        for (const auto& part : paramParts)
-        {
-            const auto idPos = part.find(hyperlinkIDParameter);
-            if (idPos != std::wstring::npos)
-            {
-                params = part.substr(idPos + hyperlinkIDParameter.size());
-            }
-        }
+        params = string.substr(0, midPos);
+        // const auto paramParts = Utils::SplitString(paramStr, ':');
+        // for (const auto& part : paramParts)
+        // {
+        //     const auto idPos = part.find(hyperlinkIDParameter);
+        //     if (idPos != std::wstring::npos)
+        //     {
+        //         params = part.substr(idPos + hyperlinkIDParameter.size());
+        //     }
+        // }
         return true;
     }
     return false;
