@@ -98,6 +98,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // issues when displaying 32-bit floats, because WinUI is unaware about their existence.
             SignificantDigitsNumberRounder rounder;
             rounder.SignificantDigits(6);
+            // BODGY: Depends on WinUI internals.
             _fontSizeBox().NumberFormatter().as<DecimalFormatter>().NumberRounder(rounder);
         }
 
