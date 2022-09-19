@@ -676,7 +676,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return result;
     }
 
-    winrt::Windows::Foundation::Collections::IVector<Model::Command> Command::HistoryToCommands(winrt::hstring history, bool directories)
+    winrt::Windows::Foundation::Collections::IVector<Model::Command> Command::HistoryToCommands(Windows::Foundation::Collections::IVector<winrt::hstring> history,
+                                                                                                winrt::hstring /*currentCommandline*/,
+                                                                                                bool directories)
     {
         std::wstring cdText = directories ? L"cd " : L"";
         auto result = winrt::single_threaded_vector<Model::Command>();
@@ -705,19 +707,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // foundCommands.insert(line, true);
         };
 
-        std::wstring lineBreak = L"\r\n";
+        // std::wstring lineBreak = L"\r\n";
 
-        std::wstring_view historyView{ history };
-        size_t start = 0u;
-        auto end = historyView.find(lineBreak);
-        while (end != std::string::npos)
+        // std::wstring_view historyView{ history };
+        // size_t start = 0u;
+        // auto end = historyView.find(lineBreak);
+        // while (end != std::string::npos)
+        // {
+        //     auto line = historyView.substr(start, end - start);
+        //     createAction(line);
+        //     start = end + lineBreak.length();
+        //     end = historyView.find(lineBreak, start);
+        // }
+        // createAction(historyView.substr(start, end));
+        for (const auto&& command : history)
         {
-            auto line = historyView.substr(start, end - start);
-            createAction(line);
-            start = end + lineBreak.length();
-            end = historyView.find(lineBreak, start);
+            createAction(command);
         }
-        createAction(historyView.substr(start, end));
 
         return result;
     }

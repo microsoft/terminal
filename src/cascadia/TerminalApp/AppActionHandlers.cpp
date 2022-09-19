@@ -1205,8 +1205,8 @@ namespace winrt::TerminalApp::implementation
                 {
                     if (const auto& control{ _GetActiveControl() })
                     {
-                        const auto buffer = control.ReadPromptLines();
-                        _openTaskView(Command::HistoryToCommands(buffer, false));
+                        const auto context = control.ReadPromptLines();
+                        _openTaskView(Command::HistoryToCommands(context.History(), context.CurrentCommandline(), false));
                     }
                     args.Handled(true);
                 }

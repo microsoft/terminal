@@ -17,6 +17,8 @@
 
 #include "ControlCore.g.h"
 #include "SelectionColor.g.h"
+#include "CommandHistoryContext.g.h"
+
 #include "ControlSettings.h"
 #include "../../audio/midi/MidiAudio.hpp"
 #include "../../renderer/base/Renderer.hpp"
@@ -48,6 +50,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         WINRT_PROPERTY(til::color, Color);
         WINRT_PROPERTY(bool, IsIndex16);
+    };
+
+    struct CommandHistoryContext : CommandHistoryContextT<CommandHistoryContext>
+    {
+        WINRT_PROPERTY(Windows::Foundation::Collections::IVector<winrt::hstring>, History, winrt::single_threaded_vector<winrt::hstring>());
+        WINRT_PROPERTY(winrt::hstring, CurrentCommandline);
     };
 
     struct ControlCore : ControlCoreT<ControlCore>
@@ -195,7 +203,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ToggleReadOnlyMode();
 
         hstring ReadEntireBuffer() const;
-        hstring ReadPromptLines() const;
+        Control::CommandHistoryContext ReadPromptLines() const;
 
         static bool IsVintageOpacityAvailable() noexcept;
 

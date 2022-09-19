@@ -49,6 +49,12 @@ namespace Microsoft.Terminal.Control
         Boolean EndAtRightBoundary;
     };
 
+    [default_interface] runtimeclass CommandHistoryContext
+    {
+        IVector<String> History;
+        String CurrentCommandline;
+    };
+
     [default_interface] runtimeclass SelectionColor
     {
         SelectionColor();
@@ -133,7 +139,7 @@ namespace Microsoft.Terminal.Control
         void EnablePainting();
 
         String ReadEntireBuffer();
-        String ReadPromptLines();
+        CommandHistoryContext ReadPromptLines();
 
         void AdjustOpacity(Double Opacity, Boolean relative);
         void WindowVisibilityChanged(Boolean showOrHide);

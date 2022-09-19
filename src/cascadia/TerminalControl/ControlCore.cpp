@@ -18,6 +18,7 @@
 
 #include "ControlCore.g.cpp"
 #include "SelectionColor.g.cpp"
+#include "CommandHistoryContext.g.cpp"
 
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Console::VirtualTerminal;
@@ -1797,34 +1798,38 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return hstring(ss.str());
     }
 
-    hstring ControlCore::ReadPromptLines() const
+    Control::CommandHistoryContext ControlCore::ReadPromptLines() const
     {
         auto terminalLock = _terminal->LockForWriting();
 
+        auto context = winrt::make_self<CommandHistoryContext>();
+
         const auto& textBuffer = _terminal->GetTextBuffer();
 
-        std::wstringstream ss;
+        // std::wstringstream ss;
 
-        auto addRowText = [&ss](auto&& row, std::wstring& rowText) {
+        auto addRowText = [&context](auto&& row, std::wstring& rowText) {
             const auto strEnd = rowText.find_last_not_of(UNICODE_SPACE);
             if (strEnd != std::string::npos)
             {
                 rowText.erase(strEnd + 1);
-                ss << rowText;
+                context->History().Append(winrt::hstring{ rowText });
             }
 
             auto wrapped = row.WasWrapForced();
-            if (!wrapped)
-            {
-                ss << UNICODE_CARRIAGERETURN << UNICODE_LINEFEED;
-            }
+            // if (!wrapped)
+            // {
+            //     ss << UNICODE_CARRIAGERETURN << UNICODE_LINEFEED;
+            // }
             return wrapped;
         };
 
         // const auto lastRow = textBuffer.GetLastNonSpaceCharacter().Y;
         for (const auto& mark : _terminal->GetScrollMarks())
         {
-            const bool markHasCommand = mark.start != mark.end;
+            bool markHasCommand = mark.start != mark.end;
+            if (!markHasCommand)
+                continue;
 
             auto line = markHasCommand ? mark.end.y : mark.start.y;
 
@@ -1832,17 +1837,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             auto rowText = row.GetText(markHasCommand ? mark.end.x : 0);
             auto wrapped = addRowText(row, rowText);
-
-            while (wrapped)
-            {
-                line++;
-                const auto& newRow = textBuffer.GetRowByOffset(line);
-                auto newRowText = newRow.GetText(0);
-                wrapped = addRowText(newRow, newRowText);
-            }
+            wrapped;
+            // TODO! dea with wrapped commandlines.
+            line;
+            // while (wrapped)
+            // {
+            //     line++;
+            //     const auto& newRow = textBuffer.GetRowByOffset(line);
+            //     auto newRowText = newRow.GetText(0);
+            //     wrapped = addRowText(newRow, newRowText);
+            // }
         }
 
-        return hstring(ss.str());
+        return *context;
     }
 
     // Helper to check if we're on Windows 11 or not. This is used to check if

@@ -4341,7 +4341,7 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        const auto buffer = control.ReadPromptLines();
+        const auto buffer = control.ReadEntireBuffer();
         buffer;
 
         SuggestionResults().Text(buffer);

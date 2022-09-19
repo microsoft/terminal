@@ -3035,7 +3035,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         return _core.ReadEntireBuffer();
     }
-    hstring TermControl::ReadPromptLines() const
+
+    Control::CommandHistoryContext TermControl::ReadPromptLines() const
     {
         return _core.ReadPromptLines();
     }
