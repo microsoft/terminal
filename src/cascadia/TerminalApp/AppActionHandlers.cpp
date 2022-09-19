@@ -1203,6 +1203,12 @@ namespace winrt::TerminalApp::implementation
                 break;
                 case TaskSource::CommandHistory:
                 {
+                    if (const auto& control{ _GetActiveControl() })
+                    {
+                        const auto buffer = control.ReadPromptLines();
+                        _openTaskView(Command::HistoryToCommands(buffer, false));
+                    }
+                    args.Handled(true);
                 }
                 break;
                 case TaskSource::DirectoryHistory:

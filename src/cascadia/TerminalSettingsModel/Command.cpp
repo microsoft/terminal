@@ -676,4 +676,42 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return result;
     }
 
+    winrt::Windows::Foundation::Collections::IVector<Model::Command> Command::HistoryToCommands(winrt::hstring history, bool directories)
+    {
+        std::wstring cdText = directories ? L"cd " : L"";
+        auto result = winrt::single_threaded_vector<Model::Command>();
+        auto backspaces = std::wstring(::base::saturated_cast<size_t>(0), L'\x7f');
+
+        // split `history` on ";"
+        std::wstringstream ss{ history.c_str() };
+        std::wstring line;
+
+        while (std::getline(ss, line))
+        {
+            if (line.empty())
+            {
+                continue;
+            }
+            Model::SendInputArgs args{ winrt::hstring{ fmt::format(L"{}{}{}", cdText, backspaces, line.c_str()) } };
+            Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, args };
+            Model::Command command{};
+            command.ActionAndArgs(actionAndArgs);
+            command.Name(line);
+            result.Append(command);
+        }
+
+
+
+        // for (const auto& line : lines)
+        // {
+        //     Model::SendInputArgs args{ winrt::hstring{ fmt::format(L"{}{}{}", backspaces, cdText, line.c_str()) } };
+        //     Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, args };
+        //     Model::Command command{};
+        //     command.ActionAndArgs(actionAndArgs);
+        //     command.Name(line);
+
+        //     result.Append(command);
+        // }
+        return result;
+    }
 }

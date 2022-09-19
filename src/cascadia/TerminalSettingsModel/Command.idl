@@ -50,5 +50,6 @@ namespace Microsoft.Terminal.Settings.Model
                                    Windows.Foundation.Collections.IVector<SettingsLoadWarnings> warnings);
 
         static IVector<Command> ParsePowerShellMenuComplete(String json, Int32 replaceLength);
+        static IVector<Command> HistoryToCommands(String commandHistory, Boolean directories);
     }
 }
