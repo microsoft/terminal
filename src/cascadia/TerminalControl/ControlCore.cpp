@@ -696,6 +696,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    Control::Clickable GetClickable(const Core::Point pos) const
+    {
+        // Lock for the duration of our reads.
+        auto lock = _terminal->LockForReading();
+        auto clicked = _terminal->GetClickableAtViewportPosition(til::point{ pos });
+
+        Control::Clickable result{};
+        result.Uri(winrt::hstring{ clicked.uri });
+        result.Suggestions(std::move(clicked.suggestions));
+        return result;
+    }
     winrt::hstring ControlCore::GetHyperlink(const Core::Point pos) const
     {
         // Lock for the duration of our reads.

@@ -588,6 +588,10 @@ std::wstring Terminal::GetHyperlinkAtViewportPosition(const til::point viewportP
 
 std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
 {
+}
+
+Core::Clickable Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
+{
     // Case 1: buffer position has a hyperlink stored in the buffer
     const auto attr = _activeBuffer().GetCellDataAt(bufferPos)->TextAttr();
     if (attr.IsHyperlink())
