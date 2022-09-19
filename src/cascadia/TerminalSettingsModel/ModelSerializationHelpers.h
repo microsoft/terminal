@@ -62,12 +62,12 @@ _TIL_INLINEPREFIX void ParseCommaSeparatedPair(const std::string& string,
 // See: ParseCommaSeparatedPair
 _TIL_INLINEPREFIX ::winrt::Microsoft::Terminal::Settings::Model::LaunchPosition LaunchPositionFromString(const std::string& string)
 {
-    ::winrt::Microsoft::Terminal::Settings::Model::LaunchPosition intitialPosition;
+    ::winrt::Microsoft::Terminal::Settings::Model::LaunchPosition initialPosition;
     ParseCommaSeparatedPair(
         string,
-        [&intitialPosition](int32_t left) { intitialPosition.X = left; },
-        [&intitialPosition](int32_t right) { intitialPosition.Y = right; });
-    return intitialPosition;
+        [&initialPosition](int32_t left) { initialPosition.X = left; },
+        [&initialPosition](int32_t right) { initialPosition.Y = right; });
+    return initialPosition;
 }
 
 // See: ParseCommaSeparatedPair
