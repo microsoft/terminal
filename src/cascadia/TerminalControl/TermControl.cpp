@@ -1273,41 +1273,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         else
         {
             const auto mouseButtons = TermControl::GetPressedMouseButtons(point);
-            if (!_rightClickPressed &&
-                WI_IsFlagSet(mouseButtons, Control::MouseButtonState::IsRightButtonDown))
-            {
-                _rightClickPressed = true;
-            }
 
-            if (_rightClickPressed &&
-                !WI_IsFlagSet(mouseButtons, Control::MouseButtonState::IsRightButtonDown))
-            {
-                // TODO! hey idiot, there's PointerReleased where this needs to be. But that also goes straight to interactivity. Sooooo all this should probably be in there. idiot.
-                _rightClickPressed = false;
-                // TODO! only do this in VT mouse Mode if shift is pressed too.
-                auto bufferText = _core.SelectedText(true);
-                std::wstring singleString = L"";
-                for (const auto& line : bufferText)
-                {
-                    if (!singleString.empty())
-                    {
-                        singleString += L"\r\n";
-                    }
-                    singleString += line;
-                };
-                auto contextArgs = winrt::make_self<ContextMenuRequestedEventArgs>(winrt::hstring{ singleString }, point.Position());
-
-                _ContextMenuRequestedHandlers(*this, *contextArgs);
-            }
-            else
-            {
-                const auto cursorPosition = point.Position();
-                _interactivity.PointerPressed(mouseButtons,
-                                              TermControl::GetPointerUpdateKind(point),
-                                              point.Timestamp(),
-                                              ControlKeyStates{ args.KeyModifiers() },
-                                              _toTerminalOrigin(cursorPosition).to_core_point());
-            }
+            const auto cursorPosition = point.Position();
+            _interactivity.PointerPressed(mouseButtons,
+                                          TermControl::GetPointerUpdateKind(point),
+                                          point.Timestamp(),
+                                          ControlKeyStates{ args.KeyModifiers() },
+                                          _toTerminalOrigin(cursorPosition).to_core_point());
         }
 
         args.Handled(true);
