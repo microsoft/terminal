@@ -1159,6 +1159,21 @@ void CascadiaSettings::ExportFile(winrt::hstring path, winrt::hstring content)
     CATCH_LOG();
 }
 
+winrt::hstring CascadiaSettings::ReadFile(winrt::hstring path)
+{
+    try
+    {
+        auto maybeContents = ReadUTF8FileIfExists({ path.c_str() });
+        if (maybeContents.has_value())
+        {
+            return winrt::hstring{ til::u8u16(*maybeContents) };
+        }
+    }
+    CATCH_LOG();
+
+    return L"";
+}
+
 void CascadiaSettings::_validateThemeExists()
 {
     if (_globals->Themes().Size() == 0)

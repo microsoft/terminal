@@ -704,22 +704,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             command.Name(winrt::hstring{ line });
             result.Append(command);
             foundCommands[line] = true;
-            // foundCommands.insert(line, true);
         };
 
-        // std::wstring lineBreak = L"\r\n";
-
-        // std::wstring_view historyView{ history };
-        // size_t start = 0u;
-        // auto end = historyView.find(lineBreak);
-        // while (end != std::string::npos)
-        // {
-        //     auto line = historyView.substr(start, end - start);
-        //     createAction(line);
-        //     start = end + lineBreak.length();
-        //     end = historyView.find(lineBreak, start);
-        // }
-        // createAction(historyView.substr(start, end));
         for (const auto&& command : history)
         {
             createAction(command);
@@ -727,4 +713,29 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         return result;
     }
+
+    void Command::AddLocalCommands(Windows::Foundation::Collections::IVector<Model::Command> commands,
+                                   winrt::hstring localTasksFileContents)
+    {
+        auto data = winrt::to_string(localTasksFileContents);
+        std::string errs;
+        static std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+        Json::Value root;
+        if (!reader->parse(data.data(), data.data() + data.size(), &root, &errs))
+        {
+            throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
+        }
+        if (auto actions{ root[JsonKey("actions")] })
+        {
+            std::vector<SettingsLoadWarnings> warnings;
+            for (const auto& json : actions)
+            {
+                auto parsed = Command::FromJson(json, warnings);
+                if (parsed->ActionAndArgs().Action() != ShortcutAction::SendInput)
+                    continue;
+                commands.Append(*parsed);
+            }
+        }
+    }
+
 }

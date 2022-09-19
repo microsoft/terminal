@@ -80,8 +80,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ClearAllMarks();
         void ScrollToMark(const Control::ScrollToMarkDirection& direction);
 
-        Windows::Foundation::Collections::IVector<Control::MenuEntry> MenuEntries() const;
-
 #pragma endregion
 
         void ScrollViewport(int viewTop);
@@ -131,7 +129,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         static Windows::UI::Xaml::Thickness ParseThicknessFromPadding(const hstring padding);
 
         hstring ReadEntireBuffer() const;
-        Control::CommandHistoryContext ReadPromptLines() const;
+        Control::CommandHistoryContext CommandHistory() const;
+        Control::DirectoryHistoryContext DirectoryHistory() const;
 
         winrt::Microsoft::Terminal::Core::Scheme ColorScheme() const noexcept;
         void ColorScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme) const noexcept;

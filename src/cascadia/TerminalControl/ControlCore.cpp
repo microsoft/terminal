@@ -19,6 +19,7 @@
 #include "ControlCore.g.cpp"
 #include "SelectionColor.g.cpp"
 #include "CommandHistoryContext.g.cpp"
+#include "DirectoryHistoryContext.g.cpp"
 
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Console::VirtualTerminal;
@@ -1798,7 +1799,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return hstring(ss.str());
     }
 
-    Control::CommandHistoryContext ControlCore::ReadPromptLines() const
+    Control::CommandHistoryContext ControlCore::CommandHistory() const
     {
         auto terminalLock = _terminal->LockForWriting();
 
@@ -1849,6 +1850,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // }
         }
 
+        return *context;
+    }
+
+    Control::DirectoryHistoryContext ControlCore::DirectoryHistory() const
+    {
+        auto terminalLock = _terminal->LockForWriting();
+        auto context = winrt::make_self<DirectoryHistoryContext>();
+        context->CurrentWorkingDirectory(WorkingDirectory());
         return *context;
     }
 

@@ -406,7 +406,8 @@
                              Title=""
                              IsOpen="False"
                              PreferredPlacement="Right"
-                             Subtitle="">
+                             Subtitle=""
+                             Translation="0,0,-100">
                 <!--                 <muxc:TeachingTip.IconSource>
                     <muxc:SymbolIconSource Symbol="Refresh" />
                 </muxc:TeachingTip.IconSource>-->

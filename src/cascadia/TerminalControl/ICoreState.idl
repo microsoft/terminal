@@ -29,11 +29,18 @@ namespace Microsoft.Terminal.Control
         Last
     };
 
-    struct MenuEntry
+
+    [default_interface] runtimeclass CommandHistoryContext
     {
-        String Name;
-        String Comment;
-        String Input;
+        IVector<String> History;
+        String CurrentCommandline;
+    };
+
+    [default_interface] runtimeclass DirectoryHistoryContext
+    {
+        IVector<String> History;
+        String CurrentWorkingDirectory;
+        Boolean SetByClient;
     };
 
     // These are properties of the TerminalCore that should be queryable by the
@@ -45,6 +52,9 @@ namespace Microsoft.Terminal.Control
         UInt64 TaskbarProgress { get; };
 
         String WorkingDirectory { get; };
+
+        CommandHistoryContext CommandHistory { get; };
+        DirectoryHistoryContext DirectoryHistory { get; };
 
         Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
 

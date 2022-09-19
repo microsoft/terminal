@@ -18,6 +18,7 @@
 #include "ControlCore.g.h"
 #include "SelectionColor.g.h"
 #include "CommandHistoryContext.g.h"
+#include "DirectoryHistoryContext.g.h"
 
 #include "ControlSettings.h"
 #include "../../audio/midi/MidiAudio.hpp"
@@ -56,6 +57,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         WINRT_PROPERTY(Windows::Foundation::Collections::IVector<winrt::hstring>, History, winrt::single_threaded_vector<winrt::hstring>());
         WINRT_PROPERTY(winrt::hstring, CurrentCommandline);
+    };
+    struct DirectoryHistoryContext : DirectoryHistoryContextT<DirectoryHistoryContext>
+    {
+        WINRT_PROPERTY(Windows::Foundation::Collections::IVector<winrt::hstring>, History, winrt::single_threaded_vector<winrt::hstring>());
+        WINRT_PROPERTY(winrt::hstring, CurrentWorkingDirectory);
+        WINRT_PROPERTY(bool, SetByClient);
     };
 
     struct ControlCore : ControlCoreT<ControlCore>
@@ -203,7 +210,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ToggleReadOnlyMode();
 
         hstring ReadEntireBuffer() const;
-        Control::CommandHistoryContext ReadPromptLines() const;
+        Control::CommandHistoryContext CommandHistory() const;
+        Control::DirectoryHistoryContext DirectoryHistory() const;
 
         static bool IsVintageOpacityAvailable() noexcept;
 

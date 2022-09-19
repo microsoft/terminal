@@ -1197,6 +1197,20 @@ namespace winrt::TerminalApp::implementation
                 case TaskSource::Prompt:
                 {
                     auto commandsCollection = _settings.GlobalSettings().ActionMap().FilterToSendInput();
+                    if (const auto& control{ _GetActiveControl() })
+                    {
+                        const auto context = control.DirectoryHistory();
+                        auto cwd = context.CurrentWorkingDirectory();
+                        if (!cwd.empty())
+                        {
+                            auto localTasks = CascadiaSettings::ReadFile(cwd + L"\\.wt.json");
+                            if (!localTasks.empty())
+                            {
+                                Command::AddLocalCommands(commandsCollection, localTasks);
+                            }
+                        }
+                    }
+
                     _openTaskView(commandsCollection);
                     args.Handled(true);
                 }
@@ -1205,7 +1219,7 @@ namespace winrt::TerminalApp::implementation
                 {
                     if (const auto& control{ _GetActiveControl() })
                     {
-                        const auto context = control.ReadPromptLines();
+                        const auto context = control.CommandHistory();
                         _openTaskView(Command::HistoryToCommands(context.History(), context.CurrentCommandline(), false));
                     }
                     args.Handled(true);
@@ -1213,6 +1227,12 @@ namespace winrt::TerminalApp::implementation
                 break;
                 case TaskSource::DirectoryHistory:
                 {
+                    if (const auto& control{ _GetActiveControl() })
+                    {
+                        const auto context = control.DirectoryHistory();
+                        _openTaskView(Command::HistoryToCommands(context.History(), L"", true));
+                    }
+                    args.Handled(true);
                 }
                 break;
 

@@ -69,6 +69,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         static Windows::Foundation::Collections::IVector<Model::Command> ParsePowerShellMenuComplete(winrt::hstring json, int32_t replaceLength);
         static Windows::Foundation::Collections::IVector<Model::Command> HistoryToCommands(Windows::Foundation::Collections::IVector<winrt::hstring> history, winrt::hstring currentCommandline, bool directories);
+        static void AddLocalCommands(Windows::Foundation::Collections::IVector<Model::Command>, winrt::hstring localTasksFileContents);
 
         winrt::Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker propertyChangedRevoker;
 
