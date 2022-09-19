@@ -1203,6 +1203,7 @@ namespace winrt::TerminalApp::implementation
                         auto cwd = context.CurrentWorkingDirectory();
                         if (!cwd.empty())
                         {
+                            // TODO! don't read the file on the UI thread you idiot
                             auto localTasks = CascadiaSettings::ReadFile(cwd + L"\\.wt.json");
                             if (!localTasks.empty())
                             {

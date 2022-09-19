@@ -1,0 +1,26 @@
+{
+    "actions":
+    [
+        {
+            "command": { "action": "sendInput", "input": "bx\r" },
+            "name": "Build project",
+            "description": "Build the project in the CWD"
+        },
+        {
+            "command": { "action": "sendInput", "input": "bz\r" },
+            "name": "Build solution, incremental",
+            "description": "Just build changes to the solution"
+        },
+        {
+            "command": { "action": "sendInput", "input": "bcz\r" },
+            "name": "Clean & build solution",
+            "description": "Start over. Go get your coffee. "
+        },
+        {
+            "command": { "action": "sendInput", "input": "nuget push -apikey az -source TerminalDependencies %userprofile%\\Downloads" },
+            "name": "Upload package to nuget feed",
+            "description": "Go download a .nupkg, put it in ~/Downloads, and use this to push to our private feed."
+        },
+
+    ]
+}

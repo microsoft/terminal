@@ -1858,6 +1858,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto terminalLock = _terminal->LockForWriting();
         auto context = winrt::make_self<DirectoryHistoryContext>();
         context->CurrentWorkingDirectory(WorkingDirectory());
+        // TODO! as the CWD changes, store them in a stack (up to some
+        // quantity), and bubble them up here.
         return *context;
     }
 

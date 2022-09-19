@@ -528,6 +528,10 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::CommandPaletteLa
     };
 };
 
+// TODO! This could totally be a flag enum
+// TODO! Add "saved" -> ones in the settings file
+// TODO! Add "local" -> ones in the cwd
+// TODO! default to saved|local
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::TaskSource)
 {
     JSON_MAPPINGS(4) = {
