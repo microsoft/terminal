@@ -4319,7 +4319,6 @@ namespace winrt::TerminalApp::implementation
 
         SuggestionResults().Text(L"");
         SuggestionTest().IsOpen(true);
-
     }
 
     void TerminalPage::_SuggestionActionClick(const IInspectable& /*sender*/,
@@ -4348,6 +4347,100 @@ namespace winrt::TerminalApp::implementation
 
         // An idea: export the text to a temp file, then run a command like `get-suggestions.py temp.txt` and read that output.
         // CascadiaSettings::ExportFile(tempPath, buffer);
+
+        // Launch foo.exe and get the output
+
+        // {
+        //     wil::unique_handle readPipe;
+        //     wil::unique_handle writePipe;
+        //     SECURITY_ATTRIBUTES sa{ sizeof(sa), nullptr, true };
+        //     THROW_IF_WIN32_BOOL_FALSE(CreatePipe(&readPipe, &writePipe, &sa, 0));
+        //     STARTUPINFO si{ 0 };
+        //     si.cb = sizeof(si);
+        //     si.dwFlags = STARTF_USESTDHANDLES;
+        //     si.hStdOutput = writePipe.get();
+        //     si.hStdError = writePipe.get();
+        //     wil::unique_process_information pi;
+        //     // wil::unique_cotaskmem_string systemPath;
+        //     // THROW_IF_FAILED(wil::GetSystemDirectoryW(systemPath));
+        //     // std::wstring command(systemPath.get());
+        //     std::wstring command = L"python.exe D:\\test.py ";
+
+        //     THROW_IF_WIN32_BOOL_FALSE(CreateProcessW(nullptr,
+        //                                              const_cast<LPWSTR>(command.c_str()),
+        //                                              nullptr,
+        //                                              nullptr,
+        //                                              TRUE,
+        //                                              CREATE_NO_WINDOW,
+        //                                              nullptr,
+        //                                              nullptr,
+        //                                              &si,
+        //                                              &pi));
+        //     switch (WaitForSingleObject(pi.hProcess, 2000))
+        //     {
+        //     case WAIT_OBJECT_0:
+        //         break;
+        //     case WAIT_ABANDONED:
+        //     case WAIT_TIMEOUT:
+        //         return;
+        //     case WAIT_FAILED:
+        //         THROW_LAST_ERROR();
+        //     default:
+        //         THROW_HR(ERROR_UNHANDLED_EXCEPTION);
+        //     }
+        //     DWORD exitCode;
+        //     if (!GetExitCodeProcess(pi.hProcess, &exitCode))
+        //     {
+        //         THROW_HR(E_INVALIDARG);
+        //     }
+        //     else if (exitCode != 0)
+        //     {
+        //         return;
+        //     }
+        //     DWORD bytesAvailable;
+        //     THROW_IF_WIN32_BOOL_FALSE(PeekNamedPipe(readPipe.get(), nullptr, NULL, nullptr, &bytesAvailable, nullptr));
+        //     // "The _open_osfhandle call transfers ownership of the Win32 file handle to the file descriptor."
+        //     // (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/open-osfhandle?view=vs-2019)
+        //     // so, we detach_from_smart_pointer it -- but...
+        //     // "File descriptors passed into _fdopen are owned by the returned FILE * stream.
+        //     // If _fdopen is successful, do not call _close on the file descriptor.
+        //     // Calling fclose on the returned FILE * also closes the file descriptor."
+        //     // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/fdopen-wfdopen?view=vs-2019
+        //     auto stdioPipeHandle = _wfdopen(_open_osfhandle((intptr_t)wil::detach_from_smart_pointer(readPipe), _O_WTEXT | _O_RDONLY), L"r");
+        //     auto closeFile = wil::scope_exit([&]() { fclose(stdioPipeHandle); });
+
+        //     std::wfstream pipe{ stdioPipeHandle };
+
+        //     std::wstring wline;
+        //     std::getline(pipe, wline); // remove the header from the output.
+        //     while (pipe.tellp() < bytesAvailable)
+        //     {
+        //         std::getline(pipe, wline);
+        //         std::wstringstream wlinestream(wline);
+        //         if (wlinestream)
+        //         {
+        //             std::wstring distName;
+        //             std::getline(wlinestream, distName, L'\r');
+
+        //             if (til::starts_with(distName, DockerDistributionPrefix))
+        //             {
+        //                 // Docker for Windows creates some utility distributions to handle Docker commands.
+        //                 // Pursuant to GH#3556, because they are _not_ user-facing we want to hide them.
+        //                 continue;
+        //             }
+
+        //             const auto firstChar = distName.find_first_of(L"( ");
+        //             // Some localizations don't have a space between the name and "(Default)"
+        //             // https://github.com/microsoft/terminal/issues/1168#issuecomment-500187109
+        //             if (firstChar < distName.size())
+        //             {
+        //                 distName.resize(firstChar);
+        //             }
+
+        //             profiles.emplace_back(makeProfile(distName));
+        //         }
+        //     }
+        // }
     }
 
     void TerminalPage::_SuggestionKeyDown(const IInspectable& /*sender*/,
