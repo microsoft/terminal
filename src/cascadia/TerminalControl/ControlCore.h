@@ -56,22 +56,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         static std::atomic<size_t> _searchIdGenerator;
 
         SearchState(const winrt::hstring& text, const Search::Sensitivity sensitivity, const std::optional<bool> forward) :
-            Text(text),
-            Sensitivity(sensitivity),
+            text(text),
+            sensitivity(sensitivity),
             goForward(forward),
-            SearchId(_searchIdGenerator.fetch_add(1))
+            searchId(_searchIdGenerator.fetch_add(1))
         {
         }
 
-        winrt::hstring Text;
-        Search::Sensitivity Sensitivity;
-        std::optional<bool> goForward{ std::nullopt };
-        size_t SearchId;
-        std::optional<std::vector<std::pair<til::point, til::point>>> Matches;
-        int32_t CurrentMatchIndex{ -1 };
+        std::optional<std::vector<std::pair<til::point, til::point>>> matches;
 
         void UpdateIndex(bool goForward);
         std::optional<std::pair<til::point, til::point>> GetCurrentMatch();
+
+        winrt::hstring text;
+        Search::Sensitivity sensitivity;
+        std::optional<bool> goForward{ std::nullopt };
+        size_t searchId;
+        int32_t currentMatchIndex{ -1 };
     };
 
     struct ControlCore : ControlCoreT<ControlCore>

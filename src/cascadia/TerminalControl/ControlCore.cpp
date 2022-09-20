@@ -1550,27 +1550,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             co_return;
         }
 
-        const auto originalSearchId = _searchState->SearchId;
+        const auto originalSearchId = _searchState->searchId;
         auto weakThis{ get_weak() };
 
         // If no matches were computed it means we need to perform the search
-        if (!_searchState->Matches.has_value())
+        if (!_searchState->matches.has_value())
         {
             std::vector<std::pair<til::point, til::point>> matches;
-            if (!_searchState->Text.empty())
+            if (!_searchState->text.empty())
             {
                 // We perform explicit search forward, so the first result will also be the earliest buffer location
                 // We will use goForward later to decide if we need to select 1 of n or n of n.
                 ::Search search(*GetUiaData(),
-                                _searchState->Text.c_str(),
+                                _searchState->text.c_str(),
                                 Search::Direction::Forward,
-                                _searchState->Sensitivity);
+                                _searchState->sensitivity);
 
                 while (co_await _SearchOne(search))
                 {
                     // if search box was collapsed or the new one search was triggered - let's cancel this one
                     if (!_searchState.has_value() ||
-                        _searchState->SearchId != originalSearchId)
+                        _searchState->searchId != originalSearchId)
                     {
                         co_return;
                     }
@@ -1580,12 +1580,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
                 // if search box was collapsed or the new one search was triggered - let's cancel this one
                 if (!_searchState.has_value() ||
-                    _searchState->SearchId != originalSearchId)
+                    _searchState->searchId != originalSearchId)
                 {
                     co_return;
                 }
             }
-            _searchState->Matches.emplace(std::move(matches));
+            _searchState->matches.emplace(std::move(matches));
             _bufferChangedSinceSearch = false;
         }
 
@@ -1619,10 +1619,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void ControlCore::_SelectSearchResult(std::optional<bool> goForward)
     {
-        if (_searchState.has_value() && _searchState->Matches.has_value())
+        if (_searchState.has_value() && _searchState->matches.has_value())
         {
             auto& state = _searchState.value();
-            auto& matches = state.Matches.value();
+            auto& matches = state.matches.value();
 
             if (goForward.has_value())
             {
@@ -1641,7 +1641,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Let the control know we got one
             auto foundResults = winrt::make_self<implementation::FoundResultsArgs>(true);
             foundResults->TotalMatches(gsl::narrow<int32_t>(matches.size()));
-            foundResults->CurrentMatch(state.CurrentMatchIndex);
+            foundResults->CurrentMatch(state.currentMatchIndex);
             _FoundMatchHandlers(*this, *foundResults);
         }
     }
@@ -1679,18 +1679,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void SearchState::UpdateIndex(bool goForward)
     {
-        if (Matches.has_value())
+        if (matches.has_value())
         {
-            const int numMatches = ::base::saturated_cast<int>(Matches->size());
+            const int numMatches = ::base::saturated_cast<int>(matches->size());
             if (numMatches > 0)
             {
-                if (CurrentMatchIndex == -1)
+                if (currentMatchIndex == -1)
                 {
-                    CurrentMatchIndex = goForward ? 0 : numMatches - 1;
+                    currentMatchIndex = goForward ? 0 : numMatches - 1;
                 }
                 else
                 {
-                    CurrentMatchIndex = (numMatches + CurrentMatchIndex + (goForward ? 1 : -1)) % numMatches;
+                    currentMatchIndex = (numMatches + currentMatchIndex + (goForward ? 1 : -1)) % numMatches;
                 }
             }
         }
@@ -1705,9 +1705,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // (e.g., when the index is -1 or there are no matches)
     std::optional<std::pair<til::point, til::point>> SearchState::GetCurrentMatch()
     {
-        if (Matches.has_value() && CurrentMatchIndex > -1 && CurrentMatchIndex < Matches->size())
+        if (matches.has_value() && currentMatchIndex > -1 && currentMatchIndex < matches->size())
         {
-            return til::at(Matches.value(), CurrentMatchIndex);
+            return til::at(matches.value(), currentMatchIndex);
         }
         else
         {
@@ -1727,9 +1727,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return results;
         }
 
-        if (_searchState.has_value() && _searchState->Matches.has_value())
+        if (_searchState.has_value() && _searchState->matches.has_value())
         {
-            for (auto&& [start, end] : *(_searchState->Matches))
+            for (auto&& [start, end] : *(_searchState->matches))
             {
                 results.Append(start.Y);
             }
