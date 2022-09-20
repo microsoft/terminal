@@ -394,7 +394,7 @@ void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty, BOOL wait)
 // - wait: If true, waits for conhost/OpenConsole to exit first.
 // Return Value:
 // - <none>
-static void _ClosePseudoConsole(_In_ PseudoConsole* pPty, BOOL wait)
+static void _ClosePseudoConsole(_In_ PseudoConsole* pPty, BOOL wait) noexcept
 {
     if (pPty != nullptr)
     {
