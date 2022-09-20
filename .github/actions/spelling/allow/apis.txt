@@ -5,6 +5,7 @@ aclapi
 alignas
 alignof
 APPLYTOSUBMENUS
+appxrecipe
 bitfield
 bitfields
 BUILDBRANCH
@@ -14,6 +15,7 @@ BYCOMMAND
 BYPOSITION
 charconv
 CLASSNOTAVAILABLE
+CLOSEAPP
 cmdletbinding
 COLORPROPERTY
 colspan
@@ -28,12 +30,14 @@ dataobject
 dcomp
 DERR
 dlldata
+DNE
 DONTADDTORECENT
 DWMWA
 DWORDLONG
 DWMSBT
 DWMWA
 endfor
+ENDSESSION
 enumset
 environstrings
 EXPCMDFLAGS
@@ -88,6 +92,7 @@ istream
 IStringable
 ITab
 ITaskbar
+itow
 IUri
 IVirtual
 KEYSELECT
@@ -99,6 +104,7 @@ lround
 Lsa
 lsass
 LSHIFT
+LTGRAY
 MAINWINDOW
 memchr
 memicmp
@@ -142,10 +148,12 @@ OUTLINETEXTMETRICW
 overridable
 PACL
 PAGESCROLL
+PATINVERT
 PEXPLICIT
 PICKFOLDERS
 pmr
 ptstr
+QUERYENDSESSION
 rcx
 REGCLS
 RETURNCMD

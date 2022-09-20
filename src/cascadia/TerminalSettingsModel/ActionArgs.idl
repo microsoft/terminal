@@ -188,7 +188,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass AdjustFontSizeArgs : IActionArgs
     {
-        Int32 Delta { get; };
+        Single Delta { get; };
     };
 
     [default_interface] runtimeclass SendInputArgs : IActionArgs
@@ -377,5 +377,12 @@ namespace Microsoft.Terminal.Settings.Model
         AdjustOpacityArgs();
         Int32 Opacity { get; };
         Boolean Relative { get; };
+    };
+
+    [default_interface] runtimeclass ColorSelectionArgs : IActionArgs
+    {
+        Microsoft.Terminal.Control.SelectionColor Foreground;
+        Microsoft.Terminal.Control.SelectionColor Background;
+        Microsoft.Terminal.Core.MatchMode MatchMode { get; };
     };
 }

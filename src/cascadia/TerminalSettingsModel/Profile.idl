@@ -26,7 +26,8 @@ namespace Microsoft.Terminal.Settings.Model
     {
         Never = 0,
         Graceful,
-        Always
+        Always,
+        Automatic
     };
 
     [flags]

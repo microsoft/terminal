@@ -57,21 +57,18 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT SetWindowSize(const til::size pixels) noexcept override;
 
-        void SetCallback(std::function<void()> pfn) noexcept override;
+        void SetCallback(std::function<void(const HANDLE)> pfn) noexcept override;
         void SetWarningCallback(std::function<void(const HRESULT)> pfn) noexcept override;
-
-        void ToggleShaderEffects() noexcept override;
 
         bool GetRetroTerminalEffect() const noexcept override;
         void SetRetroTerminalEffect(bool enable) noexcept override;
 
+        std::wstring_view GetPixelShaderPath() noexcept override;
         void SetPixelShaderPath(std::wstring_view value) noexcept override;
 
         void SetForceFullRepaintRendering(bool enable) noexcept override;
 
         void SetSoftwareRendering(bool enable) noexcept override;
-
-        HANDLE GetSwapChainHandle() noexcept override;
 
         // IRenderEngine Members
         [[nodiscard]] HRESULT Invalidate(const til::rect* const psrRegion) noexcept override;
@@ -100,8 +97,8 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT ResetLineTransform() noexcept override;
         [[nodiscard]] HRESULT PrepareLineTransform(const LineRendition lineRendition,
-                                                   const size_t targetRow,
-                                                   const size_t viewportLeft) noexcept override;
+                                                   const til::CoordType targetRow,
+                                                   const til::CoordType viewportLeft) noexcept override;
 
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
         [[nodiscard]] HRESULT PaintBufferLine(const gsl::span<const Cluster> clusters,
@@ -162,7 +159,7 @@ namespace Microsoft::Console::Render
         float _scale;
         float _prevScale;
 
-        std::function<void()> _pfn;
+        std::function<void(const HANDLE)> _pfn;
         std::function<void(const HRESULT)> _pfnWarningCallback;
 
         bool _isEnabled;

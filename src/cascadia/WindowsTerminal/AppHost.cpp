@@ -406,6 +406,12 @@ void AppHost::Initialize()
         }
     });
 
+    _window->AutomaticShutdownRequested([this]() {
+        // Raised when the OS is beginning an update of the app. We will quit,
+        // to save our state, before the OS manually kills us.
+        _windowManager.RequestQuitAll();
+    });
+
     // Load bearing: make sure the PropertyChanged handler is added before we
     // call Create, so that when the app sets up the titlebar brush, we're
     // already prepared to listen for the change notification
@@ -683,13 +689,6 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, til::rect proposedRect, Launc
     // If we can't resize the window, that's really okay. We can just go on with
     // the originally proposed window size.
     LOG_LAST_ERROR_IF(!succeeded);
-
-    TraceLoggingWrite(
-        g_hWindowsTerminalProvider,
-        "WindowCreated",
-        TraceLoggingDescription("Event emitted upon creating the application window"),
-        TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-        TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
 }
 
 // Method Description:

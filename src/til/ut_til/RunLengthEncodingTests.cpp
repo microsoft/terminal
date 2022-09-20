@@ -574,7 +574,7 @@ class RunLengthEncodingTests
             const auto beg = rle.begin();
             auto it = beg;
 
-            for (size_t i = 0; i <= expected.size(); ++i, ++it)
+            for (size_t i = 0; i < expected.size(); ++i, ++it)
             {
                 VERIFY_ARE_EQUAL(static_cast<difference_type>(i), it - beg);
                 VERIFY_ARE_EQUAL(-static_cast<difference_type>(i), beg - it);

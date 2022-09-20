@@ -33,7 +33,7 @@ protected:
         _NotifyChanges(std::forward<Args>(more)...);
     }
 
-private:
+protected:
     winrt::event<::winrt::Windows::UI::Xaml::Data::PropertyChangedEventHandler> _propertyChangedHandlers;
 };
 

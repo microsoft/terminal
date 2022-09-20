@@ -37,7 +37,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    if: (success() || failure()) && needs.spelling.outputs.followup
+    if: (success() || failure()) && needs.spelling.outputs.followup && github.event_name != 'push'
     steps:
     - name: comment
       uses: check-spelling/check-spelling@v0.0.20

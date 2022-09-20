@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="15.0"
-  xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA5CAD1A-d7ec-4107-b7c6-79cb77ae2907}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -14,6 +13,7 @@
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
     <TerminalVisualStudioSetup>true</TerminalVisualStudioSetup>
+    <TerminalMUX>true</TerminalMUX>
   </PropertyGroup>
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
@@ -281,13 +281,6 @@
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 
-  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets'))" />
-  </Target>
   <!-- This target will take our defaults.json and stamp it into a .h file that
   we can include in the code directly. This way, we don't need to worry about
   failing to load the default settings at runtime. -->
@@ -301,6 +294,10 @@
   <!-- Same as above, but for the default settings.json template -->
   <Target Name="_TerminalAppGenerateUserSettingsH" Inputs="userDefaults.json" Outputs="Generated Files\userDefaults.h" BeforeTargets="BeforeClCompile">
     <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1&quot; -JsonFile userDefaults.json -OutPath &quot;Generated Files\userDefaults.h&quot; -VariableName UserSettingsJson" />
+  </Target>
+  <!-- Same as above, but for the enableColorSelection actions -->
+  <Target Name="_TerminalAppGenerateEnableColorSelectionSettingsH" Inputs="enableColorSelection.json" Outputs="Generated Files\enableColorSelection.h" BeforeTargets="BeforeClCompile">
+    <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1&quot; -JsonFile enableColorSelection.json -OutPath &quot;Generated Files\enableColorSelection.h&quot; -VariableName EnableColorSelectionSettingsJson" />
   </Target>
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 

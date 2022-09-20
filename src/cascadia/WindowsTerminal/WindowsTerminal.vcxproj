@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}</ProjectGuid>
@@ -21,6 +21,7 @@
     <TerminalXamlApplicationToolkit>true</TerminalXamlApplicationToolkit>
     <TerminalVCRTForwarders>true</TerminalVCRTForwarders>
     <TerminalThemeHelpers>true</TerminalThemeHelpers>
+    <TerminalMUX>true</TerminalMUX>
   </PropertyGroup>
 
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
@@ -140,14 +141,6 @@
   </ItemDefinitionGroup>
 
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
-
-  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets'))" />
-  </Target>
 
   <!-- Override GetPackagingOutputs to roll up all our dependencies.
        This ensures that when the WAP packaging project asks what files go into

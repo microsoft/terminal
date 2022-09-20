@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "small_vector.h"
+
 #ifdef UNIT_TESTING
 class RunLengthEncodingTests;
 #endif
@@ -378,7 +380,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         void swap(basic_rle& other) noexcept
         {
-            _runs.swap(other._runs);
+            std::swap(_runs, other._runs);
             std::swap(_total_length, other._total_length);
         }
 
@@ -507,7 +509,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
                 run->length = ++pos;
 
-                _runs.erase(++run, _runs.cend());
+                _runs.erase(++run, _runs.end());
             }
             else if (new_size > _total_length)
             {
@@ -1021,10 +1023,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     template<typename T, typename S = std::size_t>
     using rle = basic_rle<T, S, std::vector<rle_pair<T, S>>>;
 
-#ifdef BOOST_CONTAINER_CONTAINER_SMALL_VECTOR_HPP
     template<typename T, typename S = std::size_t, std::size_t N = 1>
-    using small_rle = basic_rle<T, S, boost::container::small_vector<rle_pair<T, S>, N>>;
-#endif
+    using small_rle = basic_rle<T, S, til::small_vector<rle_pair<T, S>, N>>;
 };
 
 #ifdef __WEX_COMMON_H__

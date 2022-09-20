@@ -3,14 +3,17 @@
 
 #pragma once
 
-#include <d2d1.h>
+#include <d2d1_1.h>
 #include <d3d11_1.h>
 #include <dwrite_3.h>
 
 #include "../../renderer/inc/IRenderEngine.hpp"
+#include "DWriteTextAnalysis.h"
 
 namespace Microsoft::Console::Render
 {
+    struct TextAnalysisSinkResult;
+
     class AtlasEngine final : public IRenderEngine
     {
     public:
@@ -38,7 +41,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT NotifyNewText(const std::wstring_view newText) noexcept override;
         [[nodiscard]] HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept override;
         [[nodiscard]] HRESULT ResetLineTransform() noexcept override;
-        [[nodiscard]] HRESULT PrepareLineTransform(LineRendition lineRendition, size_t targetRow, size_t viewportLeft) noexcept override;
+        [[nodiscard]] HRESULT PrepareLineTransform(LineRendition lineRendition, til::CoordType targetRow, til::CoordType viewportLeft) noexcept override;
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
         [[nodiscard]] HRESULT PaintBufferLine(gsl::span<const Cluster> clusters, til::point coord, bool fTrimLeft, bool lineWrapped) noexcept override;
         [[nodiscard]] HRESULT PaintBufferGridLines(GridLineSet lines, COLORREF color, size_t cchLine, til::point coordTarget) noexcept override;
@@ -57,14 +60,14 @@ namespace Microsoft::Console::Render
 
         // DxRenderer - getter
         HRESULT Enable() noexcept override;
+        [[nodiscard]] std::wstring_view GetPixelShaderPath() noexcept override;
         [[nodiscard]] bool GetRetroTerminalEffect() const noexcept override;
         [[nodiscard]] float GetScaling() const noexcept override;
-        [[nodiscard]] HANDLE GetSwapChainHandle() override;
         [[nodiscard]] Types::Viewport GetViewportInCharacters(const Types::Viewport& viewInPixels) const noexcept override;
         [[nodiscard]] Types::Viewport GetViewportInPixels(const Types::Viewport& viewInCharacters) const noexcept override;
         // DxRenderer - setter
         void SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept override;
-        void SetCallback(std::function<void()> pfn) noexcept override;
+        void SetCallback(std::function<void(HANDLE)> pfn) noexcept override;
         void EnableTransparentBackground(const bool isTransparent) noexcept override;
         void SetForceFullRepaintRendering(bool enable) noexcept override;
         [[nodiscard]] HRESULT SetHwnd(HWND hwnd) noexcept override;
@@ -74,7 +77,6 @@ namespace Microsoft::Console::Render
         void SetSoftwareRendering(bool enable) noexcept override;
         void SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept override;
         [[nodiscard]] HRESULT SetWindowSize(til::size pixels) noexcept override;
-        void ToggleShaderEffects() noexcept override;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept override;
         void UpdateHyperlinkHoveredId(uint16_t hoveredId) noexcept override;
 
@@ -96,8 +98,10 @@ namespace Microsoft::Console::Render
     friend constexpr type operator~(type v) noexcept { return static_cast<type>(~static_cast<underlying>(v)); }                                             \
     friend constexpr type operator|(type lhs, type rhs) noexcept { return static_cast<type>(static_cast<underlying>(lhs) | static_cast<underlying>(rhs)); } \
     friend constexpr type operator&(type lhs, type rhs) noexcept { return static_cast<type>(static_cast<underlying>(lhs) & static_cast<underlying>(rhs)); } \
+    friend constexpr type operator^(type lhs, type rhs) noexcept { return static_cast<type>(static_cast<underlying>(lhs) ^ static_cast<underlying>(rhs)); } \
     friend constexpr void operator|=(type& lhs, type rhs) noexcept { lhs = lhs | rhs; }                                                                     \
-    friend constexpr void operator&=(type& lhs, type rhs) noexcept { lhs = lhs & rhs; }
+    friend constexpr void operator&=(type& lhs, type rhs) noexcept { lhs = lhs & rhs; }                                                                     \
+    friend constexpr void operator^=(type& lhs, type rhs) noexcept { lhs = lhs ^ rhs; }
 
         template<typename T>
         struct vec2
@@ -106,6 +110,16 @@ namespace Microsoft::Console::Render
             T y{};
 
             ATLAS_POD_OPS(vec2)
+        };
+
+        template<typename T>
+        struct vec3
+        {
+            T x{};
+            T y{};
+            T z{};
+
+            ATLAS_POD_OPS(vec3)
         };
 
         template<typename T>
@@ -129,7 +143,7 @@ namespace Microsoft::Console::Render
 
             ATLAS_POD_OPS(rect)
 
-            constexpr bool non_empty() noexcept
+            constexpr bool non_empty() const noexcept
             {
                 return (left < right) & (top < bottom);
             }
@@ -150,6 +164,7 @@ namespace Microsoft::Console::Render
 
         using f32 = float;
         using f32x2 = vec2<f32>;
+        using f32x3 = vec3<f32>;
         using f32x4 = vec4<f32>;
 
         struct TextAnalyzerResult
@@ -344,7 +359,8 @@ namespace Microsoft::Console::Render
 
             SmallObjectOptimizer& operator=(SmallObjectOptimizer&& other) noexcept
             {
-                return *new (this) SmallObjectOptimizer(other);
+                std::destroy_at(this);
+                return *std::construct_at(this, std::move(other));
             }
 
             ~SmallObjectOptimizer()
@@ -394,14 +410,18 @@ namespace Microsoft::Console::Render
         struct FontMetrics
         {
             wil::com_ptr<IDWriteFontCollection> fontCollection;
-            wil::unique_process_heap_string fontName;
+            std::wstring fontName;
             float baselineInDIP = 0.0f;
             float fontSizeInDIP = 0.0f;
+            f32 advanceScale = 0;
             u16x2 cellSize;
             u16 fontWeight = 0;
             u16 underlinePos = 0;
+            u16 underlineWidth = 0;
             u16 strikethroughPos = 0;
-            u16 lineThickness = 0;
+            u16 strikethroughWidth = 0;
+            u16x2 doubleUnderlinePos;
+            u16 thinLineWidth = 0;
         };
 
         // These flags are shared with shader_ps.hlsl.
@@ -500,6 +520,21 @@ namespace Microsoft::Console::Render
             }
         };
 
+        struct CachedGlyphLayout
+        {
+            wil::com_ptr<IDWriteTextLayout> textLayout;
+            f32x2 halfSize;
+            f32x2 offset;
+            f32x2 scale;
+            D2D1_DRAW_TEXT_OPTIONS options = D2D1_DRAW_TEXT_OPTIONS_NONE;
+            bool scalingRequired = false;
+
+            explicit operator bool() const noexcept;
+            void reset() noexcept;
+            void applyScaling(ID2D1RenderTarget* d2dRenderTarget, D2D1_POINT_2F origin) const noexcept;
+            void undoScaling(ID2D1RenderTarget* d2dRenderTarget) const noexcept;
+        };
+
         struct AtlasValueData
         {
             CellFlags flags = CellFlags::None;
@@ -523,6 +558,8 @@ namespace Microsoft::Console::Render
                 return _data.data();
             }
 
+            CachedGlyphLayout cachedLayout;
+
         private:
             SmallObjectOptimizer<AtlasValueData> _data;
 
@@ -530,12 +567,6 @@ namespace Microsoft::Console::Render
             {
                 return sizeof(AtlasValueData) - sizeof(AtlasValueData::coords) + static_cast<size_t>(coordCount) * sizeof(AtlasValueData::coords[0]);
             }
-        };
-
-        struct AtlasQueueItem
-        {
-            const AtlasKey* key;
-            const AtlasValue* value;
         };
 
         struct AtlasKeyHasher
@@ -797,6 +828,7 @@ namespace Microsoft::Console::Render
             u32 cursorColor = INVALID_COLOR;
             u16 cursorType = gsl::narrow_cast<u16>(CursorType::Legacy);
             u8 heightPercentage = 20;
+            u8 _padding = 0;
 
             ATLAS_POD_OPS(CachedCursorOptions)
         };
@@ -823,13 +855,27 @@ namespace Microsoft::Console::Render
             alignas(sizeof(f32)) f32 enhancedContrast = 0;
             alignas(sizeof(u32)) u32 cellCountX = 0;
             alignas(sizeof(u32x2)) u32x2 cellSize;
-            alignas(sizeof(u32x2)) u32x2 underlinePos;
-            alignas(sizeof(u32x2)) u32x2 strikethroughPos;
+            alignas(sizeof(u32)) u32 underlinePos = 0;
+            alignas(sizeof(u32)) u32 underlineWidth = 0;
+            alignas(sizeof(u32)) u32 strikethroughPos = 0;
+            alignas(sizeof(u32)) u32 strikethroughWidth = 0;
+            alignas(sizeof(u32x2)) u32x2 doubleUnderlinePos;
+            alignas(sizeof(u32)) u32 thinLineWidth = 0;
             alignas(sizeof(u32)) u32 backgroundColor = 0;
             alignas(sizeof(u32)) u32 cursorColor = 0;
             alignas(sizeof(u32)) u32 selectionColor = 0;
             alignas(sizeof(u32)) u32 useClearType = 0;
 #pragma warning(suppress : 4324) // 'ConstBuffer': structure was padded due to alignment specifier
+        };
+
+        struct alignas(16) CustomConstBuffer
+        {
+            // WARNING: Same rules as for ConstBuffer above apply.
+            alignas(sizeof(f32)) f32 time = 0;
+            alignas(sizeof(f32)) f32 scale = 0;
+            alignas(sizeof(f32x2)) f32x2 resolution;
+            alignas(sizeof(f32x4)) f32x4 background;
+#pragma warning(suppress : 4324) // 'CustomConstBuffer': structure was padded due to alignment specifier
         };
 
         // Handled in BeginPaint()
@@ -879,20 +925,37 @@ namespace Microsoft::Console::Render
         bool _emplaceGlyph(IDWriteFontFace* fontFace, size_t bufferPos1, size_t bufferPos2);
 
         // AtlasEngine.api.cpp
-        void _resolveAntialiasingMode() noexcept;
+        void _resolveTransparencySettings() noexcept;
         void _updateFont(const wchar_t* faceName, const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes);
         void _resolveFontMetrics(const wchar_t* faceName, const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, FontMetrics* fontMetrics = nullptr) const;
 
         // AtlasEngine.r.cpp
+        void _renderWithCustomShader() const;
         void _setShaderResources() const;
         void _updateConstantBuffer() const noexcept;
         void _adjustAtlasSize();
         void _processGlyphQueue();
-        void _drawGlyph(const AtlasQueueItem& item) const;
-        void _drawCursor();
+        void _drawGlyph(const TileHashMap::iterator& it) const;
+        CachedGlyphLayout _getCachedGlyphLayout(const wchar_t* chars, u16 charsLength, u16 cellCount, IDWriteTextFormat* textFormat, bool coloredGlyph) const;
+        void _drawCursor(u16r rect, u32 color, bool clear);
+        ID2D1Brush* _brushWithColor(u32 color);
+        void _d2dPresent();
+        void _d2dCreateRenderTarget();
+        void _d2dDrawDirtyArea();
+        u16 _d2dDrawGlyph(const TileHashMap::iterator& it, u16x2 coord, u32 color);
+        void _d2dDrawLine(u16r rect, u16 pos, u16 width, u32 color, ID2D1StrokeStyle* strokeStyle = nullptr);
+        void _d2dFillRectangle(u16r rect, u32 color);
+        void _d2dCellFlagRendererCursor(u16r rect, u32 color);
+        void _d2dCellFlagRendererSelected(u16r rect, u32 color);
+        void _d2dCellFlagRendererUnderline(u16r rect, u32 color);
+        void _d2dCellFlagRendererUnderlineDotted(u16r rect, u32 color);
+        void _d2dCellFlagRendererUnderlineDouble(u16r rect, u32 color);
+        void _d2dCellFlagRendererStrikethrough(u16r rect, u32 color);
 
+        static constexpr bool debugForceD2DMode = false;
         static constexpr bool debugGlyphGenerationPerformance = false;
-        static constexpr bool debugGeneralPerformance = false || debugGlyphGenerationPerformance;
+        static constexpr bool debugTextParsingPerformance = false || debugGlyphGenerationPerformance;
+        static constexpr bool debugGeneralPerformance = false || debugTextParsingPerformance;
 
         static constexpr u16 u16min = 0x0000;
         static constexpr u16 u16max = 0xffff;
@@ -919,6 +982,9 @@ namespace Microsoft::Console::Render
 
         struct Resources
         {
+            // DXGI resources
+            wil::com_ptr<IDXGIFactory1> dxgiFactory;
+
             // D3D resources
             wil::com_ptr<ID3D11Device> device;
             wil::com_ptr<ID3D11DeviceContext1> deviceContext;
@@ -930,38 +996,53 @@ namespace Microsoft::Console::Render
             wil::com_ptr<ID3D11Buffer> constantBuffer;
             wil::com_ptr<ID3D11Buffer> cellBuffer;
             wil::com_ptr<ID3D11ShaderResourceView> cellView;
+            wil::com_ptr<ID3D11Texture2D> customOffscreenTexture;
+            wil::com_ptr<ID3D11ShaderResourceView> customOffscreenTextureView;
+            wil::com_ptr<ID3D11RenderTargetView> customOffscreenTextureTargetView;
+            wil::com_ptr<ID3D11VertexShader> customVertexShader;
+            wil::com_ptr<ID3D11PixelShader> customPixelShader;
+            wil::com_ptr<ID3D11Buffer> customShaderConstantBuffer;
+            wil::com_ptr<ID3D11SamplerState> customShaderSamplerState;
+            std::chrono::steady_clock::time_point customShaderStartTime;
 
             // D2D resources
             wil::com_ptr<ID3D11Texture2D> atlasBuffer;
             wil::com_ptr<ID3D11ShaderResourceView> atlasView;
-            wil::com_ptr<ID2D1RenderTarget> d2dRenderTarget;
-            wil::com_ptr<ID2D1Brush> brush;
+            wil::com_ptr<ID2D1DeviceContext> d2dRenderTarget;
+            wil::com_ptr<ID2D1SolidColorBrush> brush;
             wil::com_ptr<IDWriteTextFormat> textFormats[2][2];
             Buffer<DWRITE_FONT_AXIS_VALUE> textFormatAxes[2][2];
             wil::com_ptr<IDWriteTypography> typography;
+            wil::com_ptr<ID2D1StrokeStyle> dottedStrokeStyle;
 
             Buffer<Cell, 32> cells; // invalidated by ApiInvalidations::Size
             Buffer<TileHashMap::iterator> cellGlyphMapping; // invalidated by ApiInvalidations::Size
             f32x2 cellSizeDIP; // invalidated by ApiInvalidations::Font, caches _api.cellSize but in DIP
-            u16x2 cellSize; // invalidated by ApiInvalidations::Font, caches _api.cellSize
             u16x2 cellCount; // invalidated by ApiInvalidations::Font|Size, caches _api.cellCount
-            u16 underlinePos = 0;
-            u16 strikethroughPos = 0;
-            u16 lineThickness = 0;
             u16 dpi = USER_DEFAULT_SCREEN_DPI; // invalidated by ApiInvalidations::Font, caches _api.dpi
+            FontMetrics fontMetrics; // invalidated by ApiInvalidations::Font, cached _api.fontMetrics
+            f32 dipPerPixel = 1.0f; // invalidated by ApiInvalidations::Font, caches USER_DEFAULT_SCREEN_DPI / _api.dpi
+            f32 pixelPerDIP = 1.0f; // invalidated by ApiInvalidations::Font, caches _api.dpi / USER_DEFAULT_SCREEN_DPI
             u16x2 atlasSizeInPixel; // invalidated by ApiInvalidations::Font
             TileHashMap glyphs;
             TileAllocator tileAllocator;
-            std::vector<AtlasQueueItem> glyphQueue;
+            std::vector<TileHashMap::iterator> glyphQueue;
 
             f32 gamma = 0;
             f32 cleartypeEnhancedContrast = 0;
             f32 grayscaleEnhancedContrast = 0;
             u32 backgroundColor = 0xff000000;
             u32 selectionColor = 0x7fffffff;
+            u32 brushColor = 0xffffffff;
 
             CachedCursorOptions cursorOptions;
             RenderInvalidations invalidations = RenderInvalidations::None;
+
+            til::rect dirtyRect;
+            i16 scrollOffset = 0;
+            bool d2dMode = false;
+            bool waitForPresentation = false;
+            bool requiresContinuousRedraw = false;
 
 #ifndef NDEBUG
             // See documentation for IDXGISwapChain2::GetFrameLatencyWaitableObject method:
@@ -979,7 +1060,7 @@ namespace Microsoft::Console::Render
             std::vector<wchar_t> bufferLine;
             std::vector<u16> bufferLineColumn;
             Buffer<BufferLineMetadata> bufferLineMetadata;
-            std::vector<TextAnalyzerResult> analysisResults;
+            std::vector<TextAnalysisSinkResult> analysisResults;
             Buffer<u16> clusterMap;
             Buffer<DWRITE_SHAPING_TEXT_PROPERTIES> textProps;
             Buffer<u16> glyphIndices;
@@ -994,7 +1075,7 @@ namespace Microsoft::Console::Render
             u16x2 sizeInPixel; // changes are flagged as ApiInvalidations::Size
 
             // UpdateDrawingBrushes()
-            u32 backgroundOpaqueMixin = 0xff000000; // changes are flagged as ApiInvalidations::Device
+            u32 backgroundOpaqueMixin = 0xff000000; // changes are flagged as ApiInvalidations::SwapChain
             u32x2 currentColor;
             AtlasKeyAttributes attributes{};
             u16x2 lastPaintBufferLineCoord;
@@ -1013,12 +1094,17 @@ namespace Microsoft::Console::Render
             i16 scrollOffset = 0;
 
             std::function<void(HRESULT)> warningCallback;
-            std::function<void()> swapChainChangedCallback;
+            std::function<void(HANDLE)> swapChainChangedCallback;
             wil::unique_handle swapChainHandle;
             HWND hwnd = nullptr;
             u16 dpi = USER_DEFAULT_SCREEN_DPI; // changes are flagged as ApiInvalidations::Font|Size
             u8 antialiasingMode = D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE; // changes are flagged as ApiInvalidations::Font
-            u8 realizedAntialiasingMode = D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE; // caches antialiasingMode, depends on antialiasingMode and backgroundOpaqueMixin, see _resolveAntialiasingMode
+            u8 realizedAntialiasingMode = D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE; // caches antialiasingMode, depends on antialiasingMode and backgroundOpaqueMixin, see _resolveTransparencySettings
+            bool enableTransparentBackground = false;
+
+            std::wstring customPixelShaderPath; // changes are flagged as ApiInvalidations::Device
+            bool useRetroTerminalEffect = false; // changes are flagged as ApiInvalidations::Device
+            bool useSoftwareRendering = false; // changes are flagged as ApiInvalidations::Device
 
             ApiInvalidations invalidations = ApiInvalidations::Device;
         } _api;

@@ -28,6 +28,8 @@ namespace Microsoft.Terminal.Settings.Editor
 
         Boolean InvertedDisableAnimations;
 
+        void ShowTitlebarToggled(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs args);
+
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AlwaysShowTabs);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ShowTabsInTitlebar);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, UseAcrylicInTabRow);

@@ -1716,7 +1716,7 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
         // code points that get translated as C1 controls when that is not their
         // intended use. In order to avoid them triggering unintentional escape
         // sequences, we ignore these characters by default.
-        if (_parserMode.test(Mode::AcceptC1))
+        if (_parserMode.any(Mode::AcceptC1, Mode::AlwaysAcceptC1))
         {
             ProcessCharacter(AsciiChars::ESC);
             ProcessCharacter(_c1To7Bit(wch));
@@ -2014,7 +2014,6 @@ void StateMachine::ResetState() noexcept
 //   into the given size_t. All existing value is moved up by 10.
 // - For example, if your value had 437 and you put in the printable number 2,
 //   this function will update value to 4372.
-// - Clamps to 32767 if it gets too big.
 // Arguments:
 // - wch - Printable character to accumulate into the value (after conversion to number, of course)
 // - value - The value to update with the printable character. See example above.

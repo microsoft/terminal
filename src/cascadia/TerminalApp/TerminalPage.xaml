@@ -109,7 +109,7 @@
                     <Run Text="{x:Bind ApplicationVersion}" />
                 </TextBlock>
                 <HyperlinkButton x:Uid="AboutDialog_SourceCodeLink"
-                                 NavigateUri="https://github.com/microsoft/terminal" />
+                                 NavigateUri="https://go.microsoft.com/fwlink/?linkid=2203152" />
                 <HyperlinkButton x:Uid="AboutDialog_DocumentationLink"
                                  NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125416" />
                 <HyperlinkButton x:Uid="AboutDialog_ReleaseNotesLink"
