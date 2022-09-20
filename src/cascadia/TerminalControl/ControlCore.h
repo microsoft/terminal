@@ -55,16 +55,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     public:
         static std::atomic<size_t> _searchIdGenerator;
 
-        SearchState(const winrt::hstring& text, const Search::Sensitivity sensitivity) :
+        SearchState(const winrt::hstring& text, const Search::Sensitivity sensitivity, const std::optional<bool> forward) :
             Text(text),
             Sensitivity(sensitivity),
+            goForward(forward),
             SearchId(_searchIdGenerator.fetch_add(1))
         {
         }
 
-        const winrt::hstring Text;
-        const Search::Sensitivity Sensitivity;
-        const size_t SearchId;
+        winrt::hstring Text;
+        Search::Sensitivity Sensitivity;
+        std::optional<bool> goForward{ std::nullopt };
+        size_t SearchId;
         std::optional<std::vector<std::pair<til::point, til::point>>> Matches;
         int32_t CurrentMatchIndex{ -1 };
 
@@ -309,7 +311,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::shared_ptr<ThrottledFuncTrailing<>> _tsfTryRedrawCanvas;
         std::unique_ptr<til::throttled_func_trailing<>> _updatePatternLocations;
         std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> _updateScrollBar;
-        std::shared_ptr<ThrottledFuncTrailing<>> _updateSearchStatus;
+        std::shared_ptr<ThrottledFuncTrailing<SearchState>> _updateSearchStatus;
 
         bool _setFontSizeUnderLock(float fontSize);
         void _updateFont(const bool initialUpdate = false);

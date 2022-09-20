@@ -242,20 +242,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             });
 
         // TODO! is this in the right place
-        _updateSearchStatus = std::make_shared<ThrottledFuncTrailing<>>(
+        _updateSearchStatus = std::make_shared<ThrottledFuncTrailing<SearchState>>(
             _dispatcher,
             SearchUponOutputInterval,
-            [weakThis = get_weak()]() {
+            [weakThis = get_weak()](const auto& update) {
                 if (auto core{ weakThis.get() })
                 {
-                    // If in the middle of the search, recompute the matches.
-                    // We avoid navigation to the first result to prevent auto-scrolling.
-                    if (core->_searchState.has_value())
-                    {
-                        const SearchState searchState{ core->_searchState->Text, core->_searchState->Sensitivity };
-                        core->_searchState.emplace(searchState);
-                        core->_SearchAsync(std::nullopt, SearchAfterOutputDelay);
-                    }
+                    // // If in the middle of the search, recompute the matches.
+                    // // We avoid navigation to the first result to prevent auto-scrolling.
+                    // if (core->_searchState.has_value())
+                    // {
+                    //      const SearchState searchState{ core->_searchState->Text, core->_searchState->Sensitivity };
+                    core->_searchState.emplace(update);
+                    core->_SearchAsync(std::nullopt, SearchAfterOutputDelay);
+                    // }
                 }
             });
 
@@ -1553,57 +1553,56 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // If no matches were computed it means we need to perform the search
         if (!_searchState->Matches.has_value())
         {
-            // Before we search, let's wait a bit:
-            // probably the search criteria or the data are still modified.
-            co_await winrt::resume_after(delay);
+            // // Before we search, let's wait a bit:
+            // // probably the search criteria or the data are still modified.
+            // co_await winrt::resume_after(delay);
 
-            // Switch back to Dispatcher so we can set the Searching status
-            co_await winrt::resume_foreground(_dispatcher);
-            if (auto core{ weakThis.get() })
+            // // Switch back to Dispatcher so we can set the Searching status
+            // co_await winrt::resume_foreground(_dispatcher);
+            // if (auto core{ weakThis.get() })
+            // {
+            //     // If search box was collapsed or the new one search was triggered - let's cancel this one
+            //     if (!_searchState.has_value() || _searchState->SearchId != originalSearchId)
+            //     {
+            //         co_return;
+            //     }
+
+            std::vector<std::pair<til::point, til::point>> matches;
+            if (!_searchState->Text.empty())
             {
-                // If search box was collapsed or the new one search was triggered - let's cancel this one
-                if (!_searchState.has_value() || _searchState->SearchId != originalSearchId)
+                // We perform explicit search forward, so the first result will also be the earliest buffer location
+                // We will use goForward later to decide if we need to select 1 of n or n of n.
+                ::Search search(*GetUiaData(),
+                                _searchState->Text.c_str(),
+                                Search::Direction::Forward,
+                                _searchState->Sensitivity);
+
+                while (co_await _SearchOne(search))
                 {
-                    co_return;
-                }
-
-                // // Let's mark the start of searching
-                // if (_searchBox)
-                // {
-                //     _searchBox->SetStatus(-1, -1);
-                //     _searchBox->SetNavigationEnabled(false);
-                // }
-
-                std::vector<std::pair<til::point, til::point>> matches;
-                if (!_searchState->Text.empty())
-                {
-                    // We perform explicit search forward, so the first result will also be the earliest buffer location
-                    // We will use goForward later to decide if we need to select 1 of n or n of n.
-                    ::Search search(*GetUiaData(), _searchState->Text.c_str(), Search::Direction::Forward, _searchState->Sensitivity);
-                    while (co_await _SearchOne(search))
-                    {
-                        // if search box was collapsed or the new one search was triggered - let's cancel this one
-                        if (!_searchState.has_value() || _searchState->SearchId != originalSearchId)
-                        {
-                            co_return;
-                        }
-
-                        matches.push_back(search.GetFoundLocation());
-                    }
-
                     // if search box was collapsed or the new one search was triggered - let's cancel this one
-                    if (!_searchState.has_value() || _searchState->SearchId != originalSearchId)
+                    if (!_searchState.has_value() ||
+                        _searchState->SearchId != originalSearchId)
                     {
                         co_return;
                     }
+
+                    matches.push_back(search.GetFoundLocation());
                 }
-                _searchState->Matches.emplace(std::move(matches));
+
+                // if search box was collapsed or the new one search was triggered - let's cancel this one
+                if (!_searchState.has_value() ||
+                    _searchState->SearchId != originalSearchId)
+                {
+                    co_return;
+                }
             }
+            _searchState->Matches.emplace(std::move(matches));
+            // }
         }
 
         if (auto core{ weakThis.get() })
         {
-            _SelectSearchResult(goForward);
+            _SelectSearchResult(_searchState->goForward);
         }
     }
 
@@ -1616,9 +1615,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _renderer->TriggerSelection();
 
         const auto sensitivity = caseSensitive ? Search::Sensitivity::CaseSensitive : Search::Sensitivity::CaseInsensitive;
-        const SearchState searchState{ text, sensitivity };
-        _searchState.emplace(searchState);
-        _SearchAsync(goForward, SearchAfterChangeDelay);
+        const SearchState searchState{ text, sensitivity, goForward };
+        // _searchState.emplace(searchState);
+
+        _updateSearchStatus->Run(searchState);
+        // _SearchAsync(goForward, SearchAfterChangeDelay);
     }
 
     // Method Description:
