@@ -1520,34 +1520,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        // const auto direction = goForward ?
-        //                            Search::Direction::Forward :
-        //                            Search::Direction::Backward;
-
-        // const auto sensitivity = caseSensitive ?
-        //                              Search::Sensitivity::CaseSensitive :
-        //                              Search::Sensitivity::CaseInsensitive;
-
-        // ::Search search(*GetUiaData(), text.c_str(), direction, sensitivity);
-        // auto lock = _terminal->LockForWriting();
-        // const auto foundMatch{ search.FindNext() };
-        // if (foundMatch)
-        // {
-        //     _terminal->SetBlockSelection(false);
-        //     search.Select();
-
-        //     // this is used for search,
-        //     // DO NOT call _updateSelectionUI() here.
-        //     // We don't want to show the markers so manually tell it to clear it.
-        //     _renderer->TriggerSelection();
-        //     _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
-        // }
-
-        // // Raise a FoundMatch event, which the control will use to notify
-        // // narrator if there was any results in the buffer
-        // auto foundResults = winrt::make_self<implementation::FoundResultsArgs>(foundMatch);
-        // _FoundMatchHandlers(*this, *foundResults);
-
         _SelectSearchResult(goForward);
     }
 
@@ -1673,12 +1645,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             }
 
-            // if (_searchBox)
-            // {
-            //     _searchBox->SetStatus(gsl::narrow<int32_t>(matches.size()), state.CurrentMatchIndex);
-            //     _searchBox->SetNavigationEnabled(!_searchState->Matches->empty());
-            // }
-
+            // Let the control know we got one
             auto foundResults = winrt::make_self<implementation::FoundResultsArgs>(true);
             foundResults->TotalMatches(gsl::narrow<int32_t>(matches.size()));
             foundResults->CurrentMatch(state.CurrentMatchIndex);
