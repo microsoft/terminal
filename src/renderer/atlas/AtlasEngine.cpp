@@ -249,6 +249,13 @@ try
     _r.dirtyRect = _api.dirtyRect;
     _r.scrollOffset = _api.scrollOffset;
 
+    // Clear the previous cursor. PaintCursor() is only called if the cursor is on.
+    if (const auto r = _api.invalidatedCursorArea; r.non_empty())
+    {
+        _setCellFlags(r, CellFlags::Cursor, CellFlags::None);
+        _r.dirtyRect |= til::rect{ r.left, r.top, r.right, r.bottom };
+    }
+
     // This is an important block of code for our TileHashMap.
     // We only process glyphs within the dirtyRect, but glyphs outside of the
     // dirtyRect are still in use and shouldn't be discarded. This is critical
@@ -435,13 +442,6 @@ try
             _r.cursorOptions = cachedOptions;
             WI_SetFlag(_r.invalidations, RenderInvalidations::Cursor);
         }
-    }
-
-    // Clear the previous cursor
-    if (const auto r = _api.invalidatedCursorArea; r.non_empty())
-    {
-        _setCellFlags(r, CellFlags::Cursor, CellFlags::None);
-        _r.dirtyRect |= til::rect{ r.left, r.top, r.right, r.bottom };
     }
 
     if (options.isOn)
