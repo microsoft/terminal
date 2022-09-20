@@ -3261,7 +3261,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             co_await wil::resume_foreground(Dispatcher());
             _searchBox->SetStatus(args.TotalMatches(), args.CurrentMatch());
-            _searchBox->SetNavigationEnabled(false);
+            _searchBox->SetNavigationEnabled(true);
         }
     }
 
