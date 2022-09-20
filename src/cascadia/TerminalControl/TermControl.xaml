@@ -1235,6 +1235,7 @@
                                         x:Load="False"
                                         Closed="_CloseSearchBoxControl"
                                         Search="_Search"
+                                        SearchChanged="_SearchChanged"
                                         Visibility="Collapsed" />
             </Grid>
 

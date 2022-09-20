@@ -183,6 +183,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         std::shared_ptr<ThrottledFuncLeading> _playWarningBell;
 
+        std::shared_ptr<ThrottledFunc<>> _updateSearchStatus;
+
         struct ScrollBarUpdate
         {
             std::optional<double> newValue;
@@ -229,6 +231,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _UpdateSettingsFromUIThread();
         void _UpdateAppearanceFromUIThread(Control::IControlAppearance newAppearance);
+
         void _ApplyUISettings();
         winrt::fire_and_forget UpdateAppearance(Control::IControlAppearance newAppearance);
         void _SetBackgroundImage(const IControlAppearance& newAppearance);
@@ -290,8 +293,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const til::point _toTerminalOrigin(winrt::Windows::Foundation::Point cursorPosition);
         double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;
 
+        winrt::Windows::Foundation::IAsyncOperation<bool> _SearchOne(Search& search);
         void _Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
+
+        void _SearchChanged(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
         void _CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
+        fire_and_forget _SearchAsync(std::optional<bool> goForward, Windows::Foundation::TimeSpan const& delay);
+        void _SelectSearchResult(std::optional<bool> goForward);
 
         // TSFInputControl Handlers
         void _CompositionCompleted(winrt::hstring text);

@@ -50,6 +50,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         WINRT_PROPERTY(bool, IsIndex16);
     };
 
+    struct SearchState
+    {
+    public:
+        static std::atomic<size_t> _searchIdGenerator;
+
+        SearchState(const winrt::hstring& text, const Search::Sensitivity sensitivity) :
+            Text(text),
+            Sensitivity(sensitivity),
+            SearchId(_searchIdGenerator.fetch_add(1))
+        {
+        }
+
+        const winrt::hstring Text;
+        const Search::Sensitivity Sensitivity;
+        const size_t SearchId;
+        std::optional<std::vector<std::pair<COORD, COORD>>> Matches;
+        int32_t CurrentMatchIndex{ -1 };
+
+        void UpdateIndex(bool goForward);
+        std::optional<std::pair<COORD, COORD>> GetCurrentMatch();
+    };
+
     struct ControlCore : ControlCoreT<ControlCore>
     {
     public:
@@ -276,6 +298,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         double _compositionScale{ 0 };
 
         uint64_t _owningHwnd{ 0 };
+
+        std::optional<SearchState> _searchState;
 
         winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };
         std::shared_ptr<ThrottledFuncTrailing<>> _tsfTryRedrawCanvas;
