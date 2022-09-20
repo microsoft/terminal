@@ -36,8 +36,19 @@ constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
 // The minimum delay between updating the locations of regex patterns
 constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(500);
 
+// The minimum delay between triggering search upon output to terminal
+constexpr const auto SearchUponOutputInterval = std::chrono::milliseconds(500);
+
+// The delay before performing the search after output to terminal
+constexpr const auto SearchAfterOutputDelay = std::chrono::milliseconds(800);
+
+// The delay before performing the search after change of search criteria
+constexpr const auto SearchAfterChangeDelay = std::chrono::milliseconds(200);
+
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
+    std::atomic<size_t> SearchState::_searchIdGenerator{ 0 };
+
     static winrt::Microsoft::Terminal::Core::OptionalColor OptionalFromColor(const til::color& c)
     {
         Core::OptionalColor result;
@@ -227,6 +238,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 if (auto core{ weakThis.get() }; !core->_IsClosing())
                 {
                     core->_ScrollPositionChangedHandlers(*core, update);
+                }
+            });
+
+        // TODO! is this in the right place
+        _updateSearchStatus = std::make_shared<ThrottledFuncTrailing<>>(
+            _dispatcher,
+            SearchUponOutputInterval,
+            [weakThis = get_weak()]() {
+                if (auto core{ weakThis.get() })
+                {
+                    // If in the middle of the search, recompute the matches.
+                    // We avoid navigation to the first result to prevent auto-scrolling.
+                    if (core->_searchState.has_value())
+                    {
+                        const SearchState searchState{ core->_searchState->Text, core->_searchState->Sensitivity };
+                        core->_searchState.emplace(searchState);
+                        core->_SearchAsync(std::nullopt, SearchAfterOutputDelay);
+                    }
                 }
             });
 
@@ -1484,42 +1513,251 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void ControlCore::Search(const winrt::hstring& text,
                              const bool goForward,
-                             const bool caseSensitive)
+                             const bool /*caseSensitive*/)
     {
         if (text.size() == 0)
         {
             return;
         }
 
-        const auto direction = goForward ?
-                                   Search::Direction::Forward :
-                                   Search::Direction::Backward;
+        // const auto direction = goForward ?
+        //                            Search::Direction::Forward :
+        //                            Search::Direction::Backward;
 
-        const auto sensitivity = caseSensitive ?
-                                     Search::Sensitivity::CaseSensitive :
-                                     Search::Sensitivity::CaseInsensitive;
+        // const auto sensitivity = caseSensitive ?
+        //                              Search::Sensitivity::CaseSensitive :
+        //                              Search::Sensitivity::CaseInsensitive;
 
-        ::Search search(*GetUiaData(), text.c_str(), direction, sensitivity);
-        auto lock = _terminal->LockForWriting();
-        const auto foundMatch{ search.FindNext() };
-        if (foundMatch)
-        {
-            _terminal->SetBlockSelection(false);
-            search.Select();
+        // ::Search search(*GetUiaData(), text.c_str(), direction, sensitivity);
+        // auto lock = _terminal->LockForWriting();
+        // const auto foundMatch{ search.FindNext() };
+        // if (foundMatch)
+        // {
+        //     _terminal->SetBlockSelection(false);
+        //     search.Select();
 
-            // this is used for search,
-            // DO NOT call _updateSelectionUI() here.
-            // We don't want to show the markers so manually tell it to clear it.
-            _renderer->TriggerSelection();
-            _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
-        }
+        //     // this is used for search,
+        //     // DO NOT call _updateSelectionUI() here.
+        //     // We don't want to show the markers so manually tell it to clear it.
+        //     _renderer->TriggerSelection();
+        //     _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
+        // }
 
-        // Raise a FoundMatch event, which the control will use to notify
-        // narrator if there was any results in the buffer
-        auto foundResults = winrt::make_self<implementation::FoundResultsArgs>(foundMatch);
-        _FoundMatchHandlers(*this, *foundResults);
+        // // Raise a FoundMatch event, which the control will use to notify
+        // // narrator if there was any results in the buffer
+        // auto foundResults = winrt::make_self<implementation::FoundResultsArgs>(foundMatch);
+        // _FoundMatchHandlers(*this, *foundResults);
+
+        _SelectSearchResult(goForward);
     }
 
+    // Method Description:
+    // - Search text in text buffer.
+    // This is triggered when the user starts typing, clicks on navigation or
+    // when the search is active and the terminal text is changing
+    // Arguments:
+    // - goForward: optional boolean that represents if the current search direction is forward
+    // - delay: time in milliseconds to wait before performing the search
+    // (grace time to allow next search to start)
+    // Return Value:
+    // - <none>
+    fire_and_forget ControlCore::_SearchAsync(std::optional<bool> goForward,
+                                              Windows::Foundation::TimeSpan const& delay)
+    {
+        // Run only if the search state was initialized
+        if (_closing || !_searchState.has_value())
+        {
+            co_return;
+        }
+
+        const auto originalSearchId = _searchState->SearchId;
+        auto weakThis{ this->get_weak() };
+
+        // If no matches were computed it means we need to perform the search
+        if (!_searchState->Matches.has_value())
+        {
+            // Before we search, let's wait a bit:
+            // probably the search criteria or the data are still modified.
+            co_await winrt::resume_after(delay);
+
+            // Switch back to Dispatcher so we can set the Searching status
+            co_await winrt::resume_foreground(_dispatcher);
+            if (auto control{ weakThis.get() })
+            {
+                // If search box was collapsed or the new one search was triggered - let's cancel this one
+                if (!_searchState.has_value() || _searchState->SearchId != originalSearchId)
+                {
+                    co_return;
+                }
+
+                // // Let's mark the start of searching
+                // if (_searchBox)
+                // {
+                //     _searchBox->SetStatus(-1, -1);
+                //     _searchBox->SetNavigationEnabled(false);
+                // }
+
+                std::vector<std::pair<til::point, til::point>> matches;
+                if (!_searchState->Text.empty())
+                {
+                    // We perform explicit search forward, so the first result will also be the earliest buffer location
+                    // We will use goForward later to decide if we need to select 1 of n or n of n.
+                    ::Search search(*GetUiaData(), _searchState->Text.c_str(), Search::Direction::Forward, _searchState->Sensitivity);
+                    while (co_await _SearchOne(search))
+                    {
+                        // if search box was collapsed or the new one search was triggered - let's cancel this one
+                        if (!_searchState.has_value() || _searchState->SearchId != originalSearchId)
+                        {
+                            co_return;
+                        }
+
+                        matches.push_back(search.GetFoundLocation());
+                    }
+
+                    // if search box was collapsed or the new one search was triggered - let's cancel this one
+                    if (!_searchState.has_value() || _searchState->SearchId != originalSearchId)
+                    {
+                        co_return;
+                    }
+                }
+                _searchState->Matches.emplace(std::move(matches));
+            }
+        }
+
+        if (auto control{ weakThis.get() })
+        {
+            _SelectSearchResult(goForward);
+        }
+    }
+
+    void ControlCore::SearchChanged(const winrt::hstring& text,
+                                    const bool goForward,
+                                    const bool caseSensitive)
+    {
+        // Clear the selection reset the anchor
+        _terminal->ClearSelection();
+        _renderer->TriggerSelection();
+
+        const auto sensitivity = caseSensitive ? Search::Sensitivity::CaseSensitive : Search::Sensitivity::CaseInsensitive;
+        const SearchState searchState{ text, sensitivity };
+        _searchState.emplace(searchState);
+        _SearchAsync(goForward, SearchAfterChangeDelay);
+    }
+
+    // Method Description:
+    // - Selects one of precomputed search results in the terminal (if exist).
+    // - Updates the search box control accordingly.
+    // - The selection might be preceded by going to next / previous result
+    // - goForward: if true, select next result; if false, select previous result;
+    // if not set, remain at the current result.
+    // Return Value:
+    // - <none>
+    void ControlCore::_SelectSearchResult(std::optional<bool> goForward)
+    {
+        if (_searchState.has_value() && _searchState->Matches.has_value())
+        {
+            auto& state = _searchState.value();
+            auto& matches = state.Matches.value();
+
+            if (goForward.has_value())
+            {
+                state.UpdateIndex(goForward.value());
+
+                const auto currentMatch = state.GetCurrentMatch();
+                if (currentMatch.has_value())
+                {
+                    auto lock = _terminal->LockForWriting();
+                    _terminal->SetBlockSelection(false);
+                    _terminal->SelectNewRegion(currentMatch->first, currentMatch->second);
+                    _renderer->TriggerSelection();
+                }
+            }
+
+            // if (_searchBox)
+            // {
+            //     _searchBox->SetStatus(gsl::narrow<int32_t>(matches.size()), state.CurrentMatchIndex);
+            //     _searchBox->SetNavigationEnabled(!_searchState->Matches->empty());
+            // }
+
+            auto foundResults = winrt::make_self<implementation::FoundResultsArgs>(true);
+            foundResults->TotalMatches(gsl::narrow<int32_t>(matches.size()));
+            foundResults->CurrentMatch(state.CurrentMatchIndex);
+            _FoundMatchHandlers(*this, *foundResults);
+        }
+    }
+
+    // Method Description:
+    // - Search for a single value in a background
+    // Arguments:
+    // - search: search object to use to find the next match
+    // Return Value:
+    // - <none>
+    winrt::Windows::Foundation::IAsyncOperation<bool> ControlCore::_SearchOne(::Search& search)
+    {
+        bool found{ false };
+        auto weakThis{ get_weak() };
+
+        co_await winrt::resume_background();
+        if (auto control{ weakThis.get() })
+        {
+            // We don't lock the terminal for the duration of the entire search,
+            // since if the terminal was modified the search ID will be updated.
+            auto lock = _terminal->LockForWriting();
+            found = search.FindNext();
+        }
+
+        co_await winrt::resume_foreground(_dispatcher);
+        co_return found;
+    }
+
+    // Method Description:
+    // - Updates the index of the current match according to the direction.
+    // The index will remain unchanged (usually -1) if the number of matches is 0
+    // Arguments:
+    // - goForward: if true, move to the next match, else go to previous
+    // Return Value:
+    // - <none>
+    void SearchState::UpdateIndex(bool goForward)
+    {
+        if (Matches.has_value())
+        {
+            const int numMatches = ::base::saturated_cast<int>(Matches->size());
+            if (numMatches > 0)
+            {
+                if (CurrentMatchIndex == -1)
+                {
+                    CurrentMatchIndex = goForward ? 0 : numMatches - 1;
+                }
+                else
+                {
+                    CurrentMatchIndex = (numMatches + CurrentMatchIndex + (goForward ? 1 : -1)) % numMatches;
+                }
+            }
+        }
+    }
+
+    // Method Description:
+    // - Retrieves the current match
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - current match, null-opt if current match is invalid
+    // (e.g., when the index is -1 or there are no matches)
+    std::optional<std::pair<til::point, til::point>> SearchState::GetCurrentMatch()
+    {
+        if (Matches.has_value() && CurrentMatchIndex > -1 && CurrentMatchIndex < Matches->size())
+        {
+            return til::at(Matches.value(), CurrentMatchIndex);
+        }
+        else
+        {
+            return std::nullopt;
+        }
+    }
+    void ControlCore::ExitSearch()
+    {
+        _searchState.reset();
+    }
     void ControlCore::Close()
     {
         if (!_IsClosing())

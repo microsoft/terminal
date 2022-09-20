@@ -183,8 +183,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         std::shared_ptr<ThrottledFuncLeading> _playWarningBell;
 
-        std::shared_ptr<ThrottledFunc<>> _updateSearchStatus;
-
         struct ScrollBarUpdate
         {
             std::optional<double> newValue;
@@ -298,8 +296,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _SearchChanged(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
         void _CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
-        fire_and_forget _SearchAsync(std::optional<bool> goForward, Windows::Foundation::TimeSpan const& delay);
-        void _SelectSearchResult(std::optional<bool> goForward);
 
         // TSFInputControl Handlers
         void _CompositionCompleted(winrt::hstring text);
@@ -315,7 +311,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::fire_and_forget _coreTransparencyChanged(IInspectable sender, Control::TransparencyChangedEventArgs args);
         void _coreRaisedNotice(const IInspectable& s, const Control::NoticeEventArgs& args);
         void _coreWarningBell(const IInspectable& sender, const IInspectable& args);
-        void _coreFoundMatch(const IInspectable& sender, const Control::FoundResultsArgs& args);
+        winrt::fire_and_forget _coreFoundMatch(const IInspectable& sender, Control::FoundResultsArgs args);
 
         til::point _toPosInDips(const Core::Point terminalCellPos);
         void _throttledUpdateScrollbar(const ScrollBarUpdate& update);

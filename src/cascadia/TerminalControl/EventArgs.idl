@@ -72,6 +72,8 @@ namespace Microsoft.Terminal.Control
     runtimeclass FoundResultsArgs
     {
         Boolean FoundMatch { get; };
+        Int32 TotalMatches { get; };
+        Int32 CurrentMatch { get; };
     }
 
     runtimeclass ShowWindowArgs

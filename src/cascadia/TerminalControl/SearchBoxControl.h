@@ -14,13 +14,6 @@ Author(s):
 --*/
 
 #pragma once
-#include "winrt/Windows.UI.Xaml.h"
-#include "winrt/Windows.UI.Xaml.Controls.h"
-<<<<<<< HEAD
-
-=======
-#include "../../cascadia/inc/cppwinrt_utils.h"
->>>>>>> pull/8588
 #include "SearchBoxControl.g.h"
 
     namespace winrt::Microsoft::Terminal::Control::implementation

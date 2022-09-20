@@ -146,6 +146,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         WINRT_PROPERTY(bool, FoundMatch);
+        WINRT_PROPERTY(int32_t, TotalMatches);
+        WINRT_PROPERTY(int32_t, CurrentMatch);
     };
 
     struct ShowWindowArgs : public ShowWindowArgsT<ShowWindowArgs>

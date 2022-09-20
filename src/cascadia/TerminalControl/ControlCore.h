@@ -65,11 +65,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const winrt::hstring Text;
         const Search::Sensitivity Sensitivity;
         const size_t SearchId;
-        std::optional<std::vector<std::pair<COORD, COORD>>> Matches;
+        std::optional<std::vector<std::pair<til::point, til::point>>> Matches;
         int32_t CurrentMatchIndex{ -1 };
 
         void UpdateIndex(bool goForward);
-        std::optional<std::pair<COORD, COORD>> GetCurrentMatch();
+        std::optional<std::pair<til::point, til::point>> GetCurrentMatch();
     };
 
     struct ControlCore : ControlCoreT<ControlCore>
@@ -203,6 +203,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void Search(const winrt::hstring& text,
                     const bool goForward,
                     const bool caseSensitive);
+        void SearchChanged(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
+        void ExitSearch();
 
         void LeftClickOnTerminal(const til::point terminalPosition,
                                  const int numberOfClicks,
@@ -305,6 +307,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::shared_ptr<ThrottledFuncTrailing<>> _tsfTryRedrawCanvas;
         std::unique_ptr<til::throttled_func_trailing<>> _updatePatternLocations;
         std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> _updateScrollBar;
+        std::shared_ptr<ThrottledFuncTrailing<>> _updateSearchStatus;
 
         bool _setFontSizeUnderLock(float fontSize);
         void _updateFont(const bool initialUpdate = false);
@@ -349,6 +352,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool _isBackgroundTransparent();
         void _focusChanged(bool focused);
+
+        fire_and_forget _SearchAsync(std::optional<bool> goForward, Windows::Foundation::TimeSpan const& delay);
+        void _SelectSearchResult(std::optional<bool> goForward);
+        winrt::Windows::Foundation::IAsyncOperation<bool> _SearchOne(::Search& search);
 
         inline bool _IsClosing() const noexcept
         {
