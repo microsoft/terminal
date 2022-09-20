@@ -410,7 +410,7 @@
                             </Grid.Resources>
 
                             <VisualStateManager.CustomVisualStateManager>
-                                <local:ScrollBarVisualStateManager/>
+                                <local:ScrollBarVisualStateManager />
                             </VisualStateManager.CustomVisualStateManager>
 
                             <Grid x:Name="HorizontalRoot"
