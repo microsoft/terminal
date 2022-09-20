@@ -306,6 +306,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         uint64_t _owningHwnd{ 0 };
 
         std::optional<SearchState> _searchState;
+        bool _bufferChangedSinceSearch{ true };
 
         winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };
         std::shared_ptr<ThrottledFuncTrailing<>> _tsfTryRedrawCanvas;

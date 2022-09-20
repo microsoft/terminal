@@ -1512,14 +1512,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void ControlCore::Search(const winrt::hstring& text,
                              const bool goForward,
-                             const bool /*caseSensitive*/)
+                             const bool caseSensitive)
     {
         if (text.size() == 0)
         {
             return;
         }
 
-        _SelectSearchResult(goForward);
+        if (_bufferChangedSinceSearch)
+        {
+            const auto sensitivity = caseSensitive ? Search::Sensitivity::CaseSensitive : Search::Sensitivity::CaseInsensitive;
+            const SearchState searchState{ text, sensitivity, goForward };
+            _updateSearchStatus->Run(searchState);
+        }
+        else
+        {
+            _SelectSearchResult(goForward);
+        }
     }
 
     // Method Description:
@@ -1577,6 +1586,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             }
             _searchState->Matches.emplace(std::move(matches));
+            _bufferChangedSinceSearch = false;
         }
 
         if (auto core{ weakThis.get() })
@@ -1913,6 +1923,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // Start the throttled update of where our hyperlinks are.
             (*_updatePatternLocations)();
+
+            _bufferChangedSinceSearch = true;
         }
         catch (...)
         {
