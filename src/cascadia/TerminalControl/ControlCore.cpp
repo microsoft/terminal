@@ -36,12 +36,6 @@ constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
 // The minimum delay between updating the locations of regex patterns
 constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(500);
 
-// The minimum delay between triggering search upon output to terminal
-constexpr const auto SearchUponOutputInterval = std::chrono::milliseconds(500);
-
-// The delay before performing the search after output to terminal
-constexpr const auto SearchAfterOutputDelay = std::chrono::milliseconds(800);
-
 // The delay before performing the search after change of search criteria
 constexpr const auto SearchAfterChangeDelay = std::chrono::milliseconds(200);
 
@@ -241,15 +235,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             });
 
-        // TODO! is this in the right place
         _updateSearchStatus = std::make_shared<ThrottledFuncTrailing<SearchState>>(
             _dispatcher,
-            SearchUponOutputInterval,
+            SearchAfterChangeDelay,
             [weakThis = get_weak()](const auto& update) {
                 if (auto core{ weakThis.get() })
                 {
                     core->_searchState.emplace(update);
-                    core->_SearchAsync(std::nullopt, SearchAfterOutputDelay);
+                    core->_SearchAsync(std::nullopt);
                 }
             });
 
@@ -1541,8 +1534,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // (grace time to allow next search to start)
     // Return Value:
     // - <none>
-    fire_and_forget ControlCore::_SearchAsync(std::optional<bool> goForward,
-                                              Windows::Foundation::TimeSpan const& delay)
+    fire_and_forget ControlCore::_SearchAsync(std::optional<bool> goForward)
     {
         // Run only if the search state was initialized
         if (_closing || !_searchState.has_value())

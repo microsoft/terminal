@@ -359,7 +359,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _isBackgroundTransparent();
         void _focusChanged(bool focused);
 
-        fire_and_forget _SearchAsync(std::optional<bool> goForward, Windows::Foundation::TimeSpan const& delay);
+        fire_and_forget _SearchAsync(std::optional<bool> goForward);
         void _SelectSearchResult(std::optional<bool> goForward);
         winrt::Windows::Foundation::IAsyncOperation<bool> _SearchOne(::Search& search);
 

@@ -3120,11 +3120,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 L"SearchBoxResultAnnouncement" /* unique name for this group of notifications */);
         }
 
-        // ControlCore will manually trigger a _terminalScrollPositionChanged to update the scrollbat marks
+        co_await wil::resume_foreground(Dispatcher());
+
+        // Manually send a scrollbar update, now, on the UI thread. We're
+        // already UI-driven, so that's okay. We're not really changing the
+        // scrollbar, but we do want to update the position of any marks. The
+        // Core might send a scrollbar updated event too, but if the first
+        // search hit is in the visible viewport, then the pips won't display
+        // until the user first scrolls.
+        auto scrollBar = ScrollBar();
+        ScrollBarUpdate update{
+            .newValue = scrollBar.Value(),
+            .newMaximum = scrollBar.Maximum(),
+            .newMinimum = scrollBar.Minimum(),
+            .newViewportSize = scrollBar.ViewportSize(),
+        };
+        _throttledUpdateScrollbar(update);
 
         if (_searchBox)
         {
-            co_await wil::resume_foreground(Dispatcher());
             _searchBox->SetStatus(args.TotalMatches(), args.CurrentMatch());
             _searchBox->SetNavigationEnabled(true);
         }

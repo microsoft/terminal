@@ -16,7 +16,7 @@ Author(s):
 #pragma once
 #include "SearchBoxControl.g.h"
 
-    namespace winrt::Microsoft::Terminal::Control::implementation
+namespace winrt::Microsoft::Terminal::Control::implementation
 {
     struct SearchBoxControl : SearchBoxControlT<SearchBoxControl>
     {
