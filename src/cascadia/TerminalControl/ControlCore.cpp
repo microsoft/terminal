@@ -1548,7 +1548,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         const auto originalSearchId = _searchState->SearchId;
-        auto weakThis{ this->get_weak() };
+        auto weakThis{ get_weak() };
 
         // If no matches were computed it means we need to perform the search
         if (!_searchState->Matches.has_value())
@@ -1559,7 +1559,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // Switch back to Dispatcher so we can set the Searching status
             co_await winrt::resume_foreground(_dispatcher);
-            if (auto control{ weakThis.get() })
+            if (auto core{ weakThis.get() })
             {
                 // If search box was collapsed or the new one search was triggered - let's cancel this one
                 if (!_searchState.has_value() || _searchState->SearchId != originalSearchId)
@@ -1601,7 +1601,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
         }
 
-        if (auto control{ weakThis.get() })
+        if (auto core{ weakThis.get() })
         {
             _SelectSearchResult(goForward);
         }

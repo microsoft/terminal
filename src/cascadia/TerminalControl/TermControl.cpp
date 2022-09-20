@@ -285,13 +285,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                               const bool caseSensitive)
     {
         _core.Search(text, goForward, caseSensitive);
-
-        // Let's mark the start of searching
-        if (_searchBox)
-        {
-            _searchBox->SetStatus(-1, -1);
-            _searchBox->SetNavigationEnabled(false);
-        }
     }
 
     // Method Description:
