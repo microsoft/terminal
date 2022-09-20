@@ -22,7 +22,7 @@ Author(s):
 --*/
 #pragma once
 
-#include <conattrs.hpp>
+#include <winrt/base.h>
 
 using namespace Microsoft::WRL;
 
@@ -34,7 +34,7 @@ struct
 #else // DEV
     __declspec(uuid("52065414-e077-47ec-a3ac-1cc5455e1b54"))
 #endif
-        OpenTerminalHere : public RuntimeClass<RuntimeClassFlags<ClassicCom | InhibitFtmBase>, IExplorerCommand>
+        OpenTerminalHere : public RuntimeClass<RuntimeClassFlags<ClassicCom | InhibitFtmBase>, IExplorerCommand, IObjectWithSite>
 {
 #pragma region IExplorerCommand
     STDMETHODIMP Invoke(IShellItemArray* psiItemArray,
@@ -52,9 +52,16 @@ struct
     STDMETHODIMP GetCanonicalName(GUID* pguidCommandName);
     STDMETHODIMP EnumSubCommands(IEnumExplorerCommand** ppEnum);
 #pragma endregion
+#pragma region IObjectWithSite
+    IFACEMETHODIMP SetSite(IUnknown* site) noexcept;
+    IFACEMETHODIMP GetSite(REFIID riid, void** site) noexcept;
+#pragma endregion
 
 private:
-    std::wstring _GetPathFromExplorer() const;
+    HRESULT GetLocationFromSite(IShellItem** location) const;
+    HRESULT GetBestLocationFromSelectionOrSite(IShellItemArray* psiArray, IShellItem** location) const;
+
+    winrt::com_ptr<IUnknown> site_;
 };
 
 CoCreatableClass(OpenTerminalHere);

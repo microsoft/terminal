@@ -26,29 +26,15 @@ static constexpr std::wstring_view VerbName{ L"WindowsTerminalOpenHere" };
 HRESULT OpenTerminalHere::Invoke(IShellItemArray* psiItemArray,
                                  IBindCtx* /*pBindContext*/)
 {
+    winrt::com_ptr<IShellItem> psi;
+    RETURN_IF_FAILED(GetBestLocationFromSelectionOrSite(psiItemArray, psi.put()));
+    if (!psi)
+    {
+        return S_FALSE;
+    }
+
     wil::unique_cotaskmem_string pszName;
-
-    if (psiItemArray == nullptr)
-    {
-        // get the current path from explorer.exe
-        const auto path = this->_GetPathFromExplorer();
-
-        // no go, unable to get a reasonable path
-        if (path.empty())
-        {
-            return S_FALSE;
-        }
-        pszName = wil::make_cotaskmem_string(path.c_str(), path.length());
-    }
-    else
-    {
-        DWORD count;
-        psiItemArray->GetCount(&count);
-
-        winrt::com_ptr<IShellItem> psi;
-        RETURN_IF_FAILED(psiItemArray->GetItemAt(0, psi.put()));
-        RETURN_IF_FAILED(psi->GetDisplayName(SIGDN_FILESYSPATH, &pszName));
-    }
+    RETURN_IF_FAILED(psi->GetDisplayName(SIGDN_FILESYSPATH, &pszName));
 
     {
         wil::unique_process_information _piClient;
@@ -109,21 +95,14 @@ HRESULT OpenTerminalHere::GetState(IShellItemArray* psiItemArray,
     // We however don't need to bother with any of that.
 
     // If no item was selected when the context menu was opened and Explorer
-    // is not at a valid path (e.g. This PC or Quick Access), we should hide
+    // is not at a valid location (e.g. This PC or Quick Access), we should hide
     // the verb from the context menu.
-    if (psiItemArray == nullptr)
-    {
-        const auto path = this->_GetPathFromExplorer();
-        *pCmdState = path.empty() ? ECS_HIDDEN : ECS_ENABLED;
-    }
-    else
-    {
-        winrt::com_ptr<IShellItem> psi;
-        psiItemArray->GetItemAt(0, psi.put());
-        SFGAOF attributes;
-        const bool isFileSystemItem = (psi->GetAttributes(SFGAO_FILESYSTEM, &attributes) == S_OK);
-        *pCmdState = isFileSystemItem ? ECS_ENABLED : ECS_HIDDEN;
-    }
+    winrt::com_ptr<IShellItem> psi;
+    RETURN_IF_FAILED(GetBestLocationFromSelectionOrSite(psiItemArray, psi.put()));
+
+    SFGAOF attributes;
+    const bool isFileSystemItem = psi && (psi->GetAttributes(SFGAO_FILESYSTEM, &attributes) == S_OK);
+    *pCmdState = isFileSystemItem ? ECS_ENABLED : ECS_HIDDEN;
 
     return S_OK;
 }
@@ -160,102 +139,52 @@ HRESULT OpenTerminalHere::EnumSubCommands(IEnumExplorerCommand** ppEnum)
     return E_NOTIMPL;
 }
 
-std::wstring OpenTerminalHere::_GetPathFromExplorer() const
+IFACEMETHODIMP OpenTerminalHere::SetSite(IUnknown* site) noexcept
 {
-    using namespace std;
-    using namespace winrt;
-
-    wstring path;
-    HRESULT hr = NOERROR;
-
-    auto hwnd = ::GetForegroundWindow();
-    if (hwnd == nullptr)
-    {
-        return path;
-    }
-
-    TCHAR szName[MAX_PATH] = { 0 };
-    ::GetClassName(hwnd, szName, MAX_PATH);
-    if (0 == StrCmp(szName, L"WorkerW") ||
-        0 == StrCmp(szName, L"Progman"))
-    {
-        //special folder: desktop
-        hr = ::SHGetFolderPath(NULL, CSIDL_DESKTOP, NULL, SHGFP_TYPE_CURRENT, szName);
-        if (FAILED(hr))
-        {
-            return path;
-        }
-
-        path = szName;
-        return path;
-    }
-
-    if (0 != StrCmp(szName, L"CabinetWClass"))
-    {
-        return path;
-    }
-
-    com_ptr<IShellWindows> shell;
-    try
-    {
-        shell = create_instance<IShellWindows>(CLSID_ShellWindows, CLSCTX_ALL);
-    }
-    catch (...)
-    {
-        //look like try_create_instance is not available no more
-    }
-
-    if (shell == nullptr)
-    {
-        return path;
-    }
-
-    com_ptr<IDispatch> disp;
-    wil::unique_variant variant;
-    variant.vt = VT_I4;
-
-    com_ptr<IWebBrowserApp> browser;
-    // look for correct explorer window
-    for (variant.intVal = 0;
-         shell->Item(variant, disp.put()) == S_OK;
-         variant.intVal++)
-    {
-        com_ptr<IWebBrowserApp> tmp;
-        if (FAILED(disp->QueryInterface(tmp.put())))
-        {
-            disp = nullptr; // get rid of DEBUG non-nullptr warning
-            continue;
-        }
-
-        HWND tmpHWND = NULL;
-        hr = tmp->get_HWND(reinterpret_cast<SHANDLE_PTR*>(&tmpHWND));
-        if (hwnd == tmpHWND)
-        {
-            browser = tmp;
-            disp = nullptr; // get rid of DEBUG non-nullptr warning
-            break; //found
-        }
-
-        disp = nullptr; // get rid of DEBUG non-nullptr warning
-    }
-
-    if (browser != nullptr)
-    {
-        wil::unique_bstr url;
-        hr = browser->get_LocationURL(&url);
-        if (FAILED(hr))
-        {
-            return path;
-        }
-
-        wstring sUrl(url.get(), SysStringLen(url.get()));
-        DWORD size = MAX_PATH;
-        hr = ::PathCreateFromUrl(sUrl.c_str(), szName, &size, NULL);
-        if (SUCCEEDED(hr))
-        {
-            path = szName;
-        }
-    }
-
-    return path;
+    site_.copy_from(site);
+    return S_OK;
 }
+
+IFACEMETHODIMP OpenTerminalHere::GetSite(REFIID riid, void** site) noexcept
+try
+{
+    site_.as(riid, site);
+    return S_OK;
+}
+CATCH_RETURN();
+
+HRESULT OpenTerminalHere::GetLocationFromSite(IShellItem** location) const
+try
+{
+    auto serviceProvider = site_.as<IServiceProvider>();
+    winrt::com_ptr<IFolderView> folderView;
+    RETURN_IF_FAILED(serviceProvider->QueryService(SID_SFolderView, IID_PPV_ARGS(folderView.put())));
+    RETURN_IF_FAILED(folderView->GetFolder(IID_PPV_ARGS(location)));
+    return S_OK;
+}
+CATCH_RETURN()
+
+HRESULT OpenTerminalHere::GetBestLocationFromSelectionOrSite(IShellItemArray* psiArray, IShellItem** location) const
+try
+{
+    winrt::com_ptr<IShellItem> psi;
+    if (psiArray)
+    {
+        DWORD count{};
+        RETURN_IF_FAILED(psiArray->GetCount(&count));
+        if (count) // Sometimes we get an array with a count of 0. Fall back to the site chain.
+        {
+            RETURN_IF_FAILED(psiArray->GetItemAt(0, psi.put()));
+        }
+    }
+
+    if (!psi)
+    {
+        RETURN_IF_FAILED(GetLocationFromSite(psi.put()));
+    }
+
+    RETURN_HR_IF(S_FALSE, !psi);
+    psi.copy_to(location);
+    return S_OK;
+}
+CATCH_RETURN()
