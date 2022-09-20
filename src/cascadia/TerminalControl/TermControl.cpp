@@ -194,7 +194,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
 
             auto searchMatches{ _core.MatchRows() };
-            if (searchMatches.Size() > 0)
+            if (searchMatches.Size() > 0 && _searchBox->Visibility() == Visibility::Visible)
             {
                 auto fgColor{ _core.ForegroundColor() };
                 Media::SolidColorBrush searchMarkBrush{};

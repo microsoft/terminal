@@ -1268,7 +1268,7 @@ void Terminal::_AdjustCursorPosition(const til::point proposedPosition)
         }
 
         // If the viewport moved, then send a scrolling notification.
-        if (updatedViewport)
+        if (updatedViewport || rowsPushedOffTopOfBuffer != 0)
         {
             _NotifyScrollEvent();
         }

@@ -1722,9 +1722,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     Windows::Foundation::Collections::IVector<int32_t> ControlCore::MatchRows()
     {
         auto results = winrt::single_threaded_vector<int32_t>();
-        if (_searchState.has_value() && (*_searchState).Matches.has_value())
+        if (_bufferChangedSinceSearch)
         {
-            for (auto&& [start, end] : *((*_searchState).Matches))
+            return results;
+        }
+
+        if (_searchState.has_value() && _searchState->Matches.has_value())
+        {
+            for (auto&& [start, end] : *(_searchState->Matches))
             {
                 results.Append(start.Y);
             }
