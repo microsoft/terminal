@@ -5,7 +5,7 @@
 // - ScrollBarVisualStateManager.h
 //
 // Abstract:
-// - This is a custom VisualStateManager that keeps the scroll bar from 
+// - This is a custom VisualStateManager that keeps the scroll bar from
 //   going into the collapsed mode when the user wants the scroll bar
 //   to always be displayed.
 //

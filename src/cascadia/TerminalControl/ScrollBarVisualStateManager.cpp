@@ -17,7 +17,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::Windows::UI::Xaml::FrameworkElement const& templateRoot,
         winrt::hstring const& stateName,
         winrt::Windows::UI::Xaml::VisualStateGroup const& group,
-        winrt::Windows::UI::Xaml::VisualState const& state, bool useTransitions)
+        winrt::Windows::UI::Xaml::VisualState const& state,
+        bool useTransitions)
     {
         if (!_termControl)
         {
