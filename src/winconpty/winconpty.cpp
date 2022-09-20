@@ -347,9 +347,10 @@ HRESULT _ReparentPseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const 
 //      HPCON via the API).
 // Arguments:
 // - pPty: A pointer to a PseudoConsole struct.
+// - wait: If true, waits for conhost/OpenConsole to exit first.
 // Return Value:
 // - <none>
-void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty)
+void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty, BOOL wait)
 {
     if (pPty != nullptr)
     {
@@ -365,19 +366,11 @@ void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty)
         //      has yet to send before we hard kill it.
         if (_HandleIsValid(pPty->hConPtyProcess))
         {
-            // If the conhost is already dead, then that's fine. Presumably
-            //      it's finished flushing it's output already.
-            DWORD dwExit = 0;
-            // If GetExitCodeProcess failed, it's likely conhost is already dead
-            //      If so, skip waiting regardless of whatever error
-            //      GetExitCodeProcess returned.
-            //      We'll just go straight to killing conhost.
-            if (GetExitCodeProcess(pPty->hConPtyProcess, &dwExit) && dwExit == STILL_ACTIVE)
+            if (wait)
             {
                 WaitForSingleObject(pPty->hConPtyProcess, INFINITE);
             }
 
-            TerminateProcess(pPty->hConPtyProcess, 0);
             CloseHandle(pPty->hConPtyProcess);
             pPty->hConPtyProcess = nullptr;
         }
@@ -398,13 +391,14 @@ void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty)
 //      PseudoConsoles that were created with CreatePseudoConsole.
 // Arguments:
 // - pPty: A pointer to a PseudoConsole struct.
+// - wait: If true, waits for conhost/OpenConsole to exit first.
 // Return Value:
 // - <none>
-VOID _ClosePseudoConsole(_In_ PseudoConsole* pPty)
+static void _ClosePseudoConsole(_In_ PseudoConsole* pPty, BOOL wait)
 {
     if (pPty != nullptr)
     {
-        _ClosePseudoConsoleMembers(pPty);
+        _ClosePseudoConsoleMembers(pPty, wait);
         HeapFree(GetProcessHeap(), 0, pPty);
     }
 }
@@ -465,7 +459,7 @@ extern "C" HRESULT ConptyCreatePseudoConsoleAsUser(_In_ HANDLE hToken,
     auto pPty = (PseudoConsole*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(PseudoConsole));
     RETURN_IF_NULL_ALLOC(pPty);
     auto cleanupPty = wil::scope_exit([&]() noexcept {
-        _ClosePseudoConsole(pPty);
+        _ClosePseudoConsole(pPty, TRUE);
     });
 
     wil::unique_handle duplicatedInput;
@@ -544,13 +538,22 @@ extern "C" HRESULT WINAPI ConptyReparentPseudoConsole(_In_ HPCON hPC, HWND newPa
 //      console window they were running in was closed.
 // This can fail if the conhost hosting the pseudoconsole failed to be
 //      terminated, or if the pseudoconsole was already terminated.
+// Waits for conhost/OpenConsole to exit first.
 extern "C" VOID WINAPI ConptyClosePseudoConsole(_In_ HPCON hPC)
 {
-    const auto pPty = (PseudoConsole*)hPC;
-    if (pPty != nullptr)
-    {
-        _ClosePseudoConsole(pPty);
-    }
+    _ClosePseudoConsole((PseudoConsole*)hPC, TRUE);
+}
+
+// Function Description:
+// Closes the conpty and all associated state.
+// Client applications attached to the conpty will also behave as though the
+//      console window they were running in was closed.
+// This can fail if the conhost hosting the pseudoconsole failed to be
+//      terminated, or if the pseudoconsole was already terminated.
+// Doesn't wait for conhost/OpenConsole to exit.
+extern "C" VOID WINAPI ConptyClosePseudoConsoleNoWait(_In_ HPCON hPC)
+{
+    _ClosePseudoConsole((PseudoConsole*)hPC, FALSE);
 }
 
 // NOTE: This one is not defined in the Windows headers but is

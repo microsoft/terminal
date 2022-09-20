@@ -13,7 +13,7 @@
 namespace wil
 {
     // These belong in WIL upstream, so when we reingest the change that has them we'll get rid of ours.
-    using unique_static_pseudoconsole_handle = wil::unique_any<HPCON, decltype(&::ConptyClosePseudoConsole), ::ConptyClosePseudoConsole>;
+    using unique_static_pseudoconsole_handle = wil::unique_any<HPCON, decltype(&::ConptyClosePseudoConsole), ::ConptyClosePseudoConsoleNoWait>;
 }
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation

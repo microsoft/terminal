@@ -32,7 +32,7 @@ namespace Microsoft::Console::Interactivity
     public:
         static void SetOneCoreTeardownFunction(void (*pfn)()) noexcept;
 
-        [[noreturn]] static void RundownAndExit(const HRESULT hr);
+        static void RundownAndExit(const HRESULT hr);
 
         // N.B.: Location methods without corresponding creation methods
         //       automatically create the singleton object on demand.
@@ -86,7 +86,6 @@ namespace Microsoft::Console::Interactivity
 
         static HWND LocatePseudoWindow(const HWND owner = nullptr /*HWND_DESKTOP = 0*/);
 
-    protected:
         ServiceLocator(const ServiceLocator&) = delete;
         ServiceLocator& operator=(const ServiceLocator&) = delete;
 
@@ -112,7 +111,5 @@ namespace Microsoft::Console::Interactivity
         static Globals s_globals;
         static bool s_pseudoWindowInitialized;
         static wil::unique_hwnd s_pseudoWindow;
-
-        static inline SRWLOCK s_shutdownLock = SRWLOCK_INIT;
     };
 }

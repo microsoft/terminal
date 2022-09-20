@@ -39,14 +39,30 @@ void ServiceLocator::SetOneCoreTeardownFunction(void (*pfn)()) noexcept
     s_oneCoreTeardownFunction = pfn;
 }
 
-[[noreturn]] void ServiceLocator::RundownAndExit(const HRESULT hr)
+void ServiceLocator::RundownAndExit(const HRESULT hr)
 {
+    static thread_local bool preventRecursion = false;
+    static std::atomic<bool> locked;
+
+    // BODGY:
+    // pRender->TriggerTeardown() might cause another VtEngine pass, which then might fail to write to the IO pipe.
+    // If that happens it calls VtIo::CloseOutput(), which in turn calls ServiceLocator::RundownAndExit().
+    // This prevents the unintended recursion and resulting deadlock.
+    if (preventRecursion)
+    {
+        return;
+    }
+    preventRecursion = true;
+
     // MSFT:40146639
     //   The premise of this function is that 1 thread enters and 0 threads leave alive.
     //   We need to prevent anyone from calling us until we actually ExitProcess(),
     //   so that we don't TriggerTeardown() twice. LockConsole() can't be used here,
     //   because doing so would prevent the render thread from progressing.
-    AcquireSRWLockExclusive(&s_shutdownLock);
+    if (locked.exchange(true, std::memory_order_relaxed))
+    {
+        Sleep(INFINITE);
+    }
 
     // MSFT:15506250
     // In VT I/O Mode, a client application might die before we've rendered
