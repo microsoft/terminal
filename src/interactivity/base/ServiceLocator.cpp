@@ -48,11 +48,10 @@ void ServiceLocator::RundownAndExit(const HRESULT hr)
     // pRender->TriggerTeardown() might cause another VtEngine pass, which then might fail to write to the IO pipe.
     // If that happens it calls VtIo::CloseOutput(), which in turn calls ServiceLocator::RundownAndExit().
     // This prevents the unintended recursion and resulting deadlock.
-    if (preventRecursion)
+    if (std::exchange(preventRecursion, true))
     {
         return;
     }
-    preventRecursion = true;
 
     // MSFT:40146639
     //   The premise of this function is that 1 thread enters and 0 threads leave alive.
