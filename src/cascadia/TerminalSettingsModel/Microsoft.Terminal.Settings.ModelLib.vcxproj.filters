@@ -18,6 +18,9 @@
     <ClCompile Include="WslDistroGenerator.cpp">
       <Filter>profileGeneration</Filter>
     </ClCompile>
+    <ClCompile Include="SshHostGenerator.cpp">
+      <Filter>profileGeneration</Filter>
+    </ClCompile>
     <ClCompile Include="CascadiaSettings.cpp" />
     <ClCompile Include="CascadiaSettingsSerialization.cpp" />
     <ClCompile Include="GlobalAppSettings.cpp" />
@@ -59,6 +62,9 @@
       <Filter>profileGeneration</Filter>
     </ClInclude>
     <ClInclude Include="WslDistroGenerator.h">
+      <Filter>profileGeneration</Filter>
+    </ClInclude>
+    <ClInclude Include="SshHostGenerator.h">
       <Filter>profileGeneration</Filter>
     </ClInclude>
     <ClInclude Include="CascadiaSettings.h" />
