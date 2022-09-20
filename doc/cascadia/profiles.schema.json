@@ -2350,7 +2350,8 @@
           "description": "Defines the visibility of the scrollbar.",
           "enum": [
             "visible",
-            "hidden"
+            "hidden",
+            "always"
           ],
           "type": "string"
         },
