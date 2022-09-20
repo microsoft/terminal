@@ -165,6 +165,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto fullHeight{ ScrollBarCanvas().ActualHeight() };
             const auto totalBufferRows{ update.newMaximum + update.newViewportSize };
 
+            auto drawPip = [&](const auto row, const auto rightAlign, const auto& brush) {
+                Windows::UI::Xaml::Shapes::Rectangle r;
+                r.Fill(brush);
+                r.Width(16.0f / 3.0f); // pip width - 1/3rd of the scrollbar width.
+                r.Height(2);
+                const auto fractionalHeight = row / totalBufferRows;
+                const auto relativePos = fractionalHeight * fullHeight;
+                ScrollBarCanvas().Children().Append(r);
+                Windows::UI::Xaml::Controls::Canvas::SetTop(r, relativePos);
+                if (rightAlign)
+                {
+                    Windows::UI::Xaml::Controls::Canvas::SetLeft(r, 16.0f * .66f);
+                }
+            };
+
             for (const auto m : marks)
             {
                 Windows::UI::Xaml::Shapes::Rectangle r;
@@ -175,14 +190,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 // pre-evaluate that for us, and shove the real value into the
                 // Color member, regardless if the mark has a literal value set.
                 brush.Color(static_cast<til::color>(m.Color.Color));
-                r.Fill(brush);
-                r.Width(16.0f / 3.0f); // pip width - 1/3rd of the scrollbar width.
-                r.Height(2);
-                const auto markRow = m.Start.Y;
-                const auto fractionalHeight = markRow / totalBufferRows;
-                const auto relativePos = fractionalHeight * fullHeight;
-                ScrollBarCanvas().Children().Append(r);
-                Windows::UI::Xaml::Controls::Canvas::SetTop(r, relativePos);
+                drawPip(m.Start.Y, false, brush);
+            }
+
+            auto searchMatches{ _core.MatchRows() };
+            if (searchMatches.Size() > 0)
+            {
+                auto fgColor{ _core.ForegroundColor() };
+                Media::SolidColorBrush searchMarkBrush{};
+                searchMarkBrush.Color(static_cast<til::color>(fgColor));
+                for (const auto m : searchMatches)
+                {
+                    drawPip(m, true, searchMarkBrush);
+                }
             }
         }
     }
@@ -3106,6 +3126,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 args.FoundMatch() ? RS_(L"SearchBox_MatchesAvailable") : RS_(L"SearchBox_NoMatches"), // what to announce if results were found
                 L"SearchBoxResultAnnouncement" /* unique name for this group of notifications */);
         }
+
+        // ControlCore will manually trigger a _terminalScrollPositionChanged to update the scrollbat marks
 
         if (_searchBox)
         {

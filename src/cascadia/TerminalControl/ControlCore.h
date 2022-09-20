@@ -107,6 +107,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::hstring FontFaceName() const noexcept;
         uint16_t FontWeight() const noexcept;
 
+        til::color ForegroundColor() const;
         til::color BackgroundColor() const;
 
         void SendInput(const winrt::hstring& wstr);
@@ -205,6 +206,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     const bool caseSensitive);
         void SearchChanged(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
         void ExitSearch();
+        Windows::Foundation::Collections::IVector<int32_t> MatchRows();
 
         void LeftClickOnTerminal(const til::point terminalPosition,
                                  const int numberOfClicks,

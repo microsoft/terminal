@@ -1277,6 +1277,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                        nullptr;
     }
 
+    til::color ControlCore::ForegroundColor() const
+    {
+        return _terminal->GetRenderSettings().GetColorAlias(ColorAlias::DefaultForeground);
+    }
+
     til::color ControlCore::BackgroundColor() const
     {
         return _terminal->GetRenderSettings().GetColorAlias(ColorAlias::DefaultBackground);
@@ -1650,6 +1655,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             foundResults->TotalMatches(gsl::narrow<int32_t>(matches.size()));
             foundResults->CurrentMatch(state.CurrentMatchIndex);
             _FoundMatchHandlers(*this, *foundResults);
+
+            // _terminalScrollPositionChanged(BufferHeight(), ViewHeight(), BufferHeight());
         }
     }
 
@@ -1725,6 +1732,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _searchState.reset();
     }
+
+    Windows::Foundation::Collections::IVector<int32_t> ControlCore::MatchRows()
+    {
+        auto results = winrt::single_threaded_vector<int32_t>();
+        if (_searchState.has_value() && (*_searchState).Matches.has_value())
+        {
+            for (auto&& [start, end] : *((*_searchState).Matches))
+            {
+                results.Append(start.Y);
+            }
+        }
+        return results;
+    }
+
     void ControlCore::Close()
     {
         if (!_IsClosing())

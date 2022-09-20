@@ -119,7 +119,9 @@ namespace Microsoft.Terminal.Control
         void Search(String text, Boolean goForward, Boolean caseSensitive);
         void SearchChanged(String text, Boolean goForward, Boolean caseSensitive);
         void ExitSearch();
+        IVector<Int32> MatchRows { get; };
 
+        Microsoft.Terminal.Core.Color ForegroundColor { get; };
         Microsoft.Terminal.Core.Color BackgroundColor { get; };
 
         Boolean HasSelection { get; };
