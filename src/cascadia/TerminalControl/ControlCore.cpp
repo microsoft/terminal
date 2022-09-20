@@ -248,14 +248,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             [weakThis = get_weak()](const auto& update) {
                 if (auto core{ weakThis.get() })
                 {
-                    // // If in the middle of the search, recompute the matches.
-                    // // We avoid navigation to the first result to prevent auto-scrolling.
-                    // if (core->_searchState.has_value())
-                    // {
-                    //      const SearchState searchState{ core->_searchState->Text, core->_searchState->Sensitivity };
                     core->_searchState.emplace(update);
                     core->_SearchAsync(std::nullopt, SearchAfterOutputDelay);
-                    // }
                 }
             });
 
@@ -1553,20 +1547,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // If no matches were computed it means we need to perform the search
         if (!_searchState->Matches.has_value())
         {
-            // // Before we search, let's wait a bit:
-            // // probably the search criteria or the data are still modified.
-            // co_await winrt::resume_after(delay);
-
-            // // Switch back to Dispatcher so we can set the Searching status
-            // co_await winrt::resume_foreground(_dispatcher);
-            // if (auto core{ weakThis.get() })
-            // {
-            //     // If search box was collapsed or the new one search was triggered - let's cancel this one
-            //     if (!_searchState.has_value() || _searchState->SearchId != originalSearchId)
-            //     {
-            //         co_return;
-            //     }
-
             std::vector<std::pair<til::point, til::point>> matches;
             if (!_searchState->Text.empty())
             {
@@ -1597,7 +1577,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             }
             _searchState->Matches.emplace(std::move(matches));
-            // }
         }
 
         if (auto core{ weakThis.get() })
@@ -1615,11 +1594,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _renderer->TriggerSelection();
 
         const auto sensitivity = caseSensitive ? Search::Sensitivity::CaseSensitive : Search::Sensitivity::CaseInsensitive;
-        const SearchState searchState{ text, sensitivity, goForward };
-        // _searchState.emplace(searchState);
 
+        const SearchState searchState{ text, sensitivity, goForward };
         _updateSearchStatus->Run(searchState);
-        // _SearchAsync(goForward, SearchAfterChangeDelay);
     }
 
     // Method Description:
@@ -1656,8 +1633,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             foundResults->TotalMatches(gsl::narrow<int32_t>(matches.size()));
             foundResults->CurrentMatch(state.CurrentMatchIndex);
             _FoundMatchHandlers(*this, *foundResults);
-
-            // _terminalScrollPositionChanged(BufferHeight(), ViewHeight(), BufferHeight());
         }
     }
 
