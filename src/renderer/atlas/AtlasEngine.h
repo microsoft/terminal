@@ -523,9 +523,9 @@ namespace Microsoft::Console::Render
         struct CachedGlyphLayout
         {
             wil::com_ptr<IDWriteTextLayout> textLayout;
-            f32x2 halfSize;
             f32x2 offset;
             f32x2 scale;
+            f32x2 scaleCenter;
             D2D1_DRAW_TEXT_OPTIONS options = D2D1_DRAW_TEXT_OPTIONS_NONE;
             bool scalingRequired = false;
 
