@@ -2117,7 +2117,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         double width = cols * actualFontSize.X;
 
         // Reserve additional space if scrollbar is intended to be visible
-        if (scrollState == ScrollbarState::Visible)
+        if (scrollState != ScrollbarState::Hidden)
         {
             width += scrollbarSize;
         }
@@ -2161,7 +2161,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             double width = fontSize.Width;
             double height = fontSize.Height;
             // Reserve additional space if scrollbar is intended to be visible
-            if (_core.Settings().ScrollState() == ScrollbarState::Visible)
+            if (_core.Settings().ScrollState() != ScrollbarState::Hidden)
             {
                 width += ScrollBar().ActualWidth();
             }
@@ -2204,7 +2204,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                            padding.Left + padding.Right :
                                                            padding.Top + padding.Bottom);
 
-        if (widthOrHeight && _core.Settings().ScrollState() == ScrollbarState::Visible)
+        if (widthOrHeight && _core.Settings().ScrollState() != ScrollbarState::Hidden)
         {
             nonTerminalArea += gsl::narrow_cast<float>(ScrollBar().ActualWidth());
         }
