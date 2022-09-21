@@ -22,8 +22,6 @@ Author(s):
 --*/
 #pragma once
 
-#include <winrt/base.h>
-
 using namespace Microsoft::WRL;
 
 struct
@@ -58,10 +56,10 @@ struct
 #pragma endregion
 
 private:
-    HRESULT GetLocationFromSite(IShellItem** location) const;
-    HRESULT GetBestLocationFromSelectionOrSite(IShellItemArray* psiArray, IShellItem** location) const;
+    HRESULT GetLocationFromSite(IShellItem** location) const noexcept;
+    HRESULT GetBestLocationFromSelectionOrSite(IShellItemArray* psiArray, IShellItem** location) const noexcept;
 
-    winrt::com_ptr<IUnknown> site_;
+    wil::com_ptr_nothrow<IUnknown> site_;
 };
 
 CoCreatableClass(OpenTerminalHere);

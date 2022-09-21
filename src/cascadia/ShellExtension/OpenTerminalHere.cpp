@@ -25,8 +25,9 @@ static constexpr std::wstring_view VerbName{ L"WindowsTerminalOpenHere" };
 //   failure from an earlier HRESULT.
 HRESULT OpenTerminalHere::Invoke(IShellItemArray* psiItemArray,
                                  IBindCtx* /*pBindContext*/)
+try
 {
-    winrt::com_ptr<IShellItem> psi;
+    wil::com_ptr_nothrow<IShellItem> psi;
     RETURN_IF_FAILED(GetBestLocationFromSelectionOrSite(psiItemArray, psi.put()));
     if (!psi)
     {
@@ -41,7 +42,8 @@ HRESULT OpenTerminalHere::Invoke(IShellItemArray* psiItemArray,
         STARTUPINFOEX siEx{ 0 };
         siEx.StartupInfo.cb = sizeof(STARTUPINFOEX);
 
-        auto cmdline{ wil::str_printf<std::wstring>(LR"-("%s" -d %s)-", GetWtExePath().c_str(), QuoteAndEscapeCommandlineArg(pszName.get()).c_str()) };
+        std::wstring cmdline;
+        RETURN_IF_FAILED(wil::str_printf_nothrow(cmdline, LR"-("%s" -d %s)-", GetWtExePath().c_str(), QuoteAndEscapeCommandlineArg(pszName.get()).c_str()));
         RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(
             nullptr, // lpApplicationName
             cmdline.data(),
@@ -58,6 +60,7 @@ HRESULT OpenTerminalHere::Invoke(IShellItemArray* psiItemArray,
 
     return S_OK;
 }
+CATCH_RETURN()
 
 HRESULT OpenTerminalHere::GetToolTip(IShellItemArray* /*psiItemArray*/,
                                      LPWSTR* ppszInfoTip)
@@ -97,7 +100,7 @@ HRESULT OpenTerminalHere::GetState(IShellItemArray* psiItemArray,
     // If no item was selected when the context menu was opened and Explorer
     // is not at a valid location (e.g. This PC or Quick Access), we should hide
     // the verb from the context menu.
-    winrt::com_ptr<IShellItem> psi;
+    wil::com_ptr_nothrow<IShellItem> psi;
     RETURN_IF_FAILED(GetBestLocationFromSelectionOrSite(psiItemArray, psi.put()));
 
     SFGAOF attributes;
@@ -141,33 +144,29 @@ HRESULT OpenTerminalHere::EnumSubCommands(IEnumExplorerCommand** ppEnum)
 
 IFACEMETHODIMP OpenTerminalHere::SetSite(IUnknown* site) noexcept
 {
-    site_.copy_from(site);
+    site_ = site;
     return S_OK;
 }
 
 IFACEMETHODIMP OpenTerminalHere::GetSite(REFIID riid, void** site) noexcept
-try
 {
-    site_.as(riid, site);
+    RETURN_IF_FAILED(site_.query_to(riid, site));
     return S_OK;
 }
-CATCH_RETURN();
 
-HRESULT OpenTerminalHere::GetLocationFromSite(IShellItem** location) const
-try
+HRESULT OpenTerminalHere::GetLocationFromSite(IShellItem** location) const noexcept
 {
-    auto serviceProvider = site_.as<IServiceProvider>();
-    winrt::com_ptr<IFolderView> folderView;
+    wil::com_ptr_nothrow<IServiceProvider> serviceProvider;
+    RETURN_IF_FAILED(site_.query_to(serviceProvider.put()));
+    wil::com_ptr_nothrow<IFolderView> folderView;
     RETURN_IF_FAILED(serviceProvider->QueryService(SID_SFolderView, IID_PPV_ARGS(folderView.put())));
     RETURN_IF_FAILED(folderView->GetFolder(IID_PPV_ARGS(location)));
     return S_OK;
 }
-CATCH_RETURN()
 
-HRESULT OpenTerminalHere::GetBestLocationFromSelectionOrSite(IShellItemArray* psiArray, IShellItem** location) const
-try
+HRESULT OpenTerminalHere::GetBestLocationFromSelectionOrSite(IShellItemArray* psiArray, IShellItem** location) const noexcept
 {
-    winrt::com_ptr<IShellItem> psi;
+    wil::com_ptr_nothrow<IShellItem> psi;
     if (psiArray)
     {
         DWORD count{};
@@ -184,7 +183,6 @@ try
     }
 
     RETURN_HR_IF(S_FALSE, !psi);
-    psi.copy_to(location);
+    RETURN_IF_FAILED(psi.copy_to(location));
     return S_OK;
 }
-CATCH_RETURN()
