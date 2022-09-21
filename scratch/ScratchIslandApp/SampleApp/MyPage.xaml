@@ -26,6 +26,11 @@
             <Button Grid.Row="0">
                 Create
             </Button>
+            <Button x:Name="SendNotificationButton"
+                    Grid.Row="0"
+                    Click="SendNotification">
+                Send notification
+            </Button>
 
         </StackPanel>
 

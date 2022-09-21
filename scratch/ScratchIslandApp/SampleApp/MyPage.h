@@ -16,6 +16,7 @@ namespace winrt::SampleApp::implementation
         void Create();
 
         hstring Title();
+        void SendNotification(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
 
     private:
         friend struct MyPageT<MyPage>; // for Xaml to bind events

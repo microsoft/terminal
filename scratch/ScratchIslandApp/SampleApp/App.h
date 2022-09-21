@@ -13,6 +13,7 @@ namespace winrt::SampleApp::implementation
     public:
         App();
         void OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEventArgs const&);
+        void OnActivated(Windows::ApplicationModel::Activation::IActivatedEventArgs const&);
 
         SampleApp::SampleAppLogic Logic();
 

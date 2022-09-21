@@ -44,8 +44,9 @@ namespace winrt::SampleApp::implementation
     /// will be used such as when the application is launched to open a specific file.
     /// </summary>
     /// <param name="e">Details about the launch request and process.</param>
-    void App::OnLaunched(LaunchActivatedEventArgs const& /*e*/)
+    void App::OnLaunched(LaunchActivatedEventArgs const& e)
     {
+        e;
         // if this is a UWP... it means its our problem to hook up the content to the window here.
         if (_isUwp)
         {
@@ -61,5 +62,29 @@ namespace winrt::SampleApp::implementation
                 Window::Current().Activate();
             }
         }
+
+        auto activatedArgs = Windows::ApplicationModel::AppInstance::GetActivatedEventArgs();
+
+        if (activatedArgs.Kind() == Windows::ApplicationModel::Activation::ActivationKind::ToastNotification)
+        {
+            ToastNotificationActivatedEventArgs toastArgs = activatedArgs.try_as<ToastNotificationActivatedEventArgs>();
+
+            // Obtain the arguments from the notification
+            auto args = toastArgs.Argument();
+            args;
+
+            // Obtain any user input (text boxes, menu selections) from the notification
+            auto userInput = toastArgs.UserInput();
+            userInput;
+            auto a = 1;
+            a++;
+            a;
+        }
+    }
+
+    void App::OnActivated(Windows::ApplicationModel::Activation::IActivatedEventArgs const& e)
+    {
+        e;
+        // This never gets hit.
     }
 }
