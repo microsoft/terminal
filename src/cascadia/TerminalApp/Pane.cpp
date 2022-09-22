@@ -1038,7 +1038,7 @@ void Pane::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundatio
 }
 
 void Pane::_CloseTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                         const winrt::Windows::Foundation::IInspectable& /*args*/)
+                                          const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
     std::unique_lock lock{ _createCloseLock };
 

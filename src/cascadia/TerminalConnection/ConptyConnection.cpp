@@ -20,7 +20,7 @@ using namespace std::string_view_literals;
 // Format is: "DecimalResult (HexadecimalForm)"
 static constexpr auto _errorFormat = L"{0} ({0:#010x})"sv;
 
-    // Notes:
+// Notes:
 // There is a number of ways that the Conpty connection can be terminated (voluntarily or not):
 // 1. The connection is Close()d
 // 2. The pseudoconsole or process cannot be spawned during Start()
