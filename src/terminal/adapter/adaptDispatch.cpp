@@ -695,7 +695,7 @@ bool AdaptDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
 // - <none>
 void AdaptDispatch::_SelectiveEraseRect(TextBuffer& textBuffer, const til::rect& eraseRect)
 {
-    if (eraseRect.left < eraseRect.right && eraseRect.top < eraseRect.bottom)
+    if (eraseRect)
     {
         for (auto row = eraseRect.top; row < eraseRect.bottom; row++)
         {
