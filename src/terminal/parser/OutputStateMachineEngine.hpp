@@ -146,6 +146,7 @@ namespace Microsoft::Console::VirtualTerminal
             XT_PopSgrAlias = VTID("#q"),
             XT_PushSgr = VTID("#{"),
             XT_PopSgr = VTID("#}"),
+            DECCRA_CopyRectangularArea = VTID("$v"),
             DECFRA_FillRectangularArea = VTID("$x"),
             DECERA_EraseRectangularArea = VTID("$z"),
             DECSERA_SelectiveEraseRectangularArea = VTID("${"),

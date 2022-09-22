@@ -86,6 +86,7 @@ public:
     bool SelectiveEraseInDisplay(const DispatchTypes::EraseType /*eraseType*/) override { return false; } // DECSED
     bool SelectiveEraseInLine(const DispatchTypes::EraseType /*eraseType*/) override { return false; } // DECSEL
 
+    bool CopyRectangularArea(const VTInt /*top*/, const VTInt /*left*/, const VTInt /*bottom*/, const VTInt /*right*/, const VTInt /*page*/, const VTInt /*dstTop*/, const VTInt /*dstLeft*/, const VTInt /*dstPage*/) override { return false; } // DECCRA
     bool FillRectangularArea(const VTParameter /*ch*/, const VTInt /*top*/, const VTInt /*left*/, const VTInt /*bottom*/, const VTInt /*right*/) override { return false; } // DECFRA
     bool EraseRectangularArea(const VTInt /*top*/, const VTInt /*left*/, const VTInt /*bottom*/, const VTInt /*right*/) override { return false; } // DECERA
     bool SelectiveEraseRectangularArea(const VTInt /*top*/, const VTInt /*left*/, const VTInt /*bottom*/, const VTInt /*right*/) override { return false; } // DECSERA

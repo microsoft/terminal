@@ -827,6 +827,57 @@ til::rect AdaptDispatch::_CalculateRectArea(const VTInt top, const VTInt left, c
 }
 
 // Routine Description:
+// - DECCRA - Copys a rectangular area from one part of the buffer to another.
+// Arguments:
+// - top - The first row of the source area.
+// - left - The first column of the source area.
+// - bottom - The last row of the source area (inclusive).
+// - right - The last column of the source area (inclusive).
+// - page - The source page number (unused for now).
+// - dstTop - The first row of the destination.
+// - dstLeft - The first column of the destination.
+// - dstPage - The destination page number (unused for now).
+// Return Value:
+// - True.
+bool AdaptDispatch::CopyRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const VTInt /*page*/, const VTInt dstTop, const VTInt dstLeft, const VTInt /*dstPage*/)
+{
+    // GH#13892 We don't yet support the paging extension, so for now we ignore
+    // the page parameters. This is the same as if the maximum page count was 1.
+
+    auto& textBuffer = _api.GetTextBuffer();
+    const auto bufferSize = textBuffer.GetSize().Dimensions();
+    const auto srcRect = _CalculateRectArea(top, left, bottom, right, bufferSize);
+    const auto dstBottom = dstTop + srcRect.height() - 1;
+    const auto dstRight = dstLeft + srcRect.width() - 1;
+    const auto dstRect = _CalculateRectArea(dstTop, dstLeft, dstBottom, dstRight, bufferSize);
+
+    if (dstRect && dstRect.origin() != srcRect.origin())
+    {
+        // If the source is bigger than the available space at the destination
+        // it needs to be clipped, so we only care about the destination size.
+        const auto srcView = Viewport::FromDimensions(srcRect.origin(), dstRect.size());
+        const auto dstView = Viewport::FromDimensions(dstRect.origin(), dstRect.size());
+        const auto walkDirection = Viewport::DetermineWalkDirection(srcView, dstView);
+        auto srcPos = srcView.GetWalkOrigin(walkDirection);
+        auto dstPos = dstView.GetWalkOrigin(walkDirection);
+        do
+        {
+            // If the source position is offscreen (which can occur on double
+            // width lines), then we shouldn't copy anything to the destination.
+            if (srcPos.x < textBuffer.GetLineWidth(srcPos.y))
+            {
+                const auto data = OutputCell(*textBuffer.GetCellDataAt(srcPos));
+                textBuffer.Write(OutputCellIterator({ &data, 1 }), dstPos);
+            }
+            srcView.WalkInBounds(srcPos, walkDirection);
+        } while (dstView.WalkInBounds(dstPos, walkDirection));
+        _api.NotifyAccessibilityChange(dstRect);
+    }
+
+    return true;
+}
+
+// Routine Description:
 // - DECFRA - Fills a rectangular area with the given character and using the
 //     currently active rendition attributes.
 // Arguments:
