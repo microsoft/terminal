@@ -11,6 +11,7 @@
 static constexpr std::wstring_view SshHostGeneratorNamespace{ L"Windows.Terminal.SSH" };
 
 static constexpr const wchar_t* PROFILE_TITLE_PREFIX = L"SSH - ";
+static constexpr const wchar_t* PROFILE_ICON_PATH = L"ms-appx:///ProfileIcons/{550ce7b8-d500-50ad-8a1a-c400c3262db3}.png";
 
 static constexpr const wchar_t* SSH_EXE_PATH1 = L"%SystemRoot%\\System32\\OpenSSH\\ssh.exe";
 static constexpr const wchar_t* SSH_EXE_PATH2 = L"%ProgramFiles%\\OpenSSH\\ssh.exe";
@@ -19,17 +20,30 @@ static constexpr const wchar_t* SSH_EXE_PATH3 = L"%ProgramFiles(x86)%\\OpenSSH\\
 static constexpr const wchar_t* SSH_SYSTEMCONFIG_PATH = L"%ProgramData%\\ssh\\ssh_config";
 static constexpr const wchar_t* SSH_USERCONFIG_PATH = L"%UserProfile%\\.ssh\\config";
 
-static constexpr std::wstring_view SSH_HOST_PREFIX{ L"Host " };
+static constexpr std::wstring_view SSH_CONFIG_HOST_KEY{ L"Host" };
+static constexpr std::wstring_view SSH_CONFIG_HOSTNAME_KEY{ L"HostName" };
 
 using namespace ::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
-std::wstring_view SshHostGenerator::GetNamespace() const noexcept
+/*static*/ const std::wregex SshHostGenerator::ConfigKeyValueRegex{ LR"(^\s*(\w+)\s+([^\s]+.*[^\s])\s*$)" };
+
+/*static*/ std::wstring SshHostGenerator::GetProfileName(const std::wstring_view& hostName) noexcept
 {
-    return SshHostGeneratorNamespace;
+    return std::wstring{ PROFILE_TITLE_PREFIX + hostName };
 }
 
-static bool tryFindSshExePath(std::wstring& sshExePath) noexcept
+/*static*/ std::wstring SshHostGenerator::GetProfileIconPath() noexcept
+{
+    return PROFILE_ICON_PATH;
+}
+
+/*static*/ std::wstring SshHostGenerator::GetProfileCommandLine(const std::wstring_view& sshExePath, const std::wstring_view& hostName) noexcept
+{
+    return std::wstring(L"\"" + sshExePath + L"\" " + hostName);
+}
+
+/*static*/ bool SshHostGenerator::TryFindSshExePath(std::wstring& sshExePath) noexcept
 {
     try
     {
@@ -59,16 +73,28 @@ static bool tryFindSshExePath(std::wstring& sshExePath) noexcept
     return false;
 }
 
-static winrt::com_ptr<implementation::Profile> makeProfile(const std::wstring& sshExePath, const std::wstring& hostName)
+/*static*/ bool SshHostGenerator::TryParseConfigKeyValue(const std::wstring_view& line, std::wstring& key, std::wstring& value) noexcept
 {
-    const auto profile{ CreateDynamicProfile(PROFILE_TITLE_PREFIX + hostName) };
+    try
+    {
+        if (!line.empty() && !line.starts_with(L"#"))
+        {
+            std::wstring input{ line };
+            std::wsmatch match;
+            if (std::regex_search(input, match, SshHostGenerator::ConfigKeyValueRegex))
+            {
+                key = match[1];
+                value = match[2];
+                return true;
+            }
+        }
+    }
+    CATCH_LOG();
 
-    profile->Commandline(winrt::hstring{ L"\"" + sshExePath + L"\" " + hostName });
-
-    return profile;
+    return false;
 }
 
-static void tryGetHostNamesFromConfigFile(const std::wstring configPath, std::vector<std::wstring>& hostNames) noexcept
+/*static*/ void SshHostGenerator::GetHostNamesFromConfigFile(const std::wstring configPath, std::vector<std::wstring>& hostNames) noexcept
 {
     try
     {
@@ -78,16 +104,39 @@ static void tryGetHostNamesFromConfigFile(const std::wstring configPath, std::ve
             std::wifstream inputStream(resolvedConfigPath);
 
             std::wstring line;
+            std::wstring key;
+            std::wstring value;
+
+            std::wstring lastHost;
+
             while (std::getline(inputStream, line))
             {
-                if (line.starts_with(SSH_HOST_PREFIX))
+                if (TryParseConfigKeyValue(line, key, value))
                 {
-                    hostNames.emplace_back(line.substr(SSH_HOST_PREFIX.length()));
+                    if (til::equals_insensitive_ascii(key, SSH_CONFIG_HOST_KEY))
+                    {
+                        // Save potential Host value for later
+                        lastHost = value;
+                    }
+                    else if (til::equals_insensitive_ascii(key, SSH_CONFIG_HOSTNAME_KEY))
+                    {
+                        // HostName was specified
+                        if (!lastHost.empty())
+                        {
+                            hostNames.emplace_back(lastHost);
+                            lastHost = L"";
+                        }
+                    }
                 }
             }
         }
     }
     CATCH_LOG();
+}
+
+std::wstring_view SshHostGenerator::GetNamespace() const noexcept
+{
+    return SshHostGeneratorNamespace;
 }
 
 // Method Description:
@@ -99,16 +148,21 @@ static void tryGetHostNamesFromConfigFile(const std::wstring configPath, std::ve
 void SshHostGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const
 {
     std::wstring sshExePath;
-    if (tryFindSshExePath(sshExePath))
+    if (TryFindSshExePath(sshExePath))
     {
         std::vector<std::wstring> hostNames;
 
-        tryGetHostNamesFromConfigFile(SSH_SYSTEMCONFIG_PATH, hostNames);
-        tryGetHostNamesFromConfigFile(SSH_USERCONFIG_PATH, hostNames);
+        GetHostNamesFromConfigFile(SSH_SYSTEMCONFIG_PATH, hostNames);
+        GetHostNamesFromConfigFile(SSH_USERCONFIG_PATH, hostNames);
 
         for (const auto& hostName : hostNames)
         {
-            profiles.emplace_back(makeProfile(sshExePath, hostName));
+            const auto profile{ CreateDynamicProfile(GetProfileName(hostName)) };
+
+            profile->Commandline(winrt::hstring{ GetProfileCommandLine(sshExePath, hostName) });
+            profile->Icon(winrt::hstring{ GetProfileIconPath() });
+
+            profiles.emplace_back(profile);
         }
     }
 }
