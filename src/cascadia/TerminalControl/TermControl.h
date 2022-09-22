@@ -145,6 +145,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         PROJECTED_FORWARDED_TYPED_EVENT(SetTaskbarProgress,     IInspectable, IInspectable, _core, TaskbarProgressChanged);
         PROJECTED_FORWARDED_TYPED_EVENT(ConnectionStateChanged, IInspectable, IInspectable, _core, ConnectionStateChanged);
         PROJECTED_FORWARDED_TYPED_EVENT(ShowWindowChanged,      IInspectable, Control::ShowWindowArgs, _core, ShowWindowChanged);
+        PROJECTED_FORWARDED_TYPED_EVENT(CloseTerminalRequested, IInspectable, IInspectable, _core, CloseTerminalRequested);
 
         PROJECTED_FORWARDED_TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs, _interactivity, PasteFromClipboard);
 
@@ -159,7 +160,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // clang-format on
 
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, BackgroundBrush, _PropertyChangedHandlers, nullptr);
-
+        
     private:
         friend struct TermControlT<TermControl>; // friend our parent so it can bind private event handlers
 

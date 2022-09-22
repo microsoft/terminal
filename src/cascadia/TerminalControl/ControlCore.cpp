@@ -401,6 +401,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                     const WORD scanCode,
                                     const ::Microsoft::Terminal::Core::ControlKeyStates modifiers)
     {
+        const CtrlD = 0x4;
+
+        if (ch == CtrlD && _connection.State() >= winrt::Microsoft::Terminal::TerminalConnection::ConnectionState::Closed)
+        {
+            _CloseTerminalRequestedHandlers(*this, nullptr);
+            return;
+        }
+
         return _terminal->SendCharEvent(ch, scanCode, modifiers);
     }
 
