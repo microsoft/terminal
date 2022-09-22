@@ -86,6 +86,22 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             return _isStateOneOf(ConnectionState::Connected);
         }
 
+        // Method Description:
+        // - Force a transition to closed. Used by Ctrl+D logic.
+        void _forceTransitionToClosed() noexcept
+        try
+        {
+            {
+                std::lock_guard<std::mutex> stateLock{ _stateMutex };
+                _connectionState = ConnectionState::Closed;
+            }
+
+            // Dispatch the event outside of lock.
+#pragma warning(suppress : 26491) // We can't avoid static_cast downcast because this is template magic.
+            _StateChangedHandlers(*static_cast<T*>(this), nullptr);
+        }
+        CATCH_FAIL_FAST()
+
     private:
         std::atomic<ConnectionState> _connectionState{ ConnectionState::NotConnected };
         mutable std::mutex _stateMutex;

@@ -20,7 +20,7 @@ using namespace std::string_view_literals;
 // Format is: "DecimalResult (HexadecimalForm)"
 static constexpr auto _errorFormat = L"{0} ({0:#010x})"sv;
 
-// Notes:
+    // Notes:
 // There is a number of ways that the Conpty connection can be terminated (voluntarily or not):
 // 1. The connection is Close()d
 // 2. The pseudoconsole or process cannot be spawned during Start()
@@ -58,6 +58,34 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         *phInput = inPipeOurSide.release();
         *phOutput = outPipeOurSide.release();
         return S_OK;
+    }
+
+    // Parses out the value of the unicode char (3rd value) from the sequence
+    // created by TerminalInput::_GenerateWin32KeySequence.
+    static int _GetCharFromInput(std::wstring_view input)
+    {
+        if (input.length() >= 3 && input[0] == '\x1b' && input[1] == '[' && input[input.length() - 1] == '_')
+        {
+            const wchar_t seps[] = L";_";
+
+            std::wstring parsedText = &input[2];
+            wchar_t* next_token = nullptr;
+            std::vector<int> values;
+            for (auto token = wcstok_s(parsedText.data(), seps, &next_token);
+                token != nullptr;
+                token = wcstok_s(nullptr, seps, &next_token))
+            {
+                values.push_back(_wtoi(token));
+            }
+
+            const int CharIndex = 2;
+            if (values.size() >= CharIndex + 1)
+            {
+                return values[CharIndex];
+            }
+        }
+
+        return 0;
     }
 
     // Function Description:
@@ -436,6 +464,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             winrt::hstring exitText{ fmt::format(std::wstring_view{ RS_(L"ProcessExited") }, fmt::format(_errorFormat, status)) };
             _TerminalOutputHandlers(L"\r\n");
             _TerminalOutputHandlers(exitText);
+            _TerminalOutputHandlers(L"\r\n");
+            _TerminalOutputHandlers(RS_(L"CtrlDToClose"));
         }
         CATCH_LOG();
     }
@@ -477,6 +507,15 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         if (!_isConnected())
         {
+            const int CtrlD = 0x4;
+
+            // If we're in the failed state and we get a ctrl+D,
+            // transition from failed to closed.
+            if (State() == ConnectionState::Failed && _GetCharFromInput(data) == CtrlD)
+            {
+                _forceTransitionToClosed();
+            }
+
             return;
         }
 
