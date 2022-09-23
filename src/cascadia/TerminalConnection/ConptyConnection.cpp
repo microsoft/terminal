@@ -205,8 +205,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                        const HANDLE hServerProcess,
                                        const HANDLE hClientProcess,
                                        TERMINAL_STARTUP_INFO startupInfo) :
-        _initialRows{ 25 },
-        _initialCols{ 80 },
+        _rows{ 25 },
+        _cols{ 80 },
         _guid{ Utils::CreateGuid() },
         _inPipe{ hIn },
         _outPipe{ hOut }
@@ -269,8 +269,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _commandline = winrt::unbox_value_or<winrt::hstring>(settings.TryLookup(L"commandline").try_as<Windows::Foundation::IPropertyValue>(), _commandline);
             _startingDirectory = winrt::unbox_value_or<winrt::hstring>(settings.TryLookup(L"startingDirectory").try_as<Windows::Foundation::IPropertyValue>(), _startingDirectory);
             _startingTitle = winrt::unbox_value_or<winrt::hstring>(settings.TryLookup(L"startingTitle").try_as<Windows::Foundation::IPropertyValue>(), _startingTitle);
-            _initialRows = winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialRows").try_as<Windows::Foundation::IPropertyValue>(), _initialRows);
-            _initialCols = winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialCols").try_as<Windows::Foundation::IPropertyValue>(), _initialCols);
+            _rows = winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialRows").try_as<Windows::Foundation::IPropertyValue>(), _rows);
+            _cols = winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialCols").try_as<Windows::Foundation::IPropertyValue>(), _cols);
             _guid = winrt::unbox_value_or<winrt::guid>(settings.TryLookup(L"guid").try_as<Windows::Foundation::IPropertyValue>(), _guid);
             _environment = settings.TryLookup(L"environment").try_as<Windows::Foundation::Collections::ValueSet>();
             if constexpr (Feature_VtPassthroughMode::IsEnabled())
@@ -312,7 +312,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         _transitionToState(ConnectionState::Connecting);
 
-        const til::size dimensions{ gsl::narrow<til::CoordType>(_initialCols), gsl::narrow<til::CoordType>(_initialRows) };
+        const til::size dimensions{ gsl::narrow<til::CoordType>(_cols), gsl::narrow<til::CoordType>(_rows) };
 
         // If we do not have pipes already, then this is a fresh connection... not an inbound one that is a received
         // handoff from an already-started PTY process.
@@ -508,15 +508,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     void ConptyConnection::Resize(uint32_t rows, uint32_t columns)
     {
-        // If we haven't started connecting at all, it's still fair to update
-        // the initial rows and columns before we set things up.
-        if (!_isStateAtOrBeyond(ConnectionState::Connecting))
-        {
-            _initialRows = rows;
-            _initialCols = columns;
-        }
-        // Otherwise, we can really only dispatch a resize if we're already connected.
-        else if (_isConnected())
+        // Always keep these in case we ever want to disconnect/restart
+        _rows = rows;
+        _cols = columns;
+
+        if (_isConnected())
         {
             THROW_IF_FAILED(ConptyResizePseudoConsole(_hPC.get(), { Utils::ClampToShortMax(columns, 1), Utils::ClampToShortMax(rows, 1) }));
         }

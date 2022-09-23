@@ -71,8 +71,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void _indicateExitWithStatus(unsigned int status) noexcept;
         void _ClientTerminated() noexcept;
 
-        til::CoordType _initialRows{};
-        til::CoordType _initialCols{};
+        til::CoordType _rows{};
+        til::CoordType _cols{};
         uint64_t _initialParentHwnd{ 0 };
         hstring _commandline{};
         hstring _startingDirectory{};
