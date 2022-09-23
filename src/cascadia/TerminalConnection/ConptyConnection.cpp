@@ -560,7 +560,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     void ConptyConnection::Close() noexcept
     try
     {
-        bool isClosing = _transitionToState(ConnectionState::Closing);
+        const bool isClosing = _transitionToState(ConnectionState::Closing);
         if (isClosing || _isStateAtOrBeyond(ConnectionState::Closed))
         {
             // EXIT POINT
