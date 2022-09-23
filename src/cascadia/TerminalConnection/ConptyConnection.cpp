@@ -303,6 +303,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     void ConptyConnection::Start()
     try
     {
+        bool usingExistingBuffer = false;
+        if (_isStateAtOrBeyond(ConnectionState::Closed))
+        {
+            _resetConnectionState();
+            usingExistingBuffer = true;
+        }
+
         _transitionToState(ConnectionState::Connecting);
 
         const til::size dimensions{ gsl::narrow<til::CoordType>(_initialCols), gsl::narrow<til::CoordType>(_initialRows) };
@@ -312,6 +319,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         if (!_inPipe)
         {
             DWORD flags = PSEUDOCONSOLE_RESIZE_QUIRK | PSEUDOCONSOLE_WIN32_INPUT_MODE;
+
+            if (usingExistingBuffer)
+            {
+                flags |= PSEUDOCONSOLE_INHERIT_CURSOR;
+            }
 
             if constexpr (Feature_VtPassthroughMode::IsEnabled())
             {
@@ -438,6 +450,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _TerminalOutputHandlers(exitText);
             _TerminalOutputHandlers(L"\r\n");
             _TerminalOutputHandlers(RS_(L"CtrlDToClose"));
+            _TerminalOutputHandlers(L"\r\n");
         }
         CATCH_LOG();
     }
@@ -546,7 +559,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     void ConptyConnection::Close() noexcept
     try
     {
-        if (_transitionToState(ConnectionState::Closing))
+        bool isClosing = _transitionToState(ConnectionState::Closing);
+        if (isClosing || _isStateAtOrBeyond(ConnectionState::Closed))
         {
             // EXIT POINT
 
@@ -577,7 +591,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 _hOutputThread.reset();
             }
 
-            _transitionToState(ConnectionState::Closed);
+            if (isClosing)
+            {
+                _transitionToState(ConnectionState::Closed);
+            }
         }
     }
     CATCH_LOG()

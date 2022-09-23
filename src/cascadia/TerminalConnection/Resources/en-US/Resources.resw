@@ -208,7 +208,7 @@
     <comment>The first argument {0} is the error code of the process. When there is no error, the number ZERO will be displayed. </comment>
   </data>
   <data name="CtrlDToClose" xml:space="preserve">
-    <value>You can now close this terminal with ^D</value>
+    <value>You can now close this terminal with ^D or Enter to restart.</value>
   </data>
   <data name="ProcessFailedToLaunch" xml:space="preserve">
     <value>[error {0} when launching `{1}']</value>

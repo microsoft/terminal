@@ -402,11 +402,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                     const ::Microsoft::Terminal::Core::ControlKeyStates modifiers)
     {
         const wchar_t CtrlD = 0x4;
+        const wchar_t Enter = '\r';
 
-        if (ch == CtrlD && _connection.State() >= winrt::Microsoft::Terminal::TerminalConnection::ConnectionState::Closed)
+        if (_connection.State() >= winrt::Microsoft::Terminal::TerminalConnection::ConnectionState::Closed)
         {
-            _CloseTerminalRequestedHandlers(*this, nullptr);
-            return true;
+            if (ch == CtrlD)
+            {
+                _CloseTerminalRequestedHandlers(*this, nullptr);
+                return true;
+            }
+
+            if (ch == Enter)
+            {
+                _connection.Close();
+                _connection.Start();
+                return true;
+            }
         }
 
         return _terminal->SendCharEvent(ch, scanCode, modifiers);
