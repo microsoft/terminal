@@ -7,8 +7,12 @@
 #include <d3d11_1.h>
 #include <dwrite_3.h>
 
+#include <til/hash.h>
+#include <til/small_vector.h>
+
 #include "../../renderer/inc/IRenderEngine.hpp"
 #include "DWriteTextAnalysis.h"
+#include "stb_rect_pack.h"
 
 namespace Microsoft::Console::Render
 {
@@ -83,15 +87,24 @@ namespace Microsoft::Console::Render
         // Some helper classes for the implementation.
         // public because I don't want to sprinkle the code with friends.
     public:
-#define ATLAS_POD_OPS(type)                                    \
-    constexpr bool operator==(const type& rhs) const noexcept  \
-    {                                                          \
-        return __builtin_memcmp(this, &rhs, sizeof(rhs)) == 0; \
-    }                                                          \
-                                                               \
-    constexpr bool operator!=(const type& rhs) const noexcept  \
-    {                                                          \
-        return __builtin_memcmp(this, &rhs, sizeof(rhs)) != 0; \
+#define ATLAS_POD_OPS(type)                                           \
+    constexpr auto operator<=>(const type&) const noexcept = default; \
+                                                                      \
+    constexpr bool operator==(const type& rhs) const noexcept         \
+    {                                                                 \
+        if constexpr (std::has_unique_object_representations_v<type>) \
+        {                                                             \
+            return __builtin_memcmp(this, &rhs, sizeof(rhs)) == 0;    \
+        }                                                             \
+        else                                                          \
+        {                                                             \
+            return std::is_eq(*this <=> rhs);                         \
+        }                                                             \
+    }                                                                 \
+                                                                      \
+    constexpr bool operator!=(const type& rhs) const noexcept         \
+    {                                                                 \
+        return !(*this == rhs);                                       \
     }
 
 #define ATLAS_FLAG_OPS(type, underlying)                                                                                                                    \
@@ -161,11 +174,13 @@ namespace Microsoft::Console::Render
         using u32x2 = vec2<u32>;
 
         using i32 = int32_t;
+        using i32x2 = vec2<i32>;
 
         using f32 = float;
         using f32x2 = vec2<f32>;
         using f32x3 = vec3<f32>;
         using f32x4 = vec4<f32>;
+        using f32r = rect<f32>;
 
         struct TextAnalyzerResult
         {
@@ -412,9 +427,10 @@ namespace Microsoft::Console::Render
             wil::com_ptr<IDWriteFontCollection> fontCollection;
             wil::com_ptr<IDWriteFontFamily> fontFamily;
             std::wstring fontName;
-            float baselineInDIP = 0.0f;
-            float fontSizeInDIP = 0.0f;
+            f32 fontSizeInDIP = 0;
             f32 advanceScale = 0;
+            f32 baselineInDIP = 0;
+            u16 baseline = 0;
             u16x2 cellSize;
             u16 fontWeight = 0;
             u16 underlinePos = 0;
@@ -451,377 +467,12 @@ namespace Microsoft::Console::Render
         // clang-format on
         ATLAS_FLAG_OPS(CellFlags, u32)
 
-        // This structure is shared with the GPU shader and needs to follow certain alignment rules.
-        // You can generally assume that only u32 or types of that alignment are allowed.
-        struct Cell
-        {
-            alignas(u32) u16x2 tileIndex;
-            alignas(u32) CellFlags flags = CellFlags::None;
-            u32x2 color;
-        };
-
         struct AtlasKeyAttributes
         {
-            u16 inlined : 1;
-            u16 bold : 1;
-            u16 italic : 1;
-            u16 cellCount : 13;
+            bool bold = false;
+            bool italic = false;
 
             ATLAS_POD_OPS(AtlasKeyAttributes)
-        };
-
-        struct AtlasKeyData
-        {
-            AtlasKeyAttributes attributes;
-            u16 charCount;
-            wchar_t chars[14];
-        };
-
-        struct AtlasKey
-        {
-            AtlasKey(AtlasKeyAttributes attributes, u16 charCount, const wchar_t* chars)
-            {
-                const auto size = dataSize(charCount);
-                const auto data = _data.initialize(size);
-                attributes.inlined = _data.would_inline(size);
-                data->attributes = attributes;
-                data->charCount = charCount;
-                memcpy(&data->chars[0], chars, static_cast<size_t>(charCount) * sizeof(AtlasKeyData::chars[0]));
-            }
-
-            const AtlasKeyData* data() const noexcept
-            {
-                return _data.data();
-            }
-
-            size_t hash() const noexcept
-            {
-                const auto d = data();
-#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
-                return std::_Fnv1a_append_bytes(std::_FNV_offset_basis, reinterpret_cast<const u8*>(d), dataSize(d->charCount));
-            }
-
-            bool operator==(const AtlasKey& rhs) const noexcept
-            {
-                const auto a = data();
-                const auto b = rhs.data();
-                return a->charCount == b->charCount && memcmp(a, b, dataSize(a->charCount)) == 0;
-            }
-
-        private:
-            SmallObjectOptimizer<AtlasKeyData> _data;
-
-            static constexpr size_t dataSize(u16 charCount) noexcept
-            {
-                // This returns the actual byte size of a AtlasKeyData struct for the given charCount.
-                // The `wchar_t chars[2]` is only a buffer for the inlined variant after
-                // all and the actual charCount can be smaller or larger. Due to this we
-                // remove the size of the `chars` array and add it's true length on top.
-                return sizeof(AtlasKeyData) - sizeof(AtlasKeyData::chars) + static_cast<size_t>(charCount) * sizeof(AtlasKeyData::chars[0]);
-            }
-        };
-
-        struct CachedGlyphLayout
-        {
-            wil::com_ptr<IDWriteTextLayout> textLayout;
-            f32x2 offset;
-            f32x2 scale;
-            f32x2 scaleCenter;
-            D2D1_DRAW_TEXT_OPTIONS options = D2D1_DRAW_TEXT_OPTIONS_NONE;
-            bool scalingRequired = false;
-
-            explicit operator bool() const noexcept;
-            void reset() noexcept;
-            void applyScaling(ID2D1RenderTarget* d2dRenderTarget, D2D1_POINT_2F origin) const noexcept;
-            void undoScaling(ID2D1RenderTarget* d2dRenderTarget) const noexcept;
-        };
-
-        struct AtlasValueData
-        {
-            CellFlags flags = CellFlags::None;
-            u16x2 coords[7];
-        };
-
-        struct AtlasValue
-        {
-            AtlasValue(CellFlags flags, u16 cellCount, u16x2** coords)
-            {
-                __assume(coords != nullptr);
-                const auto size = dataSize(cellCount);
-                const auto data = _data.initialize(size);
-                WI_SetFlagIf(flags, CellFlags::Inlined, _data.would_inline(size));
-                data->flags = flags;
-                *coords = &data->coords[0];
-            }
-
-            const AtlasValueData* data() const noexcept
-            {
-                return _data.data();
-            }
-
-            CachedGlyphLayout cachedLayout;
-
-        private:
-            SmallObjectOptimizer<AtlasValueData> _data;
-
-            static constexpr size_t dataSize(u16 coordCount) noexcept
-            {
-                return sizeof(AtlasValueData) - sizeof(AtlasValueData::coords) + static_cast<size_t>(coordCount) * sizeof(AtlasValueData::coords[0]);
-            }
-        };
-
-        struct AtlasKeyHasher
-        {
-            using is_transparent = int;
-
-            size_t operator()(const AtlasKey& v) const noexcept
-            {
-                return v.hash();
-            }
-
-            size_t operator()(const std::list<std::pair<AtlasKey, AtlasValue>>::iterator& v) const noexcept
-            {
-                return operator()(v->first);
-            }
-        };
-
-        struct AtlasKeyEq
-        {
-            using is_transparent = int;
-
-            bool operator()(const AtlasKey& a, const std::list<std::pair<AtlasKey, AtlasValue>>::iterator& b) const noexcept
-            {
-                return a == b->first;
-            }
-
-            bool operator()(const std::list<std::pair<AtlasKey, AtlasValue>>::iterator& a, const std::list<std::pair<AtlasKey, AtlasValue>>::iterator& b) const noexcept
-            {
-                return operator()(a->first, b);
-            }
-        };
-
-        struct TileHashMap
-        {
-            using iterator = std::list<std::pair<AtlasKey, AtlasValue>>::iterator;
-
-            TileHashMap() noexcept = default;
-
-            iterator end() noexcept
-            {
-                return _lru.end();
-            }
-
-            iterator find(const AtlasKey& key)
-            {
-                const auto it = _map.find(key);
-                if (it != _map.end())
-                {
-                    // Move the key to the head of the LRU queue.
-                    makeNewest(*it);
-                    return *it;
-                }
-                return end();
-            }
-
-            iterator insert(AtlasKey&& key, AtlasValue&& value)
-            {
-                // Insert the key/value right at the head of the LRU queue, just like find().
-                //
-                // && decays to & if the argument is named, because C++ is a simple language
-                // and so you have to std::move it again, because C++ is a simple language.
-                _lru.emplace_front(std::move(key), std::move(value));
-                auto it = _lru.begin();
-                _map.emplace(it);
-                return it;
-            }
-
-            void makeNewest(const iterator& it)
-            {
-                _lru.splice(_lru.begin(), _lru, it);
-            }
-
-            void popOldestTiles(std::vector<u16x2>& out) noexcept
-            {
-                Expects(!_lru.empty());
-                const auto it = --_lru.end();
-
-                const auto key = it->first.data();
-                const auto value = it->second.data();
-                const auto beg = &value->coords[0];
-                const auto cellCount = key->attributes.cellCount;
-
-                const auto offset = out.size();
-                out.resize(offset + cellCount);
-                std::copy_n(beg, cellCount, out.begin() + offset);
-
-                _map.erase(it);
-                _lru.pop_back();
-            }
-
-        private:
-            // Please don't copy this code. It's a proof-of-concept.
-            // If you need a LRU hash-map, write a custom one with an intrusive
-            // prev/next linked list (it's easier than you might think!).
-            std::list<std::pair<AtlasKey, AtlasValue>> _lru;
-            std::unordered_set<iterator, AtlasKeyHasher, AtlasKeyEq> _map;
-        };
-
-        // TileAllocator yields `tileSize`-sized tiles for our texture atlas.
-        // While doing so it'll grow the atlas size() by a factor of 2 if needed.
-        // Once the setMaxArea() is exceeded it'll stop growing and instead
-        // snatch tiles back from the oldest TileHashMap entries.
-        //
-        // The quadratic growth works by alternating the size()
-        // between an 1:1 and 2:1 aspect ratio, like so:
-        //   (64,64) -> (128,64) -> (128,128) -> (256,128) -> (256,256)
-        // These initial tile positions allocate() returns are in a Z
-        // pattern over the available space in the atlas texture.
-        // You can log the `return _pos;` in allocate() using "Tracepoint"s
-        // in Visual Studio if you'd like to understand the Z pattern better.
-        struct TileAllocator
-        {
-            TileAllocator() = default;
-
-            explicit TileAllocator(u16x2 tileSize, u16x2 windowSize) noexcept :
-                _tileSize{ tileSize }
-            {
-                const auto initialSize = std::max(u16{ _absoluteMinSize }, std::bit_ceil(std::max(tileSize.x, tileSize.y)));
-                _size = { initialSize, initialSize };
-                _limit = { gsl::narrow_cast<u16>(initialSize - _tileSize.x), gsl::narrow_cast<u16>(initialSize - _tileSize.y) };
-                setMaxArea(windowSize);
-            }
-
-            u16x2 size() const noexcept
-            {
-                return _size;
-            }
-
-            void setMaxArea(u16x2 windowSize) noexcept
-            {
-                // _generate() uses a quadratic growth factor for _size's area.
-                // Once it exceeds the _maxArea, it'll start snatching tiles back from the
-                // TileHashMap using its LRU queue. Since _size will at least reach half
-                // of _maxSize (because otherwise it could still grow by a factor of 2)
-                // and by ensuring that _maxArea is at least twice the window size
-                // we make it impossible* for _generate() to return false before
-                // TileHashMap contains at least as many tiles as the window contains.
-                // If that wasn't the case we'd snatch and reuse tiles that are still in use.
-                // * lhecker's legal department:
-                //   No responsibility is taken for the correctness of this information.
-                setMaxArea(static_cast<size_t>(windowSize.x) * static_cast<size_t>(windowSize.y) * 2);
-            }
-
-            void setMaxArea(size_t max) noexcept
-            {
-                // We need to reserve at least 1 extra `tileArea`, because the tile
-                // at position {0,0} is already reserved for the cursor texture.
-                const auto tileArea = static_cast<size_t>(_tileSize.x) * static_cast<size_t>(_tileSize.y);
-                _maxArea = clamp(max + tileArea, _absoluteMinArea, _absoluteMaxArea);
-                _updateCanGenerate();
-            }
-
-            u16x2 allocate(TileHashMap& map) noexcept
-            {
-                if (_generate())
-                {
-                    return _pos;
-                }
-
-                if (_cache.empty())
-                {
-                    map.popOldestTiles(_cache);
-                }
-
-                const auto pos = _cache.back();
-                _cache.pop_back();
-                return pos;
-            }
-
-        private:
-            // This method generates the Z pattern coordinates
-            // described above in the TileAllocator comment.
-            bool _generate() noexcept
-            {
-                if (!_canGenerate)
-                {
-                    return false;
-                }
-
-                // We need to backup _pos/_size in case our resize below exceeds _maxArea.
-                // In that case we have to restore _pos/_size so that if _maxArea is increased
-                // (window resize for instance), we can pick up where we previously left off.
-                const auto pos = _pos;
-
-                _pos.x += _tileSize.x;
-                if (_pos.x <= _limit.x)
-                {
-                    return true;
-                }
-
-                _pos.y += _tileSize.y;
-                if (_pos.y <= _limit.y)
-                {
-                    _pos.x = _originX;
-                    return true;
-                }
-
-                // Same as for pos.
-                const auto size = _size;
-
-                // This implements a quadratic growth factor for _size, by
-                // alternating between an 1:1 and 2:1 aspect ratio, like so:
-                //   (64,64) -> (128,64) -> (128,128) -> (256,128) -> (256,256)
-                // This behavior is strictly dependent on setMaxArea(u16x2)'s
-                // behavior. See it's comment for an explanation.
-                if (_size.x == _size.y)
-                {
-                    _size.x *= 2;
-                    _pos.y = 0;
-                }
-                else
-                {
-                    _size.y *= 2;
-                    _pos.x = 0;
-                }
-
-                _updateCanGenerate();
-                if (_canGenerate)
-                {
-                    _limit = { gsl::narrow_cast<u16>(_size.x - _tileSize.x), gsl::narrow_cast<u16>(_size.y - _tileSize.y) };
-                    _originX = _pos.x;
-                }
-                else
-                {
-                    _size = size;
-                    _pos = pos;
-                }
-
-                return _canGenerate;
-            }
-
-            void _updateCanGenerate() noexcept
-            {
-                _canGenerate = static_cast<size_t>(_size.x) * static_cast<size_t>(_size.y) <= _maxArea;
-            }
-
-            static constexpr u16 _absoluteMinSize = 256;
-            static constexpr size_t _absoluteMinArea = _absoluteMinSize * _absoluteMinSize;
-            // TODO: Consider using IDXGIAdapter3::QueryVideoMemoryInfo() and IDXGIAdapter3::RegisterVideoMemoryBudgetChangeNotificationEvent()
-            // That way we can make better to use of a user's available video memory.
-            static constexpr size_t _absoluteMaxArea = D3D10_REQ_TEXTURE2D_U_OR_V_DIMENSION * D3D10_REQ_TEXTURE2D_U_OR_V_DIMENSION;
-
-            std::vector<u16x2> _cache;
-            size_t _maxArea = _absoluteMaxArea;
-            u16x2 _tileSize;
-            u16x2 _size;
-            u16x2 _limit;
-            // Since _pos starts at {0, 0}, it'll result in the first allocate()d tile to be at {_tileSize.x, 0}.
-            // Coincidentially that's exactly what we want as the cursor texture lives at {0, 0}.
-            u16x2 _pos;
-            u16 _originX = 0;
-            // Indicates whether we've exhausted our Z pattern across the atlas texture.
-            // If this is false, we have to snatch tiles back from TileHashMap.
-            bool _canGenerate = true;
         };
 
         struct CachedCursorOptions
@@ -851,21 +502,10 @@ namespace Microsoft::Console::Render
             //   padding so that it is {u32; u32; u32; <4 byte padding>; u32x2}.
             // * bool will probably not work the way you want it to,
             //   because HLSL uses 32-bit bools and C++ doesn't.
-            alignas(sizeof(f32x4)) f32x4 viewport;
+            alignas(sizeof(f32x4)) f32x4 positionScale;
             alignas(sizeof(f32x4)) f32 gammaRatios[4]{};
-            alignas(sizeof(f32)) f32 enhancedContrast = 0;
-            alignas(sizeof(u32)) u32 cellCountX = 0;
-            alignas(sizeof(u32x2)) u32x2 cellSize;
-            alignas(sizeof(u32)) u32 underlinePos = 0;
-            alignas(sizeof(u32)) u32 underlineWidth = 0;
-            alignas(sizeof(u32)) u32 strikethroughPos = 0;
-            alignas(sizeof(u32)) u32 strikethroughWidth = 0;
-            alignas(sizeof(u32x2)) u32x2 doubleUnderlinePos;
-            alignas(sizeof(u32)) u32 thinLineWidth = 0;
-            alignas(sizeof(u32)) u32 backgroundColor = 0;
-            alignas(sizeof(u32)) u32 cursorColor = 0;
-            alignas(sizeof(u32)) u32 selectionColor = 0;
-            alignas(sizeof(u32)) u32 useClearType = 0;
+            alignas(sizeof(f32)) f32 cleartypeEnhancedContrast = 0;
+            alignas(sizeof(f32)) f32 grayscaleEnhancedContrast = 0;
 #pragma warning(suppress : 4324) // 'ConstBuffer': structure was padded due to alignment specifier
         };
 
@@ -901,6 +541,76 @@ namespace Microsoft::Console::Render
         };
         ATLAS_FLAG_OPS(RenderInvalidations, u8)
 
+        struct FontMapping
+        {
+            wil::com_ptr<IDWriteFontFace> fontFace;
+            f32 fontEmSize = 0;
+            u32 offset = 0;
+        };
+
+        struct ShapedCluster
+        {
+            u32 offset = 0;
+            u32 color = 0;
+        };
+
+        struct ShapedRow
+        {
+            void clear() noexcept
+            {
+                mappings.clear();
+                glyphIndices.clear();
+                glyphAdvances.clear();
+                glyphOffsets.clear();
+                clusters.clear();
+            }
+
+            std::vector<FontMapping> mappings;
+            std::vector<ShapedCluster> clusters;
+            std::vector<u16> glyphIndices;
+            std::vector<f32> glyphAdvances; // same size as glyphIndices
+            std::vector<DWRITE_GLYPH_OFFSET> glyphOffsets; // same size as glyphIndices
+        };
+
+        struct AtlasKey
+        {
+            wil::com_ptr<IDWriteFontFace> fontFace; // ActiveFaceCache
+            til::small_vector<u16, 4> glyphs;
+
+            bool operator==(const AtlasKey& other) const noexcept
+            {
+                return fontFace == other.fontFace && glyphs == other.glyphs;
+            }
+        };
+
+        struct AtlasKeyHasher
+        {
+            size_t operator()(const AtlasKey& v) const noexcept
+            {
+                til::hasher h;
+                h.write(v.fontFace.get());
+                h.write(v.glyphs.data(), v.glyphs.size());
+                return h.finalize();
+            }
+        };
+
+        struct AtlasValue
+        {
+            f32x2 xy;
+            f32x2 wh;
+            f32x2 offset;
+            bool colorGlyph = false;
+        };
+
+        struct alignas(16) VertexData
+        {
+            alignas(sizeof(f32x2)) f32x2 position;
+            alignas(sizeof(f32x2)) f32x2 texcoord;
+            alignas(sizeof(u32)) u32 color = 0;
+            alignas(sizeof(u32)) u32 shadingType = 0;
+#pragma warning(suppress : 4324) // 'CustomConstBuffer': structure was padded due to alignment specifier
+        };
+
         // MSVC STL (version 22000) implements std::clamp<T>(T, T, T) in terms of the generic
         // std::clamp<T, Predicate>(T, T, T, Predicate) with std::less{} as the argument,
         // which introduces branching. While not perfect, this is still better than std::clamp.
@@ -919,11 +629,8 @@ namespace Microsoft::Console::Render
         __declspec(noinline) void _recreateFontDependentResources();
         IDWriteTextFormat* _getTextFormat(bool bold, bool italic) const noexcept;
         const Buffer<DWRITE_FONT_AXIS_VALUE>& _getTextFormatAxis(bool bold, bool italic) const noexcept;
-        Cell* _getCell(u16 x, u16 y) noexcept;
-        TileHashMap::iterator* _getCellGlyphMapping(u16 x, u16 y) noexcept;
         void _setCellFlags(u16r coords, CellFlags mask, CellFlags bits) noexcept;
         void _flushBufferLine();
-        bool _emplaceGlyph(IDWriteFontFace* fontFace, size_t bufferPos1, size_t bufferPos2);
 
         // AtlasEngine.api.cpp
         void _resolveTransparencySettings() noexcept;
@@ -931,27 +638,7 @@ namespace Microsoft::Console::Render
         void _resolveFontMetrics(const wchar_t* faceName, const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, FontMetrics* fontMetrics = nullptr) const;
 
         // AtlasEngine.r.cpp
-        void _renderWithCustomShader() const;
-        void _setShaderResources() const;
-        void _updateConstantBuffer() const noexcept;
-        void _adjustAtlasSize();
-        void _processGlyphQueue();
-        void _drawGlyph(const TileHashMap::iterator& it) const;
-        CachedGlyphLayout _getCachedGlyphLayout(const wchar_t* chars, u16 charsLength, u16 cellCount, IDWriteTextFormat* textFormat, bool coloredGlyph) const;
-        void _drawCursor(u16r rect, u32 color, bool clear);
-        ID2D1Brush* _brushWithColor(u32 color);
-        void _d2dPresent();
-        void _d2dCreateRenderTarget();
-        void _d2dDrawDirtyArea();
-        u16 _d2dDrawGlyph(const TileHashMap::iterator& it, u16x2 coord, u32 color);
-        void _d2dDrawLine(u16r rect, u16 pos, u16 width, u32 color, ID2D1StrokeStyle* strokeStyle = nullptr);
-        void _d2dFillRectangle(u16r rect, u32 color);
-        void _d2dCellFlagRendererCursor(u16r rect, u32 color);
-        void _d2dCellFlagRendererSelected(u16r rect, u32 color);
-        void _d2dCellFlagRendererUnderline(u16r rect, u32 color);
-        void _d2dCellFlagRendererUnderlineDotted(u16r rect, u32 color);
-        void _d2dCellFlagRendererUnderlineDouble(u16r rect, u32 color);
-        void _d2dCellFlagRendererStrikethrough(u16r rect, u32 color);
+        void _drawGlyphs(const DWRITE_GLYPH_RUN& glyphRun, AtlasValue& value);
 
         static constexpr bool debugForceD2DMode = false;
         static constexpr bool debugGlyphGenerationPerformance = false;
@@ -969,7 +656,7 @@ namespace Microsoft::Console::Render
         struct StaticResources
         {
             wil::com_ptr<ID2D1Factory> d2dFactory;
-            wil::com_ptr<IDWriteFactory1> dwriteFactory;
+            wil::com_ptr<IDWriteFactory2> dwriteFactory;
             wil::com_ptr<IDWriteFontFallback> systemFontFallback;
             wil::com_ptr<IDWriteTextAnalyzer1> textAnalyzer;
             bool isWindows10OrGreater = true;
@@ -992,11 +679,27 @@ namespace Microsoft::Console::Render
             wil::com_ptr<IDXGISwapChain1> swapChain;
             wil::unique_handle frameLatencyWaitableObject;
             wil::com_ptr<ID3D11RenderTargetView> renderTargetView;
+
             wil::com_ptr<ID3D11VertexShader> vertexShader;
-            wil::com_ptr<ID3D11PixelShader> pixelShader;
+            wil::com_ptr<ID3D11PixelShader> cleartypePixelShader;
+            wil::com_ptr<ID3D11PixelShader> grayscalePixelShader;
+            wil::com_ptr<ID3D11PixelShader> passthroughPixelShader;
+            wil::com_ptr<ID3D11BlendState> cleartypeBlendState;
+            wil::com_ptr<ID3D11BlendState> alphaBlendState;
+
+            wil::com_ptr<ID3D11PixelShader> textPixelShader;
+            wil::com_ptr<ID3D11BlendState> textBlendState;
+
+            wil::com_ptr<ID3D11PixelShader> wireframePixelShader;
+            wil::com_ptr<ID3D11RasterizerState> wireframeRasterizerState;
+
             wil::com_ptr<ID3D11Buffer> constantBuffer;
-            wil::com_ptr<ID3D11Buffer> cellBuffer;
-            wil::com_ptr<ID3D11ShaderResourceView> cellView;
+            wil::com_ptr<ID3D11InputLayout> textInputLayout;
+            wil::com_ptr<ID3D11Buffer> vertexBuffer;
+
+            wil::com_ptr<ID3D11Texture2D> perCellColor;
+            wil::com_ptr<ID3D11ShaderResourceView> perCellColorView;
+
             wil::com_ptr<ID3D11Texture2D> customOffscreenTexture;
             wil::com_ptr<ID3D11ShaderResourceView> customOffscreenTextureView;
             wil::com_ptr<ID3D11RenderTargetView> customOffscreenTextureTargetView;
@@ -1016,9 +719,17 @@ namespace Microsoft::Console::Render
             Buffer<DWRITE_FONT_AXIS_VALUE> textFormatAxes[2][2];
             wil::com_ptr<IDWriteTypography> typography;
             wil::com_ptr<ID2D1StrokeStyle> dottedStrokeStyle;
+            
+            wil::com_ptr<ID2D1Bitmap> d2dBackgroundBitmap;
+            wil::com_ptr<ID2D1BitmapBrush> d2dBackgroundBrush;
 
-            Buffer<Cell, 32> cells; // invalidated by ApiInvalidations::Size
-            Buffer<TileHashMap::iterator> cellGlyphMapping; // invalidated by ApiInvalidations::Size
+            std::unordered_map<AtlasKey, AtlasValue, AtlasKeyHasher> glyphCache;
+            std::vector<stbrp_node> rectPackerData;
+            stbrp_context rectPacker;
+            std::vector<u32> backgroundBitmap;
+            std::vector<ShapedRow> rows;
+            std::vector<VertexData> vertexData;
+
             f32x2 cellSizeDIP; // invalidated by ApiInvalidations::Font, caches _api.cellSize but in DIP
             u16x2 cellCount; // invalidated by ApiInvalidations::Font|Size, caches _api.cellCount
             u16 dpi = USER_DEFAULT_SCREEN_DPI; // invalidated by ApiInvalidations::Font, caches _api.dpi
@@ -1026,9 +737,6 @@ namespace Microsoft::Console::Render
             f32 dipPerPixel = 1.0f; // invalidated by ApiInvalidations::Font, caches USER_DEFAULT_SCREEN_DPI / _api.dpi
             f32 pixelPerDIP = 1.0f; // invalidated by ApiInvalidations::Font, caches _api.dpi / USER_DEFAULT_SCREEN_DPI
             u16x2 atlasSizeInPixel; // invalidated by ApiInvalidations::Font
-            TileHashMap glyphs;
-            TileAllocator tileAllocator;
-            std::vector<TileHashMap::iterator> glyphQueue;
 
             f32 gamma = 0;
             f32 cleartypeEnhancedContrast = 0;
@@ -1100,8 +808,8 @@ namespace Microsoft::Console::Render
             wil::unique_handle swapChainHandle;
             HWND hwnd = nullptr;
             u16 dpi = USER_DEFAULT_SCREEN_DPI; // changes are flagged as ApiInvalidations::Font|Size
-            u8 antialiasingMode = D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE; // changes are flagged as ApiInvalidations::Font
-            u8 realizedAntialiasingMode = D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE; // caches antialiasingMode, depends on antialiasingMode and backgroundOpaqueMixin, see _resolveTransparencySettings
+            u8 antialiasingMode = D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE; // changes are flagged as ApiInvalidations::Font
+            u8 realizedAntialiasingMode = D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE; // caches antialiasingMode, depends on antialiasingMode and backgroundOpaqueMixin, see _resolveTransparencySettings
             bool enableTransparentBackground = false;
 
             std::wstring customPixelShaderPath; // changes are flagged as ApiInvalidations::Device

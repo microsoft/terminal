@@ -1,17 +1,24 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-// clang-format off
-float4 main(uint id: SV_VERTEXID): SV_POSITION
-// clang-format on
+cbuffer ConstBuffer : register(b0)
 {
-    // The algorithm below is a fast way to generate a full screen triangle,
-    // published by Bill Bilodeau "Vertex Shader Tricks" at GDC14.
-    // It covers the entire viewport and is faster for the GPU than a quad/rectangle.
-    return float4(
-        float(id / 2) * 4.0 - 1.0,
-        float(id % 2) * 4.0 - 1.0,
-        0.0,
-        1.0
-    );
+    float4 positionScale;
+    float4 gammaRatios;
+    float cleartypeEnhancedContrast;
+    float grayscaleEnhancedContrast;
+}
+
+void main(
+    // clang-format off
+    inout float4 position : SV_Position,
+    inout float2 texCoord : TEXCOORD,
+    inout float4 foregroundStraight : COLOR,
+    inout uint shadingType : ShadingType
+    // clang-format on
+)
+{
+    // positionScale is expected to be float4(2.0f / sizeInPixel.x, -2.0f / sizeInPixel.y, 1, 1).
+    // Together with the addition below this will transform our "position" from pixel into NCD space.
+    position = position * positionScale + float4(-1.0f, 1.0f, 0, 0);
 }
