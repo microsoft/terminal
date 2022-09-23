@@ -320,6 +320,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         {
             DWORD flags = PSEUDOCONSOLE_RESIZE_QUIRK | PSEUDOCONSOLE_WIN32_INPUT_MODE;
 
+            // If we're using an existing buffer, we want the new connection
+            // to reuse the existing cursor. When not setting this flag, the
+            // PseudoConsole sends a clear screen VT code which our renderer
+            // interprets into making all the previous lines be outside the
+            // current viewport.
             if (usingExistingBuffer)
             {
                 flags |= PSEUDOCONSOLE_INHERIT_CURSOR;
