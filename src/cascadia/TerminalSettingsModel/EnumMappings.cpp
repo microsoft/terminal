@@ -38,6 +38,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     DEFINE_ENUM_MAP(Model::TabSwitcherMode, TabSwitcherMode);
     DEFINE_ENUM_MAP(Microsoft::Terminal::Control::CopyFormat, CopyFormat);
     DEFINE_ENUM_MAP(Model::WindowingMode, WindowingMode);
+    DEFINE_ENUM_MAP(Microsoft::Terminal::Core::MatchMode, MatchMode);
 
     // Profile Settings
     DEFINE_ENUM_MAP(Model::CloseOnExitMode, CloseOnExitMode);

@@ -134,6 +134,26 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             };
         }
 
+        // source-over alpha blending/composition.
+        // `this` (source/top) will be blended "over" `destination` (bottom).
+        // `this` and `destination` are expected to be in straight alpha.
+        // See https://en.wikipedia.org/wiki/Alpha_compositing#Description
+        constexpr color layer_over(const color& destination) const
+        {
+            const auto aInverse = (255 - a) / 255.0f;
+            const auto resultA = a + destination.a * aInverse;
+            const auto resultR = (r * a + destination.r * destination.a * aInverse) / resultA;
+            const auto resultG = (g * a + destination.g * destination.a * aInverse) / resultA;
+            const auto resultB = (b * a + destination.b * destination.a * aInverse) / resultA;
+
+            return {
+                static_cast<uint8_t>(resultR + 0.5f),
+                static_cast<uint8_t>(resultG + 0.5f),
+                static_cast<uint8_t>(resultB + 0.5f),
+                static_cast<uint8_t>(resultA + 0.5f),
+            };
+        }
+
 #ifdef D3DCOLORVALUE_DEFINED
         constexpr operator D3DCOLORVALUE() const
         {

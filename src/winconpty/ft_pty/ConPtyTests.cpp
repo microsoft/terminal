@@ -84,10 +84,10 @@ void ConPtyTests::CreateConPtyNoPipes()
     VERIFY_FAILED(_CreatePseudoConsole(defaultSize, nullptr, nullptr, 0, &pcon));
 
     VERIFY_SUCCEEDED(_CreatePseudoConsole(defaultSize, nullptr, goodOut, 0, &pcon));
-    _ClosePseudoConsoleMembers(&pcon);
+    _ClosePseudoConsoleMembers(&pcon, TRUE);
 
     VERIFY_SUCCEEDED(_CreatePseudoConsole(defaultSize, goodIn, nullptr, 0, &pcon));
-    _ClosePseudoConsoleMembers(&pcon);
+    _ClosePseudoConsoleMembers(&pcon, TRUE);
 }
 
 void ConPtyTests::CreateConPtyBadSize()
@@ -131,7 +131,7 @@ void ConPtyTests::GoodCreate()
                              &pcon));
 
     auto closePty = wil::scope_exit([&] {
-        _ClosePseudoConsoleMembers(&pcon);
+        _ClosePseudoConsoleMembers(&pcon, TRUE);
     });
 }
 
@@ -160,7 +160,7 @@ void ConPtyTests::GoodCreateMultiple()
                              0,
                              &pcon1));
     auto closePty1 = wil::scope_exit([&] {
-        _ClosePseudoConsoleMembers(&pcon1);
+        _ClosePseudoConsoleMembers(&pcon1, TRUE);
     });
 
     VERIFY_SUCCEEDED(
@@ -170,7 +170,7 @@ void ConPtyTests::GoodCreateMultiple()
                              0,
                              &pcon2));
     auto closePty2 = wil::scope_exit([&] {
-        _ClosePseudoConsoleMembers(&pcon2);
+        _ClosePseudoConsoleMembers(&pcon2, TRUE);
     });
 }
 
@@ -197,7 +197,7 @@ void ConPtyTests::SurvivesOnBreakInput()
                              0,
                              &pty));
     auto closePty1 = wil::scope_exit([&] {
-        _ClosePseudoConsoleMembers(&pty);
+        _ClosePseudoConsoleMembers(&pty, TRUE);
     });
 
     DWORD dwExit;
@@ -242,7 +242,7 @@ void ConPtyTests::SurvivesOnBreakOutput()
                              0,
                              &pty));
     auto closePty1 = wil::scope_exit([&] {
-        _ClosePseudoConsoleMembers(&pty);
+        _ClosePseudoConsoleMembers(&pty, TRUE);
     });
 
     DWORD dwExit;
@@ -287,7 +287,7 @@ void ConPtyTests::DiesOnBreakBoth()
                              0,
                              &pty));
     auto closePty1 = wil::scope_exit([&] {
-        _ClosePseudoConsoleMembers(&pty);
+        _ClosePseudoConsoleMembers(&pty, TRUE);
     });
 
     DWORD dwExit;
@@ -358,7 +358,7 @@ void ConPtyTests::DiesOnClose()
                              0,
                              &pty));
     auto closePty1 = wil::scope_exit([&] {
-        _ClosePseudoConsoleMembers(&pty);
+        _ClosePseudoConsoleMembers(&pty, TRUE);
     });
 
     DWORD dwExit;
@@ -382,7 +382,7 @@ void ConPtyTests::DiesOnClose()
     Log::Comment(NoThrowString().Format(L"Sleep a bit to let the process attach"));
     Sleep(100);
 
-    _ClosePseudoConsoleMembers(&pty);
+    _ClosePseudoConsoleMembers(&pty, TRUE);
 
     GetExitCodeProcess(hConPtyProcess.get(), &dwExit);
     VERIFY_ARE_NOT_EQUAL(dwExit, (DWORD)STILL_ACTIVE);

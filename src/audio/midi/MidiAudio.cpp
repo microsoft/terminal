@@ -8,7 +8,6 @@
 #include <dsound.h>
 
 #pragma comment(lib, "dxguid.lib")
-#pragma comment(lib, "dsound.lib")
 
 using Microsoft::WRL::ComPtr;
 using namespace std::chrono_literals;
@@ -20,11 +19,18 @@ constexpr auto WAVE_DATA = std::array<byte, WAVE_SIZE>{ 128, 159, 191, 223, 255,
 
 MidiAudio::MidiAudio(HWND windowHandle)
 {
-    if (SUCCEEDED(DirectSoundCreate8(nullptr, &_directSound, nullptr)))
+    _directSoundModule.reset(LoadLibraryExW(L"dsound.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32));
+    if (_directSoundModule)
     {
-        if (SUCCEEDED(_directSound->SetCooperativeLevel(windowHandle, DSSCL_NORMAL)))
+        if (auto createFunction = GetProcAddressByFunctionDeclaration(_directSoundModule.get(), DirectSoundCreate8))
         {
-            _createBuffers();
+            if (SUCCEEDED(createFunction(nullptr, &_directSound, nullptr)))
+            {
+                if (SUCCEEDED(_directSound->SetCooperativeLevel(windowHandle, DSSCL_NORMAL)))
+                {
+                    _createBuffers();
+                }
+            }
         }
     }
 }

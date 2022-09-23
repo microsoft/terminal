@@ -214,7 +214,7 @@ void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
     };
 
     bool includeCRLF, trimTrailingWhitespace;
-    if (WI_IsFlagSet(GetKeyState(VK_SHIFT), KEY_PRESSED))
+    if (WI_IsFlagSet(OneCoreSafeGetKeyState(VK_SHIFT), KEY_PRESSED))
     {
         // When shift is held, put everything in one line
         includeCRLF = trimTrailingWhitespace = false;

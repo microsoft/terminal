@@ -192,7 +192,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             TraceLoggingGuid(_guid, "SessionGuid", "The WT_SESSION's GUID"),
             TraceLoggingWideString(_clientName.c_str(), "Client", "The attached client process"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
         return S_OK;
     }
@@ -203,7 +203,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                        const HANDLE hOut,
                                        const HANDLE hRef,
                                        const HANDLE hServerProcess,
-                                       const HANDLE hClientProcess) :
+                                       const HANDLE hClientProcess,
+                                       TERMINAL_STARTUP_INFO startupInfo) :
         _initialRows{ 25 },
         _initialCols{ 80 },
         _guid{ Utils::CreateGuid() },
@@ -212,6 +213,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         THROW_IF_FAILED(ConptyPackPseudoConsole(hServerProcess, hRef, hSig, &_hPC));
         _piClient.hProcess = hClientProcess;
+
+        _startupInfo.title = winrt::hstring{ startupInfo.pszTitle, SysStringLen(startupInfo.pszTitle) };
+        SysFreeString(startupInfo.pszTitle);
+        _startupInfo.iconPath = winrt::hstring{ startupInfo.pszIconPath, SysStringLen(startupInfo.pszIconPath) };
+        SysFreeString(startupInfo.pszIconPath);
+        _startupInfo.iconIndex = startupInfo.iconIndex;
 
         try
         {
@@ -288,6 +295,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         return _commandline;
     }
 
+    winrt::hstring ConptyConnection::StartingTitle() const
+    {
+        return _startupInfo.title;
+    }
+
     void ConptyConnection::Start()
     try
     {
@@ -336,7 +348,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 TraceLoggingGuid(_guid, "SessionGuid", "The WT_SESSION's GUID"),
                 TraceLoggingWideString(_clientName.c_str(), "Client", "The attached client process"),
                 TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
             THROW_IF_FAILED(ConptyResizePseudoConsole(_hPC.get(), til::unwrap_coord_size(dimensions)));
             THROW_IF_FAILED(ConptyReparentPseudoConsole(_hPC.get(), reinterpret_cast<HWND>(_initialParentHwnd)));
@@ -535,26 +547,32 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         if (_transitionToState(ConnectionState::Closing))
         {
             // EXIT POINT
-            _clientExitWait.reset(); // immediately stop waiting for the client to exit.
+
+            // _clientExitWait holds a CreateThreadpoolWait() which holds a weak reference to "this".
+            // This manual reset() ensures we wait for it to be teared down via WaitForThreadpoolWaitCallbacks().
+            _clientExitWait.reset();
 
             _hPC.reset(); // tear down the pseudoconsole (this is like clicking X on a console window)
+
+            // CloseHandle() on pipes blocks until any current WriteFile()/ReadFile() has returned.
+            // CancelSynchronousIo prevents us from deadlocking ourselves.
+            // At this point in Close(), _inPipe won't be used anymore since the UI parts are torn down.
+            // _outPipe is probably still stuck in ReadFile() and might currently be written to.
+            if (_hOutputThread)
+            {
+                CancelSynchronousIo(_hOutputThread.get());
+            }
 
             _inPipe.reset(); // break the pipes
             _outPipe.reset();
 
             if (_hOutputThread)
             {
-                // Tear down our output thread -- now that the output pipe was closed on the
-                // far side, we can run down our local reader.
+                // Waiting for the output thread to exit ensures that all pending _TerminalOutputHandlers()
+                // calls have returned and won't notify our caller (ControlCore) anymore. This ensures that
+                // we don't call a destroyed event handler asynchronously from a background thread (GH#13880).
                 LOG_LAST_ERROR_IF(WAIT_FAILED == WaitForSingleObject(_hOutputThread.get(), INFINITE));
                 _hOutputThread.reset();
-            }
-
-            if (_piClient.hProcess)
-            {
-                // Wait for the client to terminate (which it should do successfully)
-                LOG_LAST_ERROR_IF(WAIT_FAILED == WaitForSingleObject(_piClient.hProcess, INFINITE));
-                _piClient.reset();
             }
 
             _transitionToState(ConnectionState::Closed);
@@ -606,10 +624,17 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             DWORD read{};
 
             const auto readFail{ !ReadFile(_outPipe.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), &read, nullptr) };
+
+            // When we call CancelSynchronousIo() in Close() this is the branch that's taken and gets us out of here.
+            if (_isStateAtOrBeyond(ConnectionState::Closing))
+            {
+                return 0;
+            }
+
             if (readFail) // reading failed (we must check this first, because read will also be 0.)
             {
                 const auto lastError = GetLastError();
-                if (lastError != ERROR_BROKEN_PIPE && !_isStateAtOrBeyond(ConnectionState::Closing))
+                if (lastError != ERROR_BROKEN_PIPE)
                 {
                     // EXIT POINT
                     _indicateExitWithStatus(HRESULT_FROM_WIN32(lastError)); // print a message
@@ -622,12 +647,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             const auto result{ til::u8u16(std::string_view{ _buffer.data(), read }, _u16Str, _u8State) };
             if (FAILED(result))
             {
-                if (_isStateAtOrBeyond(ConnectionState::Closing))
-                {
-                    // This termination was expected.
-                    return 0;
-                }
-
                 // EXIT POINT
                 _indicateExitWithStatus(result); // print a message
                 _transitionToState(ConnectionState::Failed);
@@ -667,10 +686,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     winrt::event_token ConptyConnection::NewConnection(const NewConnectionHandler& handler) { return _newConnectionHandlers.add(handler); };
     void ConptyConnection::NewConnection(const winrt::event_token& token) { _newConnectionHandlers.remove(token); };
 
-    HRESULT ConptyConnection::NewHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE ref, HANDLE server, HANDLE client) noexcept
+    HRESULT ConptyConnection::NewHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE ref, HANDLE server, HANDLE client, TERMINAL_STARTUP_INFO startupInfo) noexcept
     try
     {
-        _newConnectionHandlers(winrt::make<ConptyConnection>(signal, in, out, ref, server, client));
+        _newConnectionHandlers(winrt::make<ConptyConnection>(signal, in, out, ref, server, client, startupInfo));
 
         return S_OK;
     }
