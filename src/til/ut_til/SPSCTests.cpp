@@ -191,7 +191,7 @@ void SPSCTests::IntegrationTest()
 
     std::thread t([tx = std::move(tx)]() {
         std::array<int, 11> buffer{};
-        std::generate(buffer.begin(), buffer.end(), [v = 0]() mutable { return v++; });
+        std::ranges::generate(buffer, [v = 0]() mutable { return v++; });
 
         for (auto i = 0; i < 37; ++i)
         {
