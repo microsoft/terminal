@@ -119,7 +119,7 @@ namespace til::spsc
             }
             else
             {
-                return static_cast<T*>(::operator new(size, std::align_val_t(alignment)));
+                return static_cast<T*>(::operator new(size, static_cast<std::align_val_t>(alignment)));
             }
         }
 
@@ -133,7 +133,7 @@ namespace til::spsc
             }
             else
             {
-                ::operator delete(ptr, std::align_val_t(alignment));
+                ::operator delete(ptr, static_cast<std::align_val_t>(alignment));
             }
         }
 
@@ -211,7 +211,7 @@ namespace til::spsc
         struct arc
         {
             explicit arc(size_type capacity) noexcept :
-                _data(alloc_raw_memory<T>(size_t(capacity) * sizeof(T))),
+                _data(alloc_raw_memory<T>(static_cast<size_t>(capacity) * sizeof(T))),
                 _capacity(capacity)
             {
             }
