@@ -22,6 +22,7 @@ AdaptDispatch::AdaptDispatch(ITerminalApi& api, Renderer& renderer, RenderSettin
     _usingAltBuffer(false),
     _isOriginModeRelative(false), // by default, the DECOM origin mode is absolute.
     _isDECCOLMAllowed(false), // by default, DECCOLM is not allowed.
+    _isChangeExtentRectangular(false),
     _termOutput()
 {
 }
@@ -946,6 +947,29 @@ bool AdaptDispatch::SelectiveEraseRectangularArea(const VTInt top, const VTInt l
     const auto eraseRect = _CalculateRectArea(top, left, bottom, right, textBuffer.GetSize().Dimensions());
     _SelectiveEraseRect(textBuffer, eraseRect);
     return true;
+}
+
+// Routine Description:
+// - DECSACE - Selects the format of the character range that will be affected
+//   by the DECCARA and DECRARA attribute operations.
+// Arguments:
+// - changeExtent - Whether the character range is a stream or a rectangle.
+// Return value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SelectAttributeChangeExtent(const DispatchTypes::ChangeExtent changeExtent) noexcept
+{
+    switch (changeExtent)
+    {
+    case DispatchTypes::ChangeExtent::Default:
+    case DispatchTypes::ChangeExtent::Stream:
+        _isChangeExtentRectangular = false;
+        return true;
+    case DispatchTypes::ChangeExtent::Rectangle:
+        _isChangeExtentRectangular = true;
+        return true;
+    default:
+        return false;
+    }
 }
 
 // Routine Description:
@@ -2140,6 +2164,9 @@ bool AdaptDispatch::HardReset()
     _renderer.UpdateSoftFont({}, {}, false);
     _fontBuffer = nullptr;
 
+    // Reset the attribute change extent (DECSACE) to a stream.
+    _isChangeExtentRectangular = false;
+
     // GH#2715 - If all this succeeded, but we're in a conpty, return `false` to
     // make the state machine propagate this RIS sequence to the connected
     // terminal application. We've reset our state, but the connected terminal
@@ -3071,6 +3098,9 @@ ITermDispatch::StringHandler AdaptDispatch::RequestSetting()
             case VTID("\"q"):
                 _ReportDECSCASetting();
                 break;
+            case VTID("*x"):
+                _ReportDECSACESetting();
+                break;
             default:
                 _api.ReturnResponse(L"\033P0$r\033\\");
                 break;
@@ -3196,6 +3226,28 @@ void AdaptDispatch::_ReportDECSCASetting() const
 
     // The '"q' indicates this is an DECSCA response, and ST ends the sequence.
     response.append(L"\"q\033\\"sv);
+    _api.ReturnResponse({ response.data(), response.size() });
+}
+
+// Method Description:
+// - Reports the DECSACE change extent in response to a DECRQSS query.
+// Arguments:
+// - None
+// Return Value:
+// - None
+void AdaptDispatch::_ReportDECSACESetting() const
+{
+    using namespace std::string_view_literals;
+
+    // A valid response always starts with DCS 1 $ r.
+    fmt::basic_memory_buffer<wchar_t, 64> response;
+    response.append(L"\033P1$r"sv);
+
+    const auto attr = _api.GetTextBuffer().GetCurrentAttributes();
+    response.append(_isChangeExtentRectangular ? L"2"sv : L"1"sv);
+
+    // The '*x' indicates this is an DECSACE response, and ST ends the sequence.
+    response.append(L"*x\033\\"sv);
     _api.ReturnResponse({ response.data(), response.size() });
 }
 

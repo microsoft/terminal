@@ -259,6 +259,13 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         Scrollback = 3
     };
 
+    enum class ChangeExtent : VTInt
+    {
+        Default = 0,
+        Stream = 1,
+        Rectangle = 2
+    };
+
     enum class TaskbarState : VTInt
     {
         Clear = 0,

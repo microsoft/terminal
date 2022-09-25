@@ -114,6 +114,7 @@ namespace Microsoft::Console::VirtualTerminal
             DECFRA,
             DECERA,
             DECSERA,
+            DECSACE,
             DECAC,
             DECPS,
             // Only use this last enum as a count of the number of codes.

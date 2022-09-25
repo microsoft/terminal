@@ -59,6 +59,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool FillRectangularArea(const VTParameter ch, const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) override; // DECFRA
         bool EraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) override; // DECERA
         bool SelectiveEraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) override; // DECSERA
+        bool SelectAttributeChangeExtent(const DispatchTypes::ChangeExtent changeExtent) noexcept override; // DECSACE
         bool SetGraphicsRendition(const VTParameters options) override; // SGR
         bool SetLineRendition(const LineRendition rendition) override; // DECSWL, DECDWL, DECDHL
         bool SetCharacterProtectionAttribute(const VTParameters options) override; // DECSCA
@@ -218,6 +219,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _ReportSGRSetting() const;
         void _ReportDECSTBMSetting();
         void _ReportDECSCASetting() const;
+        void _ReportDECSACESetting() const;
 
         StringHandler _CreateDrcsPassthroughHandler(const DispatchTypes::DrcsCharsetSize charsetSize);
         StringHandler _CreatePassthroughHandler();
@@ -244,8 +246,8 @@ namespace Microsoft::Console::VirtualTerminal
         til::inclusive_rect _scrollMargins;
 
         bool _isOriginModeRelative;
-
         bool _isDECCOLMAllowed;
+        bool _isChangeExtentRectangular;
 
         SgrStack _sgrStack;
 

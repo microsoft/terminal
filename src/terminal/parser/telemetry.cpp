@@ -287,6 +287,7 @@ void TermTelemetry::WriteFinalTraceLog() const
                                       TraceLoggingUInt32(_uiTimesUsed[DECFRA], "DECFRA"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECERA], "DECERA"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECSERA], "DECSERA"),
+                                      TraceLoggingUInt32(_uiTimesUsed[DECSACE], "DECSACE"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECAC], "DECAC"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECPS], "DECPS"),
                                       TraceLoggingUInt32Array(_uiTimesFailed, ARRAYSIZE(_uiTimesFailed), "Failed"),
