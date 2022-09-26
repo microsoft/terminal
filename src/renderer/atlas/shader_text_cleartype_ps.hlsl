@@ -21,14 +21,14 @@ struct Output
 };
 
 // clang-format off
-Output main(VSData data) : SV_Target
+Output main(PSData data) : SV_Target
 // clang-format on
 {
     switch (data.shadingType)
     {
     case 0:
     {
-        float4 glyph = glyphAtlas[data.texCoord];
+        float4 glyph = glyphAtlas[data.texcoord];
 
         float blendEnhancedContrast = DWrite_ApplyLightOnDarkContrastAdjustment(cleartypeEnhancedContrast, data.color.rgb);
         float3 contrasted = DWrite_EnhanceContrast3(glyph.rgb, blendEnhancedContrast);
@@ -61,13 +61,20 @@ Output main(VSData data) : SV_Target
         output.weights = weights;
         return output;
     }
-    default:
+    case 1:
     {
-        float4 glyph = glyphAtlas[data.texCoord];
+        float4 glyph = glyphAtlas[data.texcoord];
 
         Output output;
         output.color = glyph;
         output.weights = glyph.aaaa;
+        return output;
+    }
+    default:
+    {
+        Output output;
+        output.color = premultiplyColor(data.color);
+        output.weights = data.color.aaaa;
         return output;
     }
     }

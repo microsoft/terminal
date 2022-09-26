@@ -5,5 +5,5 @@
 uint4 main() : SV_Target
 // clang-format on
 {
-    return uint4(63, 63, 63, 63);
+    return uint4(192, 192, 192, 192);
 }

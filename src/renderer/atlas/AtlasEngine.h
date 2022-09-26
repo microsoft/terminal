@@ -165,6 +165,7 @@ namespace Microsoft::Console::Render
 
         using u16 = uint16_t;
         using u16x2 = vec2<u16>;
+        using u16x4 = vec4<u16>;
         using u16r = rect<u16>;
 
         using i16 = int16_t;
@@ -471,6 +472,8 @@ namespace Microsoft::Console::Render
                 glyphAdvances.clear();
                 glyphOffsets.clear();
                 colors.clear();
+                selectionFrom = 0;
+                selectionTo = 0;
             }
 
             std::vector<FontMapping> mappings;
@@ -478,6 +481,9 @@ namespace Microsoft::Console::Render
             std::vector<f32> glyphAdvances; // same size as glyphIndices
             std::vector<DWRITE_GLYPH_OFFSET> glyphOffsets; // same size as glyphIndices
             std::vector<u32> colors;
+
+            u16 selectionFrom = 0;
+            u16 selectionTo = 0;
         };
 
         struct GlyphCacheEntry
@@ -594,12 +600,12 @@ namespace Microsoft::Console::Render
             size_t _size = 0;
         };
 
-        struct alignas(16) VertexData
+        struct alignas(16) VertexInstanceData
         {
-            alignas(sizeof(f32x2)) f32x2 position;
-            alignas(sizeof(f32x2)) f32x2 texcoord;
-            alignas(sizeof(u32)) u32 color = 0;
-            alignas(sizeof(u32)) u32 shadingType = 0;
+            f32x4 rect;
+            f32x4 tex;
+            u32 color = 0;
+            u32 shadingType = 0;
 #pragma warning(suppress : 4324) // 'CustomConstBuffer': structure was padded due to alignment specifier
         };
 
@@ -620,7 +626,6 @@ namespace Microsoft::Console::Render
         __declspec(noinline) void _recreateSizeDependentResources();
         __declspec(noinline) void _recreateFontDependentResources();
         const Buffer<DWRITE_FONT_AXIS_VALUE>& _getTextFormatAxis(bool bold, bool italic) const noexcept;
-        void _setCellFlags(u16r coords, CellFlags mask, CellFlags bits) noexcept;
         void _flushBufferLine();
 
         // AtlasEngine.api.cpp
@@ -631,10 +636,6 @@ namespace Microsoft::Console::Render
         // AtlasEngine.r.cpp
         bool _drawGlyphRun(D2D_POINT_2F baselineOrigin, const DWRITE_GLYPH_RUN* glyphRun, ID2D1SolidColorBrush* foregroundBrush) const noexcept;
         void _drawGlyph(GlyphCacheEntry& entry, f32 fontEmSize);
-        void _appendQuad()
-        {
-
-        }
 
         static constexpr bool debugForceD2DMode = false;
         static constexpr bool debugGlyphGenerationPerformance = false;
@@ -671,19 +672,20 @@ namespace Microsoft::Console::Render
             wil::com_ptr<IDXGIFactory1> dxgiFactory;
 
             // D3D resources
-            wil::com_ptr<ID3D11Device> device;
+            wil::com_ptr<ID3D11Device1> device;
             wil::com_ptr<ID3D11DeviceContext1> deviceContext;
             wil::com_ptr<IDXGISwapChain1> swapChain;
             wil::unique_handle frameLatencyWaitableObject;
             wil::com_ptr<ID3D11RenderTargetView> renderTargetView;
-            wil::com_ptr<ID3D11RenderTargetView> renderTargetView2;
+            wil::com_ptr<ID3D11RenderTargetView> renderTargetViewUInt;
 
             wil::com_ptr<ID3D11VertexShader> vertexShader;
             wil::com_ptr<ID3D11PixelShader> cleartypePixelShader;
             wil::com_ptr<ID3D11PixelShader> grayscalePixelShader;
-            wil::com_ptr<ID3D11PixelShader> passthroughPixelShader;
-            wil::com_ptr<ID3D11BlendState> cleartypeBlendState;
-            wil::com_ptr<ID3D11BlendState> alphaBlendState;
+            wil::com_ptr<ID3D11PixelShader> invertCursorPixelShader;
+            wil::com_ptr<ID3D11BlendState1> cleartypeBlendState;
+            wil::com_ptr<ID3D11BlendState1> alphaBlendState;
+            wil::com_ptr<ID3D11BlendState1> invertCursorBlendState;
 
             wil::com_ptr<ID3D11PixelShader> textPixelShader;
             wil::com_ptr<ID3D11BlendState> textBlendState;
@@ -693,7 +695,8 @@ namespace Microsoft::Console::Render
 
             wil::com_ptr<ID3D11Buffer> constantBuffer;
             wil::com_ptr<ID3D11InputLayout> textInputLayout;
-            wil::com_ptr<ID3D11Buffer> vertexBuffer;
+            wil::com_ptr<ID3D11Buffer> vertexBuffers[2];
+            size_t vertexBuffers1Size = 0;
 
             wil::com_ptr<ID3D11Texture2D> perCellColor;
             wil::com_ptr<ID3D11ShaderResourceView> perCellColorView;
@@ -724,7 +727,7 @@ namespace Microsoft::Console::Render
             stbrp_context rectPacker;
             std::vector<u32> backgroundBitmap;
             std::vector<ShapedRow> rows;
-            std::vector<VertexData> vertexData;
+            std::vector<VertexInstanceData> vertexInstanceData;
 
             f32x2 cellSizeDIP; // invalidated by ApiInvalidations::Font, caches _api.cellSize but in DIP
             u16x2 cellCount; // invalidated by ApiInvalidations::Font|Size, caches _api.cellCount
@@ -742,6 +745,7 @@ namespace Microsoft::Console::Render
             u32 brushColor = 0xffffffff;
 
             CachedCursorOptions cursorOptions;
+            u16r cursorRect;
             RenderInvalidations invalidations = RenderInvalidations::None;
 
             til::rect dirtyRect;

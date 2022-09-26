@@ -273,87 +273,139 @@ try
             }
         }
 
-        {
-            _r.vertexData.clear();
-            {
-                static constexpr f32x2 vertices[]{
-                    { 0, 0 },
-                    { 1, 0 },
-                    { 1, 1 },
-                    { 1, 1 },
-                    { 0, 1 },
-                    { 0, 0 },
-                };
+        vec2<size_t> textRange;
+        vec2<size_t> cursorRange;
+        vec2<size_t> selectionRange;
 
-                for (const auto& v : vertices)
-                {
-                    auto& ref = _r.vertexData.emplace_back();
-                    ref.position.x = v.x * _api.sizeInPixel.x;
-                    ref.position.y = v.y * _api.sizeInPixel.y;
-                    ref.texcoord.x = v.x * _api.cellCount.x;
-                    ref.texcoord.y = v.y * _api.cellCount.y;
-                    ref.color = 0;
-                }
+        {
+            _r.vertexInstanceData.clear();
+
+            // Background
+            {
+                auto& ref = _r.vertexInstanceData.emplace_back();
+                ref.rect = { 0.0f, 0.0f, static_cast<f32>(_api.sizeInPixel.x), static_cast<f32>(_api.sizeInPixel.y) };
+                ref.tex = { 0.0f, 0.0f, static_cast<f32>(_api.sizeInPixel.x) / static_cast<f32>(_r.fontMetrics.cellSize.x), static_cast<f32>(_api.sizeInPixel.y) / static_cast<f32>(_r.fontMetrics.cellSize.y) };
+                ref.color = 0;
+                ref.shadingType = 1;
             }
 
-            bool beganDrawing = false;
-
-            size_t y = 0;
-            for (const auto& row : _r.rows)
+            // Text
             {
-                const auto baselineY = _r.cellSizeDIP.y * y + _r.fontMetrics.baselineInDIP;
-                f32 cumulativeAdvance = 0;
+                textRange.x = _r.vertexInstanceData.size();
 
-                for (const auto& m : row.mappings)
+                bool beganDrawing = false;
+
+                size_t y = 0;
+                for (const auto& row : _r.rows)
                 {
-                    for (auto i = m.glyphsFrom; i < m.glyphsTo; ++i)
+                    const auto baselineY = _r.cellSizeDIP.y * y + _r.fontMetrics.baselineInDIP;
+                    f32 cumulativeAdvance = 0;
+
+                    for (const auto& m : row.mappings)
                     {
-                        bool inserted = false;
-                        auto& entry = _r.glyphCache.FindOrInsert(m.fontFace.get(), row.glyphIndices[i], inserted);
-                        if (inserted)
+                        for (auto i = m.glyphsFrom; i < m.glyphsTo; ++i)
                         {
-                            if (!beganDrawing)
+                            bool inserted = false;
+                            auto& entry = _r.glyphCache.FindOrInsert(m.fontFace.get(), row.glyphIndices[i], inserted);
+                            if (inserted)
                             {
-                                beganDrawing = true;
-                                _r.d2dRenderTarget->BeginDraw();
+                                if (!beganDrawing)
+                                {
+                                    beganDrawing = true;
+                                    _r.d2dRenderTarget->BeginDraw();
+                                }
+
+                                _drawGlyph(entry, m.fontEmSize);
                             }
 
-                            _drawGlyph(entry, m.fontEmSize);
-                        }
-
-                        if (entry.wh != u16x2{})
-                        {
-                            static constexpr f32x2 vertices[]{
-                                { 0, 0 },
-                                { 1, 0 },
-                                { 1, 1 },
-                                { 1, 1 },
-                                { 0, 1 },
-                                { 0, 0 },
-                            };
-
-                            for (const auto& v : vertices)
+                            if (entry.wh != u16x2{})
                             {
-                                auto& ref = _r.vertexData.emplace_back();
-                                ref.position.x = (cumulativeAdvance + row.glyphOffsets[i].advanceOffset) * _r.pixelPerDIP + entry.offset.x + v.x * entry.wh.x;
-                                ref.position.y = (baselineY - row.glyphOffsets[i].ascenderOffset) * _r.pixelPerDIP + entry.offset.y + v.y * entry.wh.y;
-                                ref.texcoord.x = entry.xy.x + v.x * entry.wh.x;
-                                ref.texcoord.y = entry.xy.y + v.y * entry.wh.y;
+                                auto& ref = _r.vertexInstanceData.emplace_back();
+                                ref.rect = {
+                                    (cumulativeAdvance + row.glyphOffsets[i].advanceOffset) * _r.pixelPerDIP + entry.offset.x,
+                                    (baselineY - row.glyphOffsets[i].ascenderOffset) * _r.pixelPerDIP + entry.offset.y,
+                                    static_cast<f32>(entry.wh.x),
+                                    static_cast<f32>(entry.wh.y),
+                                };
+                                ref.tex = {
+                                    static_cast<f32>(entry.xy.x),
+                                    static_cast<f32>(entry.xy.y),
+                                    static_cast<f32>(entry.wh.x),
+                                    static_cast<f32>(entry.wh.y),
+                                };
                                 ref.color = row.colors[i];
                                 ref.shadingType = entry.colorGlyph ? 1 : 0;
                             }
-                        }
 
-                        cumulativeAdvance += row.glyphAdvances[i];
+                            cumulativeAdvance += row.glyphAdvances[i];
+                        }
                     }
+
+                    y++;
                 }
 
-                y++;
+                if (beganDrawing)
+                {
+                    THROW_IF_FAILED(_r.d2dRenderTarget->EndDraw());
+                }
+
+                if constexpr (false)
+                {
+                    auto& ref = _r.vertexInstanceData.emplace_back();
+                    ref.rect = { 0.0f, 0.0f, 100.0f, 100.0f };
+                    ref.color = _r.selectionColor;
+                    ref.shadingType = 2;
+                }
+                if constexpr (false)
+                {
+                    auto& ref = _r.vertexInstanceData.emplace_back();
+                    ref.rect = { 50.0f, 50.0f, 100.0f, 100.0f };
+                    ref.color = _r.selectionColor;
+                    ref.shadingType = 2;
+                }
+
+                textRange.y = _r.vertexInstanceData.size() - textRange.x;
             }
 
-            if (beganDrawing)
+            if (_r.cursorRect.non_empty())
             {
-                THROW_IF_FAILED(_r.d2dRenderTarget->EndDraw());
+                cursorRange.x = _r.vertexInstanceData.size();
+
+                auto& ref = _r.vertexInstanceData.emplace_back();
+                ref.rect = {
+                    static_cast<f32>(_r.fontMetrics.cellSize.x * _r.cursorRect.left),
+                    static_cast<f32>(_r.fontMetrics.cellSize.y * _r.cursorRect.top),
+                    static_cast<f32>(_r.fontMetrics.cellSize.x * (_r.cursorRect.right - _r.cursorRect.left)),
+                    static_cast<f32>(_r.fontMetrics.cellSize.y * (_r.cursorRect.bottom - _r.cursorRect.top)),
+                };
+
+                cursorRange.y = _r.vertexInstanceData.size() - cursorRange.x;
+            }
+
+            // Selection
+            {
+                selectionRange.x = _r.vertexInstanceData.size();
+
+                size_t y = 0;
+                for (const auto& row : _r.rows)
+                {
+                    if (row.selectionTo > row.selectionFrom)
+                    {
+                        auto& ref = _r.vertexInstanceData.emplace_back();
+                        ref.rect = {
+                            static_cast<f32>(_r.fontMetrics.cellSize.x * row.selectionFrom),
+                            static_cast<f32>(_r.fontMetrics.cellSize.y * y),
+                            static_cast<f32>(_r.fontMetrics.cellSize.x * (row.selectionTo - row.selectionFrom)),
+                            static_cast<f32>(_r.fontMetrics.cellSize.y),
+                        };
+                        ref.color = _r.selectionColor;
+                        ref.shadingType = 2;
+                    }
+
+                    y++;
+                }
+
+                selectionRange.y = _r.vertexInstanceData.size() - selectionRange.x;
             }
         }
 
@@ -369,12 +421,20 @@ try
             WI_ClearFlag(_r.invalidations, RenderInvalidations::ConstBuffer);
         }
 
+        if (_r.vertexInstanceData.size() > _r.vertexBuffers1Size)
         {
-#pragma warning(suppress : 26494) // Variable 'mapped' is uninitialized. Always initialize an object (type.5).
-            D3D11_MAPPED_SUBRESOURCE mapped;
-            THROW_IF_FAILED(_r.deviceContext->Map(_r.vertexBuffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
-            memcpy(mapped.pData, _r.vertexData.data(), _r.vertexData.size() * sizeof(VertexData));
-            _r.deviceContext->Unmap(_r.vertexBuffer.get(), 0);
+            const auto totalCellCount = static_cast<size_t>(_r.cellCount.x) * static_cast<size_t>(_r.cellCount.y);
+            const auto growthSize = _r.vertexBuffers1Size + _r.vertexBuffers1Size / 2;
+            const auto newSize = std::max(totalCellCount, growthSize);
+
+            D3D11_BUFFER_DESC desc{};
+            desc.ByteWidth = gsl::narrow<UINT>(sizeof(VertexInstanceData) * newSize);
+            desc.Usage = D3D11_USAGE_DYNAMIC;
+            desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+            desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+            THROW_IF_FAILED(_r.device->CreateBuffer(&desc, nullptr, _r.vertexBuffers[1].put()));
+
+            _r.vertexBuffers1Size = newSize;
         }
 
         {
@@ -390,13 +450,20 @@ try
         }
 
         {
+#pragma warning(suppress : 26494) // Variable 'mapped' is uninitialized. Always initialize an object (type.5).
+            D3D11_MAPPED_SUBRESOURCE mapped;
+            THROW_IF_FAILED(_r.deviceContext->Map(_r.vertexBuffers[1].get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
+            memcpy(mapped.pData, _r.vertexInstanceData.data(), _r.vertexInstanceData.size() * sizeof(VertexInstanceData));
+            _r.deviceContext->Unmap(_r.vertexBuffers[1].get(), 0);
+        }
+
+        {
             {
                 // IA: Input Assembler
+                static constexpr UINT strides[2]{ sizeof(f32x2), sizeof(VertexInstanceData) };
+                static constexpr UINT offsets[2]{ 0, 0 };
                 _r.deviceContext->IASetInputLayout(_r.textInputLayout.get());
-                static constexpr UINT stride = sizeof(VertexData);
-                static constexpr UINT offset = 0;
-                _r.deviceContext->IASetVertexBuffers(0, 1, _r.vertexBuffer.addressof(), &stride, &offset);
-                //_r.deviceContext->IASetIndexBuffer()
+                _r.deviceContext->IASetVertexBuffers(0, 2, _r.vertexBuffers[0].addressof(), &strides[0], &offsets[0]);
                 _r.deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
                 // VS: Vertex Shader
@@ -411,7 +478,7 @@ try
                 _r.deviceContext->RSSetState(nullptr);
 
                 // PS: Pixel Shader
-                _r.deviceContext->PSSetShader(_r.passthroughPixelShader.get(), nullptr, 0);
+                _r.deviceContext->PSSetShader(_r.textPixelShader.get(), nullptr, 0);
                 _r.deviceContext->PSSetConstantBuffers(0, 1, _r.constantBuffer.addressof());
                 _r.deviceContext->PSSetShaderResources(0, 1, _r.perCellColorView.addressof());
 
@@ -419,49 +486,50 @@ try
                 _r.deviceContext->OMSetRenderTargets(1, _r.renderTargetView.addressof(), nullptr);
                 _r.deviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
 
-                _r.deviceContext->Draw(6, 0);
+                _r.deviceContext->DrawInstanced(6, 1, 0, 0);
             }
 
+            // Inverted cursors use D3D11 Logic Ops with D3D11_LOGIC_OP_XOR (see GH#).
+            // But unfortunately this poses two problems:
+            // * Cursors are drawn "in between" text and selection
+            // * all RenderTargets bound must have a UINT format
+            // --> We have to draw in 3 passes.
+            if (cursorRange.y)
             {
-                // PS: Pixel Shader
                 _r.deviceContext->PSSetShader(_r.textPixelShader.get(), nullptr, 0);
                 _r.deviceContext->PSSetShaderResources(0, 1, _r.atlasView.addressof());
-
-                // OM: Output Merger
                 _r.deviceContext->OMSetBlendState(_r.textBlendState.get(), nullptr, 0xffffffff);
+                _r.deviceContext->DrawInstanced(6, gsl::narrow_cast<UINT>(textRange.y), 0, gsl::narrow_cast<UINT>(textRange.x));
 
-                _r.deviceContext->Draw(gsl::narrow_cast<UINT>(_r.vertexData.size() - 6), 6);
+                _r.deviceContext->PSSetShader(_r.invertCursorPixelShader.get(), nullptr, 0);
+                _r.deviceContext->OMSetRenderTargets(1, _r.renderTargetViewUInt.addressof(), nullptr);
+                _r.deviceContext->OMSetBlendState(_r.invertCursorBlendState.get(), nullptr, 0xffffffff);
+                _r.deviceContext->DrawInstanced(6, gsl::narrow_cast<UINT>(cursorRange.y), 0, gsl::narrow_cast<UINT>(cursorRange.x));
+
+                if (selectionRange.y)
+                {
+                    _r.deviceContext->PSSetShader(_r.textPixelShader.get(), nullptr, 0);
+                    _r.deviceContext->PSSetShaderResources(0, 1, _r.atlasView.addressof());
+                    _r.deviceContext->OMSetRenderTargets(1, _r.renderTargetView.addressof(), nullptr);
+                    _r.deviceContext->OMSetBlendState(_r.textBlendState.get(), nullptr, 0xffffffff);
+                    _r.deviceContext->DrawInstanced(6, gsl::narrow_cast<UINT>(selectionRange.y), 0, gsl::narrow_cast<UINT>(selectionRange.x));
+                }
             }
-
-            if constexpr (false)
+            else
             {
-                D3D11_BLEND_DESC1 desc{};
-                desc.RenderTarget[0] = {
-                    .LogicOpEnable = true,
-                    .LogicOp = D3D11_LOGIC_OP_XOR,
-                    .RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_RED | D3D11_COLOR_WRITE_ENABLE_GREEN | D3D11_COLOR_WRITE_ENABLE_BLUE,
-                };
-                wil::com_ptr<ID3D11BlendState1> blendState;
-                THROW_IF_FAILED(_r.device.query<ID3D11Device1>()->CreateBlendState1(&desc, blendState.put()));
-
-                // PS: Pixel Shader
-                _r.deviceContext->PSSetShader(_r.passthroughPixelShader.get(), nullptr, 0);
-                _r.deviceContext->PSSetShaderResources(0, 1, _r.perCellColorView.addressof());
-
-                // OM: Output Merger
-                _r.deviceContext->OMSetRenderTargets(1, _r.renderTargetView2.addressof(), nullptr);
-                _r.deviceContext->OMSetBlendState(blendState.get(), nullptr, 0xffffffff);
-                
-                _r.deviceContext->Draw(6, 0);
+                _r.deviceContext->PSSetShader(_r.textPixelShader.get(), nullptr, 0);
+                _r.deviceContext->PSSetShaderResources(0, 1, _r.atlasView.addressof());
+                _r.deviceContext->OMSetBlendState(_r.textBlendState.get(), nullptr, 0xffffffff);
+                _r.deviceContext->DrawInstanced(6, gsl::narrow_cast<UINT>(textRange.y + selectionRange.y), 0, gsl::narrow_cast<UINT>(textRange.x));
             }
         }
 
-        if constexpr (false)
+        if constexpr (true)
         {
             _r.deviceContext->RSSetState(_r.wireframeRasterizerState.get());
             _r.deviceContext->PSSetShader(_r.wireframePixelShader.get(), nullptr, 0);
             _r.deviceContext->OMSetBlendState(_r.alphaBlendState.get(), nullptr, 0xffffffff);
-            _r.deviceContext->Draw(gsl::narrow_cast<UINT>(_r.vertexData.size()), 0);
+            _r.deviceContext->DrawInstanced(6, gsl::narrow<UINT>(_r.vertexInstanceData.size()), 0, 0);
         }
     }
 

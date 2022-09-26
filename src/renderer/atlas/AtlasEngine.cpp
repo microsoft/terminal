@@ -8,7 +8,7 @@
 #include <custom_shader_vs.h>
 #include <shader_text_cleartype_ps.h>
 #include <shader_text_grayscale_ps.h>
-#include <shader_passthrough_ps.h>
+#include <shader_invert_cursor_ps.h>
 #include <shader_wireframe.h>
 #include <shader_vs.h>
 
@@ -397,7 +397,13 @@ try
         rect.narrow_right<u16>(),
         rect.narrow_bottom<u16>(),
     };
-    _setCellFlags(u16rect, CellFlags::Selected, CellFlags::Selected);
+
+    const auto row = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.top, 0, _r.cellCount.y));
+    const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.left, 0, _r.cellCount.x - 1));
+    const auto to = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.right, from, _r.cellCount.x));
+
+    _r.rows[row].selectionFrom = from;
+    _r.rows[row].selectionTo = to;
     _r.dirtyRect |= rect;
     return S_OK;
 }
@@ -427,7 +433,7 @@ try
     // Clear the previous cursor
     if (const auto r = _api.invalidatedCursorArea; r.non_empty())
     {
-        _setCellFlags(r, CellFlags::Cursor, CellFlags::None);
+        _r.cursorRect = {};
         _r.dirtyRect |= til::rect{ r.left, r.top, r.right, r.bottom };
     }
 
@@ -441,7 +447,7 @@ try
         const auto cursorWidth = 1 + (options.fIsDoubleWidth & (options.cursorType != CursorType::VerticalBar));
         const auto right = gsl::narrow_cast<uint16_t>(clamp(x + cursorWidth, 0, _r.cellCount.x - 0));
         const auto bottom = gsl::narrow_cast<uint16_t>(y + 1);
-        _setCellFlags({ x, y, right, bottom }, CellFlags::Cursor, CellFlags::Cursor);
+        _r.cursorRect = { x, y, right, bottom };
         _r.dirtyRect |= til::rect{ x, y, right, bottom };
     }
 
@@ -600,6 +606,7 @@ void AtlasEngine::_createResources()
         }
     }
 
+    wil::com_ptr<ID3D11Device> device;
     wil::com_ptr<ID3D11DeviceContext> deviceContext;
     D3D_FEATURE_LEVEL featureLevel{};
 
@@ -621,10 +628,11 @@ void AtlasEngine::_createResources()
         /* pFeatureLevels */ featureLevels.data(),
         /* FeatureLevels */ gsl::narrow_cast<UINT>(featureLevels.size()),
         /* SDKVersion */ D3D11_SDK_VERSION,
-        /* ppDevice */ _r.device.put(),
+        /* ppDevice */ device.addressof(),
         /* pFeatureLevel */ &featureLevel,
-        /* ppImmediateContext */ deviceContext.put()));
+        /* ppImmediateContext */ deviceContext.addressof()));
 
+    _r.device = device.query<ID3D11Device1>();
     _r.deviceContext = deviceContext.query<ID3D11DeviceContext1>();
 
     if (featureLevel < D3D_FEATURE_LEVEL_10_0)
@@ -655,21 +663,12 @@ void AtlasEngine::_createResources()
         THROW_IF_FAILED(_r.device->CreateVertexShader(&shader_vs[0], sizeof(shader_vs), nullptr, _r.vertexShader.put()));
         THROW_IF_FAILED(_r.device->CreatePixelShader(&shader_text_cleartype_ps[0], sizeof(shader_text_cleartype_ps), nullptr, _r.cleartypePixelShader.put()));
         THROW_IF_FAILED(_r.device->CreatePixelShader(&shader_text_grayscale_ps[0], sizeof(shader_text_grayscale_ps), nullptr, _r.grayscalePixelShader.put()));
-        THROW_IF_FAILED(_r.device->CreatePixelShader(&shader_passthrough_ps[0], sizeof(shader_passthrough_ps), nullptr, _r.passthroughPixelShader.put()));
+        THROW_IF_FAILED(_r.device->CreatePixelShader(&shader_invert_cursor_ps[0], sizeof(shader_invert_cursor_ps), nullptr, _r.invertCursorPixelShader.put()));
         THROW_IF_FAILED(_r.device->CreatePixelShader(&shader_wireframe[0], sizeof(shader_wireframe), nullptr, _r.wireframePixelShader.put()));
 
         {
-            static constexpr D3D11_RENDER_TARGET_BLEND_DESC alphaBlending{
-                .BlendEnable = true,
-                .SrcBlend = D3D11_BLEND_ONE,
-                .DestBlend = D3D11_BLEND_INV_SRC_ALPHA,
-                .BlendOp = D3D11_BLEND_OP_ADD,
-                .SrcBlendAlpha = D3D11_BLEND_ONE,
-                .DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA,
-                .BlendOpAlpha = D3D11_BLEND_OP_ADD,
-                .RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL,
-            };
-            static constexpr D3D11_RENDER_TARGET_BLEND_DESC cleartypeBlending{
+            D3D11_BLEND_DESC1 desc{};
+            desc.RenderTarget[0] = {
                 .BlendEnable = true,
                 .SrcBlend = D3D11_BLEND_ONE,
                 .DestBlend = D3D11_BLEND_INV_SRC1_COLOR,
@@ -679,11 +678,30 @@ void AtlasEngine::_createResources()
                 .BlendOpAlpha = D3D11_BLEND_OP_ADD,
                 .RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL,
             };
-            D3D11_BLEND_DESC desc{};
-            desc.RenderTarget[0] = cleartypeBlending;
-            THROW_IF_FAILED(_r.device->CreateBlendState(&desc, _r.cleartypeBlendState.put()));
-            desc.RenderTarget[0] = alphaBlending;
-            THROW_IF_FAILED(_r.device->CreateBlendState(&desc, _r.alphaBlendState.put()));
+            THROW_IF_FAILED(_r.device->CreateBlendState1(&desc, _r.cleartypeBlendState.put()));
+        }
+        {
+            D3D11_BLEND_DESC1 desc{};
+            desc.RenderTarget[0] = {
+                .BlendEnable = true,
+                .SrcBlend = D3D11_BLEND_ONE,
+                .DestBlend = D3D11_BLEND_INV_SRC_ALPHA,
+                .BlendOp = D3D11_BLEND_OP_ADD,
+                .SrcBlendAlpha = D3D11_BLEND_ONE,
+                .DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA,
+                .BlendOpAlpha = D3D11_BLEND_OP_ADD,
+                .RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL,
+            };
+            THROW_IF_FAILED(_r.device->CreateBlendState1(&desc, _r.alphaBlendState.put()));
+        }
+        {
+            D3D11_BLEND_DESC1 desc{};
+            desc.RenderTarget[0] = {
+                .LogicOpEnable = true,
+                .LogicOp = D3D11_LOGIC_OP_XOR,
+                .RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_RED | D3D11_COLOR_WRITE_ENABLE_GREEN | D3D11_COLOR_WRITE_ENABLE_BLUE,
+            };
+            THROW_IF_FAILED(_r.device->CreateBlendState1(&desc, _r.invertCursorBlendState.put()));
         }
 
         {
@@ -696,12 +714,31 @@ void AtlasEngine::_createResources()
 
         {
             static constexpr D3D11_INPUT_ELEMENT_DESC layout[]{
-                { "SV_Position", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(VertexData, position), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-                { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(VertexData, texcoord), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-                { "COLOR", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, offsetof(VertexData, color), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-                { "ShadingType", 0, DXGI_FORMAT_R32_UINT, 0, offsetof(VertexData, shadingType), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+                { "SV_Position", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+                { "Rect", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, offsetof(VertexInstanceData, rect), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+                { "Tex", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, offsetof(VertexInstanceData, tex), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+                { "Color", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 1, offsetof(VertexInstanceData, color), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+                { "ShadingType", 0, DXGI_FORMAT_R32_UINT, 1, offsetof(VertexInstanceData, shadingType), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
             };
             THROW_IF_FAILED(_r.device->CreateInputLayout(&layout[0], gsl::narrow_cast<UINT>(std::size(layout)), &shader_vs[0], sizeof(shader_vs), _r.textInputLayout.put()));
+        }
+
+        {
+            static constexpr f32x2 vertices[]{
+                { 0, 0 },
+                { 1, 0 },
+                { 1, 1 },
+                { 1, 1 },
+                { 0, 1 },
+                { 0, 0 },
+            };
+
+            D3D11_BUFFER_DESC desc{};
+            desc.ByteWidth = sizeof(vertices);
+            desc.Usage = D3D11_USAGE_IMMUTABLE;
+            desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+            const D3D11_SUBRESOURCE_DATA initialData{ &vertices[0] };
+            THROW_IF_FAILED(_r.device->CreateBuffer(&desc, &initialData, _r.vertexBuffers[0].put()));
         }
 
         if (!_api.customPixelShaderPath.empty())
@@ -938,7 +975,7 @@ void AtlasEngine::_recreateSizeDependentResources()
             _r.d2dRenderTarget.reset();
         }
         _r.renderTargetView.reset();
-        _r.renderTargetView2.reset();
+        _r.renderTargetViewUInt.reset();
         _r.deviceContext->ClearState();
         _r.deviceContext->Flush();
         THROW_IF_FAILED(_r.swapChain->ResizeBuffers(0, _api.sizeInPixel.x, _api.sizeInPixel.y, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT));
@@ -992,7 +1029,7 @@ void AtlasEngine::_recreateSizeDependentResources()
                 .Format = DXGI_FORMAT_R8G8B8A8_UINT,
                 .ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D,
             };
-            THROW_IF_FAILED(_r.device->CreateRenderTargetView(buffer.get(), &desc, _r.renderTargetView2.put()));
+            THROW_IF_FAILED(_r.device->CreateRenderTargetView(buffer.get(), &desc, _r.renderTargetViewUInt.put()));
         }
         if (_r.customPixelShader)
         {
@@ -1011,15 +1048,6 @@ void AtlasEngine::_recreateSizeDependentResources()
 
         if (resize)
         {
-            {
-                D3D11_BUFFER_DESC desc{};
-                desc.ByteWidth = gsl::narrow_cast<UINT>(sizeof(VertexData) * 6 * totalCellCount);
-                desc.Usage = D3D11_USAGE_DYNAMIC;
-                desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-                desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-                THROW_IF_FAILED(_r.device->CreateBuffer(&desc, nullptr, _r.vertexBuffer.put()));
-            }
-
             {
                 D3D11_TEXTURE2D_DESC desc{};
                 desc.Width = _api.cellCount.x;
@@ -1126,14 +1154,6 @@ void AtlasEngine::_recreateFontDependentResources()
 const AtlasEngine::Buffer<DWRITE_FONT_AXIS_VALUE>& AtlasEngine::_getTextFormatAxis(bool bold, bool italic) const noexcept
 {
     return _r.textFormatAxes[italic][bold];
-}
-
-void AtlasEngine::_setCellFlags(u16r coords, CellFlags mask, CellFlags bits) noexcept
-{
-    assert(coords.left <= coords.right);
-    assert(coords.top <= coords.bottom);
-    assert(coords.right <= _r.cellCount.x);
-    assert(coords.bottom <= _r.cellCount.y);
 }
 
 void AtlasEngine::_flushBufferLine()
