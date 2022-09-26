@@ -4,9 +4,10 @@
 #include "pch.h"
 #include "AtlasEngine.h"
 
-#include "dwrite.h"
+#include <til/small_vector.h>
 
 #include "AtlasEngine.h"
+#include "dwrite.h"
 
 // #### NOTE ####
 // If you see any code in here that contains "_api." you might be seeing a race condition.
@@ -69,7 +70,12 @@ static AtlasEngine::f32r getGlyphRunBlackBox(const DWRITE_GLYPH_RUN& glyphRun, f
     glyphRun.fontFace->GetDesignGlyphMetrics(glyphRun.glyphIndices, glyphRun.glyphCount, glyphRunMetrics.data(), false);
 
     float const fontScale = glyphRun.fontEmSize / fontMetrics.designUnitsPerEm;
-    AtlasEngine::f32r accumulatedBounds;
+    AtlasEngine::f32r accumulatedBounds{
+        FLT_MAX,
+        FLT_MAX,
+        FLT_MIN,
+        FLT_MIN,
+    };
 
     for (uint32_t i = 0; i < glyphRun.glyphCount; ++i)
     {
@@ -101,88 +107,6 @@ static AtlasEngine::f32r getGlyphRunBlackBox(const DWRITE_GLYPH_RUN& glyphRun, f
     }
 
     return accumulatedBounds;
-}
-
-static bool drawGlyphRun(IDWriteFactory4* dwriteFactory, ID2D1DeviceContext4* deviceContext, D2D_POINT_2F baselineOrigin, const DWRITE_GLYPH_RUN* glyphRun, ID2D1SolidColorBrush* foregroundBrush) noexcept
-{
-    static constexpr auto measuringMode = DWRITE_MEASURING_MODE_NATURAL;
-    static constexpr auto formats =
-        DWRITE_GLYPH_IMAGE_FORMATS_TRUETYPE |
-        DWRITE_GLYPH_IMAGE_FORMATS_CFF |
-        DWRITE_GLYPH_IMAGE_FORMATS_COLR |
-        DWRITE_GLYPH_IMAGE_FORMATS_SVG |
-        DWRITE_GLYPH_IMAGE_FORMATS_PNG |
-        DWRITE_GLYPH_IMAGE_FORMATS_JPEG |
-        DWRITE_GLYPH_IMAGE_FORMATS_TIFF |
-        DWRITE_GLYPH_IMAGE_FORMATS_PREMULTIPLIED_B8G8R8A8;
-
-    wil::com_ptr<IDWriteColorGlyphRunEnumerator1> colorRunEnumerator;
-    const auto hr = dwriteFactory->TranslateColorGlyphRun(baselineOrigin, glyphRun, nullptr, formats, measuringMode, nullptr, 0, &colorRunEnumerator);
-    if (hr == DWRITE_E_NOCOLOR)
-    {
-        deviceContext->DrawGlyphRun(baselineOrigin, glyphRun, foregroundBrush, measuringMode);
-        return false;
-    }
-    THROW_IF_FAILED(hr);
-
-    const auto previousAntialiasingMode = deviceContext->GetTextAntialiasMode();
-    deviceContext->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
-    const auto cleanup = wil::scope_exit([&]() {
-        deviceContext->SetTextAntialiasMode(previousAntialiasingMode);
-    });
-
-    wil::com_ptr<ID2D1SolidColorBrush> solidBrush;
-
-    for (;;)
-    {
-        BOOL hasRun;
-        THROW_IF_FAILED(colorRunEnumerator->MoveNext(&hasRun));
-        if (!hasRun)
-        {
-            break;
-        }
-
-        const DWRITE_COLOR_GLYPH_RUN1* colorGlyphRun;
-        THROW_IF_FAILED(colorRunEnumerator->GetCurrentRun(&colorGlyphRun));
-
-        ID2D1Brush* runBrush;
-        if (colorGlyphRun->paletteIndex == /*DWRITE_NO_PALETTE_INDEX*/ 0xffff)
-        {
-            runBrush = foregroundBrush;
-        }
-        else
-        {
-            if (!solidBrush)
-            {
-                THROW_IF_FAILED(deviceContext->CreateSolidColorBrush(colorGlyphRun->runColor, &solidBrush));
-            }
-            else
-            {
-                solidBrush->SetColor(colorGlyphRun->runColor);
-            }
-            runBrush = solidBrush.get();
-        }
-
-        switch (colorGlyphRun->glyphImageFormat)
-        {
-        case DWRITE_GLYPH_IMAGE_FORMATS_NONE:
-            break;
-        case DWRITE_GLYPH_IMAGE_FORMATS_PNG:
-        case DWRITE_GLYPH_IMAGE_FORMATS_JPEG:
-        case DWRITE_GLYPH_IMAGE_FORMATS_TIFF:
-        case DWRITE_GLYPH_IMAGE_FORMATS_PREMULTIPLIED_B8G8R8A8:
-            deviceContext->DrawColorBitmapGlyphRun(colorGlyphRun->glyphImageFormat, baselineOrigin, &colorGlyphRun->glyphRun, colorGlyphRun->measuringMode, D2D1_COLOR_BITMAP_GLYPH_SNAP_OPTION_DEFAULT);
-            break;
-        case DWRITE_GLYPH_IMAGE_FORMATS_SVG:
-            deviceContext->DrawSvgGlyphRun(baselineOrigin, &colorGlyphRun->glyphRun, runBrush, nullptr, 0, colorGlyphRun->measuringMode);
-            break;
-        default:
-            deviceContext->DrawGlyphRun(baselineOrigin, &colorGlyphRun->glyphRun, colorGlyphRun->glyphRunDescription, runBrush, colorGlyphRun->measuringMode);
-            break;
-        }
-    }
-
-    return true;
 }
 
 #pragma region IRenderEngine
@@ -228,6 +152,7 @@ try
                 wil::com_ptr<ID2D1RenderTarget> renderTarget;
                 THROW_IF_FAILED(_sr.d2dFactory->CreateDxgiSurfaceRenderTarget(surface.get(), &props, renderTarget.addressof()));
                 _r.d2dRenderTarget = renderTarget.query<ID2D1DeviceContext>();
+                _r.d2dRenderTarget4 = renderTarget.query<ID2D1DeviceContext4>();
 
                 // In case _api.realizedAntialiasingMode is D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE we'll
                 // continuously adjust it in AtlasEngine::_drawGlyph. See _drawGlyph.
@@ -253,48 +178,27 @@ try
         _r.d2dRenderTarget->BeginDraw();
 
         _r.d2dBackgroundBitmap->CopyFromMemory(nullptr, _r.backgroundBitmap.data(), _r.cellCount.x * 4);
-        _r.d2dRenderTarget->FillRectangle({0, 0, _r.cellCount.x * _r.cellSizeDIP.x, _r.cellCount.y * _r.cellSizeDIP.y}, _r.d2dBackgroundBrush.get());
+        _r.d2dRenderTarget->FillRectangle({ 0, 0, _r.cellCount.x * _r.cellSizeDIP.x, _r.cellCount.y * _r.cellSizeDIP.y }, _r.d2dBackgroundBrush.get());
 
         size_t y = 0;
         for (const auto& row : _r.rows)
         {
-            if (row.mappings.empty())
+            for (const auto& m : row.mappings)
             {
-                continue;
-            }
-
-            auto m = row.mappings.begin();
-            const auto end = row.mappings.end() - 1;
-
-            for (; m != end; ++m)
-            {
-                const auto offset = m->offset;
-                const auto nextOffset = std::next(m)->offset;
-
-                DWRITE_GLYPH_RUN glyphRun;
-                glyphRun.fontFace = m->fontFace.get();
-                glyphRun.fontEmSize = m->fontEmSize;
-                glyphRun.glyphCount = nextOffset - offset;
-                glyphRun.glyphIndices = &row.glyphIndices[offset];
-                glyphRun.glyphAdvances = &row.glyphAdvances[offset];
-                glyphRun.glyphOffsets = &row.glyphOffsets[offset];
-                glyphRun.isSideways = FALSE;
-                glyphRun.bidiLevel = 0;
+                DWRITE_GLYPH_RUN glyphRun{};
+                glyphRun.fontFace = m.fontFace.get();
+                glyphRun.fontEmSize = m.fontEmSize;
+                glyphRun.glyphCount = m.glyphsTo - m.glyphsFrom;
+                glyphRun.glyphIndices = &row.glyphIndices[m.glyphsFrom];
+                glyphRun.glyphAdvances = &row.glyphAdvances[m.glyphsFrom];
+                glyphRun.glyphOffsets = &row.glyphOffsets[m.glyphsFrom];
 
                 const D2D1_POINT_2F baseline{
-                    0,
+                    0, // TODO
                     _r.cellSizeDIP.y * y + _r.fontMetrics.baselineInDIP,
                 };
 
-                if (const auto d2dRenderTarget4 = _r.d2dRenderTarget.try_query<ID2D1DeviceContext4>())
-                {
-                    const auto factory4 = _sr.dwriteFactory.query<IDWriteFactory4>();
-                    drawGlyphRun(factory4.get(), d2dRenderTarget4.get(), baseline, &glyphRun, _r.brush.get());
-                }
-                else
-                {
-                    _r.d2dRenderTarget->DrawGlyphRun(baseline, &glyphRun, _r.brush.get(), DWRITE_MEASURING_MODE_NATURAL);
-                }
+                _drawGlyphRun(baseline, &glyphRun, _r.brush.get());
             }
 
             y++;
@@ -308,8 +212,8 @@ try
         {
             {
                 D3D11_TEXTURE2D_DESC desc{};
-                desc.Width = 2048;
-                desc.Height = 2048;
+                desc.Width = 1024;
+                desc.Height = 1024;
                 desc.MipLevels = 1;
                 desc.ArraySize = 1;
                 desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
@@ -320,9 +224,9 @@ try
             }
 
             {
-                _r.glyphCache.clear();
-                _r.rectPackerData.resize(2048);
-                stbrp_init_target(&_r.rectPacker, 2048, 2048, _r.rectPackerData.data(), gsl::narrow_cast<int>(_r.rectPackerData.size()));
+                _r.glyphCache.Clear();
+                _r.rectPackerData.resize(1024);
+                stbrp_init_target(&_r.rectPacker, 1024, 1024, _r.rectPackerData.data(), gsl::narrow_cast<int>(_r.rectPackerData.size()));
             }
 
             {
@@ -339,6 +243,7 @@ try
                 wil::com_ptr<ID2D1RenderTarget> renderTarget;
                 THROW_IF_FAILED(_sr.d2dFactory->CreateDxgiSurfaceRenderTarget(surface.get(), &props, renderTarget.addressof()));
                 _r.d2dRenderTarget = renderTarget.query<ID2D1DeviceContext>();
+                _r.d2dRenderTarget4 = renderTarget.query<ID2D1DeviceContext4>();
 
                 // We don't really use D2D for anything except DWrite, but it
                 // can't hurt to ensure that everything it does is pixel aligned.
@@ -391,78 +296,54 @@ try
                 }
             }
 
-            _r.d2dRenderTarget->BeginDraw();
+            bool beganDrawing = false;
 
             size_t y = 0;
             for (const auto& row : _r.rows)
             {
-                if (row.mappings.empty())
-                {
-                    continue;
-                }
-
                 const auto baselineY = _r.cellSizeDIP.y * y + _r.fontMetrics.baselineInDIP;
                 f32 cumulativeAdvance = 0;
 
-                auto m = row.mappings.begin();
-                auto c = row.clusters.begin();
-                const auto end = row.clusters.end() - 1;
-
-                for (; c != end; ++c)
+                for (const auto& m : row.mappings)
                 {
-                    const auto offset = c->offset;
-                    const auto nextOffset = std::next(c)->offset;
-
-                    if (offset >= std::next(m)->offset)
+                    for (auto i = m.glyphsFrom; i < m.glyphsTo; ++i)
                     {
-                        ++m;
-                    }
-
-                    AtlasKey key;
-                    key.fontFace = m->fontFace;
-                    key.glyphs.insert(key.glyphs.begin(), row.glyphIndices.begin() + offset, row.glyphIndices.begin() + nextOffset);
-
-                    const auto [it, ok] = _r.glyphCache.try_emplace(key);
-                    if (ok)
-                    {
-                        DWRITE_GLYPH_RUN glyphRun;
-                        glyphRun.fontFace = m->fontFace.get();
-                        glyphRun.fontEmSize = m->fontEmSize;
-                        glyphRun.glyphCount = nextOffset - offset;
-                        glyphRun.glyphIndices = &row.glyphIndices[offset];
-                        glyphRun.glyphAdvances = &row.glyphAdvances[offset];
-                        glyphRun.glyphOffsets = &row.glyphOffsets[offset];
-                        glyphRun.isSideways = FALSE;
-                        glyphRun.bidiLevel = 0;
-                        _drawGlyphs(glyphRun, it->second);
-                    }
-
-                    if (it->second.wh != f32x2{})
-                    {
-                        static constexpr f32x2 vertices[]{
-                            { 0, 0 },
-                            { 1, 0 },
-                            { 1, 1 },
-                            { 1, 1 },
-                            { 0, 1 },
-                            { 0, 0 },
-                        };
-
-                        for (const auto& v : vertices)
+                        bool inserted = false;
+                        auto& entry = _r.glyphCache.FindOrInsert(m.fontFace.get(), row.glyphIndices[i], inserted);
+                        if (inserted)
                         {
-                            const auto vv = it->second;
-                            auto& ref = _r.vertexData.emplace_back();
-                            ref.position.x = cumulativeAdvance * _r.pixelPerDIP + vv.offset.x + v.x * vv.wh.x;
-                            ref.position.y = baselineY * _r.pixelPerDIP + vv.offset.y + v.y * vv.wh.y;
-                            ref.texcoord.x = vv.xy.x + v.x * vv.wh.x;
-                            ref.texcoord.y = vv.xy.y + v.y * vv.wh.y;
-                            ref.color = c->color;
-                            ref.shadingType = vv.colorGlyph ? 0 : 1;
-                        }
-                    }
+                            if (!beganDrawing)
+                            {
+                                beganDrawing = true;
+                                _r.d2dRenderTarget->BeginDraw();
+                            }
 
-                    for (auto i = offset; i < nextOffset; ++i)
-                    {
+                            _drawGlyph(entry, m.fontEmSize);
+                        }
+
+                        if (entry.wh != u16x2{})
+                        {
+                            static constexpr f32x2 vertices[]{
+                                { 0, 0 },
+                                { 1, 0 },
+                                { 1, 1 },
+                                { 1, 1 },
+                                { 0, 1 },
+                                { 0, 0 },
+                            };
+
+                            for (const auto& v : vertices)
+                            {
+                                auto& ref = _r.vertexData.emplace_back();
+                                ref.position.x = (cumulativeAdvance + row.glyphOffsets[i].advanceOffset) * _r.pixelPerDIP + entry.offset.x + v.x * entry.wh.x;
+                                ref.position.y = (baselineY - row.glyphOffsets[i].ascenderOffset) * _r.pixelPerDIP + entry.offset.y + v.y * entry.wh.y;
+                                ref.texcoord.x = entry.xy.x + v.x * entry.wh.x;
+                                ref.texcoord.y = entry.xy.y + v.y * entry.wh.y;
+                                ref.color = row.colors[i];
+                                ref.shadingType = entry.colorGlyph ? 1 : 0;
+                            }
+                        }
+
                         cumulativeAdvance += row.glyphAdvances[i];
                     }
                 }
@@ -470,7 +351,10 @@ try
                 y++;
             }
 
-            THROW_IF_FAILED(_r.d2dRenderTarget->EndDraw());
+            if (beganDrawing)
+            {
+                THROW_IF_FAILED(_r.d2dRenderTarget->EndDraw());
+            }
         }
 
         if (WI_IsFlagSet(_r.invalidations, RenderInvalidations::ConstBuffer))
@@ -547,6 +431,28 @@ try
                 _r.deviceContext->OMSetBlendState(_r.textBlendState.get(), nullptr, 0xffffffff);
 
                 _r.deviceContext->Draw(gsl::narrow_cast<UINT>(_r.vertexData.size() - 6), 6);
+            }
+
+            if constexpr (false)
+            {
+                D3D11_BLEND_DESC1 desc{};
+                desc.RenderTarget[0] = {
+                    .LogicOpEnable = true,
+                    .LogicOp = D3D11_LOGIC_OP_XOR,
+                    .RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_RED | D3D11_COLOR_WRITE_ENABLE_GREEN | D3D11_COLOR_WRITE_ENABLE_BLUE,
+                };
+                wil::com_ptr<ID3D11BlendState1> blendState;
+                THROW_IF_FAILED(_r.device.query<ID3D11Device1>()->CreateBlendState1(&desc, blendState.put()));
+
+                // PS: Pixel Shader
+                _r.deviceContext->PSSetShader(_r.passthroughPixelShader.get(), nullptr, 0);
+                _r.deviceContext->PSSetShaderResources(0, 1, _r.perCellColorView.addressof());
+
+                // OM: Output Merger
+                _r.deviceContext->OMSetRenderTargets(1, _r.renderTargetView2.addressof(), nullptr);
+                _r.deviceContext->OMSetBlendState(blendState.get(), nullptr, 0xffffffff);
+                
+                _r.deviceContext->Draw(6, 0);
             }
         }
 
@@ -641,8 +547,113 @@ void AtlasEngine::WaitUntilCanRender() noexcept
 
 #pragma endregion
 
-void AtlasEngine::_drawGlyphs(const DWRITE_GLYPH_RUN& glyphRun, AtlasValue& value)
+bool AtlasEngine::_drawGlyphRun(D2D_POINT_2F baselineOrigin, const DWRITE_GLYPH_RUN* glyphRun, ID2D1SolidColorBrush* foregroundBrush) const noexcept
 {
+    static constexpr auto measuringMode = DWRITE_MEASURING_MODE_NATURAL;
+    static constexpr auto formats =
+        DWRITE_GLYPH_IMAGE_FORMATS_TRUETYPE |
+        DWRITE_GLYPH_IMAGE_FORMATS_CFF |
+        DWRITE_GLYPH_IMAGE_FORMATS_COLR |
+        DWRITE_GLYPH_IMAGE_FORMATS_SVG |
+        DWRITE_GLYPH_IMAGE_FORMATS_PNG |
+        DWRITE_GLYPH_IMAGE_FORMATS_JPEG |
+        DWRITE_GLYPH_IMAGE_FORMATS_TIFF |
+        DWRITE_GLYPH_IMAGE_FORMATS_PREMULTIPLIED_B8G8R8A8;
+
+    wil::com_ptr<IDWriteColorGlyphRunEnumerator1> enumerator;
+
+    // If ID2D1DeviceContext4 isn't supported, we'll exit early below.
+    auto hr = DWRITE_E_NOCOLOR;
+
+    if (_r.d2dRenderTarget4)
+    {
+        D2D_MATRIX_3X2_F transform;
+        _r.d2dRenderTarget4->GetTransform(&transform);
+        float dpiX, dpiY;
+        _r.d2dRenderTarget4->GetDpi(&dpiX, &dpiY);
+        transform = transform * D2D1::Matrix3x2F::Scale(dpiX, dpiY);
+
+        // Support for ID2D1DeviceContext4 implies support for IDWriteFactory4.
+        // ID2D1DeviceContext4 is required for drawing below.
+        hr = _sr.dwriteFactory4->TranslateColorGlyphRun(baselineOrigin, glyphRun, nullptr, formats, measuringMode, nullptr, 0, &enumerator);
+    }
+
+    if (hr == DWRITE_E_NOCOLOR)
+    {
+        _r.d2dRenderTarget->DrawGlyphRun(baselineOrigin, glyphRun, foregroundBrush, measuringMode);
+        return false;
+    }
+
+    THROW_IF_FAILED(hr);
+
+    const auto previousAntialiasingMode = _r.d2dRenderTarget4->GetTextAntialiasMode();
+    _r.d2dRenderTarget4->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
+    const auto cleanup = wil::scope_exit([&]() {
+        _r.d2dRenderTarget4->SetTextAntialiasMode(previousAntialiasingMode);
+    });
+
+    wil::com_ptr<ID2D1SolidColorBrush> solidBrush;
+
+    for (;;)
+    {
+        BOOL hasRun;
+        THROW_IF_FAILED(enumerator->MoveNext(&hasRun));
+        if (!hasRun)
+        {
+            break;
+        }
+
+        const DWRITE_COLOR_GLYPH_RUN1* colorGlyphRun;
+        THROW_IF_FAILED(enumerator->GetCurrentRun(&colorGlyphRun));
+
+        ID2D1Brush* runBrush;
+        if (colorGlyphRun->paletteIndex == /*DWRITE_NO_PALETTE_INDEX*/ 0xffff)
+        {
+            runBrush = foregroundBrush;
+        }
+        else
+        {
+            if (!solidBrush)
+            {
+                THROW_IF_FAILED(_r.d2dRenderTarget4->CreateSolidColorBrush(colorGlyphRun->runColor, &solidBrush));
+            }
+            else
+            {
+                solidBrush->SetColor(colorGlyphRun->runColor);
+            }
+            runBrush = solidBrush.get();
+        }
+
+        switch (colorGlyphRun->glyphImageFormat)
+        {
+        case DWRITE_GLYPH_IMAGE_FORMATS_NONE:
+            break;
+        case DWRITE_GLYPH_IMAGE_FORMATS_PNG:
+        case DWRITE_GLYPH_IMAGE_FORMATS_JPEG:
+        case DWRITE_GLYPH_IMAGE_FORMATS_TIFF:
+        case DWRITE_GLYPH_IMAGE_FORMATS_PREMULTIPLIED_B8G8R8A8:
+            _r.d2dRenderTarget4->DrawColorBitmapGlyphRun(colorGlyphRun->glyphImageFormat, baselineOrigin, &colorGlyphRun->glyphRun, colorGlyphRun->measuringMode, D2D1_COLOR_BITMAP_GLYPH_SNAP_OPTION_DEFAULT);
+            break;
+        case DWRITE_GLYPH_IMAGE_FORMATS_SVG:
+            _r.d2dRenderTarget4->DrawSvgGlyphRun(baselineOrigin, &colorGlyphRun->glyphRun, runBrush, nullptr, 0, colorGlyphRun->measuringMode);
+            break;
+        default:
+            _r.d2dRenderTarget4->DrawGlyphRun(baselineOrigin, &colorGlyphRun->glyphRun, colorGlyphRun->glyphRunDescription, runBrush, colorGlyphRun->measuringMode);
+            break;
+        }
+    }
+
+    return true;
+}
+
+void AtlasEngine::_drawGlyph(GlyphCacheEntry& entry, f32 fontEmSize)
+{
+    DWRITE_GLYPH_RUN glyphRun{};
+    glyphRun.fontFace = entry.fontFace;
+    glyphRun.fontEmSize = fontEmSize;
+    glyphRun.glyphCount = 1;
+    glyphRun.glyphIndices = &entry.glyphIndex;
+
     auto box = getGlyphRunBlackBox(glyphRun, 0, 0);
     if (box.left >= box.right || box.top >= box.bottom)
     {
@@ -663,34 +674,17 @@ void AtlasEngine::_drawGlyphs(const DWRITE_GLYPH_RUN& glyphRun, AtlasValue& valu
         return;
     }
 
-    const f32x2 offset{
-        box.left,
-        box.top,
-    };
     const D2D1_POINT_2F baseline{
-        (rect.x - offset.x) * _r.dipPerPixel,
-        (rect.y - offset.y) * _r.dipPerPixel,
+        (rect.x - box.left) * _r.dipPerPixel,
+        (rect.y - box.top) * _r.dipPerPixel,
     };
+    const auto colorGlyph = _drawGlyphRun(baseline, &glyphRun, _r.brush.get());
 
-    bool colorGlyph;
-
-    // My understanding is that a ID2D1DeviceContext4 implies the existence of a IDWriteFactory5, because only
-    // IDWriteFactory5 has a CreateDevice() for ID2D1Device4 with which a ID2D1DeviceContext4 can be created.
-    if (const auto d2dRenderTarget4 = _r.d2dRenderTarget.try_query<ID2D1DeviceContext4>())
-    {
-        const auto factory4 = _sr.dwriteFactory.query<IDWriteFactory4>();
-        colorGlyph = drawGlyphRun(factory4.get(), d2dRenderTarget4.get(), baseline, &glyphRun, _r.brush.get());
-    }
-    else
-    {
-        _r.d2dRenderTarget->DrawGlyphRun(baseline, &glyphRun, _r.brush.get(), DWRITE_MEASURING_MODE_NATURAL);
-        colorGlyph = false;
-    }
-
-    value.xy.x = static_cast<f32>(rect.x);
-    value.xy.y = static_cast<f32>(rect.y);
-    value.wh.x = static_cast<f32>(rect.w);
-    value.wh.y = static_cast<f32>(rect.h);
-    value.offset = offset;
-    value.colorGlyph = colorGlyph;
+    entry.xy.x = gsl::narrow_cast<u16>(rect.x);
+    entry.xy.y = gsl::narrow_cast<u16>(rect.y);
+    entry.wh.x = gsl::narrow_cast<u16>(rect.w);
+    entry.wh.y = gsl::narrow_cast<u16>(rect.h);
+    entry.offset.x = gsl::narrow_cast<u16>(box.left);
+    entry.offset.y = gsl::narrow_cast<u16>(box.top);
+    entry.colorGlyph = colorGlyph;
 }

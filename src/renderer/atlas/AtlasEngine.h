@@ -3,12 +3,11 @@
 
 #pragma once
 
-#include <d2d1_1.h>
+#include <d2d1_3.h>
 #include <d3d11_1.h>
 #include <dwrite_3.h>
 
 #include <til/hash.h>
-#include <til/small_vector.h>
 
 #include "../../renderer/inc/IRenderEngine.hpp"
 #include "DWriteTextAnalysis.h"
@@ -169,6 +168,7 @@ namespace Microsoft::Console::Render
         using u16r = rect<u16>;
 
         using i16 = int16_t;
+        using i16x2 = vec2<i16>;
 
         using u32 = uint32_t;
         using u32x2 = vec2<u32>;
@@ -339,98 +339,14 @@ namespace Microsoft::Console::Render
             size_t _size = 0;
         };
 
-        // This structure works similar to how std::string works:
-        // You can think of a std::string as a structure consisting of:
-        //   char*  data;
-        //   size_t size;
-        //   size_t capacity;
-        // where data is some backing memory allocated on the heap.
-        //
-        // But std::string employs an optimization called "small string optimization" (SSO).
-        // To simplify things it could be explained as:
-        // If the string capacity is small, then the characters are stored inside the "data"
-        // pointer and you make sure to set the lowest bit in the pointer one way or another.
-        // Heap allocations are always aligned by at least 4-8 bytes on any platform.
-        // If the address of the "data" pointer is not even you know data is stored inline.
-        template<typename T>
-        union SmallObjectOptimizer
-        {
-            static_assert(std::is_trivially_copyable_v<T>);
-            static_assert(std::has_unique_object_representations_v<T>);
-
-            T* allocated = nullptr;
-            T inlined;
-
-            constexpr SmallObjectOptimizer() = default;
-
-            SmallObjectOptimizer(const SmallObjectOptimizer& other) = delete;
-            SmallObjectOptimizer& operator=(const SmallObjectOptimizer& other) = delete;
-
-            SmallObjectOptimizer(SmallObjectOptimizer&& other) noexcept
-            {
-                memcpy(this, &other, std::max(sizeof(allocated), sizeof(inlined)));
-                other.allocated = nullptr;
-            }
-
-            SmallObjectOptimizer& operator=(SmallObjectOptimizer&& other) noexcept
-            {
-                std::destroy_at(this);
-                return *std::construct_at(this, std::move(other));
-            }
-
-            ~SmallObjectOptimizer()
-            {
-                if (!is_inline())
-                {
-#pragma warning(suppress : 26408) // Avoid malloc() and free(), prefer the nothrow version of new with delete (r.10).
-                    free(allocated);
-                }
-            }
-
-            T* initialize(size_t byteSize)
-            {
-                if (would_inline(byteSize))
-                {
-                    return &inlined;
-                }
-
-#pragma warning(suppress : 26408) // Avoid malloc() and free(), prefer the nothrow version of new with delete (r.10).
-                allocated = THROW_IF_NULL_ALLOC(static_cast<T*>(malloc(byteSize)));
-                return allocated;
-            }
-
-            constexpr bool would_inline(size_t byteSize) const noexcept
-            {
-                return byteSize <= sizeof(T);
-            }
-
-            bool is_inline() const noexcept
-            {
-                // VSO-1430353: __builtin_bitcast crashes the compiler under /permissive-. (BODGY)
-#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
-                return (reinterpret_cast<uintptr_t>(allocated) & 1) != 0;
-            }
-
-            const T* data() const noexcept
-            {
-                return is_inline() ? &inlined : allocated;
-            }
-
-            size_t size() const noexcept
-            {
-                return is_inline() ? sizeof(inlined) : _msize(allocated);
-            }
-        };
-
         struct FontMetrics
         {
             wil::com_ptr<IDWriteFontCollection> fontCollection;
             wil::com_ptr<IDWriteFontFamily> fontFamily;
             std::wstring fontName;
-            f32 fontSizeInDIP = 0;
+            float baselineInDIP = 0.0f;
+            float fontSizeInDIP = 0.0f;
             f32 advanceScale = 0;
-            f32 baselineInDIP = 0;
-            u16 baseline = 0;
             u16x2 cellSize;
             u16 fontWeight = 0;
             u16 underlinePos = 0;
@@ -448,9 +364,6 @@ namespace Microsoft::Console::Render
         enum class CellFlags : u32
         {
             None            = 0x00000000,
-            Inlined         = 0x00000001,
-
-            ColoredGlyph    = 0x00000002,
 
             Cursor          = 0x00000008,
             Selected        = 0x00000010,
@@ -545,13 +458,8 @@ namespace Microsoft::Console::Render
         {
             wil::com_ptr<IDWriteFontFace> fontFace;
             f32 fontEmSize = 0;
-            u32 offset = 0;
-        };
-
-        struct ShapedCluster
-        {
-            u32 offset = 0;
-            u32 color = 0;
+            u32 glyphsFrom = 0;
+            u32 glyphsTo = 0;
         };
 
         struct ShapedRow
@@ -562,44 +470,128 @@ namespace Microsoft::Console::Render
                 glyphIndices.clear();
                 glyphAdvances.clear();
                 glyphOffsets.clear();
-                clusters.clear();
+                colors.clear();
             }
 
             std::vector<FontMapping> mappings;
-            std::vector<ShapedCluster> clusters;
             std::vector<u16> glyphIndices;
             std::vector<f32> glyphAdvances; // same size as glyphIndices
             std::vector<DWRITE_GLYPH_OFFSET> glyphOffsets; // same size as glyphIndices
+            std::vector<u32> colors;
         };
 
-        struct AtlasKey
+        struct GlyphCacheEntry
         {
-            wil::com_ptr<IDWriteFontFace> fontFace; // ActiveFaceCache
-            til::small_vector<u16, 4> glyphs;
+            // BODGY: The IDWriteFontFace results from us calling IDWriteFontFallback::MapCharacters
+            // which at the time of writing returns the same IDWriteFontFace as long as someone is
+            // holding a reference / the reference count doesn't drop to 0 (see ActiveFaceCache).
+            IDWriteFontFace* fontFace = nullptr;
+            u16 glyphIndex = 0;
 
-            bool operator==(const AtlasKey& other) const noexcept
-            {
-                return fontFace == other.fontFace && glyphs == other.glyphs;
-            }
-        };
-
-        struct AtlasKeyHasher
-        {
-            size_t operator()(const AtlasKey& v) const noexcept
-            {
-                til::hasher h;
-                h.write(v.fontFace.get());
-                h.write(v.glyphs.data(), v.glyphs.size());
-                return h.finalize();
-            }
-        };
-
-        struct AtlasValue
-        {
-            f32x2 xy;
-            f32x2 wh;
-            f32x2 offset;
+            u16x2 xy;
+            u16x2 wh;
+            i16x2 offset;
             bool colorGlyph = false;
+        };
+        static_assert(sizeof(GlyphCacheEntry) == 24);
+
+        struct GlyphCacheMap
+        {
+            GlyphCacheMap() = default;
+
+            GlyphCacheMap& operator=(GlyphCacheMap&& other) noexcept
+            {
+                _map = std::exchange(other._map, {});
+                _mapSize = std::exchange(other._mapSize, 0);
+                _mapMask = std::exchange(other._mapMask, 0);
+                _size = std::exchange(other._size, 0);
+                return *this;
+            }
+
+            ~GlyphCacheMap()
+            {
+                Clear();
+            }
+
+            void Clear() noexcept
+            {
+                for (auto& entry : _map)
+                {
+                    if (entry.fontFace)
+                    {
+                        entry.fontFace->Release();
+                        entry.fontFace = nullptr;
+                    }
+                }
+            }
+
+            GlyphCacheEntry& FindOrInsert(IDWriteFontFace* fontFace, u16 glyphIndex, bool& inserted)
+            {
+                const auto hash = _hash(fontFace, glyphIndex);
+
+                for (auto i = hash;; ++i)
+                {
+                    auto& entry = _map[i & _mapMask];
+                    if (entry.fontFace == fontFace && entry.glyphIndex == glyphIndex)
+                    {
+                        inserted = false;
+                        return entry;
+                    }
+                    if (!entry.fontFace)
+                    {
+                        inserted = true;
+                        return _insert(fontFace, glyphIndex, hash);
+                    }
+                }
+            }
+
+        private:
+            static size_t _hash(IDWriteFontFace* fontFace, u16 glyphIndex) noexcept
+            {
+                // MSVC 19.33 produces surprisingly good assembly for this without stack allocation.
+                const uintptr_t data[2]{ std::bit_cast<uintptr_t>(fontFace), glyphIndex };
+                return til::hash(&data[0], sizeof(data));
+            }
+
+            GlyphCacheEntry& _insert(IDWriteFontFace* fontFace, u16 glyphIndex, size_t hash)
+            {
+                for (auto i = hash;; ++i)
+                {
+                    auto& entry = _map[i & _mapMask];
+                    if (!entry.fontFace)
+                    {
+                        entry.fontFace = fontFace;
+                        entry.glyphIndex = glyphIndex;
+                        entry.fontFace->AddRef();
+                        return entry;
+                    }
+                }
+            }
+
+            void _bumpSize()
+            {
+                const auto newMapSize = _mapSize << 1;
+                const auto newMapMask = newMapSize - 1;
+                FAIL_FAST_IF(newMapSize <= _mapSize); // overflow
+                auto newMap = Buffer<GlyphCacheEntry>(newMapSize);
+
+                for (const auto& entry : _map)
+                {
+                    const auto newHash = _hash(entry.fontFace, entry.glyphIndex);
+                    newMap[newHash & newMapMask] = entry;
+                }
+
+                _map = std::move(newMap);
+                _mapSize = newMapSize;
+                _mapMask = newMapMask;
+            }
+
+            static constexpr u32 initialSize = 256;
+
+            Buffer<GlyphCacheEntry> _map{ initialSize };
+            size_t _mapSize = initialSize;
+            size_t _mapMask = initialSize - 1;
+            size_t _size = 0;
         };
 
         struct alignas(16) VertexData
@@ -627,7 +619,6 @@ namespace Microsoft::Console::Render
         __declspec(noinline) void _createSwapChain();
         __declspec(noinline) void _recreateSizeDependentResources();
         __declspec(noinline) void _recreateFontDependentResources();
-        IDWriteTextFormat* _getTextFormat(bool bold, bool italic) const noexcept;
         const Buffer<DWRITE_FONT_AXIS_VALUE>& _getTextFormatAxis(bool bold, bool italic) const noexcept;
         void _setCellFlags(u16r coords, CellFlags mask, CellFlags bits) noexcept;
         void _flushBufferLine();
@@ -638,7 +629,12 @@ namespace Microsoft::Console::Render
         void _resolveFontMetrics(const wchar_t* faceName, const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, FontMetrics* fontMetrics = nullptr) const;
 
         // AtlasEngine.r.cpp
-        void _drawGlyphs(const DWRITE_GLYPH_RUN& glyphRun, AtlasValue& value);
+        bool _drawGlyphRun(D2D_POINT_2F baselineOrigin, const DWRITE_GLYPH_RUN* glyphRun, ID2D1SolidColorBrush* foregroundBrush) const noexcept;
+        void _drawGlyph(GlyphCacheEntry& entry, f32 fontEmSize);
+        void _appendQuad()
+        {
+
+        }
 
         static constexpr bool debugForceD2DMode = false;
         static constexpr bool debugGlyphGenerationPerformance = false;
@@ -657,6 +653,7 @@ namespace Microsoft::Console::Render
         {
             wil::com_ptr<ID2D1Factory> d2dFactory;
             wil::com_ptr<IDWriteFactory2> dwriteFactory;
+            wil::com_ptr<IDWriteFactory4> dwriteFactory4; // Optional. Supported since Windows 10 14393 (potentially earlier).
             wil::com_ptr<IDWriteFontFallback> systemFontFallback;
             wil::com_ptr<IDWriteTextAnalyzer1> textAnalyzer;
             bool isWindows10OrGreater = true;
@@ -679,6 +676,7 @@ namespace Microsoft::Console::Render
             wil::com_ptr<IDXGISwapChain1> swapChain;
             wil::unique_handle frameLatencyWaitableObject;
             wil::com_ptr<ID3D11RenderTargetView> renderTargetView;
+            wil::com_ptr<ID3D11RenderTargetView> renderTargetView2;
 
             wil::com_ptr<ID3D11VertexShader> vertexShader;
             wil::com_ptr<ID3D11PixelShader> cleartypePixelShader;
@@ -713,17 +711,15 @@ namespace Microsoft::Console::Render
             wil::com_ptr<ID3D11Texture2D> atlasBuffer;
             wil::com_ptr<ID3D11ShaderResourceView> atlasView;
             wil::com_ptr<ID2D1DeviceContext> d2dRenderTarget;
+            wil::com_ptr<ID2D1DeviceContext4> d2dRenderTarget4; // Optional. Supported since Windows 10 14393.
             wil::com_ptr<ID2D1SolidColorBrush> brush;
-            wil::com_ptr<IDWriteFontFace> fontFaces[4];
-            wil::com_ptr<IDWriteTextFormat> textFormats[2][2];
             Buffer<DWRITE_FONT_AXIS_VALUE> textFormatAxes[2][2];
-            wil::com_ptr<IDWriteTypography> typography;
             wil::com_ptr<ID2D1StrokeStyle> dottedStrokeStyle;
-            
+
             wil::com_ptr<ID2D1Bitmap> d2dBackgroundBitmap;
             wil::com_ptr<ID2D1BitmapBrush> d2dBackgroundBrush;
 
-            std::unordered_map<AtlasKey, AtlasValue, AtlasKeyHasher> glyphCache;
+            GlyphCacheMap glyphCache;
             std::vector<stbrp_node> rectPackerData;
             stbrp_context rectPacker;
             std::vector<u32> backgroundBitmap;
@@ -808,8 +804,8 @@ namespace Microsoft::Console::Render
             wil::unique_handle swapChainHandle;
             HWND hwnd = nullptr;
             u16 dpi = USER_DEFAULT_SCREEN_DPI; // changes are flagged as ApiInvalidations::Font|Size
-            u8 antialiasingMode = D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE; // changes are flagged as ApiInvalidations::Font
-            u8 realizedAntialiasingMode = D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE; // caches antialiasingMode, depends on antialiasingMode and backgroundOpaqueMixin, see _resolveTransparencySettings
+            u8 antialiasingMode = D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE; // changes are flagged as ApiInvalidations::Font
+            u8 realizedAntialiasingMode = D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE; // caches antialiasingMode, depends on antialiasingMode and backgroundOpaqueMixin, see _resolveTransparencySettings
             bool enableTransparentBackground = false;
 
             std::wstring customPixelShaderPath; // changes are flagged as ApiInvalidations::Device

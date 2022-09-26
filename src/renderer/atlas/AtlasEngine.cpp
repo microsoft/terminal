@@ -42,6 +42,7 @@ AtlasEngine::AtlasEngine()
 #endif
 
     THROW_IF_FAILED(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(_sr.dwriteFactory), reinterpret_cast<::IUnknown**>(_sr.dwriteFactory.addressof())));
+    _sr.dwriteFactory4 = _sr.dwriteFactory.try_query<IDWriteFactory4>();
     THROW_IF_FAILED(_sr.dwriteFactory->GetSystemFontFallback(_sr.systemFontFallback.addressof()));
     {
         wil::com_ptr<IDWriteTextAnalyzer> textAnalyzer;
@@ -254,17 +255,6 @@ CATCH_RETURN()
 try
 {
     _flushBufferLine();
-
-    // sentinels
-    for (auto y = _api.invalidatedRows.x; y < _api.invalidatedRows.y; ++y)
-    {
-        auto& row = _r.rows[y];
-        if (!row.glyphIndices.empty())
-        {
-            row.clusters.emplace_back(gsl::narrow_cast<u32>(row.glyphIndices.size()), 0);
-            row.mappings.emplace_back(nullptr, 0.0f, gsl::narrow_cast<u32>(row.glyphIndices.size()));
-        }
-    }
 
     _api.invalidatedCursorArea = invalidatedAreaNone;
     _api.invalidatedRows = invalidatedRowsNone;
@@ -869,7 +859,7 @@ void AtlasEngine::_createSwapChain()
         DXGI_SWAP_CHAIN_DESC1 desc{};
         desc.Width = _api.sizeInPixel.x;
         desc.Height = _api.sizeInPixel.y;
-        desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+        desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
         desc.SampleDesc.Count = 1;
         desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
         // Sometimes up to 2 buffers are locked, for instance during screen capture or when moving the window.
@@ -948,6 +938,7 @@ void AtlasEngine::_recreateSizeDependentResources()
             _r.d2dRenderTarget.reset();
         }
         _r.renderTargetView.reset();
+        _r.renderTargetView2.reset();
         _r.deviceContext->ClearState();
         _r.deviceContext->Flush();
         THROW_IF_FAILED(_r.swapChain->ResizeBuffers(0, _api.sizeInPixel.x, _api.sizeInPixel.y, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT));
@@ -996,6 +987,12 @@ void AtlasEngine::_recreateSizeDependentResources()
             wil::com_ptr<ID3D11Texture2D> buffer;
             THROW_IF_FAILED(_r.swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), buffer.put_void()));
             THROW_IF_FAILED(_r.device->CreateRenderTargetView(buffer.get(), nullptr, _r.renderTargetView.put()));
+
+            const D3D11_RENDER_TARGET_VIEW_DESC desc{
+                .Format = DXGI_FORMAT_R8G8B8A8_UINT,
+                .ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D,
+            };
+            THROW_IF_FAILED(_r.device->CreateRenderTargetView(buffer.get(), &desc, _r.renderTargetView2.put()));
         }
         if (_r.customPixelShader)
         {
@@ -1082,6 +1079,7 @@ void AtlasEngine::_recreateFontDependentResources()
     }
 
     // D2D
+    if (!_api.fontAxisValues.empty())
     {
         // See AtlasEngine::UpdateFont.
         // It hardcodes indices 0/1/2 in fontAxisValues to the weight/italic/slant axes.
@@ -1109,67 +1107,20 @@ void AtlasEngine::_recreateFontDependentResources()
             for (auto bold = 0; bold < 2; ++bold)
             {
                 const auto fontWeight = bold ? DWRITE_FONT_WEIGHT_BOLD : static_cast<DWRITE_FONT_WEIGHT>(_api.fontMetrics.fontWeight);
-                const auto fontStyle = italic ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL;
-                auto& textFormat = _r.textFormats[italic][bold];
 
-                wil::com_ptr<IDWriteFont> font;
-                THROW_IF_FAILED(_r.fontMetrics.fontFamily->GetFirstMatchingFont(fontWeight, DWRITE_FONT_STRETCH_NORMAL, fontStyle, font.addressof()));
-                THROW_IF_FAILED(font->CreateFontFace(_r.fontFaces[italic << 1 | bold].put()));
-
-                THROW_IF_FAILED(_sr.dwriteFactory->CreateTextFormat(_api.fontMetrics.fontName.c_str(), _api.fontMetrics.fontCollection.get(), fontWeight, fontStyle, DWRITE_FONT_STRETCH_NORMAL, _api.fontMetrics.fontSizeInDIP, L"", textFormat.put()));
-                THROW_IF_FAILED(textFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
-
-                // DWRITE_LINE_SPACING_METHOD_UNIFORM:
-                // > Lines are explicitly set to uniform spacing, regardless of contained font sizes.
-                // > This can be useful to avoid the uneven appearance that can occur from font fallback.
-                // We want that. Otherwise fallback fonts might be rendered with an incorrect baseline and get cut off vertically.
-                THROW_IF_FAILED(textFormat->SetLineSpacing(DWRITE_LINE_SPACING_METHOD_UNIFORM, _r.cellSizeDIP.y, _api.fontMetrics.baselineInDIP));
-
-                // NOTE: SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER) breaks certain
-                // bitmap fonts which expect glyphs to be laid out left-aligned.
-
-                // NOTE: SetAutomaticFontAxes(DWRITE_AUTOMATIC_FONT_AXES_OPTICAL_SIZE) breaks certain
-                // fonts making them look fairly unslightly. With no option to easily disable this
-                // feature in Windows Terminal, it's better left disabled by default.
-
-                if (!_api.fontAxisValues.empty())
-                {
-                    if (const auto textFormat3 = textFormat.try_query<IDWriteTextFormat3>())
-                    {
-                        // The wght axis defaults to the font weight.
-                        _api.fontAxisValues[0].value = bold || standardAxes[0].value == -1.0f ? static_cast<float>(fontWeight) : standardAxes[0].value;
-                        // The ital axis defaults to 1 if this is italic and 0 otherwise.
-                        _api.fontAxisValues[1].value = italic ? 1.0f : (standardAxes[1].value == -1.0f ? 0.0f : standardAxes[1].value);
-                        // The slnt axis defaults to -12 if this is italic and 0 otherwise.
-                        _api.fontAxisValues[2].value = italic ? -12.0f : (standardAxes[2].value == -1.0f ? 0.0f : standardAxes[2].value);
-
-                        THROW_IF_FAILED(textFormat3->SetFontAxisValues(_api.fontAxisValues.data(), gsl::narrow_cast<u32>(_api.fontAxisValues.size())));
-                        _r.textFormatAxes[italic][bold] = { _api.fontAxisValues.data(), _api.fontAxisValues.size() };
-                    }
-                }
-            }
-        }
-    }
-    {
-        _r.typography.reset();
-
-        if (!_api.fontFeatures.empty())
-        {
-            _sr.dwriteFactory->CreateTypography(_r.typography.addressof());
-            for (const auto& v : _api.fontFeatures)
-            {
-                THROW_IF_FAILED(_r.typography->AddFontFeature(v));
+                // The wght axis defaults to the font weight.
+                _api.fontAxisValues[0].value = bold || standardAxes[0].value == -1.0f ? static_cast<float>(fontWeight) : standardAxes[0].value;
+                // The ital axis defaults to 1 if this is italic and 0 otherwise.
+                _api.fontAxisValues[1].value = italic ? 1.0f : (standardAxes[1].value == -1.0f ? 0.0f : standardAxes[1].value);
+                // The slnt axis defaults to -12 if this is italic and 0 otherwise.
+                _api.fontAxisValues[2].value = italic ? -12.0f : (standardAxes[2].value == -1.0f ? 0.0f : standardAxes[2].value);
+                _r.textFormatAxes[italic][bold] = { _api.fontAxisValues.data(), _api.fontAxisValues.size() };
             }
         }
     }
 
     WI_ClearFlag(_api.invalidations, ApiInvalidations::Font);
     WI_SetAllFlags(_r.invalidations, RenderInvalidations::Cursor | RenderInvalidations::ConstBuffer);
-}
-
-IDWriteTextFormat* AtlasEngine::_getTextFormat(bool bold, bool italic) const noexcept
-{
-    return _r.textFormats[italic][bold].get();
 }
 
 const AtlasEngine::Buffer<DWRITE_FONT_AXIS_VALUE>& AtlasEngine::_getTextFormatAxis(bool bold, bool italic) const noexcept
@@ -1199,15 +1150,6 @@ void AtlasEngine::_flushBufferLine()
 
     // This would seriously blow us up otherwise.
     Expects(_api.bufferLineColumn.size() == _api.bufferLine.size() + 1);
-
-    // GH#13962: With the lack of proper LineRendition support, just fill
-    // the remaining columns with whitespace to prevent any weird artifacts.
-    for (auto lastColumn = _api.bufferLineColumn.back(); lastColumn < _api.cellCount.x;)
-    {
-        ++lastColumn;
-        _api.bufferLine.emplace_back(L' ');
-        _api.bufferLineColumn.emplace_back(lastColumn);
-    }
 
     // NOTE:
     // This entire function is one huge hack to see if it works.
@@ -1243,14 +1185,10 @@ void AtlasEngine::_flushBufferLine()
     // Font fallback with IDWriteFontFallback::MapCharacters is very slow.
 
     auto& row = _r.rows[_api.lastPaintBufferLineCoord.y];
-    const auto textFormat = _getTextFormat(_api.attributes.bold, _api.attributes.italic);
     const auto& textFormatAxis = _getTextFormatAxis(_api.attributes.bold, _api.attributes.italic);
 
     TextAnalysisSource analysisSource{ _api.bufferLine.data(), gsl::narrow<UINT32>(_api.bufferLine.size()) };
     TextAnalysisSink analysisSink{ _api.analysisResults };
-
-    wil::com_ptr<IDWriteFontCollection> fontCollection;
-    THROW_IF_FAILED(textFormat->GetFontCollection(fontCollection.addressof()));
 
     wil::com_ptr<IDWriteFontFace> mappedFontFace;
 
@@ -1267,7 +1205,7 @@ void AtlasEngine::_flushBufferLine()
                 /* analysisSource */ &analysisSource,
                 /* textPosition */ idx,
                 /* textLength */ gsl::narrow_cast<u32>(_api.bufferLine.size()) - idx,
-                /* baseFontCollection */ fontCollection.get(),
+                /* baseFontCollection */ _api.fontMetrics.fontCollection.get(),
                 /* baseFamilyName */ _api.fontMetrics.fontName.c_str(),
                 /* fontAxisValues */ textFormatAxis.data(),
                 /* fontAxisValueCount */ gsl::narrow_cast<u32>(textFormatAxis.size()),
@@ -1286,7 +1224,7 @@ void AtlasEngine::_flushBufferLine()
                 /* analysisSource     */ &analysisSource,
                 /* textPosition       */ idx,
                 /* textLength         */ gsl::narrow_cast<u32>(_api.bufferLine.size()) - idx,
-                /* baseFontCollection */ fontCollection.get(),
+                /* baseFontCollection */ _api.fontMetrics.fontCollection.get(),
                 /* baseFamilyName     */ _api.fontMetrics.fontName.c_str(),
                 /* baseWeight         */ baseWeight,
                 /* baseStyle          */ baseStyle,
@@ -1309,7 +1247,7 @@ void AtlasEngine::_flushBufferLine()
             continue;
         }
 
-        row.mappings.emplace_back(mappedFontFace, _r.fontMetrics.fontSizeInDIP * scale, gsl::narrow_cast<u32>(row.glyphIndices.size()));
+        const auto initialIndicesCount = row.glyphIndices.size();
 
         // We can reuse idx here, as it'll be reset to "idx = mappedEnd" in the outer loop anyways.
         for (u32 complexityLength = 0; idx < mappedEnd; idx += complexityLength)
@@ -1334,10 +1272,10 @@ void AtlasEngine::_flushBufferLine()
                         }
                     }
 
-                    row.clusters.emplace_back(gsl::narrow_cast<u32>(row.glyphIndices.size()), colors.x);
                     row.glyphIndices.emplace_back(_api.glyphIndices[i]);
                     row.glyphAdvances.emplace_back(glyphAdvance);
                     row.glyphOffsets.emplace_back();
+                    row.colors.emplace_back(colors.x);
 
                     std::fill_n(_r.backgroundBitmap.begin() + _api.lastPaintBufferLineCoord.y * _api.cellCount.x + col, 1, _api.bufferLineMetadata[col].colors.y);
                 }
@@ -1449,16 +1387,13 @@ void AtlasEngine::_flushBufferLine()
 
                     _api.clusterMap[a.textLength] = gsl::narrow_cast<u16>(actualGlyphCount);
 
-                    const auto initialOffset = gsl::narrow_cast<u32>(row.glyphIndices.size());
-                    const auto initialCol = _api.bufferLineColumn[a.textPosition];
-                    f32 cumulativeAdvance = initialCol * _r.cellSizeDIP.x;
-
                     auto prevCluster = _api.clusterMap[0];
                     size_t beg = 0;
+
                     for (size_t i = 1; i <= a.textLength; ++i)
                     {
-                        const auto currCluster = _api.clusterMap[i];
-                        if (prevCluster == currCluster)
+                        const auto nextCluster = _api.clusterMap[i];
+                        if (prevCluster == nextCluster)
                         {
                             continue;
                         }
@@ -1467,18 +1402,21 @@ void AtlasEngine::_flushBufferLine()
                         const auto col2 = _api.bufferLineColumn[a.textPosition + i];
                         const auto colors = _api.bufferLineMetadata[col1].colors;
 
-                        row.clusters.emplace_back(initialOffset + prevCluster, colors.x);
-
-                        const auto posX = col2 * _r.cellSizeDIP.x;
-                        for (auto j = prevCluster; j < currCluster; ++j)
                         {
-                            cumulativeAdvance += _api.glyphAdvances[j];
+                            const auto expectedAdvance = (col2 - col1) * _r.cellSizeDIP.x;
+                            f32 actualAdvance = 0;
+                            for (auto j = prevCluster; j < nextCluster; ++j)
+                            {
+                                actualAdvance += _api.glyphAdvances[j];
+                            }
+                            _api.glyphAdvances[nextCluster - 1] += expectedAdvance - actualAdvance;
                         }
-                        _api.glyphAdvances[currCluster - 1] += posX - cumulativeAdvance;
+
+                        row.colors.insert(row.colors.end(), nextCluster - prevCluster, colors.x);
 
                         std::fill_n(_r.backgroundBitmap.begin() + _api.lastPaintBufferLineCoord.y * _api.cellCount.x + col1, col2 - col1, _api.bufferLineMetadata[col1].colors.y);
 
-                        prevCluster = currCluster;
+                        prevCluster = nextCluster;
                         beg = i;
                     }
 
@@ -1487,6 +1425,12 @@ void AtlasEngine::_flushBufferLine()
                     row.glyphOffsets.insert(row.glyphOffsets.end(), _api.glyphOffsets.begin(), _api.glyphOffsets.begin() + actualGlyphCount);
                 }
             }
+        }
+
+        const auto indicesCount = row.glyphIndices.size();
+        if (indicesCount > initialIndicesCount)
+        {
+            row.mappings.emplace_back(std::move(mappedFontFace), _r.fontMetrics.fontSizeInDIP * scale, gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(indicesCount));
         }
     }
 }

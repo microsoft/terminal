@@ -54,6 +54,9 @@
     <FxCompile Include="dwrite.hlsl">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </FxCompile>
+    <FxCompile Include="shader_common.hlsl">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </FxCompile>
     <FxCompile Include="shader_text_cleartype_ps.hlsl">
       <ShaderType>Pixel</ShaderType>
       <ShaderModel>4.0</ShaderModel>
@@ -87,7 +90,7 @@
       <AdditionalOptions>/Zpc %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="'$(Configuration)'=='Release'">/O3 /Qstrip_debug /Qstrip_reflect %(AdditionalOptions)</AdditionalOptions>
     </FxCompile>
-    <FxCompile Include="shader_passthrough_ps.hlsl">
+    <FxCompile Include="shader_invert_cursor_ps.hlsl">
       <ShaderType>Pixel</ShaderType>
       <ShaderModel>4.0</ShaderModel>
       <AllResourcesBound>true</AllResourcesBound>
