@@ -1273,7 +1273,7 @@ namespace winrt::TerminalApp::implementation
             duplicateTabMenuItem.Text(RS_(L"DuplicateTabText"));
             duplicateTabMenuItem.Icon(duplicateTabSymbol);
 
-            auto duplicateTabToolTip = RS_(L"DuplicateTabToolTip");
+            const auto duplicateTabToolTip = RS_(L"DuplicateTabToolTip");
 
             WUX::Controls::ToolTipService::SetToolTip(duplicateTabMenuItem, box_value(duplicateTabToolTip));
             Automation::AutomationProperties::SetHelpText(duplicateTabMenuItem, duplicateTabToolTip);
