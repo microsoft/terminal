@@ -1230,7 +1230,7 @@ namespace winrt::TerminalApp::implementation
         chooseColorMenuItem.Text(RS_(L"TabColorChoose"));
         chooseColorMenuItem.Icon(colorPickSymbol);
 
-        auto chooseColorToolTip = RS_(L"ChooseColorToolTip");
+        const auto chooseColorToolTip = RS_(L"ChooseColorToolTip");
 
         WUX::Controls::ToolTipService::SetToolTip(chooseColorMenuItem, box_value(chooseColorToolTip));
         Automation::AutomationProperties::SetHelpText(chooseColorMenuItem, chooseColorToolTip);
