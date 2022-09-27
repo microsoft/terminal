@@ -1339,7 +1339,7 @@ namespace winrt::TerminalApp::implementation
             findMenuItem.Text(RS_(L"FindText"));
             findMenuItem.Icon(findSymbol);
 
-            auto findToolTip = RS_(L"FindToolTip");
+            const auto findToolTip = RS_(L"FindToolTip");
 
             WUX::Controls::ToolTipService::SetToolTip(findMenuItem, box_value(findToolTip));
             Automation::AutomationProperties::SetHelpText(findMenuItem, findToolTip);
