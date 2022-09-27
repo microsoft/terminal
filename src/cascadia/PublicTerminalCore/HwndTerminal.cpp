@@ -4,11 +4,7 @@
 #include "pch.h"
 #include "HwndTerminal.hpp"
 #include <windowsx.h>
-#include "../../types/TermControlUiaProvider.hpp"
 #include <DefaultSettings.h>
-#include "../../renderer/base/Renderer.hpp"
-#include "../../renderer/dx/DxRenderer.hpp"
-#include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "../../types/viewport.cpp"
 #include "../../types/inc/GlyphWidth.hpp"
 
@@ -330,7 +326,10 @@ IRawElementProviderSimple* HwndTerminal::_GetUiaProvider() noexcept
         try
         {
             auto lock = _terminal->LockForWriting();
-            LOG_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<::Microsoft::Terminal::TermControlUiaProvider>(&_uiaProvider, this->GetUiaData(), this));
+            LOG_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<HwndTerminalAutomationPeer>(&_uiaProvider, this->GetUiaData(), this));
+            _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(_uiaProvider.Get());
+            LOG_IF_FAILED(_uiaEngine->Enable());
+            _renderer->AddRenderEngine(_uiaEngine.get());
             _uiaProviderInitialized = true;
         }
         catch (...)
@@ -724,6 +723,10 @@ try
     if (WI_IsFlagSet(flags, ENHANCED_KEY))
     {
         modifiers |= ControlKeyStates::EnhancedKey;
+    }
+    if (vkey && keyDown && _uiaProviderInitialized)
+    {
+        _uiaProvider->RecordKeyEvent(vkey);
     }
     _terminal->SendKeyEvent(vkey, scanCode, modifiers, keyDown);
 }

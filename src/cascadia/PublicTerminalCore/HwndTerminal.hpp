@@ -5,10 +5,10 @@
 
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
+#include "../../renderer/uia/UiaRenderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
-#include <UIAutomationCore.h>
 #include "../../types/IControlAccessibilityInfo.h"
-#include "../../types/TermControlUiaProvider.hpp"
+#include "HwndTerminalAutomationPeer.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -74,12 +74,13 @@ private:
     FontInfo _actualFont;
     int _currentDpi;
     std::function<void(wchar_t*)> _pfnWriteCallback;
-    ::Microsoft::WRL::ComPtr<::Microsoft::Terminal::TermControlUiaProvider> _uiaProvider;
+    ::Microsoft::WRL::ComPtr<HwndTerminalAutomationPeer> _uiaProvider;
 
     std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal;
 
     std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer;
     std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
+    std::unique_ptr<::Microsoft::Console::Render::UiaEngine> _uiaEngine;
 
     bool _focused{ false };
     bool _uiaProviderInitialized{ false };
