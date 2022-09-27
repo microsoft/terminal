@@ -967,7 +967,7 @@ namespace winrt::TerminalApp::implementation
             // Create the about button.
             auto aboutFlyout = WUX::Controls::MenuFlyoutItem{};
             aboutFlyout.Text(RS_(L"AboutMenuItem"));
-            auto aboutToolTip = RS_(L"AboutToolTip");
+            const auto aboutToolTip = RS_(L"AboutToolTip");
 
             WUX::Controls::ToolTipService::SetToolTip(aboutFlyout, box_value(aboutToolTip));
             Automation::AutomationProperties::SetHelpText(aboutFlyout, aboutToolTip);
