@@ -1317,7 +1317,7 @@ namespace winrt::TerminalApp::implementation
             exportTabMenuItem.Text(RS_(L"ExportTabText"));
             exportTabMenuItem.Icon(exportTabSymbol);
 
-            auto exportTabToolTip = RS_(L"ExportTabToolTip");
+            const auto exportTabToolTip = RS_(L"ExportTabToolTip");
 
             WUX::Controls::ToolTipService::SetToolTip(exportTabMenuItem, box_value(exportTabToolTip));
             Automation::AutomationProperties::SetHelpText(exportTabMenuItem, exportTabToolTip);
