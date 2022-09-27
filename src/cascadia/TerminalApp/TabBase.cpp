@@ -79,10 +79,10 @@ namespace winrt::TerminalApp::implementation
             }
         });
         _closeTabsAfterMenuItem.Text(RS_(L"TabCloseAfter"));
-        auto _closeTabsAfterToolTip = RS_(L"TabCloseAfterToolTip");
+        const auto closeTabsAfterToolTip = RS_(L"TabCloseAfterToolTip");
 
-        WUX::Controls::ToolTipService::SetToolTip(_closeTabsAfterMenuItem, box_value(_closeTabsAfterToolTip));
-        Automation::AutomationProperties::SetHelpText(_closeTabsAfterMenuItem, _closeTabsAfterToolTip);
+        WUX::Controls::ToolTipService::SetToolTip(_closeTabsAfterMenuItem, box_value(closeTabsAfterToolTip));
+        Automation::AutomationProperties::SetHelpText(_closeTabsAfterMenuItem, closeTabsAfterToolTip);
 
         // Close other tabs
         _closeOtherTabsMenuItem.Click([weakThis](auto&&, auto&&) {
