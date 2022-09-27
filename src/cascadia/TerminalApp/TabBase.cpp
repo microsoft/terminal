@@ -111,7 +111,7 @@ namespace winrt::TerminalApp::implementation
         });
         closeTabMenuItem.Text(RS_(L"TabClose"));
         closeTabMenuItem.Icon(closeSymbol);
-        auto closeTabToolTip = RS_(L"TabCloseToolTip");
+        const auto closeTabToolTip = RS_(L"TabCloseToolTip");
 
         WUX::Controls::ToolTipService::SetToolTip(closeTabMenuItem, box_value(closeTabToolTip));
         Automation::AutomationProperties::SetHelpText(closeTabMenuItem, closeTabToolTip);
