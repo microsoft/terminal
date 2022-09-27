@@ -508,8 +508,8 @@ namespace Microsoft::Console::Render
             GlyphCacheMap& operator=(GlyphCacheMap&& other) noexcept
             {
                 _map = std::exchange(other._map, {});
-                _mapSize = std::exchange(other._mapSize, 0);
                 _mapMask = std::exchange(other._mapMask, 0);
+                _capacity = std::exchange(other._capacity, 0);
                 _size = std::exchange(other._size, 0);
                 return *this;
             }
@@ -561,6 +561,13 @@ namespace Microsoft::Console::Render
 
             GlyphCacheEntry& _insert(IDWriteFontFace* fontFace, u16 glyphIndex, size_t hash)
             {
+                if (_size >= _capacity)
+                {
+                    _bumpSize();
+                }
+
+                ++_size;
+
                 for (auto i = hash;; ++i)
                 {
                     auto& entry = _map[i & _mapMask];
@@ -576,9 +583,10 @@ namespace Microsoft::Console::Render
 
             void _bumpSize()
             {
-                const auto newMapSize = _mapSize << 1;
+                const auto newMapSize = _map.size() << 1;
                 const auto newMapMask = newMapSize - 1;
-                FAIL_FAST_IF(newMapSize <= _mapSize); // overflow
+                FAIL_FAST_IF(newMapSize >= INT32_MAX); // overflow/truncation protection
+
                 auto newMap = Buffer<GlyphCacheEntry>(newMapSize);
 
                 for (const auto& entry : _map)
@@ -588,15 +596,15 @@ namespace Microsoft::Console::Render
                 }
 
                 _map = std::move(newMap);
-                _mapSize = newMapSize;
                 _mapMask = newMapMask;
+                _capacity = newMapMask / 2;
             }
 
             static constexpr u32 initialSize = 256;
 
             Buffer<GlyphCacheEntry> _map{ initialSize };
-            size_t _mapSize = initialSize;
             size_t _mapMask = initialSize - 1;
+            size_t _capacity = _mapMask / 2;
             size_t _size = 0;
         };
 

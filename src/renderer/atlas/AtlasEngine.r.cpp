@@ -524,7 +524,7 @@ try
             }
         }
 
-        if constexpr (true)
+        if constexpr (false)
         {
             _r.deviceContext->RSSetState(_r.wireframeRasterizerState.get());
             _r.deviceContext->PSSetShader(_r.wireframePixelShader.get(), nullptr, 0);
