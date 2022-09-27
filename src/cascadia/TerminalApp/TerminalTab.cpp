@@ -1251,7 +1251,7 @@ namespace winrt::TerminalApp::implementation
             renameTabMenuItem.Text(RS_(L"RenameTabText"));
             renameTabMenuItem.Icon(renameTabSymbol);
 
-            auto renameTabToolTip = RS_(L"RenameTabToolTip");
+            const auto renameTabToolTip = RS_(L"RenameTabToolTip");
 
             WUX::Controls::ToolTipService::SetToolTip(renameTabMenuItem, box_value(renameTabToolTip));
             Automation::AutomationProperties::SetHelpText(renameTabMenuItem, renameTabToolTip);
