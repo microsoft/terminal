@@ -923,7 +923,7 @@ namespace winrt::TerminalApp::implementation
                 // Create the settings button.
                 auto settingsItem = WUX::Controls::MenuFlyoutItem{};
                 settingsItem.Text(RS_(L"SettingsMenuItem"));
-                auto settingsToolTip = RS_(L"SettingsToolTip");
+                const auto settingsToolTip = RS_(L"SettingsToolTip");
 
                 WUX::Controls::ToolTipService::SetToolTip(settingsItem, box_value(settingsToolTip));
                 Automation::AutomationProperties::SetHelpText(settingsItem, settingsToolTip);
