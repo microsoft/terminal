@@ -944,7 +944,7 @@ namespace winrt::TerminalApp::implementation
                 // Create the command palette button.
                 auto commandPaletteFlyout = WUX::Controls::MenuFlyoutItem{};
                 commandPaletteFlyout.Text(RS_(L"CommandPaletteMenuItem"));
-                auto commandPaletteToolTip = RS_(L"CommandPaletteToolTip");
+                const auto commandPaletteToolTip = RS_(L"CommandPaletteToolTip");
 
                 WUX::Controls::ToolTipService::SetToolTip(commandPaletteFlyout, box_value(commandPaletteToolTip));
                 Automation::AutomationProperties::SetHelpText(commandPaletteFlyout, commandPaletteToolTip);
