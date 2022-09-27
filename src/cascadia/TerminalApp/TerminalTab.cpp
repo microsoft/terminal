@@ -1295,7 +1295,7 @@ namespace winrt::TerminalApp::implementation
             splitTabMenuItem.Text(RS_(L"SplitTabText"));
             splitTabMenuItem.Icon(splitTabSymbol);
 
-            auto splitTabToolTip = RS_(L"SplitTabToolTip");
+            const auto splitTabToolTip = RS_(L"SplitTabToolTip");
 
             WUX::Controls::ToolTipService::SetToolTip(splitTabMenuItem, box_value(splitTabToolTip));
             Automation::AutomationProperties::SetHelpText(splitTabMenuItem, splitTabToolTip);
