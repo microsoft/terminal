@@ -2452,12 +2452,17 @@ bool AdaptDispatch::DoConEmuAction(const std::wstring_view string)
             // An example: 9;"D:/"
             // If we fail to find the surrounding quotation marks, we'll give the path a try anyway.
             // ConEmu also does this.
-            if (path.at(0) == L'"' && path.at(path.size() - 1) == L'"' && path.size() >= 3)
+            if (path.size() >= 3 && path.at(0) == L'"' && path.at(path.size() - 1) == L'"')
             {
                 path = path.substr(1, path.size() - 2);
             }
 
-            _api.SetWorkingDirectory(til::clean_path(std::wstring{ path }));
+            if (!til::is_legal_path(path))
+            {
+                return false;
+            }
+
+            _api.SetWorkingDirectory(path);
             return true;
         }
     }

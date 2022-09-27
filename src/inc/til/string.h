@@ -32,41 +32,52 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
     namespace details
     {
-        /*
-         *   ,- Invalid in Path string
-         * 0b00
-         *    `- Invalid in Filename
-         */
+        inline constexpr uint8_t __ = 0b00;
+        inline constexpr uint8_t F_ = 0b10; // stripped in clean_filename
+        inline constexpr uint8_t _P = 0b01; // stripped in clean_path
+        inline constexpr uint8_t FP = 0b11; // stripped in clean_filename and clean_path
         static constexpr std::array<uint8_t, 128> pathFilter{ {
             // clang-format off
-            0b00 /* NUL */, 0b00 /* SOH */, 0b00 /* STX */, 0b00 /* ETX */, 0b00 /* EOT */, 0b00 /* ENQ */, 0b00 /* ACK */, 0b00 /* BEL */, 0b00 /* BS  */, 0b00 /* HT  */, 0b00 /* LF  */, 0b00 /* VT  */, 0b00 /* FF  */, 0b00 /* CR  */, 0b00 /* SO  */, 0b00 /* SI  */,
-            0b00 /* DLE */, 0b00 /* DC1 */, 0b00 /* DC2 */, 0b00 /* DC3 */, 0b00 /* DC4 */, 0b00 /* NAK */, 0b00 /* SYN */, 0b00 /* ETB */, 0b00 /* CAN */, 0b00 /* EM  */, 0b00 /* SUB */, 0b00 /* ESC */, 0b00 /* FS  */, 0b00 /* GS  */, 0b00 /* RS  */, 0b00 /* US  */,
-            0b00 /* SP  */, 0b00 /* !   */, 0b11 /* "   */, 0b00 /* #   */, 0b00 /* $   */, 0b00 /* %   */, 0b00 /* &   */, 0b00 /* '   */, 0b00 /* (   */, 0b00 /* )   */, 0b11 /* *   */, 0b00 /* +   */, 0b00 /* ,   */, 0b00 /* -   */, 0b00 /* .   */, 0b01 /* /   */,
-            0b00 /* 0   */, 0b00 /* 1   */, 0b00 /* 2   */, 0b00 /* 3   */, 0b00 /* 4   */, 0b00 /* 5   */, 0b00 /* 6   */, 0b00 /* 7   */, 0b00 /* 8   */, 0b00 /* 9   */, 0b01 /* :   */, 0b00 /* ;   */, 0b11 /* <   */, 0b00 /* =   */, 0b11 /* >   */, 0b11 /* ?   */,
-            0b00 /* @   */, 0b00 /* A   */, 0b00 /* B   */, 0b00 /* C   */, 0b00 /* D   */, 0b00 /* E   */, 0b00 /* F   */, 0b00 /* G   */, 0b00 /* H   */, 0b00 /* I   */, 0b00 /* J   */, 0b00 /* K   */, 0b00 /* L   */, 0b00 /* M   */, 0b00 /* N   */, 0b00 /* O   */,
-            0b00 /* P   */, 0b00 /* Q   */, 0b00 /* R   */, 0b00 /* S   */, 0b00 /* T   */, 0b00 /* U   */, 0b00 /* V   */, 0b00 /* W   */, 0b00 /* X   */, 0b00 /* Y   */, 0b00 /* Z   */, 0b00 /* [   */, 0b01 /* \   */, 0b00 /* ]   */, 0b00 /* ^   */, 0b00 /* _   */,
-            0b00 /* `   */, 0b00 /* a   */, 0b00 /* b   */, 0b00 /* c   */, 0b00 /* d   */, 0b00 /* e   */, 0b00 /* f   */, 0b00 /* g   */, 0b00 /* h   */, 0b00 /* i   */, 0b00 /* j   */, 0b00 /* k   */, 0b00 /* l   */, 0b00 /* m   */, 0b00 /* n   */, 0b00 /* o   */,
-            0b00 /* p   */, 0b00 /* q   */, 0b00 /* r   */, 0b00 /* s   */, 0b00 /* t   */, 0b00 /* u   */, 0b00 /* v   */, 0b00 /* w   */, 0b00 /* x   */, 0b00 /* y   */, 0b00 /* z   */, 0b00 /* {   */, 0b11 /* |   */, 0b00 /* }   */, 0b00 /* ~   */, 0b00 /* DEL */,
+            __ /* NUL */, __ /* SOH */, __ /* STX */, __ /* ETX */, __ /* EOT */, __ /* ENQ */, __ /* ACK */, __ /* BEL */, __ /* BS  */, __ /* HT  */, __ /* LF  */, __ /* VT  */, __ /* FF  */, __ /* CR  */, __ /* SO  */, __ /* SI  */,
+            __ /* DLE */, __ /* DC1 */, __ /* DC2 */, __ /* DC3 */, __ /* DC4 */, __ /* NAK */, __ /* SYN */, __ /* ETB */, __ /* CAN */, __ /* EM  */, __ /* SUB */, __ /* ESC */, __ /* FS  */, __ /* GS  */, __ /* RS  */, __ /* US  */,
+            __ /* SP  */, __ /* !   */, FP /* "   */, __ /* #   */, __ /* $   */, __ /* %   */, __ /* &   */, __ /* '   */, __ /* (   */, __ /* )   */, FP /* *   */, __ /* +   */, __ /* ,   */, __ /* -   */, __ /* .   */, F_ /* /   */,
+            __ /* 0   */, __ /* 1   */, __ /* 2   */, __ /* 3   */, __ /* 4   */, __ /* 5   */, __ /* 6   */, __ /* 7   */, __ /* 8   */, __ /* 9   */, F_ /* :   */, __ /* ;   */, FP /* <   */, __ /* =   */, FP /* >   */, FP /* ?   */,
+            __ /* @   */, __ /* A   */, __ /* B   */, __ /* C   */, __ /* D   */, __ /* E   */, __ /* F   */, __ /* G   */, __ /* H   */, __ /* I   */, __ /* J   */, __ /* K   */, __ /* L   */, __ /* M   */, __ /* N   */, __ /* O   */,
+            __ /* P   */, __ /* Q   */, __ /* R   */, __ /* S   */, __ /* T   */, __ /* U   */, __ /* V   */, __ /* W   */, __ /* X   */, __ /* Y   */, __ /* Z   */, __ /* [   */, F_ /* \   */, __ /* ]   */, __ /* ^   */, __ /* _   */,
+            __ /* `   */, __ /* a   */, __ /* b   */, __ /* c   */, __ /* d   */, __ /* e   */, __ /* f   */, __ /* g   */, __ /* h   */, __ /* i   */, __ /* j   */, __ /* k   */, __ /* l   */, __ /* m   */, __ /* n   */, __ /* o   */,
+            __ /* p   */, __ /* q   */, __ /* r   */, __ /* s   */, __ /* t   */, __ /* u   */, __ /* v   */, __ /* w   */, __ /* x   */, __ /* y   */, __ /* z   */, __ /* {   */, FP /* |   */, __ /* }   */, __ /* ~   */, __ /* DEL */,
             // clang-format on
         } };
     }
 
     _TIL_INLINEPREFIX std::wstring clean_filename(std::wstring str) noexcept
     {
+        using namespace til::details;
         std::erase_if(str, [](auto ch) {
             // This lookup is branchless: It always checks the filter, but throws
             // away the result if ch >= 128. This is faster than using `&&` (branchy).
-            return til::at(details::pathFilter, ch & 127) & 0b01 & (ch < 128);
+            return ((til::at(details::pathFilter, ch & 127) & F_) != 0) & (ch < 128);
         });
         return str;
     }
 
     _TIL_INLINEPREFIX std::wstring clean_path(std::wstring str) noexcept
     {
+        using namespace til::details;
         std::erase_if(str, [](auto ch) {
-            return ((til::at(details::pathFilter, ch & 127) & 0b10) >> 1) & (ch < 128);
+            return ((til::at(details::pathFilter, ch & 127) & _P) != 0) & (ch < 128);
         });
         return str;
+    }
+
+    // is_legal_path rules on whether a path contains any non-path characters.
+    // it **DOES NOT** rule on whether a path exists.
+    _TIL_INLINEPREFIX bool is_legal_path(const std::wstring_view str) noexcept
+    {
+        using namespace til::details;
+        return !std::any_of(std::begin(str), std::end(str), [](auto&& ch) {
+            return ((til::at(details::pathFilter, ch & 127) & _P) != 0) & (ch < 128);
+        });
     }
 
     // std::string_view::starts_with support for C++17.
