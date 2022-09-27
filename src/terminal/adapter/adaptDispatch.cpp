@@ -2447,19 +2447,17 @@ bool AdaptDispatch::DoConEmuAction(const std::wstring_view string)
     {
         if (parts.size() >= 2)
         {
-            const auto path = til::at(parts, 1);
+            auto path = til::at(parts, 1);
             // The path should be surrounded with '"' according to the documentation of ConEmu.
             // An example: 9;"D:/"
+            // If we fail to find the surrounding quotation marks, we'll give the path a try anyway.
+            // ConEmu also does this.
             if (path.at(0) == L'"' && path.at(path.size() - 1) == L'"' && path.size() >= 3)
             {
-                _api.SetWorkingDirectory(path.substr(1, path.size() - 2));
+                path = path.substr(1, path.size() - 2);
             }
-            else
-            {
-                // If we fail to find the surrounding quotation marks, we'll give the path a try anyway.
-                // ConEmu also does this.
-                _api.SetWorkingDirectory(path);
-            }
+
+            _api.SetWorkingDirectory(til::clean_path(std::wstring{ path }));
             return true;
         }
     }

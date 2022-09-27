@@ -30,25 +30,41 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         return visualize_control_codes(std::wstring{ str });
     }
 
-    _TIL_INLINEPREFIX std::wstring clean_filename(std::wstring str) noexcept
+    namespace details
     {
-        static constexpr std::array<bool, 128> filter{ {
+        /*
+         *   ,- Invalid in Path string
+         * 0b00
+         *    `- Invalid in Filename
+         */
+        static constexpr std::array<uint8_t, 128> pathFilter{ {
             // clang-format off
-            0 /* NUL */, 0 /* SOH */, 0 /* STX */, 0 /* ETX */, 0 /* EOT */, 0 /* ENQ */, 0 /* ACK */, 0 /* BEL */, 0 /* BS  */, 0 /* HT  */, 0 /* LF  */, 0 /* VT  */, 0 /* FF  */, 0 /* CR  */, 0 /* SO  */, 0 /* SI  */,
-            0 /* DLE */, 0 /* DC1 */, 0 /* DC2 */, 0 /* DC3 */, 0 /* DC4 */, 0 /* NAK */, 0 /* SYN */, 0 /* ETB */, 0 /* CAN */, 0 /* EM  */, 0 /* SUB */, 0 /* ESC */, 0 /* FS  */, 0 /* GS  */, 0 /* RS  */, 0 /* US  */,
-            0 /* SP  */, 0 /* !   */, 1 /* "   */, 0 /* #   */, 0 /* $   */, 0 /* %   */, 0 /* &   */, 0 /* '   */, 0 /* (   */, 0 /* )   */, 1 /* *   */, 0 /* +   */, 0 /* ,   */, 0 /* -   */, 0 /* .   */, 1 /* /   */,
-            0 /* 0   */, 0 /* 1   */, 0 /* 2   */, 0 /* 3   */, 0 /* 4   */, 0 /* 5   */, 0 /* 6   */, 0 /* 7   */, 0 /* 8   */, 0 /* 9   */, 1 /* :   */, 0 /* ;   */, 1 /* <   */, 0 /* =   */, 1 /* >   */, 1 /* ?   */,
-            0 /* @   */, 0 /* A   */, 0 /* B   */, 0 /* C   */, 0 /* D   */, 0 /* E   */, 0 /* F   */, 0 /* G   */, 0 /* H   */, 0 /* I   */, 0 /* J   */, 0 /* K   */, 0 /* L   */, 0 /* M   */, 0 /* N   */, 0 /* O   */,
-            0 /* P   */, 0 /* Q   */, 0 /* R   */, 0 /* S   */, 0 /* T   */, 0 /* U   */, 0 /* V   */, 0 /* W   */, 0 /* X   */, 0 /* Y   */, 0 /* Z   */, 0 /* [   */, 1 /* \   */, 0 /* ]   */, 0 /* ^   */, 0 /* _   */,
-            0 /* `   */, 0 /* a   */, 0 /* b   */, 0 /* c   */, 0 /* d   */, 0 /* e   */, 0 /* f   */, 0 /* g   */, 0 /* h   */, 0 /* i   */, 0 /* j   */, 0 /* k   */, 0 /* l   */, 0 /* m   */, 0 /* n   */, 0 /* o   */,
-            0 /* p   */, 0 /* q   */, 0 /* r   */, 0 /* s   */, 0 /* t   */, 0 /* u   */, 0 /* v   */, 0 /* w   */, 0 /* x   */, 0 /* y   */, 0 /* z   */, 0 /* {   */, 1 /* |   */, 0 /* }   */, 0 /* ~   */, 0 /* DEL */,
+            0b00 /* NUL */, 0b00 /* SOH */, 0b00 /* STX */, 0b00 /* ETX */, 0b00 /* EOT */, 0b00 /* ENQ */, 0b00 /* ACK */, 0b00 /* BEL */, 0b00 /* BS  */, 0b00 /* HT  */, 0b00 /* LF  */, 0b00 /* VT  */, 0b00 /* FF  */, 0b00 /* CR  */, 0b00 /* SO  */, 0b00 /* SI  */,
+            0b00 /* DLE */, 0b00 /* DC1 */, 0b00 /* DC2 */, 0b00 /* DC3 */, 0b00 /* DC4 */, 0b00 /* NAK */, 0b00 /* SYN */, 0b00 /* ETB */, 0b00 /* CAN */, 0b00 /* EM  */, 0b00 /* SUB */, 0b00 /* ESC */, 0b00 /* FS  */, 0b00 /* GS  */, 0b00 /* RS  */, 0b00 /* US  */,
+            0b00 /* SP  */, 0b00 /* !   */, 0b11 /* "   */, 0b00 /* #   */, 0b00 /* $   */, 0b00 /* %   */, 0b00 /* &   */, 0b00 /* '   */, 0b00 /* (   */, 0b00 /* )   */, 0b11 /* *   */, 0b00 /* +   */, 0b00 /* ,   */, 0b00 /* -   */, 0b00 /* .   */, 0b01 /* /   */,
+            0b00 /* 0   */, 0b00 /* 1   */, 0b00 /* 2   */, 0b00 /* 3   */, 0b00 /* 4   */, 0b00 /* 5   */, 0b00 /* 6   */, 0b00 /* 7   */, 0b00 /* 8   */, 0b00 /* 9   */, 0b01 /* :   */, 0b00 /* ;   */, 0b11 /* <   */, 0b00 /* =   */, 0b11 /* >   */, 0b11 /* ?   */,
+            0b00 /* @   */, 0b00 /* A   */, 0b00 /* B   */, 0b00 /* C   */, 0b00 /* D   */, 0b00 /* E   */, 0b00 /* F   */, 0b00 /* G   */, 0b00 /* H   */, 0b00 /* I   */, 0b00 /* J   */, 0b00 /* K   */, 0b00 /* L   */, 0b00 /* M   */, 0b00 /* N   */, 0b00 /* O   */,
+            0b00 /* P   */, 0b00 /* Q   */, 0b00 /* R   */, 0b00 /* S   */, 0b00 /* T   */, 0b00 /* U   */, 0b00 /* V   */, 0b00 /* W   */, 0b00 /* X   */, 0b00 /* Y   */, 0b00 /* Z   */, 0b00 /* [   */, 0b01 /* \   */, 0b00 /* ]   */, 0b00 /* ^   */, 0b00 /* _   */,
+            0b00 /* `   */, 0b00 /* a   */, 0b00 /* b   */, 0b00 /* c   */, 0b00 /* d   */, 0b00 /* e   */, 0b00 /* f   */, 0b00 /* g   */, 0b00 /* h   */, 0b00 /* i   */, 0b00 /* j   */, 0b00 /* k   */, 0b00 /* l   */, 0b00 /* m   */, 0b00 /* n   */, 0b00 /* o   */,
+            0b00 /* p   */, 0b00 /* q   */, 0b00 /* r   */, 0b00 /* s   */, 0b00 /* t   */, 0b00 /* u   */, 0b00 /* v   */, 0b00 /* w   */, 0b00 /* x   */, 0b00 /* y   */, 0b00 /* z   */, 0b00 /* {   */, 0b11 /* |   */, 0b00 /* }   */, 0b00 /* ~   */, 0b00 /* DEL */,
             // clang-format on
         } };
+    }
 
+    _TIL_INLINEPREFIX std::wstring clean_filename(std::wstring str) noexcept
+    {
         std::erase_if(str, [](auto ch) {
             // This lookup is branchless: It always checks the filter, but throws
             // away the result if ch >= 128. This is faster than using `&&` (branchy).
-            return til::at(filter, ch & 127) & (ch < 128);
+            return til::at(details::pathFilter, ch & 127) & 0b01 & (ch < 128);
+        });
+        return str;
+    }
+
+    _TIL_INLINEPREFIX std::wstring clean_path(std::wstring str) noexcept
+    {
+        std::erase_if(str, [](auto ch) {
+            return ((til::at(details::pathFilter, ch & 127) & 0b10) >> 1) & (ch < 128);
         });
         return str;
     }
