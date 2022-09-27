@@ -5,10 +5,12 @@
 #include "LaunchViewModel.h"
 #include "LaunchViewModel.g.cpp"
 #include "EnumEntry.h"
+#include <LibraryResources.h>
 
 using namespace winrt::Windows::UI::Xaml::Navigation;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace winrt::Windows::UI::Xaml::Data;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -25,12 +27,54 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _LaunchModeList.RemoveAt(6); // fullscreenFocus
         _LaunchModeList.RemoveAt(3); // maximizedFullscreen
         INITIALIZE_BINDABLE_ENUM_SETTING(WindowingBehavior, WindowingMode, WindowingMode, L"Globals_WindowingBehavior", L"Content");
+
+        // Add a property changed handler to our own property changed event.
+        // This propagates changes from the settings model to anybody listening to our
+        // unique view model members.
+        PropertyChanged([this](auto&&, const PropertyChangedEventArgs& args) {
+            const auto viewModelProperty{ args.PropertyName() };
+            if (viewModelProperty == L"CenterOnLaunch")
+            {
+                _NotifyChanges(L"LaunchParametersCurrentValue");
+            }
+        });
     }
 
-    winrt::hstring LaunchViewModel::LaunchParameters()
+    winrt::hstring LaunchViewModel::LaunchParametersCurrentValue()
     {
         // todo: get all the current values and combine them into a string
-        return L"";
+        const auto launchModeString = CurrentLaunchMode().as<EnumEntry>()->EnumName();
+        const auto centerOnLaunchString = CenterOnLaunch() ? RS_(L"Globals_CenterOnLaunchOn") : RS_(L"Globals_CenterOnLaunchOff");
+
+        winrt::hstring result;
+
+        if (UseDefaultLaunchPosition())
+        {
+            result = fmt::format(L"{}, {}, {}", launchModeString, RS_(L"Globals_LaunchModeDefault/Content"), centerOnLaunchString);
+        }
+        else
+        {
+            std::wstring xPosString;
+            std::wstring yPosString;
+            if (!isnan(InitialPosX()))
+            {
+                xPosString = std::to_wstring(gsl::narrow_cast<int>(InitialPosX()));
+            }
+            else
+            {
+                xPosString = RS_(L"Globals_LaunchModeDefault/Content");
+            }
+            if (!isnan(InitialPosY()))
+            {
+                yPosString = std::to_wstring(gsl::narrow_cast<int>(InitialPosY()));
+            }
+            else
+            {
+                yPosString = RS_(L"Globals_LaunchModeDefault/Content");
+            }
+            result = fmt::format(L"{}, ({},{}), {}", launchModeString, xPosString, yPosString, centerOnLaunchString);
+        }
+        return result;
     }
 
     double LaunchViewModel::InitialPosX()
@@ -61,6 +105,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         const LaunchPosition newPos{ xCoordRef, _Settings.GlobalSettings().InitialPosition().Y };
         _Settings.GlobalSettings().InitialPosition(newPos);
+        _NotifyChanges(L"LaunchParametersCurrentValue");
     }
 
     void LaunchViewModel::InitialPosY(double yCoord)
@@ -73,6 +118,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         const LaunchPosition newPos{ _Settings.GlobalSettings().InitialPosition().X, yCoordRef };
         _Settings.GlobalSettings().InitialPosition(newPos);
+        _NotifyChanges(L"LaunchParametersCurrentValue");
     }
 
     void LaunchViewModel::UseDefaultLaunchPosition(bool useDefaultPosition)
@@ -82,15 +128,29 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             InitialPosX(NAN);
             InitialPosY(NAN);
-            _NotifyChanges(L"InitialPosX");
-            _NotifyChanges(L"InitialPosY");
+            _NotifyChanges(L"InitialPosX", L"InitialPosY");
         }
-        _NotifyChanges(L"UseDefaultLaunchPosition");
+        _NotifyChanges(L"UseDefaultLaunchPosition", L"LaunchParametersCurrentValue");
     }
 
     bool LaunchViewModel::UseDefaultLaunchPosition()
     {
         return _useDefaultLaunchPosition;
+    }
+
+    winrt::Windows::Foundation::IInspectable LaunchViewModel::CurrentLaunchMode()
+    {
+        return winrt::box_value<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>(_LaunchModeMap.Lookup(_Settings.GlobalSettings().LaunchMode()));
+    }
+
+    void LaunchViewModel::CurrentLaunchMode(const winrt::Windows::Foundation::IInspectable& enumEntry)
+    {
+        if (auto ee = enumEntry.try_as<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>())
+        {
+            auto setting = winrt::unbox_value<LaunchMode>(ee.EnumValue());
+            _Settings.GlobalSettings().LaunchMode(setting);
+            _NotifyChanges(L"LaunchParametersCurrentValue");
+        }
     }
 
     winrt::Windows::Foundation::IInspectable LaunchViewModel::CurrentDefaultProfile()

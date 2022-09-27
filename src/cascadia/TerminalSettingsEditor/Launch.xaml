@@ -198,7 +198,7 @@
 
                 <!--  Launch Parameters  -->
                 <local:SettingContainer x:Uid="Globals_LaunchParameters"
-                                        CurrentValue="{x:Bind ViewModel.LaunchParameters, Mode=OneWay}"
+                                        CurrentValue="{x:Bind ViewModel.LaunchParametersCurrentValue, Mode=OneWay}"
                                         Style="{StaticResource ExpanderSettingContainerStyle}">
                     <Grid RowSpacing="10">
                         <Grid.RowDefinitions>
