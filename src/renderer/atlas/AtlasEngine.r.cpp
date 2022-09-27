@@ -550,10 +550,12 @@ AtlasEngine::CachedGlyphLayout AtlasEngine::_getCachedGlyphLayout(const wchar_t*
                 static_cast<f32>(glyphMetrics.advanceHeight) / static_cast<f32>(metrics.designUnitsPerEm) * _r.fontMetrics.fontSizeInDIP,
             };
 
+            // NOTE: Don't adjust the offset.
+            // Despite these being block characters, some fonts position them really weird with glyphs hanging out
+            // on all sides by up to 0.2em. They still expect the glyphs to be drawn on to their regular baseline.
+            // At the time of writing this can be tested with MesloLGM Nerd Font and U+E0B0 for instance.
+
             scalingRequired = true;
-            // We always want box drawing glyphs to be centered in their cell.
-            offset.x = (layoutBox.x - boxSize.x) * 0.5f;
-            offset.y = (layoutBox.y - boxSize.y) * 0.5f;
             // We always want box drawing glyphs to exactly match the size of a terminal cell.
             // But add 1px to the destination size, so that we don't end up with fractional pixels.
             scale.x = (layoutBox.x + _r.dipPerPixel) / boxSize.x;
