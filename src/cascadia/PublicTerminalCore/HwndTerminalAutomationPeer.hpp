@@ -6,17 +6,10 @@ Module Name:
 - HwndTerminalAutomationPeer.hpp
 
 Abstract:
-- This module provides UI Automation access to the TermControl
+- This module provides UI Automation access to the HwndTerminal
   to support both automation tests and accessibility (screen
-  reading) applications. This mainly interacts with ScreenInfoUiaProvider
-  to allow for shared code between ConHost and Windows Terminal
-  accessibility providers.
-- Based on the Custom Automation Peers guide on msdn
-  (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
-- Wraps the UIAutomationCore ITextProvider
-  (https://docs.microsoft.com/en-us/windows/win32/api/uiautomationcore/nn-uiautomationcore-itextprovider)
-  with a XAML ITextProvider
-  (https://docs.microsoft.com/en-us/uwp/api/windows.ui.xaml.automation.provider.itextprovider)
+  reading) applications. This mainly interacts with TermControlUiaProvider
+  to allow for shared code with Windows Terminal accessibility providers.
 
 Author(s):
 - Carlos Zamora   (CaZamor)    2022

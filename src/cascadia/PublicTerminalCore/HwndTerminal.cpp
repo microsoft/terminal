@@ -320,8 +320,7 @@ IRawElementProviderSimple* HwndTerminal::_GetUiaProvider() noexcept
 {
     // If TermControlUiaProvider throws during construction,
     // we don't want to try constructing an instance again and again.
-    // _uiaProviderInitialized helps us prevent this.
-    if (!_uiaProviderInitialized)
+    if (!_uiaProvider)
     {
         try
         {
@@ -330,7 +329,6 @@ IRawElementProviderSimple* HwndTerminal::_GetUiaProvider() noexcept
             _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(_uiaProvider.Get());
             LOG_IF_FAILED(_uiaEngine->Enable());
             _renderer->AddRenderEngine(_uiaEngine.get());
-            _uiaProviderInitialized = true;
         }
         catch (...)
         {
@@ -724,7 +722,7 @@ try
     {
         modifiers |= ControlKeyStates::EnhancedKey;
     }
-    if (vkey && keyDown && _uiaProviderInitialized)
+    if (vkey && keyDown && _uiaProvider)
     {
         _uiaProvider->RecordKeyEvent(vkey);
     }
@@ -836,12 +834,20 @@ void __stdcall TerminalSetFocus(void* terminal)
 {
     auto publicTerminal = static_cast<HwndTerminal*>(terminal);
     publicTerminal->_focused = true;
+    if (auto uiaEngine = publicTerminal->_uiaEngine.get())
+    {
+        LOG_IF_FAILED(uiaEngine->Enable());
+    }
 }
 
 void __stdcall TerminalKillFocus(void* terminal)
 {
     auto publicTerminal = static_cast<HwndTerminal*>(terminal);
     publicTerminal->_focused = false;
+    if (auto uiaEngine = publicTerminal->_uiaEngine.get())
+    {
+        LOG_IF_FAILED(uiaEngine->Disable());
+    }
 }
 
 // Routine Description:
