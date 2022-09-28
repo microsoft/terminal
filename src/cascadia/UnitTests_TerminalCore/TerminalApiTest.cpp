@@ -435,7 +435,9 @@ void TerminalCoreUnitTests::TerminalApiTest::SetWorkingDirectory()
     stateMachine.ProcessString(L"\x1b]9;9\"C:\\\"\x1b\\");
     VERIFY_IS_TRUE(term.GetWorkingDirectory().empty());
 
-    stateMachine.ProcessString(L"\x1b" LR"(]9;9;"C:\invalid path "with" quotes")" L"\x1b\\");
+    stateMachine.ProcessString(L"\x1b"
+                               LR"(]9;9;"C:\invalid path "with" quotes")"
+                               L"\x1b\\");
     VERIFY_IS_TRUE(term.GetWorkingDirectory().empty());
 
     // These OSC 9;9 sequences will result in invalid CWD. It should end up empty, like above.
