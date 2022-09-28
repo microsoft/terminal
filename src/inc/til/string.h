@@ -30,27 +30,56 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         return visualize_control_codes(std::wstring{ str });
     }
 
-    _TIL_INLINEPREFIX std::wstring clean_filename(std::wstring str) noexcept
+    namespace details
     {
-        static constexpr std::array<bool, 128> filter{ {
+        inline constexpr uint8_t __ = 0b00;
+        inline constexpr uint8_t F_ = 0b10; // stripped in clean_filename
+        inline constexpr uint8_t _P = 0b01; // stripped in clean_path
+        inline constexpr uint8_t FP = 0b11; // stripped in clean_filename and clean_path
+        static constexpr std::array<uint8_t, 128> pathFilter{ {
             // clang-format off
-            0 /* NUL */, 0 /* SOH */, 0 /* STX */, 0 /* ETX */, 0 /* EOT */, 0 /* ENQ */, 0 /* ACK */, 0 /* BEL */, 0 /* BS  */, 0 /* HT  */, 0 /* LF  */, 0 /* VT  */, 0 /* FF  */, 0 /* CR  */, 0 /* SO  */, 0 /* SI  */,
-            0 /* DLE */, 0 /* DC1 */, 0 /* DC2 */, 0 /* DC3 */, 0 /* DC4 */, 0 /* NAK */, 0 /* SYN */, 0 /* ETB */, 0 /* CAN */, 0 /* EM  */, 0 /* SUB */, 0 /* ESC */, 0 /* FS  */, 0 /* GS  */, 0 /* RS  */, 0 /* US  */,
-            0 /* SP  */, 0 /* !   */, 1 /* "   */, 0 /* #   */, 0 /* $   */, 0 /* %   */, 0 /* &   */, 0 /* '   */, 0 /* (   */, 0 /* )   */, 1 /* *   */, 0 /* +   */, 0 /* ,   */, 0 /* -   */, 0 /* .   */, 1 /* /   */,
-            0 /* 0   */, 0 /* 1   */, 0 /* 2   */, 0 /* 3   */, 0 /* 4   */, 0 /* 5   */, 0 /* 6   */, 0 /* 7   */, 0 /* 8   */, 0 /* 9   */, 1 /* :   */, 0 /* ;   */, 1 /* <   */, 0 /* =   */, 1 /* >   */, 1 /* ?   */,
-            0 /* @   */, 0 /* A   */, 0 /* B   */, 0 /* C   */, 0 /* D   */, 0 /* E   */, 0 /* F   */, 0 /* G   */, 0 /* H   */, 0 /* I   */, 0 /* J   */, 0 /* K   */, 0 /* L   */, 0 /* M   */, 0 /* N   */, 0 /* O   */,
-            0 /* P   */, 0 /* Q   */, 0 /* R   */, 0 /* S   */, 0 /* T   */, 0 /* U   */, 0 /* V   */, 0 /* W   */, 0 /* X   */, 0 /* Y   */, 0 /* Z   */, 0 /* [   */, 1 /* \   */, 0 /* ]   */, 0 /* ^   */, 0 /* _   */,
-            0 /* `   */, 0 /* a   */, 0 /* b   */, 0 /* c   */, 0 /* d   */, 0 /* e   */, 0 /* f   */, 0 /* g   */, 0 /* h   */, 0 /* i   */, 0 /* j   */, 0 /* k   */, 0 /* l   */, 0 /* m   */, 0 /* n   */, 0 /* o   */,
-            0 /* p   */, 0 /* q   */, 0 /* r   */, 0 /* s   */, 0 /* t   */, 0 /* u   */, 0 /* v   */, 0 /* w   */, 0 /* x   */, 0 /* y   */, 0 /* z   */, 0 /* {   */, 1 /* |   */, 0 /* }   */, 0 /* ~   */, 0 /* DEL */,
+            __ /* NUL */, __ /* SOH */, __ /* STX */, __ /* ETX */, __ /* EOT */, __ /* ENQ */, __ /* ACK */, __ /* BEL */, __ /* BS  */, __ /* HT  */, __ /* LF  */, __ /* VT  */, __ /* FF  */, __ /* CR  */, __ /* SO  */, __ /* SI  */,
+            __ /* DLE */, __ /* DC1 */, __ /* DC2 */, __ /* DC3 */, __ /* DC4 */, __ /* NAK */, __ /* SYN */, __ /* ETB */, __ /* CAN */, __ /* EM  */, __ /* SUB */, __ /* ESC */, __ /* FS  */, __ /* GS  */, __ /* RS  */, __ /* US  */,
+            __ /* SP  */, __ /* !   */, FP /* "   */, __ /* #   */, __ /* $   */, __ /* %   */, __ /* &   */, __ /* '   */, __ /* (   */, __ /* )   */, FP /* *   */, __ /* +   */, __ /* ,   */, __ /* -   */, __ /* .   */, F_ /* /   */,
+            __ /* 0   */, __ /* 1   */, __ /* 2   */, __ /* 3   */, __ /* 4   */, __ /* 5   */, __ /* 6   */, __ /* 7   */, __ /* 8   */, __ /* 9   */, F_ /* :   */, __ /* ;   */, FP /* <   */, __ /* =   */, FP /* >   */, FP /* ?   */,
+            __ /* @   */, __ /* A   */, __ /* B   */, __ /* C   */, __ /* D   */, __ /* E   */, __ /* F   */, __ /* G   */, __ /* H   */, __ /* I   */, __ /* J   */, __ /* K   */, __ /* L   */, __ /* M   */, __ /* N   */, __ /* O   */,
+            __ /* P   */, __ /* Q   */, __ /* R   */, __ /* S   */, __ /* T   */, __ /* U   */, __ /* V   */, __ /* W   */, __ /* X   */, __ /* Y   */, __ /* Z   */, __ /* [   */, F_ /* \   */, __ /* ]   */, __ /* ^   */, __ /* _   */,
+            __ /* `   */, __ /* a   */, __ /* b   */, __ /* c   */, __ /* d   */, __ /* e   */, __ /* f   */, __ /* g   */, __ /* h   */, __ /* i   */, __ /* j   */, __ /* k   */, __ /* l   */, __ /* m   */, __ /* n   */, __ /* o   */,
+            __ /* p   */, __ /* q   */, __ /* r   */, __ /* s   */, __ /* t   */, __ /* u   */, __ /* v   */, __ /* w   */, __ /* x   */, __ /* y   */, __ /* z   */, __ /* {   */, FP /* |   */, __ /* }   */, __ /* ~   */, __ /* DEL */,
             // clang-format on
         } };
+    }
 
+    _TIL_INLINEPREFIX std::wstring clean_filename(std::wstring str) noexcept
+    {
+        using namespace til::details;
         str.erase(std::remove_if(std::begin(str), std::end(str), [](auto ch) {
-            // This lookup is branchless: It always checks the filter, but throws
-            // away the result if ch >= 128. This is faster than using `&&` (branchy).
-            return til::at(filter, ch & 127) & (ch < 128);
-        }), str.end());
+                      // This lookup is branchless: It always checks the filter, but throws
+                      // away the result if ch >= 128. This is faster than using `&&` (branchy).
+                      return ((til::at(details::pathFilter, ch & 127) & F_) != 0) & (ch < 128);
+                  }),
+                  str.end());
         return str;
+    }
+
+    _TIL_INLINEPREFIX std::wstring clean_path(std::wstring str) noexcept
+    {
+        using namespace til::details;
+        str.erase(std::remove_if(std::begin(str), std::end(str), [](auto ch) {
+                      return ((til::at(details::pathFilter, ch & 127) & _P) != 0) & (ch < 128);
+                  }),
+                  str.end());
+        return str;
+    }
+
+    // is_legal_path rules on whether a path contains any non-path characters.
+    // it **DOES NOT** rule on whether a path exists.
+    _TIL_INLINEPREFIX constexpr bool is_legal_path(const std::wstring_view str) noexcept
+    {
+        using namespace til::details;
+        return !std::any_of(std::begin(str), std::end(str), [](auto&& ch) {
+            return ((til::at(details::pathFilter, ch & 127) & _P) != 0) & (ch < 128);
+        });
     }
 
     // std::string_view::starts_with support for C++17.
