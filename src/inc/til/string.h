@@ -74,7 +74,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
     // is_legal_path rules on whether a path contains any non-path characters.
     // it **DOES NOT** rule on whether a path exists.
-    _TIL_INLINEPREFIX constexpr bool is_legal_path(const std::wstring_view str) noexcept
+    _TIL_INLINEPREFIX bool is_legal_path(const std::wstring_view str) noexcept
     {
         using namespace til::details;
         return !std::any_of(std::begin(str), std::end(str), [](auto&& ch) {
