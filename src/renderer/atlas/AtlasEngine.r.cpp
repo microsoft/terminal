@@ -535,34 +535,30 @@ AtlasEngine::CachedGlyphLayout AtlasEngine::_getCachedGlyphLayout(const wchar_t*
             wil::com_ptr<IDWriteFontFace> fontFace;
             THROW_IF_FAILED(mappedFont->CreateFontFace(fontFace.addressof()));
 
-            DWRITE_FONT_METRICS metrics;
-            fontFace->GetMetrics(&metrics);
-
-            static constexpr u32 codePoint = L'\u2588'; // Full Block character
-            u16 glyphIndex;
-            THROW_IF_FAILED(fontFace->GetGlyphIndicesW(&codePoint, 1, &glyphIndex));
-
-            if (glyphIndex)
+            // Don't adjust the size of block glyphs that are part of the user's chosen font.
+            if (std::ranges::find(_r.fontFaces, fontFace) == std::end(_r.fontFaces))
             {
-                DWRITE_GLYPH_METRICS glyphMetrics;
-                THROW_IF_FAILED(fontFace->GetDesignGlyphMetrics(&glyphIndex, 1, &glyphMetrics));
+                DWRITE_FONT_METRICS metrics;
+                fontFace->GetMetrics(&metrics);
 
-                const auto fontScale = _r.fontMetrics.fontSizeInDIP / metrics.designUnitsPerEm;
+                static constexpr u32 codePoint = L'\u2588'; // Full Block character
+                u16 glyphIndex;
+                THROW_IF_FAILED(fontFace->GetGlyphIndicesW(&codePoint, 1, &glyphIndex));
 
-                // How-to-overhang given a single glyph:
-                DWRITE_OVERHANG_METRICS overhang;
-                overhang.left = static_cast<f32>(glyphMetrics.leftSideBearing) * fontScale;
-                overhang.top = static_cast<f32>(glyphMetrics.verticalOriginY - glyphMetrics.topSideBearing) * fontScale - _r.fontMetrics.baselineInDIP;
-                overhang.right = static_cast<f32>(gsl::narrow_cast<INT32>(glyphMetrics.advanceWidth) - glyphMetrics.rightSideBearing) * fontScale - layoutBox.x;
-                overhang.bottom = static_cast<f32>(gsl::narrow_cast<INT32>(glyphMetrics.advanceHeight) - glyphMetrics.verticalOriginY - glyphMetrics.bottomSideBearing) * fontScale + _r.fontMetrics.baselineInDIP - layoutBox.y;
-
-                // Marvel at this beautiful code. Don't copy this, use DirectXMath instead.
-                if (
-                    overhang.left < _r.pixelPerDIP || overhang.left > _r.pixelPerDIP ||
-                    overhang.top < _r.pixelPerDIP || overhang.top > _r.pixelPerDIP ||
-                    overhang.right < _r.pixelPerDIP || overhang.right > _r.pixelPerDIP ||
-                    overhang.bottom < _r.pixelPerDIP || overhang.bottom > _r.pixelPerDIP)
+                if (glyphIndex)
                 {
+                    DWRITE_GLYPH_METRICS glyphMetrics;
+                    THROW_IF_FAILED(fontFace->GetDesignGlyphMetrics(&glyphIndex, 1, &glyphMetrics));
+
+                    const auto fontScale = _r.fontMetrics.fontSizeInDIP / metrics.designUnitsPerEm;
+
+                    // How-to-DWRITE_OVERHANG_METRICS given a single glyph:
+                    DWRITE_OVERHANG_METRICS overhang;
+                    overhang.left = static_cast<f32>(glyphMetrics.leftSideBearing) * fontScale;
+                    overhang.top = static_cast<f32>(glyphMetrics.verticalOriginY - glyphMetrics.topSideBearing) * fontScale - _r.fontMetrics.baselineInDIP;
+                    overhang.right = static_cast<f32>(gsl::narrow_cast<INT32>(glyphMetrics.advanceWidth) - glyphMetrics.rightSideBearing) * fontScale - layoutBox.x;
+                    overhang.bottom = static_cast<f32>(gsl::narrow_cast<INT32>(glyphMetrics.advanceHeight) - glyphMetrics.verticalOriginY - glyphMetrics.bottomSideBearing) * fontScale + _r.fontMetrics.baselineInDIP - layoutBox.y;
+
                     scalingRequired = true;
                     // Center glyphs.
                     offset.x = (overhang.left - overhang.right) * 0.5f;
