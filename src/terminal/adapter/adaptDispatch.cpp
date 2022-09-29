@@ -892,6 +892,59 @@ til::rect AdaptDispatch::_CalculateRectArea(const VTInt top, const VTInt left, c
 }
 
 // Routine Description:
+// - DECCARA - Changes the attributes in a rectangular area. The affected range
+//   is dependent on the change extent setting defined by DECSACE.
+// Arguments:
+// - top - The first row of the area.
+// - left - The first column of the area.
+// - bottom - The last row of the area (inclusive).
+// - right - The last column of the area (inclusive).
+// - attrs - The rendition attributes that will be applied to the area.
+// Return Value:
+// - True.
+bool AdaptDispatch::ChangeAttributesRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const VTParameters attrs)
+{
+    // We apply the attribute parameters to two TextAttribute instances: one
+    // with no character attributes set, and one with all attributes set. This
+    // provides us with an OR mask and an AND mask which can then be applied to
+    // each cell to set and reset the appropriate attribute bits.
+    auto allAttrsOff = TextAttribute{};
+    auto allAttrsOn = TextAttribute{ 0, 0 };
+    allAttrsOn.SetCharacterAttributes(CharacterAttributes::All);
+    _ApplyGraphicsOptions(attrs, allAttrsOff);
+    _ApplyGraphicsOptions(attrs, allAttrsOn);
+    const auto setAttrMask = allAttrsOff.GetCharacterAttributes();
+    const auto resetAttrMask = allAttrsOn.GetCharacterAttributes();
+
+    // We also make use of the two TextAttributes calculated above to determine
+    // whether colors need to be applied. Since allAttrsOff started off with
+    // default colors, and allAttrsOn started with black, we know something has
+    // been set if the former is no longer default, or the latter is now default.
+    const auto foreground = allAttrsOff.GetForeground();
+    const auto background = allAttrsOff.GetBackground();
+    const auto foregroundChanged = !foreground.IsDefault() || allAttrsOn.GetForeground().IsDefault();
+    const auto backgroundChanged = !background.IsDefault() || allAttrsOn.GetBackground().IsDefault();
+
+    const auto changeOp = [&](TextAttribute& attr) noexcept {
+        auto characterAttributes = attr.GetCharacterAttributes();
+        characterAttributes &= resetAttrMask;
+        characterAttributes |= setAttrMask;
+        attr.SetCharacterAttributes(characterAttributes);
+        if (foregroundChanged)
+        {
+            attr.SetForeground(foreground);
+        }
+        if (backgroundChanged)
+        {
+            attr.SetBackground(background);
+        }
+    };
+    _ChangeRectOrStreamAttributes({ left, top, right, bottom }, changeOp);
+
+    return true;
+}
+
+// Routine Description:
 // - DECCRA - Copys a rectangular area from one part of the buffer to another.
 // Arguments:
 // - top - The first row of the source area.
