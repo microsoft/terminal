@@ -87,6 +87,15 @@
     </feature>
 
     <feature>
+        <name>Feature_AdjustIndistinguishableText</name>
+        <description>If enabled, the foreground color will, when necessary, be automatically adjusted to make it more visible.</description>
+        <stage>AlwaysEnabled</stage>
+        <alwaysDisabledBrandingTokens>
+            <brandingToken>WindowsInbox</brandingToken>
+        </alwaysDisabledBrandingTokens>
+    </feature>
+
+    <feature>
         <name>Feature_VtPassthroughMode</name>
         <description>Enables passthrough option per profile in Terminal and ConPTY ability to use passthrough API dispatch engine</description>
         <stage>AlwaysDisabled</stage>

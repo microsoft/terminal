@@ -42,7 +42,8 @@
             <local:SettingContainer x:Uid="Profile_ColorScheme"
                                     ClearSettingValue="{x:Bind Appearance.ClearColorSchemeName}"
                                     HasSettingValue="{x:Bind Appearance.HasColorSchemeName, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Appearance.ColorSchemeNameOverrideSource, Mode=OneWay}">
+                                    SettingOverrideSource="{x:Bind Appearance.AdjustIndistinguishableColorsOverrideSource, Mode=OneWay}"
+                                    Visibility="{x:Bind ShowIndistinguishableColorsItem}">
                 <ComboBox ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
                           SelectedItem="{x:Bind CurrentColorScheme, Mode=TwoWay}"
                           Style="{StaticResource ComboBoxSettingStyle}">
