@@ -71,7 +71,7 @@ namespace Microsoft.Terminal.Control
 
         void SearchMatch(Boolean goForward);
 
-        void AdjustFontSize(Int32 fontSizeDelta);
+        void AdjustFontSize(Single fontSizeDelta);
         void ResetFontSize();
 
         void ToggleShaderEffects();

@@ -34,7 +34,7 @@ namespace Microsoft.Terminal.Settings.Editor
         IHostedInWindow WindowRoot; // necessary to send the right HWND into the file picker dialogs.
 
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, FontFace);
-        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Int32, FontSize);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Single, FontSize);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.UI.Text.FontWeight, FontWeight);
 
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, ColorSchemeName);

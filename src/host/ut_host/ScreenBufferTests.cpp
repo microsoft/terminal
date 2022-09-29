@@ -5406,54 +5406,54 @@ void ScreenBufferTests::TestExtendedTextAttributes()
     auto& stateMachine = si.GetStateMachine();
     auto& cursor = tbi.GetCursor();
 
-    auto expectedAttrs{ ExtendedAttributes::Normal };
+    auto expectedAttrs{ CharacterAttributes::Normal };
     std::wstring vtSeq = L"";
 
     // Collect up a VT sequence to set the state given the method properties
     if (intense)
     {
-        WI_SetFlag(expectedAttrs, ExtendedAttributes::Intense);
+        WI_SetFlag(expectedAttrs, CharacterAttributes::Intense);
         vtSeq += L"\x1b[1m";
     }
     if (faint)
     {
-        WI_SetFlag(expectedAttrs, ExtendedAttributes::Faint);
+        WI_SetFlag(expectedAttrs, CharacterAttributes::Faint);
         vtSeq += L"\x1b[2m";
     }
     if (italics)
     {
-        WI_SetFlag(expectedAttrs, ExtendedAttributes::Italics);
+        WI_SetFlag(expectedAttrs, CharacterAttributes::Italics);
         vtSeq += L"\x1b[3m";
     }
     if (underlined)
     {
-        WI_SetFlag(expectedAttrs, ExtendedAttributes::Underlined);
+        WI_SetFlag(expectedAttrs, CharacterAttributes::Underlined);
         vtSeq += L"\x1b[4m";
     }
     if (doublyUnderlined)
     {
-        WI_SetFlag(expectedAttrs, ExtendedAttributes::DoublyUnderlined);
+        WI_SetFlag(expectedAttrs, CharacterAttributes::DoublyUnderlined);
         vtSeq += L"\x1b[21m";
     }
     if (blink)
     {
-        WI_SetFlag(expectedAttrs, ExtendedAttributes::Blinking);
+        WI_SetFlag(expectedAttrs, CharacterAttributes::Blinking);
         vtSeq += L"\x1b[5m";
     }
     if (invisible)
     {
-        WI_SetFlag(expectedAttrs, ExtendedAttributes::Invisible);
+        WI_SetFlag(expectedAttrs, CharacterAttributes::Invisible);
         vtSeq += L"\x1b[8m";
     }
     if (crossedOut)
     {
-        WI_SetFlag(expectedAttrs, ExtendedAttributes::CrossedOut);
+        WI_SetFlag(expectedAttrs, CharacterAttributes::CrossedOut);
         vtSeq += L"\x1b[9m";
     }
 
     // Helper lambda to write a VT sequence, then an "X", then check that the
     // attributes of the "X" match what we think they should be.
-    auto validate = [&](const ExtendedAttributes expectedAttrs,
+    auto validate = [&](const CharacterAttributes expectedAttrs,
                         const std::wstring& vtSequence) {
         auto cursorPos = cursor.GetPosition();
 
@@ -5478,8 +5478,8 @@ void ScreenBufferTests::TestExtendedTextAttributes()
         stateMachine.ProcessString(L"X");
 
         auto iter = tbi.GetCellDataAt(cursorPos);
-        auto currentExtendedAttrs = iter->TextAttr().GetExtendedAttributes();
-        VERIFY_ARE_EQUAL(expectedAttrs, currentExtendedAttrs);
+        auto currentAttrs = iter->TextAttr().GetCharacterAttributes();
+        VERIFY_ARE_EQUAL(expectedAttrs, currentAttrs);
     };
 
     // Check setting all the states collected above
@@ -5490,38 +5490,38 @@ void ScreenBufferTests::TestExtendedTextAttributes()
     if (intense || faint)
     {
         // The intense and faint attributes share the same reset sequence.
-        WI_ClearAllFlags(expectedAttrs, ExtendedAttributes::Intense | ExtendedAttributes::Faint);
+        WI_ClearAllFlags(expectedAttrs, CharacterAttributes::Intense | CharacterAttributes::Faint);
         vtSeq = L"\x1b[22m";
         validate(expectedAttrs, vtSeq);
     }
     if (italics)
     {
-        WI_ClearFlag(expectedAttrs, ExtendedAttributes::Italics);
+        WI_ClearFlag(expectedAttrs, CharacterAttributes::Italics);
         vtSeq = L"\x1b[23m";
         validate(expectedAttrs, vtSeq);
     }
     if (underlined || doublyUnderlined)
     {
         // The two underlined attributes share the same reset sequence.
-        WI_ClearAllFlags(expectedAttrs, ExtendedAttributes::Underlined | ExtendedAttributes::DoublyUnderlined);
+        WI_ClearAllFlags(expectedAttrs, CharacterAttributes::Underlined | CharacterAttributes::DoublyUnderlined);
         vtSeq = L"\x1b[24m";
         validate(expectedAttrs, vtSeq);
     }
     if (blink)
     {
-        WI_ClearFlag(expectedAttrs, ExtendedAttributes::Blinking);
+        WI_ClearFlag(expectedAttrs, CharacterAttributes::Blinking);
         vtSeq = L"\x1b[25m";
         validate(expectedAttrs, vtSeq);
     }
     if (invisible)
     {
-        WI_ClearFlag(expectedAttrs, ExtendedAttributes::Invisible);
+        WI_ClearFlag(expectedAttrs, CharacterAttributes::Invisible);
         vtSeq = L"\x1b[28m";
         validate(expectedAttrs, vtSeq);
     }
     if (crossedOut)
     {
-        WI_ClearFlag(expectedAttrs, ExtendedAttributes::CrossedOut);
+        WI_ClearFlag(expectedAttrs, CharacterAttributes::CrossedOut);
         vtSeq = L"\x1b[29m";
         validate(expectedAttrs, vtSeq);
     }

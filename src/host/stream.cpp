@@ -153,7 +153,7 @@ using Microsoft::Console::Interactivity::ServiceLocator;
                 }
                 else
                 {
-                    const auto zeroVkeyData = VkKeyScanW(0);
+                    const auto zeroVkeyData = OneCoreSafeVkKeyScanW(0);
                     const auto zeroVKey = LOBYTE(zeroVkeyData);
                     const auto zeroControlKeyState = HIBYTE(zeroVkeyData);
 

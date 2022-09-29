@@ -70,9 +70,10 @@ JSON_ENUM_MAPPER(::winrt::Windows::UI::Xaml::Media::Stretch)
 
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ScrollbarState)
 {
-    static constexpr std::array<pair_type, 2> mappings = {
+    static constexpr std::array<pair_type, 3> mappings = {
         pair_type{ "visible", ValueType::Visible },
-        pair_type{ "hidden", ValueType::Hidden }
+        pair_type{ "hidden", ValueType::Hidden },
+        pair_type{ "always", ValueType::Always }
     };
 };
 

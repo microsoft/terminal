@@ -57,6 +57,7 @@ locl
 lorem
 Lorigin
 maxed
+minimalistic
 mkmk
 mnt
 mru

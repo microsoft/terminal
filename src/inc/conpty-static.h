@@ -41,4 +41,6 @@ CONPTY_EXPORT HRESULT WINAPI ConptyReparentPseudoConsole(HPCON hPC, HWND newPare
 
 CONPTY_EXPORT VOID WINAPI ConptyClosePseudoConsole(HPCON hPC);
 
+CONPTY_EXPORT VOID WINAPI ConptyClosePseudoConsoleNoWait(HPCON hPC);
+
 CONPTY_EXPORT HRESULT WINAPI ConptyPackPseudoConsole(HANDLE hServerProcess, HANDLE hRef, HANDLE hSignal, HPCON* phPC);

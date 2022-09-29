@@ -25,7 +25,7 @@ Selection::KeySelectionEventResult Selection::HandleKeySelectionEvent(const INPU
     FAIL_FAST_IF(!IsInSelectingState());
 
     const auto wVirtualKeyCode = pInputKeyInfo->GetVirtualKey();
-    const auto ctrlPressed = WI_IsFlagSet(GetKeyState(VK_CONTROL), KEY_PRESSED);
+    const auto ctrlPressed = WI_IsFlagSet(OneCoreSafeGetKeyState(VK_CONTROL), KEY_PRESSED);
 
     // if escape or ctrl-c, cancel selection
     if (!IsMouseButtonDown())
@@ -611,7 +611,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
 // - <none>
 void Selection::CheckAndSetAlternateSelection()
 {
-    _fUseAlternateSelection = !!(GetKeyState(VK_MENU) & KEY_PRESSED);
+    _fUseAlternateSelection = !!(OneCoreSafeGetKeyState(VK_MENU) & KEY_PRESSED);
 }
 
 // Routine Description:
@@ -904,7 +904,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
         }
 
         // see if shift is down. if so, we're extending the selection. otherwise, we're resetting the anchor
-        if (GetKeyState(VK_SHIFT) & KEY_PRESSED)
+        if (OneCoreSafeGetKeyState(VK_SHIFT) & KEY_PRESSED)
         {
             // if we're just starting to "extend" our selection from moving around as a cursor
             // then attempt to set the alternate selection state based on the ALT key right now

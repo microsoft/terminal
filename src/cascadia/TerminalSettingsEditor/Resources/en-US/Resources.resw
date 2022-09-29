@@ -936,7 +936,11 @@
   </data>
   <data name="Profile_ScrollbarVisibilityVisible.Content" xml:space="preserve">
     <value>Visible</value>
-    <comment>An option to choose from for the "scrollbar visibility" setting. When selected, the scrollbar is visible.</comment>
+    <comment>An option to choose from for the "scrollbar visibility" setting. When selected, the scrollbar is visible but may dynamically shrink.</comment>
+  </data>
+  <data name="Profile_ScrollbarVisibilityAlways.Content" xml:space="preserve">
+    <value>Always</value>
+    <comment>An option to choose from for the "scrollbar visibility" setting. When selected, the scrollbar is always visible.</comment>
   </data>
   <data name="Profile_SnapOnInput.Header" xml:space="preserve">
     <value>Scroll to input when typing</value>
