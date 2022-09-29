@@ -769,14 +769,11 @@ til::point CommandLine::_moveCursorRightByWord(COOKED_READ_DATA& cookedReadData)
         if (*NextWord == L' ')
         {
             // If the current character is space, skip to the next non-space character.
-            do
+            while (++NextWord < BufLast)
             {
                 if (*NextWord != L' ')
-                {
                     break;
-                }
-                ++NextWord;
-            } while (NextWord < BufLast);
+            }
         }
         else
         {
@@ -792,14 +789,12 @@ til::point CommandLine::_moveCursorRightByWord(COOKED_READ_DATA& cookedReadData)
             }
 
             // Skip the space block.
-
-            while (NextWord < BufLast)
+            for (; NextWord < BufLast; NextWord++;)
             {
                 if (*NextWord != L' ')
                 {
                     break;
                 }
-                NextWord++;
             }
         }
 
