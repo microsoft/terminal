@@ -189,6 +189,8 @@ namespace Microsoft::Console::VirtualTerminal
         void _ApplyCursorMovementFlags(Cursor& cursor) noexcept;
         void _FillRect(TextBuffer& textBuffer, const til::rect& fillRect, const wchar_t fillChar, const TextAttribute fillAttrs);
         void _SelectiveEraseRect(TextBuffer& textBuffer, const til::rect& eraseRect);
+        void _ChangeRectAttributes(TextBuffer& textBuffer, const til::rect& changeRect, std::function<void(TextAttribute&)> changeOp);
+        void _ChangeRectOrStreamAttributes(const til::rect& changeArea, std::function<void(TextAttribute&)> changeOp);
         til::rect _CalculateRectArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const til::size bufferSize);
         void _EraseScrollback();
         void _EraseAll();
@@ -254,5 +256,10 @@ namespace Microsoft::Console::VirtualTerminal
         size_t _SetRgbColorsHelper(const VTParameters options,
                                    TextAttribute& attr,
                                    const bool isForeground) noexcept;
+        size_t _ApplyGraphicsOption(const VTParameters options,
+                                    const size_t optionIndex,
+                                    TextAttribute& attr) noexcept;
+        void _ApplyGraphicsOptions(const VTParameters options,
+                                   TextAttribute& attr) noexcept;
     };
 }

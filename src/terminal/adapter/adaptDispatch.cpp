@@ -785,6 +785,70 @@ bool AdaptDispatch::SelectiveEraseInLine(const DispatchTypes::EraseType eraseTyp
 }
 
 // Routine Description:
+// - Changes the attributes of each cell in a rectangular area of the buffer.
+// Arguments:
+// - textBuffer - Target buffer to be changed.
+// - changeRect - A rectangular area of the buffer that will be affected.
+// - changeOp - Function that will be applied to each of the attributes.
+// Return Value:
+// - <none>
+void AdaptDispatch::_ChangeRectAttributes(TextBuffer& textBuffer, const til::rect& changeRect, std::function<void(TextAttribute&)> changeOp)
+{
+    if (changeRect)
+    {
+        for (auto row = changeRect.top; row < changeRect.bottom; row++)
+        {
+            auto& rowBuffer = textBuffer.GetRowByOffset(row);
+            auto& attrs = rowBuffer.GetAttrRow();
+            for (auto col = changeRect.left; col < changeRect.right; col++)
+            {
+                auto attr = attrs.GetAttrByColumn(col);
+                changeOp(attr);
+                attrs.Replace(col, col + 1, attr);
+            }
+        }
+        textBuffer.TriggerRedraw(Viewport::FromExclusive(changeRect));
+        _api.NotifyAccessibilityChange(changeRect);
+    }
+}
+
+// Routine Description:
+// - Changes the attributes of each cell in an area of the buffer.
+// Arguments:
+// - changeArea - Area of the buffer that will be affected. This may be
+//     interpreted as a rectangle or a stream depending on the state of the
+//     _isChangeExtentRectangular field.
+// - changeOp - Function that will be applied to each of the attributes.
+// Return Value:
+// - <none>
+void AdaptDispatch::_ChangeRectOrStreamAttributes(const til::rect& changeArea, std::function<void(TextAttribute&)> changeOp)
+{
+    auto& textBuffer = _api.GetTextBuffer();
+    const auto bufferSize = textBuffer.GetSize().Dimensions();
+    const auto changeRect = _CalculateRectArea(changeArea.top, changeArea.left, changeArea.bottom, changeArea.right, bufferSize);
+    const auto lineCount = changeRect.height();
+
+    // If the change extent is rectangular, we can apply the change with a
+    // single call. The same is true for a stream extent that is only one line.
+    if (_isChangeExtentRectangular || lineCount == 1)
+    {
+        _ChangeRectAttributes(textBuffer, changeRect, changeOp);
+    }
+    // If the stream extent is more than one line we require three passes. The
+    // top line is altered from the left offset up to the end of the line. The
+    // bottom line is altered from the start up to the right offset. All the
+    // lines inbetween have their entire length altered. The right coordinate
+    // must be greater than the left, otherwise the operation is ignored.
+    else if (lineCount > 1 && changeRect.right > changeRect.left)
+    {
+        const auto bufferWidth = bufferSize.width;
+        _ChangeRectAttributes(textBuffer, { changeRect.origin(), til::size{ bufferWidth - changeRect.left, 1 } }, changeOp);
+        _ChangeRectAttributes(textBuffer, { { 0, changeRect.top + 1 }, til::size{ bufferWidth, lineCount - 2 } }, changeOp);
+        _ChangeRectAttributes(textBuffer, { { 0, changeRect.bottom - 1 }, til::size{ changeRect.right, 1 } }, changeOp);
+    }
+}
+
+// Routine Description:
 // - Helper method to caculate the applicable buffer coordinates for use with
 //   the various rectangular area operations.
 // Arguments:
