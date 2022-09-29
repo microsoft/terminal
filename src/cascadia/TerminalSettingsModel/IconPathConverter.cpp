@@ -209,7 +209,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         throw hresult_not_implemented();
     }
 
-    Windows::UI::Xaml::Controls::IconSource IconPathConverter::IconSourceWUX(hstring path)
+    Windows::UI::Xaml::Controls::IconSource _IconSourceWUX(hstring path)
     {
         return _getIconSource<Windows::UI::Xaml::Controls::IconSource>(path);
     }
@@ -348,7 +348,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto indexOpt = _getIconIndex(iconPath, iconPathWithoutIndex);
         if (!indexOpt.has_value())
         {
-            auto source = IconPathConverter::IconSourceWUX(iconPath);
+            auto source = _IconSourceWUX(iconPath);
             Controls::IconSourceElement icon;
             icon.IconSource(source);
             icon.Width(32);

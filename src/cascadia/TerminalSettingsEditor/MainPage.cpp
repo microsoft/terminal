@@ -569,23 +569,34 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         profileNavItem.Content(box_value(profile.Name()));
         profileNavItem.Tag(box_value<Editor::ProfileViewModel>(profile));
 
-        const auto iconSource{ IconPathConverter::IconSourceWUX(profile.Icon()) };
-        WUX::Controls::IconSourceElement icon;
-        icon.IconSource(iconSource);
-        profileNavItem.Icon(icon);
+        if (!profile.Icon().empty())
+        {
+            winrt::weak_ref<MUX::Controls::NavigationViewItem> weakItem(profileNavItem);
+            Dispatcher().RunAsync(CoreDispatcherPriority::Low, [weakItem, icon = profile.Icon()]() -> winrt::fire_and_forget {
+                if (auto item{ weakItem.get() })
+                {
+                    const auto iconElem{ co_await IconPathConverter::IconWUX(icon) };
+                    item.Icon(iconElem);
+                }
+            });
+        }
 
         // Update the menu item when the icon/name changes
         auto weakMenuItem{ make_weak(profileNavItem) };
-        profile.PropertyChanged([weakMenuItem](const auto&, const WUX::Data::PropertyChangedEventArgs& args) {
+        profile.PropertyChanged([weakMenuItem, dispatcher = Dispatcher()](const auto&, const WUX::Data::PropertyChangedEventArgs& args) {
             if (auto menuItem{ weakMenuItem.get() })
             {
                 const auto& tag{ menuItem.Tag().as<Editor::ProfileViewModel>() };
                 if (args.PropertyName() == L"Icon")
                 {
-                    const auto iconSource{ IconPathConverter::IconSourceWUX(tag.Icon()) };
-                    WUX::Controls::IconSourceElement icon;
-                    icon.IconSource(iconSource);
-                    menuItem.Icon(icon);
+                    winrt::weak_ref<MUX::Controls::NavigationViewItem> weakItem(menuItem);
+                    dispatcher.RunAsync(CoreDispatcherPriority::Low, [weakItem, icon = tag.Icon()]() -> winrt::fire_and_forget {
+                        if (auto item{ weakItem.get() })
+                        {
+                            const auto iconElem{ co_await IconPathConverter::IconWUX(icon) };
+                            item.Icon(iconElem);
+                        }
+                    });
                 }
                 else if (args.PropertyName() == L"Name")
                 {
