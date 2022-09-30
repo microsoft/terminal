@@ -300,7 +300,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Media::Imaging::SoftwareBitmapSource> _getImageIconSourceForBinary(std::wstring_view iconPathWithoutIndex,
-                                                                                                             int index)
+                                                                                                                                             int index)
     {
         winrt::apartment_context fg_thread;
 
