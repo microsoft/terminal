@@ -747,7 +747,7 @@
     <comment>{0} will be replaced with a number.</comment>
   </data>
   <data name="AboutToolTip" xml:space="preserve">
-    <value>Open the About dialog</value>
+    <value>Open a dialog containing product information</value>
   </data>
   <data name="ChooseColorToolTip" xml:space="preserve">
     <value>Open the color picker to choose the color of this tab</value>
