@@ -923,6 +923,10 @@ namespace winrt::TerminalApp::implementation
                 // Create the settings button.
                 auto settingsItem = WUX::Controls::MenuFlyoutItem{};
                 settingsItem.Text(RS_(L"SettingsMenuItem"));
+                const auto settingsToolTip = RS_(L"SettingsToolTip");
+
+                WUX::Controls::ToolTipService::SetToolTip(settingsItem, box_value(settingsToolTip));
+                Automation::AutomationProperties::SetHelpText(settingsItem, settingsToolTip);
 
                 WUX::Controls::SymbolIcon ico{};
                 ico.Symbol(WUX::Controls::Symbol::Setting);
@@ -940,6 +944,10 @@ namespace winrt::TerminalApp::implementation
                 // Create the command palette button.
                 auto commandPaletteFlyout = WUX::Controls::MenuFlyoutItem{};
                 commandPaletteFlyout.Text(RS_(L"CommandPaletteMenuItem"));
+                const auto commandPaletteToolTip = RS_(L"CommandPaletteToolTip");
+
+                WUX::Controls::ToolTipService::SetToolTip(commandPaletteFlyout, box_value(commandPaletteToolTip));
+                Automation::AutomationProperties::SetHelpText(commandPaletteFlyout, commandPaletteToolTip);
 
                 WUX::Controls::FontIcon commandPaletteIcon{};
                 commandPaletteIcon.Glyph(L"\xE945");
@@ -959,6 +967,10 @@ namespace winrt::TerminalApp::implementation
             // Create the about button.
             auto aboutFlyout = WUX::Controls::MenuFlyoutItem{};
             aboutFlyout.Text(RS_(L"AboutMenuItem"));
+            const auto aboutToolTip = RS_(L"AboutToolTip");
+
+            WUX::Controls::ToolTipService::SetToolTip(aboutFlyout, box_value(aboutToolTip));
+            Automation::AutomationProperties::SetHelpText(aboutFlyout, aboutToolTip);
 
             WUX::Controls::SymbolIcon aboutIcon{};
             aboutIcon.Symbol(WUX::Controls::Symbol::Help);
