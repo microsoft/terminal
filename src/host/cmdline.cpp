@@ -772,7 +772,9 @@ til::point CommandLine::_moveCursorRightByWord(COOKED_READ_DATA& cookedReadData)
             while (++NextWord < BufLast)
             {
                 if (*NextWord != L' ')
+                {
                     break;
+                }
             }
         }
         else
@@ -789,7 +791,7 @@ til::point CommandLine::_moveCursorRightByWord(COOKED_READ_DATA& cookedReadData)
             }
 
             // Skip the space block.
-            for (; NextWord < BufLast; NextWord++;)
+            for (; NextWord < BufLast; NextWord++)
             {
                 if (*NextWord != L' ')
                 {
