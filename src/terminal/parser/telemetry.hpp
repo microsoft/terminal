@@ -111,6 +111,7 @@ namespace Microsoft::Console::VirtualTerminal
             XTPUSHSGR,
             XTPOPSGR,
             DECCARA,
+            DECRARA,
             DECCRA,
             DECFRA,
             DECERA,

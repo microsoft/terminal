@@ -945,6 +945,61 @@ bool AdaptDispatch::ChangeAttributesRectangularArea(const VTInt top, const VTInt
 }
 
 // Routine Description:
+// - DECRARA - Reverses the attributes in a rectangular area. The affected range
+//   is dependent on the change extent setting defined by DECSACE.
+// Arguments:
+// - top - The first row of the area.
+// - left - The first column of the area.
+// - bottom - The last row of the area (inclusive).
+// - right - The last column of the area (inclusive).
+// - attrs - The rendition attributes that will be applied to the area.
+// Return Value:
+// - True.
+bool AdaptDispatch::ReverseAttributesRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const VTParameters attrs)
+{
+    // In order to create a mask of the attributes that we want to reverse, we
+    // need to go through the options one by one, applying each of them to an
+    // empty TextAttribute object from which can extract the effected bits. We
+    // then combine them with XOR, because if we're reversing the same attribute
+    // twice, we'd expect the two instances to cancel each other out.
+    auto reverseMask = CharacterAttributes::Normal;
+    if (!attrs.empty())
+    {
+        for (size_t i = 0; i < attrs.size();)
+        {
+            // A zero or default option is a special case that reverses all the
+            // rendition bits. But note that this shouldn't be triggered by an
+            // empty attribute list, so we we explicitly exclude that case in
+            // the empty check above.
+            if (attrs.at(i).value_or(0) == 0)
+            {
+                reverseMask ^= CharacterAttributes::Rendition;
+                i++;
+            }
+            else
+            {
+                auto allAttrsOff = TextAttribute{};
+                i += _ApplyGraphicsOption(attrs, i, allAttrsOff);
+                reverseMask ^= allAttrsOff.GetCharacterAttributes();
+            }
+        }
+    }
+
+    // If the accumulated mask ends up blank, there's nothing for us to do.
+    if (reverseMask != CharacterAttributes::Normal)
+    {
+        const auto changeOp = [&](TextAttribute& attr) noexcept {
+            auto characterAttributes = attr.GetCharacterAttributes();
+            characterAttributes ^= reverseMask;
+            attr.SetCharacterAttributes(characterAttributes);
+        };
+        _ChangeRectOrStreamAttributes({ left, top, right, bottom }, changeOp);
+    }
+
+    return true;
+}
+
+// Routine Description:
 // - DECCRA - Copys a rectangular area from one part of the buffer to another.
 // Arguments:
 // - top - The first row of the source area.
