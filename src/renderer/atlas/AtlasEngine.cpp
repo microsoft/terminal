@@ -896,7 +896,7 @@ void AtlasEngine::_createSwapChain()
         DXGI_SWAP_CHAIN_DESC1 desc{};
         desc.Width = _api.sizeInPixel.x;
         desc.Height = _api.sizeInPixel.y;
-        desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        desc.Format = _r.d2dMode ? DXGI_FORMAT_B8G8R8A8_UNORM : DXGI_FORMAT_R8G8B8A8_UNORM;
         desc.SampleDesc.Count = 1;
         desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
         // Sometimes up to 2 buffers are locked, for instance during screen capture or when moving the window.
