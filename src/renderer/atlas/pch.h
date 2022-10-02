@@ -25,7 +25,8 @@
 #include <dxgidebug.h>
 #include <VersionHelpers.h>
 
-#include <gsl/gsl_util>
+#include <gsl/util>
+#include <gsl/narrow>
 #include <gsl/pointers>
 #include <gsl/span>
 #include <wil/com.h>

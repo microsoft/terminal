@@ -62,10 +62,8 @@
 #include <wil/win32_helpers.h>
 
 // GSL
-// Block GSL Multi Span include because it both has C++17 deprecated iterators
-// and uses the C-namespaced "max" which conflicts with Windows definitions.
-#define GSL_MULTI_SPAN_H
 #include <gsl/gsl>
+#include <gsl/narrow>
 #include <gsl/span_ext>
 
 // CppCoreCheck
