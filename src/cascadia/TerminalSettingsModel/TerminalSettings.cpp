@@ -234,7 +234,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                     ApplyColorScheme(scheme);
                 }
             }
-        }  
+        }
         if (appearance.Foreground())
         {
             _DefaultForeground = til::color{ appearance.Foreground().Value() };
