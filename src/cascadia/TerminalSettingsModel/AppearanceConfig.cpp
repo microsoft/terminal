@@ -54,10 +54,19 @@ Json::Value AppearanceConfig::ToJson() const
     JsonUtils::SetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
     JsonUtils::SetValueForKey(json, CursorColorKey, _CursorColor);
     JsonUtils::SetValueForKey(json, OpacityKey, _Opacity, JsonUtils::OptionalConverter<double, IntAsFloatPercentConversionTrait>{});
-    if (HasColorSchemeName() && HasLightColorSchemeName())
+    if (HasDarkColorSchemeName() && HasLightColorSchemeName())
     {
-        JsonUtils::SetValueForKey(json["colorScheme"], "dark", _DarkColorSchemeName);
-        JsonUtils::SetValueForKey(json["colorScheme"], "light", _LightColorSchemeName);
+        // check if the setting is coming from the UI, if so grab the ColorSchemeName until the settings UI is fixed..
+        if (_ColorSchemeName != _DarkColorSchemeName)
+        {
+            JsonUtils::SetValueForKey(json["colorScheme"], "dark", _ColorSchemeName);
+            JsonUtils::SetValueForKey(json["colorScheme"], "light", _ColorSchemeName);
+        }
+        else
+        {
+            JsonUtils::SetValueForKey(json["colorScheme"], "dark", _DarkColorSchemeName);
+            JsonUtils::SetValueForKey(json["colorScheme"], "light", _LightColorSchemeName);
+        }
     }
     else if (HasColorSchemeName())
     {

@@ -217,6 +217,14 @@ namespace SettingsModelLocalTests
                     {
                         "name": "Different reference",
                         "colorScheme": "One Half Dark"
+                    },
+                    {
+                        "name": "Different reference / Light and Dark",
+                        "colorScheme": 
+                        {
+                            "dark": "One Half Dark",
+                            "light": "One Half Light"
+                        }
                     }
                 ]
             },
@@ -321,6 +329,15 @@ namespace SettingsModelLocalTests
             const auto& prof{ profiles.GetAt(3) };
             VERIFY_ARE_EQUAL(L"One Half Dark", prof.DefaultAppearance().ColorSchemeName());
             VERIFY_IS_TRUE(prof.DefaultAppearance().HasColorSchemeName());
+        }
+        {
+            const auto& prof{ profiles.GetAt(4) };
+            VERIFY_ARE_EQUAL(L"One Half Dark", prof.DefaultAppearance().DarkColorSchemeName());
+            VERIFY_ARE_EQUAL(L"One Half Light", prof.DefaultAppearance().LightColorSchemeName());
+            VERIFY_ARE_EQUAL(L"One Half Dark", prof.DefaultAppearance().ColorSchemeName());
+            VERIFY_IS_TRUE(prof.DefaultAppearance().HasColorSchemeName());
+            VERIFY_IS_TRUE(prof.DefaultAppearance().HasDarkColorSchemeName());
+            VERIFY_IS_TRUE(prof.DefaultAppearance().HasLightColorSchemeName());
         }
     }
 }

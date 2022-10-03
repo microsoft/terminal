@@ -14,6 +14,7 @@ namespace Microsoft.Terminal.Control
         // IntenseIsBold and IntenseIsBright are in Core Appearance
         Double Opacity { get; };
 
+        String ColorSchemeName { get; };
         // Experimental settings
         Boolean RetroTerminalEffect { get; };
         String PixelShaderPath { get; };

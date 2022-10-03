@@ -326,6 +326,9 @@ Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, SelectionBackground);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, CursorColor);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, Opacity);
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, DarkColorSchemeName);
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, LightColorSchemeName);
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, ColorSchemeName);
     }
 
     // UnfocusedAppearance is treated as a single setting,

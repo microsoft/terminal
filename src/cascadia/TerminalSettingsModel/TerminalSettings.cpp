@@ -187,7 +187,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         _CursorShape = appearance.CursorShape();
         _CursorHeight = appearance.CursorHeight();
-        if (currentTheme.Name() == L"dark")
+        // check if this setting update is coming from the UI. DarkColorSchemeName doesn't update till the save button is hit. This means if they differ, it is just the control preview that needs the update.
+        if (appearance.DarkColorSchemeName() != appearance.ColorSchemeName())
+        {
+            if (const auto scheme = schemes.TryLookup(appearance.ColorSchemeName()))
+            {
+                ApplyColorScheme(scheme);
+            }
+        }
+        else if (currentTheme.Name() == L"dark")
         {
             if (!appearance.DarkColorSchemeName().empty())
             {
@@ -363,6 +371,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         else
         {
             AppliedColorScheme(scheme);
+            ColorSchemeName(scheme.Name());
             _DefaultForeground = til::color{ scheme.Foreground() };
             _DefaultBackground = til::color{ scheme.Background() };
             _SelectionBackground = til::color{ scheme.SelectionBackground() };
