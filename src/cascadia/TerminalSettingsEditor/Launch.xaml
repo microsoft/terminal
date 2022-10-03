@@ -210,7 +210,7 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock x:Uid="Globals_LaunchMode"
+                        <TextBlock x:Uid="Globals_LaunchModeSetting"
                                    Grid.Row="0"
                                    Grid.Column="0"
                                    VerticalAlignment="Center" />
@@ -228,14 +228,13 @@
                                    VerticalAlignment="Center" />
                         <StackPanel Grid.Row="1"
                                     Grid.Column="1">
-                            <StackPanel Orientation="Horizontal">
+                            <StackPanel Orientation="Horizontal"
+                                        Spacing="4">
                                 <muxc:NumberBox x:Uid="Globals_InitialPosXBox"
-                                                HorizontalAlignment="Stretch"
                                                 IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.UseDefaultLaunchPosition), Mode=OneWay}"
                                                 Style="{StaticResource LaunchSizeNumberBoxStyle}"
                                                 Value="{x:Bind ViewModel.InitialPosX, Mode=TwoWay}" />
                                 <muxc:NumberBox x:Uid="Globals_InitialPosYBox"
-                                                VerticalAlignment="Center"
                                                 IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.UseDefaultLaunchPosition), Mode=OneWay}"
                                                 Style="{StaticResource LaunchSizeNumberBoxStyle}"
                                                 Value="{x:Bind ViewModel.InitialPosY, Mode=TwoWay}" />

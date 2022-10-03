@@ -33,10 +33,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // We cannot use the macro for LaunchMode because we want to insert an event into the setter
         winrt::Windows::Foundation::IInspectable CurrentLaunchMode();
         void CurrentLaunchMode(const winrt::Windows::Foundation::IInspectable& enumEntry);
-        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> LaunchModeList()
-        {
-            return _LaunchModeList;
-        }
+        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> LaunchModeList();
 
         GETSET_BINDABLE_ENUM_SETTING(FirstWindowPreference, Model::FirstWindowPreference, _Settings.GlobalSettings().FirstWindowPreference);
         GETSET_BINDABLE_ENUM_SETTING(WindowingBehavior, Model::WindowingMode, _Settings.GlobalSettings().WindowingBehavior);

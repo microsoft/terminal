@@ -329,7 +329,7 @@
   </data>
   <data name="Globals_InitialPosXBox.PlaceholderText" xml:space="preserve">
     <value>X</value>
-    <comment>The string to be displayed when there is no current value in this number box.</comment>
+    <comment>The string to be displayed when there is no current value in the x-coordinate number box.</comment>
   </data>
   <data name="Globals_InitialPosYBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Y position</value>
@@ -337,7 +337,7 @@
   </data>
   <data name="Globals_InitialPosYBox.PlaceholderText" xml:space="preserve">
     <value>Y</value>
-    <comment>The string to be displayed when there is no current value in this number box.</comment>
+    <comment>The string to be displayed when there is no current value in the y-coordinate number box.</comment>
   </data>
   <data name="Globals_DefaultLaunchPositionCheckbox.Content" xml:space="preserve">
     <value>Use system default</value>
@@ -362,19 +362,27 @@
     <value>Open windows from a previous session</value>
     <comment>An option to choose from for the "First window preference" setting. Reopen the layouts from the last session.</comment>
   </data>
+  <data name="Globals_LaunchMode.Header" xml:space="preserve">
+    <value>Launch mode</value>
+    <comment>Header for a control to select what mode to launch the terminal in.</comment>
+  </data>
+  <data name="Globals_LaunchMode.HelpText" xml:space="preserve">
+    <value>How the terminal will appear on launch. Focus will hide the tabs and title bar.</value>
+    <comment>'Focus' must match &lt;Globals_LaunchModeFocus.Content&gt;.</comment>
+  </data>
   <data name="Globals_LaunchParameters.Header" xml:space="preserve">
     <value>Launch parameters</value>
-    <comment>Header for a set of settings that determine how terminal launches.</comment>
+    <comment>Header for a set of settings that determine how terminal launches. These settings include the launch mode, launch position and whether the teminal should center itself on launch.</comment>
   </data>
   <data name="Globals_LaunchParameters.HelpText" xml:space="preserve">
     <value>Settings that control how the terminal launches</value>
     <comment>A description for what the "launch parameters" expander contains. Presented near "Globals_LaunchParameters.Header".</comment>
   </data>
-  <data name="Globals_LaunchMode.Text" xml:space="preserve">
+  <data name="Globals_LaunchModeSetting.Text" xml:space="preserve">
     <value>Launch mode</value>
     <comment>Header for a control to select what mode to launch the terminal in.</comment>
   </data>
-  <data name="Globals_LaunchMode.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_LaunchModeSetting.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>How the terminal will appear on launch. Focus will hide the tabs and title bar.</value>
     <comment>'Focus' must match &lt;Globals_LaunchModeFocus.Content&gt;.</comment>
   </data>
