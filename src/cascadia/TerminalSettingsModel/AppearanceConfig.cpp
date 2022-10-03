@@ -73,7 +73,7 @@ Json::Value AppearanceConfig::ToJson() const
         JsonUtils::SetValueForKey(json["colorScheme"], "dark", _ColorSchemeName);
         JsonUtils::SetValueForKey(json["colorScheme"], "light", _ColorSchemeName);
     }
-    
+
 #define APPEARANCE_SETTINGS_TO_JSON(type, name, jsonKey, ...) \
     JsonUtils::SetValueForKey(json, jsonKey, _##name);
     MTSM_APPEARANCE_SETTINGS(APPEARANCE_SETTINGS_TO_JSON)
@@ -116,7 +116,6 @@ void AppearanceConfig::LayerJson(const Json::Value& json)
         JsonUtils::GetValueForKey(json["colorScheme"], "dark", _DarkColorSchemeName);
         JsonUtils::GetValueForKey(json["colorScheme"], "light", _LightColorSchemeName);
     }
-    
 
 #define APPEARANCE_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
     JsonUtils::GetValueForKey(json, jsonKey, _##name);

@@ -5,7 +5,7 @@ import "Profile.idl";
 #include "IInheritable.idl.h"
 
 #define INHERITABLE_APPEARANCE_SETTING(Type, Name) \
-    _BASE_INHERITABLE_SETTING(Type, Name);      \
+    _BASE_INHERITABLE_SETTING(Type, Name);         \
     Microsoft.Terminal.Settings.Model.IAppearanceConfig Name##OverrideSource { get; }
 
 namespace Microsoft.Terminal.Settings.Model
@@ -22,9 +22,7 @@ namespace Microsoft.Terminal.Settings.Model
         Vertical_Bottom = 0x20
     };
 
-    [flags]
-    enum IntenseStyle
-    {
+    [flags] enum IntenseStyle {
         Bold = 0x1,
         Bright = 0x2,
         All = 0xffffffff
