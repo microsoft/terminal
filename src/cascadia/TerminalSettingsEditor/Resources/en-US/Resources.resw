@@ -327,6 +327,10 @@
     <value>X position</value>
     <comment>Name for a control to choose the X coordinate of the terminal's starting position.</comment>
   </data>
+  <data name="Globals_InitialPosXBox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Enter the value for the x-coordinate.</value>
+    <comment>Tooltip for the control that allows the user to choose the X coordinate of the terminal's starting position.</comment>
+  </data>
   <data name="Globals_InitialPosXBox.PlaceholderText" xml:space="preserve">
     <value>X</value>
     <comment>The string to be displayed when there is no current value in the x-coordinate number box.</comment>
@@ -334,6 +338,10 @@
   <data name="Globals_InitialPosYBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Y position</value>
     <comment>Name for a control to choose the Y coordinate of the terminal's starting position.</comment>
+  </data>
+  <data name="Globals_InitialPosYBox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Enter the value for the y-coordinate.</value>
+    <comment>Tooltip for the control that allows the user to choose the Y coordinate of the terminal's starting position.</comment>
   </data>
   <data name="Globals_InitialPosYBox.PlaceholderText" xml:space="preserve">
     <value>Y</value>

@@ -214,7 +214,8 @@
                                    Grid.Row="0"
                                    Grid.Column="0"
                                    VerticalAlignment="Center" />
-                        <ComboBox Grid.Row="0"
+                        <ComboBox x:Name="LaunchModeComboBox"
+                                  Grid.Row="0"
                                   Grid.Column="1"
                                   MinWidth="240"
                                   AutomationProperties.AccessibilityView="Content"
@@ -230,11 +231,13 @@
                                     Grid.Column="1">
                             <StackPanel Orientation="Horizontal"
                                         Spacing="4">
-                                <muxc:NumberBox x:Uid="Globals_InitialPosXBox"
+                                <muxc:NumberBox x:Name="PosXBox"
+                                                x:Uid="Globals_InitialPosXBox"
                                                 IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.UseDefaultLaunchPosition), Mode=OneWay}"
                                                 Style="{StaticResource LaunchSizeNumberBoxStyle}"
                                                 Value="{x:Bind ViewModel.InitialPosX, Mode=TwoWay}" />
-                                <muxc:NumberBox x:Uid="Globals_InitialPosYBox"
+                                <muxc:NumberBox x:Name="PosYBox"
+                                                x:Uid="Globals_InitialPosYBox"
                                                 IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.UseDefaultLaunchPosition), Mode=OneWay}"
                                                 Style="{StaticResource LaunchSizeNumberBoxStyle}"
                                                 Value="{x:Bind ViewModel.InitialPosY, Mode=TwoWay}" />
@@ -247,7 +250,8 @@
                                    Grid.Row="2"
                                    Grid.Column="0"
                                    VerticalAlignment="Center" />
-                        <ToggleSwitch Grid.Row="2"
+                        <ToggleSwitch x:Name="CenterOnLaunchToggle"
+                                      Grid.Row="2"
                                       Grid.Column="1"
                                       IsOn="{x:Bind ViewModel.CenterOnLaunch, Mode=TwoWay}"
                                       Style="{StaticResource ToggleSwitchInExpanderStyle}" />
