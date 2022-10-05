@@ -52,10 +52,12 @@ try
 {
     if (WM_NCCREATE == uMsg)
     {
+#pragma warning(suppress : 26490) // Win32 APIs can only store void*, have to use reinterpret_cast
         auto cs = reinterpret_cast<CREATESTRUCT*>(lParam);
         HwndTerminal* that = static_cast<HwndTerminal*>(cs->lpCreateParams);
         that->_hwnd = wil::unique_hwnd(hwnd);
 
+#pragma warning(suppress : 26490) // Win32 APIs can only store void*, have to use reinterpret_cast
         SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(that));
         return DefWindowProc(hwnd, WM_NCCREATE, wParam, lParam);
     }
