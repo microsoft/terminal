@@ -1,12 +1,22 @@
-<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-    <RuntimeFrameworkVersion>3.1.18</RuntimeFrameworkVersion>
+    <TargetFramework>net6.0-windows10.0.22621.0</TargetFramework>
     <UseWPF>true</UseWPF>
     <Platforms>AnyCPU;x64;x86</Platforms>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <CsWinRTIncludes>Microsoft.Terminal.Core</CsWinRTIncludes>
+    <CsWinRTGeneratedFilesDir>$(OutDir)</CsWinRTGeneratedFilesDir>
+  </PropertyGroup>
+
+	<PropertyGroup>
+		<RestoreSources>
+			https://api.nuget.org/v3/index.json;
+		</RestoreSources>
+	</PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="$(SolutionDir)src\cascadia\PublicTerminalCore\PublicTerminalCore.vcxproj" />
@@ -22,6 +32,9 @@
     <Content Include="$(SolutionDir)bin\$(UnreasonablePlatform)\$(Configuration)\PublicTerminalCore.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.0.0" />
   </ItemGroup>
 
 </Project>
