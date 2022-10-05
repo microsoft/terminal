@@ -6,7 +6,7 @@
         "type": "git",
         "git": {
           "repositoryUrl": "https://github.com/imneme/pcg-cpp",
-          "commitHash": "ffd522e7188bef30a00c74dc7eb9de5faff90092"
+          "commitHash": "428802d1a5634f96bcd0705fab379ff0113bcf13"
         }
       }
     }
