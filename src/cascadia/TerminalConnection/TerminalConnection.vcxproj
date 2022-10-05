@@ -8,6 +8,8 @@
     <SubSystem>Console</SubSystem>
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
     <PgoTarget>true</PgoTarget>
+    <WindowsTargetPlatformVersion>10.0.22000.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformMinVersion>10.0.19041.0</WindowsTargetPlatformMinVersion>
   </PropertyGroup>
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
@@ -96,10 +98,8 @@
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
-
   <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
-
   <!--
   BODGY:
 
@@ -123,15 +123,7 @@
   _CopyFilesMarkedCopyLocal, and always creates the CopyUpToDateMarker. This
   makes the FastUpToDate check succeed.
   -->
-
-  <Target
-      Name="_Post_CopyFilesMarkedCopyLocal"
-      AfterTargets="_CopyFilesMarkedCopyLocal"
-      Condition="'@(ReferenceCopyLocalPaths)' != ''">
-
-    <Touch Files="@(CopyUpToDateMarker)"
-      AlwaysCreate="true" />
+  <Target Name="_Post_CopyFilesMarkedCopyLocal" AfterTargets="_CopyFilesMarkedCopyLocal" Condition="'@(ReferenceCopyLocalPaths)' != ''">
+    <Touch Files="@(CopyUpToDateMarker)" AlwaysCreate="true" />
   </Target>
-
-
 </Project>

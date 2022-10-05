@@ -9,6 +9,8 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <SubSystem>Console</SubSystem>
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+    <WindowsTargetPlatformVersion>10.0.22000.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformMinVersion>10.0.19041.0</WindowsTargetPlatformMinVersion>
   </PropertyGroup>
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>

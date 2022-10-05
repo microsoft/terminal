@@ -7,16 +7,14 @@
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="LibraryResources.cpp" />
     <ClCompile Include="ScopedResourceLoader.cpp" />
+    <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="ScopedResourceLoader.h" />
     <ClInclude Include="inc\LibraryResources.h" />
     <ClInclude Include="inc\ThrottledFunc.h" />
     <ClInclude Include="inc\Utils.h" />
     <ClInclude Include="inc\WtExeUtils.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
+    <ClInclude Include="inc\ScopedResourceLoader.h" />
   </ItemGroup>
 </Project>

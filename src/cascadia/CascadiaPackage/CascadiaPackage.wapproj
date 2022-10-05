@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
-
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalMUX>true</TerminalMUX>
   </PropertyGroup>
@@ -18,6 +17,7 @@
     <AppxOSMaxVersionTestedReplaceManifestVersion>false</AppxOSMaxVersionTestedReplaceManifestVersion>
     <OCExecutionAliasName Condition="'$(WindowsTerminalBranding)'=='' or '$(WindowsTerminalBranding)'=='Dev'">wtd</OCExecutionAliasName>
     <OCExecutionAliasName Condition="'$(OCExecutionAliasName)'==''">wt</OCExecutionAliasName>
+    <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
   </PropertyGroup>
   <PropertyGroup>
     <ProjectGuid>CA5CAD1A-224A-4171-B13A-F16E576FDD12</ProjectGuid>
@@ -55,7 +55,6 @@
     <PRIResource Include="Resources\Resources.resw" />
     <OCResourceDirectory Include="Resources" />
   </ItemGroup>
-
   <!-- This is picked up by CascadiaResources.build.items. -->
   <PropertyGroup Condition="'$(WindowsTerminalBranding)'=='' or '$(WindowsTerminalBranding)'=='Dev'">
     <WindowsTerminalAssetSuffix>-Dev</WindowsTerminalAssetSuffix>
@@ -63,10 +62,8 @@
   <PropertyGroup Condition="'$(WindowsTerminalBranding)'=='Preview'">
     <WindowsTerminalAssetSuffix>-Pre</WindowsTerminalAssetSuffix>
   </PropertyGroup>
-
   <Import Project="$(MSBuildThisFileDirectory)..\CascadiaResources.build.items" />
   <Import Project="$(OpenConsoleDir)src\wap-common.build.post.props" />
-
   <ItemGroup>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\WindowsTerminal\WindowsTerminal.vcxproj">
       <Project>{CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}</Project>
@@ -83,14 +80,13 @@
     <ProjectReference Include="$(OpenConsoleDir)src\host\exe\Host.EXE.vcxproj">
       <Project>{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}</Project>
     </ProjectReference>
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\ElevateShim\elevate-shim.vcxproj" >
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\ElevateShim\elevate-shim.vcxproj">
       <Project>{416fd703-baa7-4f6e-9361-64f550ec8fca}</Project>
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\host\proxy\Host.Proxy.vcxproj">
       <Project>{71CC9D78-BA29-4D93-946F-BEF5D9A3A6EF}</Project>
     </ProjectReference>
   </ItemGroup>
-
   <Target Name="OpenConsoleStompSourceProjectForWapProject" BeforeTargets="_ConvertItems">
     <ItemGroup>
       <!-- Stomp all "SourceProject" values for all incoming dependencies to flatten the package. -->
@@ -136,13 +132,11 @@
       <!-- 16.3.0 - remove non-resources.pri PRI files since we just forced them back in. -->
       <AppxPackagePayload Remove="@(AppxPackagePayload)" Condition="'%(Extension)' == '.pri' and '%(Filename)' != 'resources'" />
       <AppxUploadPackagePayload Remove="@(AppxUploadPackagePayload)" Condition="'%(Extension)' == '.pri' and '%(Filename)' != 'resources'" />
-
       <!-- Remove all of the xaml files, because we are using embedded xbf payloads (saves about 500kb on disk!) -->
       <AppxPackagePayload Remove="@(AppxPackagePayload)" Condition="'%(Extension)' == '.xaml'" />
       <AppxUploadPackagePayload Remove="@(AppxUploadPackagePayload)" Condition="'%(Extension)' == '.xaml'" />
     </ItemGroup>
   </Target>
-
   <!--
     Some of our dependencies still require a CRT, so we're going to ship the forwarders in our package and
     depend on the desktop CRT. This lets us unify the Windows 10 and Windows 11 builds around a common CRT.
@@ -155,7 +149,6 @@
       <FrameworkSdkPackage Remove="@(FrameworkSdkPackage)" Condition="'%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00' or '%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00.Debug'" />
     </ItemGroup>
   </Target>
-
   <!-- This target removes the FrameworkSdkPackages from before the *desktop bridge* manifest generation happens. -->
   <Target Name="_OpenConsoleStripAllDependenciesFromPackageSecondManifest" BeforeTargets="_GenerateDesktopBridgeAppxManifest" DependsOnTargets="_ResolveVCLibDependencies">
     <ItemGroup>
@@ -163,9 +156,7 @@
       <FrameworkSdkPackage Remove="@(FrameworkSdkPackage)" Condition="'%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00' or '%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00.Debug'" />
     </ItemGroup>
   </Target>
-
   <!-- This is required to get the package dependency in the AppXManifest. -->
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
-
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 </Project>
