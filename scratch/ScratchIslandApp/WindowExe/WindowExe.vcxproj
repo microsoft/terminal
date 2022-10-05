@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-
   <PropertyGroup Label="Globals">
     <ProjectGuid>{b4427499-9fde-4208-b456-5bc580637633}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -14,24 +13,20 @@
     <WindowsAppContainer>false</WindowsAppContainer>
     <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
   </PropertyGroup>
-
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
     <TerminalXamlApplicationToolkit>true</TerminalXamlApplicationToolkit>
     <TerminalVCRTForwarders>true</TerminalVCRTForwarders>
     <TerminalThemeHelpers>true</TerminalThemeHelpers>
   </PropertyGroup>
-
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
-
   <ItemDefinitionGroup>
     <ClCompile>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
   </ItemDefinitionGroup>
-
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(OpenConsoleDir)\src\inc;$(OpenConsoleDir)\dep;$(OpenConsoleDir)\dep\Console;$(OpenConsoleDir)\dep\Win32K;$(OpenConsoleDir)\dep\gsl\include;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
@@ -71,12 +66,10 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
-
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
     <ProjectReference Include="$(OpenConsoleDir)scratch\ScratchIslandApp\SampleApp\dll\SampleApp.vcxproj" />
   </ItemGroup>
-
   <!-- ========================== Other References ========================= -->
   <ItemGroup>
     <!--
@@ -123,8 +116,8 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <WindowsTargetPlatformVersion>10.0.22000.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
-
   <!--
   BODGY
 
@@ -138,12 +131,10 @@
   -->
   <ItemDefinitionGroup>
     <Link>
-        <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
+      <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
     </Link>
   </ItemDefinitionGroup>
-
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
-
   <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.7.1\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.7.1\build\native\Microsoft.UI.Xaml.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -151,7 +142,6 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.7.1\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.7.1\build\native\Microsoft.UI.Xaml.targets'))" />
   </Target>
-
   <!-- Override GetPackagingOutputs to roll up all our dependencies.
        This ensures that when the WAP packaging project asks what files go into
        the package, we tell it.
@@ -162,32 +152,20 @@
     <_ContinueOnError Condition="'$(BuildingProject)' != 'true'">false</_ContinueOnError>
   </PropertyGroup>
   <Target Name="GetPackagingOutputs" Returns="@(PackagingOutputs)">
-    <MSBuild
-      Projects="@(ProjectReferenceWithConfiguration)"
-      Targets="GetPackagingOutputs"
-      BuildInParallel="$(BuildInParallel)"
-      Properties="%(ProjectReferenceWithConfiguration.SetConfiguration); %(ProjectReferenceWithConfiguration.SetPlatform)"
-      Condition="'@(ProjectReferenceWithConfiguration)' != ''
-                 and '%(ProjectReferenceWithConfiguration.BuildReference)' == 'true'
-                 and '%(ProjectReferenceWithConfiguration.ReferenceOutputAssembly)' == 'true'"
-      ContinueOnError="$(_ContinueOnError)">
-      <Output TaskParameter="TargetOutputs" ItemName="_PackagingOutputsFromOtherProjects"/>
+    <MSBuild Projects="@(ProjectReferenceWithConfiguration)" Targets="GetPackagingOutputs" BuildInParallel="$(BuildInParallel)" Properties="%(ProjectReferenceWithConfiguration.SetConfiguration); %(ProjectReferenceWithConfiguration.SetPlatform)" Condition="'@(ProjectReferenceWithConfiguration)' != ''&#xD;&#xA;                 and '%(ProjectReferenceWithConfiguration.BuildReference)' == 'true'&#xD;&#xA;                 and '%(ProjectReferenceWithConfiguration.ReferenceOutputAssembly)' == 'true'" ContinueOnError="$(_ContinueOnError)">
+      <Output TaskParameter="TargetOutputs" ItemName="_PackagingOutputsFromOtherProjects" />
     </MSBuild>
-
     <ItemGroup>
       <PackagingOutputs Include="@(_PackagingOutputsFromOtherProjects)" />
     </ItemGroup>
-
     <!-- **BEGIN VC LIBS HACK** -->
     <PropertyGroup>
       <ReasonablePlatform Condition="'$(Platform)'=='Win32'">x86</ReasonablePlatform>
       <ReasonablePlatform Condition="'$(ReasonablePlatform)'==''">$(Platform)</ReasonablePlatform>
     </PropertyGroup>
-
     <ItemGroup Condition="'$(WindowExeOfficialBuild)'=='true'">
       <!-- Add all the CRT libs as content; these must be inside a Target as they are wildcards. -->
       <_OpenConsoleVCLibToCopy Include="$(VCToolsRedistInstallDir)\$(ReasonablePlatform)\Microsoft.VC142.CRT\*.dll" />
-
       <PackagingOutputs Include="@(_OpenConsoleVCLibToCopy)">
         <ProjectName>$(ProjectName)</ProjectName>
         <OutputGroup>BuiltProjectOutputGroup</OutputGroup>
@@ -195,8 +173,6 @@
       </PackagingOutputs>
     </ItemGroup>
     <!-- **END VC LIBS HACK** -->
-
-
     <!-- **BEGIN TERMINAL CONNECTION HACK** -->
     <!-- This is the same as the above VC libs hack, but for TerminalConnection.
     TerminalConnection depends on cpprest*.dll, and if we don't include it in
@@ -208,7 +184,6 @@
     its own. -->
     <ItemGroup>
       <_TerminalConnectionDlls Include="$(OpenConsoleCommonOutDir)\TerminalConnection\*.dll" />
-
       <PackagingOutputs Include="@(_TerminalConnectionDlls)">
         <ProjectName>$(ProjectName)</ProjectName>
         <OutputGroup>BuiltProjectOutputGroup</OutputGroup>
@@ -216,24 +191,20 @@
       </PackagingOutputs>
     </ItemGroup>
     <!-- **END TERMINAL CONNECTION HACK** -->
-
     <!-- Same thing again here, with WindowsTerminal.exe -->
     <ItemGroup>
       <_WindowsTerminalExe Include="$(OpenConsoleCommonOutDir)\WindowsTerminal\*.exe" />
-
       <PackagingOutputs Include="@(_WindowsTerminalExe)">
         <ProjectName>$(ProjectName)</ProjectName>
         <OutputGroup>BuiltProjectOutputGroup</OutputGroup>
         <TargetPath>%(Filename)%(Extension)</TargetPath>
       </PackagingOutputs>
     </ItemGroup>
-
     <!-- Same thing AGAIN here, with OpenConsole.exe If you forget this, then
     the scratch app will use the inbox conpty with a newer conpty lib, causing
     us to send the inbox conhost messages that will make it explode. -->
     <ItemGroup>
       <_OpenConsoleExe Include="$(OpenConsoleCommonOutDir)\OpenConsole.exe" />
-
       <PackagingOutputs Include="@(_OpenConsoleExe)">
         <ProjectName>$(ProjectName)</ProjectName>
         <OutputGroup>BuiltProjectOutputGroup</OutputGroup>
@@ -241,10 +212,7 @@
       </PackagingOutputs>
     </ItemGroup>
   </Target>
-
   <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" />
-
   <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 </Project>
-
