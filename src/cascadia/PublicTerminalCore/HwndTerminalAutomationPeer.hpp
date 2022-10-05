@@ -28,6 +28,9 @@ class HwndTerminalAutomationPeer :
 public:
     void RecordKeyEvent(const WORD vkey);
 
+    IFACEMETHODIMP GetPropertyValue(_In_ PROPERTYID idProp,
+                                    _Out_ VARIANT* pVariant) noexcept override;
+
 #pragma region IUiaEventDispatcher
     void SignalSelectionChanged() override;
     void SignalTextChanged() override;

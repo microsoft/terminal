@@ -50,6 +50,15 @@ LRESULT CALLBACK HwndTerminal::HwndTerminalWndProc(
     LPARAM lParam) noexcept
 try
 {
+    if (WM_NCCREATE == uMsg)
+    {
+        auto cs = reinterpret_cast<CREATESTRUCT*>(lParam);
+        HwndTerminal* that = static_cast<HwndTerminal*>(cs->lpCreateParams);
+        that->_hwnd = wil::unique_hwnd(hwnd);
+
+        SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(that));
+        return DefWindowProc(hwnd, WM_NCCREATE, wParam, lParam);
+    }
 #pragma warning(suppress : 26490) // Win32 APIs can only store void*, have to use reinterpret_cast
     auto terminal = reinterpret_cast<HwndTerminal*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
 
@@ -178,7 +187,7 @@ HwndTerminal::HwndTerminal(HWND parentHwnd) :
 
     if (RegisterTermClass(hInstance))
     {
-        _hwnd = wil::unique_hwnd(CreateWindowExW(
+        CreateWindowExW(
             0,
             term_window_class,
             nullptr,
@@ -193,10 +202,7 @@ HwndTerminal::HwndTerminal(HWND parentHwnd) :
             parentHwnd,
             nullptr,
             hInstance,
-            nullptr));
-
-#pragma warning(suppress : 26490) // Win32 APIs can only store void*, have to use reinterpret_cast
-        SetWindowLongPtr(_hwnd.get(), GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+            this);
     }
 }
 
@@ -326,7 +332,7 @@ IRawElementProviderSimple* HwndTerminal::_GetUiaProvider() noexcept
         {
             auto lock = _terminal->LockForWriting();
             LOG_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<HwndTerminalAutomationPeer>(&_uiaProvider, this->GetUiaData(), this));
-            _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(_uiaProvider.Get());
+            _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(_uiaProvider.Get()); // TODO CARLOS: fix circular ref
             LOG_IF_FAILED(_uiaEngine->Enable());
             _renderer->AddRenderEngine(_uiaEngine.get());
         }
@@ -377,29 +383,10 @@ void HwndTerminal::SendOutput(std::wstring_view data)
 
 HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal)
 {
-    // In order for UIA to hook up properly there needs to be a "static" window hosting the
-    // inner win32 control. If the static window is not present then WM_GETOBJECT messages
-    // will not reach the child control, and the uia element will not be present in the tree.
-    auto _hostWindow = CreateWindowEx(
-        0,
-        L"static",
-        nullptr,
-        WS_CHILD |
-            WS_CLIPCHILDREN |
-            WS_CLIPSIBLINGS |
-            WS_VISIBLE,
-        0,
-        0,
-        0,
-        0,
-        parentHwnd,
-        nullptr,
-        nullptr,
-        nullptr);
-    auto _terminal = std::make_unique<HwndTerminal>(_hostWindow);
+    auto _terminal = std::make_unique<HwndTerminal>(/*_hostWindow*/ parentHwnd);
     RETURN_IF_FAILED(_terminal->Initialize());
 
-    *hwnd = _hostWindow;
+    *hwnd = _terminal->GetHwnd();
     *terminal = _terminal.release();
 
     return S_OK;

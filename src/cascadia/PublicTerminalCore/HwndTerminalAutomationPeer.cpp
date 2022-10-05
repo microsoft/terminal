@@ -59,6 +59,32 @@ void HwndTerminalAutomationPeer::RecordKeyEvent(const WORD vkey)
     }
 }
 
+// Implementation of IRawElementProviderSimple::get_PropertyValue.
+// Gets custom properties.
+IFACEMETHODIMP HwndTerminalAutomationPeer::GetPropertyValue(_In_ PROPERTYID propertyId,
+                                                            _Out_ VARIANT* pVariant) noexcept
+{
+    pVariant->vt = VT_EMPTY;
+
+    // Returning the default will leave the property as the default
+    // so we only really need to touch it for the properties we want to implement
+    if (propertyId == UIA_ClassNamePropertyId)
+    {
+        // IMPORTANT: Do NOT change the name. Screen readers like may be dependent on this being "WpfTermControl".
+        pVariant->bstrVal = SysAllocString(L"WPFTermControl");
+        if (pVariant->bstrVal != nullptr)
+        {
+            pVariant->vt = VT_BSTR;
+        }
+    }
+    else
+    {
+        // fall back to shared implementation
+        TermControlUiaProvider::GetPropertyValue(propertyId, pVariant);
+    }
+    return S_OK;
+}
+
 // Method Description:
 // - Signals the ui automation client that the terminal's selection has changed and should be updated
 // Arguments:
