@@ -6,7 +6,7 @@
         "type": "git",
         "git": {
           "repositoryUrl": "https://github.com/fmtlib/fmt",
-          "commitHash": "7bdf0628b1276379886c7f6dda2cef2b3b374f0b"
+          "commitHash": "a33701196adfad74917046096bf5a2aa0ab0bb50"
         }
       }
     }
