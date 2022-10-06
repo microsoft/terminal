@@ -80,7 +80,7 @@ IFACEMETHODIMP HwndTerminalAutomationPeer::GetPropertyValue(_In_ PROPERTYID prop
     else
     {
         // fall back to shared implementation
-        TermControlUiaProvider::GetPropertyValue(propertyId, pVariant);
+        return TermControlUiaProvider::GetPropertyValue(propertyId, pVariant);
     }
     return S_OK;
 }
@@ -153,7 +153,7 @@ void HwndTerminalAutomationPeer::NotifyNewOutput(std::wstring_view newOutput)
         return;
     }
 
-    const auto sanitizedBstr = SysAllocString(sanitized.c_str());
-    static auto activityId = SysAllocString(L"TerminalTextOutput");
-    LOG_IF_FAILED(UiaRaiseNotificationEvent(this, NotificationKind_ActionCompleted, NotificationProcessing_All, sanitizedBstr, activityId));
+    const auto sanitizedBstr = wil::unique_bstr(sanitized.c_str());
+    static auto activityId = wil::unique_bstr(L"TerminalTextOutput");
+    LOG_IF_FAILED(UiaRaiseNotificationEvent(this, NotificationKind_ActionCompleted, NotificationProcessing_All, sanitizedBstr.get(), activityId.get()));
 }

@@ -334,7 +334,7 @@ IRawElementProviderSimple* HwndTerminal::_GetUiaProvider() noexcept
         {
             auto lock = _terminal->LockForWriting();
             LOG_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<HwndTerminalAutomationPeer>(&_uiaProvider, this->GetUiaData(), this));
-            _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(_uiaProvider.Get()); // TODO CARLOS: fix circular ref
+            _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(_uiaProvider.Get());
             LOG_IF_FAILED(_uiaEngine->Enable());
             _renderer->AddRenderEngine(_uiaEngine.get());
         }
@@ -385,7 +385,7 @@ void HwndTerminal::SendOutput(std::wstring_view data)
 
 HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal)
 {
-    auto _terminal = std::make_unique<HwndTerminal>(/*_hostWindow*/ parentHwnd);
+    auto _terminal = std::make_unique<HwndTerminal>(parentHwnd);
     RETURN_IF_FAILED(_terminal->Initialize());
 
     *hwnd = _terminal->GetHwnd();

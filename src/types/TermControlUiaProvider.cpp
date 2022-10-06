@@ -28,21 +28,20 @@ IFACEMETHODIMP TermControlUiaProvider::GetPropertyValue(_In_ PROPERTYID property
 
     // Returning the default will leave the property as the default
     // so we only really need to touch it for the properties we want to implement
-    if (propertyId == UIA_ClassNamePropertyId)
+    switch (propertyId)
     {
+    case UIA_ClassNamePropertyId:
         pVariant->bstrVal = SysAllocString(L"TermControl");
         if (pVariant->bstrVal != nullptr)
         {
             pVariant->vt = VT_BSTR;
         }
-    }
-    else if (propertyId == UIA_ControlTypePropertyId)
-    {
+        break;
+    case UIA_ControlTypePropertyId:
         pVariant->vt = VT_I4;
         pVariant->lVal = UIA_TextControlTypeId;
-    }
-    else if (propertyId == UIA_LocalizedControlTypePropertyId)
-    {
+        break;
+    case UIA_LocalizedControlTypePropertyId:
         // TODO: we should use RS_(L"TerminalControl_ControlType"),
         // but that's exposed/defined in the TermControl project
         pVariant->bstrVal = SysAllocString(L"terminal");
@@ -50,21 +49,18 @@ IFACEMETHODIMP TermControlUiaProvider::GetPropertyValue(_In_ PROPERTYID property
         {
             pVariant->vt = VT_BSTR;
         }
-    }
-    else if (propertyId == UIA_OrientationPropertyId)
-    {
+        break;
+    case UIA_OrientationPropertyId:
         pVariant->vt = VT_I4;
         pVariant->lVal = OrientationType_Vertical;
-    }
-    else if (propertyId == UIA_LiveSettingPropertyId)
-    {
+        break;
+    case UIA_LiveSettingPropertyId:
         pVariant->vt = VT_I4;
         pVariant->lVal = LiveSetting::Polite;
-    }
-    else
-    {
+        break;
+    default:
         // fall back to the shared implementation
-        ScreenInfoUiaProviderBase::GetPropertyValue(propertyId, pVariant);
+        return ScreenInfoUiaProviderBase::GetPropertyValue(propertyId, pVariant);
     }
     return S_OK;
 }
