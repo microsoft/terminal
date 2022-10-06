@@ -677,7 +677,7 @@ namespace Microsoft::Console::Render
         struct Resources
         {
             // DXGI resources
-            wil::com_ptr<IDXGIFactory1> dxgiFactory;
+            wil::com_ptr<IDXGIFactory2> dxgiFactory;
 
             // D3D resources
             wil::com_ptr<ID3D11Device1> device;

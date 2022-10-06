@@ -557,7 +557,7 @@ void AtlasEngine::_createResources()
 #else
         static constexpr UINT flags = DXGI_CREATE_FACTORY_DEBUG;
 #endif
-        THROW_IF_FAILED(CreateDXGIFactory2(flags, __uuidof(IDXGIFactory3), _r.dxgiFactory.put_void()));
+        THROW_IF_FAILED(CreateDXGIFactory2(flags, __uuidof(_r.dxgiFactory), _r.dxgiFactory.put_void()));
     }
 
     auto deviceFlags = D3D11_CREATE_DEVICE_SINGLETHREADED |
@@ -916,12 +916,9 @@ void AtlasEngine::_createSwapChain()
         desc.AlphaMode = _api.backgroundOpaqueMixin ? DXGI_ALPHA_MODE_IGNORE : DXGI_ALPHA_MODE_PREMULTIPLIED;
         desc.Flags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
 
-        wil::com_ptr<IDXGIFactory2> dxgiFactory;
-        THROW_IF_FAILED(CreateDXGIFactory1(IID_PPV_ARGS(dxgiFactory.addressof())));
-
         if (_api.hwnd)
         {
-            THROW_IF_FAILED(dxgiFactory->CreateSwapChainForHwnd(_r.device.get(), _api.hwnd, &desc, nullptr, nullptr, _r.swapChain.put()));
+            THROW_IF_FAILED(_r.dxgiFactory->CreateSwapChainForHwnd(_r.device.get(), _api.hwnd, &desc, nullptr, nullptr, _r.swapChain.put()));
         }
         else
         {
@@ -933,7 +930,7 @@ void AtlasEngine::_createSwapChain()
             // As per: https://docs.microsoft.com/en-us/windows/win32/api/dcomp/nf-dcomp-dcompositioncreatesurfacehandle
             static constexpr DWORD COMPOSITIONSURFACE_ALL_ACCESS = 0x0003L;
             THROW_IF_FAILED(DCompositionCreateSurfaceHandle(COMPOSITIONSURFACE_ALL_ACCESS, nullptr, _api.swapChainHandle.put()));
-            THROW_IF_FAILED(dxgiFactory.query<IDXGIFactoryMedia>()->CreateSwapChainForCompositionSurfaceHandle(_r.device.get(), _api.swapChainHandle.get(), &desc, nullptr, _r.swapChain.put()));
+            THROW_IF_FAILED(_r.dxgiFactory.query<IDXGIFactoryMedia>()->CreateSwapChainForCompositionSurfaceHandle(_r.device.get(), _api.swapChainHandle.get(), &desc, nullptr, _r.swapChain.put()));
         }
 
         {
