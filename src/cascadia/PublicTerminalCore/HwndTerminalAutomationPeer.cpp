@@ -153,7 +153,7 @@ void HwndTerminalAutomationPeer::NotifyNewOutput(std::wstring_view newOutput)
         return;
     }
 
-    const auto sanitizedBstr = wil::unique_bstr(sanitized.c_str());
-    static auto activityId = wil::unique_bstr(L"TerminalTextOutput");
+    const auto sanitizedBstr = wil::make_bstr_nothrow(sanitized.c_str());
+    static auto activityId = wil::make_bstr_nothrow(L"TerminalTextOutput");
     LOG_IF_FAILED(UiaRaiseNotificationEvent(this, NotificationKind_ActionCompleted, NotificationProcessing_All, sanitizedBstr.get(), activityId.get()));
 }
