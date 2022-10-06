@@ -8,6 +8,8 @@ namespace Microsoft.Terminal.Wpf
     using System;
     using System.Runtime.InteropServices;
     using System.Windows;
+    using System.Windows.Automation;
+    using System.Windows.Automation.Peers;
     using System.Windows.Interop;
     using System.Windows.Media;
     using System.Windows.Threading;
@@ -50,6 +52,30 @@ namespace Microsoft.Terminal.Wpf
                     }
                 };
             }
+        }
+
+        /// <summary>
+        /// WPF's HwndHost likes to mark the WM_GETOBJECT message as handled to
+        /// force the usage of the WPF automation peer. We explicitly mark it as
+        /// not handled and don't return an automation peer in "OnCreateAutomationPeer" below.
+        /// This forces the message to go down to the HwndTerminal where we return terminal's UiaProvider.
+        /// </summary>
+        /// <inheritdoc/>
+        protected override IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            if (msg == (int)NativeMethods.WindowMessage.WM_GETOBJECT)
+            {
+                handled = false;
+                return IntPtr.Zero;
+            }
+
+            return base.WndProc(hwnd, msg, wParam, lParam, ref handled);
+        }
+
+        /// <inheritdoc/>
+        protected override AutomationPeer OnCreateAutomationPeer()
+        {
+            return null;
         }
 
         /// <summary>

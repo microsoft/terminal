@@ -32,6 +32,10 @@ namespace Microsoft::Terminal
         HRESULT RuntimeClassInitialize(_In_ ::Microsoft::Console::Types::IUiaData* const uiaData,
                                        _In_ ::Microsoft::Console::Types::IControlAccessibilityInfo* controlInfo) noexcept;
 
+        // IRawElementProviderSimple methods
+        IFACEMETHODIMP GetPropertyValue(_In_ PROPERTYID idProp,
+                                        _Out_ VARIANT* pVariant) noexcept override;
+
         // IRawElementProviderFragment methods
         IFACEMETHODIMP Navigate(_In_ NavigateDirection direction,
                                 _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) noexcept override;

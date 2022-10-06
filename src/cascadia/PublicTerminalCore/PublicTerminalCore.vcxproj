@@ -15,9 +15,11 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="HwndTerminal.cpp" />
+    <ClCompile Include="HwndTerminalAutomationPeer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="HwndTerminal.hpp" />
+    <ClInclude Include="HwndTerminalAutomationPeer.hpp" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
@@ -41,6 +43,9 @@
     </ProjectReference>
     <ProjectReference Include="$(SolutionDir)src\api-ms-win-core-synch-l1-2-0\api-ms-win-core-synch-l1-2-0.vcxproj">
       <Project>{9CF74355-F018-4C19-81AD-9DC6B7F2C6F5}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\renderer\uia\lib\uia.vcxproj">
+      <Project>{48d21369-3d7b-4431-9967-24e81292cf63}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemDefinitionGroup>
