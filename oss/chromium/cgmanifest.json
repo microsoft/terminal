@@ -6,7 +6,7 @@
         "type": "git",
         "git": {
           "repositoryUrl": "https://github.com/chromium/chromium",
-          "commitHash": "d8710dd959da8e3be56f20af8cc94fbf560fbb6b"
+          "commitHash": "1969444812ba8163eecc581f72236040f7f3c304"
         }
       }
     }

@@ -21,6 +21,7 @@ source_set("base_numerics") {
     "checked_math.h",
     "clamped_math.h",
     "math_constants.h",
+    "ostream_operators.h",
     "ranges.h",
     "safe_conversions.h",
     "safe_math.h",

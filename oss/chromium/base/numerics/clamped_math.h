@@ -38,7 +38,7 @@ class ClampedNumeric {
   template <typename Src>
   constexpr ClampedNumeric(Src value)  // NOLINT(runtime/explicit)
       : value_(saturated_cast<T>(value)) {
-    static_assert(std::is_arithmetic<Src>::value, "Argument must be numeric.");
+    static_assert(UnderlyingType<Src>::is_numeric, "Argument must be numeric.");
   }
 
   // This is not an explicit constructor because we want a seamless conversion
@@ -178,28 +178,19 @@ class ClampedNumeric {
   // ClampedNumeric and POD arithmetic types.
   template <typename Src>
   struct Wrapper {
-    static constexpr Src value(Src value) {
-      return static_cast<typename UnderlyingType<Src>::type>(value);
+    static constexpr typename UnderlyingType<Src>::type value(Src value) {
+      return value;
     }
   };
 };
 
-// Convience wrapper to return a new ClampedNumeric from the provided arithmetic
-// or ClampedNumericType.
+// Convenience wrapper to return a new ClampedNumeric from the provided
+// arithmetic or ClampedNumericType.
 template <typename T>
 constexpr ClampedNumeric<typename UnderlyingType<T>::type> MakeClampedNum(
     const T value) {
   return value;
 }
-
-#if !BASE_NUMERICS_DISABLE_OSTREAM_OPERATORS
-// Overload the ostream output operator to make logging work nicely.
-template <typename T>
-std::ostream& operator<<(std::ostream& os, const ClampedNumeric<T>& value) {
-  os << static_cast<T>(value);
-  return os;
-}
-#endif
 
 // These implement the variadic wrapper for the math operations.
 template <template <typename, typename, typename> class M,
@@ -218,8 +209,7 @@ template <template <typename, typename, typename> class M,
           typename L,
           typename R,
           typename... Args>
-constexpr ClampedNumeric<typename ResultType<M, L, R, Args...>::type>
-ClampMathOp(const L lhs, const R rhs, const Args... args) {
+constexpr auto ClampMathOp(const L lhs, const R rhs, const Args... args) {
   return ClampMathOp<M>(ClampMathOp<M>(lhs, rhs), args...);
 }
 
@@ -244,20 +234,20 @@ BASE_NUMERIC_COMPARISON_OPERATORS(Clamped, IsNotEqual, !=)
 
 }  // namespace internal
 
+using internal::ClampAdd;
+using internal::ClampAnd;
+using internal::ClampDiv;
 using internal::ClampedNumeric;
-using internal::MakeClampedNum;
+using internal::ClampLsh;
 using internal::ClampMax;
 using internal::ClampMin;
-using internal::ClampAdd;
-using internal::ClampSub;
-using internal::ClampMul;
-using internal::ClampDiv;
 using internal::ClampMod;
-using internal::ClampLsh;
-using internal::ClampRsh;
-using internal::ClampAnd;
+using internal::ClampMul;
 using internal::ClampOr;
+using internal::ClampRsh;
+using internal::ClampSub;
 using internal::ClampXor;
+using internal::MakeClampedNum;
 
 }  // namespace base
 

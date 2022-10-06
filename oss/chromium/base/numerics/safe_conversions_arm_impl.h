@@ -18,8 +18,8 @@ namespace internal {
 template <typename Dst, typename Src>
 struct SaturateFastAsmOp {
   static constexpr bool is_supported =
-      std::is_signed<Src>::value && std::is_integral<Dst>::value &&
-      std::is_integral<Src>::value &&
+      kEnableAsmCode && std::is_signed<Src>::value &&
+      std::is_integral<Dst>::value && std::is_integral<Src>::value &&
       IntegerBitsPlusSign<Src>::value <= IntegerBitsPlusSign<int32_t>::value &&
       IntegerBitsPlusSign<Dst>::value <= IntegerBitsPlusSign<int32_t>::value &&
       !IsTypeInRangeForNumericType<Dst, Src>::value;

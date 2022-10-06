@@ -5,16 +5,10 @@
 #ifndef BASE_NUMERICS_RANGES_H_
 #define BASE_NUMERICS_RANGES_H_
 
-#include <algorithm>
 #include <cmath>
+#include <type_traits>
 
 namespace base {
-
-// To be replaced with std::clamp() from C++17, someday.
-template <class T>
-constexpr const T& ClampToRange(const T& value, const T& min, const T& max) {
-  return std::min(std::max(value, min), max);
-}
 
 template <typename T>
 constexpr bool IsApproximatelyEqual(T lhs, T rhs, T tolerance) {
