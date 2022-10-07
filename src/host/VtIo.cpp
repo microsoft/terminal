@@ -143,6 +143,8 @@ VtIo::VtIo() :
     auto& globals = ServiceLocator::LocateGlobals();
 
     const auto& gci = globals.getConsoleInformation();
+    // SetWindowVisibility uses the console lock to protect access to _pVtRenderEngine.
+    assert(gci.IsConsoleLocked());
 
     try
     {
@@ -337,6 +339,11 @@ void VtIo::CreatePseudoWindow()
 
 void VtIo::SetWindowVisibility(bool showOrHide) noexcept
 {
+    auto& gci = ::Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    gci.LockConsole();
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
     // ConsoleInputThreadProcWin32 calls VtIo::CreatePseudoWindow,
     // which calls CreateWindowExW, which causes a WM_SIZE message.
     // In short, this function might be called before _pVtRenderEngine exists.
@@ -345,11 +352,6 @@ void VtIo::SetWindowVisibility(bool showOrHide) noexcept
     {
         return;
     }
-
-    auto& gci = ::Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
-
-    gci.LockConsole();
-    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
     LOG_IF_FAILED(_pVtRenderEngine->SetWindowVisibility(showOrHide));
 }
