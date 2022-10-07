@@ -54,6 +54,16 @@ namespace Microsoft.Terminal.Wpf
             }
         }
 
+        public void TryEnableUiaEvents()
+        {
+            NativeMethods.TerminalTryEnableUiaEvents(this.terminal);
+        }
+
+        public void TryDisableUiaEvents()
+        {
+            NativeMethods.TerminalTryDisableUiaEvents(this.terminal);
+        }
+
         /// <summary>
         /// WPF's HwndHost likes to mark the WM_GETOBJECT message as handled to
         /// force the usage of the WPF automation peer. We explicitly mark it as

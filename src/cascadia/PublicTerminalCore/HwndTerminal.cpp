@@ -823,19 +823,29 @@ void __stdcall TerminalSetFocus(void* terminal)
 {
     auto publicTerminal = static_cast<HwndTerminal*>(terminal);
     publicTerminal->_focused = true;
-    if (auto uiaEngine = publicTerminal->_uiaEngine.get())
-    {
-        LOG_IF_FAILED(uiaEngine->Enable());
-    }
 }
 
 void __stdcall TerminalKillFocus(void* terminal)
 {
     auto publicTerminal = static_cast<HwndTerminal*>(terminal);
     publicTerminal->_focused = false;
-    if (auto uiaEngine = publicTerminal->_uiaEngine.get())
+}
+
+void __stdcall TerminalTryEnableUiaEvents(void* terminal)
+{
+    auto publicTerminal = static_cast<HwndTerminal*>(terminal);
+    if (auto engine = publicTerminal->_uiaEngine.get())
     {
-        LOG_IF_FAILED(uiaEngine->Disable());
+        LOG_IF_FAILED(engine->Enable());
+    }
+}
+
+void __stdcall TerminalTryDisableUiaEvents(void* terminal)
+{
+    auto publicTerminal = static_cast<HwndTerminal*>(terminal);
+    if (auto engine = publicTerminal->_uiaEngine.get())
+    {
+        LOG_IF_FAILED(engine->Disable());
     }
 }
 

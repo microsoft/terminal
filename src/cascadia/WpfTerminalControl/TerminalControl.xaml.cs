@@ -43,6 +43,16 @@ namespace Microsoft.Terminal.Wpf
             this.GotFocus += this.TerminalControl_GotFocus;
         }
 
+        public void TryEnableUiaEvents()
+        {
+            this.termContainer.TryEnableUiaEvents();
+        }
+
+        public void TryDisableUiaEvents()
+        {
+            this.termContainer.TryDisableUiaEvents();
+        }
+
         /// <inheritdoc/>
         protected override AutomationPeer OnCreateAutomationPeer()
         {

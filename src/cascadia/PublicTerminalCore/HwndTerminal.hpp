@@ -44,6 +44,8 @@ __declspec(dllexport) void _stdcall TerminalBlinkCursor(void* terminal);
 __declspec(dllexport) void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible);
 __declspec(dllexport) void _stdcall TerminalSetFocus(void* terminal);
 __declspec(dllexport) void _stdcall TerminalKillFocus(void* terminal);
+__declspec(dllexport) void _stdcall TerminalTryEnableUiaEvents(void* terminal);
+__declspec(dllexport) void _stdcall TerminalTryDisableUiaEvents(void* terminal);
 };
 
 struct HwndTerminal : ::Microsoft::Console::Types::IControlAccessibilityInfo
@@ -106,6 +108,8 @@ private:
     friend void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible);
     friend void _stdcall TerminalSetFocus(void* terminal);
     friend void _stdcall TerminalKillFocus(void* terminal);
+    friend void _stdcall TerminalTryEnableUiaEvents(void* terminal);
+    friend void _stdcall TerminalTryDisableUiaEvents(void* terminal);
 
     void _UpdateFont(int newDpi);
     void _WriteTextToConnection(const std::wstring_view text) noexcept;
