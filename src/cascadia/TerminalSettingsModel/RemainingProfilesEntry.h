@@ -15,11 +15,8 @@ Author(s):
 --*/
 #pragma once
 
-#include "pch.h"
 #include "ProfileCollectionEntry.h"
 #include "RemainingProfilesEntry.g.h"
-#include "JsonUtils.h"
-#include "Profile.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {

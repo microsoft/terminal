@@ -14,10 +14,8 @@ Author(s):
 --*/
 #pragma once
 
-#include "pch.h"
 #include "NewTabMenuEntry.h"
 #include "SeparatorEntry.g.h"
-#include "JsonUtils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {

@@ -16,7 +16,6 @@ Author(s):
 --*/
 #pragma once
 
-#include "pch.h"
 #include "NewTabMenuEntry.h"
 #include "ProfileCollectionEntry.g.h"
 #include "Profile.h"
