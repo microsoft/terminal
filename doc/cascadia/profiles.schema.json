@@ -244,7 +244,7 @@
           "default": 12,
           "description": "Size of the font in points.",
           "minimum": 1,
-          "type": "integer"
+          "type": "number"
         },
         "weight": {
           "default": "normal",
@@ -2405,7 +2405,7 @@
           "default": 12,
           "description": "[deprecated] Define 'size' within the 'font' object instead.",
           "minimum": 1,
-          "type": "integer",
+          "type": "number",
           "deprecated": true
         },
         "fontWeight": {
@@ -2503,7 +2503,8 @@
           "description": "Defines the visibility of the scrollbar.",
           "enum": [
             "visible",
-            "hidden"
+            "hidden",
+            "always"
           ],
           "type": "string"
         },

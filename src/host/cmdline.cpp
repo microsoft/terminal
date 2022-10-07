@@ -83,7 +83,7 @@ bool IsWordDelim(const wchar_t wch)
         return true;
     }
     const auto& delimiters = ServiceLocator::LocateGlobals().WordDelimiters;
-    return std::find(delimiters.begin(), delimiters.end(), wch) != delimiters.end();
+    return std::ranges::find(delimiters, wch) != delimiters.end();
 }
 
 bool IsWordDelim(const std::wstring_view charData)

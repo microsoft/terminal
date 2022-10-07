@@ -13,7 +13,7 @@
 # Preprocessor Settings
 # -------------------------------------
 
-C_DEFINES               = $(C_DEFINES) -DBUILD_ONECORE_INTERACTIVITY
+C_DEFINES               = $(C_DEFINES)
 
 # -------------------------------------
 # Compiler Settings
@@ -39,6 +39,7 @@ SOURCES = \
     ..\ApiDetector.cpp \
     ..\InteractivityFactory.cpp \
     ..\ServiceLocator.cpp \
+    ..\VtApiRedirection.cpp \
     ..\EventSynthesis.cpp \
     ..\RemoteConsoleControl.cpp \
     ..\HostSignalInputThread.cpp \

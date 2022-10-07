@@ -97,7 +97,7 @@ Author(s):
 
 #define MTSM_FONT_SETTINGS(X)                                                          \
     X(hstring, FontFace, "face", DEFAULT_FONT_FACE)                                    \
-    X(int32_t, FontSize, "size", DEFAULT_FONT_SIZE)                                    \
+    X(float, FontSize, "size", DEFAULT_FONT_SIZE)                                      \
     X(winrt::Windows::UI::Text::FontWeight, FontWeight, "weight", DEFAULT_FONT_WEIGHT) \
     X(IFontAxesMap, FontAxes, "axes")                                                  \
     X(IFontFeatureMap, FontFeatures, "features")

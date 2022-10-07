@@ -12,7 +12,6 @@
 #include "til/enumset.h"
 #include "til/pmr.h"
 #include "til/replace.h"
-#include "til/rle.h"
 #include "til/string.h"
 #include "til/u8u16convert.h"
 
