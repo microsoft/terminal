@@ -127,7 +127,6 @@ namespace Microsoft::Console::Render
         bool _newBottomLine;
         til::point _deferredCursorPos;
 
-        bool _pipeBroken;
         HRESULT _exitResult;
         Microsoft::Console::VirtualTerminal::VtIo* _terminalOwner;
 
