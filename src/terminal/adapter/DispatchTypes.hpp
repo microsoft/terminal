@@ -507,6 +507,18 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         Size96 = 1
     };
 
+    enum class MacroDeleteControl : VTInt
+    {
+        DeleteId = 0,
+        DeleteAll = 1
+    };
+
+    enum class MacroEncoding : VTInt
+    {
+        Text = 0,
+        HexPair = 1
+    };
+
     enum class ReportFormat : VTInt
     {
         TerminalStateReport = 1,

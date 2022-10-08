@@ -152,6 +152,10 @@ public:
                                const VTParameter /*cellHeight*/,
                                const DispatchTypes::DrcsCharsetSize /*charsetSize*/) override { return nullptr; } // DECDLD
 
+    StringHandler DefineMacro(const VTInt /*macroId*/,
+                              const DispatchTypes::MacroDeleteControl /*deleteControl*/,
+                              const DispatchTypes::MacroEncoding /*encoding*/) override { return nullptr; } // DECDMAC
+
     StringHandler RestoreTerminalState(const DispatchTypes::ReportFormat /*format*/) override { return nullptr; }; // DECRSTS
 
     StringHandler RequestSetting() override { return nullptr; }; // DECRQSS

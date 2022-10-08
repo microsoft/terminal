@@ -3178,6 +3178,22 @@ ITermDispatch::StringHandler AdaptDispatch::_CreateDrcsPassthroughHandler(const 
 }
 
 // Method Description:
+// - DECDMAC - Defines a string of characters as a macro that can later be
+//   invoked with a DECINVM sequence.
+// Arguments:
+// - macroId - a number to identify the macro when invoked.
+// - deleteControl - what gets deleted before loading the new macro data.
+// - encoding - whether the data is encoded as plain text or hex digits.
+// Return Value:
+// - a function to receive the macro data or nullptr if parameters are invalid.
+ITermDispatch::StringHandler AdaptDispatch::DefineMacro(const VTInt /*macroId*/,
+                                                        const DispatchTypes::MacroDeleteControl /*deleteControl*/,
+                                                        const DispatchTypes::MacroEncoding /*encoding*/)
+{
+    return nullptr;
+}
+
+// Method Description:
 // - DECRSTS - Restores the terminal state from a stream of data previously
 //   saved with a DECRQTSR query.
 // Arguments:

@@ -159,6 +159,10 @@ public:
                                        const VTParameter cellHeight,
                                        const DispatchTypes::DrcsCharsetSize charsetSize) = 0; // DECDLD
 
+    virtual StringHandler DefineMacro(const VTInt macroId,
+                                      const DispatchTypes::MacroDeleteControl deleteControl,
+                                      const DispatchTypes::MacroEncoding encoding) = 0; // DECDMAC
+
     virtual StringHandler RestoreTerminalState(const DispatchTypes::ReportFormat format) = 0; // DECRSTS
 
     virtual StringHandler RequestSetting() = 0; // DECRQSS

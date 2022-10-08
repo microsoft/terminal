@@ -715,6 +715,9 @@ IStateMachineEngine::StringHandler OutputStateMachineEngine::ActionDcsDispatch(c
                                           parameters.at(6),
                                           parameters.at(7));
         break;
+    case DcsActionCodes::DECDMAC_DefineMacro:
+        handler = _dispatch->DefineMacro(parameters.at(0).value_or(0), parameters.at(1), parameters.at(2));
+        break;
     case DcsActionCodes::DECRSTS_RestoreTerminalState:
         handler = _dispatch->RestoreTerminalState(parameters.at(0));
         break;

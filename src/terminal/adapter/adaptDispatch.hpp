@@ -153,6 +153,10 @@ namespace Microsoft::Console::VirtualTerminal
                                    const VTParameter cellHeight,
                                    const DispatchTypes::DrcsCharsetSize charsetSize) override; // DECDLD
 
+        StringHandler DefineMacro(const VTInt macroId,
+                                  const DispatchTypes::MacroDeleteControl deleteControl,
+                                  const DispatchTypes::MacroEncoding encoding) override; // DECDMAC
+
         StringHandler RestoreTerminalState(const DispatchTypes::ReportFormat format) override; // DECRSTS
 
         StringHandler RequestSetting() override; // DECRQSS
