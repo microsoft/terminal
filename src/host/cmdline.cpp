@@ -843,7 +843,7 @@ til::point CommandLine::_moveCursorRight(COOKED_READ_DATA& cookedReadData) noexc
                                 cookedReadData.OriginalCursorPosition().X,
                                 true))
         {
-            // Snap cursorPosition.X to sScreenBufferSizeX if it is off by one
+            // Snap cursorPosition.X to sScreenBufferSizeX if it is at the edge of the screen
             if (cursorPosition.X == (sScreenBufferSizeX - 1))
                 cursorPosition.X = sScreenBufferSizeX;
         }
