@@ -156,6 +156,7 @@ namespace Microsoft::Console::VirtualTerminal
         StringHandler DefineMacro(const VTInt macroId,
                                   const DispatchTypes::MacroDeleteControl deleteControl,
                                   const DispatchTypes::MacroEncoding encoding) override; // DECDMAC
+        bool InvokeMacro(const VTInt macroId) override; // DECINVM
 
         StringHandler RestoreTerminalState(const DispatchTypes::ReportFormat format) override; // DECRSTS
 

@@ -155,6 +155,7 @@ public:
     StringHandler DefineMacro(const VTInt /*macroId*/,
                               const DispatchTypes::MacroDeleteControl /*deleteControl*/,
                               const DispatchTypes::MacroEncoding /*encoding*/) override { return nullptr; } // DECDMAC
+    bool InvokeMacro(const VTInt /*macroId*/) override { return false; } // DECINVM
 
     StringHandler RestoreTerminalState(const DispatchTypes::ReportFormat /*format*/) override { return nullptr; }; // DECRSTS
 

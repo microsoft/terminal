@@ -3194,6 +3194,18 @@ ITermDispatch::StringHandler AdaptDispatch::DefineMacro(const VTInt /*macroId*/,
 }
 
 // Method Description:
+// - DECINVM - Invokes a previously defined macro, executing the macro content
+//   as if it had been received directly from the host.
+// Arguments:
+// - macroId - the id number of the macro to be invoked.
+// Return Value:
+// - True
+bool AdaptDispatch::InvokeMacro(const VTInt /*macroId*/)
+{
+    return true;
+}
+
+// Method Description:
 // - DECRSTS - Restores the terminal state from a stream of data previously
 //   saved with a DECRQTSR query.
 // Arguments:

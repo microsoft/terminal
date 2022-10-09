@@ -162,6 +162,7 @@ public:
     virtual StringHandler DefineMacro(const VTInt macroId,
                                       const DispatchTypes::MacroDeleteControl deleteControl,
                                       const DispatchTypes::MacroEncoding encoding) = 0; // DECDMAC
+    virtual bool InvokeMacro(const VTInt macroId) = 0; // DECINVM
 
     virtual StringHandler RestoreTerminalState(const DispatchTypes::ReportFormat format) = 0; // DECRSTS
 

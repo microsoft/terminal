@@ -155,6 +155,7 @@ namespace Microsoft::Console::VirtualTerminal
             DECSERA_SelectiveEraseRectangularArea = VTID("${"),
             DECSCPP_SetColumnsPerPage = VTID("$|"),
             DECSACE_SelectAttributeChangeExtent = VTID("*x"),
+            DECINVM_InvokeMacro = VTID("*z"),
             DECAC_AssignColor = VTID(",|"),
             DECPS_PlaySound = VTID(",~")
         };
