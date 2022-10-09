@@ -15,6 +15,7 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace winrt::Microsoft::UI::Xaml::Controls;
 using namespace winrt::Windows::System;
 
 namespace winrt
@@ -316,7 +317,7 @@ namespace winrt::TerminalApp::implementation
                 if (hide)
                 {
                     Icon({});
-                    TabViewItem().IconSource(IconPathConverter::IconSourceMUX({}));
+                    TabViewItem().IconSource(IconSource{ nullptr });
                 }
                 else
                 {
