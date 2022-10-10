@@ -388,6 +388,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         DECSCNM_ScreenMode = DECPrivateMode(5),
         DECOM_OriginMode = DECPrivateMode(6),
         DECAWM_AutoWrapMode = DECPrivateMode(7),
+        DECARM_AutoRepeatMode = DECPrivateMode(8),
         ATT610_StartCursorBlink = DECPrivateMode(12),
         DECTCEM_TextCursorEnableMode = DECPrivateMode(25),
         XTERM_EnableDECCOLMSupport = DECPrivateMode(40),

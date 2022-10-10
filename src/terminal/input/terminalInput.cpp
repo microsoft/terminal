@@ -554,8 +554,23 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
     // Only need to handle key down. See raw key handler (see RawReadWaitRoutine in stream.cpp)
     if (!keyEvent.IsKeyDown())
     {
+        // If this is a release of the last recorded key press, we can reset that.
+        if (keyEvent.GetVirtualKeyCode() == _lastVirtualKeyCode)
+        {
+            _lastVirtualKeyCode = 0;
+        }
         return false;
     }
+
+    // If this is a repeat of the last recorded key press, and Auto Repeat Mode
+    // is disabled, then we should suppress this event.
+    if (keyEvent.GetVirtualKeyCode() == _lastVirtualKeyCode && !_inputMode.test(Mode::AutoRepeat))
+    {
+        // Note that we must return true here to say we've handled the event,
+        // otherwise the key press can still end up being submitted.
+        return true;
+    }
+    _lastVirtualKeyCode = keyEvent.GetVirtualKeyCode();
 
     // The VK_BACK key depends on the state of Backarrow Key mode (DECBKM).
     // If the mode is set, we should send BS. If reset, we should send DEL.

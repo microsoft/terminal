@@ -39,6 +39,7 @@ namespace Microsoft::Console::VirtualTerminal
         enum class Mode : size_t
         {
             Ansi,
+            AutoRepeat,
             Keypad,
             CursorKey,
             BackarrowKey,
@@ -92,7 +93,9 @@ namespace Microsoft::Console::VirtualTerminal
         // storage location for the leading surrogate of a utf-16 surrogate pair
         std::optional<wchar_t> _leadingSurrogate;
 
-        til::enumset<Mode> _inputMode{ Mode::Ansi };
+        WORD _lastVirtualKeyCode{ 0 };
+
+        til::enumset<Mode> _inputMode{ Mode::Ansi, Mode::AutoRepeat };
         bool _forceDisableWin32InputMode{ false };
 
         void _SendChar(const wchar_t ch);

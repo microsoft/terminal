@@ -1110,6 +1110,9 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
     case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
         success = SetAutoWrapMode(enable);
         break;
+    case DispatchTypes::ModeParams::DECARM_AutoRepeatMode:
+        success = _SetInputMode(TerminalInput::Mode::AutoRepeat, enable);
+        break;
     case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
         success = EnableCursorBlinking(enable);
         break;
@@ -1961,6 +1964,9 @@ bool AdaptDispatch::HardReset()
 
     // Reset the Backarrow Key mode
     _SetInputMode(TerminalInput::Mode::BackarrowKey, false);
+
+    // Set the keyboard Auto Repeat mode
+    _SetInputMode(TerminalInput::Mode::AutoRepeat, true);
 
     // Delete all current tab stops and reapply
     _ResetTabStops();
