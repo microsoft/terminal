@@ -18,8 +18,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                                       const Windows::Foundation::IInspectable& parameter,
                                                       const hstring& language);
 
-        static winrt::Windows::Foundation::IAsyncOperation<Microsoft::UI::Xaml::Controls::IconSource> IconSourceMUX(const winrt::hstring& iconPath);
-        static winrt::Windows::Foundation::IAsyncOperation<Windows::UI::Xaml::Controls::IconElement> IconWUX(const winrt::hstring& iconPath);
+        static Microsoft::UI::Xaml::Controls::IconSource IconSourceMUX(const winrt::hstring& iconPath);
+        static Windows::UI::Xaml::Controls::IconElement IconWUX(const winrt::hstring& iconPath);
     };
 }
 

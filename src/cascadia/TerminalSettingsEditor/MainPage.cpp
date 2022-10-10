@@ -571,32 +571,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         if (!profile.Icon().empty())
         {
-            winrt::weak_ref<MUX::Controls::NavigationViewItem> weakItem(profileNavItem);
-            Dispatcher().RunAsync(CoreDispatcherPriority::Low, [weakItem, icon = profile.Icon()]() -> winrt::fire_and_forget {
-                if (auto item{ weakItem.get() })
-                {
-                    const auto iconElem{ co_await IconPathConverter::IconWUX(icon) };
-                    item.Icon(iconElem);
-                }
-            });
+            profileNavItem.Icon(IconPathConverter::IconWUX(profile.Icon()));
         }
 
         // Update the menu item when the icon/name changes
         auto weakMenuItem{ make_weak(profileNavItem) };
-        profile.PropertyChanged([weakMenuItem, dispatcher = Dispatcher()](const auto&, const WUX::Data::PropertyChangedEventArgs& args) {
+        profile.PropertyChanged([weakMenuItem](const auto&, const WUX::Data::PropertyChangedEventArgs& args) {
             if (auto menuItem{ weakMenuItem.get() })
             {
                 const auto& tag{ menuItem.Tag().as<Editor::ProfileViewModel>() };
                 if (args.PropertyName() == L"Icon")
                 {
-                    winrt::weak_ref<MUX::Controls::NavigationViewItem> weakItem(menuItem);
-                    dispatcher.RunAsync(CoreDispatcherPriority::Low, [weakItem, icon = tag.Icon()]() -> winrt::fire_and_forget {
-                        if (auto item{ weakItem.get() })
-                        {
-                            const auto iconElem{ co_await IconPathConverter::IconWUX(icon) };
-                            item.Icon(iconElem);
-                        }
-                    });
+                    if (!tag.Icon().empty())
+                    {
+                        menuItem.Icon(IconPathConverter::IconWUX(tag.Icon()));
+                    }
                 }
                 else if (args.PropertyName() == L"Name")
                 {

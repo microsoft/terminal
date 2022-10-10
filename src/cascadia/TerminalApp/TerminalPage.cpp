@@ -853,15 +853,9 @@ namespace winrt::TerminalApp::implementation
             // this flyout item.
             if (!profile.Icon().empty())
             {
-                winrt::weak_ref<WUX::Controls::MenuFlyoutItem> weakItem(profileMenuItem);
-                Dispatcher().RunAsync(CoreDispatcherPriority::Low, [weakItem, icon = profile.Icon()]() -> winrt::fire_and_forget {
-                    if (auto item{ weakItem.get() })
-                    {
-                        auto elem = co_await IconPathConverter::IconWUX(icon);
-                        item.Icon(elem);
-                        Automation::AutomationProperties::SetAccessibilityView(elem, Automation::Peers::AccessibilityView::Raw);
-                    }
-                });
+                auto icon = IconPathConverter::IconWUX(profile.Icon());
+                Automation::AutomationProperties::SetAccessibilityView(icon, Automation::Peers::AccessibilityView::Raw);
+                profileMenuItem.Icon(icon);
             }
 
             if (profile.Guid() == defaultProfileGuid)

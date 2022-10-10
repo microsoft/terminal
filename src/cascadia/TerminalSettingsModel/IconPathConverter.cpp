@@ -324,25 +324,40 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         co_await fg_thread;
         co_return bitmapSource;
     }
-    winrt::Windows::Foundation::IAsyncOperation<MUX::Controls::IconSource> IconPathConverter::IconSourceMUX(const winrt::hstring& iconPath)
+
+    winrt::Windows::UI::Xaml::Media::Imaging::SoftwareBitmapSource _getImageIconSourceForBinaryNotAsync(std::wstring_view iconPathWithoutIndex,
+                                                                                                        int index)
+    {
+        auto swBitmap{ _getBitmapFromIconFileAsync(winrt::hstring{ iconPathWithoutIndex }, index, 32) };
+        if (swBitmap == nullptr)
+        {
+            return nullptr;
+        }
+
+        winrt::Windows::UI::Xaml::Media::Imaging::SoftwareBitmapSource bitmapSource{};
+        bitmapSource.SetBitmapAsync(swBitmap);
+        return bitmapSource;
+    }
+
+    MUX::Controls::IconSource IconPathConverter::IconSourceMUX(const winrt::hstring& iconPath)
     {
         std::wstring_view iconPathWithoutIndex;
         auto indexOpt = _getIconIndex(iconPath, iconPathWithoutIndex);
         if (!indexOpt.has_value())
         {
-            co_return _IconSourceMUX(iconPath);
+            return _IconSourceMUX(iconPath);
         }
         auto index = indexOpt.value();
 
-        auto bitmapSource = co_await _getImageIconSourceForBinary(iconPathWithoutIndex, index);
+        auto bitmapSource = _getImageIconSourceForBinaryNotAsync(iconPathWithoutIndex, index);
 
         MUX::Controls::ImageIconSource imageIconSource{};
         imageIconSource.ImageSource(bitmapSource);
 
-        co_return imageIconSource;
+        return imageIconSource;
     }
 
-    winrt::Windows::Foundation::IAsyncOperation<Windows::UI::Xaml::Controls::IconElement> IconPathConverter::IconWUX(const winrt::hstring& iconPath)
+    Windows::UI::Xaml::Controls::IconElement IconPathConverter::IconWUX(const winrt::hstring& iconPath)
     {
         std::wstring_view iconPathWithoutIndex;
         auto indexOpt = _getIconIndex(iconPath, iconPathWithoutIndex);
@@ -353,16 +368,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             icon.IconSource(source);
             icon.Width(32);
             icon.Height(32);
-            co_return icon;
+            return icon;
         }
         auto index = indexOpt.value();
 
-        auto bitmapSource = co_await _getImageIconSourceForBinary(iconPathWithoutIndex, index);
+        auto bitmapSource = _getImageIconSourceForBinaryNotAsync(iconPathWithoutIndex, index);
 
         winrt::Microsoft::UI::Xaml::Controls::ImageIcon icon{};
         icon.Source(bitmapSource);
         icon.Width(32);
         icon.Height(32);
-        co_return icon;
+        return icon;
     }
 }
