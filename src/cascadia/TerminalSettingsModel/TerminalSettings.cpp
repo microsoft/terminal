@@ -195,7 +195,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 ApplyColorScheme(scheme);
             }
         }
-        else if (currentTheme.Name() == L"dark")
+        else if (Windows::UI::Xaml::Application::Current().RequestedTheme() == Windows::UI::Xaml::ApplicationTheme::Dark)
         {
             if (!appearance.DarkColorSchemeName().empty())
             {
@@ -205,27 +205,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 }
             }
         }
-        else if (currentTheme.Name() == L"light")
-        {
-            if (!appearance.LightColorSchemeName().empty())
-            {
-                if (const auto scheme = schemes.TryLookup(appearance.LightColorSchemeName()))
-                {
-                    ApplyColorScheme(scheme);
-                }
-            }
-        }
-        else if (currentTheme.Name() == L"system" && Windows::UI::Xaml::Application::Current().RequestedTheme() == Windows::UI::Xaml::ApplicationTheme::Dark)
-        {
-            if (!appearance.DarkColorSchemeName().empty())
-            {
-                if (const auto scheme = schemes.TryLookup(appearance.DarkColorSchemeName()))
-                {
-                    ApplyColorScheme(scheme);
-                }
-            }
-        }
-        else if (currentTheme.Name() == L"system" && Windows::UI::Xaml::Application::Current().RequestedTheme() == Windows::UI::Xaml::ApplicationTheme::Light)
+        else if (Windows::UI::Xaml::Application::Current().RequestedTheme() == Windows::UI::Xaml::ApplicationTheme::Light)
         {
             if (!appearance.LightColorSchemeName().empty())
             {
