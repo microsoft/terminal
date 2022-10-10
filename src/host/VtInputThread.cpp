@@ -146,9 +146,6 @@ void VtInputThread::SetLookingForDSR(const bool looking) noexcept
 // - The ThreadProc for the VT Input Thread. Reads input from the pipe, and
 //      passes it to _HandleRunInput to be processed by the
 //      InputStateMachineEngine.
-// Return Value:
-// - Any error from reading the pipe or writing to the input buffer that might
-//      have caused us to exit.
 void VtInputThread::_InputThread()
 {
     while (!_exitRequested)
