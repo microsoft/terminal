@@ -175,6 +175,12 @@ namespace Microsoft::Console::Types
                                 _In_ const bool preventBoundary = false) noexcept;
 
         void
+        _moveEndpointByUnitPage(_In_ const int moveCount,
+                                _In_ const TextPatternRangeEndpoint endpoint,
+                                const gsl::not_null<int*> pAmountMoved,
+                                _In_ const bool preventBoundary = false) noexcept;
+
+        void
         _moveEndpointByUnitDocument(_In_ const int moveCount,
                                     _In_ const TextPatternRangeEndpoint endpoint,
                                     const gsl::not_null<int*> pAmountMoved,

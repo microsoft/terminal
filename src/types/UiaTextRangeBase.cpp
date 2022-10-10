@@ -1118,6 +1118,10 @@ try
         {
             _moveEndpointByUnitLine(count, endpoint, pRetVal, preventBoundary);
         }
+        else if (unit <= TextUnit::TextUnit_Page)
+        {
+            _moveEndpointByUnitPage(count, endpoint, pRetVal, preventBoundary);
+        }
         else if (unit <= TextUnit::TextUnit_Document)
         {
             _moveEndpointByUnitDocument(count, endpoint, pRetVal, preventBoundary);
@@ -1189,6 +1193,10 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoin
         else if (unit <= TextUnit::TextUnit_Line)
         {
             _moveEndpointByUnitLine(count, endpoint, pRetVal);
+        }
+        else if (unit <= TextUnit::TextUnit_Page)
+        {
+            _moveEndpointByUnitPage(count, endpoint, pRetVal);
         }
         else if (unit <= TextUnit::TextUnit_Document)
         {
@@ -1727,6 +1735,143 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
                     nextPos.X = bufferSize.Left();
                 }
             }
+
+            // NOTE: Automatically detects if we are trying to move past origin
+            success = bufferSize.DecrementInBounds(nextPos, true);
+
+            if (success)
+            {
+                nextPos.X = bufferSize.Left();
+                resultPos = nextPos;
+                (*pAmountMoved)--;
+            }
+            break;
+        }
+        default:
+            break;
+        }
+    }
+
+    SetEndpoint(endpoint, resultPos);
+}
+
+// Routine Description:
+// - moves the UTR's endpoint by moveCount times by line.
+// - if endpoints crossed, the degenerate range is created and both endpoints are moved
+// - a successful movement on start entails start being at Left()
+// - a successful movement on end entails end being at Left() of the NEXT line
+// Arguments:
+// - moveCount - the number of times to move
+// - endpoint - the endpoint to move
+// - pAmountMoved - the number of times that the return values are "moved"
+// - preventBoundary - true --> the range encompasses the unit we're on; prevent movement onto boundaries
+//                     false --> act like we're just moving an endpoint; allow movement onto boundaries
+// Return Value:
+// - <none>
+void UiaTextRangeBase::_moveEndpointByUnitPage(_In_ const int moveCount,
+                                               _In_ const TextPatternRangeEndpoint endpoint,
+                                               _Out_ const gsl::not_null<int*> pAmountMoved,
+                                               _In_ const bool preventBoundary) noexcept
+{
+    *pAmountMoved = 0;
+
+    if (moveCount == 0)
+    {
+        return;
+    }
+
+    const auto allowBottomExclusive = !preventBoundary;
+    const auto moveDirection = (moveCount > 0) ? MovementDirection::Forward : MovementDirection::Backward;
+    const auto bufferSize = _getOptimizedBufferSize();
+
+    auto documentEnd{ bufferSize.EndExclusive() };
+    try
+    {
+        documentEnd = _getDocumentEnd();
+    }
+    CATCH_LOG();
+
+    auto success = true;
+    auto resultPos = GetEndpoint(endpoint);
+
+    // Get "viewport" we're in (even if we're not in the current view)
+    auto currentViewport = [&]() {
+        auto view = _pData->GetViewport();
+        while (!view.IsInBounds(_start))
+        {
+            switch (moveDirection)
+            {
+            case MovementDirection::Forward:
+            {
+                const til::point newOrigin{ view.EndExclusive() };
+                view = Viewport::FromDimensions(newOrigin, view.Dimensions());
+            }
+            case MovementDirection::Backward:
+            {
+                const til::point newOrigin{ view.Left(), std::max(view.Top() - view.Height(), bufferSize.Top()) };
+                view = Viewport::FromDimensions(newOrigin, view.Dimensions());
+            }
+            }
+        }
+        return view;
+    }();
+
+    while (std::abs(*pAmountMoved) < std::abs(moveCount) && success)
+    {
+        auto nextPos = resultPos;
+        switch (moveDirection)
+        {
+        case MovementDirection::Forward:
+        {
+            if (nextPos.Y >= documentEnd.Y)
+            {
+                // Corner Case: we're past the limit
+                // Clamp us to the limit
+                resultPos = documentEnd;
+                success = false;
+            }
+            else if (preventBoundary && nextPos.Y >= documentEnd.Y - currentViewport.Height())
+            {
+                // Corner Case: we're just before the limit
+                // and we're not allowed onto the exclusive end.
+                // Fail to move.
+                success = false;
+            }
+            else
+            {
+                const til::point newOrigin{ currentViewport.EndExclusive() };
+                currentViewport = Viewport::FromDimensions(newOrigin, currentViewport.Dimensions());
+                nextPos = newOrigin;
+                success = true;
+                resultPos = nextPos;
+                (*pAmountMoved)++;
+            }
+            break;
+        }
+        case MovementDirection::Backward:
+        {
+            // TODO CARLOS:
+            // I think the if-branch is fine
+            // just need to figure out the rest of this section then on to testing!!
+
+            if (preventBoundary)
+            {
+                if (nextPos == bufferSize.Origin())
+                {
+                    // can't move past top
+                    success = false;
+                    break;
+                }
+                else if (nextPos.Y <= bufferSize.Top() + currentViewport.Height())
+                {
+                    // GH#10924: as a non-degenerate range, we are supposed to act
+                    // like we already encompass the line.
+                    // Move to the left boundary so we try to wrap around
+                    nextPos = bufferSize.Origin();
+                }
+            }
+
+            
 
             // NOTE: Automatically detects if we are trying to move past origin
             success = bufferSize.DecrementInBounds(nextPos, true);
