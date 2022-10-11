@@ -82,30 +82,6 @@ winrt::Microsoft::Terminal::Settings::Model::ThemeColor ThemeColor::FromTerminal
     return *result;
 }
 
-static wil::unique_hkey openDwmRegKey()
-{
-    HKEY hKey{ nullptr };
-    if (RegOpenKeyEx(HKEY_CURRENT_USER, RegKeyDwm, 0, KEY_READ, &hKey) == ERROR_SUCCESS)
-    {
-        return wil::unique_hkey{ hKey };
-    }
-    return nullptr;
-}
-static DWORD readDwmSubValue(const wil::unique_hkey& dwmRootKey, const wchar_t* key)
-{
-    DWORD val{ 0 };
-    DWORD size{ sizeof(val) };
-    LOG_IF_FAILED(RegQueryValueExW(dwmRootKey.get(), key, nullptr, nullptr, reinterpret_cast<BYTE*>(&val), &size));
-    return val;
-}
-
-static til::color _getAccentColorForTitlebar()
-{
-    // The color used for the "Use Accent color in the title bar" in DWM is
-    // stored in HKCU\Software\Microsoft\Windows\DWM\AccentColor.
-    return til::color{ static_cast<COLORREF>(readDwmSubValue(openDwmRegKey(), RegKeyAccentColor)) }.with_alpha(255);
-}
-
 til::color ThemeColor::ColorFromBrush(const winrt::WUX::Media::Brush& brush)
 {
     if (auto acrylic = brush.try_as<winrt::WUX::Media::AcrylicBrush>())
@@ -119,12 +95,10 @@ til::color ThemeColor::ColorFromBrush(const winrt::WUX::Media::Brush& brush)
     return {};
 }
 
-winrt::WUX::Media::Brush ThemeColor::Evaluate(const winrt::WUX::ResourceDictionary& res,
+winrt::WUX::Media::Brush ThemeColor::Evaluate(const winrt::WUX::ResourceDictionary&,
                                               const winrt::WUX::Media::Brush& terminalBackground,
                                               const bool forTitlebar)
 {
-    static const auto accentColorKey{ winrt::box_value(L"SystemAccentColor") };
-
     // NOTE: Currently, the DWM titlebar is always drawn, underneath our XAML
     // content. If the opacity is <1.0, then you'll be able to see it, including
     // the original caption buttons, which we don't want.
@@ -133,13 +107,16 @@ winrt::WUX::Media::Brush ThemeColor::Evaluate(const winrt::WUX::ResourceDictiona
     {
     case ThemeColorType::Accent:
     {
+        // As of 226xx, this object has a trivial constructor and destructor...
+        // but we can do this to avoid calling RoGetActivationFactory/RoActivateInstance
+        // every time we need a theme color.
+        static wil::object_without_destructor_on_shutdown<winrt::Windows::UI::ViewManagement::UISettings> uiSettings{};
+
         // NOTE: There is no canonical way to get the unfocused ACCENT titlebar
         // color in Windows. Edge uses it's own heuristic, and in Windows 11,
         // much of this logic is rapidly changing. We're not gonna mess with
         // that, since it seems there's no good way to reverse engineer that.
-        til::color accentColor = forTitlebar ?
-                                     _getAccentColorForTitlebar() :
-                                     til::color{ winrt::unbox_value<winrt::Windows::UI::Color>(res.Lookup(accentColorKey)) };
+        const til::color accentColor = uiSettings.get().GetColorValue(winrt::Windows::UI::ViewManagement::UIColorType::Accent);
 
         const winrt::WUX::Media::SolidColorBrush accentBrush{ accentColor };
         // _getAccentColorForTitlebar should have already filled the alpha
