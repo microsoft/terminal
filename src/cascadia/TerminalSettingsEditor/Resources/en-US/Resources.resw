@@ -478,13 +478,9 @@
     <value>When enabled, this enables the launch of Terminal at machine startup.</value>
     <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin.Header".</comment>
   </data>
-  <data name="Globals_CenterOnLaunchOn" xml:space="preserve">
-    <value>On</value>
-    <comment>The "On" value for the center on launch setting.</comment>
-  </data>
-  <data name="Globals_CenterOnLaunchOff" xml:space="preserve">
-    <value>Off</value>
-    <comment>The "Off" value for the center on launch setting.</comment>
+  <data name="Globals_CenterOnLaunchCentered" xml:space="preserve">
+    <value>Centered</value>
+    <comment>What the "On" value for the center on launch setting represents.</comment>
   </data>
   <data name="Globals_CenterOnLaunch.Text" xml:space="preserve">
     <value>Center on launch</value>

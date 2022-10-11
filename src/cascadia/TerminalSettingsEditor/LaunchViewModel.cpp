@@ -43,20 +43,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     winrt::hstring LaunchViewModel::LaunchParametersCurrentValue()
     {
         const auto launchModeString = CurrentLaunchMode().as<EnumEntry>()->EnumName();
-        const auto centerOnLaunchString = CenterOnLaunch() ? RS_(L"Globals_CenterOnLaunchOn") : RS_(L"Globals_CenterOnLaunchOff");
 
         winrt::hstring result;
 
+        // Append the launch position part
         if (UseDefaultLaunchPosition())
         {
-            result = fmt::format(L"{}, {}, {}", launchModeString, RS_(L"Globals_LaunchModeDefault/Content"), centerOnLaunchString);
+            result = fmt::format(L"{}, {}", launchModeString, RS_(L"Globals_LaunchModeDefault/Content"));
         }
         else
         {
             const std::wstring xPosString = isnan(InitialPosX()) ? RS_(L"Globals_LaunchModeDefault/Content").c_str() : std::to_wstring(gsl::narrow_cast<int>(InitialPosX()));
             const std::wstring yPosString = isnan(InitialPosY()) ? RS_(L"Globals_LaunchModeDefault/Content").c_str() : std::to_wstring(gsl::narrow_cast<int>(InitialPosY()));
-            result = fmt::format(L"{}, ({},{}), {}", launchModeString, xPosString, yPosString, centerOnLaunchString);
+            result = fmt::format(L"{}, ({},{})", launchModeString, xPosString, yPosString);
         }
+
+        // Append the CenterOnLaunch part
+        result = CenterOnLaunch() ? fmt::format(L"{}, {}", result, RS_(L"Globals_CenterOnLaunchCentered")).c_str() : result;
         return result;
     }
 
@@ -111,7 +114,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             InitialPosX(NAN);
             InitialPosY(NAN);
-            _NotifyChanges(L"InitialPosX", L"InitialPosY");
         }
         _NotifyChanges(L"UseDefaultLaunchPosition", L"LaunchParametersCurrentValue");
     }
