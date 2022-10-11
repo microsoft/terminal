@@ -59,7 +59,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         // Append the CenterOnLaunch part
-        result = CenterOnLaunch() ? fmt::format(L"{}, {}", result, RS_(L"Globals_CenterOnLaunchCentered")).c_str() : result;
+        result = CenterOnLaunch() ? winrt::hstring{ fmt::format(L"{}, {}", result, RS_(L"Globals_CenterOnLaunchCentered")) } : result;
         return result;
     }
 

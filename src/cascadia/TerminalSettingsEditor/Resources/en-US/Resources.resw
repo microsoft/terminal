@@ -480,7 +480,7 @@
   </data>
   <data name="Globals_CenterOnLaunchCentered" xml:space="preserve">
     <value>Centered</value>
-    <comment>What the "On" value for the center on launch setting represents.</comment>
+    <comment>Shorthand, explanatory text displayed when the user has enabled the feature indicated by "Globals_CenterOnLaunch.Text".</comment>
   </data>
   <data name="Globals_CenterOnLaunch.Text" xml:space="preserve">
     <value>Center on launch</value>
