@@ -28,9 +28,6 @@ namespace winrt
 
 static constexpr std::string_view NameKey{ "name" };
 
-static constexpr wchar_t RegKeyDwm[] = L"Software\\Microsoft\\Windows\\DWM";
-static constexpr wchar_t RegKeyAccentColor[] = L"AccentColor";
-
 #define THEME_SETTINGS_COPY(type, name, jsonKey, ...) \
     result->_##name = _##name;
 
