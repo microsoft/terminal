@@ -379,7 +379,7 @@ namespace winrt::TerminalApp::implementation
                                                                       const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
 
         std::shared_ptr<Pane> _MakePane(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs = nullptr,
-                                        const bool duplicate = false,
+                                        const winrt::TerminalApp::TabBase& sourceTab = nullptr,
                                         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
 
         void _RefreshUIForSettingsReload();
