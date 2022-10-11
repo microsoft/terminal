@@ -20,7 +20,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Profile_Advanced
     };
 
-    runtimeclass Breadcrumb
+    runtimeclass Breadcrumb : Windows.Foundation.IStringable
     {
         IInspectable Tag;
         String Label;
