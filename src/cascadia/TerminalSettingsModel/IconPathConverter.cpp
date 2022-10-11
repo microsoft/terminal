@@ -230,7 +230,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // Put the IWICBitmap into a SoftwareBitmap. This may fail if WICBitmap's format is not supported by
         // SoftwareBitmap. CreateBitmapFromHICON always creates RGBA8 so we're ok.
-        auto softwareBitmap = winrt::capture<winrt::Windows::Graphics::Imaging::SoftwareBitmap>(
+        auto softwareBitmap = winrt::capture<SoftwareBitmap>(
             winrt::create_instance<ISoftwareBitmapNativeFactory>(CLSID_SoftwareBitmapNativeFactory),
             &ISoftwareBitmapNativeFactory::CreateFromWICBitmap,
             iconBitmap.get(),
@@ -239,15 +239,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // Convert the pixel format and alpha mode if necessary
         if (softwareBitmap.BitmapPixelFormat() != pixelFormat || softwareBitmap.BitmapAlphaMode() != alphaMode)
         {
-            softwareBitmap = winrt::Windows::Graphics::Imaging::SoftwareBitmap::Convert(softwareBitmap, pixelFormat, alphaMode);
+            softwareBitmap = SoftwareBitmap::Convert(softwareBitmap, pixelFormat, alphaMode);
         }
 
         return softwareBitmap;
     }
 
-    winrt::Windows::Graphics::Imaging::SoftwareBitmap _getBitmapFromIconFileAsync(const winrt::hstring& iconPath,
-                                                                                  int32_t iconIndex,
-                                                                                  uint32_t iconSize)
+    SoftwareBitmap _getBitmapFromIconFileAsync(const winrt::hstring& iconPath,
+                                               int32_t iconIndex,
+                                               uint32_t iconSize)
     {
         wil::unique_hicon hicon;
         LOG_IF_FAILED(SHDefExtractIcon(iconPath.c_str(), iconIndex, 0, &hicon, nullptr, iconSize));
@@ -299,36 +299,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return 0;
     }
 
-    winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Media::Imaging::SoftwareBitmapSource> _getImageIconSourceForBinary(std::wstring_view iconPathWithoutIndex,
-                                                                                                                                             int index)
+    winrt::Windows::UI::Xaml::Media::Imaging::SoftwareBitmapSource _getImageIconSourceForBinary(std::wstring_view iconPathWithoutIndex,
+                                                                                                        int index)
     {
-        winrt::apartment_context fg_thread;
-
         // Try:
         // * c:\Windows\System32\SHELL32.dll, 210
         // * c:\Windows\System32\notepad.exe, 0
         // * C:\Program Files\PowerShell\6-preview\pwsh.exe, 0 (this doesn't exist for me)
         // * C:\Program Files\PowerShell\7\pwsh.exe, 0
 
-        co_await winrt::resume_background();
-
-        auto swBitmap{ _getBitmapFromIconFileAsync(winrt::hstring{ iconPathWithoutIndex }, index, 32) };
-        if (swBitmap == nullptr)
-        {
-            co_return nullptr;
-        }
-
-        co_await fg_thread;
-        winrt::Windows::UI::Xaml::Media::Imaging::SoftwareBitmapSource bitmapSource{};
-        co_await bitmapSource.SetBitmapAsync(swBitmap);
-        co_await fg_thread;
-        co_return bitmapSource;
-    }
-
-    winrt::Windows::UI::Xaml::Media::Imaging::SoftwareBitmapSource _getImageIconSourceForBinaryNotAsync(std::wstring_view iconPathWithoutIndex,
-                                                                                                        int index)
-    {
-        auto swBitmap{ _getBitmapFromIconFileAsync(winrt::hstring{ iconPathWithoutIndex }, index, 32) };
+        const auto swBitmap{ _getBitmapFromIconFileAsync(winrt::hstring{ iconPathWithoutIndex }, index, 32) };
         if (swBitmap == nullptr)
         {
             return nullptr;
@@ -342,14 +322,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     MUX::Controls::IconSource IconPathConverter::IconSourceMUX(const winrt::hstring& iconPath)
     {
         std::wstring_view iconPathWithoutIndex;
-        auto indexOpt = _getIconIndex(iconPath, iconPathWithoutIndex);
+        const auto indexOpt = _getIconIndex(iconPath, iconPathWithoutIndex);
         if (!indexOpt.has_value())
         {
             return _IconSourceMUX(iconPath);
         }
-        auto index = indexOpt.value();
 
-        auto bitmapSource = _getImageIconSourceForBinaryNotAsync(iconPathWithoutIndex, index);
+        const auto bitmapSource = _getImageIconSourceForBinary(iconPathWithoutIndex, indexOpt.value());
 
         MUX::Controls::ImageIconSource imageIconSource{};
         imageIconSource.ImageSource(bitmapSource);
@@ -360,7 +339,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     Windows::UI::Xaml::Controls::IconElement IconPathConverter::IconWUX(const winrt::hstring& iconPath)
     {
         std::wstring_view iconPathWithoutIndex;
-        auto indexOpt = _getIconIndex(iconPath, iconPathWithoutIndex);
+        const auto indexOpt = _getIconIndex(iconPath, iconPathWithoutIndex);
         if (!indexOpt.has_value())
         {
             auto source = _IconSourceWUX(iconPath);
@@ -370,9 +349,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             icon.Height(32);
             return icon;
         }
-        auto index = indexOpt.value();
 
-        auto bitmapSource = _getImageIconSourceForBinaryNotAsync(iconPathWithoutIndex, index);
+        const auto bitmapSource = _getImageIconSourceForBinary(iconPathWithoutIndex, indexOpt.value());
 
         winrt::Microsoft::UI::Xaml::Controls::ImageIcon icon{};
         icon.Source(bitmapSource);

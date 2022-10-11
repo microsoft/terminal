@@ -54,7 +54,7 @@
                     <ContentPresenter Grid.Column="0"
                                       Width="16"
                                       Height="16"
-                                      Content="{x:Bind Item.ResolvedIcon(), Mode=OneWay}" />
+                                      Content="{x:Bind Item.ResolvedIcon, Mode=OneWay}" />
 
                     <local:HighlightedTextControl Grid.Column="1"
                                                   HorizontalAlignment="Left"
@@ -104,7 +104,7 @@
                     <ContentPresenter Grid.Column="0"
                                       Width="16"
                                       Height="16"
-                                      Content="{x:Bind Item.ResolvedIcon(), Mode=OneWay}" />
+                                      Content="{x:Bind Item.ResolvedIcon, Mode=OneWay}" />
 
                     <local:HighlightedTextControl Grid.Column="1"
                                                   HorizontalAlignment="Left"
@@ -174,7 +174,7 @@
                     <ContentPresenter Grid.Column="0"
                                       Width="16"
                                       Height="16"
-                                      Content="{x:Bind Item.ResolvedIcon(), Mode=OneWay}" />
+                                      Content="{x:Bind Item.ResolvedIcon, Mode=OneWay}" />
 
                     <local:HighlightedTextControl Grid.Column="1"
                                                   HorizontalAlignment="Left"
