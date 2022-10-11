@@ -219,10 +219,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return _getIconSource<Microsoft::UI::Xaml::Controls::IconSource>(path);
     }
 
-    winrt::Windows::Graphics::Imaging::SoftwareBitmap _convertToSoftwareBitmap(HICON hicon,
-                                                                               winrt::Windows::Graphics::Imaging::BitmapPixelFormat pixelFormat,
-                                                                               winrt::Windows::Graphics::Imaging::BitmapAlphaMode alphaMode,
-                                                                               IWICImagingFactory* imagingFactory)
+    SoftwareBitmap _convertToSoftwareBitmap(HICON hicon,
+                                            BitmapPixelFormat pixelFormat,
+                                            BitmapAlphaMode alphaMode,
+                                            IWICImagingFactory* imagingFactory)
     {
         // Load the icon into an IWICBitmap
         wil::com_ptr<IWICBitmap> iconBitmap;
@@ -266,6 +266,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                         wicImagingFactory.get());
     }
 
+    // Method Description:
+    // - Attempt to get the icon index from the icon path provided
+    // Arguments:
+    // - iconPath: the full icon path, including the index if present
+    // - iconPathWithoutIndex: the place to store the icon path, sans the index if present
+    // Return Value:
+    // - nullopt if the iconPath is not an exe/dll/lnk file in the first place
+    // - 0 if the iconPath is an exe/dll/lnk file but does not contain an index (i.e. we default
+    //   to the first icon in the file)
+    // - the icon index if the iconPath is an exe/dll/lnk file and contains an index
     std::optional<int> _getIconIndex(const winrt::hstring& iconPath, std::wstring_view& iconPathWithoutIndex)
     {
         const auto pathView = std::wstring_view{ iconPath };
@@ -300,7 +310,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     winrt::Windows::UI::Xaml::Media::Imaging::SoftwareBitmapSource _getImageIconSourceForBinary(std::wstring_view iconPathWithoutIndex,
-                                                                                                        int index)
+                                                                                                int index)
     {
         // Try:
         // * c:\Windows\System32\SHELL32.dll, 210
