@@ -80,11 +80,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void LaunchViewModel::InitialPosX(double xCoord)
     {
-        winrt::Windows::Foundation::IReference<int64_t> xCoordRef;
+        winrt::Windows::Foundation::IReference<int32_t> xCoordRef;
         // If the value was cleared, xCoord will be NAN, so check for that
         if (!isnan(xCoord))
         {
-            xCoordRef = gsl::narrow_cast<int64_t>(xCoord);
+            xCoordRef = gsl::narrow_cast<int32_t>(xCoord);
         }
         const LaunchPosition newPos{ xCoordRef, _Settings.GlobalSettings().InitialPosition().Y };
         _Settings.GlobalSettings().InitialPosition(newPos);
@@ -93,11 +93,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void LaunchViewModel::InitialPosY(double yCoord)
     {
-        winrt::Windows::Foundation::IReference<int64_t> yCoordRef;
+        winrt::Windows::Foundation::IReference<int32_t> yCoordRef;
         // If the value was cleared, yCoord will be NAN, so check for that
         if (!isnan(yCoord))
         {
-            yCoordRef = gsl::narrow_cast<int64_t>(yCoord);
+            yCoordRef = gsl::narrow_cast<int32_t>(yCoord);
         }
         const LaunchPosition newPos{ _Settings.GlobalSettings().InitialPosition().X, yCoordRef };
         _Settings.GlobalSettings().InitialPosition(newPos);
