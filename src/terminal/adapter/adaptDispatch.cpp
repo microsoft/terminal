@@ -687,6 +687,103 @@ bool AdaptDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
 }
 
 // Routine Description:
+// - Selectively erases unprotected cells in an area of the buffer.
+// Arguments:
+// - textBuffer - Target buffer to be erased.
+// - eraseRect - Area of the buffer that will be affected.
+// Return Value:
+// - <none>
+void AdaptDispatch::_SelectiveEraseRect(TextBuffer& textBuffer, const til::rect& eraseRect)
+{
+    if (eraseRect)
+    {
+        for (auto row = eraseRect.top; row < eraseRect.bottom; row++)
+        {
+            auto& rowBuffer = textBuffer.GetRowByOffset(row);
+            const auto& attrs = rowBuffer.GetAttrRow();
+            auto& chars = rowBuffer.GetCharRow();
+            for (auto col = eraseRect.left; col < eraseRect.right; col++)
+            {
+                // Only unprotected cells are affected.
+                if (!attrs.GetAttrByColumn(col).IsProtected())
+                {
+                    // The text is cleared but the attributes are left as is.
+                    chars.ClearGlyph(col);
+                    textBuffer.TriggerRedraw(Viewport::FromCoord({ col, row }));
+                }
+            }
+        }
+        _api.NotifyAccessibilityChange(eraseRect);
+    }
+}
+
+// Routine Description:
+// - DECSED - Selectively erases unprotected cells in a portion of the viewport.
+// Arguments:
+// - eraseType - Determines whether to erase:
+//      From beginning (top-left corner) to the cursor
+//      From cursor to end (bottom-right corner)
+//      The entire viewport area
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SelectiveEraseInDisplay(const DispatchTypes::EraseType eraseType)
+{
+    const auto viewport = _api.GetViewport();
+    auto& textBuffer = _api.GetTextBuffer();
+    const auto bufferWidth = textBuffer.GetSize().Width();
+    const auto row = textBuffer.GetCursor().GetPosition().Y;
+    const auto col = textBuffer.GetCursor().GetPosition().X;
+
+    switch (eraseType)
+    {
+    case DispatchTypes::EraseType::FromBeginning:
+        _SelectiveEraseRect(textBuffer, { 0, viewport.top, bufferWidth, row });
+        _SelectiveEraseRect(textBuffer, { 0, row, col + 1, row + 1 });
+        return true;
+    case DispatchTypes::EraseType::ToEnd:
+        _SelectiveEraseRect(textBuffer, { col, row, bufferWidth, row + 1 });
+        _SelectiveEraseRect(textBuffer, { 0, row + 1, bufferWidth, viewport.bottom });
+        return true;
+    case DispatchTypes::EraseType::All:
+        _SelectiveEraseRect(textBuffer, { 0, viewport.top, bufferWidth, viewport.bottom });
+        return true;
+    default:
+        return false;
+    }
+}
+
+// Routine Description:
+// - DECSEL - Selectively erases unprotected cells on line with the cursor.
+// Arguments:
+// - eraseType - Determines whether to erase:
+//      From beginning (left edge) to the cursor
+//      From cursor to end (right edge)
+//      The entire line.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SelectiveEraseInLine(const DispatchTypes::EraseType eraseType)
+{
+    auto& textBuffer = _api.GetTextBuffer();
+    const auto row = textBuffer.GetCursor().GetPosition().Y;
+    const auto col = textBuffer.GetCursor().GetPosition().X;
+
+    switch (eraseType)
+    {
+    case DispatchTypes::EraseType::FromBeginning:
+        _SelectiveEraseRect(textBuffer, { 0, row, col + 1, row + 1 });
+        return true;
+    case DispatchTypes::EraseType::ToEnd:
+        _SelectiveEraseRect(textBuffer, { col, row, textBuffer.GetLineWidth(row), row + 1 });
+        return true;
+    case DispatchTypes::EraseType::All:
+        _SelectiveEraseRect(textBuffer, { 0, row, textBuffer.GetLineWidth(row), row + 1 });
+        return true;
+    default:
+        return false;
+    }
+}
+
+// Routine Description:
 // - DECSWL/DECDWL/DECDHL - Sets the line rendition attribute for the current line.
 // Arguments:
 // - rendition - Determines whether the line will be rendered as single width, double
@@ -1012,6 +1109,9 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         break;
     case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
         success = SetAutoWrapMode(enable);
+        break;
+    case DispatchTypes::ModeParams::DECARM_AutoRepeatMode:
+        success = _SetInputMode(TerminalInput::Mode::AutoRepeat, enable);
         break;
     case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
         success = EnableCursorBlinking(enable);
@@ -1768,7 +1868,7 @@ bool AdaptDispatch::AcceptC1Controls(const bool enabled)
 //  X All character sets          G0, G1, G2, Default settings.
 //                                G3, GL, GR
 //  X Select graphic rendition    SGR         Normal rendition.
-//    Select character attribute  DECSCA      Normal (erasable by DECSEL and DECSED).
+//  X Select character attribute  DECSCA      Normal (erasable by DECSEL and DECSED).
 //  X Save cursor state           DECSC       Home position.
 //    Assign user preference      DECAUPSS    Set selected in Set-Up.
 //        supplemental set
@@ -1802,6 +1902,7 @@ bool AdaptDispatch::SoftReset()
     AcceptC1Controls(false);
 
     SetGraphicsRendition({}); // Normal rendition.
+    SetCharacterProtectionAttribute({}); // Default (unprotected)
 
     // Reset the saved cursor state.
     // Note that XTerm only resets the main buffer state, but that
@@ -1863,6 +1964,9 @@ bool AdaptDispatch::HardReset()
 
     // Reset the Backarrow Key mode
     _SetInputMode(TerminalInput::Mode::BackarrowKey, false);
+
+    // Set the keyboard Auto Repeat mode
+    _SetInputMode(TerminalInput::Mode::AutoRepeat, true);
 
     // Delete all current tab stops and reapply
     _ResetTabStops();
@@ -2793,11 +2897,14 @@ ITermDispatch::StringHandler AdaptDispatch::RequestSetting()
             const auto id = idBuilder->Finalize(ch);
             switch (id)
             {
-            case VTID('m'):
+            case VTID("m"):
                 _ReportSGRSetting();
                 break;
-            case VTID('r'):
+            case VTID("r"):
                 _ReportDECSTBMSetting();
+                break;
+            case VTID("\"q"):
+                _ReportDECSCASetting();
                 break;
             default:
                 _api.ReturnResponse(L"\033P0$r\033\\");
@@ -2902,6 +3009,28 @@ void AdaptDispatch::_ReportDECSTBMSetting()
 
     // The 'r' indicates this is an DECSTBM response, and ST ends the sequence.
     response.append(L"r\033\\"sv);
+    _api.ReturnResponse({ response.data(), response.size() });
+}
+
+// Method Description:
+// - Reports the DECSCA protected attribute in response to a DECRQSS query.
+// Arguments:
+// - None
+// Return Value:
+// - None
+void AdaptDispatch::_ReportDECSCASetting() const
+{
+    using namespace std::string_view_literals;
+
+    // A valid response always starts with DCS 1 $ r.
+    fmt::basic_memory_buffer<wchar_t, 64> response;
+    response.append(L"\033P1$r"sv);
+
+    const auto attr = _api.GetTextBuffer().GetCurrentAttributes();
+    response.append(attr.IsProtected() ? L"1"sv : L"0"sv);
+
+    // The '"q' indicates this is an DECSCA response, and ST ends the sequence.
+    response.append(L"\"q\033\\"sv);
     _api.ReturnResponse({ response.data(), response.size() });
 }
 

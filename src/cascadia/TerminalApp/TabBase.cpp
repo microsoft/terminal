@@ -79,6 +79,10 @@ namespace winrt::TerminalApp::implementation
             }
         });
         _closeTabsAfterMenuItem.Text(RS_(L"TabCloseAfter"));
+        const auto closeTabsAfterToolTip = RS_(L"TabCloseAfterToolTip");
+
+        WUX::Controls::ToolTipService::SetToolTip(_closeTabsAfterMenuItem, box_value(closeTabsAfterToolTip));
+        Automation::AutomationProperties::SetHelpText(_closeTabsAfterMenuItem, closeTabsAfterToolTip);
 
         // Close other tabs
         _closeOtherTabsMenuItem.Click([weakThis](auto&&, auto&&) {
@@ -88,6 +92,10 @@ namespace winrt::TerminalApp::implementation
             }
         });
         _closeOtherTabsMenuItem.Text(RS_(L"TabCloseOther"));
+        const auto closeOtherTabsToolTip = RS_(L"TabCloseOtherToolTip");
+
+        WUX::Controls::ToolTipService::SetToolTip(_closeOtherTabsMenuItem, box_value(closeOtherTabsToolTip));
+        Automation::AutomationProperties::SetHelpText(_closeOtherTabsMenuItem, closeOtherTabsToolTip);
 
         // Close
         Controls::MenuFlyoutItem closeTabMenuItem;
@@ -103,6 +111,10 @@ namespace winrt::TerminalApp::implementation
         });
         closeTabMenuItem.Text(RS_(L"TabClose"));
         closeTabMenuItem.Icon(closeSymbol);
+        const auto closeTabToolTip = RS_(L"TabCloseToolTip");
+
+        WUX::Controls::ToolTipService::SetToolTip(closeTabMenuItem, box_value(closeTabToolTip));
+        Automation::AutomationProperties::SetHelpText(closeTabMenuItem, closeTabToolTip);
 
         // GH#8238 append the close menu items to the flyout itself until crash in XAML is fixed
         //Controls::MenuFlyoutSubItem closeSubMenu;

@@ -90,6 +90,7 @@ public:
     bool IsDoublyUnderlined() const noexcept;
     bool IsOverlined() const noexcept;
     bool IsReverseVideo() const noexcept;
+    bool IsProtected() const noexcept;
 
     void SetIntense(bool isIntense) noexcept;
     void SetFaint(bool isFaint) noexcept;
@@ -101,6 +102,7 @@ public:
     void SetDoublyUnderlined(bool isDoublyUnderlined) noexcept;
     void SetOverlined(bool isOverlined) noexcept;
     void SetReverseVideo(bool isReversed) noexcept;
+    void SetProtected(bool isProtected) noexcept;
 
     constexpr CharacterAttributes GetCharacterAttributes() const noexcept
     {

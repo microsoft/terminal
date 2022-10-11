@@ -46,6 +46,7 @@ public:
     TEST_METHOD(DifferentModifiersTest);
     TEST_METHOD(CtrlNumTest);
     TEST_METHOD(BackarrowKeyModeTest);
+    TEST_METHOD(AutoRepeatModeTest);
 
     wchar_t GetModifierChar(const bool fShift, const bool fAlt, const bool fCtrl)
     {
@@ -852,4 +853,57 @@ void InputTest::BackarrowKeyModeTest()
 
     s_expectedInput = L"\x1b\x8";
     TestKey(pInput, LEFT_ALT_PRESSED | LEFT_CTRL_PRESSED | SHIFT_PRESSED, vkey);
+}
+
+void InputTest::AutoRepeatModeTest()
+{
+    Log::Comment(L"Starting test...");
+
+    auto receivedChars = std::wstring{};
+    const auto pInput = new TerminalInput([&](auto& inEvents) {
+        for (auto& record : IInputEvent::ToInputRecords(inEvents))
+        {
+            receivedChars.push_back(record.Event.KeyEvent.uChar.UnicodeChar);
+        }
+    });
+
+    const auto repeatKey = [&](auto vKey, auto unicodeChar, int repeatCount) {
+        auto irTest = INPUT_RECORD{ 0 };
+        irTest.EventType = KEY_EVENT;
+        irTest.Event.KeyEvent.wRepeatCount = 1;
+        irTest.Event.KeyEvent.wVirtualKeyCode = vKey;
+        irTest.Event.KeyEvent.uChar.UnicodeChar = unicodeChar;
+        irTest.Event.KeyEvent.bKeyDown = TRUE;
+
+        // We're simulating a key being held down so that it repeats, by sending
+        // multiple KeyDown events followed by a single KeyUp event.
+
+        for (auto i = 0; i < repeatCount; i++)
+        {
+            auto keyDownEvent = IInputEvent::Create(irTest);
+            VERIFY_IS_TRUE(pInput->HandleKey(keyDownEvent.get()));
+        }
+
+        irTest.Event.KeyEvent.bKeyDown = FALSE;
+        auto keyUpEvent = IInputEvent::Create(irTest);
+        VERIFY_IS_FALSE(pInput->HandleKey(keyUpEvent.get()));
+    };
+
+    Log::Comment(L"Sending repeating keypresses with DECARM disabled.");
+
+    pInput->SetInputMode(TerminalInput::Mode::AutoRepeat, false);
+    receivedChars.clear();
+    repeatKey('A', L'a', 5);
+    repeatKey('B', L'b', 5);
+    repeatKey('C', L'c', 5);
+    VERIFY_ARE_EQUAL(L"abc", receivedChars);
+
+    Log::Comment(L"Sending repeating keypresses with DECARM enabled.");
+
+    pInput->SetInputMode(TerminalInput::Mode::AutoRepeat, true);
+    receivedChars.clear();
+    repeatKey('A', L'a', 5);
+    repeatKey('B', L'b', 5);
+    repeatKey('C', L'c', 5);
+    VERIFY_ARE_EQUAL(L"aaaaabbbbbccccc", receivedChars);
 }

@@ -330,6 +330,13 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         BrightBackgroundWhite = 107,
     };
 
+    enum LogicalAttributeOptions : VTInt
+    {
+        Default = 0,
+        Protected = 1,
+        Unprotected = 2
+    };
+
     // Many of these correspond directly to SGR parameters (the GraphicsOptions enum), but
     // these are distinct (notably 10 and 11, which as SGR parameters would select fonts,
     // are used here to indicate that the foreground/background colors should be saved).
@@ -381,6 +388,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         DECSCNM_ScreenMode = DECPrivateMode(5),
         DECOM_OriginMode = DECPrivateMode(6),
         DECAWM_AutoWrapMode = DECPrivateMode(7),
+        DECARM_AutoRepeatMode = DECPrivateMode(8),
         ATT610_StartCursorBlink = DECPrivateMode(12),
         DECTCEM_TextCursorEnableMode = DECPrivateMode(25),
         XTERM_EnableDECCOLMSupport = DECPrivateMode(40),

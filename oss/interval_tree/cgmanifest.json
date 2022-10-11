@@ -6,7 +6,7 @@
         "type": "git",
         "git": {
           "repositoryUrl": "https://github.com/ekg/intervaltree",
-          "commitHash": "b90527f9e6d51cd36ecbb50429e4524d3a418ea5"
+          "commitHash": "aa5937755000f1cd007402d03b6f7ce4427c5d21"
         }
       }
     }
