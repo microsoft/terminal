@@ -584,7 +584,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Windows 10.
         // We'll also turn the acrylic back off when they're fully opaque, which
         // is what the Terminal did prior to 1.12.
-        UseAcrylic(opacity < 1.0 && (!IsVintageOpacityAvailable() || _settings->UseAcrylic()));
+        UseAcrylic(newOpacity < 1.0 && (!IsVintageOpacityAvailable() || _settings->UseAcrylic()));
 
         // Update the renderer as well. It might need to fall back from
         // cleartype -> grayscale if the BG is transparent / acrylic.
