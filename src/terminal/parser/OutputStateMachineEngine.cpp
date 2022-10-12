@@ -973,7 +973,7 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
     const auto midPos = string.find(';');
     if (midPos != std::wstring::npos)
     {
-        uri = string.substr(midPos + 1);
+        uri = string.substr(midPos + 1, MAX_URL_LENGTH);
         const auto paramStr = string.substr(0, midPos);
         const auto paramParts = Utils::SplitString(paramStr, ':');
         for (const auto& part : paramParts)
