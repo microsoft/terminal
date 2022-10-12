@@ -74,4 +74,9 @@ template<typename T>
     return _SendTypedPacket(_pipe.get(), HostSignals::EndTask, data);
 }
 
+[[nodiscard]] NTSTATUS RemoteConsoleControl::SetWindowOwner(HWND hwnd, DWORD processId, DWORD threadId)
+{
+    return _control.SetWindowOwner(hwnd, processId, threadId);
+}
+
 #pragma endregion

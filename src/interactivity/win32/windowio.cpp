@@ -78,7 +78,13 @@ VOID SetConsoleWindowOwner(const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pP
     else
     {
         // Find a process to own the console window. If there are none then let's use conhost's.
-        pProcessData = gci.ProcessHandleList.GetFirstProcess();
+        pProcessData = gci.ProcessHandleList.FindProcessInList(ConsoleProcessList::ROOT_PROCESS_ID);
+        if (!pProcessData)
+        {
+            // No root process ID? Pick the oldest existing process.
+            pProcessData = gci.ProcessHandleList.GetFirstProcess();
+        }
+
         if (pProcessData != nullptr)
         {
             dwProcessId = pProcessData->dwProcessId;
@@ -92,16 +98,8 @@ VOID SetConsoleWindowOwner(const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pP
         }
     }
 
-    CONSOLEWINDOWOWNER ConsoleOwner;
-    ConsoleOwner.hwnd = hwnd;
-    ConsoleOwner.ProcessId = dwProcessId;
-    ConsoleOwner.ThreadId = dwThreadId;
-
     // Comment out this line to enable UIA tree to be visible until UIAutomationCore.dll can support our scenario.
-    LOG_IF_FAILED(ServiceLocator::LocateConsoleControl<Microsoft::Console::Interactivity::Win32::ConsoleControl>()
-                      ->Control(ConsoleControl::ControlType::ConsoleSetWindowOwner,
-                                &ConsoleOwner,
-                                sizeof(ConsoleOwner)));
+    LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->SetWindowOwner(hwnd, dwProcessId, dwThreadId));
 }
 
 // ----------------------------
@@ -1048,6 +1046,10 @@ DWORD WINAPI ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
         // successfully created with the owner configured when the window is
         // first created. See GH#13066 for details.
         ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo()->CreatePseudoWindow();
+
+        // Register the pseudoconsole window as being owned by the root process.
+        const auto pseudoWindow = ServiceLocator::LocatePseudoWindow();
+        SetConsoleWindowOwner(pseudoWindow, nullptr);
     }
 
     UnlockConsole();

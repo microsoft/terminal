@@ -38,4 +38,9 @@ using namespace Microsoft::Console::Interactivity::OneCore;
                                sizeof(*a));
 }
 
+[[nodiscard]] NTSTATUS ConsoleControl::SetWindowOwner(HWND, DWORD, DWORD)
+{
+    return STATUS_SUCCESS;
+}
+
 #pragma endregion
