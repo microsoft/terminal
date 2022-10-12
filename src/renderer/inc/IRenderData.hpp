@@ -69,5 +69,5 @@ namespace Microsoft::Console::Render
     };
 
     // See docs/virtual-dtors.md for an explanation of why this is weird.
-    inline IRenderData::~IRenderData() {}
+    inline IRenderData::~IRenderData() = default;
 }

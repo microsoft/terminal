@@ -215,8 +215,8 @@ namespace fuzz
     class CFuzzRangeException
     {
     public:
-        CFuzzRangeException(){};
-        virtual ~CFuzzRangeException(){};
+        CFuzzRangeException() = default;
+        virtual ~CFuzzRangeException() = default;
     };
 
     // In an effort to avoid fuzzing code from scattering rand() throughout
@@ -301,8 +301,8 @@ namespace fuzz
         }
 
     private:
-        CFuzzChance() {}
-        virtual ~CFuzzChance() {}
+        CFuzzChance() = default;
+        virtual ~CFuzzChance() = default;
         static std::random_device m_rd;
     };
 
@@ -317,7 +317,7 @@ namespace fuzz
         CFuzzBase() :
             m_fFuzzed(FALSE),
             m_iPercentageTotal(100){};
-        virtual ~CFuzzBase(){};
+        virtual ~CFuzzBase() = default;
 
         // Converts a percentage into a valid range.  Note that riTotal
         // is a reference value, which allows for a running total to be
