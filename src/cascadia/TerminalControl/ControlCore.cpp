@@ -692,7 +692,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
         if (_lastHoveredCell.has_value())
         {
-            return winrt::hstring{ _terminal->GetHyperlinkAtViewportPosition(*_lastHoveredCell) };
+            auto uri{ _terminal->GetHyperlinkAtViewportPosition(*_lastHoveredCell) };
+            uri.resize(std::min<size_t>(1024u, uri.size())); // Truncate for display
+            return winrt::hstring{ uri };
         }
         return {};
     }
