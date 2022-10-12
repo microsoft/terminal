@@ -8,7 +8,7 @@ KeyEvent::~KeyEvent() = default;
 
 INPUT_RECORD KeyEvent::ToInputRecord() const noexcept
 {
-    INPUT_RECORD record;
+    INPUT_RECORD record{};
     record.EventType = KEY_EVENT;
     record.Event.KeyEvent.bKeyDown = !!_keyDown;
     record.Event.KeyEvent.wRepeatCount = _repeatCount;
