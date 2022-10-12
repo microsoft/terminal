@@ -584,10 +584,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Windows 10.
         // We'll also turn the acrylic back off when they're fully opaque, which
         // is what the Terminal did prior to 1.12.
-        if (!IsVintageOpacityAvailable())
-        {
-            _runtimeUseAcrylic = newOpacity < 1.0;
-        }
+        UseAcrylic(opacity < 1.0 && (!IsVintageOpacityAvailable() || _settings->UseAcrylic()));
 
         // Update the renderer as well. It might need to fall back from
         // cleartype -> grayscale if the BG is transparent / acrylic.
@@ -711,16 +708,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         auto lock = _terminal->LockForWriting();
 
-        _runtimeOpacity = std::nullopt;
-        _runtimeUseAcrylic = std::nullopt;
-
         // GH#11285 - If the user is on Windows 10, and they wanted opacity, but
         // didn't explicitly request acrylic, then opt them in to acrylic.
         // On Windows 11+, this isn't needed, because we can have vintage opacity.
-        if (!IsVintageOpacityAvailable() && _settings->Opacity() < 1.0 && !_settings->UseAcrylic())
-        {
-            _runtimeUseAcrylic = true;
-        }
+        // Instead, disable acrylic while the opacity is 100%
+        _runtimeUseAcrylic = _settings->Opacity() < 1.0 && (!IsVintageOpacityAvailable() || _settings->UseAcrylic());
+        _runtimeOpacity = std::nullopt;
 
         const auto sizeChanged = _setFontSizeUnderLock(_settings->FontSize());
 
