@@ -242,6 +242,25 @@ void HandleCtrlEvent(const DWORD EventType)
     }
 }
 
+static UINT_PTR sharedTimerID;
+
+static void midiSkipTimerCallback(HWND, UINT, UINT_PTR idEvent, DWORD) noexcept
+{
+    KillTimer(nullptr, idEvent);
+    sharedTimerID = 0;
+
+    auto& midiAudio = ServiceLocator::LocateGlobals().getConsoleInformation().GetMidiAudio();
+    midiAudio.EndSkip();
+}
+
+static void beginMidiSkip() noexcept
+{
+    auto& midiAudio = ServiceLocator::LocateGlobals().getConsoleInformation().GetMidiAudio();
+    midiAudio.BeginSkip();
+
+    sharedTimerID = SetTimer(nullptr, sharedTimerID, 1000, midiSkipTimerCallback);
+}
+
 void ProcessCtrlEvents()
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -250,6 +269,8 @@ void ProcessCtrlEvents()
         gci.UnlockConsole();
         return;
     }
+
+    beginMidiSkip();
 
     // Make our own copy of the console process handle list.
     const auto LimitingProcessId = gci.LimitingProcessId;

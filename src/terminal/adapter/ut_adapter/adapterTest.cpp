@@ -221,7 +221,7 @@ public:
         Log::Comment(L"SetWorkingDirectory MOCK called...");
     }
 
-    void PlayMidiNote(const int /*noteNumber*/, const int /*velocity*/, const std::chrono::microseconds /*duration*/) override
+    void PlayMidiNote(const int /*noteNumber*/, const int /*velocity*/, const MidiDuration /*duration*/) override
     {
         Log::Comment(L"PlayMidiNote MOCK called...");
     }

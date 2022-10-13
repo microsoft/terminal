@@ -6,6 +6,7 @@
 namespace Microsoft::Console::VirtualTerminal
 {
     using VTInt = int32_t;
+    using MidiDuration = std::chrono::milliseconds;
 
     class VTID
     {
