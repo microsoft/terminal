@@ -30,7 +30,6 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
     _u8State{},
     _dwThreadId{ 0 },
     _exitRequested{ false },
-    _exitResult{ S_OK },
     _pfnSetLookingForDSR{}
 {
     THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
@@ -94,7 +93,7 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
 DWORD WINAPI VtInputThread::StaticVtInputThreadProc(_In_ LPVOID lpParameter)
 {
     const auto pInstance = reinterpret_cast<VtInputThread*>(lpParameter);
-    return pInstance->_InputThread();
+    pInstance->_InputThread();
 }
 
 // Method Description:
@@ -118,7 +117,6 @@ void VtInputThread::DoReadInput(const bool throwOnFail)
     if (!fSuccess)
     {
         _exitRequested = true;
-        _exitResult = HRESULT_FROM_WIN32(GetLastError());
         return;
     }
 
@@ -127,7 +125,6 @@ void VtInputThread::DoReadInput(const bool throwOnFail)
     {
         if (throwOnFail)
         {
-            _exitResult = hr;
             _exitRequested = true;
         }
         else
@@ -149,18 +146,13 @@ void VtInputThread::SetLookingForDSR(const bool looking) noexcept
 // - The ThreadProc for the VT Input Thread. Reads input from the pipe, and
 //      passes it to _HandleRunInput to be processed by the
 //      InputStateMachineEngine.
-// Return Value:
-// - Any error from reading the pipe or writing to the input buffer that might
-//      have caused us to exit.
-DWORD VtInputThread::_InputThread()
+void VtInputThread::_InputThread()
 {
     while (!_exitRequested)
     {
         DoReadInput(true);
     }
     ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo()->CloseInput();
-
-    return _exitResult;
 }
 
 // Method Description:
