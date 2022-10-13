@@ -41,17 +41,7 @@ void ServiceLocator::SetOneCoreTeardownFunction(void (*pfn)()) noexcept
 
 void ServiceLocator::RundownAndExit(const HRESULT hr)
 {
-    static thread_local bool preventRecursion = false;
     static std::atomic<bool> locked;
-
-    // BODGY:
-    // pRender->TriggerTeardown() might cause another VtEngine pass, which then might fail to write to the IO pipe.
-    // If that happens it calls VtIo::CloseOutput(), which in turn calls ServiceLocator::RundownAndExit().
-    // This prevents the unintended recursion and resulting deadlock.
-    if (std::exchange(preventRecursion, true))
-    {
-        return;
-    }
 
     // MSFT:40146639
     //   The premise of this function is that 1 thread enters and 0 threads leave alive.
