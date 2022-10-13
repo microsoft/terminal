@@ -552,7 +552,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
     }
 
     // Check if this key matches the last recorded key code.
-    const auto matchingLastKeyPress = _lastVirtualKeyCode && _lastVirtualKeyCode.value() == keyEvent.GetVirtualKeyCode();
+    const auto matchingLastKeyPress = _lastVirtualKeyCode == keyEvent.GetVirtualKeyCode();
 
     // Only need to handle key down. See raw key handler (see RawReadWaitRoutine in stream.cpp)
     if (!keyEvent.IsKeyDown())
