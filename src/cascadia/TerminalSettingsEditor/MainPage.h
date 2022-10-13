@@ -7,6 +7,11 @@
 #include "Breadcrumb.g.h"
 #include "Utils.h"
 
+namespace Microsoft::Terminal::Core
+{
+    class ControlKeyStates;
+}
+
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     struct Breadcrumb : BreadcrumbT<Breadcrumb>
@@ -30,6 +35,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void UpdateSettings(const Model::CascadiaSettings& settings);
 
+        bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
         void OpenJsonKeyDown(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& args);
         void OpenJsonTapped(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& args);
         void SettingsNav_Loaded(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
@@ -47,6 +53,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::Foundation::Collections::IObservableVector<IInspectable> Breadcrumbs() noexcept;
 
         TYPED_EVENT(OpenJson, Windows::Foundation::IInspectable, Model::SettingsTarget);
+        TYPED_EVENT(OpenSystemMenu, IInspectable, IInspectable);
 
     private:
         Windows::Foundation::Collections::IObservableVector<IInspectable> _breadcrumbs;
@@ -55,6 +62,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         std::optional<HWND> _hostingHwnd;
 
+        static ::Microsoft::Terminal::Core::ControlKeyStates _GetPressedModifierKeys() noexcept;
         void _InitializeProfilesList();
         void _CreateAndNavigateToNewProfile(const uint32_t index, const Model::Profile& profile);
         winrt::Microsoft::UI::Xaml::Controls::NavigationViewItem _CreateProfileNavViewItem(const Editor::ProfileViewModel& profile);

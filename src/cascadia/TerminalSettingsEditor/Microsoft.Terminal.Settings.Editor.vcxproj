@@ -312,6 +312,7 @@
       <DependentUpon>Launch.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="IDirectKeyListener.idl" />
     <Midl Include="Interaction.idl">
       <DependentUpon>Interaction.xaml</DependentUpon>
       <SubType>Code</SubType>

@@ -17,6 +17,7 @@
 #include "InteractionViewModel.h"
 #include "LaunchViewModel.h"
 #include "..\types\inc\utils.hpp"
+#include "../TerminalCore/ControlKeyStates.hpp"
 
 #include <LibraryResources.h>
 
@@ -26,6 +27,7 @@ namespace winrt
     namespace WUX = Windows::UI::Xaml;
 }
 
+using namespace ::Microsoft::Terminal::Core;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
@@ -645,4 +647,58 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return SettingsNav().Background();
     }
 
+    bool MainPage::OnDirectKeyEvent(const uint32_t vkey, const uint8_t /*scanCode*/, const bool down)
+    {
+        auto handled = false;
+        const auto modifiers = _GetPressedModifierKeys();
+        if (modifiers.IsAltPressed() && vkey == VK_SPACE && down)
+        {
+            _OpenSystemMenuHandlers(*this, nullptr);
+            handled = true;
+        }
+        return handled;
+    }
+
+    ControlKeyStates MainPage::_GetPressedModifierKeys() noexcept
+    {
+        const auto window = CoreWindow::GetForCurrentThread();
+        // DONT USE
+        //      != CoreVirtualKeyStates::None
+        // OR
+        //      == CoreVirtualKeyStates::Down
+        // Sometimes with the key down, the state is Down | Locked.
+        // Sometimes with the key up, the state is Locked.
+        // IsFlagSet(Down) is the only correct solution.
+
+        struct KeyModifier
+        {
+            VirtualKey vkey;
+            ControlKeyStates flags;
+        };
+
+        constexpr std::array<KeyModifier, 7> modifiers{ {
+            { VirtualKey::RightMenu, ControlKeyStates::RightAltPressed },
+            { VirtualKey::LeftMenu, ControlKeyStates::LeftAltPressed },
+            { VirtualKey::RightControl, ControlKeyStates::RightCtrlPressed },
+            { VirtualKey::LeftControl, ControlKeyStates::LeftCtrlPressed },
+            { VirtualKey::Shift, ControlKeyStates::ShiftPressed },
+            { VirtualKey::RightWindows, ControlKeyStates::RightWinPressed },
+            { VirtualKey::LeftWindows, ControlKeyStates::LeftWinPressed },
+        } };
+
+        ControlKeyStates flags;
+
+        for (const auto& mod : modifiers)
+        {
+            const auto state = window.GetKeyState(mod.vkey);
+            const auto isDown = WI_IsFlagSet(state, CoreVirtualKeyStates::Down);
+
+            if (isDown)
+            {
+                flags |= mod.flags;
+            }
+        }
+
+        return flags;
+    }
 }

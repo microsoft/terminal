@@ -3336,6 +3336,7 @@ namespace winrt::TerminalApp::implementation
 
             // GH#8767 - let unhandled keys in the SUI try to run commands too.
             sui.KeyDown({ this, &TerminalPage::_KeyDownHandler });
+            sui.OpenSystemMenu([&](auto&& sender, auto&& args) { _OpenSystemMenuHandlers(sender, args); });
 
             sui.OpenJson([weakThis{ get_weak() }](auto&& /*s*/, winrt::Microsoft::Terminal::Settings::Model::SettingsTarget e) {
                 if (auto page{ weakThis.get() })

@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "IDirectKeyListener.idl";
+
 namespace Microsoft.Terminal.Settings.Editor
 {
     // Due to a XAML Compiler bug, it is hard for us to propagate an HWND into a XAML-using runtimeclass.
@@ -28,7 +30,7 @@ namespace Microsoft.Terminal.Settings.Editor
         BreadcrumbSubPage SubPage;
     }
 
-    [default_interface] runtimeclass MainPage : Windows.UI.Xaml.Controls.Page, IHostedInWindow
+    [default_interface] runtimeclass MainPage : Windows.UI.Xaml.Controls.Page, IHostedInWindow, IDirectKeyListener
     {
         MainPage(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
 
@@ -42,5 +44,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.Foundation.Collections.IObservableVector<IInspectable> Breadcrumbs { get; };
 
         Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
+
+        event Windows.Foundation.TypedEventHandler<Object, Object> OpenSystemMenu;
     }
 }
