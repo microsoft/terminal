@@ -17,6 +17,7 @@ Author(s):
 #include "termDispatch.hpp"
 #include "ITerminalApi.hpp"
 #include "FontBuffer.hpp"
+#include "MacroBuffer.hpp"
 #include "terminalOutput.hpp"
 #include "../input/terminalInput.hpp"
 #include "../../types/inc/sgrStack.hpp"
@@ -249,6 +250,7 @@ namespace Microsoft::Console::VirtualTerminal
         TerminalInput& _terminalInput;
         TerminalOutput _termOutput;
         std::unique_ptr<FontBuffer> _fontBuffer;
+        std::shared_ptr<MacroBuffer> _macroBuffer;
         std::optional<unsigned int> _initialCodePage;
 
         // We have two instances of the saved cursor state, because we need

@@ -2358,6 +2358,13 @@ bool AdaptDispatch::HardReset()
     // Reset the attribute change extent (DECSACE) to a stream.
     _isChangeExtentRectangular = false;
 
+    // Clear and release the macro buffer.
+    if (_macroBuffer)
+    {
+        _macroBuffer->ClearMacrosIfInUse();
+        _macroBuffer = nullptr;
+    }
+
     // GH#2715 - If all this succeeded, but we're in a conpty, return `false` to
     // make the state machine propagate this RIS sequence to the connected
     // terminal application. We've reset our state, but the connected terminal
@@ -3186,10 +3193,22 @@ ITermDispatch::StringHandler AdaptDispatch::_CreateDrcsPassthroughHandler(const 
 // - encoding - whether the data is encoded as plain text or hex digits.
 // Return Value:
 // - a function to receive the macro data or nullptr if parameters are invalid.
-ITermDispatch::StringHandler AdaptDispatch::DefineMacro(const VTInt /*macroId*/,
-                                                        const DispatchTypes::MacroDeleteControl /*deleteControl*/,
-                                                        const DispatchTypes::MacroEncoding /*encoding*/)
+ITermDispatch::StringHandler AdaptDispatch::DefineMacro(const VTInt macroId,
+                                                        const DispatchTypes::MacroDeleteControl deleteControl,
+                                                        const DispatchTypes::MacroEncoding encoding)
 {
+    if (!_macroBuffer)
+    {
+        _macroBuffer = std::make_shared<MacroBuffer>();
+    }
+
+    if (_macroBuffer->InitParser(macroId, deleteControl, encoding))
+    {
+        return [&](const auto ch) {
+            return _macroBuffer->ParseDefinition(ch);
+        };
+    }
+
     return nullptr;
 }
 
@@ -3200,8 +3219,26 @@ ITermDispatch::StringHandler AdaptDispatch::DefineMacro(const VTInt /*macroId*/,
 // - macroId - the id number of the macro to be invoked.
 // Return Value:
 // - True
-bool AdaptDispatch::InvokeMacro(const VTInt /*macroId*/)
+bool AdaptDispatch::InvokeMacro(const VTInt macroId)
 {
+    if (_macroBuffer)
+    {
+        const auto macroSequence = _macroBuffer->GetMacroSequence(macroId);
+        if (!macroSequence.empty())
+        {
+            // In order to inject our macro sequence into the state machine
+            // we need to register a callback that will be executed only
+            // once it has finished processing the current operation, and
+            // has returned to the ground state. Note that we're capturing
+            // a copy of the _macroBuffer pointer here to make sure it won't
+            // be deleted (e.g. from an invoked RIS) while still in use.
+            const auto macroBuffer = _macroBuffer;
+            auto& stateMachine = _api.GetStateMachine();
+            stateMachine.OnCsiComplete([=, &stateMachine]() {
+                macroBuffer->InvokeMacroSequence(macroSequence, stateMachine);
+            });
+        }
+    }
     return true;
 }
 
