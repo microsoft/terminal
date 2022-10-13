@@ -960,12 +960,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     bool TermControl::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
     {
         // Short-circuit isReadOnly check to avoid warning dialog
+        const auto modifiers{ _GetPressedModifierKeys() };
         if (_core.IsInReadOnlyMode())
         {
-            return false;
+            return _TryHandleKeyBinding(gsl::narrow_cast<WORD>(vkey), scanCode, modifiers);
         }
 
-        const auto modifiers{ _GetPressedModifierKeys() };
         auto handled = false;
 
         if (vkey == VK_MENU && !down)
