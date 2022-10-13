@@ -56,7 +56,7 @@ Json::Value AppearanceConfig::ToJson() const
     JsonUtils::SetValueForKey(json, OpacityKey, _Opacity, JsonUtils::OptionalConverter<double, IntAsFloatPercentConversionTrait>{});
     if (HasDarkColorSchemeName() && HasLightColorSchemeName())
     {
-        // check if the setting is coming from the UI, if so grab the ColorSchemeName until the settings UI is fixed..
+        // check if the setting is coming from the UI, if so grab the ColorSchemeName until the settings UI is fixed.
         if (_ColorSchemeName != _DarkColorSchemeName)
         {
             JsonUtils::SetValueForKey(json["colorScheme"], "dark", _ColorSchemeName);
@@ -106,15 +106,15 @@ void AppearanceConfig::LayerJson(const Json::Value& json)
     {
         // to make the UI happy, set ColorSchemeName.
         JsonUtils::GetValueForKey(json, ColorSchemeKey, _ColorSchemeName);
-        JsonUtils::GetValueForKey(json, ColorSchemeKey, _DarkColorSchemeName);
-        JsonUtils::GetValueForKey(json, ColorSchemeKey, _LightColorSchemeName);
+        _DarkColorSchemeName = _ColorSchemeName;
+        _LightColorSchemeName = _ColorSchemeName;
     }
     else if (json["colorScheme"].isObject())
     {
         // to make the UI happy, set ColorSchemeName to whatever the dark value is.
-        JsonUtils::GetValueForKey(json["colorScheme"], "dark", _ColorSchemeName);
         JsonUtils::GetValueForKey(json["colorScheme"], "dark", _DarkColorSchemeName);
         JsonUtils::GetValueForKey(json["colorScheme"], "light", _LightColorSchemeName);
+        _ColorSchemeName = _DarkColorSchemeName;
     }
 
 #define APPEARANCE_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
