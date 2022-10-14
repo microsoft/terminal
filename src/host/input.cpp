@@ -242,23 +242,22 @@ void HandleCtrlEvent(const DWORD EventType)
     }
 }
 
-static UINT_PTR sharedTimerID;
-
-static void midiSkipTimerCallback(HWND, UINT, UINT_PTR idEvent, DWORD) noexcept
+static void CALLBACK midiSkipTimerCallback(HWND, UINT, UINT_PTR idEvent, DWORD) noexcept
 {
-    KillTimer(nullptr, idEvent);
-    sharedTimerID = 0;
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& midiAudio = gci.GetMidiAudio();
 
-    auto& midiAudio = ServiceLocator::LocateGlobals().getConsoleInformation().GetMidiAudio();
+    KillTimer(nullptr, idEvent);
     midiAudio.EndSkip();
 }
 
 static void beginMidiSkip() noexcept
 {
-    auto& midiAudio = ServiceLocator::LocateGlobals().getConsoleInformation().GetMidiAudio();
-    midiAudio.BeginSkip();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& midiAudio = gci.GetMidiAudio();
 
-    sharedTimerID = SetTimer(nullptr, sharedTimerID, 1000, midiSkipTimerCallback);
+    midiAudio.BeginSkip();
+    SetTimer(nullptr, 0, 1000, midiSkipTimerCallback);
 }
 
 void ProcessCtrlEvents()
