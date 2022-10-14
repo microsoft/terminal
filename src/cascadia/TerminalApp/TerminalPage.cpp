@@ -3317,7 +3317,7 @@ namespace winrt::TerminalApp::implementation
             // manually maximize it here. Ideally, we should be _initializing_
             // the session maximized, instead of manually maximizing it after initialization.
             // However, because of the current way our defterm handoff works,
-            // we are unable to get the connection info before the console session
+            // we are unable to get the connection info before the terminal session
             // has already started.
 
             // Make sure that there were no other tabs already existing (in
