@@ -301,7 +301,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         return _startupInfo.title;
     }
 
-    WORD ConptyConnection::ShowWindow() const
+    WORD ConptyConnection::ShowWindow() const noexcept
     {
         return _startupInfo.showWindow;
     }

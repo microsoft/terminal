@@ -46,7 +46,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         winrt::guid Guid() const noexcept;
         winrt::hstring Commandline() const;
         winrt::hstring StartingTitle() const;
-        WORD ShowWindow() const;
+        WORD ShowWindow() const noexcept;
 
         static void StartInboundListener();
         static void StopInboundListener();
