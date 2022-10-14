@@ -3311,6 +3311,11 @@ namespace winrt::TerminalApp::implementation
 
             const IInspectable unused{ nullptr };
             _SetAsDefaultDismissHandler(unused, unused);
+
+            if (connection.ShowWindow() == 3)
+            {
+                RequestSetMaximized(true);
+            }
             return S_OK;
         }
         CATCH_RETURN()
