@@ -1509,9 +1509,11 @@ void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration,
     else
     {
         // Try first to send a message to the current foreground window. If it's not responding, it may
-        // be waiting on us to finsh launching. Give it only 50ms--a tiny time slice--so as to not wait
-        // too long before failing out. SendMessageTimeoutW returns nonzero if it succeeds.
-        if (0 != SendMessageTimeoutW(oldForegroundWindow, WM_NULL, 0, 0, SMTO_BLOCK | SMTO_ABORTIFHUNG, 50, nullptr))
+        // be waiting on us to finsh launching. Passing SMTO_NOTIMEOUTIFNOTHUNG means that we get the same
+        // behavior as before--that is, waiting for the message loop--but we've done an early return if
+        // it turns out that it was hung.
+        // SendMessageTimeoutW returns nonzero if it succeeds.
+        if (0 != SendMessageTimeoutW(oldForegroundWindow, WM_NULL, 0, 0, SMTO_NOTIMEOUTIFNOTHUNG | SMTO_BLOCK | SMTO_ABORTIFHUNG, 50, nullptr))
         {
             const auto windowThreadProcessId = GetWindowThreadProcessId(oldForegroundWindow, nullptr);
             const auto currentThreadId = GetCurrentThreadId();
