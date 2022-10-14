@@ -135,6 +135,8 @@ namespace winrt::TerminalApp::implementation
 
         void OpenSettingsUI();
 
+        bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
+
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
         // -------------------------------- WinRT Events ---------------------------------

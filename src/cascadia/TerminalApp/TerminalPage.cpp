@@ -1326,6 +1326,29 @@ namespace winrt::TerminalApp::implementation
         e.Handled(true);
     }
 
+    bool TerminalPage::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
+    {
+        const auto modifiers = _GetPressedModifierKeys();
+        if (vkey == VK_SPACE && modifiers.IsAltPressed() && down)
+        {
+            if (const auto actionMap = _settings.ActionMap())
+            {
+                if (const auto cmd = actionMap.GetActionByKeyChord({
+                        modifiers.IsCtrlPressed(),
+                        modifiers.IsAltPressed(),
+                        modifiers.IsShiftPressed(),
+                        modifiers.IsWinPressed(),
+                        gsl::narrow_cast<int32_t>(vkey),
+                        scanCode,
+                    }))
+                {
+                    return _actionDispatch->DoAction(cmd.ActionAndArgs());
+                }
+            }
+        }
+        return false;
+    }
+
     // Method Description:
     // - Get the modifier keys that are currently pressed. This can be used to
     //   find out which modifiers (ctrl, alt, shift) are pressed in events that
