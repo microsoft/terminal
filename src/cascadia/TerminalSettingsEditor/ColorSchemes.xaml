@@ -55,28 +55,10 @@
                               Style="{StaticResource SchemeGridStyle}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0"
-                                       VerticalAlignment="Center"
-                                       Style="{StaticResource SettingsPageItemHeaderStyle}"
-                                       Text="{x:Bind Name, Mode=OneWay}" />
-                            <Border Grid.Column="1"
-                                    Margin="10,0,0,0"
-                                    Padding="2,0,2,0"
-                                    HorizontalAlignment="Left"
-                                    VerticalAlignment="Center"
-                                    Background="{ThemeResource SystemAltMediumLowColor}"
-                                    BorderBrush="{ThemeResource SystemControlForegroundBaseMediumBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="1"
-                                    Visibility="{x:Bind IsDefaultScheme, Mode=OneWay}">
-                                <TextBlock x:Uid="ColorScheme_DefaultTag"
-                                           Grid.Column="1"
-                                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
-                            </Border>
-                            <Grid Grid.Column="2"
+                            <Grid Grid.Column="0"
                                   VerticalAlignment="Center"
                                   ColumnSpacing="4"
                                   RowSpacing="4">
@@ -188,6 +170,25 @@
                                                 ContentTemplate="{StaticResource ColorPreviewChipTemplate}"
                                                 IsTabStop="False" />
                             </Grid>
+                            <TextBlock Grid.Column="1"
+                                       VerticalAlignment="Center"
+                                       Margin="12,0,0,0"
+                                       Style="{StaticResource SettingsPageItemHeaderStyle}"
+                                       Text="{x:Bind Name, Mode=OneWay}" />
+                            <Border Grid.Column="2"
+                                    Margin="10,0,0,0"
+                                    Padding="2,0,2,0"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Center"
+                                    Background="{ThemeResource SystemAltMediumLowColor}"
+                                    BorderBrush="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="1"
+                                    Visibility="{x:Bind IsDefaultScheme, Mode=OneWay}">
+                                <TextBlock x:Uid="ColorScheme_DefaultTag"
+                                           Grid.Column="1"
+                                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                            </Border>
                         </Grid>
                     </DataTemplate>
                 </ListView.ItemTemplate>
