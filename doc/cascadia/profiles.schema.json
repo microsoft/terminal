@@ -197,7 +197,7 @@
         },
         "intenseTextStyle": {
           "default": "bright",
-          "description": "Controls how 'intense' text is rendered. Values are \"bold\", \"bright\", \"all\" and \"none\"",
+          "description": "Controls how 'intense' text is rendered when unfocused. Values are \"bold\", \"bright\", \"all\" and \"none\"",
           "enum": [
             "none",
             "bold",
@@ -2208,6 +2208,17 @@
             }
           ],
           "deprecated": true
+        },
+        "intenseTextStyle": {
+          "default": "bright",
+          "description": "Controls how 'intense' text is rendered. Values are \"bold\", \"bright\", \"all\" and \"none\"",
+          "enum": [
+            "none",
+            "bold",
+            "bright",
+            "all"
+          ],
+          "type": "string"
         },
         "foreground": {
           "$ref": "#/$defs/Color",
