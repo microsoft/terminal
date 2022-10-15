@@ -762,7 +762,8 @@ namespace winrt::TerminalApp::implementation
             // Load settings if we haven't already
             LoadSettings();
         }
-        return _settings.GlobalSettings().CenterOnLaunch();
+        // If the position has been specified on the commandline, don't center on launch
+        return _settings.GlobalSettings().CenterOnLaunch() && !_appArgs.GetPosition().has_value();
     }
 
     winrt::Windows::UI::Xaml::ElementTheme AppLogic::GetRequestedTheme()
