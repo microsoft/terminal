@@ -215,9 +215,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _piClient.hProcess = hClientProcess;
 
         _startupInfo.title = winrt::hstring{ startupInfo.pszTitle, SysStringLen(startupInfo.pszTitle) };
-        SysFreeString(startupInfo.pszTitle);
         _startupInfo.iconPath = winrt::hstring{ startupInfo.pszIconPath, SysStringLen(startupInfo.pszIconPath) };
-        SysFreeString(startupInfo.pszIconPath);
         _startupInfo.iconIndex = startupInfo.iconIndex;
 
         try
