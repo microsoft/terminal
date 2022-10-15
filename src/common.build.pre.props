@@ -91,7 +91,7 @@
 
   <ItemDefinitionGroup>
     <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(PrecompiledHeader)' == ''">Use</PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <TreatSpecificWarningsAsErrors>4189;4100;4242;4389;4244</TreatSpecificWarningsAsErrors>
       <!--<WarningLevel>EnableAllWarnings</WarningLevel>-->
