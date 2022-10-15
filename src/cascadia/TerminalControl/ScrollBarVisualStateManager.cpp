@@ -7,11 +7,6 @@
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    ScrollBarVisualStateManager::ScrollBarVisualStateManager() :
-        _termControl(nullptr)
-    {
-    }
-
     bool ScrollBarVisualStateManager::GoToStateCore(
         winrt::Windows::UI::Xaml::Controls::Control const& control,
         winrt::Windows::UI::Xaml::FrameworkElement const& templateRoot,
@@ -20,22 +15,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::Windows::UI::Xaml::VisualState const& state,
         bool useTransitions)
     {
-        if (!_termControl)
+        if (!_settings)
         {
+            TermControl termControl{ nullptr };
+
             for (auto parent = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetParent(control);
                  parent != nullptr;
                  parent = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetParent(parent))
             {
-                if (parent.try_as(_termControl))
+                if (parent.try_as(termControl))
                 {
+                    _settings = termControl.Settings();
                     break;
                 }
             }
         }
 
-        WINRT_ASSERT(_termControl);
+        WINRT_ASSERT(_settings);
 
-        auto scrollState = _termControl.Settings().ScrollState();
+        const auto scrollState = _settings.ScrollState();
         if (scrollState == ScrollbarState::Always)
         {
             // If we're in Always mode, and the control is trying to collapse,
