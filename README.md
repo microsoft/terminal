@@ -67,7 +67,7 @@ the latest Terminal release by installing the `Microsoft.WindowsTerminal`
 package:
 
 ```powershell
-winget install --id=Microsoft.WindowsTerminal -e
+winget install --id Microsoft.WindowsTerminal -e
 ```
 
 #### Via Chocolatey (unofficial)
