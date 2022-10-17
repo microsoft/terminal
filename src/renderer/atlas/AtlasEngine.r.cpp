@@ -535,35 +535,44 @@ AtlasEngine::CachedGlyphLayout AtlasEngine::_getCachedGlyphLayout(const wchar_t*
             wil::com_ptr<IDWriteFontFace> fontFace;
             THROW_IF_FAILED(mappedFont->CreateFontFace(fontFace.addressof()));
 
-            DWRITE_FONT_METRICS metrics;
-            fontFace->GetMetrics(&metrics);
+            // Don't adjust the size of block glyphs that are part of the user's chosen font.
+            if (std::ranges::find(_r.fontFaces, fontFace) == std::end(_r.fontFaces))
+            {
+                DWRITE_FONT_METRICS metrics;
+                fontFace->GetMetrics(&metrics);
 
-            const u32 codePoint = chars[0];
-            u16 glyphIndex;
-            THROW_IF_FAILED(fontFace->GetGlyphIndicesW(&codePoint, 1, &glyphIndex));
+                static constexpr u32 codePoint = L'\u2588'; // Full Block character
+                u16 glyphIndex;
+                THROW_IF_FAILED(fontFace->GetGlyphIndicesW(&codePoint, 1, &glyphIndex));
 
-            DWRITE_GLYPH_METRICS glyphMetrics;
-            THROW_IF_FAILED(fontFace->GetDesignGlyphMetrics(&glyphIndex, 1, &glyphMetrics));
+                if (glyphIndex)
+                {
+                    DWRITE_GLYPH_METRICS glyphMetrics;
+                    THROW_IF_FAILED(fontFace->GetDesignGlyphMetrics(&glyphIndex, 1, &glyphMetrics));
 
-            const f32x2 boxSize{
-                static_cast<f32>(glyphMetrics.advanceWidth) / static_cast<f32>(metrics.designUnitsPerEm) * _r.fontMetrics.fontSizeInDIP,
-                static_cast<f32>(glyphMetrics.advanceHeight) / static_cast<f32>(metrics.designUnitsPerEm) * _r.fontMetrics.fontSizeInDIP,
-            };
+                    const auto fontScale = _r.fontMetrics.fontSizeInDIP / metrics.designUnitsPerEm;
 
-            // NOTE: Don't adjust the offset.
-            // Despite these being block characters, some fonts position them really weird with glyphs hanging out
-            // on all sides by up to 0.2em. They still expect the glyphs to be drawn on to their regular baseline.
-            // At the time of writing this can be tested with MesloLGM Nerd Font and U+E0B0 for instance.
+                    // How-to-DWRITE_OVERHANG_METRICS given a single glyph:
+                    DWRITE_OVERHANG_METRICS overhang;
+                    overhang.left = static_cast<f32>(glyphMetrics.leftSideBearing) * fontScale;
+                    overhang.top = static_cast<f32>(glyphMetrics.verticalOriginY - glyphMetrics.topSideBearing) * fontScale - _r.fontMetrics.baselineInDIP;
+                    overhang.right = static_cast<f32>(gsl::narrow_cast<INT32>(glyphMetrics.advanceWidth) - glyphMetrics.rightSideBearing) * fontScale - layoutBox.x;
+                    overhang.bottom = static_cast<f32>(gsl::narrow_cast<INT32>(glyphMetrics.advanceHeight) - glyphMetrics.verticalOriginY - glyphMetrics.bottomSideBearing) * fontScale + _r.fontMetrics.baselineInDIP - layoutBox.y;
 
-            scalingRequired = true;
-            // We always want box drawing glyphs to exactly match the size of a terminal cell.
-            // But add 1px to the destination size, so that we don't end up with fractional pixels.
-            scale.x = (layoutBox.x + _r.dipPerPixel) / boxSize.x;
-            scale.y = (layoutBox.y + _r.dipPerPixel) / boxSize.y;
-            // Now that the glyph is in the center of the cell thanks
-            // to the offset, the scaleCenter is center of the cell.
-            scaleCenter.x = layoutBox.x * 0.5f;
-            scaleCenter.y = layoutBox.y * 0.5f;
+                    scalingRequired = true;
+                    // Center glyphs.
+                    offset.x = (overhang.left - overhang.right) * 0.5f;
+                    offset.y = (overhang.top - overhang.bottom) * 0.5f;
+                    // We always want box drawing glyphs to exactly match the size of a terminal cell.
+                    // But add 1px to the destination size, so that we don't end up with fractional pixels.
+                    scale.x = (layoutBox.x + _r.pixelPerDIP) / (layoutBox.x + overhang.left + overhang.right);
+                    scale.y = (layoutBox.y + _r.pixelPerDIP) / (layoutBox.y + overhang.top + overhang.bottom);
+                    // Now that the glyph is in the center of the cell thanks
+                    // to the offset, the scaleCenter is center of the cell.
+                    scaleCenter.x = layoutBox.x * 0.5f;
+                    scaleCenter.y = layoutBox.y * 0.5f;
+                }
+            }
         }
     }
     else
