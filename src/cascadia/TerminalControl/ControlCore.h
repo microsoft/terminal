@@ -303,7 +303,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _terminalShowWindowChanged(bool showOrHide);
         void _terminalPlayMidiNote(const int noteNumber,
                                    const int velocity,
-                                   const ::Microsoft::Console::VirtualTerminal::MidiDuration duration);
+                                   const std::chrono::microseconds duration);
 #pragma endregion
 
         MidiAudio _midiAudio;

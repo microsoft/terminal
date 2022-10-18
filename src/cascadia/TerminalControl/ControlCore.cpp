@@ -1416,19 +1416,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Arguments:
     // - noteNumber - The MIDI note number to be played (0 - 127).
     // - velocity - The force with which the note should be played (0 - 127).
-    // - duration - How long the note should be sustained.
-    void ControlCore::_terminalPlayMidiNote(const int noteNumber, const int velocity, const MidiDuration duration)
+    // - duration - How long the note should be sustained (in microseconds).
+    void ControlCore::_terminalPlayMidiNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration)
     {
-        // We then unlock the terminal, so the UI doesn't hang while we're busy.
+        // Unlock the terminal, so the UI doesn't hang while we're busy.
         auto& terminalLock = _terminal->GetReadWriteLock();
         terminalLock.unlock();
 
         // This call will block for the duration, unless shutdown early.
-        _midiAudio.PlayNote(reinterpret_cast<HWND>(_owningHwnd), noteNumber, velocity, duration);
+        _midiAudio.PlayNote(reinterpret_cast<HWND>(_owningHwnd), noteNumber, velocity, std::chrono::duration_cast<std::chrono::milliseconds>(duration));
 
-        // Once complete, we reacquire the terminal lock and unlock the audio.
-        // If the terminal has shutdown in the meantime, the Unlock call
-        // will throw an exception, forcing the thread to exit ASAP.
         terminalLock.lock();
     }
 

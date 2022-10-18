@@ -77,9 +77,9 @@ try
         buffer->SetCurrentPosition((_lastBufferPosition + 12) % WAVE_SIZE);
     }
 
-    // By waiting on the shutdown future with the duration of the note, we'll
-    // either be paused for the appropriate amount of time, or we'll break out
-    // of the wait early if we've been shutdown.
+    // By waiting on the skip event with a maximum duration of the note, we'll
+    // either be paused for the appropriate amount of time, or we'll break out early
+    // because BeginSkip() was called. This happens for Ctrl+C or during shutdown.
     _skip.wait(::base::saturated_cast<DWORD>(duration.count()));
 
     if (velocity && buffer)

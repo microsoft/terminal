@@ -368,22 +368,19 @@ void ConhostInternalGetSet::SetWorkingDirectory(const std::wstring_view /*uri*/)
 // Arguments:
 // - noteNumber - The MIDI note number to be played (0 - 127).
 // - velocity - The force with which the note should be played (0 - 127).
-// - duration - How long the note should be sustained.
+// - duration - How long the note should be sustained (in milliseconds).
 // Return value:
 // - true if successful. false otherwise.
-void ConhostInternalGetSet::PlayMidiNote(const int noteNumber, const int velocity, const MidiDuration duration)
+void ConhostInternalGetSet::PlayMidiNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration)
 {
-    // We then unlock the console, so the UI doesn't hang while we're busy.
+    // Unlock the console, so the UI doesn't hang while we're busy.
     UnlockConsole();
 
     // This call will block for the duration, unless shutdown early.
     const auto windowHandle = ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
     auto& midiAudio = ServiceLocator::LocateGlobals().getConsoleInformation().GetMidiAudio();
-    midiAudio.PlayNote(windowHandle, noteNumber, velocity, duration);
+    midiAudio.PlayNote(windowHandle, noteNumber, velocity, std::chrono::duration_cast<std::chrono::milliseconds>(duration));
 
-    // Once complete, we reacquire the console lock and unlock the audio.
-    // If the console has shutdown in the meantime, the Unlock call
-    // will throw an exception, forcing the thread to exit ASAP.
     LockConsole();
 }
 

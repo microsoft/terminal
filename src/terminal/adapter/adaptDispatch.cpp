@@ -3055,10 +3055,9 @@ bool AdaptDispatch::PlaySounds(const VTParameters parameters)
     // 127 / 7 to obtain an equivalent MIDI velocity in the range 0 to 127.
     const auto velocity = std::min(parameters.at(0).value_or(0), 7) * 127 / 7;
     // Second parameter is the duration, in the range 0 to 255. Units are
-    // 1/32 of a second, so we multiply by 1000ms/32 to obtain milliseconds.
-    // The maximum loss in precision is 0.25ms.
+    // 1/32 of a second, so we multiply by 1000000us/32 to obtain microseconds.
     using namespace std::chrono_literals;
-    const auto duration = std::min(parameters.at(1).value_or(0), 255) * 1000ms / 32;
+    const auto duration = std::min(parameters.at(1).value_or(0), 255) * 1000000us / 32;
     // The subsequent parameters are notes, in the range 0 to 25.
     return parameters.subspan(2).for_each([=](const auto param) {
         // Values 1 to 25 represent the notes C5 to C7, so we add 71 to

@@ -1402,7 +1402,7 @@ void Terminal::SetShowWindowCallback(std::function<void(bool)> pfn) noexcept
 // - Allows setting a callback for playing MIDI notes.
 // Arguments:
 // - pfn: a function callback that takes a note number, a velocity level, and a duration
-void Terminal::SetPlayMidiNoteCallback(std::function<void(const int, const int, const MidiDuration)> pfn) noexcept
+void Terminal::SetPlayMidiNoteCallback(std::function<void(const int, const int, const std::chrono::microseconds)> pfn) noexcept
 {
     _pfnPlayMidiNote.swap(pfn);
 }
