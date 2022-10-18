@@ -86,6 +86,10 @@
       <DependentUpon>ProfileViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="ActionsViewModel.h">
+      <DependentUpon>ActionsViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
     <ClInclude Include="ColorSchemeViewModel.h">
       <DependentUpon>ColorSchemeViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
@@ -229,6 +233,10 @@
       <DependentUpon>ProfileViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
+    <ClCompile Include="ActionsViewModel.cpp">
+      <DependentUpon>ActionsViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
     <ClCompile Include="ColorSchemeViewModel.cpp">
       <DependentUpon>ColorSchemeViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
@@ -327,6 +335,7 @@
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="ProfileViewModel.idl" />
+    <Midl Include="ActionsViewModel.idl" />
     <Midl Include="ColorSchemeViewModel.idl" />
     <Midl Include="ColorSchemesPageViewModel.idl" />
     <Midl Include="RenderingViewModel.idl" />
