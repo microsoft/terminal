@@ -1965,13 +1965,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         // If we're:
         // * Not fully opaque
-        // * On an acrylic background (of any opacity)
         // * rendering on top of an image
         //
         // then the renderer should not render "default background" text with a
         // fully opaque background. Doing that would cover up our nice
         // transparency, or our acrylic, or our image.
-        return Opacity() < 1.0f || UseAcrylic() || !_settings->BackgroundImage().empty() || _settings->UseBackgroundImageForWindow();
+        return Opacity() < 1.0f || !_settings->BackgroundImage().empty() || _settings->UseBackgroundImageForWindow();
     }
 
     uint64_t ControlCore::OwningHwnd()
