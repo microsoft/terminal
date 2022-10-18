@@ -5,6 +5,7 @@
 
 #include "adaptDispatch.hpp"
 #include "../../renderer/base/renderer.hpp"
+#include "../../types/inc/GlyphWidth.hpp"
 #include "../../types/inc/Viewport.hpp"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/unicode.hpp"
@@ -1064,7 +1065,7 @@ bool AdaptDispatch::CopyRectangularArea(const VTInt top, const VTInt left, const
 bool AdaptDispatch::FillRectangularArea(const VTParameter ch, const VTInt top, const VTInt left, const VTInt bottom, const VTInt right)
 {
     auto& textBuffer = _api.GetTextBuffer();
-    const auto fillRect = _CalculateRectArea(top, left, bottom, right, textBuffer.GetSize().Dimensions());
+    auto fillRect = _CalculateRectArea(top, left, bottom, right, textBuffer.GetSize().Dimensions());
 
     // The standard only allows for characters in the range of the GL and GR
     // character set tables, but we also support additional Unicode characters
@@ -1077,6 +1078,12 @@ bool AdaptDispatch::FillRectangularArea(const VTParameter ch, const VTInt top, c
     {
         const auto fillChar = _termOutput.TranslateKey(gsl::narrow_cast<wchar_t>(charValue));
         const auto fillAttributes = textBuffer.GetCurrentAttributes();
+        if (IsGlyphFullWidth(fillChar))
+        {
+            // If the fill char is full width, we need to halve the width of the
+            // fill area, otherwise it'll occupy twice as much space as expected.
+            fillRect.right = fillRect.left + fillRect.width() / 2;
+        }
         _FillRect(textBuffer, fillRect, fillChar, fillAttributes);
     }
 
