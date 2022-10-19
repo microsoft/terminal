@@ -15,6 +15,8 @@
 
 #include <cctype>
 
+#include "../../interactivity/inc/VtApiRedirection.hpp"
+
 #include "../../inc/consoletaeftemplates.hpp"
 
 using namespace WEX::Common;
@@ -167,9 +169,9 @@ class ClipboardTests
                 keyEvent.reset(static_cast<KeyEvent* const>(events.front().release()));
                 events.pop_front();
 
-                const auto keyState = VkKeyScanW(wch);
+                const auto keyState = OneCoreSafeVkKeyScanW(wch);
                 VERIFY_ARE_NOT_EQUAL(-1, keyState);
-                const auto virtualScanCode = static_cast<WORD>(MapVirtualKeyW(LOBYTE(keyState), MAPVK_VK_TO_VSC));
+                const auto virtualScanCode = static_cast<WORD>(OneCoreSafeMapVirtualKeyW(LOBYTE(keyState), MAPVK_VK_TO_VSC));
 
                 VERIFY_ARE_EQUAL(wch, keyEvent->GetCharData());
                 VERIFY_ARE_EQUAL(isKeyDown, keyEvent->IsKeyDown());
@@ -206,9 +208,9 @@ class ClipboardTests
                 events.pop_front();
 
                 const short keyScanError = -1;
-                const auto keyState = VkKeyScanW(wch);
+                const auto keyState = OneCoreSafeVkKeyScanW(wch);
                 VERIFY_ARE_NOT_EQUAL(keyScanError, keyState);
-                const auto virtualScanCode = static_cast<WORD>(MapVirtualKeyW(LOBYTE(keyState), MAPVK_VK_TO_VSC));
+                const auto virtualScanCode = static_cast<WORD>(OneCoreSafeMapVirtualKeyW(LOBYTE(keyState), MAPVK_VK_TO_VSC));
 
                 if (std::isupper(wch))
                 {
@@ -222,9 +224,9 @@ class ClipboardTests
                     keyEvent2.reset(static_cast<KeyEvent* const>(events.front().release()));
                     events.pop_front();
 
-                    const auto keyState2 = VkKeyScanW(wch);
+                    const auto keyState2 = OneCoreSafeVkKeyScanW(wch);
                     VERIFY_ARE_NOT_EQUAL(keyScanError, keyState2);
-                    const auto virtualScanCode2 = static_cast<WORD>(MapVirtualKeyW(LOBYTE(keyState2), MAPVK_VK_TO_VSC));
+                    const auto virtualScanCode2 = static_cast<WORD>(OneCoreSafeMapVirtualKeyW(LOBYTE(keyState2), MAPVK_VK_TO_VSC));
 
                     if (isKeyDown)
                     {
@@ -258,9 +260,9 @@ class ClipboardTests
     {
         const std::wstring wstr = L"\x20ac"; // € char U+20AC
 
-        const auto keyState = VkKeyScanW(wstr[0]);
+        const auto keyState = OneCoreSafeVkKeyScanW(wstr[0]);
         const WORD virtualKeyCode = LOBYTE(keyState);
-        const auto virtualScanCode = static_cast<WORD>(MapVirtualKeyW(virtualKeyCode, MAPVK_VK_TO_VSC));
+        const auto virtualScanCode = static_cast<WORD>(OneCoreSafeMapVirtualKeyW(virtualKeyCode, MAPVK_VK_TO_VSC));
 
         if (keyState == -1 || HIBYTE(keyState) == 0 /* no modifiers required */)
         {

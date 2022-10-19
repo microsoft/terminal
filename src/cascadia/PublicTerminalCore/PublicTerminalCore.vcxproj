@@ -16,9 +16,11 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="HwndTerminal.cpp" />
+    <ClCompile Include="HwndTerminalAutomationPeer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="HwndTerminal.hpp" />
+    <ClInclude Include="HwndTerminalAutomationPeer.hpp" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
@@ -39,6 +41,9 @@
     </ProjectReference>
     <ProjectReference Include="$(SolutionDir)src\renderer\dx\lib\dx.vcxproj">
       <Project>{48d21369-3d7b-4431-9967-24e81292cf62}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\renderer\uia\lib\uia.vcxproj">
+      <Project>{48d21369-3d7b-4431-9967-24e81292cf63}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemDefinitionGroup>

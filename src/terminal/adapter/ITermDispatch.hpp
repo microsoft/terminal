@@ -90,9 +90,12 @@ public:
     virtual bool EraseInDisplay(const DispatchTypes::EraseType eraseType) = 0; // ED
     virtual bool EraseInLine(const DispatchTypes::EraseType eraseType) = 0; // EL
     virtual bool EraseCharacters(const VTInt numChars) = 0; // ECH
+    virtual bool SelectiveEraseInDisplay(const DispatchTypes::EraseType eraseType) = 0; // DECSED
+    virtual bool SelectiveEraseInLine(const DispatchTypes::EraseType eraseType) = 0; // DECSEL
 
     virtual bool SetGraphicsRendition(const VTParameters options) = 0; // SGR
     virtual bool SetLineRendition(const LineRendition rendition) = 0; // DECSWL, DECDWL, DECDHL
+    virtual bool SetCharacterProtectionAttribute(const VTParameters options) = 0; // DECSCA
 
     virtual bool PushGraphicsRendition(const VTParameters options) = 0; // XTPUSHSGR
     virtual bool PopGraphicsRendition() = 0; // XTPOPSGR
@@ -154,5 +157,5 @@ public:
 
     virtual bool PlaySounds(const VTParameters parameters) = 0; // DECPS
 };
-inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() {}
+inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() = default;
 #pragma warning(pop)

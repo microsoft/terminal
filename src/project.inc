@@ -3,14 +3,14 @@
 # - Common Project Configuration
 # -------------------------------------
 
-!include $(OSDEPENDSROOT)\OSS\gsl\3.1.0\consume.inc
+!include $(PROJECT_ROOT)\vcpkg\consume.inc
 
 # -------------------------------------
 # Preprocessor Settings
 # -------------------------------------
 
 UNICODE                 = 1
-C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE -DFMT_HEADER_ONLY -D__INSIDE_WINDOWS
+C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE -DFMT_HEADER_ONLY -D__INSIDE_WINDOWS -DBUILD_ONECORE_INTERACTIVITY
 
 # -------------------------------------
 # CRT Configuration

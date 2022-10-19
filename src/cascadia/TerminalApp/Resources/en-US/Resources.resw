@@ -394,6 +394,12 @@
   <data name="CmdWindowTargetArgDesc" xml:space="preserve">
     <value>Specify a terminal window to run the given commandline in. "0" always refers to the current window. </value>
   </data>
+  <data name="CmdPositionDesc" xml:space="preserve">
+    <value>Specify the position for the terminal, in "x,y" format.</value>
+  </data>
+  <data name="CmdSizeDesc" xml:space="preserve">
+    <value>Specify the number of columns and rows for the terminal, in "c,r" format.</value>
+  </data>
   <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
     <value>Press the button to open a new terminal tab with your default profile. Open the flyout to select which profile you want to open.</value>
   </data>
@@ -745,5 +751,41 @@
   <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
     <value>Suggestions found: {0}</value>
     <comment>{0} will be replaced with a number.</comment>
+  </data>
+  <data name="AboutToolTip" xml:space="preserve">
+    <value>Open a dialog containing product information</value>
+  </data>
+  <data name="ChooseColorToolTip" xml:space="preserve">
+    <value>Open the color picker to choose the color of this tab</value>
+  </data>
+  <data name="CommandPaletteToolTip" xml:space="preserve">
+    <value>Open the command palette</value>
+  </data>
+  <data name="DuplicateTabToolTip" xml:space="preserve">
+    <value>Open a new tab using the active profile in the current directory</value>
+  </data>
+  <data name="ExportTabToolTip" xml:space="preserve">
+    <value>Export the contents of the text buffer into a text file</value>
+  </data>
+  <data name="FindToolTip" xml:space="preserve">
+    <value>Open the search dialog</value>
+  </data>
+  <data name="RenameTabToolTip" xml:space="preserve">
+    <value>Rename this tab</value>
+  </data>
+  <data name="SettingsToolTip" xml:space="preserve">
+    <value>Open the settings page</value>
+  </data>
+  <data name="SplitTabToolTip" xml:space="preserve">
+    <value>Open a new pane using the active profile in the current directory</value>
+  </data>
+  <data name="TabCloseAfterToolTip" xml:space="preserve">
+    <value>Close all tabs to the right of this tab</value>
+  </data>
+  <data name="TabCloseOtherToolTip" xml:space="preserve">
+    <value>Close all tabs except this tab</value>
+  </data>
+  <data name="TabCloseToolTip" xml:space="preserve">
+    <value>Close this tab</value>
   </data>
 </root>

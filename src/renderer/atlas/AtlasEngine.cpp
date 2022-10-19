@@ -249,6 +249,13 @@ try
     _r.dirtyRect = _api.dirtyRect;
     _r.scrollOffset = _api.scrollOffset;
 
+    // Clear the previous cursor. PaintCursor() is only called if the cursor is on.
+    if (const auto r = _api.invalidatedCursorArea; r.non_empty())
+    {
+        _setCellFlags(r, CellFlags::Cursor, CellFlags::None);
+        _r.dirtyRect |= til::rect{ r.left, r.top, r.right, r.bottom };
+    }
+
     // This is an important block of code for our TileHashMap.
     // We only process glyphs within the dirtyRect, but glyphs outside of the
     // dirtyRect are still in use and shouldn't be discarded. This is critical
@@ -435,13 +442,6 @@ try
             _r.cursorOptions = cachedOptions;
             WI_SetFlag(_r.invalidations, RenderInvalidations::Cursor);
         }
-    }
-
-    // Clear the previous cursor
-    if (const auto r = _api.invalidatedCursorArea; r.non_empty())
-    {
-        _setCellFlags(r, CellFlags::Cursor, CellFlags::None);
-        _r.dirtyRect |= til::rect{ r.left, r.top, r.right, r.bottom };
     }
 
     if (options.isOn)
@@ -1101,8 +1101,11 @@ void AtlasEngine::_recreateFontDependentResources()
                 const auto fontStyle = italic ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL;
                 auto& textFormat = _r.textFormats[italic][bold];
 
+                wil::com_ptr<IDWriteFont> font;
+                THROW_IF_FAILED(_r.fontMetrics.fontFamily->GetFirstMatchingFont(fontWeight, DWRITE_FONT_STRETCH_NORMAL, fontStyle, font.addressof()));
+                THROW_IF_FAILED(font->CreateFontFace(_r.fontFaces[italic << 1 | bold].put()));
+
                 THROW_IF_FAILED(_sr.dwriteFactory->CreateTextFormat(_api.fontMetrics.fontName.c_str(), _api.fontMetrics.fontCollection.get(), fontWeight, fontStyle, DWRITE_FONT_STRETCH_NORMAL, _api.fontMetrics.fontSizeInDIP, L"", textFormat.put()));
-                THROW_IF_FAILED(textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER));
                 THROW_IF_FAILED(textFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
 
                 // DWRITE_LINE_SPACING_METHOD_UNIFORM:
@@ -1111,11 +1114,16 @@ void AtlasEngine::_recreateFontDependentResources()
                 // We want that. Otherwise fallback fonts might be rendered with an incorrect baseline and get cut off vertically.
                 THROW_IF_FAILED(textFormat->SetLineSpacing(DWRITE_LINE_SPACING_METHOD_UNIFORM, _r.cellSizeDIP.y, _api.fontMetrics.baselineInDIP));
 
-                if (const auto textFormat3 = textFormat.try_query<IDWriteTextFormat3>())
-                {
-                    THROW_IF_FAILED(textFormat3->SetAutomaticFontAxes(DWRITE_AUTOMATIC_FONT_AXES_OPTICAL_SIZE));
+                // NOTE: SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER) breaks certain
+                // bitmap fonts which expect glyphs to be laid out left-aligned.
 
-                    if (!_api.fontAxisValues.empty())
+                // NOTE: SetAutomaticFontAxes(DWRITE_AUTOMATIC_FONT_AXES_OPTICAL_SIZE) breaks certain
+                // fonts making them look fairly unslightly. With no option to easily disable this
+                // feature in Windows Terminal, it's better left disabled by default.
+
+                if (!_api.fontAxisValues.empty())
+                {
+                    if (const auto textFormat3 = textFormat.try_query<IDWriteTextFormat3>())
                     {
                         // The wght axis defaults to the font weight.
                         _api.fontAxisValues[0].value = bold || standardAxes[0].value == -1.0f ? static_cast<float>(fontWeight) : standardAxes[0].value;
