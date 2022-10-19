@@ -61,8 +61,8 @@
     X(winrt::Windows::UI::Text::FontWeight, FontWeight)                                                                                                  \
     X(IFontFeatureMap, FontFeatures)                                                                                                                     \
     X(IFontAxesMap, FontAxes)                                                                                                                            \
-    X(hstring, CellSizeX)                                                                                                                                \
-    X(hstring, CellSizeY)                                                                                                                                \
+    X(winrt::hstring, CellSizeX)                                                                                                                         \
+    X(winrt::hstring, CellSizeY)                                                                                                                         \
     X(winrt::Microsoft::Terminal::Control::IKeyBindings, KeyBindings, nullptr)                                                                           \
     X(winrt::hstring, Commandline)                                                                                                                       \
     X(winrt::hstring, StartingDirectory)                                                                                                                 \
