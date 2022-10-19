@@ -49,6 +49,88 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    double AppearanceViewModel::LineHeight() const noexcept
+    {
+        const auto cellSizeY = _appearance.SourceProfile().CellSizeY();
+        const auto str = cellSizeY.c_str();
+
+        auto& errnoRef = errno; // Nonzero cost, pay it once.
+        errnoRef = 0;
+
+        wchar_t* end;
+        const auto value = std::wcstod(str, &end);
+
+        return str == end || errnoRef == ERANGE ? NAN : value;
+    }
+
+    void AppearanceViewModel::LineHeight(const double value)
+    {
+        wchar_t buffer[16];
+        std::wstring_view view;
+
+        if (value >= 0.1 && value <= 10.0)
+        {
+            auto length = gsl::narrow<size_t>(swprintf_s(&buffer[0], std::size(buffer), L"%.6f", value));
+            const auto separator = std::wstring_view{ &buffer[0], length }.find(L'.');
+
+            if (separator != std::wstring_view::npos)
+            {
+                for (; length > separator && buffer[length - 1] == L'0'; --length)
+                {
+                }
+                // winrt::hstring expects a null-terminated string
+                buffer[length] = L'\0';
+            }
+
+            view = { &buffer[0], length };
+        }
+
+        const auto profile = _appearance.SourceProfile();
+
+        if (profile.CellSizeY() != view)
+        {
+            if (view.empty())
+            {
+                profile.ClearCellSizeY();
+            }
+            else
+            {
+                profile.CellSizeY(view);
+            }
+            _NotifyChanges(L"HasLineHeight", L"LineHeight");
+        }
+    }
+
+    bool AppearanceViewModel::HasLineHeight()
+    {
+        return _appearance.SourceProfile().HasCellSizeY();
+    }
+
+    void AppearanceViewModel::ClearLineHeight()
+    {
+        LineHeight({});
+    }
+
+    Model::Profile AppearanceViewModel::LineHeightOverrideSource()
+    {
+        return _appearance.SourceProfile().CellSizeYOverrideSource();
+    }
+
+    void AppearanceViewModel::SetFontWeightFromDouble(double fontWeight)
+    {
+        FontWeight(Converters::DoubleToFontWeight(fontWeight));
+    }
+
+    void AppearanceViewModel::SetBackgroundImageOpacityFromPercentageValue(double percentageValue)
+    {
+        BackgroundImageOpacity(Converters::PercentageValueToPercentage(percentageValue));
+    }
+
+    void AppearanceViewModel::SetBackgroundImagePath(winrt::hstring path)
+    {
+        BackgroundImagePath(path);
+    }
+
     bool AppearanceViewModel::UseDesktopBGImage()
     {
         return BackgroundImagePath() == L"desktopWallpaper";
@@ -83,6 +165,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return BackgroundImagePath() != L"";
     }
 
+    IMapView<hstring, Model::ColorScheme> AppearanceViewModel::Schemes()
+    {
+        return _Schemes;
+    }
+
+    void AppearanceViewModel::Schemes(const IMapView<hstring, Model::ColorScheme>& val)
+    {
+        _Schemes = val;
+    }
+
     DependencyProperty Appearances::_AppearanceProperty{ nullptr };
 
     Appearances::Appearances() :
@@ -96,10 +188,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // > .NET rounds to 12 significant digits when displaying doubles, so we will [...]
             // ...obviously not do that, because this is an UI element for humans. This prevents
             // issues when displaying 32-bit floats, because WinUI is unaware about their existence.
-            SignificantDigitsNumberRounder rounder;
-            rounder.SignificantDigits(6);
-            // BODGY: Depends on WinUI internals.
-            _fontSizeBox().NumberFormatter().as<DecimalFormatter>().NumberRounder(rounder);
+            IncrementNumberRounder rounder;
+            rounder.Increment(1e-6);
+
+            for (const auto& box : { _fontSizeBox(), _lineHeightBox() })
+            {
+                // BODGY: Depends on WinUI internals.
+                box.NumberFormatter().as<DecimalFormatter>().NumberRounder(rounder);
+            }
         }
 
         INITIALIZE_BINDABLE_ENUM_SETTING(CursorShape, CursorStyle, winrt::Microsoft::Terminal::Core::CursorStyle, L"Profile_CursorShape", L"Content");

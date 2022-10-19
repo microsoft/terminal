@@ -1121,6 +1121,14 @@ void AtlasEngine::_recreateFontDependentResources()
                 // fonts making them look fairly unslightly. With no option to easily disable this
                 // feature in Windows Terminal, it's better left disabled by default.
 
+                const DWRITE_LINE_SPACING lineSpacing{
+                    .method = DWRITE_LINE_SPACING_METHOD_UNIFORM,
+                    .height = _r.cellSizeDIP.y,
+                    .baseline = _api.fontMetrics.baselineInDIP,
+                    .fontLineGapUsage = DWRITE_FONT_LINE_GAP_USAGE_ENABLED,
+                };
+                THROW_IF_FAILED(textFormat.query<IDWriteTextFormat2>()->SetLineSpacing(&lineSpacing));
+
                 if (!_api.fontAxisValues.empty())
                 {
                     if (const auto textFormat3 = textFormat.try_query<IDWriteTextFormat3>())

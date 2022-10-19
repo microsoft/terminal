@@ -42,6 +42,8 @@ namespace Microsoft.Terminal.Control
         String Padding { get; };
         Windows.Foundation.Collections.IMap<String, UInt32> FontFeatures { get; };
         Windows.Foundation.Collections.IMap<String, Single> FontAxes { get; };
+        String CellSizeX { get; };
+        String CellSizeY { get; };
 
         Microsoft.Terminal.Control.IKeyBindings KeyBindings { get; };
 

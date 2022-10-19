@@ -622,20 +622,23 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     const auto designUnitsPerPx = fontSizeInPx / static_cast<float>(metrics.designUnitsPerEm);
     const auto ascent = static_cast<float>(metrics.ascent) * designUnitsPerPx;
     const auto descent = static_cast<float>(metrics.descent) * designUnitsPerPx;
+    const auto lineGap = static_cast<float>(metrics.lineGap) * designUnitsPerPx;
     const auto underlinePosition = static_cast<float>(-metrics.underlinePosition) * designUnitsPerPx;
     const auto underlineThickness = static_cast<float>(metrics.underlineThickness) * designUnitsPerPx;
     const auto strikethroughPosition = static_cast<float>(-metrics.strikethroughPosition) * designUnitsPerPx;
     const auto strikethroughThickness = static_cast<float>(metrics.strikethroughThickness) * designUnitsPerPx;
-
     const auto advanceWidth = static_cast<float>(glyphMetrics.advanceWidth) * designUnitsPerPx;
+    const auto advanceHeight = ascent + descent + lineGap;
 
-    // NOTE: Line-gaps shouldn't be taken into account for lineHeight calculations.
-    // Terminals don't really have "gaps" between lines and instead the expectation
-    // is that two full block characters above each other don't leave any gaps
-    // between the lines. "Terminus TTF" for instance sets a line-gap of 90 units
-    // even though its font bitmap only covers the ascend/descend height.
-    const auto baseline = std::roundf(ascent);
-    const auto lineHeight = std::roundf(baseline + descent);
+    auto adjustedWidth = std::roundf(fontInfoDesired.GetCellSizeX().Resolve(advanceWidth, _api.dpi, fontSizeInPx, advanceWidth));
+    auto adjustedHeight = std::roundf(fontInfoDesired.GetCellSizeY().Resolve(advanceHeight, _api.dpi, fontSizeInPx, advanceWidth));
+
+    // Protection against bad user values in GetCellSizeX/Y.
+    // AtlasEngine fails hard with 0 cell sizes.
+    adjustedWidth = std::max(1.0f, adjustedWidth);
+    adjustedHeight = std::max(1.0f, adjustedHeight);
+
+    const auto baseline = std::roundf(ascent + (lineGap + adjustedHeight - advanceHeight) / 2.0f);
     const auto underlinePos = std::roundf(baseline + underlinePosition);
     const auto underlineWidth = std::max(1.0f, std::roundf(underlineThickness));
     const auto strikethroughPos = std::roundf(baseline + strikethroughPosition);
@@ -662,10 +665,10 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     const auto doubleUnderlineGap = std::max(1.0f, std::roundf(1.2f / 72.0f * _api.dpi));
     doubleUnderlinePosBottom = std::max(doubleUnderlinePosBottom, doubleUnderlinePosTop + doubleUnderlineGap + thinLineWidth);
     // Our cells can't overlap each other so we additionally clamp the bottom line to be inside the cell boundaries.
-    doubleUnderlinePosBottom = std::min(doubleUnderlinePosBottom, lineHeight - thinLineWidth);
+    doubleUnderlinePosBottom = std::min(doubleUnderlinePosBottom, adjustedHeight - thinLineWidth);
 
-    const auto cellWidth = gsl::narrow<u16>(std::lroundf(advanceWidth));
-    const auto cellHeight = gsl::narrow<u16>(lineHeight);
+    const auto cellWidth = gsl::narrow<u16>(std::lroundf(adjustedWidth));
+    const auto cellHeight = gsl::narrow<u16>(std::lroundf(adjustedHeight));
 
     {
         til::size coordSize;
@@ -703,7 +706,7 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
         fontMetrics->fontName = std::move(fontName);
         fontMetrics->fontSizeInDIP = fontSizeInDIP;
         fontMetrics->baselineInDIP = baseline / static_cast<float>(_api.dpi) * 96.0f;
-        fontMetrics->advanceScale = cellWidth / advanceWidth;
+        fontMetrics->advanceScale = cellWidth / adjustedWidth;
         fontMetrics->cellSize = { cellWidth, cellHeight };
         fontMetrics->fontWeight = fontWeightU16;
         fontMetrics->underlinePos = underlinePosU16;

@@ -71,6 +71,8 @@ namespace Microsoft.Terminal.Settings.Model
         String EvaluatedStartingDirectory { get; };
 
         FontConfig FontInfo { get; };
+        INHERITABLE_PROFILE_SETTING(String, CellSizeX);
+        INHERITABLE_PROFILE_SETTING(String, CellSizeY);
 
         IAppearanceConfig DefaultAppearance { get; };
         INHERITABLE_PROFILE_SETTING(IAppearanceConfig, UnfocusedAppearance);

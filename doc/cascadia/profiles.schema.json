@@ -296,6 +296,13 @@
       },
       "type": "object"
     },
+    "CSSLengthPercentage": {
+      "pattern": "^[+-]?\\d+(?:\\.\\d+)?(?:%|ch|pt|px)?$",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "ProfileGuid": {
       "default": "{}",
       "pattern": "^\\{[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}\\}$",
@@ -2085,6 +2092,19 @@
             "object",
             "null"
           ]
+        },
+        "cellSize": {
+          "type": "object",
+          "properties": {
+            "height": {
+              "$ref": "#/$defs/CSSLengthPercentage",
+              "description": "Override the height of the terminal's cells. The override works similar to CSS' line-height. Defaults to the sum of the natural glyph ascend, descend and line-gap of the primary font rounded to the nearest pixel. The default is usually quite close to setting this to 1.2."
+            },
+            "width": {
+              "$ref": "#/$defs/CSSLengthPercentage",
+              "description": "Override the width of the terminal's cells. The override works similar to CSS' line-height. Defaults to the natural glyph advance width of the primary font rounded to the nearest pixel."
+            }
+          }
         },
         "backgroundImage": {
           "description": "Sets the file location of the image to draw over the window background.",

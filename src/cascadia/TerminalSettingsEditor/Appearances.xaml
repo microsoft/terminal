@@ -104,6 +104,24 @@
                                 Value="{x:Bind Appearance.FontSize, Mode=TwoWay}" />
             </local:SettingContainer>
 
+            <!--  Line Height  -->
+            <local:SettingContainer x:Uid="Profile_LineHeight"
+                                    ClearSettingValue="{x:Bind Appearance.ClearLineHeight}"
+                                    HasSettingValue="{x:Bind Appearance.HasLineHeight, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Appearance.LineHeightOverrideSource, Mode=OneWay}"
+                                    Visibility="{x:Bind Appearance.IsDefault, Mode=OneWay}">
+                <muxc:NumberBox x:Name="_lineHeightBox"
+                                x:Uid="Profile_LineHeightBox"
+                                AcceptsExpression="False"
+                                LargeChange="0.1"
+                                Maximum="10"
+                                Minimum="0.1"
+                                SmallChange="0.1"
+                                SpinButtonPlacementMode="Compact"
+                                Style="{StaticResource NumberBoxSettingStyle}"
+                                Value="{x:Bind Appearance.LineHeight, Mode=TwoWay}" />
+            </local:SettingContainer>
+
             <!--  Font Weight  -->
             <local:SettingContainer x:Name="FontWeightContainer"
                                     x:Uid="Profile_FontWeight"

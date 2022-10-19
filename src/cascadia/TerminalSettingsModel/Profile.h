@@ -116,6 +116,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::Profile, hstring, Source);
         INHERITABLE_SETTING(Model::Profile, bool, Hidden, false);
         INHERITABLE_SETTING(Model::Profile, guid, Guid, _GenerateGuidForProfile(Name(), Source()));
+        INHERITABLE_SETTING(Model::Profile, hstring, CellSizeX);
+        INHERITABLE_SETTING(Model::Profile, hstring, CellSizeY);
         INHERITABLE_SETTING(Model::Profile, hstring, Padding, DEFAULT_PADDING);
 
 #define PROFILE_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \

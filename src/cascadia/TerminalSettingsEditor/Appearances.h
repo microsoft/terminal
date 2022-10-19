@@ -51,26 +51,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         AppearanceViewModel(const Model::AppearanceConfig& appearance);
 
-        void SetFontWeightFromDouble(double fontWeight)
-        {
-            FontWeight(winrt::Microsoft::Terminal::Settings::Editor::Converters::DoubleToFontWeight(fontWeight));
-        }
-        void SetBackgroundImageOpacityFromPercentageValue(double percentageValue)
-        {
-            BackgroundImageOpacity(winrt::Microsoft::Terminal::Settings::Editor::Converters::PercentageValueToPercentage(percentageValue));
-        }
-        void SetBackgroundImagePath(winrt::hstring path)
-        {
-            BackgroundImagePath(path);
-        }
+        double LineHeight() const noexcept;
+        void LineHeight(const double value);
+        bool HasLineHeight();
+        void ClearLineHeight();
+        Model::Profile LineHeightOverrideSource();
+        void SetFontWeightFromDouble(double fontWeight);
+        void SetBackgroundImageOpacityFromPercentageValue(double percentageValue);
+        void SetBackgroundImagePath(winrt::hstring path);
 
         // background image
         bool UseDesktopBGImage();
         void UseDesktopBGImage(const bool useDesktop);
         bool BackgroundImageSettingsVisible();
 
-        Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> Schemes() { return _Schemes; }
-        void Schemes(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& val) { _Schemes = val; }
+        Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> Schemes();
+        void Schemes(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& val);
 
         WINRT_PROPERTY(bool, IsDefault, false);
         WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
@@ -99,6 +95,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Model::AppearanceConfig _appearance;
         winrt::hstring _lastBgImagePath;
         Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> _Schemes;
+        float _cachedLineHeight = 0;
     };
 
     struct Appearances : AppearancesT<Appearances>

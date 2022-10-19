@@ -713,6 +713,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         auto lock = _terminal->LockForWriting();
 
+        _cellSizeAdjustmentX = CSSLengthPercentage::FromString(_settings->CellSizeX().c_str());
+        _cellSizeAdjustmentY = CSSLengthPercentage::FromString(_settings->CellSizeY().c_str());
         _runtimeOpacity = std::nullopt;
         _runtimeUseAcrylic = std::nullopt;
 
@@ -870,6 +872,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _desiredFont = { fontFace, 0, fontWeight.Weight, newSize, CP_UTF8 };
         _actualFont = { fontFace, 0, fontWeight.Weight, _desiredFont.GetEngineSize(), CP_UTF8, false };
         _actualFontFaceName = { fontFace };
+
+        _desiredFont.SetCellSizes(_cellSizeAdjustmentX, _cellSizeAdjustmentY);
 
         const auto before = _actualFont.GetSize();
         _updateFont();
