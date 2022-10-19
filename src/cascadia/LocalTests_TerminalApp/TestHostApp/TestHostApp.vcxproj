@@ -14,6 +14,7 @@
     <UseWmXml>true</UseWmXml>
     <ConfigurationType>Application</ConfigurationType>
     <OpenConsoleCppWinRTProject>true</OpenConsoleCppWinRTProject>
+    <EnableHybridCRT>false</EnableHybridCRT> <!-- C++/CLI projects can't deal -->
 
     <!--
     These two properties are very important!

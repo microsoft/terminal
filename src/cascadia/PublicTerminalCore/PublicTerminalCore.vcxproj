@@ -8,7 +8,6 @@
     <ProjectName>PublicTerminalCore</ProjectName>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <!-- Consumers of the WPF control need not bring a VC++ Runtime -->
-    <EnableHybridCRT>true</EnableHybridCRT>
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <Import Project="$(SolutionDir)src\common.nugetversions.props" />

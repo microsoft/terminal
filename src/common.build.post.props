@@ -11,7 +11,7 @@
 
     This must come before Microsoft.Cpp.targets because it manipulates ClCompile.RuntimeLibrary.
   -->
-  <ItemDefinitionGroup Condition="'$(EnableHybridCRT)'=='true' and '$(Configuration)'=='Debug'">
+  <ItemDefinitionGroup Condition="'$(EnableHybridCRT)'!='false' and '$(Configuration)'=='Debug'">
     <ClCompile>
       <!-- We use MultiThreadedDebug, rather than MultiThreadedDebugDLL, to avoid DLL dependencies on VCRUNTIME140d.dll and MSVCP140d.dll. -->
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -25,7 +25,7 @@
       <AdditionalOptions>%(AdditionalOptions) /defaultlib:ucrtd.lib</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(EnableHybridCRT)'=='true' and '$(Configuration)'=='Release'">
+  <ItemDefinitionGroup Condition="'$(EnableHybridCRT)'!='false' and '$(Configuration)'=='Release'">
     <ClCompile>
       <!-- We use MultiThreaded, rather than MultiThreadedDLL, to avoid DLL dependencies on VCRUNTIME140.dll and MSVCP140.dll. -->
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
