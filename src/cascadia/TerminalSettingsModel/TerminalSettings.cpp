@@ -211,7 +211,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                     ApplyColorScheme(scheme);
                 }
             }
-            
         }
         // system theme selected, set the color scheme based off of the system theme.
         else if(requestedTheme == winrt::Windows::UI::Xaml::ElementTheme::Default)
