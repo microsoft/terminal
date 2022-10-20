@@ -29,13 +29,9 @@ Notes:
 //
 //----------------------------------------------------------------------------
 
-CicDisplayAttributeMgr::CicDisplayAttributeMgr()
-{
-}
+CicDisplayAttributeMgr::CicDisplayAttributeMgr() = default;
 
-CicDisplayAttributeMgr::~CicDisplayAttributeMgr()
-{
-}
+CicDisplayAttributeMgr::~CicDisplayAttributeMgr() = default;
 
 //+---------------------------------------------------------------------------
 //

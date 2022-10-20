@@ -8,6 +8,7 @@ namespace Microsoft.Terminal.Wpf
     using System;
     using System.Threading;
     using System.Windows;
+    using System.Windows.Automation.Peers;
     using System.Windows.Controls;
     using System.Windows.Input;
     using System.Windows.Media;
@@ -40,6 +41,20 @@ namespace Microsoft.Terminal.Wpf
             this.scrollbar.MouseWheel += this.Scrollbar_MouseWheel;
 
             this.GotFocus += this.TerminalControl_GotFocus;
+        }
+
+        /// <inheritdoc/>
+        protected override AutomationPeer OnCreateAutomationPeer()
+        {
+            var peer = FrameworkElementAutomationPeer.FromElement(this);
+            if (peer == null)
+            {
+                // Provide our own automation peer here that just sets IsContentElement/IsControlElement to false
+                // (aka AccessibilityView = Raw). This makes it not pop up in the UIA tree.
+                peer = new TermControlAutomationPeer(this);
+            }
+
+            return peer;
         }
 
         /// <summary>
@@ -265,6 +280,23 @@ namespace Microsoft.Terminal.Wpf
         {
             var viewTop = (int)e.NewValue;
             this.termContainer.UserScroll(viewTop);
+        }
+
+        private class TermControlAutomationPeer : UserControlAutomationPeer
+        {
+            public TermControlAutomationPeer(UserControl owner) : base(owner)
+            {
+            }
+
+            protected override bool IsContentElementCore()
+            {
+                return false;
+            }
+
+            protected override bool IsControlElementCore()
+            {
+                return false;
+            }
         }
     }
 }

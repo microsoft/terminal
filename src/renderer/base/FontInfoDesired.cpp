@@ -8,23 +8,24 @@
 FontInfoDesired::FontInfoDesired(const std::wstring_view& faceName,
                                  const unsigned char family,
                                  const unsigned int weight,
-                                 const til::size coordSizeDesired,
+                                 const float fontSize,
                                  const unsigned int codePage) noexcept :
     FontInfoBase(faceName, family, weight, false, codePage),
-    _coordSizeDesired(coordSizeDesired)
+    _coordSizeDesired{ 0, lroundf(fontSize) },
+    _fontSize{ fontSize }
 {
 }
 
 FontInfoDesired::FontInfoDesired(const FontInfo& fiFont) noexcept :
     FontInfoBase(fiFont),
-    _coordSizeDesired(fiFont.GetUnscaledSize())
+    _coordSizeDesired{ fiFont.GetUnscaledSize() },
+    _fontSize{ static_cast<float>(_coordSizeDesired.height) }
 {
 }
 
-bool FontInfoDesired::operator==(const FontInfoDesired& other) noexcept
+float FontInfoDesired::GetFontSize() const noexcept
 {
-    return FontInfoBase::operator==(other) &&
-           _coordSizeDesired == other._coordSizeDesired;
+    return _fontSize;
 }
 
 til::size FontInfoDesired::GetEngineSize() const noexcept

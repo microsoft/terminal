@@ -215,9 +215,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _piClient.hProcess = hClientProcess;
 
         _startupInfo.title = winrt::hstring{ startupInfo.pszTitle, SysStringLen(startupInfo.pszTitle) };
-        SysFreeString(startupInfo.pszTitle);
         _startupInfo.iconPath = winrt::hstring{ startupInfo.pszIconPath, SysStringLen(startupInfo.pszIconPath) };
-        SysFreeString(startupInfo.pszIconPath);
         _startupInfo.iconIndex = startupInfo.iconIndex;
 
         try
@@ -554,6 +552,15 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
             _hPC.reset(); // tear down the pseudoconsole (this is like clicking X on a console window)
 
+            // CloseHandle() on pipes blocks until any current WriteFile()/ReadFile() has returned.
+            // CancelSynchronousIo prevents us from deadlocking ourselves.
+            // At this point in Close(), _inPipe won't be used anymore since the UI parts are torn down.
+            // _outPipe is probably still stuck in ReadFile() and might currently be written to.
+            if (_hOutputThread)
+            {
+                CancelSynchronousIo(_hOutputThread.get());
+            }
+
             _inPipe.reset(); // break the pipes
             _outPipe.reset();
 
@@ -615,10 +622,17 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             DWORD read{};
 
             const auto readFail{ !ReadFile(_outPipe.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), &read, nullptr) };
+
+            // When we call CancelSynchronousIo() in Close() this is the branch that's taken and gets us out of here.
+            if (_isStateAtOrBeyond(ConnectionState::Closing))
+            {
+                return 0;
+            }
+
             if (readFail) // reading failed (we must check this first, because read will also be 0.)
             {
                 const auto lastError = GetLastError();
-                if (lastError != ERROR_BROKEN_PIPE && !_isStateAtOrBeyond(ConnectionState::Closing))
+                if (lastError != ERROR_BROKEN_PIPE)
                 {
                     // EXIT POINT
                     _indicateExitWithStatus(HRESULT_FROM_WIN32(lastError)); // print a message
@@ -631,12 +645,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             const auto result{ til::u8u16(std::string_view{ _buffer.data(), read }, _u16Str, _u8State) };
             if (FAILED(result))
             {
-                if (_isStateAtOrBeyond(ConnectionState::Closing))
-                {
-                    // This termination was expected.
-                    return 0;
-                }
-
                 // EXIT POINT
                 _indicateExitWithStatus(result); // print a message
                 _transitionToState(ConnectionState::Failed);

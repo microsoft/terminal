@@ -435,6 +435,27 @@ void TerminalCoreUnitTests::TerminalApiTest::SetWorkingDirectory()
     stateMachine.ProcessString(L"\x1b]9;9\"C:\\\"\x1b\\");
     VERIFY_IS_TRUE(term.GetWorkingDirectory().empty());
 
+    stateMachine.ProcessString(L"\x1b"
+                               LR"(]9;9;"C:\invalid path "with" quotes")"
+                               L"\x1b\\");
+    VERIFY_IS_TRUE(term.GetWorkingDirectory().empty());
+
+    // These OSC 9;9 sequences will result in invalid CWD. It should end up empty, like above.
+    stateMachine.ProcessString(L"\x1b]9;9;\"\x1b\\");
+    VERIFY_IS_TRUE(term.GetWorkingDirectory().empty());
+
+    stateMachine.ProcessString(L"\x1b]9;9;\"\"\x1b\\");
+    VERIFY_IS_TRUE(term.GetWorkingDirectory().empty());
+
+    stateMachine.ProcessString(L"\x1b]9;9;\"\"\"\x1b\\");
+    VERIFY_IS_TRUE(term.GetWorkingDirectory().empty());
+
+    stateMachine.ProcessString(L"\x1b]9;9;\"\"\"\"\x1b\\");
+    VERIFY_IS_TRUE(term.GetWorkingDirectory().empty());
+
+    stateMachine.ProcessString(L"\x1b]9;9;No quotes \"until\" later\x1b\\");
+    VERIFY_IS_TRUE(term.GetWorkingDirectory().empty());
+
     // Valid sequences should change CWD
     stateMachine.ProcessString(L"\x1b]9;9;\"C:\\\"\x1b\\");
     VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"C:\\");
@@ -454,17 +475,4 @@ void TerminalCoreUnitTests::TerminalApiTest::SetWorkingDirectory()
 
     stateMachine.ProcessString(L"\x1b]9;9;D:\\中文\x1b\\");
     VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"D:\\中文");
-
-    // These OSC 9;9 sequences will result in invalid CWD. We shouldn't crash on these.
-    stateMachine.ProcessString(L"\x1b]9;9;\"\x1b\\");
-    VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"\"");
-
-    stateMachine.ProcessString(L"\x1b]9;9;\"\"\x1b\\");
-    VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"\"\"");
-
-    stateMachine.ProcessString(L"\x1b]9;9;\"\"\"\x1b\\");
-    VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"\"");
-
-    stateMachine.ProcessString(L"\x1b]9;9;\"\"\"\"\x1b\\");
-    VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"\"\"");
 }

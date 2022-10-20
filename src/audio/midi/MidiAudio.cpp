@@ -22,12 +22,14 @@ MidiAudio::MidiAudio(HWND windowHandle)
     _directSoundModule.reset(LoadLibraryExW(L"dsound.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32));
     if (_directSoundModule)
     {
-        auto createFunction = GetProcAddressByFunctionDeclaration(_directSoundModule.get(), DirectSoundCreate8);
-        if (SUCCEEDED(createFunction(nullptr, &_directSound, nullptr)))
+        if (auto createFunction = GetProcAddressByFunctionDeclaration(_directSoundModule.get(), DirectSoundCreate8))
         {
-            if (SUCCEEDED(_directSound->SetCooperativeLevel(windowHandle, DSSCL_NORMAL)))
+            if (SUCCEEDED(createFunction(nullptr, &_directSound, nullptr)))
             {
-                _createBuffers();
+                if (SUCCEEDED(_directSound->SetCooperativeLevel(windowHandle, DSSCL_NORMAL)))
+                {
+                    _createBuffers();
+                }
             }
         }
     }
