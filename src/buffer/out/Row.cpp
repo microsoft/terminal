@@ -118,14 +118,14 @@ bool ROW::WasDoubleBytePadded() const noexcept
     return _doubleBytePadded;
 }
 
-LineRendition ROW::GetLineRendition() const noexcept
-{
-    return _lineRendition;
-}
-
 void ROW::SetLineRendition(const LineRendition lineRendition) noexcept
 {
     _lineRendition = lineRendition;
+}
+
+LineRendition ROW::GetLineRendition() const noexcept
+{
+    return _lineRendition;
 }
 
 // Routine Description:
@@ -355,14 +355,14 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const til::CoordType c
 
 bool ROW::SetAttrToEnd(const til::CoordType columnBegin, const TextAttribute attr)
 {
-    _attr.replace(clampedColumnInclusive(columnBegin), _attr.size(), attr);
+    _attr.replace(_clampedColumnInclusive(columnBegin), _attr.size(), attr);
     return true;
 }
 
 void ROW::ReplaceCharacters(til::CoordType columnBegin, til::CoordType width, const std::wstring_view& chars)
 {
-    const auto colBeg = clampedUint16(columnBegin);
-    const auto colEnd = clampedUint16(columnBegin + width);
+    const auto colBeg = _clampedUint16(columnBegin);
+    const auto colEnd = _clampedUint16(columnBegin + width);
 
     if (colBeg >= colEnd || colEnd > _columnCount || chars.empty())
     {
@@ -453,7 +453,7 @@ const til::small_rle<TextAttribute, uint16_t, 1>& ROW::Attributes() const noexce
 
 TextAttribute ROW::GetAttrByColumn(const til::CoordType column) const
 {
-    return _attr.at(clampedUint16(column));
+    return _attr.at(_clampedUint16(column));
 }
 
 std::vector<uint16_t> ROW::GetHyperlinks() const
@@ -536,7 +536,7 @@ bool ROW::ContainsText() const noexcept
 
 std::wstring_view ROW::GlyphAt(til::CoordType column) const noexcept
 {
-    auto col = clampedColumn(column);
+    auto col = _clampedColumn(column);
 
     // Safety: col is [0, _columnCount).
     const auto beg = _uncheckedCharOffset(col);
@@ -553,7 +553,7 @@ std::wstring_view ROW::GlyphAt(til::CoordType column) const noexcept
 
 DbcsAttribute ROW::DbcsAttrAt(til::CoordType column) const noexcept
 {
-    const auto col = clampedColumn(column);
+    const auto col = _clampedColumn(column);
 
     auto attr = DbcsAttribute::Single;
     // Safety: col is [0, _columnCount).
@@ -577,7 +577,7 @@ std::wstring_view ROW::GetText() const noexcept
 
 DelimiterClass ROW::DelimiterClassAt(til::CoordType column, const std::wstring_view& wordDelimiters) const noexcept
 {
-    const auto col = clampedColumn(column);
+    const auto col = _clampedColumn(column);
     // Safety: col is [0, _columnCount).
     const auto glyph = _uncheckedChar(_uncheckedCharOffset(col));
 
@@ -596,19 +596,19 @@ DelimiterClass ROW::DelimiterClassAt(til::CoordType column, const std::wstring_v
 }
 
 template<typename T>
-constexpr uint16_t ROW::clampedUint16(T v) noexcept
+constexpr uint16_t ROW::_clampedUint16(T v) noexcept
 {
     return static_cast<uint16_t>(std::max(T{ 0 }, std::min(T{ 65535 }, v)));
 }
 
 template<typename T>
-constexpr uint16_t ROW::clampedColumn(T v) const noexcept
+constexpr uint16_t ROW::_clampedColumn(T v) const noexcept
 {
     return static_cast<uint16_t>(std::max(T{ 0 }, std::min<T>(_columnCount - 1u, v)));
 }
 
 template<typename T>
-constexpr uint16_t ROW::clampedColumnInclusive(T v) const noexcept
+constexpr uint16_t ROW::_clampedColumnInclusive(T v) const noexcept
 {
     return static_cast<uint16_t>(std::max(T{ 0 }, std::min<T>(_columnCount, v)));
 }

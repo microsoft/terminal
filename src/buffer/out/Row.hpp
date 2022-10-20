@@ -54,8 +54,8 @@ public:
     bool WasWrapForced() const noexcept;
     void SetDoubleBytePadded(const bool doubleBytePadded) noexcept;
     bool WasDoubleBytePadded() const noexcept;
-    LineRendition GetLineRendition() const noexcept;
     void SetLineRendition(const LineRendition lineRendition) noexcept;
+    LineRendition GetLineRendition() const noexcept;
 
     void Reset(const TextAttribute& attr);
     void Resize(wchar_t* charsBuffer, uint16_t* charOffsetsBuffer, uint16_t rowWidth, const TextAttribute& fillAttribute);
@@ -91,11 +91,11 @@ private:
     static constexpr uint16_t CharOffsetsMask = 0x7fff;
 
     template<typename T>
-    static constexpr uint16_t clampedUint16(T v) noexcept;
+    static constexpr uint16_t _clampedUint16(T v) noexcept;
     template<typename T>
-    constexpr uint16_t clampedColumn(T v) const noexcept;
+    constexpr uint16_t _clampedColumn(T v) const noexcept;
     template<typename T>
-    constexpr uint16_t clampedColumnInclusive(T v) const noexcept;
+    constexpr uint16_t _clampedColumnInclusive(T v) const noexcept;
 
     wchar_t _uncheckedChar(size_t off) const noexcept;
     uint16_t _charSize() const noexcept;
