@@ -186,6 +186,7 @@ class ScreenBufferTests
 
     TEST_METHOD(EraseScrollbackTests);
     TEST_METHOD(EraseTests);
+    TEST_METHOD(ProtectedAttributeTests);
 
     TEST_METHOD(ScrollUpInMargins);
     TEST_METHOD(ScrollDownInMargins);
@@ -3599,17 +3600,23 @@ bool _ValidateLineContains(int line, T expectedContent, TextAttribute expectedAt
 }
 
 template<class T>
-auto _ValidateLinesContain(int startLine, int endLine, T expectedContent, TextAttribute expectedAttr)
+auto _ValidateLinesContain(int startCol, int startLine, int endLine, T expectedContent, TextAttribute expectedAttr)
 {
     for (auto line = startLine; line < endLine; ++line)
     {
-        if (!_ValidateLineContains(line, expectedContent, expectedAttr))
+        if (!_ValidateLineContains({ startCol, line }, expectedContent, expectedAttr))
         {
             return false;
         }
     }
     return true;
 };
+
+template<class T>
+auto _ValidateLinesContain(int startLine, int endLine, T expectedContent, TextAttribute expectedAttr)
+{
+    return _ValidateLinesContain(0, startLine, endLine, expectedContent, expectedAttr);
+}
 
 void ScreenBufferTests::ScrollOperations()
 {
@@ -4149,17 +4156,26 @@ void ScreenBufferTests::EraseTests()
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"Data:eraseType", L"{0, 1, 2}") // corresponds to options in DispatchTypes::EraseType
         TEST_METHOD_PROPERTY(L"Data:eraseScreen", L"{false, true}") // corresponds to Line (false) or Screen (true)
+        TEST_METHOD_PROPERTY(L"Data:selectiveErase", L"{false, true}")
     END_TEST_METHOD_PROPERTIES()
 
     int eraseTypeValue;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"eraseType", eraseTypeValue));
     bool eraseScreen;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"eraseScreen", eraseScreen));
+    bool selectiveErase;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"selectiveErase", selectiveErase));
 
     const auto eraseType = gsl::narrow<DispatchTypes::EraseType>(eraseTypeValue);
 
     std::wstringstream escapeSequence;
     escapeSequence << "\x1b[";
+
+    if (selectiveErase)
+    {
+        Log::Comment(L"Erasing unprotected cells only.");
+        escapeSequence << "?";
+    }
 
     switch (eraseType)
     {
@@ -4200,11 +4216,23 @@ void ScreenBufferTests::EraseTests()
 
     // Move the viewport down a few lines, and only cover part of the buffer width.
     si.SetViewport(Viewport::FromDimensions({ 5, 10 }, { bufferWidth - 10, 10 }), true);
+    const auto& viewport = si.GetViewport();
 
     // Fill the entire buffer with Zs. Blue on Green.
     const auto bufferChar = L'Z';
     const auto bufferAttr = TextAttribute{ FOREGROUND_BLUE | BACKGROUND_GREEN };
     _FillLines(0, bufferHeight, bufferChar, bufferAttr);
+
+    // For selective erasure tests, we protect the first five columns.
+    if (selectiveErase)
+    {
+        auto protectedAttr = bufferAttr;
+        protectedAttr.SetProtected(true);
+        for (auto line = viewport.Top(); line < viewport.BottomExclusive(); ++line)
+        {
+            _FillLine(line, L"ZZZZZ", protectedAttr);
+        }
+    }
 
     // Set the attributes that will be used to fill the erased area.
     auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
@@ -4215,10 +4243,15 @@ void ScreenBufferTests::EraseTests()
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
     expectedFillAttr.SetStandardErase();
+    // And with selective erasure the original attributes are maintained.
+    if (selectiveErase)
+    {
+        expectedFillAttr = bufferAttr;
+    }
 
     // Place the cursor in the center.
     const auto centerX = bufferWidth / 2;
-    const auto centerY = (si.GetViewport().Top() + si.GetViewport().BottomExclusive()) / 2;
+    const auto centerY = (viewport.Top() + viewport.BottomExclusive()) / 2;
 
     Log::Comment(L"Set the cursor position and perform the operation.");
     VERIFY_SUCCEEDED(si.SetCursorPosition({ centerX, centerY }, true));
@@ -4226,34 +4259,37 @@ void ScreenBufferTests::EraseTests()
 
     // Get cursor position and viewport range.
     const auto cursorPos = si.GetTextBuffer().GetCursor().GetPosition();
-    const auto viewportStart = si.GetViewport().Top();
-    const auto viewportEnd = si.GetViewport().BottomExclusive();
+    const auto viewportStart = viewport.Top();
+    const auto viewportEnd = viewport.BottomExclusive();
 
     Log::Comment(L"Lines outside the viewport should remain unchanged.");
     VERIFY_IS_TRUE(_ValidateLinesContain(0, viewportStart, bufferChar, bufferAttr));
     VERIFY_IS_TRUE(_ValidateLinesContain(viewportEnd, bufferHeight, bufferChar, bufferAttr));
+
+    // With selective erasure, there's a protected range to account for at the start of the line.
+    const auto protectedOffset = selectiveErase ? 5 : 0;
 
     // 1. Lines before cursor line
     if (eraseScreen && eraseType != DispatchTypes::EraseType::ToEnd)
     {
         // For eraseScreen, if we're not erasing to the end, these rows will be cleared.
         Log::Comment(L"Lines before the cursor line should be erased.");
-        VERIFY_IS_TRUE(_ValidateLinesContain(viewportStart, cursorPos.Y, L' ', expectedFillAttr));
+        VERIFY_IS_TRUE(_ValidateLinesContain(protectedOffset, viewportStart, cursorPos.Y, L' ', expectedFillAttr));
     }
     else
     {
         // Otherwise we'll be left with the original buffer content.
         Log::Comment(L"Lines before the cursor line should remain unchanged.");
-        VERIFY_IS_TRUE(_ValidateLinesContain(viewportStart, cursorPos.Y, bufferChar, bufferAttr));
+        VERIFY_IS_TRUE(_ValidateLinesContain(protectedOffset, viewportStart, cursorPos.Y, bufferChar, bufferAttr));
     }
 
     // 2. Cursor Line
-    auto prefixPos = til::point{ 0, cursorPos.Y };
+    auto prefixPos = til::point{ protectedOffset, cursorPos.Y };
     auto suffixPos = cursorPos;
     // When erasing from the beginning, the cursor column is included in the range.
     suffixPos.X += (eraseType == DispatchTypes::EraseType::FromBeginning);
-    size_t prefixWidth = suffixPos.X;
-    auto suffixWidth = bufferWidth - prefixWidth;
+    size_t prefixWidth = suffixPos.X - prefixPos.X;
+    size_t suffixWidth = bufferWidth - suffixPos.X;
     if (eraseType == DispatchTypes::EraseType::ToEnd)
     {
         Log::Comment(L"The start of the cursor line should remain unchanged.");
@@ -4271,7 +4307,7 @@ void ScreenBufferTests::EraseTests()
     if (eraseType == DispatchTypes::EraseType::All)
     {
         Log::Comment(L"The entire cursor line should be erased.");
-        VERIFY_IS_TRUE(_ValidateLineContains(cursorPos.Y, L' ', expectedFillAttr));
+        VERIFY_IS_TRUE(_ValidateLineContains(prefixPos, L' ', expectedFillAttr));
     }
 
     // 3. Lines after cursor line
@@ -4279,14 +4315,83 @@ void ScreenBufferTests::EraseTests()
     {
         // For eraseScreen, if we're not erasing from the beginning, these rows will be cleared.
         Log::Comment(L"Lines after the cursor line should be erased.");
-        VERIFY_IS_TRUE(_ValidateLinesContain(cursorPos.Y + 1, viewportEnd, L' ', expectedFillAttr));
+        VERIFY_IS_TRUE(_ValidateLinesContain(protectedOffset, cursorPos.Y + 1, viewportEnd, L' ', expectedFillAttr));
     }
     else
     {
         // Otherwise we'll be left with the original buffer content.
         Log::Comment(L"Lines after the cursor line should remain unchanged.");
-        VERIFY_IS_TRUE(_ValidateLinesContain(cursorPos.Y + 1, viewportEnd, bufferChar, bufferAttr));
+        VERIFY_IS_TRUE(_ValidateLinesContain(protectedOffset, cursorPos.Y + 1, viewportEnd, bufferChar, bufferAttr));
     }
+
+    // 4. Protected columns
+    if (selectiveErase)
+    {
+        Log::Comment(L"First five columns should remain unchanged.");
+        auto protectedAttr = bufferAttr;
+        protectedAttr.SetProtected(true);
+        for (auto line = viewport.Top(); line < viewport.BottomExclusive(); ++line)
+        {
+            VERIFY_IS_TRUE(_ValidateLineContains(line, L"ZZZZZ", protectedAttr));
+        }
+    }
+}
+
+void ScreenBufferTests::ProtectedAttributeTests()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& textBuffer = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    const auto cursorPosition = textBuffer.GetCursor().GetPosition();
+    auto unprotectedAttribute = textBuffer.GetCurrentAttributes();
+    unprotectedAttribute.SetProtected(false);
+    auto protectedAttribute = textBuffer.GetCurrentAttributes();
+    protectedAttribute.SetProtected(true);
+
+    Log::Comment(L"DECSCA default should be unprotected");
+    textBuffer.GetCursor().SetPosition(cursorPosition);
+    textBuffer.SetCurrentAttributes(protectedAttribute);
+    stateMachine.ProcessString(L"\x1b[\"qZZZZZ");
+    VERIFY_IS_FALSE(textBuffer.GetCurrentAttributes().IsProtected());
+    VERIFY_IS_TRUE(_ValidateLineContains(cursorPosition, L"ZZZZZ", unprotectedAttribute));
+
+    Log::Comment(L"DECSCA 0 should be unprotected");
+    textBuffer.GetCursor().SetPosition(cursorPosition);
+    textBuffer.SetCurrentAttributes(protectedAttribute);
+    stateMachine.ProcessString(L"\x1b[0\"qZZZZZ");
+    VERIFY_IS_FALSE(textBuffer.GetCurrentAttributes().IsProtected());
+    VERIFY_IS_TRUE(_ValidateLineContains(cursorPosition, L"ZZZZZ", unprotectedAttribute));
+
+    Log::Comment(L"DECSCA 1 should be protected");
+    textBuffer.GetCursor().SetPosition(cursorPosition);
+    textBuffer.SetCurrentAttributes(unprotectedAttribute);
+    stateMachine.ProcessString(L"\x1b[1\"qZZZZZ");
+    VERIFY_IS_TRUE(textBuffer.GetCurrentAttributes().IsProtected());
+    VERIFY_IS_TRUE(_ValidateLineContains(cursorPosition, L"ZZZZZ", protectedAttribute));
+
+    Log::Comment(L"DECSCA 2 should be unprotected");
+    textBuffer.GetCursor().SetPosition(cursorPosition);
+    textBuffer.SetCurrentAttributes(protectedAttribute);
+    stateMachine.ProcessString(L"\x1b[2\"qZZZZZ");
+    VERIFY_IS_FALSE(textBuffer.GetCurrentAttributes().IsProtected());
+    VERIFY_IS_TRUE(_ValidateLineContains(cursorPosition, L"ZZZZZ", unprotectedAttribute));
+
+    Log::Comment(L"DECSCA 2;1 should be protected");
+    textBuffer.GetCursor().SetPosition(cursorPosition);
+    textBuffer.SetCurrentAttributes(unprotectedAttribute);
+    stateMachine.ProcessString(L"\x1b[2;1\"qZZZZZ");
+    VERIFY_IS_TRUE(textBuffer.GetCurrentAttributes().IsProtected());
+    VERIFY_IS_TRUE(_ValidateLineContains(cursorPosition, L"ZZZZZ", protectedAttribute));
+
+    Log::Comment(L"DECSCA 1;2 should be unprotected");
+    textBuffer.GetCursor().SetPosition(cursorPosition);
+    textBuffer.SetCurrentAttributes(protectedAttribute);
+    stateMachine.ProcessString(L"\x1b[1;2\"qZZZZZ");
+    VERIFY_IS_FALSE(textBuffer.GetCurrentAttributes().IsProtected());
+    VERIFY_IS_TRUE(_ValidateLineContains(cursorPosition, L"ZZZZZ", unprotectedAttribute));
 }
 
 void _CommonScrollingSetup()
@@ -5359,54 +5464,54 @@ void ScreenBufferTests::TestExtendedTextAttributes()
     auto& stateMachine = si.GetStateMachine();
     auto& cursor = tbi.GetCursor();
 
-    auto expectedAttrs{ ExtendedAttributes::Normal };
+    auto expectedAttrs{ CharacterAttributes::Normal };
     std::wstring vtSeq = L"";
 
     // Collect up a VT sequence to set the state given the method properties
     if (intense)
     {
-        WI_SetFlag(expectedAttrs, ExtendedAttributes::Intense);
+        WI_SetFlag(expectedAttrs, CharacterAttributes::Intense);
         vtSeq += L"\x1b[1m";
     }
     if (faint)
     {
-        WI_SetFlag(expectedAttrs, ExtendedAttributes::Faint);
+        WI_SetFlag(expectedAttrs, CharacterAttributes::Faint);
         vtSeq += L"\x1b[2m";
     }
     if (italics)
     {
-        WI_SetFlag(expectedAttrs, ExtendedAttributes::Italics);
+        WI_SetFlag(expectedAttrs, CharacterAttributes::Italics);
         vtSeq += L"\x1b[3m";
     }
     if (underlined)
     {
-        WI_SetFlag(expectedAttrs, ExtendedAttributes::Underlined);
+        WI_SetFlag(expectedAttrs, CharacterAttributes::Underlined);
         vtSeq += L"\x1b[4m";
     }
     if (doublyUnderlined)
     {
-        WI_SetFlag(expectedAttrs, ExtendedAttributes::DoublyUnderlined);
+        WI_SetFlag(expectedAttrs, CharacterAttributes::DoublyUnderlined);
         vtSeq += L"\x1b[21m";
     }
     if (blink)
     {
-        WI_SetFlag(expectedAttrs, ExtendedAttributes::Blinking);
+        WI_SetFlag(expectedAttrs, CharacterAttributes::Blinking);
         vtSeq += L"\x1b[5m";
     }
     if (invisible)
     {
-        WI_SetFlag(expectedAttrs, ExtendedAttributes::Invisible);
+        WI_SetFlag(expectedAttrs, CharacterAttributes::Invisible);
         vtSeq += L"\x1b[8m";
     }
     if (crossedOut)
     {
-        WI_SetFlag(expectedAttrs, ExtendedAttributes::CrossedOut);
+        WI_SetFlag(expectedAttrs, CharacterAttributes::CrossedOut);
         vtSeq += L"\x1b[9m";
     }
 
     // Helper lambda to write a VT sequence, then an "X", then check that the
     // attributes of the "X" match what we think they should be.
-    auto validate = [&](const ExtendedAttributes expectedAttrs,
+    auto validate = [&](const CharacterAttributes expectedAttrs,
                         const std::wstring& vtSequence) {
         auto cursorPos = cursor.GetPosition();
 
@@ -5431,8 +5536,8 @@ void ScreenBufferTests::TestExtendedTextAttributes()
         stateMachine.ProcessString(L"X");
 
         auto iter = tbi.GetCellDataAt(cursorPos);
-        auto currentExtendedAttrs = iter->TextAttr().GetExtendedAttributes();
-        VERIFY_ARE_EQUAL(expectedAttrs, currentExtendedAttrs);
+        auto currentAttrs = iter->TextAttr().GetCharacterAttributes();
+        VERIFY_ARE_EQUAL(expectedAttrs, currentAttrs);
     };
 
     // Check setting all the states collected above
@@ -5443,38 +5548,38 @@ void ScreenBufferTests::TestExtendedTextAttributes()
     if (intense || faint)
     {
         // The intense and faint attributes share the same reset sequence.
-        WI_ClearAllFlags(expectedAttrs, ExtendedAttributes::Intense | ExtendedAttributes::Faint);
+        WI_ClearAllFlags(expectedAttrs, CharacterAttributes::Intense | CharacterAttributes::Faint);
         vtSeq = L"\x1b[22m";
         validate(expectedAttrs, vtSeq);
     }
     if (italics)
     {
-        WI_ClearFlag(expectedAttrs, ExtendedAttributes::Italics);
+        WI_ClearFlag(expectedAttrs, CharacterAttributes::Italics);
         vtSeq = L"\x1b[23m";
         validate(expectedAttrs, vtSeq);
     }
     if (underlined || doublyUnderlined)
     {
         // The two underlined attributes share the same reset sequence.
-        WI_ClearAllFlags(expectedAttrs, ExtendedAttributes::Underlined | ExtendedAttributes::DoublyUnderlined);
+        WI_ClearAllFlags(expectedAttrs, CharacterAttributes::Underlined | CharacterAttributes::DoublyUnderlined);
         vtSeq = L"\x1b[24m";
         validate(expectedAttrs, vtSeq);
     }
     if (blink)
     {
-        WI_ClearFlag(expectedAttrs, ExtendedAttributes::Blinking);
+        WI_ClearFlag(expectedAttrs, CharacterAttributes::Blinking);
         vtSeq = L"\x1b[25m";
         validate(expectedAttrs, vtSeq);
     }
     if (invisible)
     {
-        WI_ClearFlag(expectedAttrs, ExtendedAttributes::Invisible);
+        WI_ClearFlag(expectedAttrs, CharacterAttributes::Invisible);
         vtSeq = L"\x1b[28m";
         validate(expectedAttrs, vtSeq);
     }
     if (crossedOut)
     {
-        WI_ClearFlag(expectedAttrs, ExtendedAttributes::CrossedOut);
+        WI_ClearFlag(expectedAttrs, CharacterAttributes::CrossedOut);
         vtSeq = L"\x1b[29m";
         validate(expectedAttrs, vtSeq);
     }

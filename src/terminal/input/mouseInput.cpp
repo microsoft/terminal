@@ -5,6 +5,7 @@
 #include <windows.h>
 #include "terminalInput.hpp"
 #include "../types/inc/utils.hpp"
+#include "../../interactivity/inc/VtApiRedirection.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
 

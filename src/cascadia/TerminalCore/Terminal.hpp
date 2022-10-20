@@ -64,7 +64,7 @@ class Microsoft::Terminal::Core::Terminal final :
 
 public:
     Terminal();
-    ~Terminal(){};
+    ~Terminal() = default;
     Terminal(const Terminal&) = default;
     Terminal(Terminal&&) = default;
     Terminal& operator=(const Terminal&) = default;

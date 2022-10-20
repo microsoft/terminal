@@ -1712,3 +1712,23 @@ til::point Terminal::GetViewportRelativeCursorPosition() const noexcept
     const auto viewport{ _GetMutableViewport() };
     return absoluteCursorPosition - viewport.Origin();
 }
+
+// These functions are used by TerminalInput, which must build in conhost
+// against OneCore compatible signatures. See the definitions in
+// VtApiRedirection.hpp (which we cannot include cross-project.)
+// Since we do nto run on OneCore, we can dispense with the compatibility
+// shims.
+extern "C" UINT OneCoreSafeMapVirtualKeyW(_In_ UINT uCode, _In_ UINT uMapType)
+{
+    return MapVirtualKeyW(uCode, uMapType);
+}
+
+extern "C" SHORT OneCoreSafeVkKeyScanW(_In_ WCHAR ch)
+{
+    return VkKeyScanW(ch);
+}
+
+extern "C" SHORT OneCoreSafeGetKeyState(_In_ int nVirtKey)
+{
+    return GetKeyState(nVirtKey);
+}

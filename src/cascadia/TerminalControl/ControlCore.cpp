@@ -95,7 +95,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                              Control::IControlAppearance unfocusedAppearance,
                              TerminalConnection::ITerminalConnection connection) :
         _connection{ connection },
-        _desiredFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8 },
+        _desiredFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, DEFAULT_FONT_SIZE, CP_UTF8 },
         _actualFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false }
     {
         _EnsureStaticInitialization();
@@ -692,7 +692,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
         if (_lastHoveredCell.has_value())
         {
-            return winrt::hstring{ _terminal->GetHyperlinkAtViewportPosition(*_lastHoveredCell) };
+            auto uri{ _terminal->GetHyperlinkAtViewportPosition(*_lastHoveredCell) };
+            uri.resize(std::min<size_t>(1024u, uri.size())); // Truncate for display
+            return winrt::hstring{ uri };
         }
         return {};
     }
@@ -859,15 +861,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - fontSize: The size of the font.
     // Return Value:
     // - Returns true if you need to call _refreshSizeUnderLock().
-    bool ControlCore::_setFontSizeUnderLock(int fontSize)
+    bool ControlCore::_setFontSizeUnderLock(float fontSize)
     {
         // Make sure we have a non-zero font size
-        const auto newSize = std::max(fontSize, 1);
+        const auto newSize = std::max(fontSize, 1.0f);
         const auto fontFace = _settings->FontFace();
         const auto fontWeight = _settings->FontWeight();
-        _actualFont = { fontFace, 0, fontWeight.Weight, { 0, newSize }, CP_UTF8, false };
+        _desiredFont = { fontFace, 0, fontWeight.Weight, newSize, CP_UTF8 };
+        _actualFont = { fontFace, 0, fontWeight.Weight, _desiredFont.GetEngineSize(), CP_UTF8, false };
         _actualFontFaceName = { fontFace };
-        _desiredFont = { _actualFont };
 
         const auto before = _actualFont.GetSize();
         _updateFont();
@@ -893,11 +895,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Adjust the font size of the terminal control.
     // Arguments:
     // - fontSizeDelta: The amount to increase or decrease the font size by.
-    void ControlCore::AdjustFontSize(int fontSizeDelta)
+    void ControlCore::AdjustFontSize(float fontSizeDelta)
     {
         const auto lock = _terminal->LockForWriting();
 
-        if (_setFontSizeUnderLock(_desiredFont.GetEngineSize().Y + fontSizeDelta))
+        if (_setFontSizeUnderLock(_desiredFont.GetFontSize() + fontSizeDelta))
         {
             _refreshSizeUnderLock();
         }
@@ -1211,10 +1213,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return static_cast<uint16_t>(_actualFont.GetWeight());
     }
 
-    til::size ControlCore::FontSizeInDips() const
+    winrt::Windows::Foundation::Size ControlCore::FontSizeInDips() const
     {
-        const til::size fontSize{ _actualFont.GetSize() };
-        return fontSize.scale(til::math::rounding, 1.0f / ::base::saturated_cast<float>(_compositionScale));
+        const auto fontSize = _actualFont.GetSize();
+        const auto scale = 1.0f / static_cast<float>(_compositionScale);
+        return {
+            fontSize.width * scale,
+            fontSize.height * scale,
+        };
     }
 
     TerminalConnection::ConnectionState ControlCore::ConnectionState() const

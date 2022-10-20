@@ -83,9 +83,12 @@ public:
     bool EraseInDisplay(const DispatchTypes::EraseType /* eraseType*/) override { return false; } // ED
     bool EraseInLine(const DispatchTypes::EraseType /* eraseType*/) override { return false; } // EL
     bool EraseCharacters(const VTInt /*numChars*/) override { return false; } // ECH
+    bool SelectiveEraseInDisplay(const DispatchTypes::EraseType /*eraseType*/) override { return false; } // DECSED
+    bool SelectiveEraseInLine(const DispatchTypes::EraseType /*eraseType*/) override { return false; } // DECSEL
 
     bool SetGraphicsRendition(const VTParameters /*options*/) override { return false; } // SGR
     bool SetLineRendition(const LineRendition /*rendition*/) override { return false; } // DECSWL, DECDWL, DECDHL
+    bool SetCharacterProtectionAttribute(const VTParameters /*options*/) override { return false; } // DECSCA
 
     bool PushGraphicsRendition(const VTParameters /*options*/) override { return false; } // XTPUSHSGR
     bool PopGraphicsRendition() override { return false; } // XTPOPSGR
