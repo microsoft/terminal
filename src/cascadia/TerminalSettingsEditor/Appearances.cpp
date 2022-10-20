@@ -108,7 +108,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void AppearanceViewModel::ClearLineHeight()
     {
-        LineHeight({});
+        LineHeight(NAN);
     }
 
     Model::Profile AppearanceViewModel::LineHeightOverrideSource()
