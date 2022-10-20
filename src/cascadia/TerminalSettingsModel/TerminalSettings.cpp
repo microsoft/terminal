@@ -213,7 +213,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
         }
         // system theme selected, set the color scheme based off of the system theme.
-        else if(requestedTheme == winrt::Windows::UI::Xaml::ElementTheme::Default)
+        else if (requestedTheme == winrt::Windows::UI::Xaml::ElementTheme::Default)
         {
             const auto& schemeName = Windows::UI::Xaml::Application::Current().RequestedTheme() == Windows::UI::Xaml::ApplicationTheme::Dark ? darkName : lightName;
             if (const auto scheme = schemes.TryLookup(schemeName))
