@@ -387,7 +387,7 @@ try
     // Due to the current IRenderEngine interface (that wasn't refactored yet) we need to assemble
     // the current buffer line first as the remaining function operates on whole lines of text.
     {
-        u16 column = x;
+        auto column = x;
         for (const auto& cluster : clusters)
         {
             for (const auto& ch : cluster.GetText())
