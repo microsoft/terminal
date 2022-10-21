@@ -1780,7 +1780,6 @@ void UiaTextRangeBase::_moveEndpointByUnitPage(_In_ const int moveCount,
         return;
     }
 
-    const auto allowBottomExclusive = !preventBoundary;
     const auto moveDirection = (moveCount > 0) ? MovementDirection::Forward : MovementDirection::Backward;
     const auto bufferSize = _getOptimizedBufferSize();
 
@@ -1877,6 +1876,7 @@ void UiaTextRangeBase::_moveEndpointByUnitPage(_In_ const int moveCount,
             if (success)
             {
                 nextPos.X = bufferSize.Left();
+                nextPos.Y = std::max(nextPos.Y - currentViewport.Height(), bufferSize.Top());
                 resultPos = nextPos;
                 (*pAmountMoved)--;
             }

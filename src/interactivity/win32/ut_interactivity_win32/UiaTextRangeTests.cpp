@@ -124,6 +124,7 @@ static constexpr til::point point_offset_by_viewport(const til::point start, con
             else
             {
                 pos_y += viewportHeight;
+                pos_y = std::min(pos_y, bounds.bottom);
             }
             --amt;
         }
@@ -137,6 +138,7 @@ static constexpr til::point point_offset_by_viewport(const til::point start, con
             else
             {
                 pos_y -= viewportHeight;
+                pos_y = std::max(pos_y, 0);
             }
             ++amt;
         }
@@ -1384,6 +1386,7 @@ class UiaTextRangeTests
         const til::point lastLineStart{ bufferSize.left, documentEndInclusive.y };
         const auto secondToLastLinePos{ point_offset_by_line(lastLineStart, bufferSize, -1) };
         const til::point secondToLastCharacterPos{ documentEndInclusive.x - 1, documentEndInclusive.y };
+        const auto lastPageStart{ point_offset_by_viewport(documentEndExclusive, bufferSize, -1) };
 
         // Iterate over each TextUnit. If we don't support
         // the given TextUnit, we're supposed to fallback
@@ -1443,6 +1446,11 @@ class UiaTextRangeTests
             VERIFY_ARE_EQUAL(lastLineStart, utr->_start);
             VERIFY_ARE_EQUAL(documentEndExclusive, utr->_end);
         }
+        else if (textUnit <= TextUnit::TextUnit_Page)
+        {
+            VERIFY_ARE_EQUAL(origin, utr->_start);
+            VERIFY_ARE_EQUAL(documentEndExclusive, utr->_end);
+        }
         else // textUnit <= TextUnit::TextUnit_Document:
         {
             VERIFY_ARE_EQUAL(origin, utr->_start);
@@ -1488,6 +1496,12 @@ class UiaTextRangeTests
             VERIFY_ARE_EQUAL(-1, moveAmt);
             VERIFY_ARE_EQUAL(degenerate || !atDocumentEnd ? lastLineStart : secondToLastLinePos, utr->_start);
             VERIFY_ARE_EQUAL(lastLineStart, utr->_end);
+        }
+        else if (textUnit <= TextUnit::TextUnit_Page)
+        {
+            VERIFY_ARE_EQUAL(degenerate || !atDocumentEnd ? -1 : 0, moveAmt);
+            VERIFY_ARE_EQUAL(lastPageStart, utr->_start);
+            VERIFY_ARE_EQUAL(degenerate || !atDocumentEnd ? lastPageStart : documentEndExclusive, utr->_end);
         }
         else // textUnit <= TextUnit::TextUnit_Document:
         {
