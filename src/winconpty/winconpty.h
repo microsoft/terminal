@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#include "precomp.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif

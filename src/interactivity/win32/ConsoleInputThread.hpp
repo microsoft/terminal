@@ -12,8 +12,6 @@ Author(s):
 - Hernan Gatta (HeGatta) 29-Mar-2017
 --*/
 
-#include "precomp.h"
-
 #include "../inc/IConsoleInputThread.hpp"
 
 namespace Microsoft::Console::Interactivity::Win32

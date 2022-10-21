@@ -18,8 +18,6 @@ Revision History:
 
 #pragma once
 
-#include "precomp.h"
-
 class Registry
 {
 public:

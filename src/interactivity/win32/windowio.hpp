@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include "precomp.h"
-
 #include "../../server/ProcessHandle.h"
 
 #pragma hdrstop

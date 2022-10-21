@@ -19,8 +19,6 @@ Author(s):
 
 #pragma once
 
-#include "precomp.h"
-
 #include <UIAutomationCore.h>
 #include <wrl/implements.h>
 

@@ -3,15 +3,11 @@
 
 #pragma once
 
-#include "precomp.h"
-
 #include "ApiDetector.hpp"
 
 #include "../inc/IInteractivityFactory.hpp"
 
 #include <map>
-
-#pragma hdrstop
 
 namespace Microsoft::Console::Interactivity
 {

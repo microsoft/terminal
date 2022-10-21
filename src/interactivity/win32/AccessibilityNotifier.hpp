@@ -14,11 +14,7 @@ Author(s):
 
 #pragma once
 
-#include "precomp.h"
-
 #include "../inc/IAccessibilityNotifier.hpp"
-
-#pragma hdrstop
 
 namespace Microsoft::Console::Interactivity::Win32
 {

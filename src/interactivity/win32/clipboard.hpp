@@ -18,8 +18,6 @@ Revision History:
 
 #pragma once
 
-#include "precomp.h"
-
 #include "../../host/screenInfo.hpp"
 
 namespace Microsoft::Console::Interactivity::Win32

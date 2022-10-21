@@ -14,8 +14,6 @@ Author(s):
 
 #pragma once
 
-#include "precomp.h"
-
 #include "../inc/ISystemConfigurationProvider.hpp"
 
 namespace Microsoft::Console::Interactivity::Win32
