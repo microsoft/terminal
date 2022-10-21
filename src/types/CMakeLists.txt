@@ -1,0 +1,32 @@
+add_library(ConTypes)
+target_sources(ConTypes
+	PRIVATE
+		CodepointWidthDetector.cpp
+		ColorFix.cpp
+		colorTable.cpp
+		convert.cpp
+		Environment.cpp
+		FocusEvent.cpp
+		GlyphWidth.cpp
+		IInputEvent.cpp
+		KeyEvent.cpp
+		MenuEvent.cpp
+		ModifierKeyState.cpp
+		MouseEvent.cpp
+		ScreenInfoUiaProviderBase.cpp
+		sgrStack.cpp
+		TermControlUiaProvider.cpp
+		TermControlUiaTextRange.cpp
+		ThemeUtils.cpp
+		UiaTextRangeBase.cpp
+		UiaTracing.cpp
+		Utf16Parser.cpp
+		utils.cpp
+		viewport.cpp
+		WindowBufferSizeEvent.cpp
+)
+
+target_precompile_headers(ConTypes
+	PRIVATE
+		precomp.h
+)

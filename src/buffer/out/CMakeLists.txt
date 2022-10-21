@@ -1,0 +1,26 @@
+add_library(ConBufferOut)
+target_sources(ConBufferOut
+	PRIVATE
+		AttrRow.cpp
+		CharRow.cpp
+		CharRowCell.cpp
+		CharRowCellReference.cpp
+		cursor.cpp
+		OutputCell.cpp
+		OutputCellIterator.cpp
+		OutputCellRect.cpp
+		OutputCellView.cpp
+		Row.cpp
+		search.cpp
+		TextAttribute.cpp
+		textBuffer.cpp
+		textBufferCellIterator.cpp
+		textBufferTextIterator.cpp
+		TextColor.cpp
+		UnicodeStorage.cpp
+)
+
+target_precompile_headers(ConBufferOut
+	PRIVATE
+		precomp.h
+)

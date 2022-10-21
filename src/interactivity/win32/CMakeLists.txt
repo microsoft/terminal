@@ -1,0 +1,27 @@
+add_library(ConInteractivityWin32)
+target_sources(ConInteractivityWin32
+	PRIVATE
+		AccessibilityNotifier.cpp
+		Clipboard.cpp
+		ConsoleControl.cpp
+		ConsoleInputThread.cpp
+		consoleKeyInfo.cpp
+		find.cpp
+		icon.cpp
+		menu.cpp
+		screenInfoUiaProvider.cpp
+		SystemConfigurationProvider.cpp
+		uiaTextRange.cpp
+		window.cpp
+		windowdpiapi.cpp
+		WindowIme.cpp
+		windowio.cpp
+		WindowMetrics.cpp
+		windowproc.cpp
+		windowUiaProvider.cpp
+)
+
+target_precompile_headers(ConInteractivityWin32
+	PRIVATE
+		precomp.h
+)

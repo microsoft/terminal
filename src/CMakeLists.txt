@@ -1,0 +1,29 @@
+include_directories(
+	inc
+	../dep/gsl/include
+	../dep/wil/include
+	../oss/dynamic_bitset
+	../oss/chromium
+	../oss/libpopcnt
+	../oss/fmt/include
+	../oss/interval_tree
+	../oss/pch/include
+	../dep/Console
+	../dep/NT
+	../dep/Win32K
+	../dep
+)
+
+add_subdirectory(audio)
+add_subdirectory(buffer)
+add_subdirectory(host)
+add_subdirectory(interactivity)
+add_subdirectory(propsheet)
+add_subdirectory(propslib)
+add_subdirectory(renderer)
+add_subdirectory(server)
+add_subdirectory(terminal)
+#add_subdirectory(til)
+add_subdirectory(tsf)
+add_subdirectory(types)
+add_subdirectory(internal)
