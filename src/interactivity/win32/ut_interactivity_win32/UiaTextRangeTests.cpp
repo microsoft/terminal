@@ -106,6 +106,44 @@ static constexpr til::point point_offset_by_line(const til::point start, const t
     return { pos_x, pos_y };
 }
 
+static constexpr til::CoordType viewportHeight = 80;
+static constexpr til::point point_offset_by_viewport(const til::point start, const til::rect& bounds, til::CoordType amt)
+{
+    // X = left boundary for UIA
+    auto pos_x = bounds.left;
+    auto pos_y = start.y;
+    while (amt != 0)
+    {
+        if (amt > 0)
+        {
+            if (pos_y >= bounds.bottom)
+            {
+                pos_y = bounds.bottom;
+                break;
+            }
+            else
+            {
+                pos_y += viewportHeight;
+            }
+            --amt;
+        }
+        else
+        {
+            if (pos_y <= bounds.top)
+            {
+                pos_y = bounds.top;
+                break;
+            }
+            else
+            {
+                pos_y -= viewportHeight;
+            }
+            ++amt;
+        }
+    }
+    return { pos_x, pos_y };
+}
+
 // IMPORTANT: reference this _after_ defining point_offset_by_XXX. We need it for some definitions
 #include "GeneratedUiaTextRangeMovementTests.g.cpp"
 
@@ -329,6 +367,7 @@ class UiaTextRangeTests
             return L"Line";
         case TextUnit_Paragraph:
         case TextUnit_Page:
+            return L"Page";
         case TextUnit_Document:
         default:
             return L"Document";

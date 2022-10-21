@@ -1871,8 +1871,6 @@ void UiaTextRangeBase::_moveEndpointByUnitPage(_In_ const int moveCount,
                 }
             }
 
-            
-
             // NOTE: Automatically detects if we are trying to move past origin
             success = bufferSize.DecrementInBounds(nextPos, true);
 

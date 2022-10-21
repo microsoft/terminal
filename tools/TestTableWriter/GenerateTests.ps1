@@ -36,6 +36,8 @@ constexpr til::CoordType segment4{ 64 };
 constexpr til::point origin{ 0, 0 };
 constexpr til::point midTop{ midX, 0 };
 constexpr til::point midHistory{ midX, midPopulatedY };
+constexpr til::point midHistoryViewStart{ midX, midPopulatedY - viewportHeight/2 };
+constexpr til::point midHistoryViewEnd{ midX, midPopulatedY + viewportHeight/2 };
 constexpr til::point midDocEnd{ midX, midY };
 constexpr til::point lastCharPos{ 72, midY };
 constexpr til::point docEnd{ 0, midY + 1 };
@@ -116,6 +118,17 @@ foreach ($var in $vars)
                 else
                 {
                     $result += "constexpr auto {0}{{ point_offset_by_line({1}, bufferSize, -{2}) }};" -f $var, $standardVar, $moveAmt;
+                }
+            }
+            'P' # move by page
+            {
+                if ($moveForward)
+                {
+                    $result += "constexpr auto {0}{{ point_offset_by_viewport({1}, bufferSize, {2}) }};" -f $var, $standardVar, $moveAmt;
+                }
+                else
+                {
+                    $result += "constexpr auto {0}{{ point_offset_by_viewport({1}, bufferSize, -{2}) }};" -f $var, $standardVar, $moveAmt;
                 }
             }
             Default { Write-Host "Error: unknown variable movement type" -ForegroundColor Red }
