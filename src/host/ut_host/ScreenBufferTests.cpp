@@ -247,6 +247,8 @@ class ScreenBufferTests
     TEST_METHOD(TestReflowBiggerLongLineWithColor);
 
     TEST_METHOD(TestDeferredMainBufferResize);
+
+    TEST_METHOD(RectangularAreaOperations);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -7332,4 +7334,128 @@ void ScreenBufferTests::TestDeferredMainBufferResize()
     VERIFY_ARE_NOT_EQUAL(oldSize, mainPostRestoreSize);
     VERIFY_ARE_EQUAL(altPostResizeView, mainPostRestoreView);
     VERIFY_ARE_EQUAL(expectedSize, mainPostRestoreView);
+}
+
+void ScreenBufferTests::RectangularAreaOperations()
+{
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:rectOp", L"{0, 1, 2, 3, 4, 5}")
+    END_TEST_METHOD_PROPERTIES();
+
+    enum RectOp : int
+    {
+        DECFRA,
+        DECERA,
+        DECSERA,
+        DECCARA,
+        DECRARA,
+        DECCRA
+    };
+
+    RectOp rectOp;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"rectOp", (int&)rectOp));
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    const auto bufferWidth = si.GetBufferSize().Width();
+    const auto bufferHeight = si.GetBufferSize().Height();
+
+    // Move the viewport down a few lines, and only cover part of the buffer width.
+    si.SetViewport(Viewport::FromDimensions({ 5, 10 }, { bufferWidth - 10, 20 }), true);
+    const auto viewport = si.GetViewport();
+
+    // Fill the entire buffer with Zs. Blue on Green and Underlined.
+    const auto bufferChar = L'Z';
+    auto bufferAttr = TextAttribute{ FOREGROUND_BLUE | BACKGROUND_GREEN };
+    bufferAttr.SetUnderlined(true);
+    _FillLines(0, bufferHeight, bufferChar, bufferAttr);
+
+    // Set the active attributes to Red on Blue and Intense;
+    auto activeAttr = TextAttribute{ FOREGROUND_RED | BACKGROUND_BLUE };
+    activeAttr.SetIntense(true);
+    si.SetAttributes(activeAttr);
+
+    // The area we're targetting in all the operations below is 27;3 to 54;6.
+    // But VT coordinates use origin 1;1 so we need to subtract 1, and til::rect
+    // expects exclusive coordinates, so the bottom/right also need to add 1.
+    const auto targetArea = til::rect{ 27 - 1, viewport.Top() + 3 - 1, 54, viewport.Top() + 6 };
+
+    wchar_t expectedChar{};
+    TextAttribute expectedAttr;
+
+    // DECCARA and DECRARA can apply to both a stream of character positions or
+    // a rectangular area, but these tests only cover the rectangular option.
+    if (rectOp == DECCARA || rectOp == DECRARA)
+    {
+        Log::Comment(L"Request a rectangular change extent with DECSACE");
+        stateMachine.ProcessString(L"\033[2*x");
+    }
+
+    switch (rectOp)
+    {
+    case DECFRA:
+        Log::Comment(L"DECFRA: fill a rectangle with the active attributes and a given character value");
+        expectedAttr = activeAttr;
+        expectedChar = wchar_t{ 42 };
+        // The first parameter specifies the fill character.
+        stateMachine.ProcessString(L"\033[42;3;27;6;54$x");
+        break;
+    case DECERA:
+        Log::Comment(L"DECERA: erase a rectangle using the active colors but no rendition attributes");
+        expectedAttr = activeAttr;
+        expectedAttr.SetStandardErase();
+        expectedChar = L' ';
+        stateMachine.ProcessString(L"\033[3;27;6;54$z");
+        break;
+    case DECSERA:
+        Log::Comment(L"DECSERA: erase the text in a rectangle but leave the attributes unchanged");
+        expectedAttr = bufferAttr;
+        expectedChar = L' ';
+        stateMachine.ProcessString(L"\033[3;27;6;54${");
+        break;
+    case DECCARA:
+        Log::Comment(L"DECCARA: update the attributes in a rectangle but leave the text unchanged");
+        expectedAttr = bufferAttr;
+        expectedAttr.SetReverseVideo(true);
+        expectedChar = bufferChar;
+        // The final parameter specifies the reverse video attribute that will be set.
+        stateMachine.ProcessString(L"\033[3;27;6;54;7$r");
+        break;
+    case DECRARA:
+        Log::Comment(L"DECRARA: reverse the attributes in a rectangle but leave the text unchanged");
+        expectedAttr = bufferAttr;
+        expectedAttr.SetUnderlined(false);
+        expectedChar = bufferChar;
+        // The final parameter specifies the underline attribute that will be reversed.
+        stateMachine.ProcessString(L"\033[3;27;6;54;4$t");
+        break;
+    case DECCRA:
+        Log::Comment(L"DECCRA: copy a rectangle from the lower part of the viewport to the top");
+        expectedAttr = TextAttribute{ FOREGROUND_GREEN | BACKGROUND_RED };
+        expectedChar = L'*';
+        // Fill the lower part of the viewport with some different content.
+        _FillLines(viewport.Top() + 10, viewport.BottomExclusive(), expectedChar, expectedAttr);
+        // Copy a rectangle from that lower part up to the top with DECCRA.
+        stateMachine.ProcessString(L"\033[11;27;14;54;1;3;27;1;4$v");
+        // Reset the lower part back to it's original content.
+        _FillLines(viewport.Top() + 10, viewport.BottomExclusive(), bufferChar, bufferAttr);
+        break;
+    default:
+        VERIFY_FAIL(L"Unsupported operation");
+    }
+
+    const auto expectedChars = std::wstring(targetArea.width(), expectedChar);
+    VERIFY_IS_TRUE(_ValidateLinesContain(targetArea.left, targetArea.top, targetArea.bottom, expectedChars, expectedAttr));
+
+    Log::Comment(L"Everything above and below the target area should remain unchanged");
+    VERIFY_IS_TRUE(_ValidateLinesContain(0, targetArea.top, bufferChar, bufferAttr));
+    VERIFY_IS_TRUE(_ValidateLinesContain(targetArea.bottom, bufferHeight, bufferChar, bufferAttr));
+
+    Log::Comment(L"Everything to the left and right of the target area should remain unchanged");
+    const auto bufferChars = std::wstring(targetArea.left, bufferChar);
+    VERIFY_IS_TRUE(_ValidateLinesContain(targetArea.top, targetArea.bottom, bufferChars, bufferAttr));
+    VERIFY_IS_TRUE(_ValidateLinesContain(targetArea.right, targetArea.top, targetArea.bottom, bufferChar, bufferAttr));
 }
