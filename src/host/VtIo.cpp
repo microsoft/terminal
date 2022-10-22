@@ -472,9 +472,6 @@ void VtIo::_shutdownNow()
     //      _before_ we RundownAndExit.
     LockConsole();
     ProcessCtrlEvents();
-
-    // Make sure we terminate.
-    ServiceLocator::RundownAndExit(ERROR_BROKEN_PIPE);
 }
 
 // Method Description:
