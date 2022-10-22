@@ -60,25 +60,18 @@ constexpr auto midEmptySpaceP1C{ point_offset_by_char(midEmptySpace, bufferSize,
 constexpr til::point midHistoryLeft{ bufferSize.left, midHistory.y };
 constexpr auto midHistoryM1C{ point_offset_by_char(midHistory, bufferSize, -1) };
 constexpr auto midHistoryM1L{ point_offset_by_line(midHistory, bufferSize, -1) };
-constexpr auto midHistoryM1P{ point_offset_by_viewport(midHistory, bufferSize, -1) };
 constexpr auto midHistoryM4C{ point_offset_by_char(midHistory, bufferSize, -4) };
 constexpr auto midHistoryM4L{ point_offset_by_line(midHistory, bufferSize, -4) };
-constexpr auto midHistoryM4P{ point_offset_by_viewport(midHistory, bufferSize, -4) };
 constexpr auto midHistoryM5C{ point_offset_by_char(midHistory, bufferSize, -5) };
 constexpr auto midHistoryM5L{ point_offset_by_line(midHistory, bufferSize, -5) };
-constexpr auto midHistoryM5P{ point_offset_by_viewport(midHistory, bufferSize, -5) };
 constexpr auto midHistoryP1C{ point_offset_by_char(midHistory, bufferSize, 1) };
 constexpr auto midHistoryP1L{ point_offset_by_line(midHistory, bufferSize, 1) };
-constexpr auto midHistoryP1P{ point_offset_by_viewport(midHistory, bufferSize, 1) };
 constexpr auto midHistoryP2C{ point_offset_by_char(midHistory, bufferSize, 2) };
 constexpr auto midHistoryP2L{ point_offset_by_line(midHistory, bufferSize, 2) };
-constexpr auto midHistoryP2P{ point_offset_by_viewport(midHistory, bufferSize, 2) };
 constexpr auto midHistoryP5C{ point_offset_by_char(midHistory, bufferSize, 5) };
 constexpr auto midHistoryP5L{ point_offset_by_line(midHistory, bufferSize, 5) };
-constexpr auto midHistoryP5P{ point_offset_by_viewport(midHistory, bufferSize, 5) };
 constexpr auto midHistoryP6C{ point_offset_by_char(midHistory, bufferSize, 6) };
 constexpr auto midHistoryP6L{ point_offset_by_line(midHistory, bufferSize, 6) };
-constexpr auto midHistoryP6P{ point_offset_by_viewport(midHistory, bufferSize, 6) };
 
 constexpr auto midTopM1C{ point_offset_by_char(midTop, bufferSize, -1) };
 constexpr auto midTopM4C{ point_offset_by_char(midTop, bufferSize, -4) };
@@ -94,13 +87,10 @@ constexpr auto originP1L{ point_offset_by_line(origin, bufferSize, 1) };
 constexpr auto originP1P{ point_offset_by_viewport(origin, bufferSize, 1) };
 constexpr auto originP2C{ point_offset_by_char(origin, bufferSize, 2) };
 constexpr auto originP2L{ point_offset_by_line(origin, bufferSize, 2) };
-constexpr auto originP2P{ point_offset_by_viewport(origin, bufferSize, 2) };
 constexpr auto originP5C{ point_offset_by_char(origin, bufferSize, 5) };
 constexpr auto originP5L{ point_offset_by_line(origin, bufferSize, 5) };
-constexpr auto originP5P{ point_offset_by_viewport(origin, bufferSize, 5) };
 constexpr auto originP6C{ point_offset_by_char(origin, bufferSize, 6) };
 constexpr auto originP6L{ point_offset_by_line(origin, bufferSize, 6) };
-constexpr auto originP6P{ point_offset_by_viewport(origin, bufferSize, 6) };
 constexpr til::point segment0LmidTopP1L{ segment0, midTopP1L.y };
 constexpr til::point segment1LmidDocEnd{ segment1, midDocEnd.y };
 constexpr til::point segment1LmidHistory{ segment1, midHistory.y };
@@ -4282,9 +4272,9 @@ static constexpr std::array<GeneratedMovementTest, 425> s_movementTests{
             origin,
             origin },
         GeneratedMovementTestExpected{
-            5,
-            originP5P,
-            originP5P },
+            2,
+            docEnd,
+            docEnd },
         false },
     GeneratedMovementTest{
         L"Move non-degenerate range at position 1 -5 times by Page",
@@ -4332,7 +4322,7 @@ static constexpr std::array<GeneratedMovementTest, 425> s_movementTests{
         GeneratedMovementTestExpected{
             1,
             originP1P,
-            originP2P },
+            docEnd },
         false },
     GeneratedMovementTest{
         L"Move non-degenerate range at position 1 5 times by Page",
@@ -4342,9 +4332,9 @@ static constexpr std::array<GeneratedMovementTest, 425> s_movementTests{
             origin,
             originP1C },
         GeneratedMovementTestExpected{
-            5,
-            originP5P,
-            originP6P },
+            1,
+            originP1P,
+            docEnd },
         false },
     GeneratedMovementTest{
         L"Move degenerate range at position 2 -5 times by Page",
@@ -4402,9 +4392,9 @@ static constexpr std::array<GeneratedMovementTest, 425> s_movementTests{
             midTop,
             midTop },
         GeneratedMovementTestExpected{
-            5,
-            originP5P,
-            originP5P },
+            2,
+            docEnd,
+            docEnd },
         false },
     GeneratedMovementTest{
         L"Move non-degenerate range at position 2 -5 times by Page",
@@ -4452,7 +4442,7 @@ static constexpr std::array<GeneratedMovementTest, 425> s_movementTests{
         GeneratedMovementTestExpected{
             1,
             originP1P,
-            originP2P },
+            docEnd },
         false },
     GeneratedMovementTest{
         L"Move non-degenerate range at position 2 5 times by Page",
@@ -4462,9 +4452,9 @@ static constexpr std::array<GeneratedMovementTest, 425> s_movementTests{
             midTop,
             midTopP1C },
         GeneratedMovementTestExpected{
-            5,
-            originP5P,
-            originP6P },
+            1,
+            originP1P,
+            docEnd },
         false },
     GeneratedMovementTest{
         L"Move degenerate range at position 3 -5 times by Page",
@@ -4474,9 +4464,9 @@ static constexpr std::array<GeneratedMovementTest, 425> s_movementTests{
             midHistory,
             midHistory },
         GeneratedMovementTestExpected{
-            -5,
-            midHistoryM5P,
-            midHistoryM5P },
+            -1,
+            origin,
+            origin },
         false },
     GeneratedMovementTest{
         L"Move degenerate range at position 3 -1 times by Page",
@@ -4487,8 +4477,8 @@ static constexpr std::array<GeneratedMovementTest, 425> s_movementTests{
             midHistory },
         GeneratedMovementTestExpected{
             -1,
-            midHistoryM1P,
-            midHistoryM1P },
+            origin,
+            origin },
         false },
     GeneratedMovementTest{
         L"Move degenerate range at position 3 0 times by Page",
@@ -4511,8 +4501,8 @@ static constexpr std::array<GeneratedMovementTest, 425> s_movementTests{
             midHistory },
         GeneratedMovementTestExpected{
             1,
-            midHistoryP1P,
-            midHistoryP1P },
+            docEnd,
+            docEnd },
         false },
     GeneratedMovementTest{
         L"Move degenerate range at position 3 5 times by Page",
@@ -4522,9 +4512,9 @@ static constexpr std::array<GeneratedMovementTest, 425> s_movementTests{
             midHistory,
             midHistory },
         GeneratedMovementTestExpected{
-            5,
-            midHistoryP5P,
-            midHistoryP5P },
+            1,
+            docEnd,
+            docEnd },
         false },
     GeneratedMovementTest{
         L"Move non-degenerate range at position 3 -5 times by Page",
@@ -4534,9 +4524,9 @@ static constexpr std::array<GeneratedMovementTest, 425> s_movementTests{
             midHistory,
             midHistoryP1C },
         GeneratedMovementTestExpected{
-            -5,
-            midHistoryM5P,
-            midHistoryM4P },
+            0,
+            origin,
+            originP1P },
         false },
     GeneratedMovementTest{
         L"Move non-degenerate range at position 3 -1 times by Page",
@@ -4546,9 +4536,9 @@ static constexpr std::array<GeneratedMovementTest, 425> s_movementTests{
             midHistory,
             midHistoryP1C },
         GeneratedMovementTestExpected{
-            -1,
-            midHistoryM1P,
-            midHistoryP1L },
+            0,
+            origin,
+            originP1P },
         false },
     GeneratedMovementTest{
         L"Move non-degenerate range at position 3 0 times by Page",
@@ -4570,9 +4560,9 @@ static constexpr std::array<GeneratedMovementTest, 425> s_movementTests{
             midHistory,
             midHistoryP1C },
         GeneratedMovementTestExpected{
-            1,
-            midHistoryP1P,
-            midHistoryP2P },
+            0,
+            docEndM1P,
+            docEnd },
         false },
     GeneratedMovementTest{
         L"Move non-degenerate range at position 3 5 times by Page",
@@ -4582,9 +4572,9 @@ static constexpr std::array<GeneratedMovementTest, 425> s_movementTests{
             midHistory,
             midHistoryP1C },
         GeneratedMovementTestExpected{
-            5,
-            midHistoryP5P,
-            midHistoryP6P },
+            0,
+            docEndM1P,
+            docEnd },
         false },
     GeneratedMovementTest{
         L"Move degenerate range at position 4 -5 times by Page",
@@ -4594,9 +4584,9 @@ static constexpr std::array<GeneratedMovementTest, 425> s_movementTests{
             midDocEnd,
             midDocEnd },
         GeneratedMovementTestExpected{
-            -5,
-            docEndM5P,
-            docEndM5P },
+            -2,
+            origin,
+            origin },
         false },
     GeneratedMovementTest{
         L"Move degenerate range at position 4 -1 times by Page",
@@ -4714,9 +4704,9 @@ static constexpr std::array<GeneratedMovementTest, 425> s_movementTests{
             lastCharPos,
             lastCharPos },
         GeneratedMovementTestExpected{
-            -5,
-            docEndM5P,
-            docEndM5P },
+            -2,
+            origin,
+            origin },
         false },
     GeneratedMovementTest{
         L"Move degenerate range at position 5 -1 times by Page",
@@ -4834,9 +4824,9 @@ static constexpr std::array<GeneratedMovementTest, 425> s_movementTests{
             docEnd,
             docEnd },
         GeneratedMovementTestExpected{
-            -5,
-            docEndM5P,
-            docEndM5P },
+            -2,
+            origin,
+            origin },
         false },
     GeneratedMovementTest{
         L"Move degenerate range at position 6 -1 times by Page",
@@ -4894,9 +4884,9 @@ static constexpr std::array<GeneratedMovementTest, 425> s_movementTests{
             docEnd,
             docEndP1C },
         GeneratedMovementTestExpected{
-            -5,
-            docEndM5P,
-            docEndM5P },
+            -2,
+            origin,
+            origin },
         false },
     GeneratedMovementTest{
         L"Move non-degenerate range at position 6 -1 times by Page",
@@ -4954,9 +4944,9 @@ static constexpr std::array<GeneratedMovementTest, 425> s_movementTests{
             midEmptySpace,
             midEmptySpace },
         GeneratedMovementTestExpected{
-            -5,
-            docEndM5P,
-            docEndM5P },
+            -2,
+            origin,
+            origin },
         false },
     GeneratedMovementTest{
         L"Move degenerate range at position 7 -1 times by Page",
@@ -5014,9 +5004,9 @@ static constexpr std::array<GeneratedMovementTest, 425> s_movementTests{
             midEmptySpace,
             midEmptySpaceP1C },
         GeneratedMovementTestExpected{
-            -5,
-            docEndM5P,
-            docEndM5P },
+            -2,
+            origin,
+            origin },
         false },
     GeneratedMovementTest{
         L"Move non-degenerate range at position 7 -1 times by Page",
@@ -5074,9 +5064,9 @@ static constexpr std::array<GeneratedMovementTest, 425> s_movementTests{
             bufferEnd,
             bufferEnd },
         GeneratedMovementTestExpected{
-            -5,
-            docEndM5P,
-            docEndM5P },
+            -2,
+            origin,
+            origin },
         false },
     GeneratedMovementTest{
         L"Move degenerate range at position 8 -1 times by Page",
@@ -5134,9 +5124,9 @@ static constexpr std::array<GeneratedMovementTest, 425> s_movementTests{
             bufferEnd,
             endExclusive },
         GeneratedMovementTestExpected{
-            -5,
-            docEndM5P,
-            docEndM5P },
+            -2,
+            origin,
+            origin },
         false },
     GeneratedMovementTest{
         L"Move non-degenerate range at position 8 -1 times by Page",
@@ -5194,9 +5184,9 @@ static constexpr std::array<GeneratedMovementTest, 425> s_movementTests{
             endExclusive,
             endExclusive },
         GeneratedMovementTestExpected{
-            -5,
-            docEndM5P,
-            docEndM5P },
+            -2,
+            origin,
+            origin },
         false },
     GeneratedMovementTest{
         L"Move degenerate range at position 9 -1 times by Page",

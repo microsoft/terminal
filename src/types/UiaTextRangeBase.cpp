@@ -1793,28 +1793,7 @@ void UiaTextRangeBase::_moveEndpointByUnitPage(_In_ const int moveCount,
     auto success = true;
     auto resultPos = GetEndpoint(endpoint);
 
-    // Get "viewport" we're in (even if we're not in the current view)
-    auto currentViewport = [&]() {
-        auto view = _pData->GetViewport();
-        while (!view.IsInBounds(_start))
-        {
-            switch (moveDirection)
-            {
-            case MovementDirection::Forward:
-            {
-                const til::point newOrigin{ view.EndExclusive() };
-                view = Viewport::FromDimensions(newOrigin, view.Dimensions());
-            }
-            case MovementDirection::Backward:
-            {
-                const til::point newOrigin{ view.Left(), std::max(view.Top() - view.Height(), bufferSize.Top()) };
-                view = Viewport::FromDimensions(newOrigin, view.Dimensions());
-            }
-            }
-        }
-        return view;
-    }();
-
+    const auto viewportSize = _pData->GetViewport().Dimensions();
     while (std::abs(*pAmountMoved) < std::abs(moveCount) && success)
     {
         auto nextPos = resultPos;
@@ -1829,7 +1808,7 @@ void UiaTextRangeBase::_moveEndpointByUnitPage(_In_ const int moveCount,
                 resultPos = documentEnd;
                 success = false;
             }
-            else if (preventBoundary && nextPos.Y >= documentEnd.Y - currentViewport.Height())
+            else if (preventBoundary && nextPos.Y >= documentEnd.Y - viewportSize.Y)
             {
                 // Corner Case: we're just before the limit
                 // and we're not allowed onto the exclusive end.
@@ -1838,9 +1817,8 @@ void UiaTextRangeBase::_moveEndpointByUnitPage(_In_ const int moveCount,
             }
             else
             {
-                const til::point newOrigin{ currentViewport.EndExclusive() };
-                currentViewport = Viewport::FromDimensions(newOrigin, currentViewport.Dimensions());
-                nextPos = newOrigin;
+                nextPos.X = bufferSize.Left();
+                nextPos.Y = std::min(nextPos.Y + viewportSize.Y, documentEnd.Y);
                 success = true;
                 resultPos = nextPos;
                 (*pAmountMoved)++;
@@ -1849,10 +1827,6 @@ void UiaTextRangeBase::_moveEndpointByUnitPage(_In_ const int moveCount,
         }
         case MovementDirection::Backward:
         {
-            // TODO CARLOS:
-            // I think the if-branch is fine
-            // just need to figure out the rest of this section then on to testing!!
-
             if (preventBoundary)
             {
                 if (nextPos == bufferSize.Origin())
@@ -1861,7 +1835,7 @@ void UiaTextRangeBase::_moveEndpointByUnitPage(_In_ const int moveCount,
                     success = false;
                     break;
                 }
-                else if (nextPos.Y <= bufferSize.Top() + currentViewport.Height())
+                else if (nextPos.Y <= bufferSize.Top() + viewportSize.Y)
                 {
                     // GH#10924: as a non-degenerate range, we are supposed to act
                     // like we already encompass the line.
@@ -1876,7 +1850,7 @@ void UiaTextRangeBase::_moveEndpointByUnitPage(_In_ const int moveCount,
             if (success)
             {
                 nextPos.X = bufferSize.Left();
-                nextPos.Y = std::max(nextPos.Y - currentViewport.Height(), bufferSize.Top());
+                nextPos.Y = std::max(nextPos.Y - viewportSize.Y + 1, bufferSize.Top());
                 resultPos = nextPos;
                 (*pAmountMoved)--;
             }
