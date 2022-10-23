@@ -8,6 +8,7 @@
 #include <custom_shader_vs.h>
 #include <shader_ps.h>
 #include <shader_vs.h>
+#include <wincodec.h>
 
 #include "../../interactivity/win32/CustomWindowMessages.h"
 
@@ -674,6 +675,13 @@ void AtlasEngine::_createResources()
             desc.Usage = D3D11_USAGE_DEFAULT;
             desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
             THROW_IF_FAILED(_r.device->CreateBuffer(&desc, nullptr, _r.constantBuffer.put()));
+        }
+
+        if (!_api.customPixelShaderImagePath.empty())
+        {
+            _r.customShaderTexture = LoadShaderTextureFromFile(
+                _r.device.get(),
+                _api.customPixelShaderImagePath);
         }
 
         THROW_IF_FAILED(_r.device->CreateVertexShader(&shader_vs[0], sizeof(shader_vs), nullptr, _r.vertexShader.put()));

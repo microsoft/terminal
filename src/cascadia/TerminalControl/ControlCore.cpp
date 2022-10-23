@@ -330,6 +330,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             _renderEngine->SetRetroTerminalEffect(_settings->RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(_settings->PixelShaderPath());
+            _renderEngine->SetPixelShaderImagePath(_settings->PixelShaderImagePath());
             _renderEngine->SetForceFullRepaintRendering(_settings->ForceFullRepaintRendering());
             _renderEngine->SetSoftwareRendering(_settings->SoftwareRendering());
 
@@ -762,6 +763,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetSelectionBackground(til::color{ newAppearance->SelectionBackground() });
             _renderEngine->SetRetroTerminalEffect(newAppearance->RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(newAppearance->PixelShaderPath());
+            _renderEngine->SetPixelShaderImagePath(newAppearance->PixelShaderImagePath());
             _renderer->TriggerRedrawAll();
         }
     }

@@ -10,6 +10,8 @@
 #include "../../renderer/inc/IRenderEngine.hpp"
 #include "DWriteTextAnalysis.h"
 
+#include "TextureLoader.h"
+
 namespace Microsoft::Console::Render
 {
     struct TextAnalysisSinkResult;
@@ -61,6 +63,7 @@ namespace Microsoft::Console::Render
         // DxRenderer - getter
         HRESULT Enable() noexcept override;
         [[nodiscard]] std::wstring_view GetPixelShaderPath() noexcept override;
+        [[nodiscard]] std::wstring_view GetPixelShaderImagePath() noexcept override;
         [[nodiscard]] bool GetRetroTerminalEffect() const noexcept override;
         [[nodiscard]] float GetScaling() const noexcept override;
         [[nodiscard]] Types::Viewport GetViewportInCharacters(const Types::Viewport& viewInPixels) const noexcept override;
@@ -72,6 +75,7 @@ namespace Microsoft::Console::Render
         void SetForceFullRepaintRendering(bool enable) noexcept override;
         [[nodiscard]] HRESULT SetHwnd(HWND hwnd) noexcept override;
         void SetPixelShaderPath(std::wstring_view value) noexcept override;
+        void SetPixelShaderImagePath(std::wstring_view value) noexcept override;
         void SetRetroTerminalEffect(bool enable) noexcept override;
         void SetSelectionBackground(COLORREF color, float alpha = 0.5f) noexcept override;
         void SetSoftwareRendering(bool enable) noexcept override;
@@ -1004,6 +1008,7 @@ namespace Microsoft::Console::Render
             wil::com_ptr<ID3D11PixelShader> customPixelShader;
             wil::com_ptr<ID3D11Buffer> customShaderConstantBuffer;
             wil::com_ptr<ID3D11SamplerState> customShaderSamplerState;
+            ShaderTexture customShaderTexture;
             std::chrono::steady_clock::time_point customShaderStartTime;
 
             // D2D resources
@@ -1105,6 +1110,7 @@ namespace Microsoft::Console::Render
             bool enableTransparentBackground = false;
 
             std::wstring customPixelShaderPath; // changes are flagged as ApiInvalidations::Device
+            std::wstring customPixelShaderImagePath;
             bool useRetroTerminalEffect = false; // changes are flagged as ApiInvalidations::Device
             bool useSoftwareRendering = false; // changes are flagged as ApiInvalidations::Device
 

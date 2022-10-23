@@ -296,6 +296,11 @@ HRESULT AtlasEngine::Enable() noexcept
     return _api.customPixelShaderPath;
 }
 
+[[nodiscard]] std::wstring_view AtlasEngine::GetPixelShaderImagePath() noexcept
+{
+    return _api.customPixelShaderImagePath;
+}
+
 [[nodiscard]] bool AtlasEngine::GetRetroTerminalEffect() const noexcept
 {
     return _api.useRetroTerminalEffect;
@@ -365,6 +370,16 @@ void AtlasEngine::SetPixelShaderPath(std::wstring_view value) noexcept
     if (_api.customPixelShaderPath != value)
     {
         _api.customPixelShaderPath = value;
+        _resolveTransparencySettings();
+        WI_SetFlag(_api.invalidations, ApiInvalidations::Device);
+    }
+}
+
+void AtlasEngine::SetPixelShaderImagePath(std::wstring_view value) noexcept
+{
+    if (_api.customPixelShaderImagePath != value)
+    {
+        _api.customPixelShaderImagePath = value;
         _resolveTransparencySettings();
         WI_SetFlag(_api.invalidations, ApiInvalidations::Device);
     }

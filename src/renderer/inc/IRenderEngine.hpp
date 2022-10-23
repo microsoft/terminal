@@ -93,6 +93,7 @@ namespace Microsoft::Console::Render
         // DxRenderer - getter
         virtual HRESULT Enable() noexcept { return S_OK; }
         virtual [[nodiscard]] std::wstring_view GetPixelShaderPath() noexcept { return {}; }
+        virtual [[nodiscard]] std::wstring_view GetPixelShaderImagePath() noexcept { return {}; }
         virtual [[nodiscard]] bool GetRetroTerminalEffect() const noexcept { return false; }
         virtual [[nodiscard]] float GetScaling() const noexcept { return 1; }
         virtual [[nodiscard]] Types::Viewport GetViewportInCharacters(const Types::Viewport& viewInPixels) const noexcept { return Types::Viewport::Empty(); }
@@ -104,6 +105,7 @@ namespace Microsoft::Console::Render
         virtual void SetForceFullRepaintRendering(bool enable) noexcept {}
         virtual [[nodiscard]] HRESULT SetHwnd(const HWND hwnd) noexcept { return E_NOTIMPL; }
         virtual void SetPixelShaderPath(std::wstring_view value) noexcept {}
+        virtual void SetPixelShaderImagePath(std::wstring_view value) noexcept {}
         virtual void SetRetroTerminalEffect(bool enable) noexcept {}
         virtual void SetSelectionBackground(const COLORREF color, const float alpha = 0.5f) noexcept {}
         virtual void SetSoftwareRendering(bool enable) noexcept {}
