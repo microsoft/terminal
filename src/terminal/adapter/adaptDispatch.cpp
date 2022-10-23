@@ -798,19 +798,18 @@ bool AdaptDispatch::SetLineRendition(const LineRendition rendition)
 
 // Routine Description:
 // - DSR - Reports status of a console property back to the STDIN based on the type of status requested.
-//       - This particular routine responds to ANSI status patterns only (CSI # n), not the DEC format (CSI ? # n)
 // Arguments:
-// - statusType - ANSI status type indicating what property we should report back
+// - statusType - status type indicating what property we should report back
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType)
+bool AdaptDispatch::DeviceStatusReport(const DispatchTypes::StatusType statusType)
 {
     switch (statusType)
     {
-    case DispatchTypes::AnsiStatusType::OS_OperatingStatus:
+    case DispatchTypes::StatusType::OS_OperatingStatus:
         _OperatingStatus();
         return true;
-    case DispatchTypes::AnsiStatusType::CPR_CursorPositionReport:
+    case DispatchTypes::StatusType::CPR_CursorPositionReport:
         _CursorPositionReport();
         return true;
     default:

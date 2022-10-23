@@ -134,6 +134,7 @@ namespace Microsoft::Console::VirtualTerminal
             DECRST_PrivateModeReset = VTID("?l"),
             SGR_SetGraphicsRendition = VTID("m"),
             DSR_DeviceStatusReport = VTID("n"),
+            DSR_PrivateDeviceStatusReport = VTID("?n"),
             DECSTBM_SetScrollingRegion = VTID("r"),
             ANSISYSSC_CursorSave = VTID("s"), // NOTE: Overlaps with DECLRMM/DECSLRM. Fix when/if implemented.
             DTTERM_WindowManipulation = VTID("t"), // NOTE: Overlaps with DECSLPP. Fix when/if implemented.

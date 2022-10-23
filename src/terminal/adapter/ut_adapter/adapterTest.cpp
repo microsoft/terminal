@@ -1358,7 +1358,7 @@ public:
 
         Log::Comment(L"Test 1: Verify failure when using bad status.");
         _testGetSet->PrepData();
-        VERIFY_IS_FALSE(_pDispatch->DeviceStatusReport((DispatchTypes::AnsiStatusType)-1));
+        VERIFY_IS_FALSE(_pDispatch->DeviceStatusReport((DispatchTypes::StatusType)-1));
     }
 
     TEST_METHOD(DeviceStatus_OperatingStatusTests)
@@ -1367,7 +1367,7 @@ public:
 
         Log::Comment(L"Test 1: Verify good operating condition.");
         _testGetSet->PrepData();
-        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::AnsiStatusType::OS_OperatingStatus));
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::OS_OperatingStatus));
 
         _testGetSet->ValidateInputEvent(L"\x1b[0n");
     }
@@ -1390,7 +1390,7 @@ public:
             coordCursorExpected.X++;
             coordCursorExpected.Y++;
 
-            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::AnsiStatusType::CPR_CursorPositionReport));
+            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::CPR_CursorPositionReport));
 
             wchar_t pwszBuffer[50];
 
@@ -1414,7 +1414,7 @@ public:
             // Then note that VT is 1,1 based for the top left, so add 1. (The rest of the console uses 0,0 for array index bases.)
             coordCursorExpectedFirst += til::point{ 1, 1 };
 
-            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::AnsiStatusType::CPR_CursorPositionReport));
+            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::CPR_CursorPositionReport));
 
             auto cursorPos = _testGetSet->_textBuffer->GetCursor().GetPosition();
             cursorPos.X++;
@@ -1424,7 +1424,7 @@ public:
             auto coordCursorExpectedSecond{ coordCursorExpectedFirst };
             coordCursorExpectedSecond += til::point{ 1, 1 };
 
-            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::AnsiStatusType::CPR_CursorPositionReport));
+            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::CPR_CursorPositionReport));
 
             wchar_t pwszBuffer[50];
 

@@ -1017,7 +1017,7 @@ public:
         _eraseType{ (DispatchTypes::EraseType)-1 },
         _eraseTypes{},
         _setGraphics{ false },
-        _statusReportType{ (DispatchTypes::AnsiStatusType)-1 },
+        _statusReportType{ (DispatchTypes::StatusType)-1 },
         _deviceStatusReport{ false },
         _deviceAttributes{ false },
         _secondaryDeviceAttributes{ false },
@@ -1203,7 +1203,7 @@ public:
     }
     CATCH_LOG_RETURN_FALSE()
 
-    bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) noexcept override
+    bool DeviceStatusReport(const DispatchTypes::StatusType statusType) noexcept override
     {
         _deviceStatusReport = true;
         _statusReportType = statusType;
@@ -1502,7 +1502,7 @@ public:
     DispatchTypes::EraseType _eraseType;
     std::vector<DispatchTypes::EraseType> _eraseTypes;
     bool _setGraphics;
-    DispatchTypes::AnsiStatusType _statusReportType;
+    DispatchTypes::StatusType _statusReportType;
     bool _deviceStatusReport;
     bool _deviceAttributes;
     bool _secondaryDeviceAttributes;
@@ -2338,7 +2338,7 @@ class StateMachineExternalTest final
         mach.ProcessCharacter(L'n');
 
         VERIFY_IS_TRUE(pDispatch->_deviceStatusReport);
-        VERIFY_ARE_EQUAL(DispatchTypes::AnsiStatusType::OS_OperatingStatus, pDispatch->_statusReportType);
+        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::OS_OperatingStatus, pDispatch->_statusReportType);
 
         pDispatch->ClearState();
 
@@ -2349,7 +2349,7 @@ class StateMachineExternalTest final
         mach.ProcessCharacter(L'n');
 
         VERIFY_IS_TRUE(pDispatch->_deviceStatusReport);
-        VERIFY_ARE_EQUAL(DispatchTypes::AnsiStatusType::CPR_CursorPositionReport, pDispatch->_statusReportType);
+        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::CPR_CursorPositionReport, pDispatch->_statusReportType);
 
         pDispatch->ClearState();
     }
