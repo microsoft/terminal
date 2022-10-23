@@ -378,6 +378,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
     {
         OS_OperatingStatus = ANSIStandardStatus(5),
         CPR_CursorPositionReport = ANSIStandardStatus(6),
+        ExCPR_ExtendedCursorPositionReport = DECPrivateStatus(6),
     };
 
     using ANSIStandardMode = FlaggedEnumValue<0x00000000>;

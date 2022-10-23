@@ -195,7 +195,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _DoSetTopBottomScrollingMargins(const VTInt topMargin,
                                              const VTInt bottomMargin);
         void _OperatingStatus() const;
-        void _CursorPositionReport();
+        void _CursorPositionReport(const bool extendedReport);
 
         bool _GetParserMode(const StateMachine::Mode mode) const;
         void _SetParserMode(const StateMachine::Mode mode, const bool enable);
