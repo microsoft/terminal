@@ -380,7 +380,7 @@
   </data>
   <data name="Globals_LaunchParameters.Header" xml:space="preserve">
     <value>Launch parameters</value>
-    <comment>Header for a set of settings that determine how terminal launches. These settings include the launch mode, launch position and whether the teminal should center itself on launch.</comment>
+    <comment>Header for a set of settings that determine how terminal launches. These settings include the launch mode, launch position and whether the terminal should center itself on launch.</comment>
   </data>
   <data name="Globals_LaunchParameters.HelpText" xml:space="preserve">
     <value>Settings that control how the terminal launches</value>

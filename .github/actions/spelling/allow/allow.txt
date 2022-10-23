@@ -32,10 +32,12 @@ ftp
 fvar
 gantt
 gcc
+Geddy
 geeksforgeeks
 ghe
 gje
 godbolt
+hardcode
 hostname
 hostnames
 hyperlink
@@ -68,6 +70,7 @@ ok'd
 overlined
 pipeline
 postmodern
+Premultiplied
 ptys
 qof
 qps
@@ -98,6 +101,7 @@ vsdevcmd
 We'd
 wildcards
 XBox
+XTK
 YBox
 yeru
 zhe
