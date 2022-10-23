@@ -25,6 +25,9 @@
 #include <dxgidebug.h>
 #include <VersionHelpers.h>
 
+#include <wrl/client.h>
+#include <wincodec.h>
+
 #include <gsl/gsl_util>
 #include <gsl/pointers>
 #include <gsl/span>

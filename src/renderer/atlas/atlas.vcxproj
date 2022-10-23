@@ -7,10 +7,12 @@
     <ProjectName>RendererAtlas</ProjectName>
     <TargetName>ConRenderAtlas</TargetName>
     <ConfigurationType>StaticLibrary</ConfigurationType>
+    <IncludePath>$(SolutionDir)\dep\DirectXTK\Inc;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <Import Project="$(SolutionDir)src\common.nugetversions.props" />
   <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\dep\DirectXTK\Src\WICTextureLoader.cpp" />
     <ClCompile Include="AtlasEngine.api.cpp" />
     <ClCompile Include="AtlasEngine.r.cpp" />
     <ClCompile Include="dwrite.cpp" />
@@ -19,12 +21,14 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="AtlasEngine.cpp" />
+    <ClCompile Include="TextureLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dwrite.h" />
     <ClInclude Include="DWriteTextAnalysis.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="AtlasEngine.h" />
+    <ClInclude Include="TextureLoader.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="custom_shader_ps.hlsl">
