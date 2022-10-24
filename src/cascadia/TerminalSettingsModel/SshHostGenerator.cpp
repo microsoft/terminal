@@ -10,20 +10,20 @@
 
 static constexpr std::wstring_view SshHostGeneratorNamespace{ L"Windows.Terminal.SSH" };
 
-static constexpr const wchar_t* PROFILE_TITLE_PREFIX = L"SSH - ";
-static constexpr const wchar_t* PROFILE_ICON_PATH = L"ms-appx:///ProfileIcons/{550ce7b8-d500-50ad-8a1a-c400c3262db3}.png";
+static constexpr std::wstring_view PROFILE_TITLE_PREFIX = L"SSH - ";
+static constexpr std::wstring_view PROFILE_ICON_PATH = L"ms-appx:///ProfileIcons/{550ce7b8-d500-50ad-8a1a-c400c3262db3}.png";
 
 // OpenSSH is installed under System32 when installed via Optional Features
-static constexpr const wchar_t* SSH_EXE_PATH1 = L"%SystemRoot%\\System32\\OpenSSH\\ssh.exe";
+static constexpr std::wstring_view SSH_EXE_PATH1 = L"%SystemRoot%\\System32\\OpenSSH\\ssh.exe";
 
 // OpenSSH (x86/x64) is installed under Program Files when installed via MSI
-static constexpr const wchar_t* SSH_EXE_PATH2 = L"%ProgramFiles%\\OpenSSH\\ssh.exe";
+static constexpr std::wstring_view SSH_EXE_PATH2 = L"%ProgramFiles%\\OpenSSH\\ssh.exe";
 
 // OpenSSH (x86) is installed under Program Files x86 when installed via MSI on x64 machine
-static constexpr const wchar_t* SSH_EXE_PATH3 = L"%ProgramFiles(x86)%\\OpenSSH\\ssh.exe";
+static constexpr std::wstring_view SSH_EXE_PATH3 = L"%ProgramFiles(x86)%\\OpenSSH\\ssh.exe";
 
-static constexpr const wchar_t* SSH_SYSTEMCONFIG_PATH = L"%ProgramData%\\ssh\\ssh_config";
-static constexpr const wchar_t* SSH_USERCONFIG_PATH = L"%UserProfile%\\.ssh\\config";
+static constexpr std::wstring_view SSH_SYSTEMCONFIG_PATH = L"%ProgramData%\\ssh\\ssh_config";
+static constexpr std::wstring_view SSH_USERCONFIG_PATH = L"%UserProfile%\\.ssh\\config";
 
 static constexpr std::wstring_view SSH_CONFIG_HOST_KEY{ L"Host" };
 static constexpr std::wstring_view SSH_CONFIG_HOSTNAME_KEY{ L"HostName" };
@@ -31,21 +31,21 @@ static constexpr std::wstring_view SSH_CONFIG_HOSTNAME_KEY{ L"HostName" };
 using namespace ::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
-/*static*/ const std::wregex SshHostGenerator::_ConfigKeyValueRegex{ LR"(^\s*(\w+)\s+([^\s]+.*[^\s])\s*$)" };
+/*static*/ const std::wregex SshHostGenerator::_configKeyValueRegex{ LR"(^\s*(\w+)\s+([^\s]+.*[^\s])\s*$)" };
 
-/*static*/ std::wstring SshHostGenerator::_getProfileName(const std::wstring_view& hostName) noexcept
+/*static*/ std::wstring_view SshHostGenerator::_getProfileName(const std::wstring_view& hostName) noexcept
 {
-    return std::wstring{ PROFILE_TITLE_PREFIX + hostName };
+    return std::wstring_view{ L"" + PROFILE_TITLE_PREFIX + hostName };
 }
 
-/*static*/ std::wstring SshHostGenerator::_getProfileIconPath() noexcept
+/*static*/ std::wstring_view SshHostGenerator::_getProfileIconPath() noexcept
 {
     return PROFILE_ICON_PATH;
 }
 
-/*static*/ std::wstring SshHostGenerator::_getProfileCommandLine(const std::wstring_view& sshExePath, const std::wstring_view& hostName) noexcept
+/*static*/ std::wstring_view SshHostGenerator::_getProfileCommandLine(const std::wstring_view& sshExePath, const std::wstring_view& hostName) noexcept
 {
-    return std::wstring(L"\"" + sshExePath + L"\" " + hostName);
+    return std::wstring_view{ L"\"" + sshExePath + L"\" " + hostName };
 }
 
 /*static*/ bool SshHostGenerator::_tryFindSshExePath(std::wstring& sshExePath) noexcept
@@ -54,7 +54,7 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
     {
         for (const auto& path : { SSH_EXE_PATH1, SSH_EXE_PATH2, SSH_EXE_PATH3 })
         {
-            if (std::filesystem::exists(wil::ExpandEnvironmentStringsW<std::wstring>(path)))
+            if (std::filesystem::exists(wil::ExpandEnvironmentStringsW<std::wstring>(path.data())))
             {
                 sshExePath = path;
                 return true;
@@ -74,7 +74,7 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
         {
             std::wstring input{ line };
             std::wsmatch match;
-            if (std::regex_search(input, match, SshHostGenerator::_ConfigKeyValueRegex))
+            if (std::regex_search(input, match, SshHostGenerator::_configKeyValueRegex))
             {
                 key = match[1];
                 value = match[2];
@@ -87,11 +87,11 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
     return false;
 }
 
-/*static*/ void SshHostGenerator::_getHostNamesFromConfigFile(const std::wstring configPath, std::vector<std::wstring>& hostNames) noexcept
+/*static*/ void SshHostGenerator::_getHostNamesFromConfigFile(const std::wstring_view& configPath, std::vector<std::wstring>& hostNames) noexcept
 {
     try
     {
-        const std::filesystem::path resolvedConfigPath{ wil::ExpandEnvironmentStringsW<std::wstring>(configPath.c_str()) };
+        const std::filesystem::path resolvedConfigPath{ wil::ExpandEnvironmentStringsW<std::wstring>(configPath.data()) };
         if (std::filesystem::exists(resolvedConfigPath))
         {
             std::wifstream inputStream(resolvedConfigPath);
