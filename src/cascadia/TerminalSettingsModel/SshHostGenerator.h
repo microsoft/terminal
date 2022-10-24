@@ -27,14 +27,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model
         void GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const override;
 
     private:
-        static const std::wregex ConfigKeyValueRegex;
+        static const std::wregex _ConfigKeyValueRegex;
 
-        static std::wstring GetProfileName(const std::wstring_view& hostName) noexcept;
-        static std::wstring GetProfileIconPath() noexcept;
-        static std::wstring GetProfileCommandLine(const std::wstring_view& sshExePath, const std::wstring_view& hostName) noexcept;
+        static std::wstring _getProfileName(const std::wstring_view& hostName) noexcept;
+        static std::wstring _getProfileIconPath() noexcept;
+        static std::wstring _getProfileCommandLine(const std::wstring_view& sshExePath, const std::wstring_view& hostName) noexcept;
 
-        static bool TryFindSshExePath(std::wstring& sshExePath) noexcept;
-        static bool TryParseConfigKeyValue(const std::wstring_view& line, std::wstring& key, std::wstring& value) noexcept;
-        static void GetHostNamesFromConfigFile(const std::wstring configPath, std::vector<std::wstring>& hostNames) noexcept;
+        static bool _tryFindSshExePath(std::wstring& sshExePath) noexcept;
+        static bool _tryParseConfigKeyValue(const std::wstring_view& line, std::wstring& key, std::wstring& value) noexcept;
+        static void _getHostNamesFromConfigFile(const std::wstring configPath, std::vector<std::wstring>& hostNames) noexcept;
     };
 };
