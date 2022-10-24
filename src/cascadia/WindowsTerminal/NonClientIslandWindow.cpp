@@ -26,9 +26,7 @@ NonClientIslandWindow::NonClientIslandWindow(const ElementTheme& requestedTheme)
 {
 }
 
-NonClientIslandWindow::~NonClientIslandWindow()
-{
-}
+NonClientIslandWindow::~NonClientIslandWindow() = default;
 
 static constexpr const wchar_t* dragBarClassName{ L"DRAG_BAR_WINDOW_CLASS" };
 

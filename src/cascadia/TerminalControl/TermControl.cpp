@@ -2032,15 +2032,26 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - dpi: The DPI we should create the terminal at. This affects things such
     //   as font size, scrollbar and other control scaling, etc. Make sure the
     //   caller knows what monitor the control is about to appear on.
+    // - commandlineCols: Number of cols specified on the commandline
+    // - commandlineRows: Number of rows specified on the commandline
     // Return Value:
     // - a size containing the requested dimensions in pixels.
-    winrt::Windows::Foundation::Size TermControl::GetProposedDimensions(const IControlSettings& settings, const uint32_t dpi)
+    winrt::Windows::Foundation::Size TermControl::GetProposedDimensions(const IControlSettings& settings,
+                                                                        const uint32_t dpi,
+                                                                        int32_t commandlineCols,
+                                                                        int32_t commandlineRows)
     {
         // If the settings have negative or zero row or column counts, ignore those counts.
         // (The lower TerminalCore layer also has upper bounds as well, but at this layer
         //  we may eventually impose different ones depending on how many pixels we can address.)
-        const auto cols = ::base::saturated_cast<float>(std::max(settings.InitialCols(), 1));
-        const auto rows = ::base::saturated_cast<float>(std::max(settings.InitialRows(), 1));
+        const auto cols = ::base::saturated_cast<float>(std::max(commandlineCols > 0 ?
+                                                                     commandlineCols :
+                                                                     settings.InitialCols(),
+                                                                 1));
+        const auto rows = ::base::saturated_cast<float>(std::max(commandlineRows > 0 ?
+                                                                     commandlineRows :
+                                                                     settings.InitialRows(),
+                                                                 1));
 
         const winrt::Windows::Foundation::Size initialSize{ cols, rows };
 
@@ -2117,7 +2128,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         double width = cols * actualFontSize.X;
 
         // Reserve additional space if scrollbar is intended to be visible
-        if (scrollState == ScrollbarState::Visible)
+        if (scrollState != ScrollbarState::Hidden)
         {
             width += scrollbarSize;
         }
@@ -2161,7 +2172,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             double width = fontSize.Width;
             double height = fontSize.Height;
             // Reserve additional space if scrollbar is intended to be visible
-            if (_core.Settings().ScrollState() == ScrollbarState::Visible)
+            if (_core.Settings().ScrollState() != ScrollbarState::Hidden)
             {
                 width += ScrollBar().ActualWidth();
             }
@@ -2204,7 +2215,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                            padding.Left + padding.Right :
                                                            padding.Top + padding.Bottom);
 
-        if (widthOrHeight && _core.Settings().ScrollState() == ScrollbarState::Visible)
+        if (widthOrHeight && _core.Settings().ScrollState() != ScrollbarState::Hidden)
         {
             nonTerminalArea += gsl::narrow_cast<float>(ScrollBar().ActualWidth());
         }

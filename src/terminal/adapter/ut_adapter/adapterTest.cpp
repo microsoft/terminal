@@ -355,9 +355,7 @@ public:
         _expectedScrollRegion.Bottom = (bottom > 0) ? rect->Bottom - 1 : rect->Bottom;
     }
 
-    ~TestGetSet()
-    {
-    }
+    ~TestGetSet() = default;
 
     static const WCHAR s_wchErase = (WCHAR)0x20;
     static const WCHAR s_wchDefault = L'Z';
@@ -1618,6 +1616,21 @@ public:
         _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
         requestSetting(L"m");
         _testGetSet->ValidateInputEvent(L"\033P1$r0;38;2;12;34;56;48;2;65;43;21m\033\\");
+
+        Log::Comment(L"Requesting DECSCA attributes (unprotected).");
+        _testGetSet->PrepData();
+        attribute = {};
+        _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
+        requestSetting(L"\"q");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0\"q\033\\");
+
+        Log::Comment(L"Requesting DECSCA attributes (protected).");
+        _testGetSet->PrepData();
+        attribute = {};
+        attribute.SetProtected(true);
+        _testGetSet->_textBuffer->SetCurrentAttributes(attribute);
+        requestSetting(L"\"q");
+        _testGetSet->ValidateInputEvent(L"\033P1$r1\"q\033\\");
 
         Log::Comment(L"Requesting an unsupported setting.");
         _testGetSet->PrepData();

@@ -15,6 +15,7 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace winrt::Microsoft::UI::Xaml::Controls;
 using namespace winrt::Windows::System;
 
 namespace winrt
@@ -316,7 +317,7 @@ namespace winrt::TerminalApp::implementation
                 if (hide)
                 {
                     Icon({});
-                    TabViewItem().IconSource(IconPathConverter::IconSourceMUX({}));
+                    TabViewItem().IconSource(IconSource{ nullptr });
                 }
                 else
                 {
@@ -1230,6 +1231,11 @@ namespace winrt::TerminalApp::implementation
         chooseColorMenuItem.Text(RS_(L"TabColorChoose"));
         chooseColorMenuItem.Icon(colorPickSymbol);
 
+        const auto chooseColorToolTip = RS_(L"ChooseColorToolTip");
+
+        WUX::Controls::ToolTipService::SetToolTip(chooseColorMenuItem, box_value(chooseColorToolTip));
+        Automation::AutomationProperties::SetHelpText(chooseColorMenuItem, chooseColorToolTip);
+
         Controls::MenuFlyoutItem renameTabMenuItem;
         {
             // "Rename Tab"
@@ -1245,6 +1251,11 @@ namespace winrt::TerminalApp::implementation
             });
             renameTabMenuItem.Text(RS_(L"RenameTabText"));
             renameTabMenuItem.Icon(renameTabSymbol);
+
+            const auto renameTabToolTip = RS_(L"RenameTabToolTip");
+
+            WUX::Controls::ToolTipService::SetToolTip(renameTabMenuItem, box_value(renameTabToolTip));
+            Automation::AutomationProperties::SetHelpText(renameTabMenuItem, renameTabToolTip);
         }
 
         Controls::MenuFlyoutItem duplicateTabMenuItem;
@@ -1262,6 +1273,11 @@ namespace winrt::TerminalApp::implementation
             });
             duplicateTabMenuItem.Text(RS_(L"DuplicateTabText"));
             duplicateTabMenuItem.Icon(duplicateTabSymbol);
+
+            const auto duplicateTabToolTip = RS_(L"DuplicateTabToolTip");
+
+            WUX::Controls::ToolTipService::SetToolTip(duplicateTabMenuItem, box_value(duplicateTabToolTip));
+            Automation::AutomationProperties::SetHelpText(duplicateTabMenuItem, duplicateTabToolTip);
         }
 
         Controls::MenuFlyoutItem splitTabMenuItem;
@@ -1279,11 +1295,16 @@ namespace winrt::TerminalApp::implementation
             });
             splitTabMenuItem.Text(RS_(L"SplitTabText"));
             splitTabMenuItem.Icon(splitTabSymbol);
+
+            const auto splitTabToolTip = RS_(L"SplitTabToolTip");
+
+            WUX::Controls::ToolTipService::SetToolTip(splitTabMenuItem, box_value(splitTabToolTip));
+            Automation::AutomationProperties::SetHelpText(splitTabMenuItem, splitTabToolTip);
         }
 
         Controls::MenuFlyoutItem exportTabMenuItem;
         {
-            // "Split Tab"
+            // "Export Tab"
             Controls::FontIcon exportTabSymbol;
             exportTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             exportTabSymbol.Glyph(L"\xE74E"); // Save
@@ -1296,11 +1317,16 @@ namespace winrt::TerminalApp::implementation
             });
             exportTabMenuItem.Text(RS_(L"ExportTabText"));
             exportTabMenuItem.Icon(exportTabSymbol);
+
+            const auto exportTabToolTip = RS_(L"ExportTabToolTip");
+
+            WUX::Controls::ToolTipService::SetToolTip(exportTabMenuItem, box_value(exportTabToolTip));
+            Automation::AutomationProperties::SetHelpText(exportTabMenuItem, exportTabToolTip);
         }
 
         Controls::MenuFlyoutItem findMenuItem;
         {
-            // "Split Tab"
+            // "Find"
             Controls::FontIcon findSymbol;
             findSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             findSymbol.Glyph(L"\xF78B"); // SearchMedium
@@ -1313,6 +1339,11 @@ namespace winrt::TerminalApp::implementation
             });
             findMenuItem.Text(RS_(L"FindText"));
             findMenuItem.Icon(findSymbol);
+
+            const auto findToolTip = RS_(L"FindToolTip");
+
+            WUX::Controls::ToolTipService::SetToolTip(findMenuItem, box_value(findToolTip));
+            Automation::AutomationProperties::SetHelpText(findMenuItem, findToolTip);
         }
 
         // Build the menu

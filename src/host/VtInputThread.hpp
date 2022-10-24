@@ -30,14 +30,13 @@ namespace Microsoft::Console
 
     private:
         [[nodiscard]] HRESULT _HandleRunInput(const std::string_view u8Str);
-        DWORD _InputThread();
+        [[noreturn]] void _InputThread();
 
         wil::unique_hfile _hFile;
         wil::unique_handle _hThread;
         DWORD _dwThreadId;
 
         bool _exitRequested;
-        HRESULT _exitResult;
 
         std::function<void(bool)> _pfnSetLookingForDSR;
 
