@@ -502,7 +502,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (!profile.Deleted())
             {
                 auto navItem = _CreateProfileNavViewItem(_viewModelForProfile(profile, _settingsClone));
-                Controls::ToolTipService::SetToolTip(navItem, box_value(profile.Name()));
                 menuItems.Append(navItem);
             }
         }
@@ -510,7 +509,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Top off (the end of the nav view) with the Add Profile item
         MUX::Controls::NavigationViewItem addProfileItem;
         addProfileItem.Content(box_value(RS_(L"Nav_AddNewProfile/Content")));
-        Controls::ToolTipService::SetToolTip(addProfileItem, box_value(RS_(L"Nav_AddNewProfile/Content")));
         addProfileItem.Tag(box_value(addProfileTag));
 
         FontIcon icon;
