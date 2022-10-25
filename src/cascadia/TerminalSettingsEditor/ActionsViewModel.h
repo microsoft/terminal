@@ -107,6 +107,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::KeyBindingViewModel>, KeyBindingList);
         TYPED_EVENT(FocusContainer, IInspectable, IInspectable);
+        TYPED_EVENT(UpdateBackground, IInspectable, IInspectable);
 
     private:
         bool _AutomationPeerAttached{ false };

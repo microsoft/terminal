@@ -55,5 +55,6 @@ namespace Microsoft.Terminal.Settings.Editor
 
         IObservableVector<KeyBindingViewModel> KeyBindingList { get; };
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusContainer;
+        event Windows.Foundation.TypedEventHandler<Object, Object> UpdateBackground;
     }
 }

@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "Actions.h"
 #include "Actions.g.cpp"
-#include "KeyBindingViewModel.g.cpp"
 #include "LibraryResources.h"
 #include "../TerminalSettingsModel/AllShortcutActions.h"
 
@@ -30,10 +29,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _ViewModel = e.Parameter().as<Editor::ActionsViewModel>();
 
-        // subscribe to the view model's FocusContainer event
-        // use the KeyBindingViewModel or index provided in the event to focus the corresponding container
+        // Subscribe to the view model's FocusContainer event.
+        // Use the KeyBindingViewModel or index provided in the event to focus the corresponding container
         _ViewModel.FocusContainer([this](const auto& /*sender*/, const auto& args) {
-            if (const auto& kbdVM = args.try_as<KeyBindingViewModel>())
+            if (auto kbdVM{ args.try_as<KeyBindingViewModel>() })
             {
                 if (const auto& container = KeyBindingsListView().ContainerFromItem(*kbdVM))
                 {
@@ -45,7 +44,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 if (const auto& container = KeyBindingsListView().ContainerFromIndex(*index))
                 {
                     container.as<Controls::ListViewItem>().Focus(FocusState::Programmatic);
-                }                
+                }
+            }
+        });
+
+        // Subscribe to the view model's UpdateBackground event.
+        // The view model does not have access to the page resources, so it asks us
+        // to update the key binding's container background
+        _ViewModel.UpdateBackground([this](const auto& /*sender*/, const auto& args) {
+            if (auto kbdVM{ args.try_as<KeyBindingViewModel>() })
+            {
+                if (kbdVM->IsInEditMode())
+                {
+                    const auto& containerBackground{ Resources().Lookup(box_value(L"ActionContainerBackgroundEditing")).as<Windows::UI::Xaml::Media::Brush>() };
+                    kbdVM->ContainerBackground(containerBackground);
+                }
+                else
+                {
+                    const auto& containerBackground{ Resources().Lookup(box_value(L"ActionContainerBackground")).as<Windows::UI::Xaml::Media::Brush>() };
+                    kbdVM->ContainerBackground(containerBackground);
+                }
             }
         });
     }

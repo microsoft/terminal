@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "ActionsViewModel.h"
 #include "ActionsViewModel.g.cpp"
+#include "KeyBindingViewModel.g.cpp"
 #include "LibraryResources.h"
 #include "../TerminalSettingsModel/AllShortcutActions.h"
 
@@ -156,14 +157,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Manually add the editing background. This needs to be done in Actions not the view model.
         // We also have to do this manually because it hasn't been added to the list yet.
         kbdVM->IsInEditMode(true);
-        // TODO background
-        //const auto& containerBackground{ Resources().Lookup(box_value(L"ActionContainerBackgroundEditing")).as<Windows::UI::Xaml::Media::Brush>() };
-        //kbdVM->ContainerBackground(containerBackground);
+        // Emit an event to let the page know to update the background of this key binding VM
+        _UpdateBackgroundHandlers(*this, *kbdVM);
 
         // IMPORTANT: do this _after_ setting IsInEditMode. Otherwise, it'll get deleted immediately
         //              by the PropertyChangedHandler below (where we delete any IsNewlyAdded items)
         kbdVM->IsNewlyAdded(true);
         _KeyBindingList.InsertAt(0, *kbdVM);
+        _FocusContainerHandlers(*this, *kbdVM);
     }
 
     void ActionsViewModel::_ViewModelPropertyChangedHandler(const IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args)
@@ -199,21 +200,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                         get_self<KeyBindingViewModel>(kbdVM)->DisableEditMode();
                     }
                 }
-
-                // TODO background
-                //const auto& containerBackground{ Resources().Lookup(box_value(L"ActionContainerBackgroundEditing")).as<Windows::UI::Xaml::Media::Brush>() };
-                //get_self<KeyBindingViewModel>(senderVM)->ContainerBackground(containerBackground);
             }
             else
             {
                 // Emit an event to let the page know to move focus to
                 // this VM's container.
                 _FocusContainerHandlers(*this, senderVM);
-
-                // TODO background
-                //const auto& containerBackground{ Resources().Lookup(box_value(L"ActionContainerBackground")).as<Windows::UI::Xaml::Media::Brush>() };
-                //get_self<KeyBindingViewModel>(senderVM)->ContainerBackground(containerBackground);
             }
+
+            // Emit an event to let the page know to update the background of this key binding VM
+            _UpdateBackgroundHandlers(*this, senderVM);
         }
     }
 
