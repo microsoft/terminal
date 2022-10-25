@@ -334,7 +334,7 @@
                         Style="{StaticResource SettingsStackStyle}">
                 <!--  Add New Button  -->
                 <Button x:Name="AddNewButton"
-                        Click="AddNew_Click">
+                        Click="{x:Bind ViewModel.AddNew_Click}">
                     <Button.Content>
                         <StackPanel Orientation="Horizontal">
                             <FontIcon FontSize="{StaticResource StandardIconSize}"
@@ -348,7 +348,7 @@
                 <!--  Keybindings  -->
                 <ListView x:Name="KeyBindingsListView"
                           ItemTemplate="{StaticResource KeyBindingTemplate}"
-                          ItemsSource="{x:Bind KeyBindingList, Mode=OneWay}"
+                          ItemsSource="{x:Bind ViewModel.KeyBindingList, Mode=OneWay}"
                           SelectionMode="None" />
             </StackPanel>
         </Border>
