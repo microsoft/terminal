@@ -60,7 +60,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool SetCharacterProtectionAttribute(const VTParameters options) override; // DECSCA
         bool PushGraphicsRendition(const VTParameters options) override; // XTPUSHSGR
         bool PopGraphicsRendition() override; // XTPOPSGR
-        bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) override; // DSR, DSR-OS, DSR-CPR
+        bool DeviceStatusReport(const DispatchTypes::StatusType statusType) override; // DSR, DSR-OS, DSR-CPR
         bool DeviceAttributes() override; // DA1
         bool SecondaryDeviceAttributes() override; // DA2
         bool TertiaryDeviceAttributes() override; // DA3
@@ -195,7 +195,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _DoSetTopBottomScrollingMargins(const VTInt topMargin,
                                              const VTInt bottomMargin);
         void _OperatingStatus() const;
-        void _CursorPositionReport();
+        void _CursorPositionReport(const bool extendedReport);
 
         bool _GetParserMode(const StateMachine::Mode mode) const;
         void _SetParserMode(const StateMachine::Mode mode, const bool enable);
