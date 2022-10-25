@@ -746,4 +746,25 @@
     <value>Suggestions found: {0}</value>
     <comment>{0} will be replaced with a number.</comment>
   </data>
+  <data name="PasteContextMenuEntry.Text" xml:space="preserve">
+    <value>Paste</value>
+  </data>
+  <data name="CopyContextMenuEntry.Text" xml:space="preserve">
+    <value>Copy</value>
+  </data>
+  <data name="FindContextMenuEntry.Text" xml:space="preserve">
+    <value>Find selected text</value>
+  </data>
+  <data name="SplitPaneContextMenuEntry.Text" xml:space="preserve">
+    <value>Split pane</value>
+  </data>
+  <data name="DuplicateTabContextMenuEntry.Text" xml:space="preserve">
+    <value>Duplicate tab</value>
+  </data>
+  <data name="ClosePaneContextMenuEntry.Text" xml:space="preserve">
+    <value>Close pane</value>
+  </data>
+  <data name="CloseTabContextMenuEntry.Text" xml:space="preserve">
+    <value>Close tab</value>
+  </data>
 </root>

@@ -4240,12 +4240,14 @@ namespace winrt::TerminalApp::implementation
                                                     const winrt::Microsoft::Terminal::Control::ContextMenuRequestedEventArgs& args)
     {
         auto text = args.SelectedText();
-        text;
 
         auto fwe = sender.try_as<WUX::FrameworkElement>();
 
         auto flyout = TerminalApp::ControlContextMenu();
 
+        // Helper lambda for dispatching an ActionAndArgs onto the
+        // ShortcutActionDispatch. Used below to wire up each menu entry to the
+        // respective action.
         auto weak = get_weak();
         auto makeCallback = [weak](const Microsoft::Terminal::Settings::Model::ActionAndArgs& actionAndArgs) {
             return [weak, actionAndArgs](auto&&, auto&&) {
@@ -4256,42 +4258,43 @@ namespace winrt::TerminalApp::implementation
             };
         };
 
-        flyout.PasteItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::PasteText,
-                                                             nullptr }));
+        // Wire up each item to the action that should be performed. By actually
+        // connecting these to actions, we ensure the implementation is
+        // consistent. This also leaves room for customizing this menu with
+        // actions in the future.
 
+        flyout.PasteItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::PasteText, nullptr }));
+
+        // If we don't have selected text, then hide the find item, and disable the copy one.
         if (text.empty())
         {
             flyout.CopyItem().IsEnabled(false);
             flyout.FindItem().Visibility(Visibility::Collapsed);
-            flyout.SearchWebItem().Visibility(Visibility::Collapsed);
         }
         else
         {
-            flyout.CopyItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::CopyText,
-                                                                CopyTextArgs{} }));
-            flyout.FindItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::Find,
-                                                                nullptr }));
-            // flyout.SearchWebItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::CopyText, nullptr }));
+            flyout.CopyItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::CopyText, CopyTextArgs{} }));
+            flyout.FindItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::Find, nullptr }));
         }
 
-        flyout.SplitPaneItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::SplitPane,
-                                                                 SplitPaneArgs{ SplitType::Duplicate } }));
-        flyout.DuplicateTabItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::DuplicateTab,
-                                                                    nullptr }));
+        flyout.SplitPaneItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate } }));
+        flyout.DuplicateTabItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::DuplicateTab, nullptr }));
+
+        // Only wire up "Close Pane" if there's multiple panes.
         if (_GetFocusedTabImpl()->GetLeafPaneCount() > 1)
         {
-            flyout.ClosePaneItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::ClosePane,
-                                                                     nullptr }));
+            flyout.ClosePaneItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::ClosePane, nullptr }));
         }
         else
         {
             flyout.ClosePaneItem().Visibility(Visibility::Collapsed);
         }
-        flyout.CloseTabItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::CloseTab,
-                                                                CloseTabArgs{ _GetFocusedTabIndex().value() } }));
+
+        flyout.CloseTabItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::CloseTab, CloseTabArgs{ _GetFocusedTabIndex().value() } }));
 
         WUX::Controls::Primitives::FlyoutBase::SetAttachedFlyout(*this, flyout);
 
+        // Position the menu where the pointer is. This was the best way I found how.
         til::point absolutePointerPos{ til::math::rounding, CoreWindow::GetForCurrentThread().PointerPosition() };
         til::point absoluteWindowOrigin{ til::math::rounding,
                                          CoreWindow::GetForCurrentThread().Bounds().X,

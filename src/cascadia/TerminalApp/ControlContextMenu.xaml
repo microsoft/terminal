@@ -10,43 +10,43 @@
             mc:Ignorable="d">
 
     <MenuFlyoutItem x:Name="PasteItem"
-                    Text="Paste">
+                    x:Uid="PasteContextMenuEntry">
         <MenuFlyoutItem.Icon>
             <FontIcon Glyph="&#xe77f;" />
         </MenuFlyoutItem.Icon>
     </MenuFlyoutItem>
 
-    <!-- <MenuFlyoutSeparator /> -->
 
     <MenuFlyoutItem x:Name="CopyItem"
-                    Text="Copy">
+                    x:Uid="CopyContextMenuEntry">
         <MenuFlyoutItem.Icon>
             <FontIcon Glyph="&#xe8c8;" />
         </MenuFlyoutItem.Icon>
     </MenuFlyoutItem>
     <MenuFlyoutItem x:Name="FindItem"
-                    Text="Find selected text">
+                    x:Uid="FindContextMenuEntry">
         <MenuFlyoutItem.Icon>
             <FontIcon Glyph="&#xF78B;" />
         </MenuFlyoutItem.Icon>
     </MenuFlyoutItem>
-    <MenuFlyoutItem x:Name="SearchWebItem"
+
+    <!--     <MenuFlyoutItem x:Name="SearchWebItem"
                     Text="Search the web...">
         <MenuFlyoutItem.Icon>
             <FontIcon Glyph="&#xf6fa;" />
         </MenuFlyoutItem.Icon>
-    </MenuFlyoutItem>
+    </MenuFlyoutItem>-->
 
     <MenuFlyoutSeparator />
 
     <MenuFlyoutItem x:Name="SplitPaneItem"
-                    Text="Split pane">
+                    x:Uid="SplitPaneContextMenuEntry">
         <MenuFlyoutItem.Icon>
             <FontIcon Glyph="&#xF246;" />
         </MenuFlyoutItem.Icon>
     </MenuFlyoutItem>
     <MenuFlyoutItem x:Name="DuplicateTabItem"
-                    Text="Duplicate tab">
+                    x:Uid="DuplicateTabContextMenuEntry">
         <MenuFlyoutItem.Icon>
             <FontIcon Glyph="&#xF5ED;" />
         </MenuFlyoutItem.Icon>
@@ -55,13 +55,13 @@
     <MenuFlyoutSeparator />
 
     <MenuFlyoutItem x:Name="ClosePaneItem"
-                    Text="Close pane">
+                    x:Uid="ClosePaneContextMenuEntry">
         <MenuFlyoutItem.Icon>
             <FontIcon Glyph="&#xe89f;" />
         </MenuFlyoutItem.Icon>
     </MenuFlyoutItem>
     <MenuFlyoutItem x:Name="CloseTabItem"
-                    Text="Close tab">
+                    x:Uid="CloseTabContextMenuEntry">
         <MenuFlyoutItem.Icon>
             <FontIcon Glyph="&#xE711;" />
         </MenuFlyoutItem.Icon>
