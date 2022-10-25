@@ -18,6 +18,8 @@
 #include <string>
 #include <algorithm>
 
+#include "../../../interactivity/inc/VtApiRedirection.hpp"
+
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
@@ -443,10 +445,10 @@ void InputEngineTest::C0Test()
             break;
         }
 
-        auto keyscan = VkKeyScanW(expectedWch);
+        auto keyscan = OneCoreSafeVkKeyScanW(expectedWch);
         short vkey = keyscan & 0xff;
         short keyscanModifiers = (keyscan >> 8) & 0xff;
-        auto scanCode = (WORD)MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
+        auto scanCode = (WORD)OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
 
         DWORD dwModifierState = 0;
         if (writeCtrl)
@@ -521,9 +523,9 @@ void InputEngineTest::AlphanumericTest()
     {
         auto inputSeq = std::wstring(&wch, 1);
 
-        auto keyscan = VkKeyScanW(wch);
+        auto keyscan = OneCoreSafeVkKeyScanW(wch);
         short vkey = keyscan & 0xff;
-        WORD scanCode = (wchar_t)MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
+        WORD scanCode = (wchar_t)OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
 
         short keyscanModifiers = (keyscan >> 8) & 0xff;
         // Because of course, these are not the same flags.
@@ -574,8 +576,8 @@ void InputEngineTest::RoundTripTest()
 
     for (BYTE vkey = 0; vkey < BYTE_MAX; vkey++)
     {
-        wchar_t wch = (wchar_t)MapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR);
-        WORD scanCode = (wchar_t)MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
+        wchar_t wch = (wchar_t)OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR);
+        WORD scanCode = (wchar_t)OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
 
         unsigned int uiActualKeystate = 0;
 
@@ -761,7 +763,7 @@ void InputEngineTest::CursorPositioningTest()
     inputRec.Event.KeyEvent.dwControlKeyState = LEFT_ALT_PRESSED | SHIFT_PRESSED;
     inputRec.Event.KeyEvent.wRepeatCount = 1;
     inputRec.Event.KeyEvent.wVirtualKeyCode = VK_F3;
-    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_F3, MAPVK_VK_TO_VSC));
+    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_F3, MAPVK_VK_TO_VSC));
     inputRec.Event.KeyEvent.uChar.UnicodeChar = L'\0';
 
     testState.vExpectedInput.push_back(inputRec);
@@ -787,7 +789,7 @@ void InputEngineTest::CSICursorBackTabTest()
     inputRec.Event.KeyEvent.dwControlKeyState = SHIFT_PRESSED;
     inputRec.Event.KeyEvent.wRepeatCount = 1;
     inputRec.Event.KeyEvent.wVirtualKeyCode = VK_TAB;
-    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKeyW(VK_TAB, MAPVK_VK_TO_VSC));
+    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_TAB, MAPVK_VK_TO_VSC));
     inputRec.Event.KeyEvent.uChar.UnicodeChar = L'\t';
 
     testState.vExpectedInput.push_back(inputRec);
@@ -829,8 +831,8 @@ void InputEngineTest::EnhancedKeysTest()
     {
         INPUT_RECORD inputRec;
 
-        const auto wch = (wchar_t)MapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR);
-        const auto scanCode = (WORD)MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
+        const auto wch = (wchar_t)OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR);
+        const auto scanCode = (WORD)OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
 
         inputRec.EventType = KEY_EVENT;
         inputRec.Event.KeyEvent.bKeyDown = TRUE;
@@ -873,8 +875,8 @@ void InputEngineTest::SS3CursorKeyTest()
     {
         INPUT_RECORD inputRec;
 
-        const auto wch = (wchar_t)MapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR);
-        const auto scanCode = (WORD)MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
+        const auto wch = (wchar_t)OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR);
+        const auto scanCode = (WORD)OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
 
         inputRec.EventType = KEY_EVENT;
         inputRec.Event.KeyEvent.bKeyDown = TRUE;
@@ -909,7 +911,7 @@ void InputEngineTest::AltBackspaceTest()
     inputRec.Event.KeyEvent.dwControlKeyState = LEFT_ALT_PRESSED;
     inputRec.Event.KeyEvent.wRepeatCount = 1;
     inputRec.Event.KeyEvent.wVirtualKeyCode = VK_BACK;
-    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKeyW(VK_BACK, MAPVK_VK_TO_VSC));
+    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_BACK, MAPVK_VK_TO_VSC));
     inputRec.Event.KeyEvent.uChar.UnicodeChar = L'\x08';
 
     testState.vExpectedInput.push_back(inputRec);
@@ -937,7 +939,7 @@ void InputEngineTest::AltCtrlDTest()
     inputRec.Event.KeyEvent.dwControlKeyState = LEFT_ALT_PRESSED | LEFT_CTRL_PRESSED;
     inputRec.Event.KeyEvent.wRepeatCount = 1;
     inputRec.Event.KeyEvent.wVirtualKeyCode = 0x44; // D key
-    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKeyW(0x44, MAPVK_VK_TO_VSC));
+    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(OneCoreSafeMapVirtualKeyW(0x44, MAPVK_VK_TO_VSC));
     inputRec.Event.KeyEvent.uChar.UnicodeChar = L'\x04';
 
     testState.vExpectedInput.push_back(inputRec);
@@ -1032,7 +1034,7 @@ void InputEngineTest::AltBackspaceEnterTest()
     inputRec.Event.KeyEvent.dwControlKeyState = LEFT_ALT_PRESSED;
     inputRec.Event.KeyEvent.wRepeatCount = 1;
     inputRec.Event.KeyEvent.wVirtualKeyCode = VK_BACK;
-    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKeyW(VK_BACK, MAPVK_VK_TO_VSC));
+    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_BACK, MAPVK_VK_TO_VSC));
     inputRec.Event.KeyEvent.uChar.UnicodeChar = L'\x08';
 
     // First, expect a alt+backspace.
@@ -1047,7 +1049,7 @@ void InputEngineTest::AltBackspaceEnterTest()
 
     inputRec.Event.KeyEvent.wVirtualKeyCode = VK_RETURN;
     inputRec.Event.KeyEvent.dwControlKeyState = 0;
-    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKeyW(VK_RETURN, MAPVK_VK_TO_VSC));
+    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_RETURN, MAPVK_VK_TO_VSC));
     inputRec.Event.KeyEvent.uChar.UnicodeChar = L'\x0d'; //maybe \xa
 
     // Then, expect a enter
@@ -1350,9 +1352,9 @@ void InputEngineTest::CtrlAltZCtrlAltXTest()
         auto inputSeq = L"\x1b\x1a"; // ^[^Z
 
         auto expectedWch = L'Z';
-        auto keyscan = VkKeyScanW(expectedWch);
+        auto keyscan = OneCoreSafeVkKeyScanW(expectedWch);
         short vkey = keyscan & 0xff;
-        auto scanCode = (WORD)MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
+        auto scanCode = (WORD)OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
 
         INPUT_RECORD inputRec;
 
@@ -1372,9 +1374,9 @@ void InputEngineTest::CtrlAltZCtrlAltXTest()
         auto inputSeq = L"\x1b\x18"; // ^[^X
 
         auto expectedWch = L'X';
-        auto keyscan = VkKeyScanW(expectedWch);
+        auto keyscan = OneCoreSafeVkKeyScanW(expectedWch);
         short vkey = keyscan & 0xff;
-        auto scanCode = (WORD)MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
+        auto scanCode = (WORD)OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
 
         INPUT_RECORD inputRec;
 

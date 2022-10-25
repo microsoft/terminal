@@ -203,7 +203,7 @@
         },
         "intenseTextStyle": {
           "default": "bright",
-          "description": "Controls how 'intense' text is rendered. Values are \"bold\", \"bright\", \"all\" and \"none\"",
+          "description": "Controls how 'intense' text is rendered when unfocused. Values are \"bold\", \"bright\", \"all\" and \"none\"",
           "enum": [
             "none",
             "bold",
@@ -244,7 +244,7 @@
           "default": 12,
           "description": "Size of the font in points.",
           "minimum": 1,
-          "type": "integer"
+          "type": "number"
         },
         "weight": {
           "default": "normal",
@@ -2237,10 +2237,10 @@
           "description": "Use to set a path to a pixel shader to use with the Terminal. Overrides `experimental.retroTerminalEffect`. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "string"
         },
-        "experimental.useAtlasEngine": {
-          "description": "Enable using the experimental new rendering engine for this profile. This is an experimental feature, and its continued existence is not guaranteed.",
+        "useAtlasEngine": {
+          "description": "Windows Terminal 1.16 and later ship with a new, performant text renderer. Set this to false to revert back to the old text renderer.",
           "type": "boolean",
-          "default": false
+          "default": true
         },
         "fontFace": {
           "default": "Cascadia Mono",
@@ -2252,7 +2252,7 @@
           "default": 12,
           "description": "[deprecated] Define 'size' within the 'font' object instead.",
           "minimum": 1,
-          "type": "integer",
+          "type": "number",
           "deprecated": true
         },
         "fontWeight": {
@@ -2282,6 +2282,17 @@
             }
           ],
           "deprecated": true
+        },
+        "intenseTextStyle": {
+          "default": "bright",
+          "description": "Controls how 'intense' text is rendered. Values are \"bold\", \"bright\", \"all\" and \"none\"",
+          "enum": [
+            "none",
+            "bold",
+            "bright",
+            "all"
+          ],
+          "type": "string"
         },
         "foreground": {
           "$ref": "#/$defs/Color",
@@ -2350,7 +2361,8 @@
           "description": "Defines the visibility of the scrollbar.",
           "enum": [
             "visible",
-            "hidden"
+            "hidden",
+            "always"
           ],
           "type": "string"
         },

@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <d2d1.h>
+#include <d2d1_1.h>
 #include <d3d11_1.h>
 #include <dwrite_3.h>
 
@@ -41,7 +41,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT NotifyNewText(const std::wstring_view newText) noexcept override;
         [[nodiscard]] HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept override;
         [[nodiscard]] HRESULT ResetLineTransform() noexcept override;
-        [[nodiscard]] HRESULT PrepareLineTransform(LineRendition lineRendition, size_t targetRow, size_t viewportLeft) noexcept override;
+        [[nodiscard]] HRESULT PrepareLineTransform(LineRendition lineRendition, til::CoordType targetRow, til::CoordType viewportLeft) noexcept override;
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
         [[nodiscard]] HRESULT PaintBufferLine(gsl::span<const Cluster> clusters, til::point coord, bool fTrimLeft, bool lineWrapped) noexcept override;
         [[nodiscard]] HRESULT PaintBufferGridLines(GridLineSet lines, COLORREF color, size_t cchLine, til::point coordTarget) noexcept override;
@@ -60,14 +60,14 @@ namespace Microsoft::Console::Render
 
         // DxRenderer - getter
         HRESULT Enable() noexcept override;
+        [[nodiscard]] std::wstring_view GetPixelShaderPath() noexcept override;
         [[nodiscard]] bool GetRetroTerminalEffect() const noexcept override;
         [[nodiscard]] float GetScaling() const noexcept override;
-        [[nodiscard]] HANDLE GetSwapChainHandle() override;
         [[nodiscard]] Types::Viewport GetViewportInCharacters(const Types::Viewport& viewInPixels) const noexcept override;
         [[nodiscard]] Types::Viewport GetViewportInPixels(const Types::Viewport& viewInCharacters) const noexcept override;
         // DxRenderer - setter
         void SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept override;
-        void SetCallback(std::function<void()> pfn) noexcept override;
+        void SetCallback(std::function<void(HANDLE)> pfn) noexcept override;
         void EnableTransparentBackground(const bool isTransparent) noexcept override;
         void SetForceFullRepaintRendering(bool enable) noexcept override;
         [[nodiscard]] HRESULT SetHwnd(HWND hwnd) noexcept override;
@@ -77,7 +77,6 @@ namespace Microsoft::Console::Render
         void SetSoftwareRendering(bool enable) noexcept override;
         void SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept override;
         [[nodiscard]] HRESULT SetWindowSize(til::size pixels) noexcept override;
-        void ToggleShaderEffects() noexcept override;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept override;
         void UpdateHyperlinkHoveredId(uint16_t hoveredId) noexcept override;
 
@@ -411,6 +410,7 @@ namespace Microsoft::Console::Render
         struct FontMetrics
         {
             wil::com_ptr<IDWriteFontCollection> fontCollection;
+            wil::com_ptr<IDWriteFontFamily> fontFamily;
             std::wstring fontName;
             float baselineInDIP = 0.0f;
             float fontSizeInDIP = 0.0f;
@@ -524,9 +524,9 @@ namespace Microsoft::Console::Render
         struct CachedGlyphLayout
         {
             wil::com_ptr<IDWriteTextLayout> textLayout;
-            f32x2 halfSize;
             f32x2 offset;
             f32x2 scale;
+            f32x2 scaleCenter;
             D2D1_DRAW_TEXT_OPTIONS options = D2D1_DRAW_TEXT_OPTIONS_NONE;
             bool scalingRequired = false;
 
@@ -829,6 +829,7 @@ namespace Microsoft::Console::Render
             u32 cursorColor = INVALID_COLOR;
             u16 cursorType = gsl::narrow_cast<u16>(CursorType::Legacy);
             u8 heightPercentage = 20;
+            u8 _padding = 0;
 
             ATLAS_POD_OPS(CachedCursorOptions)
         };
@@ -1008,8 +1009,9 @@ namespace Microsoft::Console::Render
             // D2D resources
             wil::com_ptr<ID3D11Texture2D> atlasBuffer;
             wil::com_ptr<ID3D11ShaderResourceView> atlasView;
-            wil::com_ptr<ID2D1RenderTarget> d2dRenderTarget;
+            wil::com_ptr<ID2D1DeviceContext> d2dRenderTarget;
             wil::com_ptr<ID2D1SolidColorBrush> brush;
+            wil::com_ptr<IDWriteFontFace> fontFaces[4];
             wil::com_ptr<IDWriteTextFormat> textFormats[2][2];
             Buffer<DWRITE_FONT_AXIS_VALUE> textFormatAxes[2][2];
             wil::com_ptr<IDWriteTypography> typography;
@@ -1038,7 +1040,6 @@ namespace Microsoft::Console::Render
             CachedCursorOptions cursorOptions;
             RenderInvalidations invalidations = RenderInvalidations::None;
 
-            til::rect previousDirtyRectInPx;
             til::rect dirtyRect;
             i16 scrollOffset = 0;
             bool d2dMode = false;
@@ -1095,7 +1096,7 @@ namespace Microsoft::Console::Render
             i16 scrollOffset = 0;
 
             std::function<void(HRESULT)> warningCallback;
-            std::function<void()> swapChainChangedCallback;
+            std::function<void(HANDLE)> swapChainChangedCallback;
             wil::unique_handle swapChainHandle;
             HWND hwnd = nullptr;
             u16 dpi = USER_DEFAULT_SCREEN_DPI; // changes are flagged as ApiInvalidations::Font|Size

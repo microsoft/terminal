@@ -26,6 +26,8 @@ namespace Microsoft::Console::VirtualTerminal
     class OutputStateMachineEngine : public IStateMachineEngine
     {
     public:
+        static constexpr size_t MAX_URL_LENGTH = 2 * 1048576; // 2MB, like iTerm2
+
         OutputStateMachineEngine(std::unique_ptr<ITermDispatch> pDispatch);
 
         bool ActionExecute(const wchar_t wch) override;
@@ -108,7 +110,9 @@ namespace Microsoft::Console::VirtualTerminal
             CUP_CursorPosition = VTID("H"),
             CHT_CursorForwardTab = VTID("I"),
             ED_EraseDisplay = VTID("J"),
+            DECSED_SelectiveEraseDisplay = VTID("?J"),
             EL_EraseLine = VTID("K"),
+            DECSEL_SelectiveEraseLine = VTID("?K"),
             IL_InsertLine = VTID("L"),
             DL_DeleteLine = VTID("M"),
             DCH_DeleteCharacter = VTID("P"),
@@ -130,6 +134,7 @@ namespace Microsoft::Console::VirtualTerminal
             DECRST_PrivateModeReset = VTID("?l"),
             SGR_SetGraphicsRendition = VTID("m"),
             DSR_DeviceStatusReport = VTID("n"),
+            DSR_PrivateDeviceStatusReport = VTID("?n"),
             DECSTBM_SetScrollingRegion = VTID("r"),
             ANSISYSSC_CursorSave = VTID("s"), // NOTE: Overlaps with DECLRMM/DECSLRM. Fix when/if implemented.
             DTTERM_WindowManipulation = VTID("t"), // NOTE: Overlaps with DECSLPP. Fix when/if implemented.
@@ -137,6 +142,7 @@ namespace Microsoft::Console::VirtualTerminal
             DECREQTPARM_RequestTerminalParameters = VTID("x"),
             DECSCUSR_SetCursorStyle = VTID(" q"),
             DECSTR_SoftReset = VTID("!p"),
+            DECSCA_SetCharacterProtectionAttribute = VTID("\"q"),
             XT_PushSgrAlias = VTID("#p"),
             XT_PopSgrAlias = VTID("#q"),
             XT_PushSgr = VTID("#{"),

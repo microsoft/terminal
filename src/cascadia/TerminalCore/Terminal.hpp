@@ -64,7 +64,7 @@ class Microsoft::Terminal::Core::Terminal final :
 
 public:
     Terminal();
-    ~Terminal(){};
+    ~Terminal() = default;
     Terminal(const Terminal&) = default;
     Terminal(Terminal&&) = default;
     Terminal& operator=(const Terminal&) = default;
@@ -287,7 +287,6 @@ public:
     void ExpandSelectionToWord();
     void ToggleMarkMode();
     void SelectHyperlink(const SearchDirection dir);
-    bool SelectionIsTargetingUrl() const noexcept;
 
     using UpdateSelectionParams = std::optional<std::pair<SelectionDirection, SelectionExpansion>>;
     UpdateSelectionParams ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const;

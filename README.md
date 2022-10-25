@@ -67,7 +67,7 @@ the latest Terminal release by installing the `Microsoft.WindowsTerminal`
 package:
 
 ```powershell
-winget install --id=Microsoft.WindowsTerminal -e
+winget install --id Microsoft.WindowsTerminal -e
 ```
 
 #### Via Chocolatey (unofficial)
@@ -289,7 +289,7 @@ If you would like to ask a question that you feel doesn't warrant an issue
   app](https://docs.microsoft.com/en-us/windows/uwp/get-started/enable-your-device-for-development)
   to locally install and run Windows Terminal
 * You must have [PowerShell 7 or later](https://github.com/PowerShell/PowerShell/releases/latest) installed
-* You must have the [Windows 11 (10.0.22000.0)
+* You must have the [Windows 11 (10.0.22621.0)
   SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/)
   installed
 * You must have at least [VS

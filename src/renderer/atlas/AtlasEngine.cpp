@@ -249,6 +249,13 @@ try
     _r.dirtyRect = _api.dirtyRect;
     _r.scrollOffset = _api.scrollOffset;
 
+    // Clear the previous cursor. PaintCursor() is only called if the cursor is on.
+    if (const auto r = _api.invalidatedCursorArea; r.non_empty())
+    {
+        _setCellFlags(r, CellFlags::Cursor, CellFlags::None);
+        _r.dirtyRect |= til::rect{ r.left, r.top, r.right, r.bottom };
+    }
+
     // This is an important block of code for our TileHashMap.
     // We only process glyphs within the dirtyRect, but glyphs outside of the
     // dirtyRect are still in use and shouldn't be discarded. This is critical
@@ -325,7 +332,7 @@ CATCH_RETURN()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT AtlasEngine::PrepareLineTransform(const LineRendition lineRendition, const size_t targetRow, const size_t viewportLeft) noexcept
+[[nodiscard]] HRESULT AtlasEngine::PrepareLineTransform(const LineRendition lineRendition, const til::CoordType targetRow, const til::CoordType viewportLeft) noexcept
 {
     return S_OK;
 }
@@ -435,13 +442,6 @@ try
             _r.cursorOptions = cachedOptions;
             WI_SetFlag(_r.invalidations, RenderInvalidations::Cursor);
         }
-    }
-
-    // Clear the previous cursor
-    if (const auto r = _api.invalidatedCursorArea; r.non_empty())
-    {
-        _setCellFlags(r, CellFlags::Cursor, CellFlags::None);
-        _r.dirtyRect |= til::rect{ r.left, r.top, r.right, r.bottom };
     }
 
     if (options.isOn)
@@ -582,6 +582,9 @@ void AtlasEngine::_createResources()
             D3D_FEATURE_LEVEL_11_0,
             D3D_FEATURE_LEVEL_10_1,
             D3D_FEATURE_LEVEL_10_0,
+            D3D_FEATURE_LEVEL_9_3,
+            D3D_FEATURE_LEVEL_9_2,
+            D3D_FEATURE_LEVEL_9_1,
         };
 
         auto hr = E_UNEXPECTED;
@@ -624,16 +627,6 @@ void AtlasEngine::_createResources()
         _r.deviceContext = deviceContext.query<ID3D11DeviceContext1>();
     }
 
-    {
-        wil::com_ptr<IDXGIAdapter1> dxgiAdapter;
-        THROW_IF_FAILED(_r.device.query<IDXGIObject>()->GetParent(__uuidof(dxgiAdapter), dxgiAdapter.put_void()));
-        THROW_IF_FAILED(dxgiAdapter->GetParent(__uuidof(_r.dxgiFactory), _r.dxgiFactory.put_void()));
-
-        DXGI_ADAPTER_DESC1 desc;
-        THROW_IF_FAILED(dxgiAdapter->GetDesc1(&desc));
-        _r.d2dMode = debugForceD2DMode || WI_IsAnyFlagSet(desc.Flags, DXGI_ADAPTER_FLAG_REMOTE | DXGI_ADAPTER_FLAG_SOFTWARE);
-    }
-
 #ifndef NDEBUG
     // D3D debug messages
     if (deviceFlags & D3D11_CREATE_DEVICE_DEBUG)
@@ -645,6 +638,32 @@ void AtlasEngine::_createResources()
         }
     }
 #endif // NDEBUG
+
+    {
+        wil::com_ptr<IDXGIAdapter1> dxgiAdapter;
+        THROW_IF_FAILED(_r.device.query<IDXGIObject>()->GetParent(__uuidof(dxgiAdapter), dxgiAdapter.put_void()));
+        THROW_IF_FAILED(dxgiAdapter->GetParent(__uuidof(_r.dxgiFactory), _r.dxgiFactory.put_void()));
+
+        DXGI_ADAPTER_DESC1 desc;
+        THROW_IF_FAILED(dxgiAdapter->GetDesc1(&desc));
+        _r.d2dMode = debugForceD2DMode || WI_IsAnyFlagSet(desc.Flags, DXGI_ADAPTER_FLAG_REMOTE | DXGI_ADAPTER_FLAG_SOFTWARE);
+    }
+
+    const auto featureLevel = _r.device->GetFeatureLevel();
+
+    if (featureLevel < D3D_FEATURE_LEVEL_10_0)
+    {
+        _r.d2dMode = true;
+    }
+    else if (featureLevel < D3D_FEATURE_LEVEL_11_0)
+    {
+        D3D11_FEATURE_DATA_D3D10_X_HARDWARE_OPTIONS options;
+        THROW_IF_FAILED(_r.device->CheckFeatureSupport(D3D11_FEATURE_D3D10_X_HARDWARE_OPTIONS, &options, sizeof(options)));
+        if (!options.ComputeShaders_Plus_RawAndStructuredBuffers_Via_Shader_4_x)
+        {
+            _r.d2dMode = true;
+        }
+    }
 
     if (!_r.d2dMode)
     {
@@ -663,7 +682,7 @@ void AtlasEngine::_createResources()
         if (!_api.customPixelShaderPath.empty())
         {
             const char* target = nullptr;
-            switch (_r.device->GetFeatureLevel())
+            switch (featureLevel)
             {
             case D3D_FEATURE_LEVEL_10_0:
                 target = "ps_4_0";
@@ -676,11 +695,18 @@ void AtlasEngine::_createResources()
                 break;
             }
 
-            static constexpr auto flags = D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR | D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_WARNINGS_ARE_ERRORS
+            static constexpr auto flags =
+                D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR
 #ifdef NDEBUG
-                                          | D3DCOMPILE_OPTIMIZATION_LEVEL3;
+                | D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #else
-                                          | D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+                // Only enable strictness and warnings in DEBUG mode
+                //  as these settings makes it very difficult to develop
+                //  shaders as windows terminal is not telling the user
+                //  what's wrong, windows terminal just fails.
+                //  Keep it in DEBUG mode to catch errors in shaders
+                //  shipped with windows terminal
+                | D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_WARNINGS_ARE_ERRORS | D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 #endif
 
             wil::com_ptr<ID3DBlob> error;
@@ -696,9 +722,30 @@ void AtlasEngine::_createResources()
                 /* ppCode      */ blob.addressof(),
                 /* ppErrorMsgs */ error.addressof());
 
+            // Unless we can determine otherwise, assume this shader requires evaluation every frame
+            _r.requiresContinuousRedraw = true;
+
             if (SUCCEEDED(hr))
             {
                 THROW_IF_FAILED(_r.device->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, _r.customPixelShader.put()));
+
+                // Try to determine whether the shader uses the Time variable
+                wil::com_ptr<ID3D11ShaderReflection> reflector;
+                if (SUCCEEDED_LOG(D3DReflect(blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(reflector.put()))))
+                {
+                    if (ID3D11ShaderReflectionConstantBuffer* constantBufferReflector = reflector->GetConstantBufferByIndex(0)) // shader buffer
+                    {
+                        if (ID3D11ShaderReflectionVariable* variableReflector = constantBufferReflector->GetVariableByIndex(0)) // time
+                        {
+                            D3D11_SHADER_VARIABLE_DESC variableDescriptor;
+                            if (SUCCEEDED_LOG(variableReflector->GetDesc(&variableDescriptor)))
+                            {
+                                // only if time is used
+                                _r.requiresContinuousRedraw = WI_IsFlagSet(variableDescriptor.uFlags, D3D_SVF_USED);
+                            }
+                        }
+                    }
+                }
             }
             else
             {
@@ -710,18 +757,17 @@ void AtlasEngine::_createResources()
                 {
                     LOG_HR(hr);
                 }
-
                 if (_api.warningCallback)
                 {
                     _api.warningCallback(D2DERR_SHADER_COMPILE_FAILED);
                 }
             }
-
-            _r.requiresContinuousRedraw = true;
         }
         else if (_api.useRetroTerminalEffect)
         {
             THROW_IF_FAILED(_r.device->CreatePixelShader(&custom_shader_ps[0], sizeof(custom_shader_ps), nullptr, _r.customPixelShader.put()));
+            // We know the built-in retro shader doesn't require continuous redraw.
+            _r.requiresContinuousRedraw = false;
         }
 
         if (_r.customPixelShader)
@@ -791,10 +837,19 @@ void AtlasEngine::_createSwapChain()
         desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
         desc.SampleDesc.Count = 1;
         desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-        desc.BufferCount = 2;
+        // Sometimes up to 2 buffers are locked, for instance during screen capture or when moving the window.
+        // 3 buffers seems to guarantee a stable framerate at display frequency at all times.
+        desc.BufferCount = 3;
         desc.Scaling = DXGI_SCALING_NONE;
-        desc.SwapEffect = _sr.isWindows10OrGreater && !_r.d2dMode ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-        // If our background is opaque we can enable "independent" flips by setting DXGI_SWAP_EFFECT_FLIP_DISCARD and DXGI_ALPHA_MODE_IGNORE.
+        // DXGI_SWAP_EFFECT_FLIP_DISCARD is a mode that was created at a time were display drivers
+        // lacked support for Multiplane Overlays (MPO) and were copying buffers was expensive.
+        // This allowed DWM to quickly draw overlays (like gamebars) on top of rendered content.
+        // With faster GPU memory in general and with support for MPO in particular this isn't
+        // really an advantage anymore. Instead DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL allows for a
+        // more "intelligent" composition and display updates to occur like Panel Self Refresh
+        // (PSR) which requires dirty rectangles (Present1 API) to work correctly.
+        desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+        // If our background is opaque we can enable "independent" flips by setting DXGI_ALPHA_MODE_IGNORE.
         // As our swap chain won't have to compose with DWM anymore it reduces the display latency dramatically.
         desc.AlphaMode = _api.backgroundOpaqueMixin ? DXGI_ALPHA_MODE_IGNORE : DXGI_ALPHA_MODE_PREMULTIPLIED;
         desc.Flags = debugGeneralPerformance ? 0 : DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
@@ -837,7 +892,7 @@ void AtlasEngine::_createSwapChain()
     {
         try
         {
-            _api.swapChainChangedCallback();
+            _api.swapChainChangedCallback(_api.swapChainHandle.get());
         }
         CATCH_LOG();
     }
@@ -901,6 +956,21 @@ void AtlasEngine::_recreateSizeDependentResources()
         _api.glyphProps = Buffer<DWRITE_SHAPING_GLYPH_PROPERTIES>{ projectedGlyphSize };
         _api.glyphAdvances = Buffer<f32>{ projectedGlyphSize };
         _api.glyphOffsets = Buffer<DWRITE_GLYPH_OFFSET>{ projectedGlyphSize };
+
+        // Initialize cellGlyphMapping with valid data (whitespace), so that it can be
+        // safely used by the TileHashMap refresh logic via makeNewest() in StartPaint().
+        {
+            u16x2* coords{};
+            AtlasKey key{ { .cellCount = 1 }, 1, L" " };
+            AtlasValue value{ CellFlags::None, 1, &coords };
+
+            coords[0] = _r.tileAllocator.allocate(_r.glyphs);
+
+            const auto it = _r.glyphs.insert(std::move(key), std::move(value));
+            _r.glyphQueue.emplace_back(it);
+
+            std::fill(_r.cellGlyphMapping.begin(), _r.cellGlyphMapping.end(), it);
+        }
     }
 
     if (!_r.d2dMode)
@@ -1031,8 +1101,11 @@ void AtlasEngine::_recreateFontDependentResources()
                 const auto fontStyle = italic ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL;
                 auto& textFormat = _r.textFormats[italic][bold];
 
+                wil::com_ptr<IDWriteFont> font;
+                THROW_IF_FAILED(_r.fontMetrics.fontFamily->GetFirstMatchingFont(fontWeight, DWRITE_FONT_STRETCH_NORMAL, fontStyle, font.addressof()));
+                THROW_IF_FAILED(font->CreateFontFace(_r.fontFaces[italic << 1 | bold].put()));
+
                 THROW_IF_FAILED(_sr.dwriteFactory->CreateTextFormat(_api.fontMetrics.fontName.c_str(), _api.fontMetrics.fontCollection.get(), fontWeight, fontStyle, DWRITE_FONT_STRETCH_NORMAL, _api.fontMetrics.fontSizeInDIP, L"", textFormat.put()));
-                THROW_IF_FAILED(textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER));
                 THROW_IF_FAILED(textFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
 
                 // DWRITE_LINE_SPACING_METHOD_UNIFORM:
@@ -1041,11 +1114,16 @@ void AtlasEngine::_recreateFontDependentResources()
                 // We want that. Otherwise fallback fonts might be rendered with an incorrect baseline and get cut off vertically.
                 THROW_IF_FAILED(textFormat->SetLineSpacing(DWRITE_LINE_SPACING_METHOD_UNIFORM, _r.cellSizeDIP.y, _api.fontMetrics.baselineInDIP));
 
-                if (const auto textFormat3 = textFormat.try_query<IDWriteTextFormat3>())
-                {
-                    THROW_IF_FAILED(textFormat3->SetAutomaticFontAxes(DWRITE_AUTOMATIC_FONT_AXES_OPTICAL_SIZE));
+                // NOTE: SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER) breaks certain
+                // bitmap fonts which expect glyphs to be laid out left-aligned.
 
-                    if (!_api.fontAxisValues.empty())
+                // NOTE: SetAutomaticFontAxes(DWRITE_AUTOMATIC_FONT_AXES_OPTICAL_SIZE) breaks certain
+                // fonts making them look fairly unslightly. With no option to easily disable this
+                // feature in Windows Terminal, it's better left disabled by default.
+
+                if (!_api.fontAxisValues.empty())
+                {
+                    if (const auto textFormat3 = textFormat.try_query<IDWriteTextFormat3>())
                     {
                         // The wght axis defaults to the font weight.
                         _api.fontAxisValues[0].value = bold || standardAxes[0].value == -1.0f ? static_cast<float>(fontWeight) : standardAxes[0].value;
@@ -1141,6 +1219,15 @@ void AtlasEngine::_flushBufferLine()
 
     // This would seriously blow us up otherwise.
     Expects(_api.bufferLineColumn.size() == _api.bufferLine.size() + 1);
+
+    // GH#13962: With the lack of proper LineRendition support, just fill
+    // the remaining columns with whitespace to prevent any weird artifacts.
+    for (auto lastColumn = _api.bufferLineColumn.back(); lastColumn < _api.cellCount.x;)
+    {
+        ++lastColumn;
+        _api.bufferLine.emplace_back(L' ');
+        _api.bufferLineColumn.emplace_back(lastColumn);
+    }
 
     // NOTE:
     // This entire function is one huge hack to see if it works.

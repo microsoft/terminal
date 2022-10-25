@@ -1263,7 +1263,6 @@ bool IslandWindow::RegisterHotKey(const int index, const winrt::Microsoft::Termi
     // TODO GH#8888: We should display a warning of some kind if this fails.
     // This can fail if something else already bound this hotkey.
     const auto result = ::RegisterHotKey(_window.get(), index, hotkeyFlags, vkey);
-    LOG_IF_WIN32_BOOL_FALSE(result);
 
     TraceLoggingWrite(g_hWindowsTerminalProvider,
                       "RegisterHotKey",
@@ -1509,23 +1508,31 @@ void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration,
     }
     else
     {
-        const auto windowThreadProcessId = GetWindowThreadProcessId(oldForegroundWindow, nullptr);
-        const auto currentThreadId = GetCurrentThreadId();
+        // Try first to send a message to the current foreground window. If it's not responding, it may
+        // be waiting on us to finsh launching. Passing SMTO_NOTIMEOUTIFNOTHUNG means that we get the same
+        // behavior as before--that is, waiting for the message loop--but we've done an early return if
+        // it turns out that it was hung.
+        // SendMessageTimeoutW returns nonzero if it succeeds.
+        if (0 != SendMessageTimeoutW(oldForegroundWindow, WM_NULL, 0, 0, SMTO_NOTIMEOUTIFNOTHUNG | SMTO_BLOCK | SMTO_ABORTIFHUNG, 1000, nullptr))
+        {
+            const auto windowThreadProcessId = GetWindowThreadProcessId(oldForegroundWindow, nullptr);
+            const auto currentThreadId = GetCurrentThreadId();
 
-        LOG_IF_WIN32_BOOL_FALSE(AttachThreadInput(windowThreadProcessId, currentThreadId, true));
-        // Just in case, add the thread detach as a scope_exit, to make _sure_ we do it.
-        auto detachThread = wil::scope_exit([windowThreadProcessId, currentThreadId]() {
-            LOG_IF_WIN32_BOOL_FALSE(AttachThreadInput(windowThreadProcessId, currentThreadId, false));
-        });
-        LOG_IF_WIN32_BOOL_FALSE(BringWindowToTop(_window.get()));
-        ShowWindow(_window.get(), SW_SHOW);
+            LOG_IF_WIN32_BOOL_FALSE(AttachThreadInput(windowThreadProcessId, currentThreadId, true));
+            // Just in case, add the thread detach as a scope_exit, to make _sure_ we do it.
+            auto detachThread = wil::scope_exit([windowThreadProcessId, currentThreadId]() {
+                LOG_IF_WIN32_BOOL_FALSE(AttachThreadInput(windowThreadProcessId, currentThreadId, false));
+            });
+            LOG_IF_WIN32_BOOL_FALSE(BringWindowToTop(_window.get()));
+            ShowWindow(_window.get(), SW_SHOW);
 
-        // Activate the window too. This will force us to the virtual desktop this
-        // window is on, if it's on another virtual desktop.
-        LOG_LAST_ERROR_IF_NULL(SetActiveWindow(_window.get()));
+            // Activate the window too. This will force us to the virtual desktop this
+            // window is on, if it's on another virtual desktop.
+            LOG_LAST_ERROR_IF_NULL(SetActiveWindow(_window.get()));
 
-        // Throw us on the active monitor.
-        _moveToMonitor(oldForegroundWindow, toMonitor);
+            // Throw us on the active monitor.
+            _moveToMonitor(oldForegroundWindow, toMonitor);
+        }
     }
 }
 

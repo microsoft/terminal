@@ -41,9 +41,7 @@ InputBuffer::InputBuffer() :
 // Arguments:
 // - None
 // Return Value:
-InputBuffer::~InputBuffer()
-{
-}
+InputBuffer::~InputBuffer() = default;
 
 // Routine Description:
 // - checks if any partial char data is available for reading operation

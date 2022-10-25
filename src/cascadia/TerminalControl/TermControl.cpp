@@ -707,7 +707,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                              margins.Top,
                                              margins.Right,
                                              margins.Bottom };
-                _automationPeer = winrt::make<implementation::TermControlAutomationPeer>(this, padding, interactivityAutoPeer);
+                _automationPeer = winrt::make<implementation::TermControlAutomationPeer>(get_strong(), padding, interactivityAutoPeer);
                 return _automationPeer;
             }
         }
@@ -731,19 +731,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.ConnectionState();
     }
 
-    winrt::fire_and_forget TermControl::RenderEngineSwapChainChanged(IInspectable /*sender*/, IInspectable /*args*/)
+    winrt::fire_and_forget TermControl::RenderEngineSwapChainChanged(IInspectable /*sender*/, IInspectable args)
     {
         // This event is only registered during terminal initialization,
         // so we don't need to check _initializedTerminal.
-        // We also don't lock for things that come back from the renderer.
-        auto weakThis{ get_weak() };
+        const auto weakThis{ get_weak() };
+
+        // Create a copy of the swap chain HANDLE in args, since we don't own that parameter.
+        // By the time we return from the co_await below, it might be deleted already.
+        winrt::handle handle;
+        const auto processHandle = GetCurrentProcess();
+        const auto sourceHandle = reinterpret_cast<HANDLE>(winrt::unbox_value<uint64_t>(args));
+        THROW_IF_WIN32_BOOL_FALSE(DuplicateHandle(processHandle, sourceHandle, processHandle, handle.put(), 0, FALSE, DUPLICATE_SAME_ACCESS));
 
         co_await wil::resume_foreground(Dispatcher());
 
         if (auto control{ weakThis.get() })
         {
-            const auto chainHandle = reinterpret_cast<HANDLE>(control->_core.SwapChainHandle());
-            _AttachDxgiSwapChainToXaml(chainHandle);
+            _AttachDxgiSwapChainToXaml(handle.get());
         }
     }
 
@@ -830,21 +835,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         _interactivity.Initialize();
 
-        _AttachDxgiSwapChainToXaml(reinterpret_cast<HANDLE>(_core.SwapChainHandle()));
-
-        // Tell the DX Engine to notify us when the swap chain changes. We do
-        // this after we initially set the swapchain so as to avoid unnecessary
-        // callbacks (and locking problems)
         _core.SwapChainChanged({ get_weak(), &TermControl::RenderEngineSwapChainChanged });
-
-        // !! LOAD BEARING !!
-        // Make sure you enable painting _AFTER_ calling _AttachDxgiSwapChainToXaml
-        //
-        // If you EnablePainting first, then you almost certainly won't have any
-        // problems when running in Debug. However, in Release, you'll run into
-        // issues where the Renderer starts trying to paint before we've
-        // actually attached the swapchain to anything, and the DxEngine is not
-        // prepared to handle that.
         _core.EnablePainting();
 
         auto bufferHeight = _core.BufferHeight();
@@ -1526,7 +1517,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Adjust the font size of the terminal control.
     // Arguments:
     // - fontSizeDelta: The amount to increase or decrease the font size by.
-    void TermControl::AdjustFontSize(int fontSizeDelta)
+    void TermControl::AdjustFontSize(float fontSizeDelta)
     {
         _core.AdjustFontSize(fontSizeDelta);
     }
@@ -2041,15 +2032,26 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - dpi: The DPI we should create the terminal at. This affects things such
     //   as font size, scrollbar and other control scaling, etc. Make sure the
     //   caller knows what monitor the control is about to appear on.
+    // - commandlineCols: Number of cols specified on the commandline
+    // - commandlineRows: Number of rows specified on the commandline
     // Return Value:
     // - a size containing the requested dimensions in pixels.
-    winrt::Windows::Foundation::Size TermControl::GetProposedDimensions(const IControlSettings& settings, const uint32_t dpi)
+    winrt::Windows::Foundation::Size TermControl::GetProposedDimensions(const IControlSettings& settings,
+                                                                        const uint32_t dpi,
+                                                                        int32_t commandlineCols,
+                                                                        int32_t commandlineRows)
     {
         // If the settings have negative or zero row or column counts, ignore those counts.
         // (The lower TerminalCore layer also has upper bounds as well, but at this layer
         //  we may eventually impose different ones depending on how many pixels we can address.)
-        const auto cols = ::base::saturated_cast<float>(std::max(settings.InitialCols(), 1));
-        const auto rows = ::base::saturated_cast<float>(std::max(settings.InitialRows(), 1));
+        const auto cols = ::base::saturated_cast<float>(std::max(commandlineCols > 0 ?
+                                                                     commandlineCols :
+                                                                     settings.InitialCols(),
+                                                                 1));
+        const auto rows = ::base::saturated_cast<float>(std::max(commandlineRows > 0 ?
+                                                                     commandlineRows :
+                                                                     settings.InitialRows(),
+                                                                 1));
 
         const winrt::Windows::Foundation::Size initialSize{ cols, rows };
 
@@ -2091,8 +2093,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //      The family is only used to determine if the font is truetype or
         //      not, but DX doesn't use that info at all.
         //      The Codepage is additionally not actually used by the DX engine at all.
-        FontInfo actualFont = { fontFace, 0, fontWeight.Weight, { 0, fontSize }, CP_UTF8, false };
-        FontInfoDesired desiredFont = { actualFont };
+        FontInfoDesired desiredFont{ fontFace, 0, fontWeight.Weight, fontSize, CP_UTF8 };
+        FontInfo actualFont{ fontFace, 0, fontWeight.Weight, desiredFont.GetEngineSize(), CP_UTF8, false };
 
         // Create a DX engine and initialize it with our font and DPI. We'll
         // then use it to measure how much space the requested rows and columns
@@ -2126,7 +2128,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         double width = cols * actualFontSize.X;
 
         // Reserve additional space if scrollbar is intended to be visible
-        if (scrollState == ScrollbarState::Visible)
+        if (scrollState != ScrollbarState::Hidden)
         {
             width += scrollbarSize;
         }
@@ -2170,7 +2172,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             double width = fontSize.Width;
             double height = fontSize.Height;
             // Reserve additional space if scrollbar is intended to be visible
-            if (_core.Settings().ScrollState() == ScrollbarState::Visible)
+            if (_core.Settings().ScrollState() != ScrollbarState::Hidden)
             {
                 width += ScrollBar().ActualWidth();
             }
@@ -2213,7 +2215,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                            padding.Left + padding.Right :
                                                            padding.Top + padding.Bottom);
 
-        if (widthOrHeight && _core.Settings().ScrollState() == ScrollbarState::Visible)
+        if (widthOrHeight && _core.Settings().ScrollState() != ScrollbarState::Hidden)
         {
             nonTerminalArea += gsl::narrow_cast<float>(ScrollBar().ActualWidth());
         }

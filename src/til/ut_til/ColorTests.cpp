@@ -108,4 +108,19 @@ class ColorTests
         VERIFY_ARE_EQUAL(0xfe, colorWithAlpha.b);
         VERIFY_ARE_EQUAL(0x7f, colorWithAlpha.a);
     }
+
+    TEST_METHOD(LayerOver)
+    {
+        static constexpr til::color orange{ 255, 165, 0, 255 };
+        static constexpr til::color blue{ 0, 205, 255, 255 };
+        static constexpr til::color orangeWithAlpha{ 255, 165, 0, 165 };
+        static constexpr til::color blueWithAlpha{ 0, 205, 255, 205 };
+
+        VERIFY_ARE_EQUAL(orange, orange.layer_over(blue));
+        VERIFY_ARE_EQUAL(blue, blue.layer_over(orange));
+        VERIFY_ARE_EQUAL(til::color(165, 179, 90, 255), orangeWithAlpha.layer_over(blue));
+        VERIFY_ARE_EQUAL(til::color(177, 177, 78, 237), orangeWithAlpha.layer_over(blueWithAlpha));
+        VERIFY_ARE_EQUAL(til::color(50, 197, 205, 255), blueWithAlpha.layer_over(orange));
+        VERIFY_ARE_EQUAL(til::color(35, 200, 220, 237), blueWithAlpha.layer_over(orangeWithAlpha));
+    }
 };

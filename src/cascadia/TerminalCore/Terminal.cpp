@@ -91,7 +91,7 @@ void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Re
     // But if they are being accepted by conhost, there's a chance they may get
     // passed through in some situations, so it's important that our state
     // machine is always prepared to accept them.
-    _stateMachine->SetParserMode(StateMachine::Mode::AcceptC1, true);
+    _stateMachine->SetParserMode(StateMachine::Mode::AlwaysAcceptC1, true);
 }
 
 // Method Description:
@@ -1711,4 +1711,24 @@ til::point Terminal::GetViewportRelativeCursorPosition() const noexcept
     const auto absoluteCursorPosition{ GetCursorPosition() };
     const auto viewport{ _GetMutableViewport() };
     return absoluteCursorPosition - viewport.Origin();
+}
+
+// These functions are used by TerminalInput, which must build in conhost
+// against OneCore compatible signatures. See the definitions in
+// VtApiRedirection.hpp (which we cannot include cross-project.)
+// Since we do nto run on OneCore, we can dispense with the compatibility
+// shims.
+extern "C" UINT OneCoreSafeMapVirtualKeyW(_In_ UINT uCode, _In_ UINT uMapType)
+{
+    return MapVirtualKeyW(uCode, uMapType);
+}
+
+extern "C" SHORT OneCoreSafeVkKeyScanW(_In_ WCHAR ch)
+{
+    return VkKeyScanW(ch);
+}
+
+extern "C" SHORT OneCoreSafeGetKeyState(_In_ int nVirtKey)
+{
+    return GetKeyState(nVirtKey);
 }

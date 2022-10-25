@@ -4,11 +4,7 @@
 #include "pch.h"
 #include "HwndTerminal.hpp"
 #include <windowsx.h>
-#include "../../types/TermControlUiaProvider.hpp"
 #include <DefaultSettings.h>
-#include "../../renderer/base/Renderer.hpp"
-#include "../../renderer/dx/DxRenderer.hpp"
-#include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "../../types/viewport.cpp"
 #include "../../types/inc/GlyphWidth.hpp"
 
@@ -54,6 +50,17 @@ LRESULT CALLBACK HwndTerminal::HwndTerminalWndProc(
     LPARAM lParam) noexcept
 try
 {
+    if (WM_NCCREATE == uMsg)
+    {
+#pragma warning(suppress : 26490) // Win32 APIs can only store void*, have to use reinterpret_cast
+        auto cs = reinterpret_cast<CREATESTRUCT*>(lParam);
+        HwndTerminal* that = static_cast<HwndTerminal*>(cs->lpCreateParams);
+        that->_hwnd = wil::unique_hwnd(hwnd);
+
+#pragma warning(suppress : 26490) // Win32 APIs can only store void*, have to use reinterpret_cast
+        SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(that));
+        return DefWindowProc(hwnd, WM_NCCREATE, wParam, lParam);
+    }
 #pragma warning(suppress : 26490) // Win32 APIs can only store void*, have to use reinterpret_cast
     auto terminal = reinterpret_cast<HwndTerminal*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
 
@@ -169,7 +176,7 @@ static bool RegisterTermClass(HINSTANCE hInstance) noexcept
 }
 
 HwndTerminal::HwndTerminal(HWND parentHwnd) :
-    _desiredFont{ L"Consolas", 0, DEFAULT_FONT_WEIGHT, { 0, 14 }, CP_UTF8 },
+    _desiredFont{ L"Consolas", 0, DEFAULT_FONT_WEIGHT, 14, CP_UTF8 },
     _actualFont{ L"Consolas", 0, DEFAULT_FONT_WEIGHT, { 0, 14 }, CP_UTF8, false },
     _uiaProvider{ nullptr },
     _currentDpi{ USER_DEFAULT_SCREEN_DPI },
@@ -182,7 +189,7 @@ HwndTerminal::HwndTerminal(HWND parentHwnd) :
 
     if (RegisterTermClass(hInstance))
     {
-        _hwnd = wil::unique_hwnd(CreateWindowExW(
+        CreateWindowExW(
             0,
             term_window_class,
             nullptr,
@@ -197,10 +204,7 @@ HwndTerminal::HwndTerminal(HWND parentHwnd) :
             parentHwnd,
             nullptr,
             hInstance,
-            nullptr));
-
-#pragma warning(suppress : 26490) // Win32 APIs can only store void*, have to use reinterpret_cast
-        SetWindowLongPtr(_hwnd.get(), GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+            this);
     }
 }
 
@@ -324,14 +328,15 @@ IRawElementProviderSimple* HwndTerminal::_GetUiaProvider() noexcept
 {
     // If TermControlUiaProvider throws during construction,
     // we don't want to try constructing an instance again and again.
-    // _uiaProviderInitialized helps us prevent this.
-    if (!_uiaProviderInitialized)
+    if (!_uiaProvider)
     {
         try
         {
             auto lock = _terminal->LockForWriting();
-            LOG_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<::Microsoft::Terminal::TermControlUiaProvider>(&_uiaProvider, this->GetUiaData(), this));
-            _uiaProviderInitialized = true;
+            LOG_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<HwndTerminalAutomationPeer>(&_uiaProvider, this->GetUiaData(), this));
+            _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(_uiaProvider.Get());
+            LOG_IF_FAILED(_uiaEngine->Enable());
+            _renderer->AddRenderEngine(_uiaEngine.get());
         }
         catch (...)
         {
@@ -380,29 +385,10 @@ void HwndTerminal::SendOutput(std::wstring_view data)
 
 HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal)
 {
-    // In order for UIA to hook up properly there needs to be a "static" window hosting the
-    // inner win32 control. If the static window is not present then WM_GETOBJECT messages
-    // will not reach the child control, and the uia element will not be present in the tree.
-    auto _hostWindow = CreateWindowEx(
-        0,
-        L"static",
-        nullptr,
-        WS_CHILD |
-            WS_CLIPCHILDREN |
-            WS_CLIPSIBLINGS |
-            WS_VISIBLE,
-        0,
-        0,
-        0,
-        0,
-        parentHwnd,
-        nullptr,
-        nullptr,
-        nullptr);
-    auto _terminal = std::make_unique<HwndTerminal>(_hostWindow);
+    auto _terminal = std::make_unique<HwndTerminal>(parentHwnd);
     RETURN_IF_FAILED(_terminal->Initialize());
 
-    *hwnd = _hostWindow;
+    *hwnd = _terminal->GetHwnd();
     *terminal = _terminal.release();
 
     return S_OK;
@@ -725,6 +711,10 @@ try
     {
         modifiers |= ControlKeyStates::EnhancedKey;
     }
+    if (vkey && keyDown && _uiaProvider)
+    {
+        _uiaProvider->RecordKeyEvent(vkey);
+    }
     _terminal->SendKeyEvent(vkey, scanCode, modifiers, keyDown);
 }
 CATCH_LOG();
@@ -799,7 +789,7 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
 
     publicTerminal->_terminal->SetCursorStyle(static_cast<DispatchTypes::CursorStyle>(theme.CursorStyle));
 
-    publicTerminal->_desiredFont = { fontFamily, 0, DEFAULT_FONT_WEIGHT, { 0, fontSize }, CP_UTF8 };
+    publicTerminal->_desiredFont = { fontFamily, 0, DEFAULT_FONT_WEIGHT, static_cast<float>(fontSize), CP_UTF8 };
     publicTerminal->_UpdateFont(newDpi);
 
     // When the font changes the terminal dimensions need to be recalculated since the available row and column
@@ -833,12 +823,20 @@ void __stdcall TerminalSetFocus(void* terminal)
 {
     auto publicTerminal = static_cast<HwndTerminal*>(terminal);
     publicTerminal->_focused = true;
+    if (auto uiaEngine = publicTerminal->_uiaEngine.get())
+    {
+        LOG_IF_FAILED(uiaEngine->Enable());
+    }
 }
 
 void __stdcall TerminalKillFocus(void* terminal)
 {
     auto publicTerminal = static_cast<HwndTerminal*>(terminal);
     publicTerminal->_focused = false;
+    if (auto uiaEngine = publicTerminal->_uiaEngine.get())
+    {
+        LOG_IF_FAILED(uiaEngine->Disable());
+    }
 }
 
 // Routine Description:

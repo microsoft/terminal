@@ -95,7 +95,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                              Control::IControlAppearance unfocusedAppearance,
                              TerminalConnection::ITerminalConnection connection) :
         _connection{ connection },
-        _desiredFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8 },
+        _desiredFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, DEFAULT_FONT_SIZE, CP_UTF8 },
         _actualFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false }
     {
         _EnsureStaticInitialization();
@@ -326,7 +326,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // Tell the DX Engine to notify us when the swap chain changes.
             // We do this after we initially set the swapchain so as to avoid unnecessary callbacks (and locking problems)
-            _renderEngine->SetCallback(std::bind(&ControlCore::_renderEngineSwapChainChanged, this));
+            _renderEngine->SetCallback([this](auto handle) { _renderEngineSwapChainChanged(handle); });
 
             _renderEngine->SetRetroTerminalEffect(_settings->RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(_settings->PixelShaderPath());
@@ -435,12 +435,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _updateSelectionUI();
                 return true;
             }
-            else if (vkey == VK_RETURN && mods.IsCtrlPressed() && !mods.IsAltPressed() && !mods.IsShiftPressed() && _terminal->SelectionIsTargetingUrl())
+            else if (vkey == VK_RETURN && mods.IsCtrlPressed() && !mods.IsAltPressed() && !mods.IsShiftPressed())
             {
                 // Ctrl + Enter --> Open URL
                 auto lock = _terminal->LockForReading();
-                const auto uri = _terminal->GetHyperlinkAtBufferPosition(_terminal->GetSelectionAnchor());
-                _OpenHyperlinkHandlers(*this, winrt::make<OpenHyperlinkEventArgs>(winrt::hstring{ uri }));
+                if (const auto uri = _terminal->GetHyperlinkAtBufferPosition(_terminal->GetSelectionAnchor()); !uri.empty())
+                {
+                    _OpenHyperlinkHandlers(*this, winrt::make<OpenHyperlinkEventArgs>(winrt::hstring{ uri }));
+                }
+                else
+                {
+                    const auto selectedText = _terminal->GetTextBuffer().GetPlainText(_terminal->GetSelectionAnchor(), _terminal->GetSelectionEnd());
+                    _OpenHyperlinkHandlers(*this, winrt::make<OpenHyperlinkEventArgs>(winrt::hstring{ selectedText }));
+                }
                 return true;
             }
             else if (vkey == VK_RETURN && !mods.IsCtrlPressed() && !mods.IsAltPressed())
@@ -596,24 +603,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::ToggleShaderEffects()
     {
+        const auto path = _settings->PixelShaderPath();
         auto lock = _terminal->LockForWriting();
         // Originally, this action could be used to enable the retro effects
         // even when they're set to `false` in the settings. If the user didn't
         // specify a custom pixel shader, manually enable the legacy retro
         // effect first. This will ensure that a toggle off->on will still work,
         // even if they currently have retro effect off.
-        if (_settings->PixelShaderPath().empty() && !_renderEngine->GetRetroTerminalEffect())
+        if (path.empty())
         {
-            // SetRetroTerminalEffect to true will enable the effect. In this
-            // case, the shader effect will already be disabled (because neither
-            // a pixel shader nor the retro effects were originally requested).
-            // So we _don't_ want to toggle it again below, because that would
-            // toggle it back off.
-            _renderEngine->SetRetroTerminalEffect(true);
+            _renderEngine->SetRetroTerminalEffect(!_renderEngine->GetRetroTerminalEffect());
         }
         else
         {
-            _renderEngine->ToggleShaderEffects();
+            _renderEngine->SetPixelShaderPath(_renderEngine->GetPixelShaderPath().empty() ? std::wstring_view{ path } : std::wstring_view{});
         }
         // Always redraw after toggling effects. This way even if the control
         // does not have focus it will update immediately.
@@ -689,7 +692,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
         if (_lastHoveredCell.has_value())
         {
-            return winrt::hstring{ _terminal->GetHyperlinkAtViewportPosition(*_lastHoveredCell) };
+            auto uri{ _terminal->GetHyperlinkAtViewportPosition(*_lastHoveredCell) };
+            uri.resize(std::min<size_t>(1024u, uri.size())); // Truncate for display
+            return winrt::hstring{ uri };
         }
         return {};
     }
@@ -856,15 +861,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - fontSize: The size of the font.
     // Return Value:
     // - Returns true if you need to call _refreshSizeUnderLock().
-    bool ControlCore::_setFontSizeUnderLock(int fontSize)
+    bool ControlCore::_setFontSizeUnderLock(float fontSize)
     {
         // Make sure we have a non-zero font size
-        const auto newSize = std::max(fontSize, 1);
+        const auto newSize = std::max(fontSize, 1.0f);
         const auto fontFace = _settings->FontFace();
         const auto fontWeight = _settings->FontWeight();
-        _actualFont = { fontFace, 0, fontWeight.Weight, { 0, newSize }, CP_UTF8, false };
+        _desiredFont = { fontFace, 0, fontWeight.Weight, newSize, CP_UTF8 };
+        _actualFont = { fontFace, 0, fontWeight.Weight, _desiredFont.GetEngineSize(), CP_UTF8, false };
         _actualFontFaceName = { fontFace };
-        _desiredFont = { _actualFont };
 
         const auto before = _actualFont.GetSize();
         _updateFont();
@@ -890,11 +895,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Adjust the font size of the terminal control.
     // Arguments:
     // - fontSizeDelta: The amount to increase or decrease the font size by.
-    void ControlCore::AdjustFontSize(int fontSizeDelta)
+    void ControlCore::AdjustFontSize(float fontSizeDelta)
     {
         const auto lock = _terminal->LockForWriting();
 
-        if (_setFontSizeUnderLock(_desiredFont.GetEngineSize().Y + fontSizeDelta))
+        if (_setFontSizeUnderLock(_desiredFont.GetFontSize() + fontSizeDelta))
         {
             _refreshSizeUnderLock();
         }
@@ -1208,10 +1213,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return static_cast<uint16_t>(_actualFont.GetWeight());
     }
 
-    til::size ControlCore::FontSizeInDips() const
+    winrt::Windows::Foundation::Size ControlCore::FontSizeInDips() const
     {
-        const til::size fontSize{ _actualFont.GetSize() };
-        return fontSize.scale(til::math::rounding, 1.0f / ::base::saturated_cast<float>(_compositionScale));
+        const auto fontSize = _actualFont.GetSize();
+        const auto scale = 1.0f / static_cast<float>(_compositionScale);
+        return {
+            fontSize.width * scale,
+            fontSize.height * scale,
+        };
     }
 
     TerminalConnection::ConnectionState ControlCore::ConnectionState() const
@@ -1513,32 +1522,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _FoundMatchHandlers(*this, *foundResults);
     }
 
-    // Method Description:
-    // - Asynchronously close our connection. The Connection will likely wait
-    //   until the attached process terminates before Close returns. If that's
-    //   the case, we don't want to block the UI thread waiting on that process
-    //   handle.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    winrt::fire_and_forget ControlCore::_asyncCloseConnection()
-    {
-        if (auto localConnection{ std::exchange(_connection, nullptr) })
-        {
-            // Close the connection on the background thread.
-            co_await winrt::resume_background(); // ** DO NOT INTERACT WITH THE CONTROL CORE AFTER THIS LINE **
-
-            // Here, the ControlCore very well might be gone.
-            // _asyncCloseConnection is called on the dtor, so it's entirely
-            // possible that the background thread is resuming after we've been
-            // cleaned up.
-
-            localConnection.Close();
-            // connection is destroyed.
-        }
-    }
-
     void ControlCore::Close()
     {
         if (!_IsClosing())
@@ -1548,25 +1531,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Stop accepting new output and state changes before we disconnect everything.
             _connection.TerminalOutput(_connectionOutputEventToken);
             _connectionStateChangedRevoker.revoke();
-
-            // GH#1996 - Close the connection asynchronously on a background
-            // thread.
-            // Since TermControl::Close is only ever triggered by the UI, we
-            // don't really care to wait for the connection to be completely
-            // closed. We can just do it whenever.
-            _asyncCloseConnection();
+            _connection.Close();
         }
-    }
-
-    uint64_t ControlCore::SwapChainHandle() const
-    {
-        // This is called by:
-        // * TermControl::RenderEngineSwapChainChanged, who is only registered
-        //   after Core::Initialize() is called.
-        // * TermControl::_InitializeTerminal, after the call to Initialize, for
-        //   _AttachDxgiSwapChainToXaml.
-        // In both cases, we'll have a _renderEngine by then.
-        return reinterpret_cast<uint64_t>(_renderEngine->GetSwapChainHandle());
     }
 
     void ControlCore::_rendererWarning(const HRESULT hr)
@@ -1574,9 +1540,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _RendererWarningHandlers(*this, winrt::make<RendererWarningArgs>(hr));
     }
 
-    void ControlCore::_renderEngineSwapChainChanged()
+    void ControlCore::_renderEngineSwapChainChanged(const HANDLE handle)
     {
-        _SwapChainChangedHandlers(*this, nullptr);
+        _SwapChainChangedHandlers(*this, winrt::box_value<uint64_t>(reinterpret_cast<uint64_t>(handle)));
     }
 
     void ControlCore::_rendererBackgroundColorChanged()
