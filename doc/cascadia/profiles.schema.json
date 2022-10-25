@@ -28,8 +28,7 @@
       "enum": [
         "Windows.Terminal.Wsl",
         "Windows.Terminal.Azure",
-        "Windows.Terminal.PowershellCore",
-        "Windows.Terminal.SSH"
+        "Windows.Terminal.PowershellCore"
       ],
       "type": "string"
     },

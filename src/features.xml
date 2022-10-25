@@ -135,4 +135,11 @@
         </alwaysEnabledBrandingTokens>
     </feature>
 
+    <feature>
+        <name>Feature_DynamicSSHProfiles</name>
+        <description>Enables the dynamic profile generator for OpenSSH config files</description>
+        <id>9031</id>
+        <stage>AlwaysDisabled</stage>
+    </feature>
+
 </featureStaging>

@@ -13,7 +13,9 @@
 #include "PowershellCoreProfileGenerator.h"
 #include "VisualStudioGenerator.h"
 #include "WslDistroGenerator.h"
+#if TIL_FEATURE_DYNAMICSSHPROFILES_ENABLED
 #include "SshHostGenerator.h"
+#endif
 
 // The following files are generated at build time into the "Generated Files" directory.
 // defaults(-universal).h is a file containing the default json settings in a std::string_view.
@@ -149,7 +151,9 @@ void SettingsLoader::GenerateProfiles()
     _executeGenerator(WslDistroGenerator{});
     _executeGenerator(AzureCloudShellGenerator{});
     _executeGenerator(VisualStudioGenerator{});
+#if TIL_FEATURE_DYNAMICSSHPROFILES_ENABLED
     _executeGenerator(SshHostGenerator{});
+#endif
 }
 
 // A new settings.json gets a special treatment:
