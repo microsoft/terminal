@@ -293,75 +293,169 @@ try
             {
                 textRange.x = _r.vertexInstanceData.size();
 
-                bool beganDrawing = false;
-
-                size_t y = 0;
-                for (const auto& row : _r.rows)
                 {
-                    const auto baselineY = _r.cellSizeDIP.y * y + _r.fontMetrics.baselineInDIP;
-                    f32 cumulativeAdvance = 0;
+                    bool beganDrawing = false;
 
-                    for (const auto& m : row.mappings)
+                    size_t y = 0;
+                    for (const auto& row : _r.rows)
                     {
-                        for (auto i = m.glyphsFrom; i < m.glyphsTo; ++i)
+                        const auto baselineY = _r.cellSizeDIP.y * y + _r.fontMetrics.baselineInDIP;
+                        f32 cumulativeAdvance = 0;
+
+                        for (const auto& m : row.mappings)
                         {
-                            bool inserted = false;
-                            auto& entry = _r.glyphCache.FindOrInsert(m.fontFace.get(), row.glyphIndices[i], inserted);
-                            if (inserted)
+                            for (auto i = m.glyphsFrom; i < m.glyphsTo; ++i)
                             {
-                                if (!beganDrawing)
+                                bool inserted = false;
+                                auto& entry = _r.glyphCache.FindOrInsert(m.fontFace.get(), row.glyphIndices[i], inserted);
+                                if (inserted)
                                 {
-                                    beganDrawing = true;
-                                    _r.d2dRenderTarget->BeginDraw();
+                                    if (!beganDrawing)
+                                    {
+                                        beganDrawing = true;
+                                        _r.d2dRenderTarget->BeginDraw();
+                                    }
+
+                                    _drawGlyph(entry, m.fontEmSize);
                                 }
 
-                                _drawGlyph(entry, m.fontEmSize);
-                            }
+                                if (entry.wh != u16x2{})
+                                {
+                                    auto& ref = _r.vertexInstanceData.emplace_back();
+                                    ref.rect = {
+                                        (cumulativeAdvance + row.glyphOffsets[i].advanceOffset) * _r.pixelPerDIP + entry.offset.x,
+                                        (baselineY - row.glyphOffsets[i].ascenderOffset) * _r.pixelPerDIP + entry.offset.y,
+                                        static_cast<f32>(entry.wh.x),
+                                        static_cast<f32>(entry.wh.y),
+                                    };
+                                    ref.tex = {
+                                        static_cast<f32>(entry.xy.x),
+                                        static_cast<f32>(entry.xy.y),
+                                        static_cast<f32>(entry.wh.x),
+                                        static_cast<f32>(entry.wh.y),
+                                    };
+                                    ref.color = row.colors[i];
+                                    ref.shadingType = entry.colorGlyph ? 1 : 0;
+                                }
 
-                            if (entry.wh != u16x2{})
-                            {
-                                auto& ref = _r.vertexInstanceData.emplace_back();
-                                ref.rect = {
-                                    (cumulativeAdvance + row.glyphOffsets[i].advanceOffset) * _r.pixelPerDIP + entry.offset.x,
-                                    (baselineY - row.glyphOffsets[i].ascenderOffset) * _r.pixelPerDIP + entry.offset.y,
-                                    static_cast<f32>(entry.wh.x),
-                                    static_cast<f32>(entry.wh.y),
-                                };
-                                ref.tex = {
-                                    static_cast<f32>(entry.xy.x),
-                                    static_cast<f32>(entry.xy.y),
-                                    static_cast<f32>(entry.wh.x),
-                                    static_cast<f32>(entry.wh.y),
-                                };
-                                ref.color = row.colors[i];
-                                ref.shadingType = entry.colorGlyph ? 1 : 0;
+                                cumulativeAdvance += row.glyphAdvances[i];
                             }
-
-                            cumulativeAdvance += row.glyphAdvances[i];
                         }
+
+                        y++;
                     }
 
-                    y++;
+                    if (beganDrawing)
+                    {
+                        THROW_IF_FAILED(_r.d2dRenderTarget->EndDraw());
+                    }
                 }
 
-                if (beganDrawing)
                 {
-                    THROW_IF_FAILED(_r.d2dRenderTarget->EndDraw());
-                }
+                    auto it = _r.metadata.begin();
 
-                if constexpr (false)
-                {
-                    auto& ref = _r.vertexInstanceData.emplace_back();
-                    ref.rect = { 0.0f, 0.0f, 100.0f, 100.0f };
-                    ref.color = _r.selectionColor;
-                    ref.shadingType = 2;
-                }
-                if constexpr (false)
-                {
-                    auto& ref = _r.vertexInstanceData.emplace_back();
-                    ref.rect = { 50.0f, 50.0f, 100.0f, 100.0f };
-                    ref.color = _r.selectionColor;
-                    ref.shadingType = 2;
+                    for (u16 y = 0; y < _r.cellCount.y; ++y)
+                    {
+                        for (u16 x = 0; x < _r.cellCount.x; ++x, ++it)
+                        {
+                            const auto meta = *it;
+                            const auto flags = meta.flags;
+                            if (flags == CellFlags::None)
+                            {
+                                continue;
+                            }
+
+                            const auto top = _r.fontMetrics.cellSize.y * y;
+                            const auto left = _r.fontMetrics.cellSize.x * x;
+
+                            auto& ref = _r.vertexInstanceData.emplace_back();
+                            ref.color = meta.colors.x;
+                            ref.shadingType = 2;
+
+                            if (WI_IsFlagSet(flags, CellFlags::BorderLeft))
+                            {
+                                ref.rect = {
+                                    static_cast<float>(left),
+                                    static_cast<float>(top),
+                                    static_cast<float>(_r.fontMetrics.thinLineWidth),
+                                    static_cast<float>(_r.fontMetrics.cellSize.y),
+                                };
+                            }
+                            if (WI_IsFlagSet(flags, CellFlags::BorderTop))
+                            {
+                                ref.rect = {
+                                    static_cast<float>(left),
+                                    static_cast<float>(top),
+                                    static_cast<float>(_r.fontMetrics.cellSize.x),
+                                    static_cast<float>(_r.fontMetrics.thinLineWidth),
+                                };
+                            }
+                            if (WI_IsFlagSet(flags, CellFlags::BorderRight))
+                            {
+                                ref.rect = {
+                                    static_cast<float>(left + _r.fontMetrics.cellSize.x - _r.fontMetrics.thinLineWidth),
+                                    static_cast<float>(top),
+                                    static_cast<float>(_r.fontMetrics.thinLineWidth),
+                                    static_cast<float>(_r.fontMetrics.cellSize.y),
+                                };
+                            }
+                            if (WI_IsFlagSet(flags, CellFlags::BorderBottom))
+                            {
+                                ref.rect = {
+                                    static_cast<float>(left),
+                                    static_cast<float>(top + _r.fontMetrics.cellSize.y - _r.fontMetrics.thinLineWidth),
+                                    static_cast<float>(_r.fontMetrics.cellSize.x),
+                                    static_cast<float>(_r.fontMetrics.thinLineWidth),
+                                };
+                            }
+                            if (WI_IsFlagSet(flags, CellFlags::Underline))
+                            {
+                                ref.rect = {
+                                    static_cast<float>(left),
+                                    static_cast<float>(top + _r.fontMetrics.underlinePos),
+                                    static_cast<float>(_r.fontMetrics.cellSize.x),
+                                    static_cast<float>(_r.fontMetrics.underlineWidth),
+                                };
+                            }
+                            if (WI_IsFlagSet(flags, CellFlags::UnderlineDotted))
+                            {
+                                // TODO
+                                ref.rect = {
+                                    static_cast<float>(left),
+                                    static_cast<float>(top + _r.fontMetrics.underlinePos),
+                                    static_cast<float>(_r.fontMetrics.cellSize.x),
+                                    static_cast<float>(_r.fontMetrics.underlineWidth),
+                                };
+                            }
+                            if (WI_IsFlagSet(flags, CellFlags::UnderlineDouble))
+                            {
+                                ref.rect = {
+                                    static_cast<float>(left),
+                                    static_cast<float>(top + _r.fontMetrics.doubleUnderlinePos.x),
+                                    static_cast<float>(_r.fontMetrics.cellSize.x),
+                                    static_cast<float>(_r.fontMetrics.thinLineWidth),
+                                };
+                                auto& ref2 = _r.vertexInstanceData.emplace_back();
+                                ref2.color = meta.colors.x;
+                                ref2.shadingType = 2;
+                                ref2.rect = {
+                                    static_cast<float>(left),
+                                    static_cast<float>(top + _r.fontMetrics.doubleUnderlinePos.y),
+                                    static_cast<float>(_r.fontMetrics.cellSize.x),
+                                    static_cast<float>(_r.fontMetrics.thinLineWidth),
+                                };
+                            }
+                            if (WI_IsFlagSet(flags, CellFlags::Strikethrough))
+                            {
+                                ref.rect = {
+                                    static_cast<float>(left),
+                                    static_cast<float>(top + _r.fontMetrics.strikethroughPos),
+                                    static_cast<float>(_r.fontMetrics.cellSize.x),
+                                    static_cast<float>(_r.fontMetrics.strikethroughWidth),
+                                };
+                            }
+                        }
+                    }
                 }
 
                 textRange.y = _r.vertexInstanceData.size() - textRange.x;

@@ -366,9 +366,6 @@ namespace Microsoft::Console::Render
         {
             None            = 0x00000000,
 
-            Cursor          = 0x00000008,
-            Selected        = 0x00000010,
-
             BorderLeft      = 0x00000020,
             BorderTop       = 0x00000040,
             BorderRight     = 0x00000080,
@@ -634,6 +631,7 @@ namespace Microsoft::Console::Render
         __declspec(noinline) void _recreateSizeDependentResources();
         __declspec(noinline) void _recreateFontDependentResources();
         const Buffer<DWRITE_FONT_AXIS_VALUE>& _getTextFormatAxis(bool bold, bool italic) const noexcept;
+        BufferLineMetadata* _getBufferLineMetadata(u16 x, u16 y) noexcept;
         void _flushBufferLine();
 
         // AtlasEngine.api.cpp
@@ -734,6 +732,7 @@ namespace Microsoft::Console::Render
             std::vector<stbrp_node> rectPackerData;
             stbrp_context rectPacker;
             std::vector<u32> backgroundBitmap;
+            Buffer<BufferLineMetadata> metadata;
             std::vector<ShapedRow> rows;
             std::vector<VertexInstanceData> vertexInstanceData;
 
@@ -777,7 +776,6 @@ namespace Microsoft::Console::Render
 
             std::vector<wchar_t> bufferLine;
             std::vector<u16> bufferLineColumn;
-            Buffer<BufferLineMetadata> bufferLineMetadata;
             std::vector<TextAnalysisSinkResult> analysisResults;
             Buffer<u16> clusterMap;
             Buffer<DWRITE_SHAPING_TEXT_PROPERTIES> textProps;
