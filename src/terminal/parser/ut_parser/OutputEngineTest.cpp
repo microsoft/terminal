@@ -2352,6 +2352,18 @@ class StateMachineExternalTest final
         VERIFY_ARE_EQUAL(DispatchTypes::StatusType::CPR_CursorPositionReport, pDispatch->_statusReportType);
 
         pDispatch->ClearState();
+
+        Log::Comment(L"Test 3: Check DECXCPR (extended cursor position report) case ?6. Should succeed.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'?');
+        mach.ProcessCharacter(L'6');
+        mach.ProcessCharacter(L'n');
+
+        VERIFY_IS_TRUE(pDispatch->_deviceStatusReport);
+        VERIFY_ARE_EQUAL(DispatchTypes::StatusType::ExCPR_ExtendedCursorPositionReport, pDispatch->_statusReportType);
+
+        pDispatch->ClearState();
     }
 
     TEST_METHOD(TestDeviceAttributes)

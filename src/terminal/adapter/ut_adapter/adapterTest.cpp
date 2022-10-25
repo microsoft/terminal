@@ -1433,6 +1433,33 @@ public:
         }
     }
 
+    TEST_METHOD(DeviceStatus_ExtendedCursorPositionReportTests)
+    {
+        Log::Comment(L"Starting test...");
+
+        Log::Comment(L"Test 1: Verify extended cursor position report.");
+        _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
+
+        // start with the cursor position in the buffer.
+        til::point coordCursorExpected{ _testGetSet->_textBuffer->GetCursor().GetPosition() };
+
+        // to get to VT, we have to adjust it to its position relative to the viewport top.
+        coordCursorExpected.Y -= _testGetSet->_viewport.Top;
+
+        // Then note that VT is 1,1 based for the top left, so add 1. (The rest of the console uses 0,0 for array index bases.)
+        coordCursorExpected.X++;
+        coordCursorExpected.Y++;
+
+        // Until we support paging (GH#13892) the reported page number should always be 1.
+        const auto pageExpected = 1;
+
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::ExCPR_ExtendedCursorPositionReport));
+
+        wchar_t pwszBuffer[50];
+        swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[?%d;%d;%dR", coordCursorExpected.Y, coordCursorExpected.X, pageExpected);
+        _testGetSet->ValidateInputEvent(pwszBuffer);
+    }
+
     TEST_METHOD(DeviceAttributesTests)
     {
         Log::Comment(L"Starting test...");
