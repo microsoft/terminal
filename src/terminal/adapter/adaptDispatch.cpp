@@ -1070,7 +1070,7 @@ bool AdaptDispatch::FillRectangularArea(const VTParameter ch, const VTInt top, c
     // The standard only allows for characters in the range of the GL and GR
     // character set tables, but we also support additional Unicode characters
     // from the BMP if the code page is UTF-8. Default and 0 are treated as 32.
-    const auto charValue = !ch.has_value() || ch.value() == 0 ? 32 : ch.value();
+    const auto charValue = ch.value_or(0) == 0 ? 32 : ch.value();
     const auto glChar = (charValue >= 32 && charValue <= 126);
     const auto grChar = (charValue >= 160 && charValue <= 255);
     const auto unicodeChar = (charValue >= 256 && charValue <= 65535 && _api.GetConsoleOutputCP() == CP_UTF8);
