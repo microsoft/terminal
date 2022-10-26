@@ -22,10 +22,10 @@ namespace Microsoft.Terminal.Wpf
     /// </remarks>
     public class TerminalContainer : HwndHost
     {
-        private readonly DispatcherTimer blinkTimer;
         private ITerminalConnection connection;
         private IntPtr hwnd;
         private IntPtr terminal;
+        private DispatcherTimer blinkTimer;
         private NativeMethods.ScrollCallback scrollCallback;
         private NativeMethods.WriteCallback writeCallback;
 
