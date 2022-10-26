@@ -3323,7 +3323,7 @@ namespace winrt::TerminalApp::implementation
             // Make sure that there were no other tabs already existing (in
             // the case that we are in glomming mode), because we don't want
             // to be maximizing other existing sessions that did not ask for it.
-            if (_tabs.Size() == 1 && connection.ShowWindow() == 3)
+            if (_tabs.Size() == 1 && connection.ShowWindow() == SW_SHOWMAXIMIZED)
             {
                 RequestSetMaximized(true);
             }
