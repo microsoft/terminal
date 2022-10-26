@@ -3334,6 +3334,22 @@ namespace winrt::TerminalApp::implementation
 
             const IInspectable unused{ nullptr };
             _SetAsDefaultDismissHandler(unused, unused);
+
+            // TEMPORARY SOLUTION
+            // If the connection has requested for the window to be maximized,
+            // manually maximize it here. Ideally, we should be _initializing_
+            // the session maximized, instead of manually maximizing it after initialization.
+            // However, because of the current way our defterm handoff works,
+            // we are unable to get the connection info before the terminal session
+            // has already started.
+
+            // Make sure that there were no other tabs already existing (in
+            // the case that we are in glomming mode), because we don't want
+            // to be maximizing other existing sessions that did not ask for it.
+            if (_tabs.Size() == 1 && connection.ShowWindow() == SW_SHOWMAXIMIZED)
+            {
+                RequestSetMaximized(true);
+            }
             return S_OK;
         }
         CATCH_RETURN()

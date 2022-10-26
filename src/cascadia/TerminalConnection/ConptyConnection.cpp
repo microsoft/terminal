@@ -217,6 +217,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _startupInfo.title = winrt::hstring{ startupInfo.pszTitle, SysStringLen(startupInfo.pszTitle) };
         _startupInfo.iconPath = winrt::hstring{ startupInfo.pszIconPath, SysStringLen(startupInfo.pszIconPath) };
         _startupInfo.iconIndex = startupInfo.iconIndex;
+        _startupInfo.showWindow = startupInfo.wShowWindow;
 
         try
         {
@@ -296,6 +297,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     winrt::hstring ConptyConnection::StartingTitle() const
     {
         return _startupInfo.title;
+    }
+
+    WORD ConptyConnection::ShowWindow() const noexcept
+    {
+        return _startupInfo.showWindow;
     }
 
     void ConptyConnection::Start()
