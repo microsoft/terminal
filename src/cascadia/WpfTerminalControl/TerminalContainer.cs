@@ -277,11 +277,10 @@ namespace Microsoft.Terminal.Wpf
         /// <inheritdoc/>
         protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         {
-            if (this.terminal == IntPtr.Zero)
+            if (this.terminal != IntPtr.Zero)
             {
-                return;
+                NativeMethods.TerminalDpiChanged(this.terminal, (int)(NativeMethods.USER_DEFAULT_SCREEN_DPI * newDpi.DpiScaleX));
             }
-            NativeMethods.TerminalDpiChanged(this.terminal, (int)(NativeMethods.USER_DEFAULT_SCREEN_DPI * newDpi.DpiScaleX));
         }
 
         /// <inheritdoc/>
