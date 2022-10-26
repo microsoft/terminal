@@ -853,12 +853,9 @@ namespace winrt::TerminalApp::implementation
             // this flyout item.
             if (!profile.Icon().empty())
             {
-                const auto iconSource{ IconPathConverter().IconSourceWUX(profile.Icon()) };
-
-                WUX::Controls::IconSourceElement iconElement;
-                iconElement.IconSource(iconSource);
-                profileMenuItem.Icon(iconElement);
-                Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
+                auto icon = IconPathConverter::IconWUX(profile.Icon());
+                Automation::AutomationProperties::SetAccessibilityView(icon, Automation::Peers::AccessibilityView::Raw);
+                profileMenuItem.Icon(icon);
             }
 
             if (profile.Guid() == defaultProfileGuid)
