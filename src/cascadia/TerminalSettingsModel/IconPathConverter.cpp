@@ -355,8 +355,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto source = _IconSourceWUX(iconPath);
             Controls::IconSourceElement icon;
             icon.IconSource(source);
-            icon.Width(32);
-            icon.Height(32);
             return icon;
         }
 
