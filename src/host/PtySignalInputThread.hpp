@@ -60,7 +60,7 @@ namespace Microsoft::Console
             uint64_t handle;
         };
 
-        [[nodiscard]] HRESULT _InputThread();
+        [[nodiscard]] HRESULT _InputThread() noexcept;
         bool _GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer, const DWORD cbBuffer);
         void _DoResizeWindow(const ResizeWindowData& data);
         void _DoSetWindowParent(const SetParentData& data);

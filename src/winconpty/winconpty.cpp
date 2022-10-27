@@ -361,6 +361,14 @@ void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty, BOOL wait)
             CloseHandle(pPty->hSignal);
             pPty->hSignal = nullptr;
         }
+        // The reference handle ensures that conhost keeps running unless ClosePseudoConsole is called.
+        // We have to call it before calling WaitForSingleObject however in order to not deadlock,
+        // Due to conhost waiting for all clients to disconnect, while we wait for conhost to exit.
+        if (_HandleIsValid(pPty->hPtyReference))
+        {
+            CloseHandle(pPty->hPtyReference);
+            pPty->hPtyReference = nullptr;
+        }
         // Then, wait on the conhost process before killing it.
         // We do this to make sure the conhost finishes flushing any output it
         //      has yet to send before we hard kill it.
@@ -373,14 +381,6 @@ void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty, BOOL wait)
 
             CloseHandle(pPty->hConPtyProcess);
             pPty->hConPtyProcess = nullptr;
-        }
-        // Then take care of the reference handle.
-        // TODO GH#1810: Closing the reference handle late leaves conhost thinking
-        // that we have an outstanding connected client.
-        if (_HandleIsValid(pPty->hPtyReference))
-        {
-            CloseHandle(pPty->hPtyReference);
-            pPty->hPtyReference = nullptr;
         }
     }
 }
