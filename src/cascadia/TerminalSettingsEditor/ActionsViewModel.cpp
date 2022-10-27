@@ -20,7 +20,7 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    KeyBindingViewModel::KeyBindingViewModel(const Windows::Foundation::Collections::IObservableVector<hstring>& availableActions) :
+    KeyBindingViewModel::KeyBindingViewModel(const IObservableVector<hstring>& availableActions) :
         KeyBindingViewModel(nullptr, availableActions.First().Current(), availableActions) {}
 
     KeyBindingViewModel::KeyBindingViewModel(const Control::KeyChord& keys, const hstring& actionName, const IObservableVector<hstring>& availableActions) :
@@ -152,7 +152,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Create the new key binding and register all of the event handlers.
         auto kbdVM{ make_self<KeyBindingViewModel>(_AvailableActionAndArgs) };
         _RegisterEvents(kbdVM);
-        kbdVM->DeleteNewlyAddedKeyBinding({ this, &ActionsViewModel::_ViewModelDeleteNewlyAddedKeyBindingHandler });
+        kbdVM->DeleteNewlyAddedKeyBinding({ this, &ActionsViewModel::_KeyBindingViewModelDeleteNewlyAddedKeyBindingHandler });
 
         // Manually add the editing background. This needs to be done in Actions not the view model.
         // We also have to do this manually because it hasn't been added to the list yet.
@@ -167,7 +167,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _FocusContainerHandlers(*this, *kbdVM);
     }
 
-    void ActionsViewModel::_ViewModelPropertyChangedHandler(const IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args)
+    void ActionsViewModel::_KeyBindingViewModelPropertyChangedHandler(const IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args)
     {
         const auto senderVM{ sender.as<Editor::KeyBindingViewModel>() };
         const auto propertyName{ args.PropertyName() };
@@ -213,7 +213,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void ActionsViewModel::_ViewModelDeleteKeyBindingHandler(const Editor::KeyBindingViewModel& senderVM, const Control::KeyChord& keys)
+    void ActionsViewModel::_KeyBindingViewModelDeleteKeyBindingHandler(const Editor::KeyBindingViewModel& senderVM, const Control::KeyChord& keys)
     {
         // Update the settings model
         _Settings.ActionMap().DeleteKeyBinding(keys);
@@ -236,7 +236,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void ActionsViewModel::_ViewModelModifyKeyBindingHandler(const Editor::KeyBindingViewModel& senderVM, const Editor::ModifyKeyBindingEventArgs& args)
+    void ActionsViewModel::_KeyBindingViewModelModifyKeyBindingHandler(const Editor::KeyBindingViewModel& senderVM, const Editor::ModifyKeyBindingEventArgs& args)
     {
         const auto isNewAction{ !args.OldKeys() && args.OldActionName().empty() };
 
@@ -321,7 +321,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 Flyout acceptChangesFlyout{};
                 acceptChangesFlyout.Content(flyoutStack);
                 senderVM.AcceptChangesFlyout(acceptChangesFlyout);
-                return;
             }
         }
 
@@ -334,7 +333,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         senderVM.ToggleEditMode();
     }
 
-    void ActionsViewModel::_ViewModelDeleteNewlyAddedKeyBindingHandler(const Editor::KeyBindingViewModel& senderVM, const IInspectable& /*args*/)
+    void ActionsViewModel::_KeyBindingViewModelDeleteNewlyAddedKeyBindingHandler(const Editor::KeyBindingViewModel& senderVM, const IInspectable& /*args*/)
     {
         for (uint32_t i = 0; i < _KeyBindingList.Size(); ++i)
         {
@@ -373,9 +372,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ActionsViewModel::_RegisterEvents(com_ptr<KeyBindingViewModel>& kbdVM)
     {
-        kbdVM->PropertyChanged({ this, &ActionsViewModel::_ViewModelPropertyChangedHandler });
-        kbdVM->DeleteKeyBindingRequested({ this, &ActionsViewModel::_ViewModelDeleteKeyBindingHandler });
-        kbdVM->ModifyKeyBindingRequested({ this, &ActionsViewModel::_ViewModelModifyKeyBindingHandler });
+        kbdVM->PropertyChanged({ this, &ActionsViewModel::_KeyBindingViewModelPropertyChangedHandler });
+        kbdVM->DeleteKeyBindingRequested({ this, &ActionsViewModel::_KeyBindingViewModelDeleteKeyBindingHandler });
+        kbdVM->ModifyKeyBindingRequested({ this, &ActionsViewModel::_KeyBindingViewModelModifyKeyBindingHandler });
         kbdVM->IsAutomationPeerAttached(_AutomationPeerAttached);
     }
 }

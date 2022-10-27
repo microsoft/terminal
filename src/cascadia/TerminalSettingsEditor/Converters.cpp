@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "Converters.h"
-
 #if __has_include("Converters.g.cpp")
 #include "Converters.g.cpp"
 #endif
