@@ -347,13 +347,4 @@ void PtySignalInputThread::_Shutdown()
 {
     // Trigger process shutdown.
     CloseConsoleProcessState();
-
-    // If we haven't terminated by now, that's because there's a client that's still attached.
-    // Force the handling of the control events by the attached clients.
-    // As of MSFT:19419231, CloseConsoleProcessState will make sure this
-    //      happens if this method is called outside of lock, but if we're
-    //      currently locked, we want to make sure ctrl events are handled
-    //      _before_ we RundownAndExit.
-    LockConsole();
-    ProcessCtrlEvents();
 }

@@ -50,6 +50,14 @@ void ServiceLocator::RundownAndExit(const HRESULT hr)
     //   because doing so would prevent the render thread from progressing.
     if (locked.exchange(true, std::memory_order_relaxed))
     {
+        // Don't sleep forever with the console lock being held or otherwise
+        // no one can acquire it while we shut down.
+        const auto& gci = s_globals.getConsoleInformation();
+        while (gci.IsConsoleLocked())
+        {
+            gci.UnlockConsole();
+        }
+
         // If we reach this point, another thread is already in the process of exiting.
         // There's a lot of ways to suspend ourselves until we exit, one of which is "sleep forever".
         Sleep(INFINITE);
