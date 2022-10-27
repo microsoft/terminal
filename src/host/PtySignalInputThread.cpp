@@ -186,7 +186,7 @@ void PtySignalInputThread::CreatePseudoWindow()
         case PtySignal::SetParent:
         {
             SetParentData reparentMessage = { 0 };
-            if (_GetData(&reparentMessage, sizeof(reparentMessage)))
+            if (!_GetData(&reparentMessage, sizeof(reparentMessage)))
             {
                 return S_OK;
             }
