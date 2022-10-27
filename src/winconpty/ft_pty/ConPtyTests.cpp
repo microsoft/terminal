@@ -20,7 +20,6 @@ class ConPtyTests
     TEST_METHOD(GoodCreate);
     TEST_METHOD(GoodCreateMultiple);
     TEST_METHOD(SurvivesOnBreakOutput);
-    TEST_METHOD(DiesOnBreakBoth);
     TEST_METHOD(DiesOnClose);
 };
 
