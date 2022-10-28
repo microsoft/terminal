@@ -334,7 +334,7 @@
                         Style="{StaticResource SettingsStackStyle}">
                 <!--  Add New Button  -->
                 <Button x:Name="AddNewButton"
-                        Click="{x:Bind ViewModel.AddNew_Click}">
+                        Click="{x:Bind ViewModel.AddNewKeybinding}">
                     <Button.Content>
                         <StackPanel Orientation="Horizontal">
                             <FontIcon FontSize="{StaticResource StandardIconSize}"

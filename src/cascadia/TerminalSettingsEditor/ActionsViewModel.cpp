@@ -147,7 +147,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void ActionsViewModel::AddNew_Click(const IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::RoutedEventArgs& /*e*/)
+    void ActionsViewModel::AddNewKeybinding()
     {
         // Create the new key binding and register all of the event handlers.
         auto kbdVM{ make_self<KeyBindingViewModel>(_AvailableActionAndArgs) };

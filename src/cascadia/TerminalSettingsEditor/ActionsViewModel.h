@@ -103,7 +103,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ActionsViewModel(Model::CascadiaSettings settings);
 
         void OnAutomationPeerAttached();
-        void AddNew_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+        void AddNewKeybinding();
 
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::KeyBindingViewModel>, KeyBindingList);
         TYPED_EVENT(FocusContainer, IInspectable, IInspectable);
