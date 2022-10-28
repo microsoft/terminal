@@ -56,6 +56,7 @@
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
+                            <!--  Set the height of the inner grid as 48 to be 3/4 of the ListViewItem height  -->
                             <Grid Grid.Column="0"
                                   Height="48"
                                   Padding="12,11,8,8"
