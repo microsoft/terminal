@@ -219,6 +219,7 @@ namespace Microsoft::Console::VirtualTerminal
                                              const VTInt bottomMargin);
         void _OperatingStatus() const;
         void _CursorPositionReport(const bool extendedReport);
+        void _MacroSpaceReport() const;
 
         bool _GetParserMode(const StateMachine::Mode mode) const;
         void _SetParserMode(const StateMachine::Mode mode, const bool enable);

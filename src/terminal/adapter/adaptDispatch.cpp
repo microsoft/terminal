@@ -1181,6 +1181,9 @@ bool AdaptDispatch::DeviceStatusReport(const DispatchTypes::StatusType statusTyp
     case DispatchTypes::StatusType::ExCPR_ExtendedCursorPositionReport:
         _CursorPositionReport(true);
         return true;
+    case DispatchTypes::StatusType::MSR_MacroSpaceReport:
+        _MacroSpaceReport();
+        return true;
     default:
         return false;
     }
@@ -1334,6 +1337,20 @@ void AdaptDispatch::_CursorPositionReport(const bool extendedReport)
         const auto response = wil::str_printf<std::wstring>(L"\x1b[%d;%dR", cursorPosition.Y, cursorPosition.X);
         _api.ReturnResponse(response);
     }
+}
+
+// Routine Description:
+// - DECMSR - Reports the amount of space available for macro definitions.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void AdaptDispatch::_MacroSpaceReport() const
+{
+    const auto spaceInBytes = _macroBuffer ? _macroBuffer->GetSpaceAvailable() : MacroBuffer::MAX_SPACE;
+    // The available space is measured in blocks of 16 bytes, so we need to divide by 16.
+    const auto response = wil::str_printf<std::wstring>(L"\x1b[%zu*{", spaceInBytes / 16);
+    _api.ReturnResponse(response);
 }
 
 // Routine Description:
