@@ -112,7 +112,7 @@ public:
 
     virtual bool ResetMode(const DispatchTypes::ModeParams param) = 0; // DECRST
 
-    virtual bool DeviceStatusReport(const DispatchTypes::StatusType statusType) = 0; // DSR, DSR-OS, DSR-CPR
+    virtual bool DeviceStatusReport(const DispatchTypes::StatusType statusType, const VTParameter id) = 0; // DSR
     virtual bool DeviceAttributes() = 0; // DA1
     virtual bool SecondaryDeviceAttributes() = 0; // DA2
     virtual bool TertiaryDeviceAttributes() = 0; // DA3

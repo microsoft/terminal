@@ -1166,9 +1166,10 @@ bool AdaptDispatch::SetLineRendition(const LineRendition rendition)
 // - DSR - Reports status of a console property back to the STDIN based on the type of status requested.
 // Arguments:
 // - statusType - status type indicating what property we should report back
+// - id - a numeric label used to identify the request in DECCKSR reports
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::DeviceStatusReport(const DispatchTypes::StatusType statusType)
+bool AdaptDispatch::DeviceStatusReport(const DispatchTypes::StatusType statusType, const VTParameter id)
 {
     switch (statusType)
     {
@@ -1183,6 +1184,9 @@ bool AdaptDispatch::DeviceStatusReport(const DispatchTypes::StatusType statusTyp
         return true;
     case DispatchTypes::StatusType::MSR_MacroSpaceReport:
         _MacroSpaceReport();
+        return true;
+    case DispatchTypes::StatusType::MEM_MemoryChecksum:
+        _MacroChecksumReport(id);
         return true;
     default:
         return false;
@@ -1350,6 +1354,20 @@ void AdaptDispatch::_MacroSpaceReport() const
     const auto spaceInBytes = _macroBuffer ? _macroBuffer->GetSpaceAvailable() : MacroBuffer::MAX_SPACE;
     // The available space is measured in blocks of 16 bytes, so we need to divide by 16.
     const auto response = wil::str_printf<std::wstring>(L"\x1b[%zu*{", spaceInBytes / 16);
+    _api.ReturnResponse(response);
+}
+
+// Routine Description:
+// - DECCKSR - Reports a checksum of the current macro definitions.
+// Arguments:
+// - id - a numeric label used to identify the DSR request
+// Return Value:
+// - <none>
+void AdaptDispatch::_MacroChecksumReport(const VTParameter id) const
+{
+    const auto requestId = id.value_or(0);
+    const auto checksum = _macroBuffer ? _macroBuffer->CalculateChecksum() : 0;
+    const auto response = wil::str_printf<std::wstring>(L"\033P%d!~%04X\033\\", requestId, checksum);
     _api.ReturnResponse(response);
 }
 

@@ -530,11 +530,11 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         TermTelemetry::Instance().Log(TermTelemetry::Codes::SGR);
         break;
     case CsiActionCodes::DSR_DeviceStatusReport:
-        success = _dispatch->DeviceStatusReport(DispatchTypes::ANSIStandardStatus(parameters.at(0)));
+        success = _dispatch->DeviceStatusReport(DispatchTypes::ANSIStandardStatus(parameters.at(0)), parameters.at(1));
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DSR);
         break;
     case CsiActionCodes::DSR_PrivateDeviceStatusReport:
-        success = _dispatch->DeviceStatusReport(DispatchTypes::DECPrivateStatus(parameters.at(0)));
+        success = _dispatch->DeviceStatusReport(DispatchTypes::DECPrivateStatus(parameters.at(0)), parameters.at(1));
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DSR);
         break;
     case CsiActionCodes::DA_DeviceAttributes:

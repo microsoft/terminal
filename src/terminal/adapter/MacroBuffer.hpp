@@ -35,6 +35,7 @@ namespace Microsoft::Console::VirtualTerminal
         ~MacroBuffer() = default;
 
         size_t GetSpaceAvailable() const noexcept;
+        uint16_t CalculateChecksum() const noexcept;
         std::wstring_view GetMacroSequence(const size_t macroId) const noexcept;
         void InvokeMacroSequence(const std::wstring_view macroSequence, StateMachine& stateMachine);
         void ClearMacrosIfInUse();

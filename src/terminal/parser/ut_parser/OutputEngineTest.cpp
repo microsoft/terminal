@@ -1203,7 +1203,7 @@ public:
     }
     CATCH_LOG_RETURN_FALSE()
 
-    bool DeviceStatusReport(const DispatchTypes::StatusType statusType) noexcept override
+    bool DeviceStatusReport(const DispatchTypes::StatusType statusType, const VTParameter /*id*/) noexcept override
     {
         _deviceStatusReport = true;
         _statusReportType = statusType;

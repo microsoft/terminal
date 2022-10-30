@@ -13,6 +13,25 @@ size_t MacroBuffer::GetSpaceAvailable() const noexcept
     return MAX_SPACE - _spaceUsed;
 }
 
+uint16_t MacroBuffer::CalculateChecksum() const noexcept
+{
+    // The algorithm that we're using here is intended to match the checksums
+    // produced by the original DEC VT420 terminal. Although note that a real
+    // VT420 would have included the entire macro memory area in the checksum,
+    // which could still contain remnants of previous macro definitions that
+    // are no longer active. We don't replicate that behavior, since that's of
+    // no benefit to applications that might want to use the checksum.
+    uint16_t checksum = 0;
+    for (auto& macro : _macros)
+    {
+        for (auto ch : macro)
+        {
+            checksum -= ch;
+        }
+    }
+    return checksum;
+}
+
 std::wstring_view MacroBuffer::GetMacroSequence(const size_t macroId) const noexcept
 {
     return macroId < _macros.size() ? til::at(_macros, macroId) : std::wstring_view{};

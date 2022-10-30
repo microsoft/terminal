@@ -105,7 +105,7 @@ public:
 
     bool ResetMode(const DispatchTypes::ModeParams /*param*/) override { return false; } // DECRST
 
-    bool DeviceStatusReport(const DispatchTypes::StatusType /*statusType*/) override { return false; } // DSR, DSR-OS, DSR-CPR
+    bool DeviceStatusReport(const DispatchTypes::StatusType /*statusType*/, const VTParameter /*id*/) override { return false; } // DSR
     bool DeviceAttributes() override { return false; } // DA1
     bool SecondaryDeviceAttributes() override { return false; } // DA2
     bool TertiaryDeviceAttributes() override { return false; } // DA3

@@ -387,6 +387,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         CPR_CursorPositionReport = ANSIStandardStatus(6),
         ExCPR_ExtendedCursorPositionReport = DECPrivateStatus(6),
         MSR_MacroSpaceReport = DECPrivateStatus(62),
+        MEM_MemoryChecksum = DECPrivateStatus(63),
     };
 
     using ANSIStandardMode = FlaggedEnumValue<0x00000000>;
