@@ -105,7 +105,7 @@ namespace Microsoft.Terminal.Control
         void ClearHoveredCell();
 
         void ResetFontSize();
-        void AdjustFontSize(Int32 fontSizeDelta);
+        void AdjustFontSize(Single fontSizeDelta);
         void SizeChanged(Double width, Double height);
         void ScaleChanged(Double scale);
 

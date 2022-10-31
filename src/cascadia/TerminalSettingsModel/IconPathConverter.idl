@@ -15,7 +15,7 @@ namespace Microsoft.Terminal.Settings.Model
     {
         IconPathConverter();
 
-        static Windows.UI.Xaml.Controls.IconSource IconSourceWUX(String path);
+        static Windows.UI.Xaml.Controls.IconElement IconWUX(String path);
         static Microsoft.UI.Xaml.Controls.IconSource IconSourceMUX(String path);
     };
 

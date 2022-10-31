@@ -100,6 +100,7 @@ namespace Microsoft::Console::Render
 
         bool _usingLineRenditions;
         bool _stopUsingLineRenditions;
+        bool _usingSoftFont;
         TextAttribute _lastTextAttributes;
 
         std::function<void(bool)> _pfnSetLookingForDSR;
@@ -126,7 +127,6 @@ namespace Microsoft::Console::Render
         bool _newBottomLine;
         til::point _deferredCursorPos;
 
-        bool _pipeBroken;
         HRESULT _exitResult;
         Microsoft::Console::VirtualTerminal::VtIo* _terminalOwner;
 
@@ -225,6 +225,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT _WriteTerminalUtf8(const std::wstring_view str) noexcept;
         [[nodiscard]] HRESULT _WriteTerminalAscii(const std::wstring_view str) noexcept;
+        [[nodiscard]] HRESULT _WriteTerminalDrcs(const std::wstring_view str) noexcept;
 
         [[nodiscard]] virtual HRESULT _DoUpdateTitle(const std::wstring_view newTitle) noexcept override;
 

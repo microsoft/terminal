@@ -95,7 +95,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                              Control::IControlAppearance unfocusedAppearance,
                              TerminalConnection::ITerminalConnection connection) :
         _connection{ connection },
-        _desiredFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8 },
+        _desiredFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, DEFAULT_FONT_SIZE, CP_UTF8 },
         _actualFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false }
     {
         _EnsureStaticInitialization();
@@ -576,7 +576,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // Update our runtime opacity value
-        Opacity(newOpacity);
+        _runtimeOpacity = newOpacity;
 
         // GH#11285 - If the user is on Windows 10, and they changed the
         // transparency of the control s.t. it should be partially opaque, then
@@ -584,10 +584,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Windows 10.
         // We'll also turn the acrylic back off when they're fully opaque, which
         // is what the Terminal did prior to 1.12.
-        if (!IsVintageOpacityAvailable())
-        {
-            _runtimeUseAcrylic = newOpacity < 1.0;
-        }
+        _runtimeUseAcrylic = newOpacity < 1.0 && (!IsVintageOpacityAvailable() || _settings->UseAcrylic());
 
         // Update the renderer as well. It might need to fall back from
         // cleartype -> grayscale if the BG is transparent / acrylic.
@@ -692,7 +689,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
         if (_lastHoveredCell.has_value())
         {
-            return winrt::hstring{ _terminal->GetHyperlinkAtViewportPosition(*_lastHoveredCell) };
+            auto uri{ _terminal->GetHyperlinkAtViewportPosition(*_lastHoveredCell) };
+            uri.resize(std::min<size_t>(1024u, uri.size())); // Truncate for display
+            return winrt::hstring{ uri };
         }
         return {};
     }
@@ -711,16 +710,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         auto lock = _terminal->LockForWriting();
 
-        _runtimeOpacity = std::nullopt;
-        _runtimeUseAcrylic = std::nullopt;
-
         // GH#11285 - If the user is on Windows 10, and they wanted opacity, but
         // didn't explicitly request acrylic, then opt them in to acrylic.
         // On Windows 11+, this isn't needed, because we can have vintage opacity.
-        if (!IsVintageOpacityAvailable() && _settings->Opacity() < 1.0 && !_settings->UseAcrylic())
-        {
-            _runtimeUseAcrylic = true;
-        }
+        // Instead, disable acrylic while the opacity is 100%
+        _runtimeUseAcrylic = _settings->Opacity() < 1.0 && (!IsVintageOpacityAvailable() || _settings->UseAcrylic());
+        _runtimeOpacity = std::nullopt;
 
         const auto sizeChanged = _setFontSizeUnderLock(_settings->FontSize());
 
@@ -859,15 +854,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - fontSize: The size of the font.
     // Return Value:
     // - Returns true if you need to call _refreshSizeUnderLock().
-    bool ControlCore::_setFontSizeUnderLock(int fontSize)
+    bool ControlCore::_setFontSizeUnderLock(float fontSize)
     {
         // Make sure we have a non-zero font size
-        const auto newSize = std::max(fontSize, 1);
+        const auto newSize = std::max(fontSize, 1.0f);
         const auto fontFace = _settings->FontFace();
         const auto fontWeight = _settings->FontWeight();
-        _actualFont = { fontFace, 0, fontWeight.Weight, { 0, newSize }, CP_UTF8, false };
+        _desiredFont = { fontFace, 0, fontWeight.Weight, newSize, CP_UTF8 };
+        _actualFont = { fontFace, 0, fontWeight.Weight, _desiredFont.GetEngineSize(), CP_UTF8, false };
         _actualFontFaceName = { fontFace };
-        _desiredFont = { _actualFont };
 
         const auto before = _actualFont.GetSize();
         _updateFont();
@@ -893,11 +888,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Adjust the font size of the terminal control.
     // Arguments:
     // - fontSizeDelta: The amount to increase or decrease the font size by.
-    void ControlCore::AdjustFontSize(int fontSizeDelta)
+    void ControlCore::AdjustFontSize(float fontSizeDelta)
     {
         const auto lock = _terminal->LockForWriting();
 
-        if (_setFontSizeUnderLock(_desiredFont.GetEngineSize().Y + fontSizeDelta))
+        if (_setFontSizeUnderLock(_desiredFont.GetFontSize() + fontSizeDelta))
         {
             _refreshSizeUnderLock();
         }
@@ -1211,10 +1206,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return static_cast<uint16_t>(_actualFont.GetWeight());
     }
 
-    til::size ControlCore::FontSizeInDips() const
+    winrt::Windows::Foundation::Size ControlCore::FontSizeInDips() const
     {
-        const til::size fontSize{ _actualFont.GetSize() };
-        return fontSize.scale(til::math::rounding, 1.0f / ::base::saturated_cast<float>(_compositionScale));
+        const auto fontSize = _actualFont.GetSize();
+        const auto scale = 1.0f / static_cast<float>(_compositionScale);
+        return {
+            fontSize.width * scale,
+            fontSize.height * scale,
+        };
     }
 
     TerminalConnection::ConnectionState ControlCore::ConnectionState() const
@@ -1968,13 +1967,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         // If we're:
         // * Not fully opaque
-        // * On an acrylic background (of any opacity)
         // * rendering on top of an image
         //
         // then the renderer should not render "default background" text with a
         // fully opaque background. Doing that would cover up our nice
         // transparency, or our acrylic, or our image.
-        return Opacity() < 1.0f || UseAcrylic() || !_settings->BackgroundImage().empty() || _settings->UseBackgroundImageForWindow();
+        return Opacity() < 1.0f || !_settings->BackgroundImage().empty() || _settings->UseBackgroundImageForWindow();
     }
 
     uint64_t ControlCore::OwningHwnd()

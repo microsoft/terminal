@@ -66,7 +66,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _used = N;
         }
 
-        constexpr void swap(some& _Other) noexcept(std::is_nothrow_swappable<T>::value)
+        constexpr void swap(some& _Other) noexcept(std::is_nothrow_swappable_v<T>)
         {
             _array.swap(_Other._array);
             std::swap(_used, _Other._used);

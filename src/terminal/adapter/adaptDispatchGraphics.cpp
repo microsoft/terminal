@@ -85,7 +85,7 @@ bool AdaptDispatch::SetGraphicsRendition(const VTParameters options)
         case Off:
             attr.SetDefaultForeground();
             attr.SetDefaultBackground();
-            attr.SetDefaultMetaAttrs();
+            attr.SetDefaultRenditionAttributes();
             break;
         case ForegroundDefault:
             attr.SetDefaultForeground();
@@ -256,6 +256,38 @@ bool AdaptDispatch::SetGraphicsRendition(const VTParameters options)
     }
     _api.SetTextAttributes(attr);
 
+    return true;
+}
+
+// Routine Description:
+// - DECSCA - Modifies the character protection attribute. This operation was
+//   originally intended to support a range of logical character attributes,
+//   but the protected attribute was the only one ever implemented.
+// Arguments:
+// - options - An array of options that will be applied in order.
+// Return Value:
+// - True.
+bool AdaptDispatch::SetCharacterProtectionAttribute(const VTParameters options)
+{
+    auto& textBuffer = _api.GetTextBuffer();
+    auto attr = textBuffer.GetCurrentAttributes();
+    for (size_t i = 0; i < options.size(); i++)
+    {
+        const LogicalAttributeOptions opt = options.at(i);
+        switch (opt)
+        {
+        case Default:
+            attr.SetProtected(false);
+            break;
+        case Protected:
+            attr.SetProtected(true);
+            break;
+        case Unprotected:
+            attr.SetProtected(false);
+            break;
+        }
+    }
+    textBuffer.SetCurrentAttributes(attr);
     return true;
 }
 

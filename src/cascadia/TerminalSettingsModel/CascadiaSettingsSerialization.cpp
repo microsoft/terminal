@@ -1110,8 +1110,9 @@ void CascadiaSettings::WriteSettingsToDisk()
 
     // write current settings to current settings file
     Json::StreamWriterBuilder wbuilder;
-    wbuilder.settings_["indentation"] = "    ";
     wbuilder.settings_["enableYAMLCompatibility"] = true; // suppress spaces around colons
+    wbuilder.settings_["indentation"] = "    ";
+    wbuilder.settings_["precision"] = 6; // prevent values like 1.1000000000000001
 
     FILETIME lastWriteTime{};
     const auto styledString{ Json::writeString(wbuilder, ToJson()) };

@@ -57,6 +57,7 @@ locl
 lorem
 Lorigin
 maxed
+minimalistic
 mkmk
 mnt
 mru
@@ -96,5 +97,7 @@ versioned
 vsdevcmd
 We'd
 wildcards
+XBox
+YBox
 yeru
 zhe

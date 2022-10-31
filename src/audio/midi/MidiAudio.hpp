@@ -36,6 +36,7 @@ public:
 private:
     void _createBuffers() noexcept;
 
+    wil::unique_hmodule _directSoundModule;
     Microsoft::WRL::ComPtr<IDirectSound8> _directSound;
     std::array<Microsoft::WRL::ComPtr<IDirectSoundBuffer>, 2> _buffers;
     size_t _activeBufferIndex = 0;
