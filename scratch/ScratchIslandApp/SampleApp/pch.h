@@ -46,8 +46,8 @@
 #include "winrt/Windows.UI.Xaml.Markup.h"
 #include "winrt/Windows.UI.ViewManagement.h"
 
-#include "winrt/Windows.UI.Notifications.h"
 #include "winrt/Windows.Data.Xml.Dom.h"
+#include "winrt/Windows.UI.Notifications.h"
 #include "winrt/Windows.ApplicationModel.h"
 #include "winrt/Windows.ApplicationModel.Activation.h"
 

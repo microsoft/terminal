@@ -43,6 +43,12 @@ AppHost::AppHost() noexcept :
     // would mean we'd need to be responsible for looking that up.
     _windowManager.FindTargetWindowRequested({ this, &AppHost::_FindTargetWindow });
 
+    // Before handling any commandline arguments, chech if this was a toast invocation. If it was, we can go ahead and totally ignore everything else.
+    if (_HandleLaunchArgs())
+    {
+        return;
+    }
+
     // If there were commandline args to our process, try and process them here.
     // Do this before AppLogic::Create, otherwise this will have no effect.
     //
@@ -333,6 +339,40 @@ void AppHost::_HandleCommandlineArgs()
         _logic.WindowName(peasant.WindowName());
         _logic.WindowId(peasant.GetID());
     }
+}
+
+bool AppHost::_HandleLaunchArgs()
+{
+    // If someone clicks on a notification, then a fresh instance of
+    // windowsterminal.exe will spawn. We certainly don't want to create a new
+    // window for that - we only awnt to activate the window that created the
+    // actual notification. In the toast arg's payload will be the window id
+    // that sent the notification. We'll ask the window manager to try and
+    // activate that window ID, without even bothering to register as the
+    // monarch ourselves (if we can't find a monarch, then there are no windows
+    // running, so whoever sent it must have died.)
+    //
+    // I bet this won't work from elevated context. I'm actually quite curious.
+    // TODO!
+
+    auto activatedArgs = winrt::Windows::ApplicationModel::AppInstance::GetActivatedEventArgs();
+    if (activatedArgs != nullptr && activatedArgs.Kind() == winrt::Windows::ApplicationModel::Activation::ActivationKind::ToastNotification)
+    {
+        ToastNotificationActivatedEventArgs toastArgs = activatedArgs.try_as<ToastNotificationActivatedEventArgs>();
+
+        // Obtain the arguments from the notification
+        auto args = toastArgs.Argument();
+
+        // Args is gonna look like
+        //
+        // "window=id"
+
+        // Split that and get the id.
+
+        return true;
+    }
+
+    return false;
 }
 
 // Method Description:

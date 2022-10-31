@@ -2,7 +2,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.2.32422.2
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Terminal", "Terminal", "{59840756-302F-44DF-AA47-441A9D673202}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "`", "`", "{59840756-302F-44DF-AA47-441A9D673202}"
 EndProject
 Project("{C7167F0D-BC9F-4E6E-AFE1-012C56B48DB5}") = "CascadiaPackage", "src\cascadia\CascadiaPackage\CascadiaPackage.wapproj", "{CA5CAD1A-224A-4171-B13A-F16E576FDD12}"
 	ProjectSection(ProjectDependencies) = postProject
