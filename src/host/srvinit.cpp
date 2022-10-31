@@ -584,6 +584,8 @@ try
         icon.index
     };
 
+    myStartupInfo.wShowWindow = settings.GetShowWindow();
+
     RETURN_IF_FAILED(handoff->EstablishPtyHandoff(inPipeTheirSide.get(),
                                                   outPipeTheirSide.get(),
                                                   signalPipeTheirSide.get(),

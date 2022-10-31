@@ -515,6 +515,4 @@ void CloseConsoleProcessState()
     }
 
     HandleCtrlEvent(CTRL_CLOSE_EVENT);
-
-    gci.ShutdownMidiAudio();
 }

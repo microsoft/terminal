@@ -303,7 +303,7 @@ class SizeTests
         Log::Comment(L"1.) Scale results in value that is too large.");
         {
             const til::size sz{ 5, 10 };
-            constexpr auto scale = std::numeric_limits<float>().max();
+            constexpr auto scale = 1e12f;
 
             auto fn = [&]() {
                 sz.scale(til::math::ceiling, scale);
