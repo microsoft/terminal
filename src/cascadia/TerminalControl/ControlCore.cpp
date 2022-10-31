@@ -4,6 +4,10 @@
 #include "pch.h"
 #include "ControlCore.h"
 
+// MidiAudio
+#include <mmeapi.h>
+#include <dsound.h>
+
 #include <DefaultSettings.h>
 #include <unicode.hpp>
 #include <Utf16Parser.hpp>
@@ -241,8 +245,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _renderer->TriggerTeardown();
         }
-
-        _shutdownMidiAudio();
     }
 
     bool ControlCore::Initialize(const double actualWidth,
@@ -401,7 +403,31 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                     const WORD scanCode,
                                     const ::Microsoft::Terminal::Core::ControlKeyStates modifiers)
     {
+        if (ch == L'\x3') // Ctrl+C or Ctrl+Break
+        {
+            _handleControlC();
+        }
+
         return _terminal->SendCharEvent(ch, scanCode, modifiers);
+    }
+
+    void ControlCore::_handleControlC()
+    {
+        if (!_midiAudioSkipTimer)
+        {
+            _midiAudioSkipTimer = _dispatcher.CreateTimer();
+            _midiAudioSkipTimer.Interval(std::chrono::seconds(1));
+            _midiAudioSkipTimer.IsRepeating(false);
+            _midiAudioSkipTimer.Tick([weakSelf = get_weak()](auto&&, auto&&) {
+                if (const auto self = weakSelf.get())
+                {
+                    self->_midiAudio.EndSkip();
+                }
+            });
+        }
+
+        _midiAudio.BeginSkip();
+        _midiAudioSkipTimer.Start();
     }
 
     bool ControlCore::_shouldTryUpdateSelection(const WORD vkey)
@@ -1386,57 +1412,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - duration - How long the note should be sustained (in microseconds).
     void ControlCore::_terminalPlayMidiNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration)
     {
-        // We create the audio instance on demand, and lock it for the duration
-        // of the note output so it can't be destroyed while in use.
-        auto& midiAudio = _getMidiAudio();
-        midiAudio.Lock();
-
-        // We then unlock the terminal, so the UI doesn't hang while we're busy.
+        // Unlock the terminal, so the UI doesn't hang while we're busy.
         auto& terminalLock = _terminal->GetReadWriteLock();
         terminalLock.unlock();
 
         // This call will block for the duration, unless shutdown early.
-        midiAudio.PlayNote(noteNumber, velocity, duration);
+        _midiAudio.PlayNote(reinterpret_cast<HWND>(_owningHwnd), noteNumber, velocity, std::chrono::duration_cast<std::chrono::milliseconds>(duration));
 
-        // Once complete, we reacquire the terminal lock and unlock the audio.
-        // If the terminal has shutdown in the meantime, the Unlock call
-        // will throw an exception, forcing the thread to exit ASAP.
         terminalLock.lock();
-        midiAudio.Unlock();
-    }
-
-    // Method Description:
-    // - Returns the MIDI audio instance, created on demand.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - a reference to the MidiAudio instance.
-    MidiAudio& ControlCore::_getMidiAudio()
-    {
-        if (!_midiAudio)
-        {
-            const auto windowHandle = reinterpret_cast<HWND>(_owningHwnd);
-            _midiAudio = std::make_unique<MidiAudio>(windowHandle);
-            _midiAudio->Initialize();
-        }
-        return *_midiAudio;
-    }
-
-    // Method Description:
-    // - Shuts down the MIDI audio system if previously instantiated.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void ControlCore::_shutdownMidiAudio()
-    {
-        if (_midiAudio)
-        {
-            // We lock the terminal here to make sure the shutdown promise is
-            // set before the audio is unlocked in the thread that is playing.
-            auto lock = _terminal->LockForWriting();
-            _midiAudio->Shutdown();
-        }
     }
 
     bool ControlCore::HasSelection() const
@@ -1520,6 +1503,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (!_IsClosing())
         {
             _closing = true;
+
+            // Ensure Close() doesn't hang, waiting for MidiAudio to finish playing an hour long song.
+            _midiAudio.BeginSkip();
 
             // Stop accepting new output and state changes before we disconnect everything.
             _connection.TerminalOutput(_connectionOutputEventToken);

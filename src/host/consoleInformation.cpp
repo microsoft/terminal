@@ -4,6 +4,10 @@
 #include "precomp.h"
 #include <intsafe.h>
 
+// MidiAudio
+#include <mmeapi.h>
+#include <dsound.h>
+
 #include "misc.h"
 #include "output.h"
 #include "srvinit.h"
@@ -373,38 +377,14 @@ Microsoft::Console::CursorBlinker& CONSOLE_INFORMATION::GetCursorBlinker() noexc
 }
 
 // Method Description:
-// - Returns the MIDI audio instance, created on demand.
+// - Returns the MIDI audio instance.
 // Arguments:
 // - <none>
 // Return Value:
 // - a reference to the MidiAudio instance.
 MidiAudio& CONSOLE_INFORMATION::GetMidiAudio()
 {
-    if (!_midiAudio)
-    {
-        const auto windowHandle = ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
-        _midiAudio = std::make_unique<MidiAudio>(windowHandle);
-        _midiAudio->Initialize();
-    }
-    return *_midiAudio;
-}
-
-// Method Description:
-// - Shuts down the MIDI audio system if previously instantiated.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void CONSOLE_INFORMATION::ShutdownMidiAudio()
-{
-    if (_midiAudio)
-    {
-        // We lock the console here to make sure the shutdown promise is
-        // set before the audio is unlocked in the thread that is playing.
-        LockConsole();
-        _midiAudio->Shutdown();
-        UnlockConsole();
-    }
+    return _midiAudio;
 }
 
 // Method Description:
