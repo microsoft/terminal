@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-5-13
-last updated: 2022-12-09
+last updated: 2022-10-31
 issue id: 1571
 ---
 
@@ -171,6 +171,10 @@ nested entries for each subsequent dynamic profile generator.
 }
 ```
 
+> _note_: The `"source": "Microsoft\\.Terminal\\.Wsl"` entries could also
+> technically be written `"Microsoft.Terminal.Wsl"`, because the regex will
+> still match the single period separating the namespaces.
+
 I might only recommend that for `userDefaults.json`, which is the json files
 used as a template for a user's new settings file. This would prevent us from
 moving the user's cheese too much, if they're already using the Terminal and
@@ -233,6 +237,35 @@ we'll evaluate the entries in the following order:
 * all explicit `profile` entries
 * then all `matchProfile` entries, using profiles not already specified
 * then expand out `remainingProfiles` with anything not found above.
+
+As an example:
+
+```jsonc
+{
+    "newTabMenu": [
+        { "type": "matchProfile", "name": ".*" }
+        {
+            "type": "folder",
+            "name": "WSLs",
+            "entries": [ { "type": "matchProfile", "source": "Microsoft.Terminal.Wsl" } ]
+        },
+        { "type": "remainingProfiles" }
+    ]
+}
+```
+
+For profiles { "Profile A", "Profile B (WSL)", "Profile C (WSL)" }, This would
+expand to:
+
+```
+New Tab Button ▽
+├─ Profile A
+├─ Profile B (WSL)
+├─ Profile C (WSL)
+└─ WSLs
+   └─ Profile B (WSL)
+   └─ Profile C (WSL)
+```
 
 ## UI/UX Design
 
