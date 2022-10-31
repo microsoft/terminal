@@ -30,6 +30,7 @@ namespace winrt::Microsoft::Terminal::Core
     struct ICoreSettings;
     struct ICoreAppearance;
     struct Scheme;
+    enum class MatchMode;
 }
 
 namespace Microsoft::Console::VirtualTerminal
@@ -63,7 +64,7 @@ class Microsoft::Terminal::Core::Terminal final :
 
 public:
     Terminal();
-    ~Terminal(){};
+    ~Terminal() = default;
     Terminal(const Terminal&) = default;
     Terminal(Terminal&&) = default;
     Terminal& operator=(const Terminal&) = default;
@@ -83,6 +84,8 @@ public:
     void EraseScrollback();
     bool IsXtermBracketedPasteModeEnabled() const;
     std::wstring_view GetWorkingDirectory();
+
+    til::point GetViewportRelativeCursorPosition() const noexcept;
 
     // Write comes from the PTY and goes to our parser to be stored in the output buffer
     void Write(std::wstring_view stringView);
@@ -232,6 +235,8 @@ public:
     const size_t GetTaskbarState() const noexcept;
     const size_t GetTaskbarProgress() const noexcept;
 
+    void ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode);
+
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
     enum class SelectionInteractionMode
@@ -279,9 +284,9 @@ public:
     void SelectAll();
     SelectionInteractionMode SelectionMode() const noexcept;
     void SwitchSelectionEndpoint();
+    void ExpandSelectionToWord();
     void ToggleMarkMode();
     void SelectHyperlink(const SearchDirection dir);
-    bool IsTargetingUrl() const noexcept;
 
     using UpdateSelectionParams = std::optional<std::pair<SelectionDirection, SelectionExpansion>>;
     UpdateSelectionParams ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const;
@@ -355,7 +360,7 @@ private:
     std::wstring _wordDelimiters;
     SelectionExpansion _multiClickSelectionMode;
     SelectionInteractionMode _selectionMode;
-    bool _isTargetingUrl;
+    bool _selectionIsTargetingUrl;
     SelectionEndpoint _selectionEndpoint;
     bool _anchorInactiveSelectionEndpoint;
 #pragma endregion
@@ -428,6 +433,7 @@ private:
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
     std::vector<til::inclusive_rect> _GetSelectionRects() const noexcept;
+    std::vector<til::point_span> _GetSelectionSpans() const noexcept;
     std::pair<til::point, til::point> _PivotSelection(const til::point targetPos, bool& targetStart) const;
     std::pair<til::point, til::point> _ExpandSelectionAnchors(std::pair<til::point, til::point> anchors) const;
     til::point _ConvertToBufferCell(const til::point viewportPos) const;

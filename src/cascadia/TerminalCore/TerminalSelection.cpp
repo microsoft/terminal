@@ -64,6 +64,27 @@ std::vector<til::inclusive_rect> Terminal::_GetSelectionRects() const noexcept
 }
 
 // Method Description:
+// - Identical to GetTextRects if it's a block selection, else returns a single span for the whole selection.
+// Return Value:
+// - A vector of one or more spans representing the selection. They are absolute coordinates relative to the buffer origin.
+std::vector<til::point_span> Terminal::_GetSelectionSpans() const noexcept
+{
+    std::vector<til::point_span> result;
+
+    if (!IsSelectionActive())
+    {
+        return result;
+    }
+
+    try
+    {
+        return _activeBuffer().GetTextSpans(_selection->start, _selection->end, _blockSelection, false);
+    }
+    CATCH_LOG();
+    return result;
+}
+
+// Method Description:
 // - Get the current anchor position relative to the whole text buffer
 // Arguments:
 // - None
@@ -217,6 +238,7 @@ void Terminal::SetSelectionEnd(const til::point viewportPos, std::optional<Selec
         std::tie(_selection->start, _selection->end) = expandedAnchors;
     }
     _selectionMode = SelectionInteractionMode::Mouse;
+    _selectionIsTargetingUrl = false;
 }
 
 // Method Description:
@@ -229,7 +251,7 @@ void Terminal::SetSelectionEnd(const til::point viewportPos, std::optional<Selec
 // - the new start/end for a selection
 std::pair<til::point, til::point> Terminal::_PivotSelection(const til::point targetPos, bool& targetStart) const
 {
-    if (targetStart = targetPos <= _selection->pivot)
+    if (targetStart = _activeBuffer().GetSize().CompareInBounds(targetPos, _selection->pivot) <= 0)
     {
         // target is before pivot
         // treat target as start
@@ -299,16 +321,25 @@ void Terminal::ToggleMarkMode()
         // Enter Mark Mode
         // NOTE: directly set cursor state. We already should have locked before calling this function.
         _activeBuffer().GetCursor().SetIsOn(false);
-        const auto cursorPos{ _activeBuffer().GetCursor().GetPosition() };
-        _selection = SelectionAnchors{};
-        _selection->start = cursorPos;
-        _selection->end = cursorPos;
-        _selection->pivot = cursorPos;
-        _ScrollToPoint(cursorPos);
+        if (!IsSelectionActive())
+        {
+            // No selection --> start one at the cursor
+            const auto cursorPos{ _activeBuffer().GetCursor().GetPosition() };
+            _selection = SelectionAnchors{};
+            _selection->start = cursorPos;
+            _selection->end = cursorPos;
+            _selection->pivot = cursorPos;
+            _blockSelection = false;
+            WI_SetAllFlags(_selectionEndpoint, SelectionEndpoint::Start | SelectionEndpoint::End);
+        }
+        else if (WI_AreAllFlagsClear(_selectionEndpoint, SelectionEndpoint::Start | SelectionEndpoint::End))
+        {
+            // Selection already existed
+            WI_SetFlag(_selectionEndpoint, SelectionEndpoint::End);
+        }
+        _ScrollToPoint(_selection->start);
         _selectionMode = SelectionInteractionMode::Mark;
-        _blockSelection = false;
-        _isTargetingUrl = false;
-        WI_SetAllFlags(_selectionEndpoint, SelectionEndpoint::Start | SelectionEndpoint::End);
+        _selectionIsTargetingUrl = false;
     }
 }
 
@@ -339,6 +370,23 @@ void Terminal::SwitchSelectionEndpoint()
     }
 }
 
+void Terminal::ExpandSelectionToWord()
+{
+    if (IsSelectionActive())
+    {
+        const auto& buffer = _activeBuffer();
+        _selection->start = buffer.GetWordStart(_selection->start, _wordDelimiters);
+        _selection->pivot = _selection->start;
+        _selection->end = buffer.GetWordEnd(_selection->end, _wordDelimiters);
+
+        // if we're targeting both endpoints, instead just target "end"
+        if (WI_IsFlagSet(_selectionEndpoint, SelectionEndpoint::Start) && WI_IsFlagSet(_selectionEndpoint, SelectionEndpoint::End))
+        {
+            _selectionEndpoint = SelectionEndpoint::End;
+        }
+    }
+}
+
 // Method Description:
 // - selects the next/previous hyperlink, if one is available
 // Arguments:
@@ -350,7 +398,7 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
     if (_selectionMode != SelectionInteractionMode::Mark)
     {
         // This feature only works in mark mode
-        _isTargetingUrl = false;
+        _selectionIsTargetingUrl = false;
         return;
     }
 
@@ -380,7 +428,7 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
                 // pattern tree includes the currently selected range when going forward,
                 // so we need to check if we're pointing to that one before returning it.
                 auto range = list.front();
-                if (_isTargetingUrl && range.start == selectionStartInSearchArea)
+                if (_selectionIsTargetingUrl && range.start == selectionStartInSearchArea)
                 {
                     if (list.size() > 1)
                     {
@@ -478,16 +526,11 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
     _selection->pivot = result->first;
     _selection->end = result->second;
     bufferSize.DecrementInBounds(_selection->end);
-    _isTargetingUrl = true;
+    _selectionIsTargetingUrl = true;
     _selectionEndpoint = SelectionEndpoint::End;
 
     // 3. Scroll to the selected area (if necessary)
     _ScrollToPoint(_selection->end);
-}
-
-bool Terminal::IsTargetingUrl() const noexcept
-{
-    return _isTargetingUrl;
 }
 
 Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const
@@ -591,7 +634,7 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
     }
 
     // 3. Actually modify the selection state
-    _isTargetingUrl = false;
+    _selectionIsTargetingUrl = false;
     _selectionMode = std::max(_selectionMode, SelectionInteractionMode::Keyboard);
     if (shouldMoveBothEndpoints)
     {
@@ -625,6 +668,7 @@ void Terminal::SelectAll()
     _selection->end = { bufferSize.RightInclusive(), _GetMutableViewport().BottomInclusive() };
     _selection->pivot = _selection->end;
     _selectionMode = SelectionInteractionMode::Keyboard;
+    _selectionIsTargetingUrl = false;
     _ScrollToPoint(_selection->start);
 }
 
@@ -665,7 +709,7 @@ void Terminal::_MoveByWord(SelectionDirection direction, til::point& pos)
     case SelectionDirection::Left:
     {
         const auto wordStartPos{ _activeBuffer().GetWordStart(pos, _wordDelimiters) };
-        if (_selection->pivot < pos)
+        if (_activeBuffer().GetSize().CompareInBounds(_selection->pivot, pos) < 0)
         {
             // If we're moving towards the pivot, move one more cell
             pos = wordStartPos;
@@ -688,7 +732,7 @@ void Terminal::_MoveByWord(SelectionDirection direction, til::point& pos)
     case SelectionDirection::Right:
     {
         const auto wordEndPos{ _activeBuffer().GetWordEnd(pos, _wordDelimiters) };
-        if (pos < _selection->pivot)
+        if (_activeBuffer().GetSize().CompareInBounds(pos, _selection->pivot) < 0)
         {
             // If we're moving towards the pivot, move one more cell
             pos = _activeBuffer().GetWordEnd(pos, _wordDelimiters);
@@ -771,7 +815,7 @@ void Terminal::ClearSelection()
 {
     _selection = std::nullopt;
     _selectionMode = SelectionInteractionMode::None;
-    _isTargetingUrl = false;
+    _selectionIsTargetingUrl = false;
     _selectionEndpoint = static_cast<SelectionEndpoint>(0);
     _anchorInactiveSelectionEndpoint = false;
 }
@@ -841,13 +885,14 @@ void Terminal::_ScrollToPoint(const til::point pos)
 }
 
 // Method Description:
-// - This method won't be used. We just throw and do nothing. For now we
-//   need this method to implement UiaData interface
+// - apply the TextAttribute "attr" to the active buffer
 // Arguments:
-// - coordSelectionStart - Not used
-// - coordSelectionEnd - Not used
-// - attr - Not used.
-void Terminal::ColorSelection(const til::point, const til::point, const TextAttribute)
+// - coordStart - where to begin applying attr
+// - coordEnd - where to end applying attr (inclusive)
+// - attr - the text attributes to apply
+void Terminal::ColorSelection(const til::point coordStart, const til::point coordEnd, const TextAttribute attr)
 {
-    THROW_HR(E_NOTIMPL);
+    size_t spanLength = _activeBuffer().SpanLength(coordStart, coordEnd);
+
+    _activeBuffer().Write(OutputCellIterator(attr, spanLength), coordStart);
 }

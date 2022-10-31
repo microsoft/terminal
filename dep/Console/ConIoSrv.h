@@ -13,6 +13,10 @@ Licensed under the MIT license.
 #define CIS_EVENT_TYPE_FOCUS         (1)
 #define CIS_EVENT_TYPE_FOCUS_ACK     (2)
 
+#define CIS_MSG_TYPE_MAPVIRTUALKEY   (0)
+#define CIS_MSG_TYPE_VKKEYSCAN       (1)
+#define CIS_MSG_TYPE_GETKEYSTATE     (2)
+
 #define CIS_MSG_TYPE_GETDISPLAYSIZE  (3)
 #define CIS_MSG_TYPE_GETFONTSIZE     (4)
 #define CIS_MSG_TYPE_SETCURSOR       (5)
@@ -31,6 +35,22 @@ typedef struct {
     UCHAR Type;
 
     union {
+        struct {
+            UINT Code;
+            UINT MapType;
+            UINT ReturnValue;
+        } MapVirtualKeyParams;
+
+        struct {
+            WCHAR Character;
+            SHORT ReturnValue;
+        } VkKeyScanParams;
+
+        struct {
+            int VirtualKey;
+            SHORT ReturnValue;
+        } GetKeyStateParams;
+
         struct {
             CD_IO_DISPLAY_SIZE DisplaySize;
 

@@ -142,7 +142,6 @@ public:
     Microsoft::Console::CursorBlinker& GetCursorBlinker() noexcept;
 
     MidiAudio& GetMidiAudio();
-    void ShutdownMidiAudio();
 
     CHAR_INFO AsCharInfo(const OutputCellView& cell) const noexcept;
 
@@ -161,7 +160,7 @@ private:
 
     Microsoft::Console::VirtualTerminal::VtIo _vtIo;
     Microsoft::Console::CursorBlinker _blinker;
-    std::unique_ptr<MidiAudio> _midiAudio;
+    MidiAudio _midiAudio;
 };
 
 #define ConsoleLocked() (ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleLock.OwningThread == NtCurrentTeb()->ClientId.UniqueThread)

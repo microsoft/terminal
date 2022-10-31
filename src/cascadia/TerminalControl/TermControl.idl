@@ -21,7 +21,10 @@ namespace Microsoft.Terminal.Control
                     IControlAppearance unfocusedAppearance,
                     Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
-        static Windows.Foundation.Size GetProposedDimensions(IControlSettings settings, UInt32 dpi);
+        static Windows.Foundation.Size GetProposedDimensions(IControlSettings settings,
+                                                             UInt32 dpi,
+                                                             Int32 commandlineCols,
+                                                             Int32 commandlineRows);
 
         void UpdateControlSettings(IControlSettings settings);
         void UpdateControlSettings(IControlSettings settings, IControlAppearance unfocusedAppearance);
@@ -55,6 +58,7 @@ namespace Microsoft.Terminal.Control
         Boolean ToggleBlockSelection();
         void ToggleMarkMode();
         Boolean SwitchSelectionEndpoint();
+        Boolean ExpandSelectionToWord();
         void ClearBuffer(ClearBufferType clearType);
         void Close();
         Windows.Foundation.Size CharacterDimensions { get; };
@@ -70,7 +74,7 @@ namespace Microsoft.Terminal.Control
 
         void SearchMatch(Boolean goForward);
 
-        void AdjustFontSize(Int32 fontSizeDelta);
+        void AdjustFontSize(Single fontSizeDelta);
         void ResetFontSize();
 
         void ToggleShaderEffects();
@@ -92,5 +96,7 @@ namespace Microsoft.Terminal.Control
         Double BackgroundOpacity { get; };
 
         Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
+
+        void ColorSelection(SelectionColor fg, SelectionColor bg, Microsoft.Terminal.Core.MatchMode matchMode);
     }
 }

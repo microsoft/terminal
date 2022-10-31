@@ -5,6 +5,8 @@
 
 #include "InteractivityFactory.hpp"
 
+#include "../inc/ServiceLocator.hpp"
+
 #ifdef BUILD_ONECORE_INTERACTIVITY
 #include "..\onecore\AccessibilityNotifier.hpp"
 #include "..\onecore\ConsoleControl.hpp"
@@ -372,18 +374,6 @@ using namespace Microsoft::Console::Interactivity;
 }
 
 // Method Description:
-// - Gives the pseudo console window a target to relay show/hide window messages
-// Arguments:
-// - func - A function that will take a true for "show" and false for "hide" and
-//          relay that information to the attached terminal to adjust its window state.
-// Return Value:
-// - <none>
-void InteractivityFactory::SetPseudoWindowCallback(std::function<void(bool)> func)
-{
-    _pseudoWindowMessageCallback = func;
-}
-
-// Method Description:
 // - Static window procedure for pseudo console windows
 // - Processes set-up on create to stow the "this" pointer to specific instantiations and routes
 //   to the specific object on future calls.
@@ -492,9 +482,10 @@ void InteractivityFactory::_WritePseudoWindowCallback(bool showOrHide)
     // A hosting terminal window should only "restore" itself in response to
     // this message, if it's already minimized. If the window is maximized a
     // restore will restore-down the window instead.
-    if (_pseudoWindowMessageCallback)
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    if (const auto io = gci.GetVtIo())
     {
-        _pseudoWindowMessageCallback(showOrHide);
+        io->SetWindowVisibility(showOrHide);
     }
 }
 

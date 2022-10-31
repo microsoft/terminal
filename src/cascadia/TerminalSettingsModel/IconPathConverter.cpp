@@ -4,8 +4,20 @@
 
 #include "Utils.h"
 
+#include <Shlobj.h>
+#include <Shlobj_core.h>
+#include <wincodec.h>
+
+namespace winrt
+{
+    namespace MUX = Microsoft::UI::Xaml;
+}
+
 using namespace winrt::Windows;
 using namespace winrt::Windows::UI::Xaml;
+
+using namespace winrt::Windows::Graphics::Imaging;
+using namespace winrt::Windows::Storage::Streams;
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -62,7 +74,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     template<typename TIconSource>
     TIconSource _getColoredBitmapIcon(const winrt::hstring& path)
     {
-        if (!path.empty())
+        // FontIcon uses glyphs in the private use area, whereas valid URIs only contain ASCII characters.
+        // To skip throwing on Uri construction, we can quickly check if the first character is ASCII.
+        if (!path.empty() && path.front() < 128)
         {
             try
             {
@@ -195,13 +209,161 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         throw hresult_not_implemented();
     }
 
-    Windows::UI::Xaml::Controls::IconSource IconPathConverter::IconSourceWUX(hstring path)
+    Windows::UI::Xaml::Controls::IconSource _IconSourceWUX(hstring path)
     {
         return _getIconSource<Windows::UI::Xaml::Controls::IconSource>(path);
     }
 
-    Microsoft::UI::Xaml::Controls::IconSource IconPathConverter::IconSourceMUX(hstring path)
+    Microsoft::UI::Xaml::Controls::IconSource _IconSourceMUX(hstring path)
     {
         return _getIconSource<Microsoft::UI::Xaml::Controls::IconSource>(path);
+    }
+
+    SoftwareBitmap _convertToSoftwareBitmap(HICON hicon,
+                                            BitmapPixelFormat pixelFormat,
+                                            BitmapAlphaMode alphaMode,
+                                            IWICImagingFactory* imagingFactory)
+    {
+        // Load the icon into an IWICBitmap
+        wil::com_ptr<IWICBitmap> iconBitmap;
+        THROW_IF_FAILED(imagingFactory->CreateBitmapFromHICON(hicon, iconBitmap.put()));
+
+        // Put the IWICBitmap into a SoftwareBitmap. This may fail if WICBitmap's format is not supported by
+        // SoftwareBitmap. CreateBitmapFromHICON always creates RGBA8 so we're ok.
+        auto softwareBitmap = winrt::capture<SoftwareBitmap>(
+            winrt::create_instance<ISoftwareBitmapNativeFactory>(CLSID_SoftwareBitmapNativeFactory),
+            &ISoftwareBitmapNativeFactory::CreateFromWICBitmap,
+            iconBitmap.get(),
+            false);
+
+        // Convert the pixel format and alpha mode if necessary
+        if (softwareBitmap.BitmapPixelFormat() != pixelFormat || softwareBitmap.BitmapAlphaMode() != alphaMode)
+        {
+            softwareBitmap = SoftwareBitmap::Convert(softwareBitmap, pixelFormat, alphaMode);
+        }
+
+        return softwareBitmap;
+    }
+
+    SoftwareBitmap _getBitmapFromIconFileAsync(const winrt::hstring& iconPath,
+                                               int32_t iconIndex,
+                                               uint32_t iconSize)
+    {
+        wil::unique_hicon hicon;
+        LOG_IF_FAILED(SHDefExtractIcon(iconPath.c_str(), iconIndex, 0, &hicon, nullptr, iconSize));
+
+        if (!hicon)
+        {
+            return nullptr;
+        }
+
+        wil::com_ptr<IWICImagingFactory> wicImagingFactory;
+        THROW_IF_FAILED(CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&wicImagingFactory)));
+
+        return _convertToSoftwareBitmap(hicon.get(),
+                                        BitmapPixelFormat::Bgra8,
+                                        BitmapAlphaMode::Premultiplied,
+                                        wicImagingFactory.get());
+    }
+
+    // Method Description:
+    // - Attempt to get the icon index from the icon path provided
+    // Arguments:
+    // - iconPath: the full icon path, including the index if present
+    // - iconPathWithoutIndex: the place to store the icon path, sans the index if present
+    // Return Value:
+    // - nullopt if the iconPath is not an exe/dll/lnk file in the first place
+    // - 0 if the iconPath is an exe/dll/lnk file but does not contain an index (i.e. we default
+    //   to the first icon in the file)
+    // - the icon index if the iconPath is an exe/dll/lnk file and contains an index
+    std::optional<int> _getIconIndex(const winrt::hstring& iconPath, std::wstring_view& iconPathWithoutIndex)
+    {
+        const auto pathView = std::wstring_view{ iconPath };
+        // Does iconPath have a comma in it? If so, split the string on the
+        // comma and look for the index and extension.
+        const auto commaIndex = pathView.find(L',');
+
+        // split the path on the comma
+        iconPathWithoutIndex = pathView.substr(0, commaIndex);
+
+        // It's an exe, dll, or lnk, so we need to extract the icon from the file.
+        if (!til::ends_with(iconPathWithoutIndex, L".exe") &&
+            !til::ends_with(iconPathWithoutIndex, L".dll") &&
+            !til::ends_with(iconPathWithoutIndex, L".lnk"))
+        {
+            return std::nullopt;
+        }
+
+        if (commaIndex != std::wstring::npos)
+        {
+            // Convert the string iconIndex to an int
+            const auto index = til::to_ulong(pathView.substr(commaIndex + 1));
+            if (index == til::to_ulong_error)
+            {
+                return std::nullopt;
+            }
+            return static_cast<int>(index);
+        }
+
+        // We had a binary path, but no index. Default to 0.
+        return 0;
+    }
+
+    winrt::Windows::UI::Xaml::Media::Imaging::SoftwareBitmapSource _getImageIconSourceForBinary(std::wstring_view iconPathWithoutIndex,
+                                                                                                int index)
+    {
+        // Try:
+        // * c:\Windows\System32\SHELL32.dll, 210
+        // * c:\Windows\System32\notepad.exe, 0
+        // * C:\Program Files\PowerShell\6-preview\pwsh.exe, 0 (this doesn't exist for me)
+        // * C:\Program Files\PowerShell\7\pwsh.exe, 0
+
+        const auto swBitmap{ _getBitmapFromIconFileAsync(winrt::hstring{ iconPathWithoutIndex }, index, 32) };
+        if (swBitmap == nullptr)
+        {
+            return nullptr;
+        }
+
+        winrt::Windows::UI::Xaml::Media::Imaging::SoftwareBitmapSource bitmapSource{};
+        bitmapSource.SetBitmapAsync(swBitmap);
+        return bitmapSource;
+    }
+
+    MUX::Controls::IconSource IconPathConverter::IconSourceMUX(const winrt::hstring& iconPath)
+    {
+        std::wstring_view iconPathWithoutIndex;
+        const auto indexOpt = _getIconIndex(iconPath, iconPathWithoutIndex);
+        if (!indexOpt.has_value())
+        {
+            return _IconSourceMUX(iconPath);
+        }
+
+        const auto bitmapSource = _getImageIconSourceForBinary(iconPathWithoutIndex, indexOpt.value());
+
+        MUX::Controls::ImageIconSource imageIconSource{};
+        imageIconSource.ImageSource(bitmapSource);
+
+        return imageIconSource;
+    }
+
+    Windows::UI::Xaml::Controls::IconElement IconPathConverter::IconWUX(const winrt::hstring& iconPath)
+    {
+        std::wstring_view iconPathWithoutIndex;
+        const auto indexOpt = _getIconIndex(iconPath, iconPathWithoutIndex);
+        if (!indexOpt.has_value())
+        {
+            auto source = _IconSourceWUX(iconPath);
+            Controls::IconSourceElement icon;
+            icon.IconSource(source);
+            return icon;
+        }
+
+        const auto bitmapSource = _getImageIconSourceForBinary(iconPathWithoutIndex, indexOpt.value());
+
+        winrt::Microsoft::UI::Xaml::Controls::ImageIcon icon{};
+        icon.Source(bitmapSource);
+        icon.Width(32);
+        icon.Height(32);
+        return icon;
     }
 }

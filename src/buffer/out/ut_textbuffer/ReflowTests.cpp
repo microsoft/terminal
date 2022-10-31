@@ -683,7 +683,7 @@ namespace
     {
         STDMETHODIMP Advance(IDataRow** ppDataRow) override
         {
-            if (_index < std::extent<decltype(testCases)>::value)
+            if (_index < std::extent_v<decltype(testCases)>)
             {
                 Microsoft::WRL::MakeAndInitialize<ArrayIndexTaefAdapterRow>(ppDataRow, _index++);
             }

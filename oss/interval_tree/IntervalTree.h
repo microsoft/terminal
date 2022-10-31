@@ -6,6 +6,7 @@
 #include <iostream>
 #include <memory>
 #include <cassert>
+#include <limits>
 
 #ifdef USE_INTERVAL_TREE_NAMESPACE
 namespace interval_tree

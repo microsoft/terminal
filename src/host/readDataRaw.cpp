@@ -38,9 +38,7 @@ RAW_READ_DATA::RAW_READ_DATA(_In_ InputBuffer* const pInputBuffer,
 // Routine Description:
 // - Destructs a read data class.
 // - Decrements count of readers waiting on the given handle.
-RAW_READ_DATA::~RAW_READ_DATA()
-{
-}
+RAW_READ_DATA::~RAW_READ_DATA() = default;
 
 // Routine Description:
 // - This routine is called to complete a raw read that blocked in ReadInputBuffer.

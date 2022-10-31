@@ -62,7 +62,6 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean EditableUnfocusedAppearance { get; };
         Boolean ShowUnfocusedAppearance { get; };
         AppearanceViewModel UnfocusedAppearance { get; };
-        Boolean AtlasEngineAvailable { get; };
         Boolean VtPassthroughAvailable { get; };
 
         void CreateUnfocusedAppearance();

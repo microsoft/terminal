@@ -772,3 +772,28 @@ std::tuple<std::wstring, std::wstring> Utils::MangleStartingDirectoryForWSL(std:
                                     std::wstring{ startingDirectory }
     };
 }
+
+std::wstring_view Utils::TrimPaste(std::wstring_view textView) noexcept
+{
+    const auto lastNonSpace = textView.find_last_not_of(L"\t\n\v\f\r ");
+    const auto firstNewline = textView.find_first_of(L"\n\v\f\r");
+
+    const bool isOnlyWhitespace = lastNonSpace == textView.npos;
+    const bool isMultiline = firstNewline < lastNonSpace;
+
+    if (isOnlyWhitespace)
+    {
+        // Text is all white space, nothing to paste
+        return L"";
+    }
+
+    if (isMultiline)
+    {
+        // In this case, the user totally wanted to paste multiple lines of text,
+        // and that likely includes the trailing newline.
+        // DON'T trim it in this case.
+        return textView;
+    }
+
+    return textView.substr(0, lastNonSpace + 1);
+}

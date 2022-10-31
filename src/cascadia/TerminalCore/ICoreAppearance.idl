@@ -3,6 +3,12 @@
 
 namespace Microsoft.Terminal.Core
 {
+    enum MatchMode
+    {
+        None,
+        All
+    };
+
     enum CursorStyle
     {
         Vintage,

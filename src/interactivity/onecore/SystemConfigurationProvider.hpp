@@ -37,7 +37,8 @@ namespace Microsoft::Console::Interactivity::OneCore
                                  _Inout_updates_bytes_(*pdwTitleLength) LPWSTR pwszTitle,
                                  _Inout_ PDWORD pdwTitleLength,
                                  _In_ PCWSTR pwszCurrDir,
-                                 _In_ PCWSTR pwszAppName) override;
+                                 _In_ PCWSTR pwszAppName,
+                                 _Inout_opt_ IconInfo* iconInfo) override;
 
     private:
         static constexpr UINT s_DefaultCaretBlinkTime = 530; // milliseconds

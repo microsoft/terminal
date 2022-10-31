@@ -9,9 +9,7 @@
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
-    EchoConnection::EchoConnection() noexcept
-    {
-    }
+    EchoConnection::EchoConnection() noexcept = default;
 
     void EchoConnection::Start() noexcept
     {
