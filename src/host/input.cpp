@@ -241,6 +241,24 @@ void HandleCtrlEvent(const DWORD EventType)
     }
 }
 
+static void CALLBACK midiSkipTimerCallback(HWND, UINT, UINT_PTR idEvent, DWORD) noexcept
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& midiAudio = gci.GetMidiAudio();
+
+    KillTimer(nullptr, idEvent);
+    midiAudio.EndSkip();
+}
+
+static void beginMidiSkip() noexcept
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& midiAudio = gci.GetMidiAudio();
+
+    midiAudio.BeginSkip();
+    SetTimer(nullptr, 0, 1000, midiSkipTimerCallback);
+}
+
 void ProcessCtrlEvents()
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -249,6 +267,8 @@ void ProcessCtrlEvents()
         gci.UnlockConsole();
         return;
     }
+
+    beginMidiSkip();
 
     // Make our own copy of the console process handle list.
     const auto LimitingProcessId = gci.LimitingProcessId;
