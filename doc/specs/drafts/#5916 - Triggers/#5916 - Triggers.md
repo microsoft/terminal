@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2022-09-07
-last updated: 2022-09-07
+last updated: 2022-10-31
 issue id: 5916
 ---
 
@@ -90,6 +90,29 @@ by the control, it'll raise an event. The app will recieve the event, match it
 up to the trigger, and call `Model.Trigger.Parse(String[] matches) ->
 ActionAndArgs` which will do the string replace in the JSON itself. We'll then
 just take the _whole json_, and try to parse it literally as an `ActionAndArgs`.
+
+
+[TODO!]: # TODO! Notes from a vscode sync:
+
+* vvscode only runs matchers on prompt sequences, for perf. We'll need to be VERY explicit that anything else is highly detrimental to performance.
+
+* things to consider
+
+```jsonc
+"matcher": {
+    "anchor": "bottom",
+    "offset": 0, // starting how many rows from the bottom
+    "length": 5, // how many lines to match against
+    "pattern": "    git push --set-upstream origin ([^\\w]*)"
+},
+"action": { ... },
+"runOn": "everything|newline|mark"
+```
+
+To avoid running on every single everything. Prompts are probably close enough
+to frequent enough, and the anchor/offset/length give a subset of the buffer
+that can be used to run matches on
+
 
 ### Turn text into clickable links
 
