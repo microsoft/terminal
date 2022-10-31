@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2022-05-18
-last updated: 2022-05-18
+last updated: 2022-10-28
 issue id: n/a
 ---
 
@@ -56,37 +56,6 @@ has a long set of commands for building the Terminal, running tests, deploying,
 and various other helper scripts. Being able to immediately leverage this
 existing ecosystem would undobtably lead to quicker adoption.
 
-Opening Markdown side-by-side with the Terminal output is certainly a little
-different than the way a notebook traditionally works. Notebooks typically have
-the code in a block, with output inline, below the block. Blocks could also just
-be dedicated to text, for documentation mixed between the code. The feature
-proposed here is different from that, for sure. For this proposal, the Terminal
-still exists side-by-side from the source markdown. Running commands from the
-markdown text would then send the command as a string of input to the connected
-terminal. This approach was elected over attempting to create artificial
-boundaries between different blocks.
-
-Oftentimes, the command line is a very stateful experience. Set some environment
-variables, run some script, use the errorlevel from the previous command, etc.
-Running each block in wholly separate console instances would likely not be
-useful.
-
-Additionally, finding the separation between command line input and its output,
-and the separation between individual commands is not an entirely trivial
-process. Should we try to separate out the command input line into one buffer,
-then the output into another buffer sounds great on paper. Consider, however,
-something like `cmd.exe`, which does not provide any sort of distinction between
-its input line and its output. Or `python.exe`, as an interactive REPL, which
-certainly doesn't tell the terminal the difference. How would we be able to
-detect something like a multi-line command at the REPL?
-
-By keeing the command blocks out-of-band from the terminal output, we keep the
-familiar terminal experience. It acts just as you'd expect, with no additional
-configuration on the user's side. The commands are something that are already
-written down, just waiting for the user to run them. They could even be sent to
-something that isn't necessarily a shell - like pasting a bit of configuration
-into a text editor like `vim` or `emacs`. The commands in the markdown side are
-just strings of text to send to the terminal side - nothing more.
 
 ### User Stories
 
@@ -127,11 +96,75 @@ pane to send the `sendInput` command to might be a bit tricky. We'll need to
 figure out what an action like that does when the active pane is not a terminal
 pane.
 
+Below are two different structures that could be used for imlpementing notebooks
+in the Terminal. These are **Side-by-side** notebooks, and **Inline** notebooks.
+Side-by-side notebooks consist of two panes - a standard terminal control in
+one, and rendered markdown in the other. Inline notebooks are more like
+traditional notebooks, with the terminal output rendered as a block within the
+rendered markdown content.
+
+### Side-by-side notebooks
+
+Opening Markdown side-by-side with the Terminal output is certainly a little
+different than the way a notebook traditionally works. Notebooks typically have
+the code in a block, with output inline, below the block. Blocks could also just
+be dedicated to text, for documentation mixed between the code. The feature
+proposed here is different from that, for sure. For this proposal, the Terminal
+still exists side-by-side from the source markdown. Running commands from the
+markdown text would then send the command as a string of input to the connected
+terminal. This approach was elected over attempting to create artificial
+boundaries between different blocks.
+
+Oftentimes, the command line is a very stateful experience. Set some environment
+variables, run some script, use the errorlevel from the previous command, etc.
+Running each block in wholly separate console instances would likely not be
+useful.
+
+Additionally, finding the separation between command line input and its output,
+and the separation between individual commands is not an entirely trivial
+process. Should we try to separate out the command input line into one buffer,
+then the output into another buffer sounds great on paper. Consider, however,
+something like `cmd.exe`, which does not provide any sort of distinction between
+its input line and its output. Or `python.exe`, as an interactive REPL, which
+certainly doesn't tell the terminal the difference. How would we be able to
+detect something like a multi-line command at the REPL?
+
+By keeing the command blocks out-of-band from the terminal output, we keep the
+familiar terminal experience. It acts just as you'd expect, with no additional
+configuration on the user's side. The commands are something that are already
+written down, just waiting for the user to run them. They could even be sent to
+something that isn't necessarily a shell - like pasting a bit of configuration
+into a text editor like `vim` or `emacs`. The commands in the markdown side are
+just strings of text to send to the terminal side - nothing more.
+
+### Inline notebooks
+
+Is there a way to have a more traditional notebook experience, where the
+terminal output is rendered as blocks within the markdown itself? I believe
+there is, by making agressive use of the FTCS mark VT sequences. These are
+sequences that enable identifying the parts of the buffer as a prompt, the
+commandline, or the output. We can use these to pull out individual rows of the
+buffer, and display them as miniature terminal controls within the notebook.
+
+This involves a single terminal insance backing the entire notebook. When the
+user runs a code block in the notebook, we'll `sendInput` the text to the
+backing terminal the same as before. We'll then use the `FTCS_COMMAND_EXECUTED`
+sequence to know where the actual start of the output of the command is. We'll
+gather all output from that moment on, and tee that to a separate "front"
+control, which we use as the display for the output of the command. We'll render
+that "front" control inline with the rest of the markdown content, immediately
+below the code block for that command.
+
 
 ## UI/UX Design
 
+### Side-by-side
 ![A rough mockup of what this feature might look like](./mockup-000.png)
 
+
+### Inline
+
+![](./inline-blocks-000.png)
 
 ## Tenents
 
