@@ -1412,14 +1412,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - duration - How long the note should be sustained (in microseconds).
     void ControlCore::_terminalPlayMidiNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration)
     {
-        // Unlock the terminal, so the UI doesn't hang while we're busy.
-        auto& terminalLock = _terminal->GetReadWriteLock();
-        terminalLock.unlock();
+        // The UI thread might try to acquire the console lock from time to time.
+        // --> Unlock it, so the UI doesn't hang while we're busy.
+        const auto suspension = _terminal->SuspendLock();
 
         // This call will block for the duration, unless shutdown early.
         _midiAudio.PlayNote(reinterpret_cast<HWND>(_owningHwnd), noteNumber, velocity, std::chrono::duration_cast<std::chrono::milliseconds>(duration));
-
-        terminalLock.lock();
     }
 
     bool ControlCore::HasSelection() const

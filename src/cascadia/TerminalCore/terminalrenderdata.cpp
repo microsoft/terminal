@@ -208,9 +208,6 @@ catch (...)
 void Terminal::LockConsole() noexcept
 {
     _readWriteLock.lock();
-#ifndef NDEBUG
-    _lastLocker = GetCurrentThreadId();
-#endif
 }
 
 // Method Description:
