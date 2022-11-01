@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-5-13
-last updated: 2022-10-31
+last updated: 2022-11-01
 issue id: 1571
 ---
 
@@ -133,7 +133,9 @@ There are five `type`s of objects in this menu:
   manually.
   - `"name"`, `"commandline"` or `"source"`: These three properties are used to
     filter the list of profiles, based on the matching property in the profile
-    itself. The value is a regex to string compare the profile's value with.
+    itself. The value is a string to compare with the corresponding property in
+    the profile. A full string comparison is done - not a regex or partial
+    string match.
 
 The "default" new tab menu could be imagined as the following blob of json:
 
@@ -158,22 +160,18 @@ nested entries for each subsequent dynamic profile generator.
         {
             "type": "folder",
             "name": "WSL",
-            "entries": [ { "type": "matchProfile", "source": "Microsoft\\.Terminal\\.Wsl" } ]
+            "entries": [ { "type": "matchProfile", "source": "Microsoft.Terminal.Wsl" } ]
         },
         {
             "type": "folder",
             "name": "Visual Studio",
-            "entries": [ { "type": "matchProfile", "source": "Microsoft\\.Terminal\\.VisualStudio" } ]
+            "entries": [ { "type": "matchProfile", "source": "Microsoft.Terminal.VisualStudio" } ]
         },
         // ... etc for other profile generators
         { "type": "remainingProfiles" }
     ]
 }
 ```
-
-> _note_: The `"source": "Microsoft\\.Terminal\\.Wsl"` entries could also
-> technically be written `"Microsoft.Terminal.Wsl"`, because the regex will
-> still match the single period separating the namespaces.
 
 I might only recommend that for `userDefaults.json`, which is the json files
 used as a template for a user's new settings file. This would prevent us from
@@ -243,7 +241,7 @@ As an example:
 ```jsonc
 {
     "newTabMenu": [
-        { "type": "matchProfile", "name": ".*" }
+        { "type": "matchProfile", "source": "Microsoft.Terminal.Wsl" }
         {
             "type": "folder",
             "name": "WSLs",
@@ -402,6 +400,27 @@ And assuming the user has bound:
     - Close Tab: `{ "action": "closeTab", "index": "${selectedTab.index}" }`
     - Close Other Tabs: `{ "action": "closeTabs", "otherThan": "${selectedTab.index}" }`
     - Close Tabs to the Right: `{ "action": "closeTabs", "after": "${selectedTab.index}" }`
+* We may want to consider regex, tag-based, or some other type of matching for
+  `matchProfile` entries in the future. We originally considered using regex for
+  `matchProfile` by default, but decided instead on full string matches to leave
+  room for regex matching in the future. Should we chose to pursue something
+  like that, we should use a settings structure like:
+
+  ```json
+  "type": "profileMatch",
+  "source": { "type": "regex", "value": ".*wsl.*" }
+  ```
+* We may want to expand `matchProfile` to match on other properties too. (`title`?)
+* We may want to consider something like
+  ```json
+  {
+    "type": "profileMatch",
+    "name": { "type": "regex", "value": "ssh: (.*)" }
+  }
+  ```
+  for matching to all your `ssh: ` profiles, but populate the name in the entry
+  with that first capture group. So, ["ssh: foo", "ssh: bar"] would just expand
+  to a "foo" and "bar" entry.
 
 ## Updates
 
