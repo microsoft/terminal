@@ -4,9 +4,6 @@
 #include "pch.h"
 #include "AtlasEngine.h"
 
-#include <til/small_vector.h>
-
-#include "AtlasEngine.h"
 #include "dwrite.h"
 
 // #### NOTE ####
@@ -65,9 +62,17 @@ static AtlasEngine::f32r getGlyphRunBlackBox(const DWRITE_GLYPH_RUN& glyphRun, f
     DWRITE_FONT_METRICS fontMetrics;
     glyphRun.fontFace->GetMetrics(&fontMetrics);
 
-    til::small_vector<DWRITE_GLYPH_METRICS, 16> glyphRunMetrics;
-    glyphRunMetrics.resize(glyphRun.glyphCount);
-    glyphRun.fontFace->GetDesignGlyphMetrics(glyphRun.glyphIndices, glyphRun.glyphCount, glyphRunMetrics.data(), false);
+    std::unique_ptr<DWRITE_GLYPH_METRICS[]> glyphRunMetricsHeap;
+    std::array<DWRITE_GLYPH_METRICS, 8> glyphRunMetricsStack;
+    DWRITE_GLYPH_METRICS* glyphRunMetrics = glyphRunMetricsStack.data();
+
+    if (glyphRun.glyphCount > glyphRunMetricsStack.size())
+    {
+        glyphRunMetricsHeap = std::make_unique_for_overwrite<DWRITE_GLYPH_METRICS[]>(glyphRun.glyphCount);
+        glyphRunMetrics = glyphRunMetricsHeap.get();
+    }
+
+    glyphRun.fontFace->GetDesignGlyphMetrics(glyphRun.glyphIndices, glyphRun.glyphCount, glyphRunMetrics, false);
 
     float const fontScale = glyphRun.fontEmSize / fontMetrics.designUnitsPerEm;
     AtlasEngine::f32r accumulatedBounds{
@@ -569,7 +574,7 @@ try
                 viewport.Width = static_cast<float>(_api.sizeInPixel.x);
                 viewport.Height = static_cast<float>(_api.sizeInPixel.y);
                 _r.deviceContext->RSSetViewports(1, &viewport);
-                _r.deviceContext->RSSetState(nullptr);
+                _r.deviceContext->RSSetState(_r.rasterizerState.get());
 
                 // PS: Pixel Shader
                 _r.deviceContext->PSSetShader(_r.textPixelShader.get(), nullptr, 0);
@@ -593,12 +598,12 @@ try
                 _r.deviceContext->PSSetShader(_r.textPixelShader.get(), nullptr, 0);
                 _r.deviceContext->PSSetShaderResources(0, 1, _r.atlasView.addressof());
                 _r.deviceContext->OMSetBlendState(_r.textBlendState.get(), nullptr, 0xffffffff);
-                _r.deviceContext->DrawInstanced(6, gsl::narrow_cast<UINT>(textRange.y), 0, gsl::narrow_cast<UINT>(textRange.x));
+                _r.deviceContext->DrawInstanced(_r.instanceCount, gsl::narrow_cast<UINT>(textRange.y), 0, gsl::narrow_cast<UINT>(textRange.x));
 
                 _r.deviceContext->PSSetShader(_r.invertCursorPixelShader.get(), nullptr, 0);
                 _r.deviceContext->OMSetRenderTargets(1, _r.renderTargetViewUInt.addressof(), nullptr);
                 _r.deviceContext->OMSetBlendState(_r.invertCursorBlendState.get(), nullptr, 0xffffffff);
-                _r.deviceContext->DrawInstanced(6, gsl::narrow_cast<UINT>(cursorRange.y), 0, gsl::narrow_cast<UINT>(cursorRange.x));
+                _r.deviceContext->DrawInstanced(_r.instanceCount, gsl::narrow_cast<UINT>(cursorRange.y), 0, gsl::narrow_cast<UINT>(cursorRange.x));
 
                 if (selectionRange.y)
                 {
@@ -606,7 +611,7 @@ try
                     _r.deviceContext->PSSetShaderResources(0, 1, _r.atlasView.addressof());
                     _r.deviceContext->OMSetRenderTargets(1, _r.renderTargetView.addressof(), nullptr);
                     _r.deviceContext->OMSetBlendState(_r.textBlendState.get(), nullptr, 0xffffffff);
-                    _r.deviceContext->DrawInstanced(6, gsl::narrow_cast<UINT>(selectionRange.y), 0, gsl::narrow_cast<UINT>(selectionRange.x));
+                    _r.deviceContext->DrawInstanced(_r.instanceCount, gsl::narrow_cast<UINT>(selectionRange.y), 0, gsl::narrow_cast<UINT>(selectionRange.x));
                 }
             }
             else
@@ -614,7 +619,7 @@ try
                 _r.deviceContext->PSSetShader(_r.textPixelShader.get(), nullptr, 0);
                 _r.deviceContext->PSSetShaderResources(0, 1, _r.atlasView.addressof());
                 _r.deviceContext->OMSetBlendState(_r.textBlendState.get(), nullptr, 0xffffffff);
-                _r.deviceContext->DrawInstanced(6, gsl::narrow_cast<UINT>(textRange.y + selectionRange.y), 0, gsl::narrow_cast<UINT>(textRange.x));
+                _r.deviceContext->DrawInstanced(_r.instanceCount, gsl::narrow_cast<UINT>(textRange.y + selectionRange.y), 0, gsl::narrow_cast<UINT>(textRange.x));
             }
         }
 
@@ -623,7 +628,7 @@ try
             _r.deviceContext->RSSetState(_r.wireframeRasterizerState.get());
             _r.deviceContext->PSSetShader(_r.wireframePixelShader.get(), nullptr, 0);
             _r.deviceContext->OMSetBlendState(_r.alphaBlendState.get(), nullptr, 0xffffffff);
-            _r.deviceContext->DrawInstanced(6, gsl::narrow<UINT>(_r.vertexInstanceData.size()), 0, 0);
+            _r.deviceContext->DrawInstanced(_r.instanceCount, gsl::narrow<UINT>(_r.vertexInstanceData.size()), 0, 0);
         }
     }
 

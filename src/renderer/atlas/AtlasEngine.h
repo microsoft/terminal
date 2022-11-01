@@ -692,7 +692,8 @@ namespace Microsoft::Console::Render
             wil::com_ptr<ID3D11BlendState1> cleartypeBlendState;
             wil::com_ptr<ID3D11BlendState1> alphaBlendState;
             wil::com_ptr<ID3D11BlendState1> invertCursorBlendState;
-
+            
+            wil::com_ptr<ID3D11RasterizerState> rasterizerState;
             wil::com_ptr<ID3D11PixelShader> textPixelShader;
             wil::com_ptr<ID3D11BlendState> textBlendState;
 
@@ -753,6 +754,7 @@ namespace Microsoft::Console::Render
 
             CachedCursorOptions cursorOptions;
             u16r cursorRect;
+            u32 instanceCount = 6;
             RenderInvalidations invalidations = RenderInvalidations::None;
 
             til::rect dirtyRect;

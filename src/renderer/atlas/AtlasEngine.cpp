@@ -704,12 +704,80 @@ void AtlasEngine::_createResources()
             THROW_IF_FAILED(_r.device->CreateBlendState1(&desc, _r.invertCursorBlendState.put()));
         }
 
+        if constexpr (true)
+        {
+            // Quick hack to test NVAPI_QUAD_FILLMODE_BBOX if needed.
+            struct NvAPI_D3D11_RASTERIZER_DESC_EX : D3D11_RASTERIZER_DESC
+            {
+                UINT8 _padding1[40];
+                INT QuadFillMode; // Set to 1 for NVAPI_QUAD_FILLMODE_BBOX
+                UINT8 _padding2[67];
+            };
+
+            using NvAPI_QueryInterface_t = PVOID(__cdecl*)(UINT);
+            using NvAPI_Initialize_t = INT(__cdecl*)();
+            using NvAPI_D3D11_CreateRasterizerState_t = INT(__cdecl*)(ID3D11Device*, const NvAPI_D3D11_RASTERIZER_DESC_EX*, ID3D11RasterizerState**);
+
+            static const auto NvAPI_D3D11_CreateRasterizerState = []() -> NvAPI_D3D11_CreateRasterizerState_t {
+                const auto module = LoadLibraryExW(L"nvapi64.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
+                if (!module)
+                {
+                    return nullptr;
+                }
+                const auto NvAPI_QueryInterface = reinterpret_cast<NvAPI_QueryInterface_t>(GetProcAddress(module, "nvapi_QueryInterface"));
+                if (!NvAPI_QueryInterface)
+                {
+                    return nullptr;
+                }
+                const auto NvAPI_Initialize = reinterpret_cast<NvAPI_Initialize_t>(NvAPI_QueryInterface(0x0150E828));
+                if (!NvAPI_Initialize)
+                {
+                    return nullptr;
+                }
+                const auto func = reinterpret_cast<NvAPI_D3D11_CreateRasterizerState_t>(NvAPI_QueryInterface(0xDB8D28AF));
+                if (!NvAPI_Initialize)
+                {
+                    return nullptr;
+                }
+                if (NvAPI_Initialize())
+                {
+                    return nullptr;
+                }
+                return func;
+            }();
+
+            if (NvAPI_D3D11_CreateRasterizerState)
+            {
+                NvAPI_D3D11_RASTERIZER_DESC_EX desc{};
+                desc.FillMode = D3D11_FILL_SOLID;
+                desc.CullMode = D3D11_CULL_NONE;
+                desc.QuadFillMode = 1;
+                if (const auto status = NvAPI_D3D11_CreateRasterizerState(_r.device.get(), &desc, _r.rasterizerState.put()))
+                {
+                    LOG_HR_MSG(E_UNEXPECTED, "failed to set QuadFillMode with: %d", status);
+                    THROW_IF_FAILED(_r.device->CreateRasterizerState(&desc, _r.rasterizerState.put()));
+                    _r.instanceCount = 6;
+                }
+                else
+                {
+                    _r.instanceCount = 3;
+                }
+            }
+        }
+        else
+        {
+            D3D11_RASTERIZER_DESC desc{};
+            desc.FillMode = D3D11_FILL_SOLID;
+            desc.CullMode = D3D11_CULL_NONE;
+            THROW_IF_FAILED(_r.device->CreateRasterizerState(&desc, _r.rasterizerState.put()));
+        }
+
         {
             D3D11_RASTERIZER_DESC desc{};
             desc.FillMode = D3D11_FILL_WIREFRAME;
             desc.CullMode = D3D11_CULL_NONE;
             wil::com_ptr<ID3D11RasterizerState> state;
-            _r.device->CreateRasterizerState(&desc, _r.wireframeRasterizerState.put());
+            THROW_IF_FAILED(_r.device->CreateRasterizerState(&desc, _r.wireframeRasterizerState.put()));
         }
 
         {
@@ -1152,7 +1220,6 @@ const AtlasEngine::Buffer<DWRITE_FONT_AXIS_VALUE>& AtlasEngine::_getTextFormatAx
 {
     return _r.textFormatAxes[italic][bold];
 }
-
 
 AtlasEngine::BufferLineMetadata* AtlasEngine::_getBufferLineMetadata(u16 x, u16 y) noexcept
 {
