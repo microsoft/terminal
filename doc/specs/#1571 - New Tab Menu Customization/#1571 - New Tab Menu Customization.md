@@ -128,9 +128,8 @@ There are five `type`s of objects in this menu:
   - This won't include any profiles that have been included via `matchProfile`
     entries (below)
 * `"type": "matchProfile"`: Expands to all the profiles that match a given
-  regex, which haven't already been included. This lets the user easily specify
-  a whole collection of profiles for a folder, without needing to add them all
-  manually.
+  string. This lets the user easily specify a whole collection of profiles for a
+  folder, without needing to add them all manually.
   - `"name"`, `"commandline"` or `"source"`: These three properties are used to
     filter the list of profiles, based on the matching property in the profile
     itself. The value is a string to compare with the corresponding property in
