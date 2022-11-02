@@ -20,10 +20,14 @@ using namespace Microsoft::Console::Types;
 //      HRESULT error code if painting didn't start successfully.
 [[nodiscard]] HRESULT VtEngine::StartPaint() noexcept
 {
-    if (_pipeBroken)
+    if (!_hFile)
     {
         return S_FALSE;
     }
+
+    // If we're using line renditions, and this is a full screen paint, we can
+    // potentially stop using them at the end of this frame.
+    _stopUsingLineRenditions = _usingLineRenditions && _AllIsInvalid();
 
     // If there's nothing to do, quick return
     auto somethingToDo = _invalidMap.any() ||
@@ -75,6 +79,14 @@ using namespace Microsoft::Console::Types;
     }
     _circled = false;
 
+    // If _stopUsingLineRenditions is still true at the end of the frame, that
+    // means we've refreshed the entire viewport with every line being single
+    // width, so we can safely stop using them from now on.
+    if (_stopUsingLineRenditions)
+    {
+        _usingLineRenditions = false;
+    }
+
     // If we deferred a cursor movement during the frame, make sure we put the
     //      cursor in the right place before we end the frame.
     if (_deferredCursorPos != INVALID_COORDS)
@@ -98,6 +110,45 @@ using namespace Microsoft::Console::Types;
 [[nodiscard]] HRESULT VtEngine::Present() noexcept
 {
     return S_FALSE;
+}
+
+[[nodiscard]] HRESULT VtEngine::ResetLineTransform() noexcept
+{
+    return S_FALSE;
+}
+
+[[nodiscard]] HRESULT VtEngine::PrepareLineTransform(const LineRendition lineRendition,
+                                                     const til::CoordType targetRow,
+                                                     const til::CoordType /*viewportLeft*/) noexcept
+{
+    // We don't want to waste bandwidth writing out line rendition attributes
+    // until we know they're in use. But once they are in use, we have to keep
+    // applying them on every line until we know they definitely aren't being
+    // used anymore (we check that at the end of any fullscreen paint).
+    if (lineRendition != LineRendition::SingleWidth)
+    {
+        _stopUsingLineRenditions = false;
+        _usingLineRenditions = true;
+    }
+    // One simple optimization is that we can skip sending the line attributes
+    // when _quickReturn is true. That indicates that we're writing out a single
+    // character, which should preclude there being a rendition switch.
+    if (_usingLineRenditions && !_quickReturn)
+    {
+        RETURN_IF_FAILED(_MoveCursor({ _lastText.x, targetRow }));
+        switch (lineRendition)
+        {
+        case LineRendition::SingleWidth:
+            return _Write("\x1b#5");
+        case LineRendition::DoubleWidth:
+            return _Write("\x1b#6");
+        case LineRendition::DoubleHeightTop:
+            return _Write("\x1b#3");
+        case LineRendition::DoubleHeightBottom:
+            return _Write("\x1b#4");
+        }
+    }
+    return S_OK;
 }
 
 // Routine Description:
@@ -205,7 +256,7 @@ using namespace Microsoft::Console::Types;
         RETURN_IF_FAILED(_SetGraphicsDefault());
         _lastTextAttributes.SetDefaultBackground();
         _lastTextAttributes.SetDefaultForeground();
-        _lastTextAttributes.SetDefaultMetaAttrs();
+        _lastTextAttributes.SetDefaultRenditionAttributes();
         lastFg = {};
         lastBg = {};
     }
@@ -281,7 +332,7 @@ using namespace Microsoft::Console::Types;
         RETURN_IF_FAILED(_SetGraphicsDefault());
         _lastTextAttributes.SetDefaultBackground();
         _lastTextAttributes.SetDefaultForeground();
-        _lastTextAttributes.SetDefaultMetaAttrs();
+        _lastTextAttributes.SetDefaultRenditionAttributes();
         lastFg = {};
         lastBg = {};
     }
@@ -425,14 +476,14 @@ using namespace Microsoft::Console::Types;
     // and it uses xterm-ascii. This ensures that xterm and -256color consumers
     // get the enhancements, and telnet isn't broken.
     //
-    // GH#13229: ECH and EL don't fill the space with "meta" attributes like
+    // GH#13229: ECH and EL don't fill the space with visual attributes like
     // underline, reverse video, hyperlinks, etc. If these spaces had those
     // attrs, then don't try and optimize them out.
     const auto optimalToUseECH = numSpaces > ERASE_CHARACTER_STRING_LENGTH;
     const auto useEraseChar = (optimalToUseECH) &&
                               (!_newBottomLine) &&
                               (!_clearedAllThisFrame) &&
-                              (!_lastTextAttributes.HasAnyExtendedAttributes());
+                              (!_lastTextAttributes.HasAnyVisualAttributes());
     const auto printingBottomLine = coord.Y == _lastViewport.BottomInclusive();
 
     // GH#5502 - If the background color of the "new bottom line" is different
@@ -484,8 +535,17 @@ using namespace Microsoft::Console::Types;
     // Move the cursor to the start of this run.
     RETURN_IF_FAILED(_MoveCursor(coord));
 
-    // Write the actual text string
-    RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8({ _bufferLine.data(), cchActual }));
+    // Write the actual text string. If we're using a soft font, the character
+    // set should have already been selected, so we just need to map our internal
+    // representation back to ASCII (handled by the _WriteTerminalDrcs method).
+    if (_usingSoftFont) [[unlikely]]
+    {
+        RETURN_IF_FAILED(VtEngine::_WriteTerminalDrcs({ _bufferLine.data(), cchActual }));
+    }
+    else
+    {
+        RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8({ _bufferLine.data(), cchActual }));
+    }
 
     // GH#4415, GH#5181
     // If the renderer told us that this was a wrapped line, then mark

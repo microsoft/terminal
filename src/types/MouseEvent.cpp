@@ -4,9 +4,7 @@
 #include "precomp.h"
 #include "inc/IInputEvent.hpp"
 
-MouseEvent::~MouseEvent()
-{
-}
+MouseEvent::~MouseEvent() = default;
 
 INPUT_RECORD MouseEvent::ToInputRecord() const noexcept
 {

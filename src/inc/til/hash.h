@@ -17,8 +17,8 @@
 #define TIL_HASH_X64
 #elif defined(_M_ARM64) || defined(_M_ARM64EC)
 #define TIL_HASH_ARM64
-#elif defined(_M_IX86)
-#define TIL_HASH_X86
+#elif defined(_M_IX86) || defined(_M_ARM)
+#define TIL_HASH_32BIT
 #else
 #error "Unsupported architecture for til::hash"
 #endif
@@ -59,7 +59,7 @@ namespace til
         }
 
     private:
-#if defined(TIL_HASH_X86)
+#if defined(TIL_HASH_32BIT)
 
         static uint32_t _wyr24(const uint8_t* p, uint32_t k) noexcept
         {
@@ -109,7 +109,7 @@ namespace til
             return seed ^ see1;
         }
 
-#else // defined(TIL_HASH_X86)
+#else // defined(TIL_HASH_32BIT)
 
         static uint64_t _wyr3(const uint8_t* p, size_t k) noexcept
         {
@@ -201,7 +201,7 @@ namespace til
             return _wymix(s1 ^ len, _wymix(a ^ s1, b ^ seed));
         }
 
-#endif // defined(TIL_HASH_X86)
+#endif // defined(TIL_HASH_32BIT)
 
         size_t _hash = 0;
     };

@@ -494,11 +494,23 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         });
         TermTelemetry::Instance().Log(TermTelemetry::Codes::ED);
         break;
+    case CsiActionCodes::DECSED_SelectiveEraseDisplay:
+        success = parameters.for_each([&](const auto eraseType) {
+            return _dispatch->SelectiveEraseInDisplay(eraseType);
+        });
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSED);
+        break;
     case CsiActionCodes::EL_EraseLine:
         success = parameters.for_each([&](const auto eraseType) {
             return _dispatch->EraseInLine(eraseType);
         });
         TermTelemetry::Instance().Log(TermTelemetry::Codes::EL);
+        break;
+    case CsiActionCodes::DECSEL_SelectiveEraseLine:
+        success = parameters.for_each([&](const auto eraseType) {
+            return _dispatch->SelectiveEraseInLine(eraseType);
+        });
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSEL);
         break;
     case CsiActionCodes::DECSET_PrivateModeSet:
         success = parameters.for_each([&](const auto mode) {
@@ -518,7 +530,11 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         TermTelemetry::Instance().Log(TermTelemetry::Codes::SGR);
         break;
     case CsiActionCodes::DSR_DeviceStatusReport:
-        success = _dispatch->DeviceStatusReport(parameters.at(0));
+        success = _dispatch->DeviceStatusReport(DispatchTypes::ANSIStandardStatus(parameters.at(0)));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DSR);
+        break;
+    case CsiActionCodes::DSR_PrivateDeviceStatusReport:
+        success = _dispatch->DeviceStatusReport(DispatchTypes::DECPrivateStatus(parameters.at(0)));
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DSR);
         break;
     case CsiActionCodes::DA_DeviceAttributes:
@@ -605,6 +621,10 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
     case CsiActionCodes::DECSTR_SoftReset:
         success = _dispatch->SoftReset();
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSTR);
+        break;
+    case CsiActionCodes::DECSCA_SetCharacterProtectionAttribute:
+        success = _dispatch->SetCharacterProtectionAttribute(parameters);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSCA);
         break;
     case CsiActionCodes::XT_PushSgr:
     case CsiActionCodes::XT_PushSgrAlias:
@@ -973,7 +993,7 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
     const auto midPos = string.find(';');
     if (midPos != std::wstring::npos)
     {
-        uri = string.substr(midPos + 1);
+        uri = string.substr(midPos + 1, MAX_URL_LENGTH);
         const auto paramStr = string.substr(0, midPos);
         const auto paramParts = Utils::SplitString(paramStr, ':');
         for (const auto& part : paramParts)

@@ -27,15 +27,17 @@ public:
     FontInfoDesired(const std::wstring_view& faceName,
                     const unsigned char family,
                     const unsigned int weight,
-                    const til::size coordSizeDesired,
+                    const float fontSize,
                     const unsigned int uiCodePage) noexcept;
     FontInfoDesired(const FontInfo& fiFont) noexcept;
 
-    bool operator==(const FontInfoDesired& other) noexcept;
+    bool operator==(const FontInfoDesired& other) = delete;
 
+    float GetFontSize() const noexcept;
     til::size GetEngineSize() const noexcept;
     bool IsDefaultRasterFont() const noexcept;
 
 private:
     til::size _coordSizeDesired;
+    float _fontSize;
 };

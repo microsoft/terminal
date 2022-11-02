@@ -62,9 +62,7 @@ public:
 #endif
 };
 
-inline IInputEvent::~IInputEvent()
-{
-}
+inline IInputEvent::~IInputEvent() = default;
 
 #ifdef UNIT_TESTING
 std::wostream& operator<<(std::wostream& stream, const IInputEvent* pEvent);

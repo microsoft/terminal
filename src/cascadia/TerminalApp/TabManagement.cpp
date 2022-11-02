@@ -86,34 +86,7 @@ namespace winrt::TerminalApp::implementation
         //
         // This call to _MakePane won't return nullptr, we already checked that
         // case above with the _maybeElevate call.
-        _CreateNewTabFromPane(_MakePane(newTerminalArgs, false, existingConnection));
-
-        const auto tabCount = _tabs.Size();
-        const auto usedManualProfile = (newTerminalArgs != nullptr) &&
-                                       (newTerminalArgs.ProfileIndex() != nullptr ||
-                                        newTerminalArgs.Profile().empty());
-
-        // Lookup the name of the color scheme used by this profile.
-        const auto scheme = _settings.GetColorSchemeForProfile(profile);
-        // If they explicitly specified `null` as the scheme (indicating _no_ scheme), log
-        // that as the empty string.
-        const auto schemeName = scheme ? scheme.Name() : L"\0";
-
-        TraceLoggingWrite(
-            g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
-            "TabInformation",
-            TraceLoggingDescription("Event emitted upon new tab creation in TerminalApp"),
-            TraceLoggingUInt32(1u, "EventVer", "Version of this event"),
-            TraceLoggingUInt32(tabCount, "TabCount", "Count of tabs currently opened in TerminalApp"),
-            TraceLoggingBool(usedManualProfile, "ProfileSpecified", "Whether the new tab specified a profile explicitly"),
-            TraceLoggingGuid(profile.Guid(), "ProfileGuid", "The GUID of the profile spawned in the new tab"),
-            TraceLoggingBool(settings.DefaultSettings().UseAcrylic(), "UseAcrylic", "The acrylic preference from the settings"),
-            TraceLoggingFloat64(settings.DefaultSettings().Opacity(), "TintOpacity", "Opacity preference from the settings"),
-            TraceLoggingWideString(settings.DefaultSettings().FontFace().c_str(), "FontFace", "Font face chosen in the settings"),
-            TraceLoggingWideString(schemeName.data(), "SchemeName", "Color scheme set in the settings"),
-            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
-
+        _CreateNewTabFromPane(_MakePane(newTerminalArgs, nullptr, existingConnection));
         return S_OK;
     }
     CATCH_RETURN();
@@ -364,7 +337,7 @@ namespace winrt::TerminalApp::implementation
             // In the future, it may be preferable to just duplicate the
             // current control's live settings (which will include changes
             // made through VT).
-            _CreateNewTabFromPane(_MakePane(nullptr, true, nullptr));
+            _CreateNewTabFromPane(_MakePane(nullptr, tab, nullptr));
 
             const auto runtimeTabText{ tab.GetTabText() };
             if (!runtimeTabText.empty())
@@ -387,7 +360,7 @@ namespace winrt::TerminalApp::implementation
         try
         {
             _SetFocusedTab(tab);
-            _SplitPane(tab, SplitDirection::Automatic, 0.5f, _MakePane(nullptr, true));
+            _SplitPane(tab, SplitDirection::Automatic, 0.5f, _MakePane(nullptr, tab));
         }
         CATCH_LOG();
     }
@@ -420,7 +393,9 @@ namespace winrt::TerminalApp::implementation
                     // GH#11356 - we can't use the UWP apis for writing the file,
                     // because they don't work elevated (shocker) So just use the
                     // shell32 file picker manually.
-                    path = co_await SaveFilePicker(*_hostingHwnd, [control](auto&& dialog) {
+                    std::wstring filename{ tab.Title() };
+                    filename = til::clean_filename(filename);
+                    path = co_await SaveFilePicker(*_hostingHwnd, [filename = std::move(filename)](auto&& dialog) {
                         THROW_IF_FAILED(dialog->SetClientGuid(clientGuidExportFile));
                         try
                         {
@@ -434,8 +409,6 @@ namespace winrt::TerminalApp::implementation
                         THROW_IF_FAILED(dialog->SetDefaultExtension(L"txt"));
 
                         // Default to using the tab title as the file name
-                        std::wstring filename{ control.Title() };
-                        filename = til::clean_filename(filename);
                         THROW_IF_FAILED(dialog->SetFileName((filename + L".txt").c_str()));
                     });
                 }

@@ -53,8 +53,8 @@ HRESULT RenderEngineBase::ResetLineTransform() noexcept
 }
 
 HRESULT RenderEngineBase::PrepareLineTransform(const LineRendition /*lineRendition*/,
-                                               const size_t /*targetRow*/,
-                                               const size_t /*viewportLeft*/) noexcept
+                                               const til::CoordType /*targetRow*/,
+                                               const til::CoordType /*viewportLeft*/) noexcept
 {
     return S_FALSE;
 }

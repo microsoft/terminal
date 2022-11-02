@@ -91,7 +91,7 @@ void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Re
     // But if they are being accepted by conhost, there's a chance they may get
     // passed through in some situations, so it's important that our state
     // machine is always prepared to accept them.
-    _stateMachine->SetParserMode(StateMachine::Mode::AcceptC1, true);
+    _stateMachine->SetParserMode(StateMachine::Mode::AlwaysAcceptC1, true);
 }
 
 // Method Description:
@@ -1012,15 +1012,9 @@ WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
 // Return Value:
 // - a shared_lock which can be used to unlock the terminal. The shared_lock
 //      will release this lock when it's destructed.
-[[nodiscard]] std::unique_lock<til::ticket_lock> Terminal::LockForReading()
+[[nodiscard]] std::unique_lock<til::recursive_ticket_lock> Terminal::LockForReading()
 {
-#ifdef NDEBUG
     return std::unique_lock{ _readWriteLock };
-#else
-    auto lock = std::unique_lock{ _readWriteLock };
-    _lastLocker = GetCurrentThreadId();
-    return lock;
-#endif
 }
 
 // Method Description:
@@ -1028,24 +1022,18 @@ WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
 // Return Value:
 // - a unique_lock which can be used to unlock the terminal. The unique_lock
 //      will release this lock when it's destructed.
-[[nodiscard]] std::unique_lock<til::ticket_lock> Terminal::LockForWriting()
+[[nodiscard]] std::unique_lock<til::recursive_ticket_lock> Terminal::LockForWriting()
 {
-#ifdef NDEBUG
     return std::unique_lock{ _readWriteLock };
-#else
-    auto lock = std::unique_lock{ _readWriteLock };
-    _lastLocker = GetCurrentThreadId();
-    return lock;
-#endif
 }
 
 // Method Description:
 // - Get a reference to the terminal's read/write lock.
 // Return Value:
 // - a ticket_lock which can be used to manually lock or unlock the terminal.
-til::ticket_lock& Terminal::GetReadWriteLock() noexcept
+til::recursive_ticket_lock_suspension Terminal::SuspendLock() noexcept
 {
-    return _readWriteLock;
+    return _readWriteLock.suspend();
 }
 
 Viewport Terminal::_GetMutableViewport() const noexcept
@@ -1711,4 +1699,24 @@ til::point Terminal::GetViewportRelativeCursorPosition() const noexcept
     const auto absoluteCursorPosition{ GetCursorPosition() };
     const auto viewport{ _GetMutableViewport() };
     return absoluteCursorPosition - viewport.Origin();
+}
+
+// These functions are used by TerminalInput, which must build in conhost
+// against OneCore compatible signatures. See the definitions in
+// VtApiRedirection.hpp (which we cannot include cross-project.)
+// Since we do nto run on OneCore, we can dispense with the compatibility
+// shims.
+extern "C" UINT OneCoreSafeMapVirtualKeyW(_In_ UINT uCode, _In_ UINT uMapType)
+{
+    return MapVirtualKeyW(uCode, uMapType);
+}
+
+extern "C" SHORT OneCoreSafeVkKeyScanW(_In_ WCHAR ch)
+{
+    return VkKeyScanW(ch);
+}
+
+extern "C" SHORT OneCoreSafeGetKeyState(_In_ int nVirtKey)
+{
+    return GetKeyState(nVirtKey);
 }

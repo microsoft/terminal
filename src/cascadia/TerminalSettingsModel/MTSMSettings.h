@@ -78,7 +78,7 @@ Author(s):
     X(CloseOnExitMode, CloseOnExit, "closeOnExit", CloseOnExitMode::Automatic)                                                                                 \
     X(hstring, TabTitle, "tabTitle")                                                                                                                           \
     X(Model::BellStyle, BellStyle, "bellStyle", BellStyle::Audible)                                                                                            \
-    X(bool, UseAtlasEngine, "experimental.useAtlasEngine", Feature_AtlasEngine::IsEnabled())                                                                   \
+    X(bool, UseAtlasEngine, "useAtlasEngine", Feature_AtlasEngine::IsEnabled())                                                                                \
     X(Windows::Foundation::Collections::IVector<winrt::hstring>, BellSound, "bellSound", nullptr)                                                              \
     X(bool, Elevate, "elevate", false)                                                                                                                         \
     X(bool, VtPassthrough, "experimental.connection.passthroughMode", false)                                                                                   \
@@ -96,7 +96,7 @@ Author(s):
 
 #define MTSM_FONT_SETTINGS(X)                                                          \
     X(hstring, FontFace, "face", DEFAULT_FONT_FACE)                                    \
-    X(int32_t, FontSize, "size", DEFAULT_FONT_SIZE)                                    \
+    X(float, FontSize, "size", DEFAULT_FONT_SIZE)                                      \
     X(winrt::Windows::UI::Text::FontWeight, FontWeight, "weight", DEFAULT_FONT_WEIGHT) \
     X(IFontAxesMap, FontAxes, "axes")                                                  \
     X(IFontFeatureMap, FontFeatures, "features")

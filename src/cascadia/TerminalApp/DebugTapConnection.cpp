@@ -66,9 +66,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
         _wrappedConnection = wrappedConnection;
     }
 
-    DebugTapConnection::~DebugTapConnection()
-    {
-    }
+    DebugTapConnection::~DebugTapConnection() = default;
 
     void DebugTapConnection::Start()
     {

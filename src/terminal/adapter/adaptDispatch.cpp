@@ -687,6 +687,103 @@ bool AdaptDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
 }
 
 // Routine Description:
+// - Selectively erases unprotected cells in an area of the buffer.
+// Arguments:
+// - textBuffer - Target buffer to be erased.
+// - eraseRect - Area of the buffer that will be affected.
+// Return Value:
+// - <none>
+void AdaptDispatch::_SelectiveEraseRect(TextBuffer& textBuffer, const til::rect& eraseRect)
+{
+    if (eraseRect)
+    {
+        for (auto row = eraseRect.top; row < eraseRect.bottom; row++)
+        {
+            auto& rowBuffer = textBuffer.GetRowByOffset(row);
+            const auto& attrs = rowBuffer.GetAttrRow();
+            auto& chars = rowBuffer.GetCharRow();
+            for (auto col = eraseRect.left; col < eraseRect.right; col++)
+            {
+                // Only unprotected cells are affected.
+                if (!attrs.GetAttrByColumn(col).IsProtected())
+                {
+                    // The text is cleared but the attributes are left as is.
+                    chars.ClearGlyph(col);
+                    textBuffer.TriggerRedraw(Viewport::FromCoord({ col, row }));
+                }
+            }
+        }
+        _api.NotifyAccessibilityChange(eraseRect);
+    }
+}
+
+// Routine Description:
+// - DECSED - Selectively erases unprotected cells in a portion of the viewport.
+// Arguments:
+// - eraseType - Determines whether to erase:
+//      From beginning (top-left corner) to the cursor
+//      From cursor to end (bottom-right corner)
+//      The entire viewport area
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SelectiveEraseInDisplay(const DispatchTypes::EraseType eraseType)
+{
+    const auto viewport = _api.GetViewport();
+    auto& textBuffer = _api.GetTextBuffer();
+    const auto bufferWidth = textBuffer.GetSize().Width();
+    const auto row = textBuffer.GetCursor().GetPosition().Y;
+    const auto col = textBuffer.GetCursor().GetPosition().X;
+
+    switch (eraseType)
+    {
+    case DispatchTypes::EraseType::FromBeginning:
+        _SelectiveEraseRect(textBuffer, { 0, viewport.top, bufferWidth, row });
+        _SelectiveEraseRect(textBuffer, { 0, row, col + 1, row + 1 });
+        return true;
+    case DispatchTypes::EraseType::ToEnd:
+        _SelectiveEraseRect(textBuffer, { col, row, bufferWidth, row + 1 });
+        _SelectiveEraseRect(textBuffer, { 0, row + 1, bufferWidth, viewport.bottom });
+        return true;
+    case DispatchTypes::EraseType::All:
+        _SelectiveEraseRect(textBuffer, { 0, viewport.top, bufferWidth, viewport.bottom });
+        return true;
+    default:
+        return false;
+    }
+}
+
+// Routine Description:
+// - DECSEL - Selectively erases unprotected cells on line with the cursor.
+// Arguments:
+// - eraseType - Determines whether to erase:
+//      From beginning (left edge) to the cursor
+//      From cursor to end (right edge)
+//      The entire line.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SelectiveEraseInLine(const DispatchTypes::EraseType eraseType)
+{
+    auto& textBuffer = _api.GetTextBuffer();
+    const auto row = textBuffer.GetCursor().GetPosition().Y;
+    const auto col = textBuffer.GetCursor().GetPosition().X;
+
+    switch (eraseType)
+    {
+    case DispatchTypes::EraseType::FromBeginning:
+        _SelectiveEraseRect(textBuffer, { 0, row, col + 1, row + 1 });
+        return true;
+    case DispatchTypes::EraseType::ToEnd:
+        _SelectiveEraseRect(textBuffer, { col, row, textBuffer.GetLineWidth(row), row + 1 });
+        return true;
+    case DispatchTypes::EraseType::All:
+        _SelectiveEraseRect(textBuffer, { 0, row, textBuffer.GetLineWidth(row), row + 1 });
+        return true;
+    default:
+        return false;
+    }
+}
+
+// Routine Description:
 // - DECSWL/DECDWL/DECDHL - Sets the line rendition attribute for the current line.
 // Arguments:
 // - rendition - Determines whether the line will be rendered as single width, double
@@ -701,20 +798,22 @@ bool AdaptDispatch::SetLineRendition(const LineRendition rendition)
 
 // Routine Description:
 // - DSR - Reports status of a console property back to the STDIN based on the type of status requested.
-//       - This particular routine responds to ANSI status patterns only (CSI # n), not the DEC format (CSI ? # n)
 // Arguments:
-// - statusType - ANSI status type indicating what property we should report back
+// - statusType - status type indicating what property we should report back
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType)
+bool AdaptDispatch::DeviceStatusReport(const DispatchTypes::StatusType statusType)
 {
     switch (statusType)
     {
-    case DispatchTypes::AnsiStatusType::OS_OperatingStatus:
+    case DispatchTypes::StatusType::OS_OperatingStatus:
         _OperatingStatus();
         return true;
-    case DispatchTypes::AnsiStatusType::CPR_CursorPositionReport:
-        _CursorPositionReport();
+    case DispatchTypes::StatusType::CPR_CursorPositionReport:
+        _CursorPositionReport(false);
+        return true;
+    case DispatchTypes::StatusType::ExCPR_ExtendedCursorPositionReport:
+        _CursorPositionReport(true);
         return true;
     default:
         return false;
@@ -826,12 +925,13 @@ void AdaptDispatch::_OperatingStatus() const
 }
 
 // Routine Description:
-// - DSR-CPR - Reports the current cursor position within the viewport back to the input channel
+// - CPR and DECXCPR- Reports the current cursor position within the viewport,
+//   as well as the current page number if this is an extended report.
 // Arguments:
-// - <none>
+// - extendedReport - Set to true if the report should include the page number
 // Return Value:
 // - <none>
-void AdaptDispatch::_CursorPositionReport()
+void AdaptDispatch::_CursorPositionReport(const bool extendedReport)
 {
     const auto viewport = _api.GetViewport();
     const auto& textBuffer = _api.GetTextBuffer();
@@ -854,9 +954,20 @@ void AdaptDispatch::_CursorPositionReport()
     }
 
     // Now send it back into the input channel of the console.
-    // First format the response string.
-    const auto response = wil::str_printf<std::wstring>(L"\x1b[%d;%dR", cursorPosition.Y, cursorPosition.X);
-    _api.ReturnResponse(response);
+    if (extendedReport)
+    {
+        // An extended report should also include the page number, but for now
+        // we hardcode it to 1, since we don't yet support paging (GH#13892).
+        const auto pageNumber = 1;
+        const auto response = wil::str_printf<std::wstring>(L"\x1b[?%d;%d;%dR", cursorPosition.Y, cursorPosition.X, pageNumber);
+        _api.ReturnResponse(response);
+    }
+    else
+    {
+        // The standard report only returns the cursor position.
+        const auto response = wil::str_printf<std::wstring>(L"\x1b[%d;%dR", cursorPosition.Y, cursorPosition.X);
+        _api.ReturnResponse(response);
+    }
 }
 
 // Routine Description:
@@ -978,23 +1089,7 @@ bool AdaptDispatch::_SetInputMode(const TerminalInput::Mode mode, const bool ena
     // impact on the actual connected terminal. We can't remove this check,
     // because SSH <=7.7 is out in the wild on all versions of Windows <=2004.
 
-    // GH#12799 - If the app requested that we disable focus events, DON'T pass
-    // that through. ConPTY would _always_ like to know about focus events.
-
-    return !_api.IsConsolePty() ||
-           !_api.IsVtInputEnabled() ||
-           (!enable && mode == TerminalInput::Mode::FocusEvent);
-
-    // Another way of writing the above statement is:
-    //
-    // const bool inConpty = _api.IsConsolePty();
-    // const bool shouldPassthrough = inConpty && _api.IsVtInputEnabled();
-    // const bool disabledFocusEvents = inConpty && (!enable && mode == TerminalInput::Mode::FocusEvent);
-    // return !shouldPassthrough || disabledFocusEvents;
-    //
-    // It's like a "filter" left to right. Due to the early return via
-    // !IsConsolePty, once you're at the !enable part, IsConsolePty can only be
-    // true anymore.
+    return !_api.IsConsolePty() || !_api.IsVtInputEnabled();
 }
 
 // Routine Description:
@@ -1029,6 +1124,9 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
     case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
         success = SetAutoWrapMode(enable);
         break;
+    case DispatchTypes::ModeParams::DECARM_AutoRepeatMode:
+        success = _SetInputMode(TerminalInput::Mode::AutoRepeat, enable);
+        break;
     case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
         success = EnableCursorBlinking(enable);
         break;
@@ -1037,6 +1135,9 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         break;
     case DispatchTypes::ModeParams::XTERM_EnableDECCOLMSupport:
         success = EnableDECCOLMSupport(enable);
+        break;
+    case DispatchTypes::ModeParams::DECBKM_BackarrowKeyMode:
+        success = _SetInputMode(TerminalInput::Mode::BackarrowKey, enable);
         break;
     case DispatchTypes::ModeParams::VT200_MOUSE_MODE:
         success = EnableVT200MouseMode(enable);
@@ -1781,7 +1882,7 @@ bool AdaptDispatch::AcceptC1Controls(const bool enabled)
 //  X All character sets          G0, G1, G2, Default settings.
 //                                G3, GL, GR
 //  X Select graphic rendition    SGR         Normal rendition.
-//    Select character attribute  DECSCA      Normal (erasable by DECSEL and DECSED).
+//  X Select character attribute  DECSCA      Normal (erasable by DECSEL and DECSED).
 //  X Save cursor state           DECSC       Home position.
 //    Assign user preference      DECAUPSS    Set selected in Set-Up.
 //        supplemental set
@@ -1815,6 +1916,7 @@ bool AdaptDispatch::SoftReset()
     AcceptC1Controls(false);
 
     SetGraphicsRendition({}); // Normal rendition.
+    SetCharacterProtectionAttribute({}); // Default (unprotected)
 
     // Reset the saved cursor state.
     // Note that XTerm only resets the main buffer state, but that
@@ -1873,6 +1975,12 @@ bool AdaptDispatch::HardReset()
     // Reset the mouse mode
     EnableSGRExtendedMouseMode(false);
     EnableAnyEventMouseMode(false);
+
+    // Reset the Backarrow Key mode
+    _SetInputMode(TerminalInput::Mode::BackarrowKey, false);
+
+    // Set the keyboard Auto Repeat mode
+    _SetInputMode(TerminalInput::Mode::AutoRepeat, true);
 
     // Delete all current tab stops and reapply
     _ResetTabStops();
@@ -2088,7 +2196,9 @@ bool AdaptDispatch::EnableAnyEventMouseMode(const bool enabled)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableFocusEventMode(const bool enabled)
 {
-    return _SetInputMode(TerminalInput::Mode::FocusEvent, enabled);
+    // GH#12799 - If the app requested that we disable focus events, DON'T pass
+    // that through. ConPTY would _always_ like to know about focus events.
+    return _SetInputMode(TerminalInput::Mode::FocusEvent, enabled) || !enabled;
 }
 
 //Routine Description:
@@ -2455,19 +2565,22 @@ bool AdaptDispatch::DoConEmuAction(const std::wstring_view string)
     {
         if (parts.size() >= 2)
         {
-            const auto path = til::at(parts, 1);
+            auto path = til::at(parts, 1);
             // The path should be surrounded with '"' according to the documentation of ConEmu.
             // An example: 9;"D:/"
-            if (path.at(0) == L'"' && path.at(path.size() - 1) == L'"' && path.size() >= 3)
+            // If we fail to find the surrounding quotation marks, we'll give the path a try anyway.
+            // ConEmu also does this.
+            if (path.size() >= 3 && path.at(0) == L'"' && path.at(path.size() - 1) == L'"')
             {
-                _api.SetWorkingDirectory(path.substr(1, path.size() - 2));
+                path = path.substr(1, path.size() - 2);
             }
-            else
+
+            if (!til::is_legal_path(path))
             {
-                // If we fail to find the surrounding quotation marks, we'll give the path a try anyway.
-                // ConEmu also does this.
-                _api.SetWorkingDirectory(path);
+                return false;
             }
+
+            _api.SetWorkingDirectory(path);
             return true;
         }
     }
@@ -2593,14 +2706,6 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const VTInt fontNumber,
                                                          const VTParameter cellHeight,
                                                          const DispatchTypes::DrcsCharsetSize charsetSize)
 {
-    // If we're a conpty, we're just going to ignore the operation for now.
-    // There's no point in trying to pass it through without also being able
-    // to pass through the character set designations.
-    if (_api.IsConsolePty())
-    {
-        return nullptr;
-    }
-
     // The font buffer is created on demand.
     if (!_fontBuffer)
     {
@@ -2620,7 +2725,19 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const VTInt fontNumber,
         return nullptr;
     }
 
+    // If we're a conpty, we create a special passthrough handler that will
+    // forward the DECDLD sequence to the conpty terminal with a hardcoded ID.
+    // That ID is also pre-mapped into the G1 table, so the VT engine can just
+    // switch to G1 when it needs to output any DRCS characters. But note that
+    // we still need to process the DECDLD sequence locally, so the character
+    // set translation is correctly handled on the host side.
+    const auto conptyPassthrough = _api.IsConsolePty() ? _CreateDrcsPassthroughHandler(charsetSize) : nullptr;
+
     return [=](const auto ch) {
+        if (conptyPassthrough)
+        {
+            conptyPassthrough(ch);
+        }
         // We pass the data string straight through to the font buffer class
         // until we receive an ESC, indicating the end of the string. At that
         // point we can finalize the buffer, and if valid, update the renderer
@@ -2649,6 +2766,46 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const VTInt fontNumber,
         }
         return true;
     };
+}
+
+// Routine Description:
+// - Helper method to create a string handler that can be used to pass through
+//   DECDLD sequences when in conpty mode. This patches the original sequence
+//   with a hardcoded character set ID, and pre-maps that ID into the G1 table.
+// Arguments:
+// - <none>
+// Return value:
+// - a function to receive the data or nullptr if the initial flush fails
+ITermDispatch::StringHandler AdaptDispatch::_CreateDrcsPassthroughHandler(const DispatchTypes::DrcsCharsetSize charsetSize)
+{
+    const auto defaultPassthrough = _CreatePassthroughHandler();
+    if (defaultPassthrough)
+    {
+        auto& engine = _api.GetStateMachine().Engine();
+        return [=, &engine, gotId = false](const auto ch) mutable {
+            // The character set ID is contained in the first characters of the
+            // sequence, so we just ignore that initial content until we receive
+            // a "final" character (i.e. in range 30 to 7E). At that point we
+            // pass through a hardcoded ID of "@".
+            if (!gotId)
+            {
+                if (ch >= 0x30 && ch <= 0x7E)
+                {
+                    gotId = true;
+                    defaultPassthrough('@');
+                }
+            }
+            else if (!defaultPassthrough(ch))
+            {
+                // Once the DECDLD sequence is finished, we also output an SCS
+                // sequence to map the character set into the G1 table.
+                const auto charset96 = charsetSize == DispatchTypes::DrcsCharsetSize::Size96;
+                engine.ActionPassThroughString(charset96 ? L"\033-@" : L"\033)@");
+            }
+            return true;
+        };
+    }
+    return nullptr;
 }
 
 // Method Description:
@@ -2754,11 +2911,14 @@ ITermDispatch::StringHandler AdaptDispatch::RequestSetting()
             const auto id = idBuilder->Finalize(ch);
             switch (id)
             {
-            case VTID('m'):
+            case VTID("m"):
                 _ReportSGRSetting();
                 break;
-            case VTID('r'):
+            case VTID("r"):
                 _ReportDECSTBMSetting();
+                break;
+            case VTID("\"q"):
+                _ReportDECSCASetting();
                 break;
             default:
                 _api.ReturnResponse(L"\033P0$r\033\\");
@@ -2863,6 +3023,28 @@ void AdaptDispatch::_ReportDECSTBMSetting()
 
     // The 'r' indicates this is an DECSTBM response, and ST ends the sequence.
     response.append(L"r\033\\"sv);
+    _api.ReturnResponse({ response.data(), response.size() });
+}
+
+// Method Description:
+// - Reports the DECSCA protected attribute in response to a DECRQSS query.
+// Arguments:
+// - None
+// Return Value:
+// - None
+void AdaptDispatch::_ReportDECSCASetting() const
+{
+    using namespace std::string_view_literals;
+
+    // A valid response always starts with DCS 1 $ r.
+    fmt::basic_memory_buffer<wchar_t, 64> response;
+    response.append(L"\033P1$r"sv);
+
+    const auto attr = _api.GetTextBuffer().GetCurrentAttributes();
+    response.append(attr.IsProtected() ? L"1"sv : L"0"sv);
+
+    // The '"q' indicates this is an DECSCA response, and ST ends the sequence.
+    response.append(L"\"q\033\\"sv);
     _api.ReturnResponse({ response.data(), response.size() });
 }
 
