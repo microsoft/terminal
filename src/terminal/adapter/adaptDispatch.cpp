@@ -970,7 +970,7 @@ bool AdaptDispatch::ReverseAttributesRectangularArea(const VTInt top, const VTIn
         {
             // A zero or default option is a special case that reverses all the
             // rendition bits. But note that this shouldn't be triggered by an
-            // empty attribute list, so we we explicitly exclude that case in
+            // empty attribute list, so we explicitly exclude that case in
             // the empty check above.
             if (attrs.at(i).value_or(0) == 0)
             {
