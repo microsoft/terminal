@@ -19,6 +19,52 @@ HRESULT TermControlUiaProvider::RuntimeClassInitialize(_In_ ::Microsoft::Console
     return S_OK;
 }
 
+// Implementation of IRawElementProviderSimple::get_PropertyValue.
+// Gets custom properties.
+IFACEMETHODIMP TermControlUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyId,
+                                                        _Out_ VARIANT* pVariant) noexcept
+{
+    pVariant->vt = VT_EMPTY;
+
+    // Returning the default will leave the property as the default
+    // so we only really need to touch it for the properties we want to implement
+    switch (propertyId)
+    {
+    case UIA_ClassNamePropertyId:
+        pVariant->bstrVal = SysAllocString(L"TermControl");
+        if (pVariant->bstrVal != nullptr)
+        {
+            pVariant->vt = VT_BSTR;
+        }
+        break;
+    case UIA_ControlTypePropertyId:
+        pVariant->vt = VT_I4;
+        pVariant->lVal = UIA_TextControlTypeId;
+        break;
+    case UIA_LocalizedControlTypePropertyId:
+        // TODO: we should use RS_(L"TerminalControl_ControlType"),
+        // but that's exposed/defined in the TermControl project
+        pVariant->bstrVal = SysAllocString(L"terminal");
+        if (pVariant->bstrVal != nullptr)
+        {
+            pVariant->vt = VT_BSTR;
+        }
+        break;
+    case UIA_OrientationPropertyId:
+        pVariant->vt = VT_I4;
+        pVariant->lVal = OrientationType_Vertical;
+        break;
+    case UIA_LiveSettingPropertyId:
+        pVariant->vt = VT_I4;
+        pVariant->lVal = LiveSetting::Polite;
+        break;
+    default:
+        // fall back to the shared implementation
+        return ScreenInfoUiaProviderBase::GetPropertyValue(propertyId, pVariant);
+    }
+    return S_OK;
+}
+
 IFACEMETHODIMP TermControlUiaProvider::Navigate(_In_ NavigateDirection direction,
                                                 _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) noexcept
 {
@@ -89,17 +135,17 @@ IFACEMETHODIMP TermControlUiaProvider::get_FragmentRoot(_COM_Outptr_result_maybe
     return S_OK;
 }
 
-const til::size TermControlUiaProvider::GetFontSize() const noexcept
+til::size TermControlUiaProvider::GetFontSize() const noexcept
 {
     return _controlInfo->GetFontSize();
 }
 
-const til::rect TermControlUiaProvider::GetPadding() const noexcept
+til::rect TermControlUiaProvider::GetPadding() const noexcept
 {
     return _controlInfo->GetPadding();
 }
 
-const double TermControlUiaProvider::GetScaleFactor() const noexcept
+double TermControlUiaProvider::GetScaleFactor() const noexcept
 {
     return _controlInfo->GetScaleFactor();
 }

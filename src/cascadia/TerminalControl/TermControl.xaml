@@ -408,6 +408,11 @@
                                     </Rectangle>
                                 </ControlTemplate>
                             </Grid.Resources>
+
+                            <VisualStateManager.CustomVisualStateManager>
+                                <local:ScrollBarVisualStateManager />
+                            </VisualStateManager.CustomVisualStateManager>
+
                             <Grid x:Name="HorizontalRoot"
                                   contract7Present:CornerRadius="{TemplateBinding CornerRadius}"
                                   Background="{TemplateBinding Background}"

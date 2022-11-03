@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "AppCommandlineArgs.h"
 #include "../types/inc/utils.hpp"
+#include "TerminalSettingsModel/ModelSerializationHelpers.h"
 #include <LibraryResources.h>
 
 using namespace winrt::Microsoft::Terminal::Settings::Model;
@@ -182,6 +183,15 @@ void AppCommandlineArgs::_buildParser()
     auto focus = _app.add_flag_function("-f,--focus", focusCallback, RS_A(L"CmdFocusDesc"));
     maximized->excludes(fullscreen);
     focus->excludes(fullscreen);
+
+    auto positionCallback = [this](std::string string) {
+        _position = LaunchPositionFromString(string);
+    };
+    _app.add_option_function<std::string>("--pos", positionCallback, RS_A(L"CmdPositionDesc"));
+    auto sizeCallback = [this](std::string string) {
+        _size = SizeFromString(string);
+    };
+    _app.add_option_function<std::string>("--size", sizeCallback, RS_A(L"CmdSizeDesc"));
 
     _app.add_option("-w,--window",
                     _windowTarget,
@@ -709,7 +719,7 @@ void AppCommandlineArgs::_resetStateToDefault()
     // DON'T clear _launchMode here! This will get called once for every
     // subcommand, so we don't want `wt -F new-tab ; split-pane` clearing out
     // the "global" fullscreen flag (-F).
-    // Same with _windowTarget.
+    // Same with _windowTarget, _position and _size.
 }
 
 // Function Description:
@@ -934,6 +944,16 @@ std::optional<uint32_t> AppCommandlineArgs::GetPersistedLayoutIdx() const noexce
 std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchMode> AppCommandlineArgs::GetLaunchMode() const noexcept
 {
     return _launchMode;
+}
+
+std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchPosition> AppCommandlineArgs::GetPosition() const noexcept
+{
+    return _position;
+}
+
+std::optional<til::size> AppCommandlineArgs::GetSize() const noexcept
+{
+    return _size;
 }
 
 // Method Description:

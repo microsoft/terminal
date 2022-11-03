@@ -512,8 +512,6 @@ void CloseConsoleProcessState()
 
     HandleCtrlEvent(CTRL_CLOSE_EVENT);
 
-    gci.ShutdownMidiAudio();
-
     // Jiggle the handle: (see MSFT:19419231)
     // When we call this function, we'll only actually close the console once
     //      we're totally unlocked. If our caller has the console locked, great,

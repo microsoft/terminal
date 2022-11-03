@@ -51,13 +51,16 @@ namespace Microsoft::Console::VirtualTerminal
         bool EraseInDisplay(const DispatchTypes::EraseType eraseType) override; // ED
         bool EraseInLine(const DispatchTypes::EraseType eraseType) override; // EL
         bool EraseCharacters(const VTInt numChars) override; // ECH
+        bool SelectiveEraseInDisplay(const DispatchTypes::EraseType eraseType) override; // DECSED
+        bool SelectiveEraseInLine(const DispatchTypes::EraseType eraseType) override; // DECSEL
         bool InsertCharacter(const VTInt count) override; // ICH
         bool DeleteCharacter(const VTInt count) override; // DCH
         bool SetGraphicsRendition(const VTParameters options) override; // SGR
         bool SetLineRendition(const LineRendition rendition) override; // DECSWL, DECDWL, DECDHL
+        bool SetCharacterProtectionAttribute(const VTParameters options) override; // DECSCA
         bool PushGraphicsRendition(const VTParameters options) override; // XTPUSHSGR
         bool PopGraphicsRendition() override; // XTPOPSGR
-        bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) override; // DSR, DSR-OS, DSR-CPR
+        bool DeviceStatusReport(const DispatchTypes::StatusType statusType) override; // DSR, DSR-OS, DSR-CPR
         bool DeviceAttributes() override; // DA1
         bool SecondaryDeviceAttributes() override; // DA2
         bool TertiaryDeviceAttributes() override; // DA3
@@ -180,6 +183,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins);
         void _ApplyCursorMovementFlags(Cursor& cursor) noexcept;
         void _FillRect(TextBuffer& textBuffer, const til::rect& fillRect, const wchar_t fillChar, const TextAttribute fillAttrs);
+        void _SelectiveEraseRect(TextBuffer& textBuffer, const til::rect& eraseRect);
         void _EraseScrollback();
         void _EraseAll();
         void _ScrollRectVertically(TextBuffer& textBuffer, const til::rect& scrollRect, const VTInt delta);
@@ -191,7 +195,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _DoSetTopBottomScrollingMargins(const VTInt topMargin,
                                              const VTInt bottomMargin);
         void _OperatingStatus() const;
-        void _CursorPositionReport();
+        void _CursorPositionReport(const bool extendedReport);
 
         bool _GetParserMode(const StateMachine::Mode mode) const;
         void _SetParserMode(const StateMachine::Mode mode, const bool enable);
@@ -208,6 +212,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         void _ReportSGRSetting() const;
         void _ReportDECSTBMSetting();
+        void _ReportDECSCASetting() const;
 
         StringHandler _CreateDrcsPassthroughHandler(const DispatchTypes::DrcsCharsetSize charsetSize);
         StringHandler _CreatePassthroughHandler();

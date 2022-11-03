@@ -54,6 +54,7 @@ Llast
 llvm
 Lmid
 locl
+lol
 lorem
 Lorigin
 maxed
@@ -97,5 +98,7 @@ versioned
 vsdevcmd
 We'd
 wildcards
+XBox
+YBox
 yeru
 zhe

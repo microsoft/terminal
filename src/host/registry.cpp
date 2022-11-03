@@ -21,9 +21,7 @@ Registry::Registry(_In_ Settings* const pSettings) :
 {
 }
 
-Registry::~Registry()
-{
-}
+Registry::~Registry() = default;
 
 // Routine Description:
 // - Reads extended edit keys and related registry information into the global state.

@@ -4,6 +4,10 @@
 #include "pch.h"
 #include "ControlCore.h"
 
+// MidiAudio
+#include <mmeapi.h>
+#include <dsound.h>
+
 #include <DefaultSettings.h>
 #include <unicode.hpp>
 #include <Utf16Parser.hpp>
@@ -257,8 +261,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _renderer->TriggerTeardown();
         }
-
-        _shutdownMidiAudio();
     }
 
     bool ControlCore::Initialize(const double actualWidth,
@@ -417,7 +419,31 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                     const WORD scanCode,
                                     const ::Microsoft::Terminal::Core::ControlKeyStates modifiers)
     {
+        if (ch == L'\x3') // Ctrl+C or Ctrl+Break
+        {
+            _handleControlC();
+        }
+
         return _terminal->SendCharEvent(ch, scanCode, modifiers);
+    }
+
+    void ControlCore::_handleControlC()
+    {
+        if (!_midiAudioSkipTimer)
+        {
+            _midiAudioSkipTimer = _dispatcher.CreateTimer();
+            _midiAudioSkipTimer.Interval(std::chrono::seconds(1));
+            _midiAudioSkipTimer.IsRepeating(false);
+            _midiAudioSkipTimer.Tick([weakSelf = get_weak()](auto&&, auto&&) {
+                if (const auto self = weakSelf.get())
+                {
+                    self->_midiAudio.EndSkip();
+                }
+            });
+        }
+
+        _midiAudio.BeginSkip();
+        _midiAudioSkipTimer.Start();
     }
 
     bool ControlCore::_shouldTryUpdateSelection(const WORD vkey)
@@ -592,7 +618,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // Update our runtime opacity value
-        Opacity(newOpacity);
+        _runtimeOpacity = newOpacity;
 
         // GH#11285 - If the user is on Windows 10, and they changed the
         // transparency of the control s.t. it should be partially opaque, then
@@ -600,10 +626,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Windows 10.
         // We'll also turn the acrylic back off when they're fully opaque, which
         // is what the Terminal did prior to 1.12.
-        if (!IsVintageOpacityAvailable())
-        {
-            _runtimeUseAcrylic = newOpacity < 1.0;
-        }
+        _runtimeUseAcrylic = newOpacity < 1.0 && (!IsVintageOpacityAvailable() || _settings->UseAcrylic());
 
         // Update the renderer as well. It might need to fall back from
         // cleartype -> grayscale if the BG is transparent / acrylic.
@@ -708,7 +731,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
         if (_lastHoveredCell.has_value())
         {
-            return winrt::hstring{ _terminal->GetHyperlinkAtViewportPosition(*_lastHoveredCell) };
+            auto uri{ _terminal->GetHyperlinkAtViewportPosition(*_lastHoveredCell) };
+            uri.resize(std::min<size_t>(1024u, uri.size())); // Truncate for display
+            return winrt::hstring{ uri };
         }
         return {};
     }
@@ -727,16 +752,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         auto lock = _terminal->LockForWriting();
 
-        _runtimeOpacity = std::nullopt;
-        _runtimeUseAcrylic = std::nullopt;
-
         // GH#11285 - If the user is on Windows 10, and they wanted opacity, but
         // didn't explicitly request acrylic, then opt them in to acrylic.
         // On Windows 11+, this isn't needed, because we can have vintage opacity.
-        if (!IsVintageOpacityAvailable() && _settings->Opacity() < 1.0 && !_settings->UseAcrylic())
-        {
-            _runtimeUseAcrylic = true;
-        }
+        // Instead, disable acrylic while the opacity is 100%
+        _runtimeUseAcrylic = _settings->Opacity() < 1.0 && (!IsVintageOpacityAvailable() || _settings->UseAcrylic());
+        _runtimeOpacity = std::nullopt;
 
         const auto sizeChanged = _setFontSizeUnderLock(_settings->FontSize());
 
@@ -1412,57 +1433,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - duration - How long the note should be sustained (in microseconds).
     void ControlCore::_terminalPlayMidiNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration)
     {
-        // We create the audio instance on demand, and lock it for the duration
-        // of the note output so it can't be destroyed while in use.
-        auto& midiAudio = _getMidiAudio();
-        midiAudio.Lock();
-
-        // We then unlock the terminal, so the UI doesn't hang while we're busy.
-        auto& terminalLock = _terminal->GetReadWriteLock();
-        terminalLock.unlock();
+        // The UI thread might try to acquire the console lock from time to time.
+        // --> Unlock it, so the UI doesn't hang while we're busy.
+        const auto suspension = _terminal->SuspendLock();
 
         // This call will block for the duration, unless shutdown early.
-        midiAudio.PlayNote(noteNumber, velocity, duration);
-
-        // Once complete, we reacquire the terminal lock and unlock the audio.
-        // If the terminal has shutdown in the meantime, the Unlock call
-        // will throw an exception, forcing the thread to exit ASAP.
-        terminalLock.lock();
-        midiAudio.Unlock();
-    }
-
-    // Method Description:
-    // - Returns the MIDI audio instance, created on demand.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - a reference to the MidiAudio instance.
-    MidiAudio& ControlCore::_getMidiAudio()
-    {
-        if (!_midiAudio)
-        {
-            const auto windowHandle = reinterpret_cast<HWND>(_owningHwnd);
-            _midiAudio = std::make_unique<MidiAudio>(windowHandle);
-            _midiAudio->Initialize();
-        }
-        return *_midiAudio;
-    }
-
-    // Method Description:
-    // - Shuts down the MIDI audio system if previously instantiated.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void ControlCore::_shutdownMidiAudio()
-    {
-        if (_midiAudio)
-        {
-            // We lock the terminal here to make sure the shutdown promise is
-            // set before the audio is unlocked in the thread that is playing.
-            auto lock = _terminal->LockForWriting();
-            _midiAudio->Shutdown();
-        }
+        _midiAudio.PlayNote(reinterpret_cast<HWND>(_owningHwnd), noteNumber, velocity, std::chrono::duration_cast<std::chrono::milliseconds>(duration));
     }
 
     bool ControlCore::HasSelection() const
@@ -1734,6 +1710,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (!_IsClosing())
         {
             _closing = true;
+
+            // Ensure Close() doesn't hang, waiting for MidiAudio to finish playing an hour long song.
+            _midiAudio.BeginSkip();
 
             // Stop accepting new output and state changes before we disconnect everything.
             _connection.TerminalOutput(_connectionOutputEventToken);
@@ -2183,13 +2162,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         // If we're:
         // * Not fully opaque
-        // * On an acrylic background (of any opacity)
         // * rendering on top of an image
         //
         // then the renderer should not render "default background" text with a
         // fully opaque background. Doing that would cover up our nice
         // transparency, or our acrylic, or our image.
-        return Opacity() < 1.0f || UseAcrylic() || !_settings->BackgroundImage().empty() || _settings->UseBackgroundImageForWindow();
+        return Opacity() < 1.0f || !_settings->BackgroundImage().empty() || _settings->UseBackgroundImageForWindow();
     }
 
     uint64_t ControlCore::OwningHwnd()

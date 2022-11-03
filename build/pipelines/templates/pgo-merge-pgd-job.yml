@@ -27,9 +27,9 @@ jobs:
     displayName: 'Retrieve VC tools directory'
 
   - task: NuGetToolInstaller@0
-    displayName: 'Use NuGet 5.2.0'
+    displayName: 'Use NuGet 6.3.0'
     inputs:
-      versionSpec: 5.2.0
+      versionSpec: 6.3.0
 
   - task: NuGetAuthenticate@0
 

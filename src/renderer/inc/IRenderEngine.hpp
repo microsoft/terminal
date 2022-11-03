@@ -50,9 +50,7 @@ namespace Microsoft::Console::Render
         using GridLineSet = til::enumset<GridLines>;
 
 #pragma warning(suppress : 26432) // If you define or delete any default operation in the type '...', define or delete them all (c.21).
-        virtual ~IRenderEngine()
-        {
-        }
+        virtual ~IRenderEngine() = default;
 
         [[nodiscard]] virtual HRESULT StartPaint() noexcept = 0;
         [[nodiscard]] virtual HRESULT EndPaint() noexcept = 0;
