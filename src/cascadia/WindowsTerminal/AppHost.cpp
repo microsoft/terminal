@@ -1353,19 +1353,11 @@ void AppHost::_updateTheme()
     // version of the code will only work on Windows 11, SV2. There's a slightly
     // different API surface for enabling Mica on Windows 11 22000.0.
     //
-    // This code is left here, commented out, for future enablement of Mica.
-    // We'll revisit this in GH#10509. Because we can't enable transparent
-    // titlebars for showing Mica currently, we're just gonna disable it
-    // entirely while we sort that out.
-    //
+    // This API was only publicly supported as of Windows 11 SV2, 22621. Before
+    // that version, this API will just return an error and do nothing silently.
 
-    // TODO! We very well may need to implement this differently on different
-    // build numbers. I believe this API became public some time around 22523. I
-    // think there's a way to do it with a private API on 22000, but we should
-    // do that in post.
-
-    const int attribute = theme.Window().UseMica() ? /*DWMSBT_MAINWINDOW*/ 2 : /*DWMSBT_NONE*/ 1;
-    DwmSetWindowAttribute(_window->GetHandle(), /* DWMWA_SYSTEMBACKDROP_TYPE */ 38, &attribute, sizeof(attribute));
+    const int attribute = theme.Window().UseMica() ? DWMSBT_MAINWINDOW : DWMSBT_NONE;
+    DwmSetWindowAttribute(_window->GetHandle(), DWMWA_SYSTEMBACKDROP_TYPE, &attribute, sizeof(attribute));
 }
 
 void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,
