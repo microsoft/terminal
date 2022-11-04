@@ -298,10 +298,51 @@ void Terminal::UseMainScreenBuffer()
     CATCH_LOG();
 }
 
+// NOTE: This is the version of AddMark that comes from VT
 void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark)
 {
     const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
     AddMark(mark, cursorPos, cursorPos);
+    auto* last = &_scrollMarks.back();
+    if (last->category == Microsoft::Console::VirtualTerminal::DispatchTypes::MarkCategory::Prompt)
+    {
+        _currentPrompt = last;
+    }
+}
+
+void Terminal::CommandStart()
+{
+    if (_currentPrompt)
+    {
+        const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
+
+        _currentPrompt->end = cursorPos;
+    }
+
+    // CommandStart(mark, cursorPos, cursorPos);
+}
+
+void Terminal::OutputStart()
+{
+    if (_currentPrompt)
+    {
+        const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
+        _currentPrompt->commandEnd = cursorPos;
+    }
+}
+
+void Terminal::CommandFinished(std::optional<unsigned int> error)
+{
+    if (_currentPrompt)
+    {
+        const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
+        _currentPrompt->outputEnd = cursorPos;
+
+        if (error.has_value())
+        {
+            _currentPrompt->category = *error == 0u ? DispatchTypes::MarkCategory::Success : DispatchTypes::MarkCategory::Error;
+        }
+    }
 }
 
 // Method Description:

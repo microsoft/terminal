@@ -825,7 +825,31 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
         mark.category = DispatchTypes::MarkCategory::Prompt;
         // Don't set the color - we'll automatically use the DEFAULT_FOREGROUND
         // color for any MarkCategory::Prompt marks without one set.
-        AddMark(mark);
+
+        // AddMark(mark);
+        // AddMark without explicit start/end will also set that as the _currentPrompt. That seems reasonable.
+
+        // TODO! also, probably FTCS_COMMAND_EXECUTED here.
+        // DEFINITELY actually.
+        // TODO!
+        // * look if we have a _currentPrompt.
+        //   - if we do, then we did know that the prompt started, (we may have
+        //     also already gotten a CommandStartq) The prompt has now ended.
+        //       - FTCS_COMMAND_EXECUTED, so that the prompt starts marking this as output.
+        //   - Else: We don't have a prompt. We don't know anything else, but we
+        //     can set the whole like as the prompt, no command, and start the
+        //     command_executed now.
+
+        if (_currentPrompt)
+        {
+            OutputStart();
+        }
+        else
+        {
+            AddMark(mark);
+            _currentPrompt = &_scrollMarks.back();
+            OutputStart();
+        }
     }
 
     // Unfortunately, the UI doesn't give us both a character down and a
@@ -1559,6 +1583,7 @@ void Terminal::_updateUrlDetection()
     }
 }
 
+// NOTE: This is the version of AddMark that comes from the UI. The VT api call into this too.
 void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark,
                        const til::point& start,
                        const til::point& end)
@@ -1577,6 +1602,9 @@ void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes:
     // Tell the control that the scrollbar has somehow changed. Used as a
     // workaround to force the control to redraw any scrollbar marks
     _NotifyScrollEvent();
+
+    // DON'T set _currentPrompt. The VT impl will do that for you. We don't want
+    // UI-driven marks to set that.
 }
 
 void Terminal::ClearMark()
@@ -1593,13 +1621,19 @@ void Terminal::ClearMark()
         start = til::point{ GetSelectionAnchor() };
         end = til::point{ GetSelectionEnd() };
     }
+    auto inSelection = [&start, &end](const DispatchTypes::ScrollMark& m) {
+        return (m.start >= start && m.start <= end) ||
+               (m.end >= start && m.end <= end);
+    };
+
+    if (_currentPrompt && inSelection(*_currentPrompt))
+    {
+        _currentPrompt = nullptr;
+    }
 
     _scrollMarks.erase(std::remove_if(_scrollMarks.begin(),
                                       _scrollMarks.end(),
-                                      [&start, &end](const auto& m) {
-                                          return (m.start >= start && m.start <= end) ||
-                                                 (m.end >= start && m.end <= end);
-                                      }),
+                                      inSelection),
                        _scrollMarks.end());
 
     // Tell the control that the scrollbar has somehow changed. Used as a
@@ -1608,6 +1642,7 @@ void Terminal::ClearMark()
 }
 void Terminal::ClearAllMarks()
 {
+    _currentPrompt = nullptr;
     _scrollMarks.clear();
     // Tell the control that the scrollbar has somehow changed. Used as a
     // workaround to force the control to redraw any scrollbar marks

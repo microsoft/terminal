@@ -2674,6 +2674,35 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
         _api.AddMark(mark);
         return true;
     }
+    else if (action == L"B") // FTCS_COMMAND_START
+    {
+        _api.CommandStart();
+        return true;
+    }
+    else if (action == L"C") // FTCS_COMMAND_EXECUTED
+    {
+        _api.OutputStart();
+        return true;
+    }
+    else if (action == L"D") // FTCS_COMMAND_FINISHED
+    {
+        std::optional<unsigned int> error = std::nullopt;
+        if (parts.size() >= 2)
+        {
+            const auto errorString = til::at(parts, 1);
+
+            // If we fail to parse the code, then it was gibberish, or it might
+            // have just started with "-". Either way, let's just treat it as an
+            // error and move on.
+            //
+            // We know that "0" will be successfully parsed, and that's close enough.
+            unsigned int parsedError = 0;
+            error = Utils::StringToUint(errorString, parsedError) ? parsedError :
+                                                                    static_cast<unsigned int>(-1);
+        }
+        _api.CommandFinished(error);
+        return true;
+    }
 
     // When we add the rest of the FTCS sequences (GH#11000), we should add a
     // simple state machine here to track the most recently emitted mark from

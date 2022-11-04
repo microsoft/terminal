@@ -486,3 +486,18 @@ void ConhostInternalGetSet::AddMark(const Microsoft::Console::VirtualTerminal::D
 {
     // Not implemented for conhost.
 }
+
+void ConhostInternalGetSet::CommandStart()
+{
+    // Not implemented for conhost.
+}
+
+void ConhostInternalGetSet::OutputStart()
+{
+    // Not implemented for conhost.
+}
+
+void ConhostInternalGetSet::CommandFinished(std::optional<unsigned int> /*error*/)
+{
+    // Not implemented for conhost.
+}

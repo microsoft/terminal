@@ -139,7 +139,9 @@ public:
     void UseMainScreenBuffer() override;
 
     void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) override;
-
+    void CommandStart() override;
+    void OutputStart() override;
+    void CommandFinished(std::optional<unsigned int> error) override;
     bool IsConsolePty() const override;
     bool IsVtInputEnabled() const override;
     void NotifyAccessibilityChange(const til::rect& changedRect) override;
@@ -403,6 +405,7 @@ private:
     std::optional<KeyEventCodes> _lastKeyEventCodes;
 
     std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark> _scrollMarks;
+    Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark* _currentPrompt{ nullptr };
 
     static WORD _ScanCodeFromVirtualKey(const WORD vkey) noexcept;
     static WORD _VirtualKeyFromScanCode(const WORD scanCode) noexcept;
