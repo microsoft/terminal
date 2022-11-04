@@ -43,20 +43,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     winrt::hstring LaunchViewModel::LaunchParametersCurrentValue()
     {
         const auto launchModeString = CurrentLaunchMode().as<EnumEntry>()->EnumName();
-        const auto centerOnLaunchString = CenterOnLaunch() ? RS_(L"Globals_CenterOnLaunchOn") : RS_(L"Globals_CenterOnLaunchOff");
 
         winrt::hstring result;
 
+        // Append the launch position part
         if (UseDefaultLaunchPosition())
         {
-            result = fmt::format(L"{}, {}, {}", launchModeString, RS_(L"Globals_LaunchModeDefault/Content"), centerOnLaunchString);
+            result = fmt::format(L"{}, {}", launchModeString, RS_(L"Globals_LaunchModeDefault/Content"));
         }
         else
         {
             const std::wstring xPosString = isnan(InitialPosX()) ? RS_(L"Globals_LaunchModeDefault/Content").c_str() : std::to_wstring(gsl::narrow_cast<int>(InitialPosX()));
             const std::wstring yPosString = isnan(InitialPosY()) ? RS_(L"Globals_LaunchModeDefault/Content").c_str() : std::to_wstring(gsl::narrow_cast<int>(InitialPosY()));
-            result = fmt::format(L"{}, ({},{}), {}", launchModeString, xPosString, yPosString, centerOnLaunchString);
+            result = fmt::format(L"{}, ({},{})", launchModeString, xPosString, yPosString);
         }
+
+        // Append the CenterOnLaunch part
+        result = CenterOnLaunch() ? winrt::hstring{ fmt::format(L"{}, {}", result, RS_(L"Globals_CenterOnLaunchCentered")) } : result;
         return result;
     }
 
@@ -80,11 +83,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void LaunchViewModel::InitialPosX(double xCoord)
     {
-        winrt::Windows::Foundation::IReference<int64_t> xCoordRef;
+        winrt::Windows::Foundation::IReference<int32_t> xCoordRef;
         // If the value was cleared, xCoord will be NAN, so check for that
         if (!isnan(xCoord))
         {
-            xCoordRef = gsl::narrow_cast<int64_t>(xCoord);
+            xCoordRef = gsl::narrow_cast<int32_t>(xCoord);
         }
         const LaunchPosition newPos{ xCoordRef, _Settings.GlobalSettings().InitialPosition().Y };
         _Settings.GlobalSettings().InitialPosition(newPos);
@@ -93,11 +96,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void LaunchViewModel::InitialPosY(double yCoord)
     {
-        winrt::Windows::Foundation::IReference<int64_t> yCoordRef;
+        winrt::Windows::Foundation::IReference<int32_t> yCoordRef;
         // If the value was cleared, yCoord will be NAN, so check for that
         if (!isnan(yCoord))
         {
-            yCoordRef = gsl::narrow_cast<int64_t>(yCoord);
+            yCoordRef = gsl::narrow_cast<int32_t>(yCoord);
         }
         const LaunchPosition newPos{ _Settings.GlobalSettings().InitialPosition().X, yCoordRef };
         _Settings.GlobalSettings().InitialPosition(newPos);
@@ -111,7 +114,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             InitialPosX(NAN);
             InitialPosY(NAN);
-            _NotifyChanges(L"InitialPosX", L"InitialPosY");
         }
         _NotifyChanges(L"UseDefaultLaunchPosition", L"LaunchParametersCurrentValue");
     }

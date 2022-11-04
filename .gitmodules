@@ -1,6 +1,3 @@
 [submodule "dep/gsl"]
 	path = dep/gsl
 	url = https://github.com/microsoft/gsl
-[submodule "dep/wil"]
-	path = dep/wil
-	url = https://github.com/microsoft/wil

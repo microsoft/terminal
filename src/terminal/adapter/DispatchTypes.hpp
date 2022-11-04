@@ -209,7 +209,7 @@ namespace Microsoft::Console::VirtualTerminal
     class FlaggedEnumValue
     {
     public:
-        static constexpr VTInt mask{ WI_StaticAssertSingleBitSet(Flag) };
+        static constexpr VTInt mask{ Flag };
 
         constexpr FlaggedEnumValue(const VTInt value) :
             _value{ value }
@@ -371,10 +371,14 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         Max = SaveBackgroundColor
     };
 
-    enum class AnsiStatusType : VTInt
+    using ANSIStandardStatus = FlaggedEnumValue<0x00000000>;
+    using DECPrivateStatus = FlaggedEnumValue<0x01000000>;
+
+    enum class StatusType : VTInt
     {
-        OS_OperatingStatus = 5,
-        CPR_CursorPositionReport = 6,
+        OS_OperatingStatus = ANSIStandardStatus(5),
+        CPR_CursorPositionReport = ANSIStandardStatus(6),
+        ExCPR_ExtendedCursorPositionReport = DECPrivateStatus(6),
     };
 
     using ANSIStandardMode = FlaggedEnumValue<0x00000000>;
@@ -388,6 +392,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         DECSCNM_ScreenMode = DECPrivateMode(5),
         DECOM_OriginMode = DECPrivateMode(6),
         DECAWM_AutoWrapMode = DECPrivateMode(7),
+        DECARM_AutoRepeatMode = DECPrivateMode(8),
         ATT610_StartCursorBlink = DECPrivateMode(12),
         DECTCEM_TextCursorEnableMode = DECPrivateMode(25),
         XTERM_EnableDECCOLMSupport = DECPrivateMode(40),

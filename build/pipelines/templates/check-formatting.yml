@@ -2,7 +2,7 @@
 jobs:
 - job: CodeFormatCheck
   displayName: Proper Code Formatting Check
-  pool: { vmImage: windows-2019 }
+  pool: { vmImage: windows-2022 }
 
   steps:
   - checkout: self

@@ -156,6 +156,13 @@ IFACEMETHODIMP OpenTerminalHere::GetSite(REFIID riid, void** site) noexcept
 
 HRESULT OpenTerminalHere::GetLocationFromSite(IShellItem** location) const noexcept
 {
+    wil::assign_null_to_opt_param(location);
+
+    if (!site_)
+    {
+        return S_FALSE;
+    }
+
     wil::com_ptr_nothrow<IServiceProvider> serviceProvider;
     RETURN_IF_FAILED(site_.query_to(serviceProvider.put()));
     wil::com_ptr_nothrow<IFolderView> folderView;

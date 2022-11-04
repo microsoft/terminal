@@ -166,9 +166,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // apply help text as tooltip and full description (automation property)
             if (const auto& helpText{ HelpText() }; !helpText.empty())
             {
-                Controls::ToolTipService::SetToolTip(obj, box_value(helpText));
                 Automation::AutomationProperties::SetFullDescription(obj, helpText);
-            }
+=======
             else
             {
                 Controls::ToolTipService::SetToolTip(obj, nullptr);

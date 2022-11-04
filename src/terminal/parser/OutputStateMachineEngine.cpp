@@ -530,7 +530,11 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         TermTelemetry::Instance().Log(TermTelemetry::Codes::SGR);
         break;
     case CsiActionCodes::DSR_DeviceStatusReport:
-        success = _dispatch->DeviceStatusReport(parameters.at(0));
+        success = _dispatch->DeviceStatusReport(DispatchTypes::ANSIStandardStatus(parameters.at(0)));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DSR);
+        break;
+    case CsiActionCodes::DSR_PrivateDeviceStatusReport:
+        success = _dispatch->DeviceStatusReport(DispatchTypes::DECPrivateStatus(parameters.at(0)));
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DSR);
         break;
     case CsiActionCodes::DA_DeviceAttributes:
@@ -989,7 +993,7 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
     const auto midPos = string.find(';');
     if (midPos != std::wstring::npos)
     {
-        uri = string.substr(midPos + 1);
+        uri = string.substr(midPos + 1, MAX_URL_LENGTH);
         const auto paramStr = string.substr(0, midPos);
         const auto paramParts = Utils::SplitString(paramStr, ':');
         for (const auto& part : paramParts)

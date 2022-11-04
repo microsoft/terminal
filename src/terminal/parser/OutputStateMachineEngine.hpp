@@ -26,6 +26,8 @@ namespace Microsoft::Console::VirtualTerminal
     class OutputStateMachineEngine : public IStateMachineEngine
     {
     public:
+        static constexpr size_t MAX_URL_LENGTH = 2 * 1048576; // 2MB, like iTerm2
+
         OutputStateMachineEngine(std::unique_ptr<ITermDispatch> pDispatch);
 
         bool ActionExecute(const wchar_t wch) override;
@@ -132,6 +134,7 @@ namespace Microsoft::Console::VirtualTerminal
             DECRST_PrivateModeReset = VTID("?l"),
             SGR_SetGraphicsRendition = VTID("m"),
             DSR_DeviceStatusReport = VTID("n"),
+            DSR_PrivateDeviceStatusReport = VTID("?n"),
             DECSTBM_SetScrollingRegion = VTID("r"),
             ANSISYSSC_CursorSave = VTID("s"), // NOTE: Overlaps with DECLRMM/DECSLRM. Fix when/if implemented.
             DTTERM_WindowManipulation = VTID("t"), // NOTE: Overlaps with DECSLPP. Fix when/if implemented.

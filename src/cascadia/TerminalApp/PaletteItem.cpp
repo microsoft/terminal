@@ -15,4 +15,11 @@ using namespace winrt::Windows::System;
 
 namespace winrt::TerminalApp::implementation
 {
+    Controls::IconElement PaletteItem::ResolvedIcon()
+    {
+        const auto icon = IconPathConverter::IconWUX(Icon());
+        icon.Width(16);
+        icon.Height(16);
+        return icon;
+    }
 }
