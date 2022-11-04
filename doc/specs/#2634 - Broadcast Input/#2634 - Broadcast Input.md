@@ -283,7 +283,17 @@ the pane border colors.
 iTerm2 also supports displaying "stripes" in the background of all the panes
 that are being broadcast too. That's certainly another way of indicating this
 feature to the user. I'm not sure how we'd layer it with the background image
-though.
+though. **I recommend we ignore this for now, and leave this as a follow-up**.
+
+### Tab context menu items
+
+For reference, refer to the following from iTerm2:
+![image](https://user-images.githubusercontent.com/2578976/64075757-fa971980-ccee-11e9-9e44-47aaf3bca76c.png)
+
+We don't have a menu bar like on MacOS, but we do have a tab context menu. We
+could add these items as a nested entry under each tab. If we wanted to do this,
+we should also make sure to dynamically change the icon of the MenuItem to
+reflect the current broadcast state.
 
 ## Potential Issues
 
@@ -303,12 +313,14 @@ though.
 
 ## Implementation plan
 
-1. Resurrect [#9222], and use that to implement `"scope": "tab"`. This is
+* [ ] Resurrect [#9222], and use that to implement `"scope": "tab"`. This is
   implemented the same, regardless of which proposal we chose.
-2. Implement `"scope": "window"`. Again, this is implemented the same regardless
+* [ ] Add a tab context menu entry for toggling broadcast input, with a dynamic
+  icon based on the current state.
+* [ ] Implement `"scope": "window"`. Again, this is implemented the same regardless
   of which proposal we pursue.
-3. Decide between the two proposals here.
-4. Implement `"scope": "pane"`.
+* [ ] Decide between the two proposals here.
+* [ ] Implement `"scope": "pane"`.
 
 Doing the first element here is probably the most important one for most users,
 and can be done regardless of the proposal chosen here. As such, we could even
@@ -321,13 +333,13 @@ Let's look to iTerm2, who's supported this feature for years, for some
 inspiration of future things we should be worried about. If their users have
 asked for these features, then it's inevitable that our users will too 😉
 
-* [iterm2#6709]: Broadcast Input to multiple windows
+* [iterm2#6709] - Broadcast Input to multiple windows
   - This is pretty straightforward. Would require coordination with the Monarch
     though, and I'm worried about the perf hit of tossing every keystroke across
     the process boundary.
   - I suppose this would be `{ "action": "toggleBroadcastInput", "scope":
     "global" }`
-* [iterm2#6451], [iterm2#5563]: "Broadcast commands"
+* [iterm2#6451], [iterm2#5563] - "Broadcast commands"
   - iTerm2 has an action that lets the user manually clear the terminal-side
     buffer. (This is tracked on the Windows Terminal as [#1882]). It might make
     sense for there to be a mode where some _actions_ are also broadcast to
@@ -335,14 +347,14 @@ asked for these features, then it's inevitable that our users will too 😉
     selection anchors? Copy doesn't really make sense. Paste _does_ though.
     Maybe the open find dialog / next&prev search match actions?
   - This probably would require it's own spec.
-* [iterm2#6007]: Different stripe color for different broadcast modes
+* [iterm2#6007] - Different stripe color for different broadcast modes
   - Have one color to indicate when broadcasting in `global` scope, another in
     `tab` scope, a third in `pane` scope.
   - This might mesh well with theming ([#3327]), for properties like
     `pane.broadcastBorderColor.globalScope`,
     `pane.broadcastBorderColor.paneScope`. Don't love those names, but you get
     the idea.
-* **[iterm2#5639]: Broadcast groups**, [iterm2#3372]: Broadcast Input to
+* **[iterm2#5639]: Broadcast groups**, [iterm2#3372] - Broadcast Input to
   multiple but not all tabs
   - This is probably the most interesting request. I think this one identifies a
     major shortcoming of the above proposals. With proposal 2, there's only ever
@@ -364,6 +376,10 @@ asked for these features, then it's inevitable that our users will too 😉
     that group, then remove them all.
   - The UI for this would certainly get complex fast.
   - This also matches the Terminator-style broadcasting to groups.
+* Re: stripes in the background of the tab. We could expose a pane's current
+  broadcast state to the pixel shader, and a user could use a custom pixel
+  shader to add stripes behind the text in the shader code. That's one possible
+  solution.
 
 ## Resources
 
