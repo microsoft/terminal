@@ -382,17 +382,17 @@ public:
         return true;
     }
 
-    const std::wstring GetHyperlinkUri(uint16_t /*id*/) const noexcept
+    const std::wstring GetHyperlinkUri(uint16_t /*id*/) const
     {
         return {};
     }
 
-    const std::wstring GetHyperlinkCustomId(uint16_t /*id*/) const noexcept
+    const std::wstring GetHyperlinkCustomId(uint16_t /*id*/) const
     {
         return {};
     }
 
-    const std::vector<size_t> GetPatternId(const til::point /*location*/) const noexcept
+    const std::vector<size_t> GetPatternId(const til::point /*location*/) const
     {
         return {};
     }
