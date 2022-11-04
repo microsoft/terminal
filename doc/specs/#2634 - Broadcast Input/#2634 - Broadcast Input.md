@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2021-03-03
-last updated: 2021-03-04
+last updated: 2022-11-04
 issue id: #2634
 ---
 
@@ -93,16 +93,18 @@ The scopes would work as follows:
   setting.
 * `"scope": "tab"`: Toggle the tab's "broadcast to all panes in this tab"
   setting.
-    - This does not modify the set of panes that the user is  broadcasting to in
+  - This does not modify the set of panes that the user is  broadcasting to in
       the tab, merely toggles the tab's setting. If the user has a set of panes
       they're broadcasting to in this tab, then toggles this setting on and off,
       we'll return to broadcasting to that set.
 * `"scope": "pane"`: Add this pane to the set of panes being broadcasted to in
   this tab.
-    - **TODO: FOR DISCUSSION**: Should this disable the tab's
+  - **TODO!: FOR DISCUSSION**: Should this disable the tab's
       "broadcastToAllPanes" setting? Or should it leave that alone?
 * `"disableBroadcastInput"`: Set the global setting to false, the tab's setting
   to false, and clear the set of panes being broadcasted to for this tab.
+  - **TODO!** This could also just be `"action": "toggleBroadcastInput",
+    "scope": "none"`
 
 #### Pros
 * This is exactly how iTerm2 does it, so there's prior art.
@@ -242,7 +244,7 @@ like most at this point. 1 & 3 have the advantage of being most similar to the
 prior art, but 2 is more easily extendable to "groups" (see [Future
 Considerations](#Future-Considerations)).
 
-**TODO**: Make a decision.
+**TODO!**: Make a decision.
 
 _**Fortunately**_: All these proposals actually use the same set of actions. So
 it doesn't _really_ matter which we pick right now. We can unblock [#9222] as
@@ -262,7 +264,7 @@ in the tab when a pane is being broadcasted to. If all tabs are being
 broadcasted to, then they'll all have that icon. If a tab is inactive, and any
 pane in that tab is being broadcast to, then show the icon in the tab.
 
-It probably makes the most sense to have pane titlebars (#4998) also display
+It probably makes the most sense to have pane titlebars ([#4998]) also display
 that icon.
 
 In the original PR, it was suggested to use some variant of the [accent color]
@@ -274,6 +276,9 @@ indicator that they're _not_ the active pane, but they are going to receive
 input. Something a bit like:
 
 ![A sample of using the border to indicate the broadcasted-to panes](broadcast-input-borders.gif)
+
+This should obviously be able to be overriden in the user's theme, similar to
+the pane border colors.
 
 iTerm2 also supports displaying "stripes" in the background of all the panes
 that are being broadcast too. That's certainly another way of indicating this
@@ -296,7 +301,21 @@ though.
 
 [comment]: # If there are any other potential issues, make sure to include them here.
 
-### Future Considerations
+## Implementation plan
+
+1. Resurrect [#9222], and use that to implement `"scope": "tab"`. This is
+  implemented the same, regardless of which proposal we chose.
+2. Implement `"scope": "window"`. Again, this is implemented the same regardless
+  of which proposal we pursue.
+3. Decide between the two proposals here.
+4. Implement `"scope": "pane"`.
+
+Doing the first element here is probably the most important one for most users,
+and can be done regardless of the proposal chosen here. As such, we could even
+suggest the default value of `scope` be `tab`. If we did that, then we wouldn't
+need to do any args at all in the intial version.
+
+## Future Considerations
 
 Let's look to iTerm2, who's supported this feature for years, for some
 inspiration of future things we should be worried about. If their users have
@@ -359,6 +378,7 @@ asked for these features, then it's inevitable that our users will too 😉
 [#1882]: https://github.com/microsoft/terminal/issues/1882
 [#2634]: https://github.com/microsoft/terminal/issues/2634
 [#4998]: https://github.com/microsoft/terminal/issues/4998
+[#3327]: https://github.com/microsoft/terminal/issues/3327
 [#9222]: https://github.com/microsoft/terminal/pull/9222
 [this comment]: https://github.com/microsoft/terminal/issues/2634#issuecomment-789116413
 [iTerm2 implementation]: https://iterm2.com/documentation-one-page.html#documentation-menu-items.html
