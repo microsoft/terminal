@@ -257,10 +257,10 @@ bool VtIo::IsUsingVt() const
             g.pRender->AddRenderEngine(_pVtRenderEngine.get());
             g.getConsoleInformation().GetActiveOutputBuffer().SetTerminalConnection(_pVtRenderEngine.get());
             g.getConsoleInformation().GetActiveInputBuffer()->SetTerminalConnection(_pVtRenderEngine.get());
-            ServiceLocator::SetPseudoWindowCallback([&](bool showOrHide) -> void {
-                // Set the remote window visibility to the request
-                LOG_IF_FAILED(_pVtRenderEngine->SetWindowVisibility(showOrHide));
-            });
+
+            // Force the whole window to be put together first.
+            // We don't really need the handle, we just want to leverage the setup steps.
+            ServiceLocator::LocatePseudoWindow();
         }
         CATCH_RETURN();
     }
@@ -300,16 +300,59 @@ bool VtIo::IsUsingVt() const
 
     if (_pPtySignalInputThread)
     {
-        // IMPORTANT! Start the pseudo window on this thread. This thread has a
-        // message pump. If you DON'T, then a DPI change in the owning hwnd will
-        // cause us to get a dpi change as well, which we'll never deque and
-        // handle, effectively HANGING THE OWNER HWND.
+        // Let the signal thread know that the console is connected.
         //
-        // Let the signal thread know that the console is connected
+        // By this point, the pseudo window should have already been created, by
+        // ConsoleInputThreadProcWin32. That thread has a message pump, which is
+        // needed to ensure that DPI change messages to the owning terminal
+        // window don't end up hanging because the pty didn't also process it.
         _pPtySignalInputThread->ConnectConsole();
     }
 
     return S_OK;
+}
+
+// Method Description:
+// - Create our pseudo window. This is exclusively called by
+//   ConsoleInputThreadProcWin32 on the console input thread.
+//    * It needs to be called on that thread, before any other calls to
+//      LocatePseudoWindow, to make sure that the input thread is the HWND's
+//      message thread.
+//    * It needs to be plumbed through the signal thread, because the signal
+//      thread knows if someone should be marked as the window's owner. It's
+//      VERY IMPORTANT that any initial owners are set up when the window is
+//      first created.
+// - Refer to GH#13066 for details.
+void VtIo::CreatePseudoWindow()
+{
+    if (_pPtySignalInputThread)
+    {
+        _pPtySignalInputThread->CreatePseudoWindow();
+    }
+    else
+    {
+        ServiceLocator::LocatePseudoWindow();
+    }
+}
+
+void VtIo::SetWindowVisibility(bool showOrHide) noexcept
+{
+    // MSFT:40853556 Grab the shutdown lock here, so that another
+    // thread can't trigger a CloseOutput and release the
+    // _pVtRenderEngine out from underneath us.
+    std::lock_guard<std::mutex> lk(_shutdownLock);
+
+    if (!_pVtRenderEngine)
+    {
+        return;
+    }
+
+    auto& gci = ::Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    gci.LockConsole();
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    LOG_IF_FAILED(_pVtRenderEngine->SetWindowVisibility(showOrHide));
 }
 
 // Method Description:
@@ -374,7 +417,7 @@ bool VtIo::IsUsingVt() const
 // Return Value:
 // - S_OK if we successfully inherited the cursor or did nothing, else an
 //      appropriate HRESULT
-[[nodiscard]] HRESULT VtIo::SetCursorPosition(const COORD coordCursor)
+[[nodiscard]] HRESULT VtIo::SetCursorPosition(const til::point coordCursor)
 {
     auto hr = S_OK;
     if (_lookingForCursorPosition)

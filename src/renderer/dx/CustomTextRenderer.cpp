@@ -238,10 +238,10 @@ using namespace Microsoft::Console::Render;
 // - firstPass - true if we're being called before the text is drawn, false afterwards.
 // Return Value:
 // - S_FALSE if we did nothing, S_OK if we successfully painted, otherwise an appropriate HRESULT
-[[nodiscard]] HRESULT _drawCursor(gsl::not_null<ID2D1DeviceContext*> d2dContext,
-                                  D2D1_RECT_F textRunBounds,
-                                  const DrawingContext& drawingContext,
-                                  const bool firstPass)
+[[nodiscard]] HRESULT CustomTextRenderer::DrawCursor(gsl::not_null<ID2D1DeviceContext*> d2dContext,
+                                                     D2D1_RECT_F textRunBounds,
+                                                     const DrawingContext& drawingContext,
+                                                     const bool firstPass)
 try
 {
     if (!drawingContext.cursorInfo.has_value())
@@ -344,6 +344,7 @@ try
     Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush;
     Microsoft::WRL::ComPtr<ID2D1Image> originalTarget;
     Microsoft::WRL::ComPtr<ID2D1CommandList> commandList;
+    D2D1::Matrix3x2F originalTransform;
     if (!fInvert)
     {
         // Make sure to make the cursor opaque
@@ -373,7 +374,7 @@ try
         // =   =      =====
         // =====      =====
         //
-        // Then, outside of _drawCursor, the glyph is drawn:
+        // Then, outside of DrawCursor, the glyph is drawn:
         //
         // EMPTY BOX  FILLED BOX
         // ==A==      ==A==
@@ -394,8 +395,8 @@ try
         if (firstPass)
         {
             // Draw a backplate behind the cursor in the *background* color so that we can invert it later.
-            // We're going to draw the exact same color as the background behind the cursor
-            const til::color color{ drawingContext.backgroundBrush->GetColor() };
+            // Make sure the cursor is always readable (see gh-3647)
+            const til::color color{ til::color{ drawingContext.backgroundBrush->GetColor() } ^ RGB(63, 63, 63) };
             RETURN_IF_FAILED(d2dContext->CreateSolidColorBrush(color.with_alpha(255),
                                                                &brush));
         }
@@ -407,6 +408,9 @@ try
             RETURN_IF_FAILED(d2dContext->CreateCommandList(&commandList));
             d2dContext->GetTarget(&originalTarget);
             d2dContext->SetTarget(commandList.Get());
+            // We use an identity transform here to avoid the active transform being applied twice.
+            d2dContext->GetTransform(&originalTransform);
+            d2dContext->SetTransform(D2D1::Matrix3x2F::Identity());
             RETURN_IF_FAILED(d2dContext->CreateSolidColorBrush(COLOR_WHITE, &brush));
         }
     }
@@ -449,6 +453,7 @@ try
         // so now we draw that command list using MASK_INVERT over the existing image
         RETURN_IF_FAILED(commandList->Close());
         d2dContext->SetTarget(originalTarget.Get());
+        d2dContext->SetTransform(originalTransform);
         d2dContext->DrawImage(commandList.Get(), D2D1_INTERPOLATION_MODE_LINEAR, D2D1_COMPOSITE_MODE_MASK_INVERT);
     }
 
@@ -501,8 +506,8 @@ CATCH_RETURN()
 
     // Determine clip rectangle
     D2D1_RECT_F clipRect;
-    clipRect.top = origin.y;
-    clipRect.bottom = clipRect.top + drawingContext->cellSize.height;
+    clipRect.top = origin.y + drawingContext->topClipOffset;
+    clipRect.bottom = origin.y + drawingContext->cellSize.height - drawingContext->bottomClipOffset;
     clipRect.left = 0;
     clipRect.right = drawingContext->targetSize.width;
 
@@ -551,7 +556,7 @@ CATCH_RETURN()
 
     d2dContext->FillRectangle(rect, drawingContext->backgroundBrush);
 
-    RETURN_IF_FAILED(_drawCursor(d2dContext.Get(), rect, *drawingContext, true));
+    RETURN_IF_FAILED(DrawCursor(d2dContext.Get(), rect, *drawingContext, true));
 
     // GH#5098: If we're rendering with cleartype text, we need to always render
     // onto an opaque background. If our background _isn't_ opaque, then we need
@@ -741,7 +746,7 @@ CATCH_RETURN()
                                             clientDrawingEffect));
     }
 
-    RETURN_IF_FAILED(_drawCursor(d2dContext.Get(), rect, *drawingContext, false));
+    RETURN_IF_FAILED(DrawCursor(d2dContext.Get(), rect, *drawingContext, false));
 
     return S_OK;
 }

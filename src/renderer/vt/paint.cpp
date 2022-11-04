@@ -25,6 +25,10 @@ using namespace Microsoft::Console::Types;
         return S_FALSE;
     }
 
+    // If we're using line renditions, and this is a full screen paint, we can
+    // potentially stop using them at the end of this frame.
+    _stopUsingLineRenditions = _usingLineRenditions && _AllIsInvalid();
+
     // If there's nothing to do, quick return
     auto somethingToDo = _invalidMap.any() ||
                          _scrollDelta != til::point{ 0, 0 } ||
@@ -34,7 +38,7 @@ using namespace Microsoft::Console::Types;
     _quickReturn = !somethingToDo;
     _trace.TraceStartPaint(_quickReturn,
                            _invalidMap,
-                           til::rect{ _lastViewport.ToInclusive() },
+                           _lastViewport.ToExclusive(),
                            _scrollDelta,
                            _cursorMoved,
                            _wrappedRow);
@@ -75,6 +79,14 @@ using namespace Microsoft::Console::Types;
     }
     _circled = false;
 
+    // If _stopUsingLineRenditions is still true at the end of the frame, that
+    // means we've refreshed the entire viewport with every line being single
+    // width, so we can safely stop using them from now on.
+    if (_stopUsingLineRenditions)
+    {
+        _usingLineRenditions = false;
+    }
+
     // If we deferred a cursor movement during the frame, make sure we put the
     //      cursor in the right place before we end the frame.
     if (_deferredCursorPos != INVALID_COORDS)
@@ -98,6 +110,45 @@ using namespace Microsoft::Console::Types;
 [[nodiscard]] HRESULT VtEngine::Present() noexcept
 {
     return S_FALSE;
+}
+
+[[nodiscard]] HRESULT VtEngine::ResetLineTransform() noexcept
+{
+    return S_FALSE;
+}
+
+[[nodiscard]] HRESULT VtEngine::PrepareLineTransform(const LineRendition lineRendition,
+                                                     const til::CoordType targetRow,
+                                                     const til::CoordType /*viewportLeft*/) noexcept
+{
+    // We don't want to waste bandwidth writing out line rendition attributes
+    // until we know they're in use. But once they are in use, we have to keep
+    // applying them on every line until we know they definitely aren't being
+    // used anymore (we check that at the end of any fullscreen paint).
+    if (lineRendition != LineRendition::SingleWidth)
+    {
+        _stopUsingLineRenditions = false;
+        _usingLineRenditions = true;
+    }
+    // One simple optimization is that we can skip sending the line attributes
+    // when _quickReturn is true. That indicates that we're writing out a single
+    // character, which should preclude there being a rendition switch.
+    if (_usingLineRenditions && !_quickReturn)
+    {
+        RETURN_IF_FAILED(_MoveCursor({ _lastText.x, targetRow }));
+        switch (lineRendition)
+        {
+        case LineRendition::SingleWidth:
+            return _Write("\x1b#5");
+        case LineRendition::DoubleWidth:
+            return _Write("\x1b#6");
+        case LineRendition::DoubleHeightTop:
+            return _Write("\x1b#3");
+        case LineRendition::DoubleHeightBottom:
+            return _Write("\x1b#4");
+        }
+    }
+    return S_OK;
 }
 
 // Routine Description:
@@ -126,7 +177,7 @@ using namespace Microsoft::Console::Types;
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]] HRESULT VtEngine::PaintBufferLine(const gsl::span<const Cluster> clusters,
-                                                const COORD coord,
+                                                const til::point coord,
                                                 const bool /*trimLeft*/,
                                                 const bool /*lineWrapped*/) noexcept
 {
@@ -145,7 +196,7 @@ using namespace Microsoft::Console::Types;
 [[nodiscard]] HRESULT VtEngine::PaintBufferGridLines(const GridLineSet /*lines*/,
                                                      const COLORREF /*color*/,
                                                      const size_t /*cchLine*/,
-                                                     const COORD /*coordTarget*/) noexcept
+                                                     const til::point /*coordTarget*/) noexcept
 {
     return S_OK;
 }
@@ -158,7 +209,7 @@ using namespace Microsoft::Console::Types;
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]] HRESULT VtEngine::PaintCursor(const CursorOptions& options) noexcept
 {
-    _trace.TracePaintCursor(til::point{ options.coordCursor });
+    _trace.TracePaintCursor(options.coordCursor);
 
     // MSFT:15933349 - Send the terminal the updated cursor information, if it's changed.
     LOG_IF_FAILED(_MoveCursor(options.coordCursor));
@@ -176,7 +227,7 @@ using namespace Microsoft::Console::Types;
 //  - rect - Rectangle to invert or highlight to make the selection area
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT VtEngine::PaintSelection(const SMALL_RECT /*rect*/) noexcept
+[[nodiscard]] HRESULT VtEngine::PaintSelection(const til::rect& /*rect*/) noexcept
 {
     return S_OK;
 }
@@ -339,7 +390,7 @@ using namespace Microsoft::Console::Types;
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]] HRESULT VtEngine::_PaintAsciiBufferLine(const gsl::span<const Cluster> clusters,
-                                                      const COORD coord) noexcept
+                                                      const til::point coord) noexcept
 {
     try
     {
@@ -348,11 +399,11 @@ using namespace Microsoft::Console::Types;
         _bufferLine.clear();
         _bufferLine.reserve(clusters.size());
 
-        short totalWidth = 0;
+        til::CoordType totalWidth = 0;
         for (const auto& cluster : clusters)
         {
             _bufferLine.append(cluster.GetText());
-            RETURN_IF_FAILED(ShortAdd(totalWidth, gsl::narrow<short>(cluster.GetColumns()), &totalWidth));
+            totalWidth += cluster.GetColumns();
         }
 
         RETURN_IF_FAILED(VtEngine::_WriteTerminalAscii(_bufferLine));
@@ -374,7 +425,7 @@ using namespace Microsoft::Console::Types;
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]] HRESULT VtEngine::_PaintUtf8BufferLine(const gsl::span<const Cluster> clusters,
-                                                     const COORD coord,
+                                                     const til::point coord,
                                                      const bool lineWrapped) noexcept
 {
     if (coord.Y < _virtualTop)
@@ -384,38 +435,29 @@ using namespace Microsoft::Console::Types;
 
     _bufferLine.clear();
     _bufferLine.reserve(clusters.size());
-    short totalWidth = 0;
+    til::CoordType totalWidth = 0;
     for (const auto& cluster : clusters)
     {
         _bufferLine.append(cluster.GetText());
-        RETURN_IF_FAILED(ShortAdd(totalWidth, static_cast<short>(cluster.GetColumns()), &totalWidth));
+        totalWidth += cluster.GetColumns();
     }
     const auto cchLine = _bufferLine.size();
 
-    auto foundNonspace = false;
-    size_t lastNonSpace = 0;
-    for (size_t i = 0; i < cchLine; i++)
-    {
-        if (_bufferLine.at(i) != L'\x20')
-        {
-            lastNonSpace = i;
-            foundNonspace = true;
-        }
-    }
+    const auto spaceIndex = _bufferLine.find_last_not_of(L' ');
+    const auto foundNonspace = spaceIndex != decltype(_bufferLine)::npos;
+    const auto nonSpaceLength = foundNonspace ? spaceIndex + 1 : 0;
+
     // Examples:
     // - "  ":
-    //      cch = 2, lastNonSpace = 0, foundNonSpace = false
-    //      cch-lastNonSpace = 2 -> good
-    //      cch-lastNonSpace-(0) = 2 -> good
+    //      cch = 2, spaceIndex = 0, foundNonSpace = false
+    //      cch-nonSpaceLength = 2
     // - "A "
-    //      cch = 2, lastNonSpace = 0, foundNonSpace = true
-    //      cch-lastNonSpace = 2 -> bad
-    //      cch-lastNonSpace-(1) = 1 -> good
+    //      cch = 2, spaceIndex = 0, foundNonSpace = true
+    //      cch-nonSpaceLength = 1
     // - "AA"
-    //      cch = 2, lastNonSpace = 1, foundNonSpace = true
-    //      cch-lastNonSpace = 1 -> bad
-    //      cch-lastNonSpace-(1) = 0 -> good
-    const auto numSpaces = cchLine - lastNonSpace - (foundNonspace ? 1 : 0);
+    //      cch = 2, spaceIndex = 1, foundNonSpace = true
+    //      cch-nonSpaceLength = 0
+    const auto numSpaces = gsl::narrow_cast<til::CoordType>(cchLine - nonSpaceLength);
 
     // Optimizations:
     // If there are lots of spaces at the end of the line, we can try to Erase
@@ -433,10 +475,15 @@ using namespace Microsoft::Console::Types;
     // the inbox telnet client doesn't understand the Erase Character sequence,
     // and it uses xterm-ascii. This ensures that xterm and -256color consumers
     // get the enhancements, and telnet isn't broken.
+    //
+    // GH#13229: ECH and EL don't fill the space with "meta" attributes like
+    // underline, reverse video, hyperlinks, etc. If these spaces had those
+    // attrs, then don't try and optimize them out.
     const auto optimalToUseECH = numSpaces > ERASE_CHARACTER_STRING_LENGTH;
     const auto useEraseChar = (optimalToUseECH) &&
                               (!_newBottomLine) &&
-                              (!_clearedAllThisFrame);
+                              (!_clearedAllThisFrame) &&
+                              (!_lastTextAttributes.HasAnyExtendedAttributes());
     const auto printingBottomLine = coord.Y == _lastViewport.BottomInclusive();
 
     // GH#5502 - If the background color of the "new bottom line" is different
@@ -457,12 +504,11 @@ using namespace Microsoft::Console::Types;
     // the lines _wrapped_. It doesn't care to manually break the lines, but if
     // we trimmed the spaces off here, we'd print all the "~"s one after another
     // on the same line.
-    const auto removeSpaces = !lineWrapped && (useEraseChar ||
-                                               _clearedAllThisFrame ||
-                                               (_newBottomLine && printingBottomLine && bgMatched));
-    const auto cchActual = removeSpaces ?
-                               (cchLine - numSpaces) :
-                               cchLine;
+    static const TextAttribute defaultAttrs{};
+    const auto removeSpaces = !lineWrapped && (useEraseChar // we determined earlier that ECH is optimal
+                                               || (_clearedAllThisFrame && _lastTextAttributes == defaultAttrs) // OR we cleared the last frame to the default attributes (specifically)
+                                               || (_newBottomLine && printingBottomLine && bgMatched)); // OR we just scrolled a new line onto the bottom of the screen with the correct attributes
+    const auto cchActual = removeSpaces ? nonSpaceLength : cchLine;
 
     const auto columnsActual = removeSpaces ?
                                    (totalWidth - numSpaces) :
@@ -489,8 +535,17 @@ using namespace Microsoft::Console::Types;
     // Move the cursor to the start of this run.
     RETURN_IF_FAILED(_MoveCursor(coord));
 
-    // Write the actual text string
-    RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8({ _bufferLine.data(), cchActual }));
+    // Write the actual text string. If we're using a soft font, the character
+    // set should have already been selected, so we just need to map our internal
+    // representation back to ASCII (handled by the _WriteTerminalDrcs method).
+    if (_usingSoftFont) [[unlikely]]
+    {
+        RETURN_IF_FAILED(VtEngine::_WriteTerminalDrcs({ _bufferLine.data(), cchActual }));
+    }
+    else
+    {
+        RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8({ _bufferLine.data(), cchActual }));
+    }
 
     // GH#4415, GH#5181
     // If the renderer told us that this was a wrapped line, then mark
@@ -522,7 +577,7 @@ using namespace Microsoft::Console::Types;
     // character of the row.
     if (_lastText.X < _lastViewport.RightExclusive())
     {
-        _lastText.X += static_cast<short>(columnsActual);
+        _lastText.X += columnsActual;
     }
     // GH#1245: If we wrote the exactly last char of the row, then we're in the
     // "delayed EOL wrap" state. Different terminals (conhost, gnome-terminal,
@@ -535,13 +590,6 @@ using namespace Microsoft::Console::Types;
         _delayedEolWrap = true;
     }
 
-    short sNumSpaces;
-    try
-    {
-        sNumSpaces = gsl::narrow<short>(numSpaces);
-    }
-    CATCH_RETURN();
-
     if (useEraseChar)
     {
         // ECH doesn't actually move the cursor itself. However, we think that
@@ -550,11 +598,11 @@ using namespace Microsoft::Console::Types;
         //   cursor somewhere else before the end of the frame, we'll move the
         //   cursor to the deferred position at the end of the frame, or right
         //   before we need to print new text.
-        _deferredCursorPos = { _lastText.X + sNumSpaces, _lastText.Y };
+        _deferredCursorPos = { _lastText.X + numSpaces, _lastText.Y };
 
         if (_deferredCursorPos.X <= _lastViewport.RightInclusive())
         {
-            RETURN_IF_FAILED(_EraseCharacter(sNumSpaces));
+            RETURN_IF_FAILED(_EraseCharacter(numSpaces));
         }
         else
         {
@@ -567,7 +615,7 @@ using namespace Microsoft::Console::Types;
         //      line is already empty.
         if (optimalToUseECH)
         {
-            _deferredCursorPos = { _lastText.X + sNumSpaces, _lastText.Y };
+            _deferredCursorPos = { _lastText.X + numSpaces, _lastText.Y };
         }
         else if (numSpaces > 0 && removeSpaces) // if we deleted the spaces... re-add them
         {
@@ -575,7 +623,7 @@ using namespace Microsoft::Console::Types;
             auto spaces = std::wstring(numSpaces, L' ');
             RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(spaces));
 
-            _lastText.X += static_cast<short>(numSpaces);
+            _lastText.X += numSpaces;
         }
     }
 

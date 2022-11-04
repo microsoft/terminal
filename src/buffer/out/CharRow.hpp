@@ -20,6 +20,8 @@ Revision History:
 
 #pragma once
 
+#include <til/small_vector.h>
+
 #include "DbcsAttribute.hpp"
 #include "CharRowCellReference.hpp"
 #include "CharRowCell.hpp"
@@ -47,29 +49,29 @@ enum class DelimiterClass
 class CharRow final
 {
 public:
-    using glyph_type = typename wchar_t;
-    using value_type = typename CharRowCell;
-    using iterator = typename boost::container::small_vector_base<value_type>::iterator;
-    using const_iterator = typename boost::container::small_vector_base<value_type>::const_iterator;
-    using const_reverse_iterator = typename boost::container::small_vector_base<value_type>::const_reverse_iterator;
-    using reference = typename CharRowCellReference;
+    using glyph_type = wchar_t;
+    using value_type = CharRowCell;
+    using iterator = til::small_vector<value_type, 120>::iterator;
+    using const_iterator = til::small_vector<value_type, 120>::const_iterator;
+    using const_reverse_iterator = til::small_vector<value_type, 120>::const_reverse_iterator;
+    using reference = CharRowCellReference;
 
-    CharRow(size_t rowWidth, ROW* const pParent) noexcept;
+    CharRow(til::CoordType rowWidth, ROW* const pParent) noexcept;
 
-    size_t size() const noexcept;
-    [[nodiscard]] HRESULT Resize(const size_t newSize) noexcept;
-    size_t MeasureLeft() const noexcept;
-    size_t MeasureRight() const;
+    til::CoordType size() const noexcept;
+    [[nodiscard]] HRESULT Resize(const til::CoordType newSize) noexcept;
+    til::CoordType MeasureLeft() const noexcept;
+    til::CoordType MeasureRight() const;
     bool ContainsText() const noexcept;
-    const DbcsAttribute& DbcsAttrAt(const size_t column) const;
-    DbcsAttribute& DbcsAttrAt(const size_t column);
-    void ClearGlyph(const size_t column);
+    const DbcsAttribute& DbcsAttrAt(const til::CoordType column) const;
+    DbcsAttribute& DbcsAttrAt(const til::CoordType column);
+    void ClearGlyph(const til::CoordType column);
 
-    const DelimiterClass DelimiterClassAt(const size_t column, const std::wstring_view wordDelimiters) const;
+    const DelimiterClass DelimiterClassAt(const til::CoordType column, const std::wstring_view wordDelimiters) const;
 
     // working with glyphs
-    const reference GlyphAt(const size_t column) const;
-    reference GlyphAt(const size_t column);
+    const reference GlyphAt(const til::CoordType column) const;
+    reference GlyphAt(const til::CoordType column);
 
     // iterators
     iterator begin() noexcept;
@@ -82,7 +84,7 @@ public:
 
     UnicodeStorage& GetUnicodeStorage() noexcept;
     const UnicodeStorage& GetUnicodeStorage() const noexcept;
-    COORD GetStorageKey(const size_t column) const noexcept;
+    til::point GetStorageKey(const til::CoordType column) const noexcept;
 
     void UpdateParent(ROW* const pParent);
 
@@ -91,12 +93,12 @@ public:
 
 private:
     void Reset() noexcept;
-    void ClearCell(const size_t column);
+    void ClearCell(const til::CoordType column);
     std::wstring GetText() const;
 
 protected:
     // storage for glyph data and dbcs attributes
-    boost::container::small_vector<value_type, 120> _data;
+    til::small_vector<value_type, 120> _data;
 
     // ROW that this CharRow belongs to
     ROW* _pParent;

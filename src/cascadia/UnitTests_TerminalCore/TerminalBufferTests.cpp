@@ -28,9 +28,9 @@ class TerminalCoreUnitTests::TerminalBufferTests final
     // !!! DANGER: Many tests in this class expect the Terminal buffer
     // to be 80x32. If you change these, you'll probably inadvertently break a
     // bunch of tests !!!
-    static const SHORT TerminalViewWidth = 80;
-    static const SHORT TerminalViewHeight = 32;
-    static const SHORT TerminalHistoryLength = 100;
+    static const til::CoordType TerminalViewWidth = 80;
+    static const til::CoordType TerminalViewHeight = 32;
+    static const til::CoordType TerminalHistoryLength = 100;
 
     TEST_CLASS(TerminalBufferTests);
 
@@ -70,8 +70,8 @@ class TerminalCoreUnitTests::TerminalBufferTests final
     }
 
 private:
-    void _SetTabStops(std::list<short> columns, bool replace);
-    std::list<short> _GetTabStops();
+    void _SetTabStops(std::list<til::CoordType> columns, bool replace);
+    std::list<til::CoordType> _GetTabStops();
 
     std::unique_ptr<DummyRenderer> emptyRenderer;
     std::unique_ptr<Terminal> term;
@@ -103,7 +103,7 @@ void TerminalBufferTests::TestWrappingCharByChar()
     const auto initialView = term->GetViewport();
     auto& cursor = termTb.GetCursor();
 
-    const auto charsToWrite = gsl::narrow_cast<short>(TestUtils::Test100CharsString.size());
+    const auto charsToWrite = gsl::narrow_cast<til::CoordType>(TestUtils::Test100CharsString.size());
 
     VERIFY_ARE_EQUAL(0, initialView.Top());
     VERIFY_ARE_EQUAL(32, initialView.BottomExclusive());
@@ -142,7 +142,7 @@ void TerminalBufferTests::TestWrappingALongString()
     const auto initialView = term->GetViewport();
     auto& cursor = termTb.GetCursor();
 
-    const auto charsToWrite = gsl::narrow_cast<short>(TestUtils::Test100CharsString.size());
+    const auto charsToWrite = gsl::narrow_cast<til::CoordType>(TestUtils::Test100CharsString.size());
     VERIFY_ARE_EQUAL(100, charsToWrite);
 
     VERIFY_ARE_EQUAL(0, initialView.Top());
@@ -251,7 +251,7 @@ void TerminalBufferTests::DontSnapToOutputTest()
     VERIFY_ARE_EQUAL(TerminalHistoryLength, term->_scrollOffset);
 }
 
-void TerminalBufferTests::_SetTabStops(std::list<short> columns, bool replace)
+void TerminalBufferTests::_SetTabStops(std::list<til::CoordType> columns, bool replace)
 {
     auto& termTb = *term->_mainBuffer;
     auto& termSm = *term->_stateMachine;
@@ -272,9 +272,9 @@ void TerminalBufferTests::_SetTabStops(std::list<short> columns, bool replace)
     }
 }
 
-std::list<short> TerminalBufferTests::_GetTabStops()
+std::list<til::CoordType> TerminalBufferTests::_GetTabStops()
 {
-    std::list<short> columns;
+    std::list<til::CoordType> columns;
     auto& termTb = *term->_mainBuffer;
     auto& termSm = *term->_stateMachine;
     const auto initialView = term->GetViewport();
@@ -305,7 +305,7 @@ void TerminalBufferTests::TestResetClearTabStops()
     const auto resetToInitialState = L"\033c";
 
     Log::Comment(L"Default tabs every 8 columns.");
-    std::list<short> expectedStops{ 8, 16, 24, 32, 40, 48, 56, 64, 72 };
+    std::list<til::CoordType> expectedStops{ 8, 16, 24, 32, 40, 48, 56, 64, 72 };
     VERIFY_ARE_EQUAL(expectedStops, _GetTabStops());
 
     Log::Comment(L"Clear all tabs.");
@@ -330,7 +330,7 @@ void TerminalBufferTests::TestAddTabStop()
 
     Log::Comment(L"Clear all tabs.");
     termSm.ProcessString(clearTabStops);
-    std::list<short> expectedStops{};
+    std::list<til::CoordType> expectedStops{};
     VERIFY_ARE_EQUAL(expectedStops, _GetTabStops());
 
     Log::Comment(L"Add tab to empty list.");
@@ -419,7 +419,7 @@ void TerminalBufferTests::TestClearTabStop()
 
     Log::Comment(L"Allocate many (5) list items and clear head.");
     {
-        std::list<short> inputData = { 3, 5, 6, 10, 15, 17 };
+        std::list<til::CoordType> inputData = { 3, 5, 6, 10, 15, 17 };
         _SetTabStops(inputData, false);
         cursor.SetXPosition(inputData.front());
         termSm.ProcessString(clearTabStop);
@@ -433,7 +433,7 @@ void TerminalBufferTests::TestClearTabStop()
 
     Log::Comment(L"Allocate many (5) list items and clear middle.");
     {
-        std::list<short> inputData = { 3, 5, 6, 10, 15, 17 };
+        std::list<til::CoordType> inputData = { 3, 5, 6, 10, 15, 17 };
         _SetTabStops(inputData, false);
         cursor.SetXPosition(*std::next(inputData.begin()));
         termSm.ProcessString(clearTabStop);
@@ -447,7 +447,7 @@ void TerminalBufferTests::TestClearTabStop()
 
     Log::Comment(L"Allocate many (5) list items and clear tail.");
     {
-        std::list<short> inputData = { 3, 5, 6, 10, 15, 17 };
+        std::list<til::CoordType> inputData = { 3, 5, 6, 10, 15, 17 };
         _SetTabStops(inputData, false);
         cursor.SetXPosition(inputData.back());
         termSm.ProcessString(clearTabStop);
@@ -461,7 +461,7 @@ void TerminalBufferTests::TestClearTabStop()
 
     Log::Comment(L"Allocate many (5) list items and clear nonexistent item.");
     {
-        std::list<short> inputData = { 3, 5, 6, 10, 15, 17 };
+        std::list<til::CoordType> inputData = { 3, 5, 6, 10, 15, 17 };
         _SetTabStops(inputData, false);
         cursor.SetXPosition(0);
         termSm.ProcessString(clearTabStop);
@@ -482,7 +482,7 @@ void TerminalBufferTests::TestGetForwardTab()
 
     const auto nextForwardTab = L"\033[I";
 
-    std::list<short> inputData = { 3, 5, 6, 10, 15, 17 };
+    std::list<til::CoordType> inputData = { 3, 5, 6, 10, 15, 17 };
     _SetTabStops(inputData, true);
 
     const auto coordScreenBufferSize = initialView.Dimensions();
@@ -551,7 +551,7 @@ void TerminalBufferTests::TestGetReverseTab()
 
     const auto nextReverseTab = L"\033[Z";
 
-    std::list<short> inputData = { 3, 5, 6, 10, 15, 17 };
+    std::list<til::CoordType> inputData = { 3, 5, 6, 10, 15, 17 };
     _SetTabStops(inputData, true);
 
     Log::Comment(L"Find previous tab from before front.");

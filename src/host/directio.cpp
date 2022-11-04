@@ -27,8 +27,6 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 
 class CONSOLE_INFORMATION;
 
-#define UNICODE_DBCS_PADDING 0xffff
-
 // Routine Description:
 // - converts non-unicode InputEvents to unicode InputEvents
 // Arguments:
@@ -531,61 +529,59 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 {
     try
     {
-        std::vector<CHAR_INFO> tempBuffer(buffer.begin(), buffer.end());
-
         const auto size = rectangle.Dimensions();
-        auto tempIter = tempBuffer.cbegin();
         auto outIter = buffer.begin();
 
-        for (auto i = 0; i < size.Y; i++)
+        for (til::CoordType i = 0; i < size.Y; ++i)
         {
-            for (auto j = 0; j < size.X; j++)
+            for (til::CoordType j = 0; j < size.X; ++j, ++outIter)
             {
+                auto& in1 = *outIter;
+
+                // If .AsciiChar and .UnicodeChar have the same offset (since they're a union),
+                // we can just write the latter with a byte-sized value to set the former
+                // _and_ simultaneously clear the upper byte of .UnicodeChar to 0. Nice!
+                static_assert(offsetof(CHAR_INFO, Char.AsciiChar) == offsetof(CHAR_INFO, Char.UnicodeChar));
+
                 // Any time we see the lead flag, we presume there will be a trailing one following it.
                 // Giving us two bytes of space (one per cell in the ascii part of the character union)
                 // to fill with whatever this Unicode character converts into.
-                if (WI_IsFlagSet(tempIter->Attributes, COMMON_LVB_LEADING_BYTE))
+                if (WI_IsFlagSet(in1.Attributes, COMMON_LVB_LEADING_BYTE))
                 {
                     // As long as we're not looking at the exact last column of the buffer...
                     if (j < size.X - 1)
                     {
                         // Walk forward one because we're about to consume two cells.
-                        j++;
+                        ++j;
+                        ++outIter;
+
+                        auto& in2 = *outIter;
 
                         // Try to convert the unicode character (2 bytes) in the leading cell to the codepage.
-                        CHAR AsciiDbcs[2] = { 0 };
-                        auto NumBytes = gsl::narrow<UINT>(sizeof(AsciiDbcs));
-                        NumBytes = ConvertToOem(codepage, &tempIter->Char.UnicodeChar, 1, &AsciiDbcs[0], NumBytes);
+                        CHAR AsciiDbcs[2]{};
+                        ConvertToOem(codepage, &in1.Char.UnicodeChar, 1, &AsciiDbcs[0], 2);
 
                         // Fill the 1 byte (AsciiChar) portion of the leading and trailing cells with each of the bytes returned.
-                        outIter->Char.AsciiChar = AsciiDbcs[0];
-                        outIter->Attributes = tempIter->Attributes;
-                        outIter++;
-                        tempIter++;
-                        outIter->Char.AsciiChar = AsciiDbcs[1];
-                        outIter->Attributes = tempIter->Attributes;
-                        outIter++;
-                        tempIter++;
+                        // We have to be bit careful here not to directly write the CHARs, because CHARs are signed whereas wchar_t isn't
+                        // and we don't want any sign-extension. We want a 1:1 copy instead, so cast it to an unsigned char first.
+                        in1.Char.UnicodeChar = til::bit_cast<uint8_t>(AsciiDbcs[0]);
+                        in2.Char.UnicodeChar = til::bit_cast<uint8_t>(AsciiDbcs[1]);
                     }
                     else
                     {
                         // When we're in the last column with only a leading byte, we can't return that without a trailing.
                         // Instead, replace the output data with just a space and clear all flags.
-                        outIter->Char.AsciiChar = UNICODE_SPACE;
-                        outIter->Attributes = tempIter->Attributes;
-                        WI_ClearAllFlags(outIter->Attributes, COMMON_LVB_SBCSDBCS);
-                        outIter++;
-                        tempIter++;
+                        in1.Char.UnicodeChar = UNICODE_SPACE;
+                        WI_ClearAllFlags(in1.Attributes, COMMON_LVB_SBCSDBCS);
                     }
                 }
-                else if (WI_AreAllFlagsClear(tempIter->Attributes, COMMON_LVB_SBCSDBCS))
+                else if (WI_AreAllFlagsClear(in1.Attributes, COMMON_LVB_SBCSDBCS))
                 {
                     // If there are no leading/trailing pair flags, then we only have 1 ascii byte to try to fit the
                     // 2 byte UTF-16 character into. Give it a go.
-                    ConvertToOem(codepage, &tempIter->Char.UnicodeChar, 1, &outIter->Char.AsciiChar, 1);
-                    outIter->Attributes = tempIter->Attributes;
-                    outIter++;
-                    tempIter++;
+                    CHAR asciiChar{};
+                    ConvertToOem(codepage, &in1.Char.UnicodeChar, 1, &asciiChar, 1);
+                    in1.Char.UnicodeChar = til::bit_cast<uint8_t>(asciiChar);
                 }
             }
         }
@@ -615,58 +611,57 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         const auto size = rectangle.Dimensions();
         auto outIter = buffer.begin();
 
-        for (auto i = 0; i < size.Y; i++)
+        for (til::CoordType i = 0; i < size.Y; ++i)
         {
-            for (auto j = 0; j < size.X; j++)
+            for (til::CoordType j = 0; j < size.X; ++j, ++outIter)
             {
                 // Clear lead/trailing flags. We'll determine it for ourselves versus the given codepage.
-                WI_ClearAllFlags(outIter->Attributes, COMMON_LVB_SBCSDBCS);
+                auto& in1 = *outIter;
+                WI_ClearAllFlags(in1.Attributes, COMMON_LVB_SBCSDBCS);
 
                 // If the 1 byte given is a lead in this codepage, we likely need two cells for the width.
-                if (IsDBCSLeadByteConsole(outIter->Char.AsciiChar, &gci.OutputCPInfo))
+                if (IsDBCSLeadByteConsole(in1.Char.AsciiChar, &gci.OutputCPInfo))
                 {
                     // If we're not on the last column, we have two cells to use.
                     if (j < size.X - 1)
                     {
                         // Mark we're consuming two cells.
-                        j++;
+                        ++outIter;
+                        ++j;
+
+                        // Just as above - clear the flags, as we're setting them ourselves.
+                        auto& in2 = *outIter;
+                        WI_ClearAllFlags(in2.Attributes, COMMON_LVB_SBCSDBCS);
 
                         // Grab the lead/trailing byte pair from this cell and the next one forward.
                         CHAR AsciiDbcs[2];
-                        AsciiDbcs[0] = outIter->Char.AsciiChar;
-                        AsciiDbcs[1] = (outIter + 1)->Char.AsciiChar;
+                        AsciiDbcs[0] = in1.Char.AsciiChar;
+                        AsciiDbcs[1] = in2.Char.AsciiChar;
 
                         // Convert it to UTF-16.
-                        WCHAR UnicodeDbcs[2];
-                        ConvertOutputToUnicode(codepage, &AsciiDbcs[0], 2, &UnicodeDbcs[0], 2);
+                        wchar_t wch = UNICODE_SPACE;
+                        ConvertOutputToUnicode(codepage, &AsciiDbcs[0], 2, &wch, 1);
 
                         // Store the actual character in the first available position.
-                        outIter->Char.UnicodeChar = UnicodeDbcs[0];
-                        WI_ClearAllFlags(outIter->Attributes, COMMON_LVB_SBCSDBCS);
-                        WI_SetFlag(outIter->Attributes, COMMON_LVB_LEADING_BYTE);
-                        outIter++;
+                        in1.Char.UnicodeChar = wch;
+                        WI_SetFlag(in1.Attributes, COMMON_LVB_LEADING_BYTE);
 
                         // Put a padding character in the second position.
-                        outIter->Char.UnicodeChar = UNICODE_DBCS_PADDING;
-                        WI_ClearAllFlags(outIter->Attributes, COMMON_LVB_SBCSDBCS);
-                        WI_SetFlag(outIter->Attributes, COMMON_LVB_TRAILING_BYTE);
-                        outIter++;
+                        in2.Char.UnicodeChar = wch;
+                        WI_SetFlag(in2.Attributes, COMMON_LVB_TRAILING_BYTE);
                     }
                     else
                     {
                         // If we were on the last column, put in a space.
-                        outIter->Char.UnicodeChar = UNICODE_SPACE;
-                        WI_ClearAllFlags(outIter->Attributes, COMMON_LVB_SBCSDBCS);
-                        outIter++;
+                        in1.Char.UnicodeChar = UNICODE_SPACE;
                     }
                 }
                 else
                 {
                     // If it's not detected as a lead byte of a pair, then just convert it in place and move on.
-                    auto c = outIter->Char.AsciiChar;
-
-                    ConvertOutputToUnicode(codepage, &c, 1, &outIter->Char.UnicodeChar, 1);
-                    outIter++;
+                    wchar_t wch = UNICODE_SPACE;
+                    ConvertOutputToUnicode(codepage, &in1.Char.AsciiChar, 1, &wch, 1);
+                    in1.Char.UnicodeChar = wch;
                 }
             }
         }
@@ -679,22 +674,21 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 [[nodiscard]] static std::vector<CHAR_INFO> _ConvertCellsToMungedW(gsl::span<CHAR_INFO> buffer, const Viewport& rectangle)
 {
     std::vector<CHAR_INFO> result;
-    result.reserve(buffer.size() * 2); // we estimate we'll need up to double the cells if they all expand.
+    result.reserve(buffer.size());
 
     const auto size = rectangle.Dimensions();
     auto bufferIter = buffer.begin();
 
-    for (SHORT i = 0; i < size.Y; i++)
+    for (til::CoordType i = 0; i < size.Y; i++)
     {
-        for (SHORT j = 0; j < size.X; j++)
+        for (til::CoordType j = 0; j < size.X; j++)
         {
             // Prepare a candidate charinfo on the output side copying the colors but not the lead/trail information.
-            CHAR_INFO candidate;
-            candidate.Attributes = bufferIter->Attributes;
+            auto candidate = *bufferIter;
             WI_ClearAllFlags(candidate.Attributes, COMMON_LVB_SBCSDBCS);
 
             // If the glyph we're given is full width, it needs to take two cells.
-            if (IsGlyphFullWidth(bufferIter->Char.UnicodeChar))
+            if (IsGlyphFullWidth(candidate.Char.UnicodeChar))
             {
                 // If we're not on the final cell of the row...
                 if (j < size.X - 1)
@@ -703,14 +697,11 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                     j++;
 
                     // Fill one cell with a copy of the color and character marked leading
-                    candidate.Char.UnicodeChar = bufferIter->Char.UnicodeChar;
                     WI_SetFlag(candidate.Attributes, COMMON_LVB_LEADING_BYTE);
                     result.push_back(candidate);
 
                     // Fill a second cell with a copy of the color marked trailing and a padding character.
-                    candidate.Char.UnicodeChar = UNICODE_DBCS_PADDING;
-                    candidate.Attributes = bufferIter->Attributes;
-                    WI_ClearAllFlags(candidate.Attributes, COMMON_LVB_SBCSDBCS);
+                    WI_ClearFlag(candidate.Attributes, COMMON_LVB_LEADING_BYTE);
                     WI_SetFlag(candidate.Attributes, COMMON_LVB_TRAILING_BYTE);
                 }
                 else
@@ -719,17 +710,12 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                     candidate.Char.UnicodeChar = UNICODE_SPACE;
                 }
             }
-            else
-            {
-                // If we're not full-width, we're half-width. Just copy the character over.
-                candidate.Char.UnicodeChar = bufferIter->Char.UnicodeChar;
-            }
 
             // Push our candidate in.
             result.push_back(candidate);
 
             // Advance to read the next item.
-            bufferIter++;
+            ++bufferIter;
         }
     }
     return result;
@@ -743,8 +729,8 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
     try
     {
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        const auto& storageBuffer = context.GetActiveBuffer();
-        const auto storageSize = storageBuffer.GetBufferSize().Dimensions();
+        const auto& storageBuffer = context.GetActiveBuffer().GetTextBuffer();
+        const auto storageSize = storageBuffer.GetSize().Dimensions();
 
         const auto targetSize = requestRectangle.Dimensions();
 
@@ -756,8 +742,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         }
 
         // The buffer given should be big enough to hold the dimensions of the request.
-        size_t targetArea;
-        RETURN_IF_FAILED(SizeTMult(targetSize.X, targetSize.Y, &targetArea));
+        const auto targetArea = targetSize.area<size_t>();
         RETURN_HR_IF(E_INVALIDARG, targetArea < targetBuffer.size());
 
         // Clip the request rectangle to the size of the storage buffer
@@ -767,13 +752,13 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 
         // Find the target point (where to write the user's buffer)
         // It will either be 0,0 or offset into the buffer by the inverse of the negative values.
-        COORD targetPoint;
+        til::point targetPoint;
         targetPoint.X = clip.Left < 0 ? -clip.Left : 0;
         targetPoint.Y = clip.Top < 0 ? -clip.Top : 0;
 
         // The clipped rect must be inside the buffer size, so it has a minimum value of 0. (max of itself and 0)
-        clip.Left = std::max(clip.Left, 0i16);
-        clip.Top = std::max(clip.Top, 0i16);
+        clip.Left = std::max(clip.Left, 0);
+        clip.Top = std::max(clip.Top, 0);
 
         // The final "request rectangle" or the area inside the buffer we want to read, is the clipped dimensions.
         const auto clippedRequestRectangle = Viewport::FromExclusive(clip);
@@ -784,7 +769,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         // Get an iterator to the beginning of the return buffer
         // We might have to seek this forward or skip around if we clipped the request.
         auto targetIter = targetBuffer.begin();
-        COORD targetPos = { 0 };
+        til::point targetPos;
         const auto targetLimit = Viewport::FromDimensions(targetPoint, clippedRequestRectangle.Dimensions());
 
         // Get an iterator to the beginning of the request inside the screen buffer
@@ -803,11 +788,11 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                 // Copy the data into position...
                 *targetIter = gci.AsCharInfo(*sourceIter);
                 // ... and advance the read iterator.
-                sourceIter++;
+                ++sourceIter;
             }
 
             // Always advance the write iterator, we might have skipped it due to clipping.
-            targetIter++;
+            ++targetIter;
 
             // Increment the target
             targetPos.X++;
@@ -902,7 +887,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 
         // Do clipping according to the legacy patterns.
         auto writeRegion = requestRectangle.ToInclusive();
-        SMALL_RECT sourceRect;
+        til::inclusive_rect sourceRect;
         if (writeRegion.Right > storageSize.X - 1)
         {
             writeRegion.Right = storageSize.X - 1;
@@ -949,15 +934,9 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         for (; target.Y < writeRectangle.BottomExclusive(); target.Y++)
         {
             // We find the offset into the original buffer by the dimensions of the original request rectangle.
-            ptrdiff_t rowOffset = 0;
-            RETURN_IF_FAILED(PtrdiffTSub(target.Y, requestRectangle.Top(), &rowOffset));
-            RETURN_IF_FAILED(PtrdiffTMult(rowOffset, requestRectangle.Width(), &rowOffset));
-
-            ptrdiff_t colOffset = 0;
-            RETURN_IF_FAILED(PtrdiffTSub(target.X, requestRectangle.Left(), &colOffset));
-
-            ptrdiff_t totalOffset = 0;
-            RETURN_IF_FAILED(PtrdiffTAdd(rowOffset, colOffset, &totalOffset));
+            const auto rowOffset = (target.Y - requestRectangle.Top()) * requestRectangle.Width();
+            const auto colOffset = target.X - requestRectangle.Left();
+            const auto totalOffset = rowOffset + colOffset;
 
             // Now we make a subspan starting from that offset for as much of the original request as would fit
             const auto subspan = buffer.subspan(totalOffset, writeRectangle.Width());
@@ -1027,7 +1006,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 }
 
 [[nodiscard]] HRESULT ApiRoutines::ReadConsoleOutputAttributeImpl(const SCREEN_INFORMATION& context,
-                                                                  const COORD origin,
+                                                                  const til::point origin,
                                                                   gsl::span<WORD> buffer,
                                                                   size_t& written) noexcept
 {
@@ -1048,7 +1027,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 }
 
 [[nodiscard]] HRESULT ApiRoutines::ReadConsoleOutputCharacterAImpl(const SCREEN_INFORMATION& context,
-                                                                   const COORD origin,
+                                                                   const til::point origin,
                                                                    gsl::span<char> buffer,
                                                                    size_t& written) noexcept
 {
@@ -1077,7 +1056,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 }
 
 [[nodiscard]] HRESULT ApiRoutines::ReadConsoleOutputCharacterWImpl(const SCREEN_INFORMATION& context,
-                                                                   const COORD origin,
+                                                                   const til::point origin,
                                                                    gsl::span<wchar_t> buffer,
                                                                    size_t& written) noexcept
 {

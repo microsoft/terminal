@@ -30,7 +30,7 @@ jobs:
         If ($Arch -Eq "x86") { $Arch = "Win32" }
 
         Write-Host "##vso[task.setvariable variable=RationalizedBuildPlatform]${Arch}"
-  - steps: restore-nuget-steps.yml
+  - template: restore-nuget-steps.yml
   - task: UniversalPackages@0
     displayName: Download terminal-internal Universal Package
     inputs:
@@ -71,7 +71,7 @@ jobs:
   # 1ES Component Governance onboarding (Detects open source components). See https://docs.opensource.microsoft.com/tools/cg.html
   - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
     displayName: Component Detection
-    
+
   # # PREfast and PoliCheck need Node. Install that first.
   - task: NodeTool@0
 
@@ -82,7 +82,7 @@ jobs:
   # step instead that builds the code normally before calling them.
   # Also... PREfast will rebuild anyway so that's why we're not running a normal build first.
   # Waste of time to build twice.
-  # PREfast. See https://www.1eswiki.com/wiki/SDL_Native_Rules_Build_Task 
+  # PREfast. See https://www.1eswiki.com/wiki/SDL_Native_Rules_Build_Task
 
   # The following 1ES tasks all operate completely differently and have a different syntax for usage.
   # Most notable is every one of them has a different way of excluding things.
@@ -98,7 +98,9 @@ jobs:
     displayName: 'Run the PREfast SDL Native Rules for MSBuild'
     condition: succeededOrFailed()
     inputs:
-      msBuildCommandline: msbuild.exe /nologo /m /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }} /p:WindowsTerminalReleaseBuild=true /p:platform=$(BuildPlatform) /p:configuration=$(BuildConfiguration) /t:Terminal\Window\WindowsTerminal /p:VisualStudioVersion=16.0 $(Build.SourcesDirectory)\OpenConsole.sln
+      setupCommandlines: '"C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsMSBuildCmd.bat"'
+      msBuildCommandline: msbuild.exe /nologo /m /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }} /p:WindowsTerminalReleaseBuild=true /p:platform=$(BuildPlatform) /p:configuration=$(BuildConfiguration) /t:Terminal\Window\WindowsTerminal /p:VisualStudioVersion=17.0 $(Build.SourcesDirectory)\OpenConsole.sln
+      msBuildVersion: "17.0"
 
   # Copies output from PREfast SDL Native Rules task to expected location for consumption by PkgESSecComp
   - task: CopyFiles@1
@@ -146,7 +148,7 @@ jobs:
     continueOnError: true
 
   # Set XES_SERIALPOSTBUILDREADY to run Security and Compliance task once per build
-  - powershell: Write-Host “##vso[task.setvariable variable=XES_SERIALPOSTBUILDREADY;]true”  
+  - powershell: Write-Host "##vso[task.setvariable variable=XES_SERIALPOSTBUILDREADY;]true"
     displayName: 'Set XES_SERIALPOSTBUILDREADY Vars'
 
   # https://www.osgwiki.com/wiki/Package_ES_Security_and_Compliance
@@ -156,12 +158,12 @@ jobs:
   #   (PREfast, PoliCheck, Credscan)
   # - Runs Windows-specific compliance tasks inside the task
   #   + CheckCFlags - ensures that compiler and linker flags meet Windows standards
-  #   + CFGCheck/XFGCheck - ensures that Control Flow Guard (CFG) or 
+  #   + CFGCheck/XFGCheck - ensures that Control Flow Guard (CFG) or
   #                         eXtended Flow Guard (XFG) are enabled on binaries
   #                         NOTE: CFG is deprecated and XFG isn't fully ready yet.
   #                         NOTE2: CFG fails on an XFG'd binary
   # - Brokers all security/compliance task logs to "Trust Services Automation (TSA)" (https://aka.ms/tsa)
-  #   which is a system that maps all errors into the appropriate bug database 
+  #   which is a system that maps all errors into the appropriate bug database
   #   template for each organization since they all vary. It should also suppress
   #   new bugs when one already exists for the product.
   #   This one is set up to go to the OS repository and use the given parameters

@@ -30,6 +30,8 @@
 #include "CloseTabArgs.g.h"
 #include "ScrollUpArgs.g.h"
 #include "ScrollDownArgs.g.h"
+#include "ScrollToMarkArgs.g.h"
+#include "AddMarkArgs.g.h"
 #include "MoveTabArgs.g.h"
 #include "ToggleCommandPaletteArgs.g.h"
 #include "FindMatchArgs.g.h"
@@ -43,6 +45,7 @@
 #include "ClearBufferArgs.g.h"
 #include "MultipleActionsArgs.g.h"
 #include "AdjustOpacityArgs.g.h"
+#include "ColorSelectionArgs.g.h"
 
 #include "JsonUtils.h"
 #include "HashUtils.h"
@@ -181,6 +184,14 @@ private:                                                                        
     X(Windows::Foundation::IReference<uint32_t>, RowsToScroll, "rowsToScroll", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
+#define SCROLL_TO_MARK_ARGS(X) \
+    X(Microsoft::Terminal::Control::ScrollToMarkDirection, Direction, "direction", false, Microsoft::Terminal::Control::ScrollToMarkDirection::Previous)
+
+////////////////////////////////////////////////////////////////////////////////
+#define ADD_MARK_ARGS(X) \
+    X(Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>, Color, "color", false, nullptr)
+
+////////////////////////////////////////////////////////////////////////////////
 #define TOGGLE_COMMAND_PALETTE_ARGS(X) \
     X(CommandPaletteLaunchMode, LaunchMode, "launchMode", false, CommandPaletteLaunchMode::Action)
 
@@ -224,6 +235,12 @@ private:                                                                        
 #define ADJUST_OPACITY_ARGS(X)               \
     X(int32_t, Opacity, "opacity", false, 0) \
     X(bool, Relative, "relative", false, true)
+
+////////////////////////////////////////////////////////////////////////////////
+#define COLOR_SELECTION_ARGS(X)                                                                      \
+    X(winrt::Microsoft::Terminal::Control::SelectionColor, Foreground, "foreground", false, nullptr) \
+    X(winrt::Microsoft::Terminal::Control::SelectionColor, Background, "background", false, nullptr) \
+    X(winrt::Microsoft::Terminal::Core::MatchMode, MatchMode, "matchMode", false, winrt::Microsoft::Terminal::Core::MatchMode::None)
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -371,6 +388,20 @@ struct til::hash_trait<winrt::Microsoft::Terminal::Settings::Model::NewTerminalA
         if (value)
         {
             winrt::get_self<I>(value)->Hash(h);
+        }
+    }
+};
+template<>
+struct til::hash_trait<winrt::Microsoft::Terminal::Control::SelectionColor>
+{
+    using M = winrt::Microsoft::Terminal::Control::SelectionColor;
+
+    void operator()(hasher& h, const M& value) const noexcept
+    {
+        if (value)
+        {
+            h.write(value.Color());
+            h.write(value.IsIndex16());
         }
     }
 };
@@ -612,6 +643,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     ACTION_ARGS_STRUCT(ScrollDownArgs, SCROLL_DOWN_ARGS);
 
+    ACTION_ARGS_STRUCT(ScrollToMarkArgs, SCROLL_TO_MARK_ARGS);
+
+    ACTION_ARGS_STRUCT(AddMarkArgs, ADD_MARK_ARGS);
+
     ACTION_ARGS_STRUCT(ToggleCommandPaletteArgs, TOGGLE_COMMAND_PALETTE_ARGS);
 
     ACTION_ARGS_STRUCT(FindMatchArgs, FIND_MATCH_ARGS);
@@ -698,6 +733,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     };
 
     ACTION_ARGS_STRUCT(AdjustOpacityArgs, ADJUST_OPACITY_ARGS);
+
+    ACTION_ARGS_STRUCT(ColorSelectionArgs, COLOR_SELECTION_ARGS);
 
 }
 

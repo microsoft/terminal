@@ -20,7 +20,7 @@
 
 using namespace Microsoft::Console::Render;
 
-WddmConEngine::WddmConEngine() :
+WddmConEngine::WddmConEngine() noexcept :
     RenderEngineBase(),
     _hWddmConCtx(INVALID_HANDLE_VALUE),
     _displayHeight(0),
@@ -63,10 +63,11 @@ void WddmConEngine::FreeResources(ULONG displayHeight)
 
 WddmConEngine::~WddmConEngine()
 {
+#pragma warning(suppress : 26447)
     FreeResources(_displayHeight);
 }
 
-[[nodiscard]] HRESULT WddmConEngine::Initialize() noexcept
+[[nodiscard]] HRESULT WddmConEngine::Initialize()
 {
     HRESULT hr;
     RECT DisplaySize;
@@ -84,16 +85,16 @@ WddmConEngine::~WddmConEngine()
             {
                 DisplaySize.top = 0;
                 DisplaySize.left = 0;
-                DisplaySize.bottom = (LONG)DisplaySizeIoctl.Height;
-                DisplaySize.right = (LONG)DisplaySizeIoctl.Width;
+                DisplaySize.bottom = gsl::narrow_cast<LONG>(DisplaySizeIoctl.Height);
+                DisplaySize.right = gsl::narrow_cast<LONG>(DisplaySizeIoctl.Width);
 
-                _displayState = (PCD_IO_ROW_INFORMATION*)calloc(DisplaySize.bottom, sizeof(PCD_IO_ROW_INFORMATION));
+                _displayState = static_cast<PCD_IO_ROW_INFORMATION*>(calloc(DisplaySize.bottom, sizeof(PCD_IO_ROW_INFORMATION)));
 
                 if (_displayState != nullptr)
                 {
                     for (LONG i = 0; i < DisplaySize.bottom; i++)
                     {
-                        _displayState[i] = (PCD_IO_ROW_INFORMATION)calloc(1, sizeof(CD_IO_ROW_INFORMATION));
+                        _displayState[i] = static_cast<PCD_IO_ROW_INFORMATION>(calloc(1, sizeof(CD_IO_ROW_INFORMATION)));
                         if (_displayState[i] == nullptr)
                         {
                             hr = E_OUTOFMEMORY;
@@ -101,9 +102,9 @@ WddmConEngine::~WddmConEngine()
                             break;
                         }
 
-                        _displayState[i]->Index = (SHORT)i;
-                        _displayState[i]->Old = (PCD_IO_CHARACTER)calloc(DisplaySize.right, sizeof(CD_IO_CHARACTER));
-                        _displayState[i]->New = (PCD_IO_CHARACTER)calloc(DisplaySize.right, sizeof(CD_IO_CHARACTER));
+                        _displayState[i]->Index = gsl::narrow_cast<SHORT>(i);
+                        _displayState[i]->Old = static_cast<PCD_IO_CHARACTER>(calloc(DisplaySize.right, sizeof(CD_IO_CHARACTER)));
+                        _displayState[i]->New = static_cast<PCD_IO_CHARACTER>(calloc(DisplaySize.right, sizeof(CD_IO_CHARACTER)));
 
                         if (_displayState[i]->Old == nullptr || _displayState[i]->New == nullptr)
                         {
@@ -144,44 +145,48 @@ WddmConEngine::~WddmConEngine()
     return hr;
 }
 
-bool WddmConEngine::IsInitialized()
+bool WddmConEngine::IsInitialized() noexcept
 {
     return _hWddmConCtx != INVALID_HANDLE_VALUE;
 }
 
 [[nodiscard]] HRESULT WddmConEngine::Enable() noexcept
+try
 {
-    RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
-    return WDDMConEnableDisplayAccess((PHANDLE)_hWddmConCtx, TRUE);
+    RETURN_LAST_ERROR_IF(_hWddmConCtx == INVALID_HANDLE_VALUE);
+    return WDDMConEnableDisplayAccess(_hWddmConCtx, TRUE);
 }
+CATCH_RETURN()
 
 [[nodiscard]] HRESULT WddmConEngine::Disable() noexcept
+try
 {
-    RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
-    return WDDMConEnableDisplayAccess((PHANDLE)_hWddmConCtx, FALSE);
+    RETURN_LAST_ERROR_IF(_hWddmConCtx == INVALID_HANDLE_VALUE);
+    return WDDMConEnableDisplayAccess(_hWddmConCtx, FALSE);
 }
+CATCH_RETURN()
 
-[[nodiscard]] HRESULT WddmConEngine::Invalidate(const SMALL_RECT* const /*psrRegion*/) noexcept
-{
-    return S_OK;
-}
-
-[[nodiscard]] HRESULT WddmConEngine::InvalidateCursor(const SMALL_RECT* const /*psrRegion*/) noexcept
+[[nodiscard]] HRESULT WddmConEngine::Invalidate(const til::rect* const /*psrRegion*/) noexcept
 {
     return S_OK;
 }
 
-[[nodiscard]] HRESULT WddmConEngine::InvalidateSystem(const RECT* const /*prcDirtyClient*/) noexcept
+[[nodiscard]] HRESULT WddmConEngine::InvalidateCursor(const til::rect* const /*psrRegion*/) noexcept
 {
     return S_OK;
 }
 
-[[nodiscard]] HRESULT WddmConEngine::InvalidateSelection(const std::vector<SMALL_RECT>& /*rectangles*/) noexcept
+[[nodiscard]] HRESULT WddmConEngine::InvalidateSystem(const til::rect* const /*prcDirtyClient*/) noexcept
 {
     return S_OK;
 }
 
-[[nodiscard]] HRESULT WddmConEngine::InvalidateScroll(const COORD* const /*pcoordDelta*/) noexcept
+[[nodiscard]] HRESULT WddmConEngine::InvalidateSelection(const std::vector<til::rect>& /*rectangles*/) noexcept
+{
+    return S_OK;
+}
+
+[[nodiscard]] HRESULT WddmConEngine::InvalidateScroll(const til::point* const /*pcoordDelta*/) noexcept
 {
     return S_OK;
 }
@@ -198,16 +203,20 @@ bool WddmConEngine::IsInitialized()
 }
 
 [[nodiscard]] HRESULT WddmConEngine::StartPaint() noexcept
+try
 {
-    RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
+    RETURN_LAST_ERROR_IF(_hWddmConCtx == INVALID_HANDLE_VALUE);
     return WDDMConBeginUpdateDisplayBatch(_hWddmConCtx);
 }
+CATCH_RETURN()
 
 [[nodiscard]] HRESULT WddmConEngine::EndPaint() noexcept
+try
 {
-    RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
+    RETURN_LAST_ERROR_IF(_hWddmConCtx == INVALID_HANDLE_VALUE);
     return WDDMConEndUpdateDisplayBatch(_hWddmConCtx);
 }
+CATCH_RETURN()
 
 // Routine Description:
 // - Used to perform longer running presentation steps outside the lock so the other threads can continue.
@@ -229,17 +238,14 @@ bool WddmConEngine::IsInitialized()
 
 [[nodiscard]] HRESULT WddmConEngine::PaintBackground() noexcept
 {
-    RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
-
-    PCD_IO_CHARACTER OldChar;
-    PCD_IO_CHARACTER NewChar;
+    RETURN_LAST_ERROR_IF(_hWddmConCtx == INVALID_HANDLE_VALUE);
 
     for (LONG rowIndex = 0; rowIndex < _displayHeight; rowIndex++)
     {
         for (LONG colIndex = 0; colIndex < _displayWidth; colIndex++)
         {
-            OldChar = &_displayState[rowIndex]->Old[colIndex];
-            NewChar = &_displayState[rowIndex]->New[colIndex];
+            const auto OldChar = &_displayState[rowIndex]->Old[colIndex];
+            const auto NewChar = &_displayState[rowIndex]->New[colIndex];
 
             OldChar->Character = NewChar->Character;
             OldChar->Attribute = NewChar->Attribute;
@@ -253,21 +259,18 @@ bool WddmConEngine::IsInitialized()
 }
 
 [[nodiscard]] HRESULT WddmConEngine::PaintBufferLine(const gsl::span<const Cluster> clusters,
-                                                     const COORD coord,
+                                                     const til::point coord,
                                                      const bool /*trimLeft*/,
                                                      const bool /*lineWrapped*/) noexcept
 {
     try
     {
-        RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
+        RETURN_LAST_ERROR_IF(_hWddmConCtx == INVALID_HANDLE_VALUE);
 
-        PCD_IO_CHARACTER OldChar;
-        PCD_IO_CHARACTER NewChar;
-
-        for (size_t i = 0; i < clusters.size() && i < (size_t)_displayWidth; i++)
+        for (size_t i = 0; i < clusters.size() && i < gsl::narrow_cast<size_t>(_displayWidth); i++)
         {
-            OldChar = &_displayState[coord.Y]->Old[coord.X + i];
-            NewChar = &_displayState[coord.Y]->New[coord.X + i];
+            const auto OldChar = &_displayState[coord.Y]->Old[coord.X + i];
+            const auto NewChar = &_displayState[coord.Y]->New[coord.X + i];
 
             OldChar->Character = NewChar->Character;
             OldChar->Attribute = NewChar->Attribute;
@@ -284,12 +287,12 @@ bool WddmConEngine::IsInitialized()
 [[nodiscard]] HRESULT WddmConEngine::PaintBufferGridLines(GridLineSet const /*lines*/,
                                                           COLORREF const /*color*/,
                                                           size_t const /*cchLine*/,
-                                                          const COORD /*coordTarget*/) noexcept
+                                                          const til::point /*coordTarget*/) noexcept
 {
     return S_OK;
 }
 
-[[nodiscard]] HRESULT WddmConEngine::PaintSelection(const SMALL_RECT /*rect*/) noexcept
+[[nodiscard]] HRESULT WddmConEngine::PaintSelection(const til::rect& /*rect*/) noexcept
 {
     return S_OK;
 }
@@ -327,7 +330,7 @@ bool WddmConEngine::IsInitialized()
 // - srNewViewport - The bounds of the new viewport.
 // Return Value:
 // - HRESULT S_OK
-[[nodiscard]] HRESULT WddmConEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/) noexcept
+[[nodiscard]] HRESULT WddmConEngine::UpdateViewport(const til::inclusive_rect& /*srNewViewport*/) noexcept
 {
     return S_OK;
 }
@@ -336,7 +339,8 @@ bool WddmConEngine::IsInitialized()
                                                      FontInfo& fiFontInfo,
                                                      const int /*iDpi*/) noexcept
 {
-    COORD coordSize = { 0 };
+    til::size coordSize;
+#pragma warning(suppress : 26447)
     LOG_IF_FAILED(GetFontSize(&coordSize));
 
     fiFontInfo.SetFromEngine(fiFontInfo.GetFaceName(),
@@ -360,9 +364,9 @@ bool WddmConEngine::IsInitialized()
     return S_OK;
 }
 
-RECT WddmConEngine::GetDisplaySize()
+til::rect WddmConEngine::GetDisplaySize() noexcept
 {
-    RECT r;
+    til::rect r;
     r.top = 0;
     r.left = 0;
     r.bottom = _displayHeight;
@@ -371,7 +375,7 @@ RECT WddmConEngine::GetDisplaySize()
     return r;
 }
 
-[[nodiscard]] HRESULT WddmConEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept
+[[nodiscard]] HRESULT WddmConEngine::GetFontSize(_Out_ til::size* const pFontSize) noexcept
 {
     // In order to retrieve the font size being used by DirectX, it is necessary
     // to modify the API set that defines the contract for WddmCon. However, the
@@ -384,11 +388,7 @@ RECT WddmConEngine::GetDisplaySize()
     //
     // TODO: MSFT 11851921 - Subsume WddmCon into ConhostV2 and remove the API
     //       set extension.
-    COORD c;
-    c.X = DEFAULT_FONT_WIDTH;
-    c.Y = DEFAULT_FONT_HEIGHT;
-
-    *pFontSize = c;
+    *pFontSize = { DEFAULT_FONT_WIDTH, DEFAULT_FONT_HEIGHT };
     return S_OK;
 }
 

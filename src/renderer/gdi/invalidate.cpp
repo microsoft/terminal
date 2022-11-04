@@ -14,10 +14,10 @@ using namespace Microsoft::Console::Render;
 // Routine Description:
 // - Notifies us that the system has requested a particular pixel area of the client rectangle should be redrawn. (On WM_PAINT)
 // Arguments:
-// - prcDirtyClient - Pointer to pixel area (RECT) of client region the system believes is dirty
+// - prcDirtyClient - Pointer to pixel area (til::rect) of client region the system believes is dirty
 // Return Value:
 // - HRESULT S_OK, GDI-based error code, or safemath error
-HRESULT GdiEngine::InvalidateSystem(const RECT* const prcDirtyClient) noexcept
+HRESULT GdiEngine::InvalidateSystem(const til::rect* const prcDirtyClient) noexcept
 {
     RETURN_HR(_InvalidCombine(prcDirtyClient));
 }
@@ -25,24 +25,16 @@ HRESULT GdiEngine::InvalidateSystem(const RECT* const prcDirtyClient) noexcept
 // Routine Description:
 // - Notifies us that the console is attempting to scroll the existing screen area
 // Arguments:
-// - pcoordDelta - Pointer to character dimension (COORD) of the distance the console would like us to move while scrolling.
+// - pcoordDelta - Pointer to character dimension (til::point) of the distance the console would like us to move while scrolling.
 // Return Value:
 // - HRESULT S_OK, GDI-based error code, or safemath error
-HRESULT GdiEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
+HRESULT GdiEngine::InvalidateScroll(const til::point* const pcoordDelta) noexcept
 {
     if (pcoordDelta->X != 0 || pcoordDelta->Y != 0)
     {
-        POINT ptDelta = { 0 };
-        RETURN_IF_FAILED(_ScaleByFont(pcoordDelta, &ptDelta));
-
+        const auto ptDelta = *pcoordDelta * _GetFontSize();
         RETURN_IF_FAILED(_InvalidOffset(&ptDelta));
-
-        SIZE szInvalidScrollNew;
-        RETURN_IF_FAILED(LongAdd(_szInvalidScroll.cx, ptDelta.x, &szInvalidScrollNew.cx));
-        RETURN_IF_FAILED(LongAdd(_szInvalidScroll.cy, ptDelta.y, &szInvalidScrollNew.cy));
-
-        // Store if safemath succeeded
-        _szInvalidScroll = szInvalidScrollNew;
+        _szInvalidScroll = _szInvalidScroll + ptDelta;
     }
 
     return S_OK;
@@ -54,7 +46,7 @@ HRESULT GdiEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
 // - rectangles - Vector of rectangles to draw, line by line
 // Return Value:
 // - HRESULT S_OK or GDI-based error code
-HRESULT GdiEngine::InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept
+HRESULT GdiEngine::InvalidateSelection(const std::vector<til::rect>& rectangles) noexcept
 {
     for (const auto& rect : rectangles)
     {
@@ -68,13 +60,12 @@ HRESULT GdiEngine::InvalidateSelection(const std::vector<SMALL_RECT>& rectangles
 // - Notifies us that the console has changed the character region specified.
 // - NOTE: This typically triggers on cursor or text buffer changes
 // Arguments:
-// - psrRegion - Character region (SMALL_RECT) that has been changed
+// - psrRegion - Character region (til::rect) that has been changed
 // Return Value:
 // - S_OK, GDI related failure, or safemath failure.
-HRESULT GdiEngine::Invalidate(const SMALL_RECT* const psrRegion) noexcept
+HRESULT GdiEngine::Invalidate(const til::rect* const psrRegion) noexcept
 {
-    RECT rcRegion = { 0 };
-    RETURN_IF_FAILED(_ScaleByFont(psrRegion, &rcRegion));
+    const auto rcRegion = psrRegion->scale_up(_GetFontSize());
     RETURN_HR(_InvalidateRect(&rcRegion));
 }
 
@@ -84,7 +75,7 @@ HRESULT GdiEngine::Invalidate(const SMALL_RECT* const psrRegion) noexcept
 // - psrRegion - the region covered by the cursor
 // Return Value:
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
-HRESULT GdiEngine::InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept
+HRESULT GdiEngine::InvalidateCursor(const til::rect* const psrRegion) noexcept
 {
     return this->Invalidate(psrRegion);
 }
@@ -104,8 +95,8 @@ HRESULT GdiEngine::InvalidateAll() noexcept
         return S_FALSE;
     }
 
-    RECT rc;
-    RETURN_HR_IF(E_FAIL, !(GetClientRect(_hwndTargetWindow, &rc)));
+    til::rect rc;
+    RETURN_HR_IF(E_FAIL, !(GetClientRect(_hwndTargetWindow, rc.as_win32_rect())));
     RETURN_HR(InvalidateSystem(&rc));
 }
 
@@ -127,10 +118,10 @@ HRESULT GdiEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
 // Routine Description:
 // - Helper to combine the given rectangle into the invalid region to be updated on the next paint
 // Arguments:
-// - prc - Pixel region (RECT) that should be repainted on the next frame
+// - prc - Pixel region (til::rect) that should be repainted on the next frame
 // Return Value:
 // - S_OK, GDI related failure, or safemath failure.
-HRESULT GdiEngine::_InvalidCombine(const RECT* const prc) noexcept
+HRESULT GdiEngine::_InvalidCombine(const til::rect* const prc) noexcept
 {
     if (!_fInvalidRectUsed)
     {
@@ -154,20 +145,19 @@ HRESULT GdiEngine::_InvalidCombine(const RECT* const prc) noexcept
 // - ppt - Distances by which we should move the invalid region in response to a scroll
 // Return Value:
 // - S_OK, GDI related failure, or safemath failure.
-HRESULT GdiEngine::_InvalidOffset(const POINT* const ppt) noexcept
+HRESULT GdiEngine::_InvalidOffset(const til::point* ppt) noexcept
 {
     if (_fInvalidRectUsed)
     {
-        RECT rcInvalidNew;
-
-        RETURN_IF_FAILED(LongAdd(_rcInvalid.left, ppt->x, &rcInvalidNew.left));
-        RETURN_IF_FAILED(LongAdd(_rcInvalid.right, ppt->x, &rcInvalidNew.right));
-        RETURN_IF_FAILED(LongAdd(_rcInvalid.top, ppt->y, &rcInvalidNew.top));
-        RETURN_IF_FAILED(LongAdd(_rcInvalid.bottom, ppt->y, &rcInvalidNew.bottom));
+        til::rect rcInvalidNew;
+        rcInvalidNew.left = _rcInvalid.left + ppt->x;
+        rcInvalidNew.right = _rcInvalid.right + ppt->x;
+        rcInvalidNew.top = _rcInvalid.top + ppt->y;
+        rcInvalidNew.bottom = _rcInvalid.bottom + ppt->y;
 
         // Add the scrolled invalid rectangle to what was left behind to get the new invalid area.
         // This is the equivalent of adding in the "update rectangle" that we would get out of ScrollWindowEx/ScrollDC.
-        UnionRect(&_rcInvalid, &_rcInvalid, &rcInvalidNew);
+        _rcInvalid |= rcInvalidNew;
 
         // Ensure invalid areas remain within bounds of window.
         RETURN_IF_FAILED(_InvalidRestrict());
@@ -185,13 +175,13 @@ HRESULT GdiEngine::_InvalidOffset(const POINT* const ppt) noexcept
 HRESULT GdiEngine::_InvalidRestrict() noexcept
 {
     // Ensure that the invalid area remains within the bounds of the client area
-    RECT rcClient;
+    til::rect rcClient;
 
     // Do restriction only if retrieving the client rect was successful.
-    RETURN_HR_IF(E_FAIL, !(GetClientRect(_hwndTargetWindow, &rcClient)));
+    RETURN_HR_IF(E_FAIL, !(GetClientRect(_hwndTargetWindow, rcClient.as_win32_rect())));
 
-    _rcInvalid.left = std::clamp(_rcInvalid.left, rcClient.left, rcClient.right);
-    _rcInvalid.right = std::clamp(_rcInvalid.right, rcClient.left, rcClient.right);
+    _rcInvalid.left = rcClient.left;
+    _rcInvalid.right = rcClient.right;
     _rcInvalid.top = std::clamp(_rcInvalid.top, rcClient.top, rcClient.bottom);
     _rcInvalid.bottom = std::clamp(_rcInvalid.bottom, rcClient.top, rcClient.bottom);
 
@@ -204,7 +194,7 @@ HRESULT GdiEngine::_InvalidRestrict() noexcept
 // - prc - Pointer to pixel rectangle representing invalid area to add to next paint frame
 // Return Value:
 // - S_OK, GDI related failure, or safemath failure.
-HRESULT GdiEngine::_InvalidateRect(const RECT* const prc) noexcept
+HRESULT GdiEngine::_InvalidateRect(const til::rect* const prc) noexcept
 {
     RETURN_HR(_InvalidCombine(prc));
 }

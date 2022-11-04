@@ -45,7 +45,7 @@ public:
     void RefreshAreaAttributes();
     void ClearAllAreas();
 
-    [[nodiscard]] HRESULT ResizeAllAreas(const COORD newSize);
+    [[nodiscard]] HRESULT ResizeAllAreas(const til::size newSize);
 
     void WriteCompMessage(const std::wstring_view text,
                           const gsl::span<const BYTE> attributes,
@@ -79,7 +79,7 @@ private:
 
     std::vector<OutputCell>::const_iterator _WriteConversionArea(const std::vector<OutputCell>::const_iterator begin,
                                                                  const std::vector<OutputCell>::const_iterator end,
-                                                                 COORD& pos,
+                                                                 til::point& pos,
                                                                  const Microsoft::Console::Types::Viewport view,
                                                                  SCREEN_INFORMATION& screenInfo);
 

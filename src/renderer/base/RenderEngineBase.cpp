@@ -7,12 +7,6 @@
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 
-RenderEngineBase::RenderEngineBase() :
-    _titleChanged(false),
-    _lastFrameTitle(L"")
-{
-}
-
 HRESULT RenderEngineBase::InvalidateTitle(const std::wstring_view proposedTitle) noexcept
 {
     if (proposedTitle != _lastFrameTitle)
@@ -42,7 +36,7 @@ HRESULT RenderEngineBase::NotifyNewText(const std::wstring_view /*newText*/) noe
 }
 
 HRESULT RenderEngineBase::UpdateSoftFont(const gsl::span<const uint16_t> /*bitPattern*/,
-                                         const SIZE /*cellSize*/,
+                                         const til::size /*cellSize*/,
                                          const size_t /*centeringHint*/) noexcept
 {
     return S_FALSE;
@@ -59,8 +53,8 @@ HRESULT RenderEngineBase::ResetLineTransform() noexcept
 }
 
 HRESULT RenderEngineBase::PrepareLineTransform(const LineRendition /*lineRendition*/,
-                                               const size_t /*targetRow*/,
-                                               const size_t /*viewportLeft*/) noexcept
+                                               const til::CoordType /*targetRow*/,
+                                               const til::CoordType /*viewportLeft*/) noexcept
 {
     return S_FALSE;
 }

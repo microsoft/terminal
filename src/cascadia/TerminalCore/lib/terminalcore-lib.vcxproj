@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA5CAD1A-ABCD-429C-B551-8562EC954746}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -38,6 +38,9 @@
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\renderer\base\lib\base.vcxproj">
       <Project>{af0a096a-8b3a-4949-81ef-7df8f0fee91f}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\terminal\adapter\lib\adapter.vcxproj">
+      <Project>{dcf55140-ef6a-4736-a403-957e4f7430bb}</Project>
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\terminal\parser\lib\parser.vcxproj">
       <Project>{3ae13314-1939-4dfa-9c14-38ca0834050c}</Project>

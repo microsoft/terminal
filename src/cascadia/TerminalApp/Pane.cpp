@@ -1019,9 +1019,17 @@ void Pane::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundatio
 
     if (_profile)
     {
+        if (_isDefTermSession && _profile.CloseOnExit() == CloseOnExitMode::Automatic)
+        {
+            // For 'automatic', we only care about the connection state if we were launched by Terminal
+            // Since we were launched via defterm, ignore the connection state (i.e. we treat the
+            // close on exit mode as 'always', see GH #13325 for discussion)
+            Close();
+        }
+
         const auto mode = _profile.CloseOnExit();
         if ((mode == CloseOnExitMode::Always) ||
-            (mode == CloseOnExitMode::Graceful && newConnectionState == ConnectionState::Closed))
+            ((mode == CloseOnExitMode::Graceful || mode == CloseOnExitMode::Automatic) && newConnectionState == ConnectionState::Closed))
         {
             Close();
         }
@@ -1568,11 +1576,12 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         // Find what borders need to persist after we close the child
         _borders = _GetCommonBorders();
 
-        // take the control, profile and id of the pane that _wasn't_ closed.
+        // take the control, profile, id and isDefTermSession of the pane that _wasn't_ closed.
         _control = remainingChild->_control;
         _connectionState = remainingChild->_connectionState;
         _profile = remainingChild->_profile;
         _id = remainingChild->Id();
+        _isDefTermSession = remainingChild->_isDefTermSession;
 
         // Add our new event handler before revoking the old one.
         _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
@@ -1755,6 +1764,9 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         remainingChild->_firstChild = nullptr;
         remainingChild->_secondChild = nullptr;
     }
+
+    // Notify the discarded child that it was closed by its parent
+    closedChild->_ClosedByParentHandlers();
 }
 
 winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
@@ -2464,11 +2476,12 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
     }
     else
     {
-        //   Move our control, guid into the first one.
+        //   Move our control, guid, isDefTermSession into the first one.
         _firstChild = std::make_shared<Pane>(_profile, _control);
         _firstChild->_connectionState = std::exchange(_connectionState, ConnectionState::NotConnected);
         _profile = nullptr;
         _control = { nullptr };
+        _firstChild->_isDefTermSession = _isDefTermSession;
     }
 
     _splitState = actualSplitType;
@@ -2785,7 +2798,7 @@ float Pane::CalcSnappedDimension(const bool widthOrHeight, const float dimension
 // - widthOrHeight: if true operates on width, otherwise on height
 // - dimension: a dimension (width or height) to be snapped
 // Return Value:
-// - pair of floats, where first value is the size snapped downward (not greater then
+// - pair of floats, where first value is the size snapped downward (not greater than
 //   requested size) and second is the size snapped upward (not lower than requested size).
 //   If requested size is already snapped, then both returned values equal this value.
 Pane::SnapSizeResult Pane::_CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
@@ -3106,6 +3119,15 @@ void Pane::_SetupResources()
 int Pane::GetLeafPaneCount() const noexcept
 {
     return _IsLeaf() ? 1 : (_firstChild->GetLeafPaneCount() + _secondChild->GetLeafPaneCount());
+}
+
+// Method Description:
+// - Should be called when this pane is created via a default terminal handoff
+// - Finalizes our configuration given the information that we have been
+//   created via default handoff
+void Pane::FinalizeConfigurationGivenDefault()
+{
+    _isDefTermSession = true;
 }
 
 // Method Description:

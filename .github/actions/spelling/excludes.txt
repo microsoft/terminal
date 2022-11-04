@@ -1,12 +1,19 @@
+# See https://github.com/check-spelling/check-spelling/wiki/Configuration-Examples:-excludes
 (?:(?i)\.png$)
+(?:^|/)(?i)COPYRIGHT
+(?:^|/)(?i)LICEN[CS]E
 (?:^|/)dirs$
 (?:^|/)go\.mod$
 (?:^|/)go\.sum$
-(?:^|/)package-lock\.json$
+(?:^|/)package(?:-lock|)\.json$
 (?:^|/)sources(?:|\.dep)$
+(?:^|/)vendor/
+ignore$
 SUMS$
 \.ai$
+\.avi$
 \.bmp$
+\.bz2$
 \.cer$
 \.class$
 \.crl$
@@ -18,6 +25,7 @@ SUMS$
 \.eps$
 \.exe$
 \.gif$
+\.gitattributes$
 \.graffle$
 \.gz$
 \.icns$
@@ -30,12 +38,15 @@ SUMS$
 \.lock$
 \.map$
 \.min\..
+\.mod$
 \.mp3$
 \.mp4$
+\.ocf$
 \.otf$
 \.pbxproj$
 \.pdf$
 \.pem$
+\.png$
 \.psd$
 \.runsettings$
 \.sig$
@@ -46,6 +57,7 @@ SUMS$
 \.tgz$
 \.ttf$
 \.vsdx$
+\.wav$
 \.woff
 \.xcf$
 \.xls
@@ -79,5 +91,11 @@ SUMS$
 ^src/types/ut_types/UtilsTests.cpp$
 ^tools/ReleaseEngineering/ServicingPipeline.ps1$
 ^\.github/actions/spelling/
+^\.github/fabricbot.json$
 ^\.gitignore$
+^\Q.github/workflows/spelling.yml\E$
+^\Qsamples/ConPTY/EchoCon/EchoCon/EchoCon.vcxproj.filters\E$
+^\Qsrc/host/exe/Host.EXE.vcxproj.filters\E$
+^\Qsrc/host/ft_host/chafa.txt\E$
+^\Qsrc/tools/closetest/CloseTest.vcxproj.filters\E$
 ^\XamlStyler.json$

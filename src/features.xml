@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="utf-8"?>
 <featureStaging xmlns="http://microsoft.com/TilFeatureStaging-Schema.xsd">
     <!-- See doc/feature_flags.md for more info.  -->
     <feature>
@@ -34,6 +34,16 @@
             <brandingToken>WindowsInbox</brandingToken>
         </alwaysDisabledBrandingTokens>
     </feature>
+
+    <feature>
+        <name>Feature_ConhostAtlasEngine</name>
+        <description>Controls whether conhost supports the Atlas engine</description>
+        <stage>AlwaysEnabled</stage>
+        <alwaysDisabledBrandingTokens>
+            <brandingToken>WindowsInbox</brandingToken>
+        </alwaysDisabledBrandingTokens>
+    </feature>
+
     <feature>
         <name>Feature_DxEngineShaderSupport</name>
         <description>Controls whether the DX engine is built with shader support.</description>
@@ -59,7 +69,7 @@
 
     <feature>
         <name>Feature_AtlasEngine</name>
-        <description>If enabled, AtlasEngine and the experimental.useAtlasEngine setting are compiled into the project</description>
+        <description>If enabled, AtlasEngine is used by default</description>
         <stage>AlwaysEnabled</stage>
         <alwaysDisabledBrandingTokens>
             <brandingToken>Release</brandingToken>
@@ -79,12 +89,9 @@
     <feature>
         <name>Feature_AdjustIndistinguishableText</name>
         <description>If enabled, the foreground color will, when necessary, be automatically adjusted to make it more visible.</description>
-        <stage>AlwaysDisabled</stage>
-        <alwaysEnabledBrandingTokens>
-            <brandingToken>Dev</brandingToken>
-        </alwaysEnabledBrandingTokens>
+        <stage>AlwaysEnabled</stage>
     </feature>
-    
+
     <feature>
         <name>Feature_VtPassthroughMode</name>
         <description>Enables passthrough option per profile in Terminal and ConPTY ability to use passthrough API dispatch engine</description>
@@ -93,6 +100,16 @@
         <alwaysEnabledBrandingTokens>
             <brandingToken>Dev</brandingToken>
             <brandingToken>Preview</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
+    <feature>
+        <name>Feature_VtPassthroughModeSettingInUI</name>
+        <description>Enables the setting gated by Feature_VtPassthroughMode to appear in the UI</description>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+	    <!-- Unlike Feature_VtPassthroughMode, this is not enabled in Preview -->
         </alwaysEnabledBrandingTokens>
     </feature>
 
@@ -106,4 +123,16 @@
             <brandingToken>Preview</brandingToken>
         </alwaysDisabledBrandingTokens>
     </feature>
+
+    <feature>
+        <name>Feature_ScrollbarMarks</name>
+        <description>Enables the experimental scrollbar marks feature.</description>
+        <stage>AlwaysDisabled</stage>
+        <!-- Did it this way instead of "release tokens" to ensure it won't go into Windows Inbox either... -->
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+            <brandingToken>Preview</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
 </featureStaging>

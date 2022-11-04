@@ -85,6 +85,7 @@ public:
     virtual bool SetColorTableEntry(const size_t tableIndex, const DWORD color) = 0; // OSCColorTable
     virtual bool SetDefaultForeground(const DWORD color) = 0; // OSCDefaultForeground
     virtual bool SetDefaultBackground(const DWORD color) = 0; // OSCDefaultBackground
+    virtual bool AssignColor(const DispatchTypes::ColorItem item, const VTInt fgIndex, const VTInt bgIndex) = 0; // DECAC
 
     virtual bool EraseInDisplay(const DispatchTypes::EraseType eraseType) = 0; // ED
     virtual bool EraseInLine(const DispatchTypes::EraseType eraseType) = 0; // EL
@@ -134,6 +135,10 @@ public:
 
     virtual bool DoConEmuAction(const std::wstring_view string) = 0;
 
+    virtual bool DoITerm2Action(const std::wstring_view string) = 0;
+
+    virtual bool DoFinalTermAction(const std::wstring_view string) = 0;
+
     virtual StringHandler DownloadDRCS(const VTInt fontNumber,
                                        const VTParameter startChar,
                                        const DispatchTypes::DrcsEraseControl eraseControl,
@@ -143,7 +148,11 @@ public:
                                        const VTParameter cellHeight,
                                        const DispatchTypes::DrcsCharsetSize charsetSize) = 0; // DECDLD
 
+    virtual StringHandler RestoreTerminalState(const DispatchTypes::ReportFormat format) = 0; // DECRSTS
+
     virtual StringHandler RequestSetting() = 0; // DECRQSS
+
+    virtual bool PlaySounds(const VTParameters parameters) = 0; // DECPS
 };
 inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() {}
 #pragma warning(pop)

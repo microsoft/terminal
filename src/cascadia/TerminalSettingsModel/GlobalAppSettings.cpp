@@ -17,6 +17,7 @@ using namespace winrt::Microsoft::UI::Xaml::Controls;
 
 static constexpr std::string_view LegacyKeybindingsKey{ "keybindings" };
 static constexpr std::string_view ActionsKey{ "actions" };
+static constexpr std::string_view ThemeKey{ "theme" };
 static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
 static constexpr std::string_view LegacyUseTabSwitcherModeKey{ "useTabSwitcher" };
 
@@ -37,6 +38,14 @@ void GlobalAppSettings::_FinalizeInheritance()
             if (!_colorSchemes.HasKey(k))
             {
                 _colorSchemes.Insert(k, v);
+            }
+        }
+
+        for (const auto& [k, v] : parent->_themes)
+        {
+            if (!_themes.HasKey(k))
+            {
+                _themes.Insert(k, v);
             }
         }
     }
@@ -63,6 +72,14 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
         {
             const auto schemeImpl{ winrt::get_self<ColorScheme>(kv.Value()) };
             globals->_colorSchemes.Insert(kv.Key(), *schemeImpl->Copy());
+        }
+    }
+    if (_themes)
+    {
+        for (auto kv : _themes)
+        {
+            const auto themeImpl{ winrt::get_self<implementation::Theme>(kv.Value()) };
+            globals->_themes.Insert(kv.Key(), *themeImpl->Copy());
         }
     }
 
@@ -191,4 +208,19 @@ Json::Value GlobalAppSettings::ToJson() const
 
     json[JsonKey(ActionsKey)] = _actionMap->ToJson();
     return json;
+}
+
+winrt::Microsoft::Terminal::Settings::Model::Theme GlobalAppSettings::CurrentTheme() noexcept
+{
+    return _themes.TryLookup(Theme());
+}
+
+void GlobalAppSettings::AddTheme(const Model::Theme& theme)
+{
+    _themes.Insert(theme.Name(), theme);
+}
+
+winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::Microsoft::Terminal::Settings::Model::Theme> GlobalAppSettings::Themes() noexcept
+{
+    return _themes.GetView();
 }

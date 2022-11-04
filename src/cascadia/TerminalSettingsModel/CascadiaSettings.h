@@ -73,6 +73,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             const Json::Value& colorSchemes;
             const Json::Value& profileDefaults;
             const Json::Value& profilesList;
+            const Json::Value& themes;
         };
 
         static std::pair<size_t, size_t> _lineAndColumnFromPosition(const std::string_view& string, const size_t position);
@@ -112,12 +113,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         explicit CascadiaSettings(SettingsLoader&& loader);
 
         // user settings
+        winrt::hstring Hash() const noexcept;
         Model::CascadiaSettings Copy() const;
         Model::GlobalAppSettings GlobalSettings() const;
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> AllProfiles() const noexcept;
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> ActiveProfiles() const noexcept;
         Model::ActionMap ActionMap() const noexcept;
-        void WriteSettingsToDisk() const;
+        void WriteSettingsToDisk();
         Json::Value ToJson() const;
         Model::Profile ProfileDefaults() const;
         Model::Profile CreateNewProfile();
@@ -144,6 +146,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     private:
         static const std::filesystem::path& _settingsPath();
+        static const std::filesystem::path& _releaseSettingsPath();
+        static winrt::hstring _calculateHash(std::string_view settings, const FILETIME& lastWriteTime);
 
         winrt::com_ptr<implementation::Profile> _createNewProfile(const std::wstring_view& name) const;
         Model::Profile _getProfileForCommandLine(const winrt::hstring& commandLine) const;
@@ -157,8 +161,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _validateKeybindings() const;
         void _validateColorSchemesInCommands() const;
         bool _hasInvalidColorScheme(const Model::Command& command) const;
+        void _validateThemeExists();
 
         // user settings
+        winrt::hstring _hash;
         winrt::com_ptr<implementation::GlobalAppSettings> _globals = winrt::make_self<implementation::GlobalAppSettings>();
         winrt::com_ptr<implementation::Profile> _baseLayerProfile = winrt::make_self<implementation::Profile>();
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> _allProfiles = winrt::single_threaded_observable_vector<Model::Profile>();

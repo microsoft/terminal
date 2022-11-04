@@ -20,12 +20,11 @@ using namespace Microsoft::Console::VirtualTerminal;
 PtySignalInputThread::PtySignalInputThread(wil::unique_hfile hPipe) :
     _hFile{ std::move(hPipe) },
     _hThread{},
-    _pConApi{ std::make_unique<ConhostInternalGetSet>(ServiceLocator::LocateGlobals().getConsoleInformation()) },
+    _api{ ServiceLocator::LocateGlobals().getConsoleInformation() },
     _dwThreadId{ 0 },
     _consoleConnected{ false }
 {
     THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
-    THROW_HR_IF_NULL(E_INVALIDARG, _pConApi.get());
 }
 
 PtySignalInputThread::~PtySignalInputThread()
@@ -76,11 +75,20 @@ void PtySignalInputThread::ConnectConsole() noexcept
         _DoShowHide(_initialShowHide->show);
     }
 
-    // If we were given a owner HWND, then manually start the pseudo window now.
-    if (_earlyReparent)
-    {
-        _DoSetWindowParent(*_earlyReparent);
-    }
+    // We should have successfully used the _earlyReparent message in CreatePseudoWindow.
+}
+
+// Method Description:
+// - Create our pseudo window. We're doing this here, instead of in
+//   ConnectConsole, because the window is created in
+//   ConsoleInputThreadProcWin32, before ConnectConsole is first called. Doing
+//   this here ensures that the window is first created with the initial owner
+//   set up (if so specified).
+// - Refer to GH#13066 for details.
+void PtySignalInputThread::CreatePseudoWindow()
+{
+    HWND owner = _earlyReparent.has_value() ? reinterpret_cast<HWND>((*_earlyReparent).handle) : HWND_DESKTOP;
+    ServiceLocator::LocatePseudoWindow(owner);
 }
 
 // Method Description:
@@ -199,7 +207,7 @@ void PtySignalInputThread::ConnectConsole() noexcept
 // - <none>
 void PtySignalInputThread::_DoResizeWindow(const ResizeWindowData& data)
 {
-    if (_pConApi->ResizeWindow(data.sx, data.sy))
+    if (_api.ResizeWindow(data.sx, data.sy))
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         THROW_IF_FAILED(gci.GetVtIo()->SuppressResizeRepaint());
@@ -214,7 +222,7 @@ void PtySignalInputThread::_DoClearBuffer()
 
 void PtySignalInputThread::_DoShowHide(const bool show)
 {
-    _pConApi->ShowWindow(show);
+    _api.ShowWindow(show);
 }
 
 // Method Description:
@@ -228,7 +236,29 @@ void PtySignalInputThread::_DoShowHide(const bool show)
 // - <none>
 void PtySignalInputThread::_DoSetWindowParent(const SetParentData& data)
 {
-    _pConApi->ReparentWindow(data.handle);
+    const auto owner{ reinterpret_cast<HWND>(data.handle) };
+    // This will initialize s_interactivityFactory for us. It will also
+    // conveniently return 0 when we're on OneCore.
+    //
+    // If the window hasn't been created yet, by some other call to
+    // LocatePseudoWindow, then this will also initialize the owner of the
+    // window.
+    if (const auto pseudoHwnd{ ServiceLocator::LocatePseudoWindow(owner) })
+    {
+        // DO NOT USE SetParent HERE!
+        //
+        // Calling SetParent on a window that is WS_VISIBLE will cause the OS to
+        // hide the window, make it a _child_ window, then call SW_SHOW on the
+        // window to re-show it. SW_SHOW, however, will cause the OS to also set
+        // that window as the _foreground_ window, which would result in the
+        // pty's hwnd stealing the foreground away from the owning terminal
+        // window. That's bad.
+        //
+        // SetWindowLongPtr seems to do the job of changing who the window owner
+        // is, without all the other side effects of reparenting the window.
+        // See #13066
+        ::SetWindowLongPtr(pseudoHwnd, GWLP_HWNDPARENT, reinterpret_cast<LONG_PTR>(owner));
+    }
 }
 
 // Method Description:

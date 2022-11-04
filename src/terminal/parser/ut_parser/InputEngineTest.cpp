@@ -416,31 +416,30 @@ void InputEngineTest::C0Test()
     testState._stateMachine = _stateMachine.get();
 
     Log::Comment(L"Sending 0x0-0x19 to parser to make sure they're translated correctly back to C-key");
-    DisableVerifyExceptions disable;
+
     for (wchar_t wch = '\x0'; wch < '\x20'; wch++)
     {
         auto inputSeq = std::wstring(&wch, 1);
         // In general, he actual key that we're going to generate for a C0 char
         //      is char+0x40 and with ctrl pressed.
-        wchar_t expectedWch = wch + 0x40;
+        wchar_t sentWch = wch;
+        wchar_t expectedWch = wch;
         auto writeCtrl = true;
-        // These two are weird exceptional cases.
+
+        // Exceptional cases.
         switch (wch)
         {
         case L'\r': // Enter
-            expectedWch = wch;
             writeCtrl = false;
             break;
         case L'\x1b': // Escape
-            expectedWch = wch;
             writeCtrl = false;
             break;
         case L'\t': // Tab
             writeCtrl = false;
             break;
         case L'\b': // backspace
-            wch = '\x7f';
-            expectedWch = '\x7f';
+            sentWch = '\x7f';
             break;
         }
 
@@ -462,23 +461,23 @@ void InputEngineTest::C0Test()
         }
 
         // Just make sure we write the same thing telnetd did:
-        if (wch == UNICODE_ETX)
+        if (sentWch == UNICODE_ETX)
         {
             Log::Comment(NoThrowString().Format(
                 L"We used to expect 0x%x, 0x%x, 0x%x, 0x%x here",
                 vkey,
                 scanCode,
-                wch,
+                sentWch,
                 dwModifierState));
             vkey = 'C';
             scanCode = 0;
-            wch = UNICODE_ETX;
+            sentWch = UNICODE_ETX;
             dwModifierState = LEFT_CTRL_PRESSED;
             Log::Comment(NoThrowString().Format(
                 L"Now we expect 0x%x, 0x%x, 0x%x, 0x%x here",
                 vkey,
                 scanCode,
-                wch,
+                sentWch,
                 dwModifierState));
             testState._expectSendCtrlC = true;
         }
@@ -487,7 +486,7 @@ void InputEngineTest::C0Test()
             testState._expectSendCtrlC = false;
         }
 
-        Log::Comment(NoThrowString().Format(L"Testing char 0x%x", wch));
+        Log::Comment(NoThrowString().Format(L"Testing char 0x%x", sentWch));
         Log::Comment(NoThrowString().Format(L"Input Sequence=\"%s\"", inputSeq.c_str()));
 
         INPUT_RECORD inputRec;
@@ -498,7 +497,7 @@ void InputEngineTest::C0Test()
         inputRec.Event.KeyEvent.wRepeatCount = 1;
         inputRec.Event.KeyEvent.wVirtualKeyCode = vkey;
         inputRec.Event.KeyEvent.wVirtualScanCode = scanCode;
-        inputRec.Event.KeyEvent.uChar.UnicodeChar = wch;
+        inputRec.Event.KeyEvent.uChar.UnicodeChar = sentWch;
 
         testState.vExpectedInput.push_back(inputRec);
 
@@ -1102,6 +1101,9 @@ void InputEngineTest::VerifySGRMouseData(const std::vector<std::tuple<SGR_PARAMS
 
     auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
     auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
+    // The tests may be running somewhere that doesn't report anything for GetDoubleClickTime.
+    // Let's force it to a high value to make the double click tests pass.
+    inputEngine->_doubleClickTime = std::chrono::milliseconds(1000);
     auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
     VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();

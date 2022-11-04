@@ -57,11 +57,27 @@ enum class AbsolutePosition : Microsoft::Console::VirtualTerminal::VTInt
 
 using namespace Microsoft::Console::VirtualTerminal;
 
-class TestGetSet final : public ConGetSet
+class TestGetSet final : public ITerminalApi
 {
 public:
     void PrintString(const std::wstring_view /*string*/) override
     {
+    }
+
+    void ReturnResponse(const std::wstring_view response) override
+    {
+        Log::Comment(L"ReturnResponse MOCK called...");
+
+        THROW_HR_IF(E_FAIL, !_returnResponseResult);
+
+        if (_retainResponse)
+        {
+            _response += response;
+        }
+        else
+        {
+            _response = response;
+        }
     }
 
     StateMachine& GetStateMachine() override
@@ -76,7 +92,7 @@ public:
 
     til::rect GetViewport() const override
     {
-        return til::rect{ _viewport.Left, _viewport.Top, _viewport.Right, _viewport.Bottom };
+        return { _viewport.Left, _viewport.Top, _viewport.Right, _viewport.Bottom };
     }
 
     void SetViewportPosition(const til::point /*position*/) override
@@ -101,27 +117,6 @@ public:
         THROW_HR_IF(E_FAIL, !_setTextAttributesResult);
         VERIFY_ARE_EQUAL(_expectedAttribute, attrs);
         _textBuffer->SetCurrentAttributes(attrs);
-    }
-
-    void WriteInput(std::deque<std::unique_ptr<IInputEvent>>& events, size_t& eventsWritten) override
-    {
-        Log::Comment(L"WriteInput MOCK called...");
-
-        THROW_HR_IF(E_FAIL, !_writeInputResult);
-
-        // move all the input events we were given into local storage so we can test against them
-        Log::Comment(NoThrowString().Format(L"Moving %zu input events into local storage...", events.size()));
-
-        if (_retainInput)
-        {
-            std::move(events.begin(), events.end(), std::back_inserter(_events));
-        }
-        else
-        {
-            _events.clear();
-            _events.swap(events);
-        }
-        eventsWritten = _events.size();
     }
 
     void SetScrollingRegion(const til::inclusive_rect& scrollMargins) override
@@ -187,7 +182,7 @@ public:
         VERIFY_ARE_EQUAL(_expectedShowWindow, showOrHide);
     }
 
-    bool ResizeWindow(const size_t /*width*/, const size_t /*height*/) override
+    bool ResizeWindow(const til::CoordType /*width*/, const til::CoordType /*height*/) override
     {
         Log::Comment(L"ResizeWindow MOCK called...");
         return true;
@@ -206,6 +201,31 @@ public:
         return _expectedOutputCP;
     }
 
+    void EnableXtermBracketedPasteMode(const bool /*enabled*/)
+    {
+        Log::Comment(L"EnableXtermBracketedPasteMode MOCK called...");
+    }
+
+    void CopyToClipboard(const std::wstring_view /*content*/)
+    {
+        Log::Comment(L"CopyToClipboard MOCK called...");
+    }
+
+    void SetTaskbarProgress(const DispatchTypes::TaskbarState /*state*/, const size_t /*progress*/)
+    {
+        Log::Comment(L"SetTaskbarProgress MOCK called...");
+    }
+
+    void SetWorkingDirectory(const std::wstring_view /*uri*/)
+    {
+        Log::Comment(L"SetWorkingDirectory MOCK called...");
+    }
+
+    void PlayMidiNote(const int /*noteNumber*/, const int /*velocity*/, const std::chrono::microseconds /*duration*/) override
+    {
+        Log::Comment(L"PlayMidiNote MOCK called...");
+    }
+
     bool IsConsolePty() const override
     {
         Log::Comment(L"IsConsolePty MOCK called...");
@@ -217,9 +237,9 @@ public:
         Log::Comment(L"NotifyAccessibilityChange MOCK called...");
     }
 
-    void ReparentWindow(const uint64_t /*handle*/)
+    void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& /*mark*/) override
     {
-        Log::Comment(L"ReparentWindow MOCK called...");
+        Log::Comment(L"AddMark MOCK called...");
     }
 
     void PrepData()
@@ -252,9 +272,9 @@ public:
 
         // APIs succeed by default
         _setTextAttributesResult = TRUE;
-        _writeInputResult = TRUE;
+        _returnResponseResult = TRUE;
 
-        _textBuffer = std::make_unique<TextBuffer>(COORD{ 100, 600 }, TextAttribute{}, 0, false, _renderer);
+        _textBuffer = std::make_unique<TextBuffer>(til::size{ 100, 600 }, TextAttribute{}, 0, false, _renderer);
 
         // Viewport sitting in the "middle" of the buffer somewhere (so all sides have excess buffer around them)
         _viewport.Top = 20;
@@ -269,8 +289,8 @@ public:
         _textBuffer->SetCurrentAttributes(TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED });
         _expectedAttribute = _textBuffer->GetCurrentAttributes();
 
-        _events.clear();
-        _retainInput = false;
+        _response.clear();
+        _retainResponse = false;
     }
 
     void PrepCursor(CursorX xact, CursorY yact)
@@ -312,39 +332,18 @@ public:
             break;
         }
 
-        _textBuffer->GetCursor().SetPosition(til::unwrap_coord(cursorPos));
+        _textBuffer->GetCursor().SetPosition(cursorPos);
         _expectedCursorPos = cursorPos;
     }
 
     void ValidateExpectedCursorPos()
     {
-        VERIFY_ARE_EQUAL(_expectedCursorPos, til::point{ _textBuffer->GetCursor().GetPosition() });
+        VERIFY_ARE_EQUAL(_expectedCursorPos, _textBuffer->GetCursor().GetPosition());
     }
 
     void ValidateInputEvent(_In_ PCWSTR pwszExpectedResponse)
     {
-        const auto cchResponse = wcslen(pwszExpectedResponse);
-        const auto eventCount = _events.size();
-
-        VERIFY_ARE_EQUAL(cchResponse * 2, eventCount, L"We should receive TWO input records for every character in the expected string. Key down and key up.");
-
-        for (size_t iInput = 0; iInput < eventCount; iInput++)
-        {
-            const auto wch = pwszExpectedResponse[iInput / 2]; // the same portion of the string will be used twice. 0/2 = 0. 1/2 = 0. 2/2 = 1. 3/2 = 1. and so on.
-
-            VERIFY_ARE_EQUAL(InputEventType::KeyEvent, _events[iInput]->EventType());
-
-            const auto keyEvent = static_cast<const KeyEvent* const>(_events[iInput].get());
-
-            // every even key is down. every odd key is up. DOWN = 0, UP = 1. DOWN = 2, UP = 3. and so on.
-            VERIFY_ARE_EQUAL((bool)!(iInput % 2), keyEvent->IsKeyDown());
-            VERIFY_ARE_EQUAL(0u, keyEvent->GetActiveModifierKeys());
-            Log::Comment(NoThrowString().Format(L"Comparing '%c' with '%c'...", wch, keyEvent->GetCharData()));
-            VERIFY_ARE_EQUAL(wch, keyEvent->GetCharData());
-            VERIFY_ARE_EQUAL(1u, keyEvent->GetRepeatCount());
-            VERIFY_ARE_EQUAL(0u, keyEvent->GetVirtualKeyCode());
-            VERIFY_ARE_EQUAL(0u, keyEvent->GetVirtualScanCode());
-        }
+        VERIFY_ARE_EQUAL(pwszExpectedResponse, _response);
     }
 
     void _SetMarginsHelper(til::inclusive_rect* rect, til::CoordType top, til::CoordType bottom)
@@ -366,24 +365,24 @@ public:
     static const WORD s_wDefaultAttribute = 0;
     static const WORD s_defaultFill = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED; // dark gray on black.
 
-    std::deque<std::unique_ptr<IInputEvent>> _events;
-    bool _retainInput{ false };
+    std::wstring _response;
+    bool _retainResponse{ false };
 
     auto EnableInputRetentionInScope()
     {
-        auto oldRetainValue{ _retainInput };
-        _retainInput = true;
+        auto oldRetainValue{ _retainResponse };
+        _retainResponse = true;
         return wil::scope_exit([oldRetainValue, this] {
-            _retainInput = oldRetainValue;
+            _retainResponse = oldRetainValue;
         });
     }
 
     StateMachine* _stateMachine;
     DummyRenderer _renderer;
     std::unique_ptr<TextBuffer> _textBuffer;
-    til::inclusive_rect _viewport = { 0, 0, 0, 0 };
-    til::inclusive_rect _expectedScrollRegion = { 0, 0, 0, 0 };
-    til::inclusive_rect _activeScrollRegion = { 0, 0, 0, 0 };
+    til::inclusive_rect _viewport;
+    til::inclusive_rect _expectedScrollRegion;
+    til::inclusive_rect _activeScrollRegion;
 
     til::point _expectedCursorPos;
 
@@ -392,7 +391,7 @@ public:
     bool _isPty = false;
 
     bool _setTextAttributesResult = false;
-    bool _writeInputResult = false;
+    bool _returnResponseResult = false;
 
     bool _setScrollingRegionResult = false;
     bool _getLineFeedModeResult = false;
@@ -422,12 +421,11 @@ public:
         fSuccess = api.get() != nullptr;
         if (fSuccess)
         {
-            // give AdaptDispatch ownership of _testGetSet
-            _testGetSet = api.get(); // keep a copy for us but don't manage its lifetime anymore.
+            _testGetSet = std::move(api);
             _terminalInput = TerminalInput{ nullptr };
             auto& renderer = _testGetSet->_renderer;
             auto& renderSettings = renderer._renderSettings;
-            auto adapter = std::make_unique<AdaptDispatch>(std::move(api), renderer, renderSettings, _terminalInput);
+            auto adapter = std::make_unique<AdaptDispatch>(*_testGetSet, renderer, renderSettings, _terminalInput);
 
             fSuccess = adapter.get() != nullptr;
             if (fSuccess)
@@ -1448,9 +1446,9 @@ public:
         auto pwszExpectedResponse = L"\x1b[?1;0c";
         _testGetSet->ValidateInputEvent(pwszExpectedResponse);
 
-        Log::Comment(L"Test 2: Verify failure when WriteInput doesn't work.");
+        Log::Comment(L"Test 2: Verify failure when ReturnResponse doesn't work.");
         _testGetSet->PrepData();
-        _testGetSet->_writeInputResult = FALSE;
+        _testGetSet->_returnResponseResult = FALSE;
 
         VERIFY_THROWS(_pDispatch->DeviceAttributes(), std::exception);
     }
@@ -1466,9 +1464,9 @@ public:
         auto pwszExpectedResponse = L"\x1b[>0;10;1c";
         _testGetSet->ValidateInputEvent(pwszExpectedResponse);
 
-        Log::Comment(L"Test 2: Verify failure when WriteInput doesn't work.");
+        Log::Comment(L"Test 2: Verify failure when ReturnResponse doesn't work.");
         _testGetSet->PrepData();
-        _testGetSet->_writeInputResult = FALSE;
+        _testGetSet->_returnResponseResult = FALSE;
 
         VERIFY_THROWS(_pDispatch->SecondaryDeviceAttributes(), std::exception);
     }
@@ -1484,9 +1482,9 @@ public:
         auto pwszExpectedResponse = L"\x1bP!|00000000\x1b\\";
         _testGetSet->ValidateInputEvent(pwszExpectedResponse);
 
-        Log::Comment(L"Test 2: Verify failure when WriteInput doesn't work.");
+        Log::Comment(L"Test 2: Verify failure when ReturnResponse doesn't work.");
         _testGetSet->PrepData();
-        _testGetSet->_writeInputResult = FALSE;
+        _testGetSet->_returnResponseResult = FALSE;
 
         VERIFY_THROWS(_pDispatch->TertiaryDeviceAttributes(), std::exception);
     }
@@ -1509,9 +1507,9 @@ public:
         _testGetSet->PrepData();
         VERIFY_IS_FALSE(_pDispatch->RequestTerminalParameters((DispatchTypes::ReportingPermission)2));
 
-        Log::Comment(L"Test 4: Verify failure when WriteInput doesn't work.");
+        Log::Comment(L"Test 4: Verify failure when ReturnResponse doesn't work.");
         _testGetSet->PrepData();
-        _testGetSet->_writeInputResult = FALSE;
+        _testGetSet->_returnResponseResult = FALSE;
         VERIFY_THROWS(_pDispatch->RequestTerminalParameters(DispatchTypes::ReportingPermission::Unsolicited), std::exception);
     }
 
@@ -1703,7 +1701,7 @@ public:
         Log::Comment(L"Starting test...");
 
         til::inclusive_rect srTestMargins;
-        _testGetSet->_textBuffer = std::make_unique<TextBuffer>(COORD{ 100, 600 }, TextAttribute{}, 0, false, _testGetSet->_renderer);
+        _testGetSet->_textBuffer = std::make_unique<TextBuffer>(til::size{ 100, 600 }, TextAttribute{}, 0, false, _testGetSet->_renderer);
         _testGetSet->_viewport.Right = 8;
         _testGetSet->_viewport.Bottom = 8;
         auto sScreenHeight = _testGetSet->_viewport.Bottom - _testGetSet->_viewport.Top;
@@ -1929,7 +1927,7 @@ public:
 
         Log::Comment(L"Test 5: Change Foreground to Legacy Attr while BG is RGB color");
         // Unfortunately this test isn't all that good, because the adapterTest adapter isn't smart enough
-        //   to have its own color table and translate the pre-existing RGB BG into a legacy BG.
+        //   to have its own color table and translate the preexisting RGB BG into a legacy BG.
         // Fortunately, the ft_api:RgbColorTests IS smart enough to test that.
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
         rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
@@ -2005,7 +2003,7 @@ public:
         using FontUsage = DispatchTypes::DrcsFontUsage;
 
         FontBuffer fontBuffer;
-        SIZE expectedCellSize;
+        til::size expectedCellSize;
 
         const auto decdld = [&](const auto cmw, const auto cmh, const auto ss, const auto u, const std::wstring_view data = {}) {
             const auto cellMatrix = static_cast<DispatchTypes::DrcsCellMatrix>(cmw);
@@ -2020,7 +2018,7 @@ public:
             }
             RETURN_BOOL_IF_FALSE(fontBuffer.FinalizeSixelData());
 
-            const auto cellSize = fontBuffer.GetCellSize().to_win32_size();
+            const auto cellSize = fontBuffer.GetCellSize();
             Log::Comment(NoThrowString().Format(L"Cell size: %dx%d", cellSize.cx, cellSize.cy));
             VERIFY_ARE_EQUAL(expectedCellSize.cx, cellSize.cx);
             VERIFY_ARE_EQUAL(expectedCellSize.cy, cellSize.cy);
@@ -2256,7 +2254,7 @@ public:
 
 private:
     TerminalInput _terminalInput{ nullptr };
-    TestGetSet* _testGetSet; // non-ownership pointer
+    std::unique_ptr<TestGetSet> _testGetSet;
     AdaptDispatch* _pDispatch; // non-ownership pointer
     std::unique_ptr<StateMachine> _stateMachine;
 };

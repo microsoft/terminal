@@ -47,6 +47,8 @@ namespace Microsoft::Console::Utils
     til::color ColorFromHexString(const std::string_view wstr);
     std::optional<til::color> ColorFromXTermColor(const std::wstring_view wstr) noexcept;
     std::optional<til::color> ColorFromXParseColorSpec(const std::wstring_view wstr) noexcept;
+    til::color ColorFromHLS(const int h, const int l, const int s) noexcept;
+    til::color ColorFromRGB100(const int r, const int g, const int b) noexcept;
 
     bool HexToUint(const wchar_t wch, unsigned int& value) noexcept;
     bool StringToUint(const std::wstring_view wstr, unsigned int& value);
@@ -103,5 +105,10 @@ namespace Microsoft::Console::Utils
     // be easily tested.
     std::tuple<std::wstring, std::wstring> MangleStartingDirectoryForWSL(std::wstring_view commandLine,
                                                                          std::wstring_view startingDirectory);
+
+    // Similar to MangleStartingDirectoryForWSL, this function is only ever used
+    // in TerminalPage::_PasteFromClipboardHandler, but putting it here makes
+    // testing easier.
+    std::wstring_view TrimPaste(std::wstring_view textView) noexcept;
 
 }

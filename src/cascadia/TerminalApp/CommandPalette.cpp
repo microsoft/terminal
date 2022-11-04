@@ -39,17 +39,6 @@ namespace winrt::TerminalApp::implementation
 
         _switchToMode(CommandPaletteMode::ActionMode);
 
-        if (CommandPaletteShadow())
-        {
-            // Hook up the shadow on the command palette to the backdrop that
-            // will actually show it. This needs to be done at runtime, and only
-            // if the shadow actually exists. ThemeShadow isn't supported below
-            // version 18362.
-            CommandPaletteShadow().Receivers().Append(_shadowBackdrop());
-            // "raise" the command palette up by 16 units, so it will cast a shadow.
-            _backdrop().Translation({ 0, 0, 16 });
-        }
-
         // Whatever is hosting us will enable us by setting our visibility to
         // "Visible". When that happens, set focus to our search box.
         RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
@@ -81,7 +70,7 @@ namespace winrt::TerminalApp::implementation
                     TraceLoggingDescription("Event emitted when the Command Palette is opened"),
                     TraceLoggingWideString(L"Action", "Mode", "which mode the palette was opened in"),
                     TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                    TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
             }
             else
             {
@@ -485,7 +474,13 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        auto focusedElementOrAncestor = Input::FocusManager::GetFocusedElement(this->XamlRoot()).try_as<DependencyObject>();
+        auto root = this->XamlRoot();
+        if (!root)
+        {
+            return;
+        }
+
+        auto focusedElementOrAncestor = Input::FocusManager::GetFocusedElement(root).try_as<DependencyObject>();
         while (focusedElementOrAncestor)
         {
             if (focusedElementOrAncestor == *this)
@@ -535,10 +530,38 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void CommandPalette::_listItemSelectionChanged(const Windows::Foundation::IInspectable& /*sender*/, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& e)
+    {
+        // We don't care about...
+        // - CommandlineMode: it doesn't have any selectable items in the list view
+        // - TabSwitchMode: focus and selected item are in sync
+        if (_currentMode == CommandPaletteMode::ActionMode || _currentMode == CommandPaletteMode::TabSearchMode)
+        {
+            if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(_searchBox()) })
+            {
+                if (const auto selectedList = e.AddedItems(); selectedList.Size() > 0)
+                {
+                    const auto selectedCommand = selectedList.GetAt(0);
+                    if (const auto filteredCmd = selectedCommand.try_as<TerminalApp::FilteredCommand>())
+                    {
+                        if (const auto paletteItem = filteredCmd.Item().try_as<TerminalApp::PaletteItem>())
+                        {
+                            automationPeer.RaiseNotificationEvent(
+                                Automation::Peers::AutomationNotificationKind::ItemAdded,
+                                Automation::Peers::AutomationNotificationProcessing::MostRecent,
+                                paletteItem.Name() + L" " + paletteItem.KeyChordText(),
+                                L"CommandPaletteSelectedItemChanged" /* unique name for this notification category */);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // Method Description:
-    // This event is called when the user clicks on an ChevronLeft button right
+    // This event is called when the user clicks on a ChevronLeft button right
     // next to the ParentCommandName (e.g. New Tab...) above the subcommands list.
-    // It'll go up a level when the users click the button.
+    // It'll go up a single level when the user clicks the button.
     // Arguments:
     // - sender: the button that got clicked
     // Return Value:
@@ -547,12 +570,32 @@ namespace winrt::TerminalApp::implementation
                                                 const Windows::UI::Xaml::RoutedEventArgs&)
     {
         _PreviewActionHandlers(*this, nullptr);
-        _nestedActionStack.Clear();
-        ParentCommandName(L"");
-        _currentNestedCommands.Clear();
         _searchBox().Focus(FocusState::Programmatic);
+
+        const auto previousAction{ _nestedActionStack.GetAt(_nestedActionStack.Size() - 1) };
+        _nestedActionStack.RemoveAtEnd();
+
+        // Repopulate nested commands when the root has not been reached yet
+        if (_nestedActionStack.Size() > 0)
+        {
+            const auto newPreviousAction{ _nestedActionStack.GetAt(_nestedActionStack.Size() - 1) };
+            const auto actionPaletteItem{ newPreviousAction.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() };
+
+            ParentCommandName(actionPaletteItem.Command().Name());
+            _updateCurrentNestedCommands(actionPaletteItem.Command());
+        }
+        else
+        {
+            ParentCommandName(L"");
+            _currentNestedCommands.Clear();
+        }
         _updateFilteredActions();
-        _filteredActionsView().SelectedIndex(0);
+
+        const auto lastSelectedIt = std::find_if(begin(_filteredActions), end(_filteredActions), [&](const auto& filteredCommand) {
+            return filteredCommand.Item().Name() == previousAction.Item().Name();
+        });
+        const auto lastSelectedIndex = static_cast<int32_t>(std::distance(begin(_filteredActions), lastSelectedIt));
+        _scrollToIndex(lastSelectedIt != end(_filteredActions) ? lastSelectedIndex : 0);
     }
 
     // Method Description:
@@ -650,14 +693,7 @@ namespace winrt::TerminalApp::implementation
                     // to pick from.
                     _nestedActionStack.Append(filteredCommand);
                     ParentCommandName(actionPaletteItem.Command().Name());
-                    _currentNestedCommands.Clear();
-                    for (const auto& nameAndCommand : actionPaletteItem.Command().NestedCommands())
-                    {
-                        const auto action = nameAndCommand.Value();
-                        auto nestedActionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action) };
-                        auto nestedFilteredCommand{ winrt::make<FilteredCommand>(nestedActionPaletteItem) };
-                        _currentNestedCommands.Append(nestedFilteredCommand);
-                    }
+                    _updateCurrentNestedCommands(actionPaletteItem.Command());
 
                     _updateUIForStackChange();
                 }
@@ -688,7 +724,7 @@ namespace winrt::TerminalApp::implementation
                         TraceLoggingUInt32(searchTextLength, "SearchTextLength", "Number of characters in the search string"),
                         TraceLoggingUInt32(nestedCommandDepth, "NestedCommandDepth", "the depth in the tree of commands for the dispatched action"),
                         TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                        TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+                        TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
                 }
             }
         }
@@ -756,7 +792,7 @@ namespace winrt::TerminalApp::implementation
                 "CommandPaletteDispatchedCommandline",
                 TraceLoggingDescription("Event emitted when the user runs a commandline in the Command Palette"),
                 TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
             if (const auto commandLinePaletteItem{ filteredCommand.value().Item().try_as<winrt::TerminalApp::CommandLinePaletteItem>() })
             {
@@ -794,7 +830,7 @@ namespace winrt::TerminalApp::implementation
             "CommandPaletteDismissed",
             TraceLoggingDescription("Event emitted when the user dismisses the Command Palette without selecting an action"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
     // Method Description:
@@ -1116,6 +1152,25 @@ namespace winrt::TerminalApp::implementation
         while (_filteredActions.Size() < actions.size())
         {
             _filteredActions.Append(actions[_filteredActions.Size()]);
+        }
+    }
+
+    // Method Description:
+    // - Update the list of current nested commands to match that of the
+    //   given parent command.
+    // Arguments:
+    // - parentCommand: the command with an optional list of nested commands.
+    // Return Value:
+    // - <none>
+    void CommandPalette::_updateCurrentNestedCommands(const winrt::Microsoft::Terminal::Settings::Model::Command& parentCommand)
+    {
+        _currentNestedCommands.Clear();
+        for (const auto& nameAndCommand : parentCommand.NestedCommands())
+        {
+            const auto action = nameAndCommand.Value();
+            auto nestedActionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action) };
+            auto nestedFilteredCommand{ winrt::make<FilteredCommand>(nestedActionPaletteItem) };
+            _currentNestedCommands.Append(nestedFilteredCommand);
         }
     }
 

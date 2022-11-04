@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -150,6 +150,7 @@
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
     <ProjectReference Include="..\..\types\lib\types.vcxproj" />
+    <ProjectReference Include="..\..\audio\midi\lib\midi.vcxproj" />
     <ProjectReference Include="..\..\buffer\out\lib\bufferout.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\renderer\base\lib\base.vcxproj" />
     <ProjectReference Include="..\..\renderer\atlas\atlas.vcxproj" />

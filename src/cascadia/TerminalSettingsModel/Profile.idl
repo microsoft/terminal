@@ -26,7 +26,8 @@ namespace Microsoft.Terminal.Settings.Model
     {
         Never = 0,
         Graceful,
-        Always
+        Always,
+        Automatic
     };
 
     [flags]
@@ -84,5 +85,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(Windows.Foundation.Collections.IVector<String>, BellSound);
 
         INHERITABLE_PROFILE_SETTING(Boolean, Elevate);
+        INHERITABLE_PROFILE_SETTING(Boolean, AutoMarkPrompts);
+        INHERITABLE_PROFILE_SETTING(Boolean, ShowMarks);
     }
 }

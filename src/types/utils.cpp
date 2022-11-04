@@ -87,31 +87,43 @@ std::string Utils::ColorToHexString(const til::color color)
 //      the correct format, throws E_INVALIDARG
 til::color Utils::ColorFromHexString(const std::string_view str)
 {
-    THROW_HR_IF(E_INVALIDARG, str.size() != 7 && str.size() != 4);
+    THROW_HR_IF(E_INVALIDARG, str.size() != 9 && str.size() != 7 && str.size() != 4);
     THROW_HR_IF(E_INVALIDARG, str.at(0) != '#');
 
     std::string rStr;
     std::string gStr;
     std::string bStr;
+    std::string aStr;
 
     if (str.size() == 4)
     {
         rStr = std::string(2, str.at(1));
         gStr = std::string(2, str.at(2));
         bStr = std::string(2, str.at(3));
+        aStr = "ff";
     }
-    else
+    else if (str.size() == 7)
     {
         rStr = std::string(&str.at(1), 2);
         gStr = std::string(&str.at(3), 2);
         bStr = std::string(&str.at(5), 2);
+        aStr = "ff";
+    }
+    else if (str.size() == 9)
+    {
+        // #rrggbbaa
+        rStr = std::string(&str.at(1), 2);
+        gStr = std::string(&str.at(3), 2);
+        bStr = std::string(&str.at(5), 2);
+        aStr = std::string(&str.at(7), 2);
     }
 
     const auto r = gsl::narrow_cast<BYTE>(std::stoul(rStr, nullptr, 16));
     const auto g = gsl::narrow_cast<BYTE>(std::stoul(gStr, nullptr, 16));
     const auto b = gsl::narrow_cast<BYTE>(std::stoul(bStr, nullptr, 16));
+    const auto a = gsl::narrow_cast<BYTE>(std::stoul(aStr, nullptr, 16));
 
-    return til::color{ r, g, b };
+    return til::color{ r, g, b, a };
 }
 
 // Routine Description:
@@ -316,6 +328,84 @@ catch (...)
 {
     LOG_CAUGHT_EXCEPTION();
     return std::nullopt;
+}
+
+// Routine Description:
+// - Constructs a til::color value from RGB percentage components.
+// Arguments:
+// - r - The red component of the color (0-100%).
+// - g - The green component of the color (0-100%).
+// - b - The blue component of the color (0-100%).
+// Return Value:
+// - The color defined by the given components.
+til::color Utils::ColorFromRGB100(const int r, const int g, const int b) noexcept
+{
+    // The color class is expecting components in the range 0 to 255,
+    // so we need to scale our percentage values by 255/100. We can
+    // optimise this conversion with a pre-created lookup table.
+    static constexpr auto scale100To255 = [] {
+        std::array<uint8_t, 101> lut{};
+        for (size_t i = 0; i < std::size(lut); i++)
+        {
+            lut.at(i) = gsl::narrow_cast<uint8_t>((i * 255 + 50) / 100);
+        }
+        return lut;
+    }();
+
+    const auto red = til::at(scale100To255, std::min<unsigned>(r, 100u));
+    const auto green = til::at(scale100To255, std::min<unsigned>(g, 100u));
+    const auto blue = til::at(scale100To255, std::min<unsigned>(b, 100u));
+    return { red, green, blue };
+}
+
+// Routine Description:
+// - Constructs a til::color value from HLS components.
+// Arguments:
+// - h - The hue component of the color (0-360°).
+// - l - The luminosity component of the color (0-100%).
+// - s - The saturation component of the color (0-100%).
+// Return Value:
+// - The color defined by the given components.
+til::color Utils::ColorFromHLS(const int h, const int l, const int s) noexcept
+{
+    const auto hue = h % 360;
+    const auto lum = gsl::narrow_cast<float>(std::min(l, 100));
+    const auto sat = gsl::narrow_cast<float>(std::min(s, 100));
+
+    // This calculation is based on the HSL to RGB algorithm described in
+    // Wikipedia: https://en.wikipedia.org/wiki/HSL_and_HSV#HSL_to_RGB
+    // We start by calculating the chroma value, and the point along the bottom
+    // faces of the RGB cube with the same hue and chroma as our color (x).
+    const auto chroma = (50.f - abs(lum - 50.f)) * sat / 50.f;
+    const auto x = chroma * (60 - abs(hue % 120 - 60)) / 60.f;
+
+    // We'll also need an offset added to each component to match lightness.
+    const auto lightness = lum - chroma / 2.0f;
+
+    // We use the chroma value for the brightest component, x for the second
+    // brightest, and 0 for the last. The values  are scaled by 255/100 to get
+    // them in the range 0 to 255, as required by the color class.
+    constexpr auto scale = 255.f / 100.f;
+    const auto comp1 = gsl::narrow_cast<uint8_t>((chroma + lightness) * scale + 0.5f);
+    const auto comp2 = gsl::narrow_cast<uint8_t>((x + lightness) * scale + 0.5f);
+    const auto comp3 = gsl::narrow_cast<uint8_t>((0 + lightness) * scale + 0.5f);
+
+    // Finally we order the components based on the given hue. But note that the
+    // DEC terminals used a different mapping for hue than is typical for modern
+    // color models. Blue is at 0°, red is at 120°, and green is at 240°.
+    // See DEC STD 070, ReGIS Graphics Extension, § 8.6.2.2.2, Color by Value.
+    if (hue < 60)
+        return { comp2, comp3, comp1 }; // blue to magenta
+    else if (hue < 120)
+        return { comp1, comp3, comp2 }; // magenta to red
+    else if (hue < 180)
+        return { comp1, comp2, comp3 }; // red to yellow
+    else if (hue < 240)
+        return { comp2, comp1, comp3 }; // yellow to green
+    else if (hue < 300)
+        return { comp3, comp1, comp2 }; // green to cyan
+    else
+        return { comp3, comp2, comp1 }; // cyan to blue
 }
 
 // Routine Description:
@@ -681,4 +771,29 @@ std::tuple<std::wstring, std::wstring> Utils::MangleStartingDirectoryForWSL(std:
         startingDirectory == L"~" ? wil::ExpandEnvironmentStringsW<std::wstring>(L"%USERPROFILE%") :
                                     std::wstring{ startingDirectory }
     };
+}
+
+std::wstring_view Utils::TrimPaste(std::wstring_view textView) noexcept
+{
+    const auto lastNonSpace = textView.find_last_not_of(L"\t\n\v\f\r ");
+    const auto firstNewline = textView.find_first_of(L"\n\v\f\r");
+
+    const bool isOnlyWhitespace = lastNonSpace == textView.npos;
+    const bool isMultiline = firstNewline < lastNonSpace;
+
+    if (isOnlyWhitespace)
+    {
+        // Text is all white space, nothing to paste
+        return L"";
+    }
+
+    if (isMultiline)
+    {
+        // In this case, the user totally wanted to paste multiple lines of text,
+        // and that likely includes the trailing newline.
+        // DON'T trim it in this case.
+        return textView;
+    }
+
+    return textView.substr(0, lastNonSpace + 1);
 }

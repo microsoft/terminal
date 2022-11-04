@@ -9,6 +9,13 @@ using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
+// Ensure the "safety" of til::point::as_win32_size
+static_assert(
+    sizeof(til::size) == sizeof(SIZE) &&
+    alignof(til::size) == alignof(SIZE) &&
+    offsetof(til::size, width) == offsetof(SIZE, cx) &&
+    offsetof(til::size, height) == offsetof(SIZE, cy));
+
 class SizeTests
 {
     TEST_CLASS(SizeTests);
@@ -44,31 +51,11 @@ class SizeTests
         VERIFY_ARE_EQUAL(height, sz.height);
     }
 
-    TEST_METHOD(MixedRawTypeConstruct)
-    {
-        const auto a = -5;
-        const auto b = -10;
-
-        Log::Comment(L"Case 1: til::CoordType/int");
-        {
-            const til::size sz{ a, b };
-            VERIFY_ARE_EQUAL(a, sz.width);
-            VERIFY_ARE_EQUAL(b, sz.height);
-        }
-
-        Log::Comment(L"Case 2: int/til::CoordType");
-        {
-            const til::size sz{ b, a };
-            VERIFY_ARE_EQUAL(b, sz.width);
-            VERIFY_ARE_EQUAL(a, sz.height);
-        }
-    }
-
     TEST_METHOD(CoordConstruct)
     {
         COORD coord{ -5, 10 };
 
-        const til::size sz{ coord };
+        const auto sz = til::wrap_coord_size(coord);
         VERIFY_ARE_EQUAL(coord.X, sz.width);
         VERIFY_ARE_EQUAL(coord.Y, sz.height);
     }
@@ -371,11 +358,11 @@ class SizeTests
             const til::size sz{ -10, -5 };
             const til::size divisor{ 3, 2 };
 
-            // -10 / 3 is -3.333, rounded up is -4.
-            // -5 / 2 is -2.5, rounded up is -3.
-            const til::size expected{ -4, -3 };
+            auto fn = [&]() {
+                sz.divide_ceil(divisor);
+            };
 
-            VERIFY_ARE_EQUAL(expected, sz.divide_ceil(divisor));
+            VERIFY_THROWS(fn(), std::invalid_argument);
         }
     }
 

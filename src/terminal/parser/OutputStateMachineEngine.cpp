@@ -267,19 +267,19 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECAC1);
         break;
     case EscActionCodes::DECDHL_DoubleHeightLineTop:
-        _dispatch->SetLineRendition(LineRendition::DoubleHeightTop);
+        success = _dispatch->SetLineRendition(LineRendition::DoubleHeightTop);
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECDHL);
         break;
     case EscActionCodes::DECDHL_DoubleHeightLineBottom:
-        _dispatch->SetLineRendition(LineRendition::DoubleHeightBottom);
+        success = _dispatch->SetLineRendition(LineRendition::DoubleHeightBottom);
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECDHL);
         break;
     case EscActionCodes::DECSWL_SingleWidthLine:
-        _dispatch->SetLineRendition(LineRendition::SingleWidth);
+        success = _dispatch->SetLineRendition(LineRendition::SingleWidth);
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSWL);
         break;
     case EscActionCodes::DECDWL_DoubleWidthLine:
-        _dispatch->SetLineRendition(LineRendition::DoubleWidth);
+        success = _dispatch->SetLineRendition(LineRendition::DoubleWidth);
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECDWL);
         break;
     case EscActionCodes::DECALN_ScreenAlignmentPattern:
@@ -606,19 +606,24 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         success = _dispatch->SoftReset();
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSTR);
         break;
-
     case CsiActionCodes::XT_PushSgr:
     case CsiActionCodes::XT_PushSgrAlias:
         success = _dispatch->PushGraphicsRendition(parameters);
         TermTelemetry::Instance().Log(TermTelemetry::Codes::XTPUSHSGR);
         break;
-
     case CsiActionCodes::XT_PopSgr:
     case CsiActionCodes::XT_PopSgrAlias:
         success = _dispatch->PopGraphicsRendition();
         TermTelemetry::Instance().Log(TermTelemetry::Codes::XTPOPSGR);
         break;
-
+    case CsiActionCodes::DECAC_AssignColor:
+        success = _dispatch->AssignColor(parameters.at(0), parameters.at(1).value_or(0), parameters.at(2).value_or(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECAC);
+        break;
+    case CsiActionCodes::DECPS_PlaySound:
+        success = _dispatch->PlaySounds(parameters);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECPS);
+        break;
     default:
         // If no functions to call, overall dispatch was a failure.
         success = false;
@@ -661,6 +666,9 @@ IStateMachineEngine::StringHandler OutputStateMachineEngine::ActionDcsDispatch(c
                                           parameters.at(5),
                                           parameters.at(6),
                                           parameters.at(7));
+        break;
+    case DcsActionCodes::DECRSTS_RestoreTerminalState:
+        handler = _dispatch->RestoreTerminalState(parameters.at(0));
         break;
     case DcsActionCodes::DECRQSS_RequestSetting:
         handler = _dispatch->RequestSetting();
@@ -827,6 +835,16 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
     case OscActionCodes::ConEmuAction:
     {
         success = _dispatch->DoConEmuAction(string);
+        break;
+    }
+    case OscActionCodes::ITerm2Action:
+    {
+        success = _dispatch->DoITerm2Action(string);
+        break;
+    }
+    case OscActionCodes::FinalTermAction:
+    {
+        success = _dispatch->DoFinalTermAction(string);
         break;
     }
     default:

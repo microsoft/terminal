@@ -75,8 +75,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         if (settings)
         {
-            _initialRows = winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialRows").try_as<Windows::Foundation::IPropertyValue>(), _initialRows);
-            _initialCols = winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialCols").try_as<Windows::Foundation::IPropertyValue>(), _initialCols);
+            _initialRows = gsl::narrow<til::CoordType>(winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialRows").try_as<Windows::Foundation::IPropertyValue>(), _initialRows));
+            _initialCols = gsl::narrow<til::CoordType>(winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialCols").try_as<Windows::Foundation::IPropertyValue>(), _initialCols));
         }
     }
 
@@ -264,13 +264,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             if (_state == AzureState::TermConnected)
             {
                 // Close the websocket connection
-                auto closedTask = _cloudShellSocket.close();
-                closedTask.wait();
+                _cloudShellSocket.close();
             }
 
             if (_hOutputThread)
             {
-                // Tear down our output thread
+                // Waiting for the output thread to exit ensures that all pending _TerminalOutputHandlers()
+                // calls have returned and won't notify our caller (ControlCore) anymore. This ensures that
+                // we don't call a destroyed event handler asynchronously from a background thread (GH#13880).
                 WaitForSingleObject(_hOutputThread.get(), INFINITE);
                 _hOutputThread.reset();
             }

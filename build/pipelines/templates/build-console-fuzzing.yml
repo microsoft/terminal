@@ -9,12 +9,12 @@ jobs:
   variables:
     BuildConfiguration: ${{ parameters.configuration }}
     BuildPlatform: ${{ parameters.platform }}
-  pool: 
+  pool:
     ${{ if eq(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
       name: WinDevPoolOSS-L
     ${{ if ne(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
       name: WinDevPool-L
-    demands: ImageOverride -equals WinDevVS16-latest
+    demands: ImageOverride -equals WinDevVS17-latest
 
   steps:
   - checkout: self
@@ -32,12 +32,11 @@ jobs:
       echo VCToolsInstallDir = %VCToolsInstallDir%
       echo ##vso[task.setvariable variable=VCToolsInstallDir]%VCToolsInstallDir%
     displayName: 'Retrieve VC tools directory'
-  
+
   - task: VSBuild@1
     displayName: 'Build solution **\OpenConsole.sln'
     inputs:
       solution: '**\OpenConsole.sln'
-      vsVersion: 16.0
       platform: '$(BuildPlatform)'
       configuration: '$(BuildConfiguration)'
       msbuildArgs: "${{ parameters.additionalBuildArguments }}"

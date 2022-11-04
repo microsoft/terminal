@@ -76,12 +76,15 @@ public:
 
     void Invert() noexcept;
 
-    friend constexpr bool operator==(const TextAttribute& a, const TextAttribute& b) noexcept;
-    friend constexpr bool operator!=(const TextAttribute& a, const TextAttribute& b) noexcept;
-    friend constexpr bool operator==(const TextAttribute& attr, const WORD& legacyAttr) noexcept;
-    friend constexpr bool operator!=(const TextAttribute& attr, const WORD& legacyAttr) noexcept;
-    friend constexpr bool operator==(const WORD& legacyAttr, const TextAttribute& attr) noexcept;
-    friend constexpr bool operator!=(const WORD& legacyAttr, const TextAttribute& attr) noexcept;
+    inline bool operator==(const TextAttribute& other) const noexcept
+    {
+        return memcmp(this, &other, sizeof(TextAttribute)) == 0;
+    }
+
+    inline bool operator!=(const TextAttribute& other) const noexcept
+    {
+        return memcmp(this, &other, sizeof(TextAttribute)) != 0;
+    }
 
     bool IsLegacy() const noexcept;
     bool IsIntense() const noexcept;
@@ -106,7 +109,10 @@ public:
     void SetOverlined(bool isOverlined) noexcept;
     void SetReverseVideo(bool isReversed) noexcept;
 
-    ExtendedAttributes GetExtendedAttributes() const noexcept;
+    constexpr ExtendedAttributes GetExtendedAttributes() const noexcept
+    {
+        return _extendedAttrs;
+    }
 
     bool IsHyperlink() const noexcept;
 
@@ -158,6 +164,13 @@ public:
     {
         return WI_IsAnyFlagSet(_wAttrLegacy, COMMON_LVB_GRID_HORIZONTAL | COMMON_LVB_GRID_LVERTICAL | COMMON_LVB_GRID_RVERTICAL | COMMON_LVB_UNDERSCORE);
     }
+    constexpr bool HasAnyExtendedAttributes() const noexcept
+    {
+        return GetExtendedAttributes() != ExtendedAttributes::Normal ||
+               IsAnyGridLineEnabled() ||
+               GetHyperlinkId() != 0 ||
+               IsReverseVideo();
+    }
 
 private:
     static std::array<TextColor, 16> s_legacyForegroundColorMap;
@@ -167,7 +180,7 @@ private:
     uint16_t _hyperlinkId; // sizeof: 2, alignof: 2
     TextColor _foreground; // sizeof: 4, alignof: 1
     TextColor _background; // sizeof: 4, alignof: 1
-    ExtendedAttributes _extendedAttrs; // sizeof: 1, alignof: 1
+    ExtendedAttributes _extendedAttrs; // sizeof: 2, alignof: 2
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;
@@ -183,20 +196,6 @@ enum class TextAttributeBehavior
     Current, // use text attribute of cell being written to
     StoredOnly, // only use the contained text attribute and skip the insertion of anything else
 };
-
-constexpr bool operator==(const TextAttribute& a, const TextAttribute& b) noexcept
-{
-    return a._wAttrLegacy == b._wAttrLegacy &&
-           a._foreground == b._foreground &&
-           a._background == b._background &&
-           a._extendedAttrs == b._extendedAttrs &&
-           a._hyperlinkId == b._hyperlinkId;
-}
-
-constexpr bool operator!=(const TextAttribute& a, const TextAttribute& b) noexcept
-{
-    return !(a == b);
-}
 
 #ifdef UNIT_TESTING
 

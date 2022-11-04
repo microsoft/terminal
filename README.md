@@ -21,7 +21,7 @@ Related repositories include:
 
 ## Installing and running Windows Terminal
 
-> 🔴 Note: Windows Terminal requires Windows 10 2004 (build 19041) or later
+> **Note**: Windows Terminal requires Windows 10 2004 (build 19041) or later
 
 ### Microsoft Store [Recommended]
 
@@ -52,8 +52,10 @@ fails for any reason, you can try the following command at a PowerShell prompt:
 Add-AppxPackage Microsoft.WindowsTerminal_<versionNumber>.msixbundle
 ```
 
-> 🔴 Note: If you install Terminal manually:
+> **Note**: If you install Terminal manually:
 >
+> * You may need to install the [VC++ v14 Desktop Framework Package](https://docs.microsoft.com/troubleshoot/cpp/c-runtime-packages-desktop-bridge#how-to-install-and-update-desktop-framework-packages).  
+>   This should only be necessary on older builds of Windows 10 and only if you get an error about missing framework packages.
 > * Terminal will not auto-update when new builds are released so you will need
 >   to regularly install the latest Terminal release to receive all the latest
 >   fixes and improvements!
@@ -111,10 +113,10 @@ repository.
 
 ---
 
-## Windows Terminal 2.0 Roadmap
+## Windows Terminal Roadmap
 
-The plan for delivering Windows Terminal 2.0 [is described
-here](/doc/terminal-v2-roadmap.md) and will be updated as the project proceeds.
+The plan for the Windows Terminal [is described here](/doc/roadmap-2022.md) and
+will be updated as the project proceeds.
 
 ## Project Build Status
 
@@ -175,7 +177,7 @@ While overhauling Windows Console, we modernized its codebase considerably,
 cleanly separating logical entities into modules and classes, introduced some
 key extensibility points, replaced several old, home-grown collections and
 containers with safer, more efficient [STL
-containers](https://docs.microsoft.com/en-us/cpp/standard-library/stl-containers?view=vs-2019),
+containers](https://docs.microsoft.com/en-us/cpp/standard-library/stl-containers?view=vs-2022),
 and made the code simpler and safer by using Microsoft's [Windows Implementation
 Libraries - WIL](https://github.com/Microsoft/wil).
 
@@ -233,7 +235,7 @@ Cause: You're launching the incorrect solution in Visual Studio.
 Solution: Make sure you're building & deploying the `CascadiaPackage` project in
 Visual Studio.
 
-> ⚠ Note: `OpenConsole.exe` is just a locally-built `conhost.exe`, the classic
+> **Note**: `OpenConsole.exe` is just a locally-built `conhost.exe`, the classic
 > Windows Console that hosts Windows' command-line infrastructure. OpenConsole
 > is used by Windows Terminal to connect to and communicate with command-line
 > applications (via
@@ -264,7 +266,7 @@ help avoid any wasted or duplicate effort.
 The easiest way to communicate with the team is via GitHub issues.
 
 Please file new issues, feature requests and suggestions, but **DO search for
-similar open/closed pre-existing issues before creating a new issue.**
+similar open/closed preexisting issues before creating a new issue.**
 
 If you would like to ask a question that you feel doesn't warrant an issue
 (yet), please reach out to us via Twitter:
@@ -291,14 +293,14 @@ If you would like to ask a question that you feel doesn't warrant an issue
   SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/)
   installed
 * You must have at least [VS
-  2019](https://visualstudio.microsoft.com/downloads/) installed
+  2022](https://visualstudio.microsoft.com/downloads/) installed
 * You must install the following Workloads via the VS Installer. Note: Opening
-  the solution in VS 2019 will [prompt you to install missing components
+  the solution in VS 2022 will [prompt you to install missing components
   automatically](https://devblogs.microsoft.com/setup/configure-visual-studio-across-your-organization-with-vsconfig/):
   * Desktop Development with C++
   * Universal Windows Platform Development
   * **The following Individual Components**
-    * C++ (v142) Universal Windows Platform Tools
+    * C++ (v143) Universal Windows Platform Tools
 * You must install the [.NET Framework Targeting Pack](https://docs.microsoft.com/dotnet/framework/install/guide-for-developers#to-install-the-net-framework-developer-pack-or-targeting-pack) to build test projects
 
 ## Building the Code

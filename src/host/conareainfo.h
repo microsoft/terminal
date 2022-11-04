@@ -30,18 +30,18 @@ class TextBuffer;
 class ConversionAreaBufferInfo final
 {
 public:
-    COORD coordCaBuffer;
-    SMALL_RECT rcViewCaWindow;
-    COORD coordConView;
+    til::size coordCaBuffer;
+    til::inclusive_rect rcViewCaWindow;
+    til::point coordConView;
 
-    explicit ConversionAreaBufferInfo(const COORD coordBufferSize);
+    explicit ConversionAreaBufferInfo(const til::size coordBufferSize);
 };
 
 class ConversionAreaInfo final
 {
 public:
-    ConversionAreaInfo(const COORD bufferSize,
-                       const COORD windowSize,
+    ConversionAreaInfo(const til::size bufferSize,
+                       const til::size windowSize,
                        const TextAttribute& fill,
                        const TextAttribute& popupFill,
                        const FontInfo fontInfo);
@@ -55,13 +55,13 @@ public:
     void SetHidden(const bool fIsHidden) noexcept;
     void ClearArea() noexcept;
 
-    [[nodiscard]] HRESULT Resize(const COORD newSize) noexcept;
+    [[nodiscard]] HRESULT Resize(const til::size newSize) noexcept;
 
-    void SetViewPos(const COORD pos) noexcept;
-    void SetWindowInfo(const SMALL_RECT view) noexcept;
+    void SetViewPos(const til::point pos) noexcept;
+    void SetWindowInfo(const til::inclusive_rect& view) noexcept;
     void Paint() const noexcept;
 
-    void WriteText(const std::vector<OutputCell>& text, const SHORT column);
+    void WriteText(const std::vector<OutputCell>& text, const til::CoordType column);
     void SetAttributes(const TextAttribute& attr);
 
     const TextBuffer& GetTextBuffer() const noexcept;

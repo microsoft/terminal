@@ -130,7 +130,7 @@ bool FontBuffer::SetAttributes(const DispatchTypes::DrcsCellMatrix cellMatrix,
             // 0 width is treated as unknown (we'll try and estimate the expected
             // width), and the height parameter can still give us the height.
             _sizeDeclaredAsMatrix = false;
-            _declaredWidth = static_cast<size_t>(cellMatrix);
+            _declaredWidth = static_cast<VTInt>(cellMatrix);
             _declaredHeight = cellHeight.value_or(0);
             valid = (_declaredWidth <= MAX_WIDTH && _declaredHeight <= MAX_HEIGHT);
             break;
@@ -219,17 +219,17 @@ bool FontBuffer::FinalizeSixelData()
 
 gsl::span<const uint16_t> FontBuffer::GetBitPattern() const noexcept
 {
-    return { _buffer.data(), MAX_CHARS * _fullHeight };
+    return { _buffer.data(), gsl::narrow_cast<size_t>(MAX_CHARS * _fullHeight) };
 }
 
 til::size FontBuffer::GetCellSize() const noexcept
 {
-    return { gsl::narrow_cast<til::CoordType>(_fullWidth), gsl::narrow_cast<til::CoordType>(_fullHeight) };
+    return { _fullWidth, _fullHeight };
 }
 
 size_t FontBuffer::GetTextCenteringHint() const noexcept
 {
-    return _textCenteringHint;
+    return gsl::narrow_cast<size_t>(_textCenteringHint);
 }
 
 VTID FontBuffer::GetDesignation() const noexcept
@@ -297,7 +297,7 @@ void FontBuffer::_prepareCharacterBuffer()
 void FontBuffer::_prepareNextCharacter()
 {
     _lastChar = _currentChar;
-    _currentCharBuffer = std::next(_buffer.begin(), _currentChar * _fullHeight);
+    _currentCharBuffer = std::next(_buffer.begin(), gsl::narrow_cast<size_t>(_currentChar * _fullHeight));
     _sixelColumn = 0;
     _sixelRow = 0;
 
@@ -309,7 +309,7 @@ void FontBuffer::_prepareNextCharacter()
     }
 }
 
-void FontBuffer::_addSixelValue(const size_t value) noexcept
+void FontBuffer::_addSixelValue(const VTInt value) noexcept
 {
     if (_currentChar < MAX_CHARS && _sixelColumn < _textWidth)
     {
@@ -319,10 +319,10 @@ void FontBuffer::_addSixelValue(const size_t value) noexcept
         const auto outputColumnBit = (0x8000 >> (_sixelColumn + _textOffset));
         auto outputIterator = _currentCharBuffer;
         auto inputValueMask = 1;
-        for (size_t i = 0; i < 6 && _sixelRow + i < _fullHeight; i++)
+        for (VTInt i = 0; i < 6 && _sixelRow + i < _fullHeight; i++)
         {
             *outputIterator |= (value & inputValueMask) ? outputColumnBit : 0;
-            outputIterator++;
+            ++outputIterator;
             inputValueMask <<= 1;
         }
     }
@@ -350,7 +350,7 @@ void FontBuffer::_endOfCharacter()
     _prepareNextCharacter();
 }
 
-std::tuple<size_t, size_t, size_t> FontBuffer::_calculateDimensions() const
+std::tuple<VTInt, VTInt, VTInt> FontBuffer::_calculateDimensions() const
 {
     // If the size is declared as a matrix, this is most likely a VT2xx font,
     // typically with a cell size of 10x10. However, in 132-column mode, the
@@ -398,7 +398,7 @@ std::tuple<size_t, size_t, size_t> FontBuffer::_calculateDimensions() const
     // estimate the size from the used sixel values. If comparing a sixel-based
     // height, though, we need to round up the target cell height to account for
     // the fact that our used height will always be a multiple of six.
-    const auto inRange = [=](const size_t cellWidth, const size_t cellHeight) {
+    const auto inRange = [=](const VTInt cellWidth, const VTInt cellHeight) {
         const auto sixelHeight = (cellHeight + 5) / 6 * 6;
         const auto heightInRange = _declaredHeight ? _declaredHeight <= cellHeight : _usedHeight <= sixelHeight;
         const auto widthInRange = _declaredWidth ? _declaredWidth <= cellWidth : _usedWidth <= cellWidth;
@@ -478,7 +478,7 @@ std::tuple<size_t, size_t, size_t> FontBuffer::_calculateDimensions() const
     }
 }
 
-void FontBuffer::_packAndCenterBitPatterns()
+void FontBuffer::_packAndCenterBitPatterns() noexcept
 {
     // If this is a text font, we'll clip the bits up to the text width and
     // center them within the full cell width. For a full cell font we'll just
@@ -499,7 +499,7 @@ void FontBuffer::_packAndCenterBitPatterns()
     // that are required.
     for (size_t srcLine = 0, dstLine = 0; srcLine < _buffer.size(); srcLine++)
     {
-        if ((srcLine % MAX_HEIGHT) < _fullHeight)
+        if (gsl::narrow_cast<VTInt>(srcLine % MAX_HEIGHT) < _fullHeight)
         {
             auto characterScanline = til::at(_buffer, srcLine);
             characterScanline &= textClippingMask;
@@ -515,11 +515,11 @@ void FontBuffer::_fillUnusedCharacters()
     // with an error glyph (a reverse question mark). This includes every
     // character prior to the start char, or after the last char.
     const auto errorPattern = _generateErrorGlyph();
-    for (size_t ch = 0; ch < MAX_CHARS; ch++)
+    for (VTInt ch = 0; ch < MAX_CHARS; ch++)
     {
         if (ch < _startChar || ch > _lastChar)
         {
-            auto charBuffer = std::next(_buffer.begin(), ch * _fullHeight);
+            auto charBuffer = std::next(_buffer.begin(), gsl::narrow_cast<size_t>(ch * _fullHeight));
             std::copy_n(errorPattern.begin(), _fullHeight, charBuffer);
         }
     }

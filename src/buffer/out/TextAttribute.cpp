@@ -11,6 +11,8 @@ static_assert(sizeof(TextAttribute) == 14);
 static_assert(alignof(TextAttribute) == 2);
 // Ensure that we can memcpy() and memmove() the struct for performance.
 static_assert(std::is_trivially_copyable_v<TextAttribute>);
+// Assert that the use of memcmp() for comparisons is safe.
+static_assert(std::has_unique_object_representations_v<TextAttribute>);
 
 namespace
 {
@@ -353,11 +355,6 @@ void TextAttribute::SetOverlined(bool isOverlined) noexcept
 void TextAttribute::SetReverseVideo(bool isReversed) noexcept
 {
     WI_UpdateFlag(_wAttrLegacy, COMMON_LVB_REVERSE_VIDEO, isReversed);
-}
-
-ExtendedAttributes TextAttribute::GetExtendedAttributes() const noexcept
-{
-    return _extendedAttrs;
 }
 
 // Routine Description:

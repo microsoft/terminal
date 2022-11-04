@@ -16,6 +16,7 @@
 // Disable a bunch of warnings which get in the way of writing performant code.
 #pragma warning(disable : 26429) // Symbol 'data' is never tested for nullness, it can be marked as not_null (f.23).
 #pragma warning(disable : 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).
+#pragma warning(disable : 26459) // You called an STL function '...' with a raw pointer parameter at position '...' that may be unsafe [...].
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
 #pragma warning(disable : 26482) // Only index into arrays using constant expressions (bounds.2).
 
@@ -40,7 +41,7 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
 
 #pragma region IRenderEngine
 
-[[nodiscard]] HRESULT AtlasEngine::Invalidate(const SMALL_RECT* const psrRegion) noexcept
+[[nodiscard]] HRESULT AtlasEngine::Invalidate(const til::rect* const psrRegion) noexcept
 {
     //assert(psrRegion->Top < psrRegion->Bottom && psrRegion->Top >= 0 && psrRegion->Bottom <= _api.cellCount.y);
 
@@ -50,7 +51,7 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
     return S_OK;
 }
 
-[[nodiscard]] HRESULT AtlasEngine::InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept
+[[nodiscard]] HRESULT AtlasEngine::InvalidateCursor(const til::rect* const psrRegion) noexcept
 {
     //assert(psrRegion->Left <= psrRegion->Right && psrRegion->Left >= 0 && psrRegion->Right <= _api.cellCount.x);
     //assert(psrRegion->Top <= psrRegion->Bottom && psrRegion->Top >= 0 && psrRegion->Bottom <= _api.cellCount.y);
@@ -68,19 +69,19 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
     return S_OK;
 }
 
-[[nodiscard]] HRESULT AtlasEngine::InvalidateSystem(const RECT* const prcDirtyClient) noexcept
+[[nodiscard]] HRESULT AtlasEngine::InvalidateSystem(const til::rect* const prcDirtyClient) noexcept
 {
     const auto top = prcDirtyClient->top / _api.fontMetrics.cellSize.y;
     const auto bottom = prcDirtyClient->bottom / _api.fontMetrics.cellSize.y;
 
     // BeginPaint() protects against invalid out of bounds numbers.
-    SMALL_RECT rect;
-    rect.Top = gsl::narrow_cast<SHORT>(top);
-    rect.Bottom = gsl::narrow_cast<SHORT>(bottom);
+    til::rect rect;
+    rect.Top = top;
+    rect.Bottom = bottom;
     return Invalidate(&rect);
 }
 
-[[nodiscard]] HRESULT AtlasEngine::InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept
+[[nodiscard]] HRESULT AtlasEngine::InvalidateSelection(const std::vector<til::rect>& rectangles) noexcept
 {
     for (const auto& rect : rectangles)
     {
@@ -93,7 +94,7 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
     return S_OK;
 }
 
-[[nodiscard]] HRESULT AtlasEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
+[[nodiscard]] HRESULT AtlasEngine::InvalidateScroll(const til::point* const pcoordDelta) noexcept
 {
     const auto delta = pcoordDelta->Y;
     if (delta == 0)
@@ -153,7 +154,7 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
     return UpdateFont(fontInfoDesired, fontInfo, {}, {});
 }
 
-[[nodiscard]] HRESULT AtlasEngine::UpdateSoftFont(const gsl::span<const uint16_t> bitPattern, const SIZE cellSize, const size_t centeringHint) noexcept
+[[nodiscard]] HRESULT AtlasEngine::UpdateSoftFont(const gsl::span<const uint16_t> bitPattern, const til::size cellSize, const size_t centeringHint) noexcept
 {
     return S_OK;
 }
@@ -172,8 +173,17 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
     return S_OK;
 }
 
-[[nodiscard]] HRESULT AtlasEngine::UpdateViewport(const SMALL_RECT srNewViewport) noexcept
+[[nodiscard]] HRESULT AtlasEngine::UpdateViewport(const til::inclusive_rect& srNewViewport) noexcept
 {
+    const u16x2 cellCount{
+        gsl::narrow_cast<u16>(srNewViewport.Right - srNewViewport.Left + 1),
+        gsl::narrow_cast<u16>(srNewViewport.Bottom - srNewViewport.Top + 1),
+    };
+    if (_api.cellCount != cellCount)
+    {
+        _api.cellCount = cellCount;
+        WI_SetFlag(_api.invalidations, ApiInvalidations::Size);
+    }
     return S_OK;
 }
 
@@ -227,10 +237,10 @@ try
 
         DeleteObject(SelectObject(hdc.get(), hfont.get()));
 
-        SIZE sz;
+        til::size sz;
         RETURN_HR_IF(E_FAIL, !GetTextExtentPoint32W(hdc.get(), L"M", 1, &sz));
-        resultingCellSize.X = gsl::narrow<SHORT>(sz.cx);
-        resultingCellSize.Y = gsl::narrow<SHORT>(sz.cy);
+        resultingCellSize.X = sz.cx;
+        resultingCellSize.Y = sz.cy;
     }
 #endif
 
@@ -245,11 +255,11 @@ CATCH_RETURN()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT AtlasEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept
+[[nodiscard]] HRESULT AtlasEngine::GetFontSize(_Out_ til::size* pFontSize) noexcept
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pFontSize);
-    pFontSize->X = gsl::narrow_cast<SHORT>(_api.fontMetrics.cellSize.x);
-    pFontSize->Y = gsl::narrow_cast<SHORT>(_api.fontMetrics.cellSize.y);
+    pFontSize->X = _api.fontMetrics.cellSize.x;
+    pFontSize->Y = _api.fontMetrics.cellSize.y;
     return S_OK;
 }
 
@@ -263,7 +273,7 @@ CATCH_RETURN()
     DWRITE_TEXT_METRICS metrics;
     RETURN_IF_FAILED(textLayout->GetMetrics(&metrics));
 
-    *pResult = static_cast<unsigned int>(std::ceil(metrics.width)) > _api.fontMetrics.cellSize.x;
+    *pResult = static_cast<unsigned int>(std::ceilf(metrics.width)) > _api.fontMetrics.cellSize.x;
     return S_OK;
 }
 
@@ -281,9 +291,14 @@ HRESULT AtlasEngine::Enable() noexcept
     return S_OK;
 }
 
+[[nodiscard]] std::wstring_view AtlasEngine::GetPixelShaderPath() noexcept
+{
+    return _api.customPixelShaderPath;
+}
+
 [[nodiscard]] bool AtlasEngine::GetRetroTerminalEffect() const noexcept
 {
-    return false;
+    return _api.useRetroTerminalEffect;
 }
 
 [[nodiscard]] float AtlasEngine::GetScaling() const noexcept
@@ -291,29 +306,18 @@ HRESULT AtlasEngine::Enable() noexcept
     return static_cast<float>(_api.dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
 }
 
-[[nodiscard]] HANDLE AtlasEngine::GetSwapChainHandle()
-{
-    if (WI_IsFlagSet(_api.invalidations, ApiInvalidations::Device))
-    {
-        _createResources();
-        WI_ClearFlag(_api.invalidations, ApiInvalidations::Device);
-    }
-
-    return _api.swapChainHandle.get();
-}
-
 [[nodiscard]] Microsoft::Console::Types::Viewport AtlasEngine::GetViewportInCharacters(const Types::Viewport& viewInPixels) const noexcept
 {
     assert(_api.fontMetrics.cellSize.x != 0);
     assert(_api.fontMetrics.cellSize.y != 0);
-    return Types::Viewport::FromDimensions(viewInPixels.Origin(), COORD{ gsl::narrow_cast<short>(viewInPixels.Width() / _api.fontMetrics.cellSize.x), gsl::narrow_cast<short>(viewInPixels.Height() / _api.fontMetrics.cellSize.y) });
+    return Types::Viewport::FromDimensions(viewInPixels.Origin(), { viewInPixels.Width() / _api.fontMetrics.cellSize.x, viewInPixels.Height() / _api.fontMetrics.cellSize.y });
 }
 
 [[nodiscard]] Microsoft::Console::Types::Viewport AtlasEngine::GetViewportInPixels(const Types::Viewport& viewInCharacters) const noexcept
 {
     assert(_api.fontMetrics.cellSize.x != 0);
     assert(_api.fontMetrics.cellSize.y != 0);
-    return Types::Viewport::FromDimensions(viewInCharacters.Origin(), COORD{ gsl::narrow_cast<short>(viewInCharacters.Width() * _api.fontMetrics.cellSize.x), gsl::narrow_cast<short>(viewInCharacters.Height() * _api.fontMetrics.cellSize.y) });
+    return Types::Viewport::FromDimensions(viewInCharacters.Origin(), { viewInCharacters.Width() * _api.fontMetrics.cellSize.x, viewInCharacters.Height() * _api.fontMetrics.cellSize.y });
 }
 
 void AtlasEngine::SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept
@@ -322,23 +326,22 @@ void AtlasEngine::SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasin
     if (_api.antialiasingMode != mode)
     {
         _api.antialiasingMode = mode;
-        _resolveAntialiasingMode();
+        _resolveTransparencySettings();
         WI_SetFlag(_api.invalidations, ApiInvalidations::Font);
     }
 }
 
-void AtlasEngine::SetCallback(std::function<void()> pfn) noexcept
+void AtlasEngine::SetCallback(std::function<void(HANDLE)> pfn) noexcept
 {
     _api.swapChainChangedCallback = std::move(pfn);
 }
 
 void AtlasEngine::EnableTransparentBackground(const bool isTransparent) noexcept
 {
-    const auto mixin = !isTransparent ? 0xff000000 : 0x00000000;
-    if (_api.backgroundOpaqueMixin != mixin)
+    if (_api.enableTransparentBackground != isTransparent)
     {
-        _api.backgroundOpaqueMixin = mixin;
-        _resolveAntialiasingMode();
+        _api.enableTransparentBackground = isTransparent;
+        _resolveTransparencySettings();
         WI_SetFlag(_api.invalidations, ApiInvalidations::SwapChain);
     }
 }
@@ -359,10 +362,22 @@ void AtlasEngine::SetForceFullRepaintRendering(bool enable) noexcept
 
 void AtlasEngine::SetPixelShaderPath(std::wstring_view value) noexcept
 {
+    if (_api.customPixelShaderPath != value)
+    {
+        _api.customPixelShaderPath = value;
+        _resolveTransparencySettings();
+        WI_SetFlag(_api.invalidations, ApiInvalidations::Device);
+    }
 }
 
 void AtlasEngine::SetRetroTerminalEffect(bool enable) noexcept
 {
+    if (_api.useRetroTerminalEffect != enable)
+    {
+        _api.useRetroTerminalEffect = enable;
+        _resolveTransparencySettings();
+        WI_SetFlag(_api.invalidations, ApiInvalidations::Device);
+    }
 }
 
 void AtlasEngine::SetSelectionBackground(const COLORREF color, const float alpha) noexcept
@@ -377,6 +392,11 @@ void AtlasEngine::SetSelectionBackground(const COLORREF color, const float alpha
 
 void AtlasEngine::SetSoftwareRendering(bool enable) noexcept
 {
+    if (_api.useSoftwareRendering != enable)
+    {
+        _api.useSoftwareRendering = enable;
+        WI_SetFlag(_api.invalidations, ApiInvalidations::Device);
+    }
 }
 
 void AtlasEngine::SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept
@@ -384,7 +404,7 @@ void AtlasEngine::SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept
     _api.warningCallback = std::move(pfn);
 }
 
-[[nodiscard]] HRESULT AtlasEngine::SetWindowSize(const SIZE pixels) noexcept
+[[nodiscard]] HRESULT AtlasEngine::SetWindowSize(const til::size pixels) noexcept
 {
     u16x2 newSize;
     RETURN_IF_FAILED(vec2_narrow(pixels.cx, pixels.cy, newSize));
@@ -396,15 +416,10 @@ void AtlasEngine::SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept
     if (_api.sizeInPixel != newSize && newSize != u16x2{})
     {
         _api.sizeInPixel = newSize;
-        _api.cellCount = _api.sizeInPixel / _api.fontMetrics.cellSize;
         WI_SetFlag(_api.invalidations, ApiInvalidations::Size);
     }
 
     return S_OK;
-}
-
-void AtlasEngine::ToggleShaderEffects() noexcept
-{
 }
 
 [[nodiscard]] HRESULT AtlasEngine::UpdateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept
@@ -442,13 +457,15 @@ void AtlasEngine::UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept
 
 #pragma endregion
 
-void AtlasEngine::_resolveAntialiasingMode() noexcept
+void AtlasEngine::_resolveTransparencySettings() noexcept
 {
     // If the user asks for ClearType, but also for a transparent background
     // (which our ClearType shader doesn't simultaneously support)
     // then we need to sneakily force the renderer to grayscale AA.
-    const auto forceGrayscaleAA = _api.antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE && !_api.backgroundOpaqueMixin;
-    _api.realizedAntialiasingMode = forceGrayscaleAA ? D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE : _api.antialiasingMode;
+    _api.realizedAntialiasingMode = _api.enableTransparentBackground && _api.antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE ? D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE : _api.antialiasingMode;
+    // An opaque background allows us to use true "independent" flips. See AtlasEngine::_createSwapChain().
+    // We can't enable them if custom shaders are specified, because it's unknown, whether they support opaque inputs.
+    _api.backgroundOpaqueMixin = _api.enableTransparentBackground || !_api.customPixelShaderPath.empty() || _api.useRetroTerminalEffect ? 0x00000000 : 0xff000000;
 }
 
 void AtlasEngine::_updateFont(const wchar_t* faceName, const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes)
@@ -536,7 +553,6 @@ void AtlasEngine::_updateFont(const wchar_t* faceName, const FontInfoDesired& fo
 
     if (previousCellSize != _api.fontMetrics.cellSize)
     {
-        _api.cellCount = _api.sizeInPixel / _api.fontMetrics.cellSize;
         WI_SetFlag(_api.invalidations, ApiInvalidations::Size);
     }
 }
@@ -598,50 +614,98 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     // Point sizes are commonly treated at a 72 DPI scale
     // (including by OpenType), whereas DirectWrite uses 96 DPI.
     // Since we want the height in px we multiply by the display's DPI.
-    const auto fontSizeInPx = std::ceil(requestedSize.Y / 72.0 * _api.dpi);
+    const auto fontSizeInDIP = requestedSize.Y / 72.0f * 96.0f;
+    const auto fontSizeInPx = requestedSize.Y / 72.0f * _api.dpi;
 
-    const auto designUnitsPerPx = fontSizeInPx / static_cast<double>(metrics.designUnitsPerEm);
-    const auto ascentInPx = static_cast<double>(metrics.ascent) * designUnitsPerPx;
-    const auto descentInPx = static_cast<double>(metrics.descent) * designUnitsPerPx;
-    const auto lineGapInPx = static_cast<double>(metrics.lineGap) * designUnitsPerPx;
-    const auto advanceWidthInPx = static_cast<double>(glyphMetrics.advanceWidth) * designUnitsPerPx;
+    const auto designUnitsPerPx = fontSizeInPx / static_cast<float>(metrics.designUnitsPerEm);
+    const auto ascent = static_cast<float>(metrics.ascent) * designUnitsPerPx;
+    const auto descent = static_cast<float>(metrics.descent) * designUnitsPerPx;
+    const auto lineGap = static_cast<float>(metrics.lineGap) * designUnitsPerPx;
+    const auto underlinePosition = static_cast<float>(-metrics.underlinePosition) * designUnitsPerPx;
+    const auto underlineThickness = static_cast<float>(metrics.underlineThickness) * designUnitsPerPx;
+    const auto strikethroughPosition = static_cast<float>(-metrics.strikethroughPosition) * designUnitsPerPx;
+    const auto strikethroughThickness = static_cast<float>(metrics.strikethroughThickness) * designUnitsPerPx;
 
-    const auto halfGapInPx = lineGapInPx / 2.0;
-    const auto baseline = std::ceil(ascentInPx + halfGapInPx);
-    const auto cellWidth = gsl::narrow<u16>(std::ceil(advanceWidthInPx));
-    const auto cellHeight = gsl::narrow<u16>(std::ceil(baseline + descentInPx + halfGapInPx));
+    const auto advanceWidth = static_cast<float>(glyphMetrics.advanceWidth) * designUnitsPerPx;
+
+    const auto halfGap = lineGap / 2.0f;
+    const auto baseline = std::roundf(ascent + halfGap);
+    const auto lineHeight = std::roundf(baseline + descent + halfGap);
+    const auto underlinePos = std::roundf(baseline + underlinePosition);
+    const auto underlineWidth = std::max(1.0f, std::roundf(underlineThickness));
+    const auto strikethroughPos = std::roundf(baseline + strikethroughPosition);
+    const auto strikethroughWidth = std::max(1.0f, std::roundf(strikethroughThickness));
+    const auto thinLineWidth = std::max(1.0f, std::roundf(underlineThickness / 2.0f));
+
+    // For double underlines we loosely follow what Word does:
+    // 1. The lines are half the width of an underline (= thinLineWidth)
+    // 2. Ideally the bottom line is aligned with the bottom of the underline
+    // 3. The top underline is vertically in the middle between baseline and ideal bottom underline
+    // 4. If the top line gets too close to the baseline the underlines are shifted downwards
+    // 5. The minimum gap between the two lines appears to be similar to Tex (1.2pt)
+    // (Additional notes below.)
+
+    // 2.
+    auto doubleUnderlinePosBottom = underlinePos + underlineWidth - thinLineWidth;
+    // 3. Since we don't align the center of our two lines, but rather the top borders
+    //    we need to subtract half a line width from our center point.
+    auto doubleUnderlinePosTop = std::roundf((baseline + doubleUnderlinePosBottom - thinLineWidth) / 2.0f);
+    // 4.
+    doubleUnderlinePosTop = std::max(doubleUnderlinePosTop, baseline + thinLineWidth);
+    // 5. The gap is only the distance _between_ the lines, but we need the distance from the
+    //    top border of the top and bottom lines, which includes an additional line width.
+    const auto doubleUnderlineGap = std::max(1.0f, std::roundf(1.2f / 72.0f * _api.dpi));
+    doubleUnderlinePosBottom = std::max(doubleUnderlinePosBottom, doubleUnderlinePosTop + doubleUnderlineGap + thinLineWidth);
+    // Our cells can't overlap each other so we additionally clamp the bottom line to be inside the cell boundaries.
+    doubleUnderlinePosBottom = std::min(doubleUnderlinePosBottom, lineHeight - thinLineWidth);
+
+    const auto cellWidth = gsl::narrow<u16>(std::roundf(advanceWidth));
+    const auto cellHeight = gsl::narrow<u16>(lineHeight);
 
     {
-        COORD resultingCellSize;
-        resultingCellSize.X = gsl::narrow<SHORT>(cellWidth);
-        resultingCellSize.Y = gsl::narrow<SHORT>(cellHeight);
-        fontInfo.SetFromEngine(requestedFaceName, requestedFamily, requestedWeight, false, resultingCellSize, requestedSize);
+        til::size coordSize;
+        coordSize.X = cellWidth;
+        coordSize.Y = cellHeight;
+
+        if (requestedSize.X == 0)
+        {
+            // The coordSizeUnscaled parameter to SetFromEngine is used for API functions like GetConsoleFontSize.
+            // Since clients expect that settings the font height to Y yields back a font height of Y,
+            // we're scaling the X relative/proportional to the actual cellWidth/cellHeight ratio.
+            // The code below uses a poor form of integer rounding.
+            requestedSize.X = (requestedSize.Y * cellWidth + cellHeight / 2) / cellHeight;
+        }
+
+        fontInfo.SetFromEngine(requestedFaceName, requestedFamily, requestedWeight, false, coordSize, requestedSize);
     }
 
     if (fontMetrics)
     {
-        const auto underlineOffsetInPx = static_cast<double>(-metrics.underlinePosition) * designUnitsPerPx;
-        const auto underlineThicknessInPx = static_cast<double>(metrics.underlineThickness) * designUnitsPerPx;
-        const auto strikethroughOffsetInPx = static_cast<double>(-metrics.strikethroughPosition) * designUnitsPerPx;
-        const auto strikethroughThicknessInPx = static_cast<double>(metrics.strikethroughThickness) * designUnitsPerPx;
-        const auto lineThickness = gsl::narrow<u16>(std::round(std::min(underlineThicknessInPx, strikethroughThicknessInPx)));
-        const auto underlinePos = gsl::narrow<u16>(std::ceil(baseline + underlineOffsetInPx - lineThickness / 2.0));
-        const auto strikethroughPos = gsl::narrow<u16>(std::round(baseline + strikethroughOffsetInPx - lineThickness / 2.0));
-
-        auto fontName = wil::make_process_heap_string(requestedFaceName);
-        const auto fontWeight = gsl::narrow<u16>(requestedWeight);
+        std::wstring fontName{ requestedFaceName };
+        const auto fontWeightU16 = gsl::narrow_cast<u16>(requestedWeight);
+        const auto underlinePosU16 = gsl::narrow_cast<u16>(underlinePos);
+        const auto underlineWidthU16 = gsl::narrow_cast<u16>(underlineWidth);
+        const auto strikethroughPosU16 = gsl::narrow_cast<u16>(strikethroughPos);
+        const auto strikethroughWidthU16 = gsl::narrow_cast<u16>(strikethroughWidth);
+        const auto doubleUnderlinePosTopU16 = gsl::narrow_cast<u16>(doubleUnderlinePosTop);
+        const auto doubleUnderlinePosBottomU16 = gsl::narrow_cast<u16>(doubleUnderlinePosBottom);
+        const auto thinLineWidthU16 = gsl::narrow_cast<u16>(thinLineWidth);
 
         // NOTE: From this point onward no early returns or throwing code should exist,
         // as we might cause _api to be in an inconsistent state otherwise.
 
         fontMetrics->fontCollection = std::move(fontCollection);
         fontMetrics->fontName = std::move(fontName);
-        fontMetrics->fontSizeInDIP = static_cast<float>(fontSizeInPx / static_cast<double>(_api.dpi) * 96.0);
-        fontMetrics->baselineInDIP = static_cast<float>(baseline / static_cast<double>(_api.dpi) * 96.0);
+        fontMetrics->fontSizeInDIP = fontSizeInDIP;
+        fontMetrics->baselineInDIP = baseline / static_cast<float>(_api.dpi) * 96.0f;
+        fontMetrics->advanceScale = cellWidth / advanceWidth;
         fontMetrics->cellSize = { cellWidth, cellHeight };
-        fontMetrics->fontWeight = fontWeight;
-        fontMetrics->underlinePos = underlinePos;
-        fontMetrics->strikethroughPos = strikethroughPos;
-        fontMetrics->lineThickness = lineThickness;
+        fontMetrics->fontWeight = fontWeightU16;
+        fontMetrics->underlinePos = underlinePosU16;
+        fontMetrics->underlineWidth = underlineWidthU16;
+        fontMetrics->strikethroughPos = strikethroughPosU16;
+        fontMetrics->strikethroughWidth = strikethroughWidthU16;
+        fontMetrics->doubleUnderlinePos = { doubleUnderlinePosTopU16, doubleUnderlinePosBottomU16 };
+        fontMetrics->thinLineWidth = thinLineWidthU16;
     }
 }

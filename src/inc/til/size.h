@@ -9,8 +9,21 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
     struct size
     {
-        CoordType width = 0;
-        CoordType height = 0;
+        // **** TRANSITIONAL ****
+        // The old COORD type uses uppercase X/Y member names.
+        // We'll migrate to lowercase width/height in the future.
+        union
+        {
+            CoordType width = 0;
+            CoordType X;
+            CoordType cx;
+        };
+        union
+        {
+            CoordType height = 0;
+            CoordType Y;
+            CoordType cy;
+        };
 
         constexpr size() noexcept = default;
 
@@ -42,7 +55,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         constexpr explicit operator bool() const noexcept
         {
-            return width > 0 && height > 0;
+            return (width > 0) & (height > 0);
         }
 
         constexpr size operator+(const size other) const
@@ -80,7 +93,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         template<typename TilMath, typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
         constexpr size scale(TilMath math, const T scale) const
         {
-            return til::size{
+            return {
                 math,
                 width * scale,
                 height * scale,
@@ -89,49 +102,17 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         constexpr size divide_ceil(const size other) const
         {
-            // Divide normally to get the floor.
-            const size floor = *this / other;
-
-            CoordType adjWidth = 0;
-            CoordType adjHeight = 0;
-
-            // Check for width remainder, anything not 0.
-            // If we multiply the floored number with the other, it will equal
-            // the old width if there was no remainder.
-            if (other.width * floor.width != width)
+            // The integer ceil division `((a - 1) / b) + 1` only works for numbers >0.
+            // Support for negative numbers wasn't deemed useful at this point.
+            if ((width < 0) | (height < 0) | (other.width <= 0) | (other.height <= 0))
             {
-                // If there was any remainder,
-                // Grow the magnitude by 1 in the
-                // direction of the sign.
-                if (floor.width >= 0)
-                {
-                    ++adjWidth;
-                }
-                else
-                {
-                    --adjWidth;
-                }
+                throw std::invalid_argument{ "invalid til::size::divide_ceil" };
             }
 
-            // Check for height remainder, anything not 0.
-            // If we multiply the floored number with the other, it will equal
-            // the old width if there was no remainder.
-            if (other.height * floor.height != height)
-            {
-                // If there was any remainder,
-                // Grow the magnitude by 1 in the
-                // direction of the sign.
-                if (height >= 0)
-                {
-                    ++adjHeight;
-                }
-                else
-                {
-                    --adjHeight;
-                }
-            }
-
-            return floor + size{ adjWidth, adjHeight };
+            return {
+                width != 0 ? (width - 1) / other.width + 1 : 0,
+                height != 0 ? (height - 1) / other.height + 1 : 0,
+            };
         }
 
         template<typename T = CoordType>
@@ -152,18 +133,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return gsl::narrow<T>(static_cast<int64_t>(width) * static_cast<int64_t>(height));
         }
 
-#ifdef _WINCONTYPES_
-        explicit constexpr size(const COORD other) noexcept :
-            width{ other.X }, height{ other.Y }
-        {
-        }
-
-        constexpr COORD to_win32_coord() const
-        {
-            return { gsl::narrow<short>(width), gsl::narrow<short>(height) };
-        }
-#endif
-
 #ifdef _WINDEF_
         explicit constexpr size(const SIZE other) noexcept :
             width{ other.cx }, height{ other.cy }
@@ -173,6 +142,19 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         constexpr SIZE to_win32_size() const noexcept
         {
             return { width, height };
+        }
+
+        // til::size and SIZE have the exact same layout at the time of writing,
+        // so this function lets you unsafely "view" this size as a SIZE
+        // if you need to pass it to a Win32 function.
+        //
+        // Use as_win32_size() as sparingly as possible because it'll be a pain to hack
+        // it out of this code base once til::size and SIZE aren't the same anymore.
+        // Prefer casting to SIZE and back to til::size instead if possible.
+        SIZE* as_win32_size() noexcept
+        {
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
+            return std::launder(reinterpret_cast<SIZE*>(this));
         }
 #endif
 
@@ -210,17 +192,30 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
     };
 
-    constexpr size wrap_coord_size(const COORD rect) noexcept
+    constexpr size wrap_coord_size(const COORD sz) noexcept
     {
-        return { rect.X, rect.Y };
+        return { sz.X, sz.Y };
     }
 
-    constexpr COORD unwrap_coord_size(const size rect)
+    constexpr COORD unwrap_coord_size(const size sz)
     {
         return {
-            gsl::narrow<short>(rect.width),
-            gsl::narrow<short>(rect.height),
+            gsl::narrow<short>(sz.width),
+            gsl::narrow<short>(sz.height),
         };
+    }
+
+    constexpr HRESULT unwrap_coord_size_hr(const size sz, COORD& out) noexcept
+    {
+        short x = 0;
+        short y = 0;
+        if (narrow_maybe(sz.width, x) && narrow_maybe(sz.height, y))
+        {
+            out.X = x;
+            out.Y = y;
+            return S_OK;
+        }
+        RETURN_WIN32(ERROR_UNHANDLED_EXCEPTION);
     }
 };
 

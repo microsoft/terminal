@@ -119,7 +119,7 @@ void ConsoleImeInfo::ClearAllAreas()
 // - newSize - New size for conversion areas
 // Return Value:
 // - S_OK or appropriate failure HRESULT.
-[[nodiscard]] HRESULT ConsoleImeInfo::ResizeAllAreas(const COORD newSize)
+[[nodiscard]] HRESULT ConsoleImeInfo::ResizeAllAreas(const til::size newSize)
 {
     for (auto& area : ConvAreaCompStr)
     {
@@ -310,7 +310,7 @@ std::vector<OutputCell> ConsoleImeInfo::s_ConvertToCells(const std::wstring_view
 //   If the viewport is deemed too small, we'll skip past it and advance begin past the entire full-width character.
 std::vector<OutputCell>::const_iterator ConsoleImeInfo::_WriteConversionArea(const std::vector<OutputCell>::const_iterator begin,
                                                                              const std::vector<OutputCell>::const_iterator end,
-                                                                             COORD& pos,
+                                                                             til::point& pos,
                                                                              const Microsoft::Console::Types::Viewport view,
                                                                              SCREEN_INFORMATION& screenInfo)
 {
@@ -343,14 +343,19 @@ std::vector<OutputCell>::const_iterator ConsoleImeInfo::_WriteConversionArea(con
 
     // We must attempt to compensate for ending on a leading byte. We can't split a full-width character across lines.
     // As such, if the last item is a leading byte, back the end up by one.
-    FAIL_FAST_IF(lineEnd <= lineBegin); // We should have at least 1 space we can back up.
-
     // Get the last cell in the run and if it's a leading byte, move the end position back one so we don't
     // try to insert it.
     const auto lastCell = lineEnd - 1;
     if (lastCell->DbcsAttr().IsLeading())
     {
         lineEnd--;
+    }
+
+    // GH#12730 - if the lineVec would now be empty, just return early. Failing
+    // to do so will later cause a crash trying to construct an empty view.
+    if (lineEnd <= lineBegin)
+    {
+        return lineEnd;
     }
 
     // Copy out the substring into a vector.
@@ -367,7 +372,7 @@ std::vector<OutputCell>::const_iterator ConsoleImeInfo::_WriteConversionArea(con
 
     // Set the viewport and positioning parameters for the conversion area to describe to the renderer
     // the appropriate location to overlay this conversion area on top of the main screen buffer inside the viewport.
-    const SMALL_RECT region{ insertionPos.X, 0, gsl::narrow<SHORT>(insertionPos.X + lineVec.size() - 1), 0 };
+    const til::inclusive_rect region{ insertionPos.X, 0, gsl::narrow<til::CoordType>(insertionPos.X + lineVec.size() - 1), 0 };
     area.SetWindowInfo(region);
     area.SetViewPos({ 0 - view.Left(), insertionPos.Y - view.Top() });
 
@@ -378,7 +383,7 @@ std::vector<OutputCell>::const_iterator ConsoleImeInfo::_WriteConversionArea(con
     // Notify accessibility that we have updated the text in this display region within the viewport.
     if (screenInfo.HasAccessibilityEventing())
     {
-        screenInfo.NotifyAccessibilityEventing(insertionPos.X, insertionPos.Y, gsl::narrow<SHORT>(insertionPos.X + lineVec.size() - 1), insertionPos.Y);
+        screenInfo.NotifyAccessibilityEventing(region.left, insertionPos.Y, region.right, insertionPos.Y);
     }
 
     // Hand back the iterator representing the end of what we used to be fed into the beginning of the next call.

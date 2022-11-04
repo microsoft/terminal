@@ -107,7 +107,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     Model::TerminalSettings ProfileViewModel::TermSettings() const
     {
-        return Model::TerminalSettings::CreateWithProfile(_appSettings, _profile, nullptr).DefaultSettings();
+        return Model::TerminalSettings::CreateForPreview(_appSettings, _profile);
     }
 
     // Method Description:
@@ -293,14 +293,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _unfocusedAppearanceViewModel;
     }
 
-    bool ProfileViewModel::AtlasEngineAvailable() const noexcept
-    {
-        return Feature_AtlasEngine::IsEnabled();
-    }
-
     bool ProfileViewModel::VtPassthroughAvailable() const noexcept
     {
-        return Feature_VtPassthroughMode::IsEnabled();
+        return Feature_VtPassthroughMode::IsEnabled() && Feature_VtPassthroughModeSettingInUI::IsEnabled();
     }
 
     bool ProfileViewModel::UseParentProcessDirectory()

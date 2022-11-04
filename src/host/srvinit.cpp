@@ -18,6 +18,7 @@
 #include "../server/Entrypoints.h"
 #include "../server/IoSorter.h"
 
+#include "../interactivity/inc/ISystemConfigurationProvider.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../interactivity/base/ApiDetector.hpp"
 #include "../interactivity/base/RemoteConsoleControl.hpp"
@@ -26,7 +27,6 @@
 #include "../renderer/base/renderer.hpp"
 
 #include "../inc/conint.h"
-#include "../propslib/DelegationConfig.hpp"
 
 #include "tracing.hpp"
 
@@ -64,28 +64,28 @@ try
 
     // Check if this conhost is allowed to delegate its activities to another.
     // If so, look up the registered default console handler.
-    auto isEnabled = false;
-    if (SUCCEEDED(Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy(isEnabled)) && isEnabled)
+    if (Globals.delegationPair.IsUndecided() && Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy())
     {
-        IID delegationClsid;
-        if (SUCCEEDED(DelegationConfig::s_GetDefaultConsoleId(delegationClsid)))
-        {
-            Globals.handoffConsoleClsid = delegationClsid;
-            TraceLoggingWrite(g_hConhostV2EventTraceProvider,
-                              "SrvInit_FoundDelegationConsole",
-                              TraceLoggingGuid(Globals.handoffConsoleClsid.value(), "ConsoleClsid"),
-                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-        }
-        if (SUCCEEDED(DelegationConfig::s_GetDefaultTerminalId(delegationClsid)))
-        {
-            Globals.handoffTerminalClsid = delegationClsid;
-            TraceLoggingWrite(g_hConhostV2EventTraceProvider,
-                              "SrvInit_FoundDelegationTerminal",
-                              TraceLoggingGuid(Globals.handoffTerminalClsid.value(), "TerminalClsid"),
-                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-        }
+        Globals.delegationPair = DelegationConfig::s_GetDelegationPair();
+
+        TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                          "SrvInit_FoundDelegationConsole",
+                          TraceLoggingGuid(Globals.delegationPair.console, "ConsoleClsid"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+        TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                          "SrvInit_FoundDelegationTerminal",
+                          TraceLoggingGuid(Globals.delegationPair.terminal, "TerminalClsid"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+    }
+    // If we looked up the registered defterm pair, and it was left as the default (missing or {0}),
+    // AND velocity is enabled for DxD, then we switch the delegation pair to Terminal and
+    // mark that we should check that class for the marker interface later.
+    if (Globals.delegationPair.IsDefault() && Microsoft::Console::Internal::DefaultApp::CheckShouldTerminalBeDefault())
+    {
+        Globals.delegationPair = DelegationConfig::TerminalDelegationPair;
+        Globals.defaultTerminalMarkerCheckRequired = true;
     }
 
     // Create the accessibility notifier early in the startup process.
@@ -180,7 +180,7 @@ static bool s_IsOnDesktop()
 
         // We need to see if we were spawned from a link. If we were, we need to
         // call back into the shell to try to get all the console information from the link.
-        ServiceLocator::LocateSystemConfigurationProvider()->GetSettingsFromLink(&settings, Title, &TitleLength, CurDir, AppName);
+        ServiceLocator::LocateSystemConfigurationProvider()->GetSettingsFromLink(&settings, Title, &TitleLength, CurDir, AppName, nullptr);
 
         // If we weren't started from a link, this will already be set.
         // If LoadLinkInfo couldn't find anything, it will remove the flag so we can dig in the registry.
@@ -199,6 +199,22 @@ static bool s_IsOnDesktop()
         // strong nudge in that direction. If an application _doesn't_ want VT
         // processing, it's free to disable this setting, even in conpty mode.
         settings.SetVirtTermLevel(1);
+
+        // GH#9458 - In the case of a DefTerm handoff, the OriginalTitle might
+        // be stashed in the lnk. We want to crack that lnk open, so we can get
+        // that title from it, but we want to discard everything else. So build
+        // a dummy Settings object here, and read the link settings into it.
+        // `Title` will get filled with the title from the lnk, which we'll use
+        // below.
+
+        Settings temp;
+        // We're not gonna copy over StartupFlags to the main gci settings,
+        // because we generally don't think those are valuable in ConPTY mode.
+        // However, we do need to apply them to the temp we've created, so that
+        // GetSettingsFromLink will actually look for the link settings (it will
+        // skip that if STARTF_TITLEISLINKNAME is not set).
+        temp.SetStartupFlags(pStartupSettings->GetStartupFlags());
+        ServiceLocator::LocateSystemConfigurationProvider()->GetSettingsFromLink(&temp, Title, &TitleLength, CurDir, AppName, nullptr);
     }
 
     // 1. The settings we were passed contains STARTUPINFO structure settings to be applied last.
@@ -427,28 +443,18 @@ try
     auto& g = ServiceLocator::LocateGlobals();
     g.handoffTarget = true;
 
-    IID delegationClsid;
-    if (SUCCEEDED(DelegationConfig::s_GetDefaultConsoleId(delegationClsid)))
+    g.delegationPair = DelegationConfig::s_GetDelegationPair();
+    // We've been handed off to (we're OpenConsole, not conhost).
+    // If we get here and there's not a custom defterm set, then it must be because
+    // conhost defaulted to us for DxD. Set up Terminal as the thing to handoff too.
+    if (!g.delegationPair.IsCustom())
     {
-        g.handoffConsoleClsid = delegationClsid;
-    }
-    if (SUCCEEDED(DelegationConfig::s_GetDefaultTerminalId(delegationClsid)))
-    {
-        g.handoffTerminalClsid = delegationClsid;
-    }
-
-    if (!g.handoffTerminalClsid)
-    {
-        TraceLoggingWrite(g_hConhostV2EventTraceProvider,
-                          "SrvInit_ReceiveHandoff_NoTerminal",
-                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-        return E_NOT_SET;
+        g.delegationPair = DelegationConfig::TerminalDelegationPair;
     }
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "SrvInit_ReceiveHandoff",
-                      TraceLoggingGuid(g.handoffTerminalClsid.value(), "TerminalClsid"),
+                      TraceLoggingGuid(g.delegationPair.terminal, "TerminalClsid"),
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
@@ -505,27 +511,86 @@ try
 
     const auto serverProcess = GetCurrentProcess();
 
-    ::Microsoft::WRL::ComPtr<ITerminalHandoff> handoff;
+    ::Microsoft::WRL::ComPtr<ITerminalHandoff2> handoff;
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "SrvInit_PrepareToCreateDelegationTerminal",
-                      TraceLoggingGuid(g.handoffTerminalClsid.value(), "TerminalClsid"),
+                      TraceLoggingGuid(g.delegationPair.terminal, "TerminalClsid"),
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
-    RETURN_IF_FAILED(CoCreateInstance(g.handoffTerminalClsid.value(), nullptr, CLSCTX_LOCAL_SERVER, IID_PPV_ARGS(&handoff)));
+    RETURN_IF_FAILED(CoCreateInstance(g.delegationPair.terminal, nullptr, CLSCTX_LOCAL_SERVER, IID_PPV_ARGS(&handoff)));
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "SrvInit_CreatedDelegationTerminal",
-                      TraceLoggingGuid(g.handoffTerminalClsid.value(), "TerminalClsid"),
+                      TraceLoggingGuid(g.delegationPair.terminal, "TerminalClsid"),
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+    // As a part of defterm handoff, we're gonna try to pull a lot of
+    // information out of the link and startup info, so we can let the terminal
+    // know these things as well.
+    //
+    // To let the terminal know these things, we have to look them up now,
+    // before we normally would.
+    //
+    // Typically, we'll just go into `ConsoleCreateIoThread` below, which will
+    // pull out the CONSOLE_API_CONNECTINFO from this connect message, and then
+    // get the link properties out of the title later. Below are elements of
+    // ConsoleAllocateConsole and SetUpConsole that get the bits of STARTUP_INFO
+    // we care about for defterm handoffs.
+
+    // A placeholder that we'll read icon information into, instead of setting
+    // the globals icon state.
+    Microsoft::Console::Interactivity::IconInfo icon;
+
+    // To be able to actually process this connect message into a
+    // CONSOLE_API_CONNECTINFO, we need to hook up the ConDrvDeviceComm to the
+    // message. Usually, we'd create the ConDrvDeviceComm later, in
+    // ConsoleServerInitialization, but we can set it up early here.
+    // ConsoleServerInitialization will safely no-op if it already finds one.
+    g.pDeviceComm = new ConDrvDeviceComm(Server);
+    // load bearing: if you don't set this, the ConsoleInitializeConnectInfo will fail.
+    connectMessage->_pDeviceComm = g.pDeviceComm;
+    CONSOLE_API_CONNECTINFO Cac;
+    RETURN_IF_NTSTATUS_FAILED(ConsoleInitializeConnectInfo(connectMessage, &Cac));
+
+    // BEGIN code from SetUpConsole
+    // Create a temporary Settings object to parse the settings into, rather
+    // than parsing them into the global settings object (gci).
+    Settings settings{};
+    // We need to see if we were spawned from a link. If we were, we need to
+    // call back into the OS shell to try to get all the console information from the link.
+    //
+    // load bearing: if you don't pass the StartupFlags, then
+    // GetSettingsFromLink might not even bother attempting to check the lnk.
+    settings.SetStartupFlags(Cac.ConsoleInfo.GetStartupFlags());
+    ServiceLocator::LocateSystemConfigurationProvider()->GetSettingsFromLink(&settings,
+                                                                             Cac.Title,
+                                                                             &Cac.TitleLength,
+                                                                             Cac.CurDir,
+                                                                             Cac.AppName,
+                                                                             &icon);
+
+    // 1. The settings we were passed contains STARTUPINFO structure settings to be applied last.
+    settings.ApplyStartupInfo(&Cac.ConsoleInfo);
+    // END code from SetUpConsole
+
+    // Take what we've collected, and bundle it up for handoff.
+    auto title = wil::make_bstr(Cac.Title);
+    auto iconPath = wil::make_bstr(icon.path.data());
+    TERMINAL_STARTUP_INFO myStartupInfo{
+        title.get(),
+        iconPath.get(),
+        icon.index
+    };
 
     RETURN_IF_FAILED(handoff->EstablishPtyHandoff(inPipeTheirSide.get(),
                                                   outPipeTheirSide.get(),
                                                   signalPipeTheirSide.get(),
                                                   refHandle.get(),
                                                   serverProcess,
-                                                  clientProcess.get()));
+                                                  clientProcess.get(),
+                                                  myStartupInfo));
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "SrvInit_DelegateToTerminalSucceeded",
@@ -536,7 +601,12 @@ try
     outPipeTheirSide.reset();
     signalPipeTheirSide.reset();
 
-    const auto commandLine = fmt::format(FMT_COMPILE(L" --headless --signal {:#x}"), (int64_t)signalPipeOurSide.release());
+    // GH#13211 - Make sure we request win32input mode and that the terminal
+    // obeys the resizing quirk. Otherwise, defterm connections to the Terminal
+    // are going to have weird resizing, and aren't going to send full fidelity
+    // input messages.
+    const auto commandLine = fmt::format(FMT_COMPILE(L" --headless --resizeQuirk --win32input --signal {:#x}"),
+                                         (int64_t)signalPipeOurSide.release());
 
     ConsoleArguments consoleArgs(commandLine, inPipeOurSide.release(), outPipeOurSide.release());
     RETURN_IF_FAILED(consoleArgs.ParseCommandline());
@@ -763,9 +833,9 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     Cac->ConsoleInfo.SetStartupFlags(Data.StartupFlags);
     Cac->ConsoleInfo.SetFillAttribute(Data.FillAttribute);
     Cac->ConsoleInfo.SetShowWindow(Data.ShowWindow);
-    Cac->ConsoleInfo.SetScreenBufferSize(Data.ScreenBufferSize);
-    Cac->ConsoleInfo.SetWindowSize(Data.WindowSize);
-    Cac->ConsoleInfo.SetWindowOrigin(Data.WindowOrigin);
+    Cac->ConsoleInfo.SetScreenBufferSize(til::wrap_coord_size(Data.ScreenBufferSize));
+    Cac->ConsoleInfo.SetWindowSize(til::wrap_coord_size(Data.WindowSize));
+    Cac->ConsoleInfo.SetWindowOrigin(til::wrap_coord_size(Data.WindowOrigin));
     Cac->ProcessGroupId = Data.ProcessGroupId;
     Cac->ConsoleApp = Data.ConsoleApp;
     Cac->WindowVisible = Data.WindowVisible;

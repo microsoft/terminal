@@ -41,6 +41,13 @@ void ServiceLocator::SetOneCoreTeardownFunction(void (*pfn)()) noexcept
 
 [[noreturn]] void ServiceLocator::RundownAndExit(const HRESULT hr)
 {
+    // MSFT:40146639
+    //   The premise of this function is that 1 thread enters and 0 threads leave alive.
+    //   We need to prevent anyone from calling us until we actually ExitProcess(),
+    //   so that we don't TriggerTeardown() twice. LockConsole() can't be used here,
+    //   because doing so would prevent the render thread from progressing.
+    AcquireSRWLockExclusive(&s_shutdownLock);
+
     // MSFT:15506250
     // In VT I/O Mode, a client application might die before we've rendered
     //      the last bit of text they've emitted. So give the VtRenderer one
@@ -50,9 +57,13 @@ void ServiceLocator::SetOneCoreTeardownFunction(void (*pfn)()) noexcept
         s_globals.pRender->TriggerTeardown();
     }
 
+    // MSFT:40226902 - HOTFIX shutdown on OneCore, by leaking the renderer, thereby
+    // reducing the change for existing race conditions to turn into deadlocks.
+#ifndef NDEBUG
     // By locking the console, we ensure no background tasks are accessing the
     // classes we're going to destruct down below (for instance: CursorBlinker).
     s_globals.getConsoleInformation().LockConsole();
+#endif
 
     // A History Lesson from MSFT: 13576341:
     // We introduced RundownAndExit to give services that hold onto important handles
@@ -71,14 +82,23 @@ void ServiceLocator::SetOneCoreTeardownFunction(void (*pfn)()) noexcept
 
     // TODO: MSFT: 14397093 - Expand graceful rundown beyond just the Hot Bug input services case.
 
+    // MSFT:40226902 - HOTFIX shutdown on OneCore, by leaking the renderer, thereby
+    // reducing the change for existing race conditions to turn into deadlocks.
+#ifndef NDEBUG
     delete s_globals.pRender;
+    s_globals.pRender = nullptr;
+#endif
 
     if (s_oneCoreTeardownFunction)
     {
         s_oneCoreTeardownFunction();
     }
 
+    // MSFT:40226902 - HOTFIX shutdown on OneCore, by leaking the renderer, thereby
+    // reducing the change for existing race conditions to turn into deadlocks.
+#ifndef NDEBUG
     s_consoleWindow.reset(nullptr);
+#endif
 
     ExitProcess(hr);
 }
@@ -283,27 +303,6 @@ ISystemConfigurationProvider* ServiceLocator::LocateSystemConfigurationProvider(
 Globals& ServiceLocator::LocateGlobals()
 {
     return s_globals;
-}
-
-// Method Description:
-// - Installs a callback method to receive notifications when the pseudo console
-//   window is shown or hidden by an attached client application (so we can
-//   translate it and forward it to the attached terminal, in case it would like
-//   to react accordingly.)
-// Arguments:
-// - func - Callback function that takes True as Show and False as Hide.
-// Return Value:
-// - <none>
-void ServiceLocator::SetPseudoWindowCallback(std::function<void(bool)> func)
-{
-    // Force the whole window to be put together first.
-    // We don't really need the handle, we just want to leverage the setup steps.
-    (void)LocatePseudoWindow();
-
-    if (s_interactivityFactory)
-    {
-        s_interactivityFactory->SetPseudoWindowCallback(func);
-    }
 }
 
 // Method Description:

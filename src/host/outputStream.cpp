@@ -7,6 +7,7 @@
 
 #include "_stream.h"
 #include "getset.h"
+#include "handle.h"
 #include "directio.h"
 #include "output.h"
 
@@ -15,8 +16,8 @@
 #pragma hdrstop
 
 using namespace Microsoft::Console;
+using namespace Microsoft::Console::VirtualTerminal;
 using Microsoft::Console::Interactivity::ServiceLocator;
-using Microsoft::Console::VirtualTerminal::StateMachine;
 
 ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider& io) :
     _io{ io }
@@ -56,6 +57,36 @@ void ConhostInternalGetSet::PrintString(const std::wstring_view string)
     THROW_IF_NTSTATUS_FAILED(ntstatus);
 }
 
+// - Sends a string response to the input stream of the console.
+// - Used by various commands where the program attached would like a reply to one of the commands issued.
+// - This will generate two "key presses" (one down, one up) for every character in the string and place them into the head of the console's input stream.
+// Arguments:
+// - response - The response string to transmit back to the input stream
+// Return Value:
+// - <none>
+void ConhostInternalGetSet::ReturnResponse(const std::wstring_view response)
+{
+    std::deque<std::unique_ptr<IInputEvent>> inEvents;
+
+    // generate a paired key down and key up event for every
+    // character to be sent into the console's input buffer
+    for (const auto& wch : response)
+    {
+        // This wasn't from a real keyboard, so we're leaving key/scan codes blank.
+        KeyEvent keyEvent{ TRUE, 1, 0, 0, wch, 0 };
+
+        inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
+        keyEvent.SetKeyDown(false);
+        inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
+    }
+
+    // TODO GH#4954 During the input refactor we may want to add a "priority" input list
+    // to make sure that "response" input is spooled directly into the application.
+    // We switched this to an append (vs. a prepend) to fix GH#1637, a bug where two CPR
+    // could collide with each other.
+    _io.GetActiveInputBuffer()->Write(inEvents);
+}
+
 // Routine Description:
 // - Retrieves the state machine for the active output buffer.
 // Arguments:
@@ -86,7 +117,7 @@ TextBuffer& ConhostInternalGetSet::GetTextBuffer()
 // - the exclusive coordinates of the viewport.
 til::rect ConhostInternalGetSet::GetViewport() const
 {
-    return til::rect{ _io.GetActiveOutputBuffer().GetVirtualViewport().ToInclusive() };
+    return _io.GetActiveOutputBuffer().GetVirtualViewport().ToExclusive();
 }
 
 // Routine Description:
@@ -98,8 +129,8 @@ til::rect ConhostInternalGetSet::GetViewport() const
 void ConhostInternalGetSet::SetViewportPosition(const til::point position)
 {
     auto& info = _io.GetActiveOutputBuffer();
-    const auto dimensions = til::size{ info.GetViewport().Dimensions() };
-    const auto windowRect = til::rect{ position, dimensions }.to_small_rect();
+    const auto dimensions = info.GetViewport().Dimensions();
+    const auto windowRect = til::rect{ position, dimensions }.to_inclusive_rect();
     THROW_IF_FAILED(ServiceLocator::LocateGlobals().api->SetConsoleWindowInfoImpl(info, true, windowRect));
 }
 
@@ -113,19 +144,6 @@ void ConhostInternalGetSet::SetViewportPosition(const til::point position)
 void ConhostInternalGetSet::SetTextAttributes(const TextAttribute& attrs)
 {
     _io.GetActiveOutputBuffer().SetAttributes(attrs);
-}
-
-// Routine Description:
-// - Writes events to the input buffer already formed into IInputEvents
-// Arguments:
-// - events - the input events to be copied into the head of the input
-//            buffer for the underlying attached process
-// - eventsWritten - on output, the number of events written
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::WriteInput(std::deque<std::unique_ptr<IInputEvent>>& events, size_t& eventsWritten)
-{
-    eventsWritten = _io.GetActiveInputBuffer()->Write(events);
 }
 
 // Routine Description:
@@ -156,8 +174,8 @@ void ConhostInternalGetSet::SetScrollingRegion(const til::inclusive_rect& scroll
 {
     auto& screenInfo = _io.GetActiveOutputBuffer();
     auto srScrollMargins = screenInfo.GetRelativeScrollMargins().ToInclusive();
-    srScrollMargins.Top = gsl::narrow<short>(scrollMargins.Top);
-    srScrollMargins.Bottom = gsl::narrow<short>(scrollMargins.Bottom);
+    srScrollMargins.Top = scrollMargins.Top;
+    srScrollMargins.Bottom = scrollMargins.Bottom;
     screenInfo.SetScrollMargins(Viewport::FromInclusive(srScrollMargins));
 }
 
@@ -268,7 +286,14 @@ void ConhostInternalGetSet::ShowWindow(bool showOrHide)
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto hwnd = gci.IsInVtIoMode() ? ServiceLocator::LocatePseudoWindow() : ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
-    ::ShowWindow(hwnd, showOrHide ? SW_NORMAL : SW_MINIMIZE);
+
+    // GH#13301 - When we send this ShowWindow message, if we send it to the
+    // conhost HWND, it's going to need to get processed by the window message
+    // thread before returning.
+    // However, ShowWindowAsync doesn't have this problem. It'll post the
+    // message to the window thread, then immediately return, so we don't have
+    // to worry about deadlocking.
+    ::ShowWindowAsync(hwnd, showOrHide ? SW_SHOWNOACTIVATE : SW_MINIMIZE);
 }
 
 // Routine Description:
@@ -294,21 +319,92 @@ unsigned int ConhostInternalGetSet::GetConsoleOutputCP() const
 }
 
 // Routine Description:
+// - Sets the XTerm bracketed paste mode. This controls whether pasted content is
+//     bracketed with control sequences to differentiate it from typed text.
+// Arguments:
+// - enable - set to true to enable bracketing, false to disable.
+// Return Value:
+// - <none>
+void ConhostInternalGetSet::EnableXtermBracketedPasteMode(const bool /*enabled*/)
+{
+    // TODO
+}
+
+// Routine Description:
+// - Copies the given content to the clipboard.
+// Arguments:
+// - content - the text to be copied.
+// Return Value:
+// - <none>
+void ConhostInternalGetSet::CopyToClipboard(const std::wstring_view /*content*/)
+{
+    // TODO
+}
+
+// Routine Description:
+// - Updates the taskbar progress indicator.
+// Arguments:
+// - state: indicates the progress state
+// - progress: indicates the progress value
+// Return Value:
+// - <none>
+void ConhostInternalGetSet::SetTaskbarProgress(const DispatchTypes::TaskbarState /*state*/, const size_t /*progress*/)
+{
+    // TODO
+}
+
+// Routine Description:
+// - Set the active working directory. Not used in conhost.
+// Arguments:
+// - content - the text to be copied.
+// Return Value:
+// - <none>
+void ConhostInternalGetSet::SetWorkingDirectory(const std::wstring_view /*uri*/)
+{
+}
+
+// Routine Description:
+// - Plays a single MIDI note, blocking for the duration.
+// Arguments:
+// - noteNumber - The MIDI note number to be played (0 - 127).
+// - velocity - The force with which the note should be played (0 - 127).
+// - duration - How long the note should be sustained (in milliseconds).
+// Return value:
+// - true if successful. false otherwise.
+void ConhostInternalGetSet::PlayMidiNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration)
+{
+    // We create the audio instance on demand, and lock it for the duration
+    // of the note output so it can't be destroyed while in use.
+    auto& midiAudio = ServiceLocator::LocateGlobals().getConsoleInformation().GetMidiAudio();
+    midiAudio.Lock();
+
+    // We then unlock the console, so the UI doesn't hang while we're busy.
+    UnlockConsole();
+
+    // This call will block for the duration, unless shutdown early.
+    midiAudio.PlayNote(noteNumber, velocity, duration);
+
+    // Once complete, we reacquire the console lock and unlock the audio.
+    // If the console has shutdown in the meantime, the Unlock call
+    // will throw an exception, forcing the thread to exit ASAP.
+    LockConsole();
+    midiAudio.Unlock();
+}
+
+// Routine Description:
 // - Resizes the window to the specified dimensions, in characters.
 // Arguments:
 // - width: The new width of the window, in columns
 // - height: The new height of the window, in rows
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool ConhostInternalGetSet::ResizeWindow(const size_t width, const size_t height)
+bool ConhostInternalGetSet::ResizeWindow(const til::CoordType sColumns, const til::CoordType sRows)
 {
-    SHORT sColumns = 0;
-    SHORT sRows = 0;
-
-    THROW_IF_FAILED(SizeTToShort(width, &sColumns));
-    THROW_IF_FAILED(SizeTToShort(height, &sRows));
-    // We should do nothing if 0 is passed in for a size.
-    RETURN_BOOL_IF_FALSE(width > 0 && height > 0);
+    // Ensure we can safely use gsl::narrow_cast<short>(...).
+    if (sColumns <= 0 || sRows <= 0 || sColumns > SHRT_MAX || sRows > SHRT_MAX)
+    {
+        return false;
+    }
 
     auto api = ServiceLocator::LocateGlobals().api;
     auto& screenInfo = _io.GetActiveOutputBuffer();
@@ -317,15 +413,25 @@ bool ConhostInternalGetSet::ResizeWindow(const size_t width, const size_t height
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
     api->GetConsoleScreenBufferInfoExImpl(screenInfo, csbiex);
 
-    const auto oldViewport = Viewport::FromInclusive(csbiex.srWindow);
-    const auto newViewport = Viewport::FromDimensions(oldViewport.Origin(), sColumns, sRows);
+    const auto oldViewport = screenInfo.GetVirtualViewport();
+    auto newViewport = Viewport::FromDimensions(oldViewport.Origin(), sColumns, sRows);
     // Always resize the width of the console
-    csbiex.dwSize.X = sColumns;
+    csbiex.dwSize.X = gsl::narrow_cast<short>(sColumns);
     // Only set the screen buffer's height if it's currently less than
     //  what we're requesting.
     if (sRows > csbiex.dwSize.Y)
     {
-        csbiex.dwSize.Y = sRows;
+        csbiex.dwSize.Y = gsl::narrow_cast<short>(sRows);
+    }
+
+    // If the cursor row is now past the bottom of the viewport, we'll have to
+    // move the viewport down to bring it back into view. However, we don't want
+    // to do this in pty mode, because the conpty resize operation is dependent
+    // on the viewport *not* being adjusted.
+    const auto cursorOverflow = csbiex.dwCursorPosition.Y - newViewport.BottomInclusive();
+    if (cursorOverflow > 0 && !IsConsolePty())
+    {
+        newViewport = Viewport::Offset(newViewport, { 0, cursorOverflow });
     }
 
     // SetWindowInfo expect inclusive rects
@@ -333,7 +439,7 @@ bool ConhostInternalGetSet::ResizeWindow(const size_t width, const size_t height
 
     // SetConsoleScreenBufferInfoEx however expects exclusive rects
     const auto sre = newViewport.ToExclusive();
-    csbiex.srWindow = sre;
+    csbiex.srWindow = til::unwrap_exclusive_small_rect(sre);
 
     THROW_IF_FAILED(api->SetConsoleScreenBufferInfoExImpl(screenInfo, csbiex));
     THROW_IF_FAILED(api->SetConsoleWindowInfoImpl(screenInfo, true, sri));
@@ -376,23 +482,14 @@ void ConhostInternalGetSet::NotifyAccessibilityChange(const til::rect& changedRe
     if (screenInfo.HasAccessibilityEventing())
     {
         screenInfo.NotifyAccessibilityEventing(
-            gsl::narrow_cast<short>(changedRect.left),
-            gsl::narrow_cast<short>(changedRect.top),
-            gsl::narrow_cast<short>(changedRect.right - 1),
-            gsl::narrow_cast<short>(changedRect.bottom - 1));
+            changedRect.left,
+            changedRect.top,
+            changedRect.right - 1,
+            changedRect.bottom - 1);
     }
 }
 
-void ConhostInternalGetSet::ReparentWindow(const uint64_t handle)
+void ConhostInternalGetSet::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& /*mark*/)
 {
-    // This will initialize s_interactivityFactory for us. It will also
-    // conveniently return 0 when we're on OneCore.
-    //
-    // If the window hasn't been created yet, by some other call to
-    // LocatePseudoWindow, then this will also initialize the owner of the
-    // window.
-    if (const auto pseudoHwnd{ ServiceLocator::LocatePseudoWindow(reinterpret_cast<HWND>(handle)) })
-    {
-        LOG_LAST_ERROR_IF_NULL(::SetParent(pseudoHwnd, reinterpret_cast<HWND>(handle)));
-    }
+    // Not implemented for conhost.
 }
