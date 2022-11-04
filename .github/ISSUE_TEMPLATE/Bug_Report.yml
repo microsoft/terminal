@@ -14,7 +14,7 @@ body:
     label: Windows Terminal version
     placeholder: "1.7.3651.0"
     description: |
-      You can find the version in the about dialog, or by running `wt -v` at the commandline.
+      You can find the version in the about dialog, or by running `wt -v` at the commandline (for the Stable/Preview version you’re reporting a bug about).
   validations:
     required: false
     
