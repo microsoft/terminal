@@ -316,10 +316,10 @@ void Terminal::CommandStart()
     {
         const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
 
+        // Move the end of this mark to the current cursor position. The prompt
+        // is between [mark.start, mark.end)
         _currentPrompt->end = cursorPos;
     }
-
-    // CommandStart(mark, cursorPos, cursorPos);
 }
 
 void Terminal::OutputStart()
@@ -327,6 +327,8 @@ void Terminal::OutputStart()
     if (_currentPrompt)
     {
         const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
+        // Mark the current cursor pos as the the end of the command. The command
+        // is between [mark.end, mark.commandEnd)
         _currentPrompt->commandEnd = cursorPos;
     }
 }
@@ -336,11 +338,15 @@ void Terminal::CommandFinished(std::optional<unsigned int> error)
     if (_currentPrompt)
     {
         const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
+        // Mark the current cursor pos as the the end of the output. The command
+        // is between [mark.commandEnd, mark.outputEnd)
         _currentPrompt->outputEnd = cursorPos;
 
         if (error.has_value())
         {
-            _currentPrompt->category = *error == 0u ? DispatchTypes::MarkCategory::Success : DispatchTypes::MarkCategory::Error;
+            _currentPrompt->category = *error == 0u ?
+                                           DispatchTypes::MarkCategory::Success :
+                                           DispatchTypes::MarkCategory::Error;
         }
     }
 }
