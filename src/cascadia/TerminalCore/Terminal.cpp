@@ -821,24 +821,17 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
     // Then treat this line like it's a prompt mark.
     if (_autoMarkPrompts && vkey == VK_RETURN && !_inAltBuffer())
     {
-        DispatchTypes::ScrollMark mark;
-        mark.category = DispatchTypes::MarkCategory::Prompt;
-        // Don't set the color - we'll automatically use the DEFAULT_FOREGROUND
-        // color for any MarkCategory::Prompt marks without one set.
-
-        // AddMark(mark);
-        // AddMark without explicit start/end will also set that as the _currentPrompt. That seems reasonable.
-
-        // TODO! also, probably FTCS_COMMAND_EXECUTED here.
-        // DEFINITELY actually.
-        // TODO!
-        // * look if we have a _currentPrompt.
-        //   - if we do, then we did know that the prompt started, (we may have
-        //     also already gotten a CommandStartq) The prompt has now ended.
-        //       - FTCS_COMMAND_EXECUTED, so that the prompt starts marking this as output.
-        //   - Else: We don't have a prompt. We don't know anything else, but we
-        //     can set the whole like as the prompt, no command, and start the
-        //     command_executed now.
+        // * If we have a _currentPrompt:
+        //   - Then we did know that the prompt started, (we may have also
+        //     already gotten a CommandStart sequence). The user has pressed
+        //     enter, and we're treating that like the prompt has now ended.
+        //     - Perform a FTCS_COMMAND_EXECUTED, so that we start marking this
+        //       as output.
+        //     - This enables CMD to have full FTCS support, even though there's
+        //       no point in CMD to insert a "preexec" hook
+        // * Else: We don't have a prompt. We don't know anything else, but we
+        //   can set the whole like as the prompt, no command, and start the
+        //   command_executed now.
 
         if (_currentPrompt)
         {
@@ -846,6 +839,10 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
         }
         else
         {
+            DispatchTypes::ScrollMark mark;
+            mark.category = DispatchTypes::MarkCategory::Prompt;
+            // Don't set the color - we'll automatically use the DEFAULT_FOREGROUND
+            // color for any MarkCategory::Prompt marks without one set.
             AddMark(mark);
             _currentPrompt = &_scrollMarks.back();
             OutputStart();
