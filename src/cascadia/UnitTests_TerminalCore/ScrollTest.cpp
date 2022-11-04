@@ -180,10 +180,11 @@ void ScrollTest::TestNotifyScrolling()
         // causes the first scroll event
         auto scrolled = currentRow >= TerminalViewHeight - 1;
 
-        // When we circle the buffer, the scroll bar's position does not
-        // change.
+        // When we circle the buffer, the scroll bar's position does not change.
+        // However, as of GH#14045, we still want to send notifications, so the
+        // control layer can update the position of marks on the scrollbar.
         auto circledBuffer = currentRow >= totalBufferSize - 1;
-        auto expectScrollBarNotification = scrolled && !circledBuffer;
+        auto expectScrollBarNotification = scrolled || circledBuffer;
 
         if (expectScrollBarNotification)
         {
