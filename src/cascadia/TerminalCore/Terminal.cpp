@@ -1289,8 +1289,16 @@ void Terminal::_AdjustCursorPosition(const til::point proposedPosition)
         {
             for (auto& mark : _scrollMarks)
             {
+                // Move the mark up
                 mark.start.y -= rowsPushedOffTopOfBuffer;
+
+                // If the mark had sub-regions, then move those pointers too
+                if (mark.commandEnd.has_value())
+                    (*mark.commandEnd).y -= rowsPushedOffTopOfBuffer;
+                if (mark.outputEnd.has_value())
+                    (*mark.outputEnd).y -= rowsPushedOffTopOfBuffer;
             }
+
             _scrollMarks.erase(std::remove_if(_scrollMarks.begin(),
                                               _scrollMarks.end(),
                                               [](const VirtualTerminal::DispatchTypes::ScrollMark& m) { return m.start.y < 0; }),
