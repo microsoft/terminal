@@ -93,9 +93,9 @@ public:
     // WritePastedText comes from our input and goes back to the PTY's input channel
     void WritePastedText(std::wstring_view stringView);
 
-    [[nodiscard]] std::unique_lock<til::ticket_lock> LockForReading();
-    [[nodiscard]] std::unique_lock<til::ticket_lock> LockForWriting();
-    til::ticket_lock& GetReadWriteLock() noexcept;
+    [[nodiscard]] std::unique_lock<til::recursive_ticket_lock> LockForReading();
+    [[nodiscard]] std::unique_lock<til::recursive_ticket_lock> LockForWriting();
+    til::recursive_ticket_lock_suspension SuspendLock() noexcept;
 
     til::CoordType GetBufferHeight() const noexcept;
 
@@ -309,10 +309,7 @@ private:
     //
     // But we can abuse the fact that the surrounding members rarely change and are huge
     // (std::function is like 64 bytes) to create some natural padding without wasting space.
-    til::ticket_lock _readWriteLock;
-#ifndef NDEBUG
-    DWORD _lastLocker;
-#endif
+    til::recursive_ticket_lock _readWriteLock;
 
     std::function<void(const int, const int, const int)> _pfnScrollPositionChanged;
     std::function<void()> _pfnCursorPositionChanged;

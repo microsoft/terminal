@@ -615,7 +615,6 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
             return STATUS_SUCCESS;
         }
 
-        FAIL_FAST_IF(!(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT)));
         switch (*lpString)
         {
         case UNICODE_BACKSPACE:

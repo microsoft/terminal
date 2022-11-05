@@ -796,20 +796,22 @@ bool AdaptDispatch::SetLineRendition(const LineRendition rendition)
 
 // Routine Description:
 // - DSR - Reports status of a console property back to the STDIN based on the type of status requested.
-//       - This particular routine responds to ANSI status patterns only (CSI # n), not the DEC format (CSI ? # n)
 // Arguments:
-// - statusType - ANSI status type indicating what property we should report back
+// - statusType - status type indicating what property we should report back
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType)
+bool AdaptDispatch::DeviceStatusReport(const DispatchTypes::StatusType statusType)
 {
     switch (statusType)
     {
-    case DispatchTypes::AnsiStatusType::OS_OperatingStatus:
+    case DispatchTypes::StatusType::OS_OperatingStatus:
         _OperatingStatus();
         return true;
-    case DispatchTypes::AnsiStatusType::CPR_CursorPositionReport:
-        _CursorPositionReport();
+    case DispatchTypes::StatusType::CPR_CursorPositionReport:
+        _CursorPositionReport(false);
+        return true;
+    case DispatchTypes::StatusType::ExCPR_ExtendedCursorPositionReport:
+        _CursorPositionReport(true);
         return true;
     default:
         return false;
@@ -921,12 +923,13 @@ void AdaptDispatch::_OperatingStatus() const
 }
 
 // Routine Description:
-// - DSR-CPR - Reports the current cursor position within the viewport back to the input channel
+// - CPR and DECXCPR- Reports the current cursor position within the viewport,
+//   as well as the current page number if this is an extended report.
 // Arguments:
-// - <none>
+// - extendedReport - Set to true if the report should include the page number
 // Return Value:
 // - <none>
-void AdaptDispatch::_CursorPositionReport()
+void AdaptDispatch::_CursorPositionReport(const bool extendedReport)
 {
     const auto viewport = _api.GetViewport();
     const auto& textBuffer = _api.GetTextBuffer();
@@ -949,9 +952,20 @@ void AdaptDispatch::_CursorPositionReport()
     }
 
     // Now send it back into the input channel of the console.
-    // First format the response string.
-    const auto response = wil::str_printf<std::wstring>(L"\x1b[%d;%dR", cursorPosition.Y, cursorPosition.X);
-    _api.ReturnResponse(response);
+    if (extendedReport)
+    {
+        // An extended report should also include the page number, but for now
+        // we hardcode it to 1, since we don't yet support paging (GH#13892).
+        const auto pageNumber = 1;
+        const auto response = wil::str_printf<std::wstring>(L"\x1b[?%d;%d;%dR", cursorPosition.Y, cursorPosition.X, pageNumber);
+        _api.ReturnResponse(response);
+    }
+    else
+    {
+        // The standard report only returns the cursor position.
+        const auto response = wil::str_printf<std::wstring>(L"\x1b[%d;%dR", cursorPosition.Y, cursorPosition.X);
+        _api.ReturnResponse(response);
+    }
 }
 
 // Routine Description:

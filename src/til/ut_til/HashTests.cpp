@@ -36,7 +36,7 @@ class HashTests
         for (const auto& t : tests)
         {
             const auto actual = til::hasher{ t.seed }.write(t.input).finalize();
-#if defined(TIL_HASH_X86)
+#if defined(TIL_HASH_32BIT)
             VERIFY_ARE_EQUAL(t.expected32, actual);
 #else
             VERIFY_ARE_EQUAL(t.expected64, actual);

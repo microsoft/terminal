@@ -3,6 +3,10 @@
 
 #include "precomp.h"
 
+// MidiAudio
+#include <mmeapi.h>
+#include <dsound.h>
+
 #include "../inc/ServiceLocator.hpp"
 
 #include "InteractivityFactory.hpp"
