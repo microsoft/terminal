@@ -806,7 +806,6 @@ void AdaptDispatch::_ChangeRectAttributes(TextBuffer& textBuffer, const til::rec
                 auto attr = attrs.GetAttrByColumn(col);
                 auto characterAttributes = attr.GetCharacterAttributes();
                 characterAttributes &= changeOps.andAttrMask;
-                characterAttributes |= changeOps.orAttrMask;
                 characterAttributes ^= changeOps.xorAttrMask;
                 attr.SetCharacterAttributes(characterAttributes);
                 if (changeOps.foreground)
@@ -928,8 +927,13 @@ bool AdaptDispatch::ChangeAttributesRectangularArea(const VTInt top, const VTInt
     allAttrsOn.SetCharacterAttributes(CharacterAttributes::All);
     _ApplyGraphicsOptions(attrs, allAttrsOff);
     _ApplyGraphicsOptions(attrs, allAttrsOn);
-    changeOps.orAttrMask = allAttrsOff.GetCharacterAttributes();
-    changeOps.andAttrMask = allAttrsOn.GetCharacterAttributes();
+    const auto orAttrMask = allAttrsOff.GetCharacterAttributes();
+    const auto andAttrMask = allAttrsOn.GetCharacterAttributes();
+    // But to minimize the required ops, which we share with the DECRARA control
+    // below, we want to use an XOR rather than OR. For that to work, we have to
+    // combine the AND mask with the inverse of the OR mask in advance.
+    changeOps.andAttrMask = andAttrMask & ~orAttrMask;
+    changeOps.xorAttrMask = orAttrMask;
 
     // We also make use of the two TextAttributes calculated above to determine
     // whether colors need to be applied. Since allAttrsOff started off with

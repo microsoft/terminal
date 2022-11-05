@@ -188,7 +188,6 @@ namespace Microsoft::Console::VirtualTerminal
         struct ChangeOps
         {
             CharacterAttributes andAttrMask = CharacterAttributes::All;
-            CharacterAttributes orAttrMask = CharacterAttributes::Normal;
             CharacterAttributes xorAttrMask = CharacterAttributes::Normal;
             std::optional<TextColor> foreground;
             std::optional<TextColor> background;
