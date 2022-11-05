@@ -790,10 +790,10 @@ bool AdaptDispatch::SelectiveEraseInLine(const DispatchTypes::EraseType eraseTyp
 // Arguments:
 // - textBuffer - Target buffer to be changed.
 // - changeRect - A rectangular area of the buffer that will be affected.
-// - changeOp - Function that will be applied to each of the attributes.
+// - changeOps - Changes that will be applied to each of the attributes.
 // Return Value:
 // - <none>
-void AdaptDispatch::_ChangeRectAttributes(TextBuffer& textBuffer, const til::rect& changeRect, std::function<void(TextAttribute&)> changeOp)
+void AdaptDispatch::_ChangeRectAttributes(TextBuffer& textBuffer, const til::rect& changeRect, const ChangeOps& changeOps)
 {
     if (changeRect)
     {
@@ -804,7 +804,19 @@ void AdaptDispatch::_ChangeRectAttributes(TextBuffer& textBuffer, const til::rec
             for (auto col = changeRect.left; col < changeRect.right; col++)
             {
                 auto attr = attrs.GetAttrByColumn(col);
-                changeOp(attr);
+                auto characterAttributes = attr.GetCharacterAttributes();
+                characterAttributes &= changeOps.andAttrMask;
+                characterAttributes |= changeOps.orAttrMask;
+                characterAttributes ^= changeOps.xorAttrMask;
+                attr.SetCharacterAttributes(characterAttributes);
+                if (changeOps.foreground)
+                {
+                    attr.SetForeground(*changeOps.foreground);
+                }
+                if (changeOps.background)
+                {
+                    attr.SetBackground(*changeOps.background);
+                }
                 attrs.Replace(col, col + 1, attr);
             }
         }
@@ -819,10 +831,10 @@ void AdaptDispatch::_ChangeRectAttributes(TextBuffer& textBuffer, const til::rec
 // - changeArea - Area of the buffer that will be affected. This may be
 //     interpreted as a rectangle or a stream depending on the state of the
 //     _isChangeExtentRectangular field.
-// - changeOp - Function that will be applied to each of the attributes.
+// - changeOps - Changes that will be applied to each of the attributes.
 // Return Value:
 // - <none>
-void AdaptDispatch::_ChangeRectOrStreamAttributes(const til::rect& changeArea, std::function<void(TextAttribute&)> changeOp)
+void AdaptDispatch::_ChangeRectOrStreamAttributes(const til::rect& changeArea, const ChangeOps& changeOps)
 {
     auto& textBuffer = _api.GetTextBuffer();
     const auto bufferSize = textBuffer.GetSize().Dimensions();
@@ -833,7 +845,7 @@ void AdaptDispatch::_ChangeRectOrStreamAttributes(const til::rect& changeArea, s
     // single call. The same is true for a stream extent that is only one line.
     if (_isChangeExtentRectangular || lineCount == 1)
     {
-        _ChangeRectAttributes(textBuffer, changeRect, changeOp);
+        _ChangeRectAttributes(textBuffer, changeRect, changeOps);
     }
     // If the stream extent is more than one line we require three passes. The
     // top line is altered from the left offset up to the end of the line. The
@@ -843,9 +855,9 @@ void AdaptDispatch::_ChangeRectOrStreamAttributes(const til::rect& changeArea, s
     else if (lineCount > 1 && changeRect.right > changeRect.left)
     {
         const auto bufferWidth = bufferSize.width;
-        _ChangeRectAttributes(textBuffer, { changeRect.origin(), til::size{ bufferWidth - changeRect.left, 1 } }, changeOp);
-        _ChangeRectAttributes(textBuffer, { { 0, changeRect.top + 1 }, til::size{ bufferWidth, lineCount - 2 } }, changeOp);
-        _ChangeRectAttributes(textBuffer, { { 0, changeRect.bottom - 1 }, til::size{ changeRect.right, 1 } }, changeOp);
+        _ChangeRectAttributes(textBuffer, { changeRect.origin(), til::size{ bufferWidth - changeRect.left, 1 } }, changeOps);
+        _ChangeRectAttributes(textBuffer, { { 0, changeRect.top + 1 }, til::size{ bufferWidth, lineCount - 2 } }, changeOps);
+        _ChangeRectAttributes(textBuffer, { { 0, changeRect.bottom - 1 }, til::size{ changeRect.right, 1 } }, changeOps);
     }
 }
 
@@ -905,6 +917,8 @@ til::rect AdaptDispatch::_CalculateRectArea(const VTInt top, const VTInt left, c
 // - True.
 bool AdaptDispatch::ChangeAttributesRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const VTParameters attrs)
 {
+    auto changeOps = ChangeOps{};
+
     // We apply the attribute parameters to two TextAttribute instances: one
     // with no character attributes set, and one with all attributes set. This
     // provides us with an OR mask and an AND mask which can then be applied to
@@ -914,8 +928,8 @@ bool AdaptDispatch::ChangeAttributesRectangularArea(const VTInt top, const VTInt
     allAttrsOn.SetCharacterAttributes(CharacterAttributes::All);
     _ApplyGraphicsOptions(attrs, allAttrsOff);
     _ApplyGraphicsOptions(attrs, allAttrsOn);
-    const auto setAttrMask = allAttrsOff.GetCharacterAttributes();
-    const auto resetAttrMask = allAttrsOn.GetCharacterAttributes();
+    changeOps.orAttrMask = allAttrsOff.GetCharacterAttributes();
+    changeOps.andAttrMask = allAttrsOn.GetCharacterAttributes();
 
     // We also make use of the two TextAttributes calculated above to determine
     // whether colors need to be applied. Since allAttrsOff started off with
@@ -925,22 +939,10 @@ bool AdaptDispatch::ChangeAttributesRectangularArea(const VTInt top, const VTInt
     const auto background = allAttrsOff.GetBackground();
     const auto foregroundChanged = !foreground.IsDefault() || allAttrsOn.GetForeground().IsDefault();
     const auto backgroundChanged = !background.IsDefault() || allAttrsOn.GetBackground().IsDefault();
+    changeOps.foreground = foregroundChanged ? std::optional{ foreground } : std::nullopt;
+    changeOps.background = backgroundChanged ? std::optional{ background } : std::nullopt;
 
-    const auto changeOp = [&](TextAttribute& attr) noexcept {
-        auto characterAttributes = attr.GetCharacterAttributes();
-        characterAttributes &= resetAttrMask;
-        characterAttributes |= setAttrMask;
-        attr.SetCharacterAttributes(characterAttributes);
-        if (foregroundChanged)
-        {
-            attr.SetForeground(foreground);
-        }
-        if (backgroundChanged)
-        {
-            attr.SetBackground(background);
-        }
-    };
-    _ChangeRectOrStreamAttributes({ left, top, right, bottom }, changeOp);
+    _ChangeRectOrStreamAttributes({ left, top, right, bottom }, changeOps);
 
     return true;
 }
@@ -989,12 +991,7 @@ bool AdaptDispatch::ReverseAttributesRectangularArea(const VTInt top, const VTIn
     // If the accumulated mask ends up blank, there's nothing for us to do.
     if (reverseMask != CharacterAttributes::Normal)
     {
-        const auto changeOp = [&](TextAttribute& attr) noexcept {
-            auto characterAttributes = attr.GetCharacterAttributes();
-            characterAttributes ^= reverseMask;
-            attr.SetCharacterAttributes(characterAttributes);
-        };
-        _ChangeRectOrStreamAttributes({ left, top, right, bottom }, changeOp);
+        _ChangeRectOrStreamAttributes({ left, top, right, bottom }, { .xorAttrMask = reverseMask });
     }
 
     return true;
