@@ -372,7 +372,7 @@ void ROW::ReplaceCharacters(til::CoordType columnBegin, til::CoordType width, co
     // Algorithm explanation
     //
     // Task:
-    //   Replace the characters in cells [colBeg, colEnd) with a single cell `width`-wide consisting of `chars`.
+    //   Replace the characters in cells [colBeg, colEnd) with a single `width`-wide glyph consisting of `chars`.
     //
     // Problem:
     //   Imagine that we have the following ROW contents:
