@@ -37,24 +37,7 @@ static std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& i
 }
 
 #pragma warning(suppress : 26455) // default constructor is throwing, too much effort to rearrange at this time.
-Terminal::Terminal() :
-    _mutableViewport{ Viewport::Empty() },
-    _title{},
-    _pfnWriteInput{ nullptr },
-    _altBuffer{ nullptr },
-    _scrollOffset{ 0 },
-    _snapOnInput{ true },
-    _altGrAliasing{ true },
-    _blockSelection{ false },
-    _selectionMode{ SelectionInteractionMode::None },
-    _selectionIsTargetingUrl{ false },
-    _selection{ std::nullopt },
-    _selectionEndpoint{ static_cast<SelectionEndpoint>(0) },
-    _anchorInactiveSelectionEndpoint{ false },
-    _taskbarState{ 0 },
-    _taskbarProgress{ 0 },
-    _trimBlockSelection{ false },
-    _autoMarkPrompts{ false }
+Terminal::Terminal()
 {
     auto passAlongInput = [&](std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite) {
         if (!_pfnWriteInput)
