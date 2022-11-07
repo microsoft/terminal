@@ -369,6 +369,10 @@ void ROW::ReplaceCharacters(til::CoordType columnBegin, til::CoordType width, co
         return;
     }
 
+    // Safety:
+    // * colBeg is now [0, _columnCount)
+    // * colEnd is now (colBeg, _columnCount]
+
     // Algorithm explanation
     //
     // Task:
@@ -378,8 +382,8 @@ void ROW::ReplaceCharacters(til::CoordType columnBegin, til::CoordType width, co
     //   Imagine that we have the following ROW contents:
     //     "xxyyzz"
     //   xx, yy, zz are 2 cell wide glyphs. We want to insert a 2 cell wide glyph ww at colBeg 1:
-    //      ^^
-    //      ww
+    //       ^^
+    //       ww
     //   An incorrect result would be:
     //     "xwwyzz"
     //   The half cut off x and y glyph wouldn't make much sense, so we need to fill them with whitespace:
@@ -391,10 +395,6 @@ void ROW::ReplaceCharacters(til::CoordType columnBegin, til::CoordType width, co
     //   colExtBeg <= colBeg and colExtEnd >= colEnd. In other words, the to be replaced range has been "extended".
     //   The amount of leading whitespace we need to insert is thus colBeg - colExtBeg
     //   and the amount of trailing whitespace colExtEnd - colEnd.
-
-    // Safety:
-    // * colBeg is now [0, _columnCount]
-    // * colEnd is now [colBeg, _columnCount]
 
     // Extend range downwards (leading whitespace)
     uint16_t colExtBeg = colBeg;
