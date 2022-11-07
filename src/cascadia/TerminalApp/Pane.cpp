@@ -33,6 +33,8 @@ static const Duration AnimationDuration = DurationHelper::FromTimeSpan(winrt::Wi
 
 winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_focusedBorderBrush = { nullptr };
 winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_unfocusedBorderBrush = { nullptr };
+winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_readOnlyBorderBrush = { nullptr };
+winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_broadcastBorderBrush = { nullptr };
 
 Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFocused) :
     _control{ control },
@@ -48,7 +50,7 @@ Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFo
     // On the first Pane's creation, lookup resources we'll use to theme the
     // Pane, including the brushed to use for the focused/unfocused border
     // color.
-    if (s_focusedBorderBrush == nullptr || s_unfocusedBorderBrush == nullptr)
+    if (s_focusedBorderBrush == nullptr || s_unfocusedBorderBrush == nullptr || s_readOnlyBorderBrush == nullptr || s_broadcastBorderBrush == nullptr)
     {
         _SetupResources();
     }
@@ -1381,8 +1383,8 @@ void Pane::UpdateVisuals()
     {
         _UpdateBorders();
     }
-    _borderFirst.BorderBrush(_lastActive ? s_focusedBorderBrush : s_unfocusedBorderBrush);
-    _borderSecond.BorderBrush(_lastActive ? s_focusedBorderBrush : s_unfocusedBorderBrush);
+    _borderFirst.BorderBrush(_ComputeBorderColor());
+    _borderSecond.BorderBrush(_ComputeBorderColor());
 }
 
 // Method Description:
@@ -1586,6 +1588,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         // Add our new event handler before revoking the old one.
         _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
         _warningBellToken = _control.WarningBell({ this, &Pane::_ControlWarningBellHandler });
+        _readOnlyChangedToken = _control.ReadOnlyChanged({ this, &Pane::_ControlReadOnlyChangedHandler });
 
         // Revoke the old event handlers. Remove both the handlers for the panes
         // themselves closing, and remove their handlers for their controls
@@ -1601,6 +1604,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
                 {
                     p->_control.ConnectionStateChanged(p->_connectionStateChangedToken);
                     p->_control.WarningBell(p->_warningBellToken);
+                    p->_control.ReadOnlyChanged(p->_readOnlyChangedToken);
                 }
             });
         }
@@ -1609,6 +1613,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         remainingChild->Closed(remainingChildClosedToken);
         remainingChild->_control.ConnectionStateChanged(remainingChild->_connectionStateChangedToken);
         remainingChild->_control.WarningBell(remainingChild->_warningBellToken);
+        remainingChild->_control.ReadOnlyChanged(remainingChild->_readOnlyChangedToken);
 
         // If we or either of our children was focused, we want to take that
         // focus from them.
@@ -1690,6 +1695,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
                 {
                     p->_control.ConnectionStateChanged(p->_connectionStateChangedToken);
                     p->_control.WarningBell(p->_warningBellToken);
+                    p->_control.ReadOnlyChanged(p->_readOnlyChangedToken);
                 }
             });
         }
@@ -3114,6 +3120,34 @@ void Pane::_SetupResources()
         // will eat focus.
         s_unfocusedBorderBrush = SolidColorBrush{ Colors::Black() };
     }
+
+    const auto readOnlyColorKey = winrt::box_value(L"ReadOnlyPaneBorderColor");
+    if (res.HasKey(readOnlyColorKey))
+    {
+        winrt::Windows::Foundation::IInspectable obj = res.Lookup(readOnlyColorKey);
+        s_readOnlyBorderBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
+    }
+    else
+    {
+        // DON'T use Transparent here - if it's "Transparent", then it won't
+        // be able to hittest for clicks, and then clicking on the border
+        // will eat focus.
+        s_readOnlyBorderBrush = SolidColorBrush{ Colors::Black() };
+    }
+
+    const auto broadcastColorKey = winrt::box_value(L"BroadcastPaneBorderColor");
+    if (res.HasKey(broadcastColorKey))
+    {
+        winrt::Windows::Foundation::IInspectable obj = res.Lookup(broadcastColorKey);
+        s_broadcastBorderBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
+    }
+    else
+    {
+        // DON'T use Transparent here - if it's "Transparent", then it won't
+        // be able to hittest for clicks, and then clicking on the border
+        // will eat focus.
+        s_broadcastBorderBrush = SolidColorBrush{ Colors::Black() };
+    }
 }
 
 int Pane::GetLeafPaneCount() const noexcept
@@ -3158,4 +3192,82 @@ void Pane::CollectTaskbarStates(std::vector<winrt::TerminalApp::TaskbarState>& s
         _firstChild->CollectTaskbarStates(states);
         _secondChild->CollectTaskbarStates(states);
     }
+}
+
+void Pane::EnableBroadcast(bool enabled)
+{
+    if (_IsLeaf())
+    {
+        _broadcastEnabled = enabled;
+        UpdateVisuals();
+    }
+    else
+    {
+        _firstChild->EnableBroadcast(enabled);
+        _secondChild->EnableBroadcast(enabled);
+    }
+}
+
+void Pane::BroadcastKey(const winrt::Microsoft::Terminal::Control::TermControl& sourceControl,
+                        const WORD vkey,
+                        const WORD scanCode,
+                        const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers,
+                        const bool keyDown)
+{
+    if (_IsLeaf())
+    {
+        if (_control != sourceControl && !_control.ReadOnly())
+        {
+            _control.TrySendKeyEvent(vkey, scanCode, modifiers, keyDown);
+        }
+    }
+    else
+    {
+        _firstChild->BroadcastKey(sourceControl, vkey, scanCode, modifiers, keyDown);
+        _secondChild->BroadcastKey(sourceControl, vkey, scanCode, modifiers, keyDown);
+    }
+}
+
+void Pane::BroadcastChar(const winrt::Microsoft::Terminal::Control::TermControl& sourceControl,
+                         const wchar_t character,
+                         const WORD scanCode,
+                         const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers)
+{
+    if (_IsLeaf())
+    {
+        if (_control != sourceControl && !_control.ReadOnly())
+        {
+            _control.TrySendChar(character, scanCode, modifiers);
+        }
+    }
+    else
+    {
+        _firstChild->BroadcastChar(sourceControl, character, scanCode, modifiers);
+        _secondChild->BroadcastChar(sourceControl, character, scanCode, modifiers);
+    }
+}
+
+void Pane::_ControlReadOnlyChangedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::Foundation::IInspectable& /*e*/)
+{
+    UpdateVisuals();
+}
+
+winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::_ComputeBorderColor()
+{
+    if (_lastActive)
+    {
+        return s_focusedBorderBrush;
+    }
+
+    if (_control && _control.ReadOnly())
+    {
+        return s_readOnlyBorderBrush;
+    }
+
+    if (_broadcastEnabled)
+    {
+        return s_broadcastBorderBrush;
+    }
+
+    return s_unfocusedBorderBrush;
 }

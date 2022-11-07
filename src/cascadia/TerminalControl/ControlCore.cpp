@@ -408,7 +408,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _handleControlC();
         }
 
-        return _terminal->SendCharEvent(ch, scanCode, modifiers);
+        const bool handled = TrySendCharEvent(ch, scanCode, modifiers);
+        auto charSentArgs = winrt::make<CharSentEventArgs>(ch, scanCode, modifiers);
+        _CharSentHandlers(*this, charSentArgs);
+        return handled;
+    }
+
+    // TODO! broadcasted
+    bool ControlCore::TrySendCharEvent(const wchar_t character, const WORD scanCode, const ::Microsoft::Terminal::Core::ControlKeyStates modifiers)
+    {
+        return _terminal->SendCharEvent(character, scanCode, modifiers);
     }
 
     void ControlCore::_handleControlC()
@@ -518,6 +527,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                       const ControlKeyStates modifiers,
                                       const bool keyDown)
     {
+        auto keySentArgs = winrt::make<KeySentEventArgs>(vkey, scanCode, modifiers, keyDown);
+        _KeySentHandlers(*this, keySentArgs);
+        return SendKeyEvent(vkey, scanCode, modifiers, keyDown);
+    }
+
+    bool ControlCore::SendKeyEvent(const WORD vkey,
+                                   const WORD scanCode,
+                                   const ControlKeyStates modifiers,
+                                   const bool keyDown)
+    {
+        // TODO! broadcasted
+
         // Update the selection, if it's present
         // GH#8522, GH#3758 - Only modify the selection on key _down_. If we
         // modify on key up, then there's chance that we'll immediately dismiss

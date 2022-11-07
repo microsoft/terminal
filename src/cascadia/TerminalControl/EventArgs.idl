@@ -83,4 +83,19 @@ namespace Microsoft.Terminal.Control
     {
         Boolean ClearMarkers { get; };
     }
+
+    runtimeclass KeySentEventArgs
+    {
+        UInt16 VKey { get; };
+        UInt16 ScanCode { get; };
+        Microsoft.Terminal.Core.ControlKeyStates Modifiers { get; };
+        Boolean KeyDown { get; };
+    }
+
+    runtimeclass CharSentEventArgs
+    {
+        Char Character { get; };
+        UInt16 ScanCode { get; };
+        Microsoft.Terminal.Core.ControlKeyStates Modifiers { get; };
+    }
 }

@@ -136,6 +136,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void AdjustOpacity(const double opacity, const bool relative);
 
+        bool TrySendKeyEvent(const WORD vkey, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown);
+        bool TrySendChar(const wchar_t character, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers);
+
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
         // -------------------------------- WinRT Events ---------------------------------
@@ -159,6 +162,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(FocusFollowMouseRequested, IInspectable, IInspectable);
         TYPED_EVENT(Initialized,               Control::TermControl, Windows::UI::Xaml::RoutedEventArgs);
         TYPED_EVENT(WarningBell,               IInspectable, IInspectable);
+
+        TYPED_EVENT(KeySent,                IInspectable, Control::KeySentEventArgs);
+        TYPED_EVENT(CharSent,               IInspectable, Control::CharSentEventArgs);
+
         // clang-format on
 
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, BackgroundBrush, _PropertyChangedHandlers, nullptr);

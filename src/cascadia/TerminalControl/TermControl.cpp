@@ -88,6 +88,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _interactivity.OpenHyperlink({ this, &TermControl::_HyperlinkHandler });
         _interactivity.ScrollPositionChanged({ this, &TermControl::_ScrollPositionChanged });
 
+        _core.KeySent([weakThis = get_weak()](auto&&, const auto& args) {
+            if (auto self{ weakThis.get() })
+            {
+                self->_KeySentHandlers(*self, args);
+            }
+        });
+        _core.CharSent([weakThis = get_weak()](auto&&, const auto& args) {
+            if (auto self{ weakThis.get() })
+            {
+                self->_CharSentHandlers(*self, args);
+            }
+        });
+
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
         _layoutUpdatedRevoker = SwapChainPanel().LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
@@ -1188,6 +1201,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         while (ToUnicodeEx(vkey, scanCode, keyState.data(), buffer.data(), gsl::narrow_cast<int>(buffer.size()), 0b1, nullptr) < 0)
         {
         }
+    }
+
+    // TODO! broadcasted
+    bool TermControl::TrySendKeyEvent(const WORD vkey,
+                                      const WORD scanCode,
+                                      const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers,
+                                      const bool keyDown)
+    {
+        // TODO! broadcasted
+        return _core.SendKeyEvent(vkey, scanCode, modifiers, keyDown);
+    }
+
+    // TODO! broadcasted
+    bool TermControl::TrySendChar(const wchar_t character,
+                                  const WORD scanCode,
+                                  const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers)
+    {
+        // TODO! broadcasted
+        return _core.TrySendCharEvent(character, scanCode, modifiers);
     }
 
     // Method Description:

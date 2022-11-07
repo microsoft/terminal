@@ -18,6 +18,7 @@ namespace winrt::TerminalApp::implementation
         WINRT_OBSERVABLE_PROPERTY(bool, BellIndicator, _PropertyChangedHandlers);
         WINRT_OBSERVABLE_PROPERTY(bool, IsReadOnlyActive, _PropertyChangedHandlers);
         WINRT_OBSERVABLE_PROPERTY(uint32_t, ProgressValue, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(bool, IsInputBroadcastActive, _PropertyChangedHandlers);
     };
 }
 

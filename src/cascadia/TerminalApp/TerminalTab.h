@@ -87,6 +87,7 @@ namespace winrt::TerminalApp::implementation
         int GetLeafPaneCount() const noexcept;
 
         void TogglePaneReadOnly();
+        void ToggleBroadcastInput();
         std::shared_ptr<Pane> GetActivePane() const;
         winrt::TerminalApp::TaskbarState GetCombinedTaskbarState() const;
 
@@ -128,6 +129,8 @@ namespace winrt::TerminalApp::implementation
             winrt::event_token taskbarToken;
             winrt::event_token readOnlyToken;
             winrt::event_token focusToken;
+            winrt::event_token keySentToken;
+            winrt::event_token charSentToken;
         };
         std::unordered_map<uint32_t, ControlEventTokens> _controlEvents;
 

@@ -1182,4 +1182,15 @@ namespace winrt::TerminalApp::implementation
             args.Handled(handled);
         }
     }
+    void TerminalPage::_HandleToggleBroadcastInput(const IInspectable& /*sender*/,
+                                                   const ActionEventArgs& args)
+    {
+        if (const auto activeTab{ _GetFocusedTabImpl() })
+        {
+            activeTab->ToggleBroadcastInput();
+        }
+
+        args.Handled(true);
+    }
+
 }

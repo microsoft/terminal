@@ -136,6 +136,10 @@ public:
 
     bool ContainsReadOnly() const;
 
+    void EnableBroadcast(bool enabled);
+    void BroadcastKey(const winrt::Microsoft::Terminal::Control::TermControl& sourceControl, const WORD vkey, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown);
+    void BroadcastChar(const winrt::Microsoft::Terminal::Control::TermControl& sourceControl, const wchar_t vkey, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers);
+
     // Method Description:
     // - A helper method for ad-hoc recursion on a pane tree. Walks the pane
     //   tree, calling a function on each pane in a depth-first pattern.
@@ -217,6 +221,8 @@ private:
     winrt::Windows::UI::Xaml::Controls::Border _borderSecond{};
     static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_focusedBorderBrush;
     static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_unfocusedBorderBrush;
+    static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_readOnlyBorderBrush;
+    static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_broadcastBorderBrush;
 
 #pragma region Properties that need to be transferred between child / parent panes upon splitting / closing
     std::shared_ptr<Pane> _firstChild{ nullptr };
@@ -237,6 +243,7 @@ private:
     winrt::event_token _firstClosedToken{ 0 };
     winrt::event_token _secondClosedToken{ 0 };
     winrt::event_token _warningBellToken{ 0 };
+    winrt::event_token _readOnlyChangedToken{ 0 };
 
     winrt::Windows::UI::Xaml::UIElement::GotFocus_revoker _gotFocusRevoker;
     winrt::Windows::UI::Xaml::UIElement::LostFocus_revoker _lostFocusRevoker;
@@ -246,6 +253,7 @@ private:
     Borders _borders{ Borders::None };
 
     bool _zoomed{ false };
+    bool _broadcastEnabled{ false };
 
     winrt::Windows::Media::Playback::MediaPlayer _bellPlayer{ nullptr };
     winrt::Windows::Media::Playback::MediaPlayer::MediaEnded_revoker _mediaEndedRevoker;
@@ -264,6 +272,7 @@ private:
     void _SetupEntranceAnimation();
     void _UpdateBorders();
     Borders _GetCommonBorders();
+    winrt::Windows::UI::Xaml::Media::SolidColorBrush _ComputeBorderColor();
 
     bool _Resize(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
 
@@ -290,6 +299,7 @@ private:
                                  const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
     void _ControlLostFocusHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                   const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+    void _ControlReadOnlyChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& e);
 
     std::pair<float, float> _CalcChildrenSizes(const float fullSize) const;
     SnapChildrenSizeResult _CalcSnappedChildrenSizes(const bool widthOrHeight, const float fullSize) const;

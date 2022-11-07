@@ -148,9 +148,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                              const WORD scanCode,
                              const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                              const bool keyDown);
+        bool SendKeyEvent(const WORD vkey,
+                          const WORD scanCode,
+                          const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
+                          const bool keyDown);
         bool SendCharEvent(const wchar_t ch,
                            const WORD scanCode,
                            const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
+        bool TrySendCharEvent(const wchar_t ch,
+                              const WORD scanCode,
+                              const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
         bool SendMouseEvent(const til::point viewportPos,
                             const unsigned int uiButton,
                             const ::Microsoft::Terminal::Core::ControlKeyStates states,
@@ -232,6 +239,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(ShowWindowChanged,         IInspectable, Control::ShowWindowArgs);
         TYPED_EVENT(UpdateSelectionMarkers,    IInspectable, Control::UpdateSelectionMarkersEventArgs);
         TYPED_EVENT(OpenHyperlink,             IInspectable, Control::OpenHyperlinkEventArgs);
+        TYPED_EVENT(KeySent,                   IInspectable, Control::KeySentEventArgs);
+        TYPED_EVENT(CharSent,                  IInspectable, Control::CharSentEventArgs);
         // clang-format on
 
     private:
