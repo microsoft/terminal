@@ -63,11 +63,6 @@ class Microsoft::Terminal::Core::Terminal final :
 
 public:
     Terminal();
-    ~Terminal(){};
-    Terminal(const Terminal&) = default;
-    Terminal(Terminal&&) = default;
-    Terminal& operator=(const Terminal&) = default;
-    Terminal& operator=(Terminal&&) = default;
 
     void Create(til::size viewportSize,
                 til::CoordType scrollbackLines,
@@ -262,6 +257,7 @@ public:
 
     enum class SelectionEndpoint
     {
+        None = 0,
         Start = 0x1,
         End = 0x2
     };
@@ -316,19 +312,19 @@ private:
     std::wstring _startingTitle;
     std::optional<til::color> _startingTabColor;
 
-    CursorType _defaultCursorShape;
+    CursorType _defaultCursorShape = CursorType::Legacy;
 
-    bool _snapOnInput;
-    bool _altGrAliasing;
-    bool _suppressApplicationTitle;
-    bool _bracketedPasteMode;
-    bool _trimBlockSelection;
-    bool _autoMarkPrompts;
+    bool _snapOnInput = true;
+    bool _altGrAliasing = true;
+    bool _suppressApplicationTitle = false;
+    bool _bracketedPasteMode = false;
+    bool _trimBlockSelection = false;
+    bool _autoMarkPrompts = false;
 
-    size_t _taskbarState;
-    size_t _taskbarProgress;
+    size_t _taskbarState = 0;
+    size_t _taskbarProgress = 0;
 
-    size_t _hyperlinkPatternId;
+    size_t _hyperlinkPatternId = 0;
 
     std::wstring _workingDirectory;
 
@@ -347,26 +343,26 @@ private:
         til::point pivot;
     };
     std::optional<SelectionAnchors> _selection;
-    bool _blockSelection;
+    bool _blockSelection = false;
     std::wstring _wordDelimiters;
-    SelectionExpansion _multiClickSelectionMode;
-    SelectionInteractionMode _selectionMode;
-    SelectionEndpoint _selectionEndpoint;
-    bool _anchorInactiveSelectionEndpoint;
+    SelectionExpansion _multiClickSelectionMode = SelectionExpansion::Char;
+    SelectionInteractionMode _selectionMode = SelectionInteractionMode::None;
+    SelectionEndpoint _selectionEndpoint = SelectionEndpoint::None;
+    bool _anchorInactiveSelectionEndpoint = false;
 #pragma endregion
 
     std::unique_ptr<TextBuffer> _mainBuffer;
     std::unique_ptr<TextBuffer> _altBuffer;
     Microsoft::Console::Types::Viewport _mutableViewport;
-    til::CoordType _scrollbackLines;
-    bool _detectURLs{ false };
+    til::CoordType _scrollbackLines = 0;
+    bool _detectURLs = false;
 
     til::size _altBufferSize;
-    std::optional<til::size> _deferredResize{ std::nullopt };
+    std::optional<til::size> _deferredResize;
 
     // _scrollOffset is the number of lines above the viewport that are currently visible
     // If _scrollOffset is 0, then the visible region of the buffer is the viewport.
-    int _scrollOffset;
+    til::CoordType _scrollOffset = 0;
     // TODO this might not be the value we want to store.
     // We might want to store the height in the scrollback that's currently visible.
     // Think on this some more.
