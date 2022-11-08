@@ -185,6 +185,19 @@ void Terminal::SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::D
 
 void Terminal::SetWorkingDirectory(std::wstring_view uri)
 {
+    static bool logged = false;
+    if (!logged)
+    {
+        TraceLoggingWrite(
+            g_hTerminalControlProvider,
+            "ShellIntegrationWorkingDirSet",
+            TraceLoggingDescription("A user set the CWD"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+        logged = true;
+    }
+
     _workingDirectory = uri;
 }
 
@@ -300,6 +313,19 @@ void Terminal::UseMainScreenBuffer()
 
 void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark)
 {
+    static bool logged = false;
+    if (!logged)
+    {
+        TraceLoggingWrite(
+            g_hTerminalControlProvider,
+            "ShellIntegrationMarkAdded",
+            TraceLoggingDescription("A user added a mark via VT at least once"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+        logged = true;
+    }
+
     const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
     AddMark(mark, cursorPos, cursorPos);
 }

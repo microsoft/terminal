@@ -345,6 +345,62 @@ namespace winrt::TerminalApp::implementation
             TraceLoggingBool(_settings.GlobalSettings().ShowTabsInTitlebar(), "TabsInTitlebar"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+        _onCreateResearch();
+    }
+
+    void AppLogic::_onCreateResearch()
+    {
+        // ----------------------------- RE: Themes ----------------------------
+        const auto numThemes = _settings.GlobalSettings().Themes().Size();
+        const auto themeInUse = _settings.GlobalSettings().CurrentTheme();
+        const auto usingDefaultTheme = themeInUse.Name() == L"light" ||
+                                       themeInUse.Name() == L"dark" ||
+                                       themeInUse.Name() == L"system";
+
+        TraceLoggingWrite(
+            g_hTerminalAppProvider,
+            "ThemesInUse",
+            TraceLoggingDescription("Data about the themes in use"),
+            TraceLoggingBool(usingDefaultTheme, "UsingDefaultTheme"),
+            TraceLoggingInt32(numThemes, "NumThemes"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+        // --------------------------- RE: sendInput ---------------------------
+
+        auto totalSendInput = 0;
+        const auto& allActions = _settings.GlobalSettings().ActionMap().AvailableActions();
+        for (const auto&& [name, actionAndArgs] : allActions)
+        {
+            if (actionAndArgs.Action() == ShortcutAction::SendInput)
+                totalSendInput++;
+        }
+
+        TraceLoggingWrite(
+            g_hTerminalAppProvider,
+            "SendInputUsage",
+            TraceLoggingDescription("Data about usage of sendInput"),
+            TraceLoggingInt32(totalSendInput, "NumSendInputActions"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+        // ------------------------ RE: automarkPrompts ------------------------
+        auto totalAutoMark = 0;
+        auto totalShowMarks = 0;
+        for (const auto&& p : _settings.AllProfiles())
+        {
+            totalAutoMark += p.AutoMarkPrompts() ? 1 : 0;
+            totalShowMarks += p.ShowMarks() ? 1 : 0;
+        }
+        TraceLoggingWrite(
+            g_hTerminalAppProvider,
+            "MarksProfilesUsage",
+            TraceLoggingDescription("Data about usage of scrollbar marks"),
+            TraceLoggingInt32(totalAutoMark, "NumProfilesAutoMarkPrompts"),
+            TraceLoggingInt32(totalShowMarks, "NumProfilesShowMarks"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
     void AppLogic::Quit()
