@@ -50,10 +50,10 @@ public:
 
     const std::wstring_view GetConsoleTitle() const noexcept override;
 
-    const std::wstring GetHyperlinkUri(uint16_t id) const noexcept override;
-    const std::wstring GetHyperlinkCustomId(uint16_t id) const noexcept override;
+    const std::wstring GetHyperlinkUri(uint16_t id) const override;
+    const std::wstring GetHyperlinkCustomId(uint16_t id) const override;
 
-    const std::vector<size_t> GetPatternId(const til::point location) const noexcept override;
+    const std::vector<size_t> GetPatternId(const til::point location) const override;
 #pragma endregion
 
 #pragma region IUiaData

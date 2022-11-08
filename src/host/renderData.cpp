@@ -304,7 +304,7 @@ const std::wstring_view RenderData::GetConsoleTitle() const noexcept
 // - The hyperlink ID
 // Return Value:
 // - The URI
-const std::wstring RenderData::GetHyperlinkUri(uint16_t id) const noexcept
+const std::wstring RenderData::GetHyperlinkUri(uint16_t id) const
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().GetTextBuffer().GetHyperlinkUriFromId(id);
@@ -316,14 +316,14 @@ const std::wstring RenderData::GetHyperlinkUri(uint16_t id) const noexcept
 // - The hyperlink ID
 // Return Value:
 // - The custom ID if there was one, empty string otherwise
-const std::wstring RenderData::GetHyperlinkCustomId(uint16_t id) const noexcept
+const std::wstring RenderData::GetHyperlinkCustomId(uint16_t id) const
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().GetTextBuffer().GetCustomIdFromId(id);
 }
 
 // For now, we ignore regex patterns in conhost
-const std::vector<size_t> RenderData::GetPatternId(const til::point /*location*/) const noexcept
+const std::vector<size_t> RenderData::GetPatternId(const til::point /*location*/) const
 {
     return {};
 }
