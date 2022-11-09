@@ -24,22 +24,22 @@ void Terminal::ReturnResponse(const std::wstring_view response)
     }
 }
 
-Microsoft::Console::VirtualTerminal::StateMachine& Terminal::GetStateMachine()
+Microsoft::Console::VirtualTerminal::StateMachine& Terminal::GetStateMachine() noexcept
 {
     return *_stateMachine;
 }
 
-TextBuffer& Terminal::GetTextBuffer()
+TextBuffer& Terminal::GetTextBuffer() noexcept
 {
     return _activeBuffer();
 }
 
-til::rect Terminal::GetViewport() const
+til::rect Terminal::GetViewport() const noexcept
 {
     return til::rect{ _GetMutableViewport().ToInclusive() };
 }
 
-void Terminal::SetViewportPosition(const til::point position)
+void Terminal::SetViewportPosition(const til::point position) noexcept
 {
     // The viewport is fixed at 0,0 for the alt buffer, so this is a no-op.
     if (!_inAltBuffer())
@@ -50,17 +50,17 @@ void Terminal::SetViewportPosition(const til::point position)
     }
 }
 
-void Terminal::SetTextAttributes(const TextAttribute& attrs)
+void Terminal::SetTextAttributes(const TextAttribute& attrs) noexcept
 {
     _activeBuffer().SetCurrentAttributes(attrs);
 }
 
-void Terminal::SetAutoWrapMode(const bool /*wrapAtEOL*/)
+void Terminal::SetAutoWrapMode(const bool /*wrapAtEOL*/) noexcept
 {
     // TODO: This will be needed to support DECAWM.
 }
 
-void Terminal::SetScrollingRegion(const til::inclusive_rect& /*scrollMargins*/)
+void Terminal::SetScrollingRegion(const til::inclusive_rect& /*scrollMargins*/) noexcept
 {
     // TODO: This will be needed to fully support DECSTBM.
 }
@@ -70,7 +70,7 @@ void Terminal::WarningBell()
     _pfnWarningBell();
 }
 
-bool Terminal::GetLineFeedMode() const
+bool Terminal::GetLineFeedMode() const noexcept
 {
     // TODO: This will be needed to support LNM.
     return false;
@@ -101,29 +101,29 @@ void Terminal::SetWindowTitle(const std::wstring_view title)
     }
 }
 
-CursorType Terminal::GetUserDefaultCursorStyle() const
+CursorType Terminal::GetUserDefaultCursorStyle() const noexcept
 {
     return _defaultCursorShape;
 }
 
-bool Terminal::ResizeWindow(const til::CoordType /*width*/, const til::CoordType /*height*/)
+bool Terminal::ResizeWindow(const til::CoordType /*width*/, const til::CoordType /*height*/) noexcept
 {
     // TODO: This will be needed to support various resizing sequences. See also GH#1860.
     return false;
 }
 
-void Terminal::SetConsoleOutputCP(const unsigned int /*codepage*/)
+void Terminal::SetConsoleOutputCP(const unsigned int /*codepage*/) noexcept
 {
     // TODO: This will be needed to support 8-bit charsets and DOCS sequences.
 }
 
-unsigned int Terminal::GetConsoleOutputCP() const
+unsigned int Terminal::GetConsoleOutputCP() const noexcept
 {
     // TODO: See SetConsoleOutputCP above.
     return CP_UTF8;
 }
 
-void Terminal::EnableXtermBracketedPasteMode(const bool enabled)
+void Terminal::EnableXtermBracketedPasteMode(const bool enabled) noexcept
 {
     _bracketedPasteMode = enabled;
 }
@@ -214,7 +214,7 @@ void Terminal::UseAlternateScreenBuffer()
     // Copy our cursor state to the new buffer's cursor
     {
         // Update the alt buffer's cursor style, visibility, and position to match our own.
-        auto& myCursor = _mainBuffer->GetCursor();
+        const auto& myCursor = _mainBuffer->GetCursor();
         auto& tgtCursor = _altBuffer->GetCursor();
         tgtCursor.SetStyle(myCursor.GetSize(), myCursor.GetType());
         tgtCursor.SetIsVisible(myCursor.IsVisible());
@@ -256,7 +256,7 @@ void Terminal::UseMainScreenBuffer()
     // Copy our cursor state back to the main buffer's cursor
     {
         // Update the alt buffer's cursor style, visibility, and position to match our own.
-        auto& myCursor = _altBuffer->GetCursor();
+        const auto& myCursor = _altBuffer->GetCursor();
         auto& tgtCursor = _mainBuffer->GetCursor();
         tgtCursor.SetStyle(myCursor.GetSize(), myCursor.GetType());
         tgtCursor.SetIsVisible(myCursor.IsVisible());
@@ -365,17 +365,17 @@ void Terminal::ShowWindow(bool showOrHide)
     }
 }
 
-bool Terminal::IsConsolePty() const
+bool Terminal::IsConsolePty() const noexcept
 {
     return false;
 }
 
-bool Terminal::IsVtInputEnabled() const
+bool Terminal::IsVtInputEnabled() const noexcept
 {
     return false;
 }
 
-void Terminal::NotifyAccessibilityChange(const til::rect& /*changedRect*/)
+void Terminal::NotifyAccessibilityChange(const til::rect& /*changedRect*/) noexcept
 {
     // This is only needed in conhost. Terminal handles accessibility in another way.
 }

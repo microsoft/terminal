@@ -59,10 +59,10 @@ namespace Microsoft::Console::Render
         virtual const bool IsGridLineDrawingAllowed() noexcept = 0;
         virtual const std::wstring_view GetConsoleTitle() const noexcept = 0;
 
-        virtual const std::wstring GetHyperlinkUri(uint16_t id) const noexcept = 0;
-        virtual const std::wstring GetHyperlinkCustomId(uint16_t id) const noexcept = 0;
+        virtual const std::wstring GetHyperlinkUri(uint16_t id) const = 0;
+        virtual const std::wstring GetHyperlinkCustomId(uint16_t id) const = 0;
 
-        virtual const std::vector<size_t> GetPatternId(const til::point location) const noexcept = 0;
+        virtual const std::vector<size_t> GetPatternId(const til::point location) const = 0;
 
     protected:
         IRenderData() = default;
