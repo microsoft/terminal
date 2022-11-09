@@ -1999,31 +1999,31 @@ void TextBufferTests::TestOverwriteChars()
     TextBuffer buffer{ bufferSize, attr, cursorSize, false, _renderer };
     auto& row = buffer.GetRowByOffset(0);
 
-    // scientist emoji U+1F9D1 U+200D U+1F52C
-    static constexpr std::wstring_view complex1{ L"\U0001F9D1\U0000200D\U0001F52C" };
-    // technologist emoji U+1F9D1 U+200D U+1F4BB
-    static constexpr std::wstring_view complex2{ L"\U0001F9D1\U0000200D\U0001F4BB" };
-    static constexpr std::wstring_view simple{ L"X" };
+// scientist emoji U+1F9D1 U+200D U+1F52C
+#define complex1 L"\U0001F9D1\U0000200D\U0001F52C"
+// technologist emoji U+1F9D1 U+200D U+1F4BB
+#define complex2 L"\U0001F9D1\U0000200D\U0001F4BB"
+#define simple L"X"
 
     // Test overwriting narrow chars with wide chars at the begin/end of a row.
     row.ReplaceCharacters(0, 2, complex1);
     row.ReplaceCharacters(8, 2, complex1);
-    VERIFY_ARE_EQUAL(L"\U0001F9D1\U0000200D\U0001F52C      \U0001F9D1\U0000200D\U0001F52C", row.GetText());
+    VERIFY_ARE_EQUAL(complex1 L"      " complex1, row.GetText());
 
     // Test overwriting wide chars with wide chars slightly shifted left/right.
     row.ReplaceCharacters(1, 2, complex1);
     row.ReplaceCharacters(7, 2, complex1);
-    VERIFY_ARE_EQUAL(L" \U0001F9D1\U0000200D\U0001F52C    \U0001F9D1\U0000200D\U0001F52C ", row.GetText());
+    VERIFY_ARE_EQUAL(L" " complex1 L"    " complex1 L" ", row.GetText());
 
     // Test overwriting wide chars with wide chars.
     row.ReplaceCharacters(1, 2, complex2);
     row.ReplaceCharacters(7, 2, complex2);
-    VERIFY_ARE_EQUAL(L" \U0001F9D1\U0000200D\U0001F4BB    \U0001F9D1\U0000200D\U0001F4BB ", row.GetText());
+    VERIFY_ARE_EQUAL(L" " complex2 L"    " complex2 L" ", row.GetText());
 
     // Test overwriting wide chars with narrow chars.
     row.ReplaceCharacters(1, 1, simple);
     row.ReplaceCharacters(8, 1, simple);
-    VERIFY_ARE_EQUAL(L" X      X ", row.GetText());
+    VERIFY_ARE_EQUAL(L" " simple L"      " simple L" ", row.GetText());
 
     // Test clearing narrow/wide chars.
     row.ReplaceCharacters(0, 1, simple);
@@ -2032,7 +2032,7 @@ void TextBufferTests::TestOverwriteChars()
     row.ReplaceCharacters(6, 1, simple);
     row.ReplaceCharacters(7, 2, complex2);
     row.ReplaceCharacters(9, 1, simple);
-    VERIFY_ARE_EQUAL(L"X\U0001F9D1\U0000200D\U0001F4BBX  X\U0001F9D1\U0000200D\U0001F4BBX", row.GetText());
+    VERIFY_ARE_EQUAL(simple L" " complex2 L" " simple L"  " simple L" " complex2 L" " simple, row.GetText());
 
     row.ClearCell(0);
     row.ClearCell(1);
@@ -2041,6 +2041,10 @@ void TextBufferTests::TestOverwriteChars()
     row.ClearCell(8);
     row.ClearCell(9);
     VERIFY_ARE_EQUAL(L"          ", row.GetText());
+
+#undef simple
+#undef complex2
+#undef complex1
 }
 
 void TextBufferTests::TestAppendRTFText()
