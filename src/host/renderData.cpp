@@ -250,7 +250,7 @@ const std::vector<Microsoft::Console::Render::RenderOverlay> RenderData::GetOver
 // - <none>
 // Return Value:
 // - true if the cursor should be drawn twice as wide as usual
-bool RenderData::IsCursorDoubleWidth() const
+bool RenderData::IsCursorDoubleWidth() const noexcept
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().CursorIsDoubleWidth();
