@@ -2032,7 +2032,7 @@ void TextBufferTests::TestOverwriteChars()
     row.ReplaceCharacters(6, 1, simple);
     row.ReplaceCharacters(7, 2, complex2);
     row.ReplaceCharacters(9, 1, simple);
-    VERIFY_ARE_EQUAL(simple L" " complex2 L" " simple L"  " simple L" " complex2 L" " simple, row.GetText());
+    VERIFY_ARE_EQUAL(simple complex2 simple L"  " simple complex2 simple, row.GetText());
 
     row.ClearCell(0);
     row.ClearCell(1);
