@@ -781,26 +781,31 @@ class ReflowTests
             VERIFY_ARE_EQUAL(testRow.wrap, row.WasWrapForced(), indexString);
 
             til::CoordType x = 0;
+            til::CoordType j = 0;
             for (const auto& ch : testRow.text)
             {
+                indexString.Format(L"[Cell %d, %d; Text line index %d]", x, y, j);
+
                 if (IsGlyphFullWidth(ch))
                 {
                     // Char is full width in test buffer, so
                     // ensure that real buffer is LEAD, TRAIL (ch)
-                    VERIFY_IS_TRUE(row.DbcsAttrAt(x) == DbcsAttribute::Leading, indexString);
+                    VERIFY_ARE_EQUAL(row.DbcsAttrAt(x), DbcsAttribute::Leading, indexString);
                     VERIFY_ARE_EQUAL(ch, row.GlyphAt(x).front(), indexString);
                     ++x;
 
-                    VERIFY_IS_TRUE(row.DbcsAttrAt(x) == DbcsAttribute::Trailing, indexString);
+                    VERIFY_ARE_EQUAL(row.DbcsAttrAt(x), DbcsAttribute::Trailing, indexString);
                     VERIFY_ARE_EQUAL(ch, row.GlyphAt(x).front(), indexString);
                     ++x;
                 }
                 else
                 {
-                    VERIFY_IS_TRUE(row.DbcsAttrAt(x) == DbcsAttribute::Single, indexString);
+                    VERIFY_ARE_EQUAL(row.DbcsAttrAt(x), DbcsAttribute::Single, indexString);
                     VERIFY_ARE_EQUAL(ch, row.GlyphAt(x).front(), indexString);
                     ++x;
                 }
+
+                j++;
             }
 
             y++;

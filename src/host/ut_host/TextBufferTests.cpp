@@ -324,7 +324,7 @@ void TextBufferTests::DoBoundaryTest(PCWCHAR const pwszInputString,
 
 void TextBufferTests::TestBoundaryMeasuresEmptyString()
 {
-    auto csBufferWidth = GetBufferWidth();
+    const auto csBufferWidth = GetBufferWidth();
 
     // length 0, left 80, right 0
     const auto pwszLazyDog = L"";
@@ -333,16 +333,16 @@ void TextBufferTests::TestBoundaryMeasuresEmptyString()
 
 void TextBufferTests::TestBoundaryMeasuresFullString()
 {
-    auto csBufferWidth = GetBufferWidth();
+    const auto csBufferWidth = GetBufferWidth();
 
     // length 0, left 80, right 0
-    std::wstring str(csBufferWidth, L'X');
+    const std::wstring str(csBufferWidth, L'X');
     DoBoundaryTest(str.data(), csBufferWidth, csBufferWidth, 0, 80);
 }
 
 void TextBufferTests::TestBoundaryMeasuresRegularString()
 {
-    auto csBufferWidth = GetBufferWidth();
+    const auto csBufferWidth = GetBufferWidth();
 
     // length 44, left 0, right 44
     const auto pwszLazyDog = L"The quick brown fox jumps over the lazy dog.";
@@ -351,7 +351,7 @@ void TextBufferTests::TestBoundaryMeasuresRegularString()
 
 void TextBufferTests::TestBoundaryMeasuresFloatingString()
 {
-    auto csBufferWidth = GetBufferWidth();
+    const auto csBufferWidth = GetBufferWidth();
 
     // length 5 spaces + 4 chars + 5 spaces = 14, left 5, right 9
     const auto pwszOffsets = L"     C:\\>     ";
@@ -1921,7 +1921,7 @@ void TextBufferTests::ResizeTraditionalHighUnicodeRowRemoval()
     auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
 
     // Get a position inside the buffer in the bottom row
-    const til::point pos{ 0, bufferSize.Y - 2 };
+    const til::point pos{ 0, bufferSize.Y - 1 };
 
     // Fill it up with a sequence that will have to hit the high unicode storage.
     // This is the eggplant emoji: 🍆
@@ -1950,7 +1950,7 @@ void TextBufferTests::ResizeTraditionalHighUnicodeColumnRemoval()
     const TextAttribute attr{ 0x7f };
     auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
 
-    // Get a position inside the buffer in the last column
+    // Get a position inside the buffer in the last column (-2 as the inserted character is 2 columns wide).
     const til::point pos{ bufferSize.X - 2, 0 };
 
     // Fill it up with a sequence that will have to hit the high unicode storage.
@@ -2033,6 +2033,7 @@ void TextBufferTests::TestOverwriteChars()
     row.ReplaceCharacters(7, 2, complex2);
     row.ReplaceCharacters(9, 1, simple);
     VERIFY_ARE_EQUAL(L"X\U0001F9D1\U0000200D\U0001F4BBX  X\U0001F9D1\U0000200D\U0001F4BBX", row.GetText());
+
     row.ClearCell(0);
     row.ClearCell(1);
     row.ClearCell(3);
