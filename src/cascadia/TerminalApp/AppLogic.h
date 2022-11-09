@@ -198,8 +198,6 @@ namespace winrt::TerminalApp::implementation
         void _ReloadSettings();
         void _OpenSettingsUI();
 
-        void _onCreateResearch();
-
         bool _hasCommandLineArguments{ false };
         bool _hasSettingsStartupActions{ false };
         std::vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> _warnings;

@@ -11,12 +11,4 @@
 
 #include "winrt/Microsoft.Terminal.Core.h"
 
-// Including TraceLogging essentials for the binary
-#include <TraceLoggingProvider.h>
-#include <winmeta.h>
-// We'll just use the one in TerminalControl, since that's what we'll get embedded in.
-TRACELOGGING_DECLARE_PROVIDER(g_hTerminalControlProvider);
-#include <telemetry/ProjectTelemetry.h>
-#include <TraceLoggingActivity.h>
-
 #include <til.h>
