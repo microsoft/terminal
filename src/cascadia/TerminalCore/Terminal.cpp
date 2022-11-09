@@ -1603,7 +1603,7 @@ const std::vector<DispatchTypes::ScrollMark>& Terminal::GetScrollMarks() const n
     // We want to return _no_ marks when we're in the alt buffer, to effectively
     // hide them. We need to return a reference, so we can't just ctor an empty
     // list here just for when we're in the alt buffer.
-    static constexpr std::vector<DispatchTypes::ScrollMark> _altBufferMarks{};
+    static const std::vector<DispatchTypes::ScrollMark> _altBufferMarks{};
     return _inAltBuffer() ? _altBufferMarks : _scrollMarks;
 }
 
