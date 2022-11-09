@@ -10,17 +10,6 @@
 
 using namespace Microsoft::Console;
 
-// Routine Description:
-// - Determines if a character is a valid number character, 0-9.
-// Arguments:
-// - wch - Character to check.
-// Return Value:
-// - True if it is. False if it isn't.
-static constexpr bool _isNumber(const wchar_t wch) noexcept
-{
-    return wch >= L'0' && wch <= L'9'; // 0x30 - 0x39
-}
-
 // Function Description:
 // - Creates a String representation of a guid, in the format
 //      "{12345678-ABCD-EF12-3456-7890ABCDEF12}"
@@ -174,35 +163,24 @@ try
     // First we look for "rgb:"
     // Other colorspaces are theoretically possible, but we don't support them.
     auto curr = string.cbegin();
-    if (stringSize > 4)
+    if (til::starts_with_insensitive_ascii(string, L"rgb:"))
     {
-        auto prefix = std::wstring(string.substr(0, 4));
-
-        // The "rgb:" indicator should be case insensitive. To prevent possible issues under
-        // different locales, transform only ASCII range latin characters.
-        std::transform(prefix.begin(), prefix.end(), prefix.begin(), [](const auto x) {
-            return x >= L'A' && x <= L'Z' ? static_cast<wchar_t>(std::towlower(x)) : x;
-        });
-
-        if (prefix.compare(L"rgb:") == 0)
+        // If all the components have the same digit count, we can have one of the following formats:
+        // 9 "rgb:h/h/h"
+        // 12 "rgb:hh/hh/hh"
+        // 15 "rgb:hhh/hhh/hhh"
+        // 18 "rgb:hhhh/hhhh/hhhh"
+        // Note that the component sizes aren't required to be the same.
+        // Anything in between is also valid, e.g. "rgb:h/hh/h" and "rgb:h/hh/hhh".
+        // Any fewer cannot be valid, and any more will be too many. Return early in this case.
+        if (stringSize < 9 || stringSize > 18)
         {
-            // If all the components have the same digit count, we can have one of the following formats:
-            // 9 "rgb:h/h/h"
-            // 12 "rgb:hh/hh/hh"
-            // 15 "rgb:hhh/hhh/hhh"
-            // 18 "rgb:hhhh/hhhh/hhhh"
-            // Note that the component sizes aren't required to be the same.
-            // Anything in between is also valid, e.g. "rgb:h/hh/h" and "rgb:h/hh/hhh".
-            // Any fewer cannot be valid, and any more will be too many. Return early in this case.
-            if (stringSize < 9 || stringSize > 18)
-            {
-                return std::nullopt;
-            }
-
-            foundXParseColorSpec = true;
-
-            std::advance(curr, 4);
+            return std::nullopt;
         }
+
+        foundXParseColorSpec = true;
+
+        std::advance(curr, 4);
     }
 
     // Try the sharp sign format.
@@ -418,24 +396,9 @@ til::color Utils::ColorFromHLS(const int h, const int l, const int s) noexcept
 bool Utils::HexToUint(const wchar_t wch,
                       unsigned int& value) noexcept
 {
-    value = 0;
-    auto success = false;
-    if (wch >= L'0' && wch <= L'9')
-    {
-        value = wch - L'0';
-        success = true;
-    }
-    else if (wch >= L'A' && wch <= L'F')
-    {
-        value = (wch - L'A') + 10;
-        success = true;
-    }
-    else if (wch >= L'a' && wch <= L'f')
-    {
-        value = (wch - L'a') + 10;
-        success = true;
-    }
-    return success;
+    const auto v = til::details::digits[wch & 0x7fu] | (wch & ~0x7fu);
+    value = v;
+    return v < 16;
 }
 
 // Routine Description:
@@ -448,32 +411,9 @@ bool Utils::HexToUint(const wchar_t wch,
 bool Utils::StringToUint(const std::wstring_view wstr,
                          unsigned int& value)
 {
-    if (wstr.size() < 1)
-    {
-        return false;
-    }
-
-    unsigned int result = 0;
-    size_t current = 0;
-    while (current < wstr.size())
-    {
-        const auto wch = wstr.at(current);
-        if (_isNumber(wch))
-        {
-            result *= 10;
-            result += wch - L'0';
-
-            ++current;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    value = result;
-
-    return true;
+    const auto ret = til::to_ulong(wstr, 10);
+    value = gsl::narrow_cast<unsigned int>(ret);
+    return ret != til::to_ulong_error;
 }
 
 // Routine Description:

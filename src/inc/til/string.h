@@ -48,6 +48,19 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             __ /* p   */, __ /* q   */, __ /* r   */, __ /* s   */, __ /* t   */, __ /* u   */, __ /* v   */, __ /* w   */, __ /* x   */, __ /* y   */, __ /* z   */, __ /* {   */, FP /* |   */, __ /* }   */, __ /* ~   */, __ /* DEL */,
             // clang-format on
         } };
+        
+        static constexpr std::array<uint8_t, 128> digits{ {
+            // clang-format off
+            255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+            255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+            255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+              0,   1,   2,   3,   4,   5,   6,   7,   8,   9, 255, 255, 255, 255, 255, 255,
+            255,  10,  11,  12,  13,  14,  15, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+            255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+            255,  10,  11,  12,  13,  14,  15, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+            255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+            // clang-format on
+        } };
     }
 
     _TIL_INLINEPREFIX std::wstring clean_filename(std::wstring str) noexcept
@@ -120,9 +133,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // Just like std::wcstoul, but without annoying locales and null-terminating strings.
     // It has been fuzz-tested against clang's strtoul implementation.
     template<typename T, typename Traits>
-    _TIL_INLINEPREFIX constexpr unsigned long to_ulong(const std::basic_string_view<T, Traits>& str, unsigned long base = 0) noexcept
+    constexpr unsigned long to_ulong(const std::basic_string_view<T, Traits>& str, unsigned long base = 0) noexcept
     {
-        static constexpr unsigned long maximumValue = ULONG_MAX / 16;
+        constexpr unsigned long maximumValue = ULONG_MAX / 16;
 
         // We don't have to test ptr for nullability, as we only access it under either condition:
         // * str.length() > 0, for determining the base
@@ -133,7 +146,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         auto ptr = str.data();
         const auto end = ptr + str.length();
         unsigned long accumulator = 0;
-        unsigned long value = ULONG_MAX;
 
         if (!base)
         {
@@ -154,41 +166,30 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         if (ptr == end)
         {
-            return to_ulong_error;
+            goto failure;
         }
 
-        for (;; accumulator *= base)
+        do
         {
-            value = ULONG_MAX;
-            if (*ptr >= '0' && *ptr <= '9')
-            {
-                value = *ptr - '0';
-            }
-            else if (*ptr >= 'A' && *ptr <= 'F')
-            {
-                value = *ptr - 'A' + 10;
-            }
-            else if (*ptr >= 'a' && *ptr <= 'f')
-            {
-                value = *ptr - 'a' + 10;
-            }
-            else
-            {
-                return to_ulong_error;
-            }
+            const auto value = details::digits[*ptr & 0x7fu] | (*ptr & ~0x7fu);
 
+            accumulator *= base;
             accumulator += value;
-            if (accumulator >= maximumValue)
-            {
-                return to_ulong_error;
-            }
 
-            if (++ptr == end)
+            if (value >= base || accumulator >= maximumValue)
             {
-                return accumulator;
+                goto failure;
             }
-        }
+        } while (++ptr != end);
 #pragma warning(pop)
+
+        return accumulator;
+
+        // MSVC failed to realize that my two `return to_ulong_error` can be
+        // merged in assembly by simply emitting it near the end and jumping there.
+        // So now I'm doing it our of spite by myself via `goto`. It's a C++23 extension.
+    failure:
+        return to_ulong_error;
     }
 
     constexpr unsigned long to_ulong(const std::string_view& str, unsigned long base = 0) noexcept
