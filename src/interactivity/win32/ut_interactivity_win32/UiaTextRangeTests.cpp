@@ -364,7 +364,7 @@ class UiaTextRangeTests
             auto& row = _pTextBuffer->GetRowByOffset(i);
             const auto width = row.size();
 
-            for (decltype(width) x = 0; x < width; ++x)
+            for (uint16_t x = 0; x < width; ++x)
             {
                 row.ReplaceCharacters(x, 1, glyph);
             }
@@ -492,7 +492,7 @@ class UiaTextRangeTests
             auto& row = _pTextBuffer->GetRowByOffset(i);
             const auto width = row.size();
 
-            for (decltype(width) x = 0; x < width; ++x)
+            for (uint16_t x = 0; x < width; ++x)
             {
                 const std::wstring_view glyph{ x % 5 == 0 ? L" " : L"x" };
                 row.ReplaceCharacters(x, 1, glyph);
