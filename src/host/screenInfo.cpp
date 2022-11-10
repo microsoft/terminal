@@ -682,7 +682,7 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
         }
 
         pWindow->UpdateScrollBar(true,
-                                 _IsAltBuffer() || gci.IsTerminalScrolling(),
+                                 _IsAltBuffer(),
                                  _viewport.Height(),
                                  gci.IsTerminalScrolling() ? _virtualBottom : buffer.BottomInclusive(),
                                  _viewport.Top());
