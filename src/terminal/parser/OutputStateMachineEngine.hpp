@@ -147,7 +147,14 @@ namespace Microsoft::Console::VirtualTerminal
             XT_PopSgrAlias = VTID("#q"),
             XT_PushSgr = VTID("#{"),
             XT_PopSgr = VTID("#}"),
+            DECCARA_ChangeAttributesRectangularArea = VTID("$r"),
+            DECRARA_ReverseAttributesRectangularArea = VTID("$t"),
+            DECCRA_CopyRectangularArea = VTID("$v"),
+            DECFRA_FillRectangularArea = VTID("$x"),
+            DECERA_EraseRectangularArea = VTID("$z"),
+            DECSERA_SelectiveEraseRectangularArea = VTID("${"),
             DECSCPP_SetColumnsPerPage = VTID("$|"),
+            DECSACE_SelectAttributeChangeExtent = VTID("*x"),
             DECAC_AssignColor = VTID(",|"),
             DECPS_PlaySound = VTID(",~")
         };
