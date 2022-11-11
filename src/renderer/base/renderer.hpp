@@ -22,7 +22,6 @@ Author(s):
 #include "thread.hpp"
 
 #include "../../buffer/out/textBuffer.hpp"
-#include "../../buffer/out/CharRow.hpp"
 
 // fwdecl unittest classes
 #ifdef UNIT_TESTING

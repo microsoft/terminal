@@ -3709,11 +3709,11 @@ void ConptyRoundtripTests::HyperlinkIdConsistency()
 
     auto verifyData = [](TextBuffer& tb) {
         // Check that all the linked cells still have the same ID
-        auto& attrRow = tb.GetRowByOffset(0).GetAttrRow();
-        auto id = attrRow.GetAttrByColumn(0).GetHyperlinkId();
+        auto& row = tb.GetRowByOffset(0);
+        auto id = row.GetAttrByColumn(0).GetHyperlinkId();
         for (uint16_t i = 1; i < 4; ++i)
         {
-            VERIFY_ARE_EQUAL(id, attrRow.GetAttrByColumn(i).GetHyperlinkId());
+            VERIFY_ARE_EQUAL(id, row.GetAttrByColumn(i).GetHyperlinkId());
         }
     };
 
