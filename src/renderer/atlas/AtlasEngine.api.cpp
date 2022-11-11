@@ -96,30 +96,35 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
 
 [[nodiscard]] HRESULT AtlasEngine::InvalidateScroll(const til::point* const pcoordDelta) noexcept
 {
-    const auto delta = pcoordDelta->Y;
-    if (delta == 0)
-    {
-        return S_OK;
-    }
-
-    _api.scrollOffset = gsl::narrow_cast<i16>(clamp<int>(_api.scrollOffset + delta, i16min, i16max));
-
     // InvalidateScroll() is a "synchronous" API. Any Invalidate()s after
     // a InvalidateScroll() refer to the new viewport after the scroll.
     // --> We need to shift the current invalidation rectangles as well.
 
-    _api.invalidatedCursorArea.top = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedCursorArea.top + delta, u16min, u16max));
-    _api.invalidatedCursorArea.bottom = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedCursorArea.bottom + delta, u16min, u16max));
+    if (const auto delta = pcoordDelta->X)
+    {
+        _api.invalidatedCursorArea.left = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedCursorArea.left + delta, u16min, u16max));
+        _api.invalidatedCursorArea.right = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedCursorArea.right + delta, u16min, u16max));
 
-    if (delta < 0)
-    {
-        _api.invalidatedRows.x = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedRows.x + delta, u16min, u16max));
-        _api.invalidatedRows.y = _api.cellCount.y;
+        _api.invalidatedRows = invalidatedRowsAll;
     }
-    else
+
+    if (const auto delta = pcoordDelta->Y)
     {
-        _api.invalidatedRows.x = 0;
-        _api.invalidatedRows.y = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedRows.y + delta, u16min, u16max));
+        _api.scrollOffset = gsl::narrow_cast<i16>(clamp<int>(_api.scrollOffset + delta, i16min, i16max));
+
+        _api.invalidatedCursorArea.top = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedCursorArea.top + delta, u16min, u16max));
+        _api.invalidatedCursorArea.bottom = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedCursorArea.bottom + delta, u16min, u16max));
+
+        if (delta < 0)
+        {
+            _api.invalidatedRows.x = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedRows.x + delta, u16min, u16max));
+            _api.invalidatedRows.y = _api.cellCount.y;
+        }
+        else
+        {
+            _api.invalidatedRows.x = 0;
+            _api.invalidatedRows.y = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedRows.y + delta, u16min, u16max));
+        }
     }
 
     return S_OK;
@@ -176,8 +181,8 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
 [[nodiscard]] HRESULT AtlasEngine::UpdateViewport(const til::inclusive_rect& srNewViewport) noexcept
 {
     const u16x2 cellCount{
-        gsl::narrow_cast<u16>(srNewViewport.Right - srNewViewport.Left + 1),
-        gsl::narrow_cast<u16>(srNewViewport.Bottom - srNewViewport.Top + 1),
+        gsl::narrow_cast<u16>(std::max(1, srNewViewport.Right - srNewViewport.Left + 1)),
+        gsl::narrow_cast<u16>(std::max(1, srNewViewport.Bottom - srNewViewport.Top + 1)),
     };
     if (_api.cellCount != cellCount)
     {

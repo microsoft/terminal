@@ -2738,8 +2738,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _bellLightAnimation = Window::Current().Compositor().CreateScalarKeyFrameAnimation();
             // Add key frames and a duration to our bell light animation
-            _bellLightAnimation.InsertKeyFrame(0.0, 4.0);
-            _bellLightAnimation.InsertKeyFrame(1.0, 1.9);
+            _bellLightAnimation.InsertKeyFrame(0.0f, 4.0f);
+            _bellLightAnimation.InsertKeyFrame(1.0f, 1.9f);
             _bellLightAnimation.Duration(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(TerminalWarningBellInterval)));
         }
 
@@ -2748,8 +2748,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _bellDarkAnimation = Window::Current().Compositor().CreateScalarKeyFrameAnimation();
             // reversing the order of the intensity values produces a similar effect as the light version
-            _bellDarkAnimation.InsertKeyFrame(0.0, 1.0);
-            _bellDarkAnimation.InsertKeyFrame(1.0, 2.0);
+            _bellDarkAnimation.InsertKeyFrame(0.0f, 1.0f);
+            _bellDarkAnimation.InsertKeyFrame(1.0f, 2.0f);
             _bellDarkAnimation.Duration(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(TerminalWarningBellInterval)));
         }
 

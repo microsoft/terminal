@@ -73,7 +73,7 @@ CursorType Terminal::GetCursorStyle() const noexcept
 bool Terminal::IsCursorDoubleWidth() const
 {
     const auto position = _activeBuffer().GetCursor().GetPosition();
-    TextBufferTextIterator it(TextBufferCellIterator(_activeBuffer(), position));
+    const TextBufferTextIterator it(TextBufferCellIterator(_activeBuffer(), position));
     return IsGlyphFullWidth(*it);
 }
 
@@ -87,12 +87,12 @@ const bool Terminal::IsGridLineDrawingAllowed() noexcept
     return true;
 }
 
-const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkUri(uint16_t id) const noexcept
+const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkUri(uint16_t id) const
 {
     return _activeBuffer().GetHyperlinkUriFromId(id);
 }
 
-const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkCustomId(uint16_t id) const noexcept
+const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkCustomId(uint16_t id) const
 {
     return _activeBuffer().GetCustomIdFromId(id);
 }
@@ -103,7 +103,7 @@ const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkCustomId(uin
 // - The location
 // Return value:
 // - The pattern IDs of the location
-const std::vector<size_t> Terminal::GetPatternId(const til::point location) const noexcept
+const std::vector<size_t> Terminal::GetPatternId(const til::point location) const
 {
     // Look through our interval tree for this location
     const auto intervals = _patternIntervalTree.findOverlapping({ location.X + 1, location.Y }, location);
@@ -208,9 +208,6 @@ catch (...)
 void Terminal::LockConsole() noexcept
 {
     _readWriteLock.lock();
-#ifndef NDEBUG
-    _lastLocker = GetCurrentThreadId();
-#endif
 }
 
 // Method Description:

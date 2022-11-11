@@ -141,8 +141,7 @@ namespace ControlUnitTests
             // GH#603: Adjusting opacity shouldn't change whether or not we
             // requested acrylic.
 
-            auto expectedUseAcrylic = winrt::Microsoft::Terminal::Control::implementation::ControlCore::IsVintageOpacityAvailable() ? true :
-                                                                                                                                      (expectedOpacity < 1.0 ? true : false);
+            auto expectedUseAcrylic = expectedOpacity < 1.0;
             VERIFY_ARE_EQUAL(expectedUseAcrylic, core->UseAcrylic());
             VERIFY_ARE_EQUAL(true, core->_settings->UseAcrylic());
         };
