@@ -12,6 +12,8 @@ using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
+// Note: Generate GUID using TlgGuid.exe tool
+#pragma warning(suppress : 26477) // One of the macros uses 0/NULL. We don't have control to make it nullptr.
 TRACELOGGING_DEFINE_PROVIDER(g_hCTerminalCoreProvider,
                              "Microsoft.Terminal.Core",
                              // {103ac8cf-97d2-51aa-b3ba-5ffd5528fa5f}

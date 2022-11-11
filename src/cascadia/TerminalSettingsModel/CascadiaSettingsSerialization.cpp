@@ -937,15 +937,21 @@ void CascadiaSettings::_researchOnLoad()
         // ----------------------------- RE: Themes ----------------------------
         const auto numThemes = GlobalSettings().Themes().Size();
         const auto themeInUse = GlobalSettings().CurrentTheme().Name();
-        const auto usingDefaultTheme = themeInUse == L"light" ||
-                                       themeInUse == L"dark" ||
-                                       themeInUse == L"system";
+
+        // system: 0
+        // light: 1
+        // dark: 2
+        // a custom theme: 3
+        const auto themeChoice = themeInUse == L"system" ? 0 :
+                                                           themeInUse == L"light" ? 1 :
+                                                                                    themeInUse == L"dark" ? 2 :
+                                                                                                            3;
 
         TraceLoggingWrite(
             g_hSettingsModelProvider,
             "ThemesInUse",
             TraceLoggingDescription("Data about the themes in use"),
-            TraceLoggingBool(usingDefaultTheme, "true if the user's current theme is one of the built-in themes"),
+            TraceLoggingBool(themeChoice, "Identifier for the theme chosen. 0 is system, 1 is light, 2 is dark, and 3 indicates any custom theme."),
             TraceLoggingInt32(numThemes, "Number of themes in the user's settings"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
