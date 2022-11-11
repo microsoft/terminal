@@ -299,12 +299,12 @@ void Terminal::UseMainScreenBuffer()
 }
 
 // NOTE: This is the version of AddMark that comes from VT
-void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark)
+void Terminal::AddMark(const DispatchTypes::ScrollMark& mark)
 {
     const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
     AddMark(mark, cursorPos, cursorPos);
     auto* last = &_scrollMarks.back();
-    if (last->category == Microsoft::Console::VirtualTerminal::DispatchTypes::MarkCategory::Prompt)
+    if (last->category == DispatchTypes::MarkCategory::Prompt)
     {
         _currentPrompt = last;
     }
@@ -314,11 +314,9 @@ void Terminal::CommandStart()
 {
     if (_currentPrompt)
     {
-        const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
-
         // Move the end of this mark to the current cursor position. The prompt
         // is between [mark.start, mark.end)
-        _currentPrompt->end = cursorPos;
+        _currentPrompt->end = _activeBuffer().GetCursor().GetPosition();
     }
 }
 
@@ -326,10 +324,9 @@ void Terminal::OutputStart()
 {
     if (_currentPrompt)
     {
-        const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
         // Mark the current cursor pos as the the end of the command. The command
         // is between [mark.end, mark.commandEnd)
-        _currentPrompt->commandEnd = cursorPos;
+        _currentPrompt->commandEnd = _activeBuffer().GetCursor().GetPosition();
     }
 }
 
@@ -337,10 +334,9 @@ void Terminal::CommandFinished(std::optional<unsigned int> error)
 {
     if (_currentPrompt)
     {
-        const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
         // Mark the current cursor pos as the the end of the output. The command
         // is between [mark.commandEnd, mark.outputEnd)
-        _currentPrompt->outputEnd = cursorPos;
+        _currentPrompt->outputEnd = _activeBuffer().GetCursor().GetPosition();
 
         if (error.has_value())
         {

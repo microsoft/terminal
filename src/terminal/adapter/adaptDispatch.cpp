@@ -2665,43 +2665,52 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
     }
 
     const auto action = til::at(parts, 0);
-
-    if (action == L"A") // FTCS_PROMPT
+    if (action.size() == 1)
     {
-        // Simply just mark this line as a prompt line.
-        DispatchTypes::ScrollMark mark;
-        mark.category = DispatchTypes::MarkCategory::Prompt;
-        _api.AddMark(mark);
-        return true;
-    }
-    else if (action == L"B") // FTCS_COMMAND_START
-    {
-        _api.CommandStart();
-        return true;
-    }
-    else if (action == L"C") // FTCS_COMMAND_EXECUTED
-    {
-        _api.OutputStart();
-        return true;
-    }
-    else if (action == L"D") // FTCS_COMMAND_FINISHED
-    {
-        std::optional<unsigned int> error = std::nullopt;
-        if (parts.size() >= 2)
+        switch (action[0])
         {
-            const auto errorString = til::at(parts, 1);
-
-            // If we fail to parse the code, then it was gibberish, or it might
-            // have just started with "-". Either way, let's just treat it as an
-            // error and move on.
-            //
-            // We know that "0" will be successfully parsed, and that's close enough.
-            unsigned int parsedError = 0;
-            error = Utils::StringToUint(errorString, parsedError) ? parsedError :
-                                                                    static_cast<unsigned int>(-1);
+        case L'A': // FTCS_PROMPT
+        {
+            // Simply just mark this line as a prompt line.
+            DispatchTypes::ScrollMark mark;
+            mark.category = DispatchTypes::MarkCategory::Prompt;
+            _api.AddMark(mark);
+            return true;
         }
-        _api.CommandFinished(error);
-        return true;
+        case L'B': // FTCS_COMMAND_START
+        {
+            _api.CommandStart();
+            return true;
+        }
+        case L'C': // FTCS_COMMAND_EXECUTED
+        {
+            _api.OutputStart();
+            return true;
+        }
+        case L'D': // FTCS_COMMAND_FINISHED
+        {
+            std::optional<unsigned int> error = std::nullopt;
+            if (parts.size() >= 2)
+            {
+                const auto errorString = til::at(parts, 1);
+
+                // If we fail to parse the code, then it was gibberish, or it might
+                // have just started with "-". Either way, let's just treat it as an
+                // error and move on.
+                //
+                // We know that "0" will be successfully parsed, and that's close enough.
+                unsigned int parsedError = 0;
+                error = Utils::StringToUint(errorString, parsedError) ? parsedError :
+                                                                        static_cast<unsigned int>(-1);
+            }
+            _api.CommandFinished(error);
+            return true;
+        }
+        default:
+        {
+            return false;
+        }
+        }
     }
 
     // When we add the rest of the FTCS sequences (GH#11000), we should add a

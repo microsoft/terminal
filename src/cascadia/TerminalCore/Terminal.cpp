@@ -813,7 +813,7 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
         //     - This enables CMD to have full FTCS support, even though there's
         //       no point in CMD to insert a "preexec" hook
         // * Else: We don't have a prompt. We don't know anything else, but we
-        //   can set the whole like as the prompt, no command, and start the
+        //   can set the whole line as the prompt, no command, and start the
         //   command_executed now.
 
         if (_currentPrompt)
@@ -1277,9 +1277,13 @@ void Terminal::_AdjustCursorPosition(const til::point proposedPosition)
 
                 // If the mark had sub-regions, then move those pointers too
                 if (mark.commandEnd.has_value())
+                {
                     (*mark.commandEnd).y -= rowsPushedOffTopOfBuffer;
+                }
                 if (mark.outputEnd.has_value())
+                {
                     (*mark.outputEnd).y -= rowsPushedOffTopOfBuffer;
+                }
             }
 
             _scrollMarks.erase(std::remove_if(_scrollMarks.begin(),
