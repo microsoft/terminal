@@ -13,71 +13,74 @@
 #include "../../types/inc/Utf16Parser.hpp"
 #include "../../types/inc/GlyphWidth.hpp"
 
-struct BufferAllocator
+namespace
 {
-    BufferAllocator(til::size sz)
+    struct BufferAllocator
     {
-        const auto w = gsl::narrow<uint16_t>(sz.width);
-        const auto h = gsl::narrow<uint16_t>(sz.height);
+        BufferAllocator(til::size sz)
+        {
+            const auto w = gsl::narrow<uint16_t>(sz.width);
+            const auto h = gsl::narrow<uint16_t>(sz.height);
 
-        const auto charsBytes = w * sizeof(wchar_t);
-        // The ROW::_indices array stores 1 more item than the buffer is wide.
-        // That extra column stores the past-the-end _chars pointer.
-        const auto indicesBytes = w * sizeof(uint16_t) + sizeof(uint16_t);
-        const auto rowStride = charsBytes + indicesBytes;
-        // 65535*65535 cells would result in a charsAreaSize of 8GiB.
-        // --> Use uint64_t so that we can safely do our calculations even on x86.
-        const auto allocSize = gsl::narrow<size_t>(::base::strict_cast<uint64_t>(rowStride) * ::base::strict_cast<uint64_t>(h));
+            const auto charsBytes = w * sizeof(wchar_t);
+            // The ROW::_indices array stores 1 more item than the buffer is wide.
+            // That extra column stores the past-the-end _chars pointer.
+            const auto indicesBytes = w * sizeof(uint16_t) + sizeof(uint16_t);
+            const auto rowStride = charsBytes + indicesBytes;
+            // 65535*65535 cells would result in a charsAreaSize of 8GiB.
+            // --> Use uint64_t so that we can safely do our calculations even on x86.
+            const auto allocSize = gsl::narrow<size_t>(::base::strict_cast<uint64_t>(rowStride) * ::base::strict_cast<uint64_t>(h));
 
-        _buffer = wil::unique_virtualalloc_ptr<std::byte>{ static_cast<std::byte*>(VirtualAlloc(nullptr, allocSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE)) };
-        THROW_IF_NULL_ALLOC(_buffer);
+            _buffer = wil::unique_virtualalloc_ptr<std::byte>{ static_cast<std::byte*>(VirtualAlloc(nullptr, allocSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE)) };
+            THROW_IF_NULL_ALLOC(_buffer);
 
-        _data = std::span{ _buffer.get(), allocSize }.begin();
-        _rowStride = rowStride;
-        _indicesOffset = charsBytes;
-        _width = w;
-        _height = h;
-    }
+            _data = std::span{ _buffer.get(), allocSize }.begin();
+            _rowStride = rowStride;
+            _indicesOffset = charsBytes;
+            _width = w;
+            _height = h;
+        }
 
-    BufferAllocator& operator++() noexcept
-    {
-        _data += _rowStride;
-        return *this;
-    }
+        BufferAllocator& operator++() noexcept
+        {
+            _data += _rowStride;
+            return *this;
+        }
 
-    wchar_t* chars() const noexcept
-    {
-        return til::bit_cast<wchar_t*>(&*_data);
-    }
+        wchar_t* chars() const noexcept
+        {
+            return til::bit_cast<wchar_t*>(&*_data);
+        }
 
-    uint16_t* indices() const noexcept
-    {
-        return til::bit_cast<uint16_t*>(&*(_data + _indicesOffset));
-    }
+        uint16_t* indices() const noexcept
+        {
+            return til::bit_cast<uint16_t*>(&*(_data + _indicesOffset));
+        }
 
-    uint16_t width() const noexcept
-    {
-        return _width;
-    }
+        uint16_t width() const noexcept
+        {
+            return _width;
+        }
 
-    uint16_t height() const noexcept
-    {
-        return _height;
-    }
+        uint16_t height() const noexcept
+        {
+            return _height;
+        }
 
-    wil::unique_virtualalloc_ptr<std::byte>&& take() noexcept
-    {
-        return std::move(_buffer);
-    }
+        wil::unique_virtualalloc_ptr<std::byte>&& take() noexcept
+        {
+            return std::move(_buffer);
+        }
 
-private:
-    wil::unique_virtualalloc_ptr<std::byte> _buffer;
-    std::span<std::byte>::iterator _data;
-    size_t _rowStride;
-    size_t _indicesOffset;
-    uint16_t _width;
-    uint16_t _height;
-};
+    private:
+        wil::unique_virtualalloc_ptr<std::byte> _buffer;
+        std::span<std::byte>::iterator _data;
+        size_t _rowStride;
+        size_t _indicesOffset;
+        uint16_t _width;
+        uint16_t _height;
+    };
+}
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Types;
@@ -984,9 +987,7 @@ void TextBuffer::Reset()
         // remove rows if we're shrinking
         _storage.resize(allocator.height());
 
-        // Now that we've tampered with the row placement, refresh all the row IDs.
-        // Also take advantage of the row ID refresh loop to resize the rows in the X dimension
-        // and cleanup the UnicodeStorage characters that might fall outside the resized buffer.
+        // realloc in the X direction
         for (auto& it : _storage)
         {
             it.Resize(allocator.chars(), allocator.indices(), allocator.width(), attributes);

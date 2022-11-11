@@ -87,6 +87,9 @@ public:
 #endif
 
 private:
+    // To simplify the detection of wide glyphs, we don't just store the simple character offset as described
+    // for _charOffsets. Instead we use the most significant bit to indicate whether any column is the
+    // trailing half of a wide glyph. This simplifies many implementation details via _uncheckedIsTrailer.
     static constexpr uint16_t CharOffsetsTrailer = 0x8000;
     static constexpr uint16_t CharOffsetsMask = 0x7fff;
 
@@ -132,9 +135,18 @@ private:
     // by storing the character index/offset at which a column's text in _chars starts.
     // It stores 1 more item than this row is wide, allowing it to store the
     // past-the-end offset, which is thus equal to the length of the string.
-    // For instance given a 4 column ROW containing "abcd" it would store 01234.
-    // Given "a\u732Bd" ("\u732B" is a wide glyph) it would store 01123.
-    // Given "a\uD83D\uDE00d" ("\uD83D\uDE00" is an Emoji) it would store 01134.
+    //
+    // For instance given a 4 column ROW containing "abcd" it would store 01234,
+    // because each of "abcd" are 1 column wide and 1 wchar_t per column.
+    // Given "a\u732Bd" it would store 01123, because "\u732B" is a wide glyph
+    // and "11" indicates that both column 1 and 2 start at &_chars[1] (= wide glyph).
+    // The fact that the next offset is 2 tells us that the glyph is 1 wchar_t long.
+    // Given "a\uD83D\uDE00d" ("\uD83D\uDE00" is an Emoji) it would store 01134,
+    // because while it's 2 cells wide as indicated by 2 offsets that are identical (11),
+    // the next offset is 3, which indicates that the glyph is 3-1 = 2 wchar_t long.
+    //
+    // In other words, _charOffsets tells us both the width in chars and width in columns.
+    // See CharOffsetsTrailer for more information.
     std::span<uint16_t> _charOffsets;
     // _attr is a run-length-encoded vector of TextAttribute with a decompressed
     // length equal to _columnCount (= 1 TextAttribute per column).

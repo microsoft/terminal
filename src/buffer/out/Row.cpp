@@ -145,12 +145,19 @@ void ROW::Reset(const TextAttribute& attr)
     _init();
 }
 
+void ROW::_init() noexcept
+{
+    std::fill_n(_chars.begin(), _columnCount, UNICODE_SPACE);
+    std::iota(_charOffsets.begin(), _charOffsets.end(), uint16_t{ 0 });
+}
+
 // Routine Description:
 // - resizes ROW to new width
 // Arguments:
-// - width - the new width, in cells
-// Return Value:
-// - S_OK if successful, otherwise relevant error
+// - charsBuffer - a new backing buffer to use for _charsBuffer
+// - charOffsetsBuffer - a new backing buffer to use for _charOffsets
+// - rowWidth - the new width, in cells
+// - fillAttribute - the attribute to use for any newly added, trailing cells
 void ROW::Resize(wchar_t* charsBuffer, uint16_t* charOffsetsBuffer, uint16_t rowWidth, const TextAttribute& fillAttribute)
 {
     // A default-constructed ROW has no cols/chars to copy.
@@ -446,6 +453,43 @@ void ROW::ReplaceCharacters(til::CoordType columnBegin, til::CoordType width, co
     }
 }
 
+// This function represents the slow path of ReplaceCharacters(),
+// as it reallocates the backing buffer and shifts the char offsets.
+// The parameters are difficult to explain, but their names are identical to
+// local variables in ReplaceCharacters() which I've attempted to document there.
+void ROW::_resizeChars(uint16_t colExtEnd, uint16_t chExtBeg, uint16_t chExtEnd, size_t chExtEndNew)
+{
+    const auto diff = chExtEndNew - chExtEnd;
+    const auto currentLength = _charSize();
+    const auto newLength = currentLength + diff;
+
+    if (newLength <= _chars.size())
+    {
+        std::copy_n(_chars.begin() + chExtEnd, currentLength - chExtEnd, _chars.begin() + chExtEndNew);
+    }
+    else
+    {
+        const auto minCapacity = std::min<size_t>(UINT16_MAX, _chars.size() + (_chars.size() >> 1));
+        const auto newCapacity = gsl::narrow<uint16_t>(std::max(newLength, minCapacity));
+
+        auto charsHeap = std::make_unique_for_overwrite<wchar_t[]>(newCapacity);
+        const std::span chars{ charsHeap.get(), newCapacity };
+
+        std::copy_n(_chars.begin(), chExtBeg, chars.begin());
+        std::copy_n(_chars.begin() + chExtEnd, currentLength - chExtEnd, chars.begin() + chExtEndNew);
+
+        _charsHeap = std::move(charsHeap);
+        _chars = chars;
+    }
+
+    auto it = _charOffsets.begin() + colExtEnd;
+    const auto end = _charOffsets.end();
+    for (; it != end; ++it)
+    {
+        *it = gsl::narrow_cast<uint16_t>(*it + diff);
+    }
+}
+
 const til::small_rle<TextAttribute, uint16_t, 1>& ROW::Attributes() const noexcept
 {
     return _attr;
@@ -545,7 +589,7 @@ std::wstring_view ROW::GlyphAt(til::CoordType column) const noexcept
     while (_uncheckedIsTrailer(++col))
     {
     }
-    // Safety: col is now [1, _columnCount].
+    // Safety: col is now (0, _columnCount].
     const auto end = _uncheckedCharOffset(col);
 
     return { _chars.begin() + beg, _chars.begin() + end };
@@ -613,7 +657,7 @@ constexpr uint16_t ROW::_clampedColumnInclusive(T v) const noexcept
     return static_cast<uint16_t>(std::max(T{ 0 }, std::min<T>(_columnCount, v)));
 }
 
-// Safety: col must be [0, _charSize()].
+// Safety: off must be [0, _charSize()].
 wchar_t ROW::_uncheckedChar(size_t off) const noexcept
 {
     return til::at(_chars, off);
@@ -635,43 +679,4 @@ uint16_t ROW::_uncheckedCharOffset(size_t col) const noexcept
 bool ROW::_uncheckedIsTrailer(size_t col) const noexcept
 {
     return WI_IsFlagSet(til::at(_charOffsets, col), CharOffsetsTrailer);
-}
-
-void ROW::_init() noexcept
-{
-    std::fill_n(_chars.begin(), _columnCount, UNICODE_SPACE);
-    iota_n(_charOffsets.begin(), _columnCount + 1u, uint16_t{ 0 });
-}
-
-void ROW::_resizeChars(uint16_t colExtEnd, uint16_t chExtBeg, uint16_t chExtEnd, size_t chExtEndNew)
-{
-    const auto diff = chExtEndNew - chExtEnd;
-    const auto currentLength = _charSize();
-    const auto newLength = currentLength + diff;
-
-    if (newLength <= _chars.size())
-    {
-        std::copy_n(_chars.begin() + chExtEnd, currentLength - chExtEnd, _chars.begin() + chExtEndNew);
-    }
-    else
-    {
-        const auto minCapacity = std::min<size_t>(UINT16_MAX, _chars.size() + (_chars.size() >> 1));
-        const auto newCapacity = gsl::narrow<uint16_t>(std::max(newLength, minCapacity));
-
-        auto charsHeap = std::make_unique_for_overwrite<wchar_t[]>(newCapacity);
-        const std::span chars{ charsHeap.get(), newCapacity };
-
-        std::copy_n(_chars.begin(), chExtBeg, chars.begin());
-        std::copy_n(_chars.begin() + chExtEnd, currentLength - chExtEnd, chars.begin() + chExtEndNew);
-
-        _charsHeap = std::move(charsHeap);
-        _chars = chars;
-    }
-
-    auto it = _charOffsets.begin() + colExtEnd;
-    const auto end = _charOffsets.end();
-    for (; it != end; ++it)
-    {
-        *it = gsl::narrow_cast<uint16_t>(*it + diff);
-    }
 }
