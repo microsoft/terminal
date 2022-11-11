@@ -462,6 +462,28 @@ using namespace Microsoft::Console::Interactivity;
             _WritePseudoWindowCallback((bool)wParam);
         }
     }
+    case WM_ACTIVATE:
+    {
+        auto a = 0;
+        a++;
+        a;
+        break;
+    }
+    case WM_MOUSEMOVE:
+    {
+        auto a = 0;
+        a++;
+        a;
+        break;
+    }
+    case WM_MOUSEACTIVATE:
+    {
+        // DebugBreak();
+        auto a = 0;
+        a++;
+        a;
+        return MA_NOACTIVATEANDEAT;
+    }
     }
     // If we get this far, call the default window proc
     return DefWindowProcW(hWnd, Message, wParam, lParam);
