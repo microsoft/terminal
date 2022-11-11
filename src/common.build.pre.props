@@ -86,7 +86,6 @@
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <LinkIncremental>false</LinkIncremental>
-    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
   </PropertyGroup>
 
   <ItemDefinitionGroup>
