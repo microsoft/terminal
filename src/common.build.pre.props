@@ -86,6 +86,33 @@
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <LinkIncremental>false</LinkIncremental>
+    <!--
+      VS2022 now defaults to x64! Rejoice!
+      If you run MSBuild natively, it will detect that it should use the x64 native compiler
+      when it is targeting x64.
+
+      Unfortunately, if we set this and we're building on ARM64, it will force the use of the
+      x64 compiler under emulation even if we're compiling *for* ARM64. So, it's better
+      not to set it when we're on ARM64. We could just remove it . . .
+
+      Except, most build agent tasks have not been reconfigured. The default settings for
+      Azure DevOps tasks MSBuild@1 and VSBuild@1 launch the 32-bit version of MSBuild.
+      This causes the selection of the x86 compiler.
+
+      Yes. By default on an all-x64 build agent you will still run the x86-x64 cross compiler.
+
+      We could fix this by specifying the MSBuild architecture, but that has myriad problems:
+      1. Custom tasks that rely on native code might not work. Because they were authored for x86.
+      2. If we set it in *our* rules, we have no way of ensuring the right behavior if somebody
+         runs our build outside of our build pipelines. Or if somebody runs a build on the command
+         line. Or if somebody writes their own GitHub Actions pipeline to build this repository.
+      3. Ironically, doing so will force the use of x64 emulated MSBuild on ARM64 build agents,
+         which is the exact problem we're trying to avoid.
+
+      Therefore, we only override it if we're running under WOW64 (x86 on x64). Which we will be
+      in the default build agent task configuration.
+    -->
+    <PreferredToolArchitecture Condition="'$(PROCESSOR_ARCHITEW6432)' == 'AMD64'">x64</PreferredToolArchitecture>
   </PropertyGroup>
 
   <ItemDefinitionGroup>
