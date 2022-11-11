@@ -366,6 +366,11 @@ bool ROW::SetAttrToEnd(const til::CoordType columnBegin, const TextAttribute att
     return true;
 }
 
+void ROW::ReplaceAttributes(const til::CoordType beginIndex, const til::CoordType endIndex, const TextAttribute& newAttr)
+{
+    _attr.replace(_clampedColumnInclusive(beginIndex), _clampedColumnInclusive(endIndex), newAttr);
+}
+
 void ROW::ReplaceCharacters(til::CoordType columnBegin, til::CoordType width, const std::wstring_view& chars)
 {
     const auto colBeg = _clampedUint16(columnBegin);

@@ -22,7 +22,8 @@ Revision History:
 
 #include <span>
 
-#include "til/rle.h"
+#include <til/rle.h>
+
 #include "LineRendition.hpp"
 #include "OutputCell.hpp"
 #include "OutputCellIterator.hpp"
@@ -64,6 +65,7 @@ public:
     void ClearCell(til::CoordType column);
     OutputCellIterator WriteCells(OutputCellIterator it, til::CoordType columnBegin, std::optional<bool> wrap = std::nullopt, std::optional<til::CoordType> limitRight = std::nullopt);
     bool SetAttrToEnd(til::CoordType columnBegin, TextAttribute attr);
+    void ReplaceAttributes(til::CoordType beginIndex, til::CoordType endIndex, const TextAttribute& newAttr);
     void ReplaceCharacters(til::CoordType columnBegin, til::CoordType width, const std::wstring_view& chars);
 
     const til::small_rle<TextAttribute, uint16_t, 1>& Attributes() const noexcept;

@@ -798,10 +798,9 @@ void AdaptDispatch::_ChangeRectAttributes(TextBuffer& textBuffer, const til::rec
         for (auto row = changeRect.top; row < changeRect.bottom; row++)
         {
             auto& rowBuffer = textBuffer.GetRowByOffset(row);
-            auto& attrs = rowBuffer.GetAttrRow();
             for (auto col = changeRect.left; col < changeRect.right; col++)
             {
-                auto attr = attrs.GetAttrByColumn(col);
+                auto attr = rowBuffer.GetAttrByColumn(col);
                 auto characterAttributes = attr.GetCharacterAttributes();
                 characterAttributes &= changeOps.andAttrMask;
                 characterAttributes ^= changeOps.xorAttrMask;
@@ -814,7 +813,7 @@ void AdaptDispatch::_ChangeRectAttributes(TextBuffer& textBuffer, const til::rec
                 {
                     attr.SetBackground(*changeOps.background);
                 }
-                attrs.Replace(col, col + 1, attr);
+                rowBuffer.ReplaceAttributes(col, col + 1, attr);
             }
         }
         textBuffer.TriggerRedraw(Viewport::FromExclusive(changeRect));
