@@ -96,30 +96,35 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
 
 [[nodiscard]] HRESULT AtlasEngine::InvalidateScroll(const til::point* const pcoordDelta) noexcept
 {
-    const auto delta = pcoordDelta->Y;
-    if (delta == 0)
-    {
-        return S_OK;
-    }
-
-    _api.scrollOffset = gsl::narrow_cast<i16>(clamp<int>(_api.scrollOffset + delta, i16min, i16max));
-
     // InvalidateScroll() is a "synchronous" API. Any Invalidate()s after
     // a InvalidateScroll() refer to the new viewport after the scroll.
     // --> We need to shift the current invalidation rectangles as well.
 
-    _api.invalidatedCursorArea.top = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedCursorArea.top + delta, u16min, u16max));
-    _api.invalidatedCursorArea.bottom = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedCursorArea.bottom + delta, u16min, u16max));
+    if (const auto delta = pcoordDelta->X)
+    {
+        _api.invalidatedCursorArea.left = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedCursorArea.left + delta, u16min, u16max));
+        _api.invalidatedCursorArea.right = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedCursorArea.right + delta, u16min, u16max));
 
-    if (delta < 0)
-    {
-        _api.invalidatedRows.x = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedRows.x + delta, u16min, u16max));
-        _api.invalidatedRows.y = _api.cellCount.y;
+        _api.invalidatedRows = invalidatedRowsAll;
     }
-    else
+
+    if (const auto delta = pcoordDelta->Y)
     {
-        _api.invalidatedRows.x = 0;
-        _api.invalidatedRows.y = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedRows.y + delta, u16min, u16max));
+        _api.scrollOffset = gsl::narrow_cast<i16>(clamp<int>(_api.scrollOffset + delta, i16min, i16max));
+
+        _api.invalidatedCursorArea.top = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedCursorArea.top + delta, u16min, u16max));
+        _api.invalidatedCursorArea.bottom = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedCursorArea.bottom + delta, u16min, u16max));
+
+        if (delta < 0)
+        {
+            _api.invalidatedRows.x = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedRows.x + delta, u16min, u16max));
+            _api.invalidatedRows.y = _api.cellCount.y;
+        }
+        else
+        {
+            _api.invalidatedRows.x = 0;
+            _api.invalidatedRows.y = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedRows.y + delta, u16min, u16max));
+        }
     }
 
     return S_OK;
@@ -176,8 +181,8 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
 [[nodiscard]] HRESULT AtlasEngine::UpdateViewport(const til::inclusive_rect& srNewViewport) noexcept
 {
     const u16x2 cellCount{
-        gsl::narrow_cast<u16>(srNewViewport.Right - srNewViewport.Left + 1),
-        gsl::narrow_cast<u16>(srNewViewport.Bottom - srNewViewport.Top + 1),
+        gsl::narrow_cast<u16>(std::max(1, srNewViewport.Right - srNewViewport.Left + 1)),
+        gsl::narrow_cast<u16>(std::max(1, srNewViewport.Bottom - srNewViewport.Top + 1)),
     };
     if (_api.cellCount != cellCount)
     {
@@ -561,6 +566,7 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
 {
     const auto requestedFamily = fontInfoDesired.GetFamily();
     auto requestedWeight = fontInfoDesired.GetWeight();
+    auto fontSize = fontInfoDesired.GetFontSize();
     auto requestedSize = fontInfoDesired.GetEngineSize();
 
     if (!requestedFaceName)
@@ -573,6 +579,7 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     }
     if (!requestedSize.Y)
     {
+        fontSize = 12.0f;
         requestedSize = { 0, 12 };
     }
     if (!requestedWeight)
@@ -614,13 +621,12 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     // Point sizes are commonly treated at a 72 DPI scale
     // (including by OpenType), whereas DirectWrite uses 96 DPI.
     // Since we want the height in px we multiply by the display's DPI.
-    const auto fontSizeInDIP = requestedSize.Y / 72.0f * 96.0f;
-    const auto fontSizeInPx = requestedSize.Y / 72.0f * _api.dpi;
+    const auto fontSizeInDIP = fontSize / 72.0f * 96.0f;
+    const auto fontSizeInPx = fontSize / 72.0f * _api.dpi;
 
     const auto designUnitsPerPx = fontSizeInPx / static_cast<float>(metrics.designUnitsPerEm);
     const auto ascent = static_cast<float>(metrics.ascent) * designUnitsPerPx;
     const auto descent = static_cast<float>(metrics.descent) * designUnitsPerPx;
-    const auto lineGap = static_cast<float>(metrics.lineGap) * designUnitsPerPx;
     const auto underlinePosition = static_cast<float>(-metrics.underlinePosition) * designUnitsPerPx;
     const auto underlineThickness = static_cast<float>(metrics.underlineThickness) * designUnitsPerPx;
     const auto strikethroughPosition = static_cast<float>(-metrics.strikethroughPosition) * designUnitsPerPx;
@@ -628,9 +634,13 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
 
     const auto advanceWidth = static_cast<float>(glyphMetrics.advanceWidth) * designUnitsPerPx;
 
-    const auto halfGap = lineGap / 2.0f;
-    const auto baseline = std::roundf(ascent + halfGap);
-    const auto lineHeight = std::roundf(baseline + descent + halfGap);
+    // NOTE: Line-gaps shouldn't be taken into account for lineHeight calculations.
+    // Terminals don't really have "gaps" between lines and instead the expectation
+    // is that two full block characters above each other don't leave any gaps
+    // between the lines. "Terminus TTF" for instance sets a line-gap of 90 units
+    // even though its font bitmap only covers the ascend/descend height.
+    const auto baseline = std::roundf(ascent);
+    const auto lineHeight = std::roundf(baseline + descent);
     const auto underlinePos = std::roundf(baseline + underlinePosition);
     const auto underlineWidth = std::max(1.0f, std::roundf(underlineThickness));
     const auto strikethroughPos = std::roundf(baseline + strikethroughPosition);
@@ -659,7 +669,7 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     // Our cells can't overlap each other so we additionally clamp the bottom line to be inside the cell boundaries.
     doubleUnderlinePosBottom = std::min(doubleUnderlinePosBottom, lineHeight - thinLineWidth);
 
-    const auto cellWidth = gsl::narrow<u16>(std::roundf(advanceWidth));
+    const auto cellWidth = gsl::narrow<u16>(std::lroundf(advanceWidth));
     const auto cellHeight = gsl::narrow<u16>(lineHeight);
 
     {
@@ -672,8 +682,7 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
             // The coordSizeUnscaled parameter to SetFromEngine is used for API functions like GetConsoleFontSize.
             // Since clients expect that settings the font height to Y yields back a font height of Y,
             // we're scaling the X relative/proportional to the actual cellWidth/cellHeight ratio.
-            // The code below uses a poor form of integer rounding.
-            requestedSize.X = (requestedSize.Y * cellWidth + cellHeight / 2) / cellHeight;
+            requestedSize.X = gsl::narrow_cast<til::CoordType>(std::lroundf(fontSize / cellHeight * cellWidth));
         }
 
         fontInfo.SetFromEngine(requestedFaceName, requestedFamily, requestedWeight, false, coordSize, requestedSize);
@@ -695,6 +704,7 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
         // as we might cause _api to be in an inconsistent state otherwise.
 
         fontMetrics->fontCollection = std::move(fontCollection);
+        fontMetrics->fontFamily = std::move(fontFamily);
         fontMetrics->fontName = std::move(fontName);
         fontMetrics->fontSizeInDIP = fontSizeInDIP;
         fontMetrics->baselineInDIP = baseline / static_cast<float>(_api.dpi) * 96.0f;

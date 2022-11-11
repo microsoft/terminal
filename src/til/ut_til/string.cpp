@@ -169,4 +169,16 @@ class StringTests
             VERIFY_ARE_EQUAL("", s);
         }
     }
+
+    TEST_METHOD(CleanPathAndFilename)
+    {
+        VERIFY_ARE_EQUAL(LR"(CUsersGeddyMusicAnalog Man)", til::clean_filename(LR"(C:\Users\Geddy\Music\"Analog Man")"));
+        VERIFY_ARE_EQUAL(LR"(C:\Users\Geddy\Music\Analog Man)", til::clean_path(LR"(C:\Users\Geddy\Music\"Analog Man")"));
+    }
+
+    TEST_METHOD(LegalPath)
+    {
+        VERIFY_IS_TRUE(til::is_legal_path(LR"(C:\Users\Documents and Settings\Users\;\Why not)"));
+        VERIFY_IS_FALSE(til::is_legal_path(LR"(C:\Users\Documents and Settings\"Quote-un-quote users")"));
+    }
 };

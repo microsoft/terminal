@@ -119,7 +119,7 @@ private:                                                                        
 
 ////////////////////////////////////////////////////////////////////////////////
 #define ADJUST_FONT_SIZE_ARGS(X) \
-    X(int32_t, Delta, "delta", false, 0)
+    X(float, Delta, "delta", false, 0)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SEND_INPUT_ARGS(X) \

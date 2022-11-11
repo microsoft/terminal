@@ -70,7 +70,7 @@ public:
 
     static CommandLine& Instance();
 
-    bool IsEditLineEmpty() const;
+    static bool IsEditLineEmpty();
     void Hide(const bool fUpdateFields);
     void Show();
     bool IsVisible() const noexcept;
@@ -82,7 +82,7 @@ public:
     [[nodiscard]] HRESULT StartCommandNumberPopup(COOKED_READ_DATA& cookedReadData);
 
     bool HasPopup() const noexcept;
-    Popup& GetPopup();
+    Popup& GetPopup() const;
 
     void EndCurrentPopup();
     void EndAllPopups();

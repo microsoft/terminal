@@ -29,12 +29,12 @@ class OutputCellIteratorTests
         OutputCellIterator it(wch, limit);
 
         OutputCellView expectedLead({ &wch, 1 },
-                                    DbcsAttribute(DbcsAttribute::Attribute::Leading),
+                                    DbcsAttribute::Leading,
                                     InvalidTextAttribute,
                                     TextAttributeBehavior::Current);
 
         OutputCellView expectedTrail({ &wch, 1 },
-                                     DbcsAttribute(DbcsAttribute::Attribute::Trailing),
+                                     DbcsAttribute::Trailing,
                                      InvalidTextAttribute,
                                      TextAttributeBehavior::Current);
 
@@ -284,7 +284,7 @@ class OutputCellIteratorTests
         for (const auto& wch : testText)
         {
             auto expected = OutputCellView({ &wch, 1 },
-                                           DbcsAttribute(DbcsAttribute::Attribute::Leading),
+                                           DbcsAttribute::Leading,
                                            InvalidTextAttribute,
                                            TextAttributeBehavior::Current);
 
@@ -293,7 +293,7 @@ class OutputCellIteratorTests
             it++;
 
             expected = OutputCellView({ &wch, 1 },
-                                      DbcsAttribute(DbcsAttribute::Attribute::Trailing),
+                                      DbcsAttribute::Trailing,
                                       InvalidTextAttribute,
                                       TextAttributeBehavior::Current);
 
@@ -341,7 +341,7 @@ class OutputCellIteratorTests
         for (const auto& wch : testText)
         {
             auto expected = OutputCellView({ &wch, 1 },
-                                           DbcsAttribute(DbcsAttribute::Attribute::Leading),
+                                           DbcsAttribute::Leading,
                                            color,
                                            TextAttributeBehavior::Stored);
 
@@ -350,7 +350,7 @@ class OutputCellIteratorTests
             it++;
 
             expected = OutputCellView({ &wch, 1 },
-                                      DbcsAttribute(DbcsAttribute::Attribute::Trailing),
+                                      DbcsAttribute::Trailing,
                                       color,
                                       TextAttributeBehavior::Stored);
 
@@ -496,7 +496,7 @@ class OutputCellIteratorTests
             const auto value = *it;
             it++;
 
-            if (value.DbcsAttr().IsLeading() || value.DbcsAttr().IsTrailing())
+            if (value.DbcsAttr() == DbcsAttribute::Leading || value.DbcsAttr() == DbcsAttribute::Trailing)
             {
                 VERIFY_IS_TRUE(it);
                 it++;

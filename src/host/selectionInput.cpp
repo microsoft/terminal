@@ -25,7 +25,7 @@ Selection::KeySelectionEventResult Selection::HandleKeySelectionEvent(const INPU
     FAIL_FAST_IF(!IsInSelectingState());
 
     const auto wVirtualKeyCode = pInputKeyInfo->GetVirtualKey();
-    const auto ctrlPressed = WI_IsFlagSet(GetKeyState(VK_CONTROL), KEY_PRESSED);
+    const auto ctrlPressed = WI_IsFlagSet(OneCoreSafeGetKeyState(VK_CONTROL), KEY_PRESSED);
 
     // if escape or ctrl-c, cancel selection
     if (!IsMouseButtonDown())
@@ -360,7 +360,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
             try
             {
                 const auto attr = gci.GetActiveOutputBuffer().GetCellDataAt(coordSelPoint)->DbcsAttr();
-                if (attr.IsTrailing())
+                if (attr == DbcsAttribute::Trailing)
                 {
                     bufferSize.IncrementInBounds(coordSelPoint);
                 }
@@ -583,7 +583,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
     try
     {
         const auto attr = gci.GetActiveOutputBuffer().GetCellDataAt(coordSelPoint)->DbcsAttr();
-        if (attr.IsTrailing())
+        if (attr == DbcsAttribute::Trailing)
         {
             // try to move off by highlighting the lead half too.
             auto fSuccess = bufferSize.DecrementInBounds(coordSelPoint);
@@ -611,7 +611,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
 // - <none>
 void Selection::CheckAndSetAlternateSelection()
 {
-    _fUseAlternateSelection = !!(GetKeyState(VK_MENU) & KEY_PRESSED);
+    _fUseAlternateSelection = !!(OneCoreSafeGetKeyState(VK_MENU) & KEY_PRESSED);
 }
 
 // Routine Description:
@@ -766,7 +766,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
             auto it = ScreenInfo.GetCellLineDataAt(cursorPos);
 
             // calculate next right
-            if (it->DbcsAttr().IsLeading())
+            if (it->DbcsAttr() == DbcsAttribute::Leading)
             {
                 iNextRightX = 2;
             }
@@ -779,16 +779,16 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
             if (cursorPos.X > 0)
             {
                 it--;
-                if (it->DbcsAttr().IsTrailing())
+                if (it->DbcsAttr() == DbcsAttribute::Trailing)
                 {
                     iNextLeftX = 2;
                 }
-                else if (it->DbcsAttr().IsLeading())
+                else if (it->DbcsAttr() == DbcsAttribute::Leading)
                 {
                     if (cursorPos.X - 1 > 0)
                     {
                         it--;
-                        if (it->DbcsAttr().IsTrailing())
+                        if (it->DbcsAttr() == DbcsAttribute::Trailing)
                         {
                             iNextLeftX = 3;
                         }
@@ -904,7 +904,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
         }
 
         // see if shift is down. if so, we're extending the selection. otherwise, we're resetting the anchor
-        if (GetKeyState(VK_SHIFT) & KEY_PRESSED)
+        if (OneCoreSafeGetKeyState(VK_SHIFT) & KEY_PRESSED)
         {
             // if we're just starting to "extend" our selection from moving around as a cursor
             // then attempt to set the alternate selection state based on the ALT key right now

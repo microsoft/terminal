@@ -29,9 +29,7 @@ Cursor::Cursor(const ULONG ulSize, TextBuffer& parentBuffer) noexcept :
 {
 }
 
-Cursor::~Cursor()
-{
-}
+Cursor::~Cursor() = default;
 
 til::point Cursor::GetPosition() const noexcept
 {

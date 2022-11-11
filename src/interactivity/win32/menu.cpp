@@ -132,9 +132,7 @@ Menu* Menu::Instance()
     return Menu::s_Instance;
 }
 
-Menu::~Menu()
-{
-}
+Menu::~Menu() = default;
 
 // Routine Description:
 // - this initializes the system menu when a WM_INITMENU message is read.

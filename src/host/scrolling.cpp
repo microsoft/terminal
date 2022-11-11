@@ -208,7 +208,7 @@ bool Scrolling::s_HandleKeyScrollingEvent(const INPUT_KEY_INFO* const pKeyInfo)
 
     const auto VirtualKeyCode = pKeyInfo->GetVirtualKey();
     const auto fIsCtrlPressed = pKeyInfo->IsCtrlPressed();
-    const auto fIsEditLineEmpty = CommandLine::Instance().IsEditLineEmpty();
+    const auto fIsEditLineEmpty = CommandLine::IsEditLineEmpty();
 
     // If escape, enter or ctrl-c, cancel scroll.
     if (VirtualKeyCode == VK_ESCAPE ||

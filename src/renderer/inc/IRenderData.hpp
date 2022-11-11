@@ -52,22 +52,22 @@ namespace Microsoft::Console::Render
         virtual ULONG GetCursorHeight() const noexcept = 0;
         virtual CursorType GetCursorStyle() const noexcept = 0;
         virtual ULONG GetCursorPixelWidth() const noexcept = 0;
-        virtual bool IsCursorDoubleWidth() const = 0;
+        virtual bool IsCursorDoubleWidth() const noexcept = 0;
 
         virtual const std::vector<RenderOverlay> GetOverlays() const noexcept = 0;
 
         virtual const bool IsGridLineDrawingAllowed() noexcept = 0;
         virtual const std::wstring_view GetConsoleTitle() const noexcept = 0;
 
-        virtual const std::wstring GetHyperlinkUri(uint16_t id) const noexcept = 0;
-        virtual const std::wstring GetHyperlinkCustomId(uint16_t id) const noexcept = 0;
+        virtual const std::wstring GetHyperlinkUri(uint16_t id) const = 0;
+        virtual const std::wstring GetHyperlinkCustomId(uint16_t id) const = 0;
 
-        virtual const std::vector<size_t> GetPatternId(const til::point location) const noexcept = 0;
+        virtual const std::vector<size_t> GetPatternId(const til::point location) const = 0;
 
     protected:
         IRenderData() = default;
     };
 
     // See docs/virtual-dtors.md for an explanation of why this is weird.
-    inline IRenderData::~IRenderData() {}
+    inline IRenderData::~IRenderData() = default;
 }

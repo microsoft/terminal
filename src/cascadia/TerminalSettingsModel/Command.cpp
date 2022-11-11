@@ -35,9 +35,7 @@ static constexpr std::string_view SchemeNameToken{ "${scheme.name}" };
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    Command::Command()
-    {
-    }
+    Command::Command() = default;
 
     com_ptr<Command> Command::Copy() const
     {
