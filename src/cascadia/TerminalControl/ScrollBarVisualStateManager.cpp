@@ -5,13 +5,10 @@
 #include "ScrollBarVisualStateManager.h"
 #include "ScrollBarVisualStateManager.g.cpp"
 
+using namespace winrt::Windows::UI::Xaml::Media;
+
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    ScrollBarVisualStateManager::ScrollBarVisualStateManager() :
-        _termControl(nullptr)
-    {
-    }
-
     bool ScrollBarVisualStateManager::GoToStateCore(
         winrt::Windows::UI::Xaml::Controls::Control const& control,
         winrt::Windows::UI::Xaml::FrameworkElement const& templateRoot,
@@ -20,33 +17,39 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::Windows::UI::Xaml::VisualState const& state,
         bool useTransitions)
     {
-        if (!_termControl)
+        if (!_initialized)
         {
-            for (auto parent = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetParent(control);
-                 parent != nullptr;
-                 parent = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetParent(parent))
+            _initialized = true;
+
+            Control::TermControl termControl{ nullptr };
+
+            for (auto parent = VisualTreeHelper::GetParent(control); parent; parent = VisualTreeHelper::GetParent(parent))
             {
-                if (parent.try_as(_termControl))
+                if (parent.try_as(termControl))
                 {
+                    _termControl = winrt::get_self<TermControl>(termControl)->get_weak();
                     break;
                 }
             }
+
+            assert(termControl);
         }
 
-        WINRT_ASSERT(_termControl);
-
-        auto scrollState = _termControl.Settings().ScrollState();
-        if (scrollState == ScrollbarState::Always)
+        if (const auto termControl = _termControl.get())
         {
-            // If we're in Always mode, and the control is trying to collapse,
-            // go back to expanded
-            if (stateName == L"Collapsed" || stateName == L"CollapsedWithoutAnimation")
+            const auto scrollState = termControl->Settings().ScrollState();
+            if (scrollState == ScrollbarState::Always)
             {
-                for (auto foundState : group.States())
+                // If we're in Always mode, and the control is trying to collapse,
+                // go back to expanded
+                if (stateName == L"Collapsed" || stateName == L"CollapsedWithoutAnimation")
                 {
-                    if (foundState.Name() == L"ExpandedWithoutAnimation")
+                    for (auto foundState : group.States())
                     {
-                        return base_type::GoToStateCore(control, templateRoot, foundState.Name(), group, foundState, false);
+                        if (foundState.Name() == L"ExpandedWithoutAnimation")
+                        {
+                            return base_type::GoToStateCore(control, templateRoot, foundState.Name(), group, foundState, false);
+                        }
                     }
                 }
             }

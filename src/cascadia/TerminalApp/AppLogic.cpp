@@ -633,12 +633,17 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        if (proposedSize.Width == 0 && proposedSize.Height == 0)
+        if (_appArgs.GetSize().has_value() || (proposedSize.Width == 0 && proposedSize.Height == 0))
         {
             // Use the default profile to determine how big of a window we need.
             const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, nullptr, nullptr) };
 
-            proposedSize = TermControl::GetProposedDimensions(settings.DefaultSettings(), dpi);
+            const til::size emptySize{};
+            const auto commandlineSize = _appArgs.GetSize().value_or(emptySize);
+            proposedSize = TermControl::GetProposedDimensions(settings.DefaultSettings(),
+                                                              dpi,
+                                                              commandlineSize.width,
+                                                              commandlineSize.height);
         }
 
         // GH#2061 - If the global setting "Always show tab bar" is
@@ -738,6 +743,12 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
+        // Commandline args trump everything else
+        if (_appArgs.GetPosition().has_value())
+        {
+            initialPosition = _appArgs.GetPosition().value();
+        }
+
         return {
             initialPosition.X ? initialPosition.X.Value() : defaultInitialX,
             initialPosition.Y ? initialPosition.Y.Value() : defaultInitialY
@@ -751,7 +762,8 @@ namespace winrt::TerminalApp::implementation
             // Load settings if we haven't already
             LoadSettings();
         }
-        return _settings.GlobalSettings().CenterOnLaunch();
+        // If the position has been specified on the commandline, don't center on launch
+        return _settings.GlobalSettings().CenterOnLaunch() && !_appArgs.GetPosition().has_value();
     }
 
     winrt::Windows::UI::Xaml::ElementTheme AppLogic::GetRequestedTheme()

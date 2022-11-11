@@ -343,68 +343,6 @@ class SelectionTests
         VERIFY_ARE_EQUAL(srOriginal.Left + sDeltaLeft, srSelection.Left);
         VERIFY_ARE_EQUAL(srOriginal.Right + sDeltaRight, srSelection.Right);
     }
-
-    TEST_METHOD(TestBisectSelection)
-    {
-        m_state->FillTextBufferBisect();
-
-        // From CommonState, this is what rows look like:
-        // positions of き are at 0, 27-28, 39-40, 67-68, 79
-        // きABCDEFGHIJKLMNOPQRSTUVWXYZきき0123456789ききABCDEFGHIJKLMNOPQRSTUVWXYZきき0123456789き
-        // きABCDEFGHIJKLMNOPQRSTUVWXYZきき0123456789ききABCDEFGHIJKLMNOPQRSTUVWXYZきき0123456789き
-        // きABCDEFGHIJKLMNOPQRSTUVWXYZきき0123456789ききABCDEFGHIJKLMNOPQRSTUVWXYZきき0123456789き
-        // きABCDEFGHIJKLMNOPQRSTUVWXYZきき0123456789ききABCDEFGHIJKLMNOPQRSTUVWXYZきき0123456789き
-
-        // 1a. Start position is trailing half and is at beginning of row
-
-        // start from position Column 0, Row 2
-        // selection is 5 characters long
-        // the left edge should move one to the right (+1) to not select the trailing byte
-        // right edge shouldn't move
-        TestBisectSelectionDelta(0, 2, 5, 1, 0);
-
-        // 1b. Start position is trailing half and is elsewhere in the row
-
-        // start from position Column 28, Row 2, which is the position of a trailing き in the mid row
-        // selection is 5 characters long
-        // the left edge should move one to the left (-1) to select the leading byte also
-        // right edge shouldn't move
-        TestBisectSelectionDelta(28, 2, 5, -1, 0);
-
-        // 1c. Start position is trailing half and is beginning of buffer
-
-        // start from position Column 0, Row 0 which is a trailing byte
-        // selection is 5 characters long
-        // the left edge should move one to the right (+1) to not select the trailing byte
-        // right edge shouldn't move
-        TestBisectSelectionDelta(0, 0, 5, 1, 0);
-
-        // 2a. End position is leading half and is at end of row
-
-        // start from position 10 before end of row (80 length row)
-        // row is 2
-        // selection is 9 characters long
-        // the left edge shouldn't move
-        // the right edge should move one to the left (-1) to not select the leading byte
-        TestBisectSelectionDelta(70, 2, 9, 0, -1);
-
-        // 2b. End position is leading half and is elsewhere in the row
-
-        // start from 10 before trailing き in the mid row (pos 68 - 10 = 58)
-        // row is 2
-        // selection is 10 characters long
-        // the left edge shouldn't move
-        // the right edge should not move, because it is already on the trailing byte
-        TestBisectSelectionDelta(58, 2, 10, 0, 0);
-
-        // 2c. End position is leading half and is at end of buffer
-        // start from position 10 before end of row (80 length row)
-        // row is 300 (or 299 for the index)
-        // selection is 9 characters long
-        // the left edge shouldn't move
-        // the right edge should move one to the left (-1) to not select the leading byte
-        TestBisectSelectionDelta(70, 299, 9, 0, -1);
-    }
 };
 
 class SelectionInputTests

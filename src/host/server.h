@@ -30,6 +30,8 @@ Revision History:
 #include "../host/RenderData.hpp"
 #include "../audio/midi/MidiAudio.hpp"
 
+#include <til/ticket_lock.h>
+
 // clang-format off
 // Flags flags
 #define CONSOLE_IS_ICONIC               0x00000001
@@ -103,10 +105,10 @@ public:
 
     ConsoleImeInfo ConsoleIme;
 
-    static void LockConsole();
-    static void UnlockConsole();
-    static bool IsConsoleLocked();
-    static ULONG GetCSRecursionCount();
+    void LockConsole() noexcept;
+    void UnlockConsole() noexcept;
+    bool IsConsoleLocked() const noexcept;
+    ULONG GetCSRecursionCount() const noexcept;
 
     Microsoft::Console::VirtualTerminal::VtIo* GetVtIo();
 
@@ -140,13 +142,14 @@ public:
     Microsoft::Console::CursorBlinker& GetCursorBlinker() noexcept;
 
     MidiAudio& GetMidiAudio();
-    void ShutdownMidiAudio();
 
     CHAR_INFO AsCharInfo(const OutputCellView& cell) const noexcept;
 
     RenderData renderData;
 
 private:
+    til::recursive_ticket_lock _lock;
+
     std::wstring _Title;
     std::wstring _Prefix; // Eg Select, Mark - things that we manually prepend to the title.
     std::wstring _TitleAndPrefix;
@@ -157,7 +160,7 @@ private:
 
     Microsoft::Console::VirtualTerminal::VtIo _vtIo;
     Microsoft::Console::CursorBlinker _blinker;
-    std::unique_ptr<MidiAudio> _midiAudio;
+    MidiAudio _midiAudio;
 };
 
 #define ConsoleLocked() (ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleLock.OwningThread == NtCurrentTeb()->ClientId.UniqueThread)

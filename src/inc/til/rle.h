@@ -309,8 +309,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         // We don't check anywhere whether a size_type value is negative.
         // Having signed integers would break that.
-        static_assert(std::is_unsigned<size_type>::value, "the run length S must be unsigned");
-        static_assert(std::is_same<rle_type, typename Container::value_type>::value, "the value type of the Container must be rle_pair<T, S>");
+        static_assert(std::is_unsigned_v<size_type>, "the run length S must be unsigned");
+        static_assert(std::is_same_v<rle_type, typename Container::value_type>, "the value type of the Container must be rle_pair<T, S>");
 
         constexpr basic_rle() noexcept = default;
         ~basic_rle() = default;

@@ -46,7 +46,6 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _circled(false),
     _firstPaint(true),
     _skipCursor(false),
-    _pipeBroken(false),
     _exitResult{ S_OK },
     _terminalOwner{ nullptr },
     _newBottomLine{ false },
@@ -61,7 +60,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 {
 #ifndef UNIT_TESTING
     // When unit testing, we can instantiate a VtEngine without a pipe.
-    THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
+    THROW_HR_IF(E_HANDLE, !_hFile);
 #else
     // member is only defined when UNIT_TESTING is.
     _usingTestCallback = false;
@@ -139,22 +138,14 @@ CATCH_RETURN();
 
 [[nodiscard]] HRESULT VtEngine::_Flush() noexcept
 {
-#ifdef UNIT_TESTING
-    if (_hFile.get() == INVALID_HANDLE_VALUE)
-    {
-        // Do not flush during Unit Testing because we won't have a valid file.
-        return S_OK;
-    }
-#endif
-
-    if (!_pipeBroken)
+    if (_hFile)
     {
         auto fSuccess = !!WriteFile(_hFile.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), nullptr, nullptr);
         _buffer.clear();
         if (!fSuccess)
         {
             _exitResult = HRESULT_FROM_WIN32(GetLastError());
-            _pipeBroken = true;
+            _hFile.reset();
             if (_terminalOwner)
             {
                 _terminalOwner->CloseOutput();

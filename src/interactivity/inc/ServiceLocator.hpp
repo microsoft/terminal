@@ -32,7 +32,7 @@ namespace Microsoft::Console::Interactivity
     public:
         static void SetOneCoreTeardownFunction(void (*pfn)()) noexcept;
 
-        static void RundownAndExit(const HRESULT hr);
+        [[noreturn]] static void RundownAndExit(const HRESULT hr);
 
         // N.B.: Location methods without corresponding creation methods
         //       automatically create the singleton object on demand.

@@ -2032,15 +2032,26 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - dpi: The DPI we should create the terminal at. This affects things such
     //   as font size, scrollbar and other control scaling, etc. Make sure the
     //   caller knows what monitor the control is about to appear on.
+    // - commandlineCols: Number of cols specified on the commandline
+    // - commandlineRows: Number of rows specified on the commandline
     // Return Value:
     // - a size containing the requested dimensions in pixels.
-    winrt::Windows::Foundation::Size TermControl::GetProposedDimensions(const IControlSettings& settings, const uint32_t dpi)
+    winrt::Windows::Foundation::Size TermControl::GetProposedDimensions(const IControlSettings& settings,
+                                                                        const uint32_t dpi,
+                                                                        int32_t commandlineCols,
+                                                                        int32_t commandlineRows)
     {
         // If the settings have negative or zero row or column counts, ignore those counts.
         // (The lower TerminalCore layer also has upper bounds as well, but at this layer
         //  we may eventually impose different ones depending on how many pixels we can address.)
-        const auto cols = ::base::saturated_cast<float>(std::max(settings.InitialCols(), 1));
-        const auto rows = ::base::saturated_cast<float>(std::max(settings.InitialRows(), 1));
+        const auto cols = ::base::saturated_cast<float>(std::max(commandlineCols > 0 ?
+                                                                     commandlineCols :
+                                                                     settings.InitialCols(),
+                                                                 1));
+        const auto rows = ::base::saturated_cast<float>(std::max(commandlineRows > 0 ?
+                                                                     commandlineRows :
+                                                                     settings.InitialRows(),
+                                                                 1));
 
         const winrt::Windows::Foundation::Size initialSize{ cols, rows };
 
@@ -2727,8 +2738,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _bellLightAnimation = Window::Current().Compositor().CreateScalarKeyFrameAnimation();
             // Add key frames and a duration to our bell light animation
-            _bellLightAnimation.InsertKeyFrame(0.0, 4.0);
-            _bellLightAnimation.InsertKeyFrame(1.0, 1.9);
+            _bellLightAnimation.InsertKeyFrame(0.0f, 4.0f);
+            _bellLightAnimation.InsertKeyFrame(1.0f, 1.9f);
             _bellLightAnimation.Duration(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(TerminalWarningBellInterval)));
         }
 
@@ -2737,8 +2748,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _bellDarkAnimation = Window::Current().Compositor().CreateScalarKeyFrameAnimation();
             // reversing the order of the intensity values produces a similar effect as the light version
-            _bellDarkAnimation.InsertKeyFrame(0.0, 1.0);
-            _bellDarkAnimation.InsertKeyFrame(1.0, 2.0);
+            _bellDarkAnimation.InsertKeyFrame(0.0f, 1.0f);
+            _bellDarkAnimation.InsertKeyFrame(1.0f, 2.0f);
             _bellDarkAnimation.Duration(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(TerminalWarningBellInterval)));
         }
 

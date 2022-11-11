@@ -86,7 +86,7 @@ namespace winrt::TerminalApp::implementation
         //
         // This call to _MakePane won't return nullptr, we already checked that
         // case above with the _maybeElevate call.
-        _CreateNewTabFromPane(_MakePane(newTerminalArgs, false, existingConnection));
+        _CreateNewTabFromPane(_MakePane(newTerminalArgs, nullptr, existingConnection));
         return S_OK;
     }
     CATCH_RETURN();
@@ -337,7 +337,7 @@ namespace winrt::TerminalApp::implementation
             // In the future, it may be preferable to just duplicate the
             // current control's live settings (which will include changes
             // made through VT).
-            _CreateNewTabFromPane(_MakePane(nullptr, true, nullptr));
+            _CreateNewTabFromPane(_MakePane(nullptr, tab, nullptr));
 
             const auto runtimeTabText{ tab.GetTabText() };
             if (!runtimeTabText.empty())
@@ -360,7 +360,7 @@ namespace winrt::TerminalApp::implementation
         try
         {
             _SetFocusedTab(tab);
-            _SplitPane(tab, SplitDirection::Automatic, 0.5f, _MakePane(nullptr, true));
+            _SplitPane(tab, SplitDirection::Automatic, 0.5f, _MakePane(nullptr, tab));
         }
         CATCH_LOG();
     }
