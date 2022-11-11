@@ -702,15 +702,13 @@ void AdaptDispatch::_SelectiveEraseRect(TextBuffer& textBuffer, const til::rect&
         for (auto row = eraseRect.top; row < eraseRect.bottom; row++)
         {
             auto& rowBuffer = textBuffer.GetRowByOffset(row);
-            const auto& attrs = rowBuffer.GetAttrRow();
-            auto& chars = rowBuffer.GetCharRow();
             for (auto col = eraseRect.left; col < eraseRect.right; col++)
             {
                 // Only unprotected cells are affected.
-                if (!attrs.GetAttrByColumn(col).IsProtected())
+                if (!rowBuffer.GetAttrByColumn(col).IsProtected())
                 {
                     // The text is cleared but the attributes are left as is.
-                    chars.ClearGlyph(col);
+                    rowBuffer.ClearCell(col);
                     textBuffer.TriggerRedraw(Viewport::FromCoord({ col, row }));
                 }
             }
@@ -800,10 +798,9 @@ void AdaptDispatch::_ChangeRectAttributes(TextBuffer& textBuffer, const til::rec
         for (auto row = changeRect.top; row < changeRect.bottom; row++)
         {
             auto& rowBuffer = textBuffer.GetRowByOffset(row);
-            auto& attrs = rowBuffer.GetAttrRow();
             for (auto col = changeRect.left; col < changeRect.right; col++)
             {
-                auto attr = attrs.GetAttrByColumn(col);
+                auto attr = rowBuffer.GetAttrByColumn(col);
                 auto characterAttributes = attr.GetCharacterAttributes();
                 characterAttributes &= changeOps.andAttrMask;
                 characterAttributes ^= changeOps.xorAttrMask;
@@ -816,7 +813,7 @@ void AdaptDispatch::_ChangeRectAttributes(TextBuffer& textBuffer, const til::rec
                 {
                     attr.SetBackground(*changeOps.background);
                 }
-                attrs.Replace(col, col + 1, attr);
+                rowBuffer.ReplaceAttributes(col, col + 1, attr);
             }
         }
         textBuffer.TriggerRedraw(Viewport::FromExclusive(changeRect));
