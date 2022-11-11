@@ -27,7 +27,10 @@ enum class CharacterAttributes : uint16_t
     RightGridline = COMMON_LVB_GRID_RVERTICAL, // 0x1000
     Protected = 0x2000,
     ReverseVideo = COMMON_LVB_REVERSE_VIDEO, // 0x4000
-    BottomGridline = COMMON_LVB_UNDERSCORE // 0x8000
+    BottomGridline = COMMON_LVB_UNDERSCORE, // 0x8000
+
+    All = 0xFFFF, // All character attributes
+    Rendition = All & ~Protected // Only rendition attributes (everything except Protected)
 };
 DEFINE_ENUM_FLAG_OPERATORS(CharacterAttributes);
 
