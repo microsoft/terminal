@@ -103,7 +103,8 @@ public:
     const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark>& GetScrollMarks() const noexcept;
     void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark,
                  const til::point& start,
-                 const til::point& end);
+                 const til::point& end,
+                 const bool fromUi);
 
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp
@@ -402,6 +403,14 @@ private:
     std::optional<KeyEventCodes> _lastKeyEventCodes;
 
     std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark> _scrollMarks;
+    enum PromptState : uint32_t
+    {
+        None = 0,
+        Prompt = 1,
+        Command = 2,
+        Output = 3
+    };
+    PromptState _currentPromptState{ PromptState::None };
     Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark* _currentPrompt{ nullptr };
 
     static WORD _ScanCodeFromVirtualKey(const WORD vkey) noexcept;
