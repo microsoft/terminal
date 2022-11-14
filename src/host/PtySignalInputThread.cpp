@@ -97,6 +97,7 @@ void PtySignalInputThread::CreatePseudoWindow()
 // - S_OK if the thread runs to completion.
 // - Otherwise it may cause an application termination and never return.
 [[nodiscard]] HRESULT PtySignalInputThread::_InputThread() noexcept
+try
 {
     const auto shutdown = wil::scope_exit([this]() {
         _Shutdown();
@@ -209,10 +210,11 @@ void PtySignalInputThread::CreatePseudoWindow()
             break;
         }
         default:
-            return S_OK;
+            THROW_HR(E_UNEXPECTED);
         }
     }
 }
+CATCH_LOG_RETURN_HR(S_OK)
 
 // Method Description:
 // - Dispatches a resize window message to the rest of the console code
@@ -284,8 +286,7 @@ void PtySignalInputThread::_DoSetWindowParent(const SetParentData& data)
 // - cbBuffer - Count of bytes in the given buffer.
 // Return Value:
 // - True if data was retrieved successfully. False otherwise.
-bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer,
-                                    const DWORD cbBuffer)
+[[nodiscard]] bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer, const DWORD cbBuffer)
 {
     if (!_hFile)
     {
@@ -295,6 +296,8 @@ bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBu
     DWORD dwRead = 0;
     if (FALSE == ReadFile(_hFile.get(), pBuffer, cbBuffer, &dwRead, nullptr))
     {
+        const auto hr = GetLastError();
+        LOG_HR_IF(hr, hr != ERROR_BROKEN_PIPE);
         _hFile.reset();
         return false;
     }

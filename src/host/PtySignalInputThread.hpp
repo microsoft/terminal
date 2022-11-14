@@ -61,7 +61,7 @@ namespace Microsoft::Console
         };
 
         [[nodiscard]] HRESULT _InputThread() noexcept;
-        bool _GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer, const DWORD cbBuffer);
+        [[nodiscard]] bool _GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer, const DWORD cbBuffer);
         void _DoResizeWindow(const ResizeWindowData& data);
         void _DoSetWindowParent(const SetParentData& data);
         void _DoClearBuffer();
