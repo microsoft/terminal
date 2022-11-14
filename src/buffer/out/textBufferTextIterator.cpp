@@ -5,7 +5,6 @@
 
 #include "textBufferTextIterator.hpp"
 
-#include "CharRow.hpp"
 #include "Row.hpp"
 
 #pragma hdrstop

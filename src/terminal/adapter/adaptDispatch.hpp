@@ -55,6 +55,13 @@ namespace Microsoft::Console::VirtualTerminal
         bool SelectiveEraseInLine(const DispatchTypes::EraseType eraseType) override; // DECSEL
         bool InsertCharacter(const VTInt count) override; // ICH
         bool DeleteCharacter(const VTInt count) override; // DCH
+        bool ChangeAttributesRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const VTParameters attrs) override; // DECCARA
+        bool ReverseAttributesRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const VTParameters attrs) override; // DECRARA
+        bool CopyRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const VTInt page, const VTInt dstTop, const VTInt dstLeft, const VTInt dstPage) override; // DECCRA
+        bool FillRectangularArea(const VTParameter ch, const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) override; // DECFRA
+        bool EraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) override; // DECERA
+        bool SelectiveEraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) override; // DECSERA
+        bool SelectAttributeChangeExtent(const DispatchTypes::ChangeExtent changeExtent) noexcept override; // DECSACE
         bool SetGraphicsRendition(const VTParameters options) override; // SGR
         bool SetLineRendition(const LineRendition rendition) override; // DECSWL, DECDWL, DECDHL
         bool SetCharacterProtectionAttribute(const VTParameters options) override; // DECSCA
@@ -178,12 +185,22 @@ namespace Microsoft::Console::VirtualTerminal
             static constexpr Offset Backward(const VTInt value) { return { -value, false }; };
             static constexpr Offset Unchanged() { return Forward(0); };
         };
+        struct ChangeOps
+        {
+            CharacterAttributes andAttrMask = CharacterAttributes::All;
+            CharacterAttributes xorAttrMask = CharacterAttributes::Normal;
+            std::optional<TextColor> foreground;
+            std::optional<TextColor> background;
+        };
 
         std::pair<int, int> _GetVerticalMargins(const til::rect& viewport, const bool absolute);
         bool _CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins);
         void _ApplyCursorMovementFlags(Cursor& cursor) noexcept;
         void _FillRect(TextBuffer& textBuffer, const til::rect& fillRect, const wchar_t fillChar, const TextAttribute fillAttrs);
         void _SelectiveEraseRect(TextBuffer& textBuffer, const til::rect& eraseRect);
+        void _ChangeRectAttributes(TextBuffer& textBuffer, const til::rect& changeRect, const ChangeOps& changeOps);
+        void _ChangeRectOrStreamAttributes(const til::rect& changeArea, const ChangeOps& changeOps);
+        til::rect _CalculateRectArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const til::size bufferSize);
         void _EraseScrollback();
         void _EraseAll();
         void _ScrollRectVertically(TextBuffer& textBuffer, const til::rect& scrollRect, const VTInt delta);
@@ -213,6 +230,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _ReportSGRSetting() const;
         void _ReportDECSTBMSetting();
         void _ReportDECSCASetting() const;
+        void _ReportDECSACESetting() const;
 
         StringHandler _CreateDrcsPassthroughHandler(const DispatchTypes::DrcsCharsetSize charsetSize);
         StringHandler _CreatePassthroughHandler();
@@ -239,13 +257,18 @@ namespace Microsoft::Console::VirtualTerminal
         til::inclusive_rect _scrollMargins;
 
         bool _isOriginModeRelative;
-
         bool _isDECCOLMAllowed;
+        bool _isChangeExtentRectangular;
 
         SgrStack _sgrStack;
 
         size_t _SetRgbColorsHelper(const VTParameters options,
                                    TextAttribute& attr,
                                    const bool isForeground) noexcept;
+        size_t _ApplyGraphicsOption(const VTParameters options,
+                                    const size_t optionIndex,
+                                    TextAttribute& attr) noexcept;
+        void _ApplyGraphicsOptions(const VTParameters options,
+                                   TextAttribute& attr) noexcept;
     };
 }
