@@ -379,7 +379,7 @@ void TextAttribute::SetDefaultBackground() noexcept
 //     except the Protected attribute.
 void TextAttribute::SetDefaultRenditionAttributes() noexcept
 {
-    _attrs &= CharacterAttributes::Protected;
+    _attrs &= ~CharacterAttributes::Rendition;
 }
 
 // Method Description:
