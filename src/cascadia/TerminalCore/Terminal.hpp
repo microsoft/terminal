@@ -402,6 +402,14 @@ private:
     std::optional<KeyEventCodes> _lastKeyEventCodes;
 
     std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark> _scrollMarks;
+    enum PromptState : uint32_t
+    {
+        None = 0,
+        Prompt = 1,
+        Command = 2,
+        Output = 3
+    };
+    PromptState _currentPromptState{ PromptState::None };
     Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark* _currentPrompt{ nullptr };
 
     static WORD _ScanCodeFromVirtualKey(const WORD vkey) noexcept;

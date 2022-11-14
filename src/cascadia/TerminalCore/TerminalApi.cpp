@@ -312,12 +312,40 @@ void Terminal::AddMark(const DispatchTypes::ScrollMark& mark)
 
 void Terminal::CommandStart()
 {
-    if (_currentPrompt)
+    if (_currentPromptState == Prompt)
     {
-        // Move the end of this mark to the current cursor position. The prompt
-        // is between [mark.start, mark.end)
-        _currentPrompt->end = _activeBuffer().GetCursor().GetPosition();
+        if (_scrollMarks.size() > 0)
+        {
+            _scrollMarks.end()->end = _activeBuffer().GetCursor().GetPosition();
+            _currentPromptState = PromptState::Command;
+        }
+        else
+        {
+            // There was no mark. This seems all wrong.
+            // Attempt to right the ship by adding a mark that starts & ends here, and going to the Command state.
+        }
     }
+    else
+    {
+        // We were in any other state. Weird!
+    }
+
+    // Note for monday: If there was no last mark, or we're in a weird state,
+    // then abandon the current state, and just insert a new Prompt mark that
+    // start's & ends here, and got to State::Command.
+    //
+    // I think we can kinda do the same thing for the others.
+    // * OutputStart, but no command? Whatever, start, end & commandEnd are all here. Go to State::Output.
+    // * CommandFinished, but no Output? Whatever, everything is all here. Go to State::None
+    //
+    // when we manually add a mark, push it on the front, so we don't fux with the current state.
+
+    // if (_currentPrompt)
+    // {
+    //     // Move the end of this mark to the current cursor position. The prompt
+    //     // is between [mark.start, mark.end)
+    //     _currentPrompt->end = _activeBuffer().GetCursor().GetPosition();
+    // }
 }
 
 void Terminal::OutputStart()
