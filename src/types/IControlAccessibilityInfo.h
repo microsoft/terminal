@@ -39,5 +39,5 @@ namespace Microsoft::Console::Types
         IControlAccessibilityInfo& operator=(IControlAccessibilityInfo&&) = default;
     };
 
-    inline IControlAccessibilityInfo::~IControlAccessibilityInfo() {}
+    inline IControlAccessibilityInfo::~IControlAccessibilityInfo() = default;
 }

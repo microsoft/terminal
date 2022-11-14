@@ -250,7 +250,7 @@ const std::vector<Microsoft::Console::Render::RenderOverlay> RenderData::GetOver
 // - <none>
 // Return Value:
 // - true if the cursor should be drawn twice as wide as usual
-bool RenderData::IsCursorDoubleWidth() const
+bool RenderData::IsCursorDoubleWidth() const noexcept
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().CursorIsDoubleWidth();
@@ -304,7 +304,7 @@ const std::wstring_view RenderData::GetConsoleTitle() const noexcept
 // - The hyperlink ID
 // Return Value:
 // - The URI
-const std::wstring RenderData::GetHyperlinkUri(uint16_t id) const noexcept
+const std::wstring RenderData::GetHyperlinkUri(uint16_t id) const
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().GetTextBuffer().GetHyperlinkUriFromId(id);
@@ -316,14 +316,14 @@ const std::wstring RenderData::GetHyperlinkUri(uint16_t id) const noexcept
 // - The hyperlink ID
 // Return Value:
 // - The custom ID if there was one, empty string otherwise
-const std::wstring RenderData::GetHyperlinkCustomId(uint16_t id) const noexcept
+const std::wstring RenderData::GetHyperlinkCustomId(uint16_t id) const
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().GetTextBuffer().GetCustomIdFromId(id);
 }
 
 // For now, we ignore regex patterns in conhost
-const std::vector<size_t> RenderData::GetPatternId(const til::point /*location*/) const noexcept
+const std::vector<size_t> RenderData::GetPatternId(const til::point /*location*/) const
 {
     return {};
 }

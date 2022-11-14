@@ -5,6 +5,7 @@
 
 #include "adaptDispatch.hpp"
 #include "../../renderer/base/renderer.hpp"
+#include "../../types/inc/GlyphWidth.hpp"
 #include "../../types/inc/Viewport.hpp"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/unicode.hpp"
@@ -22,6 +23,7 @@ AdaptDispatch::AdaptDispatch(ITerminalApi& api, Renderer& renderer, RenderSettin
     _usingAltBuffer(false),
     _isOriginModeRelative(false), // by default, the DECOM origin mode is absolute.
     _isDECCOLMAllowed(false), // by default, DECCOLM is not allowed.
+    _isChangeExtentRectangular(false),
     _termOutput()
 {
 }
@@ -687,6 +689,467 @@ bool AdaptDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
 }
 
 // Routine Description:
+// - Selectively erases unprotected cells in an area of the buffer.
+// Arguments:
+// - textBuffer - Target buffer to be erased.
+// - eraseRect - Area of the buffer that will be affected.
+// Return Value:
+// - <none>
+void AdaptDispatch::_SelectiveEraseRect(TextBuffer& textBuffer, const til::rect& eraseRect)
+{
+    if (eraseRect)
+    {
+        for (auto row = eraseRect.top; row < eraseRect.bottom; row++)
+        {
+            auto& rowBuffer = textBuffer.GetRowByOffset(row);
+            for (auto col = eraseRect.left; col < eraseRect.right; col++)
+            {
+                // Only unprotected cells are affected.
+                if (!rowBuffer.GetAttrByColumn(col).IsProtected())
+                {
+                    // The text is cleared but the attributes are left as is.
+                    rowBuffer.ClearCell(col);
+                    textBuffer.TriggerRedraw(Viewport::FromCoord({ col, row }));
+                }
+            }
+        }
+        _api.NotifyAccessibilityChange(eraseRect);
+    }
+}
+
+// Routine Description:
+// - DECSED - Selectively erases unprotected cells in a portion of the viewport.
+// Arguments:
+// - eraseType - Determines whether to erase:
+//      From beginning (top-left corner) to the cursor
+//      From cursor to end (bottom-right corner)
+//      The entire viewport area
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SelectiveEraseInDisplay(const DispatchTypes::EraseType eraseType)
+{
+    const auto viewport = _api.GetViewport();
+    auto& textBuffer = _api.GetTextBuffer();
+    const auto bufferWidth = textBuffer.GetSize().Width();
+    const auto row = textBuffer.GetCursor().GetPosition().Y;
+    const auto col = textBuffer.GetCursor().GetPosition().X;
+
+    switch (eraseType)
+    {
+    case DispatchTypes::EraseType::FromBeginning:
+        _SelectiveEraseRect(textBuffer, { 0, viewport.top, bufferWidth, row });
+        _SelectiveEraseRect(textBuffer, { 0, row, col + 1, row + 1 });
+        return true;
+    case DispatchTypes::EraseType::ToEnd:
+        _SelectiveEraseRect(textBuffer, { col, row, bufferWidth, row + 1 });
+        _SelectiveEraseRect(textBuffer, { 0, row + 1, bufferWidth, viewport.bottom });
+        return true;
+    case DispatchTypes::EraseType::All:
+        _SelectiveEraseRect(textBuffer, { 0, viewport.top, bufferWidth, viewport.bottom });
+        return true;
+    default:
+        return false;
+    }
+}
+
+// Routine Description:
+// - DECSEL - Selectively erases unprotected cells on line with the cursor.
+// Arguments:
+// - eraseType - Determines whether to erase:
+//      From beginning (left edge) to the cursor
+//      From cursor to end (right edge)
+//      The entire line.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SelectiveEraseInLine(const DispatchTypes::EraseType eraseType)
+{
+    auto& textBuffer = _api.GetTextBuffer();
+    const auto row = textBuffer.GetCursor().GetPosition().Y;
+    const auto col = textBuffer.GetCursor().GetPosition().X;
+
+    switch (eraseType)
+    {
+    case DispatchTypes::EraseType::FromBeginning:
+        _SelectiveEraseRect(textBuffer, { 0, row, col + 1, row + 1 });
+        return true;
+    case DispatchTypes::EraseType::ToEnd:
+        _SelectiveEraseRect(textBuffer, { col, row, textBuffer.GetLineWidth(row), row + 1 });
+        return true;
+    case DispatchTypes::EraseType::All:
+        _SelectiveEraseRect(textBuffer, { 0, row, textBuffer.GetLineWidth(row), row + 1 });
+        return true;
+    default:
+        return false;
+    }
+}
+
+// Routine Description:
+// - Changes the attributes of each cell in a rectangular area of the buffer.
+// Arguments:
+// - textBuffer - Target buffer to be changed.
+// - changeRect - A rectangular area of the buffer that will be affected.
+// - changeOps - Changes that will be applied to each of the attributes.
+// Return Value:
+// - <none>
+void AdaptDispatch::_ChangeRectAttributes(TextBuffer& textBuffer, const til::rect& changeRect, const ChangeOps& changeOps)
+{
+    if (changeRect)
+    {
+        for (auto row = changeRect.top; row < changeRect.bottom; row++)
+        {
+            auto& rowBuffer = textBuffer.GetRowByOffset(row);
+            for (auto col = changeRect.left; col < changeRect.right; col++)
+            {
+                auto attr = rowBuffer.GetAttrByColumn(col);
+                auto characterAttributes = attr.GetCharacterAttributes();
+                characterAttributes &= changeOps.andAttrMask;
+                characterAttributes ^= changeOps.xorAttrMask;
+                attr.SetCharacterAttributes(characterAttributes);
+                if (changeOps.foreground)
+                {
+                    attr.SetForeground(*changeOps.foreground);
+                }
+                if (changeOps.background)
+                {
+                    attr.SetBackground(*changeOps.background);
+                }
+                rowBuffer.ReplaceAttributes(col, col + 1, attr);
+            }
+        }
+        textBuffer.TriggerRedraw(Viewport::FromExclusive(changeRect));
+        _api.NotifyAccessibilityChange(changeRect);
+    }
+}
+
+// Routine Description:
+// - Changes the attributes of each cell in an area of the buffer.
+// Arguments:
+// - changeArea - Area of the buffer that will be affected. This may be
+//     interpreted as a rectangle or a stream depending on the state of the
+//     _isChangeExtentRectangular field.
+// - changeOps - Changes that will be applied to each of the attributes.
+// Return Value:
+// - <none>
+void AdaptDispatch::_ChangeRectOrStreamAttributes(const til::rect& changeArea, const ChangeOps& changeOps)
+{
+    auto& textBuffer = _api.GetTextBuffer();
+    const auto bufferSize = textBuffer.GetSize().Dimensions();
+    const auto changeRect = _CalculateRectArea(changeArea.top, changeArea.left, changeArea.bottom, changeArea.right, bufferSize);
+    const auto lineCount = changeRect.height();
+
+    // If the change extent is rectangular, we can apply the change with a
+    // single call. The same is true for a stream extent that is only one line.
+    if (_isChangeExtentRectangular || lineCount == 1)
+    {
+        _ChangeRectAttributes(textBuffer, changeRect, changeOps);
+    }
+    // If the stream extent is more than one line we require three passes. The
+    // top line is altered from the left offset up to the end of the line. The
+    // bottom line is altered from the start up to the right offset. All the
+    // lines inbetween have their entire length altered. The right coordinate
+    // must be greater than the left, otherwise the operation is ignored.
+    else if (lineCount > 1 && changeRect.right > changeRect.left)
+    {
+        const auto bufferWidth = bufferSize.width;
+        _ChangeRectAttributes(textBuffer, { changeRect.origin(), til::size{ bufferWidth - changeRect.left, 1 } }, changeOps);
+        _ChangeRectAttributes(textBuffer, { { 0, changeRect.top + 1 }, til::size{ bufferWidth, lineCount - 2 } }, changeOps);
+        _ChangeRectAttributes(textBuffer, { { 0, changeRect.bottom - 1 }, til::size{ changeRect.right, 1 } }, changeOps);
+    }
+}
+
+// Routine Description:
+// - Helper method to caculate the applicable buffer coordinates for use with
+//   the various rectangular area operations.
+// Arguments:
+// - top - The first row of the area.
+// - left - The first column of the area.
+// - bottom - The last row of the area (inclusive).
+// - right - The last column of the area (inclusive).
+// - bufferSize - The size of the target buffer.
+// Return value:
+// - An exclusive rect with the absolute buffer coordinates.
+til::rect AdaptDispatch::_CalculateRectArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const til::size bufferSize)
+{
+    const auto viewport = _api.GetViewport();
+
+    // We start by calculating the margin offsets and maximum dimensions.
+    // If the origin mode isn't set, we use the viewport extent.
+    const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, false);
+    const auto yOffset = _isOriginModeRelative ? topMargin : 0;
+    const auto yMaximum = _isOriginModeRelative ? bottomMargin + 1 : viewport.height();
+    const auto xMaximum = bufferSize.width;
+
+    auto fillRect = til::inclusive_rect{};
+    fillRect.left = left;
+    fillRect.top = top + yOffset;
+    // Right and bottom default to the maximum dimensions.
+    fillRect.right = (right ? right : xMaximum);
+    fillRect.bottom = (bottom ? bottom + yOffset : yMaximum);
+
+    // We also clamp everything to the maximum dimensions, and subtract 1
+    // to convert from VT coordinates which have an origin of 1;1.
+    fillRect.left = std::min(fillRect.left, xMaximum) - 1;
+    fillRect.right = std::min(fillRect.right, xMaximum) - 1;
+    fillRect.top = std::min(fillRect.top, yMaximum) - 1;
+    fillRect.bottom = std::min(fillRect.bottom, yMaximum) - 1;
+
+    // To get absolute coordinates we offset with the viewport top.
+    fillRect.top += viewport.top;
+    fillRect.bottom += viewport.top;
+
+    return til::rect{ fillRect };
+}
+
+// Routine Description:
+// - DECCARA - Changes the attributes in a rectangular area. The affected range
+//   is dependent on the change extent setting defined by DECSACE.
+// Arguments:
+// - top - The first row of the area.
+// - left - The first column of the area.
+// - bottom - The last row of the area (inclusive).
+// - right - The last column of the area (inclusive).
+// - attrs - The rendition attributes that will be applied to the area.
+// Return Value:
+// - True.
+bool AdaptDispatch::ChangeAttributesRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const VTParameters attrs)
+{
+    auto changeOps = ChangeOps{};
+
+    // We apply the attribute parameters to two TextAttribute instances: one
+    // with no character attributes set, and one with all attributes set. This
+    // provides us with an OR mask and an AND mask which can then be applied to
+    // each cell to set and reset the appropriate attribute bits.
+    auto allAttrsOff = TextAttribute{};
+    auto allAttrsOn = TextAttribute{ 0, 0 };
+    allAttrsOn.SetCharacterAttributes(CharacterAttributes::All);
+    _ApplyGraphicsOptions(attrs, allAttrsOff);
+    _ApplyGraphicsOptions(attrs, allAttrsOn);
+    const auto orAttrMask = allAttrsOff.GetCharacterAttributes();
+    const auto andAttrMask = allAttrsOn.GetCharacterAttributes();
+    // But to minimize the required ops, which we share with the DECRARA control
+    // below, we want to use an XOR rather than OR. For that to work, we have to
+    // combine the AND mask with the inverse of the OR mask in advance.
+    changeOps.andAttrMask = andAttrMask & ~orAttrMask;
+    changeOps.xorAttrMask = orAttrMask;
+
+    // We also make use of the two TextAttributes calculated above to determine
+    // whether colors need to be applied. Since allAttrsOff started off with
+    // default colors, and allAttrsOn started with black, we know something has
+    // been set if the former is no longer default, or the latter is now default.
+    const auto foreground = allAttrsOff.GetForeground();
+    const auto background = allAttrsOff.GetBackground();
+    const auto foregroundChanged = !foreground.IsDefault() || allAttrsOn.GetForeground().IsDefault();
+    const auto backgroundChanged = !background.IsDefault() || allAttrsOn.GetBackground().IsDefault();
+    changeOps.foreground = foregroundChanged ? std::optional{ foreground } : std::nullopt;
+    changeOps.background = backgroundChanged ? std::optional{ background } : std::nullopt;
+
+    _ChangeRectOrStreamAttributes({ left, top, right, bottom }, changeOps);
+
+    return true;
+}
+
+// Routine Description:
+// - DECRARA - Reverses the attributes in a rectangular area. The affected range
+//   is dependent on the change extent setting defined by DECSACE.
+// Arguments:
+// - top - The first row of the area.
+// - left - The first column of the area.
+// - bottom - The last row of the area (inclusive).
+// - right - The last column of the area (inclusive).
+// - attrs - The rendition attributes that will be applied to the area.
+// Return Value:
+// - True.
+bool AdaptDispatch::ReverseAttributesRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const VTParameters attrs)
+{
+    // In order to create a mask of the attributes that we want to reverse, we
+    // need to go through the options one by one, applying each of them to an
+    // empty TextAttribute object from which can extract the effected bits. We
+    // then combine them with XOR, because if we're reversing the same attribute
+    // twice, we'd expect the two instances to cancel each other out.
+    auto reverseMask = CharacterAttributes::Normal;
+    if (!attrs.empty())
+    {
+        for (size_t i = 0; i < attrs.size();)
+        {
+            // A zero or default option is a special case that reverses all the
+            // rendition bits. But note that this shouldn't be triggered by an
+            // empty attribute list, so we explicitly exclude that case in
+            // the empty check above.
+            if (attrs.at(i).value_or(0) == 0)
+            {
+                reverseMask ^= CharacterAttributes::Rendition;
+                i++;
+            }
+            else
+            {
+                auto allAttrsOff = TextAttribute{};
+                i += _ApplyGraphicsOption(attrs, i, allAttrsOff);
+                reverseMask ^= allAttrsOff.GetCharacterAttributes();
+            }
+        }
+    }
+
+    // If the accumulated mask ends up blank, there's nothing for us to do.
+    if (reverseMask != CharacterAttributes::Normal)
+    {
+        _ChangeRectOrStreamAttributes({ left, top, right, bottom }, { .xorAttrMask = reverseMask });
+    }
+
+    return true;
+}
+
+// Routine Description:
+// - DECCRA - Copys a rectangular area from one part of the buffer to another.
+// Arguments:
+// - top - The first row of the source area.
+// - left - The first column of the source area.
+// - bottom - The last row of the source area (inclusive).
+// - right - The last column of the source area (inclusive).
+// - page - The source page number (unused for now).
+// - dstTop - The first row of the destination.
+// - dstLeft - The first column of the destination.
+// - dstPage - The destination page number (unused for now).
+// Return Value:
+// - True.
+bool AdaptDispatch::CopyRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const VTInt /*page*/, const VTInt dstTop, const VTInt dstLeft, const VTInt /*dstPage*/)
+{
+    // GH#13892 We don't yet support the paging extension, so for now we ignore
+    // the page parameters. This is the same as if the maximum page count was 1.
+
+    auto& textBuffer = _api.GetTextBuffer();
+    const auto bufferSize = textBuffer.GetSize().Dimensions();
+    const auto srcRect = _CalculateRectArea(top, left, bottom, right, bufferSize);
+    const auto dstBottom = dstTop + srcRect.height() - 1;
+    const auto dstRight = dstLeft + srcRect.width() - 1;
+    const auto dstRect = _CalculateRectArea(dstTop, dstLeft, dstBottom, dstRight, bufferSize);
+
+    if (dstRect && dstRect.origin() != srcRect.origin())
+    {
+        // If the source is bigger than the available space at the destination
+        // it needs to be clipped, so we only care about the destination size.
+        const auto srcView = Viewport::FromDimensions(srcRect.origin(), dstRect.size());
+        const auto dstView = Viewport::FromDimensions(dstRect.origin(), dstRect.size());
+        const auto walkDirection = Viewport::DetermineWalkDirection(srcView, dstView);
+        auto srcPos = srcView.GetWalkOrigin(walkDirection);
+        auto dstPos = dstView.GetWalkOrigin(walkDirection);
+        do
+        {
+            // If the source position is offscreen (which can occur on double
+            // width lines), then we shouldn't copy anything to the destination.
+            if (srcPos.x < textBuffer.GetLineWidth(srcPos.y))
+            {
+                const auto data = OutputCell(*textBuffer.GetCellDataAt(srcPos));
+                textBuffer.Write(OutputCellIterator({ &data, 1 }), dstPos);
+            }
+            srcView.WalkInBounds(srcPos, walkDirection);
+        } while (dstView.WalkInBounds(dstPos, walkDirection));
+        _api.NotifyAccessibilityChange(dstRect);
+    }
+
+    return true;
+}
+
+// Routine Description:
+// - DECFRA - Fills a rectangular area with the given character and using the
+//     currently active rendition attributes.
+// Arguments:
+// - ch - The ordinal value of the character used to fill the area.
+// - top - The first row of the area.
+// - left - The first column of the area.
+// - bottom - The last row of the area (inclusive).
+// - right - The last column of the area (inclusive).
+// Return Value:
+// - True.
+bool AdaptDispatch::FillRectangularArea(const VTParameter ch, const VTInt top, const VTInt left, const VTInt bottom, const VTInt right)
+{
+    auto& textBuffer = _api.GetTextBuffer();
+    auto fillRect = _CalculateRectArea(top, left, bottom, right, textBuffer.GetSize().Dimensions());
+
+    // The standard only allows for characters in the range of the GL and GR
+    // character set tables, but we also support additional Unicode characters
+    // from the BMP if the code page is UTF-8. Default and 0 are treated as 32.
+    const auto charValue = ch.value_or(0) == 0 ? 32 : ch.value();
+    const auto glChar = (charValue >= 32 && charValue <= 126);
+    const auto grChar = (charValue >= 160 && charValue <= 255);
+    const auto unicodeChar = (charValue >= 256 && charValue <= 65535 && _api.GetConsoleOutputCP() == CP_UTF8);
+    if (glChar || grChar || unicodeChar)
+    {
+        const auto fillChar = _termOutput.TranslateKey(gsl::narrow_cast<wchar_t>(charValue));
+        const auto fillAttributes = textBuffer.GetCurrentAttributes();
+        if (IsGlyphFullWidth(fillChar))
+        {
+            // If the fill char is full width, we need to halve the width of the
+            // fill area, otherwise it'll occupy twice as much space as expected.
+            fillRect.right = fillRect.left + fillRect.width() / 2;
+        }
+        _FillRect(textBuffer, fillRect, fillChar, fillAttributes);
+    }
+
+    return true;
+}
+
+// Routine Description:
+// - DECERA - Erases a rectangular area, replacing all cells with a space
+//     character and the default rendition attributes.
+// Arguments:
+// - top - The first row of the area.
+// - left - The first column of the area.
+// - bottom - The last row of the area (inclusive).
+// - right - The last column of the area (inclusive).
+// Return Value:
+// - True.
+bool AdaptDispatch::EraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right)
+{
+    auto& textBuffer = _api.GetTextBuffer();
+    const auto eraseRect = _CalculateRectArea(top, left, bottom, right, textBuffer.GetSize().Dimensions());
+    auto eraseAttributes = textBuffer.GetCurrentAttributes();
+    eraseAttributes.SetStandardErase();
+    _FillRect(textBuffer, eraseRect, L' ', eraseAttributes);
+    return true;
+}
+
+// Routine Description:
+// - DECSERA - Selectively erases a rectangular area, replacing unprotected
+//     cells with a space character, but retaining the rendition attributes.
+// Arguments:
+// - top - The first row of the area.
+// - left - The first column of the area.
+// - bottom - The last row of the area (inclusive).
+// - right - The last column of the area (inclusive).
+// Return Value:
+// - True.
+bool AdaptDispatch::SelectiveEraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right)
+{
+    auto& textBuffer = _api.GetTextBuffer();
+    const auto eraseRect = _CalculateRectArea(top, left, bottom, right, textBuffer.GetSize().Dimensions());
+    _SelectiveEraseRect(textBuffer, eraseRect);
+    return true;
+}
+
+// Routine Description:
+// - DECSACE - Selects the format of the character range that will be affected
+//   by the DECCARA and DECRARA attribute operations.
+// Arguments:
+// - changeExtent - Whether the character range is a stream or a rectangle.
+// Return value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SelectAttributeChangeExtent(const DispatchTypes::ChangeExtent changeExtent) noexcept
+{
+    switch (changeExtent)
+    {
+    case DispatchTypes::ChangeExtent::Default:
+    case DispatchTypes::ChangeExtent::Stream:
+        _isChangeExtentRectangular = false;
+        return true;
+    case DispatchTypes::ChangeExtent::Rectangle:
+        _isChangeExtentRectangular = true;
+        return true;
+    default:
+        return false;
+    }
+}
+
+// Routine Description:
 // - DECSWL/DECDWL/DECDHL - Sets the line rendition attribute for the current line.
 // Arguments:
 // - rendition - Determines whether the line will be rendered as single width, double
@@ -701,20 +1164,22 @@ bool AdaptDispatch::SetLineRendition(const LineRendition rendition)
 
 // Routine Description:
 // - DSR - Reports status of a console property back to the STDIN based on the type of status requested.
-//       - This particular routine responds to ANSI status patterns only (CSI # n), not the DEC format (CSI ? # n)
 // Arguments:
-// - statusType - ANSI status type indicating what property we should report back
+// - statusType - status type indicating what property we should report back
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType)
+bool AdaptDispatch::DeviceStatusReport(const DispatchTypes::StatusType statusType)
 {
     switch (statusType)
     {
-    case DispatchTypes::AnsiStatusType::OS_OperatingStatus:
+    case DispatchTypes::StatusType::OS_OperatingStatus:
         _OperatingStatus();
         return true;
-    case DispatchTypes::AnsiStatusType::CPR_CursorPositionReport:
-        _CursorPositionReport();
+    case DispatchTypes::StatusType::CPR_CursorPositionReport:
+        _CursorPositionReport(false);
+        return true;
+    case DispatchTypes::StatusType::ExCPR_ExtendedCursorPositionReport:
+        _CursorPositionReport(true);
         return true;
     default:
         return false;
@@ -826,12 +1291,13 @@ void AdaptDispatch::_OperatingStatus() const
 }
 
 // Routine Description:
-// - DSR-CPR - Reports the current cursor position within the viewport back to the input channel
+// - CPR and DECXCPR- Reports the current cursor position within the viewport,
+//   as well as the current page number if this is an extended report.
 // Arguments:
-// - <none>
+// - extendedReport - Set to true if the report should include the page number
 // Return Value:
 // - <none>
-void AdaptDispatch::_CursorPositionReport()
+void AdaptDispatch::_CursorPositionReport(const bool extendedReport)
 {
     const auto viewport = _api.GetViewport();
     const auto& textBuffer = _api.GetTextBuffer();
@@ -854,9 +1320,20 @@ void AdaptDispatch::_CursorPositionReport()
     }
 
     // Now send it back into the input channel of the console.
-    // First format the response string.
-    const auto response = wil::str_printf<std::wstring>(L"\x1b[%d;%dR", cursorPosition.Y, cursorPosition.X);
-    _api.ReturnResponse(response);
+    if (extendedReport)
+    {
+        // An extended report should also include the page number, but for now
+        // we hardcode it to 1, since we don't yet support paging (GH#13892).
+        const auto pageNumber = 1;
+        const auto response = wil::str_printf<std::wstring>(L"\x1b[?%d;%d;%dR", cursorPosition.Y, cursorPosition.X, pageNumber);
+        _api.ReturnResponse(response);
+    }
+    else
+    {
+        // The standard report only returns the cursor position.
+        const auto response = wil::str_printf<std::wstring>(L"\x1b[%d;%dR", cursorPosition.Y, cursorPosition.X);
+        _api.ReturnResponse(response);
+    }
 }
 
 // Routine Description:
@@ -1012,6 +1489,9 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         break;
     case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
         success = SetAutoWrapMode(enable);
+        break;
+    case DispatchTypes::ModeParams::DECARM_AutoRepeatMode:
+        success = _SetInputMode(TerminalInput::Mode::AutoRepeat, enable);
         break;
     case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
         success = EnableCursorBlinking(enable);
@@ -1768,7 +2248,7 @@ bool AdaptDispatch::AcceptC1Controls(const bool enabled)
 //  X All character sets          G0, G1, G2, Default settings.
 //                                G3, GL, GR
 //  X Select graphic rendition    SGR         Normal rendition.
-//    Select character attribute  DECSCA      Normal (erasable by DECSEL and DECSED).
+//  X Select character attribute  DECSCA      Normal (erasable by DECSEL and DECSED).
 //  X Save cursor state           DECSC       Home position.
 //    Assign user preference      DECAUPSS    Set selected in Set-Up.
 //        supplemental set
@@ -1802,6 +2282,7 @@ bool AdaptDispatch::SoftReset()
     AcceptC1Controls(false);
 
     SetGraphicsRendition({}); // Normal rendition.
+    SetCharacterProtectionAttribute({}); // Default (unprotected)
 
     // Reset the saved cursor state.
     // Note that XTerm only resets the main buffer state, but that
@@ -1864,12 +2345,18 @@ bool AdaptDispatch::HardReset()
     // Reset the Backarrow Key mode
     _SetInputMode(TerminalInput::Mode::BackarrowKey, false);
 
+    // Set the keyboard Auto Repeat mode
+    _SetInputMode(TerminalInput::Mode::AutoRepeat, true);
+
     // Delete all current tab stops and reapply
     _ResetTabStops();
 
     // Clear the soft font in the renderer and delete the font buffer.
     _renderer.UpdateSoftFont({}, {}, false);
     _fontBuffer = nullptr;
+
+    // Reset the attribute change extent (DECSACE) to a stream.
+    _isChangeExtentRectangular = false;
 
     // GH#2715 - If all this succeeded, but we're in a conpty, return `false` to
     // make the state machine propagate this RIS sequence to the connected
@@ -2447,19 +2934,22 @@ bool AdaptDispatch::DoConEmuAction(const std::wstring_view string)
     {
         if (parts.size() >= 2)
         {
-            const auto path = til::at(parts, 1);
+            auto path = til::at(parts, 1);
             // The path should be surrounded with '"' according to the documentation of ConEmu.
             // An example: 9;"D:/"
-            if (path.at(0) == L'"' && path.at(path.size() - 1) == L'"' && path.size() >= 3)
+            // If we fail to find the surrounding quotation marks, we'll give the path a try anyway.
+            // ConEmu also does this.
+            if (path.size() >= 3 && path.at(0) == L'"' && path.at(path.size() - 1) == L'"')
             {
-                _api.SetWorkingDirectory(path.substr(1, path.size() - 2));
+                path = path.substr(1, path.size() - 2);
             }
-            else
+
+            if (!til::is_legal_path(path))
             {
-                // If we fail to find the surrounding quotation marks, we'll give the path a try anyway.
-                // ConEmu also does this.
-                _api.SetWorkingDirectory(path);
+                return false;
             }
+
+            _api.SetWorkingDirectory(path);
             return true;
         }
     }
@@ -2790,11 +3280,17 @@ ITermDispatch::StringHandler AdaptDispatch::RequestSetting()
             const auto id = idBuilder->Finalize(ch);
             switch (id)
             {
-            case VTID('m'):
+            case VTID("m"):
                 _ReportSGRSetting();
                 break;
-            case VTID('r'):
+            case VTID("r"):
                 _ReportDECSTBMSetting();
+                break;
+            case VTID("\"q"):
+                _ReportDECSCASetting();
+                break;
+            case VTID("*x"):
+                _ReportDECSACESetting();
                 break;
             default:
                 _api.ReturnResponse(L"\033P0$r\033\\");
@@ -2899,6 +3395,50 @@ void AdaptDispatch::_ReportDECSTBMSetting()
 
     // The 'r' indicates this is an DECSTBM response, and ST ends the sequence.
     response.append(L"r\033\\"sv);
+    _api.ReturnResponse({ response.data(), response.size() });
+}
+
+// Method Description:
+// - Reports the DECSCA protected attribute in response to a DECRQSS query.
+// Arguments:
+// - None
+// Return Value:
+// - None
+void AdaptDispatch::_ReportDECSCASetting() const
+{
+    using namespace std::string_view_literals;
+
+    // A valid response always starts with DCS 1 $ r.
+    fmt::basic_memory_buffer<wchar_t, 64> response;
+    response.append(L"\033P1$r"sv);
+
+    const auto attr = _api.GetTextBuffer().GetCurrentAttributes();
+    response.append(attr.IsProtected() ? L"1"sv : L"0"sv);
+
+    // The '"q' indicates this is an DECSCA response, and ST ends the sequence.
+    response.append(L"\"q\033\\"sv);
+    _api.ReturnResponse({ response.data(), response.size() });
+}
+
+// Method Description:
+// - Reports the DECSACE change extent in response to a DECRQSS query.
+// Arguments:
+// - None
+// Return Value:
+// - None
+void AdaptDispatch::_ReportDECSACESetting() const
+{
+    using namespace std::string_view_literals;
+
+    // A valid response always starts with DCS 1 $ r.
+    fmt::basic_memory_buffer<wchar_t, 64> response;
+    response.append(L"\033P1$r"sv);
+
+    const auto attr = _api.GetTextBuffer().GetCurrentAttributes();
+    response.append(_isChangeExtentRectangular ? L"2"sv : L"1"sv);
+
+    // The '*x' indicates this is an DECSACE response, and ST ends the sequence.
+    response.append(L"*x\033\\"sv);
     _api.ReturnResponse({ response.data(), response.size() });
 }
 

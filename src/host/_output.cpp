@@ -9,8 +9,6 @@
 #include "handle.h"
 #include "misc.h"
 
-#include "../buffer/out/CharRow.hpp"
-
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/Viewport.hpp"
 #include "../types/inc/convert.hpp"

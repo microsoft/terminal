@@ -32,10 +32,10 @@ DERR
 dlldata
 DNE
 DONTADDTORECENT
-DWMWA
-DWORDLONG
 DWMSBT
 DWMWA
+DWMWA
+DWORDLONG
 endfor
 ENDSESSION
 enumset
@@ -110,8 +110,8 @@ memchr
 memicmp
 MENUCOMMAND
 MENUDATA
-MENUITEMINFOW
 MENUINFO
+MENUITEMINFOW
 mmeapi
 MOUSELEAVE
 mov
@@ -158,8 +158,8 @@ rcx
 REGCLS
 RETURNCMD
 rfind
-roundf
 ROOTOWNER
+roundf
 RSHIFT
 SACL
 schandle
@@ -211,6 +211,7 @@ UPDATEINIFILE
 userenv
 USEROBJECTFLAGS
 Viewbox
+virtualalloc
 wcsstr
 wcstoui
 winmain
