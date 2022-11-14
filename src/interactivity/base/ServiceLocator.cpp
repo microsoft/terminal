@@ -56,7 +56,7 @@ void ServiceLocator::RundownAndExit(const HRESULT hr)
     {
         // Don't sleep forever with the console lock being held or otherwise
         // no one can acquire it while we shut down.
-        const auto& gci = s_globals.getConsoleInformation();
+        auto& gci = s_globals.getConsoleInformation();
         while (gci.IsConsoleLocked())
         {
             gci.UnlockConsole();
