@@ -103,7 +103,8 @@ public:
     const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark>& GetScrollMarks() const noexcept;
     void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark,
                  const til::point& start,
-                 const til::point& end);
+                 const til::point& end,
+                 const bool fromUi);
 
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp

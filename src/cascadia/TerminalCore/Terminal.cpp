@@ -826,8 +826,10 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
             mark.category = DispatchTypes::MarkCategory::Prompt;
             // Don't set the color - we'll automatically use the DEFAULT_FOREGROUND
             // color for any MarkCategory::Prompt marks without one set.
-            AddMark(mark);
-            _currentPrompt = &_scrollMarks.back();
+
+            AddMark(mark); // without parameters, this will act as if it came
+            // from the connection itself, and set _currentPromptState accordingly
+
             OutputStart();
         }
     }
@@ -1578,7 +1580,8 @@ void Terminal::_updateUrlDetection()
 // NOTE: This is the version of AddMark that comes from the UI. The VT api call into this too.
 void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark,
                        const til::point& start,
-                       const til::point& end)
+                       const til::point& end,
+                       const bool fromUi)
 {
     if (_inAltBuffer())
     {
@@ -1589,7 +1592,14 @@ void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes:
     m.start = start;
     m.end = end;
 
-    _scrollMarks.push_back(m);
+    if (fromUi)
+    {
+        _scrollMarks.insert(_scrollMarks.begin(), m);
+    }
+    else
+    {
+        _scrollMarks.push_back(m);
+    }
 
     // Tell the control that the scrollbar has somehow changed. Used as a
     // workaround to force the control to redraw any scrollbar marks
