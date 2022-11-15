@@ -296,8 +296,10 @@ void PtySignalInputThread::_DoSetWindowParent(const SetParentData& data)
     DWORD dwRead = 0;
     if (FALSE == ReadFile(_hFile.get(), pBuffer, cbBuffer, &dwRead, nullptr))
     {
-        const auto hr = GetLastError();
-        LOG_HR_IF(hr, hr != ERROR_BROKEN_PIPE);
+        if (const auto err = GetLastError(); err != ERROR_BROKEN_PIPE)
+        {
+            LOG_WIN32(err);
+        }
         _hFile.reset();
         return false;
     }
