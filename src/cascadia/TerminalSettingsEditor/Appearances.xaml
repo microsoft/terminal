@@ -39,7 +39,7 @@
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
 
             <!--  Color Scheme  -->
-            <!--  TODO!  -->
+            <!--  This currently only display the Dark color scheme, even if the user has a pair of schemes set.  -->
             <local:SettingContainer x:Uid="Profile_ColorScheme"
                                     ClearSettingValue="{x:Bind Appearance.ClearDarkColorSchemeName}"
                                     HasSettingValue="{x:Bind Appearance.HasDarkColorSchemeName, Mode=OneWay}"

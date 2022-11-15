@@ -953,35 +953,48 @@ bool CascadiaSettings::_hasInvalidColorScheme(const Model::Command& command) con
 // - newName: the new name for the color scheme
 // Return Value:
 // - <none>
-void CascadiaSettings::UpdateColorSchemeReferences(const winrt::hstring& /*oldName*/, const winrt::hstring& /*newName*/)
+void CascadiaSettings::UpdateColorSchemeReferences(const winrt::hstring& oldName, const winrt::hstring& newName)
 {
-    // TODO!
+    // update profiles.defaults, if necessary
+    if (_baseLayerProfile &&
+        _baseLayerProfile->DefaultAppearance().HasDarkColorSchemeName() &&
+        _baseLayerProfile->DefaultAppearance().DarkColorSchemeName() == oldName)
+    {
+        _baseLayerProfile->DefaultAppearance().DarkColorSchemeName(newName);
+    }
+    // NOT else-if, because both could match
+    if (_baseLayerProfile &&
+        _baseLayerProfile->DefaultAppearance().HasLightColorSchemeName() &&
+        _baseLayerProfile->DefaultAppearance().LightColorSchemeName() == oldName)
+    {
+        _baseLayerProfile->DefaultAppearance().LightColorSchemeName(newName);
+    }
 
-    // // update profiles.defaults, if necessary
-    // if (_baseLayerProfile &&
-    //     _baseLayerProfile->DefaultAppearance().HasColorSchemeName() &&
-    //     _baseLayerProfile->DefaultAppearance().ColorSchemeName() == oldName)
-    // {
-    //     _baseLayerProfile->DefaultAppearance().ColorSchemeName(newName);
-    // }
+    // update all profiles referencing this color scheme
+    for (const auto& profile : _allProfiles)
+    {
+        const auto defaultAppearance = profile.DefaultAppearance();
+        if (defaultAppearance.HasLightColorSchemeName() && defaultAppearance.LightColorSchemeName() == oldName)
+        {
+            defaultAppearance.LightColorSchemeName(newName);
+        }
+        if (defaultAppearance.HasDarkColorSchemeName() && defaultAppearance.DarkColorSchemeName() == oldName)
+        {
+            defaultAppearance.DarkColorSchemeName(newName);
+        }
 
-    // // update all profiles referencing this color scheme
-    // for (const auto& profile : _allProfiles)
-    // {
-    //     const auto defaultAppearance = profile.DefaultAppearance();
-    //     if (defaultAppearance.HasColorSchemeName() && defaultAppearance.ColorSchemeName() == oldName)
-    //     {
-    //         defaultAppearance.ColorSchemeName(newName);
-    //     }
-
-    //     if (profile.UnfocusedAppearance())
-    //     {
-    //         if (profile.UnfocusedAppearance().HasColorSchemeName() && profile.UnfocusedAppearance().ColorSchemeName() == oldName)
-    //         {
-    //             profile.UnfocusedAppearance().ColorSchemeName(newName);
-    //         }
-    //     }
-    // }
+        if (auto unfocused{ profile.UnfocusedAppearance() })
+        {
+            if (unfocused.HasLightColorSchemeName() && unfocused.LightColorSchemeName() == oldName)
+            {
+                unfocused.LightColorSchemeName(newName);
+            }
+            if (unfocused.HasDarkColorSchemeName() && unfocused.DarkColorSchemeName() == oldName)
+            {
+                unfocused.DarkColorSchemeName(newName);
+            }
+        }
+    }
 }
 
 winrt::hstring CascadiaSettings::ApplicationDisplayName()

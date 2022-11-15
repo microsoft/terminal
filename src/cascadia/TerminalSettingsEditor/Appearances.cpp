@@ -243,11 +243,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentCursorShape" });
                     _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsVintageCursor" });
                 }
-                // TODO!
-                // else if (settingName == L"ColorSchemeName")
-                // {
-                //     _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentColorScheme" });
-                // }
+                else if (settingName == L"DarkColorSchemeName" || settingName == L"LightColorSchemeName")
+                {
+                    _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentColorScheme" });
+                }
                 else if (settingName == L"BackgroundImageStretchMode")
                 {
                     _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentBackgroundImageStretchMode" });
