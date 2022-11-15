@@ -67,11 +67,6 @@ Json::Value AppearanceConfig::ToJson() const
             JsonUtils::SetValueForKey(json, "colorScheme", _DarkColorSchemeName);
         }
     }
-    //else if (HasColorSchemeName())
-    //{
-    //    JsonUtils::SetValueForKey(json["colorScheme"], "dark", _ColorSchemeName);
-    //    JsonUtils::SetValueForKey(json["colorScheme"], "light", _ColorSchemeName);
-    //}
 
 #define APPEARANCE_SETTINGS_TO_JSON(type, name, jsonKey, ...) \
     JsonUtils::SetValueForKey(json, jsonKey, _##name);
