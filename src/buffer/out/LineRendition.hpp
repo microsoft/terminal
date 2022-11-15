@@ -13,7 +13,7 @@ Abstract:
 
 #pragma once
 
-enum class LineRendition
+enum class LineRendition : uint8_t
 {
     SingleWidth,
     DoubleWidth,

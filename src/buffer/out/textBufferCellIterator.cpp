@@ -5,7 +5,6 @@
 
 #include "textBufferCellIterator.hpp"
 
-#include "CharRow.hpp"
 #include "textBuffer.hpp"
 #include "../types/inc/convert.hpp"
 #include "../types/inc/viewport.hpp"
@@ -37,7 +36,7 @@ TextBufferCellIterator::TextBufferCellIterator(const TextBuffer& buffer, til::po
     _bounds(limits),
     _exceeded(false),
     _view({}, {}, {}, TextAttributeBehavior::Stored),
-    _attrIter(s_GetRow(buffer, pos)->GetAttrRow().cbegin())
+    _attrIter(s_GetRow(buffer, pos)->AttrBegin())
 {
     // Throw if the bounds rectangle is not limited to the inside of the given buffer.
     THROW_HR_IF(E_INVALIDARG, !buffer.GetSize().IsInBounds(limits));
@@ -165,16 +164,15 @@ TextBufferCellIterator& TextBufferCellIterator::operator+=(const ptrdiff_t& move
         _attrIter += diff;
         _view.UpdateTextAttribute(*_attrIter);
 
-        const auto& charRow = _pRow->GetCharRow();
-        _view.UpdateText(charRow.GlyphAt(newX));
-        _view.UpdateDbcsAttribute(charRow.DbcsAttrAt(newX));
+        _view.UpdateText(_pRow->GlyphAt(newX));
+        _view.UpdateDbcsAttribute(_pRow->DbcsAttrAt(newX));
         _pos.X = newX;
     }
     else
     {
         // cold path (_GenerateView is slow)
         _pRow = s_GetRow(_buffer, { newX, newY });
-        _attrIter = _pRow->GetAttrRow().cbegin() + newX;
+        _attrIter = _pRow->AttrBegin() + newX;
         _pos.X = newX;
         _pos.Y = newY;
         _GenerateView();
@@ -289,12 +287,12 @@ ptrdiff_t TextBufferCellIterator::operator-(const TextBufferCellIterator& it)
 // - Sets the coordinate position that this iterator will inspect within the text buffer on dereference.
 // Arguments:
 // - newPos - The new coordinate position.
-void TextBufferCellIterator::_SetPos(const til::point newPos)
+void TextBufferCellIterator::_SetPos(const til::point newPos) noexcept
 {
     if (newPos.Y != _pos.Y)
     {
         _pRow = s_GetRow(_buffer, newPos);
-        _attrIter = _pRow->GetAttrRow().cbegin();
+        _attrIter = _pRow->AttrBegin();
         _pos.X = 0;
     }
 
@@ -324,10 +322,10 @@ const ROW* TextBufferCellIterator::s_GetRow(const TextBuffer& buffer, const til:
 
 // Routine Description:
 // - Updates the internal view. Call after updating row, attribute, or positions.
-void TextBufferCellIterator::_GenerateView()
+void TextBufferCellIterator::_GenerateView() noexcept
 {
-    _view = OutputCellView(_pRow->GetCharRow().GlyphAt(_pos.X),
-                           _pRow->GetCharRow().DbcsAttrAt(_pos.X),
+    _view = OutputCellView(_pRow->GlyphAt(_pos.X),
+                           _pRow->DbcsAttrAt(_pos.X),
                            *_attrIter,
                            TextAttributeBehavior::Stored);
 }
