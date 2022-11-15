@@ -333,7 +333,7 @@ namespace
 // - the width type of the codepoint
 CodepointWidth CodepointWidthDetector::GetWidth(const std::wstring_view& glyph) noexcept
 {
-    char32_t codepoint;
+    char32_t codepoint = 0;
 
     switch (glyph.size())
     {
@@ -374,7 +374,7 @@ bool CodepointWidthDetector::IsWide(const std::wstring_view& glyph) noexcept
     return GetWidth(glyph) == CodepointWidth::Wide;
 }
 
-// GetWidth's slow-path for non-ASCII characters.
+// GetWidth's slow-path for non-ASCII characters. Returns the number of columns the codepoint takes up in the terminal.
 uint8_t CodepointWidthDetector::_lookupGlyphWidth(const char32_t codepoint, const std::wstring_view& glyph) noexcept
 {
 #pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function 'lower_bound<...>()' which may throw exceptions (f.6).

@@ -77,8 +77,8 @@ class CodepointWidthDetectorTests
 
         // Cached item should match what we expect
         const auto it = widthDetector._fallbackCache.begin();
-        VERIFY_ARE_EQUAL(0x414, it->first);
-        VERIFY_ARE_EQUAL(FallbackMethod(L"\x414"), it->second);
+        VERIFY_ARE_EQUAL(0x414u, it->first);
+        VERIFY_ARE_EQUAL(FallbackMethod(L"\x414") ? 2u : 1u, it->second);
 
         // Cache should empty when font changes.
         widthDetector.NotifyFontChanged();
