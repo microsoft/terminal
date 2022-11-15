@@ -67,8 +67,7 @@ namespace Microsoft.Terminal.Settings.Editor
         IInspectable CurrentAdjustIndistinguishableColors;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> AdjustIndistinguishableColorsList { get; };
 
-        // TODO!
-        // Microsoft.Terminal.Settings.Model.ColorScheme CurrentColorScheme;
+        Microsoft.Terminal.Settings.Model.ColorScheme CurrentColorScheme;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Model.ColorScheme> ColorSchemeList { get; };
 
         IInspectable CurrentBackgroundImageStretchMode;

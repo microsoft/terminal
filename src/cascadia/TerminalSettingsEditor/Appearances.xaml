@@ -40,10 +40,10 @@
 
             <!--  Color Scheme  -->
             <!--  TODO!  -->
-            <!-- <local:SettingContainer x:Uid="Profile_ColorScheme"
-                                    ClearSettingValue="{x:Bind Appearance.ClearColorSchemeName}"
-                                    HasSettingValue="{x:Bind Appearance.HasColorSchemeName, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Appearance.ColorSchemeNameOverrideSource, Mode=OneWay}">
+            <local:SettingContainer x:Uid="Profile_ColorScheme"
+                                    ClearSettingValue="{x:Bind Appearance.ClearDarkColorSchemeName}"
+                                    HasSettingValue="{x:Bind Appearance.HasDarkColorSchemeName, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Appearance.DarkColorSchemeNameOverrideSource, Mode=OneWay}">
                 <ComboBox ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
                           SelectedItem="{x:Bind CurrentColorScheme, Mode=TwoWay}"
                           Style="{StaticResource ComboBoxSettingStyle}">
@@ -53,7 +53,7 @@
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
-            </local:SettingContainer>-->
+            </local:SettingContainer>
 
             <!--  Font Face  -->
             <local:SettingContainer x:Uid="Profile_FontFace"

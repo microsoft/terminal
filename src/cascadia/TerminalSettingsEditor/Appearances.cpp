@@ -356,20 +356,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     ColorScheme Appearances::CurrentColorScheme()
     {
-        // TODO!
-        return Appearance().Schemes().TryLookup(L"Campbell");
-
-        // const auto schemeName{ Appearance().ColorSchemeName() };
-        // if (const auto scheme{ Appearance().Schemes().TryLookup(schemeName) })
-        // {
-        //     return scheme;
-        // }
-        // else
-        // {
-        //     // This Appearance points to a color scheme that was renamed or deleted.
-        //     // Fallback to Campbell.
-        //     return Appearance().Schemes().TryLookup(L"Campbell");
-        // }
+        const auto schemeName{ Appearance().DarkColorSchemeName() };
+        if (const auto scheme{ Appearance().Schemes().TryLookup(schemeName) })
+        {
+            return scheme;
+        }
+        else
+        {
+            // This Appearance points to a color scheme that was renamed or deleted.
+            // Fallback to Campbell.
+            return Appearance().Schemes().TryLookup(L"Campbell");
+        }
     }
 
     void Appearances::CurrentColorScheme(const ColorScheme& val)
