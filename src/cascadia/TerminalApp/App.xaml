@@ -157,6 +157,9 @@
 
                             <SolidColorBrush x:Key="SettingsUiTabBrush"
                                              Color="#0c0c0c" />
+
+                            <SolidColorBrush x:Key="BroadcastPaneBorderColor"
+                                             Color="{StaticResource SystemAccentColorDark2}" />
                         </ResourceDictionary>
 
                         <ResourceDictionary x:Key="Light">
@@ -173,6 +176,9 @@
 
                             <SolidColorBrush x:Key="SettingsUiTabBrush"
                                              Color="#ffffff" />
+
+                            <SolidColorBrush x:Key="BroadcastPaneBorderColor"
+                                             Color="{StaticResource SystemAccentColorLight2}" />
                         </ResourceDictionary>
 
                         <ResourceDictionary x:Key="HighContrast">
@@ -193,6 +199,9 @@
 
                             <StaticResource x:Key="SettingsUiTabBrush"
                                             ResourceKey="SystemControlBackgroundBaseLowBrush" />
+
+                            <SolidColorBrush x:Key="BroadcastPaneBorderColor"
+                                             Color="{StaticResource SystemAccentColorLight2}" />
                         </ResourceDictionary>
 
                     </ResourceDictionary.ThemeDictionaries>

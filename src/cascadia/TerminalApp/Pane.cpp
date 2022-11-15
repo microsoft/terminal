@@ -33,7 +33,6 @@ static const Duration AnimationDuration = DurationHelper::FromTimeSpan(winrt::Wi
 
 winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_focusedBorderBrush = { nullptr };
 winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_unfocusedBorderBrush = { nullptr };
-winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_readOnlyBorderBrush = { nullptr };
 winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_broadcastBorderBrush = { nullptr };
 
 Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFocused) :
@@ -50,7 +49,7 @@ Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFo
     // On the first Pane's creation, lookup resources we'll use to theme the
     // Pane, including the brushed to use for the focused/unfocused border
     // color.
-    if (s_focusedBorderBrush == nullptr || s_unfocusedBorderBrush == nullptr || s_readOnlyBorderBrush == nullptr || s_broadcastBorderBrush == nullptr)
+    if (s_focusedBorderBrush == nullptr || s_unfocusedBorderBrush == nullptr || s_broadcastBorderBrush == nullptr)
     {
         _SetupResources();
     }
@@ -3121,20 +3120,6 @@ void Pane::_SetupResources()
         s_unfocusedBorderBrush = SolidColorBrush{ Colors::Black() };
     }
 
-    const auto readOnlyColorKey = winrt::box_value(L"ReadOnlyPaneBorderColor");
-    if (res.HasKey(readOnlyColorKey))
-    {
-        winrt::Windows::Foundation::IInspectable obj = res.Lookup(readOnlyColorKey);
-        s_readOnlyBorderBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
-    }
-    else
-    {
-        // DON'T use Transparent here - if it's "Transparent", then it won't
-        // be able to hittest for clicks, and then clicking on the border
-        // will eat focus.
-        s_readOnlyBorderBrush = SolidColorBrush{ Colors::Black() };
-    }
-
     const auto broadcastColorKey = winrt::box_value(L"BroadcastPaneBorderColor");
     if (res.HasKey(broadcastColorKey))
     {
@@ -3257,11 +3242,6 @@ winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::_ComputeBorderColor()
     if (_lastActive)
     {
         return s_focusedBorderBrush;
-    }
-
-    if (_control && _control.ReadOnly())
-    {
-        return s_readOnlyBorderBrush;
     }
 
     if (_broadcastEnabled)

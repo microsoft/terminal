@@ -525,6 +525,8 @@ namespace winrt::TerminalApp::implementation
             }
             return false;
         });
+        pane->EnableBroadcast(_tabStatus.IsInputBroadcastActive());
+
         // Make sure to take the ID before calling Split() - Split() will clear out the active pane's ID
         const auto activePaneId = _activePane->Id();
         // Depending on which direction will be split, the new pane can be
@@ -625,7 +627,7 @@ namespace winrt::TerminalApp::implementation
                 _nextPaneId++;
             }
         });
-
+        pane->EnableBroadcast(_tabStatus.IsInputBroadcastActive());
         // pass the old id to the new child
         const auto previousId = _activePane->Id();
 

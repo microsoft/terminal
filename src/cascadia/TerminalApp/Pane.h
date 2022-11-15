@@ -221,7 +221,6 @@ private:
     winrt::Windows::UI::Xaml::Controls::Border _borderSecond{};
     static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_focusedBorderBrush;
     static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_unfocusedBorderBrush;
-    static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_readOnlyBorderBrush;
     static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_broadcastBorderBrush;
 
 #pragma region Properties that need to be transferred between child / parent panes upon splitting / closing
