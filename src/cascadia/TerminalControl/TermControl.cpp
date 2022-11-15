@@ -1203,23 +1203,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    // TODO! broadcasted
-    bool TermControl::TrySendKeyEvent(const WORD vkey,
-                                      const WORD scanCode,
-                                      const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers,
-                                      const bool keyDown)
+    bool TermControl::BroadcastKeyEvent(const WORD vkey,
+                                        const WORD scanCode,
+                                        const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers,
+                                        const bool keyDown)
     {
-        // TODO! broadcasted
-        return _core.SendKeyEvent(vkey, scanCode, modifiers, keyDown);
+        return _core.BroadcastKeyEvent(vkey, scanCode, modifiers, keyDown);
     }
 
-    // TODO! broadcasted
-    bool TermControl::TrySendChar(const wchar_t character,
-                                  const WORD scanCode,
-                                  const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers)
+    bool TermControl::BroadcastChar(const wchar_t character,
+                                    const WORD scanCode,
+                                    const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers)
     {
-        // TODO! broadcasted
-        return _core.TrySendCharEvent(character, scanCode, modifiers);
+        return _core.BroadcastCharEvent(character, scanCode, modifiers);
     }
 
     // Method Description:

@@ -544,7 +544,6 @@ namespace winrt::TerminalApp::implementation
 
         // Add a event handlers to the new panes' GotFocus event. When the pane
         // gains focus, we'll mark it as the new active pane.
-        // TODO! The original delta deleted this line. This seems load bearing though?
         _AttachEventHandlersToPane(original);
 
         // Immediately update our tracker of the focused pane now. If we're

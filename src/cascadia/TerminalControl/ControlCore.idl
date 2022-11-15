@@ -84,7 +84,7 @@ namespace Microsoft.Terminal.Control
 
         Boolean TryMarkModeKeybinding(Int16 vkey,
                                       Microsoft.Terminal.Core.ControlKeyStates modifiers);
-        Boolean SendKeyEvent(Int16 vkey,
+        Boolean BroadcastKeyEvent(Int16 vkey,
                                 Int16 scanCode,
                                 Microsoft.Terminal.Core.ControlKeyStates modifiers,
                                 Boolean keyDown);
@@ -92,7 +92,7 @@ namespace Microsoft.Terminal.Control
                                 Int16 scanCode,
                                 Microsoft.Terminal.Core.ControlKeyStates modifiers,
                                 Boolean keyDown);
-        Boolean TrySendCharEvent(Char ch,
+        Boolean BroadcastCharEvent(Char ch,
                               Int16 scanCode,
                               Microsoft.Terminal.Core.ControlKeyStates modifiers);
         Boolean SendCharEvent(Char ch,

@@ -3203,7 +3203,7 @@ void Pane::BroadcastKey(const winrt::Microsoft::Terminal::Control::TermControl& 
     {
         if (_control != sourceControl && !_control.ReadOnly())
         {
-            _control.TrySendKeyEvent(vkey, scanCode, modifiers, keyDown);
+            _control.BroadcastKeyEvent(vkey, scanCode, modifiers, keyDown);
         }
     }
     else
@@ -3222,7 +3222,7 @@ void Pane::BroadcastChar(const winrt::Microsoft::Terminal::Control::TermControl&
     {
         if (_control != sourceControl && !_control.ReadOnly())
         {
-            _control.TrySendChar(character, scanCode, modifiers);
+            _control.BroadcastChar(character, scanCode, modifiers);
         }
     }
     else

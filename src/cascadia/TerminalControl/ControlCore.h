@@ -148,16 +148,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                              const WORD scanCode,
                              const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                              const bool keyDown);
-        bool SendKeyEvent(const WORD vkey,
-                          const WORD scanCode,
-                          const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
-                          const bool keyDown);
+        bool BroadcastKeyEvent(const WORD vkey,
+                               const WORD scanCode,
+                               const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
+                               const bool keyDown);
         bool SendCharEvent(const wchar_t ch,
                            const WORD scanCode,
                            const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
-        bool TrySendCharEvent(const wchar_t ch,
-                              const WORD scanCode,
-                              const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
+        bool BroadcastCharEvent(const wchar_t ch,
+                                const WORD scanCode,
+                                const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
         bool SendMouseEvent(const til::point viewportPos,
                             const unsigned int uiButton,
                             const ::Microsoft::Terminal::Core::ControlKeyStates states,

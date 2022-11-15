@@ -399,6 +399,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _sendInputToConnection(wstr);
     }
 
+    // Method Description:
+    // - Broadcasts this char to any registered CharSent handlers
     bool ControlCore::SendCharEvent(const wchar_t ch,
                                     const WORD scanCode,
                                     const ::Microsoft::Terminal::Core::ControlKeyStates modifiers)
@@ -408,14 +410,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _handleControlC();
         }
 
-        const bool handled = TrySendCharEvent(ch, scanCode, modifiers);
+        const bool handled = BroadcastCharEvent(ch, scanCode, modifiers);
         auto charSentArgs = winrt::make<CharSentEventArgs>(ch, scanCode, modifiers);
         _CharSentHandlers(*this, charSentArgs);
         return handled;
     }
 
-    // TODO! broadcasted
-    bool ControlCore::TrySendCharEvent(const wchar_t character, const WORD scanCode, const ::Microsoft::Terminal::Core::ControlKeyStates modifiers)
+    // Call this method to bypass raising a CharSent. SendCharEvent should be
+    // called when teh event originated in this control. BroadcastCharEvent is
+    // for events that came from other controls.
+    bool ControlCore::BroadcastCharEvent(const wchar_t character,
+                                         const WORD scanCode,
+                                         const ::Microsoft::Terminal::Core::ControlKeyStates modifiers)
     {
         return _terminal->SendCharEvent(character, scanCode, modifiers);
     }
@@ -517,6 +523,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   See Terminal::SendKeyEvent for more information.
     // - Clears the current selection.
     // - Makes the cursor briefly visible during typing.
+    // - Broadcasts this key to any registered KeySent handlers
     // Arguments:
     // - vkey: The vkey of the key pressed.
     // - scanCode: The scan code of the key pressed.
@@ -529,16 +536,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         auto keySentArgs = winrt::make<KeySentEventArgs>(vkey, scanCode, modifiers, keyDown);
         _KeySentHandlers(*this, keySentArgs);
-        return SendKeyEvent(vkey, scanCode, modifiers, keyDown);
+        return BroadcastKeyEvent(vkey, scanCode, modifiers, keyDown);
     }
 
-    bool ControlCore::SendKeyEvent(const WORD vkey,
-                                   const WORD scanCode,
-                                   const ControlKeyStates modifiers,
-                                   const bool keyDown)
+    // Call this method to bypass raising a KeySent. TrySendKeyEvent should be
+    // called when teh event originated in this control. BroadcastKeyEvent is
+    // for events that came from other controls.
+    bool ControlCore::BroadcastKeyEvent(const WORD vkey,
+                                        const WORD scanCode,
+                                        const ControlKeyStates modifiers,
+                                        const bool keyDown)
     {
-        // TODO! broadcasted
-
         // Update the selection, if it's present
         // GH#8522, GH#3758 - Only modify the selection on key _down_. If we
         // modify on key up, then there's chance that we'll immediately dismiss

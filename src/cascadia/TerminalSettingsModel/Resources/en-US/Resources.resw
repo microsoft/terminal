@@ -661,4 +661,8 @@
   <data name="CloseOtherPanesCommandKey" xml:space="preserve">
     <value>Close all other panes</value>
   </data>
+  <data name="ToggleBroadcastInputCommandKey" xml:space="preserve">
+    <value>Toggle broadcast input to all panes</value>
+    <comment>When enabled, input will go to all panes in this tab simultaneously</comment>
+  </data>
 </root>
