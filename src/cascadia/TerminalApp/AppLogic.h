@@ -62,7 +62,6 @@ namespace winrt::TerminalApp::implementation
         bool IsUwp() const noexcept;
         void RunAsUwp();
         bool IsElevated() const noexcept;
-        void LoadSettings();
         void ReloadSettings();
 
         [[nodiscard]] Microsoft::Terminal::Settings::Model::CascadiaSettings GetSettings() const noexcept;

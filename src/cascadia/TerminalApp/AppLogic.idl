@@ -59,7 +59,6 @@ namespace TerminalApp
 
         void Quit();
 
-        void LoadSettings();
         void ReloadSettings();
         Windows.UI.Xaml.UIElement GetRoot();
 
