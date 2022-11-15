@@ -660,7 +660,14 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     }
     case WM_SETTINGCHANGE:
     {
-        // TODO!
+        const std::wstring param{ (wchar_t*)lparam };
+        // ImmersiveColorSet seems to be the notification that the OS theme
+        // changed. If that happens, let the app know, so it can hot-reload
+        // themes, color schemes that might depend on the OS theme
+        if (param == L"ImmersiveColorSet")
+        {
+            _UpdateSettingsRequestedHandlers();
+        }
         break;
     }
     case WM_ENDSESSION:

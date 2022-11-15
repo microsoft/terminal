@@ -191,7 +191,7 @@ namespace winrt::TerminalApp::implementation
         _reloadSettings = std::make_shared<ThrottledFuncTrailing<>>(winrt::Windows::System::DispatcherQueue::GetForCurrentThread(), std::chrono::milliseconds(100), [weakSelf = get_weak()]() {
             if (auto self{ weakSelf.get() })
             {
-                self->_ReloadSettings();
+                self->ReloadSettings();
             }
         });
 
@@ -920,7 +920,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Registers for changes to the settings folder and upon a updated settings
-    //      profile calls _ReloadSettings().
+    //      profile calls ReloadSettings().
     // Arguments:
     // - <none>
     // Return Value:
@@ -1055,7 +1055,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Reloads the settings from the settings.json file.
-    void AppLogic::_ReloadSettings()
+    void AppLogic::ReloadSettings()
     {
         // Attempt to load our settings.
         // If it fails,
