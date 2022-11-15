@@ -12,8 +12,6 @@ using namespace WEX::Logging;
 
 static constexpr std::wstring_view emoji = L"\xD83E\xDD22"; // U+1F922 nauseated face
 
-static constexpr std::wstring_view ambiguous = L"\x414"; // U+0414 cyrillic capital de
-
 // codepoint and utf16 encoded string
 static const std::vector<std::tuple<unsigned int, std::wstring, CodepointWidth>> testData = {
     { 0x7, L"\a", CodepointWidth::Narrow }, // BEL
@@ -36,18 +34,6 @@ class CodepointWidthDetectorTests
     {
         CodepointWidthDetector widthDetector;
         VERIFY_IS_TRUE(widthDetector.IsWide(emoji));
-    }
-
-    TEST_METHOD(CanExtractCodepoint)
-    {
-        CodepointWidthDetector widthDetector;
-        for (const auto& data : testData)
-        {
-            const auto& expected = std::get<0>(data);
-            const auto& wstr = std::get<1>(data);
-            const auto result = widthDetector._extractCodepoint({ wstr.c_str(), wstr.size() });
-            VERIFY_ARE_EQUAL(result, expected);
-        }
     }
 
     TEST_METHOD(CanGetWidths)
@@ -84,15 +70,15 @@ class CodepointWidthDetectorTests
         VERIFY_ARE_EQUAL(0u, widthDetector._fallbackCache.size());
 
         // Lookup ambiguous width character.
-        widthDetector.IsWide(ambiguous);
+        widthDetector.IsWide(L"\x414");
 
         // Cache should hold it.
         VERIFY_ARE_EQUAL(1u, widthDetector._fallbackCache.size());
 
         // Cached item should match what we expect
         const auto it = widthDetector._fallbackCache.begin();
-        VERIFY_ARE_EQUAL(ambiguous, it->first);
-        VERIFY_ARE_EQUAL(FallbackMethod(ambiguous), it->second);
+        VERIFY_ARE_EQUAL(0x414, it->first);
+        VERIFY_ARE_EQUAL(FallbackMethod(L"\x414"), it->second);
 
         // Cache should empty when font changes.
         widthDetector.NotifyFontChanged();

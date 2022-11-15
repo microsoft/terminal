@@ -5,30 +5,22 @@
 
 #include "srvinit.h"
 
+#include "ApiRoutines.h"
 #include "dbcs.h"
 #include "handle.h"
 #include "registry.hpp"
+#include "renderData.hpp"
 #include "renderFontDefaults.hpp"
-
-#include "ApiRoutines.h"
-
-#include "../types/inc/GlyphWidth.hpp"
-
-#include "../server/DeviceHandle.h"
-#include "../server/Entrypoints.h"
-#include "../server/IoSorter.h"
-
-#include "../interactivity/inc/ISystemConfigurationProvider.hpp"
-#include "../interactivity/inc/ServiceLocator.hpp"
+#include "../inc/conint.h"
 #include "../interactivity/base/ApiDetector.hpp"
 #include "../interactivity/base/RemoteConsoleControl.hpp"
-
-#include "renderData.hpp"
+#include "../interactivity/inc/ISystemConfigurationProvider.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 #include "../renderer/base/renderer.hpp"
-
-#include "../inc/conint.h"
-
-#include "tracing.hpp"
+#include "../server/DeviceHandle.h"
+#include "../server/IoSorter.h"
+#include "../types/inc/convert.hpp"
+#include "../types/inc/GlyphWidth.hpp"
 
 #if TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
 #include "ITerminalHandoff.h"

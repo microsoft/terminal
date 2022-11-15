@@ -24,25 +24,6 @@ static constexpr bool _IsMouseMessage(UINT uMsg)
            uMsg == WM_MOUSEMOVE || uMsg == WM_MOUSEWHEEL || uMsg == WM_MOUSEHWHEEL;
 }
 
-// Helper static function to ensure that all ambiguous-width glyphs are reported as narrow.
-// See microsoft/terminal#2066 for more info.
-static bool _IsGlyphWideForceNarrowFallback(const std::wstring_view /* glyph */) noexcept
-{
-    return false; // glyph is not wide.
-}
-
-static bool _EnsureStaticInitialization()
-{
-    // use C++11 magic statics to make sure we only do this once.
-    static auto initialized = []() {
-        // *** THIS IS A SINGLETON ***
-        SetGlyphWidthFallback(_IsGlyphWideForceNarrowFallback);
-
-        return true;
-    }();
-    return initialized;
-}
-
 LRESULT CALLBACK HwndTerminal::HwndTerminalWndProc(
     HWND hwnd,
     UINT uMsg,
@@ -183,8 +164,6 @@ HwndTerminal::HwndTerminal(HWND parentHwnd) :
     _pfnWriteCallback{ nullptr },
     _multiClickTime{ 500 } // this will be overwritten by the windows system double-click time
 {
-    _EnsureStaticInitialization();
-
     auto hInstance = wil::GetModuleInstanceHandle();
 
     if (RegisterTermClass(hInstance))
