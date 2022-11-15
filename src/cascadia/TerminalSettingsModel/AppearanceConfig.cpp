@@ -33,7 +33,7 @@ winrt::com_ptr<AppearanceConfig> AppearanceConfig::CopyAppearance(const Appearan
     appearance->_SelectionBackground = source->_SelectionBackground;
     appearance->_CursorColor = source->_CursorColor;
     appearance->_Opacity = source->_Opacity;
-    appearance->_ColorSchemeName = source->_ColorSchemeName;
+
     appearance->_DarkColorSchemeName = source->_DarkColorSchemeName;
     appearance->_LightColorSchemeName = source->_LightColorSchemeName;
 
@@ -57,22 +57,21 @@ Json::Value AppearanceConfig::ToJson() const
     if (HasDarkColorSchemeName() && HasLightColorSchemeName())
     {
         // check if the setting is coming from the UI, if so grab the ColorSchemeName until the settings UI is fixed.
-        if (_ColorSchemeName != _DarkColorSchemeName)
-        {
-            JsonUtils::SetValueForKey(json["colorScheme"], "dark", _ColorSchemeName);
-            JsonUtils::SetValueForKey(json["colorScheme"], "light", _ColorSchemeName);
-        }
-        else
+        if (_LightColorSchemeName != _DarkColorSchemeName)
         {
             JsonUtils::SetValueForKey(json["colorScheme"], "dark", _DarkColorSchemeName);
             JsonUtils::SetValueForKey(json["colorScheme"], "light", _LightColorSchemeName);
         }
+        else
+        {
+            JsonUtils::SetValueForKey(json, "colorScheme", _DarkColorSchemeName);
+        }
     }
-    else if (HasColorSchemeName())
-    {
-        JsonUtils::SetValueForKey(json["colorScheme"], "dark", _ColorSchemeName);
-        JsonUtils::SetValueForKey(json["colorScheme"], "light", _ColorSchemeName);
-    }
+    //else if (HasColorSchemeName())
+    //{
+    //    JsonUtils::SetValueForKey(json["colorScheme"], "dark", _ColorSchemeName);
+    //    JsonUtils::SetValueForKey(json["colorScheme"], "light", _ColorSchemeName);
+    //}
 
 #define APPEARANCE_SETTINGS_TO_JSON(type, name, jsonKey, ...) \
     JsonUtils::SetValueForKey(json, jsonKey, _##name);
@@ -105,16 +104,14 @@ void AppearanceConfig::LayerJson(const Json::Value& json)
     if (json["colorScheme"].isString())
     {
         // to make the UI happy, set ColorSchemeName.
-        JsonUtils::GetValueForKey(json, ColorSchemeKey, _ColorSchemeName);
-        _DarkColorSchemeName = _ColorSchemeName;
-        _LightColorSchemeName = _ColorSchemeName;
+        JsonUtils::GetValueForKey(json, ColorSchemeKey, _DarkColorSchemeName);
+        _LightColorSchemeName = _DarkColorSchemeName;
     }
     else if (json["colorScheme"].isObject())
     {
         // to make the UI happy, set ColorSchemeName to whatever the dark value is.
         JsonUtils::GetValueForKey(json["colorScheme"], "dark", _DarkColorSchemeName);
         JsonUtils::GetValueForKey(json["colorScheme"], "light", _LightColorSchemeName);
-        _ColorSchemeName = _DarkColorSchemeName;
     }
 
 #define APPEARANCE_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \

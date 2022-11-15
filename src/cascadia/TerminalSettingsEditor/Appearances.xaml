@@ -39,7 +39,8 @@
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
 
             <!--  Color Scheme  -->
-            <local:SettingContainer x:Uid="Profile_ColorScheme"
+            <!--  TODO!  -->
+            <!-- <local:SettingContainer x:Uid="Profile_ColorScheme"
                                     ClearSettingValue="{x:Bind Appearance.ClearColorSchemeName}"
                                     HasSettingValue="{x:Bind Appearance.HasColorSchemeName, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.ColorSchemeNameOverrideSource, Mode=OneWay}">
@@ -52,7 +53,7 @@
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
-            </local:SettingContainer>
+            </local:SettingContainer>-->
 
             <!--  Font Face  -->
             <local:SettingContainer x:Uid="Profile_FontFace"

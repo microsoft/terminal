@@ -658,6 +658,11 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         }
         break;
     }
+    case WM_SETTINGCHANGE:
+    {
+        // TODO!
+        break;
+    }
     case WM_ENDSESSION:
     {
         // For WM_QUERYENDSESSION and WM_ENDSESSION, refer to:

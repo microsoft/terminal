@@ -243,10 +243,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentCursorShape" });
                     _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsVintageCursor" });
                 }
-                else if (settingName == L"ColorSchemeName")
-                {
-                    _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentColorScheme" });
-                }
+                // TODO!
+                // else if (settingName == L"ColorSchemeName")
+                // {
+                //     _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentColorScheme" });
+                // }
                 else if (settingName == L"BackgroundImageStretchMode")
                 {
                     _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentBackgroundImageStretchMode" });
@@ -355,22 +356,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     ColorScheme Appearances::CurrentColorScheme()
     {
-        const auto schemeName{ Appearance().ColorSchemeName() };
-        if (const auto scheme{ Appearance().Schemes().TryLookup(schemeName) })
-        {
-            return scheme;
-        }
-        else
-        {
-            // This Appearance points to a color scheme that was renamed or deleted.
-            // Fallback to Campbell.
-            return Appearance().Schemes().TryLookup(L"Campbell");
-        }
+        // TODO!
+        return Appearance().Schemes().TryLookup(L"Campbell");
+
+        // const auto schemeName{ Appearance().ColorSchemeName() };
+        // if (const auto scheme{ Appearance().Schemes().TryLookup(schemeName) })
+        // {
+        //     return scheme;
+        // }
+        // else
+        // {
+        //     // This Appearance points to a color scheme that was renamed or deleted.
+        //     // Fallback to Campbell.
+        //     return Appearance().Schemes().TryLookup(L"Campbell");
+        // }
     }
 
     void Appearances::CurrentColorScheme(const ColorScheme& val)
     {
-        Appearance().ColorSchemeName(val.Name());
+        Appearance().DarkColorSchemeName(val.Name());
+        Appearance().LightColorSchemeName(val.Name());
     }
 
     bool Appearances::IsVintageCursor() const

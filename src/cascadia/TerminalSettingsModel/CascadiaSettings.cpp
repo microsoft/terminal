@@ -328,7 +328,6 @@ Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, Opacity);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, DarkColorSchemeName);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, LightColorSchemeName);
-        DUPLICATE_SETTING_MACRO_SUB(appearance, target, ColorSchemeName);
     }
 
     // UnfocusedAppearance is treated as a single setting,
@@ -948,57 +947,41 @@ bool CascadiaSettings::_hasInvalidColorScheme(const Model::Command& command) con
 }
 
 // Method Description:
-// - Lookup the color scheme for a given profile. If the profile doesn't exist,
-//   or the scheme name listed in the profile doesn't correspond to a scheme,
-//   this will return `nullptr`.
-// Arguments:
-// - profileGuid: the GUID of the profile to find the scheme for.
-// Return Value:
-// - a non-owning pointer to the scheme.
-Model::ColorScheme CascadiaSettings::GetColorSchemeForProfile(const Model::Profile& profile) const
-{
-    if (!profile)
-    {
-        return nullptr;
-    }
-    const auto schemeName = profile.DefaultAppearance().ColorSchemeName();
-    return _globals->ColorSchemes().TryLookup(schemeName);
-}
-
-// Method Description:
 // - updates all references to that color scheme with the new name
 // Arguments:
 // - oldName: the original name for the color scheme
 // - newName: the new name for the color scheme
 // Return Value:
 // - <none>
-void CascadiaSettings::UpdateColorSchemeReferences(const winrt::hstring& oldName, const winrt::hstring& newName)
+void CascadiaSettings::UpdateColorSchemeReferences(const winrt::hstring& /*oldName*/, const winrt::hstring& /*newName*/)
 {
-    // update profiles.defaults, if necessary
-    if (_baseLayerProfile &&
-        _baseLayerProfile->DefaultAppearance().HasColorSchemeName() &&
-        _baseLayerProfile->DefaultAppearance().ColorSchemeName() == oldName)
-    {
-        _baseLayerProfile->DefaultAppearance().ColorSchemeName(newName);
-    }
+    // TODO!
 
-    // update all profiles referencing this color scheme
-    for (const auto& profile : _allProfiles)
-    {
-        const auto defaultAppearance = profile.DefaultAppearance();
-        if (defaultAppearance.HasColorSchemeName() && defaultAppearance.ColorSchemeName() == oldName)
-        {
-            defaultAppearance.ColorSchemeName(newName);
-        }
+    // // update profiles.defaults, if necessary
+    // if (_baseLayerProfile &&
+    //     _baseLayerProfile->DefaultAppearance().HasColorSchemeName() &&
+    //     _baseLayerProfile->DefaultAppearance().ColorSchemeName() == oldName)
+    // {
+    //     _baseLayerProfile->DefaultAppearance().ColorSchemeName(newName);
+    // }
 
-        if (profile.UnfocusedAppearance())
-        {
-            if (profile.UnfocusedAppearance().HasColorSchemeName() && profile.UnfocusedAppearance().ColorSchemeName() == oldName)
-            {
-                profile.UnfocusedAppearance().ColorSchemeName(newName);
-            }
-        }
-    }
+    // // update all profiles referencing this color scheme
+    // for (const auto& profile : _allProfiles)
+    // {
+    //     const auto defaultAppearance = profile.DefaultAppearance();
+    //     if (defaultAppearance.HasColorSchemeName() && defaultAppearance.ColorSchemeName() == oldName)
+    //     {
+    //         defaultAppearance.ColorSchemeName(newName);
+    //     }
+
+    //     if (profile.UnfocusedAppearance())
+    //     {
+    //         if (profile.UnfocusedAppearance().HasColorSchemeName() && profile.UnfocusedAppearance().ColorSchemeName() == oldName)
+    //         {
+    //             profile.UnfocusedAppearance().ColorSchemeName(newName);
+    //         }
+    //     }
+    // }
 }
 
 winrt::hstring CascadiaSettings::ApplicationDisplayName()
