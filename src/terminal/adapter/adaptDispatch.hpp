@@ -22,6 +22,11 @@ Author(s):
 #include "../input/terminalInput.hpp"
 #include "../../types/inc/sgrStack.hpp"
 
+// fwdecl unittest classes
+#ifdef UNIT_TESTING
+class AdapterTest;
+#endif
+
 namespace Microsoft::Console::VirtualTerminal
 {
     class AdaptDispatch : public ITermDispatch
@@ -279,5 +284,9 @@ namespace Microsoft::Console::VirtualTerminal
                                     TextAttribute& attr) noexcept;
         void _ApplyGraphicsOptions(const VTParameters options,
                                    TextAttribute& attr) noexcept;
+
+#ifdef UNIT_TESTING
+        friend class AdapterTest;
+#endif
     };
 }

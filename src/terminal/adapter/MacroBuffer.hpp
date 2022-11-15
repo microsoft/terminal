@@ -16,6 +16,11 @@ Abstract:
 #include <bitset>
 #include <string>
 
+// fwdecl unittest classes
+#ifdef UNIT_TESTING
+class AdapterTest;
+#endif
+
 namespace Microsoft::Console::VirtualTerminal
 {
     class StateMachine;
@@ -67,5 +72,9 @@ namespace Microsoft::Console::VirtualTerminal
         size_t _spaceUsed{ 0 };
         size_t _invokedDepth{ 0 };
         size_t _invokedSequenceLength{ 0 };
+
+#ifdef UNIT_TESTING
+        friend class AdapterTest;
+#endif
     };
 }
