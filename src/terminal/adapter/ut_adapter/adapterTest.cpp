@@ -237,9 +237,21 @@ public:
         Log::Comment(L"NotifyAccessibilityChange MOCK called...");
     }
 
-    void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& /*mark*/) override
+    void MarkPrompt(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& /*mark*/) override
     {
-        Log::Comment(L"AddMark MOCK called...");
+        Log::Comment(L"MarkPrompt MOCK called...");
+    }
+    void MarkCommandStart() override
+    {
+        Log::Comment(L"MarkCommandStart MOCK called...");
+    }
+    void MarkOutputStart() override
+    {
+        Log::Comment(L"MarkOutputStart MOCK called...");
+    }
+    void MarkCommandFinish(std::optional<unsigned int> /*error*/) override
+    {
+        Log::Comment(L"MarkCommandFinish MOCK called...");
     }
 
     void PrepData()

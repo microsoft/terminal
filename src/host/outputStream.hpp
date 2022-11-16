@@ -74,10 +74,10 @@ public:
 
     void NotifyAccessibilityChange(const til::rect& changedRect) override;
 
-    void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) override;
-    void CommandStart() override;
-    void OutputStart() override;
-    void CommandFinished(std::optional<unsigned int> error) override;
+    void MarkPrompt(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) override;
+    void MarkCommandStart() override;
+    void MarkOutputStart() override;
+    void MarkCommandFinish(std::optional<unsigned int> error) override;
 
 private:
     Microsoft::Console::IIoProvider& _io;

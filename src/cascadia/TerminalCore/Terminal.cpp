@@ -804,9 +804,9 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
     // Then treat this line like it's a prompt mark.
     if (_autoMarkPrompts && vkey == VK_RETURN && !_inAltBuffer())
     {
-        // * If we have a _currentPrompt:
+        // * If we have a current prompt:
         //   - Then we did know that the prompt started, (we may have also
-        //     already gotten a CommandStart sequence). The user has pressed
+        //     already gotten a MarkCommandStart sequence). The user has pressed
         //     enter, and we're treating that like the prompt has now ended.
         //     - Perform a FTCS_COMMAND_EXECUTED, so that we start marking this
         //       as output.
@@ -816,22 +816,25 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
         //   can set the whole line as the prompt, no command, and start the
         //   command_executed now.
 
-        if (_currentPrompt)
-        {
-            OutputStart();
-        }
-        else
-        {
-            DispatchTypes::ScrollMark mark;
-            mark.category = DispatchTypes::MarkCategory::Prompt;
-            // Don't set the color - we'll automatically use the DEFAULT_FOREGROUND
-            // color for any MarkCategory::Prompt marks without one set.
+        
+            MarkOutputStart();
 
-            AddMark(mark); // without parameters, this will act as if it came
-            // from the connection itself, and set _currentPromptState accordingly
+        //if (_currentPrompt)
+        //{
+        //    MarkOutputStart();
+        //}
+        //else
+        //{
+        //    DispatchTypes::ScrollMark mark;
+        //    mark.category = DispatchTypes::MarkCategory::Prompt;
+        //    // Don't set the color - we'll automatically use the DEFAULT_FOREGROUND
+        //    // color for any MarkCategory::Prompt marks without one set.
 
-            OutputStart();
-        }
+        //    MarkPrompt(mark); // without parameters, this will act as if it came
+        //    // from the connection itself, and set _currentPromptState accordingly
+
+        //    MarkOutputStart();
+        //}
     }
 
     // Unfortunately, the UI doesn't give us both a character down and a
@@ -1628,11 +1631,6 @@ void Terminal::ClearMark()
                (m.end >= start && m.end <= end);
     };
 
-    if (_currentPrompt && inSelection(*_currentPrompt))
-    {
-        _currentPrompt = nullptr;
-    }
-
     _scrollMarks.erase(std::remove_if(_scrollMarks.begin(),
                                       _scrollMarks.end(),
                                       inSelection),
@@ -1644,7 +1642,6 @@ void Terminal::ClearMark()
 }
 void Terminal::ClearAllMarks() noexcept
 {
-    _currentPrompt = nullptr;
     _scrollMarks.clear();
     // Tell the control that the scrollbar has somehow changed. Used as a
     // workaround to force the control to redraw any scrollbar marks

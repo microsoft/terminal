@@ -134,10 +134,10 @@ public:
     void UseAlternateScreenBuffer() override;
     void UseMainScreenBuffer() override;
 
-    void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) override;
-    void CommandStart() override;
-    void OutputStart() override;
-    void CommandFinished(std::optional<unsigned int> error) override;
+    void MarkPrompt(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) override;
+    void MarkCommandStart() override;
+    void MarkOutputStart() override;
+    void MarkCommandFinish(std::optional<unsigned int> error) override;
 
     bool IsConsolePty() const noexcept override;
     bool IsVtInputEnabled() const noexcept override;
@@ -403,15 +403,14 @@ private:
     std::optional<KeyEventCodes> _lastKeyEventCodes;
 
     std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark> _scrollMarks;
-    enum PromptState : uint32_t
+    enum class PromptState : uint32_t
     {
         None = 0,
-        Prompt = 1,
-        Command = 2,
-        Output = 3
+        Prompt,
+        Command,
+        Output,
     };
     PromptState _currentPromptState{ PromptState::None };
-    Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark* _currentPrompt{ nullptr };
 
     static WORD _ScanCodeFromVirtualKey(const WORD vkey) noexcept;
     static WORD _VirtualKeyFromScanCode(const WORD scanCode) noexcept;

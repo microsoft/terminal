@@ -2995,7 +2995,7 @@ bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
     {
         DispatchTypes::ScrollMark mark;
         mark.category = DispatchTypes::MarkCategory::Prompt;
-        _api.AddMark(mark);
+        _api.MarkPrompt(mark);
         return true;
     }
     return false;
@@ -3043,17 +3043,17 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
             // Simply just mark this line as a prompt line.
             DispatchTypes::ScrollMark mark;
             mark.category = DispatchTypes::MarkCategory::Prompt;
-            _api.AddMark(mark);
+            _api.MarkPrompt(mark);
             return true;
         }
         case L'B': // FTCS_COMMAND_START
         {
-            _api.CommandStart();
+            _api.MarkCommandStart();
             return true;
         }
         case L'C': // FTCS_COMMAND_EXECUTED
         {
-            _api.OutputStart();
+            _api.MarkOutputStart();
             return true;
         }
         case L'D': // FTCS_COMMAND_FINISHED
@@ -3072,7 +3072,7 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
                 error = Utils::StringToUint(errorString, parsedError) ? parsedError :
                                                                         static_cast<unsigned int>(-1);
             }
-            _api.CommandFinished(error);
+            _api.MarkCommandFinish(error);
             return true;
         }
         default:

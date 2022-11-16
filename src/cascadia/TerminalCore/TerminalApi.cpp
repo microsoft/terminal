@@ -299,7 +299,7 @@ void Terminal::UseMainScreenBuffer()
 }
 
 // NOTE: This is the version of AddMark that comes from VT
-void Terminal::AddMark(const DispatchTypes::ScrollMark& mark)
+void Terminal::MarkPrompt(const DispatchTypes::ScrollMark& mark)
 {
     const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
     AddMark(mark, cursorPos, cursorPos, false);
@@ -310,11 +310,11 @@ void Terminal::AddMark(const DispatchTypes::ScrollMark& mark)
     }
 }
 
-void Terminal::CommandStart()
+void Terminal::MarkCommandStart()
 {
     const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
 
-    if ((_currentPromptState == Prompt) &&
+    if ((_currentPromptState == PromptState::Prompt) &&
         (_scrollMarks.size() > 0))
     {
         // We were in the right state, and there's a previous mark to work
@@ -336,11 +336,11 @@ void Terminal::CommandStart()
     _currentPromptState = PromptState::Command;
 }
 
-void Terminal::OutputStart()
+void Terminal::MarkOutputStart()
 {
     const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
 
-    if ((_currentPromptState == Command) &&
+    if ((_currentPromptState == PromptState::Command) &&
         (_scrollMarks.size() > 0))
     {
         // We were in the right state, and there's a previous mark to work
@@ -362,7 +362,7 @@ void Terminal::OutputStart()
     _currentPromptState = PromptState::Output;
 }
 
-void Terminal::CommandFinished(std::optional<unsigned int> error)
+void Terminal::MarkCommandFinish(std::optional<unsigned int> error)
 {
     const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
     auto category = DispatchTypes::MarkCategory::Prompt;
@@ -373,7 +373,7 @@ void Terminal::CommandFinished(std::optional<unsigned int> error)
                        DispatchTypes::MarkCategory::Error;
     }
 
-    if ((_currentPromptState == Output) &&
+    if ((_currentPromptState == PromptState::Output) &&
         (_scrollMarks.size() > 0))
     {
         // We were in the right state, and there's a previous mark to work
