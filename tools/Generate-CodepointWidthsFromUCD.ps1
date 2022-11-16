@@ -47,9 +47,9 @@ Param(
 )
 
 Enum CodepointWidth {
-    Narrow = 1;
-    Wide = 2;
-    Ambiguous = 255;
+    Narrow;
+    Wide;
+    Ambiguous;
 }
 
 # UCD Functions {{{

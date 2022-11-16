@@ -156,7 +156,7 @@ static bool RegisterTermClass(HINSTANCE hInstance) noexcept
     return RegisterClassW(&wc) != 0;
 }
 
-HwndTerminal::HwndTerminal(HWND parentHwnd) :
+HwndTerminal::HwndTerminal(HWND parentHwnd) noexcept :
     _desiredFont{ L"Consolas", 0, DEFAULT_FONT_WEIGHT, 14, CP_UTF8 },
     _actualFont{ L"Consolas", 0, DEFAULT_FONT_WEIGHT, { 0, 14 }, CP_UTF8, false },
     _uiaProvider{ nullptr },

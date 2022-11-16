@@ -19,7 +19,7 @@ static const std::vector<std::tuple<unsigned int, std::wstring, CodepointWidth>>
     { 0x7, L"\a", CodepointWidth::Narrow }, // BEL
     { 0x20, L" ", CodepointWidth::Narrow },
     { 0x39, L"9", CodepointWidth::Narrow },
-    { 0x414, L"\x414", CodepointWidth::Ambiguous }, // U+0414 cyrillic capital de
+    { 0x414, L"\x414", CodepointWidth::Narrow }, // U+0414 cyrillic capital de
     { 0x1104, L"\x1104", CodepointWidth::Wide }, // U+1104 hangul choseong ssangtikeut
     { 0x306A, L"\x306A", CodepointWidth::Wide }, // U+306A hiragana na
     { 0x30CA, L"\x30CA", CodepointWidth::Wide }, // U+30CA katakana na
