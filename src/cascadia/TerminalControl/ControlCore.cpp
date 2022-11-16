@@ -411,8 +411,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         const bool handled = BroadcastCharEvent(ch, scanCode, modifiers);
-        auto charSentArgs = winrt::make<CharSentEventArgs>(ch, scanCode, modifiers);
-        _CharSentHandlers(*this, charSentArgs);
+        // auto charSentArgs = winrt::make<CharSentEventArgs>(ch, scanCode, modifiers);
+        // _CharSentHandlers(*this, charSentArgs);
         return handled;
     }
 
