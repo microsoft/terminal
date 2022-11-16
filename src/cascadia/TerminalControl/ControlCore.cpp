@@ -410,20 +410,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _handleControlC();
         }
 
-        const bool handled = BroadcastCharEvent(ch, scanCode, modifiers);
-        // auto charSentArgs = winrt::make<CharSentEventArgs>(ch, scanCode, modifiers);
-        // _CharSentHandlers(*this, charSentArgs);
-        return handled;
-    }
-
-    // Call this method to bypass raising a CharSent. SendCharEvent should be
-    // called when teh event originated in this control. BroadcastCharEvent is
-    // for events that came from other controls.
-    bool ControlCore::BroadcastCharEvent(const wchar_t character,
-                                         const WORD scanCode,
-                                         const ::Microsoft::Terminal::Core::ControlKeyStates modifiers)
-    {
-        return _terminal->SendCharEvent(character, scanCode, modifiers);
+        return _terminal->SendCharEvent(ch, scanCode, modifiers);
     }
 
     void ControlCore::_handleControlC()
@@ -523,7 +510,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   See Terminal::SendKeyEvent for more information.
     // - Clears the current selection.
     // - Makes the cursor briefly visible during typing.
-    // - Broadcasts this key to any registered KeySent handlers
     // Arguments:
     // - vkey: The vkey of the key pressed.
     // - scanCode: The scan code of the key pressed.
@@ -533,19 +519,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                       const WORD scanCode,
                                       const ControlKeyStates modifiers,
                                       const bool keyDown)
-    {
-        // auto keySentArgs = winrt::make<KeySentEventArgs>(vkey, scanCode, modifiers, keyDown);
-        // _KeySentHandlers(*this, keySentArgs);
-        return BroadcastKeyEvent(vkey, scanCode, modifiers, keyDown);
-    }
-
-    // Call this method to bypass raising a KeySent. TrySendKeyEvent should be
-    // called when teh event originated in this control. BroadcastKeyEvent is
-    // for events that came from other controls.
-    bool ControlCore::BroadcastKeyEvent(const WORD vkey,
-                                        const WORD scanCode,
-                                        const ControlKeyStates modifiers,
-                                        const bool keyDown)
     {
         // Update the selection, if it's present
         // GH#8522, GH#3758 - Only modify the selection on key _down_. If we

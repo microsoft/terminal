@@ -84,17 +84,10 @@ namespace Microsoft.Terminal.Control
 
         Boolean TryMarkModeKeybinding(Int16 vkey,
                                       Microsoft.Terminal.Core.ControlKeyStates modifiers);
-        Boolean BroadcastKeyEvent(Int16 vkey,
-                                Int16 scanCode,
-                                Microsoft.Terminal.Core.ControlKeyStates modifiers,
-                                Boolean keyDown);
         Boolean TrySendKeyEvent(Int16 vkey,
                                 Int16 scanCode,
                                 Microsoft.Terminal.Core.ControlKeyStates modifiers,
                                 Boolean keyDown);
-        Boolean BroadcastCharEvent(Char ch,
-                              Int16 scanCode,
-                              Microsoft.Terminal.Core.ControlKeyStates modifiers);
         Boolean SendCharEvent(Char ch,
                               Int16 scanCode,
                               Microsoft.Terminal.Core.ControlKeyStates modifiers);
@@ -168,7 +161,5 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, ShowWindowArgs> ShowWindowChanged;
         event Windows.Foundation.TypedEventHandler<Object, UpdateSelectionMarkersEventArgs> UpdateSelectionMarkers;
         event Windows.Foundation.TypedEventHandler<Object, OpenHyperlinkEventArgs> OpenHyperlink;
-        event Windows.Foundation.TypedEventHandler<Object, KeySentEventArgs> KeySent;
-        event Windows.Foundation.TypedEventHandler<Object, CharSentEventArgs> CharSent;
     };
 }

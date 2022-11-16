@@ -88,19 +88,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _interactivity.OpenHyperlink({ this, &TermControl::_HyperlinkHandler });
         _interactivity.ScrollPositionChanged({ this, &TermControl::_ScrollPositionChanged });
 
-        // _core.KeySent([weakThis = get_weak()](auto&&, const auto& args) {
-        //     if (auto self{ weakThis.get() })
-        //     {
-        //         self->_KeySentHandlers(*self, args);
-        //     }
-        // });
-        // _core.CharSent([weakThis = get_weak()](auto&&, const auto& args) {
-        //     if (auto self{ weakThis.get() })
-        //     {
-        //         self->_CharSentHandlers(*self, args);
-        //     }
-        // });
-
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
         _layoutUpdatedRevoker = SwapChainPanel().LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
@@ -961,6 +948,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             modifiers |= ControlKeyStates::EnhancedKey;
         }
 
+        // Broadcast the character to all listeners
         auto charSentArgs = winrt::make<CharSentEventArgs>(ch, scanCode, modifiers);
         _CharSentHandlers(*this, charSentArgs);
 
@@ -1215,21 +1203,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    // bool TermControl::BroadcastKeyEvent(const WORD vkey,
-    //                                     const WORD scanCode,
-    //                                     const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers,
-    //                                     const bool keyDown)
-    // {
-    //     return _core.BroadcastKeyEvent(vkey, scanCode, modifiers, keyDown);
-    // }
-
-    // bool TermControl::BroadcastChar(const wchar_t character,
-    //                                 const WORD scanCode,
-    //                                 const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers)
-    // {
-    //     return _core.BroadcastCharEvent(character, scanCode, modifiers);
-    // }
-
     // Method Description:
     // - Send this particular key event to the terminal.
     //   See Terminal::SendKeyEvent for more information.
@@ -1245,8 +1218,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                        const ControlKeyStates modifiers,
                                        const bool keyDown)
     {
+        // Broadcast the key  to all listeners
         auto keySentArgs = winrt::make<KeySentEventArgs>(vkey, scanCode, modifiers, keyDown);
-        _KeySentHandlers(*this, keySentArgs); //TODO! probably use *this as the sender
+        _KeySentHandlers(*this, keySentArgs);
 
         return BroadcastKeyEvent(vkey, scanCode, modifiers, keyDown);
     }
