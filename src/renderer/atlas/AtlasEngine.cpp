@@ -1285,6 +1285,8 @@ void AtlasEngine::_flushBufferLine()
 
     wil::com_ptr<IDWriteFontFace> mappedFontFace;
 
+    static constexpr auto debugProportionalText = false;
+
 #pragma warning(suppress : 26494) // Variable 'mappedEnd' is uninitialized. Always initialize an object (type.5).
     for (u32 idx = 0, mappedEnd; idx < _api.bufferLine.size(); idx = mappedEnd)
     {
@@ -1342,6 +1344,14 @@ void AtlasEngine::_flushBufferLine()
 
         const auto initialIndicesCount = row.glyphIndices.size();
 
+        if (mappedLength > initialIndicesCount)
+        {
+            auto size = initialIndicesCount;
+            size = size + (size >> 1);
+            size = std::max<size_t>(size, mappedLength);
+            _api.glyphIndices = Buffer<u16>{ size };
+        }
+
         // We can reuse idx here, as it'll be reset to "idx = mappedEnd" in the outer loop anyways.
         for (u32 complexityLength = 0; idx < mappedEnd; idx += complexityLength)
         {
@@ -1356,13 +1366,26 @@ void AtlasEngine::_flushBufferLine()
                     const auto colors = metadata[col].colors;
                     f32 glyphAdvance;
 
-                    for (size_t j = 1;; ++j)
+                    if constexpr (!debugProportionalText)
                     {
-                        if (col != _api.bufferLineColumn[idx + i + j])
+                        for (size_t j = 1;; ++j)
                         {
-                            glyphAdvance = j * _r.cellSizeDIP.x;
-                            break;
+                            if (col != _api.bufferLineColumn[idx + i + j])
+                            {
+                                glyphAdvance = j * _r.cellSizeDIP.x;
+                                break;
+                            }
                         }
+                    }
+                    else
+                    {
+                        DWRITE_FONT_METRICS metrics{};
+                        mappedFontFace->GetMetrics(&metrics);
+
+                        DWRITE_GLYPH_METRICS glyphMetrics{};
+                        THROW_IF_FAILED(mappedFontFace->GetDesignGlyphMetrics(&_api.glyphIndices[i], 1, &glyphMetrics, false));
+                        const auto designUnitsPerDIP = _r.fontMetrics.fontSizeInDIP / static_cast<float>(metrics.designUnitsPerEm);
+                        glyphAdvance = static_cast<f32>(glyphMetrics.advanceWidth) * designUnitsPerDIP;
                     }
 
                     row.glyphIndices.emplace_back(_api.glyphIndices[i]);
@@ -1495,6 +1518,7 @@ void AtlasEngine::_flushBufferLine()
                         const auto col2 = _api.bufferLineColumn[a.textPosition + i];
                         const auto colors = metadata[col1].colors;
 
+                        if constexpr (!debugProportionalText)
                         {
                             const auto expectedAdvance = (col2 - col1) * _r.cellSizeDIP.x;
                             f32 actualAdvance = 0;
