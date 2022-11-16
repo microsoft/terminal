@@ -1233,6 +1233,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                        const ControlKeyStates modifiers,
                                        const bool keyDown)
     {
+        auto keySentArgs = winrt::make<KeySentEventArgs>(vkey, scanCode, modifiers, keyDown);
+        _KeySentHandlers(_core, keySentArgs); //TODO! probably use *this as the sender
+
         const auto window = CoreWindow::GetForCurrentThread();
 
         // If the terminal translated the key, mark the event as handled.

@@ -534,8 +534,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                       const ControlKeyStates modifiers,
                                       const bool keyDown)
     {
-        auto keySentArgs = winrt::make<KeySentEventArgs>(vkey, scanCode, modifiers, keyDown);
-        _KeySentHandlers(*this, keySentArgs);
+        // auto keySentArgs = winrt::make<KeySentEventArgs>(vkey, scanCode, modifiers, keyDown);
+        // _KeySentHandlers(*this, keySentArgs);
         return BroadcastKeyEvent(vkey, scanCode, modifiers, keyDown);
     }
 
