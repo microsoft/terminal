@@ -183,6 +183,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return settingsPair;
     }
 
+    // I'm not even joking, this is the recommended way to do this:
+    // https://learn.microsoft.com/en-us/windows/apps/desktop/modernize/apply-windows-themes#know-when-dark-mode-is-enabled
+    bool _isSystemInDarkTheme()
+    {
+        static auto isColorLight = [](const Windows::UI::Color& clr) -> bool {
+            return (((5 * clr.G) + (2 * clr.R) + clr.B) > (8 * 128));
+        };
+        return isColorLight(Windows::UI::ViewManagement::UISettings().GetColorValue(Windows::UI::ViewManagement::UIColorType::Foreground));
+    }
+
     void TerminalSettings::_ApplyAppearanceSettings(const IAppearanceConfig& appearance,
                                                     const Windows::Foundation::Collections::IMapView<winrt::hstring, ColorScheme>& schemes,
                                                     const winrt::Microsoft::Terminal::Settings::Model::Theme currentTheme)
@@ -193,8 +203,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto requestedTheme = currentTheme.RequestedTheme();
         if (requestedTheme == winrt::Windows::UI::Xaml::ElementTheme::Default)
         {
-            // TODO! make sure local tests don't explode
-            requestedTheme = Windows::UI::Xaml::Application::Current().RequestedTheme() == winrt::Windows::UI::Xaml::ApplicationTheme::Dark ?
+            requestedTheme = _isSystemInDarkTheme() ?
                                  winrt::Windows::UI::Xaml::ElementTheme::Dark :
                                  winrt::Windows::UI::Xaml::ElementTheme::Light;
         }

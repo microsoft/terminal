@@ -744,7 +744,8 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(3u, settings->AllProfiles().Size());
         for (const auto& profile : settings->AllProfiles())
         {
-            VERIFY_ARE_EQUAL(L"Campbell", profile.DefaultAppearance().ColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Campbell", profile.DefaultAppearance().DarkColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Campbell", profile.DefaultAppearance().LightColorSchemeName());
         }
     }
 
