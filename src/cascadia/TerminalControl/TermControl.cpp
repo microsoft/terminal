@@ -952,14 +952,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto charSentArgs = winrt::make<CharSentEventArgs>(ch, scanCode, modifiers);
         _CharSentHandlers(*this, charSentArgs);
 
-        const auto handled = BroadcastChar(ch, scanCode, modifiers);
+        const auto handled = RawWriteChar(ch, scanCode, modifiers);
 
         e.Handled(handled);
     }
 
-    bool TermControl::BroadcastChar(const wchar_t character,
-                                    const WORD scanCode,
-                                    const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers)
+    bool TermControl::RawWriteChar(const wchar_t character,
+                                   const WORD scanCode,
+                                   const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers)
     {
         const auto handled = _core.SendCharEvent(character, scanCode, modifiers);
         return handled;
@@ -1222,13 +1222,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto keySentArgs = winrt::make<KeySentEventArgs>(vkey, scanCode, modifiers, keyDown);
         _KeySentHandlers(*this, keySentArgs);
 
-        return BroadcastKeyEvent(vkey, scanCode, modifiers, keyDown);
+        return RawWriteKeyEvent(vkey, scanCode, modifiers, keyDown);
     }
 
-    bool TermControl::BroadcastKeyEvent(const WORD vkey,
-                                        const WORD scanCode,
-                                        const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers,
-                                        const bool keyDown)
+    bool TermControl::RawWriteKeyEvent(const WORD vkey,
+                                       const WORD scanCode,
+                                       const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers,
+                                       const bool keyDown)
     {
         const auto window = CoreWindow::GetForCurrentThread();
 

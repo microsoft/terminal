@@ -1188,9 +1188,9 @@ namespace winrt::TerminalApp::implementation
         if (const auto activeTab{ _GetFocusedTabImpl() })
         {
             activeTab->ToggleBroadcastInput();
+            args.Handled(true);
         }
-
-        args.Handled(true);
+        // If the focused tab wasn't a TerminalTab, then leave handled=false
     }
 
 }

@@ -81,8 +81,8 @@ namespace Microsoft.Terminal.Control
 
         void ToggleShaderEffects();
         void SendInput(String input);
-        Boolean BroadcastKeyEvent(UInt16 vkey, UInt16 scanCode, Microsoft.Terminal.Core.ControlKeyStates modifiers, Boolean keyDown);
-        Boolean BroadcastChar(Char character, UInt16 scanCode, Microsoft.Terminal.Core.ControlKeyStates modifiers);
+        Boolean RawWriteKeyEvent(UInt16 vkey, UInt16 scanCode, Microsoft.Terminal.Core.ControlKeyStates modifiers, Boolean keyDown);
+        Boolean RawWriteChar(Char character, UInt16 scanCode, Microsoft.Terminal.Core.ControlKeyStates modifiers);
 
         void BellLightOn();
 
