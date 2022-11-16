@@ -360,7 +360,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
             try
             {
                 const auto attr = gci.GetActiveOutputBuffer().GetCellDataAt(coordSelPoint)->DbcsAttr();
-                if (attr.IsTrailing())
+                if (attr == DbcsAttribute::Trailing)
                 {
                     bufferSize.IncrementInBounds(coordSelPoint);
                 }
@@ -583,7 +583,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
     try
     {
         const auto attr = gci.GetActiveOutputBuffer().GetCellDataAt(coordSelPoint)->DbcsAttr();
-        if (attr.IsTrailing())
+        if (attr == DbcsAttribute::Trailing)
         {
             // try to move off by highlighting the lead half too.
             auto fSuccess = bufferSize.DecrementInBounds(coordSelPoint);
@@ -766,7 +766,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
             auto it = ScreenInfo.GetCellLineDataAt(cursorPos);
 
             // calculate next right
-            if (it->DbcsAttr().IsLeading())
+            if (it->DbcsAttr() == DbcsAttribute::Leading)
             {
                 iNextRightX = 2;
             }
@@ -779,16 +779,16 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
             if (cursorPos.X > 0)
             {
                 it--;
-                if (it->DbcsAttr().IsTrailing())
+                if (it->DbcsAttr() == DbcsAttribute::Trailing)
                 {
                     iNextLeftX = 2;
                 }
-                else if (it->DbcsAttr().IsLeading())
+                else if (it->DbcsAttr() == DbcsAttribute::Leading)
                 {
                     if (cursorPos.X - 1 > 0)
                     {
                         it--;
-                        if (it->DbcsAttr().IsTrailing())
+                        if (it->DbcsAttr() == DbcsAttribute::Trailing)
                         {
                             iNextLeftX = 3;
                         }

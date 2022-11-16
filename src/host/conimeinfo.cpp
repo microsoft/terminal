@@ -256,7 +256,7 @@ std::vector<OutputCell> ConsoleImeInfo::s_ConvertToCells(const std::wstring_view
         // If it's full width, it's two, and we need to make sure we don't draw the cursor
         // right down the middle of the character.
         // Otherwise it's one column and we'll push it in with the default empty DbcsAttribute.
-        DbcsAttribute dbcsAttr;
+        DbcsAttribute dbcsAttr = DbcsAttribute::Single;
         if (IsGlyphFullWidth(glyph))
         {
             auto leftHalfAttr = drawingAttr;
@@ -269,9 +269,9 @@ std::vector<OutputCell> ConsoleImeInfo::s_ConvertToCells(const std::wstring_view
                 leftHalfAttr.SetRightVerticalDisplayed(false);
             }
 
-            dbcsAttr.SetLeading();
+            dbcsAttr = DbcsAttribute::Leading;
             cells.emplace_back(glyph, dbcsAttr, leftHalfAttr);
-            dbcsAttr.SetTrailing();
+            dbcsAttr = DbcsAttribute::Trailing;
 
             // If we need a left vertical, don't apply it to the right side of the character
             if (rightHalfAttr.IsLeftVerticalDisplayed())
@@ -346,7 +346,7 @@ std::vector<OutputCell>::const_iterator ConsoleImeInfo::_WriteConversionArea(con
     // Get the last cell in the run and if it's a leading byte, move the end position back one so we don't
     // try to insert it.
     const auto lastCell = lineEnd - 1;
-    if (lastCell->DbcsAttr().IsLeading())
+    if (lastCell->DbcsAttr() == DbcsAttribute::Leading)
     {
         lineEnd--;
     }

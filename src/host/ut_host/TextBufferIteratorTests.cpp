@@ -11,7 +11,6 @@
 #include "../buffer/out/textBuffer.hpp"
 #include "../buffer/out/textBufferCellIterator.hpp"
 #include "../buffer/out/textBufferTextIterator.hpp"
-#include "../buffer/out/CharRow.hpp"
 
 #include "input.h"
 
@@ -455,8 +454,8 @@ void TextBufferIteratorTests::AsCharInfoCell()
 
     const auto& row = outputBuffer._textBuffer->GetRowByOffset(it._pos.Y);
 
-    const auto wcharExpected = *row.GetCharRow().GlyphAt(it._pos.X).begin();
-    const auto attrExpected = row.GetAttrRow().GetAttrByColumn(it._pos.X);
+    const auto wcharExpected = *row.GlyphAt(it._pos.X).begin();
+    const auto attrExpected = row.GetAttrByColumn(it._pos.X);
 
     const auto cellActual = gci.AsCharInfo(*it);
     const auto wcharActual = cellActual.Char.UnicodeChar;
@@ -475,7 +474,7 @@ void TextBufferIteratorTests::DereferenceOperatorText()
 
     const auto& row = outputBuffer._textBuffer->GetRowByOffset(it._pos.Y);
 
-    const auto wcharExpected = row.GetCharRow().GlyphAt(it._pos.X);
+    const auto wcharExpected = row.GlyphAt(it._pos.X);
     const auto wcharActual = *it;
 
     VERIFY_ARE_EQUAL(*wcharExpected.begin(), *wcharActual.begin());
@@ -490,9 +489,9 @@ void TextBufferIteratorTests::DereferenceOperatorCell()
 
     const auto& row = outputBuffer._textBuffer->GetRowByOffset(it._pos.Y);
 
-    const auto textExpected = (std::wstring_view)row.GetCharRow().GlyphAt(it._pos.X);
-    const auto dbcsExpected = row.GetCharRow().DbcsAttrAt(it._pos.X);
-    const auto attrExpected = row.GetAttrRow().GetAttrByColumn(it._pos.X);
+    const auto textExpected = (std::wstring_view)row.GlyphAt(it._pos.X);
+    const auto dbcsExpected = row.DbcsAttrAt(it._pos.X);
+    const auto attrExpected = row.GetAttrByColumn(it._pos.X);
 
     const auto cellActual = *it;
     const auto textActual = cellActual.Chars();

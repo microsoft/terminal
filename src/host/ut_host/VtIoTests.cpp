@@ -6,11 +6,11 @@
 #include "../../inc/consoletaeftemplates.hpp"
 #include "../../types/inc/Viewport.hpp"
 
+#include "../VtIo.hpp"
+#include "../../interactivity/inc/ServiceLocator.hpp"
+#include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/vt/Xterm256Engine.hpp"
 #include "../../renderer/vt/XtermEngine.hpp"
-#include "../../renderer/base/Renderer.hpp"
-#include "../Settings.hpp"
-#include "../VtIo.hpp"
 
 #if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
 #include "../../renderer/dx/DxRenderer.hpp"
@@ -19,7 +19,7 @@
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
-using namespace std;
+using namespace Microsoft::Console::Interactivity;
 
 class Microsoft::Console::VirtualTerminal::VtIoTests
 {
@@ -325,7 +325,7 @@ public:
         return 12ul;
     }
 
-    bool IsCursorDoubleWidth() const override
+    bool IsCursorDoubleWidth() const noexcept override
     {
         return false;
     }
@@ -472,6 +472,13 @@ void VtIoTests::BasicAnonymousPipeOpeningWithSignalChannelTest()
     VERIFY_WIN32_BOOL_SUCCEEDED(CreatePipe(&signalPipeReadSide, &signalPipeWriteSide, nullptr, 0), L"Create anonymous signal pipe.");
 
     Log::Comment(L"\tinitializing vtio");
+
+    // CreateIoHandlers() assert()s on IsConsoleLocked() to guard against a race condition.
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole();
+    const auto cleanup = wil::scope_exit([&]() {
+        gci.UnlockConsole();
+    });
 
     VtIo vtio;
     VERIFY_IS_FALSE(vtio.IsUsingVt());
