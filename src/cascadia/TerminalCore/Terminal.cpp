@@ -815,26 +815,9 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
         // * Else: We don't have a prompt. We don't know anything else, but we
         //   can set the whole line as the prompt, no command, and start the
         //   command_executed now.
-
-        
-            MarkOutputStart();
-
-        //if (_currentPrompt)
-        //{
-        //    MarkOutputStart();
-        //}
-        //else
-        //{
-        //    DispatchTypes::ScrollMark mark;
-        //    mark.category = DispatchTypes::MarkCategory::Prompt;
-        //    // Don't set the color - we'll automatically use the DEFAULT_FOREGROUND
-        //    // color for any MarkCategory::Prompt marks without one set.
-
-        //    MarkPrompt(mark); // without parameters, this will act as if it came
-        //    // from the connection itself, and set _currentPromptState accordingly
-
-        //    MarkOutputStart();
-        //}
+        //
+        // Fortunately, MarkOutputStart will do all this logic for us!
+        MarkOutputStart();
     }
 
     // Unfortunately, the UI doesn't give us both a character down and a
