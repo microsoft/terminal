@@ -1946,26 +1946,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         const auto& textBuffer = _terminal->GetTextBuffer();
 
-        std::wstringstream ss;
+        std::wstring str;
         const auto lastRow = textBuffer.GetLastNonSpaceCharacter().Y;
         for (auto rowIndex = 0; rowIndex <= lastRow; rowIndex++)
         {
             const auto& row = textBuffer.GetRowByOffset(rowIndex);
-            auto rowText = row.GetText();
+            const auto rowText = row.GetText();
             const auto strEnd = rowText.find_last_not_of(UNICODE_SPACE);
-            if (strEnd != std::string::npos)
+            if (strEnd != decltype(rowText)::npos)
             {
-                rowText.erase(strEnd + 1);
-                ss << rowText;
+                str.append(rowText.substr(0, strEnd + 1));
             }
 
             if (!row.WasWrapForced())
             {
-                ss << UNICODE_CARRIAGERETURN << UNICODE_LINEFEED;
+                str.append(L"\r\n");
             }
         }
 
-        return hstring(ss.str());
+        return hstring{ str };
     }
 
     // Helper to check if we're on Windows 11 or not. This is used to check if

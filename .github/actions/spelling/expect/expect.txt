@@ -1881,6 +1881,7 @@ QUESTIONMARK
 quickedit
 QUZ
 QWER
+Qxxxxxx
 qzmp
 RAII
 RALT
@@ -2794,6 +2795,8 @@ xutr
 xvalue
 XVIRTUALSCREEN
 XWalk
+xwwyzz
+xxyyzz
 yact
 YAML
 YCast
