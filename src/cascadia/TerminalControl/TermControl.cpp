@@ -388,7 +388,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void TermControl::SendInput(const winrt::hstring& wstr)
     {
-        _core.SendInput(wstr);
+        _StringSentHandlers(*this, winrt::make<StringSentEventArgs>(wstr));
+
+        RawWriteString(wstr);
     }
     void TermControl::ClearBuffer(Control::ClearBufferType clearType)
     {
@@ -963,6 +965,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const auto handled = _core.SendCharEvent(character, scanCode, modifiers);
         return handled;
+    }
+
+    void TermControl::RawWriteString(const winrt::hstring& text)
+    {
+        _core.SendInput(text);
     }
 
     // Method Description:
@@ -2428,7 +2435,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        _core.SendInput(text);
+        // SendInput will take care fo broadcasting for us.
+        SendInput(text);
     }
 
     // Method Description:
@@ -2507,7 +2515,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             try
             {
                 auto link{ co_await e.DataView().GetApplicationLinkAsync() };
-                _core.PasteText(link.AbsoluteUri());
+                _pasteTextWithBroadcast(link.AbsoluteUri());
             }
             CATCH_LOG();
         }
@@ -2516,7 +2524,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             try
             {
                 auto link{ co_await e.DataView().GetWebLinkAsync() };
-                _core.PasteText(link.AbsoluteUri());
+                _pasteTextWithBroadcast(link.AbsoluteUri());
             }
             CATCH_LOG();
         }
@@ -2525,7 +2533,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             try
             {
                 auto text{ co_await e.DataView().GetTextAsync() };
-                _core.PasteText(text);
+                _pasteTextWithBroadcast(text);
             }
             CATCH_LOG();
         }
@@ -2612,9 +2620,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     allPaths += fullPath;
                 }
 
-                _core.PasteText(winrt::hstring{ allPaths });
+                _pasteTextWithBroadcast(winrt::hstring{ allPaths });
             }
         }
+    }
+
+    void TermControl::_pasteTextWithBroadcast(const winrt::hstring& text)
+    {
+        _StringSentHandlers(*this, winrt::make<StringSentEventArgs>(text));
+        _core.PasteText(text);
     }
 
     // Method Description:

@@ -867,6 +867,7 @@ namespace winrt::TerminalApp::implementation
             control.FocusFollowMouseRequested(events.focusToken);
             control.KeySent(events.keySentToken);
             control.CharSent(events.charSentToken);
+            control.StringSent(events.stringSentToken);
 
             _controlEvents.erase(paneId);
         }
@@ -959,6 +960,19 @@ namespace winrt::TerminalApp::implementation
                     if (const auto termControl{ sender.try_as<winrt::Microsoft::Terminal::Control::TermControl>() })
                     {
                         tab->_rootPane->BroadcastChar(termControl, e.Character(), e.ScanCode(), e.Modifiers());
+                    }
+                }
+            }
+        });
+
+        events.stringSentToken = control.StringSent([weakThis](auto&& sender, auto&& e) {
+            if (const auto tab{ weakThis.get() })
+            {
+                if (tab->_tabStatus.IsInputBroadcastActive())
+                {
+                    if (const auto termControl{ sender.try_as<winrt::Microsoft::Terminal::Control::TermControl>() })
+                    {
+                        tab->_rootPane->BroadcastString(termControl, e.Text());
                     }
                 }
             }

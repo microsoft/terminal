@@ -98,4 +98,9 @@ namespace Microsoft.Terminal.Control
         UInt16 ScanCode { get; };
         Microsoft.Terminal.Core.ControlKeyStates Modifiers { get; };
     }
+
+    runtimeclass StringSentEventArgs
+    {
+        String Text { get; };
+    }
 }

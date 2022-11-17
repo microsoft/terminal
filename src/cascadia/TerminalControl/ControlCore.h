@@ -232,8 +232,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(ShowWindowChanged,         IInspectable, Control::ShowWindowArgs);
         TYPED_EVENT(UpdateSelectionMarkers,    IInspectable, Control::UpdateSelectionMarkersEventArgs);
         TYPED_EVENT(OpenHyperlink,             IInspectable, Control::OpenHyperlinkEventArgs);
-        TYPED_EVENT(KeySent,                   IInspectable, Control::KeySentEventArgs);
-        TYPED_EVENT(CharSent,                  IInspectable, Control::CharSentEventArgs);
         // clang-format on
 
     private:

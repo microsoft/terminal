@@ -3199,18 +3199,12 @@ void Pane::BroadcastKey(const winrt::Microsoft::Terminal::Control::TermControl& 
                         const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                         const bool keyDown)
 {
-    if (_IsLeaf())
-    {
-        if (_control != sourceControl && !_control.ReadOnly())
+    WalkTree([&](auto pane) {
+        if (pane->_IsLeaf() && pane->_control != sourceControl && !pane->_control.ReadOnly())
         {
-            _control.RawWriteKeyEvent(vkey, scanCode, modifiers, keyDown);
+            pane->_control.RawWriteKeyEvent(vkey, scanCode, modifiers, keyDown);
         }
-    }
-    else
-    {
-        _firstChild->BroadcastKey(sourceControl, vkey, scanCode, modifiers, keyDown);
-        _secondChild->BroadcastKey(sourceControl, vkey, scanCode, modifiers, keyDown);
-    }
+    });
 }
 
 void Pane::BroadcastChar(const winrt::Microsoft::Terminal::Control::TermControl& sourceControl,
@@ -3218,18 +3212,23 @@ void Pane::BroadcastChar(const winrt::Microsoft::Terminal::Control::TermControl&
                          const WORD scanCode,
                          const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers)
 {
-    if (_IsLeaf())
-    {
-        if (_control != sourceControl && !_control.ReadOnly())
+    WalkTree([&](auto pane) {
+        if (pane->_IsLeaf() && pane->_control != sourceControl && !pane->_control.ReadOnly())
         {
-            _control.RawWriteChar(character, scanCode, modifiers);
+            pane->_control.RawWriteChar(character, scanCode, modifiers);
         }
-    }
-    else
-    {
-        _firstChild->BroadcastChar(sourceControl, character, scanCode, modifiers);
-        _secondChild->BroadcastChar(sourceControl, character, scanCode, modifiers);
-    }
+    });
+}
+
+void Pane::BroadcastString(const winrt::Microsoft::Terminal::Control::TermControl& sourceControl,
+                           const winrt::hstring& text)
+{
+    WalkTree([&](auto pane) {
+        if (pane->_IsLeaf() && pane->_control != sourceControl && !pane->_control.ReadOnly())
+        {
+            pane->_control.RawWriteString(text);
+        }
+    });
 }
 
 void Pane::_ControlReadOnlyChangedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::Foundation::IInspectable& /*e*/)

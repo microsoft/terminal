@@ -46,6 +46,7 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusFollowMouseRequested;
         event Windows.Foundation.TypedEventHandler<Object, KeySentEventArgs> KeySent;
         event Windows.Foundation.TypedEventHandler<Object, CharSentEventArgs> CharSent;
+        event Windows.Foundation.TypedEventHandler<Object, StringSentEventArgs> StringSent;
 
         event Windows.Foundation.TypedEventHandler<TermControl, Windows.UI.Xaml.RoutedEventArgs> Initialized;
         // This is an event handler forwarder for the underlying connection.
@@ -83,6 +84,7 @@ namespace Microsoft.Terminal.Control
         void SendInput(String input);
         Boolean RawWriteKeyEvent(UInt16 vkey, UInt16 scanCode, Microsoft.Terminal.Core.ControlKeyStates modifiers, Boolean keyDown);
         Boolean RawWriteChar(Char character, UInt16 scanCode, Microsoft.Terminal.Core.ControlKeyStates modifiers);
+        void RawWriteString(String text);
 
         void BellLightOn();
 

@@ -131,6 +131,7 @@ namespace winrt::TerminalApp::implementation
             winrt::event_token focusToken;
             winrt::event_token keySentToken;
             winrt::event_token charSentToken;
+            winrt::event_token stringSentToken;
         };
         std::unordered_map<uint32_t, ControlEventTokens> _controlEvents;
 

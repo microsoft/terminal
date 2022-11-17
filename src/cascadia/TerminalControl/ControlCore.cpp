@@ -399,8 +399,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _sendInputToConnection(wstr);
     }
 
-    // Method Description:
-    // - Broadcasts this char to any registered CharSent handlers
     bool ControlCore::SendCharEvent(const wchar_t ch,
                                     const WORD scanCode,
                                     const ::Microsoft::Terminal::Core::ControlKeyStates modifiers)
