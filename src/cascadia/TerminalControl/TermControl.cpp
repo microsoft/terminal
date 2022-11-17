@@ -3122,6 +3122,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     winrt::fire_and_forget TermControl::_coreFoundMatch(const IInspectable& /*sender*/, Control::FoundResultsArgs args)
     {
+
+        co_await wil::resume_foreground(Dispatcher());
         if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(*this) })
         {
             automationPeer.RaiseNotificationEvent(
@@ -3130,8 +3132,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 args.FoundMatch() ? RS_(L"SearchBox_MatchesAvailable") : RS_(L"SearchBox_NoMatches"), // what to announce if results were found
                 L"SearchBoxResultAnnouncement" /* unique name for this group of notifications */);
         }
-
-        co_await wil::resume_foreground(Dispatcher());
 
         // Manually send a scrollbar update, now, on the UI thread. We're
         // already UI-driven, so that's okay. We're not really changing the
