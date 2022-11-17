@@ -201,7 +201,7 @@
                                             ResourceKey="SystemControlBackgroundBaseLowBrush" />
 
                             <SolidColorBrush x:Key="BroadcastPaneBorderColor"
-                                             Color="{StaticResource SystemAccentColorLight2}" />
+                                             Color="{StaticResource SystemColorHighlightColor}" />
                         </ResourceDictionary>
 
                     </ResourceDictionary.ThemeDictionaries>
