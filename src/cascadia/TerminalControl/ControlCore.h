@@ -360,7 +360,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         fire_and_forget _SearchAsync(std::optional<bool> goForward);
         void _SelectSearchResult(std::optional<bool> goForward);
-        winrt::Windows::Foundation::IAsyncOperation<bool> _SearchOne(::Search& search);
+        // winrt::Windows::Foundation::IAsyncOperation<bool> _SearchOne(::Search& search);
+        bool _SearchOne(::Search& search);
 
         inline bool _IsClosing() const noexcept
         {

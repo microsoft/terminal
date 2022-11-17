@@ -1527,6 +1527,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             std::vector<std::pair<til::point, til::point>> matches;
             if (!_searchState->text.empty())
             {
+                co_await winrt::resume_background();
+
                 // We perform explicit search forward, so the first result will also be the earliest buffer location
                 // We will use goForward later to decide if we need to select 1 of n or n of n.
                 ::Search search(*GetUiaData(),
@@ -1534,12 +1536,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                 Search::Direction::Forward,
                                 _searchState->sensitivity);
 
-                while (co_await _SearchOne(search))
+                while (/*co_await*/ _SearchOne(search))
                 {
                     // if search box was collapsed or the new one search was triggered - let's cancel this one
                     if (!_searchState.has_value() ||
                         _searchState->searchId != originalSearchId)
                     {
+                        co_await winrt::resume_foreground(_dispatcher);
                         co_return;
                     }
 
@@ -1550,13 +1553,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 if (!_searchState.has_value() ||
                     _searchState->searchId != originalSearchId)
                 {
+                    co_await winrt::resume_foreground(_dispatcher);
                     co_return;
                 }
             }
             _searchState->matches.emplace(std::move(matches));
             _bufferChangedSinceSearch = false;
         }
-
+        co_await winrt::resume_foreground(_dispatcher);
         if (auto core{ weakThis.get() })
         {
             _SelectSearchResult(_searchState->goForward);
@@ -1620,22 +1624,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - search: search object to use to find the next match
     // Return Value:
     // - <none>
-    winrt::Windows::Foundation::IAsyncOperation<bool> ControlCore::_SearchOne(::Search& search)
+    // winrt::Windows::Foundation::IAsyncOperation<bool> ControlCore::_SearchOne(::Search& search)
+    bool ControlCore::_SearchOne(::Search& search)
     {
         bool found{ false };
         auto weakThis{ get_weak() };
 
-        co_await winrt::resume_background();
-        if (auto control{ weakThis.get() })
-        {
-            // We don't lock the terminal for the duration of the entire search,
-            // since if the terminal was modified the search ID will be updated.
-            auto lock = _terminal->LockForWriting();
-            found = search.FindNext();
-        }
+        // co_await winrt::resume_background();
+        // if (auto control{ weakThis.get() })
+        // {
+        // We don't lock the terminal for the duration of the entire search,
+        // since if the terminal was modified the search ID will be updated.
+        auto lock = _terminal->LockForWriting();
+        found = search.FindNext();
+        // }
 
-        co_await winrt::resume_foreground(_dispatcher);
-        co_return found;
+        // co_await winrt::resume_foreground(_dispatcher);
+        return found;
     }
 
     // Method Description:

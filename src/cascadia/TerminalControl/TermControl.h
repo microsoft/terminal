@@ -294,7 +294,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const til::point _toTerminalOrigin(winrt::Windows::Foundation::Point cursorPosition);
         double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;
 
-        winrt::Windows::Foundation::IAsyncOperation<bool> _SearchOne(Search& search);
+        // winrt::Windows::Foundation::IAsyncOperation<bool> _SearchOne(Search& search);
         void _Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
 
         void _SearchChanged(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
