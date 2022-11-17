@@ -55,7 +55,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     public:
         static std::atomic<size_t> _searchIdGenerator;
 
-        SearchState(const winrt::hstring& text, const Search::Sensitivity sensitivity, const std::optional<bool> forward) :
+        SearchState(const winrt::hstring& text, const Search::Sensitivity sensitivity, const bool forward) :
             text(text),
             sensitivity(sensitivity),
             goForward(forward),
@@ -70,7 +70,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::hstring text;
         Search::Sensitivity sensitivity;
-        std::optional<bool> goForward{ std::nullopt };
+        bool goForward{ true };
         size_t searchId;
         int32_t currentMatchIndex{ -1 };
     };
