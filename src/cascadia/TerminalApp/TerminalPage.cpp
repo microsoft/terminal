@@ -2423,6 +2423,24 @@ namespace winrt::TerminalApp::implementation
     // - Paste text from the Windows Clipboard to the focused terminal
     void TerminalPage::_PasteText()
     {
+        // First, check if we're in broadcast input mode. If so, let's tell all
+        // the controls to paste.
+        if (const auto& tab{ _GetFocusedTabImpl() })
+        {
+            if (tab->TabStatus().IsInputBroadcastActive())
+            {
+                tab->GetRootPane()->WalkTree([](auto&& pane) {
+                    if (auto control = pane->GetTerminalControl())
+                    {
+                        control.PasteTextFromClipboard();
+                    }
+                });
+                return;
+            }
+        }
+
+        // The focused tab wasn't in broadcast mode. No matter. Just ask the
+        // current one to paste.
         if (const auto& control{ _GetActiveControl() })
         {
             control.PasteTextFromClipboard();
