@@ -3122,7 +3122,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     winrt::fire_and_forget TermControl::_coreFoundMatch(const IInspectable& /*sender*/, Control::FoundResultsArgs args)
     {
-
         co_await wil::resume_foreground(Dispatcher());
         if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(*this) })
         {
