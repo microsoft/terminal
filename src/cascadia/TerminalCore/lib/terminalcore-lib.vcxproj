@@ -16,11 +16,6 @@
     <TerminalCppWinrt>true</TerminalCppWinrt>
   </PropertyGroup>
 
-  <!-- Imported WinRT generated files must go up here to get excluded from Audit correctly. -->
-  <PropertyGroup Condition="'$(Configuration)'=='AuditMode'">
-    <CAExcludePath>"$(SolutionDir)\src\cascadia\TerminalCore\Generated Files\winrt";$(SolutionDir)src\cascadia\TerminalCore;$(CAExcludePath)</CAExcludePath>
-  </PropertyGroup>
-
   <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />

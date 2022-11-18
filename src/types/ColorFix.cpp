@@ -9,6 +9,8 @@
 
 #include "inc/ColorFix.hpp"
 
+TIL_FAST_MATH_BEGIN
+
 static constexpr float gMinThreshold = 12.0f;
 static constexpr float gExpThreshold = 20.0f;
 static constexpr float gLStep = 5.0f;
@@ -225,3 +227,5 @@ COLORREF ColorFix::GetPerceivableColor(COLORREF fg, COLORREF bg)
     }
     return frontLab.rgb;
 }
+
+TIL_FAST_MATH_END

@@ -238,7 +238,6 @@ MODULE_SETUP(ModuleSetup)
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(FreeConsole());
 
     // Wait a moment for the driver to be ready after freeing to attach.
-    Sleep(1000);
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(AttachConsole(dwFindPid));
 
     auto tries = 0;

@@ -566,11 +566,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         MUX::Controls::NavigationViewItem profileNavItem;
         profileNavItem.Content(box_value(profile.Name()));
         profileNavItem.Tag(box_value<Editor::ProfileViewModel>(profile));
-
-        const auto iconSource{ IconPathConverter::IconSourceWUX(profile.Icon()) };
-        WUX::Controls::IconSourceElement icon;
-        icon.IconSource(iconSource);
-        profileNavItem.Icon(icon);
+        profileNavItem.Icon(IconPathConverter::IconWUX(profile.Icon()));
 
         // Update the menu item when the icon/name changes
         auto weakMenuItem{ make_weak(profileNavItem) };
@@ -580,10 +576,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 const auto& tag{ menuItem.Tag().as<Editor::ProfileViewModel>() };
                 if (args.PropertyName() == L"Icon")
                 {
-                    const auto iconSource{ IconPathConverter::IconSourceWUX(tag.Icon()) };
-                    WUX::Controls::IconSourceElement icon;
-                    icon.IconSource(iconSource);
-                    menuItem.Icon(icon);
+                    menuItem.Icon(IconPathConverter::IconWUX(tag.Icon()));
                 }
                 else if (args.PropertyName() == L"Name")
                 {
