@@ -14,7 +14,7 @@ body:
     label: Windows Terminal version
     placeholder: "1.7.3651.0"
     description: |
-      You can find the version in the about dialog, or by running `wt -v` at the commandline.
+      You can copy the version number from the About dialog. Open the About dialog by opening the menu with the "V" button (to the right of the "+" button that opens a new tab) and choosing About from the end of the list.
   validations:
     required: false
     
