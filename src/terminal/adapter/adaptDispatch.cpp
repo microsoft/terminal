@@ -3036,7 +3036,7 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
     const auto action = til::at(parts, 0);
     if (action.size() == 1)
     {
-        switch (action[0])
+        switch (til::at(action, 0))
         {
         case L'A': // FTCS_PROMPT
         {
