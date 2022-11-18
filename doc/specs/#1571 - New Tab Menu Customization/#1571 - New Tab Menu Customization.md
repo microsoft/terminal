@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-5-13
-last updated: 2022-11-01
+last updated: 2022-11-18
 issue id: 1571
 ---
 
@@ -76,12 +76,12 @@ There are five `type`s of objects in this menu:
   - The `"entries"` property specifies a list of menu entries that will appear
     nested under this entry. This can contain other `"type":"folder"` groups as
     well!
-  - The `"expand"` property accepts two values
+  - The `"inline"` property accepts two values
     - `auto`: When the folder only has one entry in it, don't actually create a
       nested layer to then menu. Just place the single entry in the layer that
       folder would occupy. (Useful for dynamic profile sources with only a
       single entry).
-    - `always`: (**default**) Always create a nested entry, even for a single
+    - `never`: (**default**) Always create a nested entry, even for a single
       sub-item.
   - The `allowEmpty` property will force this entry to show up in the menu, even
     if it doesn't have any profiles in it. This defaults to `false`, meaning
@@ -95,14 +95,14 @@ There are five `type`s of objects in this menu:
     - _This setting is probably pretty niche, and not a requirement_. More of a
       theoretical suggestion than anything.
     - In the case of no entries for this folder, we should make sure to also
-      reflect the `expand` property:
-      - `allowEmpty:true`, `expand:auto`: just ignore the entry at all. Don't
+      reflect the `inline` property:
+      - `allowEmpty:true`, `inline:auto`: just ignore the entry at all. Don't
         add a placeholder to the parent list.
-      - `allowEmpty:true`, `expand:always`: Add a nested entry, with an
+      - `allowEmpty:true`, `inline:never`: Add a nested entry, with an
         `<empty>` placeholder.
-      - `allowEmpty:false`, `expand:auto`: just ignore the entry at all. Don't
+      - `allowEmpty:false`, `inline:auto`: just ignore the entry at all. Don't
         add a placeholder to the parent list.
-      - `allowEmpty:false`, `expand:always`: just ignore the entry at all. Don't
+      - `allowEmpty:false`, `inline:never`: just ignore the entry at all. Don't
         add a placeholder to the parent list.
 * `"type":"action"`: This represents a menu entry that should execute a specific
   `ShortcutAction`.
@@ -410,11 +410,11 @@ And assuming the user has bound:
   "source": { "type": "regex", "value": ".*wsl.*" }
   ```
 * We may want to expand `matchProfile` to match on other properties too. (`title`?)
-* We may want to consider something like
+* We may want to consider adding support for capture groups, e.g.
   ```json
   {
     "type": "profileMatch",
-    "name": { "type": "regex", "value": "ssh: (.*)" }
+    "name": { "type": "regex", "value": "^ssh: (.*)" }
   }
   ```
   for matching to all your `ssh: ` profiles, but populate the name in the entry
