@@ -230,6 +230,8 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
     pPty->hConPtyProcess = pi.hProcess;
     pi.hProcess = nullptr;
 
+    // The hPtyReference we create here is used when the PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE attribute is processed.
+    // This ensures that conhost's client processes inherit the correct (= our) console handle.
     RETURN_IF_NTSTATUS_FAILED(CreateClientHandle(&pPty->hPtyReference,
                                                  serverHandle.get(),
                                                  L"\\Reference",
