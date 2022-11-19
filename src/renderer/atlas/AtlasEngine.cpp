@@ -1285,7 +1285,7 @@ void AtlasEngine::_flushBufferLine()
 
     wil::com_ptr<IDWriteFontFace> mappedFontFace;
 
-    static constexpr auto debugProportionalText = false;
+    static constexpr auto debugProportionalText = true;
 
 #pragma warning(suppress : 26494) // Variable 'mappedEnd' is uninitialized. Always initialize an object (type.5).
     for (u32 idx = 0, mappedEnd; idx < _api.bufferLine.size(); idx = mappedEnd)
