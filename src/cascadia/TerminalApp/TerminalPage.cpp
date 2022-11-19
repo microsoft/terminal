@@ -3920,7 +3920,10 @@ namespace winrt::TerminalApp::implementation
             auto tabViewItem = newTabImpl->TabViewItem();
             _tabView.TabItems().Append(tabViewItem);
 
-            tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
+            tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabPointerPressed });
+            tabViewItem.PointerReleased({ this, &TerminalPage::_OnTabPointerReleased });
+            tabViewItem.PointerExited({ this, &TerminalPage::_OnTabPointerExited });
+            tabViewItem.PointerEntered({ this, &TerminalPage::_OnTabPointerEntered });
 
             // When the tab requests close, try to close it (prompt for approval, if required)
             newTabImpl->CloseRequested([weakTab, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
