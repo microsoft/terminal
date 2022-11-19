@@ -341,9 +341,6 @@ void PtySignalInputThread::_DoSetWindowParent(const SetParentData& data)
 // - Perform a shutdown of the console. This happens when the signal pipe is
 //      broken, which means either the parent terminal process has died, or they
 //      called ClosePseudoConsole.
-//  CloseConsoleProcessState is not enough by itself - it will disconnect
-//      clients as if the X was pressed, but then we need to actually still die,
-//      so then call RundownAndExit.
 // Arguments:
 // - <none>
 // Return Value:
