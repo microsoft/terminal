@@ -36,9 +36,7 @@ DirectReadData::DirectReadData(_In_ InputBuffer* const pInputBuffer,
 // Routine Description:
 // - Destructs a read data class.
 // - Decrements count of readers waiting on the given handle.
-DirectReadData::~DirectReadData()
-{
-}
+DirectReadData::~DirectReadData() = default;
 
 // Routine Description:
 // - This routine is called to complete a direct read that blocked in

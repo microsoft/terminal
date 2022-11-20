@@ -110,6 +110,7 @@
     <ClInclude Include="VsDevShellGenerator.h" />
     <ClInclude Include="VsSetupConfiguration.h" />
     <ClInclude Include="WslDistroGenerator.h" />
+    <ClInclude Include="ModelSerializationHelpers.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>

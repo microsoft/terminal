@@ -46,7 +46,7 @@ bool IsValidStringBuffer(_In_ bool Unicode, _In_reads_bytes_(Size) PVOID Buffer,
     while (Count > 0)
     {
         const auto StringSize = va_arg(Marker, ULONG);
-        auto StringStart = va_arg(Marker, PVOID*);
+        const auto StringStart = va_arg(Marker, PVOID*);
 
         // Make sure the string fits in the supplied buffer and that it is properly aligned.
         if (StringSize > Size)
@@ -54,7 +54,7 @@ bool IsValidStringBuffer(_In_ bool Unicode, _In_reads_bytes_(Size) PVOID Buffer,
             break;
         }
 
-        if ((Unicode != false) && ((StringSize % sizeof(WCHAR)) != 0))
+        if (Unicode && (StringSize % sizeof(WCHAR)) != 0)
         {
             break;
         }
@@ -88,11 +88,7 @@ bool IsWordDelim(const wchar_t wch)
 
 bool IsWordDelim(const std::wstring_view charData)
 {
-    if (charData.size() != 1)
-    {
-        return false;
-    }
-    return IsWordDelim(charData.front());
+    return charData.size() == 1 && IsWordDelim(charData.front());
 }
 
 CommandLine::CommandLine() :
@@ -100,9 +96,7 @@ CommandLine::CommandLine() :
 {
 }
 
-CommandLine::~CommandLine()
-{
-}
+CommandLine::~CommandLine() = default;
 
 CommandLine& CommandLine::Instance()
 {
@@ -110,7 +104,7 @@ CommandLine& CommandLine::Instance()
     return c;
 }
 
-bool CommandLine::IsEditLineEmpty() const
+bool CommandLine::IsEditLineEmpty()
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
@@ -176,7 +170,7 @@ bool CommandLine::HasPopup() const noexcept
 // Arguments:
 // Return Value:
 // - ref to the topmost popup
-Popup& CommandLine::GetPopup()
+Popup& CommandLine::GetPopup() const
 {
     return *_popups.front();
 }
@@ -198,7 +192,8 @@ void CommandLine::EndAllPopups()
 {
     while (!_popups.empty())
     {
-        EndCurrentPopup();
+        _popups.front()->End();
+        _popups.pop_front();
     }
 }
 
@@ -772,13 +767,12 @@ til::point CommandLine::_moveCursorRightByWord(COOKED_READ_DATA& cookedReadData)
         if (*NextWord == L' ')
         {
             // If the current character is space, skip to the next non-space character.
-            while (NextWord < BufLast)
+            while (++NextWord < BufLast)
             {
                 if (*NextWord != L' ')
                 {
                     break;
                 }
-                ++NextWord;
             }
         }
         else
@@ -795,14 +789,11 @@ til::point CommandLine::_moveCursorRightByWord(COOKED_READ_DATA& cookedReadData)
             }
 
             // Skip the space block.
-            if (NextWord < BufLast && *NextWord == L' ')
+            for (; NextWord < BufLast; NextWord++)
             {
-                while (++NextWord < BufLast)
+                if (*NextWord != L' ')
                 {
-                    if (*NextWord != L' ')
-                    {
-                        break;
-                    }
+                    break;
                 }
             }
         }
@@ -850,8 +841,9 @@ til::point CommandLine::_moveCursorRight(COOKED_READ_DATA& cookedReadData) noexc
                                 cookedReadData.OriginalCursorPosition().X,
                                 true))
         {
+            // Snap cursorPosition.X to sScreenBufferSizeX if it is at the edge of the screen
             if (cursorPosition.X == (sScreenBufferSizeX - 1))
-                cursorPosition.X++;
+                cursorPosition.X = sScreenBufferSizeX;
         }
 
         cookedReadData.SetBufferCurrentPtr(cookedReadData.BufferCurrentPtr() + 1);

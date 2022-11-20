@@ -394,6 +394,12 @@
   <data name="CmdWindowTargetArgDesc" xml:space="preserve">
     <value>Specify a terminal window to run the given commandline in. "0" always refers to the current window. </value>
   </data>
+  <data name="CmdPositionDesc" xml:space="preserve">
+    <value>Specify the position for the terminal, in "x,y" format.</value>
+  </data>
+  <data name="CmdSizeDesc" xml:space="preserve">
+    <value>Specify the number of columns and rows for the terminal, in "c,r" format.</value>
+  </data>
   <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
     <value>Press the button to open a new terminal tab with your default profile. Open the flyout to select which profile you want to open.</value>
   </data>

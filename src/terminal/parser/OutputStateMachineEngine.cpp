@@ -530,7 +530,11 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         TermTelemetry::Instance().Log(TermTelemetry::Codes::SGR);
         break;
     case CsiActionCodes::DSR_DeviceStatusReport:
-        success = _dispatch->DeviceStatusReport(parameters.at(0));
+        success = _dispatch->DeviceStatusReport(DispatchTypes::ANSIStandardStatus(parameters.at(0)));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DSR);
+        break;
+    case CsiActionCodes::DSR_PrivateDeviceStatusReport:
+        success = _dispatch->DeviceStatusReport(DispatchTypes::DECPrivateStatus(parameters.at(0)));
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DSR);
         break;
     case CsiActionCodes::DA_DeviceAttributes:
@@ -631,6 +635,34 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
     case CsiActionCodes::XT_PopSgrAlias:
         success = _dispatch->PopGraphicsRendition();
         TermTelemetry::Instance().Log(TermTelemetry::Codes::XTPOPSGR);
+        break;
+    case CsiActionCodes::DECCARA_ChangeAttributesRectangularArea:
+        success = _dispatch->ChangeAttributesRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0), parameters.subspan(4));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECCARA);
+        break;
+    case CsiActionCodes::DECRARA_ReverseAttributesRectangularArea:
+        success = _dispatch->ReverseAttributesRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0), parameters.subspan(4));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRARA);
+        break;
+    case CsiActionCodes::DECCRA_CopyRectangularArea:
+        success = _dispatch->CopyRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0), parameters.at(4), parameters.at(5), parameters.at(6), parameters.at(7));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECCRA);
+        break;
+    case CsiActionCodes::DECFRA_FillRectangularArea:
+        success = _dispatch->FillRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2), parameters.at(3).value_or(0), parameters.at(4).value_or(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECFRA);
+        break;
+    case CsiActionCodes::DECERA_EraseRectangularArea:
+        success = _dispatch->EraseRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECERA);
+        break;
+    case CsiActionCodes::DECSERA_SelectiveEraseRectangularArea:
+        success = _dispatch->SelectiveEraseRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSERA);
+        break;
+    case CsiActionCodes::DECSACE_SelectAttributeChangeExtent:
+        success = _dispatch->SelectAttributeChangeExtent(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSACE);
         break;
     case CsiActionCodes::DECAC_AssignColor:
         success = _dispatch->AssignColor(parameters.at(0), parameters.at(1).value_or(0), parameters.at(2).value_or(0));
@@ -989,7 +1021,7 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
     const auto midPos = string.find(';');
     if (midPos != std::wstring::npos)
     {
-        uri = string.substr(midPos + 1);
+        uri = string.substr(midPos + 1, MAX_URL_LENGTH);
         const auto paramStr = string.substr(0, midPos);
         const auto paramParts = Utils::SplitString(paramStr, ':');
         for (const auto& part : paramParts)

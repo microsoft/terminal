@@ -16,8 +16,8 @@ namespace Microsoft.Terminal.Settings.Model
     // Docs: https://docs.microsoft.com/en-us/uwp/midl-3/intro#types
     struct LaunchPosition
     {
-        Windows.Foundation.IReference<Int64> X;
-        Windows.Foundation.IReference<Int64> Y;
+        Windows.Foundation.IReference<Int32> X;
+        Windows.Foundation.IReference<Int32> Y;
     };
 
     [flags]

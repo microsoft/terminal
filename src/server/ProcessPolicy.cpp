@@ -20,9 +20,7 @@ ConsoleProcessPolicy::ConsoleProcessPolicy(const bool fCanReadOutputBuffer,
 
 // Routine Description:
 // - Destructs an instance of the process policy class.
-ConsoleProcessPolicy::~ConsoleProcessPolicy()
-{
-}
+ConsoleProcessPolicy::~ConsoleProcessPolicy() = default;
 
 // Routine Description:
 // - Opens the process token for the given handle and resolves the application model policies

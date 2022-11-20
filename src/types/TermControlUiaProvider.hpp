@@ -43,9 +43,9 @@ namespace Microsoft::Terminal
         IFACEMETHODIMP get_BoundingRectangle(_Out_ UiaRect* pRect) noexcept override;
         IFACEMETHODIMP get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider) noexcept override;
 
-        const til::size GetFontSize() const noexcept;
-        const til::rect GetPadding() const noexcept;
-        const double GetScaleFactor() const noexcept;
+        til::size GetFontSize() const noexcept;
+        til::rect GetPadding() const noexcept;
+        double GetScaleFactor() const noexcept;
         void ChangeViewport(const til::inclusive_rect& NewWindow) override;
 
     protected:

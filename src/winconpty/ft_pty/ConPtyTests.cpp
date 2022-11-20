@@ -16,7 +16,6 @@ class ConPtyTests
     TEST_METHOD(CreateConPtyBadSize);
     TEST_METHOD(GoodCreate);
     TEST_METHOD(GoodCreateMultiple);
-    TEST_METHOD(SurvivesOnBreakInput);
     TEST_METHOD(SurvivesOnBreakOutput);
     TEST_METHOD(DiesOnBreakBoth);
     TEST_METHOD(DiesOnClose);
@@ -172,51 +171,6 @@ void ConPtyTests::GoodCreateMultiple()
     auto closePty2 = wil::scope_exit([&] {
         _ClosePseudoConsoleMembers(&pcon2, TRUE);
     });
-}
-
-void ConPtyTests::SurvivesOnBreakInput()
-{
-    PseudoConsole pty = { 0 };
-    wil::unique_handle outPipeOurSide;
-    wil::unique_handle inPipeOurSide;
-    wil::unique_handle outPipePseudoConsoleSide;
-    wil::unique_handle inPipePseudoConsoleSide;
-    SECURITY_ATTRIBUTES sa;
-    sa.nLength = sizeof(sa);
-    sa.bInheritHandle = TRUE;
-    sa.lpSecurityDescriptor = nullptr;
-    VERIFY_IS_TRUE(CreatePipe(inPipePseudoConsoleSide.addressof(), inPipeOurSide.addressof(), &sa, 0));
-    VERIFY_IS_TRUE(CreatePipe(outPipeOurSide.addressof(), outPipePseudoConsoleSide.addressof(), &sa, 0));
-    VERIFY_IS_TRUE(SetHandleInformation(inPipeOurSide.get(), HANDLE_FLAG_INHERIT, 0));
-    VERIFY_IS_TRUE(SetHandleInformation(outPipeOurSide.get(), HANDLE_FLAG_INHERIT, 0));
-
-    VERIFY_SUCCEEDED(
-        _CreatePseudoConsole(defaultSize,
-                             inPipePseudoConsoleSide.get(),
-                             outPipePseudoConsoleSide.get(),
-                             0,
-                             &pty));
-    auto closePty1 = wil::scope_exit([&] {
-        _ClosePseudoConsoleMembers(&pty, TRUE);
-    });
-
-    DWORD dwExit;
-    VERIFY_IS_TRUE(GetExitCodeProcess(pty.hConPtyProcess, &dwExit));
-    VERIFY_ARE_EQUAL(dwExit, (DWORD)STILL_ACTIVE);
-
-    wil::unique_process_information piClient;
-    std::wstring realCommand = L"cmd.exe";
-    VERIFY_SUCCEEDED(AttachPseudoConsole(&pty, realCommand, piClient.addressof()));
-
-    VERIFY_IS_TRUE(GetExitCodeProcess(piClient.hProcess, &dwExit));
-    VERIFY_ARE_EQUAL(dwExit, (DWORD)STILL_ACTIVE);
-
-    VERIFY_IS_TRUE(CloseHandle(inPipeOurSide.get()));
-
-    // Wait for a couple seconds, make sure the child is still alive.
-    VERIFY_ARE_EQUAL(WaitForSingleObject(pty.hConPtyProcess, 2000), (DWORD)WAIT_TIMEOUT);
-    VERIFY_IS_TRUE(GetExitCodeProcess(pty.hConPtyProcess, &dwExit));
-    VERIFY_ARE_EQUAL(dwExit, (DWORD)STILL_ACTIVE);
 }
 
 void ConPtyTests::SurvivesOnBreakOutput()
