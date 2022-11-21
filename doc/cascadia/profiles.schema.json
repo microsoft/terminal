@@ -2395,7 +2395,10 @@
         },
         "startingDirectory": {
           "description": "The directory the shell starts in when it is loaded.",
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "suppressApplicationTitle": {
           "description": "When set to true, tabTitle overrides the default title of the tab and any title change messages from the application will be suppressed. When set to false, tabTitle behaves as normal.",
