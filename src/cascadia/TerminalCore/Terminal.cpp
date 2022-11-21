@@ -1652,17 +1652,17 @@ void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Termi
             }
             else if (matchMode == winrt::Microsoft::Terminal::Core::MatchMode::All)
             {
-                auto textBuffer = _activeBuffer().GetPlainText(start, end);
+                auto text = _activeBuffer().GetPlainText(start, end);
 
                 if (IsBlockSelection())
                 {
-                    const auto trimmed = Utils::TrimPaste(textBuffer);
-                    textBuffer = std::wstring{ trimmed };
+                    const auto trimmed = Utils::TrimPaste(text);
+                    text = std::wstring{ trimmed };
                 }
 
-                if (!textBuffer.empty())
+                if (!text.empty())
                 {
-                    Search search(*this, textBuffer, Search::Direction::Forward, Search::Sensitivity::CaseInsensitive, { 0, 0 });
+                    Search search(*this, std::move(text), Search::Direction::Forward, Search::Sensitivity::CaseInsensitive, { 0, 0 });
 
                     while (search.FindNext())
                     {

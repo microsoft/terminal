@@ -5,6 +5,11 @@
 
 namespace til
 {
+    namespace details
+    {
+        inline constexpr wchar_t UNICODE_REPLACEMENT = 0xFFFD;
+    }
+
     static constexpr bool is_surrogate(const wchar_t wch) noexcept
     {
         return (wch & 0xF800) == 0xD800;
@@ -20,17 +25,20 @@ namespace til
         return (wch & 0xFC00) == 0xDC00;
     }
 
+    // Verifies the beginning of the given UTF16 string and returns the first UTF16 sequence
+    // or U+FFFD otherwise. It's not really useful and at the time of writing only a
+    // single caller uses this. It's best to delete this if you read this comment.
     constexpr std::wstring_view utf16_next(std::wstring_view wstr) noexcept
     {
         auto it = wstr.begin();
         const auto end = wstr.end();
-        auto p = L"\uFFFD";
-        size_t l = 1;
+        auto ptr = &details::UNICODE_REPLACEMENT;
+        size_t len = 1;
 
         if (it != end)
         {
             const auto wch = *it;
-            p = &*it;
+            ptr = &*it;
 
             if (is_surrogate(wch))
             {
@@ -38,19 +46,21 @@ namespace til
                 const auto wch2 = it != end ? *it : wchar_t{};
                 if (is_leading_surrogate(wch) && is_trailing_surrogate(wch2))
                 {
-                    l = 2;
+                    len = 2;
                     ++it;
                 }
                 else
                 {
-                    p = L"\uFFFD";
+                    ptr = &details::UNICODE_REPLACEMENT;
                 }
             }
         }
 
-        return { p, l };
+        return { ptr, len };
     }
 
+    // Splits a UTF16 string into codepoints, yielding `wstring_view`s of UTF16 text. Use it as:
+    //   for (const auto& str : til::utf16_iterator{ input }) { ... }
     struct utf16_iterator
     {
         struct sentinel
@@ -66,28 +76,28 @@ namespace til
             using difference_type = std::ptrdiff_t;
 
             explicit constexpr iterator(utf16_iterator& p) noexcept :
-                _p{ p }
+                _iter{ p }
             {
             }
 
             const value_type& operator*() const noexcept
             {
-                return _p.value();
+                return _iter.value();
             }
 
             iterator& operator++() noexcept
             {
-                _p._advance = true;
+                _iter._advance = true;
                 return *this;
             }
 
             bool operator!=(const sentinel&) const noexcept
             {
-                return _p.valid();
+                return _iter.valid();
             }
 
         private:
-            utf16_iterator& _p;
+            utf16_iterator& _iter;
         };
 
         explicit constexpr utf16_iterator(std::wstring_view wstr) noexcept :
@@ -114,8 +124,8 @@ namespace til
         void advance() noexcept
         {
             const auto wch = *_it;
-            auto p = &*_it;
-            size_t l = 1;
+            auto ptr = &*_it;
+            size_t len = 1;
 
             ++_it;
 
@@ -124,16 +134,16 @@ namespace til
                 const auto wch2 = _it != _end ? *_it : wchar_t{};
                 if (is_leading_surrogate(wch) && is_trailing_surrogate(wch2))
                 {
-                    l = 2;
+                    len = 2;
                     ++_it;
                 }
                 else
                 {
-                    p = L"\uFFFD";
+                    ptr = &details::UNICODE_REPLACEMENT;
                 }
             }
 
-            _v = { p, l };
+            _value = { ptr, len };
             _advance = false;
         }
 
@@ -143,12 +153,12 @@ namespace til
             {
                 advance();
             }
-            return _v;
+            return _value;
         }
 
         std::wstring_view::iterator _it;
         std::wstring_view::iterator _end;
-        std::wstring_view _v;
+        std::wstring_view _value;
         bool _advance = true;
     };
 }
