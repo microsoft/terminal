@@ -38,6 +38,7 @@ private:
     winrt::fire_and_forget _SaveWindowLayoutsRepeat();
 
     void _HandleCommandlineArgs();
+    bool _HandleLaunchArgs();
     winrt::Microsoft::Terminal::Settings::Model::LaunchPosition _GetWindowLaunchPosition();
 
     void _HandleCreateWindow(const HWND hwnd, til::rect proposedRect, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode);

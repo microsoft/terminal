@@ -51,6 +51,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void UpdateActiveTabTitle(winrt::hstring title);
         Windows::Foundation::Collections::IVector<winrt::hstring> GetAllWindowLayouts();
 
+        static bool ProposeLaunchArgs(const winrt::hstring windowName);
+
         TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
         TYPED_EVENT(BecameMonarch, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(WindowCreated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);

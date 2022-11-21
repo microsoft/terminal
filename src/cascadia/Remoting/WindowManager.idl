@@ -23,6 +23,9 @@ namespace Microsoft.Terminal.Remoting
         void UpdateActiveTabTitle(String title);
         Boolean DoesQuakeWindowExist();
         Windows.Foundation.Collections.IVectorView<PeasantInfo> GetPeasantInfos();
+
+        static Boolean ProposeLaunchArgs(String windowName);
+
         event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> BecameMonarch;
         event Windows.Foundation.TypedEventHandler<Object, Object> WindowCreated;

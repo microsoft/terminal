@@ -18,6 +18,9 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::UI::Xaml::Controls;
 using namespace winrt::Windows::System;
 
+using namespace winrt::Windows::UI::Notifications;
+using namespace winrt::Windows::Data::Xml::Dom;
+
 namespace winrt
 {
     namespace MUX = Microsoft::UI::Xaml;
@@ -905,7 +908,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        events.taskbarToken = control.SetTaskbarProgress([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+        events.taskbarToken = control.SetTaskbarProgress([dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(dispatcher);
             // Check if Tab's lifetime has expired
             if (auto tab{ weakThis.get() })
@@ -1110,7 +1113,7 @@ namespace winrt::TerminalApp::implementation
         // Add a Closed event handler to the Pane. If the pane closes out from
         // underneath us, and it's zoomed, we want to be able to make sure to
         // update our state accordingly to un-zoom that pane. See GH#7252.
-        auto closedToken = pane->Closed([weakThis, weakPane](auto&& /*s*/, auto&& /*e*/) -> winrt::fire_and_forget {
+        auto closedToken = pane->Closed([weakThis, weakPane](auto&& /*s*/, auto && /*e*/) -> winrt::fire_and_forget {
             if (auto tab{ weakThis.get() })
             {
                 if (tab->_zoomedPane)
@@ -1155,6 +1158,8 @@ namespace winrt::TerminalApp::implementation
                     // In this part of the chain we bubble it from the hosting tab to the page
                     tab->_TabRaiseVisualBellHandlers();
                 }
+
+                tab->_RaiseNotificationHandlers();
 
                 // Show the bell indicator in the tab header
                 tab->ShowBellIndicator(true);

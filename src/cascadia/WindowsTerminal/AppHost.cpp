@@ -23,6 +23,8 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
 using namespace std::chrono_literals;
+using namespace winrt::Windows::ApplicationModel::Activation;
+using namespace winrt::Windows::UI::Notifications;
 
 // This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
 // "If the high-order bit is 1, the key is down; otherwise, it is up."
@@ -43,7 +45,9 @@ AppHost::AppHost() noexcept :
     // would mean we'd need to be responsible for looking that up.
     _windowManager.FindTargetWindowRequested({ this, &AppHost::_FindTargetWindow });
 
-    // Before handling any commandline arguments, chech if this was a toast invocation. If it was, we can go ahead and totally ignore everything else.
+    // Before handling any commandline arguments, chech if this was a toast
+    // invocation. If it was, we can go ahead and totally ignore everything
+    // else.
     if (_HandleLaunchArgs())
     {
         return;
@@ -345,7 +349,7 @@ bool AppHost::_HandleLaunchArgs()
 {
     // If someone clicks on a notification, then a fresh instance of
     // windowsterminal.exe will spawn. We certainly don't want to create a new
-    // window for that - we only awnt to activate the window that created the
+    // window for that - we only want to activate the window that created the
     // actual notification. In the toast arg's payload will be the window id
     // that sent the notification. We'll ask the window manager to try and
     // activate that window ID, without even bothering to register as the
@@ -369,7 +373,13 @@ bool AppHost::_HandleLaunchArgs()
 
         // Split that and get the id.
 
-        return true;
+        /// Split the args on the = sign
+        std::wstring_view argsView{ args };
+        const auto splitArgs = Utils::SplitString(argsView, L'=');
+        if (splitArgs.size() == 2 && splitArgs.at(0) == L"window")
+        {
+            return winrt::Microsoft::Terminal::Remoting::WindowManager::ProposeLaunchArgs(splitArgs.at(1));
+        }
     }
 
     return false;

@@ -70,6 +70,11 @@ Abstract:
 #include <winrt/Windows.ApplicationModel.Resources.Core.h>
 #include <winrt/Windows.UI.Composition.h>
 
+#include "winrt/Windows.Data.Xml.Dom.h"
+#include "winrt/Windows.UI.Notifications.h"
+// #include "winrt/Windows.ApplicationModel.h"
+#include "winrt/Windows.ApplicationModel.Activation.h"
+
 #include <winrt/TerminalApp.h>
 #include <winrt/Microsoft.Terminal.Settings.Model.h>
 #include <winrt/Microsoft.Terminal.Remoting.h>
