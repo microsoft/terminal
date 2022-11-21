@@ -43,9 +43,7 @@ public:
     {
     }
 
-    virtual ~CConsoleTSF()
-    {
-    }
+    virtual ~CConsoleTSF() = default;
     [[nodiscard]] HRESULT Initialize();
     void Uninitialize();
 

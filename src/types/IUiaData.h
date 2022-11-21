@@ -45,5 +45,5 @@ namespace Microsoft::Console::Types
     };
 
     // See docs/virtual-dtors.md for an explanation of why this is weird.
-    inline IUiaData::~IUiaData() {}
+    inline IUiaData::~IUiaData() = default;
 }

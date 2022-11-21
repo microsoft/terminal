@@ -90,9 +90,20 @@ public:
     virtual bool EraseInDisplay(const DispatchTypes::EraseType eraseType) = 0; // ED
     virtual bool EraseInLine(const DispatchTypes::EraseType eraseType) = 0; // EL
     virtual bool EraseCharacters(const VTInt numChars) = 0; // ECH
+    virtual bool SelectiveEraseInDisplay(const DispatchTypes::EraseType eraseType) = 0; // DECSED
+    virtual bool SelectiveEraseInLine(const DispatchTypes::EraseType eraseType) = 0; // DECSEL
+
+    virtual bool ChangeAttributesRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const VTParameters attrs) = 0; // DECCARA
+    virtual bool ReverseAttributesRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const VTParameters attrs) = 0; // DECRARA
+    virtual bool CopyRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const VTInt page, const VTInt dstTop, const VTInt dstLeft, const VTInt dstPage) = 0; // DECCRA
+    virtual bool FillRectangularArea(const VTParameter ch, const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) = 0; // DECFRA
+    virtual bool EraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) = 0; // DECERA
+    virtual bool SelectiveEraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) = 0; // DECSERA
+    virtual bool SelectAttributeChangeExtent(const DispatchTypes::ChangeExtent changeExtent) = 0; // DECSACE
 
     virtual bool SetGraphicsRendition(const VTParameters options) = 0; // SGR
     virtual bool SetLineRendition(const LineRendition rendition) = 0; // DECSWL, DECDWL, DECDHL
+    virtual bool SetCharacterProtectionAttribute(const VTParameters options) = 0; // DECSCA
 
     virtual bool PushGraphicsRendition(const VTParameters options) = 0; // XTPUSHSGR
     virtual bool PopGraphicsRendition() = 0; // XTPOPSGR
@@ -101,7 +112,7 @@ public:
 
     virtual bool ResetMode(const DispatchTypes::ModeParams param) = 0; // DECRST
 
-    virtual bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) = 0; // DSR, DSR-OS, DSR-CPR
+    virtual bool DeviceStatusReport(const DispatchTypes::StatusType statusType) = 0; // DSR, DSR-OS, DSR-CPR
     virtual bool DeviceAttributes() = 0; // DA1
     virtual bool SecondaryDeviceAttributes() = 0; // DA2
     virtual bool TertiaryDeviceAttributes() = 0; // DA3
@@ -154,5 +165,5 @@ public:
 
     virtual bool PlaySounds(const VTParameters parameters) = 0; // DECPS
 };
-inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() {}
+inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() = default;
 #pragma warning(pop)

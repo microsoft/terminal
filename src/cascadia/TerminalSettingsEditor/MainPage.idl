@@ -21,7 +21,7 @@ namespace Microsoft.Terminal.Settings.Editor
         ColorSchemes_Edit
     };
 
-    runtimeclass Breadcrumb
+    runtimeclass Breadcrumb : Windows.Foundation.IStringable
     {
         IInspectable Tag;
         String Label;

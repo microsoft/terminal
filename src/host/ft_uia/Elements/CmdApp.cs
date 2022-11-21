@@ -413,8 +413,8 @@ namespace Conhost.UIA.Tests.Elements
             if (this.job != IntPtr.Zero)
             {
                 WinBase.TerminateJobObject(this.job, 0);
+                this.job = IntPtr.Zero;
             }
-            this.job = IntPtr.Zero;
         }
 
         public WinEventSystem AttachWinEventSystem(IWinEventCallbacks callbacks)

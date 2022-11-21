@@ -16,6 +16,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _Label{ label },
             _SubPage{ subPage } {}
 
+        hstring ToString() { return _Label; }
+
         WINRT_PROPERTY(IInspectable, Tag);
         WINRT_PROPERTY(winrt::hstring, Label);
         WINRT_PROPERTY(BreadcrumbSubPage, SubPage);

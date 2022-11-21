@@ -119,3 +119,15 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }                                             \
         }                                                 \
     } while (0, 0)
+
+// clang-format off
+#define TIL_FAST_MATH_BEGIN                \
+    _Pragma("float_control(push)")         \
+    _Pragma("float_control(precise, off)") \
+    _Pragma("float_control(except, off)")  \
+    _Pragma("fenv_access(off)")            \
+    _Pragma("fp_contract(on)")
+
+#define TIL_FAST_MATH_END \
+    _Pragma("float_control(pop)")
+// clang-format on
