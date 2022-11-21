@@ -5,8 +5,9 @@
 
 #include "search.h"
 
+#include <til/unicode.h>
+
 #include "textBuffer.hpp"
-#include "../types/inc/Utf16Parser.hpp"
 #include "../types/inc/GlyphWidth.hpp"
 
 using namespace Microsoft::Console::Types;
@@ -22,14 +23,14 @@ using namespace Microsoft::Console::Types;
 // - direction - The direction to search (upward or downward)
 // - sensitivity - Whether or not you care about case
 Search::Search(IUiaData& uiaData,
-               const std::wstring_view str,
+               std::wstring str,
                const Direction direction,
                const Sensitivity sensitivity) :
+    _coordAnchor(s_GetInitialAnchor(uiaData, direction)),
+    _needle(std::move(str)),
     _direction(direction),
     _sensitivity(sensitivity),
-    _needle(s_CreateNeedleFromString(str)),
-    _uiaData(uiaData),
-    _coordAnchor(s_GetInitialAnchor(uiaData, direction))
+    _uiaData(uiaData)
 {
     _coordNext = _coordAnchor;
 }
@@ -46,14 +47,14 @@ Search::Search(IUiaData& uiaData,
 // - sensitivity - Whether or not you care about case
 // - anchor - starting search location in screenInfo
 Search::Search(IUiaData& uiaData,
-               const std::wstring_view str,
+               std::wstring str,
                const Direction direction,
                const Sensitivity sensitivity,
-               const til::point anchor) :
+               const til::point anchor) noexcept :
+    _coordAnchor(anchor),
+    _needle(std::move(str)),
     _direction(direction),
     _sensitivity(sensitivity),
-    _needle(s_CreateNeedleFromString(str)),
-    _coordAnchor(anchor),
     _uiaData(uiaData)
 {
     _coordNext = _coordAnchor;
@@ -190,22 +191,26 @@ bool Search::_FindNeedleInHaystackAt(const til::point pos, til::point& start, ti
     start = {};
     end = {};
 
+    if (_needle.empty())
+    {
+        return false;
+    }
+
     auto bufferPos = pos;
 
-    for (const auto& needleCell : _needle)
+    for (const auto& str : til::utf16_iterator{ _needle })
     {
-        // Haystack is the buffer. Needle is the string we were given.
-        const auto hayIter = _uiaData.GetTextBuffer().GetTextDataAt(bufferPos);
-        const auto hayChars = *hayIter;
-        const auto needleChars = std::wstring_view(needleCell.data(), needleCell.size());
-
-        // If we didn't match at any point of the needle, return false.
-        if (!_CompareChars(hayChars, needleChars))
+        const auto width = IsGlyphFullWidth(str) ? 2 : 1;
+        for (int i = 0; i < width; ++i)
         {
-            return false;
-        }
+            const auto hayIter = _uiaData.GetTextBuffer().GetTextDataAt(bufferPos);
+            if (!_CompareChars(*hayIter, str))
+            {
+                return false;
+            }
 
-        _IncrementCoord(bufferPos);
+            _IncrementCoord(bufferPos);
+        }
     }
 
     _DecrementCoord(bufferPos);
@@ -319,26 +324,4 @@ void Search::_UpdateNextPosition()
             _coordNext = bufferEndPosition;
         }
     }
-}
-
-// Routine Description:
-// - Creates a "needle" of the correct format for comparison to the screen buffer text data
-//   that we can use for our search
-// Arguments:
-// - wstr - String that will be our search term
-// Return Value:
-// - Structured text data for comparison to screen buffer text data.
-std::vector<std::vector<wchar_t>> Search::s_CreateNeedleFromString(const std::wstring_view wstr)
-{
-    const auto charData = Utf16Parser::Parse(wstr);
-    std::vector<std::vector<wchar_t>> cells;
-    for (const auto chars : charData)
-    {
-        if (IsGlyphFullWidth(std::wstring_view{ chars.data(), chars.size() }))
-        {
-            cells.emplace_back(chars);
-        }
-        cells.emplace_back(chars);
-    }
-    return cells;
 }

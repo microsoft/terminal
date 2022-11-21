@@ -41,15 +41,15 @@ public:
     };
 
     Search(Microsoft::Console::Types::IUiaData& uiaData,
-           const std::wstring_view str,
+           std::wstring str,
            const Direction dir,
            const Sensitivity sensitivity);
 
     Search(Microsoft::Console::Types::IUiaData& uiaData,
-           const std::wstring_view str,
+           std::wstring str,
            const Direction dir,
            const Sensitivity sensitivity,
-           const til::point anchor);
+           const til::point anchor) noexcept;
 
     bool FindNext();
     void Select() const;
@@ -68,17 +68,15 @@ private:
 
     static til::point s_GetInitialAnchor(const Microsoft::Console::Types::IUiaData& uiaData, const Direction dir);
 
-    static std::vector<std::vector<wchar_t>> s_CreateNeedleFromString(const std::wstring_view wstr);
-
     bool _reachedEnd = false;
     til::point _coordNext;
     til::point _coordSelStart;
     til::point _coordSelEnd;
 
-    const til::point _coordAnchor;
-    const std::vector<std::vector<wchar_t>> _needle;
-    const Direction _direction;
-    const Sensitivity _sensitivity;
+    til::point _coordAnchor;
+    std::wstring _needle;
+    Direction _direction;
+    Sensitivity _sensitivity;
     Microsoft::Console::Types::IUiaData& _uiaData;
 
 #ifdef UNIT_TESTING
