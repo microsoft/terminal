@@ -76,6 +76,8 @@ public:
 
     void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) override;
 
+    void SendNotification(const std::wstring_view /*title*/, const std::wstring_view /*body*/) override{};
+
 private:
     Microsoft::Console::IIoProvider& _io;
 };

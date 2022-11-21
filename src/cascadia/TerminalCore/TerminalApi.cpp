@@ -332,3 +332,12 @@ void Terminal::NotifyAccessibilityChange(const til::rect& /*changedRect*/) noexc
 {
     // This is only needed in conhost. Terminal handles accessibility in another way.
 }
+
+void Terminal::SendNotification(const std::wstring_view title,
+                                const std::wstring_view body) noexcept
+{
+    if (_pfnSendNotification)
+    {
+        _pfnSendNotification(title, body);
+    }
+}

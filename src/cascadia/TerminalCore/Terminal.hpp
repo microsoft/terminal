@@ -138,6 +138,7 @@ public:
     bool IsConsolePty() const noexcept override;
     bool IsVtInputEnabled() const noexcept override;
     void NotifyAccessibilityChange(const til::rect& changedRect) noexcept override;
+    void SendNotification(const std::wstring_view title, const std::wstring_view body) noexcept override;
 #pragma endregion
 
     void ClearMark();
@@ -215,6 +216,7 @@ public:
     void TaskbarProgressChangedCallback(std::function<void()> pfn) noexcept;
     void SetShowWindowCallback(std::function<void(bool)> pfn) noexcept;
     void SetPlayMidiNoteCallback(std::function<void(const int, const int, const std::chrono::microseconds)> pfn) noexcept;
+    void SetSendNotificationCallback(std::function<void(std::wstring_view, std::wstring_view)> pfn) noexcept;
 
     void SetCursorOn(const bool isOn);
     bool IsCursorBlinkingAllowed() const noexcept;
@@ -312,6 +314,7 @@ private:
     std::function<void()> _pfnTaskbarProgressChanged;
     std::function<void(bool)> _pfnShowWindowChanged;
     std::function<void(const int, const int, const std::chrono::microseconds)> _pfnPlayMidiNote;
+    std::function<void(std::wstring_view, std::wstring_view)> _pfnSendNotification;
 
     RenderSettings _renderSettings;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;

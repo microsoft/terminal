@@ -3051,6 +3051,41 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
     return false;
 }
 
+bool AdaptDispatch::DoUrxvtAction(const std::wstring_view string)
+{
+    // This is not implemented in conhost.
+    if (_api.IsConsolePty())
+    {
+        // Flush the frame manually, to make sure marks end up on the right line, like the alt buffer sequence.
+        _renderer.TriggerFlush(false);
+        return false;
+    }
+
+    // if constexpr (!Feature_ScrollbarMarks::IsEnabled())
+    // {
+    //     return false;
+    // }
+
+    const auto parts = Utils::SplitString(string, L';');
+
+    if (parts.size() < 1)
+    {
+        return false;
+    }
+
+    const auto action = til::at(parts, 0);
+
+    if (action == L"notify")
+    {
+        std::wstring_view title = parts.size() > 1 ? til::at(parts, 1) : L"";
+        std::wstring_view body = parts.size() > 2 ? til::at(parts, 2) : L"";
+        _api.SendNotification(title, body);
+        return true;
+    }
+
+    return false;
+}
+
 // Method Description:
 // - DECDLD - Downloads one or more characters of a dynamically redefinable
 //   character set (DRCS) with a specified pixel pattern. The pixel array is

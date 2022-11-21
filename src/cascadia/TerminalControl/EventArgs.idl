@@ -83,4 +83,10 @@ namespace Microsoft.Terminal.Control
     {
         Boolean ClearMarkers { get; };
     }
+
+    runtimeclass SendNotificationArgs
+    {
+        String Title { get; };
+        String Body { get; };
+    }
 }

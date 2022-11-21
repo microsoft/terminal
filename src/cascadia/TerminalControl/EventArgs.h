@@ -14,6 +14,7 @@
 #include "FoundResultsArgs.g.h"
 #include "ShowWindowArgs.g.h"
 #include "UpdateSelectionMarkersEventArgs.g.h"
+#include "SendNotificationArgs.g.h"
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
@@ -169,4 +170,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         WINRT_PROPERTY(bool, ClearMarkers, false);
     };
+
+    struct SendNotificationArgs : public SendNotificationArgsT<SendNotificationArgs>
+    {
+    public:
+        SendNotificationArgs(const std::wstring_view title,
+                             const std::wstring_view body) :
+            _Title(title),
+            _Body(body)
+        {
+        }
+
+        WINRT_PROPERTY(winrt::hstring, Title);
+        WINRT_PROPERTY(winrt::hstring, Body);
+    };
+
 }

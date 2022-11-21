@@ -149,6 +149,7 @@ public:
     virtual bool DoITerm2Action(const std::wstring_view string) = 0;
 
     virtual bool DoFinalTermAction(const std::wstring_view string) = 0;
+    virtual bool DoUrxvtAction(const std::wstring_view string) = 0;
 
     virtual StringHandler DownloadDRCS(const VTInt fontNumber,
                                        const VTParameter startChar,

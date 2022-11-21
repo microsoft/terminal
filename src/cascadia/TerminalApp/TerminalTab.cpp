@@ -1159,7 +1159,7 @@ namespace winrt::TerminalApp::implementation
                     tab->_TabRaiseVisualBellHandlers();
                 }
 
-                tab->_RaiseNotificationHandlers();
+                // tab->_RaiseNotificationHandlers();
 
                 // Show the bell indicator in the tab header
                 tab->ShowBellIndicator(true);

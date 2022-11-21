@@ -39,6 +39,9 @@ using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Terminal::Core;
 using namespace std::chrono_literals;
 
+using namespace winrt::Windows::UI::Notifications;
+using namespace winrt::Windows::Data::Xml::Dom;
+
 #define HOOKUP_ACTION(action) _actionDispatch->action({ this, &TerminalPage::_Handle##action });
 
 namespace winrt
@@ -1508,6 +1511,7 @@ namespace winrt::TerminalApp::implementation
         });
 
         term.ShowWindowChanged({ get_weak(), &TerminalPage::_ShowWindowChangedHandler });
+        term.SendNotification({ get_weak(), &TerminalPage::_SendNotificationHandler });
     }
 
     // Method Description:
@@ -2417,6 +2421,40 @@ namespace winrt::TerminalApp::implementation
     {
         co_await resume_foreground(Dispatcher());
         _ShowWindowChangedHandlers(*this, args);
+    }
+
+    winrt::fire_and_forget TerminalPage::_SendNotificationHandler(const IInspectable /*sender*/,
+                                                                  const Microsoft::Terminal::Control::SendNotificationArgs args)
+    {
+        auto weakThis = get_weak();
+
+        co_await resume_foreground(Dispatcher());
+        auto page{ weakThis.get() };
+        if (page)
+        {
+            // Construct the XML toast template
+            XmlDocument doc;
+            doc.LoadXml(L"\
+    <toast>\
+        <visual>\
+            <binding template=\"ToastGeneric\">\
+                <text></text>\
+                <text></text>\
+            </binding>\
+        </visual>\
+    </toast>");
+
+            // Populate with text and values
+            doc.DocumentElement().SetAttribute(L"launch", L"window=1&tabIndex=1");
+            doc.SelectSingleNode(L"//text[1]").InnerText(args.Title());
+            doc.SelectSingleNode(L"//text[2]").InnerText(args.Body());
+
+            // Construct the notification
+            winrt::Windows::UI::Notifications::ToastNotification notif{ doc };
+            ToastNotifier toastNotifier{ ToastNotificationManager::CreateToastNotifier() };
+            // And show it!
+            toastNotifier.Show(notif);
+        }
     }
 
     // Method Description:

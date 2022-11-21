@@ -457,6 +457,7 @@ namespace winrt::TerminalApp::implementation
         void _updateTabCloseButton(const winrt::Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem);
 
         winrt::fire_and_forget _ShowWindowChangedHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
+        winrt::fire_and_forget _SendNotificationHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::SendNotificationArgs args);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp

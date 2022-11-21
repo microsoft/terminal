@@ -232,6 +232,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(ShowWindowChanged,         IInspectable, Control::ShowWindowArgs);
         TYPED_EVENT(UpdateSelectionMarkers,    IInspectable, Control::UpdateSelectionMarkersEventArgs);
         TYPED_EVENT(OpenHyperlink,             IInspectable, Control::OpenHyperlinkEventArgs);
+        TYPED_EVENT(SendNotification,          IInspectable, Control::SendNotificationArgs);
         // clang-format on
 
     private:
@@ -304,6 +305,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _terminalPlayMidiNote(const int noteNumber,
                                    const int velocity,
                                    const std::chrono::microseconds duration);
+        void _terminalSendNotification(const std::wstring_view title,
+                                       const std::wstring_view body);
 #pragma endregion
 
         MidiAudio _midiAudio;

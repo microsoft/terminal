@@ -1378,6 +1378,11 @@ void Terminal::SetPlayMidiNoteCallback(std::function<void(const int, const int, 
     _pfnPlayMidiNote.swap(pfn);
 }
 
+void Terminal::SetSendNotificationCallback(std::function<void(std::wstring_view, std::wstring_view)> pfn) noexcept
+{
+    _pfnSendNotification.swap(pfn);
+}
+
 // Method Description:
 // - Sets the cursor to be currently on. On/Off is tracked independently of
 //   cursor visibility (hidden/visible). On/off is controlled by the cursor

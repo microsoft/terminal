@@ -143,6 +143,8 @@ public:
 
     bool DoFinalTermAction(const std::wstring_view /*string*/) override { return false; }
 
+    bool DoUrxvtAction(const std::wstring_view /*string*/) override { return false; }
+
     StringHandler DownloadDRCS(const VTInt /*fontNumber*/,
                                const VTParameter /*startChar*/,
                                const DispatchTypes::DrcsEraseControl /*eraseControl*/,
