@@ -803,7 +803,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     }
 
     // TODO! this firmly needs a better name
-    bool WindowManager::ProposeLaunchArgs(const winrt::hstring windowName)
+    bool WindowManager::ProposeLaunchArgs(const uint64_t windowId)
     {
         auto monarch = create_instance<Remoting::IMonarch>(Monarch_clsid,
                                                            CLSCTX_LOCAL_SERVER);
@@ -812,7 +812,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         {
             return false;
         }
-        SummonWindowSelectionArgs args{ windowName };
+        SummonWindowSelectionArgs args{};
+        args.WindowID(windowId);
         monarch.SummonWindow(args);
         return true;
     }

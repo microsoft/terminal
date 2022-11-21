@@ -24,7 +24,7 @@ namespace Microsoft.Terminal.Remoting
         Boolean DoesQuakeWindowExist();
         Windows.Foundation.Collections.IVectorView<PeasantInfo> GetPeasantInfos();
 
-        static Boolean ProposeLaunchArgs(String windowName);
+        static Boolean ProposeLaunchArgs(UInt64 windowId);
 
         event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> BecameMonarch;

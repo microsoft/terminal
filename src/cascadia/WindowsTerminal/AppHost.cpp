@@ -369,17 +369,33 @@ bool AppHost::_HandleLaunchArgs()
 
         // Args is gonna look like
         //
-        // "window=id"
+        // "window=id&foo=bar&..."
+        //
+        // We need to first split on &, then split those pairs on =
 
-        // Split that and get the id.
+        uint32_t window;
+        uint32_t tabIndex = 0;
 
-        /// Split the args on the = sign
         std::wstring_view argsView{ args };
-        const auto splitArgs = Utils::SplitString(argsView, L'=');
-        if (splitArgs.size() == 2 && splitArgs.at(0) == L"window")
+        const auto pairs = Utils::SplitString(argsView, L'&');
+        for (const auto& pair : pairs)
         {
-            return winrt::Microsoft::Terminal::Remoting::WindowManager::ProposeLaunchArgs(splitArgs.at(1));
+            const auto pairParts = Utils::SplitString(pair, L'=');
+            if (pairParts.size() == 2)
+            {
+                if (pairParts[0] == L"window")
+                {
+                    window = std::wcstoul(pairParts[1].data(), nullptr, 10);
+                }
+                else if (pairParts[0] == L"tabIndex")
+                {
+                    // convert a wide string to a uint
+                    tabIndex = std::wcstoul(pairParts[1].data(), nullptr, 10);
+                }
+            }
         }
+        return winrt::Microsoft::Terminal::Remoting::WindowManager::ProposeLaunchArgs(window);
+
     }
 
     return false;
