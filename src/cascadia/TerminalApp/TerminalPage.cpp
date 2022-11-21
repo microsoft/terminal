@@ -1089,14 +1089,14 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Helper method to create an IconElement that can be passed to MenuFlyoutItems and
     //   MenuFlyoutSubItems
-    IconElement TerminalPage::_CreateNewTabFlyoutIcon(const winrt::hstring& icon)
+    IconElement TerminalPage::_CreateNewTabFlyoutIcon(const winrt::hstring& iconSource)
     {
-        if (icon.empty())
+        if (iconSource.empty())
         {
             return nullptr;
         }
 
-        auto icon = IconPathConverter::IconWUX(icon);
+        auto icon = IconPathConverter::IconWUX(iconSource);
         Automation::AutomationProperties::SetAccessibilityView(icon, Automation::Peers::AccessibilityView::Raw);
 
         return icon;
