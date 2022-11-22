@@ -242,6 +242,11 @@ public:
         Log::Comment(L"AddMark MOCK called...");
     }
 
+    void SendNotification(const std::wstring_view /*title*/, const std::wstring_view /*body*/) override
+    {
+        Log::Comment(L"SendNotification MOCK called...");
+    }
+
     void PrepData()
     {
         PrepData(CursorDirection::UP); // if called like this, the cursor direction doesn't matter.
