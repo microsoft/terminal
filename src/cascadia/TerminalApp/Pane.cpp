@@ -3231,7 +3231,8 @@ void Pane::BroadcastString(const winrt::Microsoft::Terminal::Control::TermContro
     });
 }
 
-void Pane::_ControlReadOnlyChangedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::Foundation::IInspectable& /*e*/)
+void Pane::_ControlReadOnlyChangedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                          const winrt::Windows::Foundation::IInspectable& /*e*/)
 {
     UpdateVisuals();
 }
@@ -3243,7 +3244,7 @@ winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::_ComputeBorderColor()
         return s_focusedBorderBrush;
     }
 
-    if (_broadcastEnabled)
+    if (_broadcastEnabled && (_IsLeaf() && !_control->ReadOnly()))
     {
         return s_broadcastBorderBrush;
     }
