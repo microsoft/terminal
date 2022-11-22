@@ -230,6 +230,8 @@ namespace winrt::TerminalApp::implementation
         int _renamerLayoutCount{ 0 };
         bool _renamerPressedEnter{ false };
 
+        winrt::Windows::UI::Notifications::ToastNotifier _toastNotifier{ nullptr };
+
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowDialogHelper(const std::wstring_view& name);
 
         void _ShowAboutDialog();
@@ -459,6 +461,7 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget _ShowWindowChangedHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
         winrt::fire_and_forget _SendNotificationHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::SendNotificationArgs args);
 
+        void _sendNotification(const std::wstring_view title, const std::wstring_view body);
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
 #define ON_ALL_ACTIONS(action) DECLARE_ACTION_HANDLER(action);

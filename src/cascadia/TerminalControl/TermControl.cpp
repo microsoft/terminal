@@ -88,6 +88,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _interactivity.OpenHyperlink({ this, &TermControl::_HyperlinkHandler });
         _interactivity.ScrollPositionChanged({ this, &TermControl::_ScrollPositionChanged });
 
+        // Re-raise the event with us as the sender.
+        _core.SendNotification([weakThis = get_weak()](auto s, auto e) {
+            if (auto self{ weakThis.get() })
+            {
+                self->_SendNotificationHandlers(*self, e);
+            }
+        });
+
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
         _layoutUpdatedRevoker = SwapChainPanel().LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {

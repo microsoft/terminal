@@ -2423,7 +2423,7 @@ namespace winrt::TerminalApp::implementation
         _ShowWindowChangedHandlers(*this, args);
     }
 
-    winrt::fire_and_forget TerminalPage::_SendNotificationHandler(const IInspectable /*sender*/,
+    winrt::fire_and_forget TerminalPage::_SendNotificationHandler(const IInspectable sender,
                                                                   const Microsoft::Terminal::Control::SendNotificationArgs args)
     {
         auto weakThis = get_weak();
@@ -2432,9 +2432,42 @@ namespace winrt::TerminalApp::implementation
         auto page{ weakThis.get() };
         if (page)
         {
-            // Construct the XML toast template
-            XmlDocument doc;
-            doc.LoadXml(L"\
+            // If the window is inactive, we alway want to send the notification.
+            //
+            // Otherwise, we only want to send the notification for panes in inactive tabs.
+            if (_activated)
+            {
+                auto foundControl = false;
+                if (const auto activeTab{ _GetFocusedTabImpl() })
+                {
+                    activeTab->GetRootPane()->WalkTree([&](auto&& pane) {
+                        if (const auto& term{ pane->GetTerminalControl() })
+                        {
+                            if (term == sender)
+                            {
+                                foundControl = true;
+                                return;
+                            }
+                        }
+                    });
+                }
+
+                // The control that sent this is in the active tab. We
+                // should only send the notification if the window was
+                // inactive.
+                if (foundControl)
+                {
+                    co_return;
+                }
+            }
+
+            _sendNotification(args.Title(), args.Body());
+        }
+    }
+
+    void TerminalPage::_sendNotification(const std::wstring_view title, const std::wstring_view body)
+    {
+        static winrt::hstring xmlTemplate { L"\
     <toast>\
         <visual>\
             <binding template=\"ToastGeneric\">\
@@ -2442,19 +2475,25 @@ namespace winrt::TerminalApp::implementation
                 <text></text>\
             </binding>\
         </visual>\
-    </toast>");
+    </toast>" };
 
-            // Populate with text and values
-            doc.DocumentElement().SetAttribute(L"launch", L"window=1&tabIndex=1");
-            doc.SelectSingleNode(L"//text[1]").InnerText(args.Title());
-            doc.SelectSingleNode(L"//text[2]").InnerText(args.Body());
+        XmlDocument doc;
+        doc.LoadXml(xmlTemplate);
+        // Populate with text and values
+        doc.DocumentElement().SetAttribute(L"launch", L"window=1&tabIndex=1");
+        doc.SelectSingleNode(L"//text[1]").InnerText(title);
+        doc.SelectSingleNode(L"//text[2]").InnerText(body);
 
-            // Construct the notification
-            winrt::Windows::UI::Notifications::ToastNotification notif{ doc };
-            ToastNotifier toastNotifier{ ToastNotificationManager::CreateToastNotifier() };
-            // And show it!
-            toastNotifier.Show(notif);
+        // Construct the notification
+        winrt::Windows::UI::Notifications::ToastNotification notif{ doc };
+
+        if (!_toastNotifier)
+        {
+            _toastNotifier = ToastNotificationManager::CreateToastNotifier();
         }
+
+        // And show it!
+        _toastNotifier.Show(notif);
     }
 
     // Method Description:
