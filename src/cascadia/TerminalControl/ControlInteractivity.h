@@ -45,7 +45,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Control::ControlCore Core();
 
         Control::InteractivityAutomationPeer OnCreateAutomationPeer();
-        ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
+        ::Microsoft::Console::Render::IRenderData* GetUiaData() const;
 
 #pragma region Input Methods
         void PointerPressed(Control::MouseButtonState buttonState,

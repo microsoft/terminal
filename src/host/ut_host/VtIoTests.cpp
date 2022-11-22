@@ -254,7 +254,7 @@ void VtIoTests::DtorTestStackAllocMany()
     }
 }
 
-class MockRenderData : public IRenderData, IUiaData
+class MockRenderData : public IRenderData
 {
 public:
     Microsoft::Console::Types::Viewport GetViewport() noexcept override

@@ -9,7 +9,7 @@ using namespace Microsoft::Console::Types;
 using namespace Microsoft::WRL;
 
 #pragma warning(suppress : 26434) // WRL RuntimeClassInitialize base is a no-op and we need this for MakeAndInitialize
-HRESULT TermControlUiaProvider::RuntimeClassInitialize(_In_ ::Microsoft::Console::Types::IUiaData* const uiaData,
+HRESULT TermControlUiaProvider::RuntimeClassInitialize(_In_ Console::Render::IRenderData* const uiaData,
                                                        _In_ ::Microsoft::Console::Types::IControlAccessibilityInfo* controlInfo) noexcept
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, uiaData);

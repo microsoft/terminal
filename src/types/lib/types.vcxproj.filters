@@ -152,12 +152,6 @@
     <ClInclude Include="..\TermControlUiaTextRange.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\IUiaData.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\IBaseData.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\IUiaEventDispatcher.h">
       <Filter>Header Files</Filter>
     </ClInclude>

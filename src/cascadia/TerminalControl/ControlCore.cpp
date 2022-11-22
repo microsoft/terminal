@@ -1444,7 +1444,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return result;
     }
 
-    ::Microsoft::Console::Types::IUiaData* ControlCore::GetUiaData() const
+    ::Microsoft::Console::Render::IRenderData* ControlCore::GetUiaData() const
     {
         return _terminal.get();
     }

@@ -17,11 +17,11 @@ using namespace Microsoft::Console::Types;
 // - Once you've found something, you can perform actions like .Select() or .Color()
 // Arguments:
 // - textBuffer - The screen text buffer to search through (the "haystack")
-// - uiaData - The IUiaData type reference, it is for providing selection methods
+// - uiaData - The IRenderData type reference, it is for providing selection methods
 // - str - The search term you want to find (the "needle")
 // - direction - The direction to search (upward or downward)
 // - sensitivity - Whether or not you care about case
-Search::Search(IUiaData& uiaData,
+Search::Search(Microsoft::Console::Render::IRenderData& uiaData,
                const std::wstring_view str,
                const Direction direction,
                const Sensitivity sensitivity) :
@@ -40,12 +40,12 @@ Search::Search(IUiaData& uiaData,
 // - Once you've found something, you can perform actions like .Select() or .Color()
 // Arguments:
 // - textBuffer - The screen text buffer to search through (the "haystack")
-// - uiaData - The IUiaData type reference, it is for providing selection methods
+// - uiaData - The IRenderData type reference, it is for providing selection methods
 // - str - The search term you want to find (the "needle")
 // - direction - The direction to search (upward or downward)
 // - sensitivity - Whether or not you care about case
 // - anchor - starting search location in screenInfo
-Search::Search(IUiaData& uiaData,
+Search::Search(Microsoft::Console::Render::IRenderData& uiaData,
                const std::wstring_view str,
                const Direction direction,
                const Sensitivity sensitivity,
@@ -134,11 +134,11 @@ std::pair<til::point, til::point> Search::GetFoundLocation() const noexcept
 // - If the screen buffer given already has a selection in it, it will be used to determine the anchor.
 // - Otherwise, we will choose one of the ends of the screen buffer depending on direction.
 // Arguments:
-// - uiaData - The reference to the IUiaData interface type object
+// - uiaData - The reference to the IRenderData interface type object
 // - direction - The intended direction of the search
 // Return Value:
 // - Coordinate to start the search from.
-til::point Search::s_GetInitialAnchor(const IUiaData& uiaData, const Direction direction)
+til::point Search::s_GetInitialAnchor(const Microsoft::Console::Render::IRenderData& uiaData, const Direction direction)
 {
     const auto& textBuffer = uiaData.GetTextBuffer();
     const auto textBufferEndPosition = uiaData.GetTextBufferEndPosition();

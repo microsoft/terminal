@@ -39,7 +39,6 @@
     <ClCompile Include="..\utils.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\IBaseData.h" />
     <ClInclude Include="..\IControlAccessibilityInfo.h" />
     <ClInclude Include="..\inc\CodepointWidthDetector.hpp" />
     <ClInclude Include="..\inc\ColorFix.hpp" />
@@ -53,7 +52,6 @@
     <ClInclude Include="..\inc\utils.hpp" />
     <ClInclude Include="..\inc\Viewport.hpp" />
     <ClInclude Include="..\inc\Utf16Parser.hpp" />
-    <ClInclude Include="..\IUiaData.h" />
     <ClInclude Include="..\IUiaEventDispatcher.h" />
     <ClInclude Include="..\IUiaTraceable.h" />
     <ClInclude Include="..\TermControlUiaTextRange.hpp" />

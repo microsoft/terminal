@@ -304,7 +304,7 @@ void HwndTerminal::RegisterWriteCallback(const void _stdcall callback(wchar_t*))
     _pfnWriteCallback = callback;
 }
 
-::Microsoft::Console::Types::IUiaData* HwndTerminal::GetUiaData() const noexcept
+::Microsoft::Console::Render::IRenderData* HwndTerminal::GetUiaData() const noexcept
 {
     return _terminal.get();
 }

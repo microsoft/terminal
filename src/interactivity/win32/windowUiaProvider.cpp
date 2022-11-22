@@ -6,7 +6,7 @@
 #include "screenInfoUiaProvider.hpp"
 #include "windowUiaProvider.hpp"
 
-#include "../types/IUiaData.h"
+#include "../renderer/inc/IRenderData.hpp"
 #include "../host/renderData.hpp"
 #include "../inc/ServiceLocator.hpp"
 
@@ -20,7 +20,7 @@ try
 
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
-    IUiaData* uiaData = &gci.renderData;
+    Render::IRenderData* uiaData = &gci.renderData;
 
     RETURN_IF_FAILED(WRL::MakeAndInitialize<ScreenInfoUiaProvider>(&_pScreenInfoProvider, uiaData, this));
 

@@ -661,7 +661,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return nullptr;
     }
 
-    ::Microsoft::Console::Types::IUiaData* ControlInteractivity::GetUiaData() const
+    ::Microsoft::Console::Render::IRenderData* ControlInteractivity::GetUiaData() const
     {
         return _core->GetUiaData();
     }
