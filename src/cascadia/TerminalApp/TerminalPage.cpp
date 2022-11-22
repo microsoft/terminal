@@ -2465,9 +2465,10 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_sendNotification(const std::wstring_view title, const std::wstring_view body)
+    void TerminalPage::_sendNotification(const std::wstring_view title,
+                                         const std::wstring_view body)
     {
-        static winrt::hstring xmlTemplate { L"\
+        static winrt::hstring xmlTemplate{ L"\
     <toast>\
         <visual>\
             <binding template=\"ToastGeneric\">\
@@ -2480,7 +2481,8 @@ namespace winrt::TerminalApp::implementation
         XmlDocument doc;
         doc.LoadXml(xmlTemplate);
         // Populate with text and values
-        doc.DocumentElement().SetAttribute(L"launch", L"window=1&tabIndex=1");
+        auto payload{ fmt::format(L"window={}&tabIndex=0", WindowId()) };
+        doc.DocumentElement().SetAttribute(L"launch", payload);
         doc.SelectSingleNode(L"//text[1]").InnerText(title);
         doc.SelectSingleNode(L"//text[2]").InnerText(body);
 

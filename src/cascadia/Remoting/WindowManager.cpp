@@ -802,8 +802,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return nullptr;
     }
 
-    // TODO! this firmly needs a better name
-    bool WindowManager::ProposeLaunchArgs(const uint64_t windowId)
+    // Attempt to summon an existing window. This static function does NOT
+    // pre-register as the monarch. This is used for activations from a
+    // notification, where this process should NEVER become its own window.
+    bool WindowManager::SummonForNotification(const uint64_t windowId)
     {
         auto monarch = create_instance<Remoting::IMonarch>(Monarch_clsid,
                                                            CLSCTX_LOCAL_SERVER);

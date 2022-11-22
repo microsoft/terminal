@@ -23,7 +23,7 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
 using namespace std::chrono_literals;
-using namespace winrt::Windows::ApplicationModel::Activation;
+using namespace winrt::Windows::ApplicationModel;
 using namespace winrt::Windows::UI::Notifications;
 
 // This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
@@ -359,43 +359,46 @@ bool AppHost::_HandleLaunchArgs()
     // I bet this won't work from elevated context. I'm actually quite curious.
     // TODO!
 
-    auto activatedArgs = winrt::Windows::ApplicationModel::AppInstance::GetActivatedEventArgs();
-    if (activatedArgs != nullptr && activatedArgs.Kind() == winrt::Windows::ApplicationModel::Activation::ActivationKind::ToastNotification)
+    auto activatedArgs = AppInstance::GetActivatedEventArgs();
+    if (activatedArgs != nullptr &&
+        activatedArgs.Kind() == Activation::ActivationKind::ToastNotification)
     {
-        ToastNotificationActivatedEventArgs toastArgs = activatedArgs.try_as<ToastNotificationActivatedEventArgs>();
-
-        // Obtain the arguments from the notification
-        auto args = toastArgs.Argument();
-
-        // Args is gonna look like
-        //
-        // "window=id&foo=bar&..."
-        //
-        // We need to first split on &, then split those pairs on =
-
-        uint32_t window;
-        uint32_t tabIndex = 0;
-
-        std::wstring_view argsView{ args };
-        const auto pairs = Utils::SplitString(argsView, L'&');
-        for (const auto& pair : pairs)
+        if (const auto& toastArgs{ activatedArgs.try_as<Activation::ToastNotificationActivatedEventArgs>() })
         {
-            const auto pairParts = Utils::SplitString(pair, L'=');
-            if (pairParts.size() == 2)
+            // Obtain the arguments from the notification
+            auto args = toastArgs.Argument();
+
+            // Args is gonna look like
+            //
+            // "window=id&foo=bar&..."
+            //
+            // We need to first split on &, then split those pairs on =
+
+            // tabIndex code here is left as reference for parsing multiple
+            // arguments, despite it not being used currently.
+            uint32_t window;
+            // uint32_t tabIndex = 0;
+
+            std::wstring_view argsView{ args };
+            const auto pairs = Utils::SplitString(argsView, L'&');
+            for (const auto& pair : pairs)
             {
-                if (pairParts[0] == L"window")
+                const auto pairParts = Utils::SplitString(pair, L'=');
+                if (pairParts.size() == 2)
                 {
-                    window = std::wcstoul(pairParts[1].data(), nullptr, 10);
-                }
-                else if (pairParts[0] == L"tabIndex")
-                {
-                    // convert a wide string to a uint
-                    tabIndex = std::wcstoul(pairParts[1].data(), nullptr, 10);
+                    if (pairParts[0] == L"window")
+                    {
+                        window = std::wcstoul(pairParts[1].data(), nullptr, 10);
+                    }
+                    // else if (pairParts[0] == L"tabIndex")
+                    // {
+                    //     // convert a wide string to a uint
+                    //     tabIndex = std::wcstoul(pairParts[1].data(), nullptr, 10);
+                    // }
                 }
             }
+            return winrt::Microsoft::Terminal::Remoting::WindowManager::SummonForNotification(window);
         }
-        return winrt::Microsoft::Terminal::Remoting::WindowManager::ProposeLaunchArgs(window);
-
     }
 
     return false;
