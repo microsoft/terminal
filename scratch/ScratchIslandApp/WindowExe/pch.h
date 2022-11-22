@@ -63,11 +63,6 @@ Abstract:
 #include <winrt/Windows.UI.Xaml.Controls.h>
 #include <winrt/Windows.ui.xaml.media.h>
 
-
-#include "winrt/Windows.UI.Notifications.h"
-#include "winrt/Windows.ApplicationModel.h"
-#include "winrt/Windows.ApplicationModel.Activation.h"
-
 #include <winrt/SampleApp.h>
 
 #include <wil/resource.h>

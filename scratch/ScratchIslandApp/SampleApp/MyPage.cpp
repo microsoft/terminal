@@ -9,8 +9,6 @@
 
 using namespace std::chrono_literals;
 using namespace winrt::Microsoft::Terminal;
-using namespace winrt::Windows::UI::Notifications;
-using namespace winrt::Windows::Data::Xml::Dom;
 
 namespace winrt
 {
@@ -60,29 +58,4 @@ namespace winrt::SampleApp::implementation
         return { L"Sample Application" };
     }
 
-    void MyPage::SendNotification(const IInspectable& /*sender*/, const IInspectable& /*args*/)
-    {
-        // Construct the XML toast template
-        XmlDocument doc;
-        doc.LoadXml(L"\
-    <toast>\
-        <visual>\
-            <binding template=\"ToastGeneric\">\
-                <text></text>\
-                <text></text>\
-            </binding>\
-        </visual>\
-    </toast>");
-
-        // Populate with text and values
-        doc.DocumentElement().SetAttribute(L"launch", L"action=viewConversation&conversationId=9813");
-        doc.SelectSingleNode(L"//text[1]").InnerText(L"Andrew sent you a picture");
-        doc.SelectSingleNode(L"//text[2]").InnerText(L"Check this out, Happy Canyon in Utah!");
-
-        // Construct the notification
-        winrt::Windows::UI::Notifications::ToastNotification notif{ doc };
-        ToastNotifier toastNotifier{ ToastNotificationManager::CreateToastNotifier() };
-        // And show it!
-        toastNotifier.Show(notif);
-    }
 }

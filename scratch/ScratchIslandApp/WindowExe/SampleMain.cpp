@@ -13,7 +13,6 @@ using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
 
-using namespace winrt::Windows::ApplicationModel::Activation;
 // Routine Description:
 // - Takes an image architecture and locates a string resource that maps to that architecture.
 // Arguments:
@@ -103,29 +102,10 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     // doing that, we can safely init as STA before any WinRT dispatches.
     winrt::init_apartment(winrt::apartment_type::single_threaded);
 
-    // We can get the launch args here, before we even create the app. That's good. That's very good. 
-    auto activatedArgs = winrt::Windows::ApplicationModel::AppInstance::GetActivatedEventArgs();
-    if (activatedArgs != nullptr && activatedArgs.Kind() == winrt::Windows::ApplicationModel::Activation::ActivationKind::ToastNotification)
-    {
-        ToastNotificationActivatedEventArgs toastArgs = activatedArgs.try_as<ToastNotificationActivatedEventArgs>();
-
-        // Obtain the arguments from the notification
-        auto args = toastArgs.Argument();
-        args;
-
-        // Obtain any user input (text boxes, menu selections) from the notification
-        auto userInput = toastArgs.UserInput();
-        userInput;
-        auto a = 1;
-        a++;
-        a;
-    }
-
     // Create the SampleAppHost object, which will create both the window and the
     // Terminal App. This MUST BE constructed before the Xaml manager as TermApp
     // provides an implementation of Windows.UI.Xaml.Application.
     SampleAppHost host;
-
 
     // Initialize the xaml content. This must be called AFTER the
     // WindowsXamlManager is initialized.
