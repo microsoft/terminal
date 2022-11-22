@@ -963,8 +963,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                    const WORD scanCode,
                                    const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers)
     {
-        const auto handled = _core.SendCharEvent(character, scanCode, modifiers);
-        return handled;
+        return _core.SendCharEvent(character, scanCode, modifiers);
     }
 
     void TermControl::RawWriteString(const winrt::hstring& text)
