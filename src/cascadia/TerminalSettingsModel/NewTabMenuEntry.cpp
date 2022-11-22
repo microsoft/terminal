@@ -49,11 +49,17 @@ winrt::com_ptr<NewTabMenuEntry> NewTabMenuEntry::FromJson(const Json::Value& jso
 {
     const auto type = JsonUtils::GetValueForKey<NewTabMenuEntryType>(json, TypeKey);
 
-    const auto deserializer = typeDeserializerMap.find(type);
-    if (deserializer == typeDeserializerMap.end() || !deserializer->second)
+    switch (type)
     {
+    case NewTabMenuEntryType::Separator:
+        return SeparatorEntry::FromJson(json);
+    case NewTabMenuEntryType::Folder:
+        return FolderEntry::FromJson(json);
+    case NewTabMenuEntryType::Profile:
+        return ProfileEntry::FromJson(json);
+    case NewTabMenuEntryType::RemainingProfiles:
+        return RemainingProfilesEntry::FromJson(json);
+    default:
         return nullptr;
     }
-
-    return deserializer->second(json);
 }

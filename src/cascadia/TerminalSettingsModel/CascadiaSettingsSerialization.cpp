@@ -1286,7 +1286,8 @@ void CascadiaSettings::_resolveNewTabMenuProfilesSet(const IVector<Model::NewTab
             // Find the profile by name
             const auto profile = GetProfileByName(profileEntry->ProfileName());
 
-            if (profile == nullptr)
+            // If not found, or if the profile is hidden, skip it
+            if (profile == nullptr || profile.Hidden())
             {
                 profileEntry->Profile(nullptr); // override "default" profile
                 break;

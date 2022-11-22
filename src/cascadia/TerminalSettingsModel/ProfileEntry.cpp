@@ -27,9 +27,24 @@ Json::Value ProfileEntry::ToJson() const
 {
     auto json = NewTabMenuEntry::ToJson();
 
-    // We always store the GUID of the profile since that is less
-    // error prone in the long term.
-    JsonUtils::SetValueForKey(json, ProfileKey, _Profile.Guid());
+    // We will now return a profile reference to the JSON representation. Logic is
+    // as follows:
+    // - When Profile is null, this is typically because an existing profile menu entry
+    //   in the JSON config is invalid (nonexistent or hidden profile). Then, we store
+    //   the original profile string value as read from JSON, to improve portability
+    //   of the settings file and limit modifications to the JSON.
+    // - Otherwise, we always store the GUID of the profile. This will effectively convert
+    //   all name-matched profiles from the settings file to GUIDs. This might be unexpected
+    //   to some users, but is less error-prone and will continue to work when profile
+    //   names are changed.
+    if (_Profile == nullptr)
+    {
+        JsonUtils::SetValueForKey(json, ProfileKey, _ProfileName);
+    }
+    else
+    {
+        JsonUtils::SetValueForKey(json, ProfileKey, _Profile.Guid());
+    }
 
     return json;
 }
