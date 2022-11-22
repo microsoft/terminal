@@ -3061,11 +3061,6 @@ bool AdaptDispatch::DoUrxvtAction(const std::wstring_view string)
         return false;
     }
 
-    // if constexpr (!Feature_ScrollbarMarks::IsEnabled())
-    // {
-    //     return false;
-    // }
-
     const auto parts = Utils::SplitString(string, L';');
 
     if (parts.size() < 1)
@@ -3077,8 +3072,8 @@ bool AdaptDispatch::DoUrxvtAction(const std::wstring_view string)
 
     if (action == L"notify")
     {
-        std::wstring_view title = parts.size() > 1 ? til::at(parts, 1) : L"";
-        std::wstring_view body = parts.size() > 2 ? til::at(parts, 2) : L"";
+        const std::wstring_view title = parts.size() > 1 ? til::at(parts, 1) : L"";
+        const std::wstring_view body = parts.size() > 2 ? til::at(parts, 2) : L"";
         _api.SendNotification(title, body);
         return true;
     }
