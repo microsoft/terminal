@@ -1675,7 +1675,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Toggle read-only mode on the active pane
+    // - Toggle broadcasting input to all the panes in this tab.
     void TerminalTab::ToggleBroadcastInput()
     {
         _tabStatus.IsInputBroadcastActive(!_tabStatus.IsInputBroadcastActive());
