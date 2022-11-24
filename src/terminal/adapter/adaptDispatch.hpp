@@ -76,7 +76,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool ScrollDown(const VTInt distance) override; // SD
         bool InsertLine(const VTInt distance) override; // IL
         bool DeleteLine(const VTInt distance) override; // DL
-        bool SetColumns(const VTInt columns) override; // DECCOLM
         bool SetMode(const DispatchTypes::ModeParams param) override; // DECSET
         bool ResetMode(const DispatchTypes::ModeParams param) override; // DECRST
         bool SetKeypadMode(const bool applicationMode) override; // DECKPAM, DECKPNM
@@ -148,6 +147,7 @@ namespace Microsoft::Console::VirtualTerminal
         enum class Mode
         {
             Origin,
+            Column,
             AllowDECCOLM,
             RectangularChangeExtent
         };
@@ -205,9 +205,9 @@ namespace Microsoft::Console::VirtualTerminal
         void _OperatingStatus() const;
         void _CursorPositionReport(const bool extendedReport);
 
+        void _SetColumnMode(const bool enable);
         bool _PassThroughInputModes();
         bool _ModeParamsHelper(const DispatchTypes::ModeParams param, const bool enable);
-        bool _DoDECCOLMHelper(const VTInt columns);
 
         void _ClearSingleTabStop();
         void _ClearAllTabStops() noexcept;

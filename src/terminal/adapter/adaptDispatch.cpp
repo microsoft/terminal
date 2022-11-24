@@ -1361,40 +1361,27 @@ bool AdaptDispatch::ScrollDown(const VTInt uiDistance)
 }
 
 // Routine Description:
-// - DECSCPP / DECCOLM Sets the number of columns "per page" AKA sets the console width.
-// DECCOLM also clear the screen (like a CSI 2 J sequence), while DECSCPP just sets the width.
-// (DECCOLM will do this separately of this function)
-// Arguments:
-// - columns - Number of columns
-// Return Value:
-// - True.
-bool AdaptDispatch::SetColumns(const VTInt columns)
-{
-    const auto viewport = _api.GetViewport();
-    const auto viewportHeight = viewport.bottom - viewport.top;
-    _api.ResizeWindow(columns, viewportHeight);
-    return true;
-}
-
-// Routine Description:
 // - DECCOLM not only sets the number of columns, but also clears the screen buffer,
 //    resets the page margins and origin mode, and places the cursor at 1,1
 // Arguments:
-// - columns - Number of columns
+// - enable - the number of columns is set to 132 if true, 80 if false.
 // Return Value:
-// - True.
-bool AdaptDispatch::_DoDECCOLMHelper(const VTInt columns)
+// - <none>
+void AdaptDispatch::_SetColumnMode(const bool enable)
 {
     // Only proceed if DECCOLM is allowed. Return true, as this is technically a successful handling.
-    if (_modes.test(Mode::AllowDECCOLM))
+    if (_modes.test(Mode::AllowDECCOLM) && !_api.IsConsolePty())
     {
-        SetColumns(columns);
+        const auto viewport = _api.GetViewport();
+        const auto viewportHeight = viewport.bottom - viewport.top;
+        const auto viewportWidth = (enable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns);
+        _api.ResizeWindow(viewportWidth, viewportHeight);
+        _modes.set(Mode::Column, enable);
         _modes.reset(Mode::Origin);
         CursorPosition(1, 1);
         EraseInDisplay(DispatchTypes::EraseType::All);
         _DoSetTopBottomScrollingMargins(0, 0);
     }
-    return true;
 }
 
 // Routine Description:
@@ -1431,7 +1418,8 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
     case DispatchTypes::ModeParams::DECANM_AnsiMode:
         return SetAnsiMode(enable);
     case DispatchTypes::ModeParams::DECCOLM_SetNumberOfColumns:
-        return _DoDECCOLMHelper(enable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns);
+        _SetColumnMode(enable);
+        return true;
     case DispatchTypes::ModeParams::DECSCNM_ScreenMode:
         _renderSettings.SetRenderMode(RenderSettings::Mode::ScreenReversed, enable);
         // No need to force a redraw in pty mode.
