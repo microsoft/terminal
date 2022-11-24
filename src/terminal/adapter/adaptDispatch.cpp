@@ -351,7 +351,7 @@ bool AdaptDispatch::CursorSaveState()
     savedCursorState.IsOriginModeRelative = _modes.test(Mode::Origin);
     savedCursorState.Attributes = attributes;
     savedCursorState.TermOutput = _termOutput;
-    savedCursorState.C1ControlsAccepted = _GetParserMode(StateMachine::Mode::AcceptC1);
+    savedCursorState.C1ControlsAccepted = _api.GetStateMachine().GetParserMode(StateMachine::Mode::AcceptC1);
     savedCursorState.CodePage = _api.GetConsoleOutputCP();
 
     return true;
@@ -1397,29 +1397,6 @@ bool AdaptDispatch::_DoDECCOLMHelper(const VTInt columns)
     return true;
 }
 
-// Routine Description :
-// - Retrieves the various StateMachine parser modes.
-// Arguments:
-// - mode - the parser mode to query.
-// Return Value:
-// - true if the mode is enabled. false if disabled.
-bool AdaptDispatch::_GetParserMode(const StateMachine::Mode mode) const
-{
-    return _api.GetStateMachine().GetParserMode(mode);
-}
-
-// Routine Description:
-// - Sets the various StateMachine parser modes.
-// Arguments:
-// - mode - the parser mode to change.
-// - enable - set to true to enable the mode, false to disable it.
-// Return Value:
-// - <none>
-void AdaptDispatch::_SetParserMode(const StateMachine::Mode mode, const bool enable)
-{
-    _api.GetStateMachine().SetParserMode(mode, enable);
-}
-
 // Routine Description:
 // - Determines whether we need to pass through input mode requests.
 //   If we're a conpty, AND WE'RE IN VT INPUT MODE, always pass input mode requests
@@ -1628,7 +1605,7 @@ bool AdaptDispatch::SetAnsiMode(const bool ansiMode)
     // need to be reset to defaults, even if the mode doesn't actually change.
     _termOutput = {};
 
-    _SetParserMode(StateMachine::Mode::Ansi, ansiMode);
+    _api.GetStateMachine().SetParserMode(StateMachine::Mode::Ansi, ansiMode);
     _terminalInput.SetInputMode(TerminalInput::Mode::Ansi, ansiMode);
 
     // We never want to forward a DECANM mode change over conpty.
@@ -2116,7 +2093,7 @@ bool AdaptDispatch::SingleShift(const VTInt gsetNumber)
 // - True.
 bool AdaptDispatch::AcceptC1Controls(const bool enabled)
 {
-    _SetParserMode(StateMachine::Mode::AcceptC1, enabled);
+    _api.GetStateMachine().SetParserMode(StateMachine::Mode::AcceptC1, enabled);
     return true;
 }
 

@@ -205,8 +205,6 @@ namespace Microsoft::Console::VirtualTerminal
         void _OperatingStatus() const;
         void _CursorPositionReport(const bool extendedReport);
 
-        bool _GetParserMode(const StateMachine::Mode mode) const;
-        void _SetParserMode(const StateMachine::Mode mode, const bool enable);
         bool _PassThroughInputModes();
         bool _ModeParamsHelper(const DispatchTypes::ModeParams param, const bool enable);
         bool _DoDECCOLMHelper(const VTInt columns);
