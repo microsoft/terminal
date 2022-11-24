@@ -408,18 +408,6 @@ bool AdaptDispatch::CursorRestoreState()
 }
 
 // Routine Description:
-// - DECTCEM - Sets the show/hide visibility status of the cursor.
-// Arguments:
-// - fIsVisible - Turns the cursor rendering on (TRUE) or off (FALSE).
-// Return Value:
-// - True.
-bool AdaptDispatch::CursorVisibility(const bool fIsVisible)
-{
-    _api.GetTextBuffer().GetCursor().SetIsVisible(fIsVisible);
-    return true;
-}
-
-// Routine Description:
 // - Scrolls an area of the buffer in a vertical direction.
 // Arguments:
 // - textBuffer - Target buffer to be scrolled.
@@ -1488,9 +1476,11 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         _terminalInput.SetInputMode(TerminalInput::Mode::AutoRepeat, enable);
         return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
-        return EnableCursorBlinking(enable);
+        _api.GetTextBuffer().GetCursor().SetBlinkingAllowed(enable);
+        return !_api.IsConsolePty();
     case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
-        return CursorVisibility(enable);
+        _api.GetTextBuffer().GetCursor().SetIsVisible(enable);
+        return true;
     case DispatchTypes::ModeParams::XTERM_EnableDECCOLMSupport:
         _modes.set(Mode::AllowDECCOLM, enable);
         return true;
@@ -1564,27 +1554,6 @@ bool AdaptDispatch::SetKeypadMode(const bool fApplicationMode)
 {
     _terminalInput.SetInputMode(TerminalInput::Mode::Keypad, fApplicationMode);
     return !_PassThroughInputModes();
-}
-
-// - att610 - Enables or disables the cursor blinking.
-// Arguments:
-// - enable - set to true to enable blinking, false to disable
-// Return Value:
-// - True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableCursorBlinking(const bool enable)
-{
-    auto& cursor = _api.GetTextBuffer().GetCursor();
-    cursor.SetBlinkingAllowed(enable);
-
-    // GH#2642 - From what we've gathered from other terminals, when blinking is
-    // disabled, the cursor should remain On always, and have the visibility
-    // controlled by the IsVisible property. So when you do a printf "\e[?12l"
-    // to disable blinking, the cursor stays stuck On. At this point, only the
-    // cursor visibility property controls whether the user can see it or not.
-    // (Yes, the cursor can be On and NOT Visible)
-    cursor.SetIsOn(true);
-
-    return !_api.IsConsolePty();
 }
 
 // Routine Description:
@@ -2184,7 +2153,7 @@ bool AdaptDispatch::AcceptC1Controls(const bool enabled)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::SoftReset()
 {
-    CursorVisibility(true); // Cursor enabled.
+    _api.GetTextBuffer().GetCursor().SetIsVisible(true); // Cursor enabled.
     _modes.reset(Mode::Origin); // Absolute cursor addressing.
     _api.SetAutoWrapMode(true); // Wrap at end of line.
     _terminalInput.SetInputMode(TerminalInput::Mode::CursorKey, false); // Normal characters.
@@ -2261,6 +2230,9 @@ bool AdaptDispatch::HardReset()
 
     // Reset input modes to their initial state
     _terminalInput.ResetInputModes();
+
+    // Restore cursor blinking mode.
+    _api.GetTextBuffer().GetCursor().SetBlinkingAllowed(true);
 
     // Delete all current tab stops and reapply
     _ResetTabStops();
@@ -2469,7 +2441,6 @@ bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
     auto& cursor = _api.GetTextBuffer().GetCursor();
     cursor.SetType(actualType);
     cursor.SetBlinkingAllowed(fEnableBlinking);
-    cursor.SetIsOn(true);
 
     // If we're a conpty, always return false, so that this cursor state will be
     // sent to the connected terminal

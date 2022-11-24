@@ -38,7 +38,6 @@ public:
     bool CursorPosition(const VTInt /*line*/, const VTInt /*column*/) override { return false; } // CUP, HVP
     bool CursorSaveState() override { return false; } // DECSC
     bool CursorRestoreState() override { return false; } // DECRC
-    bool CursorVisibility(const bool /*isVisible*/) override { return false; } // DECTCEM
     bool InsertCharacter(const VTInt /*count*/) override { return false; } // ICH
     bool DeleteCharacter(const VTInt /*count*/) override { return false; } // DCH
     bool ScrollUp(const VTInt /*distance*/) override { return false; } // SU
@@ -47,7 +46,6 @@ public:
     bool DeleteLine(const VTInt /*distance*/) override { return false; } // DL
     bool SetColumns(const VTInt /*columns*/) override { return false; } // DECCOLM
     bool SetKeypadMode(const bool /*applicationMode*/) override { return false; } // DECKPAM, DECKPNM
-    bool EnableCursorBlinking(const bool /*enable*/) override { return false; } // ATT610
     bool SetAnsiMode(const bool /*ansiMode*/) override { return false; } // DECANM
     bool SetTopBottomScrollingMargins(const VTInt /*topMargin*/, const VTInt /*bottomMargin*/) override { return false; } // DECSTBM
     bool WarningBell() override { return false; } // BEL

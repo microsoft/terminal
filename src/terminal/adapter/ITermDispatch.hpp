@@ -45,7 +45,6 @@ public:
     virtual bool CursorPosition(const VTInt line, const VTInt column) = 0; // CUP, HVP
     virtual bool CursorSaveState() = 0; // DECSC
     virtual bool CursorRestoreState() = 0; // DECRC
-    virtual bool CursorVisibility(const bool isVisible) = 0; // DECTCEM
     virtual bool InsertCharacter(const VTInt count) = 0; // ICH
     virtual bool DeleteCharacter(const VTInt count) = 0; // DCH
     virtual bool ScrollUp(const VTInt distance) = 0; // SU
@@ -54,7 +53,6 @@ public:
     virtual bool DeleteLine(const VTInt distance) = 0; // DL
     virtual bool SetColumns(const VTInt columns) = 0; // DECCOLM
     virtual bool SetKeypadMode(const bool applicationMode) = 0; // DECKPAM, DECKPNM
-    virtual bool EnableCursorBlinking(const bool enable) = 0; // ATT610
     virtual bool SetAnsiMode(const bool ansiMode) = 0; // DECANM
     virtual bool SetTopBottomScrollingMargins(const VTInt topMargin, const VTInt bottomMargin) = 0; // DECSTBM
     virtual bool WarningBell() = 0; // BEL

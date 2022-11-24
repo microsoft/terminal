@@ -47,7 +47,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool CursorPosition(const VTInt line, const VTInt column) override; // CUP, HVP
         bool CursorSaveState() override; // DECSC
         bool CursorRestoreState() override; // DECRC
-        bool CursorVisibility(const bool isVisible) override; // DECTCEM
         bool EraseInDisplay(const DispatchTypes::EraseType eraseType) override; // ED
         bool EraseInLine(const DispatchTypes::EraseType eraseType) override; // EL
         bool EraseCharacters(const VTInt numChars) override; // ECH
@@ -81,7 +80,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool SetMode(const DispatchTypes::ModeParams param) override; // DECSET
         bool ResetMode(const DispatchTypes::ModeParams param) override; // DECRST
         bool SetKeypadMode(const bool applicationMode) override; // DECKPAM, DECKPNM
-        bool EnableCursorBlinking(const bool enable) override; // ATT610
         bool SetAnsiMode(const bool ansiMode) override; // DECANM
         bool SetTopBottomScrollingMargins(const VTInt topMargin,
                                           const VTInt bottomMargin) override; // DECSTBM
