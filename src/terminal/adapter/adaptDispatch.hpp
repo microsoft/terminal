@@ -101,7 +101,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool SoftReset() override; // DECSTR
         bool HardReset() override; // RIS
         bool ScreenAlignmentPattern() override; // DECALN
-        bool EnableXtermBracketedPasteMode(const bool enabled) override; // ?2004
         bool SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) override; // DECSCUSR
         bool SetCursorColor(const COLORREF cursorColor) override;
 

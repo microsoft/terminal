@@ -1503,7 +1503,8 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         _SetAlternateScreenBufferMode(enable);
         return true;
     case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
-        return EnableXtermBracketedPasteMode(enable);
+        _api.EnableXtermBracketedPasteMode(enable);
+        return !_api.IsConsolePty();
     case DispatchTypes::ModeParams::W32IM_Win32InputMode:
         _terminalInput.SetInputMode(TerminalInput::Mode::Win32, enable);
         return !_PassThroughInputModes();
@@ -2191,6 +2192,9 @@ bool AdaptDispatch::HardReset()
     // Reset input modes to their initial state
     _terminalInput.ResetInputModes();
 
+    // Reset bracketed paste mode
+    _api.EnableXtermBracketedPasteMode(false);
+
     // Restore cursor blinking mode.
     _api.GetTextBuffer().GetCursor().SetBlinkingAllowed(true);
 
@@ -2328,24 +2332,6 @@ void AdaptDispatch::_EraseAll()
 
     // Also reset the line rendition for the erased rows.
     textBuffer.ResetLineRenditionRange(newViewportTop, newViewportBottom);
-}
-
-//Routine Description:
-// Enable "bracketed paste mode".
-//Arguments:
-// - enabled - true to enable, false to disable.
-// Return value:
-// True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableXtermBracketedPasteMode(const bool enabled)
-{
-    // Return false to forward the operation to the hosting terminal,
-    // since ConPTY can't handle this itself.
-    if (_api.IsConsolePty())
-    {
-        return false;
-    }
-    _api.EnableXtermBracketedPasteMode(enabled);
-    return true;
 }
 
 //Routine Description:

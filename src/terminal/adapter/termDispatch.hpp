@@ -56,7 +56,6 @@ public:
     bool ForwardTab(const VTInt /*numTabs*/) override { return false; } // CHT, HT
     bool BackwardsTab(const VTInt /*numTabs*/) override { return false; } // CBT
     bool TabClear(const DispatchTypes::TabClearType /*clearType*/) override { return false; } // TBC
-    bool EnableXtermBracketedPasteMode(const bool /*enabled*/) override { return false; } // ?2004
     bool SetColorTableEntry(const size_t /*tableIndex*/, const DWORD /*color*/) override { return false; } // OSCColorTable
     bool SetDefaultForeground(const DWORD /*color*/) override { return false; } // OSCDefaultForeground
     bool SetDefaultBackground(const DWORD /*color*/) override { return false; } // OSCDefaultBackground
