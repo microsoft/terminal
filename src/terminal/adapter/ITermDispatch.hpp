@@ -56,7 +56,6 @@ public:
     virtual bool SetKeypadMode(const bool applicationMode) = 0; // DECKPAM, DECKPNM
     virtual bool EnableCursorBlinking(const bool enable) = 0; // ATT610
     virtual bool SetAnsiMode(const bool ansiMode) = 0; // DECANM
-    virtual bool SetScreenMode(const bool reverseMode) = 0; // DECSCNM
     virtual bool SetAutoWrapMode(const bool wrapAtEOL) = 0; // DECAWM
     virtual bool SetTopBottomScrollingMargins(const VTInt topMargin, const VTInt bottomMargin) = 0; // DECSTBM
     virtual bool WarningBell() = 0; // BEL

@@ -1468,7 +1468,14 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
     case DispatchTypes::ModeParams::DECCOLM_SetNumberOfColumns:
         return _DoDECCOLMHelper(enable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns);
     case DispatchTypes::ModeParams::DECSCNM_ScreenMode:
-        return SetScreenMode(enable);
+        _renderSettings.SetRenderMode(RenderSettings::Mode::ScreenReversed, enable);
+        // No need to force a redraw in pty mode.
+        if (_api.IsConsolePty())
+        {
+            return false;
+        }
+        _renderer.TriggerRedrawAll();
+        return true;
     case DispatchTypes::ModeParams::DECOM_OriginMode:
         _modes.set(Mode::Origin, enable);
         // The cursor is also moved to the new home position when the origin mode is set or reset.
@@ -1655,25 +1662,6 @@ bool AdaptDispatch::SetAnsiMode(const bool ansiMode)
     _terminalInput.SetInputMode(TerminalInput::Mode::Ansi, ansiMode);
 
     // We never want to forward a DECANM mode change over conpty.
-    return true;
-}
-
-// Routine Description:
-// - DECSCNM - Sets the screen mode to either normal or reverse.
-//    When in reverse screen mode, the background and foreground colors are switched.
-// Arguments:
-// - reverseMode - set to true to enable reverse screen mode, false for normal mode.
-// Return Value:
-// - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetScreenMode(const bool reverseMode)
-{
-    // If we're a conpty, always return false
-    if (_api.IsConsolePty())
-    {
-        return false;
-    }
-    _renderSettings.SetRenderMode(RenderSettings::Mode::ScreenReversed, reverseMode);
-    _renderer.TriggerRedrawAll();
     return true;
 }
 
@@ -2279,7 +2267,7 @@ bool AdaptDispatch::HardReset()
     EraseInDisplay(DispatchTypes::EraseType::Scrollback);
 
     // Set the DECSCNM screen mode back to normal.
-    SetScreenMode(false);
+    _renderSettings.SetRenderMode(RenderSettings::Mode::ScreenReversed, false);
 
     // Cursor to 1,1 - the Soft Reset guarantees this is absolute
     CursorPosition(1, 1);
