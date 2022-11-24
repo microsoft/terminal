@@ -54,6 +54,9 @@
     <ClInclude Include="../ProfileCollectionEntry.h">
       <DependentUpon>../NewTabMenuEntry.h</DependentUpon>
     </ClInclude>
+    <ClInclude Include="../MatchProfilesEntry.h">
+      <DependentUpon>../NewTabMenuEntry.h</DependentUpon>
+    </ClInclude>
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <!-- Don't put source files in here - put them in the lib's vcxproj instead! -->

@@ -9,6 +9,7 @@
 #include "FolderEntry.h"
 #include "ProfileEntry.h"
 #include "RemainingProfilesEntry.h"
+#include "MatchProfilesEntry.h"
 
 #include "NewTabMenuEntry.g.cpp"
 
@@ -49,6 +50,8 @@ winrt::com_ptr<NewTabMenuEntry> NewTabMenuEntry::FromJson(const Json::Value& jso
         return ProfileEntry::FromJson(json);
     case NewTabMenuEntryType::RemainingProfiles:
         return RemainingProfilesEntry::FromJson(json);
+    case NewTabMenuEntryType::MatchProfiles:
+        return MatchProfilesEntry::FromJson(json);
     default:
         return nullptr;
     }

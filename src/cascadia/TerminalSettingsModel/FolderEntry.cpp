@@ -89,6 +89,7 @@ IVector<NTMEModel> FolderEntry::Entries() const
 
         // Any profile collection is filtered out if there are no results
         case NewTabMenuEntryType::RemainingProfiles:
+        case NewTabMenuEntryType::MatchProfiles:
         {
             const auto profileCollectionEntry = entry.as<ProfileCollectionEntry>();
             if (profileCollectionEntry.Profiles().Size() == 0)

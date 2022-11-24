@@ -11,7 +11,8 @@ namespace Microsoft.Terminal.Settings.Model
         Profile,
         Separator,
         Folder,
-        RemainingProfiles
+        RemainingProfiles,
+        MatchProfiles
     };
 
     [default_interface] unsealed runtimeclass NewTabMenuEntry
@@ -60,5 +61,14 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass RemainingProfilesEntry : ProfileCollectionEntry
     {
         RemainingProfilesEntry();
+    }
+
+    [default_interface] runtimeclass MatchProfilesEntry : ProfileCollectionEntry
+    {
+        MatchProfilesEntry();
+
+        String Name;
+        String CommandLine;
+        String Source;
     }
 }

@@ -39,6 +39,9 @@
     <ClInclude Include="ProfileCollectionEntry.h">
       <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="MatchProfilesEntry.h">
+      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="VisualStudioGenerator.h" />
     <ClInclude Include="DefaultTerminal.h">
       <DependentUpon>DefaultTerminal.idl</DependentUpon>
@@ -196,6 +199,9 @@
       <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="RemainingProfilesEntry.cpp">
+      <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="MatchProfilesEntry.cpp">
       <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="VsDevCmdGenerator.cpp" />
