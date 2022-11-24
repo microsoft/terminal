@@ -52,7 +52,6 @@ public:
     bool EnableCursorBlinking(const bool /*enable*/) override { return false; } // ATT610
     bool SetAnsiMode(const bool /*ansiMode*/) override { return false; } // DECANM
     bool SetScreenMode(const bool /*reverseMode*/) override { return false; } // DECSCNM
-    bool SetOriginMode(const bool /*relativeMode*/) override { return false; }; // DECOM
     bool SetAutoWrapMode(const bool /*wrapAtEOL*/) override { return false; }; // DECAWM
     bool SetTopBottomScrollingMargins(const VTInt /*topMargin*/, const VTInt /*bottomMargin*/) override { return false; } // DECSTBM
     bool WarningBell() override { return false; } // BEL
@@ -66,7 +65,6 @@ public:
     bool ForwardTab(const VTInt /*numTabs*/) override { return false; } // CHT, HT
     bool BackwardsTab(const VTInt /*numTabs*/) override { return false; } // CBT
     bool TabClear(const DispatchTypes::TabClearType /*clearType*/) override { return false; } // TBC
-    bool EnableDECCOLMSupport(const bool /*enabled*/) override { return false; } // ?40
     bool EnableVT200MouseMode(const bool /*enabled*/) override { return false; } // ?1000
     bool EnableUTF8ExtendedMouseMode(const bool /*enabled*/) override { return false; } // ?1005
     bool EnableSGRExtendedMouseMode(const bool /*enabled*/) override { return false; } // ?1006

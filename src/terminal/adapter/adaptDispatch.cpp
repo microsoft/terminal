@@ -21,9 +21,6 @@ AdaptDispatch::AdaptDispatch(ITerminalApi& api, Renderer& renderer, RenderSettin
     _renderSettings{ renderSettings },
     _terminalInput{ terminalInput },
     _usingAltBuffer(false),
-    _isOriginModeRelative(false), // by default, the DECOM origin mode is absolute.
-    _isDECCOLMAllowed(false), // by default, DECCOLM is not allowed.
-    _isChangeExtentRectangular(false),
     _termOutput()
 {
 }
@@ -206,7 +203,7 @@ bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
     // viewport, or the top margin, depending on the origin mode.
     if (rowOffset.IsAbsolute)
     {
-        row = _isOriginModeRelative ? topMargin : viewport.top;
+        row = _modes.test(Mode::Origin) ? topMargin : viewport.top;
     }
 
     // And if the column is absolute, it'll be relative to column 0.
@@ -225,7 +222,7 @@ bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
     // If the operation needs to be clamped inside the margins, or the origin
     // mode is relative (which always requires margin clamping), then the row
     // may need to be adjusted further.
-    if (clampInMargins || _isOriginModeRelative)
+    if (clampInMargins || _modes.test(Mode::Origin))
     {
         // See microsoft/terminal#2929 - If the cursor is _below_ the top
         // margin, it should stay below the top margin. If it's _above_ the
@@ -351,7 +348,7 @@ bool AdaptDispatch::CursorSaveState()
     auto& savedCursorState = _savedCursorState.at(_usingAltBuffer);
     savedCursorState.Column = cursorPosition.X + 1;
     savedCursorState.Row = cursorPosition.Y + 1;
-    savedCursorState.IsOriginModeRelative = _isOriginModeRelative;
+    savedCursorState.IsOriginModeRelative = _modes.test(Mode::Origin);
     savedCursorState.Attributes = attributes;
     savedCursorState.TermOutput = _termOutput;
     savedCursorState.C1ControlsAccepted = _GetParserMode(StateMachine::Mode::AcceptC1);
@@ -386,11 +383,11 @@ bool AdaptDispatch::CursorRestoreState()
     }
 
     // The saved coordinates are always absolute, so we need reset the origin mode temporarily.
-    _isOriginModeRelative = false;
+    _modes.reset(Mode::Origin);
     CursorPosition(row, col);
 
     // Once the cursor position is restored, we can then restore the actual origin mode.
-    _isOriginModeRelative = savedCursorState.IsOriginModeRelative;
+    _modes.set(Mode::Origin, savedCursorState.IsOriginModeRelative);
 
     // Restore text attributes.
     _api.SetTextAttributes(savedCursorState.Attributes);
@@ -826,7 +823,7 @@ void AdaptDispatch::_ChangeRectAttributes(TextBuffer& textBuffer, const til::rec
 // Arguments:
 // - changeArea - Area of the buffer that will be affected. This may be
 //     interpreted as a rectangle or a stream depending on the state of the
-//     _isChangeExtentRectangular field.
+//     RectangularChangeExtent mode.
 // - changeOps - Changes that will be applied to each of the attributes.
 // Return Value:
 // - <none>
@@ -839,7 +836,7 @@ void AdaptDispatch::_ChangeRectOrStreamAttributes(const til::rect& changeArea, c
 
     // If the change extent is rectangular, we can apply the change with a
     // single call. The same is true for a stream extent that is only one line.
-    if (_isChangeExtentRectangular || lineCount == 1)
+    if (_modes.test(Mode::RectangularChangeExtent) || lineCount == 1)
     {
         _ChangeRectAttributes(textBuffer, changeRect, changeOps);
     }
@@ -875,8 +872,8 @@ til::rect AdaptDispatch::_CalculateRectArea(const VTInt top, const VTInt left, c
     // We start by calculating the margin offsets and maximum dimensions.
     // If the origin mode isn't set, we use the viewport extent.
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, false);
-    const auto yOffset = _isOriginModeRelative ? topMargin : 0;
-    const auto yMaximum = _isOriginModeRelative ? bottomMargin + 1 : viewport.height();
+    const auto yOffset = _modes.test(Mode::Origin) ? topMargin : 0;
+    const auto yMaximum = _modes.test(Mode::Origin) ? bottomMargin + 1 : viewport.height();
     const auto xMaximum = bufferSize.width;
 
     auto fillRect = til::inclusive_rect{};
@@ -1139,10 +1136,10 @@ bool AdaptDispatch::SelectAttributeChangeExtent(const DispatchTypes::ChangeExten
     {
     case DispatchTypes::ChangeExtent::Default:
     case DispatchTypes::ChangeExtent::Stream:
-        _isChangeExtentRectangular = false;
+        _modes.reset(Mode::RectangularChangeExtent);
         return true;
     case DispatchTypes::ChangeExtent::Rectangle:
-        _isChangeExtentRectangular = true;
+        _modes.set(Mode::RectangularChangeExtent);
         return true;
     default:
         return false;
@@ -1313,7 +1310,7 @@ void AdaptDispatch::_CursorPositionReport(const bool extendedReport)
     cursorPosition.Y++;
 
     // If the origin mode is relative, line numbers start at top margin of the scrolling region.
-    if (_isOriginModeRelative)
+    if (_modes.test(Mode::Origin))
     {
         const auto topMargin = _GetVerticalMargins(viewport, false).first;
         cursorPosition.Y -= topMargin;
@@ -1401,10 +1398,10 @@ bool AdaptDispatch::SetColumns(const VTInt columns)
 bool AdaptDispatch::_DoDECCOLMHelper(const VTInt columns)
 {
     // Only proceed if DECCOLM is allowed. Return true, as this is technically a successful handling.
-    if (_isDECCOLMAllowed)
+    if (_modes.test(Mode::AllowDECCOLM))
     {
         SetColumns(columns);
-        SetOriginMode(false);
+        _modes.reset(Mode::Origin);
         CursorPosition(1, 1);
         EraseInDisplay(DispatchTypes::EraseType::All);
         _DoSetTopBottomScrollingMargins(0, 0);
@@ -1479,8 +1476,10 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
     case DispatchTypes::ModeParams::DECSCNM_ScreenMode:
         return SetScreenMode(enable);
     case DispatchTypes::ModeParams::DECOM_OriginMode:
+        _modes.set(Mode::Origin, enable);
         // The cursor is also moved to the new home position when the origin mode is set or reset.
-        return SetOriginMode(enable) && CursorPosition(1, 1);
+        CursorPosition(1, 1);
+        return true;
     case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
         return SetAutoWrapMode(enable);
     case DispatchTypes::ModeParams::DECARM_AutoRepeatMode:
@@ -1490,7 +1489,8 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
     case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
         return CursorVisibility(enable);
     case DispatchTypes::ModeParams::XTERM_EnableDECCOLMSupport:
-        return EnableDECCOLMSupport(enable);
+        _modes.set(Mode::AllowDECCOLM, enable);
+        return true;
     case DispatchTypes::ModeParams::DECBKM_BackarrowKeyMode:
         return _SetInputMode(TerminalInput::Mode::BackarrowKey, enable);
     case DispatchTypes::ModeParams::VT200_MOUSE_MODE:
@@ -1690,20 +1690,6 @@ bool AdaptDispatch::SetScreenMode(const bool reverseMode)
     }
     _renderSettings.SetRenderMode(RenderSettings::Mode::ScreenReversed, reverseMode);
     _renderer.TriggerRedrawAll();
-    return true;
-}
-
-// Routine Description:
-// - DECOM - Sets the cursor addressing origin mode to relative or absolute.
-//    When relative, line numbers start at top margin of the user-defined scrolling region.
-//    When absolute, line numbers are independent of the scrolling region.
-// Arguments:
-// - relativeMode - set to true to use relative addressing, false for absolute addressing.
-// Return Value:
-// - True.
-bool AdaptDispatch::SetOriginMode(const bool relativeMode) noexcept
-{
-    _isOriginModeRelative = relativeMode;
     return true;
 }
 
@@ -2240,7 +2226,7 @@ bool AdaptDispatch::AcceptC1Controls(const bool enabled)
 bool AdaptDispatch::SoftReset()
 {
     CursorVisibility(true); // Cursor enabled.
-    SetOriginMode(false); // Absolute cursor addressing.
+    _modes.reset(Mode::Origin); // Absolute cursor addressing.
     SetAutoWrapMode(true); // Wrap at end of line.
     SetCursorKeysMode(false); // Normal characters.
     SetKeypadMode(false); // Numeric characters.
@@ -2331,8 +2317,8 @@ bool AdaptDispatch::HardReset()
     _renderer.UpdateSoftFont({}, {}, false);
     _fontBuffer = nullptr;
 
-    // Reset the attribute change extent (DECSACE) to a stream.
-    _isChangeExtentRectangular = false;
+    // Reset internal modes to their initial state
+    _modes = {};
 
     // GH#2715 - If all this succeeded, but we're in a conpty, return `false` to
     // make the state machine propagate this RIS sequence to the connected
@@ -2364,7 +2350,7 @@ bool AdaptDispatch::ScreenAlignmentPattern()
     attr.SetStandardErase();
     _api.SetTextAttributes(attr);
     // Reset the origin mode to absolute.
-    SetOriginMode(false);
+    _modes.reset(Mode::Origin);
     // Clear the scrolling margins.
     _DoSetTopBottomScrollingMargins(0, 0);
     // Set the cursor position to home.
@@ -2458,18 +2444,6 @@ void AdaptDispatch::_EraseAll()
 
     // Also reset the line rendition for the erased rows.
     textBuffer.ResetLineRenditionRange(newViewportTop, newViewportBottom);
-}
-
-// Routine Description:
-// - Enables or disables support for the DECCOLM escape sequence.
-// Arguments:
-// - enabled - set to true to allow DECCOLM to be used, false to disallow.
-// Return Value:
-// - True.
-bool AdaptDispatch::EnableDECCOLMSupport(const bool enabled) noexcept
-{
-    _isDECCOLMAllowed = enabled;
-    return true;
 }
 
 //Routine Description:
@@ -3411,7 +3385,7 @@ void AdaptDispatch::_ReportDECSACESetting() const
     response.append(L"\033P1$r"sv);
 
     const auto attr = _api.GetTextBuffer().GetCurrentAttributes();
-    response.append(_isChangeExtentRectangular ? L"2"sv : L"1"sv);
+    response.append(_modes.test(Mode::RectangularChangeExtent) ? L"2"sv : L"1"sv);
 
     // The '*x' indicates this is an DECSACE response, and ST ends the sequence.
     response.append(L"*x\033\\"sv);

@@ -59,7 +59,6 @@ public:
     virtual bool EnableCursorBlinking(const bool enable) = 0; // ATT610
     virtual bool SetAnsiMode(const bool ansiMode) = 0; // DECANM
     virtual bool SetScreenMode(const bool reverseMode) = 0; // DECSCNM
-    virtual bool SetOriginMode(const bool relativeMode) = 0; // DECOM
     virtual bool SetAutoWrapMode(const bool wrapAtEOL) = 0; // DECAWM
     virtual bool SetTopBottomScrollingMargins(const VTInt topMargin, const VTInt bottomMargin) = 0; // DECSTBM
     virtual bool WarningBell() = 0; // BEL
@@ -73,7 +72,6 @@ public:
     virtual bool ForwardTab(const VTInt numTabs) = 0; // CHT, HT
     virtual bool BackwardsTab(const VTInt numTabs) = 0; // CBT
     virtual bool TabClear(const DispatchTypes::TabClearType clearType) = 0; // TBC
-    virtual bool EnableDECCOLMSupport(const bool enabled) = 0; // ?40
     virtual bool EnableVT200MouseMode(const bool enabled) = 0; // ?1000
     virtual bool EnableUTF8ExtendedMouseMode(const bool enabled) = 0; // ?1005
     virtual bool EnableSGRExtendedMouseMode(const bool enabled) = 0; // ?1006

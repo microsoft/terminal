@@ -86,7 +86,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool EnableCursorBlinking(const bool enable) override; // ATT610
         bool SetAnsiMode(const bool ansiMode) override; // DECANM
         bool SetScreenMode(const bool reverseMode) override; // DECSCNM
-        bool SetOriginMode(const bool relativeMode) noexcept override; // DECOM
         bool SetAutoWrapMode(const bool wrapAtEOL) override; // DECAWM
         bool SetTopBottomScrollingMargins(const VTInt topMargin,
                                           const VTInt bottomMargin) override; // DECSTBM
@@ -111,7 +110,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool SoftReset() override; // DECSTR
         bool HardReset() override; // RIS
         bool ScreenAlignmentPattern() override; // DECALN
-        bool EnableDECCOLMSupport(const bool enabled) noexcept override; // ?40
         bool EnableVT200MouseMode(const bool enabled) override; // ?1000
         bool EnableUTF8ExtendedMouseMode(const bool enabled) override; // ?1005
         bool EnableSGRExtendedMouseMode(const bool enabled) override; // ?1006
@@ -160,6 +158,12 @@ namespace Microsoft::Console::VirtualTerminal
         bool PlaySounds(const VTParameters parameters) override; // DECPS
 
     private:
+        enum class Mode
+        {
+            Origin,
+            AllowDECCOLM,
+            RectangularChangeExtent
+        };
         enum class ScrollDirection
         {
             Up,
@@ -256,9 +260,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         til::inclusive_rect _scrollMargins;
 
-        bool _isOriginModeRelative;
-        bool _isDECCOLMAllowed;
-        bool _isChangeExtentRectangular;
+        til::enumset<Mode> _modes;
 
         SgrStack _sgrStack;
 
