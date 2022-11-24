@@ -792,4 +792,7 @@
   <data name="TabCloseToolTip" xml:space="preserve">
     <value>Close this tab</value>
   </data>
+  <data name="NewTabMenuFolderEmpty" xml:space="preserve">
+    <value>Empty...</value>
+  </data>
 </root>

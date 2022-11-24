@@ -662,6 +662,15 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::NewTabMenuEntryT
     };
 };
 
+// Possible FolderEntryInlining values
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FolderEntryInlining)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "never", ValueType::Never },
+        pair_type{ "auto", ValueType::Auto },
+    };
+}; 
+
 template<>
 struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winrt::Microsoft::Terminal::Control::SelectionColor>
 {

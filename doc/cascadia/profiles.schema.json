@@ -560,6 +560,12 @@
       ],
       "type": "object"
     },
+    "FolderEntryInlining": {
+      "enum": [
+        "never",
+        "auto"
+      ]
+    },
     "FolderEntry": {
       "description": "A folder entry in the new tab dropdown",
       "allOf": [
@@ -587,6 +593,16 @@
               "items": {
                 "$ref": "#/$defs/NewTabMenuEntry"
               }
+            },
+            "inline": {
+              "description": "When set to auto and the folder only has a single entry, the entry will show directly and no folder will be rendered",
+              "default": "never",
+              "$ref": "#/$defs/FolderEntryInlining"
+            },
+            "allowEmpty": {
+              "description": "Whether to render a folder without entries, or to hide it",
+              "default": "false",
+              "type": "boolean"
             }
           }
         }

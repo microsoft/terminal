@@ -29,6 +29,7 @@
 #include "FileUtils.h"
 
 #include "ProfileEntry.h"
+#include "FolderEntry.h"
 
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::ApplicationModel::AppExtensions;
@@ -1325,8 +1326,12 @@ void CascadiaSettings::_resolveNewTabMenuProfilesSet(const IVector<Model::NewTab
         // For a folder, we simply call this method recursively
         case NewTabMenuEntryType::Folder:
         {
-            const auto folderEntry = entry.as<Model::FolderEntry>();
-            auto folderEntries = folderEntry.Entries();
+            // We need to access the unfiltered entry list, a field that is not exposed
+            // in the projected class. So, we need to first obtain our implementation struct
+            // instance, to access this field.
+            const auto folderEntry{ winrt::get_self<implementation::FolderEntry>(entry.as<Model::FolderEntry>()) };
+
+            auto folderEntries = folderEntry->RawEntries();
             _resolveNewTabMenuProfilesSet(folderEntries, remainingProfiles, remainingProfilesEntry);
             break;
         }

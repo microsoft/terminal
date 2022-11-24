@@ -959,18 +959,50 @@ namespace winrt::TerminalApp::implementation
             case NewTabMenuEntryType::Folder:
             {
                 const auto folderEntry = entry.as<FolderEntry>();
+                const auto folderEntries = folderEntry.Entries();
 
+                // If the folder is empty, we should skip the entry if AllowEmpty is false, or
+                // when the folder should inline.
+                // The IsEmpty check includes semantics for nested (empty) folders
+                if (folderEntries.Size() == 0 && (!folderEntry.AllowEmpty() || folderEntry.Inlining() == FolderEntryInlining::Auto))
+                {
+                    break;
+                }
+
+                // Recursively generate flyout items
+                auto folderEntryItems = _CreateNewTabFlyoutItems(folderEntries);
+
+                // If the folder should auto-inline and there is only one item, do so.
+                if (folderEntry.Inlining() == FolderEntryInlining::Auto && folderEntries.Size() == 1)
+                {
+                    for (auto const& folderEntryItem : folderEntryItems)
+                    {
+                        items.push_back(folderEntryItem);
+                    }
+
+                    break;
+                }
+
+                // Otherwise, create a flyout
                 auto folderItem = WUX::Controls::MenuFlyoutSubItem{};
                 folderItem.Text(folderEntry.Name());
 
                 auto icon = _CreateNewTabFlyoutIcon(folderEntry.Icon());
                 folderItem.Icon(icon);
 
-                // Recursively generate flyout items
-                auto folderEntries = _CreateNewTabFlyoutItems(folderEntry.Entries());
-                for (auto const& folderEntry : folderEntries)
+                for (auto const& folderEntryItem : folderEntryItems)
                 {
-                    folderItem.Items().Append(folderEntry);
+                    folderItem.Items().Append(folderEntryItem);
+                }
+
+                // If the folder is empty, and by now we know we set AllowEmpty to true,
+                // create a placeholder item here
+                if (folderEntries.Size() == 0)
+                {
+                    auto placeholder = WUX::Controls::MenuFlyoutItem{};
+                    placeholder.Text(RS_(L"NewTabMenuFolderEmpty"));
+
+                    folderItem.Items().Append(placeholder);
                 }
 
                 items.push_back(folderItem);

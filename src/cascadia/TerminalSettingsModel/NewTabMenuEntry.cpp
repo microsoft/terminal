@@ -18,16 +18,6 @@ using NewTabMenuEntryType = winrt::Microsoft::Terminal::Settings::Model::NewTabM
 
 static constexpr std::string_view TypeKey{ "type" };
 
-// This is a map of NewTabMenuEntryType->function<NewTabMenuEntry(Json::Value)>,
-// it allows us to choose the correct deserialization function for a given entry type
-using MenuEntryParser = std::function<winrt::com_ptr<NewTabMenuEntry>(const Json::Value&)>;
-static const std::unordered_map<NewTabMenuEntryType, MenuEntryParser> typeDeserializerMap{
-    { NewTabMenuEntryType::Separator, SeparatorEntry::FromJson },
-    { NewTabMenuEntryType::Folder, FolderEntry::FromJson },
-    { NewTabMenuEntryType::Profile, ProfileEntry::FromJson },
-    { NewTabMenuEntryType::RemainingProfiles, RemainingProfilesEntry::FromJson }
-};
-
 NewTabMenuEntry::NewTabMenuEntry(const NewTabMenuEntryType type) noexcept :
     _Type{ type }
 {

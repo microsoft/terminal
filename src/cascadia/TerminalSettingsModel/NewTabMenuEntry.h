@@ -45,7 +45,13 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     {
         NewTabMenuEntry FromJson(const Json::Value& json)
         {
-            return *implementation::NewTabMenuEntry::FromJson(json);
+            const auto entry = implementation::NewTabMenuEntry::FromJson(json);
+            if(entry == nullptr)
+            {
+                return nullptr;
+            }
+
+            return *entry;
         }
 
         bool CanConvert(const Json::Value& json) const
