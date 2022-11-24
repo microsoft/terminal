@@ -49,7 +49,6 @@ public:
     bool SetKeypadMode(const bool /*applicationMode*/) override { return false; } // DECKPAM, DECKPNM
     bool EnableCursorBlinking(const bool /*enable*/) override { return false; } // ATT610
     bool SetAnsiMode(const bool /*ansiMode*/) override { return false; } // DECANM
-    bool SetAutoWrapMode(const bool /*wrapAtEOL*/) override { return false; }; // DECAWM
     bool SetTopBottomScrollingMargins(const VTInt /*topMargin*/, const VTInt /*bottomMargin*/) override { return false; } // DECSTBM
     bool WarningBell() override { return false; } // BEL
     bool CarriageReturn() override { return false; } // CR

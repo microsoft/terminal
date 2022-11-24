@@ -1482,7 +1482,8 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         CursorPosition(1, 1);
         return true;
     case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
-        return SetAutoWrapMode(enable);
+        _api.SetAutoWrapMode(enable);
+        return true;
     case DispatchTypes::ModeParams::DECARM_AutoRepeatMode:
         _terminalInput.SetInputMode(TerminalInput::Mode::AutoRepeat, enable);
         return !_PassThroughInputModes();
@@ -1662,20 +1663,6 @@ bool AdaptDispatch::SetAnsiMode(const bool ansiMode)
     _terminalInput.SetInputMode(TerminalInput::Mode::Ansi, ansiMode);
 
     // We never want to forward a DECANM mode change over conpty.
-    return true;
-}
-
-// Routine Description:
-// - DECAWM - Sets the Auto Wrap Mode.
-//    This controls whether the cursor moves to the beginning of the next row
-//    when it reaches the end of the current row.
-// Arguments:
-// - wrapAtEOL - set to true to wrap, false to overwrite the last character.
-// Return Value:
-// - True.
-bool AdaptDispatch::SetAutoWrapMode(const bool wrapAtEOL)
-{
-    _api.SetAutoWrapMode(wrapAtEOL);
     return true;
 }
 
@@ -2199,7 +2186,7 @@ bool AdaptDispatch::SoftReset()
 {
     CursorVisibility(true); // Cursor enabled.
     _modes.reset(Mode::Origin); // Absolute cursor addressing.
-    SetAutoWrapMode(true); // Wrap at end of line.
+    _api.SetAutoWrapMode(true); // Wrap at end of line.
     _terminalInput.SetInputMode(TerminalInput::Mode::CursorKey, false); // Normal characters.
     _terminalInput.SetInputMode(TerminalInput::Mode::Keypad, false); // Numeric characters.
 
