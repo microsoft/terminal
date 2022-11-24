@@ -60,6 +60,12 @@ void Terminal::SetAutoWrapMode(const bool /*wrapAtEOL*/) noexcept
     // TODO: This will be needed to support DECAWM.
 }
 
+bool Terminal::GetAutoWrapMode() const noexcept
+{
+    // TODO: This will be needed to support DECAWM.
+    return true;
+}
+
 void Terminal::SetScrollingRegion(const til::inclusive_rect& /*scrollMargins*/) noexcept
 {
     // TODO: This will be needed to fully support DECSTBM.
@@ -123,9 +129,14 @@ unsigned int Terminal::GetConsoleOutputCP() const noexcept
     return CP_UTF8;
 }
 
-void Terminal::EnableXtermBracketedPasteMode(const bool enabled) noexcept
+void Terminal::SetBracketedPasteMode(const bool enabled) noexcept
 {
     _bracketedPasteMode = enabled;
+}
+
+std::optional<bool> Terminal::GetBracketedPasteMode() const noexcept
+{
+    return _bracketedPasteMode;
 }
 
 void Terminal::CopyToClipboard(std::wstring_view content)

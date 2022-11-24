@@ -1503,7 +1503,7 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         _SetAlternateScreenBufferMode(enable);
         return true;
     case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
-        _api.EnableXtermBracketedPasteMode(enable);
+        _api.SetBracketedPasteMode(enable);
         return !_api.IsConsolePty();
     case DispatchTypes::ModeParams::W32IM_Win32InputMode:
         _terminalInput.SetInputMode(TerminalInput::Mode::Win32, enable);
@@ -2193,7 +2193,7 @@ bool AdaptDispatch::HardReset()
     _terminalInput.ResetInputModes();
 
     // Reset bracketed paste mode
-    _api.EnableXtermBracketedPasteMode(false);
+    _api.SetBracketedPasteMode(false);
 
     // Restore cursor blinking mode.
     _api.GetTextBuffer().GetCursor().SetBlinkingAllowed(true);

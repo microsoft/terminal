@@ -40,6 +40,7 @@ public:
     void SetTextAttributes(const TextAttribute& attrs) override;
 
     void SetAutoWrapMode(const bool wrapAtEOL) override;
+    bool GetAutoWrapMode() const override;
 
     void SetScrollingRegion(const til::inclusive_rect& scrollMargins) override;
 
@@ -63,7 +64,8 @@ public:
     void SetConsoleOutputCP(const unsigned int codepage) override;
     unsigned int GetConsoleOutputCP() const override;
 
-    void EnableXtermBracketedPasteMode(const bool enabled) override;
+    void SetBracketedPasteMode(const bool enabled) override;
+    std::optional<bool> GetBracketedPasteMode() const override;
     void CopyToClipboard(const std::wstring_view content) override;
     void SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) override;
     void SetWorkingDirectory(const std::wstring_view uri) override;
@@ -78,4 +80,5 @@ public:
 
 private:
     Microsoft::Console::IIoProvider& _io;
+    bool _bracketedPastMode{ false };
 };
