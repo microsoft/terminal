@@ -1467,80 +1467,56 @@ bool AdaptDispatch::_SetInputMode(const TerminalInput::Mode mode, const bool ena
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, const bool enable)
 {
-    auto success = false;
     switch (param)
     {
     case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
         // set - Enable Application Mode, reset - Normal mode
-        success = SetCursorKeysMode(enable);
-        break;
+        return SetCursorKeysMode(enable);
     case DispatchTypes::ModeParams::DECANM_AnsiMode:
-        success = SetAnsiMode(enable);
-        break;
+        return SetAnsiMode(enable);
     case DispatchTypes::ModeParams::DECCOLM_SetNumberOfColumns:
-        success = _DoDECCOLMHelper(enable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns);
-        break;
+        return _DoDECCOLMHelper(enable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns);
     case DispatchTypes::ModeParams::DECSCNM_ScreenMode:
-        success = SetScreenMode(enable);
-        break;
+        return SetScreenMode(enable);
     case DispatchTypes::ModeParams::DECOM_OriginMode:
         // The cursor is also moved to the new home position when the origin mode is set or reset.
-        success = SetOriginMode(enable) && CursorPosition(1, 1);
-        break;
+        return SetOriginMode(enable) && CursorPosition(1, 1);
     case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
-        success = SetAutoWrapMode(enable);
-        break;
+        return SetAutoWrapMode(enable);
     case DispatchTypes::ModeParams::DECARM_AutoRepeatMode:
-        success = _SetInputMode(TerminalInput::Mode::AutoRepeat, enable);
-        break;
+        return _SetInputMode(TerminalInput::Mode::AutoRepeat, enable);
     case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
-        success = EnableCursorBlinking(enable);
-        break;
+        return EnableCursorBlinking(enable);
     case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
-        success = CursorVisibility(enable);
-        break;
+        return CursorVisibility(enable);
     case DispatchTypes::ModeParams::XTERM_EnableDECCOLMSupport:
-        success = EnableDECCOLMSupport(enable);
-        break;
+        return EnableDECCOLMSupport(enable);
     case DispatchTypes::ModeParams::DECBKM_BackarrowKeyMode:
-        success = _SetInputMode(TerminalInput::Mode::BackarrowKey, enable);
-        break;
+        return _SetInputMode(TerminalInput::Mode::BackarrowKey, enable);
     case DispatchTypes::ModeParams::VT200_MOUSE_MODE:
-        success = EnableVT200MouseMode(enable);
-        break;
+        return EnableVT200MouseMode(enable);
     case DispatchTypes::ModeParams::BUTTON_EVENT_MOUSE_MODE:
-        success = EnableButtonEventMouseMode(enable);
-        break;
+        return EnableButtonEventMouseMode(enable);
     case DispatchTypes::ModeParams::ANY_EVENT_MOUSE_MODE:
-        success = EnableAnyEventMouseMode(enable);
-        break;
+        return EnableAnyEventMouseMode(enable);
     case DispatchTypes::ModeParams::UTF8_EXTENDED_MODE:
-        success = EnableUTF8ExtendedMouseMode(enable);
-        break;
+        return EnableUTF8ExtendedMouseMode(enable);
     case DispatchTypes::ModeParams::SGR_EXTENDED_MODE:
-        success = EnableSGRExtendedMouseMode(enable);
-        break;
+        return EnableSGRExtendedMouseMode(enable);
     case DispatchTypes::ModeParams::FOCUS_EVENT_MODE:
-        success = EnableFocusEventMode(enable);
-        break;
+        return EnableFocusEventMode(enable);
     case DispatchTypes::ModeParams::ALTERNATE_SCROLL:
-        success = EnableAlternateScroll(enable);
-        break;
+        return EnableAlternateScroll(enable);
     case DispatchTypes::ModeParams::ASB_AlternateScreenBuffer:
-        success = enable ? UseAlternateScreenBuffer() : UseMainScreenBuffer();
-        break;
+        return enable ? UseAlternateScreenBuffer() : UseMainScreenBuffer();
     case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
-        success = EnableXtermBracketedPasteMode(enable);
-        break;
+        return EnableXtermBracketedPasteMode(enable);
     case DispatchTypes::ModeParams::W32IM_Win32InputMode:
-        success = EnableWin32InputMode(enable);
-        break;
+        return EnableWin32InputMode(enable);
     default:
         // If no functions to call, overall dispatch was a failure.
-        success = false;
-        break;
+        return false;
     }
-    return success;
 }
 
 // Routine Description:
