@@ -1385,6 +1385,30 @@ void AdaptDispatch::_SetColumnMode(const bool enable)
 }
 
 // Routine Description:
+// - Set the alternate screen buffer mode. In virtual terminals, there exists
+//     both a "main" screen buffer and an alternate. This mode is used to switch
+//     between the two.
+// Arguments:
+// - enable - true selects the alternate buffer, false returns to the main buffer.
+// Return Value:
+// - <none>
+void AdaptDispatch::_SetAlternateScreenBufferMode(const bool enable)
+{
+    if (enable)
+    {
+        CursorSaveState();
+        _api.UseAlternateScreenBuffer();
+        _usingAltBuffer = true;
+    }
+    else
+    {
+        _api.UseMainScreenBuffer();
+        _usingAltBuffer = false;
+        CursorRestoreState();
+    }
+}
+
+// Routine Description:
 // - Determines whether we need to pass through input mode requests.
 //   If we're a conpty, AND WE'RE IN VT INPUT MODE, always pass input mode requests
 //   The VT Input mode check is to work around ssh.exe v7.7, which uses VT
@@ -1476,7 +1500,8 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         _terminalInput.SetInputMode(TerminalInput::Mode::AlternateScroll, enable);
         return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::ASB_AlternateScreenBuffer:
-        return enable ? UseAlternateScreenBuffer() : UseMainScreenBuffer();
+        _SetAlternateScreenBufferMode(enable);
+        return true;
     case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
         return EnableXtermBracketedPasteMode(enable);
     case DispatchTypes::ModeParams::W32IM_Win32InputMode:
@@ -1768,36 +1793,6 @@ bool AdaptDispatch::ReverseLineFeed()
 bool AdaptDispatch::SetWindowTitle(std::wstring_view title)
 {
     _api.SetWindowTitle(title);
-    return true;
-}
-
-// - ASBSET - Creates and swaps to the alternate screen buffer. In virtual terminals, there exists both a "main"
-//     screen buffer and an alternate. ASBSET creates a new alternate, and switches to it. If there is an already
-//     existing alternate, it is discarded.
-// Arguments:
-// - None
-// Return Value:
-// - True.
-bool AdaptDispatch::UseAlternateScreenBuffer()
-{
-    CursorSaveState();
-    _api.UseAlternateScreenBuffer();
-    _usingAltBuffer = true;
-    return true;
-}
-
-// Routine Description:
-// - ASBRST - From the alternate buffer, returns to the main screen buffer.
-//     From the main screen buffer, does nothing. The alternate is discarded.
-// Arguments:
-// - None
-// Return Value:
-// - True.
-bool AdaptDispatch::UseMainScreenBuffer()
-{
-    _api.UseMainScreenBuffer();
-    _usingAltBuffer = false;
-    CursorRestoreState();
     return true;
 }
 

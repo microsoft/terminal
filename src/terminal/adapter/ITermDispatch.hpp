@@ -59,8 +59,6 @@ public:
     virtual bool LineFeed(const DispatchTypes::LineFeedType lineFeedType) = 0; // IND, NEL, LF, FF, VT
     virtual bool ReverseLineFeed() = 0; // RI
     virtual bool SetWindowTitle(std::wstring_view title) = 0; // OscWindowTitle
-    virtual bool UseAlternateScreenBuffer() = 0; // ASBSET
-    virtual bool UseMainScreenBuffer() = 0; // ASBRST
     virtual bool HorizontalTabSet() = 0; // HTS
     virtual bool ForwardTab(const VTInt numTabs) = 0; // CHT, HT
     virtual bool BackwardsTab(const VTInt numTabs) = 0; // CBT

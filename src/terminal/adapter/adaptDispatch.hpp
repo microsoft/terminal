@@ -87,8 +87,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool LineFeed(const DispatchTypes::LineFeedType lineFeedType) override; // IND, NEL, LF, FF, VT
         bool ReverseLineFeed() override; // RI
         bool SetWindowTitle(const std::wstring_view title) override; // OSCWindowTitle
-        bool UseAlternateScreenBuffer() override; // ASBSET
-        bool UseMainScreenBuffer() override; // ASBRST
         bool HorizontalTabSet() override; // HTS
         bool ForwardTab(const VTInt numTabs) override; // CHT, HT
         bool BackwardsTab(const VTInt numTabs) override; // CBT
@@ -206,6 +204,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _CursorPositionReport(const bool extendedReport);
 
         void _SetColumnMode(const bool enable);
+        void _SetAlternateScreenBufferMode(const bool enable);
         bool _PassThroughInputModes();
         bool _ModeParamsHelper(const DispatchTypes::ModeParams param, const bool enable);
 

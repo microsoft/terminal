@@ -52,8 +52,6 @@ public:
     bool LineFeed(const DispatchTypes::LineFeedType /*lineFeedType*/) override { return false; } // IND, NEL, LF, FF, VT
     bool ReverseLineFeed() override { return false; } // RI
     bool SetWindowTitle(std::wstring_view /*title*/) override { return false; } // OscWindowTitle
-    bool UseAlternateScreenBuffer() override { return false; } // ASBSET
-    bool UseMainScreenBuffer() override { return false; } // ASBRST
     bool HorizontalTabSet() override { return false; } // HTS
     bool ForwardTab(const VTInt /*numTabs*/) override { return false; } // CHT, HT
     bool BackwardsTab(const VTInt /*numTabs*/) override { return false; } // CBT
