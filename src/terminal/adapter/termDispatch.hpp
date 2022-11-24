@@ -46,9 +46,7 @@ public:
     bool InsertLine(const VTInt /*distance*/) override { return false; } // IL
     bool DeleteLine(const VTInt /*distance*/) override { return false; } // DL
     bool SetColumns(const VTInt /*columns*/) override { return false; } // DECCOLM
-    bool SetCursorKeysMode(const bool /*applicationMode*/) override { return false; } // DECCKM
     bool SetKeypadMode(const bool /*applicationMode*/) override { return false; } // DECKPAM, DECKPNM
-    bool EnableWin32InputMode(const bool /*win32InputMode*/) override { return false; } // win32-input-mode
     bool EnableCursorBlinking(const bool /*enable*/) override { return false; } // ATT610
     bool SetAnsiMode(const bool /*ansiMode*/) override { return false; } // DECANM
     bool SetScreenMode(const bool /*reverseMode*/) override { return false; } // DECSCNM
@@ -65,13 +63,6 @@ public:
     bool ForwardTab(const VTInt /*numTabs*/) override { return false; } // CHT, HT
     bool BackwardsTab(const VTInt /*numTabs*/) override { return false; } // CBT
     bool TabClear(const DispatchTypes::TabClearType /*clearType*/) override { return false; } // TBC
-    bool EnableVT200MouseMode(const bool /*enabled*/) override { return false; } // ?1000
-    bool EnableUTF8ExtendedMouseMode(const bool /*enabled*/) override { return false; } // ?1005
-    bool EnableSGRExtendedMouseMode(const bool /*enabled*/) override { return false; } // ?1006
-    bool EnableButtonEventMouseMode(const bool /*enabled*/) override { return false; } // ?1002
-    bool EnableAnyEventMouseMode(const bool /*enabled*/) override { return false; } // ?1003
-    bool EnableFocusEventMode(const bool /*enabled*/) override { return false; } // ?1004
-    bool EnableAlternateScroll(const bool /*enabled*/) override { return false; } // ?1007
     bool EnableXtermBracketedPasteMode(const bool /*enabled*/) override { return false; } // ?2004
     bool SetColorTableEntry(const size_t /*tableIndex*/, const DWORD /*color*/) override { return false; } // OSCColorTable
     bool SetDefaultForeground(const DWORD /*color*/) override { return false; } // OSCDefaultForeground

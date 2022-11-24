@@ -80,9 +80,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool SetColumns(const VTInt columns) override; // DECCOLM
         bool SetMode(const DispatchTypes::ModeParams param) override; // DECSET
         bool ResetMode(const DispatchTypes::ModeParams param) override; // DECRST
-        bool SetCursorKeysMode(const bool applicationMode) override; // DECCKM
         bool SetKeypadMode(const bool applicationMode) override; // DECKPAM, DECKPNM
-        bool EnableWin32InputMode(const bool win32InputMode) override; // win32-input-mode
         bool EnableCursorBlinking(const bool enable) override; // ATT610
         bool SetAnsiMode(const bool ansiMode) override; // DECANM
         bool SetScreenMode(const bool reverseMode) override; // DECSCNM
@@ -110,13 +108,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool SoftReset() override; // DECSTR
         bool HardReset() override; // RIS
         bool ScreenAlignmentPattern() override; // DECALN
-        bool EnableVT200MouseMode(const bool enabled) override; // ?1000
-        bool EnableUTF8ExtendedMouseMode(const bool enabled) override; // ?1005
-        bool EnableSGRExtendedMouseMode(const bool enabled) override; // ?1006
-        bool EnableButtonEventMouseMode(const bool enabled) override; // ?1002
-        bool EnableAnyEventMouseMode(const bool enabled) override; // ?1003
-        bool EnableFocusEventMode(const bool enabled) override; // ?1004
-        bool EnableAlternateScroll(const bool enabled) override; // ?1007
         bool EnableXtermBracketedPasteMode(const bool enabled) override; // ?2004
         bool SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) override; // DECSCUSR
         bool SetCursorColor(const COLORREF cursorColor) override;
@@ -220,7 +211,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool _GetParserMode(const StateMachine::Mode mode) const;
         void _SetParserMode(const StateMachine::Mode mode, const bool enable);
-        bool _SetInputMode(const TerminalInput::Mode mode, const bool enable);
+        bool _PassThroughInputModes();
         bool _ModeParamsHelper(const DispatchTypes::ModeParams param, const bool enable);
         bool _DoDECCOLMHelper(const VTInt columns);
 

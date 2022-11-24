@@ -53,9 +53,7 @@ public:
     virtual bool InsertLine(const VTInt distance) = 0; // IL
     virtual bool DeleteLine(const VTInt distance) = 0; // DL
     virtual bool SetColumns(const VTInt columns) = 0; // DECCOLM
-    virtual bool SetCursorKeysMode(const bool applicationMode) = 0; // DECCKM
     virtual bool SetKeypadMode(const bool applicationMode) = 0; // DECKPAM, DECKPNM
-    virtual bool EnableWin32InputMode(const bool win32InputMode) = 0; // win32-input-mode
     virtual bool EnableCursorBlinking(const bool enable) = 0; // ATT610
     virtual bool SetAnsiMode(const bool ansiMode) = 0; // DECANM
     virtual bool SetScreenMode(const bool reverseMode) = 0; // DECSCNM
@@ -72,13 +70,6 @@ public:
     virtual bool ForwardTab(const VTInt numTabs) = 0; // CHT, HT
     virtual bool BackwardsTab(const VTInt numTabs) = 0; // CBT
     virtual bool TabClear(const DispatchTypes::TabClearType clearType) = 0; // TBC
-    virtual bool EnableVT200MouseMode(const bool enabled) = 0; // ?1000
-    virtual bool EnableUTF8ExtendedMouseMode(const bool enabled) = 0; // ?1005
-    virtual bool EnableSGRExtendedMouseMode(const bool enabled) = 0; // ?1006
-    virtual bool EnableButtonEventMouseMode(const bool enabled) = 0; // ?1002
-    virtual bool EnableAnyEventMouseMode(const bool enabled) = 0; // ?1003
-    virtual bool EnableFocusEventMode(const bool enabled) = 0; // ?1004
-    virtual bool EnableAlternateScroll(const bool enabled) = 0; // ?1007
     virtual bool EnableXtermBracketedPasteMode(const bool enabled) = 0; // ?2004
     virtual bool SetColorTableEntry(const size_t tableIndex, const DWORD color) = 0; // OSCColorTable
     virtual bool SetDefaultForeground(const DWORD color) = 0; // OSCDefaultForeground

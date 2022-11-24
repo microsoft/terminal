@@ -1433,26 +1433,20 @@ void AdaptDispatch::_SetParserMode(const StateMachine::Mode mode, const bool ena
 }
 
 // Routine Description:
-// - Sets the various terminal input modes.
-// Arguments:
-// - mode - the input mode to change.
-// - enable - set to true to enable the mode, false to disable it.
+// - Determines whether we need to pass through input mode requests.
+//   If we're a conpty, AND WE'RE IN VT INPUT MODE, always pass input mode requests
+//   The VT Input mode check is to work around ssh.exe v7.7, which uses VT
+//   output, but not Input.
+//   The original comment said, "Once the conpty supports these types of input,
+//   this check can be removed. See GH#4911". Unfortunately, time has shown
+//   us that SSH 7.7 _also_ requests mouse input and that can have a user interface
+//   impact on the actual connected terminal. We can't remove this check,
+//   because SSH <=7.7 is out in the wild on all versions of Windows <=2004.
 // Return Value:
-// - true if successful. false otherwise.
-bool AdaptDispatch::_SetInputMode(const TerminalInput::Mode mode, const bool enable)
+// - True if we should pass through. False otherwise.
+bool AdaptDispatch::_PassThroughInputModes()
 {
-    _terminalInput.SetInputMode(mode, enable);
-
-    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always pass input mode requests
-    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
-    // output, but not Input.
-    // The original comment said, "Once the conpty supports these types of input,
-    // this check can be removed. See GH#4911". Unfortunately, time has shown
-    // us that SSH 7.7 _also_ requests mouse input and that can have a user interface
-    // impact on the actual connected terminal. We can't remove this check,
-    // because SSH <=7.7 is out in the wild on all versions of Windows <=2004.
-
-    return !_api.IsConsolePty() || !_api.IsVtInputEnabled();
+    return _api.IsConsolePty() && _api.IsVtInputEnabled();
 }
 
 // Routine Description:
@@ -1467,8 +1461,8 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
     switch (param)
     {
     case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
-        // set - Enable Application Mode, reset - Normal mode
-        return SetCursorKeysMode(enable);
+        _terminalInput.SetInputMode(TerminalInput::Mode::CursorKey, enable);
+        return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::DECANM_AnsiMode:
         return SetAnsiMode(enable);
     case DispatchTypes::ModeParams::DECCOLM_SetNumberOfColumns:
@@ -1483,7 +1477,8 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
     case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
         return SetAutoWrapMode(enable);
     case DispatchTypes::ModeParams::DECARM_AutoRepeatMode:
-        return _SetInputMode(TerminalInput::Mode::AutoRepeat, enable);
+        _terminalInput.SetInputMode(TerminalInput::Mode::AutoRepeat, enable);
+        return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
         return EnableCursorBlinking(enable);
     case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
@@ -1492,27 +1487,38 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         _modes.set(Mode::AllowDECCOLM, enable);
         return true;
     case DispatchTypes::ModeParams::DECBKM_BackarrowKeyMode:
-        return _SetInputMode(TerminalInput::Mode::BackarrowKey, enable);
+        _terminalInput.SetInputMode(TerminalInput::Mode::BackarrowKey, enable);
+        return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::VT200_MOUSE_MODE:
-        return EnableVT200MouseMode(enable);
+        _terminalInput.SetInputMode(TerminalInput::Mode::DefaultMouseTracking, enable);
+        return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::BUTTON_EVENT_MOUSE_MODE:
-        return EnableButtonEventMouseMode(enable);
+        _terminalInput.SetInputMode(TerminalInput::Mode::ButtonEventMouseTracking, enable);
+        return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::ANY_EVENT_MOUSE_MODE:
-        return EnableAnyEventMouseMode(enable);
+        _terminalInput.SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, enable);
+        return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::UTF8_EXTENDED_MODE:
-        return EnableUTF8ExtendedMouseMode(enable);
+        _terminalInput.SetInputMode(TerminalInput::Mode::Utf8MouseEncoding, enable);
+        return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::SGR_EXTENDED_MODE:
-        return EnableSGRExtendedMouseMode(enable);
+        _terminalInput.SetInputMode(TerminalInput::Mode::SgrMouseEncoding, enable);
+        return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::FOCUS_EVENT_MODE:
-        return EnableFocusEventMode(enable);
+        _terminalInput.SetInputMode(TerminalInput::Mode::FocusEvent, enable);
+        // GH#12799 - If the app requested that we disable focus events, DON'T pass
+        // that through. ConPTY would _always_ like to know about focus events.
+        return !_PassThroughInputModes() || !enable;
     case DispatchTypes::ModeParams::ALTERNATE_SCROLL:
-        return EnableAlternateScroll(enable);
+        _terminalInput.SetInputMode(TerminalInput::Mode::AlternateScroll, enable);
+        return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::ASB_AlternateScreenBuffer:
         return enable ? UseAlternateScreenBuffer() : UseMainScreenBuffer();
     case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
         return EnableXtermBracketedPasteMode(enable);
     case DispatchTypes::ModeParams::W32IM_Win32InputMode:
-        return EnableWin32InputMode(enable);
+        _terminalInput.SetInputMode(TerminalInput::Mode::Win32, enable);
+        return !_PassThroughInputModes();
     default:
         // If no functions to call, overall dispatch was a failure.
         return false;
@@ -1548,29 +1554,8 @@ bool AdaptDispatch::ResetMode(const DispatchTypes::ModeParams param)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::SetKeypadMode(const bool fApplicationMode)
 {
-    return _SetInputMode(TerminalInput::Mode::Keypad, fApplicationMode);
-}
-
-// Method Description:
-// - win32-input-mode: Enable sending full input records encoded as a string of
-//   characters to the client application.
-// Arguments:
-// - win32InputMode - set to true to enable win32-input-mode, false to disable.
-// Return Value:
-// - True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableWin32InputMode(const bool win32InputMode)
-{
-    return _SetInputMode(TerminalInput::Mode::Win32, win32InputMode);
-}
-
-// - DECCKM - Sets the cursor keys input mode to either Application mode or Normal mode (true, false respectively)
-// Arguments:
-// - applicationMode - set to true to enable Application Mode Input, false for Normal Mode Input.
-// Return Value:
-// - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetCursorKeysMode(const bool applicationMode)
-{
-    return _SetInputMode(TerminalInput::Mode::CursorKey, applicationMode);
+    _terminalInput.SetInputMode(TerminalInput::Mode::Keypad, fApplicationMode);
+    return !_PassThroughInputModes();
 }
 
 // - att610 - Enables or disables the cursor blinking.
@@ -1667,10 +1652,9 @@ bool AdaptDispatch::SetAnsiMode(const bool ansiMode)
     _termOutput = {};
 
     _SetParserMode(StateMachine::Mode::Ansi, ansiMode);
-    _SetInputMode(TerminalInput::Mode::Ansi, ansiMode);
+    _terminalInput.SetInputMode(TerminalInput::Mode::Ansi, ansiMode);
 
-    // We don't check the _SetInputMode return value, because we'll never want
-    // to forward a DECANM mode change over conpty.
+    // We never want to forward a DECANM mode change over conpty.
     return true;
 }
 
@@ -2228,8 +2212,8 @@ bool AdaptDispatch::SoftReset()
     CursorVisibility(true); // Cursor enabled.
     _modes.reset(Mode::Origin); // Absolute cursor addressing.
     SetAutoWrapMode(true); // Wrap at end of line.
-    SetCursorKeysMode(false); // Normal characters.
-    SetKeypadMode(false); // Numeric characters.
+    _terminalInput.SetInputMode(TerminalInput::Mode::CursorKey, false); // Normal characters.
+    _terminalInput.SetInputMode(TerminalInput::Mode::Keypad, false); // Numeric characters.
 
     // Top margin = 1; bottom margin = page length.
     _DoSetTopBottomScrollingMargins(0, 0);
@@ -2300,15 +2284,8 @@ bool AdaptDispatch::HardReset()
     // Cursor to 1,1 - the Soft Reset guarantees this is absolute
     CursorPosition(1, 1);
 
-    // Reset the mouse mode
-    EnableSGRExtendedMouseMode(false);
-    EnableAnyEventMouseMode(false);
-
-    // Reset the Backarrow Key mode
-    _SetInputMode(TerminalInput::Mode::BackarrowKey, false);
-
-    // Set the keyboard Auto Repeat mode
-    _SetInputMode(TerminalInput::Mode::AutoRepeat, true);
+    // Reset input modes to their initial state
+    _terminalInput.ResetInputModes();
 
     // Delete all current tab stops and reapply
     _ResetTabStops();
@@ -2444,92 +2421,6 @@ void AdaptDispatch::_EraseAll()
 
     // Also reset the line rendition for the erased rows.
     textBuffer.ResetLineRenditionRange(newViewportTop, newViewportBottom);
-}
-
-//Routine Description:
-// Enable VT200 Mouse Mode - Enables/disables the mouse input handler in default tracking mode.
-//Arguments:
-// - enabled - true to enable, false to disable.
-// Return value:
-// True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableVT200MouseMode(const bool enabled)
-{
-    return _SetInputMode(TerminalInput::Mode::DefaultMouseTracking, enabled);
-}
-
-//Routine Description:
-// Enable UTF-8 Extended Encoding - this changes the encoding scheme for sequences
-//      emitted by the mouse input handler. Does not enable/disable mouse mode on its own.
-//Arguments:
-// - enabled - true to enable, false to disable.
-// Return value:
-// True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableUTF8ExtendedMouseMode(const bool enabled)
-{
-    return _SetInputMode(TerminalInput::Mode::Utf8MouseEncoding, enabled);
-}
-
-//Routine Description:
-// Enable SGR Extended Encoding - this changes the encoding scheme for sequences
-//      emitted by the mouse input handler. Does not enable/disable mouse mode on its own.
-//Arguments:
-// - enabled - true to enable, false to disable.
-// Return value:
-// True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableSGRExtendedMouseMode(const bool enabled)
-{
-    return _SetInputMode(TerminalInput::Mode::SgrMouseEncoding, enabled);
-}
-
-//Routine Description:
-// Enable Button Event mode - send mouse move events WITH A BUTTON PRESSED to the input.
-//Arguments:
-// - enabled - true to enable, false to disable.
-// Return value:
-// True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableButtonEventMouseMode(const bool enabled)
-{
-    return _SetInputMode(TerminalInput::Mode::ButtonEventMouseTracking, enabled);
-}
-
-//Routine Description:
-// Enable Any Event mode - send all mouse events to the input.
-//Arguments:
-// - enabled - true to enable, false to disable.
-// Return value:
-// True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableAnyEventMouseMode(const bool enabled)
-{
-    return _SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, enabled);
-}
-
-// Method Description:
-// - Enables/disables focus event mode. A client may enable this if they want to
-//   receive focus events.
-// - ConPTY always enables this mode and never disables it. Internally, we'll
-//   always set this mode, but conpty will never request this to be disabled by
-//   the hosting terminal.
-// Arguments:
-// - enabled - true to enable, false to disable.
-// Return Value:
-// - True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableFocusEventMode(const bool enabled)
-{
-    // GH#12799 - If the app requested that we disable focus events, DON'T pass
-    // that through. ConPTY would _always_ like to know about focus events.
-    return _SetInputMode(TerminalInput::Mode::FocusEvent, enabled) || !enabled;
-}
-
-//Routine Description:
-// Enable Alternate Scroll Mode - When in the Alt Buffer, send CUP and CUD on
-//      scroll up/down events instead of the usual sequences
-//Arguments:
-// - enabled - true to enable, false to disable.
-// Return value:
-// True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableAlternateScroll(const bool enabled)
-{
-    return _SetInputMode(TerminalInput::Mode::AlternateScroll, enabled);
 }
 
 //Routine Description:
