@@ -46,7 +46,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         NewTabMenuEntry FromJson(const Json::Value& json)
         {
             const auto entry = implementation::NewTabMenuEntry::FromJson(json);
-            if(entry == nullptr)
+            if (entry == nullptr)
             {
                 return nullptr;
             }

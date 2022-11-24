@@ -37,7 +37,7 @@ Json::Value FolderEntry::ToJson() const
     JsonUtils::SetValueForKey(json, IconKey, _Icon);
     JsonUtils::SetValueForKey(json, EntriesKey, _Entries);
     JsonUtils::SetValueForKey(json, InliningKey, _Inlining);
-    JsonUtils::SetValueForKey(json, AllowEmptyKey, _AllowEmpty); 
+    JsonUtils::SetValueForKey(json, AllowEmptyKey, _AllowEmpty);
 
     return json;
 }
@@ -50,7 +50,7 @@ winrt::com_ptr<NewTabMenuEntry> FolderEntry::FromJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, IconKey, entry->_Icon);
     JsonUtils::GetValueForKey(json, EntriesKey, entry->_Entries);
     JsonUtils::GetValueForKey(json, InliningKey, entry->_Inlining);
-    JsonUtils::GetValueForKey(json, AllowEmptyKey, entry->_AllowEmpty); 
+    JsonUtils::GetValueForKey(json, AllowEmptyKey, entry->_AllowEmpty);
 
     return entry;
 }
@@ -62,58 +62,58 @@ IVector<NTMEModel> FolderEntry::Entries() const
 {
     // We filter the full list of entries from JSON to just include the
     // non-empty ones.
-    IVector<NTMEModel> result{ winrt::single_threaded_vector<NTMEModel>() }; 
- 
-    for (const auto& entry : _Entries) 
-    { 
-        if (entry == nullptr) 
-        { 
-            continue; 
-        } 
- 
-        switch (entry.Type()) 
+    IVector<NTMEModel> result{ winrt::single_threaded_vector<NTMEModel>() };
+
+    for (const auto& entry : _Entries)
+    {
+        if (entry == nullptr)
         {
-        case NewTabMenuEntryType::Invalid: 
-            continue; 
+            continue;
+        }
+
+        switch (entry.Type())
+        {
+        case NewTabMenuEntryType::Invalid:
+            continue;
 
         // A profile is filtered out if it is not valid, so if it was not resolved
-        case NewTabMenuEntryType::Profile: 
-        { 
-            const auto profileEntry = entry.as<ProfileEntry>(); 
-            if (profileEntry.Profile() == nullptr) 
-            { 
-                continue; 
-            } 
-            break; 
-        } 
+        case NewTabMenuEntryType::Profile:
+        {
+            const auto profileEntry = entry.as<ProfileEntry>();
+            if (profileEntry.Profile() == nullptr)
+            {
+                continue;
+            }
+            break;
+        }
 
         // Any profile collection is filtered out if there are no results
-        case NewTabMenuEntryType::RemainingProfiles: 
-        { 
-            const auto profileCollectionEntry = entry.as<ProfileCollectionEntry>(); 
-            if (profileCollectionEntry.Profiles().Size() == 0) 
-            { 
-                continue; 
-            } 
-            break; 
-        } 
+        case NewTabMenuEntryType::RemainingProfiles:
+        {
+            const auto profileCollectionEntry = entry.as<ProfileCollectionEntry>();
+            if (profileCollectionEntry.Profiles().Size() == 0)
+            {
+                continue;
+            }
+            break;
+        }
 
         // A folder is filtered out if it has an effective size of 0 (calling
         // this filtering method recursively), and if it is not allowed to be
         // empty, or if it should auto-inline.
-        case NewTabMenuEntryType::Folder: 
-        { 
-            const auto folderEntry = entry.as<Model::FolderEntry>(); 
+        case NewTabMenuEntryType::Folder:
+        {
+            const auto folderEntry = entry.as<Model::FolderEntry>();
             if (folderEntry.Entries().Size() == 0 && (!folderEntry.AllowEmpty() || folderEntry.Inlining() == FolderEntryInlining::Auto))
-            { 
-                continue; 
-            } 
-            break; 
-        } 
-        } 
- 
-        result.Append(entry); 
-    } 
- 
-    return result; 
+            {
+                continue;
+            }
+            break;
+        }
+        }
+
+        result.Append(entry);
+    }
+
+    return result;
 }

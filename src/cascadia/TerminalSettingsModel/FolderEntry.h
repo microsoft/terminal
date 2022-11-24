@@ -37,7 +37,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry> RawEntries() const
         {
             return _Entries;
-        }; 
+        };
 
         WINRT_PROPERTY(winrt::hstring, Name);
         WINRT_PROPERTY(winrt::hstring, Icon);
