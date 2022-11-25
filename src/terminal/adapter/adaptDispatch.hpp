@@ -78,6 +78,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool DeleteLine(const VTInt distance) override; // DL
         bool SetMode(const DispatchTypes::ModeParams param) override; // DECSET
         bool ResetMode(const DispatchTypes::ModeParams param) override; // DECRST
+        bool RequestMode(const DispatchTypes::ModeParams param) override; // DECRQM
         bool SetKeypadMode(const bool applicationMode) override; // DECKPAM, DECKPNM
         bool SetAnsiMode(const bool ansiMode) override; // DECANM
         bool SetTopBottomScrollingMargins(const VTInt topMargin,

@@ -83,8 +83,8 @@ public:
     bool PopGraphicsRendition() override { return false; } // XTPOPSGR
 
     bool SetMode(const DispatchTypes::ModeParams /*param*/) override { return false; } // DECSET
-
     bool ResetMode(const DispatchTypes::ModeParams /*param*/) override { return false; } // DECRST
+    bool RequestMode(const DispatchTypes::ModeParams /*param*/) override { return false; } // DECRQM
 
     bool DeviceStatusReport(const DispatchTypes::StatusType /*statusType*/) override { return false; } // DSR, DSR-OS, DSR-CPR
     bool DeviceAttributes() override { return false; } // DA1

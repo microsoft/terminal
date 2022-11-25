@@ -1536,6 +1536,105 @@ bool AdaptDispatch::ResetMode(const DispatchTypes::ModeParams param)
     return _ModeParamsHelper(param, false);
 }
 
+// Routine Description:
+// - DECRQM - Requests the current state of a given mode number. The result
+//   is reported back with a DECRPM escape sequence.
+// Arguments:
+// - param - the mode number being queried
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
+{
+    auto enabled = std::optional<bool>{};
+
+    switch (param)
+    {
+    case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::CursorKey);
+        break;
+    case DispatchTypes::ModeParams::DECANM_AnsiMode:
+        enabled = _api.GetStateMachine().GetParserMode(StateMachine::Mode::Ansi);
+        break;
+    case DispatchTypes::ModeParams::DECCOLM_SetNumberOfColumns:
+        // DECCOLM is not support in conpty mode
+        if (!_api.IsConsolePty())
+        {
+            enabled = _modes.test(Mode::Column);
+        }
+        break;
+    case DispatchTypes::ModeParams::DECSCNM_ScreenMode:
+        enabled = _renderSettings.GetRenderMode(RenderSettings::Mode::ScreenReversed);
+        break;
+    case DispatchTypes::ModeParams::DECOM_OriginMode:
+        enabled = _modes.test(Mode::Origin);
+        break;
+    case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
+        enabled = _api.GetAutoWrapMode();
+        break;
+    case DispatchTypes::ModeParams::DECARM_AutoRepeatMode:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::AutoRepeat);
+        break;
+    case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
+        enabled = _api.GetTextBuffer().GetCursor().IsBlinkingAllowed();
+        break;
+    case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
+        enabled = _api.GetTextBuffer().GetCursor().IsVisible();
+        break;
+    case DispatchTypes::ModeParams::XTERM_EnableDECCOLMSupport:
+        // DECCOLM is not support in conpty mode
+        if (!_api.IsConsolePty())
+        {
+            enabled = _modes.test(Mode::AllowDECCOLM);
+        }
+        break;
+    case DispatchTypes::ModeParams::DECBKM_BackarrowKeyMode:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::BackarrowKey);
+        break;
+    case DispatchTypes::ModeParams::VT200_MOUSE_MODE:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::DefaultMouseTracking);
+        break;
+    case DispatchTypes::ModeParams::BUTTON_EVENT_MOUSE_MODE:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::ButtonEventMouseTracking);
+        break;
+    case DispatchTypes::ModeParams::ANY_EVENT_MOUSE_MODE:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::AnyEventMouseTracking);
+        break;
+    case DispatchTypes::ModeParams::UTF8_EXTENDED_MODE:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::Utf8MouseEncoding);
+        break;
+    case DispatchTypes::ModeParams::SGR_EXTENDED_MODE:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::SgrMouseEncoding);
+        break;
+    case DispatchTypes::ModeParams::FOCUS_EVENT_MODE:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::FocusEvent);
+        break;
+    case DispatchTypes::ModeParams::ALTERNATE_SCROLL:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::AlternateScroll);
+        break;
+    case DispatchTypes::ModeParams::ASB_AlternateScreenBuffer:
+        enabled = _usingAltBuffer;
+        break;
+    case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
+        enabled = _api.GetBracketedPasteMode();
+        break;
+    case DispatchTypes::ModeParams::W32IM_Win32InputMode:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::Win32);
+        break;
+    default:
+        enabled = std::nullopt;
+        break;
+    }
+
+    // 1 indicates the mode is enabled, 2 it's disabled, and 0 it's unsupported
+    const auto state = enabled.has_value() ? (enabled.value() ? 1 : 2) : 0;
+    const auto isPrivate = param >= DispatchTypes::DECPrivateMode(0);
+    const auto prefix = isPrivate ? L"?" : L"";
+    const auto mode = isPrivate ? param - DispatchTypes::DECPrivateMode(0) : param;
+    const auto response = wil::str_printf<std::wstring>(L"\x1b[%s%d;%d$y", prefix, mode, state);
+    _api.ReturnResponse(response);
+    return true;
+}
+
 // - DECKPAM, DECKPNM - Sets the keypad input mode to either Application mode or Numeric mode (true, false respectively)
 // Arguments:
 // - applicationMode - set to true to enable Application Mode Input, false for Numeric Mode Input.
@@ -1622,7 +1721,8 @@ bool AdaptDispatch::SetAnsiMode(const bool ansiMode)
     _api.GetStateMachine().SetParserMode(StateMachine::Mode::Ansi, ansiMode);
     _terminalInput.SetInputMode(TerminalInput::Mode::Ansi, ansiMode);
 
-    // We never want to forward a DECANM mode change over conpty.
+    // While input mode changes are often forwarded over conpty, we never want
+    // to do that for the DECANM mode.
     return true;
 }
 

@@ -90,8 +90,8 @@ public:
     virtual bool PopGraphicsRendition() = 0; // XTPOPSGR
 
     virtual bool SetMode(const DispatchTypes::ModeParams param) = 0; // DECSET
-
     virtual bool ResetMode(const DispatchTypes::ModeParams param) = 0; // DECRST
+    virtual bool RequestMode(const DispatchTypes::ModeParams param) = 0; // DECRQM
 
     virtual bool DeviceStatusReport(const DispatchTypes::StatusType statusType) = 0; // DSR, DSR-OS, DSR-CPR
     virtual bool DeviceAttributes() = 0; // DA1
