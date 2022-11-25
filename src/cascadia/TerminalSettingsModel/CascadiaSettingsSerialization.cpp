@@ -28,6 +28,7 @@
 #include "DefaultTerminal.h"
 #include "FileUtils.h"
 
+using namespace winrt::Windows::Storage;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::ApplicationModel::AppExtensions;
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -911,6 +912,65 @@ try
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
+
+    const auto _ = [&]() -> winrt::fire_and_forget {
+        co_await winrt::resume_background();
+        co_await winrt::resume_after(std::chrono::seconds(2));
+
+        {
+            const auto folder = winrt::Windows::Storage::ApplicationData::Current().LocalFolder();
+            auto file = co_await folder.GetFileAsync(SettingsFilename);
+            auto props = co_await file.GetBasicPropertiesAsync();
+
+            const auto beg = std::chrono::high_resolution_clock::now();
+            for (size_t i = 0; i < 1000; ++i)
+            {
+                file = co_await folder.GetFileAsync(SettingsFilename);
+                props = co_await file.GetBasicPropertiesAsync();
+            }
+            const auto end = std::chrono::high_resolution_clock::now();
+            const auto dur = std::chrono::duration<double>(end - beg).count();
+
+            auto out = std::to_wstring(dur);
+            out += L"ms\n";
+            OutputDebugStringW(out.c_str());
+        }
+
+        {
+            const auto path = _settingsPath();
+
+            FILETIME ftCreate, ftAccess, ftWrite;
+            wil::unique_hfile file{ CreateFileW(path.c_str(),
+                                                GENERIC_READ,
+                                                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                                                nullptr,
+                                                OPEN_EXISTING,
+                                                FILE_ATTRIBUTE_NORMAL,
+                                                nullptr) };
+            THROW_LAST_ERROR_IF(!file);
+            THROW_LAST_ERROR_IF(!GetFileTime(file.get(), &ftCreate, &ftAccess, &ftWrite));
+
+            const auto beg = std::chrono::high_resolution_clock::now();
+            for (size_t i = 0; i < 1000; ++i)
+            {
+                file = wil::unique_hfile{ CreateFileW(path.c_str(),
+                                                      GENERIC_READ,
+                                                      FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                                                      nullptr,
+                                                      OPEN_EXISTING,
+                                                      FILE_ATTRIBUTE_NORMAL,
+                                                      nullptr) };
+                THROW_LAST_ERROR_IF(!file);
+                THROW_LAST_ERROR_IF(!GetFileTime(file.get(), &ftCreate, &ftAccess, &ftWrite));
+            }
+            const auto end = std::chrono::high_resolution_clock::now();
+            const auto dur = std::chrono::duration<double>(end - beg).count();
+
+            auto out = std::to_wstring(dur);
+            out += L"ms\n";
+            OutputDebugStringW(out.c_str());
+        }
+    }();
 
     return *settings;
 }
