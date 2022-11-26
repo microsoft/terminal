@@ -1473,6 +1473,9 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
     case DispatchTypes::ModeParams::XTERM_EnableDECCOLMSupport:
         _modes.set(Mode::AllowDECCOLM, enable);
         return true;
+    case DispatchTypes::ModeParams::DECNKM_NumericKeypadMode:
+        _terminalInput.SetInputMode(TerminalInput::Mode::Keypad, enable);
+        return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::DECBKM_BackarrowKeyMode:
         _terminalInput.SetInputMode(TerminalInput::Mode::BackarrowKey, enable);
         return !_PassThroughInputModes();
@@ -1586,6 +1589,9 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         {
             enabled = _modes.test(Mode::AllowDECCOLM);
         }
+        break;
+    case DispatchTypes::ModeParams::DECNKM_NumericKeypadMode:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::Keypad);
         break;
     case DispatchTypes::ModeParams::DECBKM_BackarrowKeyMode:
         enabled = _terminalInput.GetInputMode(TerminalInput::Mode::BackarrowKey);
