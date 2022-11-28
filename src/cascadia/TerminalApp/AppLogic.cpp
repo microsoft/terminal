@@ -15,7 +15,6 @@
 #include "../../types/inc/utils.hpp"
 
 using namespace winrt::Windows::ApplicationModel;
-using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Core;
@@ -884,13 +883,8 @@ namespace winrt::TerminalApp::implementation
         //    we should display the loading error.
         //    * We can't display the error now, because we might not have a
         //      UI yet. We'll display the error in _OnLoaded.
-        _settingsLoadedResult = _TryLoadSettings();
-
-        if (FAILED(_settingsLoadedResult))
-        {
-            _settings = CascadiaSettings::LoadDefaults();
-        }
-
+        _settings = CascadiaSettings::LoadDefaults();
+        _settingsLoadedResult = S_OK;
         _loadedInitialSettings = true;
 
         // Register for directory change notification.
@@ -998,37 +992,9 @@ namespace winrt::TerminalApp::implementation
         _RequestedThemeChangedHandlers(*this, Theme());
     }
 
-    // Function Description:
-    // Returns the current app package or nullptr.
-    // TRANSITIONAL
-    // Exists to work around a compiler bug. This function encapsulates the
-    // exception handling that we used to keep around calls to Package::Current,
-    // so that when it's called inside a coroutine and fails it doesn't explode
-    // terribly.
-    static winrt::Windows::ApplicationModel::Package GetCurrentPackageNoThrow() noexcept
-    {
-        try
-        {
-            return winrt::Windows::ApplicationModel::Package::Current();
-        }
-        catch (...)
-        {
-            // discard any exception -- literally pretend we're not in a package
-        }
-        return nullptr;
-    }
-
     fire_and_forget AppLogic::_ApplyStartupTaskStateChange()
     try
     {
-        // First, make sure we're running in a packaged context. This method
-        // won't work, and will crash mysteriously if we're running unpackaged.
-        const auto package{ GetCurrentPackageNoThrow() };
-        if (package == nullptr)
-        {
-            co_return;
-        }
-
         const auto tryEnableStartupTask = _settings.GlobalSettings().StartOnUserLogin();
         const auto task = co_await StartupTask::GetAsync(StartupTaskName);
 

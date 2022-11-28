@@ -21,7 +21,6 @@ using namespace ::Microsoft::Console::VirtualTerminal;
 using namespace ::Microsoft::Terminal::Core;
 using namespace winrt::Windows::Graphics::Display;
 using namespace winrt::Windows::System;
-using namespace winrt::Windows::ApplicationModel::DataTransfer;
 
 static constexpr unsigned int MAX_CLICK_COUNT = 3;
 

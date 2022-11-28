@@ -30,7 +30,6 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
-using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::Storage;
 using namespace winrt::Windows::Storage::Pickers;
@@ -908,7 +907,7 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        CommandPalette().Visibility(Visibility::Collapsed);
+        //CommandPalette().Visibility(Visibility::Collapsed);
         _UpdateTabView();
     }
 
@@ -957,11 +956,11 @@ namespace winrt::TerminalApp::implementation
             // When the tab switcher is eventually dismissed, the focus will
             // get tossed back to the focused terminal control, so we don't
             // need to worry about focus getting lost.
-            if (CommandPalette().Visibility() != Visibility::Visible)
-            {
-                tab.Focus(FocusState::Programmatic);
-                _UpdateMRUTab(tab);
-            }
+            //if (CommandPalette().Visibility() != Visibility::Visible)
+            //{
+            //    tab.Focus(FocusState::Programmatic);
+            //    _UpdateMRUTab(tab);
+            //}
 
             tab.TabViewItem().StartBringIntoView();
 

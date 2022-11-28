@@ -27,7 +27,6 @@ using namespace ::Microsoft::Console::VirtualTerminal;
 using namespace ::Microsoft::Terminal::Core;
 using namespace winrt::Windows::Graphics::Display;
 using namespace winrt::Windows::System;
-using namespace winrt::Windows::ApplicationModel::DataTransfer;
 
 // The minimum delay between updates to the scroll bar's values.
 // The updates are throttled to limit power usage.

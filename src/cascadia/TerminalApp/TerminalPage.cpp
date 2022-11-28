@@ -137,7 +137,7 @@ namespace winrt::TerminalApp::implementation
         // happen before the Settings UI is reloaded and tries to re-read
         // those values.
         _UpdateCommandsForPalette();
-        CommandPalette().SetActionMap(_settings.ActionMap());
+        //CommandPalette().SetActionMap(_settings.ActionMap());
 
         if (needRefreshUI)
         {
@@ -276,16 +276,16 @@ namespace winrt::TerminalApp::implementation
         // When the visibility of the command palette changes to "collapsed",
         // the palette has been closed. Toss focus back to the currently active
         // control.
-        CommandPalette().RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
-            if (CommandPalette().Visibility() == Visibility::Collapsed)
-            {
-                _FocusActiveControl(nullptr, nullptr);
-            }
-        });
-        CommandPalette().DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
-        CommandPalette().CommandLineExecutionRequested({ this, &TerminalPage::_OnCommandLineExecutionRequested });
-        CommandPalette().SwitchToTabRequested({ this, &TerminalPage::_OnSwitchToTabRequested });
-        CommandPalette().PreviewAction({ this, &TerminalPage::_PreviewActionHandler });
+        //CommandPalette().RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
+        //    if (CommandPalette().Visibility() == Visibility::Collapsed)
+        //    {
+        //        _FocusActiveControl(nullptr, nullptr);
+        //    }
+        //});
+        //CommandPalette().DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
+        //CommandPalette().CommandLineExecutionRequested({ this, &TerminalPage::_OnCommandLineExecutionRequested });
+        //CommandPalette().SwitchToTabRequested({ this, &TerminalPage::_OnSwitchToTabRequested });
+        //CommandPalette().PreviewAction({ this, &TerminalPage::_PreviewActionHandler });
 
         // Settings AllowDependentAnimations will affect whether animations are
         // enabled application-wide, so we don't need to check it each time we
@@ -2880,7 +2880,7 @@ namespace winrt::TerminalApp::implementation
             commandsCollection.Append(nameAndCommand.Value());
         }
 
-        CommandPalette().SetCommands(commandsCollection);
+        //CommandPalette().SetCommands(commandsCollection);
     }
 
     // Method Description:
