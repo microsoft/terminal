@@ -858,7 +858,7 @@ void AdaptDispatch::_ChangeRectOrStreamAttributes(const til::rect& changeArea, c
 }
 
 // Routine Description:
-// - Helper method to caculate the applicable buffer coordinates for use with
+// - Helper method to calculate the applicable buffer coordinates for use with
 //   the various rectangular area operations.
 // Arguments:
 // - top - The first row of the area.
