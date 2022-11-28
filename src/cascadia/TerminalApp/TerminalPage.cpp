@@ -2658,9 +2658,14 @@ namespace winrt::TerminalApp::implementation
             Media::Imaging::BitmapImage image(imageUri);
             b.ImageSource(image);
             _tabContent.Background(b);
+        }
 
-            b.Stretch(newAppearance.BackgroundImageStretchMode());
-            b.Opacity(newAppearance.BackgroundImageOpacity());
+        // Pull this into a separate block. If the image didn't change, but the
+        // properties of the image did, we should still update them.
+        if (const auto newBrush{ _tabContent.Background().try_as<Media::ImageBrush>() })
+        {
+            newBrush.Stretch(newAppearance.BackgroundImageStretchMode());
+            newBrush.Opacity(newAppearance.BackgroundImageOpacity());
         }
     }
 
@@ -2692,14 +2697,6 @@ namespace winrt::TerminalApp::implementation
             // Avoid creating a TerminalSettings right now. They're not totally cheap, and we suspect that users with many
             // panes may not be using all of their profiles at the same time. Lazy evaluation is king!
             profileGuidSettingsMap.insert_or_assign(newProfile.Guid(), std::pair{ newProfile, nullptr });
-        }
-
-        if (const auto focusedTab{ _GetFocusedTabImpl() })
-        {
-            if (const auto profile{ focusedTab->GetFocusedProfile() })
-            {
-                _SetBackgroundImage(profile.DefaultAppearance());
-            }
         }
 
         for (const auto& tab : _tabs)
@@ -2745,6 +2742,14 @@ namespace winrt::TerminalApp::implementation
 
             auto tabImpl{ winrt::get_self<TabBase>(tab) };
             tabImpl->SetActionMap(_settings.ActionMap());
+        }
+
+        if (const auto focusedTab{ _GetFocusedTabImpl() })
+        {
+            if (const auto profile{ focusedTab->GetFocusedProfile() })
+            {
+                _SetBackgroundImage(profile.DefaultAppearance());
+            }
         }
 
         // repopulate the new tab button's flyout with entries for each
