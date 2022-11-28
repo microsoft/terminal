@@ -24,5 +24,6 @@ namespace Microsoft.Terminal.Settings.Editor
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, FocusFollowMouse);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, DetectURLs);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(String, WordDelimiters);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ConfirmCloseAllTabs);
     }
 }

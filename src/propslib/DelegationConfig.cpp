@@ -165,7 +165,7 @@ try
     packages.push_back({ ConhostDelegationPair });
 
     // Get consoles and terminals.
-    // If we fail to look up any, we should still have ONE come back to us as the hardcoded default console host.
+    // If we fail to look up any, we should still have ONE come back to us as the hard-coded default console host.
     // The errors aren't really useful except for debugging, so log only.
     std::vector<DelegationBase> consoles;
     LOG_IF_FAILED(_lookupCatalog(DELEGATION_CONSOLE_EXTENSION_NAME, consoles));
