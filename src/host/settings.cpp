@@ -79,7 +79,7 @@ Settings::Settings() :
 }
 
 // Routine Description:
-// - Applies hardcoded default settings that are in line with what is defined
+// - Applies hard-coded default settings that are in line with what is defined
 //   in our Windows edition manifest (living in win32k-settings.man).
 // - NOTE: This exists in case we cannot access the registry on desktop platforms.
 //   We will use this to provide better defaults than the constructor values which
