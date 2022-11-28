@@ -999,7 +999,7 @@ bool AdaptDispatch::ReverseAttributesRectangularArea(const VTInt top, const VTIn
 }
 
 // Routine Description:
-// - DECCRA - Copys a rectangular area from one part of the buffer to another.
+// - DECCRA - Copies a rectangular area from one part of the buffer to another.
 // Arguments:
 // - top - The first row of the source area.
 // - left - The first column of the source area.
