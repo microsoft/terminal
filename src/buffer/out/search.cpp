@@ -158,8 +158,8 @@ til::point Search::s_GetInitialAnchor(const IUiaData& uiaData, const Direction d
             textBuffer.GetSize().DecrementInBoundsCircular(anchor);
             // If the selection starts at (0, 0), we need to make sure
             // it does not exceed the text buffer end position
-            anchor.X = std::min(textBufferEndPosition.X, anchor.X);
-            anchor.Y = std::min(textBufferEndPosition.Y, anchor.Y);
+            anchor.x = std::min(textBufferEndPosition.x, anchor.x);
+            anchor.y = std::min(textBufferEndPosition.y, anchor.y);
         }
         return anchor;
     }
@@ -307,8 +307,8 @@ void Search::_UpdateNextPosition()
     // Backward: the position of the end of the text buffer
     const auto bufferEndPosition = _uiaData.GetTextBufferEndPosition();
 
-    if (_coordNext.Y > bufferEndPosition.Y ||
-        (_coordNext.Y == bufferEndPosition.Y && _coordNext.X > bufferEndPosition.X))
+    if (_coordNext.y > bufferEndPosition.y ||
+        (_coordNext.y == bufferEndPosition.y && _coordNext.x > bufferEndPosition.x))
     {
         if (_direction == Direction::Forward)
         {

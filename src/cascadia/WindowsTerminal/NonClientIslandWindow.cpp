@@ -444,10 +444,10 @@ til::rect NonClientIslandWindow::_GetDragAreaRect() const noexcept
         };
         const auto clientDragBarRect = transform.TransformBounds(logicalDragBarRect);
         return {
-            gsl::narrow_cast<til::CoordType>(clientDragBarRect.X * scale),
-            gsl::narrow_cast<til::CoordType>(clientDragBarRect.Y * scale),
-            gsl::narrow_cast<til::CoordType>((clientDragBarRect.Width + clientDragBarRect.X) * scale),
-            gsl::narrow_cast<til::CoordType>((clientDragBarRect.Height + clientDragBarRect.Y) * scale),
+            gsl::narrow_cast<til::CoordType>(clientDragBarRect.x * scale),
+            gsl::narrow_cast<til::CoordType>(clientDragBarRect.y * scale),
+            gsl::narrow_cast<til::CoordType>((clientDragBarRect.Width + clientDragBarRect.x) * scale),
+            gsl::narrow_cast<til::CoordType>((clientDragBarRect.Height + clientDragBarRect.y) * scale),
         };
     }
 
@@ -542,8 +542,8 @@ void NonClientIslandWindow::_UpdateIslandPosition(const UINT windowWidth, const 
 
     winrt::check_bool(SetWindowPos(_interopWindowHandle,
                                    HWND_BOTTOM,
-                                   newIslandPos.X,
-                                   newIslandPos.Y,
+                                   newIslandPos.x,
+                                   newIslandPos.y,
                                    windowWidth,
                                    windowHeight - topBorderHeight,
                                    SWP_SHOWWINDOW | SWP_NOACTIVATE));

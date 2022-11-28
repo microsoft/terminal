@@ -49,7 +49,7 @@ void ConhostInternalGetSet::PrintString(const std::wstring_view string)
                                            string.data(),
                                            &dwNumBytes,
                                            nullptr,
-                                           _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor().GetPosition().X,
+                                           _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor().GetPosition().x,
                                            WC_LIMIT_BACKSPACE | WC_DELAY_EOL_WRAP,
                                            nullptr);
     cursor.EndDeferDrawing();
@@ -174,8 +174,8 @@ void ConhostInternalGetSet::SetScrollingRegion(const til::inclusive_rect& scroll
 {
     auto& screenInfo = _io.GetActiveOutputBuffer();
     auto srScrollMargins = screenInfo.GetRelativeScrollMargins().ToInclusive();
-    srScrollMargins.Top = scrollMargins.Top;
-    srScrollMargins.Bottom = scrollMargins.Bottom;
+    srScrollMargins.top = scrollMargins.top;
+    srScrollMargins.bottom = scrollMargins.bottom;
     screenInfo.SetScrollMargins(Viewport::FromInclusive(srScrollMargins));
 }
 
@@ -208,12 +208,12 @@ void ConhostInternalGetSet::LineFeed(const bool withReturn)
     textBuffer.GetCursor().SetIsOn(true);
 
     // Since we are explicitly moving down a row, clear the wrap status on the row we're leaving
-    textBuffer.GetRowByOffset(cursorPosition.Y).SetWrapForced(false);
+    textBuffer.GetRowByOffset(cursorPosition.y).SetWrapForced(false);
 
-    cursorPosition.Y += 1;
+    cursorPosition.y += 1;
     if (withReturn)
     {
-        cursorPosition.X = 0;
+        cursorPosition.x = 0;
     }
     else
     {

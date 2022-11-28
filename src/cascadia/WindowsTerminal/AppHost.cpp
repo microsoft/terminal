@@ -539,8 +539,8 @@ LaunchPosition AppHost::_GetWindowLaunchPosition()
 
         // The nonClientArea adjustment is negative, so subtract that out.
         // This way we save the user-visible location of the terminal.
-        pos.X = window.left - nonClientArea.left;
-        pos.Y = window.top;
+        pos.x = window.left - nonClientArea.left;
+        pos.y = window.top;
     }
     CATCH_LOG();
 
@@ -568,8 +568,8 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, til::rect proposedRect, Launc
     // Acquire the actual initial position
     auto initialPos = _logic.GetInitialPosition(proposedRect.left, proposedRect.top);
     const auto centerOnLaunch = _logic.CenterOnLaunch();
-    proposedRect.left = gsl::narrow<til::CoordType>(initialPos.X);
-    proposedRect.top = gsl::narrow<til::CoordType>(initialPos.Y);
+    proposedRect.left = gsl::narrow<til::CoordType>(initialPos.x);
+    proposedRect.top = gsl::narrow<til::CoordType>(initialPos.y);
 
     long adjustedHeight = 0;
     long adjustedWidth = 0;

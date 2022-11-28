@@ -82,12 +82,12 @@ void Terminal::LineFeed(const bool withReturn)
 
     // since we explicitly just moved down a row, clear the wrap status on the
     // row we just came from
-    _activeBuffer().GetRowByOffset(cursorPos.Y).SetWrapForced(false);
+    _activeBuffer().GetRowByOffset(cursorPos.y).SetWrapForced(false);
 
-    cursorPos.Y++;
+    cursorPos.y++;
     if (withReturn)
     {
-        cursorPos.X = 0;
+        cursorPos.x = 0;
     }
     _AdjustCursorPosition(cursorPos);
 }
@@ -222,7 +222,7 @@ void Terminal::UseAlternateScreenBuffer()
 
         // The new position should match the viewport-relative position of the main buffer.
         auto tgtCursorPos = myCursor.GetPosition();
-        tgtCursorPos.Y -= _mutableViewport.Top();
+        tgtCursorPos.y -= _mutableViewport.Top();
         tgtCursor.SetPosition(tgtCursorPos);
     }
 
@@ -265,7 +265,7 @@ void Terminal::UseMainScreenBuffer()
         // The new position should match the viewport-relative position of the main buffer.
         // This is the equal and opposite effect of what we did in UseAlternateScreenBuffer
         auto tgtCursorPos = myCursor.GetPosition();
-        tgtCursorPos.Y += _mutableViewport.Top();
+        tgtCursorPos.y += _mutableViewport.Top();
         tgtCursor.SetPosition(tgtCursorPos);
     }
 

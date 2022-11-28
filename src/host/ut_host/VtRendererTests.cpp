@@ -118,9 +118,9 @@ class Microsoft::Console::Render::VtRendererTest
 Viewport VtRendererTest::SetUpViewport()
 {
     til::inclusive_rect view;
-    view.Top = view.Left = 0;
-    view.Bottom = 31;
-    view.Right = 79;
+    view.top = view.left = 0;
+    view.bottom = 31;
+    view.right = 79;
 
     return Viewport::FromInclusive(view);
 }
@@ -250,7 +250,7 @@ void VtRendererTest::Xterm256TestInvalidate()
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled one down, only top line is invalid. ----"));
         invalid = view.ToExclusive();
-        invalid.Bottom = 1;
+        invalid.bottom = 1;
 
         const auto runs = engine->_invalidMap.runs();
         VERIFY_ARE_EQUAL(1u, runs.size());
@@ -268,7 +268,7 @@ void VtRendererTest::Xterm256TestInvalidate()
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled three down, only top 3 lines are invalid. ----"));
         invalid = view.ToExclusive();
-        invalid.Bottom = 3;
+        invalid.bottom = 3;
 
         // we should have 3 runs and build a rectangle out of them
         const auto runs = engine->_invalidMap.runs();
@@ -292,7 +292,7 @@ void VtRendererTest::Xterm256TestInvalidate()
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled one up, only bottom line is invalid. ----"));
         invalid = view.ToExclusive();
-        invalid.Top = invalid.Bottom - 1;
+        invalid.top = invalid.bottom - 1;
 
         const auto runs = engine->_invalidMap.runs();
         VERIFY_ARE_EQUAL(1u, runs.size());
@@ -309,7 +309,7 @@ void VtRendererTest::Xterm256TestInvalidate()
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled three up, only bottom 3 lines are invalid. ----"));
         invalid = view.ToExclusive();
-        invalid.Top = invalid.Bottom - 3;
+        invalid.top = invalid.bottom - 3;
 
         // we should have 3 runs and build a rectangle out of them
         const auto runs = engine->_invalidMap.runs();
@@ -339,7 +339,7 @@ void VtRendererTest::Xterm256TestInvalidate()
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled three down, only top 3 lines are invalid. ----"));
         invalid = view.ToExclusive();
-        invalid.Bottom = 3;
+        invalid.bottom = 3;
 
         // we should have 3 runs and build a rectangle out of them
         const auto runs = engine->_invalidMap.runs();
@@ -925,7 +925,7 @@ void VtRendererTest::XtermTestInvalidate()
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled one down, only top line is invalid. ----"));
         invalid = view.ToExclusive();
-        invalid.Bottom = 1;
+        invalid.bottom = 1;
 
         const auto runs = engine->_invalidMap.runs();
         VERIFY_ARE_EQUAL(1u, runs.size());
@@ -942,7 +942,7 @@ void VtRendererTest::XtermTestInvalidate()
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled three down, only top 3 lines are invalid. ----"));
         invalid = view.ToExclusive();
-        invalid.Bottom = 3;
+        invalid.bottom = 3;
 
         // we should have 3 runs and build a rectangle out of them
         const auto runs = engine->_invalidMap.runs();
@@ -966,7 +966,7 @@ void VtRendererTest::XtermTestInvalidate()
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled one up, only bottom line is invalid. ----"));
         invalid = view.ToExclusive();
-        invalid.Top = invalid.Bottom - 1;
+        invalid.top = invalid.bottom - 1;
 
         const auto runs = engine->_invalidMap.runs();
         VERIFY_ARE_EQUAL(1u, runs.size());
@@ -983,7 +983,7 @@ void VtRendererTest::XtermTestInvalidate()
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled three up, only bottom 3 lines are invalid. ----"));
         invalid = view.ToExclusive();
-        invalid.Top = invalid.Bottom - 3;
+        invalid.top = invalid.bottom - 3;
 
         // we should have 3 runs and build a rectangle out of them
         const auto runs = engine->_invalidMap.runs();
@@ -1013,7 +1013,7 @@ void VtRendererTest::XtermTestInvalidate()
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled three down, only top 3 lines are invalid. ----"));
         invalid = view.ToExclusive();
-        invalid.Bottom = 3;
+        invalid.bottom = 3;
 
         // we should have 3 runs and build a rectangle out of them
         const auto runs = engine->_invalidMap.runs();

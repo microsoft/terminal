@@ -69,9 +69,9 @@ CATCH_RETURN();
     // We should ignore the first one, but after that, if the client application
     //      is moving the cursor around in the viewport, move our virtual top
     //      up to meet their changes.
-    if (!_skipCursor && _virtualTop > psrRegion->Top)
+    if (!_skipCursor && _virtualTop > psrRegion->top)
     {
-        _virtualTop = psrRegion->Top;
+        _virtualTop = psrRegion->top;
     }
     _skipCursor = false;
 

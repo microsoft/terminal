@@ -98,12 +98,12 @@ public:
         Globals& g = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals();
         CONSOLE_INFORMATION& gci = g.getConsoleInformation();
         til::size coordWindowSize;
-        coordWindowSize.X = viewWidth;
-        coordWindowSize.Y = viewHeight;
+        coordWindowSize.width = viewWidth;
+        coordWindowSize.height = viewHeight;
 
         til::size coordScreenBufferSize;
-        coordScreenBufferSize.X = bufferWidth;
-        coordScreenBufferSize.Y = bufferHeight;
+        coordScreenBufferSize.width = bufferWidth;
+        coordScreenBufferSize.height = bufferHeight;
 
         UINT uiCursorSize = 12;
 
@@ -175,8 +175,8 @@ public:
         Globals& g = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals();
         CONSOLE_INFORMATION& gci = g.getConsoleInformation();
         til::size coordScreenBufferSize;
-        coordScreenBufferSize.X = bufferWidth;
-        coordScreenBufferSize.Y = bufferHeight;
+        coordScreenBufferSize.width = bufferWidth;
+        coordScreenBufferSize.height = bufferHeight;
 
         UINT uiCursorSize = 12;
 

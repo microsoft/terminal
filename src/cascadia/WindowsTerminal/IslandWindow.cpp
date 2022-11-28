@@ -151,8 +151,8 @@ void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexce
     til::rect rc;
     rc.left = pcs->x;
     rc.top = pcs->y;
-    rc.right = rc.left + pcs->cx;
-    rc.bottom = rc.top + pcs->cy;
+    rc.right = rc.left + pcs->width;
+    rc.bottom = rc.top + pcs->height;
 
     auto launchMode = LaunchMode::DefaultMode;
     if (_pfnCreateCallback)
@@ -211,10 +211,10 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
 
     const auto nonClientSize = GetTotalNonClientExclusiveSize(dpix);
 
-    auto clientWidth = winRect->right - winRect->left - nonClientSize.cx;
+    auto clientWidth = winRect->right - winRect->left - nonClientSize.width;
     clientWidth = std::max(minWidthScaled, clientWidth);
 
-    auto clientHeight = winRect->bottom - winRect->top - nonClientSize.cy;
+    auto clientHeight = winRect->bottom - winRect->top - nonClientSize.height;
 
     // If we're the quake window, prevent resizing on all sides except the
     // bottom. This also applies to resizing with the Alt+Space menu
@@ -251,12 +251,12 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
     case WMSZ_LEFT:
     case WMSZ_TOPLEFT:
     case WMSZ_BOTTOMLEFT:
-        winRect->left = winRect->right - (clientWidth + nonClientSize.cx);
+        winRect->left = winRect->right - (clientWidth + nonClientSize.width);
         break;
     case WMSZ_RIGHT:
     case WMSZ_TOPRIGHT:
     case WMSZ_BOTTOMRIGHT:
-        winRect->right = winRect->left + (clientWidth + nonClientSize.cx);
+        winRect->right = winRect->left + (clientWidth + nonClientSize.width);
         break;
     }
 
@@ -266,12 +266,12 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
     case WMSZ_BOTTOM:
     case WMSZ_BOTTOMLEFT:
     case WMSZ_BOTTOMRIGHT:
-        winRect->bottom = winRect->top + (clientHeight + nonClientSize.cy);
+        winRect->bottom = winRect->top + (clientHeight + nonClientSize.height);
         break;
     case WMSZ_TOP:
     case WMSZ_TOPLEFT:
     case WMSZ_TOPRIGHT:
-        winRect->top = winRect->bottom - (clientHeight + nonClientSize.cy);
+        winRect->top = winRect->bottom - (clientHeight + nonClientSize.height);
         break;
     }
 
@@ -389,8 +389,8 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
     const auto nonClientSizeScaled = GetTotalNonClientExclusiveSize(dpix);
 
     auto lpMinMaxInfo = reinterpret_cast<LPMINMAXINFO>(lParam);
-    lpMinMaxInfo->ptMinTrackSize.x = _calculateTotalSize(true, minimumWidth * dpix / USER_DEFAULT_SCREEN_DPI, nonClientSizeScaled.cx);
-    lpMinMaxInfo->ptMinTrackSize.y = _calculateTotalSize(false, minimumHeight * dpiy / USER_DEFAULT_SCREEN_DPI, nonClientSizeScaled.cy);
+    lpMinMaxInfo->ptMinTrackSize.width = _calculateTotalSize(true, minimumWidth * dpix / USER_DEFAULT_SCREEN_DPI, nonClientSizeScaled.width);
+    lpMinMaxInfo->ptMinTrackSize.height = _calculateTotalSize(false, minimumHeight * dpiy / USER_DEFAULT_SCREEN_DPI, nonClientSizeScaled.height);
 }
 
 // Method Description:
@@ -577,8 +577,8 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
             RECT rcSuggested;
             rcSuggested.left = lpwpos->x;
             rcSuggested.top = lpwpos->y;
-            rcSuggested.right = rcSuggested.left + lpwpos->cx;
-            rcSuggested.bottom = rcSuggested.top + lpwpos->cy;
+            rcSuggested.right = rcSuggested.left + lpwpos->width;
+            rcSuggested.bottom = rcSuggested.top + lpwpos->height;
 
             // Find the bounds of the current monitor, and the monitor that
             // we're suggested to be on.
@@ -605,8 +605,8 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
                 // size for the new monitor.
                 lpwpos->x = newWindowRect.left;
                 lpwpos->y = newWindowRect.top;
-                lpwpos->cx = newWindowRect.width();
-                lpwpos->cy = newWindowRect.height();
+                lpwpos->width = newWindowRect.width();
+                lpwpos->height = newWindowRect.height();
 
                 return 0;
             }
@@ -793,7 +793,7 @@ void IslandWindow::OnAppInitialized()
 {
     // Do a quick resize to force the island to paint
     const auto size = GetPhysicalSize();
-    OnSize(size.cx, size.cy);
+    OnSize(size.width, size.height);
 }
 
 // Method Description:

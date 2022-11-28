@@ -13,12 +13,12 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 
 til::CoordType CalcWindowSizeX(const til::inclusive_rect& rect) noexcept
 {
-    return rect.Right - rect.Left + 1;
+    return rect.right - rect.left + 1;
 }
 
 til::CoordType CalcWindowSizeY(const til::inclusive_rect& rect) noexcept
 {
-    return rect.Bottom - rect.Top + 1;
+    return rect.bottom - rect.top + 1;
 }
 
 til::CoordType CalcCursorYOffsetInPixels(const til::CoordType sFontSizeY, const ULONG ulSize) noexcept
@@ -169,23 +169,23 @@ UINT s_LoadStringEx(_In_ HINSTANCE hModule, _In_ UINT wID, _Out_writes_(cchBuffe
 // -  The magnitude of the result is the distance between the two coordinates when typing characters into the buffer (left to right, top to bottom)
 int Utils::s_CompareCoords(const til::size bufferSize, const til::point coordFirst, const til::point coordSecond) noexcept
 {
-    const auto cRowWidth = bufferSize.X;
+    const auto cRowWidth = bufferSize.width;
 
     // Assert that our coordinates are within the expected boundaries
-    const auto cRowHeight = bufferSize.Y;
-    FAIL_FAST_IF(!(coordFirst.X >= 0 && coordFirst.X < cRowWidth));
-    FAIL_FAST_IF(!(coordSecond.X >= 0 && coordSecond.X < cRowWidth));
-    FAIL_FAST_IF(!(coordFirst.Y >= 0 && coordFirst.Y < cRowHeight));
-    FAIL_FAST_IF(!(coordSecond.Y >= 0 && coordSecond.Y < cRowHeight));
+    const auto cRowHeight = bufferSize.height;
+    FAIL_FAST_IF(!(coordFirst.x >= 0 && coordFirst.x < cRowWidth));
+    FAIL_FAST_IF(!(coordSecond.x >= 0 && coordSecond.x < cRowWidth));
+    FAIL_FAST_IF(!(coordFirst.y >= 0 && coordFirst.y < cRowHeight));
+    FAIL_FAST_IF(!(coordSecond.y >= 0 && coordSecond.y < cRowHeight));
 
     // First set the distance vertically
     //   If first is on row 4 and second is on row 6, first will be -2 rows behind second * an 80 character row would be -160.
     //   For the same row, it'll be 0 rows * 80 character width = 0 difference.
-    auto retVal = (coordFirst.Y - coordSecond.Y) * cRowWidth;
+    auto retVal = (coordFirst.y - coordSecond.y) * cRowWidth;
 
     // Now adjust for horizontal differences
     //   If first is in position 15 and second is in position 30, first is -15 left in relation to 30.
-    retVal += (coordFirst.X - coordSecond.X);
+    retVal += (coordFirst.x - coordSecond.x);
 
     // Further notes:
     //   If we already moved behind one row, this will help correct for when first is right of second.
@@ -228,9 +228,9 @@ int Utils::s_CompareCoords(const til::point coordFirst, const til::point coordSe
 til::point Utils::s_GetOppositeCorner(const til::inclusive_rect& srRectangle, const til::point coordCorner) noexcept
 {
     // Assert we were given coordinates that are indeed one of the corners of the rectangle.
-    FAIL_FAST_IF(!(coordCorner.X == srRectangle.Left || coordCorner.X == srRectangle.Right));
-    FAIL_FAST_IF(!(coordCorner.Y == srRectangle.Top || coordCorner.Y == srRectangle.Bottom));
+    FAIL_FAST_IF(!(coordCorner.x == srRectangle.left || coordCorner.x == srRectangle.right));
+    FAIL_FAST_IF(!(coordCorner.y == srRectangle.top || coordCorner.y == srRectangle.bottom));
 
-    return { (srRectangle.Left == coordCorner.X) ? srRectangle.Right : srRectangle.Left,
-             (srRectangle.Top == coordCorner.Y) ? srRectangle.Bottom : srRectangle.Top };
+    return { (srRectangle.left == coordCorner.x) ? srRectangle.right : srRectangle.left,
+             (srRectangle.top == coordCorner.y) ? srRectangle.bottom : srRectangle.top };
 }

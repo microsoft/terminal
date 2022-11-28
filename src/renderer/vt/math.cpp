@@ -47,10 +47,10 @@ using namespace Microsoft::Console::Types;
 // - <none>
 void VtEngine::_OrRect(_Inout_ til::inclusive_rect* const pRectExisting, const til::inclusive_rect* const pRectToOr) const
 {
-    pRectExisting->Left = std::min(pRectExisting->Left, pRectToOr->Left);
-    pRectExisting->Top = std::min(pRectExisting->Top, pRectToOr->Top);
-    pRectExisting->Right = std::max(pRectExisting->Right, pRectToOr->Right);
-    pRectExisting->Bottom = std::max(pRectExisting->Bottom, pRectToOr->Bottom);
+    pRectExisting->left = std::min(pRectExisting->left, pRectToOr->left);
+    pRectExisting->top = std::min(pRectExisting->top, pRectToOr->top);
+    pRectExisting->right = std::max(pRectExisting->right, pRectToOr->right);
+    pRectExisting->bottom = std::max(pRectExisting->bottom, pRectToOr->bottom);
 }
 
 // Method Description:
@@ -83,7 +83,7 @@ bool VtEngine::_WillWriteSingleChar() const
     //      character should follow this code path
     //      (The immediate previous character would suggest a backspace)
     auto invalidIsNext = invalidPoint == _lastText;
-    auto invalidIsLast = invalidPoint == til::point{ _lastText.X - 1, _lastText.Y };
+    auto invalidIsLast = invalidPoint == til::point{ _lastText.x - 1, _lastText.y };
 
     return invalidIsNext || invalidIsLast;
 }
