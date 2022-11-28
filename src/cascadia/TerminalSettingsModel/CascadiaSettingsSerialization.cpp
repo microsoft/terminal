@@ -937,6 +937,7 @@ void CascadiaSettings::_researchOnLoad()
         // ----------------------------- RE: Themes ----------------------------
         const auto numThemes = GlobalSettings().Themes().Size();
         const auto themeInUse = GlobalSettings().CurrentTheme().Name();
+        const auto changedTheme = GlobalSettings().HasTheme();
 
         // system: 0
         // light: 1
@@ -952,6 +953,7 @@ void CascadiaSettings::_researchOnLoad()
             "ThemesInUse",
             TraceLoggingDescription("Data about the themes in use"),
             TraceLoggingBool(themeChoice, "Identifier for the theme chosen. 0 is system, 1 is light, 2 is dark, and 3 indicates any custom theme."),
+            TraceLoggingBool(changedTheme, "True if the user actually changed the theme from the default theme"),
             TraceLoggingInt32(numThemes, "Number of themes in the user's settings"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
