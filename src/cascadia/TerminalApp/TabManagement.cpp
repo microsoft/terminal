@@ -42,9 +42,6 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace ::TerminalApp;
 using namespace ::Microsoft::Console;
 
-using namespace winrt::Windows::UI::Notifications;
-using namespace winrt::Windows::Data::Xml::Dom;
-
 namespace winrt
 {
     namespace MUX = Microsoft::UI::Xaml;
@@ -163,36 +160,6 @@ namespace winrt::TerminalApp::implementation
             if (page && tab)
             {
                 page->_RaiseVisualBellHandlers(nullptr, nullptr);
-            }
-        });
-
-        newTabImpl->RaiseNotification([weakTab, weakThis{ get_weak() }]() {
-            auto page{ weakThis.get() };
-            auto tab{ weakTab.get() };
-            if (page && tab)
-            {
-                // Construct the XML toast template
-                XmlDocument doc;
-                doc.LoadXml(L"\
-    <toast>\
-        <visual>\
-            <binding template=\"ToastGeneric\">\
-                <text></text>\
-                <text></text>\
-            </binding>\
-        </visual>\
-    </toast>");
-
-                // Populate with text and values
-                doc.DocumentElement().SetAttribute(L"launch", L"window=1&tabIndex=1");
-                doc.SelectSingleNode(L"//text[1]").InnerText(L"Notification from the Terminal");
-                doc.SelectSingleNode(L"//text[2]").InnerText(L"Check this out, it's a friggin notification!");
-
-                // Construct the notification
-                winrt::Windows::UI::Notifications::ToastNotification notif{ doc };
-                ToastNotifier toastNotifier{ ToastNotificationManager::CreateToastNotifier() };
-                // And show it!
-                toastNotifier.Show(notif);
             }
         });
 

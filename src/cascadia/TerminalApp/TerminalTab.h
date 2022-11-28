@@ -99,7 +99,6 @@ namespace winrt::TerminalApp::implementation
 
         WINRT_CALLBACK(ActivePaneChanged, winrt::delegate<>);
         WINRT_CALLBACK(TabRaiseVisualBell, winrt::delegate<>);
-        WINRT_CALLBACK(RaiseNotification, winrt::delegate<>);
         WINRT_CALLBACK(DuplicateRequested, winrt::delegate<>);
         WINRT_CALLBACK(SplitTabRequested, winrt::delegate<>);
         WINRT_CALLBACK(FindRequested, winrt::delegate<>);

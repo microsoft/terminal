@@ -334,7 +334,7 @@ void Terminal::NotifyAccessibilityChange(const til::rect& /*changedRect*/) noexc
 }
 
 void Terminal::SendNotification(const std::wstring_view title,
-                                const std::wstring_view body) noexcept
+                                const std::wstring_view body)
 {
     if (_pfnSendNotification)
     {

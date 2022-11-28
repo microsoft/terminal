@@ -138,7 +138,7 @@ public:
     bool IsConsolePty() const noexcept override;
     bool IsVtInputEnabled() const noexcept override;
     void NotifyAccessibilityChange(const til::rect& changedRect) noexcept override;
-    void SendNotification(const std::wstring_view title, const std::wstring_view body) noexcept override;
+    void SendNotification(const std::wstring_view title, const std::wstring_view body) override;
 #pragma endregion
 
     void ClearMark();
