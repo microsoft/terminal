@@ -846,7 +846,7 @@ void AdaptDispatch::_ChangeRectOrStreamAttributes(const til::rect& changeArea, c
     // If the stream extent is more than one line we require three passes. The
     // top line is altered from the left offset up to the end of the line. The
     // bottom line is altered from the start up to the right offset. All the
-    // lines inbetween have their entire length altered. The right coordinate
+    // lines in-between have their entire length altered. The right coordinate
     // must be greater than the left, otherwise the operation is ignored.
     else if (lineCount > 1 && changeRect.right > changeRect.left)
     {
