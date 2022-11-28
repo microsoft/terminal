@@ -2615,6 +2615,12 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_SetBackgroundImage(const winrt::Microsoft::Terminal::Settings::Model::IAppearanceConfig& newAppearance)
     {
+        if (!_settings.GlobalSettings().UseBackgroundImageForWindow())
+        {
+            _tabContent.Background(nullptr);
+            return;
+        }
+
         const auto path = newAppearance.ExpandedBackgroundImagePath();
         if (path.empty())
         {
@@ -2688,18 +2694,14 @@ namespace winrt::TerminalApp::implementation
             profileGuidSettingsMap.insert_or_assign(newProfile.Guid(), std::pair{ newProfile, nullptr });
         }
 
-        if (_settings.GlobalSettings().UseBackgroundImageForWindow())
+        if (const auto focusedTab{ _GetFocusedTabImpl() })
         {
-            const auto focusedTab{ _GetFocusedTabImpl() };
-            if (focusedTab)
+            if (const auto profile{ focusedTab->GetFocusedProfile() })
             {
-                auto profile = focusedTab->GetFocusedProfile();
-                if (profile)
-                {
-                    _SetBackgroundImage(profile.DefaultAppearance());
-                }
+                _SetBackgroundImage(profile.DefaultAppearance());
             }
         }
+
         for (const auto& tab : _tabs)
         {
             if (auto terminalTab{ _GetTerminalTabImpl(tab) })
