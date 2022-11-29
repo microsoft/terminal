@@ -41,8 +41,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         size_t GetSpaceAvailable() const noexcept;
         uint16_t CalculateChecksum() const noexcept;
-        std::wstring_view GetMacroSequence(const size_t macroId) const noexcept;
-        void InvokeMacroSequence(const std::wstring_view macroSequence, StateMachine& stateMachine);
+        void InvokeMacro(const size_t macroId, StateMachine& stateMachine);
         void ClearMacrosIfInUse();
         bool InitParser(const size_t macroId, const DispatchTypes::MacroDeleteControl deleteControl, const DispatchTypes::MacroEncoding encoding);
         bool ParseDefinition(const wchar_t ch);

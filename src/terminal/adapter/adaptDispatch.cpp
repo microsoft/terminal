@@ -3258,21 +3258,17 @@ bool AdaptDispatch::InvokeMacro(const VTInt macroId)
 {
     if (_macroBuffer)
     {
-        const auto macroSequence = _macroBuffer->GetMacroSequence(macroId);
-        if (!macroSequence.empty())
-        {
-            // In order to inject our macro sequence into the state machine
-            // we need to register a callback that will be executed only
-            // once it has finished processing the current operation, and
-            // has returned to the ground state. Note that we're capturing
-            // a copy of the _macroBuffer pointer here to make sure it won't
-            // be deleted (e.g. from an invoked RIS) while still in use.
-            const auto macroBuffer = _macroBuffer;
-            auto& stateMachine = _api.GetStateMachine();
-            stateMachine.OnCsiComplete([=, &stateMachine]() {
-                macroBuffer->InvokeMacroSequence(macroSequence, stateMachine);
-            });
-        }
+        // In order to inject our macro sequence into the state machine
+        // we need to register a callback that will be executed only
+        // once it has finished processing the current operation, and
+        // has returned to the ground state. Note that we're capturing
+        // a copy of the _macroBuffer pointer here to make sure it won't
+        // be deleted (e.g. from an invoked RIS) while still in use.
+        const auto macroBuffer = _macroBuffer;
+        auto& stateMachine = _api.GetStateMachine();
+        stateMachine.OnCsiComplete([=, &stateMachine]() {
+            macroBuffer->InvokeMacro(macroId, stateMachine);
+        });
     }
     return true;
 }

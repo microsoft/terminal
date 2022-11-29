@@ -32,30 +32,29 @@ uint16_t MacroBuffer::CalculateChecksum() const noexcept
     return checksum;
 }
 
-std::wstring_view MacroBuffer::GetMacroSequence(const size_t macroId) const noexcept
+void MacroBuffer::InvokeMacro(const size_t macroId, StateMachine& stateMachine)
 {
-    return macroId < _macros.size() ? til::at(_macros, macroId) : std::wstring_view{};
-}
-
-void MacroBuffer::InvokeMacroSequence(const std::wstring_view macroSequence, StateMachine& stateMachine)
-{
-    // Macros can invoke other macros up to a depth of 16, but we don't allow
-    // the total sequence length to exceed the maximum buffer size, since that's
-    // likely to facilitate a denial-of-service attack.
-    const auto allowedLength = MAX_SPACE - _invokedSequenceLength;
-    if (_invokedDepth < 16 && macroSequence.length() < allowedLength)
+    if (macroId < _macros.size())
     {
-        _invokedSequenceLength += macroSequence.length();
-        _invokedDepth++;
-        auto resetInvokeDepth = wil::scope_exit([&] {
-            // Once the invoke depth reaches zero, we know we've reached the end
-            // of the root invoke, so we can reset the sequence length tracker.
-            if (--_invokedDepth == 0)
-            {
-                _invokedSequenceLength = 0;
-            }
-        });
-        stateMachine.ProcessString(macroSequence);
+        const auto& macroSequence = til::at(_macros, macroId);
+        // Macros can invoke other macros up to a depth of 16, but we don't allow
+        // the total sequence length to exceed the maximum buffer size, since that's
+        // likely to facilitate a denial-of-service attack.
+        const auto allowedLength = MAX_SPACE - _invokedSequenceLength;
+        if (_invokedDepth < 16 && macroSequence.length() < allowedLength)
+        {
+            _invokedSequenceLength += macroSequence.length();
+            _invokedDepth++;
+            auto resetInvokeDepth = wil::scope_exit([&] {
+                // Once the invoke depth reaches zero, we know we've reached the end
+                // of the root invoke, so we can reset the sequence length tracker.
+                if (--_invokedDepth == 0)
+                {
+                    _invokedSequenceLength = 0;
+                }
+            });
+            stateMachine.ProcessString(macroSequence);
+        }
     }
 }
 
