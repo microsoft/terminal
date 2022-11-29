@@ -80,5 +80,5 @@ public:
 
 private:
     Microsoft::Console::IIoProvider& _io;
-    bool _bracketedPastMode{ false };
+    bool _bracketedPasteMode{ false };
 };

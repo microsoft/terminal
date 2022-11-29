@@ -339,9 +339,9 @@ unsigned int ConhostInternalGetSet::GetConsoleOutputCP() const
 // - <none>
 void ConhostInternalGetSet::SetBracketedPasteMode(const bool enabled)
 {
-    // TODO: Bracketed Paste Mode is not yet supported in conhost, but we still
-    // keep track of the state so it can be reported by DECRQM.
-    _bracketedPastMode = enabled;
+    // TODO GH#395: Bracketed Paste Mode is not yet supported in conhost, but we
+    // still keep track of the state so it can be reported by DECRQM.
+    _bracketedPasteMode = enabled;
 }
 
 // Routine Description:
@@ -352,9 +352,9 @@ void ConhostInternalGetSet::SetBracketedPasteMode(const bool enabled)
 // - true if the mode is enabled, false if not, nullopt if unsupported.
 std::optional<bool> ConhostInternalGetSet::GetBracketedPasteMode() const
 {
-    // TODO: Bracketed Paste Mode is not yet supported in conhost, so we only
-    // report the state if we're tracking it for conpty.
-    return IsConsolePty() ? std::optional{ _bracketedPastMode } : std::nullopt;
+    // TODO GH#395: Bracketed Paste Mode is not yet supported in conhost, so we
+    // only report the state if we're tracking it for conpty.
+    return IsConsolePty() ? std::optional{ _bracketedPasteMode } : std::nullopt;
 }
 
 // Routine Description:

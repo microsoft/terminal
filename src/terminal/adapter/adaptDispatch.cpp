@@ -1559,7 +1559,7 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         enabled = _api.GetStateMachine().GetParserMode(StateMachine::Mode::Ansi);
         break;
     case DispatchTypes::ModeParams::DECCOLM_SetNumberOfColumns:
-        // DECCOLM is not support in conpty mode
+        // DECCOLM is not supported in conpty mode
         if (!_api.IsConsolePty())
         {
             enabled = _modes.test(Mode::Column);
@@ -1584,7 +1584,7 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         enabled = _api.GetTextBuffer().GetCursor().IsVisible();
         break;
     case DispatchTypes::ModeParams::XTERM_EnableDECCOLMSupport:
-        // DECCOLM is not support in conpty mode
+        // DECCOLM is not supported in conpty mode
         if (!_api.IsConsolePty())
         {
             enabled = _modes.test(Mode::AllowDECCOLM);
