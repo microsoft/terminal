@@ -1,7 +1,7 @@
 admins
 allcolors
-apc
 Apc
+apc
 breadcrumb
 breadcrumbs
 bsd
@@ -14,8 +14,8 @@ CMMI
 copyable
 cybersecurity
 dalet
-dcs
 Dcs
+dcs
 dialytika
 dje
 downside
@@ -34,10 +34,12 @@ gantt
 gcc
 geeksforgeeks
 ghe
+github
 gje
 godbolt
 hostname
 hostnames
+https
 hyperlink
 hyperlinking
 hyperlinks
@@ -82,6 +84,7 @@ runtimes
 shcha
 slnt
 Sos
+ssh
 timeline
 timelines
 timestamped
@@ -90,6 +93,7 @@ tokenizes
 tonos
 toolset
 tshe
+ubuntu
 uiatextrange
 UIs
 und

@@ -1,0 +1,15 @@
+# Commits mentioned in this file will automatically
+# be skipped by GitHub's blame view.
+# To use it with "git", run
+# > git blame --ignore-revs-file ./.git-blame-ignore-revs
+
+# Reformatted the entire codebase
+9b92986b49bed8cc41fde4d6ef080921c41e6d9e
+
+# Line Endings changes
+cb7a76d96c92aa9fc7b03f69148fb0c75dff191d
+5bbf61af8c8f12e6c05d07a696bf7d411b330a67
+d07546a6fef73fa4e1fb1c2f01535843d1fcc212
+
+# UTF-8 BOM changes
+ddae2a1d49d604487d3c963e5eacbeb73861d986

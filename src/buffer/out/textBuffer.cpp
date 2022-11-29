@@ -6,11 +6,11 @@
 #include "textBuffer.hpp"
 
 #include <til/hash.h>
+#include <til/unicode.h>
 
 #include "../renderer/base/renderer.hpp"
 #include "../types/inc/utils.hpp"
 #include "../types/inc/convert.hpp"
-#include "../../types/inc/Utf16Parser.hpp"
 #include "../../types/inc/GlyphWidth.hpp"
 
 namespace
@@ -2810,16 +2810,14 @@ PointTree TextBuffer::GetPatterns(const til::CoordType firstRow, const til::Coor
             // match and the previous match, so we use the size of the prefix
             // along with the size of the match to determine the locations
             til::CoordType prefixSize = 0;
-            for (const auto parsedGlyph : Utf16Parser::Parse(i->prefix().str()))
+            for (const auto str = i->prefix().str(); const auto& glyph : til::utf16_iterator{ str })
             {
-                const std::wstring_view glyph{ parsedGlyph.data(), parsedGlyph.size() };
                 prefixSize += IsGlyphFullWidth(glyph) ? 2 : 1;
             }
             const auto start = lenUpToThis + prefixSize;
             til::CoordType matchSize = 0;
-            for (const auto parsedGlyph : Utf16Parser::Parse(i->str()))
+            for (const auto str = i->str(); const auto& glyph : til::utf16_iterator{ str })
             {
-                const std::wstring_view glyph{ parsedGlyph.data(), parsedGlyph.size() };
                 matchSize += IsGlyphFullWidth(glyph) ? 2 : 1;
             }
             const auto end = start + matchSize;
