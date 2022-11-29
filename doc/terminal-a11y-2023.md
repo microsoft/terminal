@@ -17,7 +17,8 @@ There are many first-party command-line applications on Windows. The following a
 - [**PSReadLine**](https://github.com/PowerShell/PSReadLine): a PowerShell module that enhances the input line experience
 - [**Windows Subsystem for Linux (WSL)**](https://learn.microsoft.com/en-us/windows/wsl/): a tool to manage and run GNU/Linux environments without a traditional virtual machine
 - [**PowerShell**](https://github.com/PowerShell/PowerShell): a cross-platform command-line shell (open source)
-- **CMD**: a Windows-specific command-line shell
+
+Additionally, CMD is a Windows-specific command-line shell. Though it is no longer being updated, it is still widely used.
 
 ### External Command-line Applications
 There are many third-party command-line applications on Windows that are regularly updated.
