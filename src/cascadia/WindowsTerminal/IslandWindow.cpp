@@ -151,8 +151,8 @@ void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexce
     til::rect rc;
     rc.left = pcs->x;
     rc.top = pcs->y;
-    rc.right = rc.left + pcs->width;
-    rc.bottom = rc.top + pcs->height;
+    rc.right = rc.left + pcs->cx;
+    rc.bottom = rc.top + pcs->cy;
 
     auto launchMode = LaunchMode::DefaultMode;
     if (_pfnCreateCallback)
@@ -389,8 +389,8 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
     const auto nonClientSizeScaled = GetTotalNonClientExclusiveSize(dpix);
 
     auto lpMinMaxInfo = reinterpret_cast<LPMINMAXINFO>(lParam);
-    lpMinMaxInfo->ptMinTrackSize.width = _calculateTotalSize(true, minimumWidth * dpix / USER_DEFAULT_SCREEN_DPI, nonClientSizeScaled.width);
-    lpMinMaxInfo->ptMinTrackSize.height = _calculateTotalSize(false, minimumHeight * dpiy / USER_DEFAULT_SCREEN_DPI, nonClientSizeScaled.height);
+    lpMinMaxInfo->ptMinTrackSize.x = _calculateTotalSize(true, minimumWidth * dpix / USER_DEFAULT_SCREEN_DPI, nonClientSizeScaled.width);
+    lpMinMaxInfo->ptMinTrackSize.y = _calculateTotalSize(false, minimumHeight * dpiy / USER_DEFAULT_SCREEN_DPI, nonClientSizeScaled.height);
 }
 
 // Method Description:
@@ -577,8 +577,8 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
             RECT rcSuggested;
             rcSuggested.left = lpwpos->x;
             rcSuggested.top = lpwpos->y;
-            rcSuggested.right = rcSuggested.left + lpwpos->width;
-            rcSuggested.bottom = rcSuggested.top + lpwpos->height;
+            rcSuggested.right = rcSuggested.left + lpwpos->cx;
+            rcSuggested.bottom = rcSuggested.top + lpwpos->cy;
 
             // Find the bounds of the current monitor, and the monitor that
             // we're suggested to be on.
@@ -605,8 +605,8 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
                 // size for the new monitor.
                 lpwpos->x = newWindowRect.left;
                 lpwpos->y = newWindowRect.top;
-                lpwpos->width = newWindowRect.width();
-                lpwpos->height = newWindowRect.height();
+                lpwpos->cx = newWindowRect.width();
+                lpwpos->cy = newWindowRect.height();
 
                 return 0;
             }
