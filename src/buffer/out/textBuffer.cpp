@@ -1032,6 +1032,7 @@ void TextBuffer::_RefreshRowIDs(std::optional<til::CoordType> newRowWidth)
 {
     std::unordered_map<til::CoordType, til::CoordType> rowMap;
     til::CoordType i = 0;
+    til::CoordType newWidth = newRowWidth.value_or(_storage.at(0).size());
     for (auto& it : _storage)
     {
         // Build a map so we can update Unicode Storage
@@ -1043,12 +1044,13 @@ void TextBuffer::_RefreshRowIDs(std::optional<til::CoordType> newRowWidth)
         // Also update the char row parent pointers as they can get shuffled up in the rotates.
         it.GetCharRow().UpdateParent(&it);
 
-        // Resize the rows in the X dimension if we have a new width
-        if (newRowWidth.has_value())
-        {
-            // Realloc in the X direction
-            THROW_IF_FAILED(it.Resize(newRowWidth.value()));
-        }
+        // Realloc in the X direction
+        // BODGY: We unpack the optional early and resize here unconditionally
+        // due to a codegen issue in LKG14. We used to check the optional in
+        // every iteration of the loop, but that resulted in the optimizer
+        // emitting a copy of the loop, used when the optional was empty, that
+        // never exited. Oops.
+        THROW_IF_FAILED(it.Resize(newWidth));
     }
 
     // Give the new mapping to Unicode Storage
