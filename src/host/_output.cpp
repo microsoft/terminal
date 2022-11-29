@@ -12,7 +12,6 @@
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/Viewport.hpp"
 #include "../types/inc/convert.hpp"
-#include "../types/inc/Utf16Parser.hpp"
 
 #include <algorithm>
 #include <iterator>
