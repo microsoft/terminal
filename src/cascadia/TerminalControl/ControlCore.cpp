@@ -10,7 +10,6 @@
 
 #include <DefaultSettings.h>
 #include <unicode.hpp>
-#include <Utf16Parser.hpp>
 #include <WinUser.h>
 #include <LibraryResources.h>
 
@@ -1744,7 +1743,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto strEnd = rowText.find_last_not_of(UNICODE_SPACE);
             if (strEnd != decltype(rowText)::npos)
             {
-                str.append(rowText.substr(strEnd + 1));
+                str.append(rowText.substr(0, strEnd + 1));
             }
 
             if (!row.WasWrapForced())

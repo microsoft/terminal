@@ -6,7 +6,7 @@
 #include "ColorControl.h"
 
 // The property sheet will never load on OneCore, so we do
-// not need to redirect users to the OneCore safe versionf
+// not need to redirect users to the OneCore safe version
 // of these functions.
 #undef VkKeyScanW
 #undef MapVirtualKeyW
