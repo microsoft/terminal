@@ -237,7 +237,7 @@ The Window can get this _specific_ instance of `ContentProcess` with
 Mike Griese (migrie)
 [@zadjii-msft](https://github.com/zadjii-msft)
 [Terminal Repo](https://github.com/microsoft/terminal)
-[Original doc link](https://github.com/microsoft/terminal)
+[Original doc link](https://github.com/microsoft/terminal/blob/main/doc/specs/%235000%20-%20Process%20Model%202.0/%235000%20-%20Process%20Model%202.0.md)
 [Tracking issue](https://github.com/microsoft/terminal/issues/5000)
 
 ---
