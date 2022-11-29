@@ -95,7 +95,7 @@
   #define HAVE_AVX512
 #endif
 
-#if defined(X86_OR_X64)
+#if defined(X86_OR_X64) && !defined(_M_ARM64EC)
   /* MSVC compatible compilers (Windows) */
   #if defined(_MSC_VER)
     /* clang-cl (LLVM 10 from 2020) requires /arch:AVX2 or
