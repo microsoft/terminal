@@ -357,7 +357,7 @@ CodepointWidth CodepointWidthDetector::GetWidth(const std::wstring_view& glyph) 
 
     // The return value of _lookupGlyphWidth coincides with the enum value of CodepointWidth
     // on purpose to allow for this easy conversion to happen. Optimally, we should probably
-    // remove CodepointWidth altogether to allow for ZWJs and other characters.
+    // remove CodepointWidth altogether to allow for zero-width joiners and other characters.
     static_assert(WI_EnumValue(CodepointWidth::Narrow) == 1);
     static_assert(WI_EnumValue(CodepointWidth::Wide) == 2);
     return static_cast<CodepointWidth>(_lookupGlyphWidth(codepoint, glyph));
