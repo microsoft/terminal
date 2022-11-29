@@ -246,10 +246,10 @@ void MacroBuffer::_deleteMacro(std::wstring& macro) noexcept
 
 bool MacroBuffer::_applyPendingRepeat()
 {
-    auto& activeMacro = _activeMacro();
-    const auto sequenceLength = activeMacro.length() - _repeatStart;
-    if (sequenceLength && _repeatCount > 1)
+    if (_repeatCount > 1)
     {
+        auto& activeMacro = _activeMacro();
+        const auto sequenceLength = activeMacro.length() - _repeatStart;
         // Note that the repeat sequence has already been written to the buffer
         // once while it was being parsed, so we only need to append additional
         // copies for repeat counts that are greater than one. If there is not
@@ -259,7 +259,7 @@ bool MacroBuffer::_applyPendingRepeat()
         {
             return false;
         }
-        for (auto i = 1u; i < _repeatCount; i++)
+        for (size_t i = 1; i < _repeatCount; i++)
         {
             activeMacro.append(activeMacro.substr(_repeatStart, sequenceLength));
             _spaceUsed += sequenceLength;
