@@ -72,7 +72,7 @@ void PtySignalInputThread::ConnectConsole() noexcept
     }
     if (_initialShowHide)
     {
-        _DoShowHide(_initialShowHide->show);
+        _DoShowHide(*_initialShowHide);
     }
 
     // We should have successfully used the _earlyReparent message in CreatePseudoWindow.
@@ -121,41 +121,12 @@ try
                 return S_OK;
             }
 
-            LockConsole();
-            auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-            // If the client app hasn't yet connected, stash our initial
-            // visibility for when we do. We default to not being visible - if a
-            // terminal wants the ConPTY windows to start "visible", then they
-            // should send a ShowHidePseudoConsole(..., true) to tell us to
-            // initially be visible.
-            //
-            // Notably, if they don't, then a ShowWindow(SW_HIDE) on the ConPTY
-            // HWND will initially do _nothing_, because the OS will think that
-            // the window is already hidden.
-            if (!_consoleConnected)
-            {
-                _initialShowHide = msg;
-            }
-            else
-            {
-                _DoShowHide(msg.show);
-            }
+            _DoShowHide(msg);
             break;
         }
         case PtySignal::ClearBuffer:
         {
-            LockConsole();
-            auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-            // If the client app hasn't yet connected, stash the new size in the launchArgs.
-            // We'll later use the value in launchArgs to set up the console buffer
-            // We must be under lock here to ensure that someone else doesn't come in
-            // and set with `ConnectConsole` while we're looking and modifying this.
-            if (_consoleConnected)
-            {
-                _DoClearBuffer();
-            }
+            _DoClearBuffer();
             break;
         }
         case PtySignal::ResizeWindow:
@@ -166,22 +137,7 @@ try
                 return S_OK;
             }
 
-            LockConsole();
-            auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-            // If the client app hasn't yet connected, stash the new size in the launchArgs.
-            // We'll later use the value in launchArgs to set up the console buffer
-            // We must be under lock here to ensure that someone else doesn't come in
-            // and set with `ConnectConsole` while we're looking and modifying this.
-            if (!_consoleConnected)
-            {
-                _earlyResize = resizeMsg;
-            }
-            else
-            {
-                _DoResizeWindow(resizeMsg);
-            }
-
+            _DoResizeWindow(resizeMsg);
             break;
         }
         case PtySignal::SetParent:
@@ -192,21 +148,7 @@ try
                 return S_OK;
             }
 
-            LockConsole();
-            auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-            // If the client app hasn't yet connected, stash the new owner.
-            // We'll later (PtySignalInputThread::ConnectConsole) use the value
-            // to set up the owner of the conpty window.
-            if (!_consoleConnected)
-            {
-                _earlyReparent = reparentMessage;
-            }
-            else
-            {
-                _DoSetWindowParent(reparentMessage);
-            }
-
+            _DoSetWindowParent(reparentMessage);
             break;
         }
         default:
@@ -224,6 +166,19 @@ CATCH_LOG_RETURN_HR(S_OK)
 // - <none>
 void PtySignalInputThread::_DoResizeWindow(const ResizeWindowData& data)
 {
+    LockConsole();
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+    // If the client app hasn't yet connected, stash the new size in the launchArgs.
+    // We'll later use the value in launchArgs to set up the console buffer
+    // We must be under lock here to ensure that someone else doesn't come in
+    // and set with `ConnectConsole` while we're looking and modifying this.
+    if (!_consoleConnected)
+    {
+        _earlyResize = data;
+        return;
+    }
+
     if (_api.ResizeWindow(data.sx, data.sy))
     {
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -231,15 +186,45 @@ void PtySignalInputThread::_DoResizeWindow(const ResizeWindowData& data)
     }
 }
 
-void PtySignalInputThread::_DoClearBuffer()
+void PtySignalInputThread::_DoClearBuffer() const
 {
+    LockConsole();
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+    // If the client app hasn't yet connected, stash the new size in the launchArgs.
+    // We'll later use the value in launchArgs to set up the console buffer
+    // We must be under lock here to ensure that someone else doesn't come in
+    // and set with `ConnectConsole` while we're looking and modifying this.
+    if (!_consoleConnected)
+    {
+        return;
+    }
+
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     THROW_IF_FAILED(gci.GetActiveOutputBuffer().ClearBuffer());
 }
 
-void PtySignalInputThread::_DoShowHide(const bool show)
+void PtySignalInputThread::_DoShowHide(const ShowHideData& data)
 {
-    _api.ShowWindow(show);
+    LockConsole();
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+    // If the client app hasn't yet connected, stash our initial
+    // visibility for when we do. We default to not being visible - if a
+    // terminal wants the ConPTY windows to start "visible", then they
+    // should send a ShowHidePseudoConsole(..., true) to tell us to
+    // initially be visible.
+    //
+    // Notably, if they don't, then a ShowWindow(SW_HIDE) on the ConPTY
+    // HWND will initially do _nothing_, because the OS will think that
+    // the window is already hidden.
+    if (!_consoleConnected)
+    {
+        _initialShowHide = data;
+        return;
+    }
+
+    _api.ShowWindow(data.show);
 }
 
 // Method Description:
@@ -253,6 +238,18 @@ void PtySignalInputThread::_DoShowHide(const bool show)
 // - <none>
 void PtySignalInputThread::_DoSetWindowParent(const SetParentData& data)
 {
+    LockConsole();
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+    // If the client app hasn't yet connected, stash the new owner.
+    // We'll later (PtySignalInputThread::ConnectConsole) use the value
+    // to set up the owner of the conpty window.
+    if (!_consoleConnected)
+    {
+        _earlyReparent = data;
+        return;
+    }
+
     const auto owner{ reinterpret_cast<HWND>(data.handle) };
     // This will initialize s_interactivityFactory for us. It will also
     // conveniently return 0 when we're on OneCore.
@@ -274,7 +271,7 @@ void PtySignalInputThread::_DoSetWindowParent(const SetParentData& data)
         // SetWindowLongPtr seems to do the job of changing who the window owner
         // is, without all the other side effects of reparenting the window.
         // See #13066
-        ::SetWindowLongPtr(pseudoHwnd, GWLP_HWNDPARENT, reinterpret_cast<LONG_PTR>(owner));
+        ::SetWindowLongPtrW(pseudoHwnd, GWLP_HWNDPARENT, reinterpret_cast<LONG_PTR>(owner));
     }
 }
 
