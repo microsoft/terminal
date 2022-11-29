@@ -259,6 +259,12 @@ void PtySignalInputThread::_DoSetWindowParent(const SetParentData& data)
     // window.
     if (const auto pseudoHwnd{ ServiceLocator::LocatePseudoWindow(owner) })
     {
+        // SetWindowLongPtrW may call back into the message handler and wait for it to finish,
+        // similar to SendMessageW(). If the conhost message handler is already processing and
+        // waiting to acquire the console lock, which we're currently holding, we'd deadlock.
+        // --> Release the lock now.
+        Unlock.reset();
+
         // DO NOT USE SetParent HERE!
         //
         // Calling SetParent on a window that is WS_VISIBLE will cause the OS to
