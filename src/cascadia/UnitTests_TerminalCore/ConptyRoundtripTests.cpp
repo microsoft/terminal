@@ -2785,10 +2785,10 @@ void ConptyRoundtripTests::ClsAndClearHostClearsScrollbackTest()
         til::inclusive_rect src{ 0 };
         src.top = 0;
         src.left = 0;
-        src.right = csbiex.dwSize.width;
-        src.bottom = csbiex.dwSize.height;
+        src.right = csbiex.dwSize.X;
+        src.bottom = csbiex.dwSize.Y;
 
-        til::point tgt{ 0, -csbiex.dwSize.height };
+        til::point tgt{ 0, -csbiex.dwSize.Y };
         VERIFY_SUCCEEDED(_apiRoutines.ScrollConsoleScreenBufferWImpl(si,
                                                                      src,
                                                                      tgt,
@@ -2803,7 +2803,7 @@ void ConptyRoundtripTests::ClsAndClearHostClearsScrollbackTest()
         csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
         _apiRoutines.GetConsoleScreenBufferInfoExImpl(si, csbiex);
 
-        const auto totalCellsInBuffer = csbiex.dwSize.width * csbiex.dwSize.height;
+        const auto totalCellsInBuffer = csbiex.dwSize.X * csbiex.dwSize.Y;
         size_t cellsWritten = 0;
         VERIFY_SUCCEEDED(_apiRoutines.FillConsoleOutputCharacterWImpl(si,
                                                                       L' ',
