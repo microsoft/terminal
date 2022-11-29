@@ -404,7 +404,7 @@
   <!--
     By default, the PRI file will contain resource paths beginning with the
     project name. Since we enabled XBF embedding, this *also* includes App.xbf.
-    Well, App.xbf is hardcoded by the framework to be found at the resource ROOT.
+    Well, App.xbf is hard-coded by the framework to be found at the resource ROOT.
     To make that happen, we have to disable the prepending of the project name
     to the App xaml files.
   -->
