@@ -5,8 +5,9 @@
 
 #include "OutputCellIterator.hpp"
 
+#include <til/unicode.h>
+
 #include "../../types/inc/convert.hpp"
-#include "../../types/inc/Utf16Parser.hpp"
 #include "../../types/inc/GlyphWidth.hpp"
 #include "../../inc/conattrs.hpp"
 
@@ -240,13 +241,10 @@ OutputCellIterator& OutputCellIterator::operator++()
     {
         if (!_TryMoveTrailing())
         {
-            if (_currentView.DbcsAttr().IsTrailing())
+            if (_currentView.DbcsAttr() == DbcsAttribute::Trailing)
             {
-                auto dbcsAttr = _currentView.DbcsAttr();
-                dbcsAttr.SetLeading();
-
                 _currentView = OutputCellView(_currentView.Chars(),
-                                              dbcsAttr,
+                                              DbcsAttribute::Leading,
                                               _currentView.TextAttr(),
                                               _currentView.TextAttrBehavior());
             }
@@ -336,13 +334,10 @@ const OutputCellView* OutputCellIterator::operator->() const noexcept
 // - False if this wasn't applicable and the caller should update the view.
 bool OutputCellIterator::_TryMoveTrailing() noexcept
 {
-    if (_currentView.DbcsAttr().IsLeading())
+    if (_currentView.DbcsAttr() == DbcsAttribute::Leading)
     {
-        auto dbcsAttr = _currentView.DbcsAttr();
-        dbcsAttr.SetTrailing();
-
         _currentView = OutputCellView(_currentView.Chars(),
-                                      dbcsAttr,
+                                      DbcsAttribute::Trailing,
                                       _currentView.TextAttr(),
                                       _currentView.TextAttrBehavior());
         return true;
@@ -398,13 +393,8 @@ OutputCellView OutputCellIterator::s_GenerateView(const std::wstring_view view,
                                                   const TextAttribute attr,
                                                   const TextAttributeBehavior behavior)
 {
-    const auto glyph = Utf16Parser::ParseNext(view);
-    DbcsAttribute dbcsAttr;
-    if (IsGlyphFullWidth(glyph))
-    {
-        dbcsAttr.SetLeading();
-    }
-
+    const auto glyph = til::utf16_next(view);
+    const auto dbcsAttr = IsGlyphFullWidth(glyph) ? DbcsAttribute::Leading : DbcsAttribute::Single;
     return OutputCellView(glyph, dbcsAttr, attr, behavior);
 }
 
@@ -420,13 +410,7 @@ OutputCellView OutputCellIterator::s_GenerateView(const std::wstring_view view,
 OutputCellView OutputCellIterator::s_GenerateView(const wchar_t& wch) noexcept
 {
     const auto glyph = std::wstring_view(&wch, 1);
-
-    DbcsAttribute dbcsAttr;
-    if (IsGlyphFullWidth(wch))
-    {
-        dbcsAttr.SetLeading();
-    }
-
+    const auto dbcsAttr = IsGlyphFullWidth(wch) ? DbcsAttribute::Leading : DbcsAttribute::Single;
     return OutputCellView(glyph, dbcsAttr, InvalidTextAttribute, TextAttributeBehavior::Current);
 }
 
@@ -457,13 +441,7 @@ OutputCellView OutputCellIterator::s_GenerateView(const TextAttribute& attr) noe
 OutputCellView OutputCellIterator::s_GenerateView(const wchar_t& wch, const TextAttribute& attr) noexcept
 {
     const auto glyph = std::wstring_view(&wch, 1);
-
-    DbcsAttribute dbcsAttr;
-    if (IsGlyphFullWidth(wch))
-    {
-        dbcsAttr.SetLeading();
-    }
-
+    const auto dbcsAttr = IsGlyphFullWidth(wch) ? DbcsAttribute::Leading : DbcsAttribute::Single;
     return OutputCellView(glyph, dbcsAttr, attr, TextAttributeBehavior::Stored);
 }
 
@@ -498,14 +476,14 @@ OutputCellView OutputCellIterator::s_GenerateView(const CHAR_INFO& charInfo) noe
 {
     const auto glyph = std::wstring_view(&charInfo.Char.UnicodeChar, 1);
 
-    DbcsAttribute dbcsAttr;
+    DbcsAttribute dbcsAttr = DbcsAttribute::Single;
     if (WI_IsFlagSet(charInfo.Attributes, COMMON_LVB_LEADING_BYTE))
     {
-        dbcsAttr.SetLeading();
+        dbcsAttr = DbcsAttribute::Leading;
     }
     else if (WI_IsFlagSet(charInfo.Attributes, COMMON_LVB_TRAILING_BYTE))
     {
-        dbcsAttr.SetTrailing();
+        dbcsAttr = DbcsAttribute::Trailing;
     }
 
     const TextAttribute textAttr(charInfo.Attributes);

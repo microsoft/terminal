@@ -4,15 +4,83 @@
 #include "precomp.h"
 
 #include "textBuffer.hpp"
-#include "CharRow.hpp"
+
+#include <til/hash.h>
+#include <til/unicode.h>
 
 #include "../renderer/base/renderer.hpp"
 #include "../types/inc/utils.hpp"
 #include "../types/inc/convert.hpp"
-#include "../../types/inc/Utf16Parser.hpp"
 #include "../../types/inc/GlyphWidth.hpp"
 
-#pragma hdrstop
+namespace
+{
+    struct BufferAllocator
+    {
+        BufferAllocator(til::size sz)
+        {
+            const auto w = gsl::narrow<uint16_t>(sz.width);
+            const auto h = gsl::narrow<uint16_t>(sz.height);
+
+            const auto charsBytes = w * sizeof(wchar_t);
+            // The ROW::_indices array stores 1 more item than the buffer is wide.
+            // That extra column stores the past-the-end _chars pointer.
+            const auto indicesBytes = w * sizeof(uint16_t) + sizeof(uint16_t);
+            const auto rowStride = charsBytes + indicesBytes;
+            // 65535*65535 cells would result in a charsAreaSize of 8GiB.
+            // --> Use uint64_t so that we can safely do our calculations even on x86.
+            const auto allocSize = gsl::narrow<size_t>(::base::strict_cast<uint64_t>(rowStride) * ::base::strict_cast<uint64_t>(h));
+
+            _buffer = wil::unique_virtualalloc_ptr<std::byte>{ static_cast<std::byte*>(VirtualAlloc(nullptr, allocSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE)) };
+            THROW_IF_NULL_ALLOC(_buffer);
+
+            _data = std::span{ _buffer.get(), allocSize }.begin();
+            _rowStride = rowStride;
+            _indicesOffset = charsBytes;
+            _width = w;
+            _height = h;
+        }
+
+        BufferAllocator& operator++() noexcept
+        {
+            _data += _rowStride;
+            return *this;
+        }
+
+        wchar_t* chars() const noexcept
+        {
+            return til::bit_cast<wchar_t*>(&*_data);
+        }
+
+        uint16_t* indices() const noexcept
+        {
+            return til::bit_cast<uint16_t*>(&*(_data + _indicesOffset));
+        }
+
+        uint16_t width() const noexcept
+        {
+            return _width;
+        }
+
+        uint16_t height() const noexcept
+        {
+            return _height;
+        }
+
+        wil::unique_virtualalloc_ptr<std::byte>&& take() noexcept
+        {
+            return std::move(_buffer);
+        }
+
+    private:
+        wil::unique_virtualalloc_ptr<std::byte> _buffer;
+        std::span<std::byte>::iterator _data;
+        size_t _rowStride;
+        size_t _indicesOffset;
+        uint16_t _width;
+        uint16_t _height;
+    };
+}
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Types;
@@ -35,24 +103,20 @@ TextBuffer::TextBuffer(const til::size screenBufferSize,
                        const UINT cursorSize,
                        const bool isActiveBuffer,
                        Microsoft::Console::Render::Renderer& renderer) :
-    _firstRow{ 0 },
+    _renderer{ renderer },
     _currentAttributes{ defaultAttributes },
     _cursor{ cursorSize, *this },
-    _storage{},
-    _unicodeStorage{},
-    _isActiveBuffer{ isActiveBuffer },
-    _renderer{ renderer },
-    _size{},
-    _currentHyperlinkId{ 1 },
-    _currentPatternId{ 0 }
+    _isActiveBuffer{ isActiveBuffer }
 {
-    // initialize ROWs
-    _storage.reserve(gsl::narrow<size_t>(screenBufferSize.Y));
-    for (til::CoordType i = 0; i < screenBufferSize.Y; ++i)
+    BufferAllocator allocator{ screenBufferSize };
+
+    _storage.reserve(allocator.height());
+    for (til::CoordType i = 0; i < screenBufferSize.Y; ++i, ++allocator)
     {
-        _storage.emplace_back(i, screenBufferSize.X, _currentAttributes, this);
+        _storage.emplace_back(allocator.chars(), allocator.indices(), allocator.width(), _currentAttributes);
     }
 
+    _charBuffer = allocator.take();
     _UpdateSize();
 }
 
@@ -199,10 +263,10 @@ bool TextBuffer::_AssertValidDoubleByteSequence(const DbcsAttribute dbcsAttribut
     // To figure out if the sequence is valid, we have to look at the character that comes before the current one
     const auto coordPrevPosition = _GetPreviousFromCursor();
     auto& prevRow = GetRowByOffset(coordPrevPosition.Y);
-    DbcsAttribute prevDbcsAttr;
+    DbcsAttribute prevDbcsAttr = DbcsAttribute::Single;
     try
     {
-        prevDbcsAttr = prevRow.GetCharRow().DbcsAttrAt(coordPrevPosition.X);
+        prevDbcsAttr = prevRow.DbcsAttrAt(coordPrevPosition.X);
     }
     catch (...)
     {
@@ -229,21 +293,21 @@ bool TextBuffer::_AssertValidDoubleByteSequence(const DbcsAttribute dbcsAttribut
     // T    T       Fail, uncorrectable. New trailing byte must have had leading before it.
 
     // Check for only failing portions of the matrix:
-    if (prevDbcsAttr.IsSingle() && dbcsAttribute.IsTrailing())
+    if (prevDbcsAttr == DbcsAttribute::Single && dbcsAttribute == DbcsAttribute::Trailing)
     {
         // N, T failing case (uncorrectable)
         fValidSequence = false;
     }
-    else if (prevDbcsAttr.IsLeading())
+    else if (prevDbcsAttr == DbcsAttribute::Leading)
     {
-        if (dbcsAttribute.IsSingle() || dbcsAttribute.IsLeading())
+        if (dbcsAttribute == DbcsAttribute::Single || dbcsAttribute == DbcsAttribute::Leading)
         {
             // L, N and L, L failing cases (correctable)
             fValidSequence = false;
             fCorrectableByErase = true;
         }
     }
-    else if (prevDbcsAttr.IsTrailing() && dbcsAttribute.IsTrailing())
+    else if (prevDbcsAttr == DbcsAttribute::Trailing && dbcsAttribute == DbcsAttribute::Trailing)
     {
         // T, T failing case (uncorrectable)
         fValidSequence = false;
@@ -255,7 +319,7 @@ bool TextBuffer::_AssertValidDoubleByteSequence(const DbcsAttribute dbcsAttribut
         // Erase previous character into an N type.
         try
         {
-            prevRow.ClearColumn(coordPrevPosition.X);
+            prevRow.ClearCell(coordPrevPosition.X);
         }
         catch (...)
         {
@@ -289,7 +353,7 @@ bool TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute
     auto fSuccess = true;
     // Now compensate if we don't have enough space for the upcoming double byte sequence
     // We only need to compensate for leading bytes
-    if (dbcsAttribute.IsLeading())
+    if (dbcsAttribute == DbcsAttribute::Leading)
     {
         const auto cursorPosition = GetCursor().GetPosition();
         const auto lineWidth = GetLineWidth(cursorPosition.Y);
@@ -418,12 +482,20 @@ bool TextBuffer::InsertCharacter(const std::wstring_view chars,
         auto& Row = GetRowByOffset(iRow);
 
         // Store character and double byte data
-        auto& charRow = Row.GetCharRow();
-
         try
         {
-            charRow.GlyphAt(iCol) = chars;
-            charRow.DbcsAttrAt(iCol) = dbcsAttribute;
+            switch (dbcsAttribute)
+            {
+            case DbcsAttribute::Leading:
+                Row.ReplaceCharacters(iCol, 2, chars);
+                break;
+            case DbcsAttribute::Trailing:
+                Row.ReplaceCharacters(iCol - 1, 2, chars);
+                break;
+            default:
+                Row.ReplaceCharacters(iCol, 1, chars);
+                break;
+            }
         }
         catch (...)
         {
@@ -432,7 +504,7 @@ bool TextBuffer::InsertCharacter(const std::wstring_view chars,
         }
 
         // Store color data
-        fSuccess = Row.GetAttrRow().SetAttrToEnd(iCol, attr);
+        fSuccess = Row.SetAttrToEnd(iCol, attr);
         if (fSuccess)
         {
             // Advance the cursor
@@ -572,8 +644,7 @@ bool TextBuffer::IncrementCircularBuffer(const bool inVtMode)
         // the current background color, but with no meta attributes set.
         fillAttributes.SetStandardErase();
     }
-    const auto fSuccess = _storage.at(_firstRow).Reset(fillAttributes);
-    if (fSuccess)
+    GetRowByOffset(0).Reset(fillAttributes);
     {
         // Now proceed to increment.
         // Incrementing it will cause the next line down to become the new "top" of the window (the new "0" in logical coordinates)
@@ -585,7 +656,7 @@ bool TextBuffer::IncrementCircularBuffer(const bool inVtMode)
             _firstRow = 0;
         }
     }
-    return fSuccess;
+    return true;
 }
 
 //Routine Description:
@@ -610,7 +681,7 @@ til::point TextBuffer::GetLastNonSpaceCharacter(std::optional<const Microsoft::C
 
     const auto& currRow = GetRowByOffset(coordEndOfText.Y);
     // The X position of the end of the valid text is the Right draw boundary (which is one beyond the final valid character)
-    coordEndOfText.X = currRow.GetCharRow().MeasureRight() - 1;
+    coordEndOfText.X = currRow.MeasureRight() - 1;
 
     // If the X coordinate turns out to be -1, the row was empty, we need to search backwards for the real end of text.
     const auto viewportTop = viewport.Top();
@@ -621,7 +692,7 @@ til::point TextBuffer::GetLastNonSpaceCharacter(std::optional<const Microsoft::C
         const auto& backupRow = GetRowByOffset(coordEndOfText.Y);
         // We need to back up to the previous row if this line is empty, AND there are more rows
 
-        coordEndOfText.X = backupRow.GetCharRow().MeasureRight() - 1;
+        coordEndOfText.X = backupRow.MeasureRight() - 1;
         fDoBackUp = (coordEndOfText.X < 0 && coordEndOfText.Y > viewportTop);
     }
 
@@ -779,10 +850,6 @@ void TextBuffer::ScrollRows(const til::CoordType firstRow, const til::CoordType 
         // - end
         std::rotate(_storage.begin() + firstRow, _storage.begin() + firstRow + size, _storage.begin() + firstRow + size + delta);
     }
-
-    // Renumber the IDs now that we've rearranged where the rows sit within the buffer.
-    // Refreshing should also delegate to the UnicodeStorage to re-key all the stored unicode sequences (where applicable).
-    _RefreshRowIDs(std::nullopt);
 }
 
 Cursor& TextBuffer::GetCursor() noexcept
@@ -898,10 +965,10 @@ void TextBuffer::Reset()
 // - Success if successful. Invalid parameter if screen buffer size is unexpected. No memory if allocation failed.
 [[nodiscard]] NTSTATUS TextBuffer::ResizeTraditional(const til::size newSize) noexcept
 {
-    RETURN_HR_IF(E_INVALIDARG, newSize.X < 0 || newSize.Y < 0);
-
     try
     {
+        BufferAllocator allocator{ newSize };
+
         const auto currentSize = GetSize().Dimensions();
         const auto attributes = GetCurrentAttributes();
 
@@ -913,47 +980,28 @@ void TextBuffer::Reset()
         const auto TopRowIndex = (GetFirstRowIndex() + TopRow) % currentSize.Y;
 
         // rotate rows until the top row is at index 0
-        for (auto i = 0; i < TopRowIndex; i++)
-        {
-            _storage.emplace_back(std::move(_storage.front()));
-            _storage.erase(_storage.begin());
-        }
-
+        std::rotate(_storage.begin(), _storage.begin() + TopRowIndex, _storage.end());
         _SetFirstRowIndex(0);
 
         // realloc in the Y direction
         // remove rows if we're shrinking
-        while (_storage.size() > static_cast<size_t>(newSize.Y))
-        {
-            _storage.pop_back();
-        }
-        // add rows if we're growing
-        while (_storage.size() < static_cast<size_t>(newSize.Y))
-        {
-            _storage.emplace_back(gsl::narrow_cast<til::CoordType>(_storage.size()), newSize.X, attributes, this);
-        }
+        _storage.resize(allocator.height());
 
-        // Now that we've tampered with the row placement, refresh all the row IDs.
-        // Also take advantage of the row ID refresh loop to resize the rows in the X dimension
-        // and cleanup the UnicodeStorage characters that might fall outside the resized buffer.
-        _RefreshRowIDs(newSize.X);
+        // realloc in the X direction
+        for (auto& it : _storage)
+        {
+            it.Resize(allocator.chars(), allocator.indices(), allocator.width(), attributes);
+            ++allocator;
+        }
 
         // Update the cached size value
         _UpdateSize();
+
+        _charBuffer = allocator.take();
     }
     CATCH_RETURN();
 
     return S_OK;
-}
-
-const UnicodeStorage& TextBuffer::GetUnicodeStorage() const noexcept
-{
-    return _unicodeStorage;
-}
-
-UnicodeStorage& TextBuffer::GetUnicodeStorage() noexcept
-{
-    return _unicodeStorage;
 }
 
 void TextBuffer::SetAsActiveBuffer(const bool isActiveBuffer) noexcept
@@ -1020,42 +1068,6 @@ void TextBuffer::TriggerNewTextNotification(const std::wstring_view newText)
 }
 
 // Routine Description:
-// - Method to help refresh all the Row IDs after manipulating the row
-//   by shuffling pointers around.
-// - This will also update parent pointers that are stored in depth within the buffer
-//   (e.g. it will update CharRow parents pointing at Rows that might have been moved around)
-// - Optionally takes a new row width if we're resizing to perform a resize operation and cleanup
-//   any high unicode (UnicodeStorage) runs while we're already looping through the rows.
-// Arguments:
-// - newRowWidth - Optional new value for the row width.
-void TextBuffer::_RefreshRowIDs(std::optional<til::CoordType> newRowWidth)
-{
-    std::unordered_map<til::CoordType, til::CoordType> rowMap;
-    til::CoordType i = 0;
-    for (auto& it : _storage)
-    {
-        // Build a map so we can update Unicode Storage
-        rowMap.emplace(it.GetId(), i);
-
-        // Update the IDs
-        it.SetId(i++);
-
-        // Also update the char row parent pointers as they can get shuffled up in the rotates.
-        it.GetCharRow().UpdateParent(&it);
-
-        // Resize the rows in the X dimension if we have a new width
-        if (newRowWidth.has_value())
-        {
-            // Realloc in the X direction
-            THROW_IF_FAILED(it.Resize(newRowWidth.value()));
-        }
-    }
-
-    // Give the new mapping to Unicode Storage
-    _unicodeStorage.Remap(rowMap, newRowWidth);
-}
-
-// Routine Description:
 // - Retrieves the first row from the underlying buffer.
 // Arguments:
 // - <none>
@@ -1066,27 +1078,6 @@ ROW& TextBuffer::_GetFirstRow() noexcept
     return GetRowByOffset(0);
 }
 
-// Routine Description:
-// - Retrieves the row that comes before the given row.
-// - Does not wrap around the screen buffer.
-// Arguments:
-// - The current row.
-// Return Value:
-// - reference to the previous row
-// Note:
-// - will throw exception if called with the first row of the text buffer
-ROW& TextBuffer::_GetPrevRowNoWrap(const ROW& Row)
-{
-    auto prevRowIndex = Row.GetId() - 1;
-    if (prevRowIndex < 0)
-    {
-        prevRowIndex = TotalRowCount() - 1;
-    }
-
-    THROW_HR_IF(E_FAIL, Row.GetId() == _firstRow);
-    return _storage.at(prevRowIndex);
-}
-
 // Method Description:
 // - get delimiter class for buffer cell position
 // - used for double click selection and uia word navigation
@@ -1095,9 +1086,9 @@ ROW& TextBuffer::_GetPrevRowNoWrap(const ROW& Row)
 // - wordDelimiters: the delimiters defined as a part of the DelimiterClass::DelimiterChar
 // Return Value:
 // - the delimiter class for the given char
-DelimiterClass TextBuffer::_GetDelimiterClassAt(const til::point pos, const std::wstring_view wordDelimiters) const
+DelimiterClass TextBuffer::_GetDelimiterClassAt(const til::point pos, const std::wstring_view wordDelimiters) const noexcept
 {
-    return GetRowByOffset(pos.Y).GetCharRow().DelimiterClassAt(pos.X, wordDelimiters);
+    return GetRowByOffset(pos.Y).DelimiterClassAt(pos.X, wordDelimiters);
 }
 
 // Method Description:
@@ -1161,7 +1152,7 @@ til::point TextBuffer::GetWordStart(const til::point target, const std::wstring_
 // - wordDelimiters - what characters are we considering for the separation of words
 // Return Value:
 // - The til::point for the first character on the current/previous READABLE "word" (inclusive)
-til::point TextBuffer::_GetWordStartForAccessibility(const til::point target, const std::wstring_view wordDelimiters) const
+til::point TextBuffer::_GetWordStartForAccessibility(const til::point target, const std::wstring_view wordDelimiters) const noexcept
 {
     auto result = target;
     const auto bufferSize = GetSize();
@@ -1206,7 +1197,7 @@ til::point TextBuffer::_GetWordStartForAccessibility(const til::point target, co
 // - wordDelimiters - what characters are we considering for the separation of words
 // Return Value:
 // - The til::point for the first character on the current word or delimiter run (stopped by the left margin)
-til::point TextBuffer::_GetWordStartForSelection(const til::point target, const std::wstring_view wordDelimiters) const
+til::point TextBuffer::_GetWordStartForSelection(const til::point target, const std::wstring_view wordDelimiters) const noexcept
 {
     auto result = target;
     const auto bufferSize = GetSize();
@@ -1327,7 +1318,7 @@ til::point TextBuffer::_GetWordEndForAccessibility(const til::point target, cons
 // - wordDelimiters - what characters are we considering for the separation of words
 // Return Value:
 // - The til::point for the last character of the current word or delimiter run (stopped by right margin)
-til::point TextBuffer::_GetWordEndForSelection(const til::point target, const std::wstring_view wordDelimiters) const
+til::point TextBuffer::_GetWordEndForSelection(const til::point target, const std::wstring_view wordDelimiters) const noexcept
 {
     const auto bufferSize = GetSize();
 
@@ -1362,7 +1353,7 @@ void TextBuffer::_PruneHyperlinks()
     // If the buffer does not contain the same reference, we can remove that hyperlink from our map
     // This way, obsolete hyperlink references are cleared from our hyperlink map instead of hanging around
     // Get all the hyperlink references in the row we're erasing
-    const auto hyperlinks = _storage.at(_firstRow).GetAttrRow().GetHyperlinks();
+    const auto hyperlinks = GetRowByOffset(0).GetHyperlinks();
 
     if (!hyperlinks.empty())
     {
@@ -1378,7 +1369,7 @@ void TextBuffer::_PruneHyperlinks()
         // to see if those references are anywhere else
         for (til::CoordType i = 1; i < total; ++i)
         {
-            const auto nextRowRefs = GetRowByOffset(i).GetAttrRow().GetHyperlinks();
+            const auto nextRowRefs = GetRowByOffset(i).GetHyperlinks();
             for (auto id : nextRowRefs)
             {
                 if (firstRowRefs.find(id) != firstRowRefs.end())
@@ -1472,7 +1463,7 @@ til::point TextBuffer::GetGlyphStart(const til::point pos, std::optional<til::po
     }
 
     // limit is exclusive, so we need to move back to be within valid bounds
-    if (resultPos != limit && GetCellDataAt(resultPos)->DbcsAttr().IsTrailing())
+    if (resultPos != limit && GetCellDataAt(resultPos)->DbcsAttr() == DbcsAttribute::Trailing)
     {
         bufferSize.DecrementInBounds(resultPos, true);
     }
@@ -1499,7 +1490,7 @@ til::point TextBuffer::GetGlyphEnd(const til::point pos, bool accessibilityMode,
         resultPos = limit;
     }
 
-    if (resultPos != limit && GetCellDataAt(resultPos)->DbcsAttr().IsLeading())
+    if (resultPos != limit && GetCellDataAt(resultPos)->DbcsAttr() == DbcsAttribute::Leading)
     {
         bufferSize.IncrementInBounds(resultPos, true);
     }
@@ -1547,7 +1538,7 @@ bool TextBuffer::MoveToNextGlyph(til::point& pos, bool allowExclusiveEnd, std::o
     const bool success{ ++iter };
 
     // Move again if we're on a wide glyph
-    if (success && iter->DbcsAttr().IsTrailing())
+    if (success && iter->DbcsAttr() == DbcsAttribute::Trailing)
     {
         ++iter;
     }
@@ -1579,7 +1570,7 @@ bool TextBuffer::MoveToPreviousGlyph(til::point& pos, std::optional<til::point> 
 
     // try to move. If we can't, we're done.
     const auto success = bufferSize.DecrementInBounds(resultPos, true);
-    if (resultPos != bufferSize.EndExclusive() && GetCellDataAt(resultPos)->DbcsAttr().IsLeading())
+    if (resultPos != bufferSize.EndExclusive() && GetCellDataAt(resultPos)->DbcsAttr() == DbcsAttribute::Leading)
     {
         bufferSize.DecrementInBounds(resultPos, true);
     }
@@ -1726,7 +1717,7 @@ void TextBuffer::_ExpandTextRow(til::inclusive_rect& textRow) const
 
     // expand left side of rect
     til::point targetPoint{ textRow.Left, textRow.Top };
-    if (GetCellDataAt(targetPoint)->DbcsAttr().IsTrailing())
+    if (GetCellDataAt(targetPoint)->DbcsAttr() == DbcsAttribute::Trailing)
     {
         if (targetPoint.X == bufferSize.Left())
         {
@@ -1741,7 +1732,7 @@ void TextBuffer::_ExpandTextRow(til::inclusive_rect& textRow) const
 
     // expand right side of rect
     targetPoint = { textRow.Right, textRow.Bottom };
-    if (GetCellDataAt(targetPoint)->DbcsAttr().IsLeading())
+    if (GetCellDataAt(targetPoint)->DbcsAttr() == DbcsAttribute::Leading)
     {
         if (targetPoint.X == bufferSize.RightInclusive())
         {
@@ -1811,7 +1802,7 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
         {
             const auto& cell = *it;
 
-            if (!cell.DbcsAttr().IsTrailing())
+            if (cell.DbcsAttr() != DbcsAttribute::Trailing)
             {
                 const auto chars = cell.Chars();
                 selectionText.append(chars);
@@ -1911,7 +1902,7 @@ std::wstring TextBuffer::GetPlainText(const til::point& start, const til::point&
     for (; it && spanLength > 0; ++it, --spanLength)
     {
         const auto& cell = *it;
-        if (!cell.DbcsAttr().IsTrailing())
+        if (cell.DbcsAttr() != DbcsAttribute::Trailing)
         {
             const auto chars = cell.Chars();
             text.append(chars);
@@ -2352,12 +2343,11 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         // Fetch the row and its "right" which is the last printable character.
         const auto& row = oldBuffer.GetRowByOffset(iOldRow);
         const auto cOldColsTotal = oldBuffer.GetLineWidth(iOldRow);
-        const auto& charRow = row.GetCharRow();
-        auto iRight = charRow.MeasureRight();
+        auto iRight = row.MeasureRight();
 
         // If we're starting a new row, try and preserve the line rendition
         // from the row in the original buffer.
-        const auto newBufferPos = newBuffer.GetCursor().GetPosition();
+        const auto newBufferPos = newCursor.GetPosition();
         if (newBufferPos.X == 0)
         {
             auto& newRow = newBuffer.GetRowByOffset(newBufferPos.Y);
@@ -2404,9 +2394,9 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             try
             {
                 // TODO: MSFT: 19446208 - this should just use an iterator and the inserter...
-                const auto glyph = row.GetCharRow().GlyphAt(iOldCol);
-                const auto dbcsAttr = row.GetCharRow().DbcsAttrAt(iOldCol);
-                const auto textAttr = row.GetAttrRow().GetAttrByColumn(iOldCol);
+                const auto glyph = row.GlyphAt(iOldCol);
+                const auto dbcsAttr = row.DbcsAttrAt(iOldCol);
+                const auto textAttr = row.GetAttrByColumn(iOldCol);
 
                 if (!newBuffer.InsertCharacter(glyph, dbcsAttr, textAttr))
                 {
@@ -2450,8 +2440,8 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             try
             {
                 // TODO: MSFT: 19446208 - this should just use an iterator and the inserter...
-                const auto textAttr = row.GetAttrRow().GetAttrByColumn(copyAttrCol);
-                if (!newRow.GetAttrRow().SetAttrToEnd(newAttrColumn, textAttr))
+                const auto textAttr = row.GetAttrByColumn(copyAttrCol);
+                if (!newRow.SetAttrToEnd(newAttrColumn, textAttr))
                 {
                     break;
                 }
@@ -2565,8 +2555,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         // the last attr when wider.
         auto& newRow = newBuffer.GetRowByOffset(newRowY);
         const auto newWidth = newBuffer.GetLineWidth(newRowY);
-        newRow.GetAttrRow() = row.GetAttrRow();
-        newRow.GetAttrRow().Resize(newWidth);
+        newRow.TransferAttributes(row.Attributes(), newWidth);
 
         newRowY++;
     }
@@ -2821,16 +2810,14 @@ PointTree TextBuffer::GetPatterns(const til::CoordType firstRow, const til::Coor
             // match and the previous match, so we use the size of the prefix
             // along with the size of the match to determine the locations
             til::CoordType prefixSize = 0;
-            for (const auto parsedGlyph : Utf16Parser::Parse(i->prefix().str()))
+            for (const auto str = i->prefix().str(); const auto& glyph : til::utf16_iterator{ str })
             {
-                const std::wstring_view glyph{ parsedGlyph.data(), parsedGlyph.size() };
                 prefixSize += IsGlyphFullWidth(glyph) ? 2 : 1;
             }
             const auto start = lenUpToThis + prefixSize;
             til::CoordType matchSize = 0;
-            for (const auto parsedGlyph : Utf16Parser::Parse(i->str()))
+            for (const auto str = i->str(); const auto& glyph : til::utf16_iterator{ str })
             {
-                const std::wstring_view glyph{ parsedGlyph.data(), parsedGlyph.size() };
                 matchSize += IsGlyphFullWidth(glyph) ? 2 : 1;
             }
             const auto end = start + matchSize;

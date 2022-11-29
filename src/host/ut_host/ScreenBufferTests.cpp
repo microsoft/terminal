@@ -247,6 +247,8 @@ class ScreenBufferTests
     TEST_METHOD(TestReflowBiggerLongLineWithColor);
 
     TEST_METHOD(TestDeferredMainBufferResize);
+
+    TEST_METHOD(RectangularAreaOperations);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -1462,8 +1464,7 @@ void ScreenBufferTests::VtScrollMarginsNewlineColor()
         {
             SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
             const auto& row = tbi.GetRowByOffset(y);
-            const auto attrRow = &row.GetAttrRow();
-            const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+            const std::vector<TextAttribute> attrs{ row.AttrBegin(), row.AttrEnd() };
             for (auto x = 0; x < viewport.RightInclusive(); x++)
             {
                 const auto& attr = attrs[x];
@@ -1530,8 +1531,7 @@ void ScreenBufferTests::VtNewlinePastViewport()
     {
         SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
         const auto& row = tbi.GetRowByOffset(y);
-        const auto attrRow = &row.GetAttrRow();
-        const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+        const std::vector<TextAttribute> attrs{ row.AttrBegin(), row.AttrEnd() };
         for (auto x = 0; x < viewport.RightInclusive(); x++)
         {
             const auto& attr = attrs[x];
@@ -1540,8 +1540,7 @@ void ScreenBufferTests::VtNewlinePastViewport()
     }
 
     const auto& row = tbi.GetRowByOffset(viewport.BottomInclusive());
-    const auto attrRow = &row.GetAttrRow();
-    const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+    const std::vector<TextAttribute> attrs{ row.AttrBegin(), row.AttrEnd() };
     for (auto x = 0; x < viewport.RightInclusive(); x++)
     {
         const auto& attr = attrs[x];
@@ -1607,8 +1606,7 @@ void ScreenBufferTests::VtNewlinePastEndOfBuffer()
     {
         SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
         const auto& row = tbi.GetRowByOffset(y);
-        const auto attrRow = &row.GetAttrRow();
-        const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+        const std::vector<TextAttribute> attrs{ row.AttrBegin(), row.AttrEnd() };
         for (auto x = 0; x < viewport.RightInclusive(); x++)
         {
             const auto& attr = attrs[x];
@@ -1617,8 +1615,7 @@ void ScreenBufferTests::VtNewlinePastEndOfBuffer()
     }
 
     const auto& row = tbi.GetRowByOffset(viewport.BottomInclusive());
-    const auto attrRow = &row.GetAttrRow();
-    const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+    const std::vector<TextAttribute> attrs{ row.AttrBegin(), row.AttrEnd() };
     for (auto x = 0; x < viewport.RightInclusive(); x++)
     {
         const auto& attr = attrs[x];
@@ -2475,8 +2472,7 @@ void ScreenBufferTests::TestAltBufferVtDispatching()
         // Recall we didn't print an 'X' to the main buffer, so there's no
         //      char to inspect the attributes of.
         const auto& altRow = alternate.GetTextBuffer().GetRowByOffset(altCursor.GetPosition().Y);
-        const auto altAttrRow = &altRow.GetAttrRow();
-        const std::vector<TextAttribute> altAttrs{ altAttrRow->begin(), altAttrRow->end() };
+        const std::vector<TextAttribute> altAttrs{ altRow.AttrBegin(), altRow.AttrEnd() };
         const auto altAttrA = altAttrs[altCursor.GetPosition().X - 1];
         VERIFY_ARE_EQUAL(expectedRgb, altAttrA);
     }
@@ -2570,8 +2566,7 @@ void ScreenBufferTests::SetDefaultsIndividuallyBothDefault()
     VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
 
     const auto& row = tbi.GetRowByOffset(0);
-    const auto attrRow = &row.GetAttrRow();
-    const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+    const std::vector<TextAttribute> attrs{ row.AttrBegin(), row.AttrEnd() };
     const auto attrA = attrs[0];
     const auto attrB = attrs[1];
     const auto attrC = attrs[2];
@@ -2661,8 +2656,7 @@ void ScreenBufferTests::SetDefaultsTogether()
     VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
 
     const auto& row = tbi.GetRowByOffset(0);
-    const auto attrRow = &row.GetAttrRow();
-    const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+    const std::vector<TextAttribute> attrs{ row.AttrBegin(), row.AttrEnd() };
     const auto attrA = attrs[0];
     const auto attrB = attrs[1];
     const auto attrC = attrs[2];
@@ -2725,8 +2719,7 @@ void ScreenBufferTests::ReverseResetWithDefaultBackground()
     VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
 
     const auto& row = tbi.GetRowByOffset(0);
-    const auto attrRow = &row.GetAttrRow();
-    const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+    const std::vector<TextAttribute> attrs{ row.AttrBegin(), row.AttrEnd() };
     const auto attrA = attrs[0];
     const auto attrB = attrs[1];
     const auto attrC = attrs[2];
@@ -2788,8 +2781,7 @@ void ScreenBufferTests::BackspaceDefaultAttrs()
     VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
 
     const auto& row = tbi.GetRowByOffset(0);
-    const auto attrRow = &row.GetAttrRow();
-    const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+    const std::vector<TextAttribute> attrs{ row.AttrBegin(), row.AttrEnd() };
     const auto attrA = attrs[0];
     const auto attrB = attrs[1];
 
@@ -2867,8 +2859,7 @@ void ScreenBufferTests::BackspaceDefaultAttrsWriteCharsLegacy()
     VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
 
     const auto& row = tbi.GetRowByOffset(0);
-    const auto attrRow = &row.GetAttrRow();
-    const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+    const std::vector<TextAttribute> attrs{ row.AttrBegin(), row.AttrEnd() };
     const auto attrA = attrs[0];
     const auto attrB = attrs[1];
 
@@ -2921,7 +2912,6 @@ void ScreenBufferTests::BackspaceDefaultAttrsInPrompt()
 
     const auto viewport = si.GetViewport();
     const auto& row = tbi.GetRowByOffset(cursor.GetPosition().Y);
-    const auto attrRow = &row.GetAttrRow();
 
     {
         SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
@@ -2929,7 +2919,7 @@ void ScreenBufferTests::BackspaceDefaultAttrsInPrompt()
             L"Make sure the row contains what we're expecting before we start."
             L"It should entirely be filled with defaults"));
 
-        const std::vector<TextAttribute> initialAttrs{ attrRow->begin(), attrRow->end() };
+        const std::vector<TextAttribute> initialAttrs{ row.AttrBegin(), row.AttrEnd() };
         for (auto x = 0; x <= viewport.RightInclusive(); x++)
         {
             const auto& attr = initialAttrs[x];
@@ -2946,7 +2936,7 @@ void ScreenBufferTests::BackspaceDefaultAttrsInPrompt()
     til::point expectedCursor{ 1, 0 };
     VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition());
 
-    const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+    const std::vector<TextAttribute> attrs{ row.AttrBegin(), row.AttrEnd() };
     for (auto x = 0; x <= viewport.RightInclusive(); x++)
     {
         const auto& attr = attrs[x];
@@ -2990,8 +2980,7 @@ void ScreenBufferTests::SetGlobalColorTable()
     VERIFY_ARE_EQUAL(expectedCursor, mainCursor.GetPosition());
     {
         const auto& row = mainBuffer.GetTextBuffer().GetRowByOffset(mainCursor.GetPosition().Y);
-        const auto attrRow = &row.GetAttrRow();
-        const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+        const std::vector<TextAttribute> attrs{ row.AttrBegin(), row.AttrEnd() };
         const auto attrA = attrs[0];
         LOG_ATTR(attrA);
         VERIFY_ARE_EQUAL(originalRed, renderSettings.GetAttributeColors(attrA).second);
@@ -3016,8 +3005,7 @@ void ScreenBufferTests::SetGlobalColorTable()
     VERIFY_ARE_EQUAL(expectedCursor, altCursor.GetPosition());
     {
         const auto& row = altBuffer.GetTextBuffer().GetRowByOffset(altCursor.GetPosition().Y);
-        const auto attrRow = &row.GetAttrRow();
-        const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+        const std::vector<TextAttribute> attrs{ row.AttrBegin(), row.AttrEnd() };
         const auto attrA = attrs[0];
         LOG_ATTR(attrA);
         VERIFY_ARE_EQUAL(originalRed, renderSettings.GetAttributeColors(attrA).second);
@@ -3031,8 +3019,7 @@ void ScreenBufferTests::SetGlobalColorTable()
     VERIFY_ARE_EQUAL(til::point(2, 0), altCursor.GetPosition());
     {
         const auto& row = altBuffer.GetTextBuffer().GetRowByOffset(altCursor.GetPosition().Y);
-        const auto attrRow = &row.GetAttrRow();
-        const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+        const std::vector<TextAttribute> attrs{ row.AttrBegin(), row.AttrEnd() };
         const auto attrA = attrs[0];
         const auto attrB = attrs[1];
         LOG_ATTR(attrA);
@@ -3054,8 +3041,7 @@ void ScreenBufferTests::SetGlobalColorTable()
     VERIFY_ARE_EQUAL(til::point(2, 0), mainCursor.GetPosition());
     {
         const auto& row = mainBuffer.GetTextBuffer().GetRowByOffset(mainCursor.GetPosition().Y);
-        const auto attrRow = &row.GetAttrRow();
-        const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+        const std::vector<TextAttribute> attrs{ row.AttrBegin(), row.AttrEnd() };
         const auto attrA = attrs[0];
         const auto attrB = attrs[1];
         LOG_ATTR(attrA);
@@ -3097,8 +3083,7 @@ void ScreenBufferTests::SetColorTableThreeDigits()
     VERIFY_ARE_EQUAL(expectedCursor, mainCursor.GetPosition());
     {
         const auto& row = mainBuffer.GetTextBuffer().GetRowByOffset(mainCursor.GetPosition().Y);
-        const auto attrRow = &row.GetAttrRow();
-        const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+        const std::vector<TextAttribute> attrs{ row.AttrBegin(), row.AttrEnd() };
         const auto attrA = attrs[0];
         LOG_ATTR(attrA);
         VERIFY_ARE_EQUAL(originalRed, renderSettings.GetAttributeColors(attrA).second);
@@ -3123,8 +3108,7 @@ void ScreenBufferTests::SetColorTableThreeDigits()
     VERIFY_ARE_EQUAL(expectedCursor, altCursor.GetPosition());
     {
         const auto& row = altBuffer.GetTextBuffer().GetRowByOffset(altCursor.GetPosition().Y);
-        const auto attrRow = &row.GetAttrRow();
-        const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+        const std::vector<TextAttribute> attrs{ row.AttrBegin(), row.AttrEnd() };
         const auto attrA = attrs[0];
         LOG_ATTR(attrA);
         VERIFY_ARE_EQUAL(originalRed, renderSettings.GetAttributeColors(attrA).second);
@@ -3141,8 +3125,7 @@ void ScreenBufferTests::SetColorTableThreeDigits()
     VERIFY_ARE_EQUAL(til::point(2, 0), altCursor.GetPosition());
     {
         const auto& row = altBuffer.GetTextBuffer().GetRowByOffset(altCursor.GetPosition().Y);
-        const auto attrRow = &row.GetAttrRow();
-        const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+        const std::vector<TextAttribute> attrs{ row.AttrBegin(), row.AttrEnd() };
         const auto attrB = attrs[1];
         // TODO MSFT:20105972 - attrA and attrB should both be the same color now
         LOG_ATTR(attrB);
@@ -3344,19 +3327,12 @@ void ScreenBufferTests::DeleteCharsNearEndOfLine()
 
     VERIFY_ARE_EQUAL(til::point(mainView.Width() - 1, 0), mainCursor.GetPosition());
 
-    Log::Comment(NoThrowString().Format(
-        L"row_i=[%s]",
-        tbi.GetRowByOffset(0).GetText().c_str()));
-
-    mainCursor.SetPosition({ mainView.Width() - static_cast<til::CoordType>(dx), 0 });
+    mainCursor.SetPosition({ mainView.Width() - dx, 0 });
     std::wstringstream ss;
     ss << L"\x1b[" << numCharsToDelete << L"P"; // Delete N chars
     stateMachine.ProcessString(ss.str());
 
-    Log::Comment(NoThrowString().Format(
-        L"row_f=[%s]",
-        tbi.GetRowByOffset(0).GetText().c_str()));
-    VERIFY_ARE_EQUAL(til::point(mainView.Width() - static_cast<til::CoordType>(dx), 0), mainCursor.GetPosition());
+    VERIFY_ARE_EQUAL(til::point(mainView.Width() - dx, 0), mainCursor.GetPosition());
     auto iter = tbi.GetCellDataAt({ 0, 0 });
     auto expectedNumSpaces = std::min(dx, numCharsToDelete);
     for (auto x = 0; x < mainView.Width() - expectedNumSpaces; x++)
@@ -3412,13 +3388,10 @@ void ScreenBufferTests::DeleteCharsNearEndOfLineSimpleFirstCase()
     // Place the cursor on the 'D'
     mainCursor.SetPosition({ 3, 0 });
 
-    Log::Comment(NoThrowString().Format(L"before=[%s]", tbi.GetRowByOffset(0).GetText().c_str()));
     // Delete 3 chars - [D, E, F]
     std::wstringstream ss;
     ss << L"\x1b[" << 3 << L"P";
     stateMachine.ProcessString(ss.str());
-
-    Log::Comment(NoThrowString().Format(L"after =[%s]", tbi.GetRowByOffset(0).GetText().c_str()));
 
     // Cursor shouldn't have moved
     VERIFY_ARE_EQUAL(til::point(3, 0), mainCursor.GetPosition());
@@ -3473,14 +3446,10 @@ void ScreenBufferTests::DeleteCharsNearEndOfLineSimpleSecondCase()
     // Place the cursor on the 'C'
     mainCursor.SetPosition({ 2, 0 });
 
-    Log::Comment(NoThrowString().Format(L"before=[%s]", tbi.GetRowByOffset(0).GetText().c_str()));
-
     // Delete 4 chars - [C, D, E, F]
     std::wstringstream ss;
     ss << L"\x1b[" << 4 << L"P";
     stateMachine.ProcessString(ss.str());
-
-    Log::Comment(NoThrowString().Format(L"after =[%s]", tbi.GetRowByOffset(0).GetText().c_str()));
 
     VERIFY_ARE_EQUAL(til::point(2, 0), mainCursor.GetPosition());
 
@@ -3538,8 +3507,7 @@ void ScreenBufferTests::DontResetColorsAboveVirtualBottom()
     VERIFY_ARE_EQUAL(2, cursor.GetPosition().X);
     {
         const auto& row = tbi.GetRowByOffset(cursor.GetPosition().Y);
-        const auto attrRow = &row.GetAttrRow();
-        const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+        const std::vector<TextAttribute> attrs{ row.AttrBegin(), row.AttrEnd() };
         const auto attrA = attrs[0];
         const auto attrB = attrs[1];
         LOG_ATTR(attrA);
@@ -3569,8 +3537,7 @@ void ScreenBufferTests::DontResetColorsAboveVirtualBottom()
     VERIFY_ARE_EQUAL(3, cursor.GetPosition().X);
     {
         const auto& row = tbi.GetRowByOffset(cursor.GetPosition().Y);
-        const auto attrRow = &row.GetAttrRow();
-        const std::vector<TextAttribute> attrs{ attrRow->begin(), attrRow->end() };
+        const std::vector<TextAttribute> attrs{ row.AttrBegin(), row.AttrEnd() };
         const auto attrA = attrs[0];
         const auto attrB = attrs[1];
         const auto attrC = attrs[1];
@@ -3883,8 +3850,6 @@ void ScreenBufferTests::InsertChars()
     auto before = si.GetTextBuffer().GetRowByOffset(insertLine).GetText();
     stateMachine.ProcessString(L"\x1b[5@");
     auto after = si.GetTextBuffer().GetRowByOffset(insertLine).GetText();
-    Log::Comment(before.c_str(), L"Before");
-    Log::Comment(after.c_str(), L" After");
 
     // Verify cursor didn't move.
     VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition(), L"Verify cursor didn't move from insert operation.");
@@ -3924,8 +3889,6 @@ void ScreenBufferTests::InsertChars()
     before = si.GetTextBuffer().GetRowByOffset(insertLine).GetText();
     stateMachine.ProcessString(L"\x1b[5@");
     after = si.GetTextBuffer().GetRowByOffset(insertLine).GetText();
-    Log::Comment(before.c_str(), L"Before");
-    Log::Comment(after.c_str(), L" After");
 
     // Verify cursor didn't move.
     VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition(), L"Verify cursor didn't move from insert operation.");
@@ -3962,8 +3925,6 @@ void ScreenBufferTests::InsertChars()
     before = si.GetTextBuffer().GetRowByOffset(insertLine).GetText();
     stateMachine.ProcessString(L"\x1b[100@");
     after = si.GetTextBuffer().GetRowByOffset(insertLine).GetText();
-    Log::Comment(before.c_str(), L"Before");
-    Log::Comment(after.c_str(), L" After");
 
     // Verify cursor didn't move.
     VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition(), L"Verify cursor didn't move from insert operation.");
@@ -4043,8 +4004,6 @@ void ScreenBufferTests::DeleteChars()
     auto before = si.GetTextBuffer().GetRowByOffset(deleteLine).GetText();
     stateMachine.ProcessString(L"\x1b[5P");
     auto after = si.GetTextBuffer().GetRowByOffset(deleteLine).GetText();
-    Log::Comment(before.c_str(), L"Before");
-    Log::Comment(after.c_str(), L" After");
 
     // Verify cursor didn't move.
     VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition(), L"Verify cursor didn't move from delete operation.");
@@ -4084,8 +4043,6 @@ void ScreenBufferTests::DeleteChars()
     before = si.GetTextBuffer().GetRowByOffset(deleteLine).GetText();
     stateMachine.ProcessString(L"\x1b[5P");
     after = si.GetTextBuffer().GetRowByOffset(deleteLine).GetText();
-    Log::Comment(before.c_str(), L"Before");
-    Log::Comment(after.c_str(), L" After");
 
     // Verify cursor didn't move.
     VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition(), L"Verify cursor didn't move from delete operation.");
@@ -4122,8 +4079,6 @@ void ScreenBufferTests::DeleteChars()
     before = si.GetTextBuffer().GetRowByOffset(deleteLine).GetText();
     stateMachine.ProcessString(L"\x1b[100P");
     after = si.GetTextBuffer().GetRowByOffset(deleteLine).GetText();
-    Log::Comment(before.c_str(), L"Before");
-    Log::Comment(after.c_str(), L" After");
 
     // Verify cursor didn't move.
     VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition(), L"Verify cursor didn't move from delete operation.");
@@ -6886,8 +6841,7 @@ void ScreenBufferTests::TestWriteConsoleVTQuirkMode()
 
     const auto verifyLastAttribute = [&](const TextAttribute& expected) {
         const auto& row = mainBuffer.GetTextBuffer().GetRowByOffset(cursor.GetPosition().Y);
-        const auto attrRow = &row.GetAttrRow();
-        auto iter{ attrRow->begin() };
+        auto iter{ row.AttrBegin() };
         iter += cursor.GetPosition().X - 1;
         VERIFY_ARE_EQUAL(expected, *iter);
     };
@@ -7332,4 +7286,128 @@ void ScreenBufferTests::TestDeferredMainBufferResize()
     VERIFY_ARE_NOT_EQUAL(oldSize, mainPostRestoreSize);
     VERIFY_ARE_EQUAL(altPostResizeView, mainPostRestoreView);
     VERIFY_ARE_EQUAL(expectedSize, mainPostRestoreView);
+}
+
+void ScreenBufferTests::RectangularAreaOperations()
+{
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:rectOp", L"{0, 1, 2, 3, 4, 5}")
+    END_TEST_METHOD_PROPERTIES();
+
+    enum RectOp : int
+    {
+        DECFRA,
+        DECERA,
+        DECSERA,
+        DECCARA,
+        DECRARA,
+        DECCRA
+    };
+
+    RectOp rectOp;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"rectOp", (int&)rectOp));
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    const auto bufferWidth = si.GetBufferSize().Width();
+    const auto bufferHeight = si.GetBufferSize().Height();
+
+    // Move the viewport down a few lines, and only cover part of the buffer width.
+    si.SetViewport(Viewport::FromDimensions({ 5, 10 }, { bufferWidth - 10, 20 }), true);
+    const auto viewport = si.GetViewport();
+
+    // Fill the entire buffer with Zs. Blue on Green and Underlined.
+    const auto bufferChar = L'Z';
+    auto bufferAttr = TextAttribute{ FOREGROUND_BLUE | BACKGROUND_GREEN };
+    bufferAttr.SetUnderlined(true);
+    _FillLines(0, bufferHeight, bufferChar, bufferAttr);
+
+    // Set the active attributes to Red on Blue and Intense;
+    auto activeAttr = TextAttribute{ FOREGROUND_RED | BACKGROUND_BLUE };
+    activeAttr.SetIntense(true);
+    si.SetAttributes(activeAttr);
+
+    // The area we're targeting in all the operations below is 27;3 to 54;6.
+    // But VT coordinates use origin 1;1 so we need to subtract 1, and til::rect
+    // expects exclusive coordinates, so the bottom/right also need to add 1.
+    const auto targetArea = til::rect{ 27 - 1, viewport.Top() + 3 - 1, 54, viewport.Top() + 6 };
+
+    wchar_t expectedChar{};
+    TextAttribute expectedAttr;
+
+    // DECCARA and DECRARA can apply to both a stream of character positions or
+    // a rectangular area, but these tests only cover the rectangular option.
+    if (rectOp == DECCARA || rectOp == DECRARA)
+    {
+        Log::Comment(L"Request a rectangular change extent with DECSACE");
+        stateMachine.ProcessString(L"\033[2*x");
+    }
+
+    switch (rectOp)
+    {
+    case DECFRA:
+        Log::Comment(L"DECFRA: fill a rectangle with the active attributes and a given character value");
+        expectedAttr = activeAttr;
+        expectedChar = wchar_t{ 42 };
+        // The first parameter specifies the fill character.
+        stateMachine.ProcessString(L"\033[42;3;27;6;54$x");
+        break;
+    case DECERA:
+        Log::Comment(L"DECERA: erase a rectangle using the active colors but no rendition attributes");
+        expectedAttr = activeAttr;
+        expectedAttr.SetStandardErase();
+        expectedChar = L' ';
+        stateMachine.ProcessString(L"\033[3;27;6;54$z");
+        break;
+    case DECSERA:
+        Log::Comment(L"DECSERA: erase the text in a rectangle but leave the attributes unchanged");
+        expectedAttr = bufferAttr;
+        expectedChar = L' ';
+        stateMachine.ProcessString(L"\033[3;27;6;54${");
+        break;
+    case DECCARA:
+        Log::Comment(L"DECCARA: update the attributes in a rectangle but leave the text unchanged");
+        expectedAttr = bufferAttr;
+        expectedAttr.SetReverseVideo(true);
+        expectedChar = bufferChar;
+        // The final parameter specifies the reverse video attribute that will be set.
+        stateMachine.ProcessString(L"\033[3;27;6;54;7$r");
+        break;
+    case DECRARA:
+        Log::Comment(L"DECRARA: reverse the attributes in a rectangle but leave the text unchanged");
+        expectedAttr = bufferAttr;
+        expectedAttr.SetUnderlined(false);
+        expectedChar = bufferChar;
+        // The final parameter specifies the underline attribute that will be reversed.
+        stateMachine.ProcessString(L"\033[3;27;6;54;4$t");
+        break;
+    case DECCRA:
+        Log::Comment(L"DECCRA: copy a rectangle from the lower part of the viewport to the top");
+        expectedAttr = TextAttribute{ FOREGROUND_GREEN | BACKGROUND_RED };
+        expectedChar = L'*';
+        // Fill the lower part of the viewport with some different content.
+        _FillLines(viewport.Top() + 10, viewport.BottomExclusive(), expectedChar, expectedAttr);
+        // Copy a rectangle from that lower part up to the top with DECCRA.
+        stateMachine.ProcessString(L"\033[11;27;14;54;1;3;27;1;4$v");
+        // Reset the lower part back to it's original content.
+        _FillLines(viewport.Top() + 10, viewport.BottomExclusive(), bufferChar, bufferAttr);
+        break;
+    default:
+        VERIFY_FAIL(L"Unsupported operation");
+    }
+
+    const auto expectedChars = std::wstring(targetArea.width(), expectedChar);
+    VERIFY_IS_TRUE(_ValidateLinesContain(targetArea.left, targetArea.top, targetArea.bottom, expectedChars, expectedAttr));
+
+    Log::Comment(L"Everything above and below the target area should remain unchanged");
+    VERIFY_IS_TRUE(_ValidateLinesContain(0, targetArea.top, bufferChar, bufferAttr));
+    VERIFY_IS_TRUE(_ValidateLinesContain(targetArea.bottom, bufferHeight, bufferChar, bufferAttr));
+
+    Log::Comment(L"Everything to the left and right of the target area should remain unchanged");
+    const auto bufferChars = std::wstring(targetArea.left, bufferChar);
+    VERIFY_IS_TRUE(_ValidateLinesContain(targetArea.top, targetArea.bottom, bufferChars, bufferAttr));
+    VERIFY_IS_TRUE(_ValidateLinesContain(targetArea.right, targetArea.top, targetArea.bottom, bufferChar, bufferAttr));
 }

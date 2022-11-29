@@ -342,10 +342,9 @@ CATCH_RETURN()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT AtlasEngine::PaintBufferLine(const gsl::span<const Cluster> clusters, const til::point coord, const bool fTrimLeft, const bool lineWrapped) noexcept
+[[nodiscard]] HRESULT AtlasEngine::PaintBufferLine(gsl::span<const Cluster> clusters, til::point coord, const bool fTrimLeft, const bool lineWrapped) noexcept
 try
 {
-    const auto x = gsl::narrow_cast<u16>(clamp<int>(coord.X, 0, _api.cellCount.x));
     const auto y = gsl::narrow_cast<u16>(clamp<int>(coord.Y, 0, _api.cellCount.y));
 
     if (_api.lastPaintBufferLineCoord.y != y)
@@ -353,17 +352,41 @@ try
         _flushBufferLine();
     }
 
-    _api.lastPaintBufferLineCoord = { x, y };
-    _api.bufferLineWasHyperlinked = false;
+    // _api.bufferLineColumn contains 1 more item than _api.bufferLine, as it represents the
+    // past-the-end index. It'll get appended again later once we built our new _api.bufferLine.
+    if (!_api.bufferLineColumn.empty())
+    {
+        _api.bufferLineColumn.pop_back();
+    }
+
+    // `TextBuffer` is buggy and allows a `Trailing` `DbcsAttribute` to be written
+    // into the first column. Since other code then blindly assumes that there's a
+    // preceding `Leading` character, we'll get called with a X coordinate of -1.
+    //
+    // This block can be removed after GH#13626 is merged.
+    if (coord.X < 0)
+    {
+        size_t offset = 0;
+        for (const auto& cluster : clusters)
+        {
+            offset++;
+            coord.X += cluster.GetColumns();
+            if (coord.X >= 0)
+            {
+                _api.bufferLine.insert(_api.bufferLine.end(), coord.X, L' ');
+                _api.bufferLineColumn.insert(_api.bufferLineColumn.end(), coord.X, 0u);
+                break;
+            }
+        }
+
+        clusters = clusters.subspan(offset);
+    }
+
+    const auto x = gsl::narrow_cast<u16>(clamp<int>(coord.X, 0, _api.cellCount.x));
 
     // Due to the current IRenderEngine interface (that wasn't refactored yet) we need to assemble
     // the current buffer line first as the remaining function operates on whole lines of text.
     {
-        if (!_api.bufferLineColumn.empty())
-        {
-            _api.bufferLineColumn.pop_back();
-        }
-
         auto column = x;
         for (const auto& cluster : clusters)
         {
@@ -379,8 +402,12 @@ try
         _api.bufferLineColumn.emplace_back(column);
 
         const BufferLineMetadata metadata{ _api.currentColor, _api.flags };
+        FAIL_FAST_IF(column > _api.bufferLineMetadata.size());
         std::fill_n(_api.bufferLineMetadata.data() + x, column - x, metadata);
     }
+
+    _api.lastPaintBufferLineCoord = { x, y };
+    _api.bufferLineWasHyperlinked = false;
 
     return S_OK;
 }

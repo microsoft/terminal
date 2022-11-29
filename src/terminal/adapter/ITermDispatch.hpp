@@ -93,6 +93,14 @@ public:
     virtual bool SelectiveEraseInDisplay(const DispatchTypes::EraseType eraseType) = 0; // DECSED
     virtual bool SelectiveEraseInLine(const DispatchTypes::EraseType eraseType) = 0; // DECSEL
 
+    virtual bool ChangeAttributesRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const VTParameters attrs) = 0; // DECCARA
+    virtual bool ReverseAttributesRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const VTParameters attrs) = 0; // DECRARA
+    virtual bool CopyRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const VTInt page, const VTInt dstTop, const VTInt dstLeft, const VTInt dstPage) = 0; // DECCRA
+    virtual bool FillRectangularArea(const VTParameter ch, const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) = 0; // DECFRA
+    virtual bool EraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) = 0; // DECERA
+    virtual bool SelectiveEraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) = 0; // DECSERA
+    virtual bool SelectAttributeChangeExtent(const DispatchTypes::ChangeExtent changeExtent) = 0; // DECSACE
+
     virtual bool SetGraphicsRendition(const VTParameters options) = 0; // SGR
     virtual bool SetLineRendition(const LineRendition rendition) = 0; // DECSWL, DECDWL, DECDHL
     virtual bool SetCharacterProtectionAttribute(const VTParameters options) = 0; // DECSCA
