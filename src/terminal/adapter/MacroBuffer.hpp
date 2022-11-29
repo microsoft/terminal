@@ -44,13 +44,13 @@ namespace Microsoft::Console::VirtualTerminal
         std::wstring_view GetMacroSequence(const size_t macroId) const noexcept;
         void InvokeMacroSequence(const std::wstring_view macroSequence, StateMachine& stateMachine);
         void ClearMacrosIfInUse();
-        bool InitParser(const size_t macroId, const DispatchTypes::MacroDeleteControl deleteControl, const DispatchTypes::MacroEncoding encoding) noexcept;
+        bool InitParser(const size_t macroId, const DispatchTypes::MacroDeleteControl deleteControl, const DispatchTypes::MacroEncoding encoding);
         bool ParseDefinition(const wchar_t ch);
 
     private:
         bool _decodeHexDigit(const wchar_t ch) noexcept;
         bool _appendToActiveMacro(const wchar_t ch);
-        std::wstring& _activeMacro() noexcept;
+        std::wstring& _activeMacro();
         void _deleteMacro(std::wstring& macro) noexcept;
         bool _applyPendingRepeat();
 

@@ -74,7 +74,7 @@ void MacroBuffer::ClearMacrosIfInUse()
     }
 }
 
-bool MacroBuffer::InitParser(const size_t macroId, const DispatchTypes::MacroDeleteControl deleteControl, const DispatchTypes::MacroEncoding encoding) noexcept
+bool MacroBuffer::InitParser(const size_t macroId, const DispatchTypes::MacroDeleteControl deleteControl, const DispatchTypes::MacroEncoding encoding)
 {
     // We're checking the invoked depth here to make sure we aren't defining
     // a macro from within a macro invocation.
@@ -234,9 +234,9 @@ bool MacroBuffer::_appendToActiveMacro(const wchar_t ch)
     return false;
 }
 
-std::wstring& MacroBuffer::_activeMacro() noexcept
+std::wstring& MacroBuffer::_activeMacro()
 {
-    return til::at(_macros, _activeMacroId);
+    return _macros.at(_activeMacroId);
 }
 
 void MacroBuffer::_deleteMacro(std::wstring& macro) noexcept
