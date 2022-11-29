@@ -980,7 +980,7 @@ void CascadiaSettings::_researchOnLoad()
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
-        // ------------------------ RE: automarkPrompts ------------------------
+        // ------------------------ RE: autoMarkPrompts ------------------------
         auto totalAutoMark = 0;
         auto totalShowMarks = 0;
         for (const auto&& p : AllProfiles())
