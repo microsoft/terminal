@@ -940,7 +940,7 @@ Model::CascadiaSettings CascadiaSettings::LoadUniversal()
 
 // Function Description:
 // - Creates a new CascadiaSettings object initialized with settings from the
-//   hardcoded defaults.json.
+//   hard-coded defaults.json.
 // Arguments:
 // - <none>
 // Return Value:

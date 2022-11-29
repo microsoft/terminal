@@ -831,7 +831,7 @@ void AdaptDispatch::_ChangeRectOrStreamAttributes(const til::rect& changeArea, c
     // If the stream extent is more than one line we require three passes. The
     // top line is altered from the left offset up to the end of the line. The
     // bottom line is altered from the start up to the right offset. All the
-    // lines inbetween have their entire length altered. The right coordinate
+    // lines in-between have their entire length altered. The right coordinate
     // must be greater than the left, otherwise the operation is ignored.
     else if (lineCount > 1 && changeRect.right > changeRect.left)
     {
@@ -843,7 +843,7 @@ void AdaptDispatch::_ChangeRectOrStreamAttributes(const til::rect& changeArea, c
 }
 
 // Routine Description:
-// - Helper method to caculate the applicable buffer coordinates for use with
+// - Helper method to calculate the applicable buffer coordinates for use with
 //   the various rectangular area operations.
 // Arguments:
 // - top - The first row of the area.
@@ -984,7 +984,7 @@ bool AdaptDispatch::ReverseAttributesRectangularArea(const VTInt top, const VTIn
 }
 
 // Routine Description:
-// - DECCRA - Copys a rectangular area from one part of the buffer to another.
+// - DECCRA - Copies a rectangular area from one part of the buffer to another.
 // Arguments:
 // - top - The first row of the source area.
 // - left - The first column of the source area.
@@ -1188,7 +1188,7 @@ bool AdaptDispatch::DeviceAttributes()
 // Routine Description:
 // - DA2 - Reports the terminal type, firmware version, and hardware options.
 //   For now we're following the XTerm practice of using 0 to represent a VT100
-//   terminal, the version is hardcoded as 10 (1.0), and the hardware option
+//   terminal, the version is hard-coded as 10 (1.0), and the hardware option
 //   is set to 1 (indicating a PC Keyboard).
 // Arguments:
 // - <none>
@@ -1202,7 +1202,7 @@ bool AdaptDispatch::SecondaryDeviceAttributes()
 
 // Routine Description:
 // - DA3 - Reports the terminal unit identification code. Terminal emulators
-//   typically return a hardcoded value, the most common being all zeros.
+//   typically return a hard-coded value, the most common being all zeros.
 // Arguments:
 // - <none>
 // Return Value:
@@ -1230,7 +1230,7 @@ bool AdaptDispatch::Vt52DeviceAttributes()
 // Routine Description:
 // - DECREQTPARM - This sequence was originally used on the VT100 terminal to
 //   report the serial communication parameters (baud rate, data bits, parity,
-//   etc.). On modern terminal emulators, the response is simply hardcoded.
+//   etc.). On modern terminal emulators, the response is simply hard-coded.
 // Arguments:
 // - permission - This would originally have determined whether the terminal
 //   was allowed to send unsolicited reports or not.
@@ -1240,7 +1240,7 @@ bool AdaptDispatch::RequestTerminalParameters(const DispatchTypes::ReportingPerm
 {
     // We don't care whether unsolicited reports are allowed or not, but the
     // requested permission does determine the value of the first response
-    // parameter. The remaining parameters are just hardcoded to indicate a
+    // parameter. The remaining parameters are just hard-coded to indicate a
     // 38400 baud connection, which matches the XTerm response. The full
     // parameter sequence is as follows:
     // - response type:    2 or 3 (unsolicited or solicited)
@@ -1308,7 +1308,7 @@ void AdaptDispatch::_CursorPositionReport(const bool extendedReport)
     if (extendedReport)
     {
         // An extended report should also include the page number, but for now
-        // we hardcode it to 1, since we don't yet support paging (GH#13892).
+        // we hard-code it to 1, since we don't yet support paging (GH#13892).
         const auto pageNumber = 1;
         const auto response = wil::str_printf<std::wstring>(L"\x1b[?%d;%d;%dR", cursorPosition.Y, cursorPosition.X, pageNumber);
         _api.ReturnResponse(response);
@@ -2934,7 +2934,7 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const VTInt fontNumber,
     }
 
     // If we're a conpty, we create a special passthrough handler that will
-    // forward the DECDLD sequence to the conpty terminal with a hardcoded ID.
+    // forward the DECDLD sequence to the conpty terminal with a hard-coded ID.
     // That ID is also pre-mapped into the G1 table, so the VT engine can just
     // switch to G1 when it needs to output any DRCS characters. But note that
     // we still need to process the DECDLD sequence locally, so the character
@@ -2979,7 +2979,7 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const VTInt fontNumber,
 // Routine Description:
 // - Helper method to create a string handler that can be used to pass through
 //   DECDLD sequences when in conpty mode. This patches the original sequence
-//   with a hardcoded character set ID, and pre-maps that ID into the G1 table.
+//   with a hard-coded character set ID, and pre-maps that ID into the G1 table.
 // Arguments:
 // - <none>
 // Return value:
@@ -2994,7 +2994,7 @@ ITermDispatch::StringHandler AdaptDispatch::_CreateDrcsPassthroughHandler(const 
             // The character set ID is contained in the first characters of the
             // sequence, so we just ignore that initial content until we receive
             // a "final" character (i.e. in range 30 to 7E). At that point we
-            // pass through a hardcoded ID of "@".
+            // pass through a hard-coded ID of "@".
             if (!gotId)
             {
                 if (ch >= 0x30 && ch <= 0x7E)

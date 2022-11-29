@@ -1509,7 +1509,7 @@ void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration,
     else
     {
         // Try first to send a message to the current foreground window. If it's not responding, it may
-        // be waiting on us to finsh launching. Passing SMTO_NOTIMEOUTIFNOTHUNG means that we get the same
+        // be waiting on us to finish launching. Passing SMTO_NOTIMEOUTIFNOTHUNG means that we get the same
         // behavior as before--that is, waiting for the message loop--but we've done an early return if
         // it turns out that it was hung.
         // SendMessageTimeoutW returns nonzero if it succeeds.
