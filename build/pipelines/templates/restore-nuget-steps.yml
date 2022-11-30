@@ -7,7 +7,7 @@ steps:
 - task: NuGetAuthenticate@0
 
 - script: |-
-    echo ##vso[task.setvariable variable=NUGET_RESTORE_MSBUILD_ARGS]/p:BuildPlatform=$(BuildPlatform)
+    echo ##vso[task.setvariable variable=NUGET_RESTORE_MSBUILD_ARGS]/p:Platform=$(BuildPlatform)
   displayName: Ensure NuGet restores for $(BuildPlatform)
 
 # In the Microsoft Azure DevOps tenant, NuGetCommand is ambiguous.
