@@ -7330,7 +7330,7 @@ void ScreenBufferTests::RectangularAreaOperations()
     activeAttr.SetIntense(true);
     si.SetAttributes(activeAttr);
 
-    // The area we're targetting in all the operations below is 27;3 to 54;6.
+    // The area we're targeting in all the operations below is 27;3 to 54;6.
     // But VT coordinates use origin 1;1 so we need to subtract 1, and til::rect
     // expects exclusive coordinates, so the bottom/right also need to add 1.
     const auto targetArea = til::rect{ 27 - 1, viewport.Top() + 3 - 1, 54, viewport.Top() + 6 };

@@ -38,7 +38,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         [[nodiscard]] HRESULT SwitchScreenBuffer(const bool useAltBuffer);
 
-        [[noreturn]] void CloseInput();
+        void CloseInput();
         void CloseOutput();
 
         void BeginResize();
@@ -78,7 +78,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         [[nodiscard]] HRESULT _Initialize(const HANDLE InHandle, const HANDLE OutHandle, const std::wstring& VtMode, _In_opt_ const HANDLE SignalHandle);
 
-        [[noreturn]] void _shutdownNow();
+        void _shutdownNow();
 
 #ifdef UNIT_TESTING
         friend class VtIoTests;

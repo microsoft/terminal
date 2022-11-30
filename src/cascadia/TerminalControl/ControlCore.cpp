@@ -10,7 +10,6 @@
 
 #include <DefaultSettings.h>
 #include <unicode.hpp>
-#include <Utf16Parser.hpp>
 #include <WinUser.h>
 #include <LibraryResources.h>
 

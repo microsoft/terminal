@@ -5,7 +5,6 @@
 #include "TermControl.h"
 
 #include <unicode.hpp>
-#include <Utf16Parser.hpp>
 #include <LibraryResources.h>
 
 #include "TermControlAutomationPeer.h"
