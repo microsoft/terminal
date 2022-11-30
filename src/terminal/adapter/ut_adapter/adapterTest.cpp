@@ -105,6 +105,12 @@ public:
         Log::Comment(L"SetAutoWrapMode MOCK called...");
     }
 
+    bool GetAutoWrapMode() const override
+    {
+        Log::Comment(L"GetAutoWrapMode MOCK called...");
+        return true;
+    }
+
     bool IsVtInputEnabled() const override
     {
         return false;
@@ -201,9 +207,15 @@ public:
         return _expectedOutputCP;
     }
 
-    void EnableXtermBracketedPasteMode(const bool /*enabled*/)
+    void SetBracketedPasteMode(const bool /*enabled*/) override
     {
-        Log::Comment(L"EnableXtermBracketedPasteMode MOCK called...");
+        Log::Comment(L"SetBracketedPasteMode MOCK called...");
+    }
+
+    std::optional<bool> GetBracketedPasteMode() const override
+    {
+        Log::Comment(L"GetBracketedPasteMode MOCK called...");
+        return {};
     }
 
     void CopyToClipboard(const std::wstring_view /*content*/)
@@ -772,7 +784,14 @@ public:
         Log::Comment(L"Verify successful API call modifies visibility state.");
         _testGetSet->PrepData();
         _testGetSet->_textBuffer->GetCursor().SetIsVisible(fStart);
-        VERIFY_IS_TRUE(_pDispatch->CursorVisibility(fEnd));
+        if (fEnd)
+        {
+            VERIFY_IS_TRUE(_pDispatch->SetMode(DispatchTypes::DECTCEM_TextCursorEnableMode));
+        }
+        else
+        {
+            VERIFY_IS_TRUE(_pDispatch->ResetMode(DispatchTypes::DECTCEM_TextCursorEnableMode));
+        }
         VERIFY_ARE_EQUAL(fEnd, _testGetSet->_textBuffer->GetCursor().IsVisible());
     }
 
@@ -1665,6 +1684,45 @@ public:
         _testGetSet->ValidateInputEvent(L"\033P0$r\033\\");
     }
 
+    TEST_METHOD(RequestModeTests)
+    {
+        // The mode numbers below correspond to the DECPrivateMode values
+        // in the ModeParams enum in DispatchTypes.hpp. We don't include
+        // AnsiMode (2), because once that's disabled we'd be in VT52 mode,
+        // and DECRQM would not then be applicable.
+
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Data:modeNumber", L"{1, 3, 5, 6, 8, 12, 25, 40, 66, 67, 1000, 1002, 1003, 1004, 1005, 1006, 1007, 1049, 9001}")
+        END_TEST_METHOD_PROPERTIES()
+
+        VTInt modeNumber;
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"modeNumber", modeNumber));
+        const auto mode = DispatchTypes::DECPrivateMode(modeNumber);
+
+        if (mode == DispatchTypes::DECCOLM_SetNumberOfColumns)
+        {
+            Log::Comment(L"Make sure DECCOLM is allowed");
+            VERIFY_IS_TRUE(_pDispatch->SetMode(DispatchTypes::XTERM_EnableDECCOLMSupport));
+        }
+
+        Log::Comment(NoThrowString().Format(L"Setting private mode %d", modeNumber));
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch->SetMode(mode));
+        VERIFY_IS_TRUE(_pDispatch->RequestMode(mode));
+
+        wchar_t expectedResponse[20];
+        swprintf_s(expectedResponse, ARRAYSIZE(expectedResponse), L"\x1b[?%d;1$y", modeNumber);
+        _testGetSet->ValidateInputEvent(expectedResponse);
+
+        Log::Comment(NoThrowString().Format(L"Resetting private mode %d", modeNumber));
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(mode));
+        VERIFY_IS_TRUE(_pDispatch->RequestMode(mode));
+
+        swprintf_s(expectedResponse, ARRAYSIZE(expectedResponse), L"\x1b[?%d;2$y", modeNumber);
+        _testGetSet->ValidateInputEvent(expectedResponse);
+    }
+
     TEST_METHOD(CursorKeysModeTest)
     {
         Log::Comment(L"Starting test...");
@@ -1673,12 +1731,12 @@ public:
         // success cases
         // set numeric mode = true
         Log::Comment(L"Test 1: application mode = false");
-        VERIFY_IS_TRUE(_pDispatch->SetCursorKeysMode(false));
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(DispatchTypes::DECCKM_CursorKeysMode));
         VERIFY_IS_FALSE(_terminalInput.GetInputMode(TerminalInput::Mode::CursorKey));
 
         // set numeric mode = false
         Log::Comment(L"Test 2: application mode = true");
-        VERIFY_IS_TRUE(_pDispatch->SetCursorKeysMode(true));
+        VERIFY_IS_TRUE(_pDispatch->SetMode(DispatchTypes::DECCKM_CursorKeysMode));
         VERIFY_IS_TRUE(_terminalInput.GetInputMode(TerminalInput::Mode::CursorKey));
     }
 
@@ -1726,13 +1784,13 @@ public:
         // set blinking mode = true
         Log::Comment(L"Test 1: enable blinking = true");
         _testGetSet->_textBuffer->GetCursor().SetBlinkingAllowed(false);
-        VERIFY_IS_TRUE(_pDispatch->EnableCursorBlinking(true));
+        VERIFY_IS_TRUE(_pDispatch->SetMode(DispatchTypes::ATT610_StartCursorBlink));
         VERIFY_IS_TRUE(_testGetSet->_textBuffer->GetCursor().IsBlinkingAllowed());
 
         // set blinking mode = false
         Log::Comment(L"Test 2: enable blinking = false");
         _testGetSet->_textBuffer->GetCursor().SetBlinkingAllowed(true);
-        VERIFY_IS_TRUE(_pDispatch->EnableCursorBlinking(false));
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(DispatchTypes::ATT610_StartCursorBlink));
         VERIFY_IS_FALSE(_testGetSet->_textBuffer->GetCursor().IsBlinkingAllowed());
     }
 
@@ -1885,44 +1943,44 @@ public:
 
         Log::Comment(L"Test 1: Test Default Mouse Mode");
         _terminalInput.SetInputMode(TerminalInput::Mode::DefaultMouseTracking, false);
-        VERIFY_IS_TRUE(_pDispatch->EnableVT200MouseMode(true));
+        VERIFY_IS_TRUE(_pDispatch->SetMode(DispatchTypes::VT200_MOUSE_MODE));
         VERIFY_IS_TRUE(_terminalInput.GetInputMode(TerminalInput::Mode::DefaultMouseTracking));
-        VERIFY_IS_TRUE(_pDispatch->EnableVT200MouseMode(false));
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(DispatchTypes::VT200_MOUSE_MODE));
         VERIFY_IS_FALSE(_terminalInput.GetInputMode(TerminalInput::Mode::DefaultMouseTracking));
 
         Log::Comment(L"Test 2: Test UTF-8 Extended Mouse Mode");
         _terminalInput.SetInputMode(TerminalInput::Mode::Utf8MouseEncoding, false);
-        VERIFY_IS_TRUE(_pDispatch->EnableUTF8ExtendedMouseMode(true));
+        VERIFY_IS_TRUE(_pDispatch->SetMode(DispatchTypes::UTF8_EXTENDED_MODE));
         VERIFY_IS_TRUE(_terminalInput.GetInputMode(TerminalInput::Mode::Utf8MouseEncoding));
-        VERIFY_IS_TRUE(_pDispatch->EnableUTF8ExtendedMouseMode(false));
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(DispatchTypes::UTF8_EXTENDED_MODE));
         VERIFY_IS_FALSE(_terminalInput.GetInputMode(TerminalInput::Mode::Utf8MouseEncoding));
 
         Log::Comment(L"Test 3: Test SGR Extended Mouse Mode");
         _terminalInput.SetInputMode(TerminalInput::Mode::SgrMouseEncoding, false);
-        VERIFY_IS_TRUE(_pDispatch->EnableSGRExtendedMouseMode(true));
+        VERIFY_IS_TRUE(_pDispatch->SetMode(DispatchTypes::SGR_EXTENDED_MODE));
         VERIFY_IS_TRUE(_terminalInput.GetInputMode(TerminalInput::Mode::SgrMouseEncoding));
-        VERIFY_IS_TRUE(_pDispatch->EnableSGRExtendedMouseMode(false));
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(DispatchTypes::SGR_EXTENDED_MODE));
         VERIFY_IS_FALSE(_terminalInput.GetInputMode(TerminalInput::Mode::SgrMouseEncoding));
 
         Log::Comment(L"Test 4: Test Button-Event Mouse Mode");
         _terminalInput.SetInputMode(TerminalInput::Mode::ButtonEventMouseTracking, false);
-        VERIFY_IS_TRUE(_pDispatch->EnableButtonEventMouseMode(true));
+        VERIFY_IS_TRUE(_pDispatch->SetMode(DispatchTypes::BUTTON_EVENT_MOUSE_MODE));
         VERIFY_IS_TRUE(_terminalInput.GetInputMode(TerminalInput::Mode::ButtonEventMouseTracking));
-        VERIFY_IS_TRUE(_pDispatch->EnableButtonEventMouseMode(false));
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(DispatchTypes::BUTTON_EVENT_MOUSE_MODE));
         VERIFY_IS_FALSE(_terminalInput.GetInputMode(TerminalInput::Mode::ButtonEventMouseTracking));
 
         Log::Comment(L"Test 5: Test Any-Event Mouse Mode");
         _terminalInput.SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, false);
-        VERIFY_IS_TRUE(_pDispatch->EnableAnyEventMouseMode(true));
+        VERIFY_IS_TRUE(_pDispatch->SetMode(DispatchTypes::ANY_EVENT_MOUSE_MODE));
         VERIFY_IS_TRUE(_terminalInput.GetInputMode(TerminalInput::Mode::AnyEventMouseTracking));
-        VERIFY_IS_TRUE(_pDispatch->EnableAnyEventMouseMode(false));
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(DispatchTypes::ANY_EVENT_MOUSE_MODE));
         VERIFY_IS_FALSE(_terminalInput.GetInputMode(TerminalInput::Mode::AnyEventMouseTracking));
 
         Log::Comment(L"Test 6: Test Alt Scroll Mouse Mode");
         _terminalInput.SetInputMode(TerminalInput::Mode::AlternateScroll, false);
-        VERIFY_IS_TRUE(_pDispatch->EnableAlternateScroll(true));
+        VERIFY_IS_TRUE(_pDispatch->SetMode(DispatchTypes::ALTERNATE_SCROLL));
         VERIFY_IS_TRUE(_terminalInput.GetInputMode(TerminalInput::Mode::AlternateScroll));
-        VERIFY_IS_TRUE(_pDispatch->EnableAlternateScroll(false));
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(DispatchTypes::ALTERNATE_SCROLL));
         VERIFY_IS_FALSE(_terminalInput.GetInputMode(TerminalInput::Mode::AlternateScroll));
     }
 

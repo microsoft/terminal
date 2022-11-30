@@ -160,6 +160,18 @@ void ConhostInternalGetSet::SetAutoWrapMode(const bool wrapAtEOL)
 }
 
 // Routine Description:
+// - Retrieves the current state of ENABLE_WRAP_AT_EOL_OUTPUT mode.
+// Arguments:
+// - <none>
+// Return Value:
+// - true if the mode is enabled. false otherwise.
+bool ConhostInternalGetSet::GetAutoWrapMode() const
+{
+    const auto outputMode = _io.GetActiveOutputBuffer().OutputMode;
+    return WI_IsFlagSet(outputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
+}
+
+// Routine Description:
 // - Sets the top and bottom scrolling margins for the current page. This creates
 //     a subsection of the screen that scrolls when input reaches the end of the
 //     region, leaving the rest of the screen untouched.
@@ -325,9 +337,24 @@ unsigned int ConhostInternalGetSet::GetConsoleOutputCP() const
 // - enable - set to true to enable bracketing, false to disable.
 // Return Value:
 // - <none>
-void ConhostInternalGetSet::EnableXtermBracketedPasteMode(const bool /*enabled*/)
+void ConhostInternalGetSet::SetBracketedPasteMode(const bool enabled)
 {
-    // TODO
+    // TODO GH#395: Bracketed Paste Mode is not yet supported in conhost, but we
+    // still keep track of the state so it can be reported by DECRQM.
+    _bracketedPasteMode = enabled;
+}
+
+// Routine Description:
+// - Gets the current state of XTerm bracketed paste mode.
+// Arguments:
+// - <none>
+// Return Value:
+// - true if the mode is enabled, false if not, nullopt if unsupported.
+std::optional<bool> ConhostInternalGetSet::GetBracketedPasteMode() const
+{
+    // TODO GH#395: Bracketed Paste Mode is not yet supported in conhost, so we
+    // only report the state if we're tracking it for conpty.
+    return IsConsolePty() ? std::optional{ _bracketedPasteMode } : std::nullopt;
 }
 
 // Routine Description:
