@@ -159,7 +159,7 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
     CATCH_LOG();
 
     // Alright, if our quick shot at trimming didn't work either...
-    // move onto looking up a font from our hardcoded list of fonts
+    // move onto looking up a font from our hard-coded list of fonts
     // that should really always be available.
     if (!face)
     {

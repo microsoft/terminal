@@ -5,8 +5,9 @@
 
 #include "OutputCellIterator.hpp"
 
+#include <til/unicode.h>
+
 #include "../../types/inc/convert.hpp"
-#include "../../types/inc/Utf16Parser.hpp"
 #include "../../types/inc/GlyphWidth.hpp"
 #include "../../inc/conattrs.hpp"
 
@@ -392,7 +393,7 @@ OutputCellView OutputCellIterator::s_GenerateView(const std::wstring_view view,
                                                   const TextAttribute attr,
                                                   const TextAttributeBehavior behavior)
 {
-    const auto glyph = Utf16Parser::ParseNext(view);
+    const auto glyph = til::utf16_next(view);
     const auto dbcsAttr = IsGlyphFullWidth(glyph) ? DbcsAttribute::Leading : DbcsAttribute::Single;
     return OutputCellView(glyph, dbcsAttr, attr, behavior);
 }

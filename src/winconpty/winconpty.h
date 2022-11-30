@@ -7,6 +7,7 @@
 extern "C" {
 #endif
 
+// This structure is part of an ABI shared with the rest of the operating system.
 typedef struct _PseudoConsole
 {
     HANDLE hSignal;
