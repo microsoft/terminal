@@ -66,7 +66,7 @@ namespace Microsoft::Console::Render
         // The stretch of the font is the spacing between each letter
         DWRITE_FONT_STRETCH _stretch;
 
-        // Indicates whether we couldn't match the user request and had to choose from a hardcoded default list.
+        // Indicates whether we couldn't match the user request and had to choose from a hard-coded default list.
         bool _didFallback;
     };
 }

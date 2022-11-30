@@ -2,17 +2,16 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-#include <windows.h>
 #include "terminalInput.hpp"
 
-#include "strsafe.h"
+#include <til/unicode.h>
+#include <strsafe.h>
 
 #define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
 #include <wil/Common.h>
 
 #include "../../interactivity/inc/VtApiRedirection.hpp"
 #include "../../inc/unicode.hpp"
-#include "../../types/inc/Utf16Parser.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -739,7 +738,7 @@ bool TerminalInput::HandleFocus(const bool focused) noexcept
 // - ch: The UTF-16 character to send.
 void TerminalInput::_SendChar(const wchar_t ch)
 {
-    if (Utf16Parser::IsLeadingSurrogate(ch))
+    if (til::is_leading_surrogate(ch))
     {
         if (_leadingSurrogate.has_value())
         {
