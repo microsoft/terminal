@@ -105,12 +105,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     // display disclaimer that this scheme can't be deleted
                     SelectedSchemeDisclaimer().Text(RS_(L"ColorScheme_DeleteDisclaimerInBox"));
-                    SelectedSchemeDisclaimer().Visibility(Visibility::Visible);
+                    SelectedSchemeDisclaimer().Opacity(1);
                 }
                 else
                 {
                     // hide the disclaimer
-                    SelectedSchemeDisclaimer().Visibility(Visibility::Collapsed);
+                    SelectedSchemeDisclaimer().Opacity(0);
                 }
             }
         }
