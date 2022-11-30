@@ -380,7 +380,7 @@
   </data>
   <data name="Globals_LaunchParameters.Header" xml:space="preserve">
     <value>Launch parameters</value>
-    <comment>Header for a set of settings that determine how terminal launches. These settings include the launch mode, launch position and whether the teminal should center itself on launch.</comment>
+    <comment>Header for a set of settings that determine how terminal launches. These settings include the launch mode, launch position and whether the terminal should center itself on launch.</comment>
   </data>
   <data name="Globals_LaunchParameters.HelpText" xml:space="preserve">
     <value>Settings that control how the terminal launches</value>
@@ -1556,5 +1556,9 @@
   <data name="ColorScheme_SetAsDefaultButton.Content" xml:space="preserve">
     <value>Set as default</value>
     <comment>Text label for a button that, when invoked, sets the selected color scheme as the default scheme to use.</comment>
+  </data>
+  <data name="Globals_ConfirmCloseAllTabs.Header" xml:space="preserve">
+    <value>Confirm before closing all tabs</value>
+    <comment>Header for a control to toggle whether to show a confirm dialog box when closing the application with multiple tabs open.</comment>
   </data>
 </root>

@@ -30,7 +30,6 @@
     <ClCompile Include="..\UiaTracing.cpp" />
     <ClCompile Include="..\TermControlUiaTextRange.cpp" />
     <ClCompile Include="..\TermControlUiaProvider.cpp" />
-    <ClCompile Include="..\Utf16Parser.cpp" />
     <ClCompile Include="..\Viewport.cpp" />
     <ClCompile Include="..\WindowBufferSizeEvent.cpp" />
     <ClCompile Include="..\precomp.cpp">
@@ -52,7 +51,6 @@
     <ClInclude Include="..\inc\ThemeUtils.h" />
     <ClInclude Include="..\inc\utils.hpp" />
     <ClInclude Include="..\inc\Viewport.hpp" />
-    <ClInclude Include="..\inc\Utf16Parser.hpp" />
     <ClInclude Include="..\IUiaData.h" />
     <ClInclude Include="..\IUiaEventDispatcher.h" />
     <ClInclude Include="..\IUiaTraceable.h" />
