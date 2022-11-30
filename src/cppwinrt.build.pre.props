@@ -62,7 +62,7 @@
   <!-- Overrides for common build settings -->
   <ItemDefinitionGroup>
     <ClCompile>
-      <!-- C++/WinRT hardcodes pch.h -->
+      <!-- C++/WinRT hard-codes pch.h -->
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
