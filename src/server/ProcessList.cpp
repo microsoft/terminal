@@ -186,7 +186,7 @@ ConsoleProcessHandle* ConsoleProcessList::GetRootProcess() const
 // - E_OUTOFMEMORY in a low memory situation.
 [[nodiscard]] HRESULT ConsoleProcessList::GetTerminationRecordsByGroupId(const DWORD dwLimitingProcessId,
                                                                          const bool fCtrlClose,
-                                                                         std::vector<ConsoleProcessTerminationRecord>& termRecords) const
+                                                                         _Out_ std::vector<ConsoleProcessTerminationRecord>& termRecords) const
 {
     assert(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
 
