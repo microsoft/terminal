@@ -201,7 +201,7 @@ Concerns:
 
 ### Accessibility
 
-Accessibility applications are the most likely to resort to a method of spelunking the process tree or window handles to attempt to find content to read out. Presuming they have hardcoded rules for console-type applications, these algorithms could be surprised by the substitution of another terminal environment.
+Accessibility applications are the most likely to resort to a method of spelunking the process tree or window handles to attempt to find content to read out. Presuming they have hard-coded rules for console-type applications, these algorithms could be surprised by the substitution of another terminal environment.
 
 The major players here that I am considering are NVDA, JAWS, and Narrator. As far as I am aware, all of these applications attempt to drive their interactivity through UI Automation where possible. And we have worked with all of these applications in the past in improving their support for both `conhost.exe` and the Windows Terminal product. I have relatively high confidence that we will be able to work with them again to help update these assistive products to understand the new UI delegation, if necessary.
 
