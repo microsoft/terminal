@@ -3,12 +3,22 @@
 
 #include "pch.h"
 #include "Terminal.hpp"
+#include "tracing.hpp"
+
 #include "../src/inc/unicode.hpp"
 
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
+
+// Note: Generate GUID using TlgGuid.exe tool
+#pragma warning(suppress : 26477) // One of the macros uses 0/NULL. We don't have control to make it nullptr.
+TRACELOGGING_DEFINE_PROVIDER(g_hCTerminalCoreProvider,
+                             "Microsoft.Terminal.Core",
+                             // {103ac8cf-97d2-51aa-b3ba-5ffd5528fa5f}
+                             (0x103ac8cf, 0x97d2, 0x51aa, 0xb3, 0xba, 0x5f, 0xfd, 0x55, 0x28, 0xfa, 0x5f),
+                             TraceLoggingOptionMicrosoftTelemetry());
 
 // Print puts the text in the buffer and moves the cursor
 void Terminal::PrintString(const std::wstring_view string)
@@ -196,6 +206,19 @@ void Terminal::SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::D
 
 void Terminal::SetWorkingDirectory(std::wstring_view uri)
 {
+    static bool logged = false;
+    if (!logged)
+    {
+        TraceLoggingWrite(
+            g_hCTerminalCoreProvider,
+            "ShellIntegrationWorkingDirSet",
+            TraceLoggingDescription("The CWD was set by the client application"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+        logged = true;
+    }
+
     _workingDirectory = uri;
 }
 
@@ -311,6 +334,19 @@ void Terminal::UseMainScreenBuffer()
 
 void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark)
 {
+    static bool logged = false;
+    if (!logged)
+    {
+        TraceLoggingWrite(
+            g_hCTerminalCoreProvider,
+            "ShellIntegrationMarkAdded",
+            TraceLoggingDescription("A mark was added via VT at least once"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+        logged = true;
+    }
+
     const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
     AddMark(mark, cursorPos, cursorPos);
 }
