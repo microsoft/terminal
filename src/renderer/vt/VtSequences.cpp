@@ -172,10 +172,10 @@ using namespace Microsoft::Console::Render;
 {
     // VT coords start at 1,1
     auto coordVt = coord;
-    coordVt.X++;
-    coordVt.Y++;
+    coordVt.x++;
+    coordVt.y++;
 
-    return _WriteFormatted(FMT_COMPILE("\x1b[{};{}H"), coordVt.Y, coordVt.X);
+    return _WriteFormatted(FMT_COMPILE("\x1b[{};{}H"), coordVt.y, coordVt.x);
 }
 
 // Method Description:

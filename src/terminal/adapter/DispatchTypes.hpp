@@ -403,6 +403,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         ATT610_StartCursorBlink = DECPrivateMode(12),
         DECTCEM_TextCursorEnableMode = DECPrivateMode(25),
         XTERM_EnableDECCOLMSupport = DECPrivateMode(40),
+        DECNKM_NumericKeypadMode = DECPrivateMode(66),
         DECBKM_BackarrowKeyMode = DECPrivateMode(67),
         VT200_MOUSE_MODE = DECPrivateMode(1000),
         BUTTON_EVENT_MOUSE_MODE = DECPrivateMode(1002),

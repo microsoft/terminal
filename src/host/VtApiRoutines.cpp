@@ -426,7 +426,7 @@ void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& co
                                                               const bool isAbsolute,
                                                               const til::inclusive_rect& windowRect) noexcept
 {
-    (void)m_pVtEngine->_ResizeWindow(windowRect.Right - windowRect.Left + 1, windowRect.Bottom - windowRect.Top + 1);
+    (void)m_pVtEngine->_ResizeWindow(windowRect.right - windowRect.left + 1, windowRect.bottom - windowRect.top + 1);
     (void)m_pVtEngine->_Flush();
     return S_OK;
 }
@@ -516,7 +516,7 @@ extern HRESULT _ConvertCellsToWInplace(const UINT codepage,
             (void)m_pVtEngine->WriteTerminalW(std::wstring_view{ &ci.Char.UnicodeChar, 1 });
         }
 
-        ++cursor.Y;
+        ++cursor.y;
         pos += width;
     }
 
@@ -678,8 +678,8 @@ void VtApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
                                                             const DWORD index,
                                                             til::size& size) noexcept
 {
-    size.X = 8;
-    size.Y = 12;
+    size.width = 8;
+    size.height = 12;
     return S_OK;
 }
 

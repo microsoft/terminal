@@ -33,7 +33,7 @@ til::size FontInfoDesired::GetEngineSize() const noexcept
     auto coordSize = _coordSizeDesired;
     if (IsTrueTypeFont())
     {
-        coordSize.X = 0; // Don't tell the engine about the width for a TrueType font. It makes a mess.
+        coordSize.width = 0; // Don't tell the engine about the width for a TrueType font. It makes a mess.
     }
 
     return coordSize;

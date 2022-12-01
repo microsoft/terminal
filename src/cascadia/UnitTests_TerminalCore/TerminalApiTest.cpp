@@ -235,7 +235,7 @@ void TerminalApiTest::CheckDoubleWidthCursor()
         singleWidthText.append(L"A");
     }
     stateMachine.ProcessString(singleWidthText);
-    VERIFY_IS_TRUE(cursor.GetPosition().X == 98);
+    VERIFY_IS_TRUE(cursor.GetPosition().x == 98);
 
     // Stuff two double width characters.
     std::wstring doubleWidthText{ L"我愛" };

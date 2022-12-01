@@ -110,6 +110,7 @@ namespace Microsoft::Console::VirtualTerminal
             OSCSCB,
             XTPUSHSGR,
             XTPOPSGR,
+            DECRQM,
             DECCARA,
             DECRARA,
             DECCRA,
