@@ -121,7 +121,7 @@ til::point Terminal::SelectionStartForRendering() const
         // flip the marker, so we skip this step.
         bufferSize.DecrementInBounds(pos);
     }
-    pos.Y = base::ClampSub(pos.Y, _VisibleStartIndex());
+    pos.y = base::ClampSub(pos.y, _VisibleStartIndex());
     return til::point{ pos };
 }
 
@@ -140,7 +140,7 @@ til::point Terminal::SelectionEndForRendering() const
         // flip the marker, so we skip this step.
         bufferSize.IncrementInBounds(pos);
     }
-    pos.Y = base::ClampSub(pos.Y, _VisibleStartIndex());
+    pos.y = base::ClampSub(pos.y, _VisibleStartIndex());
     return til::point{ pos };
 }
 
@@ -280,8 +280,8 @@ std::pair<til::point, til::point> Terminal::_ExpandSelectionAnchors(std::pair<ti
     switch (_multiClickSelectionMode)
     {
     case SelectionExpansion::Line:
-        start = { bufferSize.Left(), start.Y };
-        end = { bufferSize.RightInclusive(), end.Y };
+        start = { bufferSize.Left(), start.y };
+        end = { bufferSize.RightInclusive(), end.y };
         break;
     case SelectionExpansion::Word:
         start = _activeBuffer().GetWordStart(start, _wordDelimiters);
@@ -691,16 +691,16 @@ void Terminal::_MoveByChar(SelectionDirection direction, til::point& pos)
     case SelectionDirection::Up:
     {
         const auto bufferSize{ _activeBuffer().GetSize() };
-        const auto newY{ pos.Y - 1 };
-        pos = newY < bufferSize.Top() ? bufferSize.Origin() : til::point{ pos.X, newY };
+        const auto newY{ pos.y - 1 };
+        pos = newY < bufferSize.Top() ? bufferSize.Origin() : til::point{ pos.x, newY };
         break;
     }
     case SelectionDirection::Down:
     {
         const auto bufferSize{ _activeBuffer().GetSize() };
         const auto mutableBottom{ _GetMutableViewport().BottomInclusive() };
-        const auto newY{ pos.Y + 1 };
-        pos = newY > mutableBottom ? til::point{ bufferSize.RightInclusive(), mutableBottom } : til::point{ pos.X, newY };
+        const auto newY{ pos.y + 1 };
+        pos = newY > mutableBottom ? til::point{ bufferSize.RightInclusive(), mutableBottom } : til::point{ pos.x, newY };
         break;
     }
     }
@@ -773,24 +773,24 @@ void Terminal::_MoveByViewport(SelectionDirection direction, til::point& pos) no
     switch (direction)
     {
     case SelectionDirection::Left:
-        pos = { bufferSize.Left(), pos.Y };
+        pos = { bufferSize.Left(), pos.y };
         break;
     case SelectionDirection::Right:
-        pos = { bufferSize.RightInclusive(), pos.Y };
+        pos = { bufferSize.RightInclusive(), pos.y };
         break;
     case SelectionDirection::Up:
     {
         const auto viewportHeight{ _GetMutableViewport().Height() };
-        const auto newY{ pos.Y - viewportHeight };
-        pos = newY < bufferSize.Top() ? bufferSize.Origin() : til::point{ pos.X, newY };
+        const auto newY{ pos.y - viewportHeight };
+        pos = newY < bufferSize.Top() ? bufferSize.Origin() : til::point{ pos.x, newY };
         break;
     }
     case SelectionDirection::Down:
     {
         const auto viewportHeight{ _GetMutableViewport().Height() };
         const auto mutableBottom{ _GetMutableViewport().BottomInclusive() };
-        const auto newY{ pos.Y + viewportHeight };
-        pos = newY > mutableBottom ? til::point{ bufferSize.RightInclusive(), mutableBottom } : til::point{ pos.X, newY };
+        const auto newY{ pos.y + viewportHeight };
+        pos = newY > mutableBottom ? til::point{ bufferSize.RightInclusive(), mutableBottom } : til::point{ pos.x, newY };
         break;
     }
     }
@@ -858,8 +858,8 @@ const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool sin
 // - the corresponding location on the buffer
 til::point Terminal::_ConvertToBufferCell(const til::point viewportPos) const
 {
-    const auto yPos = _VisibleStartIndex() + viewportPos.Y;
-    til::point bufferPos = { viewportPos.X, yPos };
+    const auto yPos = _VisibleStartIndex() + viewportPos.y;
+    til::point bufferPos = { viewportPos.x, yPos };
     _activeBuffer().GetSize().Clamp(bufferPos);
     return bufferPos;
 }
@@ -872,7 +872,7 @@ void Terminal::_ScrollToPoint(const til::point pos)
 {
     if (const auto visibleViewport = _GetVisibleViewport(); !visibleViewport.IsInBounds(pos))
     {
-        if (const auto amtAboveView = visibleViewport.Top() - pos.Y; amtAboveView > 0)
+        if (const auto amtAboveView = visibleViewport.Top() - pos.y; amtAboveView > 0)
         {
             // anchor is above visible viewport, scroll by that amount
             _scrollOffset += amtAboveView;
@@ -880,7 +880,7 @@ void Terminal::_ScrollToPoint(const til::point pos)
         else
         {
             // anchor is below visible viewport, scroll by that amount
-            const auto amtBelowView = pos.Y - visibleViewport.BottomInclusive();
+            const auto amtBelowView = pos.y - visibleViewport.BottomInclusive();
             _scrollOffset -= amtBelowView;
         }
         _NotifyScrollEvent();

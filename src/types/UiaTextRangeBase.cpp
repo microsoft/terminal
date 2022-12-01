@@ -102,11 +102,11 @@ void UiaTextRangeBase::Initialize(_In_ const UiaPoint point)
     til::CoordType row = 0;
     if (clientPoint.y <= windowRect.top)
     {
-        row = viewport.Top;
+        row = viewport.top;
     }
     else if (clientPoint.y >= windowRect.bottom)
     {
-        row = viewport.Bottom;
+        row = viewport.bottom;
     }
     else
     {
@@ -114,7 +114,7 @@ void UiaTextRangeBase::Initialize(_In_ const UiaPoint point)
         _TranslatePointFromScreen(&clientPoint);
 
         const auto currentFontSize = _getScreenFontSize();
-        row = clientPoint.y / currentFontSize.Y + viewport.Top;
+        row = clientPoint.y / currentFontSize.height + viewport.top;
     }
     _start = { 0, row };
     _end = _start;
@@ -313,8 +313,8 @@ void UiaTextRangeBase::_expandToEnclosingUnit(TextUnit unit)
     else if (unit <= TextUnit_Line)
     {
         // expand to line
-        _start.X = 0;
-        if (_start.Y == documentEnd.y)
+        _start.x = 0;
+        if (_start.y == documentEnd.y)
         {
             // we're on the last line
             _end = documentEnd;
@@ -322,8 +322,8 @@ void UiaTextRangeBase::_expandToEnclosingUnit(TextUnit unit)
         }
         else
         {
-            _end.X = 0;
-            _end.Y = _start.Y + 1;
+            _end.x = 0;
+            _end.y = _start.y + 1;
         }
     }
     else
@@ -558,10 +558,10 @@ try
     auto viewportRange{ bufferSize };
     if (_blockRange)
     {
-        const auto originX{ std::min(_start.X, inclusiveEnd.X) };
-        const auto originY{ std::min(_start.Y, inclusiveEnd.Y) };
-        const auto width{ std::abs(inclusiveEnd.X - _start.X + 1) };
-        const auto height{ std::abs(inclusiveEnd.Y - _start.Y + 1) };
+        const auto originX{ std::min(_start.x, inclusiveEnd.x) };
+        const auto originY{ std::min(_start.y, inclusiveEnd.y) };
+        const auto width{ std::abs(inclusiveEnd.x - _start.x + 1) };
+        const auto height{ std::abs(inclusiveEnd.y - _start.y + 1) };
         viewportRange = Viewport::FromDimensions({ originX, originY }, width, height);
     }
     auto iter{ buffer.GetCellDataAt(searchStart, viewportRange) };
@@ -817,10 +817,10 @@ try
     auto viewportRange{ bufferSize };
     if (_blockRange)
     {
-        const auto originX{ std::min(_start.X, inclusiveEnd.X) };
-        const auto originY{ std::min(_start.Y, inclusiveEnd.Y) };
-        const auto width{ std::abs(inclusiveEnd.X - _start.X + 1) };
-        const auto height{ std::abs(inclusiveEnd.Y - _start.Y + 1) };
+        const auto originX{ std::min(_start.x, inclusiveEnd.x) };
+        const auto originY{ std::min(_start.y, inclusiveEnd.y) };
+        const auto width{ std::abs(inclusiveEnd.x - _start.x + 1) };
+        const auto height{ std::abs(inclusiveEnd.y - _start.y + 1) };
         viewportRange = Viewport::FromDimensions({ originX, originY }, width, height);
     }
     auto iter{ buffer.GetCellDataAt(_start, viewportRange) };
@@ -907,7 +907,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
             {
                 // Convert the buffer coordinates to an equivalent range of
                 // screen cells, taking line rendition into account.
-                const auto lineRendition = buffer.GetLineRendition(rect.Top);
+                const auto lineRendition = buffer.GetLineRendition(rect.top);
                 til::rect r{ BufferToScreenLine(rect, lineRendition) };
                 r -= viewportOrigin;
                 _getBoundingRect(r, coords);
@@ -1246,8 +1246,8 @@ try
     const auto oldViewport = _pData->GetViewport().ToInclusive();
     const auto viewportHeight = _getViewportHeight(oldViewport);
     // range rows
-    const auto startScreenInfoRow = _start.Y;
-    const auto endScreenInfoRow = _end.Y;
+    const auto startScreenInfoRow = _start.y;
+    const auto endScreenInfoRow = _end.y;
     // screen buffer rows
     constexpr til::CoordType topRow = 0;
     const auto bottomRow = _pData->GetTextBuffer().TotalRowCount() - 1;
@@ -1262,15 +1262,15 @@ try
         if (startScreenInfoRow + viewportHeight <= bottomRow)
         {
             // we can align to the top
-            newViewport.Top = startScreenInfoRow;
-            newViewport.Bottom = startScreenInfoRow + viewportHeight - 1;
+            newViewport.top = startScreenInfoRow;
+            newViewport.bottom = startScreenInfoRow + viewportHeight - 1;
         }
         else
         {
             // we can't align to the top so we'll just move the viewport
             // to the bottom of the screen buffer
-            newViewport.Bottom = bottomRow;
-            newViewport.Top = bottomRow - viewportHeight + 1;
+            newViewport.bottom = bottomRow;
+            newViewport.top = bottomRow - viewportHeight + 1;
         }
     }
     else
@@ -1284,20 +1284,20 @@ try
             //          so we need to clamp to the bottom row to stay in bounds
 
             // we can align to bottom
-            newViewport.Bottom = std::min(endScreenInfoRow, bottomRow);
-            newViewport.Top = newViewport.Bottom - viewportHeight + 1;
+            newViewport.bottom = std::min(endScreenInfoRow, bottomRow);
+            newViewport.top = newViewport.bottom - viewportHeight + 1;
         }
         else
         {
             // we can't align to bottom so we'll move the viewport to
             // the top of the screen buffer
-            newViewport.Top = topRow;
-            newViewport.Bottom = topRow + viewportHeight - 1;
+            newViewport.top = topRow;
+            newViewport.bottom = topRow + viewportHeight - 1;
         }
     }
 
-    assert(newViewport.Top >= topRow);
-    assert(newViewport.Bottom <= bottomRow);
+    assert(newViewport.top >= topRow);
+    assert(newViewport.bottom <= bottomRow);
     assert(_getViewportHeight(oldViewport) == _getViewportHeight(newViewport));
 
     Unlock.reset();
@@ -1331,8 +1331,8 @@ til::size UiaTextRangeBase::_getScreenFontSize() const noexcept
     auto coordRet = _pData->GetFontInfo().GetSize();
 
     // For sanity's sake, make sure not to leak 0 out as a possible value. These values are used in division operations.
-    coordRet.X = std::max(coordRet.X, 1);
-    coordRet.Y = std::max(coordRet.Y, 1);
+    coordRet.width = std::max(coordRet.width, 1);
+    coordRet.height = std::max(coordRet.height, 1);
 
     return coordRet;
 }
@@ -1345,10 +1345,10 @@ til::size UiaTextRangeBase::_getScreenFontSize() const noexcept
 // - The viewport height
 til::CoordType UiaTextRangeBase::_getViewportHeight(const til::inclusive_rect& viewport) const noexcept
 {
-    assert(viewport.Bottom >= viewport.Top);
+    assert(viewport.bottom >= viewport.top);
     // + 1 because til::inclusive_rect is inclusive on both sides so subtracting top
     // and bottom gets rid of 1 more then it should.
-    return viewport.Bottom - viewport.Top + 1;
+    return viewport.bottom - viewport.top + 1;
 }
 
 // Routine Description:
@@ -1364,8 +1364,8 @@ Viewport UiaTextRangeBase::_getOptimizedBufferSize() const noexcept
     // we need to add 1 to the X/Y of textBufferEnd
     // because we want the returned viewport to include this til::point
     const auto textBufferEnd = _pData->GetTextBufferEndPosition();
-    const auto width = textBufferEnd.X + 1;
-    const auto height = textBufferEnd.Y + 1;
+    const auto width = textBufferEnd.x + 1;
+    const auto height = textBufferEnd.y + 1;
 
     return Viewport::FromDimensions({ 0, 0 }, width, height);
 }
@@ -1381,7 +1381,7 @@ til::point UiaTextRangeBase::_getDocumentEnd() const
     const auto& buffer{ _pData->GetTextBuffer() };
     const auto lastCharPos{ buffer.GetLastNonSpaceCharacter(optimizedBufferSize) };
     const auto cursorPos{ buffer.GetCursor().GetPosition() };
-    return { optimizedBufferSize.Left(), std::max(lastCharPos.Y, cursorPos.Y) + 1 };
+    return { optimizedBufferSize.Left(), std::max(lastCharPos.y, cursorPos.y) + 1 };
 }
 
 // Routine Description:
@@ -1403,11 +1403,11 @@ void UiaTextRangeBase::_getBoundingRect(const til::rect& textRect, _Inout_ std::
 
     // we want to clamp to a long (output type), not a short (input type)
     // so we need to explicitly say <long,long>
-    topLeft.x = textRect.left * currentFontSize.X;
-    topLeft.y = textRect.top * currentFontSize.Y;
+    topLeft.x = textRect.left * currentFontSize.width;
+    topLeft.y = textRect.top * currentFontSize.height;
 
-    bottomRight.x = textRect.right * currentFontSize.X;
-    bottomRight.y = textRect.bottom * currentFontSize.Y;
+    bottomRight.x = textRect.right * currentFontSize.width;
+    bottomRight.y = textRect.bottom * currentFontSize.height;
 
     // convert the coords to be relative to the screen instead of
     // the client window
@@ -1642,14 +1642,14 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
         {
         case MovementDirection::Forward:
         {
-            if (nextPos.Y >= documentEnd.Y)
+            if (nextPos.y >= documentEnd.y)
             {
                 // Corner Case: we're past the limit
                 // Clamp us to the limit
                 resultPos = documentEnd;
                 success = false;
             }
-            else if (preventBoundary && nextPos.Y == documentEnd.Y - 1)
+            else if (preventBoundary && nextPos.y == documentEnd.y - 1)
             {
                 // Corner Case: we're just before the limit
                 // and we're not allowed onto the exclusive end.
@@ -1658,7 +1658,7 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
             }
             else
             {
-                nextPos.X = bufferSize.RightInclusive();
+                nextPos.x = bufferSize.RightInclusive();
                 success = bufferSize.IncrementInBounds(nextPos, allowBottomExclusive);
                 if (success)
                 {
@@ -1672,7 +1672,7 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
         {
             if (preventBoundary)
             {
-                if (nextPos.Y == bufferSize.Top())
+                if (nextPos.y == bufferSize.Top())
                 {
                     // can't move past top
                     success = false;
@@ -1683,7 +1683,7 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
                     // GH#10924: as a non-degenerate range, we are supposed to act
                     // like we already encompass the line.
                     // Move to the left boundary so we try to wrap around
-                    nextPos.X = bufferSize.Left();
+                    nextPos.x = bufferSize.Left();
                 }
             }
 
@@ -1692,7 +1692,7 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
 
             if (success)
             {
-                nextPos.X = bufferSize.Left();
+                nextPos.x = bufferSize.Left();
                 resultPos = nextPos;
                 (*pAmountMoved)--;
             }

@@ -81,9 +81,9 @@ void VtIoTests::ModeParsingTest()
 Viewport SetUpViewport()
 {
     til::inclusive_rect view;
-    view.Top = view.Left = 0;
-    view.Bottom = 31;
-    view.Right = 79;
+    view.top = view.left = 0;
+    view.bottom = 31;
+    view.right = 79;
 
     return Viewport::FromInclusive(view);
 }
