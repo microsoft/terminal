@@ -990,7 +990,7 @@ namespace winrt::TerminalApp::implementation
                 auto icon = _CreateNewTabFlyoutIcon(folderEntry.Icon());
                 folderItem.Icon(icon);
 
-                for (auto const& folderEntryItem : folderEntryItems)
+                for (const auto& folderEntryItem : folderEntryItems)
                 {
                     folderItem.Items().Append(folderEntryItem);
                 }
@@ -1001,6 +1001,7 @@ namespace winrt::TerminalApp::implementation
                 {
                     auto placeholder = WUX::Controls::MenuFlyoutItem{};
                     placeholder.Text(RS_(L"NewTabMenuFolderEmpty"));
+                    placeholder.IsEnabled(false);
 
                     folderItem.Items().Append(placeholder);
                 }

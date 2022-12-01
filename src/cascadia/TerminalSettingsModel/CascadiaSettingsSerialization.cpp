@@ -30,6 +30,7 @@
 
 #include "ProfileEntry.h"
 #include "FolderEntry.h"
+#include "MatchProfilesEntry.h"
 
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::ApplicationModel::AppExtensions;
@@ -1258,7 +1259,7 @@ void CascadiaSettings::_resolveNewTabMenuProfiles() const
 // Method Description:
 // - Helper function that processes a set of tab menu entries and resolves any profile names
 //   or source fields as necessary - see function above for a more detailed explanation.
-void CascadiaSettings::_resolveNewTabMenuProfilesSet(const IVector<Model::NewTabMenuEntry> entries, IMap<int, Model::Profile>& remainingProfiles, Model::RemainingProfilesEntry& remainingProfilesEntry) const
+void CascadiaSettings::_resolveNewTabMenuProfilesSet(const IVector<Model::NewTabMenuEntry> entries, IMap<int, Model::Profile>& remainingProfilesMap, Model::RemainingProfilesEntry& remainingProfilesEntry) const
 {
     if (entries == nullptr || entries.Size() == 0)
     {
@@ -1302,7 +1303,7 @@ void CascadiaSettings::_resolveNewTabMenuProfilesSet(const IVector<Model::NewTab
             profileEntry->ProfileIndex(profileIndex);
 
             // Remove from remaining profiles list (map)
-            remainingProfiles.TryRemove(profileIndex);
+            remainingProfilesMap.TryRemove(profileIndex);
 
             break;
         }
@@ -1332,7 +1333,7 @@ void CascadiaSettings::_resolveNewTabMenuProfilesSet(const IVector<Model::NewTab
             const auto folderEntry{ winrt::get_self<implementation::FolderEntry>(entry.as<Model::FolderEntry>()) };
 
             auto folderEntries = folderEntry->RawEntries();
-            _resolveNewTabMenuProfilesSet(folderEntries, remainingProfiles, remainingProfilesEntry);
+            _resolveNewTabMenuProfilesSet(folderEntries, remainingProfilesMap, remainingProfilesEntry);
             break;
         }
 
@@ -1342,8 +1343,11 @@ void CascadiaSettings::_resolveNewTabMenuProfilesSet(const IVector<Model::NewTab
         // We make sure that none of the matches are included in the "remaining profiles" section.
         case NewTabMenuEntryType::MatchProfiles:
         {
-            const auto matchEntry = entry.as<Model::MatchProfilesEntry>();
-            matchEntry.Profiles(single_threaded_map<int, Model::Profile>());
+            // We need to access the matching function, which is not exposed in the projected class.
+            // So, we need to first obtain our implementation struct instance, to access this field.
+            const auto matchEntry{ winrt::get_self<implementation::MatchProfilesEntry>(entry.as<Model::MatchProfilesEntry>()) };
+
+            matchEntry->Profiles(single_threaded_map<int, Model::Profile>());
 
             auto activeProfileCount = gsl::narrow_cast<int>(_activeProfiles.Size());
             for (auto profileIndex = 0; profileIndex < activeProfileCount; profileIndex++)
@@ -1351,10 +1355,10 @@ void CascadiaSettings::_resolveNewTabMenuProfilesSet(const IVector<Model::NewTab
                 const auto profile = _activeProfiles.GetAt(profileIndex);
 
                 // On a match, we store it in the entry and remove it from the remaining list
-                if ((!matchEntry.Source().empty() && profile.Source() == matchEntry.Source()) || (!matchEntry.Name().empty() && profile.Name() == matchEntry.Name()) || (!matchEntry.CommandLine().empty() && profile.Commandline() == matchEntry.CommandLine()))
+                if (matchEntry->MatchesProfile(profile))
                 {
-                    matchEntry.Profiles().Insert(profileIndex, profile);
-                    remainingProfiles.TryRemove(profileIndex);
+                    matchEntry->Profiles().Insert(profileIndex, profile);
+                    remainingProfilesMap.TryRemove(profileIndex);
                 }
             }
 

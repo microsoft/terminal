@@ -11,7 +11,7 @@ using namespace Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 
 static constexpr std::string_view NameKey{ "name" };
-static constexpr std::string_view CommandLineKey{ "commandline" };
+static constexpr std::string_view CommandlineKey{ "commandline" };
 static constexpr std::string_view SourceKey{ "source" };
 
 MatchProfilesEntry::MatchProfilesEntry() noexcept :
@@ -24,7 +24,7 @@ Json::Value MatchProfilesEntry::ToJson() const
     auto json = NewTabMenuEntry::ToJson();
 
     JsonUtils::SetValueForKey(json, NameKey, _Name);
-    JsonUtils::SetValueForKey(json, CommandLineKey, _CommandLine);
+    JsonUtils::SetValueForKey(json, CommandlineKey, _Commandline);
     JsonUtils::SetValueForKey(json, SourceKey, _Source);
 
     return json;
@@ -35,8 +35,30 @@ winrt::com_ptr<NewTabMenuEntry> MatchProfilesEntry::FromJson(const Json::Value& 
     auto entry = winrt::make_self<MatchProfilesEntry>();
 
     JsonUtils::GetValueForKey(json, NameKey, entry->_Name);
-    JsonUtils::GetValueForKey(json, CommandLineKey, entry->_CommandLine);
+    JsonUtils::GetValueForKey(json, CommandlineKey, entry->_Commandline);
     JsonUtils::GetValueForKey(json, SourceKey, entry->_Source);
 
     return entry;
+}
+
+bool MatchProfilesEntry::MatchesProfile(const Model::Profile& profile)
+{
+    auto isMatching = false;
+
+    if (!_Name.empty())
+    {
+        isMatching = isMatching || _Name == profile.Name();
+    }
+
+    if (!_Source.empty())
+    {
+        isMatching = isMatching || _Source == profile.Source();
+    }
+
+    if (!_Commandline.empty())
+    {
+        isMatching = isMatching || _Commandline == profile.Commandline();
+    }
+
+    return isMatching;
 }

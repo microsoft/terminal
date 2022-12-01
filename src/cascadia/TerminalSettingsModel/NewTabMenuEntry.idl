@@ -68,7 +68,7 @@ namespace Microsoft.Terminal.Settings.Model
         MatchProfilesEntry();
 
         String Name;
-        String CommandLine;
+        String Commandline;
         String Source;
     }
 }

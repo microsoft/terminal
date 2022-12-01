@@ -28,8 +28,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Json::Value ToJson() const override;
         static com_ptr<NewTabMenuEntry> FromJson(const Json::Value& json);
 
+        bool MatchesProfile(const Model::Profile& profile);
+
         WINRT_PROPERTY(winrt::hstring, Name);
-        WINRT_PROPERTY(winrt::hstring, CommandLine);
+        WINRT_PROPERTY(winrt::hstring, Commandline);
         WINRT_PROPERTY(winrt::hstring, Source);
     };
 }
