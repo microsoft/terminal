@@ -893,24 +893,7 @@ try
         settings->_hash = _calculateHash(settingsString, lastWriteTime);
     }
 
-    // GH#13936: We're interested in how many users opt out of useAtlasEngine,
-    // indicating major issues that would require us to disable it by default again.
-    {
-        size_t enabled[2]{};
-        for (const auto& profile : settings->_activeProfiles)
-        {
-            enabled[profile.UseAtlasEngine()]++;
-        }
-
-        TraceLoggingWrite(
-            g_hSettingsModelProvider,
-            "AtlasEngine_Usage",
-            TraceLoggingDescription("Event emitted upon settings load, containing the number of profiles opted-in/out of useAtlasEngine"),
-            TraceLoggingUIntPtr(enabled[0], "UseAtlasEngineDisabled", "Number of profiles for which AtlasEngine is disabled"),
-            TraceLoggingUIntPtr(enabled[1], "UseAtlasEngineEnabled", "Number of profiles for which AtlasEngine is enabled"),
-            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-    }
+    settings->_researchOnLoad();
 
     return *settings;
 }
@@ -925,6 +908,96 @@ catch (const SettingsTypedDeserializationException& e)
     const auto settings{ winrt::make_self<CascadiaSettings>() };
     settings->_deserializationErrorMessage = til::u8u16(e.what());
     return *settings;
+}
+
+void CascadiaSettings::_researchOnLoad()
+{
+    // Only do this if we're actually being sampled
+    if (TraceLoggingProviderEnabled(g_hSettingsModelProvider, 0, MICROSOFT_KEYWORD_MEASURES))
+    {
+        // GH#13936: We're interested in how many users opt out of useAtlasEngine,
+        // indicating major issues that would require us to disable it by default again.
+        {
+            size_t enabled[2]{};
+            for (const auto& profile : _activeProfiles)
+            {
+                enabled[profile.UseAtlasEngine()]++;
+            }
+
+            TraceLoggingWrite(
+                g_hSettingsModelProvider,
+                "AtlasEngine_Usage",
+                TraceLoggingDescription("Event emitted upon settings load, containing the number of profiles opted-in/out of useAtlasEngine"),
+                TraceLoggingUIntPtr(enabled[0], "UseAtlasEngineDisabled", "Number of profiles for which AtlasEngine is disabled"),
+                TraceLoggingUIntPtr(enabled[1], "UseAtlasEngineEnabled", "Number of profiles for which AtlasEngine is enabled"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+        }
+
+        // ----------------------------- RE: Themes ----------------------------
+        const auto numThemes = GlobalSettings().Themes().Size();
+        const auto themeInUse = GlobalSettings().CurrentTheme().Name();
+        const auto changedTheme = GlobalSettings().HasTheme();
+
+        // system: 0
+        // light: 1
+        // dark: 2
+        // a custom theme: 3
+        const auto themeChoice = themeInUse == L"system" ? 0 :
+                                 themeInUse == L"light"  ? 1 :
+                                 themeInUse == L"dark"   ? 2 :
+                                                           3;
+
+        TraceLoggingWrite(
+            g_hSettingsModelProvider,
+            "ThemesInUse",
+            TraceLoggingDescription("Data about the themes in use"),
+            TraceLoggingBool(themeChoice, "Identifier for the theme chosen. 0 is system, 1 is light, 2 is dark, and 3 indicates any custom theme."),
+            TraceLoggingBool(changedTheme, "True if the user actually changed the theme from the default theme"),
+            TraceLoggingInt32(numThemes, "Number of themes in the user's settings"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+        // --------------------------- RE: sendInput ---------------------------
+        auto collectSendInput = [&]() {
+            auto totalSendInput = 0;
+            const auto& allActions = GlobalSettings().ActionMap().AvailableActions();
+            for (const auto&& [name, actionAndArgs] : allActions)
+            {
+                if (actionAndArgs.Action() == ShortcutAction::SendInput)
+                {
+                    totalSendInput++;
+                }
+            }
+            return totalSendInput;
+        };
+
+        TraceLoggingWrite(
+            g_hSettingsModelProvider,
+            "SendInputUsage",
+            TraceLoggingDescription("Event emitted upon settings load, containing the number of sendInput actions a user has"),
+            TraceLoggingInt32(collectSendInput(), "Number of sendInput actions in the user's settings"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+        // ------------------------ RE: autoMarkPrompts ------------------------
+        auto totalAutoMark = 0;
+        auto totalShowMarks = 0;
+        for (const auto&& p : AllProfiles())
+        {
+            totalAutoMark += p.AutoMarkPrompts() ? 1 : 0;
+            totalShowMarks += p.ShowMarks() ? 1 : 0;
+        }
+
+        TraceLoggingWrite(
+            g_hSettingsModelProvider,
+            "MarksProfilesUsage",
+            TraceLoggingDescription("Event emitted upon settings load, containing the number of profiles opted-in to scrollbar marks"),
+            TraceLoggingInt32(totalAutoMark, "Number of profiles for which AutoMarkPrompts is enabled"),
+            TraceLoggingInt32(totalShowMarks, "Number of profiles for which ShowMarks is enabled"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+    }
 }
 
 // Function Description:
