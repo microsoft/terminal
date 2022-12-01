@@ -52,7 +52,7 @@ using namespace Microsoft::Console::Interactivity::Win32;
                    sizeof(ConsoleEndTaskParams));
 }
 
-[[nodiscard]] NTSTATUS ConsoleControl::SetWindowOwner(HWND hwnd, DWORD processId, DWORD threadId)
+[[nodiscard]] NTSTATUS ConsoleControl::SetWindowOwner(HWND hwnd, DWORD processId, DWORD threadId) noexcept
 {
     CONSOLEWINDOWOWNER ConsoleOwner;
     ConsoleOwner.hwnd = hwnd;
