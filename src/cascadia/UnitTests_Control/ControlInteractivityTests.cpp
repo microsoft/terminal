@@ -810,7 +810,7 @@ namespace ControlUnitTests
 
         Log::Comment(L"Verify the location of the selection");
         // The selection should now be 1 row lower
-        expectedAnchor.Y -= 1;
+        expectedAnchor.y -= 1;
         VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionAnchor());
         VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionEnd());
 

@@ -204,8 +204,8 @@ void ScrollTest::TestNotifyScrolling()
                            fmt::format(L"Expected a 'trigger scroll' notification in Render Engine for row {}", currentRow).c_str());
 
             til::point expectedDelta;
-            expectedDelta.X = 0;
-            expectedDelta.Y = -1;
+            expectedDelta.x = 0;
+            expectedDelta.y = -1;
             VERIFY_ARE_EQUAL(expectedDelta, _renderEngine->TriggerScrollDelta().value(), fmt::format(L"Wrong value in 'trigger scroll' notification in Render Engine for row {}", currentRow).c_str());
         }
         else

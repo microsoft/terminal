@@ -9,22 +9,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
     struct size
     {
-        // **** TRANSITIONAL ****
-        // The old COORD type uses uppercase X/Y member names.
-        // We'll migrate to lowercase width/height in the future.
-        union
-        {
-            CoordType width = 0;
-            CoordType X;
-            CoordType cx;
-        };
-        union
-        {
-            CoordType height = 0;
-            CoordType Y;
-            CoordType cy;
-        };
-
         constexpr size() noexcept = default;
 
         constexpr size(CoordType width, CoordType height) noexcept :
@@ -190,6 +174,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             return wil::str_printf<std::wstring>(L"[W:%d, H:%d]", width, height);
         }
+
+        CoordType width = 0;
+        CoordType height = 0;
     };
 
     constexpr size wrap_coord_size(const COORD sz) noexcept

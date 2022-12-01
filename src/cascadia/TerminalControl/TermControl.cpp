@@ -2124,7 +2124,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // ComCtl scrollbars, but it's certainly close enough.
         const auto scrollbarSize = GetSystemMetricsForDpi(SM_CXVSCROLL, dpi);
 
-        double width = cols * actualFontSize.X;
+        double width = cols * actualFontSize.width;
 
         // Reserve additional space if scrollbar is intended to be visible
         if (scrollState != ScrollbarState::Hidden)
@@ -2132,7 +2132,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             width += scrollbarSize;
         }
 
-        double height = rows * actualFontSize.Y;
+        double height = rows * actualFontSize.height;
         const auto thickness = ParseThicknessFromPadding(padding);
         // GH#2061 - make sure to account for the size the padding _will be_ scaled to
         width += scale * (thickness.Left + thickness.Right);
@@ -2186,7 +2186,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         else
         {
             // If the terminal hasn't been initialized yet, then the font size will
-            // have dimensions {1, fontSize.Y}, which can mess with consumers of
+            // have dimensions {1, fontSize.height}, which can mess with consumers of
             // this method. In that case, we'll need to pre-calculate the font
             // width, before we actually have a renderer or swapchain.
             const winrt::Windows::Foundation::Size minSize{ 1, 1 };

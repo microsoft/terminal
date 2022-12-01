@@ -425,8 +425,8 @@ const til::point RenderData::GetSelectionEnd() const noexcept
     // Then choose the opposite corner.
     const auto anchor = Selection::Instance().GetSelectionAnchor();
 
-    const auto x_pos = (selectionRect.Left == anchor.X) ? selectionRect.Right : selectionRect.Left;
-    const auto y_pos = (selectionRect.Top == anchor.Y) ? selectionRect.Bottom : selectionRect.Top;
+    const auto x_pos = (selectionRect.left == anchor.x) ? selectionRect.right : selectionRect.left;
+    const auto y_pos = (selectionRect.top == anchor.y) ? selectionRect.bottom : selectionRect.top;
 
     return { x_pos, y_pos };
 }

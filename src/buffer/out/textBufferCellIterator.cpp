@@ -44,7 +44,7 @@ TextBufferCellIterator::TextBufferCellIterator(const TextBuffer& buffer, til::po
     // Throw if the coordinate is not limited to the inside of the given buffer.
     THROW_HR_IF(E_INVALIDARG, !limits.IsInBounds(pos));
 
-    _attrIter += pos.X;
+    _attrIter += pos.x;
 
     _GenerateView();
 }
@@ -115,15 +115,15 @@ TextBufferCellIterator& TextBufferCellIterator::operator+=(const ptrdiff_t& move
     // _SetPos() necessitates calling _GenerateView() and thus the construction
     // of a new OutputCellView(). This has a high performance impact (ICache spill?).
     // The code below inlines _bounds.IncrementInBounds as well as SetPos.
-    // In the hot path (_pos.Y doesn't change) we modify the _view directly.
+    // In the hot path (_pos.y doesn't change) we modify the _view directly.
 
     // Hoist these integers which will be used frequently later.
     const auto boundsRightInclusive = _bounds.RightInclusive();
     const auto boundsLeft = _bounds.Left();
     const auto boundsBottomInclusive = _bounds.BottomInclusive();
     const auto boundsTop = _bounds.Top();
-    const auto oldX = _pos.X;
-    const auto oldY = _pos.Y;
+    const auto oldX = _pos.x;
+    const auto oldY = _pos.y;
 
     // Under MSVC writing the individual members of a til::point generates worse assembly
     // compared to having them be local variables. This causes a performance impact.
@@ -166,15 +166,15 @@ TextBufferCellIterator& TextBufferCellIterator::operator+=(const ptrdiff_t& move
 
         _view.UpdateText(_pRow->GlyphAt(newX));
         _view.UpdateDbcsAttribute(_pRow->DbcsAttrAt(newX));
-        _pos.X = newX;
+        _pos.x = newX;
     }
     else
     {
         // cold path (_GenerateView is slow)
         _pRow = s_GetRow(_buffer, { newX, newY });
         _attrIter = _pRow->AttrBegin() + newX;
-        _pos.X = newX;
-        _pos.Y = newY;
+        _pos.x = newX;
+        _pos.y = newY;
         _GenerateView();
     }
 
@@ -289,16 +289,16 @@ ptrdiff_t TextBufferCellIterator::operator-(const TextBufferCellIterator& it)
 // - newPos - The new coordinate position.
 void TextBufferCellIterator::_SetPos(const til::point newPos) noexcept
 {
-    if (newPos.Y != _pos.Y)
+    if (newPos.y != _pos.y)
     {
         _pRow = s_GetRow(_buffer, newPos);
         _attrIter = _pRow->AttrBegin();
-        _pos.X = 0;
+        _pos.x = 0;
     }
 
-    if (newPos.X != _pos.X)
+    if (newPos.x != _pos.x)
     {
-        const auto diff = gsl::narrow_cast<ptrdiff_t>(newPos.X) - gsl::narrow_cast<ptrdiff_t>(_pos.X);
+        const auto diff = gsl::narrow_cast<ptrdiff_t>(newPos.x) - gsl::narrow_cast<ptrdiff_t>(_pos.x);
         _attrIter += diff;
     }
 
@@ -317,15 +317,15 @@ void TextBufferCellIterator::_SetPos(const til::point newPos) noexcept
 // - Pointer to the underlying CharRow structure
 const ROW* TextBufferCellIterator::s_GetRow(const TextBuffer& buffer, const til::point pos) noexcept
 {
-    return &buffer.GetRowByOffset(pos.Y);
+    return &buffer.GetRowByOffset(pos.y);
 }
 
 // Routine Description:
 // - Updates the internal view. Call after updating row, attribute, or positions.
 void TextBufferCellIterator::_GenerateView() noexcept
 {
-    _view = OutputCellView(_pRow->GlyphAt(_pos.X),
-                           _pRow->DbcsAttrAt(_pos.X),
+    _view = OutputCellView(_pRow->GlyphAt(_pos.x),
+                           _pRow->DbcsAttrAt(_pos.x),
                            *_attrIter,
                            TextAttributeBehavior::Stored);
 }

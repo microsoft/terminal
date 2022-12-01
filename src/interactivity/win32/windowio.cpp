@@ -78,7 +78,13 @@ VOID SetConsoleWindowOwner(const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pP
     else
     {
         // Find a process to own the console window. If there are none then let's use conhost's.
-        pProcessData = gci.ProcessHandleList.GetOldestProcess();
+        pProcessData = gci.ProcessHandleList.GetRootProcess();
+        if (!pProcessData)
+        {
+            // No root process ID? Pick the oldest existing process.
+            pProcessData = gci.ProcessHandleList.GetOldestProcess();
+        }
+
         if (pProcessData != nullptr)
         {
             dwProcessId = pProcessData->dwProcessId;
@@ -92,16 +98,8 @@ VOID SetConsoleWindowOwner(const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pP
         }
     }
 
-    CONSOLEWINDOWOWNER ConsoleOwner;
-    ConsoleOwner.hwnd = hwnd;
-    ConsoleOwner.ProcessId = dwProcessId;
-    ConsoleOwner.ThreadId = dwThreadId;
-
     // Comment out this line to enable UIA tree to be visible until UIAutomationCore.dll can support our scenario.
-    LOG_IF_FAILED(ServiceLocator::LocateConsoleControl<Microsoft::Console::Interactivity::Win32::ConsoleControl>()
-                      ->Control(ConsoleControl::ControlType::ConsoleSetWindowOwner,
-                                &ConsoleOwner,
-                                sizeof(ConsoleOwner)));
+    LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->SetWindowOwner(hwnd, dwProcessId, dwThreadId));
 }
 
 // ----------------------------
@@ -630,8 +628,8 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
 
     // translate mouse position into characters, if necessary.
     auto ScreenFontSize = ScreenInfo.GetScreenFontSize();
-    MousePosition.X /= ScreenFontSize.X;
-    MousePosition.Y /= ScreenFontSize.Y;
+    MousePosition.x /= ScreenFontSize.width;
+    MousePosition.y /= ScreenFontSize.height;
 
     const auto fShiftPressed = WI_IsFlagSet(OneCoreSafeGetKeyState(VK_SHIFT), KEY_PRESSED);
 
@@ -680,27 +678,27 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
         }
     }
 
-    MousePosition.X += ScreenInfo.GetViewport().Left();
-    MousePosition.Y += ScreenInfo.GetViewport().Top();
+    MousePosition.x += ScreenInfo.GetViewport().Left();
+    MousePosition.y += ScreenInfo.GetViewport().Top();
 
     const auto coordScreenBufferSize = ScreenInfo.GetBufferSize().Dimensions();
 
     // make sure mouse position is clipped to screen buffer
-    if (MousePosition.X < 0)
+    if (MousePosition.x < 0)
     {
-        MousePosition.X = 0;
+        MousePosition.x = 0;
     }
-    else if (MousePosition.X >= coordScreenBufferSize.X)
+    else if (MousePosition.x >= coordScreenBufferSize.width)
     {
-        MousePosition.X = coordScreenBufferSize.X - 1;
+        MousePosition.x = coordScreenBufferSize.width - 1;
     }
-    if (MousePosition.Y < 0)
+    if (MousePosition.y < 0)
     {
-        MousePosition.Y = 0;
+        MousePosition.y = 0;
     }
-    else if (MousePosition.Y >= coordScreenBufferSize.Y)
+    else if (MousePosition.y >= coordScreenBufferSize.height)
     {
-        MousePosition.Y = coordScreenBufferSize.Y - 1;
+        MousePosition.y = coordScreenBufferSize.height - 1;
     }
 
     // Process the transparency mousewheel message before the others so that we can
@@ -1048,6 +1046,10 @@ DWORD WINAPI ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
         // successfully created with the owner configured when the window is
         // first created. See GH#13066 for details.
         ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo()->CreatePseudoWindow();
+
+        // Register the pseudoconsole window as being owned by the root process.
+        const auto pseudoWindow = ServiceLocator::LocatePseudoWindow();
+        SetConsoleWindowOwner(pseudoWindow, nullptr);
     }
 
     UnlockConsole();
