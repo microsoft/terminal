@@ -120,7 +120,7 @@ ConsoleProcessHandle* ConsoleProcessList::FindProcessByGroupId(_In_ ULONG ulProc
 }
 
 // Routine Description:
-// - Locates the the root process handle in this list.
+// - Locates the root process handle in this list.
 // Return Value:
 // - Pointer to the process handle information or nullptr if no match was found.
 ConsoleProcessHandle* ConsoleProcessList::GetRootProcess() const
