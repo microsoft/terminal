@@ -175,6 +175,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // This ensures that the JSON is updated with "Campbell", because the color scheme was deleted
         _settings.UpdateColorSchemeReferences(name, L"Campbell");
+
+        // If we're not on this page, switch back to this page
+        if (CurrentPage() != ColorSchemesSubPage::Base)
+        {
+            CurrentPage(ColorSchemesSubPage::Base);
+        }
     }
 
     void ColorSchemesPageViewModel::RequestEditSelectedScheme()
@@ -206,5 +212,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             return !_CurrentScheme.IsInBoxScheme();
         }
         return false;
+    }
+
+    void ColorSchemesPageViewModel::SchemeListItemClicked(const IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Controls::ItemClickEventArgs& e)
+    {
+        if (const auto item = e.ClickedItem())
+        {
+            CurrentScheme(item.try_as<Editor::ColorSchemeViewModel>());
+            RequestEditSelectedScheme();
+        }
     }
 }

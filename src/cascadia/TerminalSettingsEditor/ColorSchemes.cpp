@@ -30,9 +30,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         InitializeComponent();
 
-        Automation::AutomationProperties::SetName(EditButton(), RS_(L"ColorScheme_EditButton/Text"));
         Automation::AutomationProperties::SetName(AddNewButton(), RS_(L"ColorScheme_AddNewButton/Text"));
-        Automation::AutomationProperties::SetName(DeleteButton(), RS_(L"ColorScheme_DeleteButton2/Text"));
     }
 
     void ColorSchemes::OnNavigatedTo(const NavigationEventArgs& e)
@@ -44,7 +42,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ColorSchemes::DeleteConfirmation_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         _ViewModel.RequestDeleteCurrentScheme();
-        DeleteButton().Flyout().Hide();
 
         // GH#11971, part 2. If we delete a scheme, and the next scheme we've
         // loaded is an inbox one that _can't_ be deleted, then we need to toss
@@ -70,13 +67,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (const auto newSchemeVM{ _ViewModel.RequestAddNew() })
         {
             ColorSchemeListView().SelectedItem(newSchemeVM);
-            ColorSchemeListView().ScrollIntoView(newSchemeVM);
+            _ViewModel.RequestEditSelectedScheme();
         }
-    }
-
-    void ColorSchemes::Edit_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
-    {
-        _ViewModel.RequestEditSelectedScheme();
     }
 
     void ColorSchemes::ListView_PreviewKeyDown(const IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)

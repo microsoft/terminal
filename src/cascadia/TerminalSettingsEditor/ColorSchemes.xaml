@@ -47,24 +47,10 @@
                    Grid.Row="0"
                        Style="{StaticResource DisclaimerStyle}" />
 
-        <StackPanel Grid.Row="1">
-            <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}"
-                        Margin="0,8,0,0"
-                        Orientation="Horizontal"
-                        XYFocusKeyboardNavigation="Enabled">
-                <Button x:Name="EditButton"
-                        Click="{x:Bind ViewModel.RequestEditSelectedScheme}"
-                        IsEnabled="{x:Bind ViewModel.HasCurrentScheme, Mode=OneWay}"
-                        Style="{StaticResource BrowseButtonStyle}">
-                    <StackPanel Orientation="Horizontal">
-                        <FontIcon FontSize="{StaticResource StandardIconSize}"
-                                  Glyph="&#xE70F;" />
-                        <TextBlock x:Uid="ColorScheme_EditButton"
-                                   Style="{StaticResource IconButtonTextBlockStyle}" />
-                    </StackPanel>
-                </Button>
-
-                <Button x:Name="AddNewButton"
+        <StackPanel Grid.Row="1"
+                    MaxWidth="{StaticResource StandardControlMaxWidth}">
+            <Button x:Name="AddNewButton"
+                    Margin="4,0,0,0"
                         Click="AddNew_Click"
                         Style="{StaticResource BrowseButtonStyle}">
                     <StackPanel Orientation="Horizontal">
@@ -75,39 +61,8 @@
                     </StackPanel>
                 </Button>
 
-                <Button x:Name="DeleteButton"
-                        Margin="10,0,0,0"
-                        IsEnabled="{x:Bind ViewModel.CanDeleteCurrentScheme, Mode=OneWay}"
-                        Style="{StaticResource DeleteButtonStyle}">
-                    <Button.Content>
-                        <StackPanel Orientation="Horizontal">
-                            <FontIcon FontSize="{StaticResource StandardIconSize}"
-                                      Glyph="&#xE74D;" />
-                            <TextBlock x:Uid="ColorScheme_DeleteButton2"
-                                       Style="{StaticResource IconButtonTextBlockStyle}" />
-                        </StackPanel>
-                    </Button.Content>
-                    <Button.Flyout>
-                        <Flyout>
-                            <StackPanel>
-                                <TextBlock x:Uid="ColorScheme_DeleteConfirmationMessage"
-                                           Style="{StaticResource CustomFlyoutTextStyle}" />
-                                <Button x:Uid="ColorScheme_DeleteConfirmationButton"
-                                        Click="DeleteConfirmation_Click" />
-                            </StackPanel>
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
-
-                <Button x:Uid="ColorScheme_SetAsDefaultButton"
-                        Margin="10,0,0,0"
-                        Click="{x:Bind ViewModel.RequestSetSelectedSchemeAsDefault}"
-                        IsEnabled="{x:Bind ViewModel.HasCurrentScheme, Mode=OneWay}"
-                        Style="{StaticResource BrowseButtonStyle}" />
-            </StackPanel>
-
-            <TextBlock x:Name="SelectedSchemeDisclaimer"
-                       Margin="10,8,0,0"
+                <TextBlock x:Name="SelectedSchemeDisclaimer"
+                       Margin="0,4,0,0"
                        VerticalAlignment="Center"
                        Style="{StaticResource DisclaimerStyle}" />
         </StackPanel>
@@ -118,7 +73,9 @@
                   ItemsSource="{x:Bind ViewModel.AllColorSchemes, Mode=OneWay}"
                   PreviewKeyDown="ListView_PreviewKeyDown"
                   SelectedItem="{x:Bind ViewModel.CurrentScheme, Mode=TwoWay}"
+                  ItemClick="{x:Bind ViewModel.SchemeListItemClicked}"
                   SelectionChanged="ListView_SelectionChanged"
+                  IsItemClickEnabled="True"
                   SelectionMode="Single">
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="local:ColorSchemeViewModel">
