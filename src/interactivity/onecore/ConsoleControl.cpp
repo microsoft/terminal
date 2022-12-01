@@ -38,7 +38,7 @@ using namespace Microsoft::Console::Interactivity::OneCore;
                                sizeof(*a));
 }
 
-[[nodiscard]] NTSTATUS ConsoleControl::SetWindowOwner(HWND, DWORD, DWORD)
+[[nodiscard]] NTSTATUS ConsoleControl::SetWindowOwner(HWND, DWORD, DWORD) noexcept
 {
     return STATUS_SUCCESS;
 }
