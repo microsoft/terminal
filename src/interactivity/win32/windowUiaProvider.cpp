@@ -20,9 +20,9 @@ try
 
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
-    Render::IRenderData* uiaData = &gci.renderData;
+    Render::IRenderData* renderData = &gci.renderData;
 
-    RETURN_IF_FAILED(WRL::MakeAndInitialize<ScreenInfoUiaProvider>(&_pScreenInfoProvider, uiaData, this));
+    RETURN_IF_FAILED(WRL::MakeAndInitialize<ScreenInfoUiaProvider>(&_pScreenInfoProvider, renderData, this));
 
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(pWindowProvider, ApiCall::Create, nullptr);

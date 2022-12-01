@@ -39,12 +39,12 @@ public:
         CaseSensitive
     };
 
-    Search(Microsoft::Console::Render::IRenderData& uiaData,
+    Search(Microsoft::Console::Render::IRenderData& renderData,
            const std::wstring_view str,
            const Direction dir,
            const Sensitivity sensitivity);
 
-    Search(Microsoft::Console::Render::IRenderData& uiaData,
+    Search(Microsoft::Console::Render::IRenderData& renderData,
            const std::wstring_view str,
            const Direction dir,
            const Sensitivity sensitivity,
@@ -65,7 +65,7 @@ private:
     void _IncrementCoord(til::point& coord) const noexcept;
     void _DecrementCoord(til::point& coord) const noexcept;
 
-    static til::point s_GetInitialAnchor(const Microsoft::Console::Render::IRenderData& uiaData, const Direction dir);
+    static til::point s_GetInitialAnchor(const Microsoft::Console::Render::IRenderData& renderData, const Direction dir);
 
     static std::vector<std::wstring> s_CreateNeedleFromString(const std::wstring_view wstr);
 
@@ -78,7 +78,7 @@ private:
     const std::vector<std::wstring> _needle;
     const Direction _direction;
     const Sensitivity _sensitivity;
-    Microsoft::Console::Render::IRenderData& _uiaData;
+    Microsoft::Console::Render::IRenderData& _renderData;
 
 #ifdef UNIT_TESTING
     friend class SearchTests;

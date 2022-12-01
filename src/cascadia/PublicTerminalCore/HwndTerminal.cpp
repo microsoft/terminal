@@ -283,7 +283,7 @@ void HwndTerminal::RegisterWriteCallback(const void _stdcall callback(wchar_t*))
     _pfnWriteCallback = callback;
 }
 
-::Microsoft::Console::Render::IRenderData* HwndTerminal::GetUiaData() const noexcept
+::Microsoft::Console::Render::IRenderData* HwndTerminal::GetRenderData() const noexcept
 {
     return _terminal.get();
 }
@@ -312,7 +312,7 @@ IRawElementProviderSimple* HwndTerminal::_GetUiaProvider() noexcept
         try
         {
             auto lock = _terminal->LockForWriting();
-            LOG_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<HwndTerminalAutomationPeer>(&_uiaProvider, this->GetUiaData(), this));
+            LOG_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<HwndTerminalAutomationPeer>(&_uiaProvider, this->GetRenderData(), this));
             _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(_uiaProvider.Get());
             LOG_IF_FAILED(_uiaEngine->Enable());
             _renderer->AddRenderEngine(_uiaEngine.get());

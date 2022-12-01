@@ -323,9 +323,7 @@ const std::vector<size_t> RenderData::GetPatternId(const til::point /*location*/
 {
     return {};
 }
-#pragma endregion
 
-#pragma region IRenderData
 // Routine Description:
 // - Converts a text attribute into the RGB values that should be presented, applying
 //   relevant table translation information and preferences.

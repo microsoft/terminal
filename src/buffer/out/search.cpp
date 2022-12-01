@@ -18,19 +18,19 @@ using namespace Microsoft::Console::Types;
 // - Once you've found something, you can perform actions like .Select() or .Color()
 // Arguments:
 // - textBuffer - The screen text buffer to search through (the "haystack")
-// - uiaData - The IRenderData type reference, it is for providing selection methods
+// - renderData - The IRenderData type reference, it is for providing selection methods
 // - str - The search term you want to find (the "needle")
 // - direction - The direction to search (upward or downward)
 // - sensitivity - Whether or not you care about case
-Search::Search(Microsoft::Console::Render::IRenderData& uiaData,
+Search::Search(Microsoft::Console::Render::IRenderData& renderData,
                const std::wstring_view str,
                const Direction direction,
                const Sensitivity sensitivity) :
     _direction(direction),
     _sensitivity(sensitivity),
     _needle(s_CreateNeedleFromString(str)),
-    _uiaData(uiaData),
-    _coordAnchor(s_GetInitialAnchor(uiaData, direction))
+    _renderData(renderData),
+    _coordAnchor(s_GetInitialAnchor(renderData, direction))
 {
     _coordNext = _coordAnchor;
 }
@@ -41,12 +41,12 @@ Search::Search(Microsoft::Console::Render::IRenderData& uiaData,
 // - Once you've found something, you can perform actions like .Select() or .Color()
 // Arguments:
 // - textBuffer - The screen text buffer to search through (the "haystack")
-// - uiaData - The IRenderData type reference, it is for providing selection methods
+// - renderData - The IRenderData type reference, it is for providing selection methods
 // - str - The search term you want to find (the "needle")
 // - direction - The direction to search (upward or downward)
 // - sensitivity - Whether or not you care about case
 // - anchor - starting search location in screenInfo
-Search::Search(Microsoft::Console::Render::IRenderData& uiaData,
+Search::Search(Microsoft::Console::Render::IRenderData& renderData,
                const std::wstring_view str,
                const Direction direction,
                const Sensitivity sensitivity,
@@ -55,7 +55,7 @@ Search::Search(Microsoft::Console::Render::IRenderData& uiaData,
     _sensitivity(sensitivity),
     _needle(s_CreateNeedleFromString(str)),
     _coordAnchor(anchor),
-    _uiaData(uiaData)
+    _renderData(renderData)
 {
     _coordNext = _coordAnchor;
 }
@@ -99,10 +99,10 @@ void Search::Select() const
 {
     // Convert buffer selection offsets into the equivalent screen coordinates
     // required by SelectNewRegion, taking line renditions into account.
-    const auto& textBuffer = _uiaData.GetTextBuffer();
+    const auto& textBuffer = _renderData.GetTextBuffer();
     const auto selStart = textBuffer.BufferToScreenPosition(_coordSelStart);
     const auto selEnd = textBuffer.BufferToScreenPosition(_coordSelEnd);
-    _uiaData.SelectNewRegion(selStart, selEnd);
+    _renderData.SelectNewRegion(selStart, selEnd);
 }
 
 // Routine Description:
@@ -114,7 +114,7 @@ void Search::Color(const TextAttribute attr) const
     // Only select if we've found something.
     if (_coordSelEnd >= _coordSelStart)
     {
-        _uiaData.ColorSelection(_coordSelStart, _coordSelEnd, attr);
+        _renderData.ColorSelection(_coordSelStart, _coordSelEnd, attr);
     }
 }
 
@@ -135,19 +135,19 @@ std::pair<til::point, til::point> Search::GetFoundLocation() const noexcept
 // - If the screen buffer given already has a selection in it, it will be used to determine the anchor.
 // - Otherwise, we will choose one of the ends of the screen buffer depending on direction.
 // Arguments:
-// - uiaData - The reference to the IRenderData interface type object
+// - renderData - The reference to the IRenderData interface type object
 // - direction - The intended direction of the search
 // Return Value:
 // - Coordinate to start the search from.
-til::point Search::s_GetInitialAnchor(const Microsoft::Console::Render::IRenderData& uiaData, const Direction direction)
+til::point Search::s_GetInitialAnchor(const Microsoft::Console::Render::IRenderData& renderData, const Direction direction)
 {
-    const auto& textBuffer = uiaData.GetTextBuffer();
-    const auto textBufferEndPosition = uiaData.GetTextBufferEndPosition();
-    if (uiaData.IsSelectionActive())
+    const auto& textBuffer = renderData.GetTextBuffer();
+    const auto textBufferEndPosition = renderData.GetTextBufferEndPosition();
+    if (renderData.IsSelectionActive())
     {
         // Convert the screen position of the selection anchor into an equivalent
         // buffer position to start searching, taking line rendition into account.
-        auto anchor = textBuffer.ScreenToBufferPosition(uiaData.GetSelectionAnchor());
+        auto anchor = textBuffer.ScreenToBufferPosition(renderData.GetSelectionAnchor());
 
         if (direction == Direction::Forward)
         {
@@ -196,7 +196,7 @@ bool Search::_FindNeedleInHaystackAt(const til::point pos, til::point& start, ti
     for (const auto& needleChars : _needle)
     {
         // Haystack is the buffer. Needle is the string we were given.
-        const auto hayIter = _uiaData.GetTextBuffer().GetTextDataAt(bufferPos);
+        const auto hayIter = _renderData.GetTextBuffer().GetTextDataAt(bufferPos);
         const auto hayChars = *hayIter;
 
         // If we didn't match at any point of the needle, return false.
@@ -269,7 +269,7 @@ wchar_t Search::_ApplySensitivity(const wchar_t wch) const noexcept
 // - coord - Updated by function to increment one position (will wrap X and Y direction)
 void Search::_IncrementCoord(til::point& coord) const noexcept
 {
-    _uiaData.GetTextBuffer().GetSize().IncrementInBoundsCircular(coord);
+    _renderData.GetTextBuffer().GetSize().IncrementInBoundsCircular(coord);
 }
 
 // Routine Description:
@@ -278,7 +278,7 @@ void Search::_IncrementCoord(til::point& coord) const noexcept
 // - coord - Updated by function to decrement one position (will wrap X and Y direction)
 void Search::_DecrementCoord(til::point& coord) const noexcept
 {
-    _uiaData.GetTextBuffer().GetSize().DecrementInBoundsCircular(coord);
+    _renderData.GetTextBuffer().GetSize().DecrementInBoundsCircular(coord);
 }
 
 // Routine Description:
@@ -305,7 +305,7 @@ void Search::_UpdateNextPosition()
     // We put the next position to:
     // Forward: (0, 0)
     // Backward: the position of the end of the text buffer
-    const auto bufferEndPosition = _uiaData.GetTextBufferEndPosition();
+    const auto bufferEndPosition = _renderData.GetTextBufferEndPosition();
 
     if (_coordNext.y > bufferEndPosition.y ||
         (_coordNext.y == bufferEndPosition.y && _coordNext.x > bufferEndPosition.x))

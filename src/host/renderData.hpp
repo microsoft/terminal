@@ -20,7 +20,6 @@ class RenderData final :
     public Microsoft::Console::Render::IRenderData
 {
 public:
-#pragma region IRenderData
     Microsoft::Console::Types::Viewport GetViewport() noexcept override;
     til::point GetTextBufferEndPosition() const noexcept override;
     const TextBuffer& GetTextBuffer() const noexcept override;
@@ -59,5 +58,4 @@ public:
     const til::point GetSelectionEnd() const noexcept;
     void ColorSelection(const til::point coordSelectionStart, const til::point coordSelectionEnd, const TextAttribute attr);
     const bool IsUiaDataInitialized() const noexcept override { return true; }
-#pragma endregion
 };
