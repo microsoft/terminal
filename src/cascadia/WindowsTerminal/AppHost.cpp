@@ -346,7 +346,13 @@ void AppHost::_HandleCommandlineArgs()
 }
 
 bool AppHost::_HandleLaunchArgs()
+try
 {
+    // AppInstance::GetActivatedEventArgs will throw when unpackaged.
+    if (!IsPackaged())
+    {
+        return false;
+    }
     // If someone clicks on a notification, then a fresh instance of
     // windowsterminal.exe will spawn. We certainly don't want to create a new
     // window for that - we only want to activate the window that created the
@@ -355,9 +361,6 @@ bool AppHost::_HandleLaunchArgs()
     // activate that window ID, without even bothering to register as the
     // monarch ourselves (if we can't find a monarch, then there are no windows
     // running, so whoever sent it must have died.)
-    //
-    // I bet this won't work from elevated context. I'm actually quite curious.
-    // TODO!
 
     const auto activatedArgs = AppInstance::GetActivatedEventArgs();
     if (activatedArgs != nullptr &&
@@ -403,6 +406,7 @@ bool AppHost::_HandleLaunchArgs()
 
     return false;
 }
+CATCH_LOG_RETURN_HR(false)
 
 // Method Description:
 // - Initializes the XAML island, creates the terminal app, and sets the

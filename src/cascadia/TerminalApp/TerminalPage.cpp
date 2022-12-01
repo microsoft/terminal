@@ -11,6 +11,7 @@
 
 #include <inc/WindowingBehavior.h>
 #include <LibraryResources.h>
+#include <WtExeUtils.h>
 #include <TerminalCore/ControlKeyStates.hpp>
 #include <til/latch.h>
 
@@ -2423,9 +2424,24 @@ namespace winrt::TerminalApp::implementation
         _ShowWindowChangedHandlers(*this, args);
     }
 
+    // Method Description:
+    // - Handler for a control's SendNotification event. `args` will contain the
+    //   title and body of the notification requested by the client application.
+    // - This will only actually send a notification when the sender is
+    //   - in an inactive window OR
+    //   - in an inactive tab.
     winrt::fire_and_forget TerminalPage::_SendNotificationHandler(const IInspectable sender,
                                                                   const Microsoft::Terminal::Control::SendNotificationArgs args)
     {
+        // This never works as expected when we're an elevated instance. The
+        // notification will end up launching an unelevated instance to handle
+        // it, and there's no good way to get back to the elevated one.
+        // Possibly revisit after GH #13276.
+        if (IsElevated())
+        {
+            co_return;
+        }
+
         auto weakThis = get_weak();
 
         co_await resume_foreground(Dispatcher());
@@ -2465,9 +2481,20 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Actually write the payload to a XML doc and load it into a ToastNotification.
     void TerminalPage::_sendNotification(const std::wstring_view title,
                                          const std::wstring_view body)
     {
+        // ToastNotificationManager::CreateToastNotifier doesn't work in
+        // unpackaged scenarios without an AUMID. We probably don't have one if
+        // we're unpackaged. Unpackaged isn't a wholly supported scenario
+        // anyways, so let's just bail.
+
+        if (!IsPackaged())
+        {
+            return;
+        }
+
         static winrt::hstring xmlTemplate{ L"\
     <toast>\
         <visual>\
@@ -2489,6 +2516,7 @@ namespace winrt::TerminalApp::implementation
         // Construct the notification
         ToastNotification notif{ doc };
 
+        // lazy-init
         if (!_toastNotifier)
         {
             _toastNotifier = ToastNotificationManager::CreateToastNotifier();
