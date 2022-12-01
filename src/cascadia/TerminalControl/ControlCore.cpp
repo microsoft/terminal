@@ -1425,7 +1425,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::_terminalSendNotification(const std::wstring_view title,
                                                 const std::wstring_view body)
     {
-        auto e = winrt::make_self<implementation::SendNotificationArgs>(title, body);
+        const auto e = winrt::make_self<implementation::SendNotificationArgs>(title, body);
         _SendNotificationHandlers(*this, *e);
     }
 

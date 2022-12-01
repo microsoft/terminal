@@ -61,18 +61,18 @@ Abstract:
 //  * Media for ScaleTransform
 //  * ApplicationModel for finding the path to wt.exe
 //  * Primitives for Popup (used by GetOpenPopupsForXamlRoot)
+//  * XML, Notifications, Activation: for notification activations
+#include <winrt/Windows.ApplicationModel.h>
+#include <winrt/Windows.ApplicationModel.Resources.Core.h>
+#include <winrt/Windows.ApplicationModel.Activation.h>
+#include <winrt/Windows.Data.Xml.Dom.h>
+#include <winrt/Windows.UI.Composition.h>
 #include <winrt/Windows.UI.Core.h>
+#include <winrt/Windows.UI.Notifications.h>
 #include <winrt/Windows.UI.Xaml.Controls.h>
 #include <winrt/Windows.UI.Xaml.Controls.Primitives.h>
 #include <winrt/Windows.UI.Xaml.Data.h>
 #include <winrt/Windows.ui.xaml.media.h>
-#include <winrt/Windows.ApplicationModel.h>
-#include <winrt/Windows.ApplicationModel.Resources.Core.h>
-#include <winrt/Windows.UI.Composition.h>
-
-#include "winrt/Windows.Data.Xml.Dom.h"
-#include "winrt/Windows.UI.Notifications.h"
-#include "winrt/Windows.ApplicationModel.Activation.h"
 
 #include <winrt/TerminalApp.h>
 #include <winrt/Microsoft.Terminal.Settings.Model.h>

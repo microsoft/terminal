@@ -45,7 +45,7 @@ AppHost::AppHost() noexcept :
     // would mean we'd need to be responsible for looking that up.
     _windowManager.FindTargetWindowRequested({ this, &AppHost::_FindTargetWindow });
 
-    // Before handling any commandline arguments, chech if this was a toast
+    // Before handling any commandline arguments, check if this was a toast
     // invocation. If it was, we can go ahead and totally ignore everything
     // else.
     if (_HandleLaunchArgs())
@@ -359,14 +359,14 @@ bool AppHost::_HandleLaunchArgs()
     // I bet this won't work from elevated context. I'm actually quite curious.
     // TODO!
 
-    auto activatedArgs = AppInstance::GetActivatedEventArgs();
+    const auto activatedArgs = AppInstance::GetActivatedEventArgs();
     if (activatedArgs != nullptr &&
         activatedArgs.Kind() == Activation::ActivationKind::ToastNotification)
     {
         if (const auto& toastArgs{ activatedArgs.try_as<Activation::ToastNotificationActivatedEventArgs>() })
         {
             // Obtain the arguments from the notification
-            auto args = toastArgs.Argument();
+            const auto args = toastArgs.Argument();
 
             // Args is gonna look like
             //
@@ -379,14 +379,14 @@ bool AppHost::_HandleLaunchArgs()
             uint32_t window;
             // uint32_t tabIndex = 0;
 
-            std::wstring_view argsView{ args };
+            const std::wstring_view argsView{ args };
             const auto pairs = Utils::SplitString(argsView, L'&');
             for (const auto& pair : pairs)
             {
                 const auto pairParts = Utils::SplitString(pair, L'=');
                 if (pairParts.size() == 2)
                 {
-                    if (pairParts[0] == L"window")
+                    if (til::at(pairParts, 0) == L"window")
                     {
                         window = std::wcstoul(pairParts[1].data(), nullptr, 10);
                     }

@@ -2432,7 +2432,7 @@ namespace winrt::TerminalApp::implementation
         auto page{ weakThis.get() };
         if (page)
         {
-            // If the window is inactive, we alway want to send the notification.
+            // If the window is inactive, we always want to send the notification.
             //
             // Otherwise, we only want to send the notification for panes in inactive tabs.
             if (_activated)
@@ -2487,7 +2487,7 @@ namespace winrt::TerminalApp::implementation
         doc.SelectSingleNode(L"//text[2]").InnerText(body);
 
         // Construct the notification
-        winrt::Windows::UI::Notifications::ToastNotification notif{ doc };
+        ToastNotification notif{ doc };
 
         if (!_toastNotifier)
         {

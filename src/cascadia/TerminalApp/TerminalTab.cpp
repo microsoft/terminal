@@ -18,9 +18,6 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::UI::Xaml::Controls;
 using namespace winrt::Windows::System;
 
-using namespace winrt::Windows::UI::Notifications;
-using namespace winrt::Windows::Data::Xml::Dom;
-
 namespace winrt
 {
     namespace MUX = Microsoft::UI::Xaml;
