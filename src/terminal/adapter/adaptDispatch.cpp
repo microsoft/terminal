@@ -2909,7 +2909,7 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
                 // We know that "0" will be successfully parsed, and that's close enough.
                 unsigned int parsedError = 0;
                 error = Utils::StringToUint(errorString, parsedError) ? parsedError :
-                                                                        static_cast<unsigned int>(-1);
+                                                                        UINT_MAX;
             }
             _api.MarkCommandFinish(error);
             return true;

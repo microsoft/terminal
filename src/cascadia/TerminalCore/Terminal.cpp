@@ -811,7 +811,7 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
         //     - Perform a FTCS_COMMAND_EXECUTED, so that we start marking this
         //       as output.
         //     - This enables CMD to have full FTCS support, even though there's
-        //       no point in CMD to insert a "preexec" hook
+        //       no point in CMD to insert a "pre exec" hook
         // * Else: We don't have a prompt. We don't know anything else, but we
         //   can set the whole line as the prompt, no command, and start the
         //   command_executed now.
