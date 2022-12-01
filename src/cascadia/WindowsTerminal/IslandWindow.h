@@ -87,7 +87,7 @@ protected:
     {
         // Do a quick resize to force the island to paint
         const auto size = GetPhysicalSize();
-        OnSize(size.cx, size.cy);
+        OnSize(size.width, size.height);
     }
 
     HWND _interopWindowHandle;

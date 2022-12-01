@@ -158,15 +158,15 @@ std::pair<int, int> AdaptDispatch::_GetVerticalMargins(const til::rect& viewport
 {
     // If the top is out of range, reset the margins completely.
     const auto bottommostRow = viewport.bottom - viewport.top - 1;
-    if (_scrollMargins.Top >= bottommostRow)
+    if (_scrollMargins.top >= bottommostRow)
     {
-        _scrollMargins.Top = _scrollMargins.Bottom = 0;
+        _scrollMargins.top = _scrollMargins.bottom = 0;
         _api.SetScrollingRegion(_scrollMargins);
     }
     // If margins aren't set, use the full extent of the viewport.
-    const auto marginsSet = _scrollMargins.Top < _scrollMargins.Bottom;
-    auto topMargin = marginsSet ? _scrollMargins.Top : 0;
-    auto bottomMargin = marginsSet ? _scrollMargins.Bottom : bottommostRow;
+    const auto marginsSet = _scrollMargins.top < _scrollMargins.bottom;
+    auto topMargin = marginsSet ? _scrollMargins.top : 0;
+    auto bottomMargin = marginsSet ? _scrollMargins.bottom : bottommostRow;
     // If the bottom is out of range, clamp it to the bottommost row.
     bottomMargin = std::min(bottomMargin, bottommostRow);
     if (absolute)
@@ -196,8 +196,8 @@ bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
 
     // For relative movement, the given offsets will be relative to
     // the current cursor position.
-    auto row = cursorPosition.Y;
-    auto col = cursorPosition.X;
+    auto row = cursorPosition.y;
+    auto col = cursorPosition.x;
 
     // But if the row is absolute, it will be relative to the top of the
     // viewport, or the top margin, depending on the origin mode.
@@ -232,11 +232,11 @@ bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
         // to the bottom margin. See
         // ScreenBufferTests::CursorUpDownOutsideMargins for a test of that
         // behavior.
-        if (cursorPosition.Y >= topMargin)
+        if (cursorPosition.y >= topMargin)
         {
             row = std::max(row, topMargin);
         }
-        if (cursorPosition.Y <= bottomMargin)
+        if (cursorPosition.y <= bottomMargin)
         {
             row = std::min(row, bottomMargin);
         }
@@ -342,12 +342,12 @@ bool AdaptDispatch::CursorSaveState()
     // The cursor is given to us by the API as relative to the whole buffer.
     // But in VT speak, the cursor row should be relative to the current viewport top.
     auto cursorPosition = textBuffer.GetCursor().GetPosition();
-    cursorPosition.Y -= viewport.top;
+    cursorPosition.y -= viewport.top;
 
     // VT is also 1 based, not 0 based, so correct by 1.
     auto& savedCursorState = _savedCursorState.at(_usingAltBuffer);
-    savedCursorState.Column = cursorPosition.X + 1;
-    savedCursorState.Row = cursorPosition.Y + 1;
+    savedCursorState.Column = cursorPosition.x + 1;
+    savedCursorState.Row = cursorPosition.y + 1;
     savedCursorState.IsOriginModeRelative = _modes.test(Mode::Origin);
     savedCursorState.Attributes = attributes;
     savedCursorState.TermOutput = _termOutput;
@@ -493,8 +493,8 @@ void AdaptDispatch::_ScrollRectHorizontally(TextBuffer& textBuffer, const til::r
 void AdaptDispatch::_InsertDeleteCharacterHelper(const VTInt delta)
 {
     auto& textBuffer = _api.GetTextBuffer();
-    const auto row = textBuffer.GetCursor().GetPosition().Y;
-    const auto startCol = textBuffer.GetCursor().GetPosition().X;
+    const auto row = textBuffer.GetCursor().GetPosition().y;
+    const auto startCol = textBuffer.GetCursor().GetPosition().x;
     const auto endCol = textBuffer.GetLineWidth(row);
     _ScrollRectHorizontally(textBuffer, { startCol, row, endCol, row + 1 }, delta);
 }
@@ -561,8 +561,8 @@ void AdaptDispatch::_FillRect(TextBuffer& textBuffer, const til::rect& fillRect,
 bool AdaptDispatch::EraseCharacters(const VTInt numChars)
 {
     auto& textBuffer = _api.GetTextBuffer();
-    const auto row = textBuffer.GetCursor().GetPosition().Y;
-    const auto startCol = textBuffer.GetCursor().GetPosition().X;
+    const auto row = textBuffer.GetCursor().GetPosition().y;
+    const auto startCol = textBuffer.GetCursor().GetPosition().x;
     const auto endCol = std::min<VTInt>(startCol + numChars, textBuffer.GetLineWidth(row));
 
     auto eraseAttributes = textBuffer.GetCurrentAttributes();
@@ -615,8 +615,8 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
     const auto viewport = _api.GetViewport();
     auto& textBuffer = _api.GetTextBuffer();
     const auto bufferWidth = textBuffer.GetSize().Width();
-    const auto row = textBuffer.GetCursor().GetPosition().Y;
-    const auto col = textBuffer.GetCursor().GetPosition().X;
+    const auto row = textBuffer.GetCursor().GetPosition().y;
+    const auto col = textBuffer.GetCursor().GetPosition().x;
 
     auto eraseAttributes = textBuffer.GetCurrentAttributes();
     eraseAttributes.SetStandardErase();
@@ -652,8 +652,8 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
 bool AdaptDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
 {
     auto& textBuffer = _api.GetTextBuffer();
-    const auto row = textBuffer.GetCursor().GetPosition().Y;
-    const auto col = textBuffer.GetCursor().GetPosition().X;
+    const auto row = textBuffer.GetCursor().GetPosition().y;
+    const auto col = textBuffer.GetCursor().GetPosition().x;
 
     auto eraseAttributes = textBuffer.GetCurrentAttributes();
     eraseAttributes.SetStandardErase();
@@ -716,8 +716,8 @@ bool AdaptDispatch::SelectiveEraseInDisplay(const DispatchTypes::EraseType erase
     const auto viewport = _api.GetViewport();
     auto& textBuffer = _api.GetTextBuffer();
     const auto bufferWidth = textBuffer.GetSize().Width();
-    const auto row = textBuffer.GetCursor().GetPosition().Y;
-    const auto col = textBuffer.GetCursor().GetPosition().X;
+    const auto row = textBuffer.GetCursor().GetPosition().y;
+    const auto col = textBuffer.GetCursor().GetPosition().x;
 
     switch (eraseType)
     {
@@ -749,8 +749,8 @@ bool AdaptDispatch::SelectiveEraseInDisplay(const DispatchTypes::EraseType erase
 bool AdaptDispatch::SelectiveEraseInLine(const DispatchTypes::EraseType eraseType)
 {
     auto& textBuffer = _api.GetTextBuffer();
-    const auto row = textBuffer.GetCursor().GetPosition().Y;
-    const auto col = textBuffer.GetCursor().GetPosition().X;
+    const auto row = textBuffer.GetCursor().GetPosition().y;
+    const auto col = textBuffer.GetCursor().GetPosition().x;
 
     switch (eraseType)
     {
@@ -1291,17 +1291,17 @@ void AdaptDispatch::_CursorPositionReport(const bool extendedReport)
     til::point cursorPosition{ textBuffer.GetCursor().GetPosition() };
 
     // Now adjust it for its position in respect to the current viewport top.
-    cursorPosition.Y -= viewport.top;
+    cursorPosition.y -= viewport.top;
 
     // NOTE: 1,1 is the top-left corner of the viewport in VT-speak, so add 1.
-    cursorPosition.X++;
-    cursorPosition.Y++;
+    cursorPosition.x++;
+    cursorPosition.y++;
 
     // If the origin mode is relative, line numbers start at top margin of the scrolling region.
     if (_modes.test(Mode::Origin))
     {
         const auto topMargin = _GetVerticalMargins(viewport, false).first;
-        cursorPosition.Y -= topMargin;
+        cursorPosition.y -= topMargin;
     }
 
     // Now send it back into the input channel of the console.
@@ -1310,13 +1310,13 @@ void AdaptDispatch::_CursorPositionReport(const bool extendedReport)
         // An extended report should also include the page number, but for now
         // we hard-code it to 1, since we don't yet support paging (GH#13892).
         const auto pageNumber = 1;
-        const auto response = wil::str_printf<std::wstring>(L"\x1b[?%d;%d;%dR", cursorPosition.Y, cursorPosition.X, pageNumber);
+        const auto response = wil::str_printf<std::wstring>(L"\x1b[?%d;%d;%dR", cursorPosition.y, cursorPosition.x, pageNumber);
         _api.ReturnResponse(response);
     }
     else
     {
         // The standard report only returns the cursor position.
-        const auto response = wil::str_printf<std::wstring>(L"\x1b[%d;%dR", cursorPosition.Y, cursorPosition.X);
+        const auto response = wil::str_printf<std::wstring>(L"\x1b[%d;%dR", cursorPosition.y, cursorPosition.x);
         _api.ReturnResponse(response);
     }
 }
@@ -1666,7 +1666,7 @@ void AdaptDispatch::_InsertDeleteLineHelper(const int32_t delta)
     const auto bufferWidth = textBuffer.GetSize().Width();
 
     auto& cursor = textBuffer.GetCursor();
-    const auto row = cursor.GetPosition().Y;
+    const auto row = cursor.GetPosition().y;
 
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
     if (row >= topMargin && row <= bottomMargin)
@@ -1784,8 +1784,8 @@ void AdaptDispatch::_DoSetTopBottomScrollingMargins(const VTInt topMargin,
             actualTop -= 1;
             actualBottom -= 1;
         }
-        _scrollMargins.Top = actualTop;
-        _scrollMargins.Bottom = actualBottom;
+        _scrollMargins.top = actualTop;
+        _scrollMargins.bottom = actualBottom;
         _api.SetScrollingRegion(_scrollMargins);
     }
 }
@@ -1877,15 +1877,15 @@ bool AdaptDispatch::ReverseLineFeed()
 
     // If the cursor is at the top of the margin area, we shift the buffer
     // contents down, to emulate inserting a line at that point.
-    if (cursorPosition.Y == topMargin)
+    if (cursorPosition.y == topMargin)
     {
         const auto bufferWidth = textBuffer.GetSize().Width();
         _ScrollRectVertically(textBuffer, { 0, topMargin, bufferWidth, bottomMargin + 1 }, 1);
     }
-    else if (cursorPosition.Y > viewport.top)
+    else if (cursorPosition.y > viewport.top)
     {
         // Otherwise we move the cursor up, but not past the top of the viewport.
-        cursor.SetPosition(textBuffer.ClampPositionWithinLine({ cursorPosition.X, cursorPosition.Y - 1 }));
+        cursor.SetPosition(textBuffer.ClampPositionWithinLine({ cursorPosition.x, cursorPosition.y - 1 }));
         _ApplyCursorMovementFlags(cursor);
     }
     return true;
@@ -1912,8 +1912,8 @@ bool AdaptDispatch::SetWindowTitle(std::wstring_view title)
 bool AdaptDispatch::HorizontalTabSet()
 {
     const auto& textBuffer = _api.GetTextBuffer();
-    const auto width = textBuffer.GetSize().Dimensions().X;
-    const auto column = textBuffer.GetCursor().GetPosition().X;
+    const auto width = textBuffer.GetSize().Dimensions().width;
+    const auto column = textBuffer.GetCursor().GetPosition().x;
 
     _InitTabStopsForWidth(width);
     _tabStopColumns.at(column) = true;
@@ -1934,8 +1934,8 @@ bool AdaptDispatch::ForwardTab(const VTInt numTabs)
 {
     auto& textBuffer = _api.GetTextBuffer();
     auto& cursor = textBuffer.GetCursor();
-    const auto width = textBuffer.GetLineWidth(cursor.GetPosition().Y);
-    auto column = cursor.GetPosition().X;
+    const auto width = textBuffer.GetLineWidth(cursor.GetPosition().y);
+    auto column = cursor.GetPosition().x;
     auto tabsPerformed = 0;
 
     _InitTabStopsForWidth(width);
@@ -1964,8 +1964,8 @@ bool AdaptDispatch::BackwardsTab(const VTInt numTabs)
 {
     auto& textBuffer = _api.GetTextBuffer();
     auto& cursor = textBuffer.GetCursor();
-    const auto width = textBuffer.GetLineWidth(cursor.GetPosition().Y);
-    auto column = cursor.GetPosition().X;
+    const auto width = textBuffer.GetLineWidth(cursor.GetPosition().y);
+    auto column = cursor.GetPosition().x;
     auto tabsPerformed = 0;
 
     _InitTabStopsForWidth(width);
@@ -2015,8 +2015,8 @@ bool AdaptDispatch::TabClear(const DispatchTypes::TabClearType clearType)
 void AdaptDispatch::_ClearSingleTabStop()
 {
     const auto& textBuffer = _api.GetTextBuffer();
-    const auto width = textBuffer.GetSize().Dimensions().X;
-    const auto column = textBuffer.GetCursor().GetPosition().X;
+    const auto width = textBuffer.GetSize().Dimensions().width;
+    const auto column = textBuffer.GetCursor().GetPosition().x;
 
     _InitTabStopsForWidth(width);
     _tabStopColumns.at(column) = false;
@@ -2333,7 +2333,7 @@ bool AdaptDispatch::ScreenAlignmentPattern()
 {
     const auto viewport = _api.GetViewport();
     auto& textBuffer = _api.GetTextBuffer();
-    const auto bufferWidth = textBuffer.GetSize().Dimensions().X;
+    const auto bufferWidth = textBuffer.GetSize().Dimensions().width;
 
     // Fill the screen with the letter E using the default attributes.
     _FillRect(textBuffer, { 0, viewport.top, bufferWidth, viewport.bottom }, L'E', {});
@@ -2373,14 +2373,14 @@ void AdaptDispatch::_EraseScrollback()
     auto& textBuffer = _api.GetTextBuffer();
     const auto bufferSize = textBuffer.GetSize().Dimensions();
     auto& cursor = textBuffer.GetCursor();
-    const auto row = cursor.GetPosition().Y;
+    const auto row = cursor.GetPosition().y;
 
     // Scroll the viewport content to the top of the buffer.
     textBuffer.ScrollRows(top, height, -top);
     // Clear everything after the viewport.
-    _FillRect(textBuffer, { 0, height, bufferSize.X, bufferSize.Y }, L' ', {});
+    _FillRect(textBuffer, { 0, height, bufferSize.width, bufferSize.height }, L' ', {});
     // Also reset the line rendition for all of the cleared rows.
-    textBuffer.ResetLineRenditionRange(height, bufferSize.Y);
+    textBuffer.ResetLineRenditionRange(height, bufferSize.height);
     // Move the viewport
     _api.SetViewportPosition({ viewport.left, 0 });
     // Move the cursor to the same relative location.
@@ -2411,13 +2411,13 @@ void AdaptDispatch::_EraseAll()
     // We'll need to restore the cursor to that same relative position, after
     //      we move the viewport.
     auto& cursor = textBuffer.GetCursor();
-    const auto row = cursor.GetPosition().Y - viewport.top;
+    const auto row = cursor.GetPosition().y - viewport.top;
 
     // Calculate new viewport position. Typically we want to move one line below
     // the last non-space row, but if the last non-space character is the very
     // start of the buffer, then we shouldn't move down at all.
     const auto lastChar = textBuffer.GetLastNonSpaceCharacter();
-    auto newViewportTop = lastChar == til::point{} ? 0 : lastChar.Y + 1;
+    auto newViewportTop = lastChar == til::point{} ? 0 : lastChar.y + 1;
     const auto newViewportBottom = newViewportTop + viewportHeight;
     const auto delta = newViewportBottom - (bufferSize.Height());
     for (auto i = 0; i < delta; i++)

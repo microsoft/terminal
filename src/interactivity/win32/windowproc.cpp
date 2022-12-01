@@ -362,8 +362,8 @@ using namespace Microsoft::Console::Types;
             rcSuggested.right = rcSuggested.left + lpwpos->cx;
             rcSuggested.bottom = rcSuggested.top + lpwpos->cy;
             til::size szSuggested;
-            szSuggested.cx = rcSuggested.width();
-            szSuggested.cy = rcSuggested.height();
+            szSuggested.width = rcSuggested.width();
+            szSuggested.height = rcSuggested.height();
 
             // Figure out the current dimensions for comparison.
             auto rcCurrent = GetWindowRect();
@@ -429,10 +429,10 @@ using namespace Microsoft::Console::Types;
                 // or worse yet, keep it from moving entirely. We'll get a WM_DPICHANGED,
                 // resize the window, and then process the restriction in a few window messages.
                 if (((int)dpiOfMaximum == g.dpi) &&
-                    ((szSuggested.cx > rcMaximum.width()) || (szSuggested.cy > rcMaximum.height())))
+                    ((szSuggested.width > rcMaximum.width()) || (szSuggested.height > rcMaximum.height())))
                 {
-                    lpwpos->cx = std::min(rcMaximum.width(), szSuggested.cx);
-                    lpwpos->cy = std::min(rcMaximum.height(), szSuggested.cy);
+                    lpwpos->cx = std::min(rcMaximum.width(), szSuggested.width);
+                    lpwpos->cy = std::min(rcMaximum.height(), szSuggested.height);
 
                     // We usually add SWP_NOMOVE so that if the user is dragging the left or top edge
                     // and hits the restriction, then the window just stops growing, it doesn't

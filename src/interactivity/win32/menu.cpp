@@ -480,32 +480,32 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
         // Maximum number of characters we could fit on the given monitor.
         const auto coordLargest = ScreenInfo.GetLargestWindowSizeInCharacters();
 
-        coordWindow.X = std::min(coordLargest.X, coordWindow.X);
-        coordWindow.Y = std::min(coordLargest.Y, coordWindow.Y);
+        coordWindow.width = std::min(coordLargest.width, coordWindow.width);
+        coordWindow.height = std::min(coordLargest.height, coordWindow.height);
 
         if (gci.GetWrapText())
         {
             // Then if wrap text is on, the buffer width gets fixed to the window width value.
-            coordBuffer.X = coordWindow.X;
+            coordBuffer.width = coordWindow.width;
 
             // However, we're not done. The "max window size" is if we had no scroll bar.
             // We need to adjust slightly more if there's space reserved for a vertical scroll bar
             // which happens when the buffer Y is taller than the window Y.
-            if (coordBuffer.Y > coordWindow.Y)
+            if (coordBuffer.height > coordWindow.height)
             {
                 // Since we need a scroll bar in the Y direction, clamp the buffer width to make sure that
                 // it is leaving appropriate space for a scroll bar.
                 const auto coordScrollBars = ScreenInfo.GetScrollBarSizesInCharacters();
-                const auto sMaxBufferWidthWithScroll = coordLargest.X - coordScrollBars.X;
+                const auto sMaxBufferWidthWithScroll = coordLargest.width - coordScrollBars.width;
 
-                coordBuffer.X = std::min(coordBuffer.X, sMaxBufferWidthWithScroll);
+                coordBuffer.width = std::min(coordBuffer.width, sMaxBufferWidthWithScroll);
             }
         }
 
         // Now adjust the buffer size first to whatever we want it to be if it's different than before.
         const auto coordScreenBufferSize = ScreenInfo.GetBufferSize().Dimensions();
-        if (coordBuffer.X != coordScreenBufferSize.X ||
-            coordBuffer.Y != coordScreenBufferSize.Y)
+        if (coordBuffer.width != coordScreenBufferSize.width ||
+            coordBuffer.height != coordScreenBufferSize.height)
         {
             const auto pCommandLine = &CommandLine::Instance();
 
@@ -519,8 +519,8 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
         // Finally, restrict window size to the maximum possible size for the given buffer now that it's processed.
         const auto coordMaxForBuffer = ScreenInfo.GetMaxWindowSizeInCharacters();
 
-        coordWindow.X = std::min(coordWindow.X, coordMaxForBuffer.X);
-        coordWindow.Y = std::min(coordWindow.Y, coordMaxForBuffer.Y);
+        coordWindow.width = std::min(coordWindow.width, coordMaxForBuffer.width);
+        coordWindow.height = std::min(coordWindow.height, coordMaxForBuffer.height);
 
         // Then finish by updating the window. This will update the window size,
         //      as well as the screen buffer's viewport.

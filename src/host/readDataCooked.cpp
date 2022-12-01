@@ -107,13 +107,13 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
         _currentPosition = cchInitialData;
 
         OriginalCursorPosition() = screenInfo.GetTextBuffer().GetCursor().GetPosition();
-        OriginalCursorPosition().X -= (til::CoordType)_currentPosition;
+        OriginalCursorPosition().x -= (til::CoordType)_currentPosition;
 
         const auto sScreenBufferSizeX = screenInfo.GetBufferSize().Width();
-        while (OriginalCursorPosition().X < 0)
+        while (OriginalCursorPosition().x < 0)
         {
-            OriginalCursorPosition().X += sScreenBufferSizeX;
-            OriginalCursorPosition().Y -= 1;
+            OriginalCursorPosition().x += sScreenBufferSizeX;
+            OriginalCursorPosition().y -= 1;
         }
     }
 
@@ -533,12 +533,12 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                                               &wch,
                                               &NumToWrite,
                                               &NumSpaces,
-                                              _originalCursorPosition.X,
+                                              _originalCursorPosition.x,
                                               WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
                                               &ScrollY);
                     if (NT_SUCCESS(status))
                     {
-                        _originalCursorPosition.Y += ScrollY;
+                        _originalCursorPosition.y += ScrollY;
                     }
                     else
                     {
@@ -615,7 +615,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                                                   &wch,
                                                   &NumToWrite,
                                                   nullptr,
-                                                  _originalCursorPosition.X,
+                                                  _originalCursorPosition.x,
                                                   WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
                                                   nullptr);
                         if (!NT_SUCCESS(status))
@@ -669,8 +669,8 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                     if (CheckBisectProcessW(_screenInfo,
                                             _backupLimit,
                                             _currentPosition + 1,
-                                            sScreenBufferSizeX - _originalCursorPosition.X,
-                                            _originalCursorPosition.X,
+                                            sScreenBufferSizeX - _originalCursorPosition.x,
+                                            _originalCursorPosition.x,
                                             TRUE))
                     {
                         fBisect = true;
@@ -691,7 +691,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                 // calculate new cursor position
                 if (_echoInput)
                 {
-                    NumSpaces = RetrieveNumberOfSpaces(_originalCursorPosition.X,
+                    NumSpaces = RetrieveNumberOfSpaces(_originalCursorPosition.x,
                                                        _backupLimit,
                                                        _currentPosition - 1);
                     if (NumSpaces > 0 && fBisect)
@@ -706,7 +706,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
 
             // save cursor position
             CursorPosition = _screenInfo.GetTextBuffer().GetCursor().GetPosition();
-            CursorPosition.X = (til::CoordType)(CursorPosition.X + NumSpaces);
+            CursorPosition.x = (til::CoordType)(CursorPosition.x + NumSpaces);
 
             // clear the current command line from the screen
             // clang-format off
@@ -728,7 +728,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                                       _backupLimit,
                                       &NumToWrite,
                                       &_visibleCharCount,
-                                      _originalCursorPosition.X,
+                                      _originalCursorPosition.x,
                                       dwFlags,
                                       &ScrollY);
             if (!NT_SUCCESS(status))
@@ -744,19 +744,19 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                 if (CheckBisectProcessW(_screenInfo,
                                         _backupLimit,
                                         _currentPosition + 1,
-                                        sScreenBufferSizeX - _originalCursorPosition.X,
-                                        _originalCursorPosition.X,
+                                        sScreenBufferSizeX - _originalCursorPosition.x,
+                                        _originalCursorPosition.x,
                                         TRUE))
                 {
-                    if (CursorPosition.X == (sScreenBufferSizeX - 1))
+                    if (CursorPosition.x == (sScreenBufferSizeX - 1))
                     {
-                        CursorPosition.X++;
+                        CursorPosition.x++;
                     }
                 }
 
                 // adjust cursor position for WriteChars
-                _originalCursorPosition.Y += ScrollY;
-                CursorPosition.Y += ScrollY;
+                _originalCursorPosition.y += ScrollY;
+                CursorPosition.y += ScrollY;
                 status = AdjustCursorPosition(_screenInfo, CursorPosition, TRUE, nullptr);
                 if (!NT_SUCCESS(status))
                 {
@@ -786,7 +786,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                                               _bufPtr,
                                               &NumToWrite,
                                               nullptr,
-                                              _originalCursorPosition.X,
+                                              _originalCursorPosition.x,
                                               WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
                                               nullptr);
                     if (!NT_SUCCESS(status))
@@ -848,10 +848,10 @@ size_t COOKED_READ_DATA::Write(const std::wstring_view wstr)
                                                       _bufPtr,
                                                       &bytesInserted,
                                                       &NumSpaces,
-                                                      OriginalCursorPosition().X,
+                                                      OriginalCursorPosition().x,
                                                       WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
                                                       &ScrollY));
-        OriginalCursorPosition().Y += ScrollY;
+        OriginalCursorPosition().y += ScrollY;
         VisibleCharCount() += NumSpaces;
     }
     _bufPtr += charsInserted;
@@ -949,7 +949,7 @@ void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline
         // up here because the debugger is multi-threaded and calls
         // read before outputting the prompt.
 
-        if (_originalCursorPosition.X == -1)
+        if (_originalCursorPosition.x == -1)
         {
             _originalCursorPosition = _screenInfo.GetTextBuffer().GetCursor().GetPosition();
         }

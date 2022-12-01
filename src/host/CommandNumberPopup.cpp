@@ -41,7 +41,7 @@ void CommandNumberPopup::_handleNumber(COOKED_READ_DATA& cookedReadData, const w
                                                       &wch,
                                                       &CharsToWrite,
                                                       &NumSpaces,
-                                                      cookedReadData.OriginalCursorPosition().X,
+                                                      cookedReadData.OriginalCursorPosition().x,
                                                       WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
                                                       nullptr));
         cookedReadData.ScreenInfo().SetAttributes(realAttributes);
@@ -72,7 +72,7 @@ void CommandNumberPopup::_handleBackspace(COOKED_READ_DATA& cookedReadData) noex
                                                       &backspace,
                                                       &CharsToWrite,
                                                       &NumSpaces,
-                                                      cookedReadData.OriginalCursorPosition().X,
+                                                      cookedReadData.OriginalCursorPosition().x,
                                                       WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
                                                       nullptr));
         cookedReadData.ScreenInfo().SetAttributes(realAttributes);
