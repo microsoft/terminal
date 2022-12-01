@@ -513,8 +513,8 @@ void NonClientIslandWindow::_OnMaximizeChange() noexcept
         const auto isIconified = WI_IsFlagSet(windowStyle, WS_ICONIC);
 
         const auto state = _isMaximized ? winrt::TerminalApp::WindowVisualState::WindowVisualStateMaximized :
-                           isIconified  ? winrt::TerminalApp::WindowVisualState::WindowVisualStateIconified :
-                                          winrt::TerminalApp::WindowVisualState::WindowVisualStateNormal;
+                                          isIconified ? winrt::TerminalApp::WindowVisualState::WindowVisualStateIconified :
+                                                        winrt::TerminalApp::WindowVisualState::WindowVisualStateNormal;
 
         try
         {
@@ -903,9 +903,8 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         //  show the accent-colored strip of the titlebar, even on top of the
         //  Mica.
         //
-        //  So REAALLY REALLY get rid of the titlebar entirely.
+        //  So REALLY REALLY get rid of the titlebar entirely.
 
-        // TODO! check how this works on Windows 10.
         margins.cyTopHeight = 0;
     }
 
