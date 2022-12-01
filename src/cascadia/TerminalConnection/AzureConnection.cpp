@@ -264,13 +264,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             if (_state == AzureState::TermConnected)
             {
                 // Close the websocket connection
-                auto closedTask = _cloudShellSocket.close();
-                closedTask.wait();
+                _cloudShellSocket.close();
             }
 
             if (_hOutputThread)
             {
-                // Tear down our output thread
+                // Waiting for the output thread to exit ensures that all pending _TerminalOutputHandlers()
+                // calls have returned and won't notify our caller (ControlCore) anymore. This ensures that
+                // we don't call a destroyed event handler asynchronously from a background thread (GH#13880).
                 WaitForSingleObject(_hOutputThread.get(), INFINITE);
                 _hOutputThread.reset();
             }

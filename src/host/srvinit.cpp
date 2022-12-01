@@ -151,7 +151,7 @@ static bool s_IsOnDesktop()
     // 4. Hardcoded default settings
     // To establish this hierarchy, we will need to load the settings and apply them in reverse order.
 
-    // 4. Initializing Settings will establish hardcoded defaults.
+    // 4. Initializing Settings will establish hard-coded defaults.
     // Set to reference of global console information since that's the only place we need to hold the settings.
     auto& settings = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& launchArgs = ServiceLocator::LocateGlobals().launchArgs;
@@ -583,6 +583,8 @@ try
         iconPath.get(),
         icon.index
     };
+
+    myStartupInfo.wShowWindow = settings.GetShowWindow();
 
     RETURN_IF_FAILED(handoff->EstablishPtyHandoff(inPipeTheirSide.get(),
                                                   outPipeTheirSide.get(),

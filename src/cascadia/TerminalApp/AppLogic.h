@@ -192,6 +192,7 @@ namespace winrt::TerminalApp::implementation
         void _OnLoaded(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
         [[nodiscard]] HRESULT _TryLoadSettings() noexcept;
+        void _ProcessLazySettingsChanges();
         void _RegisterSettingsChange();
         fire_and_forget _DispatchReloadSettings();
         void _ReloadSettings();

@@ -64,6 +64,27 @@ std::vector<til::inclusive_rect> Terminal::_GetSelectionRects() const noexcept
 }
 
 // Method Description:
+// - Identical to GetTextRects if it's a block selection, else returns a single span for the whole selection.
+// Return Value:
+// - A vector of one or more spans representing the selection. They are absolute coordinates relative to the buffer origin.
+std::vector<til::point_span> Terminal::_GetSelectionSpans() const noexcept
+{
+    std::vector<til::point_span> result;
+
+    if (!IsSelectionActive())
+    {
+        return result;
+    }
+
+    try
+    {
+        return _activeBuffer().GetTextSpans(_selection->start, _selection->end, _blockSelection, false);
+    }
+    CATCH_LOG();
+    return result;
+}
+
+// Method Description:
 // - Get the current anchor position relative to the whole text buffer
 // Arguments:
 // - None
@@ -228,9 +249,9 @@ void Terminal::SetSelectionEnd(const til::point viewportPos, std::optional<Selec
 // - targetStart: if true, target will be the new start. Otherwise, target will be the new end.
 // Return Value:
 // - the new start/end for a selection
-std::pair<til::point, til::point> Terminal::_PivotSelection(const til::point targetPos, bool& targetStart) const
+std::pair<til::point, til::point> Terminal::_PivotSelection(const til::point targetPos, bool& targetStart) const noexcept
 {
-    if (targetStart = targetPos <= _selection->pivot)
+    if (targetStart = _activeBuffer().GetSize().CompareInBounds(targetPos, _selection->pivot) <= 0)
     {
         // target is before pivot
         // treat target as start
@@ -300,22 +321,31 @@ void Terminal::ToggleMarkMode()
         // Enter Mark Mode
         // NOTE: directly set cursor state. We already should have locked before calling this function.
         _activeBuffer().GetCursor().SetIsOn(false);
-        const auto cursorPos{ _activeBuffer().GetCursor().GetPosition() };
-        _selection = SelectionAnchors{};
-        _selection->start = cursorPos;
-        _selection->end = cursorPos;
-        _selection->pivot = cursorPos;
-        _ScrollToPoint(cursorPos);
+        if (!IsSelectionActive())
+        {
+            // No selection --> start one at the cursor
+            const auto cursorPos{ _activeBuffer().GetCursor().GetPosition() };
+            _selection = SelectionAnchors{};
+            _selection->start = cursorPos;
+            _selection->end = cursorPos;
+            _selection->pivot = cursorPos;
+            _blockSelection = false;
+            WI_SetAllFlags(_selectionEndpoint, SelectionEndpoint::Start | SelectionEndpoint::End);
+        }
+        else if (WI_AreAllFlagsClear(_selectionEndpoint, SelectionEndpoint::Start | SelectionEndpoint::End))
+        {
+            // Selection already existed
+            WI_SetFlag(_selectionEndpoint, SelectionEndpoint::End);
+        }
+        _ScrollToPoint(_selection->start);
         _selectionMode = SelectionInteractionMode::Mark;
-        _blockSelection = false;
         _selectionIsTargetingUrl = false;
-        WI_SetAllFlags(_selectionEndpoint, SelectionEndpoint::Start | SelectionEndpoint::End);
     }
 }
 
 // Method Description:
 // - switch the targeted selection endpoint with the other one (i.e. start <--> end)
-void Terminal::SwitchSelectionEndpoint()
+void Terminal::SwitchSelectionEndpoint() noexcept
 {
     if (IsSelectionActive())
     {
@@ -336,6 +366,23 @@ void Terminal::SwitchSelectionEndpoint()
             // moving start --> now we're moving end
             _selectionEndpoint = SelectionEndpoint::End;
             _selection->pivot = _selection->start;
+        }
+    }
+}
+
+void Terminal::ExpandSelectionToWord()
+{
+    if (IsSelectionActive())
+    {
+        const auto& buffer = _activeBuffer();
+        _selection->start = buffer.GetWordStart(_selection->start, _wordDelimiters);
+        _selection->pivot = _selection->start;
+        _selection->end = buffer.GetWordEnd(_selection->end, _wordDelimiters);
+
+        // if we're targeting both endpoints, instead just target "end"
+        if (WI_IsFlagSet(_selectionEndpoint, SelectionEndpoint::Start) && WI_IsFlagSet(_selectionEndpoint, SelectionEndpoint::End))
+        {
+            _selectionEndpoint = SelectionEndpoint::End;
         }
     }
 }
@@ -363,7 +410,7 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
     // but as we progressively search through more of the buffer, this will change.
     // Keep track of the search area here, and use the lambda below to convert points to the search area coordinate space.
     auto searchArea = _GetVisibleViewport();
-    auto convertToSearchArea = [&searchArea](const til::point pt) {
+    auto convertToSearchArea = [&searchArea](const til::point pt) noexcept {
         auto copy = pt;
         searchArea.ConvertToOrigin(&copy);
         return copy;
@@ -407,7 +454,7 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
             {
                 // moving backwards excludes the currently selected range,
                 // simply return the last one in the list as it's ordered
-                const auto range = list.back();
+                const auto& range = list.back();
                 resultFromList = { range.start, range.stop };
             }
         }
@@ -486,11 +533,6 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
     _ScrollToPoint(_selection->end);
 }
 
-bool Terminal::SelectionIsTargetingUrl() const noexcept
-{
-    return _selectionIsTargetingUrl;
-}
-
 Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const
 {
     if ((_selectionMode == SelectionInteractionMode::Mark || mods.IsShiftPressed()) && !mods.IsAltPressed())
@@ -509,6 +551,8 @@ Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams
                 return UpdateSelectionParams{ std::in_place, SelectionDirection::Left, SelectionExpansion::Buffer };
             case VK_END:
                 return UpdateSelectionParams{ std::in_place, SelectionDirection::Right, SelectionExpansion::Buffer };
+            default:
+                break;
             }
         }
         else
@@ -533,6 +577,8 @@ Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams
                 return UpdateSelectionParams{ std::in_place, SelectionDirection::Up, SelectionExpansion::Char };
             case VK_DOWN:
                 return UpdateSelectionParams{ std::in_place, SelectionDirection::Down, SelectionExpansion::Char };
+            default:
+                break;
             }
         }
     }
@@ -667,7 +713,7 @@ void Terminal::_MoveByWord(SelectionDirection direction, til::point& pos)
     case SelectionDirection::Left:
     {
         const auto wordStartPos{ _activeBuffer().GetWordStart(pos, _wordDelimiters) };
-        if (_selection->pivot < pos)
+        if (_activeBuffer().GetSize().CompareInBounds(_selection->pivot, pos) < 0)
         {
             // If we're moving towards the pivot, move one more cell
             pos = wordStartPos;
@@ -690,7 +736,7 @@ void Terminal::_MoveByWord(SelectionDirection direction, til::point& pos)
     case SelectionDirection::Right:
     {
         const auto wordEndPos{ _activeBuffer().GetWordEnd(pos, _wordDelimiters) };
-        if (pos < _selection->pivot)
+        if (_activeBuffer().GetSize().CompareInBounds(pos, _selection->pivot) < 0)
         {
             // If we're moving towards the pivot, move one more cell
             pos = _activeBuffer().GetWordEnd(pos, _wordDelimiters);
@@ -721,7 +767,7 @@ void Terminal::_MoveByWord(SelectionDirection direction, til::point& pos)
     }
 }
 
-void Terminal::_MoveByViewport(SelectionDirection direction, til::point& pos)
+void Terminal::_MoveByViewport(SelectionDirection direction, til::point& pos) noexcept
 {
     const auto bufferSize{ _activeBuffer().GetSize() };
     switch (direction)
@@ -750,7 +796,7 @@ void Terminal::_MoveByViewport(SelectionDirection direction, til::point& pos)
     }
 }
 
-void Terminal::_MoveByBuffer(SelectionDirection direction, til::point& pos)
+void Terminal::_MoveByBuffer(SelectionDirection direction, til::point& pos) noexcept
 {
     const auto bufferSize{ _activeBuffer().GetSize() };
     switch (direction)
@@ -843,13 +889,14 @@ void Terminal::_ScrollToPoint(const til::point pos)
 }
 
 // Method Description:
-// - This method won't be used. We just throw and do nothing. For now we
-//   need this method to implement UiaData interface
+// - apply the TextAttribute "attr" to the active buffer
 // Arguments:
-// - coordSelectionStart - Not used
-// - coordSelectionEnd - Not used
-// - attr - Not used.
-void Terminal::ColorSelection(const til::point, const til::point, const TextAttribute)
+// - coordStart - where to begin applying attr
+// - coordEnd - where to end applying attr (inclusive)
+// - attr - the text attributes to apply
+void Terminal::ColorSelection(const til::point coordStart, const til::point coordEnd, const TextAttribute attr)
 {
-    THROW_HR(E_NOTIMPL);
+    const auto spanLength = _activeBuffer().SpanLength(coordStart, coordEnd);
+
+    _activeBuffer().Write(OutputCellIterator(attr, spanLength), coordStart);
 }

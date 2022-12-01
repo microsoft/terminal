@@ -152,14 +152,14 @@ std::vector<WORD> ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,
 
         // If the first thing we read is trailing, pad with a space.
         // OR If the last thing we read is leading, pad with a space.
-        if ((amountRead == 0 && it->DbcsAttr().IsTrailing()) ||
-            (amountRead == (amountToRead - 1) && it->DbcsAttr().IsLeading()))
+        if ((amountRead == 0 && it->DbcsAttr() == DbcsAttribute::Trailing) ||
+            (amountRead == (amountToRead - 1) && it->DbcsAttr() == DbcsAttribute::Leading))
         {
             retVal.push_back(legacyAttributes);
         }
         else
         {
-            retVal.push_back(legacyAttributes | it->DbcsAttr().GeneratePublicApiAttributeFormat());
+            retVal.push_back(legacyAttributes | GeneratePublicApiAttributeFormat(it->DbcsAttr()));
         }
 
         amountRead++;
@@ -208,15 +208,15 @@ std::wstring ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
     {
         // If the first thing we read is trailing, pad with a space.
         // OR If the last thing we read is leading, pad with a space.
-        if ((amountRead == 0 && it->DbcsAttr().IsTrailing()) ||
-            (amountRead == (amountToRead - 1) && it->DbcsAttr().IsLeading()))
+        if ((amountRead == 0 && it->DbcsAttr() == DbcsAttribute::Trailing) ||
+            (amountRead == (amountToRead - 1) && it->DbcsAttr() == DbcsAttribute::Leading))
         {
             retVal += UNICODE_SPACE;
         }
         else
         {
             // Otherwise, add anything that isn't a trailing cell. (Trailings are duplicate copies of the leading.)
-            if (!it->DbcsAttr().IsTrailing())
+            if (it->DbcsAttr() != DbcsAttribute::Trailing)
             {
                 retVal += it->Chars();
             }
@@ -499,7 +499,11 @@ void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo)
 // TODO: MSFT 9450717 This should join the ProcessList class when CtrlEvents become moved into the server. https://osgvsowi/9450717
 void CloseConsoleProcessState()
 {
+    LockConsole();
+    const auto unlock = wil::scope_exit([] { UnlockConsole(); });
+
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
     // If there are no connected processes, sending control events is pointless as there's no one do send them to. In
     // this case we'll just exit conhost.
 
@@ -511,16 +515,4 @@ void CloseConsoleProcessState()
     }
 
     HandleCtrlEvent(CTRL_CLOSE_EVENT);
-
-    gci.ShutdownMidiAudio();
-
-    // Jiggle the handle: (see MSFT:19419231)
-    // When we call this function, we'll only actually close the console once
-    //      we're totally unlocked. If our caller has the console locked, great,
-    //      we'll dispatch the ctrl event once they unlock. However, if they're
-    //      not running under lock (eg PtySignalInputThread::_GetData), then the
-    //      ctrl event will never actually get dispatched.
-    // So, lock and unlock here, to make sure the ctrl event gets handled.
-    LockConsole();
-    UnlockConsole();
 }

@@ -75,29 +75,30 @@ Renderer::~Renderer()
             }
 
             const auto hr = _PaintFrameForEngine(pEngine);
-            if (E_PENDING == hr)
+            if (SUCCEEDED(hr))
             {
-                if (--tries == 0)
-                {
-                    // Stop trying.
-                    _pThread->DisablePainting();
-                    if (_pfnRendererEnteredErrorState)
-                    {
-                        _pfnRendererEnteredErrorState();
-                    }
-                    // If there's no callback, we still don't want to FAIL_FAST: the renderer going black
-                    // isn't near as bad as the entire application aborting. We're a component. We shouldn't
-                    // abort applications that host us.
-                    return S_FALSE;
-                }
-
-                // Add a bit of backoff.
-                // Sleep 150ms, 300ms, 450ms before failing out and disabling the renderer.
-                Sleep(renderBackoffBaseTimeMilliseconds * (maxRetriesForRenderEngine - tries));
-                continue;
+                break;
             }
-            LOG_IF_FAILED(hr);
-            break;
+
+            LOG_HR_IF(hr, hr != E_PENDING);
+
+            if (--tries == 0)
+            {
+                // Stop trying.
+                _pThread->DisablePainting();
+                if (_pfnRendererEnteredErrorState)
+                {
+                    _pfnRendererEnteredErrorState();
+                }
+                // If there's no callback, we still don't want to FAIL_FAST: the renderer going black
+                // isn't near as bad as the entire application aborting. We're a component. We shouldn't
+                // abort applications that host us.
+                return S_FALSE;
+            }
+
+            // Add a bit of backoff.
+            // Sleep 150ms, 300ms, 450ms before failing out and disabling the renderer.
+            Sleep(renderBackoffBaseTimeMilliseconds * (maxRetriesForRenderEngine - tries));
         }
     }
 
@@ -848,7 +849,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
 
                 // If we're on the first cluster to be added and it's marked as "trailing"
                 // (a.k.a. the right half of a two column character), then we need some special handling.
-                if (_clusterBuffer.empty() && it->DbcsAttr().IsTrailing())
+                if (_clusterBuffer.empty() && it->DbcsAttr() == DbcsAttribute::Trailing)
                 {
                     // Move left to the one so the whole character can be struck correctly.
                     --screenPoint.X;

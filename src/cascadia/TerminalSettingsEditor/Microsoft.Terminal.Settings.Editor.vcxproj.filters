@@ -38,6 +38,7 @@
     <Page Include="CommonResources.xaml" />
     <Page Include="GlobalAppearance.xaml" />
     <Page Include="ColorSchemes.xaml" />
+    <Page Include="EditColorScheme.xaml" />
     <Page Include="Interaction.xaml" />
     <Page Include="Launch.xaml" />
     <Page Include="MainPage.xaml" />

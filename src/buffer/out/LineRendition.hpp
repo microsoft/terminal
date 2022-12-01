@@ -13,7 +13,7 @@ Abstract:
 
 #pragma once
 
-enum class LineRendition
+enum class LineRendition : uint8_t
 {
     SingleWidth,
     DoubleWidth,
@@ -26,6 +26,13 @@ constexpr til::inclusive_rect ScreenToBufferLine(const til::inclusive_rect& line
     // Use shift right to quickly divide the Left and Right by 2 for double width lines.
     const auto scale = lineRendition == LineRendition::SingleWidth ? 0 : 1;
     return { line.Left >> scale, line.Top, line.Right >> scale, line.Bottom };
+}
+
+constexpr til::point ScreenToBufferLine(const til::point& line, const LineRendition lineRendition)
+{
+    // Use shift right to quickly divide the Left and Right by 2 for double width lines.
+    const auto scale = lineRendition == LineRendition::SingleWidth ? 0 : 1;
+    return { line.X >> scale, line.Y };
 }
 
 constexpr til::inclusive_rect BufferToScreenLine(const til::inclusive_rect& line, const LineRendition lineRendition)

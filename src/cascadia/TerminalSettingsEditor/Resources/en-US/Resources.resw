@@ -135,6 +135,10 @@
     <value>Duplicate</value>
     <comment>Button label that duplicates the selected profile and navigates to the duplicate's page.</comment>
   </data>
+  <data name="ColorScheme_Rename.Header" xml:space="preserve">
+    <value>Rename color scheme</value>
+    <comment>This is the header for a control that allows the user to rename the currently selected color scheme.</comment>
+  </data>
   <data name="ColorScheme_Background.Text" xml:space="preserve">
     <value>Background</value>
     <comment>This is the header for a control that lets the user select the background color for text displayed on the screen.</comment>
@@ -311,6 +315,46 @@
     <value>Initial Rows</value>
     <comment>Name for a control to choose the number of rows in the terminal's text grid.</comment>
   </data>
+  <data name="Globals_InitialPosX.Text" xml:space="preserve">
+    <value>X position</value>
+    <comment>Header for a control to choose the X coordinate of the terminal's starting position.</comment>
+  </data>
+  <data name="Globals_InitialPosY.Text" xml:space="preserve">
+    <value>Y position</value>
+    <comment>Header for a control to choose the Y coordinate of the terminal's starting position.</comment>
+  </data>
+  <data name="Globals_InitialPosXBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>X position</value>
+    <comment>Name for a control to choose the X coordinate of the terminal's starting position.</comment>
+  </data>
+  <data name="Globals_InitialPosXBox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Enter the value for the x-coordinate.</value>
+    <comment>Tooltip for the control that allows the user to choose the X coordinate of the terminal's starting position.</comment>
+  </data>
+  <data name="Globals_InitialPosXBox.PlaceholderText" xml:space="preserve">
+    <value>X</value>
+    <comment>The string to be displayed when there is no current value in the x-coordinate number box.</comment>
+  </data>
+  <data name="Globals_InitialPosYBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Y position</value>
+    <comment>Name for a control to choose the Y coordinate of the terminal's starting position.</comment>
+  </data>
+  <data name="Globals_InitialPosYBox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Enter the value for the y-coordinate.</value>
+    <comment>Tooltip for the control that allows the user to choose the Y coordinate of the terminal's starting position.</comment>
+  </data>
+  <data name="Globals_InitialPosYBox.PlaceholderText" xml:space="preserve">
+    <value>Y</value>
+    <comment>The string to be displayed when there is no current value in the y-coordinate number box.</comment>
+  </data>
+  <data name="Globals_DefaultLaunchPositionCheckbox.Content" xml:space="preserve">
+    <value>Use system default</value>
+    <comment>A checkbox for the "launch position" setting. Toggling this control sets the launch position to the system default.</comment>
+  </data>
+  <data name="Globals_DefaultLaunchPositionCheckbox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>If enabled, use the system default launch position.</value>
+    <comment>A description for what the "default launch position" checkbox does. Presented near "Globals_DefaultLaunchPositionCheckbox".</comment>
+  </data>
   <data name="Globals_FirstWindowPreference.Header" xml:space="preserve">
     <value>When Terminal starts</value>
     <comment>Header for a control to select how the terminal should load its first window.</comment>
@@ -331,6 +375,22 @@
     <comment>Header for a control to select what mode to launch the terminal in.</comment>
   </data>
   <data name="Globals_LaunchMode.HelpText" xml:space="preserve">
+    <value>How the terminal will appear on launch. Focus will hide the tabs and title bar.</value>
+    <comment>'Focus' must match &lt;Globals_LaunchModeFocus.Content&gt;.</comment>
+  </data>
+  <data name="Globals_LaunchParameters.Header" xml:space="preserve">
+    <value>Launch parameters</value>
+    <comment>Header for a set of settings that determine how terminal launches. These settings include the launch mode, launch position and whether the terminal should center itself on launch.</comment>
+  </data>
+  <data name="Globals_LaunchParameters.HelpText" xml:space="preserve">
+    <value>Settings that control how the terminal launches</value>
+    <comment>A description for what the "launch parameters" expander contains. Presented near "Globals_LaunchParameters.Header".</comment>
+  </data>
+  <data name="Globals_LaunchModeSetting.Text" xml:space="preserve">
+    <value>Launch mode</value>
+    <comment>Header for a control to select what mode to launch the terminal in.</comment>
+  </data>
+  <data name="Globals_LaunchModeSetting.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>How the terminal will appear on launch. Focus will hide the tabs and title bar.</value>
     <comment>'Focus' must match &lt;Globals_LaunchModeFocus.Content&gt;.</comment>
   </data>
@@ -418,6 +478,18 @@
     <value>When enabled, this enables the launch of Terminal at machine startup.</value>
     <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin.Header".</comment>
   </data>
+  <data name="Globals_CenterOnLaunchCentered" xml:space="preserve">
+    <value>Centered</value>
+    <comment>Shorthand, explanatory text displayed when the user has enabled the feature indicated by "Globals_CenterOnLaunch.Text".</comment>
+  </data>
+  <data name="Globals_CenterOnLaunch.Text" xml:space="preserve">
+    <value>Center on launch</value>
+    <comment>Header for a control to toggle whether the app should launch in the center of the screen, or not.</comment>
+  </data>
+  <data name="Globals_CenterOnLaunch.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>When enabled, the window will be placed in the center of the screen when launched.</value>
+    <comment>A description for what the "center on launch" setting does. Presented near "Globals_CenterOnLaunch.Header".</comment>
+  </data>
   <data name="Globals_AlwaysOnTop.Header" xml:space="preserve">
     <value>Always on top</value>
     <comment>Header for a control to toggle if the app will always be presented on top of other windows, or is treated normally (when disabled).</comment>
@@ -478,33 +550,17 @@
     <value>Appearance</value>
     <comment>Header for the "appearance" menu item. This navigates to a page that lets you see and modify settings related to the app's appearance.</comment>
   </data>
-  <data name="Nav_Appearance.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Appearance</value>
-    <comment>Tooltip for the "appearance" menu item.</comment>
-  </data>
   <data name="Nav_ColorSchemes.Content" xml:space="preserve">
     <value>Color schemes</value>
     <comment>Header for the "color schemes" menu item. This navigates to a page that lets you see and modify schemes of colors that can be used by the terminal.</comment>
-  </data>
-  <data name="Nav_ColorSchemes.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Color schemes</value>
-    <comment>Tooltip for the "color schemes" menu item.</comment>
   </data>
   <data name="Nav_Interaction.Content" xml:space="preserve">
     <value>Interaction</value>
     <comment>Header for the "interaction" menu item. This navigates to a page that lets you see and modify settings related to the user's mouse and touch interactions with the app.</comment>
   </data>
-  <data name="Nav_Interaction.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Interaction</value>
-    <comment>Tooltip for the "interaction" menu item.</comment>
-  </data>
   <data name="Nav_Launch.Content" xml:space="preserve">
     <value>Startup</value>
     <comment>Header for the "startup" menu item. This navigates to a page that lets you see and modify settings related to the app's launch experience (i.e. screen position, mode, etc.)</comment>
-  </data>
-  <data name="Nav_Launch.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Startup</value>
-    <comment>Tooltip for the "startup" menu item.</comment>
   </data>
   <data name="Nav_OpenJSON.Content" xml:space="preserve">
     <value>Open JSON file</value>
@@ -514,25 +570,13 @@
     <value>Defaults</value>
     <comment>Header for the "defaults" menu item. This navigates to a page that lets you see and modify settings that affect profiles. This is the lowest layer of profile settings that all other profile settings are based on. If a profile doesn't define a setting, this page is responsible for figuring out what that setting is supposed to be.</comment>
   </data>
-  <data name="Nav_ProfileDefaults.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Defaults</value>
-    <comment>Tooltip for the "profile defaults" menu item.</comment>
-  </data>
   <data name="Nav_Rendering.Content" xml:space="preserve">
     <value>Rendering</value>
     <comment>Header for the "rendering" menu item. This navigates to a page that lets you see and modify settings related to the app's rendering of text in the terminal.</comment>
   </data>
-  <data name="Nav_Rendering.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Rendering</value>
-    <comment>Tooltip for the "rendering" menu item.</comment>
-  </data>
   <data name="Nav_Actions.Content" xml:space="preserve">
     <value>Actions</value>
     <comment>Header for the "actions" menu item. This navigates to a page that lets you see and modify commands, key bindings, and actions that can be done in the app.</comment>
-  </data>
-  <data name="Nav_Actions.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Actions</value>
-    <comment>Tooltip for the "actions" menu item.</comment>
   </data>
   <data name="Profile_OpacitySlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Background opacity</value>
@@ -932,7 +976,11 @@
   </data>
   <data name="Profile_ScrollbarVisibilityVisible.Content" xml:space="preserve">
     <value>Visible</value>
-    <comment>An option to choose from for the "scrollbar visibility" setting. When selected, the scrollbar is visible.</comment>
+    <comment>An option to choose from for the "scrollbar visibility" setting. When selected, the scrollbar is visible but may dynamically shrink.</comment>
+  </data>
+  <data name="Profile_ScrollbarVisibilityAlways.Content" xml:space="preserve">
+    <value>Always</value>
+    <comment>An option to choose from for the "scrollbar visibility" setting. When selected, the scrollbar is always visible.</comment>
   </data>
   <data name="Profile_SnapOnInput.Header" xml:space="preserve">
     <value>Scroll to input when typing</value>
@@ -1071,8 +1119,8 @@
     <comment>A description for what the "bell style" setting does. Presented near "Profile_BellStyle".{Locked="BEL"}</comment>
   </data>
   <data name="Profile_UseAtlasEngine.Header" xml:space="preserve">
-    <value>Enable experimental text rendering engine</value>
-    <comment>An option to enable an experimental text rendering engine</comment>
+    <value>Use the new text renderer ("AtlasEngine")</value>
+    <comment>{Locked="AtlasEngine"}</comment>
   </data>
   <data name="Profile_VtPassthrough.Header" xml:space="preserve">
     <value>Enable experimental virtual terminal passthrough</value>
@@ -1146,6 +1194,14 @@
     <value>The number of rows and columns displayed in the window upon first load. Measured in characters.</value>
     <comment>A description for what the "rows" and "columns" settings do. Presented near "Globals_LaunchSize.Header".</comment>
   </data>
+  <data name="Globals_LaunchPosition.Text" xml:space="preserve">
+    <value>Launch position</value>
+    <comment>Header for a group of settings that control the launch position of the app. Presented near "Globals_InitialPosX" and "Globals_InitialPosY".</comment>
+  </data>
+  <data name="Globals_LaunchPosition.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>The initial position of the terminal window upon startup. When launching as maximized, full screen, or with "Center on launch" enabled, this is used to target the monitor of interest.</value>
+    <comment>A description for what the "X position" and "Y position" settings do. Presented near "Globals_LaunchPosition.Header".</comment>
+  </data>
   <data name="Profile_BellStyleAll.Content" xml:space="preserve">
     <value>All</value>
     <comment>An option to choose from for the "bell style" setting. When selected, a combination of the other bell styles is used to notify the user.</comment>
@@ -1167,6 +1223,14 @@
   </data>
   <data name="ColorScheme_DeleteButton.Text" xml:space="preserve">
     <value>Delete color scheme</value>
+    <comment>Button label that deletes the selected color scheme.</comment>
+  </data>
+  <data name="ColorScheme_EditButton.Text" xml:space="preserve">
+    <value>Edit</value>
+    <comment>Button label that edits the currently selected color scheme.</comment>
+  </data>
+  <data name="ColorScheme_DeleteButton2.Text" xml:space="preserve">
+    <value>Delete</value>
     <comment>Button label that deletes the selected color scheme.</comment>
   </data>
   <data name="ColorScheme_Name.Header" xml:space="preserve">
@@ -1345,6 +1409,10 @@
     <value>System colors</value>
     <comment>A header for a grouping of colors in the color scheme. These colors are used for functional parts of the terminal.</comment>
   </data>
+  <data name="ColorScheme_ColorsHeader.Header" xml:space="preserve">
+    <value>Colors</value>
+    <comment>A header for the grouping of colors in the color scheme.</comment>
+  </data>
   <data name="SettingContainer_OverrideMessageFragmentExtension" xml:space="preserve">
     <value>Reset to value from: {}</value>
     <comment>{} is replaced by the name of another profile or generator. This is a text label on a button that is dynamically generated and provides more context in the {}.</comment>
@@ -1472,5 +1540,25 @@
   <data name="Globals_AutoHideWindow.HelpText" xml:space="preserve">
     <value>If enabled, the window will be hidden as soon as it loses focus.</value>
     <comment>A description for what the "Automatically hide window" setting does.</comment>
+  </data>
+  <data name="ColorScheme_DeleteDisclaimerInBox" xml:space="preserve">
+    <value>This color scheme cannot be deleted because it is included by default.</value>
+    <comment>Disclaimer presented near the controls to delete the selected color scheme when that functionality is disabled.</comment>
+  </data>
+  <data name="ColorScheme_RenameDisclaimerInBox" xml:space="preserve">
+    <value>This color scheme cannot be renamed because it is included by default.</value>
+    <comment>Disclaimer presented near the controls to rename the color scheme when that functionality is disabled.</comment>
+  </data>
+  <data name="ColorScheme_DefaultTag.Text" xml:space="preserve">
+    <value>default</value>
+    <comment>Text label displayed adjacent to a "color scheme" entry signifying that it is currently set as the default color scheme to be used.</comment>
+  </data>
+  <data name="ColorScheme_SetAsDefaultButton.Content" xml:space="preserve">
+    <value>Set as default</value>
+    <comment>Text label for a button that, when invoked, sets the selected color scheme as the default scheme to use.</comment>
+  </data>
+  <data name="Globals_ConfirmCloseAllTabs.Header" xml:space="preserve">
+    <value>Confirm before closing all tabs</value>
+    <comment>Header for a control to toggle whether to show a confirm dialog box when closing the application with multiple tabs open.</comment>
   </data>
 </root>

@@ -28,12 +28,14 @@
     <ClCompile Include="ReplaceTests.cpp" />
     <ClCompile Include="RunLengthEncodingTests.cpp" />
     <ClCompile Include="SizeTests.cpp" />
+    <ClCompile Include="SmallVectorTests.cpp" />
     <ClCompile Include="SomeTests.cpp" />
     <ClCompile Include="SPSCTests.cpp" />
     <ClCompile Include="StaticMapTests.cpp" />
     <ClCompile Include="string.cpp" />
     <ClCompile Include="throttled_func.cpp" />
     <ClCompile Include="u8u16convertTests.cpp" />
+    <ClCompile Include="UnicodeTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\inc\til\at.h" />
@@ -55,6 +57,7 @@
     <ClInclude Include="..\..\inc\til\replace.h" />
     <ClInclude Include="..\..\inc\til\rle.h" />
     <ClInclude Include="..\..\inc\til\size.h" />
+    <ClInclude Include="..\..\inc\til\small_vector.h" />
     <ClInclude Include="..\..\inc\til\some.h" />
     <ClInclude Include="..\..\inc\til\spsc.h" />
     <ClInclude Include="..\..\inc\til\static_map.h" />
@@ -62,6 +65,7 @@
     <ClInclude Include="..\..\inc\til\throttled_func.h" />
     <ClInclude Include="..\..\inc\til\ticket_lock.h" />
     <ClInclude Include="..\..\inc\til\u8u16convert.h" />
+    <ClInclude Include="..\..\inc\til\unicode.h" />
     <ClInclude Include="..\precomp.h" />
   </ItemGroup>
   <ItemDefinitionGroup>

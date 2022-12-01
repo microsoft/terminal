@@ -4,14 +4,14 @@
 #include "precomp.h"
 
 #include "conimeinfo.h"
-#include "conareainfo.h"
 
+#include <til/unicode.h>
+
+#include "conareainfo.h"
 #include "_output.h"
 #include "dbcs.h"
-
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/GlyphWidth.hpp"
-#include "../types/inc/Utf16Parser.hpp"
 
 // Attributes flags:
 #define COMMON_LVB_GRID_SINGLEFLAG 0x2000 // DBCS: Grid attribute: use for ime cursor.
@@ -223,12 +223,9 @@ std::vector<OutputCell> ConsoleImeInfo::s_ConvertToCells(const std::wstring_view
 {
     std::vector<OutputCell> cells;
 
-    // - Convert incoming wchar_t stream into UTF-16 units.
-    const auto glyphs = Utf16Parser::Parse(text);
-
     // - Walk through all of the grouped up text, match up the correct attribute to it, and make a new cell.
     size_t attributesUsed = 0;
-    for (const auto& parsedGlyph : glyphs)
+    for (const auto& parsedGlyph : til::utf16_iterator{ text })
     {
         const std::wstring_view glyph{ parsedGlyph.data(), parsedGlyph.size() };
         // Collect up attributes that apply to this glyph range.
@@ -256,7 +253,7 @@ std::vector<OutputCell> ConsoleImeInfo::s_ConvertToCells(const std::wstring_view
         // If it's full width, it's two, and we need to make sure we don't draw the cursor
         // right down the middle of the character.
         // Otherwise it's one column and we'll push it in with the default empty DbcsAttribute.
-        DbcsAttribute dbcsAttr;
+        DbcsAttribute dbcsAttr = DbcsAttribute::Single;
         if (IsGlyphFullWidth(glyph))
         {
             auto leftHalfAttr = drawingAttr;
@@ -269,9 +266,9 @@ std::vector<OutputCell> ConsoleImeInfo::s_ConvertToCells(const std::wstring_view
                 leftHalfAttr.SetRightVerticalDisplayed(false);
             }
 
-            dbcsAttr.SetLeading();
+            dbcsAttr = DbcsAttribute::Leading;
             cells.emplace_back(glyph, dbcsAttr, leftHalfAttr);
-            dbcsAttr.SetTrailing();
+            dbcsAttr = DbcsAttribute::Trailing;
 
             // If we need a left vertical, don't apply it to the right side of the character
             if (rightHalfAttr.IsLeftVerticalDisplayed())
@@ -346,7 +343,7 @@ std::vector<OutputCell>::const_iterator ConsoleImeInfo::_WriteConversionArea(con
     // Get the last cell in the run and if it's a leading byte, move the end position back one so we don't
     // try to insert it.
     const auto lastCell = lineEnd - 1;
-    if (lastCell->DbcsAttr().IsLeading())
+    if (lastCell->DbcsAttr() == DbcsAttribute::Leading)
     {
         lineEnd--;
     }

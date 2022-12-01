@@ -2,16 +2,16 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-#include <windows.h>
 #include "terminalInput.hpp"
 
-#include "strsafe.h"
+#include <til/unicode.h>
+#include <strsafe.h>
 
 #define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
 #include <wil/Common.h>
 
+#include "../../interactivity/inc/VtApiRedirection.hpp"
 #include "../../inc/unicode.hpp"
-#include "../../types/inc/Utf16Parser.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -71,9 +71,8 @@ static constexpr std::array<TermKeyMap, 6> s_cursorKeysVt52Mapping{
     TermKeyMap{ VK_END, L"\033F" },
 };
 
-static constexpr std::array<TermKeyMap, 20> s_keypadNumericMapping{
+static constexpr std::array<TermKeyMap, 19> s_keypadNumericMapping{
     TermKeyMap{ VK_TAB, L"\x09" },
-    TermKeyMap{ VK_BACK, L"\x7f" },
     TermKeyMap{ VK_PAUSE, L"\x1a" },
     TermKeyMap{ VK_ESCAPE, L"\x1b" },
     TermKeyMap{ VK_INSERT, L"\x1b[2~" },
@@ -103,9 +102,8 @@ static constexpr std::array<TermKeyMap, 20> s_keypadNumericMapping{
 //It seems to me as though this was used for early numpad implementations, where presently numlock would enable
 //  "numeric" mode, outputting the numbers on the keys, while "application" mode does things like pgup/down, arrow keys, etc.
 //These keys aren't translated at all in numeric mode, so I figured I'd leave them out of the numeric table.
-static constexpr std::array<TermKeyMap, 20> s_keypadApplicationMapping{
+static constexpr std::array<TermKeyMap, 19> s_keypadApplicationMapping{
     TermKeyMap{ VK_TAB, L"\x09" },
-    TermKeyMap{ VK_BACK, L"\x7f" },
     TermKeyMap{ VK_PAUSE, L"\x1a" },
     TermKeyMap{ VK_ESCAPE, L"\x1b" },
     TermKeyMap{ VK_INSERT, L"\x1b[2~" },
@@ -153,9 +151,8 @@ static constexpr std::array<TermKeyMap, 20> s_keypadApplicationMapping{
     // TermKeyMap{ VK_TAB, L"\x1bOI" },   // So I left them here as a reference just in case.
 };
 
-static constexpr std::array<TermKeyMap, 20> s_keypadVt52Mapping{
+static constexpr std::array<TermKeyMap, 19> s_keypadVt52Mapping{
     TermKeyMap{ VK_TAB, L"\x09" },
-    TermKeyMap{ VK_BACK, L"\x7f" },
     TermKeyMap{ VK_PAUSE, L"\x1a" },
     TermKeyMap{ VK_ESCAPE, L"\x1b" },
     TermKeyMap{ VK_INSERT, L"\x1b[2~" },
@@ -211,10 +208,7 @@ static constexpr std::array<TermKeyMap, 22> s_modifierKeyMapping{
 // These sequences are not later updated to encode the modifier state in the
 //      sequence itself, they are just weird exceptional cases to the general
 //      rules above.
-static constexpr std::array<TermKeyMap, 14> s_simpleModifiedKeyMapping{
-    TermKeyMap{ VK_BACK, CTRL_PRESSED, L"\x8" },
-    TermKeyMap{ VK_BACK, ALT_PRESSED, L"\x1b\x7f" },
-    TermKeyMap{ VK_BACK, CTRL_PRESSED | ALT_PRESSED, L"\x1b\x8" },
+static constexpr std::array<TermKeyMap, 11> s_simpleModifiedKeyMapping{
     TermKeyMap{ VK_TAB, CTRL_PRESSED, L"\t" },
     TermKeyMap{ VK_TAB, SHIFT_PRESSED, L"\x1b[Z" },
     TermKeyMap{ VK_DIVIDE, CTRL_PRESSED, L"\x1F" },
@@ -428,8 +422,8 @@ static bool _searchWithModifier(const KeyEvent& keyEvent, InputSender sender)
             // VkKeyScan will give us both the Vkey of the key needed for this
             // character, and the modifiers the user might need to press to get
             // this character.
-            const auto slashKeyScan = VkKeyScan(L'/'); // On USASCII: 0x00bf
-            const auto questionMarkKeyScan = VkKeyScan(L'?'); //On USASCII: 0x01bf
+            const auto slashKeyScan = OneCoreSafeVkKeyScanW(L'/'); // On USASCII: 0x00bf
+            const auto questionMarkKeyScan = OneCoreSafeVkKeyScanW(L'?'); //On USASCII: 0x01bf
 
             const auto slashVkey = LOBYTE(slashKeyScan);
             const auto questionMarkVkey = LOBYTE(questionMarkKeyScan);
@@ -556,10 +550,47 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
         return true;
     }
 
+    // Check if this key matches the last recorded key code.
+    const auto matchingLastKeyPress = _lastVirtualKeyCode == keyEvent.GetVirtualKeyCode();
+
     // Only need to handle key down. See raw key handler (see RawReadWaitRoutine in stream.cpp)
     if (!keyEvent.IsKeyDown())
     {
+        // If this is a release of the last recorded key press, we can reset that.
+        if (matchingLastKeyPress)
+        {
+            _lastVirtualKeyCode = std::nullopt;
+        }
         return false;
+    }
+
+    // If this is a repeat of the last recorded key press, and Auto Repeat Mode
+    // is disabled, then we should suppress this event.
+    if (matchingLastKeyPress && !_inputMode.test(Mode::AutoRepeat))
+    {
+        // Note that we must return true here to say we've handled the event,
+        // otherwise the key press can still end up being submitted.
+        return true;
+    }
+    _lastVirtualKeyCode = keyEvent.GetVirtualKeyCode();
+
+    // The VK_BACK key depends on the state of Backarrow Key mode (DECBKM).
+    // If the mode is set, we should send BS. If reset, we should send DEL.
+    if (keyEvent.GetVirtualKeyCode() == VK_BACK)
+    {
+        // The Ctrl modifier reverses the interpretation of DECBKM.
+        const auto backarrowMode = _inputMode.test(Mode::BackarrowKey) != keyEvent.IsCtrlPressed();
+        const auto seq = backarrowMode ? L'\x08' : L'\x7f';
+        // The Alt modifier adds an escape prefix.
+        if (keyEvent.IsAltPressed())
+        {
+            _SendEscapedInputSequence(seq);
+        }
+        else
+        {
+            _SendInputSequence({ &seq, 1 });
+        }
+        return true;
     }
 
     // Many keyboard layouts have an AltGr key, which makes widely used characters accessible.
@@ -606,7 +637,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
         // Currently, when we're called with Alt+Ctrl+@, ch will be 0, since Ctrl+@ equals a null byte.
         // VkKeyScanW(0) in turn returns the vkey for the null character (ASCII @).
         // -> Use the vkey to determine if Ctrl+@ is being pressed and produce ^[^@.
-        if (ch == UNICODE_NULL && vkey == LOBYTE(VkKeyScanW(0)))
+        if (ch == UNICODE_NULL && vkey == LOBYTE(OneCoreSafeVkKeyScanW(0)))
         {
             _SendEscapedInputSequence(L'\0');
             return true;
@@ -647,7 +678,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
         // Currently, when we're called with Ctrl+@, ch will be 0, since Ctrl+@ equals a null byte.
         // VkKeyScanW(0) in turn returns the vkey for the null character (ASCII @).
         // -> Use the vkey to alternatively determine if Ctrl+@ is being pressed.
-        if (ch == UNICODE_SPACE || (ch == UNICODE_NULL && vkey == LOBYTE(VkKeyScanW(0))))
+        if (ch == UNICODE_SPACE || (ch == UNICODE_NULL && vkey == LOBYTE(OneCoreSafeVkKeyScanW(0))))
         {
             _SendNullInputSequence(keyEvent.GetActiveModifierKeys());
             return true;
@@ -659,7 +690,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
         if (ch == UNICODE_NULL)
         {
             // -> Try to infer the character from the vkey.
-            auto mappedChar = LOWORD(MapVirtualKeyW(keyEvent.GetVirtualKeyCode(), MAPVK_VK_TO_CHAR));
+            auto mappedChar = LOWORD(OneCoreSafeMapVirtualKeyW(keyEvent.GetVirtualKeyCode(), MAPVK_VK_TO_CHAR));
             if (mappedChar)
             {
                 // Pressing the control key causes all bits but the 5 least
@@ -707,7 +738,7 @@ bool TerminalInput::HandleFocus(const bool focused) noexcept
 // - ch: The UTF-16 character to send.
 void TerminalInput::_SendChar(const wchar_t ch)
 {
-    if (Utf16Parser::IsLeadingSurrogate(ch))
+    if (til::is_leading_surrogate(ch))
     {
         if (_leadingSurrogate.has_value())
         {
@@ -760,7 +791,7 @@ void TerminalInput::_SendNullInputSequence(const DWORD controlKeyState) const
         std::deque<std::unique_ptr<IInputEvent>> inputEvents;
         inputEvents.push_back(std::make_unique<KeyEvent>(true,
                                                          1ui16,
-                                                         LOBYTE(VkKeyScanW(0)),
+                                                         LOBYTE(OneCoreSafeVkKeyScanW(0)),
                                                          0ui16,
                                                          L'\x0',
                                                          controlKeyState));

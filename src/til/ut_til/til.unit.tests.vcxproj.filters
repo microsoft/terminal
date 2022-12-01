@@ -10,6 +10,7 @@
     <ClCompile Include="CoalesceTests.cpp" />
     <ClCompile Include="ColorTests.cpp" />
     <ClCompile Include="EnumSetTests.cpp" />
+    <ClCompile Include="HashTests.cpp" />
     <ClCompile Include="MathTests.cpp" />
     <ClCompile Include="mutex.cpp" />
     <ClCompile Include="OperatorTests.cpp" />
@@ -18,13 +19,14 @@
     <ClCompile Include="ReplaceTests.cpp" />
     <ClCompile Include="RunLengthEncodingTests.cpp" />
     <ClCompile Include="SizeTests.cpp" />
+    <ClCompile Include="SmallVectorTests.cpp" />
     <ClCompile Include="SomeTests.cpp" />
     <ClCompile Include="SPSCTests.cpp" />
     <ClCompile Include="StaticMapTests.cpp" />
     <ClCompile Include="string.cpp" />
     <ClCompile Include="throttled_func.cpp" />
     <ClCompile Include="u8u16convertTests.cpp" />
-    <ClCompile Include="HashTests.cpp" />
+    <ClCompile Include="UnicodeTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\precomp.h" />
@@ -85,6 +87,9 @@
     <ClInclude Include="..\..\inc\til\size.h">
       <Filter>inc</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\inc\til\small_vector.h">
+      <Filter>inc</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\inc\til\some.h">
       <Filter>inc</Filter>
     </ClInclude>
@@ -104,6 +109,9 @@
       <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\til\u8u16convert.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\til\unicode.h">
       <Filter>inc</Filter>
     </ClInclude>
   </ItemGroup>

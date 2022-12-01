@@ -38,9 +38,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     {
     }
 
-    Monarch::~Monarch()
-    {
-    }
+    Monarch::~Monarch() = default;
 
     uint64_t Monarch::GetPID()
     {

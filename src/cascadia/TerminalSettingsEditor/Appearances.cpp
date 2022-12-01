@@ -91,6 +91,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         InitializeComponent();
 
+        {
+            using namespace winrt::Windows::Globalization::NumberFormatting;
+            // > .NET rounds to 12 significant digits when displaying doubles, so we will [...]
+            // ...obviously not do that, because this is an UI element for humans. This prevents
+            // issues when displaying 32-bit floats, because WinUI is unaware about their existence.
+            SignificantDigitsNumberRounder rounder;
+            rounder.SignificantDigits(6);
+            // BODGY: Depends on WinUI internals.
+            _fontSizeBox().NumberFormatter().as<DecimalFormatter>().NumberRounder(rounder);
+        }
+
         INITIALIZE_BINDABLE_ENUM_SETTING(CursorShape, CursorStyle, winrt::Microsoft::Terminal::Core::CursorStyle, L"Profile_CursorShape", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(AdjustIndistinguishableColors, AdjustIndistinguishableColors, winrt::Microsoft::Terminal::Core::AdjustTextMode, L"Profile_AdjustIndistinguishableColors", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING_REVERSE_ORDER(BackgroundImageStretchMode, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch, L"Profile_BackgroundImageStretchMode", L"Content");
@@ -135,11 +146,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Automation::AutomationProperties::SetFullDescription(UseDesktopImageCheckBox(), unbox_value<hstring>(backgroundImgCheckboxTooltip));
 
         INITIALIZE_BINDABLE_ENUM_SETTING(IntenseTextStyle, IntenseTextStyle, winrt::Microsoft::Terminal::Settings::Model::IntenseStyle, L"Appearance_IntenseTextStyle", L"Content");
-    }
-
-    bool Appearances::ShowIndistinguishableColorsItem() const noexcept
-    {
-        return Feature_AdjustIndistinguishableText::IsEnabled();
     }
 
     // Method Description:

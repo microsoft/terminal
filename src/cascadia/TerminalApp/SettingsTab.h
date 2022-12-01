@@ -24,7 +24,8 @@ namespace winrt::TerminalApp::implementation
     struct SettingsTab : SettingsTabT<SettingsTab, TabBase>
     {
     public:
-        SettingsTab(winrt::Microsoft::Terminal::Settings::Editor::MainPage settingsUI);
+        SettingsTab(winrt::Microsoft::Terminal::Settings::Editor::MainPage settingsUI,
+                    winrt::Windows::UI::Xaml::ElementTheme requestedTheme);
 
         void UpdateSettings(Microsoft::Terminal::Settings::Model::CascadiaSettings settings);
         void Focus(winrt::Windows::UI::Xaml::FocusState focusState) override;
@@ -32,7 +33,11 @@ namespace winrt::TerminalApp::implementation
         std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> BuildStartupActions() const override;
 
     private:
+        winrt::Windows::UI::Xaml::ElementTheme _requestedTheme;
+
         void _MakeTabViewItem() override;
         winrt::fire_and_forget _CreateIcon();
+
+        virtual winrt::Windows::UI::Xaml::Media::Brush _BackgroundBrush() override;
     };
 }
