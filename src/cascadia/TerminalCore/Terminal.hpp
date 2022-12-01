@@ -115,6 +115,7 @@ public:
     void SetViewportPosition(const til::point position) noexcept override;
     void SetTextAttributes(const TextAttribute& attrs) noexcept override;
     void SetAutoWrapMode(const bool wrapAtEOL) noexcept override;
+    bool GetAutoWrapMode() const noexcept override;
     void SetScrollingRegion(const til::inclusive_rect& scrollMargins) noexcept override;
     void WarningBell() override;
     bool GetLineFeedMode() const noexcept override;
@@ -124,7 +125,8 @@ public:
     bool ResizeWindow(const til::CoordType width, const til::CoordType height) noexcept override;
     void SetConsoleOutputCP(const unsigned int codepage) noexcept override;
     unsigned int GetConsoleOutputCP() const noexcept override;
-    void EnableXtermBracketedPasteMode(const bool enabled) noexcept override;
+    void SetBracketedPasteMode(const bool enabled) noexcept override;
+    std::optional<bool> GetBracketedPasteMode() const noexcept override;
     void CopyToClipboard(std::wstring_view content) override;
     void SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) override;
     void SetWorkingDirectory(std::wstring_view uri) override;

@@ -101,6 +101,13 @@ void Cursor::SetIsOn(const bool fIsOn) noexcept
 void Cursor::SetBlinkingAllowed(const bool fBlinkingAllowed) noexcept
 {
     _fBlinkingAllowed = fBlinkingAllowed;
+    // GH#2642 - From what we've gathered from other terminals, when blinking is
+    // disabled, the cursor should remain On always, and have the visibility
+    // controlled by the IsVisible property. So when you do a printf "\e[?12l"
+    // to disable blinking, the cursor stays stuck On. At this point, only the
+    // cursor visibility property controls whether the user can see it or not.
+    // (Yes, the cursor can be On and NOT Visible)
+    _fIsOn = true;
     _RedrawCursorAlways();
 }
 

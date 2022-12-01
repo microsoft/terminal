@@ -21,9 +21,6 @@ AdaptDispatch::AdaptDispatch(ITerminalApi& api, Renderer& renderer, RenderSettin
     _renderSettings{ renderSettings },
     _terminalInput{ terminalInput },
     _usingAltBuffer(false),
-    _isOriginModeRelative(false), // by default, the DECOM origin mode is absolute.
-    _isDECCOLMAllowed(false), // by default, DECCOLM is not allowed.
-    _isChangeExtentRectangular(false),
     _termOutput()
 {
 }
@@ -206,7 +203,7 @@ bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
     // viewport, or the top margin, depending on the origin mode.
     if (rowOffset.IsAbsolute)
     {
-        row = _isOriginModeRelative ? topMargin : viewport.top;
+        row = _modes.test(Mode::Origin) ? topMargin : viewport.top;
     }
 
     // And if the column is absolute, it'll be relative to column 0.
@@ -225,7 +222,7 @@ bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
     // If the operation needs to be clamped inside the margins, or the origin
     // mode is relative (which always requires margin clamping), then the row
     // may need to be adjusted further.
-    if (clampInMargins || _isOriginModeRelative)
+    if (clampInMargins || _modes.test(Mode::Origin))
     {
         // See microsoft/terminal#2929 - If the cursor is _below_ the top
         // margin, it should stay below the top margin. If it's _above_ the
@@ -351,10 +348,10 @@ bool AdaptDispatch::CursorSaveState()
     auto& savedCursorState = _savedCursorState.at(_usingAltBuffer);
     savedCursorState.Column = cursorPosition.x + 1;
     savedCursorState.Row = cursorPosition.y + 1;
-    savedCursorState.IsOriginModeRelative = _isOriginModeRelative;
+    savedCursorState.IsOriginModeRelative = _modes.test(Mode::Origin);
     savedCursorState.Attributes = attributes;
     savedCursorState.TermOutput = _termOutput;
-    savedCursorState.C1ControlsAccepted = _GetParserMode(StateMachine::Mode::AcceptC1);
+    savedCursorState.C1ControlsAccepted = _api.GetStateMachine().GetParserMode(StateMachine::Mode::AcceptC1);
     savedCursorState.CodePage = _api.GetConsoleOutputCP();
 
     return true;
@@ -386,11 +383,11 @@ bool AdaptDispatch::CursorRestoreState()
     }
 
     // The saved coordinates are always absolute, so we need reset the origin mode temporarily.
-    _isOriginModeRelative = false;
+    _modes.reset(Mode::Origin);
     CursorPosition(row, col);
 
     // Once the cursor position is restored, we can then restore the actual origin mode.
-    _isOriginModeRelative = savedCursorState.IsOriginModeRelative;
+    _modes.set(Mode::Origin, savedCursorState.IsOriginModeRelative);
 
     // Restore text attributes.
     _api.SetTextAttributes(savedCursorState.Attributes);
@@ -407,18 +404,6 @@ bool AdaptDispatch::CursorRestoreState()
         _api.SetConsoleOutputCP(savedCursorState.CodePage);
     }
 
-    return true;
-}
-
-// Routine Description:
-// - DECTCEM - Sets the show/hide visibility status of the cursor.
-// Arguments:
-// - fIsVisible - Turns the cursor rendering on (TRUE) or off (FALSE).
-// Return Value:
-// - True.
-bool AdaptDispatch::CursorVisibility(const bool fIsVisible)
-{
-    _api.GetTextBuffer().GetCursor().SetIsVisible(fIsVisible);
     return true;
 }
 
@@ -826,7 +811,7 @@ void AdaptDispatch::_ChangeRectAttributes(TextBuffer& textBuffer, const til::rec
 // Arguments:
 // - changeArea - Area of the buffer that will be affected. This may be
 //     interpreted as a rectangle or a stream depending on the state of the
-//     _isChangeExtentRectangular field.
+//     RectangularChangeExtent mode.
 // - changeOps - Changes that will be applied to each of the attributes.
 // Return Value:
 // - <none>
@@ -839,7 +824,7 @@ void AdaptDispatch::_ChangeRectOrStreamAttributes(const til::rect& changeArea, c
 
     // If the change extent is rectangular, we can apply the change with a
     // single call. The same is true for a stream extent that is only one line.
-    if (_isChangeExtentRectangular || lineCount == 1)
+    if (_modes.test(Mode::RectangularChangeExtent) || lineCount == 1)
     {
         _ChangeRectAttributes(textBuffer, changeRect, changeOps);
     }
@@ -875,8 +860,8 @@ til::rect AdaptDispatch::_CalculateRectArea(const VTInt top, const VTInt left, c
     // We start by calculating the margin offsets and maximum dimensions.
     // If the origin mode isn't set, we use the viewport extent.
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, false);
-    const auto yOffset = _isOriginModeRelative ? topMargin : 0;
-    const auto yMaximum = _isOriginModeRelative ? bottomMargin + 1 : viewport.height();
+    const auto yOffset = _modes.test(Mode::Origin) ? topMargin : 0;
+    const auto yMaximum = _modes.test(Mode::Origin) ? bottomMargin + 1 : viewport.height();
     const auto xMaximum = bufferSize.width;
 
     auto fillRect = til::inclusive_rect{};
@@ -1139,10 +1124,10 @@ bool AdaptDispatch::SelectAttributeChangeExtent(const DispatchTypes::ChangeExten
     {
     case DispatchTypes::ChangeExtent::Default:
     case DispatchTypes::ChangeExtent::Stream:
-        _isChangeExtentRectangular = false;
+        _modes.reset(Mode::RectangularChangeExtent);
         return true;
     case DispatchTypes::ChangeExtent::Rectangle:
-        _isChangeExtentRectangular = true;
+        _modes.set(Mode::RectangularChangeExtent);
         return true;
     default:
         return false;
@@ -1313,7 +1298,7 @@ void AdaptDispatch::_CursorPositionReport(const bool extendedReport)
     cursorPosition.y++;
 
     // If the origin mode is relative, line numbers start at top margin of the scrolling region.
-    if (_isOriginModeRelative)
+    if (_modes.test(Mode::Origin))
     {
         const auto topMargin = _GetVerticalMargins(viewport, false).first;
         cursorPosition.y -= topMargin;
@@ -1376,86 +1361,68 @@ bool AdaptDispatch::ScrollDown(const VTInt uiDistance)
 }
 
 // Routine Description:
-// - DECSCPP / DECCOLM Sets the number of columns "per page" AKA sets the console width.
-// DECCOLM also clear the screen (like a CSI 2 J sequence), while DECSCPP just sets the width.
-// (DECCOLM will do this separately of this function)
-// Arguments:
-// - columns - Number of columns
-// Return Value:
-// - True.
-bool AdaptDispatch::SetColumns(const VTInt columns)
-{
-    const auto viewport = _api.GetViewport();
-    const auto viewportHeight = viewport.bottom - viewport.top;
-    _api.ResizeWindow(columns, viewportHeight);
-    return true;
-}
-
-// Routine Description:
 // - DECCOLM not only sets the number of columns, but also clears the screen buffer,
 //    resets the page margins and origin mode, and places the cursor at 1,1
 // Arguments:
-// - columns - Number of columns
+// - enable - the number of columns is set to 132 if true, 80 if false.
 // Return Value:
-// - True.
-bool AdaptDispatch::_DoDECCOLMHelper(const VTInt columns)
+// - <none>
+void AdaptDispatch::_SetColumnMode(const bool enable)
 {
     // Only proceed if DECCOLM is allowed. Return true, as this is technically a successful handling.
-    if (_isDECCOLMAllowed)
+    if (_modes.test(Mode::AllowDECCOLM) && !_api.IsConsolePty())
     {
-        SetColumns(columns);
-        SetOriginMode(false);
+        const auto viewport = _api.GetViewport();
+        const auto viewportHeight = viewport.bottom - viewport.top;
+        const auto viewportWidth = (enable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns);
+        _api.ResizeWindow(viewportWidth, viewportHeight);
+        _modes.set(Mode::Column, enable);
+        _modes.reset(Mode::Origin);
         CursorPosition(1, 1);
         EraseInDisplay(DispatchTypes::EraseType::All);
         _DoSetTopBottomScrollingMargins(0, 0);
     }
-    return true;
-}
-
-// Routine Description :
-// - Retrieves the various StateMachine parser modes.
-// Arguments:
-// - mode - the parser mode to query.
-// Return Value:
-// - true if the mode is enabled. false if disabled.
-bool AdaptDispatch::_GetParserMode(const StateMachine::Mode mode) const
-{
-    return _api.GetStateMachine().GetParserMode(mode);
 }
 
 // Routine Description:
-// - Sets the various StateMachine parser modes.
+// - Set the alternate screen buffer mode. In virtual terminals, there exists
+//     both a "main" screen buffer and an alternate. This mode is used to switch
+//     between the two.
 // Arguments:
-// - mode - the parser mode to change.
-// - enable - set to true to enable the mode, false to disable it.
+// - enable - true selects the alternate buffer, false returns to the main buffer.
 // Return Value:
 // - <none>
-void AdaptDispatch::_SetParserMode(const StateMachine::Mode mode, const bool enable)
+void AdaptDispatch::_SetAlternateScreenBufferMode(const bool enable)
 {
-    _api.GetStateMachine().SetParserMode(mode, enable);
+    if (enable)
+    {
+        CursorSaveState();
+        _api.UseAlternateScreenBuffer();
+        _usingAltBuffer = true;
+    }
+    else
+    {
+        _api.UseMainScreenBuffer();
+        _usingAltBuffer = false;
+        CursorRestoreState();
+    }
 }
 
 // Routine Description:
-// - Sets the various terminal input modes.
-// Arguments:
-// - mode - the input mode to change.
-// - enable - set to true to enable the mode, false to disable it.
+// - Determines whether we need to pass through input mode requests.
+//   If we're a conpty, AND WE'RE IN VT INPUT MODE, always pass input mode requests
+//   The VT Input mode check is to work around ssh.exe v7.7, which uses VT
+//   output, but not Input.
+//   The original comment said, "Once the conpty supports these types of input,
+//   this check can be removed. See GH#4911". Unfortunately, time has shown
+//   us that SSH 7.7 _also_ requests mouse input and that can have a user interface
+//   impact on the actual connected terminal. We can't remove this check,
+//   because SSH <=7.7 is out in the wild on all versions of Windows <=2004.
 // Return Value:
-// - true if successful. false otherwise.
-bool AdaptDispatch::_SetInputMode(const TerminalInput::Mode mode, const bool enable)
+// - True if we should pass through. False otherwise.
+bool AdaptDispatch::_PassThroughInputModes()
 {
-    _terminalInput.SetInputMode(mode, enable);
-
-    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always pass input mode requests
-    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
-    // output, but not Input.
-    // The original comment said, "Once the conpty supports these types of input,
-    // this check can be removed. See GH#4911". Unfortunately, time has shown
-    // us that SSH 7.7 _also_ requests mouse input and that can have a user interface
-    // impact on the actual connected terminal. We can't remove this check,
-    // because SSH <=7.7 is out in the wild on all versions of Windows <=2004.
-
-    return !_api.IsConsolePty() || !_api.IsVtInputEnabled();
+    return _api.IsConsolePty() && _api.IsVtInputEnabled();
 }
 
 // Routine Description:
@@ -1467,80 +1434,87 @@ bool AdaptDispatch::_SetInputMode(const TerminalInput::Mode mode, const bool ena
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, const bool enable)
 {
-    auto success = false;
     switch (param)
     {
     case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
-        // set - Enable Application Mode, reset - Normal mode
-        success = SetCursorKeysMode(enable);
-        break;
+        _terminalInput.SetInputMode(TerminalInput::Mode::CursorKey, enable);
+        return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::DECANM_AnsiMode:
-        success = SetAnsiMode(enable);
-        break;
+        return SetAnsiMode(enable);
     case DispatchTypes::ModeParams::DECCOLM_SetNumberOfColumns:
-        success = _DoDECCOLMHelper(enable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns);
-        break;
+        _SetColumnMode(enable);
+        return true;
     case DispatchTypes::ModeParams::DECSCNM_ScreenMode:
-        success = SetScreenMode(enable);
-        break;
+        _renderSettings.SetRenderMode(RenderSettings::Mode::ScreenReversed, enable);
+        // No need to force a redraw in pty mode.
+        if (_api.IsConsolePty())
+        {
+            return false;
+        }
+        _renderer.TriggerRedrawAll();
+        return true;
     case DispatchTypes::ModeParams::DECOM_OriginMode:
+        _modes.set(Mode::Origin, enable);
         // The cursor is also moved to the new home position when the origin mode is set or reset.
-        success = SetOriginMode(enable) && CursorPosition(1, 1);
-        break;
+        CursorPosition(1, 1);
+        return true;
     case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
-        success = SetAutoWrapMode(enable);
-        break;
+        _api.SetAutoWrapMode(enable);
+        return true;
     case DispatchTypes::ModeParams::DECARM_AutoRepeatMode:
-        success = _SetInputMode(TerminalInput::Mode::AutoRepeat, enable);
-        break;
+        _terminalInput.SetInputMode(TerminalInput::Mode::AutoRepeat, enable);
+        return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
-        success = EnableCursorBlinking(enable);
-        break;
+        _api.GetTextBuffer().GetCursor().SetBlinkingAllowed(enable);
+        return !_api.IsConsolePty();
     case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
-        success = CursorVisibility(enable);
-        break;
+        _api.GetTextBuffer().GetCursor().SetIsVisible(enable);
+        return true;
     case DispatchTypes::ModeParams::XTERM_EnableDECCOLMSupport:
-        success = EnableDECCOLMSupport(enable);
-        break;
+        _modes.set(Mode::AllowDECCOLM, enable);
+        return true;
+    case DispatchTypes::ModeParams::DECNKM_NumericKeypadMode:
+        _terminalInput.SetInputMode(TerminalInput::Mode::Keypad, enable);
+        return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::DECBKM_BackarrowKeyMode:
-        success = _SetInputMode(TerminalInput::Mode::BackarrowKey, enable);
-        break;
+        _terminalInput.SetInputMode(TerminalInput::Mode::BackarrowKey, enable);
+        return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::VT200_MOUSE_MODE:
-        success = EnableVT200MouseMode(enable);
-        break;
+        _terminalInput.SetInputMode(TerminalInput::Mode::DefaultMouseTracking, enable);
+        return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::BUTTON_EVENT_MOUSE_MODE:
-        success = EnableButtonEventMouseMode(enable);
-        break;
+        _terminalInput.SetInputMode(TerminalInput::Mode::ButtonEventMouseTracking, enable);
+        return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::ANY_EVENT_MOUSE_MODE:
-        success = EnableAnyEventMouseMode(enable);
-        break;
+        _terminalInput.SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, enable);
+        return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::UTF8_EXTENDED_MODE:
-        success = EnableUTF8ExtendedMouseMode(enable);
-        break;
+        _terminalInput.SetInputMode(TerminalInput::Mode::Utf8MouseEncoding, enable);
+        return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::SGR_EXTENDED_MODE:
-        success = EnableSGRExtendedMouseMode(enable);
-        break;
+        _terminalInput.SetInputMode(TerminalInput::Mode::SgrMouseEncoding, enable);
+        return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::FOCUS_EVENT_MODE:
-        success = EnableFocusEventMode(enable);
-        break;
+        _terminalInput.SetInputMode(TerminalInput::Mode::FocusEvent, enable);
+        // GH#12799 - If the app requested that we disable focus events, DON'T pass
+        // that through. ConPTY would _always_ like to know about focus events.
+        return !_PassThroughInputModes() || !enable;
     case DispatchTypes::ModeParams::ALTERNATE_SCROLL:
-        success = EnableAlternateScroll(enable);
-        break;
+        _terminalInput.SetInputMode(TerminalInput::Mode::AlternateScroll, enable);
+        return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::ASB_AlternateScreenBuffer:
-        success = enable ? UseAlternateScreenBuffer() : UseMainScreenBuffer();
-        break;
+        _SetAlternateScreenBufferMode(enable);
+        return true;
     case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
-        success = EnableXtermBracketedPasteMode(enable);
-        break;
+        _api.SetBracketedPasteMode(enable);
+        return !_api.IsConsolePty();
     case DispatchTypes::ModeParams::W32IM_Win32InputMode:
-        success = EnableWin32InputMode(enable);
-        break;
+        _terminalInput.SetInputMode(TerminalInput::Mode::Win32, enable);
+        return !_PassThroughInputModes();
     default:
         // If no functions to call, overall dispatch was a failure.
-        success = false;
-        break;
+        return false;
     }
-    return success;
 }
 
 // Routine Description:
@@ -1565,6 +1539,108 @@ bool AdaptDispatch::ResetMode(const DispatchTypes::ModeParams param)
     return _ModeParamsHelper(param, false);
 }
 
+// Routine Description:
+// - DECRQM - Requests the current state of a given mode number. The result
+//   is reported back with a DECRPM escape sequence.
+// Arguments:
+// - param - the mode number being queried
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
+{
+    auto enabled = std::optional<bool>{};
+
+    switch (param)
+    {
+    case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::CursorKey);
+        break;
+    case DispatchTypes::ModeParams::DECANM_AnsiMode:
+        enabled = _api.GetStateMachine().GetParserMode(StateMachine::Mode::Ansi);
+        break;
+    case DispatchTypes::ModeParams::DECCOLM_SetNumberOfColumns:
+        // DECCOLM is not supported in conpty mode
+        if (!_api.IsConsolePty())
+        {
+            enabled = _modes.test(Mode::Column);
+        }
+        break;
+    case DispatchTypes::ModeParams::DECSCNM_ScreenMode:
+        enabled = _renderSettings.GetRenderMode(RenderSettings::Mode::ScreenReversed);
+        break;
+    case DispatchTypes::ModeParams::DECOM_OriginMode:
+        enabled = _modes.test(Mode::Origin);
+        break;
+    case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
+        enabled = _api.GetAutoWrapMode();
+        break;
+    case DispatchTypes::ModeParams::DECARM_AutoRepeatMode:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::AutoRepeat);
+        break;
+    case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
+        enabled = _api.GetTextBuffer().GetCursor().IsBlinkingAllowed();
+        break;
+    case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
+        enabled = _api.GetTextBuffer().GetCursor().IsVisible();
+        break;
+    case DispatchTypes::ModeParams::XTERM_EnableDECCOLMSupport:
+        // DECCOLM is not supported in conpty mode
+        if (!_api.IsConsolePty())
+        {
+            enabled = _modes.test(Mode::AllowDECCOLM);
+        }
+        break;
+    case DispatchTypes::ModeParams::DECNKM_NumericKeypadMode:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::Keypad);
+        break;
+    case DispatchTypes::ModeParams::DECBKM_BackarrowKeyMode:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::BackarrowKey);
+        break;
+    case DispatchTypes::ModeParams::VT200_MOUSE_MODE:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::DefaultMouseTracking);
+        break;
+    case DispatchTypes::ModeParams::BUTTON_EVENT_MOUSE_MODE:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::ButtonEventMouseTracking);
+        break;
+    case DispatchTypes::ModeParams::ANY_EVENT_MOUSE_MODE:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::AnyEventMouseTracking);
+        break;
+    case DispatchTypes::ModeParams::UTF8_EXTENDED_MODE:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::Utf8MouseEncoding);
+        break;
+    case DispatchTypes::ModeParams::SGR_EXTENDED_MODE:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::SgrMouseEncoding);
+        break;
+    case DispatchTypes::ModeParams::FOCUS_EVENT_MODE:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::FocusEvent);
+        break;
+    case DispatchTypes::ModeParams::ALTERNATE_SCROLL:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::AlternateScroll);
+        break;
+    case DispatchTypes::ModeParams::ASB_AlternateScreenBuffer:
+        enabled = _usingAltBuffer;
+        break;
+    case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
+        enabled = _api.GetBracketedPasteMode();
+        break;
+    case DispatchTypes::ModeParams::W32IM_Win32InputMode:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::Win32);
+        break;
+    default:
+        enabled = std::nullopt;
+        break;
+    }
+
+    // 1 indicates the mode is enabled, 2 it's disabled, and 0 it's unsupported
+    const auto state = enabled.has_value() ? (enabled.value() ? 1 : 2) : 0;
+    const auto isPrivate = param >= DispatchTypes::DECPrivateMode(0);
+    const auto prefix = isPrivate ? L"?" : L"";
+    const auto mode = isPrivate ? param - DispatchTypes::DECPrivateMode(0) : param;
+    const auto response = wil::str_printf<std::wstring>(L"\x1b[%s%d;%d$y", prefix, mode, state);
+    _api.ReturnResponse(response);
+    return true;
+}
+
 // - DECKPAM, DECKPNM - Sets the keypad input mode to either Application mode or Numeric mode (true, false respectively)
 // Arguments:
 // - applicationMode - set to true to enable Application Mode Input, false for Numeric Mode Input.
@@ -1572,50 +1648,8 @@ bool AdaptDispatch::ResetMode(const DispatchTypes::ModeParams param)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::SetKeypadMode(const bool fApplicationMode)
 {
-    return _SetInputMode(TerminalInput::Mode::Keypad, fApplicationMode);
-}
-
-// Method Description:
-// - win32-input-mode: Enable sending full input records encoded as a string of
-//   characters to the client application.
-// Arguments:
-// - win32InputMode - set to true to enable win32-input-mode, false to disable.
-// Return Value:
-// - True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableWin32InputMode(const bool win32InputMode)
-{
-    return _SetInputMode(TerminalInput::Mode::Win32, win32InputMode);
-}
-
-// - DECCKM - Sets the cursor keys input mode to either Application mode or Normal mode (true, false respectively)
-// Arguments:
-// - applicationMode - set to true to enable Application Mode Input, false for Normal Mode Input.
-// Return Value:
-// - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetCursorKeysMode(const bool applicationMode)
-{
-    return _SetInputMode(TerminalInput::Mode::CursorKey, applicationMode);
-}
-
-// - att610 - Enables or disables the cursor blinking.
-// Arguments:
-// - enable - set to true to enable blinking, false to disable
-// Return Value:
-// - True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableCursorBlinking(const bool enable)
-{
-    auto& cursor = _api.GetTextBuffer().GetCursor();
-    cursor.SetBlinkingAllowed(enable);
-
-    // GH#2642 - From what we've gathered from other terminals, when blinking is
-    // disabled, the cursor should remain On always, and have the visibility
-    // controlled by the IsVisible property. So when you do a printf "\e[?12l"
-    // to disable blinking, the cursor stays stuck On. At this point, only the
-    // cursor visibility property controls whether the user can see it or not.
-    // (Yes, the cursor can be On and NOT Visible)
-    cursor.SetIsOn(true);
-
-    return !_api.IsConsolePty();
+    _terminalInput.SetInputMode(TerminalInput::Mode::Keypad, fApplicationMode);
+    return !_PassThroughInputModes();
 }
 
 // Routine Description:
@@ -1690,58 +1724,11 @@ bool AdaptDispatch::SetAnsiMode(const bool ansiMode)
     // need to be reset to defaults, even if the mode doesn't actually change.
     _termOutput = {};
 
-    _SetParserMode(StateMachine::Mode::Ansi, ansiMode);
-    _SetInputMode(TerminalInput::Mode::Ansi, ansiMode);
+    _api.GetStateMachine().SetParserMode(StateMachine::Mode::Ansi, ansiMode);
+    _terminalInput.SetInputMode(TerminalInput::Mode::Ansi, ansiMode);
 
-    // We don't check the _SetInputMode return value, because we'll never want
-    // to forward a DECANM mode change over conpty.
-    return true;
-}
-
-// Routine Description:
-// - DECSCNM - Sets the screen mode to either normal or reverse.
-//    When in reverse screen mode, the background and foreground colors are switched.
-// Arguments:
-// - reverseMode - set to true to enable reverse screen mode, false for normal mode.
-// Return Value:
-// - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetScreenMode(const bool reverseMode)
-{
-    // If we're a conpty, always return false
-    if (_api.IsConsolePty())
-    {
-        return false;
-    }
-    _renderSettings.SetRenderMode(RenderSettings::Mode::ScreenReversed, reverseMode);
-    _renderer.TriggerRedrawAll();
-    return true;
-}
-
-// Routine Description:
-// - DECOM - Sets the cursor addressing origin mode to relative or absolute.
-//    When relative, line numbers start at top margin of the user-defined scrolling region.
-//    When absolute, line numbers are independent of the scrolling region.
-// Arguments:
-// - relativeMode - set to true to use relative addressing, false for absolute addressing.
-// Return Value:
-// - True.
-bool AdaptDispatch::SetOriginMode(const bool relativeMode) noexcept
-{
-    _isOriginModeRelative = relativeMode;
-    return true;
-}
-
-// Routine Description:
-// - DECAWM - Sets the Auto Wrap Mode.
-//    This controls whether the cursor moves to the beginning of the next row
-//    when it reaches the end of the current row.
-// Arguments:
-// - wrapAtEOL - set to true to wrap, false to overwrite the last character.
-// Return Value:
-// - True.
-bool AdaptDispatch::SetAutoWrapMode(const bool wrapAtEOL)
-{
-    _api.SetAutoWrapMode(wrapAtEOL);
+    // While input mode changes are often forwarded over conpty, we never want
+    // to do that for the DECANM mode.
     return true;
 }
 
@@ -1913,36 +1900,6 @@ bool AdaptDispatch::ReverseLineFeed()
 bool AdaptDispatch::SetWindowTitle(std::wstring_view title)
 {
     _api.SetWindowTitle(title);
-    return true;
-}
-
-// - ASBSET - Creates and swaps to the alternate screen buffer. In virtual terminals, there exists both a "main"
-//     screen buffer and an alternate. ASBSET creates a new alternate, and switches to it. If there is an already
-//     existing alternate, it is discarded.
-// Arguments:
-// - None
-// Return Value:
-// - True.
-bool AdaptDispatch::UseAlternateScreenBuffer()
-{
-    CursorSaveState();
-    _api.UseAlternateScreenBuffer();
-    _usingAltBuffer = true;
-    return true;
-}
-
-// Routine Description:
-// - ASBRST - From the alternate buffer, returns to the main screen buffer.
-//     From the main screen buffer, does nothing. The alternate is discarded.
-// Arguments:
-// - None
-// Return Value:
-// - True.
-bool AdaptDispatch::UseMainScreenBuffer()
-{
-    _api.UseMainScreenBuffer();
-    _usingAltBuffer = false;
-    CursorRestoreState();
     return true;
 }
 
@@ -2226,7 +2183,7 @@ bool AdaptDispatch::SingleShift(const VTInt gsetNumber)
 // - True.
 bool AdaptDispatch::AcceptC1Controls(const bool enabled)
 {
-    _SetParserMode(StateMachine::Mode::AcceptC1, enabled);
+    _api.GetStateMachine().SetParserMode(StateMachine::Mode::AcceptC1, enabled);
     return true;
 }
 
@@ -2263,11 +2220,11 @@ bool AdaptDispatch::AcceptC1Controls(const bool enabled)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::SoftReset()
 {
-    CursorVisibility(true); // Cursor enabled.
-    SetOriginMode(false); // Absolute cursor addressing.
-    SetAutoWrapMode(true); // Wrap at end of line.
-    SetCursorKeysMode(false); // Normal characters.
-    SetKeypadMode(false); // Numeric characters.
+    _api.GetTextBuffer().GetCursor().SetIsVisible(true); // Cursor enabled.
+    _modes.reset(Mode::Origin); // Absolute cursor addressing.
+    _api.SetAutoWrapMode(true); // Wrap at end of line.
+    _terminalInput.SetInputMode(TerminalInput::Mode::CursorKey, false); // Normal characters.
+    _terminalInput.SetInputMode(TerminalInput::Mode::Keypad, false); // Numeric characters.
 
     // Top margin = 1; bottom margin = page length.
     _DoSetTopBottomScrollingMargins(0, 0);
@@ -2333,20 +2290,19 @@ bool AdaptDispatch::HardReset()
     EraseInDisplay(DispatchTypes::EraseType::Scrollback);
 
     // Set the DECSCNM screen mode back to normal.
-    SetScreenMode(false);
+    _renderSettings.SetRenderMode(RenderSettings::Mode::ScreenReversed, false);
 
     // Cursor to 1,1 - the Soft Reset guarantees this is absolute
     CursorPosition(1, 1);
 
-    // Reset the mouse mode
-    EnableSGRExtendedMouseMode(false);
-    EnableAnyEventMouseMode(false);
+    // Reset input modes to their initial state
+    _terminalInput.ResetInputModes();
 
-    // Reset the Backarrow Key mode
-    _SetInputMode(TerminalInput::Mode::BackarrowKey, false);
+    // Reset bracketed paste mode
+    _api.SetBracketedPasteMode(false);
 
-    // Set the keyboard Auto Repeat mode
-    _SetInputMode(TerminalInput::Mode::AutoRepeat, true);
+    // Restore cursor blinking mode.
+    _api.GetTextBuffer().GetCursor().SetBlinkingAllowed(true);
 
     // Delete all current tab stops and reapply
     _ResetTabStops();
@@ -2355,8 +2311,8 @@ bool AdaptDispatch::HardReset()
     _renderer.UpdateSoftFont({}, {}, false);
     _fontBuffer = nullptr;
 
-    // Reset the attribute change extent (DECSACE) to a stream.
-    _isChangeExtentRectangular = false;
+    // Reset internal modes to their initial state
+    _modes = {};
 
     // GH#2715 - If all this succeeded, but we're in a conpty, return `false` to
     // make the state machine propagate this RIS sequence to the connected
@@ -2388,7 +2344,7 @@ bool AdaptDispatch::ScreenAlignmentPattern()
     attr.SetStandardErase();
     _api.SetTextAttributes(attr);
     // Reset the origin mode to absolute.
-    SetOriginMode(false);
+    _modes.reset(Mode::Origin);
     // Clear the scrolling margins.
     _DoSetTopBottomScrollingMargins(0, 0);
     // Set the cursor position to home.
@@ -2484,122 +2440,6 @@ void AdaptDispatch::_EraseAll()
     textBuffer.ResetLineRenditionRange(newViewportTop, newViewportBottom);
 }
 
-// Routine Description:
-// - Enables or disables support for the DECCOLM escape sequence.
-// Arguments:
-// - enabled - set to true to allow DECCOLM to be used, false to disallow.
-// Return Value:
-// - True.
-bool AdaptDispatch::EnableDECCOLMSupport(const bool enabled) noexcept
-{
-    _isDECCOLMAllowed = enabled;
-    return true;
-}
-
-//Routine Description:
-// Enable VT200 Mouse Mode - Enables/disables the mouse input handler in default tracking mode.
-//Arguments:
-// - enabled - true to enable, false to disable.
-// Return value:
-// True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableVT200MouseMode(const bool enabled)
-{
-    return _SetInputMode(TerminalInput::Mode::DefaultMouseTracking, enabled);
-}
-
-//Routine Description:
-// Enable UTF-8 Extended Encoding - this changes the encoding scheme for sequences
-//      emitted by the mouse input handler. Does not enable/disable mouse mode on its own.
-//Arguments:
-// - enabled - true to enable, false to disable.
-// Return value:
-// True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableUTF8ExtendedMouseMode(const bool enabled)
-{
-    return _SetInputMode(TerminalInput::Mode::Utf8MouseEncoding, enabled);
-}
-
-//Routine Description:
-// Enable SGR Extended Encoding - this changes the encoding scheme for sequences
-//      emitted by the mouse input handler. Does not enable/disable mouse mode on its own.
-//Arguments:
-// - enabled - true to enable, false to disable.
-// Return value:
-// True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableSGRExtendedMouseMode(const bool enabled)
-{
-    return _SetInputMode(TerminalInput::Mode::SgrMouseEncoding, enabled);
-}
-
-//Routine Description:
-// Enable Button Event mode - send mouse move events WITH A BUTTON PRESSED to the input.
-//Arguments:
-// - enabled - true to enable, false to disable.
-// Return value:
-// True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableButtonEventMouseMode(const bool enabled)
-{
-    return _SetInputMode(TerminalInput::Mode::ButtonEventMouseTracking, enabled);
-}
-
-//Routine Description:
-// Enable Any Event mode - send all mouse events to the input.
-//Arguments:
-// - enabled - true to enable, false to disable.
-// Return value:
-// True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableAnyEventMouseMode(const bool enabled)
-{
-    return _SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, enabled);
-}
-
-// Method Description:
-// - Enables/disables focus event mode. A client may enable this if they want to
-//   receive focus events.
-// - ConPTY always enables this mode and never disables it. Internally, we'll
-//   always set this mode, but conpty will never request this to be disabled by
-//   the hosting terminal.
-// Arguments:
-// - enabled - true to enable, false to disable.
-// Return Value:
-// - True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableFocusEventMode(const bool enabled)
-{
-    // GH#12799 - If the app requested that we disable focus events, DON'T pass
-    // that through. ConPTY would _always_ like to know about focus events.
-    return _SetInputMode(TerminalInput::Mode::FocusEvent, enabled) || !enabled;
-}
-
-//Routine Description:
-// Enable Alternate Scroll Mode - When in the Alt Buffer, send CUP and CUD on
-//      scroll up/down events instead of the usual sequences
-//Arguments:
-// - enabled - true to enable, false to disable.
-// Return value:
-// True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableAlternateScroll(const bool enabled)
-{
-    return _SetInputMode(TerminalInput::Mode::AlternateScroll, enabled);
-}
-
-//Routine Description:
-// Enable "bracketed paste mode".
-//Arguments:
-// - enabled - true to enable, false to disable.
-// Return value:
-// True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableXtermBracketedPasteMode(const bool enabled)
-{
-    // Return false to forward the operation to the hosting terminal,
-    // since ConPTY can't handle this itself.
-    if (_api.IsConsolePty())
-    {
-        return false;
-    }
-    _api.EnableXtermBracketedPasteMode(enabled);
-    return true;
-}
-
 //Routine Description:
 // Set Cursor Style - Changes the cursor's style to match the given Dispatch
 //      cursor style. Unix styles are a combination of the shape and the blinking state.
@@ -2653,7 +2493,6 @@ bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
     auto& cursor = _api.GetTextBuffer().GetCursor();
     cursor.SetType(actualType);
     cursor.SetBlinkingAllowed(fEnableBlinking);
-    cursor.SetIsOn(true);
 
     // If we're a conpty, always return false, so that this cursor state will be
     // sent to the connected terminal
@@ -3435,7 +3274,7 @@ void AdaptDispatch::_ReportDECSACESetting() const
     response.append(L"\033P1$r"sv);
 
     const auto attr = _api.GetTextBuffer().GetCurrentAttributes();
-    response.append(_isChangeExtentRectangular ? L"2"sv : L"1"sv);
+    response.append(_modes.test(Mode::RectangularChangeExtent) ? L"2"sv : L"1"sv);
 
     // The '*x' indicates this is an DECSACE response, and ST ends the sequence.
     response.append(L"*x\033\\"sv);
