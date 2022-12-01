@@ -509,7 +509,22 @@ void ConhostInternalGetSet::NotifyAccessibilityChange(const til::rect& changedRe
     }
 }
 
-void ConhostInternalGetSet::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& /*mark*/)
+void ConhostInternalGetSet::MarkPrompt(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& /*mark*/)
+{
+    // Not implemented for conhost.
+}
+
+void ConhostInternalGetSet::MarkCommandStart()
+{
+    // Not implemented for conhost.
+}
+
+void ConhostInternalGetSet::MarkOutputStart()
+{
+    // Not implemented for conhost.
+}
+
+void ConhostInternalGetSet::MarkCommandFinish(std::optional<unsigned int> /*error*/)
 {
     // Not implemented for conhost.
 }

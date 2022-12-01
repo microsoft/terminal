@@ -2020,7 +2020,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // The version of this that only accepts a ScrollMark will automatically
         // set the start & end to the cursor position.
-        _terminal->AddMark(m, m.start, m.end);
+        _terminal->AddMark(m, m.start, m.end, true);
     }
     void ControlCore::ClearMark() { _terminal->ClearMark(); }
     void ControlCore::ClearAllMarks() { _terminal->ClearAllMarks(); }
