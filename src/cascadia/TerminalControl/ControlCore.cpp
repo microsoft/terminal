@@ -1665,7 +1665,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // (e.g., when the index is -1 or there are no matches)
     std::optional<std::pair<til::point, til::point>> SearchState::GetCurrentMatch()
     {
-        if (matches.has_value() && currentMatchIndex > -1 && currentMatchIndex < matches->size())
+        if (matches.has_value() &&
+            currentMatchIndex > -1 &&
+            static_cast<size_t>(currentMatchIndex) < matches->size())
         {
             return til::at(matches.value(), currentMatchIndex);
         }
