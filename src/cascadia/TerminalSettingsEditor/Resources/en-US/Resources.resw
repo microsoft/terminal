@@ -1558,7 +1558,7 @@
     <comment>Text label for a button that, when invoked, sets the selected color scheme as the default scheme to use.</comment>
   </data>
   <data name="Globals_ConfirmCloseAllTabs.Header" xml:space="preserve">
-    <value>Confirm before closing all tabs</value>
+    <value>Warn on closing all tabs</value>
     <comment>Header for a control to toggle whether to show a confirm dialog box when closing the application with multiple tabs open.</comment>
   </data>
 </root>
