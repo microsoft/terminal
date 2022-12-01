@@ -305,14 +305,16 @@ using namespace Microsoft::Console::Interactivity;
         try
         {
             static const auto PSEUDO_WINDOW_CLASS = L"PseudoConsoleWindow";
-            WNDCLASS pseudoClass{ 0 };
+            WNDCLASSEXW pseudoClass{ 0 };
             switch (level)
             {
             case ApiLevel::Win32:
             {
+                pseudoClass.cbSize = sizeof(WNDCLASSEXW);
                 pseudoClass.lpszClassName = PSEUDO_WINDOW_CLASS;
                 pseudoClass.lpfnWndProc = s_PseudoWindowProc;
-                RegisterClass(&pseudoClass);
+                pseudoClass.cbWndExtra = GWL_CONSOLE_WNDALLOC; // this is required to store the owning thread/process override in NTUSER
+                auto windowClassAtom{ RegisterClassExW(&pseudoClass) };
 
                 // Note that because we're not specifying WS_CHILD, this window
                 // will become an _owned_ window, not a _child_ window. This is
@@ -333,7 +335,7 @@ using namespace Microsoft::Console::Interactivity;
 
                 // Attempt to create window.
                 hwnd = CreateWindowExW(exStyles,
-                                       PSEUDO_WINDOW_CLASS,
+                                       reinterpret_cast<LPCWSTR>(windowClassAtom),
                                        nullptr,
                                        windowStyle,
                                        0,

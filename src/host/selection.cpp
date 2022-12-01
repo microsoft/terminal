@@ -54,8 +54,8 @@ std::vector<til::inclusive_rect> Selection::GetSelectionRects() const
     // _coordSelectionAnchor is at one of the corners of _srSelectionRects
     // endSelectionAnchor is at the exact opposite corner
     til::point endSelectionAnchor;
-    endSelectionAnchor.X = (_coordSelectionAnchor.X == _srSelectionRect.Left) ? _srSelectionRect.Right : _srSelectionRect.Left;
-    endSelectionAnchor.Y = (_coordSelectionAnchor.Y == _srSelectionRect.Top) ? _srSelectionRect.Bottom : _srSelectionRect.Top;
+    endSelectionAnchor.x = (_coordSelectionAnchor.x == _srSelectionRect.left) ? _srSelectionRect.right : _srSelectionRect.left;
+    endSelectionAnchor.y = (_coordSelectionAnchor.y == _srSelectionRect.top) ? _srSelectionRect.bottom : _srSelectionRect.top;
 
     const auto blockSelection = !IsLineSelection();
     return screenInfo.GetTextBuffer().GetTextRects(_coordSelectionAnchor, endSelectionAnchor, blockSelection, false);
@@ -141,10 +141,10 @@ void Selection::InitializeMouseSelection(const til::point coordBufferPos)
     _coordSelectionAnchor = coordBufferPos;
 
     // since we've started with just a point, the rectangle is 1x1 on the point given
-    _srSelectionRect.Left = coordBufferPos.X;
-    _srSelectionRect.Right = coordBufferPos.X;
-    _srSelectionRect.Top = coordBufferPos.Y;
-    _srSelectionRect.Bottom = coordBufferPos.Y;
+    _srSelectionRect.left = coordBufferPos.x;
+    _srSelectionRect.right = coordBufferPos.x;
+    _srSelectionRect.top = coordBufferPos.y;
+    _srSelectionRect.bottom = coordBufferPos.y;
 
     // Check for ALT-Mouse Down "use alternate selection"
     // If in box mode, use line mode. If in line mode, use box mode.
@@ -216,8 +216,8 @@ void Selection::ExtendSelection(_In_ til::point coordBufferPos)
         screenInfo.MakeCursorVisible(coordBufferPos);
 
         _dwSelectionFlags |= CONSOLE_SELECTION_NOT_EMPTY;
-        _srSelectionRect.Left = _srSelectionRect.Right = _coordSelectionAnchor.X;
-        _srSelectionRect.Top = _srSelectionRect.Bottom = _coordSelectionAnchor.Y;
+        _srSelectionRect.left = _srSelectionRect.right = _coordSelectionAnchor.x;
+        _srSelectionRect.top = _srSelectionRect.bottom = _coordSelectionAnchor.y;
 
         ShowSelection();
     }
@@ -233,25 +233,25 @@ void Selection::ExtendSelection(_In_ til::point coordBufferPos)
     // update selection rect
     // this adjusts the rectangle dimensions based on which way the move was requested
     // in respect to the original selection position (the anchor)
-    if (coordBufferPos.X <= _coordSelectionAnchor.X)
+    if (coordBufferPos.x <= _coordSelectionAnchor.x)
     {
-        srNewSelection.Left = coordBufferPos.X;
-        srNewSelection.Right = _coordSelectionAnchor.X;
+        srNewSelection.left = coordBufferPos.x;
+        srNewSelection.right = _coordSelectionAnchor.x;
     }
-    else if (coordBufferPos.X > _coordSelectionAnchor.X)
+    else if (coordBufferPos.x > _coordSelectionAnchor.x)
     {
-        srNewSelection.Right = coordBufferPos.X;
-        srNewSelection.Left = _coordSelectionAnchor.X;
+        srNewSelection.right = coordBufferPos.x;
+        srNewSelection.left = _coordSelectionAnchor.x;
     }
-    if (coordBufferPos.Y <= _coordSelectionAnchor.Y)
+    if (coordBufferPos.y <= _coordSelectionAnchor.y)
     {
-        srNewSelection.Top = coordBufferPos.Y;
-        srNewSelection.Bottom = _coordSelectionAnchor.Y;
+        srNewSelection.top = coordBufferPos.y;
+        srNewSelection.bottom = _coordSelectionAnchor.y;
     }
-    else if (coordBufferPos.Y > _coordSelectionAnchor.Y)
+    else if (coordBufferPos.y > _coordSelectionAnchor.y)
     {
-        srNewSelection.Bottom = coordBufferPos.Y;
-        srNewSelection.Top = _coordSelectionAnchor.Y;
+        srNewSelection.bottom = coordBufferPos.y;
+        srNewSelection.top = _coordSelectionAnchor.y;
     }
 
     // This function is called on WM_MOUSEMOVE.
@@ -396,17 +396,17 @@ void Selection::ColorSelection(const til::inclusive_rect& srRect, const TextAttr
     auto& screenInfo = gci.GetActiveOutputBuffer();
 
     til::point coordTargetSize;
-    coordTargetSize.X = CalcWindowSizeX(srRect);
-    coordTargetSize.Y = CalcWindowSizeY(srRect);
+    coordTargetSize.x = CalcWindowSizeX(srRect);
+    coordTargetSize.y = CalcWindowSizeY(srRect);
 
     til::point coordTarget;
-    coordTarget.X = srRect.Left;
-    coordTarget.Y = srRect.Top;
+    coordTarget.x = srRect.left;
+    coordTarget.y = srRect.top;
 
     // Now color the selection a line at a time.
-    for (; (coordTarget.Y < srRect.Top + coordTargetSize.Y); ++coordTarget.Y)
+    for (; (coordTarget.y < srRect.top + coordTargetSize.y); ++coordTarget.y)
     {
-        const auto cchWrite = gsl::narrow<size_t>(coordTargetSize.X);
+        const auto cchWrite = gsl::narrow<size_t>(coordTargetSize.x);
 
         try
         {
@@ -602,8 +602,8 @@ void Selection::SelectAll()
     // or it won't be selecting all the text.
     if (!IsLineSelection())
     {
-        coordNewSelStart.X = 0;
-        coordNewSelEnd.X = screenInfo.GetBufferSize().RightInclusive();
+        coordNewSelStart.x = 0;
+        coordNewSelEnd.x = screenInfo.GetBufferSize().RightInclusive();
     }
 
     SelectNewRegion(coordNewSelStart, coordNewSelEnd);

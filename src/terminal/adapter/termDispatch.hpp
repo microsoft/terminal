@@ -38,43 +38,24 @@ public:
     bool CursorPosition(const VTInt /*line*/, const VTInt /*column*/) override { return false; } // CUP, HVP
     bool CursorSaveState() override { return false; } // DECSC
     bool CursorRestoreState() override { return false; } // DECRC
-    bool CursorVisibility(const bool /*isVisible*/) override { return false; } // DECTCEM
     bool InsertCharacter(const VTInt /*count*/) override { return false; } // ICH
     bool DeleteCharacter(const VTInt /*count*/) override { return false; } // DCH
     bool ScrollUp(const VTInt /*distance*/) override { return false; } // SU
     bool ScrollDown(const VTInt /*distance*/) override { return false; } // SD
     bool InsertLine(const VTInt /*distance*/) override { return false; } // IL
     bool DeleteLine(const VTInt /*distance*/) override { return false; } // DL
-    bool SetColumns(const VTInt /*columns*/) override { return false; } // DECCOLM
-    bool SetCursorKeysMode(const bool /*applicationMode*/) override { return false; } // DECCKM
     bool SetKeypadMode(const bool /*applicationMode*/) override { return false; } // DECKPAM, DECKPNM
-    bool EnableWin32InputMode(const bool /*win32InputMode*/) override { return false; } // win32-input-mode
-    bool EnableCursorBlinking(const bool /*enable*/) override { return false; } // ATT610
     bool SetAnsiMode(const bool /*ansiMode*/) override { return false; } // DECANM
-    bool SetScreenMode(const bool /*reverseMode*/) override { return false; } // DECSCNM
-    bool SetOriginMode(const bool /*relativeMode*/) override { return false; }; // DECOM
-    bool SetAutoWrapMode(const bool /*wrapAtEOL*/) override { return false; }; // DECAWM
     bool SetTopBottomScrollingMargins(const VTInt /*topMargin*/, const VTInt /*bottomMargin*/) override { return false; } // DECSTBM
     bool WarningBell() override { return false; } // BEL
     bool CarriageReturn() override { return false; } // CR
     bool LineFeed(const DispatchTypes::LineFeedType /*lineFeedType*/) override { return false; } // IND, NEL, LF, FF, VT
     bool ReverseLineFeed() override { return false; } // RI
     bool SetWindowTitle(std::wstring_view /*title*/) override { return false; } // OscWindowTitle
-    bool UseAlternateScreenBuffer() override { return false; } // ASBSET
-    bool UseMainScreenBuffer() override { return false; } // ASBRST
     bool HorizontalTabSet() override { return false; } // HTS
     bool ForwardTab(const VTInt /*numTabs*/) override { return false; } // CHT, HT
     bool BackwardsTab(const VTInt /*numTabs*/) override { return false; } // CBT
     bool TabClear(const DispatchTypes::TabClearType /*clearType*/) override { return false; } // TBC
-    bool EnableDECCOLMSupport(const bool /*enabled*/) override { return false; } // ?40
-    bool EnableVT200MouseMode(const bool /*enabled*/) override { return false; } // ?1000
-    bool EnableUTF8ExtendedMouseMode(const bool /*enabled*/) override { return false; } // ?1005
-    bool EnableSGRExtendedMouseMode(const bool /*enabled*/) override { return false; } // ?1006
-    bool EnableButtonEventMouseMode(const bool /*enabled*/) override { return false; } // ?1002
-    bool EnableAnyEventMouseMode(const bool /*enabled*/) override { return false; } // ?1003
-    bool EnableFocusEventMode(const bool /*enabled*/) override { return false; } // ?1004
-    bool EnableAlternateScroll(const bool /*enabled*/) override { return false; } // ?1007
-    bool EnableXtermBracketedPasteMode(const bool /*enabled*/) override { return false; } // ?2004
     bool SetColorTableEntry(const size_t /*tableIndex*/, const DWORD /*color*/) override { return false; } // OSCColorTable
     bool SetDefaultForeground(const DWORD /*color*/) override { return false; } // OSCDefaultForeground
     bool SetDefaultBackground(const DWORD /*color*/) override { return false; } // OSCDefaultBackground
@@ -102,8 +83,8 @@ public:
     bool PopGraphicsRendition() override { return false; } // XTPOPSGR
 
     bool SetMode(const DispatchTypes::ModeParams /*param*/) override { return false; } // DECSET
-
     bool ResetMode(const DispatchTypes::ModeParams /*param*/) override { return false; } // DECRST
+    bool RequestMode(const DispatchTypes::ModeParams /*param*/) override { return false; } // DECRQM
 
     bool DeviceStatusReport(const DispatchTypes::StatusType /*statusType*/) override { return false; } // DSR, DSR-OS, DSR-CPR
     bool DeviceAttributes() override { return false; } // DA1

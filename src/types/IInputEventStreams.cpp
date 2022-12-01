@@ -70,8 +70,8 @@ std::wostream& operator<<(std::wostream& stream, const MouseEvent* const pMouseE
 
     // clang-format off
     return stream << L"MouseEvent(" <<
-        L"X: " << pMouseEvent->_position.X << L", " <<
-        L"Y: " << pMouseEvent->_position.Y << L", " <<
+        L"X: " << pMouseEvent->_position.x << L", " <<
+        L"Y: " << pMouseEvent->_position.y << L", " <<
         L"buttons: " << pMouseEvent->_buttonState << L", " <<
         L"mods: " << pMouseEvent->_activeModifierKeys << L", " <<
         L"events: " << pMouseEvent->_eventFlags << L")";
@@ -87,8 +87,8 @@ std::wostream& operator<<(std::wostream& stream, const WindowBufferSizeEvent* co
 
     // clang-format off
     return stream << L"WindowbufferSizeEvent(" <<
-        L"X: " << pEvent->_size.X << L", " <<
-        L"Y: " << pEvent->_size.Y << L")";
+        L"X: " << pEvent->_size.width << L", " <<
+        L"Y: " << pEvent->_size.height << L")";
     // clang-format on
 }
 

@@ -11,7 +11,7 @@ namespace WEX
         public:
             static WEX::Common::NoThrowString ToString(const til::inclusive_rect& sr)
             {
-                return WEX::Common::NoThrowString().Format(L"(L:%d, R:%d, T:%d, B:%d)", sr.Left, sr.Right, sr.Top, sr.Bottom);
+                return WEX::Common::NoThrowString().Format(L"(L:%d, R:%d, T:%d, B:%d)", sr.left, sr.right, sr.top, sr.bottom);
             }
         };
 
@@ -21,10 +21,10 @@ namespace WEX
         public:
             static bool AreEqual(const til::inclusive_rect& expected, const til::inclusive_rect& actual)
             {
-                return expected.Left == actual.Left &&
-                       expected.Right == actual.Right &&
-                       expected.Top == actual.Top &&
-                       expected.Bottom == actual.Bottom;
+                return expected.left == actual.left &&
+                       expected.right == actual.right &&
+                       expected.top == actual.top &&
+                       expected.bottom == actual.bottom;
             }
 
             static bool AreSame(const til::inclusive_rect& expected, const til::inclusive_rect& actual)
@@ -46,7 +46,7 @@ namespace WEX
 
             static bool IsNull(const til::inclusive_rect& object)
             {
-                return object.Left == 0 && object.Right == 0 && object.Top == 0 && object.Bottom == 0;
+                return object.left == 0 && object.right == 0 && object.top == 0 && object.bottom == 0;
             }
         };
 
@@ -56,7 +56,7 @@ namespace WEX
         public:
             static WEX::Common::NoThrowString ToString(const til::point coord)
             {
-                return WEX::Common::NoThrowString().Format(L"(X:%d, Y:%d)", coord.X, coord.Y);
+                return WEX::Common::NoThrowString().Format(L"(X:%d, Y:%d)", coord.x, coord.y);
             }
         };
 
@@ -77,22 +77,22 @@ namespace WEX
             static bool IsLessThan(const til::point expectedLess, const til::point expectedGreater)
             {
                 // less is on a line above greater (Y values less than)
-                return (expectedLess.Y < expectedGreater.Y) ||
+                return (expectedLess.y < expectedGreater.y) ||
                        // or on the same lines and less is left of greater (X values less than)
-                       ((expectedLess.Y == expectedGreater.Y) && (expectedLess.X < expectedGreater.X));
+                       ((expectedLess.y == expectedGreater.y) && (expectedLess.x < expectedGreater.x));
             }
 
             static bool IsGreaterThan(const til::point expectedGreater, const til::point expectedLess)
             {
                 // greater is on a line below less (Y value greater than)
-                return (expectedGreater.Y > expectedLess.Y) ||
+                return (expectedGreater.y > expectedLess.y) ||
                        // or on the same lines and greater is right of less (X values greater than)
-                       ((expectedGreater.Y == expectedLess.Y) && (expectedGreater.X > expectedLess.X));
+                       ((expectedGreater.y == expectedLess.y) && (expectedGreater.x > expectedLess.x));
             }
 
             static bool IsNull(const til::point object)
             {
-                return object.X == 0 && object.Y == 0;
+                return object.x == 0 && object.y == 0;
             }
         };
 
@@ -322,8 +322,8 @@ namespace WEX
                     VERIFY_SUCCEEDED(StringCchPrintf(szBufferSize,
                                                      ARRAYSIZE(szBufferSize),
                                                      L"WINDOW_BUFFER_SIZE (%d, %d)",
-                                                     ir.Event.WindowBufferSizeEvent.dwSize.X,
-                                                     ir.Event.WindowBufferSizeEvent.dwSize.Y));
+                                                     ir.Event.WindowBufferSizeEvent.dwSize.width,
+                                                     ir.Event.WindowBufferSizeEvent.dwSize.height));
                     VERIFY_SUCCEEDED(StringCchCat(szBuf, ARRAYSIZE(szBuf), szBufferSize));
                     break;
                 }
@@ -382,8 +382,8 @@ namespace WEX
 
                     case WINDOW_BUFFER_SIZE_EVENT:
                     {
-                        fEqual = (expected.Event.WindowBufferSizeEvent.dwSize.X == actual.Event.WindowBufferSizeEvent.dwSize.X &&
-                                  expected.Event.WindowBufferSizeEvent.dwSize.Y == actual.Event.WindowBufferSizeEvent.dwSize.Y);
+                        fEqual = (expected.Event.WindowBufferSizeEvent.dwSize.width == actual.Event.WindowBufferSizeEvent.dwSize.width &&
+                                  expected.Event.WindowBufferSizeEvent.dwSize.height == actual.Event.WindowBufferSizeEvent.dwSize.height);
                         break;
                     }
 
