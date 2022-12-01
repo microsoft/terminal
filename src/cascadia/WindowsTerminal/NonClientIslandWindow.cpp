@@ -26,9 +26,7 @@ NonClientIslandWindow::NonClientIslandWindow(const ElementTheme& requestedTheme)
 {
 }
 
-NonClientIslandWindow::~NonClientIslandWindow()
-{
-}
+NonClientIslandWindow::~NonClientIslandWindow() = default;
 
 static constexpr const wchar_t* dragBarClassName{ L"DRAG_BAR_WINDOW_CLASS" };
 
@@ -544,8 +542,8 @@ void NonClientIslandWindow::_UpdateIslandPosition(const UINT windowWidth, const 
 
     winrt::check_bool(SetWindowPos(_interopWindowHandle,
                                    HWND_BOTTOM,
-                                   newIslandPos.X,
-                                   newIslandPos.Y,
+                                   newIslandPos.x,
+                                   newIslandPos.y,
                                    windowWidth,
                                    windowHeight - topBorderHeight,
                                    SWP_SHOWWINDOW | SWP_NOACTIVATE));

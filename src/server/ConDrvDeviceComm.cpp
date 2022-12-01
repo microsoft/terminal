@@ -10,9 +10,7 @@ ConDrvDeviceComm::ConDrvDeviceComm(_In_ HANDLE Server) :
     THROW_HR_IF(E_HANDLE, Server == INVALID_HANDLE_VALUE);
 }
 
-ConDrvDeviceComm::~ConDrvDeviceComm()
-{
-}
+ConDrvDeviceComm::~ConDrvDeviceComm() = default;
 
 // Routine Description:
 // - Needs to be called once per server session and typically as the absolute first operation.

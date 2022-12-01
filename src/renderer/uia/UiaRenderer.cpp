@@ -126,7 +126,7 @@ CATCH_RETURN();
             const auto newRect = rectangles.at(i);
 
             // if any value is different, selection has changed
-            if (prevRect.Top != newRect.Top || prevRect.Right != newRect.Right || prevRect.Left != newRect.Left || prevRect.Bottom != newRect.Bottom)
+            if (prevRect.top != newRect.top || prevRect.right != newRect.right || prevRect.left != newRect.left || prevRect.bottom != newRect.bottom)
             {
                 _selectionChanged = true;
                 _prevSelection = rectangles;

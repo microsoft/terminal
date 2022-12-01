@@ -104,6 +104,10 @@ public:
     void SetReverseVideo(bool isReversed) noexcept;
     void SetProtected(bool isProtected) noexcept;
 
+    constexpr void SetCharacterAttributes(const CharacterAttributes attrs) noexcept
+    {
+        _attrs = attrs;
+    }
     constexpr CharacterAttributes GetCharacterAttributes() const noexcept
     {
         return _attrs;

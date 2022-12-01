@@ -49,7 +49,7 @@ void ConhostInternalGetSet::PrintString(const std::wstring_view string)
                                            string.data(),
                                            &dwNumBytes,
                                            nullptr,
-                                           _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor().GetPosition().X,
+                                           _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor().GetPosition().x,
                                            WC_LIMIT_BACKSPACE | WC_DELAY_EOL_WRAP,
                                            nullptr);
     cursor.EndDeferDrawing();
@@ -160,6 +160,18 @@ void ConhostInternalGetSet::SetAutoWrapMode(const bool wrapAtEOL)
 }
 
 // Routine Description:
+// - Retrieves the current state of ENABLE_WRAP_AT_EOL_OUTPUT mode.
+// Arguments:
+// - <none>
+// Return Value:
+// - true if the mode is enabled. false otherwise.
+bool ConhostInternalGetSet::GetAutoWrapMode() const
+{
+    const auto outputMode = _io.GetActiveOutputBuffer().OutputMode;
+    return WI_IsFlagSet(outputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
+}
+
+// Routine Description:
 // - Sets the top and bottom scrolling margins for the current page. This creates
 //     a subsection of the screen that scrolls when input reaches the end of the
 //     region, leaving the rest of the screen untouched.
@@ -174,8 +186,8 @@ void ConhostInternalGetSet::SetScrollingRegion(const til::inclusive_rect& scroll
 {
     auto& screenInfo = _io.GetActiveOutputBuffer();
     auto srScrollMargins = screenInfo.GetRelativeScrollMargins().ToInclusive();
-    srScrollMargins.Top = scrollMargins.Top;
-    srScrollMargins.Bottom = scrollMargins.Bottom;
+    srScrollMargins.top = scrollMargins.top;
+    srScrollMargins.bottom = scrollMargins.bottom;
     screenInfo.SetScrollMargins(Viewport::FromInclusive(srScrollMargins));
 }
 
@@ -208,12 +220,12 @@ void ConhostInternalGetSet::LineFeed(const bool withReturn)
     textBuffer.GetCursor().SetIsOn(true);
 
     // Since we are explicitly moving down a row, clear the wrap status on the row we're leaving
-    textBuffer.GetRowByOffset(cursorPosition.Y).SetWrapForced(false);
+    textBuffer.GetRowByOffset(cursorPosition.y).SetWrapForced(false);
 
-    cursorPosition.Y += 1;
+    cursorPosition.y += 1;
     if (withReturn)
     {
-        cursorPosition.X = 0;
+        cursorPosition.x = 0;
     }
     else
     {
@@ -325,9 +337,24 @@ unsigned int ConhostInternalGetSet::GetConsoleOutputCP() const
 // - enable - set to true to enable bracketing, false to disable.
 // Return Value:
 // - <none>
-void ConhostInternalGetSet::EnableXtermBracketedPasteMode(const bool /*enabled*/)
+void ConhostInternalGetSet::SetBracketedPasteMode(const bool enabled)
 {
-    // TODO
+    // TODO GH#395: Bracketed Paste Mode is not yet supported in conhost, but we
+    // still keep track of the state so it can be reported by DECRQM.
+    _bracketedPasteMode = enabled;
+}
+
+// Routine Description:
+// - Gets the current state of XTerm bracketed paste mode.
+// Arguments:
+// - <none>
+// Return Value:
+// - true if the mode is enabled, false if not, nullopt if unsupported.
+std::optional<bool> ConhostInternalGetSet::GetBracketedPasteMode() const
+{
+    // TODO GH#395: Bracketed Paste Mode is not yet supported in conhost, so we
+    // only report the state if we're tracking it for conpty.
+    return IsConsolePty() ? std::optional{ _bracketedPasteMode } : std::nullopt;
 }
 
 // Routine Description:
@@ -373,22 +400,15 @@ void ConhostInternalGetSet::SetWorkingDirectory(const std::wstring_view /*uri*/)
 // - true if successful. false otherwise.
 void ConhostInternalGetSet::PlayMidiNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration)
 {
-    // We create the audio instance on demand, and lock it for the duration
-    // of the note output so it can't be destroyed while in use.
-    auto& midiAudio = ServiceLocator::LocateGlobals().getConsoleInformation().GetMidiAudio();
-    midiAudio.Lock();
-
-    // We then unlock the console, so the UI doesn't hang while we're busy.
+    // Unlock the console, so the UI doesn't hang while we're busy.
     UnlockConsole();
 
     // This call will block for the duration, unless shutdown early.
-    midiAudio.PlayNote(noteNumber, velocity, duration);
+    const auto windowHandle = ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
+    auto& midiAudio = ServiceLocator::LocateGlobals().getConsoleInformation().GetMidiAudio();
+    midiAudio.PlayNote(windowHandle, noteNumber, velocity, std::chrono::duration_cast<std::chrono::milliseconds>(duration));
 
-    // Once complete, we reacquire the console lock and unlock the audio.
-    // If the console has shutdown in the meantime, the Unlock call
-    // will throw an exception, forcing the thread to exit ASAP.
     LockConsole();
-    midiAudio.Unlock();
 }
 
 // Routine Description:

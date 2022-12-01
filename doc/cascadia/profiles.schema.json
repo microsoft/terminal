@@ -203,7 +203,7 @@
         },
         "intenseTextStyle": {
           "default": "bright",
-          "description": "Controls how 'intense' text is rendered. Values are \"bold\", \"bright\", \"all\" and \"none\"",
+          "description": "Controls how 'intense' text is rendered when unfocused. Values are \"bold\", \"bright\", \"all\" and \"none\"",
           "enum": [
             "none",
             "bold",
@@ -2283,6 +2283,17 @@
           ],
           "deprecated": true
         },
+        "intenseTextStyle": {
+          "default": "bright",
+          "description": "Controls how 'intense' text is rendered. Values are \"bold\", \"bright\", \"all\" and \"none\"",
+          "enum": [
+            "none",
+            "bold",
+            "bright",
+            "all"
+          ],
+          "type": "string"
+        },
         "foreground": {
           "$ref": "#/$defs/Color",
           "default": "#cccccc",
@@ -2385,7 +2396,10 @@
         },
         "startingDirectory": {
           "description": "The directory the shell starts in when it is loaded.",
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "suppressApplicationTitle": {
           "description": "When set to true, tabTitle overrides the default title of the tab and any title change messages from the application will be suppressed. When set to false, tabTitle behaves as normal.",

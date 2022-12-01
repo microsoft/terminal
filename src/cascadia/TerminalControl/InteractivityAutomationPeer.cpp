@@ -176,7 +176,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void InteractivityAutomationPeer::ChangeViewport(const til::inclusive_rect& NewWindow)
     {
-        _interactivity->UpdateScrollbar(NewWindow.Top);
+        _interactivity->UpdateScrollbar(NewWindow.top);
     }
 #pragma endregion
 

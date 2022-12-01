@@ -106,8 +106,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         Appearances();
 
-        bool ShowIndistinguishableColorsItem() const noexcept;
-
         // font face
         Windows::Foundation::IInspectable CurrentFontFace() const;
 

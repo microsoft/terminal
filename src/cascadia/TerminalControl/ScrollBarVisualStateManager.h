@@ -11,8 +11,10 @@
 //
 
 #pragma once
-#include "winrt/Windows.UI.Xaml.h"
-#include "winrt/Windows.UI.Xaml.Controls.h"
+#include <winrt/Windows.UI.Xaml.h>
+#include <winrt/Windows.UI.Xaml.Controls.h>
+
+#include "TermControl.h"
 
 #include "ScrollBarVisualStateManager.g.h"
 
@@ -20,12 +22,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 {
     struct ScrollBarVisualStateManager : ScrollBarVisualStateManagerT<ScrollBarVisualStateManager>
     {
-        ScrollBarVisualStateManager();
-
         bool GoToStateCore(winrt::Windows::UI::Xaml::Controls::Control const& control, winrt::Windows::UI::Xaml::FrameworkElement const& templateRoot, hstring const& stateName, winrt::Windows::UI::Xaml::VisualStateGroup const& group, winrt::Windows::UI::Xaml::VisualState const& state, bool useTransitions);
 
     private:
-        winrt::Microsoft::Terminal::Control::TermControl _termControl;
+        winrt::weak_ref<TermControl> _termControl;
+        bool _initialized = false;
     };
 }
 

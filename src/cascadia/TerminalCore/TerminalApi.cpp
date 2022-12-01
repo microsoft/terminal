@@ -3,12 +3,22 @@
 
 #include "pch.h"
 #include "Terminal.hpp"
+#include "tracing.hpp"
+
 #include "../src/inc/unicode.hpp"
 
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
+
+// Note: Generate GUID using TlgGuid.exe tool
+#pragma warning(suppress : 26477) // One of the macros uses 0/NULL. We don't have control to make it nullptr.
+TRACELOGGING_DEFINE_PROVIDER(g_hCTerminalCoreProvider,
+                             "Microsoft.Terminal.Core",
+                             // {103ac8cf-97d2-51aa-b3ba-5ffd5528fa5f}
+                             (0x103ac8cf, 0x97d2, 0x51aa, 0xb3, 0xba, 0x5f, 0xfd, 0x55, 0x28, 0xfa, 0x5f),
+                             TraceLoggingOptionMicrosoftTelemetry());
 
 // Print puts the text in the buffer and moves the cursor
 void Terminal::PrintString(const std::wstring_view string)
@@ -24,22 +34,22 @@ void Terminal::ReturnResponse(const std::wstring_view response)
     }
 }
 
-Microsoft::Console::VirtualTerminal::StateMachine& Terminal::GetStateMachine()
+Microsoft::Console::VirtualTerminal::StateMachine& Terminal::GetStateMachine() noexcept
 {
     return *_stateMachine;
 }
 
-TextBuffer& Terminal::GetTextBuffer()
+TextBuffer& Terminal::GetTextBuffer() noexcept
 {
     return _activeBuffer();
 }
 
-til::rect Terminal::GetViewport() const
+til::rect Terminal::GetViewport() const noexcept
 {
     return til::rect{ _GetMutableViewport().ToInclusive() };
 }
 
-void Terminal::SetViewportPosition(const til::point position)
+void Terminal::SetViewportPosition(const til::point position) noexcept
 {
     // The viewport is fixed at 0,0 for the alt buffer, so this is a no-op.
     if (!_inAltBuffer())
@@ -50,17 +60,23 @@ void Terminal::SetViewportPosition(const til::point position)
     }
 }
 
-void Terminal::SetTextAttributes(const TextAttribute& attrs)
+void Terminal::SetTextAttributes(const TextAttribute& attrs) noexcept
 {
     _activeBuffer().SetCurrentAttributes(attrs);
 }
 
-void Terminal::SetAutoWrapMode(const bool /*wrapAtEOL*/)
+void Terminal::SetAutoWrapMode(const bool /*wrapAtEOL*/) noexcept
 {
     // TODO: This will be needed to support DECAWM.
 }
 
-void Terminal::SetScrollingRegion(const til::inclusive_rect& /*scrollMargins*/)
+bool Terminal::GetAutoWrapMode() const noexcept
+{
+    // TODO: This will be needed to support DECAWM.
+    return true;
+}
+
+void Terminal::SetScrollingRegion(const til::inclusive_rect& /*scrollMargins*/) noexcept
 {
     // TODO: This will be needed to fully support DECSTBM.
 }
@@ -70,7 +86,7 @@ void Terminal::WarningBell()
     _pfnWarningBell();
 }
 
-bool Terminal::GetLineFeedMode() const
+bool Terminal::GetLineFeedMode() const noexcept
 {
     // TODO: This will be needed to support LNM.
     return false;
@@ -82,12 +98,12 @@ void Terminal::LineFeed(const bool withReturn)
 
     // since we explicitly just moved down a row, clear the wrap status on the
     // row we just came from
-    _activeBuffer().GetRowByOffset(cursorPos.Y).SetWrapForced(false);
+    _activeBuffer().GetRowByOffset(cursorPos.y).SetWrapForced(false);
 
-    cursorPos.Y++;
+    cursorPos.y++;
     if (withReturn)
     {
-        cursorPos.X = 0;
+        cursorPos.x = 0;
     }
     _AdjustCursorPosition(cursorPos);
 }
@@ -101,31 +117,36 @@ void Terminal::SetWindowTitle(const std::wstring_view title)
     }
 }
 
-CursorType Terminal::GetUserDefaultCursorStyle() const
+CursorType Terminal::GetUserDefaultCursorStyle() const noexcept
 {
     return _defaultCursorShape;
 }
 
-bool Terminal::ResizeWindow(const til::CoordType /*width*/, const til::CoordType /*height*/)
+bool Terminal::ResizeWindow(const til::CoordType /*width*/, const til::CoordType /*height*/) noexcept
 {
     // TODO: This will be needed to support various resizing sequences. See also GH#1860.
     return false;
 }
 
-void Terminal::SetConsoleOutputCP(const unsigned int /*codepage*/)
+void Terminal::SetConsoleOutputCP(const unsigned int /*codepage*/) noexcept
 {
     // TODO: This will be needed to support 8-bit charsets and DOCS sequences.
 }
 
-unsigned int Terminal::GetConsoleOutputCP() const
+unsigned int Terminal::GetConsoleOutputCP() const noexcept
 {
     // TODO: See SetConsoleOutputCP above.
     return CP_UTF8;
 }
 
-void Terminal::EnableXtermBracketedPasteMode(const bool enabled)
+void Terminal::SetBracketedPasteMode(const bool enabled) noexcept
 {
     _bracketedPasteMode = enabled;
+}
+
+std::optional<bool> Terminal::GetBracketedPasteMode() const noexcept
+{
+    return _bracketedPasteMode;
 }
 
 void Terminal::CopyToClipboard(std::wstring_view content)
@@ -185,6 +206,19 @@ void Terminal::SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::D
 
 void Terminal::SetWorkingDirectory(std::wstring_view uri)
 {
+    static bool logged = false;
+    if (!logged)
+    {
+        TraceLoggingWrite(
+            g_hCTerminalCoreProvider,
+            "ShellIntegrationWorkingDirSet",
+            TraceLoggingDescription("The CWD was set by the client application"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+        logged = true;
+    }
+
     _workingDirectory = uri;
 }
 
@@ -214,7 +248,7 @@ void Terminal::UseAlternateScreenBuffer()
     // Copy our cursor state to the new buffer's cursor
     {
         // Update the alt buffer's cursor style, visibility, and position to match our own.
-        auto& myCursor = _mainBuffer->GetCursor();
+        const auto& myCursor = _mainBuffer->GetCursor();
         auto& tgtCursor = _altBuffer->GetCursor();
         tgtCursor.SetStyle(myCursor.GetSize(), myCursor.GetType());
         tgtCursor.SetIsVisible(myCursor.IsVisible());
@@ -222,7 +256,7 @@ void Terminal::UseAlternateScreenBuffer()
 
         // The new position should match the viewport-relative position of the main buffer.
         auto tgtCursorPos = myCursor.GetPosition();
-        tgtCursorPos.Y -= _mutableViewport.Top();
+        tgtCursorPos.y -= _mutableViewport.Top();
         tgtCursor.SetPosition(tgtCursorPos);
     }
 
@@ -256,7 +290,7 @@ void Terminal::UseMainScreenBuffer()
     // Copy our cursor state back to the main buffer's cursor
     {
         // Update the alt buffer's cursor style, visibility, and position to match our own.
-        auto& myCursor = _altBuffer->GetCursor();
+        const auto& myCursor = _altBuffer->GetCursor();
         auto& tgtCursor = _mainBuffer->GetCursor();
         tgtCursor.SetStyle(myCursor.GetSize(), myCursor.GetType());
         tgtCursor.SetIsVisible(myCursor.IsVisible());
@@ -265,7 +299,7 @@ void Terminal::UseMainScreenBuffer()
         // The new position should match the viewport-relative position of the main buffer.
         // This is the equal and opposite effect of what we did in UseAlternateScreenBuffer
         auto tgtCursorPos = myCursor.GetPosition();
-        tgtCursorPos.Y += _mutableViewport.Top();
+        tgtCursorPos.y += _mutableViewport.Top();
         tgtCursor.SetPosition(tgtCursorPos);
     }
 
@@ -300,6 +334,19 @@ void Terminal::UseMainScreenBuffer()
 
 void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark)
 {
+    static bool logged = false;
+    if (!logged)
+    {
+        TraceLoggingWrite(
+            g_hCTerminalCoreProvider,
+            "ShellIntegrationMarkAdded",
+            TraceLoggingDescription("A mark was added via VT at least once"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+        logged = true;
+    }
+
     const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
     AddMark(mark, cursorPos, cursorPos);
 }
@@ -318,17 +365,17 @@ void Terminal::ShowWindow(bool showOrHide)
     }
 }
 
-bool Terminal::IsConsolePty() const
+bool Terminal::IsConsolePty() const noexcept
 {
     return false;
 }
 
-bool Terminal::IsVtInputEnabled() const
+bool Terminal::IsVtInputEnabled() const noexcept
 {
     return false;
 }
 
-void Terminal::NotifyAccessibilityChange(const til::rect& /*changedRect*/)
+void Terminal::NotifyAccessibilityChange(const til::rect& /*changedRect*/) noexcept
 {
     // This is only needed in conhost. Terminal handles accessibility in another way.
 }

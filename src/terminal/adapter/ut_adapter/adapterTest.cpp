@@ -92,7 +92,7 @@ public:
 
     til::rect GetViewport() const override
     {
-        return { _viewport.Left, _viewport.Top, _viewport.Right, _viewport.Bottom };
+        return { _viewport.left, _viewport.top, _viewport.right, _viewport.bottom };
     }
 
     void SetViewportPosition(const til::point /*position*/) override
@@ -103,6 +103,12 @@ public:
     void SetAutoWrapMode(const bool /*wrapAtEOL*/) override
     {
         Log::Comment(L"SetAutoWrapMode MOCK called...");
+    }
+
+    bool GetAutoWrapMode() const override
+    {
+        Log::Comment(L"GetAutoWrapMode MOCK called...");
+        return true;
     }
 
     bool IsVtInputEnabled() const override
@@ -201,9 +207,15 @@ public:
         return _expectedOutputCP;
     }
 
-    void EnableXtermBracketedPasteMode(const bool /*enabled*/)
+    void SetBracketedPasteMode(const bool /*enabled*/) override
     {
-        Log::Comment(L"EnableXtermBracketedPasteMode MOCK called...");
+        Log::Comment(L"SetBracketedPasteMode MOCK called...");
+    }
+
+    std::optional<bool> GetBracketedPasteMode() const override
+    {
+        Log::Comment(L"GetBracketedPasteMode MOCK called...");
+        return {};
     }
 
     void CopyToClipboard(const std::wstring_view /*content*/)
@@ -277,10 +289,10 @@ public:
         _textBuffer = std::make_unique<TextBuffer>(til::size{ 100, 600 }, TextAttribute{}, 0, false, _renderer);
 
         // Viewport sitting in the "middle" of the buffer somewhere (so all sides have excess buffer around them)
-        _viewport.Top = 20;
-        _viewport.Bottom = 49;
-        _viewport.Left = 30;
-        _viewport.Right = 59;
+        _viewport.top = 20;
+        _viewport.bottom = 49;
+        _viewport.left = 30;
+        _viewport.right = 59;
 
         // Call cursor positions separately
         PrepCursor(xact, yact);
@@ -304,15 +316,15 @@ public:
         {
         case CursorX::LEFT:
             Log::Comment(L"Cursor set to left edge of buffer.");
-            cursorPos.X = 0;
+            cursorPos.x = 0;
             break;
         case CursorX::RIGHT:
             Log::Comment(L"Cursor set to right edge of buffer.");
-            cursorPos.X = bufferSize.X - 1;
+            cursorPos.x = bufferSize.width - 1;
             break;
         case CursorX::XCENTER:
             Log::Comment(L"Cursor set to centered X of buffer.");
-            cursorPos.X = bufferSize.X / 2;
+            cursorPos.x = bufferSize.width / 2;
             break;
         }
 
@@ -320,15 +332,15 @@ public:
         {
         case CursorY::TOP:
             Log::Comment(L"Cursor set to top edge of viewport.");
-            cursorPos.Y = _viewport.Top;
+            cursorPos.y = _viewport.top;
             break;
         case CursorY::BOTTOM:
             Log::Comment(L"Cursor set to bottom edge of viewport.");
-            cursorPos.Y = _viewport.Bottom - 1;
+            cursorPos.y = _viewport.bottom - 1;
             break;
         case CursorY::YCENTER:
             Log::Comment(L"Cursor set to centered Y of viewport.");
-            cursorPos.Y = _viewport.Top + ((_viewport.Bottom - _viewport.Top) / 2);
+            cursorPos.y = _viewport.top + ((_viewport.bottom - _viewport.top) / 2);
             break;
         }
 
@@ -348,16 +360,14 @@ public:
 
     void _SetMarginsHelper(til::inclusive_rect* rect, til::CoordType top, til::CoordType bottom)
     {
-        rect->Top = top;
-        rect->Bottom = bottom;
+        rect->top = top;
+        rect->bottom = bottom;
         //The rectangle is going to get converted from VT space to conhost space
-        _expectedScrollRegion.Top = (top > 0) ? rect->Top - 1 : rect->Top;
-        _expectedScrollRegion.Bottom = (bottom > 0) ? rect->Bottom - 1 : rect->Bottom;
+        _expectedScrollRegion.top = (top > 0) ? rect->top - 1 : rect->top;
+        _expectedScrollRegion.bottom = (bottom > 0) ? rect->bottom - 1 : rect->bottom;
     }
 
-    ~TestGetSet()
-    {
-    }
+    ~TestGetSet() = default;
 
     static const WCHAR s_wchErase = (WCHAR)0x20;
     static const WCHAR s_wchDefault = L'Z';
@@ -525,7 +535,7 @@ public:
 
         if (fDoTest1b)
         {
-            _testGetSet->_expectedCursorPos.X = 0;
+            _testGetSet->_expectedCursorPos.x = 0;
             VERIFY_IS_TRUE((_pDispatch->*(moveFunc))(1));
             _testGetSet->ValidateExpectedCursorPos();
         }
@@ -541,24 +551,24 @@ public:
         switch (direction)
         {
         case CursorDirection::UP:
-            _testGetSet->_expectedCursorPos.Y--;
+            _testGetSet->_expectedCursorPos.y--;
             break;
         case CursorDirection::DOWN:
-            _testGetSet->_expectedCursorPos.Y++;
+            _testGetSet->_expectedCursorPos.y++;
             break;
         case CursorDirection::RIGHT:
-            _testGetSet->_expectedCursorPos.X++;
+            _testGetSet->_expectedCursorPos.x++;
             break;
         case CursorDirection::LEFT:
-            _testGetSet->_expectedCursorPos.X--;
+            _testGetSet->_expectedCursorPos.x--;
             break;
         case CursorDirection::NEXTLINE:
-            _testGetSet->_expectedCursorPos.Y++;
-            _testGetSet->_expectedCursorPos.X = 0;
+            _testGetSet->_expectedCursorPos.y++;
+            _testGetSet->_expectedCursorPos.x = 0;
             break;
         case CursorDirection::PREVLINE:
-            _testGetSet->_expectedCursorPos.Y--;
-            _testGetSet->_expectedCursorPos.X = 0;
+            _testGetSet->_expectedCursorPos.y--;
+            _testGetSet->_expectedCursorPos.x = 0;
             break;
         }
 
@@ -574,24 +584,24 @@ public:
         switch (direction)
         {
         case CursorDirection::UP:
-            _testGetSet->_expectedCursorPos.Y = _testGetSet->_viewport.Top;
+            _testGetSet->_expectedCursorPos.y = _testGetSet->_viewport.top;
             break;
         case CursorDirection::DOWN:
-            _testGetSet->_expectedCursorPos.Y = _testGetSet->_viewport.Bottom - 1;
+            _testGetSet->_expectedCursorPos.y = _testGetSet->_viewport.bottom - 1;
             break;
         case CursorDirection::RIGHT:
-            _testGetSet->_expectedCursorPos.X = _testGetSet->_textBuffer->GetSize().Dimensions().X - 1;
+            _testGetSet->_expectedCursorPos.x = _testGetSet->_textBuffer->GetSize().Dimensions().width - 1;
             break;
         case CursorDirection::LEFT:
-            _testGetSet->_expectedCursorPos.X = 0;
+            _testGetSet->_expectedCursorPos.x = 0;
             break;
         case CursorDirection::NEXTLINE:
-            _testGetSet->_expectedCursorPos.X = 0;
-            _testGetSet->_expectedCursorPos.Y = _testGetSet->_viewport.Bottom - 1;
+            _testGetSet->_expectedCursorPos.x = 0;
+            _testGetSet->_expectedCursorPos.y = _testGetSet->_viewport.bottom - 1;
             break;
         case CursorDirection::PREVLINE:
-            _testGetSet->_expectedCursorPos.X = 0;
-            _testGetSet->_expectedCursorPos.Y = _testGetSet->_viewport.Top;
+            _testGetSet->_expectedCursorPos.x = 0;
+            _testGetSet->_expectedCursorPos.y = _testGetSet->_viewport.top;
             break;
         }
 
@@ -606,12 +616,12 @@ public:
         Log::Comment(L"Test 1: Place cursor within the viewport. Start from top left, move to middle.");
         _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
-        auto sCol = (_testGetSet->_viewport.Right - _testGetSet->_viewport.Left) / 2;
-        auto sRow = (_testGetSet->_viewport.Bottom - _testGetSet->_viewport.Top) / 2;
+        auto sCol = (_testGetSet->_viewport.right - _testGetSet->_viewport.left) / 2;
+        auto sRow = (_testGetSet->_viewport.bottom - _testGetSet->_viewport.top) / 2;
 
         // The X coordinate is unaffected by the viewport.
-        _testGetSet->_expectedCursorPos.X = sCol - 1;
-        _testGetSet->_expectedCursorPos.Y = _testGetSet->_viewport.Top + (sRow - 1);
+        _testGetSet->_expectedCursorPos.x = sCol - 1;
+        _testGetSet->_expectedCursorPos.y = _testGetSet->_viewport.top + (sRow - 1);
 
         VERIFY_IS_TRUE(_pDispatch->CursorPosition(sRow, sCol));
         _testGetSet->ValidateExpectedCursorPos();
@@ -620,8 +630,8 @@ public:
         _testGetSet->PrepData(CursorX::RIGHT, CursorY::BOTTOM);
 
         // The X coordinate is unaffected by the viewport.
-        _testGetSet->_expectedCursorPos.X = 0;
-        _testGetSet->_expectedCursorPos.Y = _testGetSet->_viewport.Top;
+        _testGetSet->_expectedCursorPos.x = 0;
+        _testGetSet->_expectedCursorPos.y = _testGetSet->_viewport.top;
 
         VERIFY_IS_TRUE(_pDispatch->CursorPosition(1, 1));
         _testGetSet->ValidateExpectedCursorPos();
@@ -629,11 +639,11 @@ public:
         Log::Comment(L"Test 3: Move beyond rectangle (down/right too far). Should be bounded back in.");
         _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
-        sCol = (_testGetSet->_textBuffer->GetSize().Dimensions().X) * 2;
-        sRow = (_testGetSet->_viewport.Bottom - _testGetSet->_viewport.Top) * 2;
+        sCol = (_testGetSet->_textBuffer->GetSize().Dimensions().width) * 2;
+        sRow = (_testGetSet->_viewport.bottom - _testGetSet->_viewport.top) * 2;
 
-        _testGetSet->_expectedCursorPos.X = _testGetSet->_textBuffer->GetSize().Dimensions().X - 1;
-        _testGetSet->_expectedCursorPos.Y = _testGetSet->_viewport.Bottom - 1;
+        _testGetSet->_expectedCursorPos.x = _testGetSet->_textBuffer->GetSize().Dimensions().width - 1;
+        _testGetSet->_expectedCursorPos.y = _testGetSet->_viewport.bottom - 1;
 
         VERIFY_IS_TRUE(_pDispatch->CursorPosition(sRow, sCol));
         _testGetSet->ValidateExpectedCursorPos();
@@ -665,16 +675,16 @@ public:
         {
         case AbsolutePosition::CursorHorizontal:
             Log::Comment(L"Testing cursor horizontal movement.");
-            sRangeEnd = _testGetSet->_textBuffer->GetSize().Dimensions().X;
+            sRangeEnd = _testGetSet->_textBuffer->GetSize().Dimensions().width;
             sRangeStart = 0;
-            psCursorExpected = &_testGetSet->_expectedCursorPos.X;
+            psCursorExpected = &_testGetSet->_expectedCursorPos.x;
             moveFunc = &AdaptDispatch::CursorHorizontalPositionAbsolute;
             break;
         case AbsolutePosition::VerticalLine:
             Log::Comment(L"Testing vertical line movement.");
-            sRangeEnd = _testGetSet->_viewport.Bottom;
-            sRangeStart = _testGetSet->_viewport.Top;
-            psCursorExpected = &_testGetSet->_expectedCursorPos.Y;
+            sRangeEnd = _testGetSet->_viewport.bottom;
+            sRangeStart = _testGetSet->_viewport.top;
+            psCursorExpected = &_testGetSet->_expectedCursorPos.y;
             moveFunc = &AdaptDispatch::VerticalLinePositionAbsolute;
             break;
         }
@@ -774,7 +784,14 @@ public:
         Log::Comment(L"Verify successful API call modifies visibility state.");
         _testGetSet->PrepData();
         _testGetSet->_textBuffer->GetCursor().SetIsVisible(fStart);
-        VERIFY_IS_TRUE(_pDispatch->CursorVisibility(fEnd));
+        if (fEnd)
+        {
+            VERIFY_IS_TRUE(_pDispatch->SetMode(DispatchTypes::DECTCEM_TextCursorEnableMode));
+        }
+        else
+        {
+            VERIFY_IS_TRUE(_pDispatch->ResetMode(DispatchTypes::DECTCEM_TextCursorEnableMode));
+        }
         VERIFY_ARE_EQUAL(fEnd, _testGetSet->_textBuffer->GetCursor().IsVisible());
     }
 
@@ -1360,7 +1377,7 @@ public:
 
         Log::Comment(L"Test 1: Verify failure when using bad status.");
         _testGetSet->PrepData();
-        VERIFY_IS_FALSE(_pDispatch->DeviceStatusReport((DispatchTypes::AnsiStatusType)-1));
+        VERIFY_IS_FALSE(_pDispatch->DeviceStatusReport((DispatchTypes::StatusType)-1));
     }
 
     TEST_METHOD(DeviceStatus_OperatingStatusTests)
@@ -1369,7 +1386,7 @@ public:
 
         Log::Comment(L"Test 1: Verify good operating condition.");
         _testGetSet->PrepData();
-        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::AnsiStatusType::OS_OperatingStatus));
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::OS_OperatingStatus));
 
         _testGetSet->ValidateInputEvent(L"\x1b[0n");
     }
@@ -1386,17 +1403,17 @@ public:
             til::point coordCursorExpected{ _testGetSet->_textBuffer->GetCursor().GetPosition() };
 
             // to get to VT, we have to adjust it to its position relative to the viewport top.
-            coordCursorExpected.Y -= _testGetSet->_viewport.Top;
+            coordCursorExpected.y -= _testGetSet->_viewport.top;
 
             // Then note that VT is 1,1 based for the top left, so add 1. (The rest of the console uses 0,0 for array index bases.)
-            coordCursorExpected.X++;
-            coordCursorExpected.Y++;
+            coordCursorExpected.x++;
+            coordCursorExpected.y++;
 
-            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::AnsiStatusType::CPR_CursorPositionReport));
+            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::CPR_CursorPositionReport));
 
             wchar_t pwszBuffer[50];
 
-            swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[%d;%dR", coordCursorExpected.Y, coordCursorExpected.X);
+            swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[%d;%dR", coordCursorExpected.y, coordCursorExpected.x);
             _testGetSet->ValidateInputEvent(pwszBuffer);
         }
 
@@ -1411,28 +1428,55 @@ public:
             til::point coordCursorExpectedFirst{ _testGetSet->_textBuffer->GetCursor().GetPosition() };
 
             // to get to VT, we have to adjust it to its position relative to the viewport top.
-            coordCursorExpectedFirst -= til::point{ 0, _testGetSet->_viewport.Top };
+            coordCursorExpectedFirst -= til::point{ 0, _testGetSet->_viewport.top };
 
             // Then note that VT is 1,1 based for the top left, so add 1. (The rest of the console uses 0,0 for array index bases.)
             coordCursorExpectedFirst += til::point{ 1, 1 };
 
-            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::AnsiStatusType::CPR_CursorPositionReport));
+            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::CPR_CursorPositionReport));
 
             auto cursorPos = _testGetSet->_textBuffer->GetCursor().GetPosition();
-            cursorPos.X++;
-            cursorPos.Y++;
+            cursorPos.x++;
+            cursorPos.y++;
             _testGetSet->_textBuffer->GetCursor().SetPosition(cursorPos);
 
             auto coordCursorExpectedSecond{ coordCursorExpectedFirst };
             coordCursorExpectedSecond += til::point{ 1, 1 };
 
-            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::AnsiStatusType::CPR_CursorPositionReport));
+            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::CPR_CursorPositionReport));
 
             wchar_t pwszBuffer[50];
 
             swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[%d;%dR\x1b[%d;%dR", coordCursorExpectedFirst.y, coordCursorExpectedFirst.x, coordCursorExpectedSecond.y, coordCursorExpectedSecond.x);
             _testGetSet->ValidateInputEvent(pwszBuffer);
         }
+    }
+
+    TEST_METHOD(DeviceStatus_ExtendedCursorPositionReportTests)
+    {
+        Log::Comment(L"Starting test...");
+
+        Log::Comment(L"Test 1: Verify extended cursor position report.");
+        _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
+
+        // start with the cursor position in the buffer.
+        til::point coordCursorExpected{ _testGetSet->_textBuffer->GetCursor().GetPosition() };
+
+        // to get to VT, we have to adjust it to its position relative to the viewport top.
+        coordCursorExpected.y -= _testGetSet->_viewport.top;
+
+        // Then note that VT is 1,1 based for the top left, so add 1. (The rest of the console uses 0,0 for array index bases.)
+        coordCursorExpected.x++;
+        coordCursorExpected.y++;
+
+        // Until we support paging (GH#13892) the reported page number should always be 1.
+        const auto pageExpected = 1;
+
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::ExCPR_ExtendedCursorPositionReport));
+
+        wchar_t pwszBuffer[50];
+        swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[?%d;%d;%dR", coordCursorExpected.y, coordCursorExpected.x, pageExpected);
+        _testGetSet->ValidateInputEvent(pwszBuffer);
     }
 
     TEST_METHOD(DeviceAttributesTests)
@@ -1533,7 +1577,7 @@ public:
         Log::Comment(L"Requesting DECSTBM margins (full screen).");
         _testGetSet->PrepData();
         // Set screen height to 25 - this will be the expected margin range.
-        _testGetSet->_viewport.Bottom = _testGetSet->_viewport.Top + 25;
+        _testGetSet->_viewport.bottom = _testGetSet->_viewport.top + 25;
         _pDispatch->SetTopBottomScrollingMargins(0, 0);
         requestSetting(L"r");
         _testGetSet->ValidateInputEvent(L"\033P1$r1;25r\033\\");
@@ -1640,6 +1684,45 @@ public:
         _testGetSet->ValidateInputEvent(L"\033P0$r\033\\");
     }
 
+    TEST_METHOD(RequestModeTests)
+    {
+        // The mode numbers below correspond to the DECPrivateMode values
+        // in the ModeParams enum in DispatchTypes.hpp. We don't include
+        // AnsiMode (2), because once that's disabled we'd be in VT52 mode,
+        // and DECRQM would not then be applicable.
+
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Data:modeNumber", L"{1, 3, 5, 6, 8, 12, 25, 40, 66, 67, 1000, 1002, 1003, 1004, 1005, 1006, 1007, 1049, 9001}")
+        END_TEST_METHOD_PROPERTIES()
+
+        VTInt modeNumber;
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"modeNumber", modeNumber));
+        const auto mode = DispatchTypes::DECPrivateMode(modeNumber);
+
+        if (mode == DispatchTypes::DECCOLM_SetNumberOfColumns)
+        {
+            Log::Comment(L"Make sure DECCOLM is allowed");
+            VERIFY_IS_TRUE(_pDispatch->SetMode(DispatchTypes::XTERM_EnableDECCOLMSupport));
+        }
+
+        Log::Comment(NoThrowString().Format(L"Setting private mode %d", modeNumber));
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch->SetMode(mode));
+        VERIFY_IS_TRUE(_pDispatch->RequestMode(mode));
+
+        wchar_t expectedResponse[20];
+        swprintf_s(expectedResponse, ARRAYSIZE(expectedResponse), L"\x1b[?%d;1$y", modeNumber);
+        _testGetSet->ValidateInputEvent(expectedResponse);
+
+        Log::Comment(NoThrowString().Format(L"Resetting private mode %d", modeNumber));
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(mode));
+        VERIFY_IS_TRUE(_pDispatch->RequestMode(mode));
+
+        swprintf_s(expectedResponse, ARRAYSIZE(expectedResponse), L"\x1b[?%d;2$y", modeNumber);
+        _testGetSet->ValidateInputEvent(expectedResponse);
+    }
+
     TEST_METHOD(CursorKeysModeTest)
     {
         Log::Comment(L"Starting test...");
@@ -1648,12 +1731,12 @@ public:
         // success cases
         // set numeric mode = true
         Log::Comment(L"Test 1: application mode = false");
-        VERIFY_IS_TRUE(_pDispatch->SetCursorKeysMode(false));
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(DispatchTypes::DECCKM_CursorKeysMode));
         VERIFY_IS_FALSE(_terminalInput.GetInputMode(TerminalInput::Mode::CursorKey));
 
         // set numeric mode = false
         Log::Comment(L"Test 2: application mode = true");
-        VERIFY_IS_TRUE(_pDispatch->SetCursorKeysMode(true));
+        VERIFY_IS_TRUE(_pDispatch->SetMode(DispatchTypes::DECCKM_CursorKeysMode));
         VERIFY_IS_TRUE(_terminalInput.GetInputMode(TerminalInput::Mode::CursorKey));
     }
 
@@ -1701,13 +1784,13 @@ public:
         // set blinking mode = true
         Log::Comment(L"Test 1: enable blinking = true");
         _testGetSet->_textBuffer->GetCursor().SetBlinkingAllowed(false);
-        VERIFY_IS_TRUE(_pDispatch->EnableCursorBlinking(true));
+        VERIFY_IS_TRUE(_pDispatch->SetMode(DispatchTypes::ATT610_StartCursorBlink));
         VERIFY_IS_TRUE(_testGetSet->_textBuffer->GetCursor().IsBlinkingAllowed());
 
         // set blinking mode = false
         Log::Comment(L"Test 2: enable blinking = false");
         _testGetSet->_textBuffer->GetCursor().SetBlinkingAllowed(true);
-        VERIFY_IS_TRUE(_pDispatch->EnableCursorBlinking(false));
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(DispatchTypes::ATT610_StartCursorBlink));
         VERIFY_IS_FALSE(_testGetSet->_textBuffer->GetCursor().IsBlinkingAllowed());
     }
 
@@ -1717,81 +1800,81 @@ public:
 
         til::inclusive_rect srTestMargins;
         _testGetSet->_textBuffer = std::make_unique<TextBuffer>(til::size{ 100, 600 }, TextAttribute{}, 0, false, _testGetSet->_renderer);
-        _testGetSet->_viewport.Right = 8;
-        _testGetSet->_viewport.Bottom = 8;
-        auto sScreenHeight = _testGetSet->_viewport.Bottom - _testGetSet->_viewport.Top;
+        _testGetSet->_viewport.right = 8;
+        _testGetSet->_viewport.bottom = 8;
+        auto sScreenHeight = _testGetSet->_viewport.bottom - _testGetSet->_viewport.top;
 
         Log::Comment(L"Test 1: Verify having both values is valid.");
         _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
         _testGetSet->_setScrollingRegionResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.top, srTestMargins.bottom));
 
         Log::Comment(L"Test 2: Verify having only top is valid.");
 
         _testGetSet->_SetMarginsHelper(&srTestMargins, 7, 0);
-        _testGetSet->_expectedScrollRegion.Bottom = _testGetSet->_viewport.Bottom - 1; // We expect the bottom to be the bottom of the viewport, exclusive.
+        _testGetSet->_expectedScrollRegion.bottom = _testGetSet->_viewport.bottom - 1; // We expect the bottom to be the bottom of the viewport, exclusive.
         _testGetSet->_setScrollingRegionResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.top, srTestMargins.bottom));
 
         Log::Comment(L"Test 3: Verify having only bottom is valid.");
 
         _testGetSet->_SetMarginsHelper(&srTestMargins, 0, 7);
         _testGetSet->_setScrollingRegionResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.top, srTestMargins.bottom));
 
         Log::Comment(L"Test 4: Verify having no values is valid.");
 
         _testGetSet->_SetMarginsHelper(&srTestMargins, 0, 0);
         _testGetSet->_setScrollingRegionResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.top, srTestMargins.bottom));
 
         Log::Comment(L"Test 5: Verify having both values, but bad bounds has no effect.");
 
         _testGetSet->_SetMarginsHelper(&srTestMargins, 7, 3);
         _testGetSet->_setScrollingRegionResult = TRUE;
         _testGetSet->_activeScrollRegion = {};
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.top, srTestMargins.bottom));
         VERIFY_ARE_EQUAL(til::inclusive_rect{}, _testGetSet->_activeScrollRegion);
 
         Log::Comment(L"Test 6: Verify setting margins to (0, height) clears them");
         // First set,
         _testGetSet->_setScrollingRegionResult = TRUE;
         _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.top, srTestMargins.bottom));
         // Then clear
         _testGetSet->_SetMarginsHelper(&srTestMargins, 0, sScreenHeight);
-        _testGetSet->_expectedScrollRegion.Top = 0;
-        _testGetSet->_expectedScrollRegion.Bottom = 0;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        _testGetSet->_expectedScrollRegion.top = 0;
+        _testGetSet->_expectedScrollRegion.bottom = 0;
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.top, srTestMargins.bottom));
 
         Log::Comment(L"Test 7: Verify setting margins to (1, height) clears them");
         // First set,
         _testGetSet->_setScrollingRegionResult = TRUE;
         _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.top, srTestMargins.bottom));
         // Then clear
         _testGetSet->_SetMarginsHelper(&srTestMargins, 1, sScreenHeight);
-        _testGetSet->_expectedScrollRegion.Top = 0;
-        _testGetSet->_expectedScrollRegion.Bottom = 0;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        _testGetSet->_expectedScrollRegion.top = 0;
+        _testGetSet->_expectedScrollRegion.bottom = 0;
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.top, srTestMargins.bottom));
 
         Log::Comment(L"Test 8: Verify setting margins to (1, 0) clears them");
         // First set,
         _testGetSet->_setScrollingRegionResult = TRUE;
         _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.top, srTestMargins.bottom));
         // Then clear
         _testGetSet->_SetMarginsHelper(&srTestMargins, 1, 0);
-        _testGetSet->_expectedScrollRegion.Top = 0;
-        _testGetSet->_expectedScrollRegion.Bottom = 0;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        _testGetSet->_expectedScrollRegion.top = 0;
+        _testGetSet->_expectedScrollRegion.bottom = 0;
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.top, srTestMargins.bottom));
 
         Log::Comment(L"Test 9: Verify having top and bottom margin the same has no effect.");
 
         _testGetSet->_SetMarginsHelper(&srTestMargins, 4, 4);
         _testGetSet->_setScrollingRegionResult = TRUE;
         _testGetSet->_activeScrollRegion = {};
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.top, srTestMargins.bottom));
         VERIFY_ARE_EQUAL(til::inclusive_rect{}, _testGetSet->_activeScrollRegion);
 
         Log::Comment(L"Test 10: Verify having top margin out of bounds has no effect.");
@@ -1799,7 +1882,7 @@ public:
         _testGetSet->_SetMarginsHelper(&srTestMargins, sScreenHeight + 1, sScreenHeight + 10);
         _testGetSet->_setScrollingRegionResult = TRUE;
         _testGetSet->_activeScrollRegion = {};
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.top, srTestMargins.bottom));
         VERIFY_ARE_EQUAL(til::inclusive_rect{}, _testGetSet->_activeScrollRegion);
 
         Log::Comment(L"Test 11: Verify having bottom margin out of bounds has no effect.");
@@ -1807,7 +1890,7 @@ public:
         _testGetSet->_SetMarginsHelper(&srTestMargins, 1, sScreenHeight + 1);
         _testGetSet->_setScrollingRegionResult = TRUE;
         _testGetSet->_activeScrollRegion = {};
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.top, srTestMargins.bottom));
         VERIFY_ARE_EQUAL(til::inclusive_rect{}, _testGetSet->_activeScrollRegion);
     }
 
@@ -1860,44 +1943,44 @@ public:
 
         Log::Comment(L"Test 1: Test Default Mouse Mode");
         _terminalInput.SetInputMode(TerminalInput::Mode::DefaultMouseTracking, false);
-        VERIFY_IS_TRUE(_pDispatch->EnableVT200MouseMode(true));
+        VERIFY_IS_TRUE(_pDispatch->SetMode(DispatchTypes::VT200_MOUSE_MODE));
         VERIFY_IS_TRUE(_terminalInput.GetInputMode(TerminalInput::Mode::DefaultMouseTracking));
-        VERIFY_IS_TRUE(_pDispatch->EnableVT200MouseMode(false));
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(DispatchTypes::VT200_MOUSE_MODE));
         VERIFY_IS_FALSE(_terminalInput.GetInputMode(TerminalInput::Mode::DefaultMouseTracking));
 
         Log::Comment(L"Test 2: Test UTF-8 Extended Mouse Mode");
         _terminalInput.SetInputMode(TerminalInput::Mode::Utf8MouseEncoding, false);
-        VERIFY_IS_TRUE(_pDispatch->EnableUTF8ExtendedMouseMode(true));
+        VERIFY_IS_TRUE(_pDispatch->SetMode(DispatchTypes::UTF8_EXTENDED_MODE));
         VERIFY_IS_TRUE(_terminalInput.GetInputMode(TerminalInput::Mode::Utf8MouseEncoding));
-        VERIFY_IS_TRUE(_pDispatch->EnableUTF8ExtendedMouseMode(false));
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(DispatchTypes::UTF8_EXTENDED_MODE));
         VERIFY_IS_FALSE(_terminalInput.GetInputMode(TerminalInput::Mode::Utf8MouseEncoding));
 
         Log::Comment(L"Test 3: Test SGR Extended Mouse Mode");
         _terminalInput.SetInputMode(TerminalInput::Mode::SgrMouseEncoding, false);
-        VERIFY_IS_TRUE(_pDispatch->EnableSGRExtendedMouseMode(true));
+        VERIFY_IS_TRUE(_pDispatch->SetMode(DispatchTypes::SGR_EXTENDED_MODE));
         VERIFY_IS_TRUE(_terminalInput.GetInputMode(TerminalInput::Mode::SgrMouseEncoding));
-        VERIFY_IS_TRUE(_pDispatch->EnableSGRExtendedMouseMode(false));
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(DispatchTypes::SGR_EXTENDED_MODE));
         VERIFY_IS_FALSE(_terminalInput.GetInputMode(TerminalInput::Mode::SgrMouseEncoding));
 
         Log::Comment(L"Test 4: Test Button-Event Mouse Mode");
         _terminalInput.SetInputMode(TerminalInput::Mode::ButtonEventMouseTracking, false);
-        VERIFY_IS_TRUE(_pDispatch->EnableButtonEventMouseMode(true));
+        VERIFY_IS_TRUE(_pDispatch->SetMode(DispatchTypes::BUTTON_EVENT_MOUSE_MODE));
         VERIFY_IS_TRUE(_terminalInput.GetInputMode(TerminalInput::Mode::ButtonEventMouseTracking));
-        VERIFY_IS_TRUE(_pDispatch->EnableButtonEventMouseMode(false));
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(DispatchTypes::BUTTON_EVENT_MOUSE_MODE));
         VERIFY_IS_FALSE(_terminalInput.GetInputMode(TerminalInput::Mode::ButtonEventMouseTracking));
 
         Log::Comment(L"Test 5: Test Any-Event Mouse Mode");
         _terminalInput.SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, false);
-        VERIFY_IS_TRUE(_pDispatch->EnableAnyEventMouseMode(true));
+        VERIFY_IS_TRUE(_pDispatch->SetMode(DispatchTypes::ANY_EVENT_MOUSE_MODE));
         VERIFY_IS_TRUE(_terminalInput.GetInputMode(TerminalInput::Mode::AnyEventMouseTracking));
-        VERIFY_IS_TRUE(_pDispatch->EnableAnyEventMouseMode(false));
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(DispatchTypes::ANY_EVENT_MOUSE_MODE));
         VERIFY_IS_FALSE(_terminalInput.GetInputMode(TerminalInput::Mode::AnyEventMouseTracking));
 
         Log::Comment(L"Test 6: Test Alt Scroll Mouse Mode");
         _terminalInput.SetInputMode(TerminalInput::Mode::AlternateScroll, false);
-        VERIFY_IS_TRUE(_pDispatch->EnableAlternateScroll(true));
+        VERIFY_IS_TRUE(_pDispatch->SetMode(DispatchTypes::ALTERNATE_SCROLL));
         VERIFY_IS_TRUE(_terminalInput.GetInputMode(TerminalInput::Mode::AlternateScroll));
-        VERIFY_IS_TRUE(_pDispatch->EnableAlternateScroll(false));
+        VERIFY_IS_TRUE(_pDispatch->ResetMode(DispatchTypes::ALTERNATE_SCROLL));
         VERIFY_IS_FALSE(_terminalInput.GetInputMode(TerminalInput::Mode::AlternateScroll));
     }
 
@@ -2034,9 +2117,9 @@ public:
             RETURN_BOOL_IF_FALSE(fontBuffer.FinalizeSixelData());
 
             const auto cellSize = fontBuffer.GetCellSize();
-            Log::Comment(NoThrowString().Format(L"Cell size: %dx%d", cellSize.cx, cellSize.cy));
-            VERIFY_ARE_EQUAL(expectedCellSize.cx, cellSize.cx);
-            VERIFY_ARE_EQUAL(expectedCellSize.cy, cellSize.cy);
+            Log::Comment(NoThrowString().Format(L"Cell size: %dx%d", cellSize.width, cellSize.height));
+            VERIFY_ARE_EQUAL(expectedCellSize.width, cellSize.width);
+            VERIFY_ARE_EQUAL(expectedCellSize.height, cellSize.height);
             return true;
         };
 

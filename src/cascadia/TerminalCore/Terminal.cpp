@@ -37,31 +37,14 @@ static std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& i
 }
 
 #pragma warning(suppress : 26455) // default constructor is throwing, too much effort to rearrange at this time.
-Terminal::Terminal() :
-    _mutableViewport{ Viewport::Empty() },
-    _title{},
-    _pfnWriteInput{ nullptr },
-    _altBuffer{ nullptr },
-    _scrollOffset{ 0 },
-    _snapOnInput{ true },
-    _altGrAliasing{ true },
-    _blockSelection{ false },
-    _selectionMode{ SelectionInteractionMode::None },
-    _selectionIsTargetingUrl{ false },
-    _selection{ std::nullopt },
-    _selectionEndpoint{ static_cast<SelectionEndpoint>(0) },
-    _anchorInactiveSelectionEndpoint{ false },
-    _taskbarState{ 0 },
-    _taskbarProgress{ 0 },
-    _trimBlockSelection{ false },
-    _autoMarkPrompts{ false }
+Terminal::Terminal()
 {
     auto passAlongInput = [&](std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite) {
         if (!_pfnWriteInput)
         {
             return;
         }
-        auto wstr = _KeyEventsToText(inEventsToWrite);
+        const auto wstr = _KeyEventsToText(inEventsToWrite);
         _pfnWriteInput(wstr);
     };
 
@@ -75,8 +58,8 @@ void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Re
 {
     _mutableViewport = Viewport::FromDimensions({ 0, 0 }, viewportSize);
     _scrollbackLines = scrollbackLines;
-    const til::size bufferSize{ viewportSize.X,
-                                Utils::ClampToShortMax(viewportSize.Y + scrollbackLines, 1) };
+    const til::size bufferSize{ viewportSize.width,
+                                Utils::ClampToShortMax(viewportSize.height + scrollbackLines, 1) };
     const TextAttribute attr{};
     const UINT cursorSize = 12;
     _mainBuffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, true, renderer);
@@ -251,12 +234,12 @@ void Terminal::EraseScrollback()
     engine.Dispatch().EraseInDisplay(DispatchTypes::EraseType::Scrollback);
 }
 
-bool Terminal::IsXtermBracketedPasteModeEnabled() const
+bool Terminal::IsXtermBracketedPasteModeEnabled() const noexcept
 {
     return _bracketedPasteMode;
 }
 
-std::wstring_view Terminal::GetWorkingDirectory()
+std::wstring_view Terminal::GetWorkingDirectory() noexcept
 {
     return _workingDirectory;
 }
@@ -303,10 +286,10 @@ std::wstring_view Terminal::GetWorkingDirectory()
         return S_OK;
     }
 
-    const auto dx = viewportSize.X - oldDimensions.X;
-    const auto newBufferHeight = std::clamp(viewportSize.Y + _scrollbackLines, 0, SHRT_MAX);
+    const auto dx = viewportSize.width - oldDimensions.width;
+    const auto newBufferHeight = std::clamp(viewportSize.height + _scrollbackLines, 0, SHRT_MAX);
 
-    til::size bufferSize{ viewportSize.X, newBufferHeight };
+    til::size bufferSize{ viewportSize.width, newBufferHeight };
 
     // This will be used to determine where the viewport should be in the new buffer.
     const auto oldViewportTop = _mutableViewport.Top();
@@ -407,9 +390,9 @@ std::wstring_view Terminal::GetWorkingDirectory()
     CATCH_LOG();
 #pragma warning(pop)
 
-    const auto maxRow = std::max(newLastChar.Y, newCursorPos.Y);
+    const auto maxRow = std::max(newLastChar.y, newCursorPos.y);
 
-    const auto proposedTopFromLastLine = maxRow - viewportSize.Y + 1;
+    const auto proposedTopFromLastLine = maxRow - viewportSize.height + 1;
     const auto proposedTopFromScrollback = newViewportTop;
 
     auto proposedTop = std::max(proposedTopFromLastLine,
@@ -437,7 +420,7 @@ std::wstring_view Terminal::GetWorkingDirectory()
             {
                 try
                 {
-                    auto& row = newTextBuffer->GetRowByOffset(::base::ClampSub(proposedTop, 1));
+                    const auto& row = newTextBuffer->GetRowByOffset(::base::ClampSub(proposedTop, 1));
                     if (row.WasWrapForced())
                     {
                         proposedTop--;
@@ -465,9 +448,9 @@ std::wstring_view Terminal::GetWorkingDirectory()
     // top up so that we'll still fit within the buffer.
     const auto newView = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
     const auto proposedBottom = newView.BottomExclusive();
-    if (proposedBottom > bufferSize.Y)
+    if (proposedBottom > bufferSize.height)
     {
-        proposedTop = ::base::ClampSub(proposedTop, ::base::ClampSub(proposedBottom, bufferSize.Y));
+        proposedTop = ::base::ClampSub(proposedTop, ::base::ClampSub(proposedBottom, bufferSize.height));
     }
 
     _mutableViewport = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
@@ -499,7 +482,7 @@ void Terminal::Write(std::wstring_view stringView)
 {
     auto lock = LockForWriting();
 
-    auto& cursor = _activeBuffer().GetCursor();
+    const auto& cursor = _activeBuffer().GetCursor();
     const til::point cursorPosBefore{ cursor.GetPosition() };
 
     _stateMachine->ProcessString(stringView);
@@ -518,8 +501,8 @@ void Terminal::Write(std::wstring_view stringView)
 
 void Terminal::WritePastedText(std::wstring_view stringView)
 {
-    auto option = ::Microsoft::Console::Utils::FilterOption::CarriageReturnNewline |
-                  ::Microsoft::Console::Utils::FilterOption::ControlCodes;
+    const auto option = ::Microsoft::Console::Utils::FilterOption::CarriageReturnNewline |
+                        ::Microsoft::Console::Utils::FilterOption::ControlCodes;
 
     auto filtered = ::Microsoft::Console::Utils::FilterStringForPaste(stringView, option);
     if (IsXtermBracketedPasteModeEnabled())
@@ -663,7 +646,7 @@ uint16_t Terminal::GetHyperlinkIdAtViewportPosition(const til::point viewportPos
 // - The interval representing the start and end coordinates
 std::optional<PointTree::interval> Terminal::GetHyperlinkIntervalFromViewportPosition(const til::point viewportPos)
 {
-    const auto results = _patternIntervalTree.findOverlapping({ viewportPos.X + 1, viewportPos.Y }, viewportPos);
+    const auto results = _patternIntervalTree.findOverlapping({ viewportPos.x + 1, viewportPos.y }, viewportPos);
     if (results.size() > 0)
     {
         for (const auto& result : results)
@@ -760,7 +743,7 @@ bool Terminal::SendKeyEvent(const WORD vkey,
         return false;
     }
 
-    KeyEvent keyEv{ keyDown, 1, vkey, sc, ch, states.Value() };
+    const KeyEvent keyEv{ keyDown, 1, vkey, sc, ch, states.Value() };
     return _terminalInput->HandleKey(&keyEv);
 }
 
@@ -832,8 +815,8 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
     // character up event, only a character received event. So fake sending both
     // to the terminal input translator. Unless it's in win32-input-mode, it'll
     // ignore the keyup.
-    KeyEvent keyDown{ true, 1, vkey, scanCode, ch, states.Value() };
-    KeyEvent keyUp{ false, 1, vkey, scanCode, ch, states.Value() };
+    const KeyEvent keyDown{ true, 1, vkey, scanCode, ch, states.Value() };
+    const KeyEvent keyUp{ false, 1, vkey, scanCode, ch, states.Value() };
     const auto handledDown = _terminalInput->HandleKey(&keyDown);
     const auto handledUp = _terminalInput->HandleKey(&keyUp);
     return handledDown || handledUp;
@@ -856,12 +839,12 @@ void Terminal::FocusChanged(const bool focused) noexcept
 // - Invalidates the regions described in the given pattern tree for the rendering purposes
 // Arguments:
 // - The interval tree containing regions that need to be invalidated
-void Terminal::_InvalidatePatternTree(interval_tree::IntervalTree<til::point, size_t>& tree)
+void Terminal::_InvalidatePatternTree(const interval_tree::IntervalTree<til::point, size_t>& tree)
 {
     const auto vis = _VisibleStartIndex();
     auto invalidate = [=](const PointTree::interval& interval) {
-        til::point startCoord{ interval.start.x, interval.start.y + vis };
-        til::point endCoord{ interval.stop.x, interval.stop.y + vis };
+        const til::point startCoord{ interval.start.x, interval.start.y + vis };
+        const til::point endCoord{ interval.stop.x, interval.stop.y + vis };
         _InvalidateFromCoords(startCoord, endCoord);
     };
     tree.visit_all(invalidate);
@@ -873,9 +856,9 @@ void Terminal::_InvalidatePatternTree(interval_tree::IntervalTree<til::point, si
 // - The start and end coords
 void Terminal::_InvalidateFromCoords(const til::point start, const til::point end)
 {
-    if (start.Y == end.Y)
+    if (start.y == end.y)
     {
-        til::inclusive_rect region{ start.X, start.Y, end.X, end.Y };
+        const til::inclusive_rect region{ start.x, start.y, end.x, end.y };
         _activeBuffer().TriggerRedraw(Viewport::FromInclusive(region));
     }
     else
@@ -883,18 +866,18 @@ void Terminal::_InvalidateFromCoords(const til::point start, const til::point en
         const auto rowSize = _activeBuffer().GetRowByOffset(0).size();
 
         // invalidate the first line
-        til::inclusive_rect region{ start.X, start.Y, rowSize - 1, start.Y };
+        til::inclusive_rect region{ start.x, start.y, rowSize - 1, start.y };
         _activeBuffer().TriggerRedraw(Viewport::FromInclusive(region));
 
-        if ((end.Y - start.Y) > 1)
+        if ((end.y - start.y) > 1)
         {
             // invalidate the lines in between the first and last line
-            region = til::inclusive_rect{ 0, start.Y + 1, rowSize - 1, end.Y - 1 };
+            region = til::inclusive_rect{ 0, start.y + 1, rowSize - 1, end.y - 1 };
             _activeBuffer().TriggerRedraw(Viewport::FromInclusive(region));
         }
 
         // invalidate the last line
-        region = til::inclusive_rect{ 0, end.Y, end.X, end.Y };
+        region = til::inclusive_rect{ 0, end.y, end.x, end.y };
         _activeBuffer().TriggerRedraw(Viewport::FromInclusive(region));
     }
 }
@@ -1012,15 +995,9 @@ WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
 // Return Value:
 // - a shared_lock which can be used to unlock the terminal. The shared_lock
 //      will release this lock when it's destructed.
-[[nodiscard]] std::unique_lock<til::ticket_lock> Terminal::LockForReading()
+[[nodiscard]] std::unique_lock<til::recursive_ticket_lock> Terminal::LockForReading()
 {
-#ifdef NDEBUG
     return std::unique_lock{ _readWriteLock };
-#else
-    auto lock = std::unique_lock{ _readWriteLock };
-    _lastLocker = GetCurrentThreadId();
-    return lock;
-#endif
 }
 
 // Method Description:
@@ -1028,24 +1005,18 @@ WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
 // Return Value:
 // - a unique_lock which can be used to unlock the terminal. The unique_lock
 //      will release this lock when it's destructed.
-[[nodiscard]] std::unique_lock<til::ticket_lock> Terminal::LockForWriting()
+[[nodiscard]] std::unique_lock<til::recursive_ticket_lock> Terminal::LockForWriting()
 {
-#ifdef NDEBUG
     return std::unique_lock{ _readWriteLock };
-#else
-    auto lock = std::unique_lock{ _readWriteLock };
-    _lastLocker = GetCurrentThreadId();
-    return lock;
-#endif
 }
 
 // Method Description:
 // - Get a reference to the terminal's read/write lock.
 // Return Value:
 // - a ticket_lock which can be used to manually lock or unlock the terminal.
-til::ticket_lock& Terminal::GetReadWriteLock() noexcept
+til::recursive_ticket_lock_suspension Terminal::SuspendLock() noexcept
 {
-    return _readWriteLock;
+    return _readWriteLock.suspend();
 }
 
 Viewport Terminal::_GetMutableViewport() const noexcept
@@ -1136,8 +1107,8 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
         {
             // If "wch" was a surrogate character, we just consumed 2 code units above.
             // -> Increment "i" by 1 in that case and thus by 2 in total in this iteration.
-            proposedCursorPosition.X += cellDistance;
-            i += inputDistance - 1;
+            proposedCursorPosition.x += cellDistance;
+            i += gsl::narrow_cast<size_t>(inputDistance - 1);
         }
         else
         {
@@ -1147,8 +1118,8 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             // decremented by 1 below and force the outer loop to loop forever.
             // This if() basically behaves as if "\r\n" had been encountered above and retries the write.
             // With well behaving shells during normal operation this safeguard should normally not be encountered.
-            proposedCursorPosition.X = 0;
-            proposedCursorPosition.Y++;
+            proposedCursorPosition.x = 0;
+            proposedCursorPosition.y++;
 
             // Try the character again.
             i--;
@@ -1185,31 +1156,31 @@ void Terminal::_AdjustCursorPosition(const til::point proposedPosition)
     // If we're about to scroll past the bottom of the buffer, instead cycle the
     // buffer.
     til::CoordType rowsPushedOffTopOfBuffer = 0;
-    const auto newRows = std::max(0, proposedCursorPosition.Y - bufferSize.Height() + 1);
-    if (proposedCursorPosition.Y >= bufferSize.Height())
+    const auto newRows = std::max(0, proposedCursorPosition.y - bufferSize.Height() + 1);
+    if (proposedCursorPosition.y >= bufferSize.Height())
     {
         for (auto dy = 0; dy < newRows; dy++)
         {
             _activeBuffer().IncrementCircularBuffer();
-            proposedCursorPosition.Y--;
+            proposedCursorPosition.y--;
             rowsPushedOffTopOfBuffer++;
 
             // Update our selection too, so it doesn't move as the buffer is cycled
             if (_selection)
             {
                 // If the start of the selection is above 0, we can reduce both the start and end by 1
-                if (_selection->start.Y > 0)
+                if (_selection->start.y > 0)
                 {
-                    _selection->start.Y -= 1;
-                    _selection->end.Y -= 1;
+                    _selection->start.y -= 1;
+                    _selection->end.y -= 1;
                 }
                 else
                 {
                     // The start of the selection is at 0, if the end is greater than 0, then only reduce the end
-                    if (_selection->end.Y > 0)
+                    if (_selection->end.y > 0)
                     {
-                        _selection->start.X = 0;
-                        _selection->end.Y -= 1;
+                        _selection->start.x = 0;
+                        _selection->end.y -= 1;
                     }
                     else
                     {
@@ -1232,10 +1203,10 @@ void Terminal::_AdjustCursorPosition(const til::point proposedPosition)
     if (!_inAltBuffer())
     {
         auto updatedViewport = false;
-        const auto scrollAmount = std::max(0, proposedCursorPosition.Y - _mutableViewport.BottomInclusive());
+        const auto scrollAmount = std::max(0, proposedCursorPosition.y - _mutableViewport.BottomInclusive());
         if (scrollAmount > 0)
         {
-            const auto newViewTop = std::max(0, proposedCursorPosition.Y - (_mutableViewport.Height() - 1));
+            const auto newViewTop = std::max(0, proposedCursorPosition.y - (_mutableViewport.Height() - 1));
             // In the alt buffer, we never need to adjust _mutableViewport, which is the viewport of the main buffer.
             if (newViewTop != _mutableViewport.Top())
             {
@@ -1290,7 +1261,7 @@ void Terminal::_AdjustCursorPosition(const til::point proposedPosition)
         // We have to report the delta here because we might have circled the text buffer.
         // That didn't change the viewport and therefore the TriggerScroll(void)
         // method can't detect the delta on its own.
-        til::point delta{ 0, -rowsPushedOffTopOfBuffer };
+        const til::point delta{ 0, -rowsPushedOffTopOfBuffer };
         _activeBuffer().TriggerScroll(delta);
     }
 }
@@ -1432,7 +1403,7 @@ bool Terminal::IsCursorBlinkingAllowed() const noexcept
 // - This is called by TerminalControl (through a throttled function) when the visible
 //   region changes (for example by text entering the buffer or scrolling)
 // - INVARIANT: this function can only be called if the caller has the writing lock on the terminal
-void Terminal::UpdatePatternsUnderLock() noexcept
+void Terminal::UpdatePatternsUnderLock()
 {
     auto oldTree = _patternIntervalTree;
     _patternIntervalTree = _activeBuffer().GetPatterns(_VisibleStartIndex(), _VisibleEndIndex());
@@ -1444,7 +1415,7 @@ void Terminal::UpdatePatternsUnderLock() noexcept
 // - Clears and invalidates the interval pattern tree
 // - This is called to prevent the renderer from rendering patterns while the
 //   visible region is changing
-void Terminal::ClearPatternTree() noexcept
+void Terminal::ClearPatternTree()
 {
     auto oldTree = _patternIntervalTree;
     _patternIntervalTree = {};
@@ -1454,7 +1425,7 @@ void Terminal::ClearPatternTree() noexcept
 // Method Description:
 // - Returns the tab color
 // If the starting color exists, its value is preferred
-const std::optional<til::color> Terminal::GetTabColor() const noexcept
+const std::optional<til::color> Terminal::GetTabColor() const
 {
     if (_startingTabColor.has_value())
     {
@@ -1485,7 +1456,7 @@ const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarProgress() const noe
     return _taskbarProgress;
 }
 
-Scheme Terminal::GetColorScheme() const noexcept
+Scheme Terminal::GetColorScheme() const
 {
     Scheme s;
 
@@ -1618,7 +1589,7 @@ void Terminal::ClearMark()
     // workaround to force the control to redraw any scrollbar marks
     _NotifyScrollEvent();
 }
-void Terminal::ClearAllMarks()
+void Terminal::ClearAllMarks() noexcept
 {
     _scrollMarks.clear();
     // Tell the control that the scrollbar has somehow changed. Used as a
@@ -1626,13 +1597,13 @@ void Terminal::ClearAllMarks()
     _NotifyScrollEvent();
 }
 
-const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark>& Terminal::GetScrollMarks() const
+const std::vector<DispatchTypes::ScrollMark>& Terminal::GetScrollMarks() const noexcept
 {
     // TODO: GH#11000 - when the marks are stored per-buffer, get rid of this.
     // We want to return _no_ marks when we're in the alt buffer, to effectively
     // hide them. We need to return a reference, so we can't just ctor an empty
     // list here just for when we're in the alt buffer.
-    static std::vector<DispatchTypes::ScrollMark> _altBufferMarks{};
+    static const std::vector<DispatchTypes::ScrollMark> _altBufferMarks{};
     return _inAltBuffer() ? _altBufferMarks : _scrollMarks;
 }
 

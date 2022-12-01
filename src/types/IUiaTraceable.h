@@ -22,7 +22,7 @@ namespace Microsoft::Console::Types
     class IUiaTraceable
     {
     public:
-        const IdType GetId() const noexcept
+        IdType GetId() const noexcept
         {
             return _id;
         }

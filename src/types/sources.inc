@@ -41,7 +41,6 @@ SOURCES= \
     ..\WindowBufferSizeEvent.cpp \
     ..\convert.cpp \
     ..\colorTable.cpp \
-    ..\Utf16Parser.cpp \
     ..\utils.cpp \
     ..\ThemeUtils.cpp \
     ..\ScreenInfoUiaProviderBase.cpp \
