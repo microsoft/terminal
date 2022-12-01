@@ -58,8 +58,8 @@ void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Re
 {
     _mutableViewport = Viewport::FromDimensions({ 0, 0 }, viewportSize);
     _scrollbackLines = scrollbackLines;
-    const til::size bufferSize{ viewportSize.X,
-                                Utils::ClampToShortMax(viewportSize.Y + scrollbackLines, 1) };
+    const til::size bufferSize{ viewportSize.width,
+                                Utils::ClampToShortMax(viewportSize.height + scrollbackLines, 1) };
     const TextAttribute attr{};
     const UINT cursorSize = 12;
     _mainBuffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, true, renderer);
@@ -286,10 +286,10 @@ std::wstring_view Terminal::GetWorkingDirectory() noexcept
         return S_OK;
     }
 
-    const auto dx = viewportSize.X - oldDimensions.X;
-    const auto newBufferHeight = std::clamp(viewportSize.Y + _scrollbackLines, 0, SHRT_MAX);
+    const auto dx = viewportSize.width - oldDimensions.width;
+    const auto newBufferHeight = std::clamp(viewportSize.height + _scrollbackLines, 0, SHRT_MAX);
 
-    til::size bufferSize{ viewportSize.X, newBufferHeight };
+    til::size bufferSize{ viewportSize.width, newBufferHeight };
 
     // This will be used to determine where the viewport should be in the new buffer.
     const auto oldViewportTop = _mutableViewport.Top();
@@ -390,9 +390,9 @@ std::wstring_view Terminal::GetWorkingDirectory() noexcept
     CATCH_LOG();
 #pragma warning(pop)
 
-    const auto maxRow = std::max(newLastChar.Y, newCursorPos.Y);
+    const auto maxRow = std::max(newLastChar.y, newCursorPos.y);
 
-    const auto proposedTopFromLastLine = maxRow - viewportSize.Y + 1;
+    const auto proposedTopFromLastLine = maxRow - viewportSize.height + 1;
     const auto proposedTopFromScrollback = newViewportTop;
 
     auto proposedTop = std::max(proposedTopFromLastLine,
@@ -448,9 +448,9 @@ std::wstring_view Terminal::GetWorkingDirectory() noexcept
     // top up so that we'll still fit within the buffer.
     const auto newView = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
     const auto proposedBottom = newView.BottomExclusive();
-    if (proposedBottom > bufferSize.Y)
+    if (proposedBottom > bufferSize.height)
     {
-        proposedTop = ::base::ClampSub(proposedTop, ::base::ClampSub(proposedBottom, bufferSize.Y));
+        proposedTop = ::base::ClampSub(proposedTop, ::base::ClampSub(proposedBottom, bufferSize.height));
     }
 
     _mutableViewport = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
@@ -646,7 +646,7 @@ uint16_t Terminal::GetHyperlinkIdAtViewportPosition(const til::point viewportPos
 // - The interval representing the start and end coordinates
 std::optional<PointTree::interval> Terminal::GetHyperlinkIntervalFromViewportPosition(const til::point viewportPos)
 {
-    const auto results = _patternIntervalTree.findOverlapping({ viewportPos.X + 1, viewportPos.Y }, viewportPos);
+    const auto results = _patternIntervalTree.findOverlapping({ viewportPos.x + 1, viewportPos.y }, viewportPos);
     if (results.size() > 0)
     {
         for (const auto& result : results)
@@ -856,9 +856,9 @@ void Terminal::_InvalidatePatternTree(const interval_tree::IntervalTree<til::poi
 // - The start and end coords
 void Terminal::_InvalidateFromCoords(const til::point start, const til::point end)
 {
-    if (start.Y == end.Y)
+    if (start.y == end.y)
     {
-        const til::inclusive_rect region{ start.X, start.Y, end.X, end.Y };
+        const til::inclusive_rect region{ start.x, start.y, end.x, end.y };
         _activeBuffer().TriggerRedraw(Viewport::FromInclusive(region));
     }
     else
@@ -866,18 +866,18 @@ void Terminal::_InvalidateFromCoords(const til::point start, const til::point en
         const auto rowSize = _activeBuffer().GetRowByOffset(0).size();
 
         // invalidate the first line
-        til::inclusive_rect region{ start.X, start.Y, rowSize - 1, start.Y };
+        til::inclusive_rect region{ start.x, start.y, rowSize - 1, start.y };
         _activeBuffer().TriggerRedraw(Viewport::FromInclusive(region));
 
-        if ((end.Y - start.Y) > 1)
+        if ((end.y - start.y) > 1)
         {
             // invalidate the lines in between the first and last line
-            region = til::inclusive_rect{ 0, start.Y + 1, rowSize - 1, end.Y - 1 };
+            region = til::inclusive_rect{ 0, start.y + 1, rowSize - 1, end.y - 1 };
             _activeBuffer().TriggerRedraw(Viewport::FromInclusive(region));
         }
 
         // invalidate the last line
-        region = til::inclusive_rect{ 0, end.Y, end.X, end.Y };
+        region = til::inclusive_rect{ 0, end.y, end.x, end.y };
         _activeBuffer().TriggerRedraw(Viewport::FromInclusive(region));
     }
 }
@@ -1107,7 +1107,7 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
         {
             // If "wch" was a surrogate character, we just consumed 2 code units above.
             // -> Increment "i" by 1 in that case and thus by 2 in total in this iteration.
-            proposedCursorPosition.X += cellDistance;
+            proposedCursorPosition.x += cellDistance;
             i += gsl::narrow_cast<size_t>(inputDistance - 1);
         }
         else
@@ -1118,8 +1118,8 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             // decremented by 1 below and force the outer loop to loop forever.
             // This if() basically behaves as if "\r\n" had been encountered above and retries the write.
             // With well behaving shells during normal operation this safeguard should normally not be encountered.
-            proposedCursorPosition.X = 0;
-            proposedCursorPosition.Y++;
+            proposedCursorPosition.x = 0;
+            proposedCursorPosition.y++;
 
             // Try the character again.
             i--;
@@ -1156,31 +1156,31 @@ void Terminal::_AdjustCursorPosition(const til::point proposedPosition)
     // If we're about to scroll past the bottom of the buffer, instead cycle the
     // buffer.
     til::CoordType rowsPushedOffTopOfBuffer = 0;
-    const auto newRows = std::max(0, proposedCursorPosition.Y - bufferSize.Height() + 1);
-    if (proposedCursorPosition.Y >= bufferSize.Height())
+    const auto newRows = std::max(0, proposedCursorPosition.y - bufferSize.Height() + 1);
+    if (proposedCursorPosition.y >= bufferSize.Height())
     {
         for (auto dy = 0; dy < newRows; dy++)
         {
             _activeBuffer().IncrementCircularBuffer();
-            proposedCursorPosition.Y--;
+            proposedCursorPosition.y--;
             rowsPushedOffTopOfBuffer++;
 
             // Update our selection too, so it doesn't move as the buffer is cycled
             if (_selection)
             {
                 // If the start of the selection is above 0, we can reduce both the start and end by 1
-                if (_selection->start.Y > 0)
+                if (_selection->start.y > 0)
                 {
-                    _selection->start.Y -= 1;
-                    _selection->end.Y -= 1;
+                    _selection->start.y -= 1;
+                    _selection->end.y -= 1;
                 }
                 else
                 {
                     // The start of the selection is at 0, if the end is greater than 0, then only reduce the end
-                    if (_selection->end.Y > 0)
+                    if (_selection->end.y > 0)
                     {
-                        _selection->start.X = 0;
-                        _selection->end.Y -= 1;
+                        _selection->start.x = 0;
+                        _selection->end.y -= 1;
                     }
                     else
                     {
@@ -1203,10 +1203,10 @@ void Terminal::_AdjustCursorPosition(const til::point proposedPosition)
     if (!_inAltBuffer())
     {
         auto updatedViewport = false;
-        const auto scrollAmount = std::max(0, proposedCursorPosition.Y - _mutableViewport.BottomInclusive());
+        const auto scrollAmount = std::max(0, proposedCursorPosition.y - _mutableViewport.BottomInclusive());
         if (scrollAmount > 0)
         {
-            const auto newViewTop = std::max(0, proposedCursorPosition.Y - (_mutableViewport.Height() - 1));
+            const auto newViewTop = std::max(0, proposedCursorPosition.y - (_mutableViewport.Height() - 1));
             // In the alt buffer, we never need to adjust _mutableViewport, which is the viewport of the main buffer.
             if (newViewTop != _mutableViewport.Top())
             {

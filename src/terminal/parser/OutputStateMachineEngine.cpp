@@ -636,6 +636,14 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         success = _dispatch->PopGraphicsRendition();
         TermTelemetry::Instance().Log(TermTelemetry::Codes::XTPOPSGR);
         break;
+    case CsiActionCodes::DECRQM_RequestMode:
+        success = _dispatch->RequestMode(DispatchTypes::ANSIStandardMode(parameters.at(0)));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRQM);
+        break;
+    case CsiActionCodes::DECRQM_PrivateRequestMode:
+        success = _dispatch->RequestMode(DispatchTypes::DECPrivateMode(parameters.at(0)));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRQM);
+        break;
     case CsiActionCodes::DECCARA_ChangeAttributesRectangularArea:
         success = _dispatch->ChangeAttributesRectangularArea(parameters.at(0), parameters.at(1), parameters.at(2).value_or(0), parameters.at(3).value_or(0), parameters.subspan(4));
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECCARA);

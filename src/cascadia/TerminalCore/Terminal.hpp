@@ -115,6 +115,7 @@ public:
     void SetViewportPosition(const til::point position) noexcept override;
     void SetTextAttributes(const TextAttribute& attrs) noexcept override;
     void SetAutoWrapMode(const bool wrapAtEOL) noexcept override;
+    bool GetAutoWrapMode() const noexcept override;
     void SetScrollingRegion(const til::inclusive_rect& scrollMargins) noexcept override;
     void WarningBell() override;
     bool GetLineFeedMode() const noexcept override;
@@ -124,7 +125,8 @@ public:
     bool ResizeWindow(const til::CoordType width, const til::CoordType height) noexcept override;
     void SetConsoleOutputCP(const unsigned int codepage) noexcept override;
     unsigned int GetConsoleOutputCP() const noexcept override;
-    void EnableXtermBracketedPasteMode(const bool enabled) noexcept override;
+    void SetBracketedPasteMode(const bool enabled) noexcept override;
+    std::optional<bool> GetBracketedPasteMode() const noexcept override;
     void CopyToClipboard(std::wstring_view content) override;
     void SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) override;
     void SetWorkingDirectory(std::wstring_view uri) override;
@@ -380,7 +382,7 @@ private:
     //   to the region they scrolled to. If that were the case, then every time we move _mutableViewport,
     //   we'd also need to update _offset.
     // However, if we just stored it as a _visibleTop, then that point would remain fixed -
-    //      Though if _visibleTop == _mutableViewport.Top, then we'd need to make sure to update
+    //      Though if _visibleTop == _mutableViewport.top, then we'd need to make sure to update
     //      _visibleTop as well.
     // Additionally, maybe some people want to scroll into the history, then have that scroll out from
     //      underneath them, while others would prefer to anchor it in place.

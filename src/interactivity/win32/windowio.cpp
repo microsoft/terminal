@@ -630,8 +630,8 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
 
     // translate mouse position into characters, if necessary.
     auto ScreenFontSize = ScreenInfo.GetScreenFontSize();
-    MousePosition.X /= ScreenFontSize.X;
-    MousePosition.Y /= ScreenFontSize.Y;
+    MousePosition.x /= ScreenFontSize.width;
+    MousePosition.y /= ScreenFontSize.height;
 
     const auto fShiftPressed = WI_IsFlagSet(OneCoreSafeGetKeyState(VK_SHIFT), KEY_PRESSED);
 
@@ -680,27 +680,27 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
         }
     }
 
-    MousePosition.X += ScreenInfo.GetViewport().Left();
-    MousePosition.Y += ScreenInfo.GetViewport().Top();
+    MousePosition.x += ScreenInfo.GetViewport().Left();
+    MousePosition.y += ScreenInfo.GetViewport().Top();
 
     const auto coordScreenBufferSize = ScreenInfo.GetBufferSize().Dimensions();
 
     // make sure mouse position is clipped to screen buffer
-    if (MousePosition.X < 0)
+    if (MousePosition.x < 0)
     {
-        MousePosition.X = 0;
+        MousePosition.x = 0;
     }
-    else if (MousePosition.X >= coordScreenBufferSize.X)
+    else if (MousePosition.x >= coordScreenBufferSize.width)
     {
-        MousePosition.X = coordScreenBufferSize.X - 1;
+        MousePosition.x = coordScreenBufferSize.width - 1;
     }
-    if (MousePosition.Y < 0)
+    if (MousePosition.y < 0)
     {
-        MousePosition.Y = 0;
+        MousePosition.y = 0;
     }
-    else if (MousePosition.Y >= coordScreenBufferSize.Y)
+    else if (MousePosition.y >= coordScreenBufferSize.height)
     {
-        MousePosition.Y = coordScreenBufferSize.Y - 1;
+        MousePosition.y = coordScreenBufferSize.height - 1;
     }
 
     // Process the transparency mousewheel message before the others so that we can
