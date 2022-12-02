@@ -142,7 +142,7 @@ namespace ControlUnitTests
             // GH#603: Adjusting opacity shouldn't change whether or not we
             // requested acrylic.
 
-            auto expectedUseAcrylic = expectedOpacity < 1.0;
+            auto expectedUseAcrylic = true;
             VERIFY_ARE_EQUAL(expectedUseAcrylic, core->UseAcrylic());
             VERIFY_ARE_EQUAL(true, core->_settings->UseAcrylic());
         };
