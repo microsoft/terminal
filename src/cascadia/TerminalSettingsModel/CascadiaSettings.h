@@ -162,6 +162,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool _hasInvalidColorScheme(const Model::Command& command) const;
         void _validateThemeExists();
 
+        void _researchOnLoad();
+
         // user settings
         winrt::hstring _hash;
         winrt::com_ptr<implementation::GlobalAppSettings> _globals = winrt::make_self<implementation::GlobalAppSettings>();

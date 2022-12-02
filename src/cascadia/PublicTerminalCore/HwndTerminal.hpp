@@ -49,7 +49,7 @@ __declspec(dllexport) void _stdcall TerminalKillFocus(void* terminal);
 struct HwndTerminal : ::Microsoft::Console::Types::IControlAccessibilityInfo
 {
 public:
-    HwndTerminal(HWND hwnd);
+    HwndTerminal(HWND hwnd) noexcept;
 
     HwndTerminal(const HwndTerminal&) = default;
     HwndTerminal(HwndTerminal&&) = default;

@@ -3,12 +3,22 @@
 
 #include "pch.h"
 #include "Terminal.hpp"
+#include "tracing.hpp"
+
 #include "../src/inc/unicode.hpp"
 
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
+
+// Note: Generate GUID using TlgGuid.exe tool
+#pragma warning(suppress : 26477) // One of the macros uses 0/NULL. We don't have control to make it nullptr.
+TRACELOGGING_DEFINE_PROVIDER(g_hCTerminalCoreProvider,
+                             "Microsoft.Terminal.Core",
+                             // {103ac8cf-97d2-51aa-b3ba-5ffd5528fa5f}
+                             (0x103ac8cf, 0x97d2, 0x51aa, 0xb3, 0xba, 0x5f, 0xfd, 0x55, 0x28, 0xfa, 0x5f),
+                             TraceLoggingOptionMicrosoftTelemetry());
 
 // Print puts the text in the buffer and moves the cursor
 void Terminal::PrintString(const std::wstring_view string)
@@ -60,6 +70,12 @@ void Terminal::SetAutoWrapMode(const bool /*wrapAtEOL*/) noexcept
     // TODO: This will be needed to support DECAWM.
 }
 
+bool Terminal::GetAutoWrapMode() const noexcept
+{
+    // TODO: This will be needed to support DECAWM.
+    return true;
+}
+
 void Terminal::SetScrollingRegion(const til::inclusive_rect& /*scrollMargins*/) noexcept
 {
     // TODO: This will be needed to fully support DECSTBM.
@@ -82,12 +98,12 @@ void Terminal::LineFeed(const bool withReturn)
 
     // since we explicitly just moved down a row, clear the wrap status on the
     // row we just came from
-    _activeBuffer().GetRowByOffset(cursorPos.Y).SetWrapForced(false);
+    _activeBuffer().GetRowByOffset(cursorPos.y).SetWrapForced(false);
 
-    cursorPos.Y++;
+    cursorPos.y++;
     if (withReturn)
     {
-        cursorPos.X = 0;
+        cursorPos.x = 0;
     }
     _AdjustCursorPosition(cursorPos);
 }
@@ -123,9 +139,14 @@ unsigned int Terminal::GetConsoleOutputCP() const noexcept
     return CP_UTF8;
 }
 
-void Terminal::EnableXtermBracketedPasteMode(const bool enabled) noexcept
+void Terminal::SetBracketedPasteMode(const bool enabled) noexcept
 {
     _bracketedPasteMode = enabled;
+}
+
+std::optional<bool> Terminal::GetBracketedPasteMode() const noexcept
+{
+    return _bracketedPasteMode;
 }
 
 void Terminal::CopyToClipboard(std::wstring_view content)
@@ -185,6 +206,19 @@ void Terminal::SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::D
 
 void Terminal::SetWorkingDirectory(std::wstring_view uri)
 {
+    static bool logged = false;
+    if (!logged)
+    {
+        TraceLoggingWrite(
+            g_hCTerminalCoreProvider,
+            "ShellIntegrationWorkingDirSet",
+            TraceLoggingDescription("The CWD was set by the client application"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+        logged = true;
+    }
+
     _workingDirectory = uri;
 }
 
@@ -222,7 +256,7 @@ void Terminal::UseAlternateScreenBuffer()
 
         // The new position should match the viewport-relative position of the main buffer.
         auto tgtCursorPos = myCursor.GetPosition();
-        tgtCursorPos.Y -= _mutableViewport.Top();
+        tgtCursorPos.y -= _mutableViewport.Top();
         tgtCursor.SetPosition(tgtCursorPos);
     }
 
@@ -265,7 +299,7 @@ void Terminal::UseMainScreenBuffer()
         // The new position should match the viewport-relative position of the main buffer.
         // This is the equal and opposite effect of what we did in UseAlternateScreenBuffer
         auto tgtCursorPos = myCursor.GetPosition();
-        tgtCursorPos.Y += _mutableViewport.Top();
+        tgtCursorPos.y += _mutableViewport.Top();
         tgtCursor.SetPosition(tgtCursorPos);
     }
 
@@ -298,10 +332,117 @@ void Terminal::UseMainScreenBuffer()
     CATCH_LOG();
 }
 
-void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark)
+// NOTE: This is the version of AddMark that comes from VT
+void Terminal::MarkPrompt(const DispatchTypes::ScrollMark& mark)
+{
+    static bool logged = false;
+    if (!logged)
+    {
+        TraceLoggingWrite(
+            g_hCTerminalCoreProvider,
+            "ShellIntegrationMarkAdded",
+            TraceLoggingDescription("A mark was added via VT at least once"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+        logged = true;
+    }
+
+    const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
+    AddMark(mark, cursorPos, cursorPos, false);
+
+    if (mark.category == DispatchTypes::MarkCategory::Prompt)
+    {
+        _currentPromptState = PromptState::Prompt;
+    }
+}
+
+void Terminal::MarkCommandStart()
 {
     const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
-    AddMark(mark, cursorPos, cursorPos);
+
+    if ((_currentPromptState == PromptState::Prompt) &&
+        (_scrollMarks.size() > 0))
+    {
+        // We were in the right state, and there's a previous mark to work
+        // with.
+        //
+        //We can just do the work below safely.
+    }
+    else
+    {
+        // If there was no last mark, or we're in a weird state,
+        // then abandon the current state, and just insert a new Prompt mark that
+        // start's & ends here, and got to State::Command.
+
+        DispatchTypes::ScrollMark mark;
+        mark.category = DispatchTypes::MarkCategory::Prompt;
+        AddMark(mark, cursorPos, cursorPos, false);
+    }
+    _scrollMarks.back().end = cursorPos;
+    _currentPromptState = PromptState::Command;
+}
+
+void Terminal::MarkOutputStart()
+{
+    const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
+
+    if ((_currentPromptState == PromptState::Command) &&
+        (_scrollMarks.size() > 0))
+    {
+        // We were in the right state, and there's a previous mark to work
+        // with.
+        //
+        //We can just do the work below safely.
+    }
+    else
+    {
+        // If there was no last mark, or we're in a weird state,
+        // then abandon the current state, and just insert a new Prompt mark that
+        // start's & ends here, and the command ends here, and go to State::Output.
+
+        DispatchTypes::ScrollMark mark;
+        mark.category = DispatchTypes::MarkCategory::Prompt;
+        AddMark(mark, cursorPos, cursorPos, false);
+    }
+    _scrollMarks.back().commandEnd = cursorPos;
+    _currentPromptState = PromptState::Output;
+}
+
+void Terminal::MarkCommandFinish(std::optional<unsigned int> error)
+{
+    const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
+    auto category = DispatchTypes::MarkCategory::Prompt;
+    if (error.has_value())
+    {
+        category = *error == 0u ?
+                       DispatchTypes::MarkCategory::Success :
+                       DispatchTypes::MarkCategory::Error;
+    }
+
+    if ((_currentPromptState == PromptState::Output) &&
+        (_scrollMarks.size() > 0))
+    {
+        // We were in the right state, and there's a previous mark to work
+        // with.
+        //
+        //We can just do the work below safely.
+    }
+    else
+    {
+        // If there was no last mark, or we're in a weird state, then abandon
+        // the current state, and just insert a new Prompt mark that start's &
+        // ends here, and the command ends here, AND the output ends here. and
+        // go to State::Output.
+
+        DispatchTypes::ScrollMark mark;
+        mark.category = DispatchTypes::MarkCategory::Prompt;
+        AddMark(mark, cursorPos, cursorPos, false);
+        _scrollMarks.back().commandEnd = cursorPos;
+    }
+    _scrollMarks.back().outputEnd = cursorPos;
+    _scrollMarks.back().category = category;
+    _currentPromptState = PromptState::None;
 }
 
 // Method Description:
