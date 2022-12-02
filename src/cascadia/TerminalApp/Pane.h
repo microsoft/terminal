@@ -136,6 +136,8 @@ public:
 
     bool ContainsReadOnly() const;
 
+    static void SetupResources(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
+
     // Method Description:
     // - A helper method for ad-hoc recursion on a pane tree. Walks the pane
     //   tree, calling a function on each pane in a depth-first pattern.
@@ -336,8 +338,6 @@ private:
         }
         return false;
     }
-
-    static void _SetupResources();
 
     struct PanePoint
     {

@@ -5,6 +5,8 @@
 #include "Pane.h"
 #include "AppLogic.h"
 
+#include "Utils.h"
+
 #include <Mmsystem.h>
 
 using namespace winrt::Windows::Foundation;
@@ -44,14 +46,6 @@ Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFo
 
     _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
     _warningBellToken = _control.WarningBell({ this, &Pane::_ControlWarningBellHandler });
-
-    // On the first Pane's creation, lookup resources we'll use to theme the
-    // Pane, including the brushed to use for the focused/unfocused border
-    // color.
-    if (s_focusedBorderBrush == nullptr || s_unfocusedBorderBrush == nullptr)
-    {
-        _SetupResources();
-    }
 
     // Register an event with the control to have it inform us when it gains focus.
     _gotFocusRevoker = _control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
@@ -3077,16 +3071,16 @@ float Pane::_ClampSplitPosition(const bool widthOrHeight, const float requestedV
 //   * The Brush we'll use for inactive Panes - TabViewBackground (to match the
 //     color of the titlebar)
 // Arguments:
-// - <none>
+// - requestedTheme: this should be the currently active Theme for the app
 // Return Value:
 // - <none>
-void Pane::_SetupResources()
+void Pane::SetupResources(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme)
 {
     const auto res = Application::Current().Resources();
     const auto accentColorKey = winrt::box_value(L"SystemAccentColor");
     if (res.HasKey(accentColorKey))
     {
-        const auto colorFromResources = res.Lookup(accentColorKey);
+        const auto colorFromResources = ThemeLookup(res, requestedTheme, accentColorKey);
         // If SystemAccentColor is _not_ a Color for some reason, use
         // Transparent as the color, so we don't do this process again on
         // the next pane (by leaving s_focusedBorderBrush nullptr)
@@ -3104,7 +3098,10 @@ void Pane::_SetupResources()
     const auto unfocusedBorderBrushKey = winrt::box_value(L"UnfocusedBorderBrush");
     if (res.HasKey(unfocusedBorderBrushKey))
     {
-        auto obj = res.Lookup(unfocusedBorderBrushKey);
+        // MAKE SURE TO USE ThemeLookup, so that we get the correct resource for
+        // the requestedTheme, not just the value from the resources (which
+        // might not respect the settings' requested theme)
+        auto obj = ThemeLookup(res, requestedTheme, unfocusedBorderBrushKey);
         s_unfocusedBorderBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
     }
     else
