@@ -104,7 +104,7 @@ namespace Microsoft.Terminal.Settings.Model
 
         Windows.Foundation.Collections.IMapView<String, Theme> Themes();
         void AddTheme(Theme theme);
-        INHERITABLE_SETTING(String, Theme);
+        INHERITABLE_SETTING(ThemePair, Theme);
         Theme CurrentTheme { get; };
     }
 }
