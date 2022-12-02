@@ -216,6 +216,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // theme.
     void GlobalAppearanceViewModel::CurrentTheme(const winrt::Windows::Foundation::IInspectable& tag)
     {
+        // TODO! This EXPLODED when switching OS theme with a pair set, and the SUI open.
+        //
+        // Though, stack was nowhere near here, so something else might be to blame.
         if (const auto& theme{ tag.try_as<Model::Theme>() })
         {
             _GlobalSettings.Theme(Model::ThemePair{ theme.Name() });
