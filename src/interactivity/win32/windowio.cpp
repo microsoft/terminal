@@ -78,11 +78,11 @@ VOID SetConsoleWindowOwner(const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pP
     else
     {
         // Find a process to own the console window. If there are none then let's use conhost's.
-        pProcessData = gci.ProcessHandleList.FindProcessInList(ConsoleProcessList::ROOT_PROCESS_ID);
+        pProcessData = gci.ProcessHandleList.GetRootProcess();
         if (!pProcessData)
         {
             // No root process ID? Pick the oldest existing process.
-            pProcessData = gci.ProcessHandleList.GetFirstProcess();
+            pProcessData = gci.ProcessHandleList.GetOldestProcess();
         }
 
         if (pProcessData != nullptr)
@@ -986,7 +986,7 @@ LRESULT CALLBACK DialogHookProc(int nCode, WPARAM /*wParam*/, LPARAM lParam)
 NTSTATUS InitWindowsSubsystem(_Out_ HHOOK* phhook)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    auto ProcessData = gci.ProcessHandleList.FindProcessInList(ConsoleProcessList::ROOT_PROCESS_ID);
+    auto ProcessData = gci.ProcessHandleList.GetRootProcess();
     FAIL_FAST_IF(!(ProcessData != nullptr && ProcessData->fRootProcess));
 
     // Create and activate the main window
