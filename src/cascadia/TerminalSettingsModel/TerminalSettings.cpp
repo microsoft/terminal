@@ -13,6 +13,16 @@ using namespace Microsoft::Console::Utils;
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
+    // I'm not even joking, this is the recommended way to do this:
+    // https://learn.microsoft.com/en-us/windows/apps/desktop/modernize/apply-windows-themes#know-when-dark-mode-is-enabled
+    bool IsSystemInDarkTheme()
+    {
+        static auto isColorLight = [](const winrt::Windows::UI::Color& clr) -> bool {
+            return (((5 * clr.G) + (2 * clr.R) + clr.B) > (8 * 128));
+        };
+        return isColorLight(winrt::Windows::UI::ViewManagement::UISettings().GetColorValue(winrt::Windows::UI::ViewManagement::UIColorType::Foreground));
+    }
+
     static std::tuple<Windows::UI::Xaml::HorizontalAlignment, Windows::UI::Xaml::VerticalAlignment> ConvertConvergedAlignment(ConvergedAlignment alignment)
     {
         // extract horizontal alignment
@@ -183,16 +193,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return settingsPair;
     }
 
-    // I'm not even joking, this is the recommended way to do this:
-    // https://learn.microsoft.com/en-us/windows/apps/desktop/modernize/apply-windows-themes#know-when-dark-mode-is-enabled
-    bool _isSystemInDarkTheme()
-    {
-        static auto isColorLight = [](const Windows::UI::Color& clr) -> bool {
-            return (((5 * clr.G) + (2 * clr.R) + clr.B) > (8 * 128));
-        };
-        return isColorLight(Windows::UI::ViewManagement::UISettings().GetColorValue(Windows::UI::ViewManagement::UIColorType::Foreground));
-    }
-
     void TerminalSettings::_ApplyAppearanceSettings(const IAppearanceConfig& appearance,
                                                     const Windows::Foundation::Collections::IMapView<winrt::hstring, ColorScheme>& schemes,
                                                     const winrt::Microsoft::Terminal::Settings::Model::Theme currentTheme)
@@ -203,7 +203,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto requestedTheme = currentTheme.RequestedTheme();
         if (requestedTheme == winrt::Windows::UI::Xaml::ElementTheme::Default)
         {
-            requestedTheme = _isSystemInDarkTheme() ?
+            requestedTheme = IsSystemInDarkTheme() ?
                                  winrt::Windows::UI::Xaml::ElementTheme::Dark :
                                  winrt::Windows::UI::Xaml::ElementTheme::Light;
         }

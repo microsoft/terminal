@@ -210,9 +210,34 @@ Json::Value GlobalAppSettings::ToJson() const
     return json;
 }
 
+// I'm not even joking, this is the recommended way to do this:
+// https://learn.microsoft.com/en-us/windows/apps/desktop/modernize/apply-windows-themes#know-when-dark-mode-is-enabled
+bool IsSystemInDarkTheme()
+{
+    static auto isColorLight = [](const winrt::Windows::UI::Color& clr) -> bool {
+        return (((5 * clr.G) + (2 * clr.R) + clr.B) > (8 * 128));
+    };
+    return isColorLight(winrt::Windows::UI::ViewManagement::UISettings().GetColorValue(winrt::Windows::UI::ViewManagement::UIColorType::Foreground));
+}
+
 winrt::Microsoft::Terminal::Settings::Model::Theme GlobalAppSettings::CurrentTheme() noexcept
 {
-    return _themes.TryLookup(Theme().DarkName());
+    auto requestedTheme = IsSystemInDarkTheme() ?
+                              winrt::Windows::UI::Xaml::ElementTheme::Dark :
+                              winrt::Windows::UI::Xaml::ElementTheme::Light;
+
+    switch (requestedTheme)
+    {
+    case winrt::Windows::UI::Xaml::ElementTheme::Light:
+        return _themes.TryLookup(Theme().LightName());
+
+    case winrt::Windows::UI::Xaml::ElementTheme::Dark:
+        return _themes.TryLookup(Theme().DarkName());
+
+    case winrt::Windows::UI::Xaml::ElementTheme::Default:
+    default:
+        return nullptr;
+    }
 }
 
 void GlobalAppSettings::AddTheme(const Model::Theme& theme)
