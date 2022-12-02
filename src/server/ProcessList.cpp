@@ -22,7 +22,7 @@ using namespace Microsoft::Console::Interactivity;
 //                 - If not used, return code will specify whether this process is known to the list or not.
 // Return Value:
 // - S_OK if the process was recorded in the list successfully or already existed.
-// - E_FAIL if we're running into an LPC port conflict by nature of the process chain.
+// - S_FALSE if we're running into an LPC port conflict by nature of the process chain.
 // - E_OUTOFMEMORY if there wasn't space to allocate a handle or push it into the list.
 [[nodiscard]] HRESULT ConsoleProcessList::AllocProcessData(const DWORD dwProcessId,
                                                            const DWORD dwThreadId,
@@ -31,23 +31,20 @@ using namespace Microsoft::Console::Interactivity;
 {
     assert(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
 
-    auto pProcessData = FindProcessInList(dwProcessId);
-    if (pProcessData)
+    if (FindProcessInList(dwProcessId))
     {
-        return E_FAIL;
+        return S_FALSE;
     }
 
+    std::unique_ptr<ConsoleProcessHandle> pProcessData;
     try
     {
-        pProcessData = new ConsoleProcessHandle{ dwProcessId, dwThreadId, ulProcessGroupId };
-        _processes.emplace_back(pProcessData);
+        pProcessData = std::make_unique<ConsoleProcessHandle>(dwProcessId, dwThreadId, ulProcessGroupId);
+        _processes.emplace_back(pProcessData.get());
     }
     CATCH_RETURN();
 
-    if (ppProcessData)
-    {
-        *ppProcessData = pProcessData;
-    }
+    wil::assign_to_opt_param(ppProcessData, pProcessData.release());
 
     return S_OK;
 }
@@ -133,6 +130,26 @@ ConsoleProcessHandle* ConsoleProcessList::GetRootProcess() const
         {
             return p;
         }
+    }
+
+    return nullptr;
+}
+
+// Routine Description:
+// - Gets the first process in the list.
+// - Used for reassigning a new root process.
+// TODO: MSFT 9450737 - encapsulate root process logic. https://osgvsowi/9450737
+// Arguments:
+// - <none>
+// Return Value:
+// - Pointer to the first item in the list or nullptr if there are no items.
+ConsoleProcessHandle* ConsoleProcessList::GetOldestProcess() const
+{
+    assert(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
+
+    if (!_processes.empty())
+    {
+        return _processes.front();
     }
 
     return nullptr;
@@ -228,26 +245,6 @@ ConsoleProcessHandle* ConsoleProcessList::GetRootProcess() const
         return S_OK;
     }
     CATCH_RETURN();
-}
-
-// Routine Description:
-// - Gets the first process in the list.
-// - Used for reassigning a new root process.
-// TODO: MSFT 9450737 - encapsulate root process logic. https://osgvsowi/9450737
-// Arguments:
-// - <none>
-// Return Value:
-// - Pointer to the first item in the list or nullptr if there are no items.
-ConsoleProcessHandle* ConsoleProcessList::GetOldestProcess() const
-{
-    assert(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
-
-    if (!_processes.empty())
-    {
-        return _processes.front();
-    }
-
-    return nullptr;
 }
 
 // Routine Description:

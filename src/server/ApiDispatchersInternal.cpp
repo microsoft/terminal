@@ -90,17 +90,10 @@ using Microsoft::Console::Interactivity::ServiceLocator;
             RETURN_IF_NTSTATUS_FAILED((NtPrivApi::s_GetProcessParentId(&ProcessId)));
             ProcessHandle = gci.ProcessHandleList.FindProcessInList(ProcessId);
             RETURN_HR_IF_NULL(E_INVALIDARG, ProcessHandle);
-
-            const auto hr = gci.ProcessHandleList.AllocProcessData(a->ProcessGroupId,
-                                                                   0,
-                                                                   a->ProcessGroupId,
-                                                                   nullptr);
-            // AllocProcessData returns E_FAIL if the given process ID already exists.
-            // The process ID already existing isn't really an error though so we ignore it.
-            if (FAILED(hr) && hr != E_FAIL)
-            {
-                RETURN_HR(hr);
-            }
+            RETURN_IF_FAILED(gci.ProcessHandleList.AllocProcessData(a->ProcessGroupId,
+                                                                    0,
+                                                                    a->ProcessGroupId,
+                                                                    nullptr));
         }
     }
 

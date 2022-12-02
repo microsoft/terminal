@@ -44,12 +44,11 @@ public:
     ConsoleProcessHandle* FindProcessInList(const DWORD dwProcessId) const;
     ConsoleProcessHandle* FindProcessByGroupId(_In_ ULONG ulProcessGroupId) const;
     ConsoleProcessHandle* GetRootProcess() const;
+    ConsoleProcessHandle* GetOldestProcess() const;
 
     [[nodiscard]] HRESULT GetTerminationRecordsByGroupId(const DWORD dwLimitingProcessId,
                                                          const bool fCtrlClose,
                                                          std::vector<ConsoleProcessTerminationRecord>& termRecords) const;
-
-    ConsoleProcessHandle* GetOldestProcess() const;
 
     [[nodiscard]] HRESULT GetProcessList(_Inout_updates_(*pcProcessList) DWORD* const pProcessList,
                                          _Inout_ size_t* const pcProcessList) const;
