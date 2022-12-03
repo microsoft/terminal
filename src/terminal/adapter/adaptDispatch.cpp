@@ -593,15 +593,25 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
     //      by moving the current contents of the viewport into the scrollback.
     if (eraseType == DispatchTypes::EraseType::Scrollback)
     {
+        _renderer.TriggerFlush(false);
+
         _EraseScrollback();
         // GH#2715 - If this succeeded, but we're in a conpty, return `false` to
         // make the state machine propagate this ED sequence to the connected
         // terminal application. While we're in conpty mode, we don't really
         // have a scrollback, but the attached terminal might.
-        return !_api.IsConsolePty();
+
+        if (_api.IsConsolePty())
+        {
+            _api.GetStateMachine().Engine().ActionPassThroughString(L"\x1b[3J");
+        }
+
+        return true; // !_api.IsConsolePty();
     }
     else if (eraseType == DispatchTypes::EraseType::All)
     {
+        _renderer.TriggerFlush(false);
+
         // GH#5683 - If this succeeded, but we're in a conpty, return `false` to
         // make the state machine propagate this ED sequence to the connected
         // terminal application. While we're in conpty mode, when the client
@@ -609,7 +619,14 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
         // connected terminal to do the same thing, so that the terminal will
         // move it's own buffer contents into the scrollback.
         _EraseAll();
-        return !_api.IsConsolePty();
+
+        if (_api.IsConsolePty())
+        {
+            // TODO! HardReset I guess also relied on this code path. Yikes.
+            _api.GetStateMachine().Engine().ActionPassThroughString(L"\x1b[2J");
+        }
+
+        return true; // !_api.IsConsolePty();
     }
 
     const auto viewport = _api.GetViewport();
@@ -2811,8 +2828,9 @@ bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
     // This is not implemented in conhost.
     if (_api.IsConsolePty())
     {
-        // Flush the frame manually, to make sure marks end up on the right line, like the alt buffer sequence.
-        _renderer.TriggerFlush(false);
+        // As of GH#8698, when we return false in ConPTY mode, we'll
+        // automatically flush the currently buffered frame before passing
+        // through this sequence.
         return false;
     }
 
@@ -2855,8 +2873,9 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
     // This is not implemented in conhost.
     if (_api.IsConsolePty())
     {
-        // Flush the frame manually, to make sure marks end up on the right line, like the alt buffer sequence.
-        _renderer.TriggerFlush(false);
+        // As of GH#8698, when we return false in ConPTY mode, we'll
+        // automatically flush the currently buffered frame before passing
+        // through this sequence.
         return false;
     }
 
@@ -3332,7 +3351,9 @@ bool AdaptDispatch::PlaySounds(const VTParameters parameters)
     // first, otherwise the visual output will lag behind the sound.
     if (_api.IsConsolePty())
     {
-        _renderer.TriggerFlush(false);
+        // As of GH#8698, when we return false in ConPTY mode, we'll
+        // automatically flush the currently buffered frame before passing
+        // through this sequence.
         return false;
     }
 
