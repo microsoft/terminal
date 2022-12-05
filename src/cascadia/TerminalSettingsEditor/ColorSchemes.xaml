@@ -36,32 +36,32 @@
         </ResourceDictionary>
     </Page.Resources>
 
-    <Grid RowSpacing="8"
-          Margin="0,0,0,8">
+    <Grid Margin="0,0,0,8"
+          RowSpacing="8">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <TextBlock x:Uid="ColorSchemesDisclaimer"
                    Grid.Row="0"
-                       Style="{StaticResource DisclaimerStyle}" />
+                   Style="{StaticResource DisclaimerStyle}" />
 
         <StackPanel Grid.Row="1"
                     MaxWidth="{StaticResource StandardControlMaxWidth}">
             <Button x:Name="AddNewButton"
                     Margin="4,0,0,0"
-                        Click="AddNew_Click"
-                        Style="{StaticResource BrowseButtonStyle}">
-                    <StackPanel Orientation="Horizontal">
-                        <FontIcon FontSize="{StaticResource StandardIconSize}"
-                                  Glyph="&#xE710;" />
-                        <TextBlock x:Uid="ColorScheme_AddNewButton"
-                                   Style="{StaticResource IconButtonTextBlockStyle}" />
-                    </StackPanel>
-                </Button>
+                    Click="AddNew_Click"
+                    Style="{StaticResource BrowseButtonStyle}">
+                <StackPanel Orientation="Horizontal">
+                    <FontIcon FontSize="{StaticResource StandardIconSize}"
+                              Glyph="&#xE710;" />
+                    <TextBlock x:Uid="ColorScheme_AddNewButton"
+                               Style="{StaticResource IconButtonTextBlockStyle}" />
+                </StackPanel>
+            </Button>
 
-                <TextBlock x:Name="SelectedSchemeDisclaimer"
+            <TextBlock x:Name="SelectedSchemeDisclaimer"
                        Margin="0,4,0,0"
                        VerticalAlignment="Center"
                        Style="{StaticResource DisclaimerStyle}" />
@@ -70,12 +70,12 @@
         <ListView x:Name="ColorSchemeListView"
                   Grid.Row="2"
                   MaxWidth="{StaticResource StandardControlMaxWidth}"
+                  IsItemClickEnabled="True"
+                  ItemClick="{x:Bind ViewModel.SchemeListItemClicked}"
                   ItemsSource="{x:Bind ViewModel.AllColorSchemes, Mode=OneWay}"
                   PreviewKeyDown="ListView_PreviewKeyDown"
                   SelectedItem="{x:Bind ViewModel.CurrentScheme, Mode=TwoWay}"
-                  ItemClick="{x:Bind ViewModel.SchemeListItemClicked}"
                   SelectionChanged="ListView_SelectionChanged"
-                  IsItemClickEnabled="True"
                   SelectionMode="Single">
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="local:ColorSchemeViewModel">

@@ -454,30 +454,30 @@
             <local:SettingContainer x:Name="SetAsDefaultContainer"
                                     x:Uid="ColorScheme_SetAsDefault">
                 <Button x:Uid="ColorScheme_SetAsDefaultButton"
-                        Style="{StaticResource BrowseButtonStyle}"
-                        Click="{x:Bind ViewModel.SetAsDefault_Click}"/>
+                        Click="{x:Bind ViewModel.SetAsDefault_Click}"
+                        Style="{StaticResource BrowseButtonStyle}" />
             </local:SettingContainer>
 
             <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
                 <Button x:Name="DeleteButton"
-                    Margin="2,10,0,0"
-                    Style="{StaticResource DeleteButtonStyle}"
-                    Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(ViewModel.IsInBoxScheme)}">
+                        Margin="2,10,0,0"
+                        Style="{StaticResource DeleteButtonStyle}"
+                        Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(ViewModel.IsInBoxScheme)}">
                     <Button.Content>
                         <StackPanel Orientation="Horizontal">
                             <FontIcon FontSize="{StaticResource StandardIconSize}"
-                                    Glyph="&#xE74D;" />
+                                      Glyph="&#xE74D;" />
                             <TextBlock x:Uid="ColorScheme_DeleteButton"
-                                    Style="{StaticResource IconButtonTextBlockStyle}" />
+                                       Style="{StaticResource IconButtonTextBlockStyle}" />
                         </StackPanel>
                     </Button.Content>
                     <Button.Flyout>
                         <Flyout>
                             <StackPanel>
                                 <TextBlock x:Uid="ColorScheme_DeleteConfirmationMessage"
-                                        Style="{StaticResource CustomFlyoutTextStyle}" />
+                                           Style="{StaticResource CustomFlyoutTextStyle}" />
                                 <Button x:Uid="ColorScheme_DeleteConfirmationButton"
-                                        Click="{x:Bind ViewModel.DeleteConfirmation_Click}"/>
+                                        Click="{x:Bind ViewModel.DeleteConfirmation_Click}" />
                             </StackPanel>
                         </Flyout>
                     </Button.Flyout>
