@@ -1422,7 +1422,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return result;
     }
 
-    ::Microsoft::Console::Types::IUiaData* ControlCore::GetUiaData() const
+    ::Microsoft::Console::Render::IRenderData* ControlCore::GetRenderData() const
     {
         return _terminal.get();
     }
@@ -1453,7 +1453,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                      Search::Sensitivity::CaseSensitive :
                                      Search::Sensitivity::CaseInsensitive;
 
-        ::Search search(*GetUiaData(), text.c_str(), direction, sensitivity);
+        ::Search search(*GetRenderData(), text.c_str(), direction, sensitivity);
         auto lock = _terminal->LockForWriting();
         const auto foundMatch{ search.FindNext() };
         if (foundMatch)

@@ -32,7 +32,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     InteractivityAutomationPeer::InteractivityAutomationPeer(Control::implementation::ControlInteractivity* owner) :
         _interactivity{ owner }
     {
-        THROW_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<::Microsoft::Terminal::TermControlUiaProvider>(&_uiaProvider, _interactivity->GetUiaData(), this));
+        THROW_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<::Microsoft::Terminal::TermControlUiaProvider>(&_uiaProvider, _interactivity->GetRenderData(), this));
     };
 
     void InteractivityAutomationPeer::SetControlBounds(const Windows::Foundation::Rect bounds)
