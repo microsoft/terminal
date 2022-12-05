@@ -60,26 +60,26 @@ class SearchTests
     void DoFoundChecks(Search& s, til::point& coordStartExpected, til::CoordType lineDelta)
     {
         auto coordEndExpected = coordStartExpected;
-        coordEndExpected.X += 1;
+        coordEndExpected.x += 1;
 
         VERIFY_IS_TRUE(s.FindNext());
         VERIFY_ARE_EQUAL(coordStartExpected, s._coordSelStart);
         VERIFY_ARE_EQUAL(coordEndExpected, s._coordSelEnd);
 
-        coordStartExpected.Y += lineDelta;
-        coordEndExpected.Y += lineDelta;
+        coordStartExpected.y += lineDelta;
+        coordEndExpected.y += lineDelta;
         VERIFY_IS_TRUE(s.FindNext());
         VERIFY_ARE_EQUAL(coordStartExpected, s._coordSelStart);
         VERIFY_ARE_EQUAL(coordEndExpected, s._coordSelEnd);
 
-        coordStartExpected.Y += lineDelta;
-        coordEndExpected.Y += lineDelta;
+        coordStartExpected.y += lineDelta;
+        coordEndExpected.y += lineDelta;
         VERIFY_IS_TRUE(s.FindNext());
         VERIFY_ARE_EQUAL(coordStartExpected, s._coordSelStart);
         VERIFY_ARE_EQUAL(coordEndExpected, s._coordSelEnd);
 
-        coordStartExpected.Y += lineDelta;
-        coordEndExpected.Y += lineDelta;
+        coordStartExpected.y += lineDelta;
+        coordEndExpected.y += lineDelta;
         VERIFY_IS_TRUE(s.FindNext());
         VERIFY_ARE_EQUAL(coordStartExpected, s._coordSelStart);
         VERIFY_ARE_EQUAL(coordEndExpected, s._coordSelEnd);

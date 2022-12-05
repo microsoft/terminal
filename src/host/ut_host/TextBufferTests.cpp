@@ -404,7 +404,7 @@ void TextBufferTests::TestInsertCharacter()
     const auto coordCursorBefore = textBuffer.GetCursor().GetPosition();
 
     // Get current row from the buffer
-    auto& Row = textBuffer.GetRowByOffset(coordCursorBefore.Y);
+    auto& Row = textBuffer.GetRowByOffset(coordCursorBefore.y);
 
     // create some sample test data
     const auto wch = L'Z';
@@ -414,10 +414,10 @@ void TextBufferTests::TestInsertCharacter()
     auto TestAttributes = TextAttribute(wAttrTest);
 
     // ensure that the buffer didn't start with these fields
-    VERIFY_ARE_NOT_EQUAL(Row.GlyphAt(coordCursorBefore.X), wchTest);
-    VERIFY_ARE_NOT_EQUAL(Row.DbcsAttrAt(coordCursorBefore.X), dbcsAttribute);
+    VERIFY_ARE_NOT_EQUAL(Row.GlyphAt(coordCursorBefore.x), wchTest);
+    VERIFY_ARE_NOT_EQUAL(Row.DbcsAttrAt(coordCursorBefore.x), dbcsAttribute);
 
-    auto attr = Row.GetAttrByColumn(coordCursorBefore.X);
+    auto attr = Row.GetAttrByColumn(coordCursorBefore.x);
 
     VERIFY_ARE_NOT_EQUAL(attr, TestAttributes);
 
@@ -425,15 +425,15 @@ void TextBufferTests::TestInsertCharacter()
     textBuffer.InsertCharacter(wchTest, dbcsAttribute, TestAttributes);
 
     // ensure that the buffer position where the cursor WAS contains the test items
-    VERIFY_ARE_EQUAL(Row.GlyphAt(coordCursorBefore.X), wchTest);
-    VERIFY_ARE_EQUAL(Row.DbcsAttrAt(coordCursorBefore.X), dbcsAttribute);
+    VERIFY_ARE_EQUAL(Row.GlyphAt(coordCursorBefore.x), wchTest);
+    VERIFY_ARE_EQUAL(Row.DbcsAttrAt(coordCursorBefore.x), dbcsAttribute);
 
-    attr = Row.GetAttrByColumn(coordCursorBefore.X);
+    attr = Row.GetAttrByColumn(coordCursorBefore.x);
     VERIFY_ARE_EQUAL(attr, TestAttributes);
 
     // ensure that the cursor moved to a new position (X or Y or both have changed)
-    VERIFY_IS_TRUE((coordCursorBefore.X != textBuffer.GetCursor().GetPosition().X) ||
-                   (coordCursorBefore.Y != textBuffer.GetCursor().GetPosition().Y));
+    VERIFY_IS_TRUE((coordCursorBefore.x != textBuffer.GetCursor().GetPosition().x) ||
+                   (coordCursorBefore.y != textBuffer.GetCursor().GetPosition().y));
     // the proper advancement of the cursor (e.g. which position it goes to) is validated in other tests
 }
 
@@ -457,8 +457,8 @@ void TextBufferTests::TestIncrementCursor()
 
     textBuffer.IncrementCursor();
 
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().X, 1); // X should advance by 1
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().Y, coordCursorBefore.Y); // Y shouldn't have moved
+    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().x, 1); // X should advance by 1
+    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().y, coordCursorBefore.y); // Y shouldn't have moved
 
     Log::Comment(L"Test line wrap case where cursor is on the right edge of the line");
     textBuffer.GetCursor().SetXPosition(sBufferWidth - 1);
@@ -468,8 +468,8 @@ void TextBufferTests::TestIncrementCursor()
 
     textBuffer.IncrementCursor();
 
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().X, 0); // position should be reset to the left edge when passing right edge
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().Y - 1, coordCursorBefore.Y); // the cursor should be moved one row down from where it used to be
+    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().x, 0); // position should be reset to the left edge when passing right edge
+    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().y - 1, coordCursorBefore.y); // the cursor should be moved one row down from where it used to be
 }
 
 void TextBufferTests::TestNewlineCursor()
@@ -496,8 +496,8 @@ void TextBufferTests::TestNewlineCursor()
     textBuffer.NewlineCursor();
 
     // verify
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().X, 0); // move to left edge of buffer
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().Y, coordCursorBefore.Y + 1); // move down one row
+    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().x, 0); // move to left edge of buffer
+    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().y, coordCursorBefore.y + 1); // move down one row
 
     Log::Comment(L"Verify increment when already on last row of buffer");
 
@@ -513,8 +513,8 @@ void TextBufferTests::TestNewlineCursor()
     textBuffer.NewlineCursor();
 
     // verify
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().X, 0); // move to left edge
-    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().Y, coordCursorBefore.Y); // cursor Y position should not have moved. stays on same logical final line of buffer
+    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().x, 0); // move to left edge
+    VERIFY_ARE_EQUAL(textBuffer.GetCursor().GetPosition().y, coordCursorBefore.y); // cursor Y position should not have moved. stays on same logical final line of buffer
 
     // This is okay because the backing circular buffer changes, not the logical screen position (final visible line of the buffer)
 }
@@ -527,7 +527,7 @@ void TextBufferTests::TestLastNonSpace(const til::CoordType cursorPosY)
     auto coordLastNonSpace = textBuffer.GetLastNonSpaceCharacter();
 
     // We expect the last non space character to be the last printable character in the row.
-    // The .Right property on a row is 1 past the last printable character in the row.
+    // The .right property on a row is 1 past the last printable character in the row.
     // If there is one character in the row, the last character would be 0.
     // If there are no characters in the row, the last character would be -1 and we need to seek backwards to find the previous row with a character.
 
@@ -535,19 +535,19 @@ void TextBufferTests::TestLastNonSpace(const til::CoordType cursorPosY)
     auto coordExpected = textBuffer.GetCursor().GetPosition();
 
     // Try to get the X position from the current cursor position.
-    coordExpected.X = textBuffer.GetRowByOffset(coordExpected.Y).MeasureRight() - 1;
+    coordExpected.x = textBuffer.GetRowByOffset(coordExpected.y).MeasureRight() - 1;
 
     // If we went negative, this row was empty and we need to continue seeking upward...
     // - As long as X is negative (empty rows)
     // - As long as we have space before the top of the buffer (Y isn't the 0th/top row).
-    while (coordExpected.X < 0 && coordExpected.Y > 0)
+    while (coordExpected.x < 0 && coordExpected.y > 0)
     {
-        coordExpected.Y--;
-        coordExpected.X = textBuffer.GetRowByOffset(coordExpected.Y).MeasureRight() - 1;
+        coordExpected.y--;
+        coordExpected.x = textBuffer.GetRowByOffset(coordExpected.y).MeasureRight() - 1;
     }
 
-    VERIFY_ARE_EQUAL(coordLastNonSpace.X, coordExpected.X);
-    VERIFY_ARE_EQUAL(coordLastNonSpace.Y, coordExpected.Y);
+    VERIFY_ARE_EQUAL(coordLastNonSpace.x, coordExpected.x);
+    VERIFY_ARE_EQUAL(coordLastNonSpace.y, coordExpected.y);
 }
 
 void TextBufferTests::TestGetLastNonSpaceCharacter()
@@ -568,7 +568,7 @@ void TextBufferTests::TestSetWrapOnCurrentRow()
 {
     auto& textBuffer = GetTbi();
 
-    auto sCurrentRow = textBuffer.GetCursor().GetPosition().Y;
+    auto sCurrentRow = textBuffer.GetCursor().GetPosition().y;
 
     auto& Row = textBuffer.GetRowByOffset(sCurrentRow);
 
@@ -657,8 +657,8 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
     const auto sequence = L"\x1b[m\x1b[38;2;64;128;255mX\x1b[49mX\x1b[m";
 
     stateMachine.ProcessString(sequence);
-    const auto x = cursor.GetPosition().X;
-    const auto y = cursor.GetPosition().Y;
+    const auto x = cursor.GetPosition().x;
+    const auto y = cursor.GetPosition().y;
     const auto& row = tbi.GetRowByOffset(y);
     const std::vector<TextAttribute> attrs{ row.AttrBegin(), row.AttrEnd() };
     const auto attrA = attrs[x - 2];
@@ -701,8 +701,8 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
 
     const auto sequence = L"\x1b[m\x1b[48;2;64;128;255mX\x1b[39mX\x1b[m";
     stateMachine.ProcessString(sequence);
-    const auto x = cursor.GetPosition().X;
-    const auto y = cursor.GetPosition().Y;
+    const auto x = cursor.GetPosition().x;
+    const auto y = cursor.GetPosition().y;
     const auto& row = tbi.GetRowByOffset(y);
     const std::vector<TextAttribute> attrs{ row.AttrBegin(), row.AttrEnd() };
     const auto attrA = attrs[x - 2];
@@ -743,8 +743,8 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
     Log::Comment(L"Case 3 \"\\E[m\\E[48;2;64;128;255mX\\E[4mX\\E[m\"");
     const auto sequence = L"\x1b[m\x1b[48;2;64;128;255mX\x1b[4mX\x1b[m";
     stateMachine.ProcessString(sequence);
-    const auto x = cursor.GetPosition().X;
-    const auto y = cursor.GetPosition().Y;
+    const auto x = cursor.GetPosition().x;
+    const auto y = cursor.GetPosition().y;
     const auto& row = tbi.GetRowByOffset(y);
     const std::vector<TextAttribute> attrs{ row.AttrBegin(), row.AttrEnd() };
     const auto attrA = attrs[x - 2];
@@ -792,8 +792,8 @@ void TextBufferTests::TestMixedRgbAndLegacyBrightness()
 
     const auto sequence = L"\x1b[m\x1b[32mX\x1b[1mX";
     stateMachine.ProcessString(sequence);
-    const auto x = cursor.GetPosition().X;
-    const auto y = cursor.GetPosition().Y;
+    const auto x = cursor.GetPosition().x;
+    const auto y = cursor.GetPosition().y;
     const auto& row = tbi.GetRowByOffset(y);
     const std::vector<TextAttribute> attrs{ row.AttrBegin(), row.AttrEnd() };
     const auto attrA = attrs[x - 2];
@@ -843,8 +843,8 @@ void TextBufferTests::TestRgbEraseLine()
         sequence = L"X";
         stateMachine.ProcessString(sequence);
 
-        const auto x = cursor.GetPosition().X;
-        const auto y = cursor.GetPosition().Y;
+        const auto x = cursor.GetPosition().x;
+        const auto y = cursor.GetPosition().y;
 
         Log::Comment(NoThrowString().Format(
             L"cursor={X:%d,Y:%d}",
@@ -892,8 +892,8 @@ void TextBufferTests::TestUnintense()
     std::wstring sequence = L"\x1b[1;32mX\x1b[22mX";
     stateMachine.ProcessString(sequence);
 
-    const auto x = cursor.GetPosition().X;
-    const auto y = cursor.GetPosition().Y;
+    const auto x = cursor.GetPosition().x;
+    const auto y = cursor.GetPosition().y;
     const auto dark_green = gci.GetColorTableEntry(TextColor::DARK_GREEN);
     const auto bright_green = gci.GetColorTableEntry(TextColor::BRIGHT_GREEN);
 
@@ -943,8 +943,8 @@ void TextBufferTests::TestUnintenseRgb()
     std::wstring sequence = L"\x1b[1;32m\x1b[48;2;1;2;3mX\x1b[22mX";
     stateMachine.ProcessString(sequence);
 
-    const auto x = cursor.GetPosition().X;
-    const auto y = cursor.GetPosition().Y;
+    const auto x = cursor.GetPosition().x;
+    const auto y = cursor.GetPosition().y;
     const auto dark_green = gci.GetColorTableEntry(TextColor::DARK_GREEN);
     const auto bright_green = gci.GetColorTableEntry(TextColor::BRIGHT_GREEN);
 
@@ -1002,8 +1002,8 @@ void TextBufferTests::TestComplexUnintense()
     Log::Comment(NoThrowString().Format(sequence.c_str()));
     stateMachine.ProcessString(sequence);
 
-    const auto x = cursor.GetPosition().X;
-    const auto y = cursor.GetPosition().Y;
+    const auto x = cursor.GetPosition().x;
+    const auto y = cursor.GetPosition().y;
     const auto dark_green = gci.GetColorTableEntry(TextColor::DARK_GREEN);
     const auto bright_green = gci.GetColorTableEntry(TextColor::BRIGHT_GREEN);
 
@@ -1084,8 +1084,8 @@ void TextBufferTests::CopyAttrs()
     std::wstring sequence = L"\x1b[32mX\x1b[33mX\n\x1b[34mX\x1b[35mX\x1b[H\x1b[M";
     stateMachine.ProcessString(sequence);
 
-    const auto x = cursor.GetPosition().X;
-    const auto y = cursor.GetPosition().Y;
+    const auto x = cursor.GetPosition().x;
+    const auto y = cursor.GetPosition().y;
     const auto dark_blue = gci.GetColorTableEntry(TextColor::DARK_BLUE);
     const auto dark_magenta = gci.GetColorTableEntry(TextColor::DARK_MAGENTA);
 
@@ -1138,8 +1138,8 @@ void TextBufferTests::EmptySgrTest()
     std::wstring sequence = L"\x1b[0mX\x1b[31mX\x1b[31;mX";
     stateMachine.ProcessString(sequence);
 
-    const auto x = cursor.GetPosition().X;
-    const auto y = cursor.GetPosition().Y;
+    const auto x = cursor.GetPosition().x;
+    const auto y = cursor.GetPosition().y;
     const auto darkRed = gci.GetColorTableEntry(TextColor::DARK_RED);
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
@@ -1197,8 +1197,8 @@ void TextBufferTests::TestReverseReset()
     std::wstring sequence = L"\x1b[42m\x1b[38;2;128;5;255mX\x1b[7mX\x1b[27mX";
     stateMachine.ProcessString(sequence);
 
-    const auto x = cursor.GetPosition().X;
-    const auto y = cursor.GetPosition().Y;
+    const auto x = cursor.GetPosition().x;
+    const auto y = cursor.GetPosition().y;
     const auto dark_green = gci.GetColorTableEntry(TextColor::DARK_GREEN);
     const auto rgbColor = RGB(128, 5, 255);
 
@@ -1300,8 +1300,8 @@ void TextBufferTests::CopyLastAttr()
     std::wstring insertLineAtHome = L"\x1b[H\x1b[L";
     stateMachine.ProcessString(insertLineAtHome);
 
-    const auto x = cursor.GetPosition().X;
-    const auto y = cursor.GetPosition().Y;
+    const auto x = cursor.GetPosition().x;
+    const auto y = cursor.GetPosition().y;
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
@@ -1370,8 +1370,8 @@ void TextBufferTests::TestRgbThenIntense()
 
     const auto sequence = L"\x1b[38;2;40;40;40m\x1b[48;2;168;153;132mX\x1b[1mX\x1b[m";
     stateMachine.ProcessString(sequence);
-    const auto x = cursor.GetPosition().X;
-    const auto y = cursor.GetPosition().Y;
+    const auto x = cursor.GetPosition().x;
+    const auto y = cursor.GetPosition().y;
     const auto& row = tbi.GetRowByOffset(y);
     const std::vector<TextAttribute> attrs{ row.AttrBegin(), row.AttrEnd() };
     const auto attrA = attrs[x - 2];
@@ -1407,7 +1407,7 @@ void TextBufferTests::TestResetClearsIntensity()
 
     Log::Comment(NoThrowString().Format(
         L"Test that resetting intense attributes clears the intensity."));
-    const auto x0 = cursor.GetPosition().X;
+    const auto x0 = cursor.GetPosition().x;
 
     // Test assumes that the background/foreground were default attribute when it starts up,
     // so set that here.
@@ -1422,8 +1422,8 @@ void TextBufferTests::TestResetClearsIntensity()
     Log::Comment(NoThrowString().Format(sequence));
     stateMachine.ProcessString(sequence);
 
-    const auto x = cursor.GetPosition().X;
-    const auto y = cursor.GetPosition().Y;
+    const auto x = cursor.GetPosition().x;
+    const auto y = cursor.GetPosition().y;
     const auto& row = tbi.GetRowByOffset(y);
     const std::vector<TextAttribute> attrs{ row.AttrBegin(), row.AttrEnd() };
     const auto attrA = attrs[x0];
@@ -1475,11 +1475,11 @@ void TextBufferTests::TestBackspaceRightSideVt()
     const auto postCursorPosition = cursor.GetPosition();
 
     // make sure newline was handled correctly
-    VERIFY_ARE_EQUAL(0, postCursorPosition.X);
-    VERIFY_ARE_EQUAL(preCursorPosition.Y, postCursorPosition.Y - 1);
+    VERIFY_ARE_EQUAL(0, postCursorPosition.x);
+    VERIFY_ARE_EQUAL(preCursorPosition.y, postCursorPosition.y - 1);
 
     // make sure "yx" was written to the end of the line the cursor started on
-    const auto& row = tbi.GetRowByOffset(preCursorPosition.Y);
+    const auto& row = tbi.GetRowByOffset(preCursorPosition.y);
     const auto rowText = row.GetText();
     auto it = rowText.crbegin();
     VERIFY_ARE_EQUAL(*it, L'x');
@@ -1495,8 +1495,8 @@ void TextBufferTests::TestBackspaceStrings()
     auto& stateMachine = si.GetStateMachine();
     const auto& cursor = tbi.GetCursor();
 
-    const auto x0 = cursor.GetPosition().X;
-    const auto y0 = cursor.GetPosition().Y;
+    const auto x0 = cursor.GetPosition().x;
+    const auto y0 = cursor.GetPosition().y;
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
@@ -1505,8 +1505,8 @@ void TextBufferTests::TestBackspaceStrings()
     std::wstring seq = L"a\b \b";
     stateMachine.ProcessString(seq);
 
-    const auto x1 = cursor.GetPosition().X;
-    const auto y1 = cursor.GetPosition().Y;
+    const auto x1 = cursor.GetPosition().x;
+    const auto y1 = cursor.GetPosition().y;
 
     VERIFY_ARE_EQUAL(x1, x0);
     VERIFY_ARE_EQUAL(y1, y0);
@@ -1520,8 +1520,8 @@ void TextBufferTests::TestBackspaceStrings()
     seq = L"\b";
     stateMachine.ProcessString(seq);
 
-    const auto x2 = cursor.GetPosition().X;
-    const auto y2 = cursor.GetPosition().Y;
+    const auto x2 = cursor.GetPosition().x;
+    const auto y2 = cursor.GetPosition().y;
 
     VERIFY_ARE_EQUAL(x2, x0);
     VERIFY_ARE_EQUAL(y2, y0);
@@ -1540,8 +1540,8 @@ void TextBufferTests::TestBackspaceStringsAPI()
     gci.SetVirtTermLevel(0);
     WI_ClearFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
-    const auto x0 = cursor.GetPosition().X;
-    const auto y0 = cursor.GetPosition().Y;
+    const auto x0 = cursor.GetPosition().x;
+    const auto y0 = cursor.GetPosition().y;
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
@@ -1562,18 +1562,18 @@ void TextBufferTests::TestBackspaceStringsAPI()
         L"Using WriteCharsLegacy, write \\b \\b as a single string."));
     {
         const auto str = L"\b \b";
-        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, 0, nullptr));
+        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, 0, nullptr));
 
-        VERIFY_ARE_EQUAL(cursor.GetPosition().X, x0);
-        VERIFY_ARE_EQUAL(cursor.GetPosition().Y, y0);
+        VERIFY_ARE_EQUAL(cursor.GetPosition().x, x0);
+        VERIFY_ARE_EQUAL(cursor.GetPosition().y, y0);
 
         Log::Comment(NoThrowString().Format(
             L"Using DoWriteConsole, write \\b \\b as a single string."));
         VERIFY_SUCCEEDED(DoWriteConsole(L"a", &aCb, si, false, waiter));
 
         VERIFY_SUCCEEDED(DoWriteConsole(str, &seqCb, si, false, waiter));
-        VERIFY_ARE_EQUAL(cursor.GetPosition().X, x0);
-        VERIFY_ARE_EQUAL(cursor.GetPosition().Y, y0);
+        VERIFY_ARE_EQUAL(cursor.GetPosition().x, x0);
+        VERIFY_ARE_EQUAL(cursor.GetPosition().y, y0);
     }
 
     seqCb = 2;
@@ -1586,30 +1586,30 @@ void TextBufferTests::TestBackspaceStringsAPI()
     VERIFY_SUCCEEDED(DoWriteConsole(L" ", &seqCb, si, false, waiter));
     VERIFY_SUCCEEDED(DoWriteConsole(L"\b", &seqCb, si, false, waiter));
 
-    VERIFY_ARE_EQUAL(cursor.GetPosition().X, x0);
-    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, y0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().x, x0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().y, y0);
 
     Log::Comment(NoThrowString().Format(
         L"Using WriteCharsLegacy, write \\b \\b as separate strings."));
     {
         const auto str = L"a";
-        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, 0, nullptr));
+        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, 0, nullptr));
     }
     {
         const auto str = L"\b";
-        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, 0, nullptr));
+        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, 0, nullptr));
     }
     {
         const auto str = L" ";
-        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, 0, nullptr));
+        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, 0, nullptr));
     }
     {
         const auto str = L"\b";
-        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, 0, nullptr));
+        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, 0, nullptr));
     }
 
-    VERIFY_ARE_EQUAL(cursor.GetPosition().X, x0);
-    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, y0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().x, x0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().y, y0);
 }
 
 void TextBufferTests::TestRepeatCharacter()
@@ -1634,8 +1634,8 @@ void TextBufferTests::TestRepeatCharacter()
     sequence = L"\x1b[b";
     stateMachine.ProcessString(sequence);
 
-    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 2);
-    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().x, 2);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().y, 0);
 
     {
         const auto& row0 = tbi.GetRowByOffset(0);
@@ -1654,8 +1654,8 @@ void TextBufferTests::TestRepeatCharacter()
     stateMachine.ProcessString(L"\x1b[A");
     stateMachine.ProcessString(L"\x1b[b");
 
-    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 2);
-    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().x, 2);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().y, 0);
 
     {
         const auto& row0 = tbi.GetRowByOffset(0);
@@ -1677,8 +1677,8 @@ void TextBufferTests::TestRepeatCharacter()
     stateMachine.ProcessString(L"C");
     stateMachine.ProcessString(L"\x1b[5b");
 
-    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 6);
-    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 2);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().x, 6);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().y, 2);
 
     {
         const auto& row2 = tbi.GetRowByOffset(2);
@@ -1696,26 +1696,26 @@ void TextBufferTests::TestRepeatCharacter()
         L"Test 3: try repeating a non-graphical character. It should do nothing.");
 
     stateMachine.ProcessString(L"\r\n");
-    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 0);
-    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 3);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().x, 0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().y, 3);
     stateMachine.ProcessString(L"D\n");
     stateMachine.ProcessString(L"\x1b[b");
 
-    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 0);
-    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 4);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().x, 0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().y, 4);
 
     Log::Comment(
         L"Test 4: try repeating multiple times. It should do nothing.");
 
     stateMachine.ProcessString(L"\r\n");
-    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 0);
-    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 5);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().x, 0);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().y, 5);
     stateMachine.ProcessString(L"E");
-    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 1);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().x, 1);
     stateMachine.ProcessString(L"\x1b[b");
-    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 2);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().x, 2);
     stateMachine.ProcessString(L"\x1b[b");
-    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 2);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().x, 2);
 
     {
         const auto& row5 = tbi.GetRowByOffset(5);
@@ -1751,7 +1751,7 @@ void TextBufferTests::ResizeTraditional()
     TextAttribute expectedAttr(FOREGROUND_RED);
     OutputCellIterator it(expectedChar, expectedAttr);
     const auto finalIt = buffer.Write(it);
-    VERIFY_ARE_EQUAL(smallSize.X * smallSize.Y, finalIt.GetCellDistance(it), L"Verify we said we filled every cell.");
+    VERIFY_ARE_EQUAL(smallSize.width * smallSize.height, finalIt.GetCellDistance(it), L"Verify we said we filled every cell.");
 
     const auto writtenView = Viewport::FromDimensions({ 0, 0 }, smallSize);
 
@@ -1771,24 +1771,24 @@ void TextBufferTests::ResizeTraditional()
 
     if (shrinkX)
     {
-        newSize.X -= 2;
+        newSize.width -= 2;
     }
     else
     {
-        newSize.X += 2;
+        newSize.width += 2;
     }
 
     if (shrinkY)
     {
-        newSize.Y -= 2;
+        newSize.height -= 2;
     }
     else
     {
-        newSize.Y += 2;
+        newSize.height += 2;
     }
 
     // When we grow, we extend the last color. Therefore, this region covers the area colored the same as the letters but filled with a blank.
-    const auto widthAdjustedView = Viewport::FromDimensions(writtenView.Origin(), { newSize.X, smallSize.Y });
+    const auto widthAdjustedView = Viewport::FromDimensions(writtenView.Origin(), { newSize.width, smallSize.height });
 
     // When we resize, we expect the attributes to be unchanged, but the new cells
     //  to be filled with spaces
@@ -1802,7 +1802,7 @@ void TextBufferTests::ResizeTraditional()
         TextBufferCellIterator viewIt(buffer, { 0, 0 });
         while (viewIt)
         {
-            Log::Comment(NoThrowString().Format(L"Checking cell (Y=%d, X=%d)", viewIt._pos.Y, viewIt._pos.X));
+            Log::Comment(NoThrowString().Format(L"Checking cell (Y=%d, X=%d)", viewIt._pos.y, viewIt._pos.x));
             if (writtenView.IsInBounds(viewIt._pos))
             {
                 Log::Comment(L"This position is inside our original write area. It should have the original character and color.");
@@ -1847,7 +1847,7 @@ void TextBufferTests::ResizeTraditionalRotationPreservesHighUnicode()
     // This is the negative squared latin capital letter B emoji: 🅱
     // It's encoded in UTF-16, as needed by the buffer.
     const auto bButton = L"\xD83C\xDD71";
-    _buffer->_storage[pos.Y].ReplaceCharacters(pos.X, 2, bButton);
+    _buffer->_storage[pos.y].ReplaceCharacters(pos.x, 2, bButton);
 
     // Read back the text at that position and ensure that it matches what we wrote.
     const auto readBack = _buffer->GetTextDataAt(pos);
@@ -1855,10 +1855,10 @@ void TextBufferTests::ResizeTraditionalRotationPreservesHighUnicode()
     VERIFY_ARE_EQUAL(String(bButton), String(readBackText.data(), gsl::narrow<int>(readBackText.size())));
 
     // Make it the first row in the buffer so it will rotate around when we resize and cause renumbering
-    const auto delta = _buffer->GetFirstRowIndex() - pos.Y;
-    const til::point newPos{ pos.X, pos.Y + delta };
+    const auto delta = _buffer->GetFirstRowIndex() - pos.y;
+    const til::point newPos{ pos.x, pos.y + delta };
 
-    _buffer->_SetFirstRowIndex(pos.Y);
+    _buffer->_SetFirstRowIndex(pos.y);
 
     // Perform resize to rotate the rows around
     VERIFY_NT_SUCCESS(_buffer->ResizeTraditional(bufferSize));
@@ -1888,7 +1888,7 @@ void TextBufferTests::ScrollBufferRotationPreservesHighUnicode()
     // This is the fire emoji: 🔥
     // It's encoded in UTF-16, as needed by the buffer.
     const auto fire = L"\xD83D\xDD25";
-    _buffer->_storage[pos.Y].ReplaceCharacters(pos.X, 2, fire);
+    _buffer->_storage[pos.y].ReplaceCharacters(pos.x, 2, fire);
 
     // Read back the text at that position and ensure that it matches what we wrote.
     const auto readBack = _buffer->GetTextDataAt(pos);
@@ -1897,10 +1897,10 @@ void TextBufferTests::ScrollBufferRotationPreservesHighUnicode()
 
     // Prepare a delta and the new position we expect the symbol to be moved into.
     const auto delta = 5;
-    const til::point newPos{ pos.X, pos.Y + delta };
+    const til::point newPos{ pos.x, pos.y + delta };
 
     // Scroll the row with our data by delta.
-    _buffer->ScrollRows(pos.Y, 1, delta);
+    _buffer->ScrollRows(pos.y, 1, delta);
 
     // Retrieve the text at the old and new positions.
     const auto shouldBeEmptyText = *_buffer->GetTextDataAt(pos);
@@ -1921,13 +1921,13 @@ void TextBufferTests::ResizeTraditionalHighUnicodeRowRemoval()
     auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
 
     // Get a position inside the buffer in the bottom row
-    const til::point pos{ 0, bufferSize.Y - 1 };
+    const til::point pos{ 0, bufferSize.height - 1 };
 
     // Fill it up with a sequence that will have to hit the high unicode storage.
     // This is the eggplant emoji: 🍆
     // It's encoded in UTF-16, as needed by the buffer.
     const auto emoji = L"\xD83C\xDF46";
-    _buffer->_storage[pos.Y].ReplaceCharacters(pos.X, 2, emoji);
+    _buffer->_storage[pos.y].ReplaceCharacters(pos.x, 2, emoji);
 
     // Read back the text at that position and ensure that it matches what we wrote.
     const auto readBack = _buffer->GetTextDataAt(pos);
@@ -1935,7 +1935,7 @@ void TextBufferTests::ResizeTraditionalHighUnicodeRowRemoval()
     VERIFY_ARE_EQUAL(String(emoji), String(readBackText.data(), gsl::narrow<int>(readBackText.size())));
 
     // Perform resize to trim off the row of the buffer that included the emoji
-    til::size trimmedBufferSize{ bufferSize.X, bufferSize.Y - 1 };
+    til::size trimmedBufferSize{ bufferSize.width, bufferSize.height - 1 };
 
     VERIFY_NT_SUCCESS(_buffer->ResizeTraditional(trimmedBufferSize));
 }
@@ -1951,13 +1951,13 @@ void TextBufferTests::ResizeTraditionalHighUnicodeColumnRemoval()
     auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, _renderer);
 
     // Get a position inside the buffer in the last column (-2 as the inserted character is 2 columns wide).
-    const til::point pos{ bufferSize.X - 2, 0 };
+    const til::point pos{ bufferSize.width - 2, 0 };
 
     // Fill it up with a sequence that will have to hit the high unicode storage.
     // This is the peach emoji: 🍑
     // It's encoded in UTF-16, as needed by the buffer.
     const auto emoji = L"\xD83C\xDF51";
-    _buffer->_storage[pos.Y].ReplaceCharacters(pos.X, 2, emoji);
+    _buffer->_storage[pos.y].ReplaceCharacters(pos.x, 2, emoji);
 
     // Read back the text at that position and ensure that it matches what we wrote.
     const auto readBack = _buffer->GetTextDataAt(pos);
@@ -1965,7 +1965,7 @@ void TextBufferTests::ResizeTraditionalHighUnicodeColumnRemoval()
     VERIFY_ARE_EQUAL(String(emoji), String(readBackText.data(), gsl::narrow<int>(readBackText.size())));
 
     // Perform resize to trim off the column of the buffer that included the emoji
-    til::size trimmedBufferSize{ bufferSize.X - 1, bufferSize.Y };
+    til::size trimmedBufferSize{ bufferSize.width - 1, bufferSize.height };
 
     VERIFY_NT_SUCCESS(_buffer->ResizeTraditional(trimmedBufferSize));
 }
@@ -2167,7 +2167,7 @@ void TextBufferTests::GetWordBoundaries()
     const std::wstring_view delimiters = L" ";
     for (const auto& test : testData)
     {
-        Log::Comment(NoThrowString().Format(L"til::point (%hd, %hd)", test.startPos.X, test.startPos.Y));
+        Log::Comment(NoThrowString().Format(L"til::point (%hd, %hd)", test.startPos.x, test.startPos.y));
         const auto result = _buffer->GetWordStart(test.startPos, delimiters, accessibilityMode);
         const auto expected = accessibilityMode ? test.expected.accessibilityModeEnabled : test.expected.accessibilityModeDisabled;
         VERIFY_ARE_EQUAL(expected, result);
@@ -2203,7 +2203,7 @@ void TextBufferTests::GetWordBoundaries()
 
     for (const auto& test : testData)
     {
-        Log::Comment(NoThrowString().Format(L"til::point (%hd, %hd)", test.startPos.X, test.startPos.Y));
+        Log::Comment(NoThrowString().Format(L"til::point (%hd, %hd)", test.startPos.x, test.startPos.y));
         auto result = _buffer->GetWordEnd(test.startPos, delimiters, accessibilityMode);
         const auto expected = accessibilityMode ? test.expected.accessibilityModeEnabled : test.expected.accessibilityModeDisabled;
         VERIFY_ARE_EQUAL(expected, result);
@@ -2277,7 +2277,7 @@ void TextBufferTests::MoveByWord()
     const auto lastCharPos = _buffer->GetLastNonSpaceCharacter();
     for (const auto& test : testData)
     {
-        Log::Comment(NoThrowString().Format(L"COORD (%hd, %hd)", test.startPos.X, test.startPos.Y));
+        Log::Comment(NoThrowString().Format(L"COORD (%hd, %hd)", test.startPos.x, test.startPos.y));
         auto pos{ test.startPos };
         const auto result = movingForwards ?
                                 _buffer->MoveToNextWord(pos, delimiters, lastCharPos) :
@@ -2678,14 +2678,14 @@ void TextBufferTests::HyperlinkTrim()
     const auto id = _buffer->GetHyperlinkId(url, customId);
     TextAttribute newAttr{ 0x7f };
     newAttr.SetHyperlinkId(id);
-    _buffer->GetRowByOffset(pos.Y).SetAttrToEnd(pos.X, newAttr);
+    _buffer->GetRowByOffset(pos.y).SetAttrToEnd(pos.x, newAttr);
     _buffer->AddHyperlinkToMap(url, id);
 
     // Set a different hyperlink id somewhere else in the buffer
     const til::point otherPos{ 70, 5 };
     const auto otherId = _buffer->GetHyperlinkId(otherUrl, otherCustomId);
     newAttr.SetHyperlinkId(otherId);
-    _buffer->GetRowByOffset(otherPos.Y).SetAttrToEnd(otherPos.X, newAttr);
+    _buffer->GetRowByOffset(otherPos.y).SetAttrToEnd(otherPos.x, newAttr);
     _buffer->AddHyperlinkToMap(otherUrl, otherId);
 
     // Increment the circular buffer
@@ -2722,12 +2722,12 @@ void TextBufferTests::NoHyperlinkTrim()
     const auto id = _buffer->GetHyperlinkId(url, customId);
     TextAttribute newAttr{ 0x7f };
     newAttr.SetHyperlinkId(id);
-    _buffer->GetRowByOffset(pos.Y).SetAttrToEnd(pos.X, newAttr);
+    _buffer->GetRowByOffset(pos.y).SetAttrToEnd(pos.x, newAttr);
     _buffer->AddHyperlinkToMap(url, id);
 
     // Set the same hyperlink id somewhere else in the buffer
     const til::point otherPos{ 70, 5 };
-    _buffer->GetRowByOffset(otherPos.Y).SetAttrToEnd(otherPos.X, newAttr);
+    _buffer->GetRowByOffset(otherPos.y).SetAttrToEnd(otherPos.x, newAttr);
 
     // Increment the circular buffer
     _buffer->IncrementCircularBuffer();

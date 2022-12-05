@@ -59,6 +59,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         void SetInputMode(const Mode mode, const bool enabled) noexcept;
         bool GetInputMode(const Mode mode) const noexcept;
+        void ResetInputModes() noexcept;
         void ForceDisableWin32InputMode(const bool win32InputMode) noexcept;
 
 #pragma region MouseInput

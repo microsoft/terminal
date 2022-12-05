@@ -33,7 +33,7 @@ static til::size calculatePopupSize(const CommandHistory& history)
     const size_t padding = 4;
 
     // find the widest command history item and use it for the width
-    size_t width = minSize.X;
+    size_t width = minSize.width;
     for (size_t i = 0; i < history.GetNumberOfCommands(); ++i)
     {
         const auto& historyItem = history.GetNth(gsl::narrow<short>(i));
@@ -45,7 +45,7 @@ static til::size calculatePopupSize(const CommandHistory& history)
     }
 
     // calculate height, it can range up to 20 rows
-    auto height = std::clamp(gsl::narrow<til::CoordType>(history.GetNumberOfCommands()), minSize.Y, 20);
+    auto height = std::clamp(gsl::narrow<til::CoordType>(history.GetNumberOfCommands()), minSize.height, 20);
 
     return { gsl::narrow_cast<til::CoordType>(width), height };
 }
@@ -331,20 +331,20 @@ void CommandListPopup::_drawList()
 {
     // draw empty popup
     til::point WriteCoord;
-    WriteCoord.X = _region.Left + 1;
-    WriteCoord.Y = _region.Top + 1;
+    WriteCoord.x = _region.left + 1;
+    WriteCoord.y = _region.top + 1;
     size_t lStringLength = Width();
     for (til::CoordType i = 0; i < Height(); ++i)
     {
         const OutputCellIterator spaces(UNICODE_SPACE, _attributes, lStringLength);
         const auto result = _screenInfo.Write(spaces, WriteCoord);
         lStringLength = result.GetCellDistance(spaces);
-        WriteCoord.Y += 1;
+        WriteCoord.y += 1;
     }
 
     auto api = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().api;
 
-    WriteCoord.Y = _region.Top + 1;
+    WriteCoord.y = _region.top + 1;
     auto i = gsl::narrow<SHORT>(std::max(_bottomIndex - Height() + 1, 0));
     for (; i <= _bottomIndex; i++)
     {
@@ -377,7 +377,7 @@ void CommandListPopup::_drawList()
             CommandNumberLength = static_cast<ULONG>(Width());
         }
 
-        WriteCoord.X = _region.Left + 1;
+        WriteCoord.x = _region.left + 1;
 
         LOG_IF_FAILED(api->WriteConsoleOutputCharacterAImpl(_screenInfo,
                                                             { CommandNumberPtr, CommandNumberLength },
@@ -415,7 +415,7 @@ void CommandListPopup::_drawList()
             }
         }
 
-        WriteCoord.X = gsl::narrow<til::CoordType>(WriteCoord.X + CommandNumberLength);
+        WriteCoord.x = gsl::narrow<til::CoordType>(WriteCoord.x + CommandNumberLength);
         size_t used;
         LOG_IF_FAILED(api->WriteConsoleOutputCharacterWImpl(_screenInfo,
                                                             { command.data(), lStringLength },
@@ -425,7 +425,7 @@ void CommandListPopup::_drawList()
         // write attributes to screen
         if (i == _currentCommand)
         {
-            WriteCoord.X = _region.Left + 1;
+            WriteCoord.x = _region.left + 1;
             // inverted attributes
             lStringLength = Width();
             auto inverted = _attributes;
@@ -437,7 +437,7 @@ void CommandListPopup::_drawList()
             lStringLength = done.GetCellDistance(it);
         }
 
-        WriteCoord.Y += 1;
+        WriteCoord.y += 1;
     }
 }
 
@@ -528,17 +528,17 @@ void CommandListPopup::_updateHighlight(const SHORT OldCurrentCommand, const SHO
         TopIndex = _bottomIndex - Height() + 1;
     }
     til::point WriteCoord;
-    WriteCoord.X = _region.Left + 1;
+    WriteCoord.x = _region.left + 1;
     size_t lStringLength = Width();
 
-    WriteCoord.Y = _region.Top + 1 + OldCurrentCommand - TopIndex;
+    WriteCoord.y = _region.top + 1 + OldCurrentCommand - TopIndex;
 
     const OutputCellIterator it(_attributes, lStringLength);
     const auto done = _screenInfo.Write(it, WriteCoord);
     lStringLength = done.GetCellDistance(it);
 
     // highlight new command
-    WriteCoord.Y = _region.Top + 1 + NewCurrentCommand - TopIndex;
+    WriteCoord.y = _region.top + 1 + NewCurrentCommand - TopIndex;
 
     // inverted attributes
     auto inverted = _attributes;

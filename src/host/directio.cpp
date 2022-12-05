@@ -532,9 +532,9 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         const auto size = rectangle.Dimensions();
         auto outIter = buffer.begin();
 
-        for (til::CoordType i = 0; i < size.Y; ++i)
+        for (til::CoordType i = 0; i < size.height; ++i)
         {
-            for (til::CoordType j = 0; j < size.X; ++j, ++outIter)
+            for (til::CoordType j = 0; j < size.width; ++j, ++outIter)
             {
                 auto& in1 = *outIter;
 
@@ -549,7 +549,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                 if (WI_IsFlagSet(in1.Attributes, COMMON_LVB_LEADING_BYTE))
                 {
                     // As long as we're not looking at the exact last column of the buffer...
-                    if (j < size.X - 1)
+                    if (j < size.width - 1)
                     {
                         // Walk forward one because we're about to consume two cells.
                         ++j;
@@ -611,9 +611,9 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         const auto size = rectangle.Dimensions();
         auto outIter = buffer.begin();
 
-        for (til::CoordType i = 0; i < size.Y; ++i)
+        for (til::CoordType i = 0; i < size.height; ++i)
         {
-            for (til::CoordType j = 0; j < size.X; ++j, ++outIter)
+            for (til::CoordType j = 0; j < size.width; ++j, ++outIter)
             {
                 // Clear lead/trailing flags. We'll determine it for ourselves versus the given codepage.
                 auto& in1 = *outIter;
@@ -623,7 +623,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                 if (IsDBCSLeadByteConsole(in1.Char.AsciiChar, &gci.OutputCPInfo))
                 {
                     // If we're not on the last column, we have two cells to use.
-                    if (j < size.X - 1)
+                    if (j < size.width - 1)
                     {
                         // Mark we're consuming two cells.
                         ++outIter;
@@ -679,9 +679,9 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
     const auto size = rectangle.Dimensions();
     auto bufferIter = buffer.begin();
 
-    for (til::CoordType i = 0; i < size.Y; i++)
+    for (til::CoordType i = 0; i < size.height; i++)
     {
-        for (til::CoordType j = 0; j < size.X; j++)
+        for (til::CoordType j = 0; j < size.width; j++)
         {
             // Prepare a candidate charinfo on the output side copying the colors but not the lead/trail information.
             auto candidate = *bufferIter;
@@ -691,7 +691,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
             if (IsGlyphFullWidth(candidate.Char.UnicodeChar))
             {
                 // If we're not on the final cell of the row...
-                if (j < size.X - 1)
+                if (j < size.width - 1)
                 {
                     // Mark that we're consuming two cells.
                     j++;
@@ -735,7 +735,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         const auto targetSize = requestRectangle.Dimensions();
 
         // If either dimension of the request is too small, return an empty rectangle as read and exit early.
-        if (targetSize.X <= 0 || targetSize.Y <= 0)
+        if (targetSize.width <= 0 || targetSize.height <= 0)
         {
             readRectangle = Viewport::FromDimensions(requestRectangle.Origin(), { 0, 0 });
             return S_OK;
@@ -747,18 +747,18 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 
         // Clip the request rectangle to the size of the storage buffer
         auto clip = requestRectangle.ToExclusive();
-        clip.Right = std::min(clip.Right, storageSize.X);
-        clip.Bottom = std::min(clip.Bottom, storageSize.Y);
+        clip.right = std::min(clip.right, storageSize.width);
+        clip.bottom = std::min(clip.bottom, storageSize.height);
 
         // Find the target point (where to write the user's buffer)
         // It will either be 0,0 or offset into the buffer by the inverse of the negative values.
         til::point targetPoint;
-        targetPoint.X = clip.Left < 0 ? -clip.Left : 0;
-        targetPoint.Y = clip.Top < 0 ? -clip.Top : 0;
+        targetPoint.x = clip.left < 0 ? -clip.left : 0;
+        targetPoint.y = clip.top < 0 ? -clip.top : 0;
 
         // The clipped rect must be inside the buffer size, so it has a minimum value of 0. (max of itself and 0)
-        clip.Left = std::max(clip.Left, 0);
-        clip.Top = std::max(clip.Top, 0);
+        clip.left = std::max(clip.left, 0);
+        clip.top = std::max(clip.top, 0);
 
         // The final "request rectangle" or the area inside the buffer we want to read, is the clipped dimensions.
         const auto clippedRequestRectangle = Viewport::FromExclusive(clip);
@@ -795,11 +795,11 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
             ++targetIter;
 
             // Increment the target
-            targetPos.X++;
-            if (targetPos.X >= targetSize.X)
+            targetPos.x++;
+            if (targetPos.x >= targetSize.width)
             {
-                targetPos.X = 0;
-                targetPos.Y++;
+                targetPos.x = 0;
+                targetPos.y++;
             }
         }
 
@@ -871,7 +871,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         const auto sourceSize = requestRectangle.Dimensions();
 
         // If either dimension of the request is too small, return an empty rectangle as the read and exit early.
-        if (sourceSize.X <= 0 || sourceSize.Y <= 0)
+        if (sourceSize.width <= 0 || sourceSize.height <= 0)
         {
             writtenRectangle = Viewport::FromDimensions(requestRectangle.Origin(), { 0, 0 });
             return S_OK;
@@ -879,7 +879,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 
         // If the top and left of the destination we're trying to write it outside the buffer,
         // give the original request rectangle back and exit early OK.
-        if (requestRectangle.Left() >= storageSize.X || requestRectangle.Top() >= storageSize.Y)
+        if (requestRectangle.Left() >= storageSize.width || requestRectangle.Top() >= storageSize.height)
         {
             writtenRectangle = requestRectangle;
             return S_OK;
@@ -888,38 +888,38 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         // Do clipping according to the legacy patterns.
         auto writeRegion = requestRectangle.ToInclusive();
         til::inclusive_rect sourceRect;
-        if (writeRegion.Right > storageSize.X - 1)
+        if (writeRegion.right > storageSize.width - 1)
         {
-            writeRegion.Right = storageSize.X - 1;
+            writeRegion.right = storageSize.width - 1;
         }
-        sourceRect.Right = writeRegion.Right - writeRegion.Left;
-        if (writeRegion.Bottom > storageSize.Y - 1)
+        sourceRect.right = writeRegion.right - writeRegion.left;
+        if (writeRegion.bottom > storageSize.height - 1)
         {
-            writeRegion.Bottom = storageSize.Y - 1;
+            writeRegion.bottom = storageSize.height - 1;
         }
-        sourceRect.Bottom = writeRegion.Bottom - writeRegion.Top;
+        sourceRect.bottom = writeRegion.bottom - writeRegion.top;
 
-        if (writeRegion.Left < 0)
+        if (writeRegion.left < 0)
         {
-            sourceRect.Left = -writeRegion.Left;
-            writeRegion.Left = 0;
+            sourceRect.left = -writeRegion.left;
+            writeRegion.left = 0;
         }
         else
         {
-            sourceRect.Left = 0;
+            sourceRect.left = 0;
         }
 
-        if (writeRegion.Top < 0)
+        if (writeRegion.top < 0)
         {
-            sourceRect.Top = -writeRegion.Top;
-            writeRegion.Top = 0;
+            sourceRect.top = -writeRegion.top;
+            writeRegion.top = 0;
         }
         else
         {
-            sourceRect.Top = 0;
+            sourceRect.top = 0;
         }
 
-        if (sourceRect.Left > sourceRect.Right || sourceRect.Top > sourceRect.Bottom)
+        if (sourceRect.left > sourceRect.right || sourceRect.top > sourceRect.bottom)
         {
             return E_INVALIDARG;
         }
@@ -931,11 +931,11 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         // For every row in the request, create a view into the clamped portion of just the one line to write.
         // This allows us to restrict the width of the call without allocating/copying any memory by just making
         // a smaller view over the existing big blob of data from the original call.
-        for (; target.Y < writeRectangle.BottomExclusive(); target.Y++)
+        for (; target.y < writeRectangle.BottomExclusive(); target.y++)
         {
             // We find the offset into the original buffer by the dimensions of the original request rectangle.
-            const auto rowOffset = (target.Y - requestRectangle.Top()) * requestRectangle.Width();
-            const auto colOffset = target.X - requestRectangle.Left();
+            const auto rowOffset = (target.y - requestRectangle.Top()) * requestRectangle.Width();
+            const auto colOffset = target.x - requestRectangle.Left();
             const auto totalOffset = rowOffset + colOffset;
 
             // Now we make a subspan starting from that offset for as much of the original request as would fit
