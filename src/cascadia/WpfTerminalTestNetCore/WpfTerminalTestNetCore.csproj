@@ -26,4 +26,7 @@
     </Content>
   </ItemGroup>
 
+  <!-- Install an empty one for CSPROJ projects as they don't PGO. -->
+  <Target Name="MergePGOCounts" />
+
 </Project>
