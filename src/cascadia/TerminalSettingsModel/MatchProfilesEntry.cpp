@@ -43,22 +43,31 @@ winrt::com_ptr<NewTabMenuEntry> MatchProfilesEntry::FromJson(const Json::Value& 
 
 bool MatchProfilesEntry::MatchesProfile(const Model::Profile& profile)
 {
-    auto isMatching = false;
+    // We use an optional here instead of a simple bool directly, since there is no
+    // sensible default value for the desired semantics: the first property we want
+    // to match on should always be applied (so one would set "true" as a default),
+    // but if none of the properties are set, the default return value should be false
+    // since this entry type is expected to behave like a positive match/whitelist.
+    //
+    // The easiest way to deal with this neatly is to use an optional, then for any
+    // property to match we consider a null value to be "true", and for the return
+    // value of the function we consider the null value to be "false".
+    auto isMatching = std::optional<bool>{};
 
     if (!_Name.empty())
     {
-        isMatching = isMatching || _Name == profile.Name();
+        isMatching = { isMatching.value_or(true) && _Name == profile.Name() };
     }
 
     if (!_Source.empty())
     {
-        isMatching = isMatching || _Source == profile.Source();
+        isMatching = { isMatching.value_or(true) && _Source == profile.Source() };
     }
 
     if (!_Commandline.empty())
     {
-        isMatching = isMatching || _Commandline == profile.Commandline();
+        isMatching = { isMatching.value_or(true) && _Commandline == profile.Commandline() };
     }
 
-    return isMatching;
+    return isMatching.value_or(false);
 }

@@ -57,12 +57,12 @@ winrt::com_ptr<NewTabMenuEntry> FolderEntry::FromJson(const Json::Value& json)
 
 // A FolderEntry should only expose the entries to actually render to WinRT,
 // to keep the logic for collapsing/expanding more centralised.
-using NTMEModel = winrt::Microsoft::Terminal::Settings::Model::NewTabMenuEntry;
-IVector<NTMEModel> FolderEntry::Entries() const
+using NewTabMenuEntryModel = winrt::Microsoft::Terminal::Settings::Model::NewTabMenuEntry;
+IVector<NewTabMenuEntryModel> FolderEntry::Entries() const
 {
     // We filter the full list of entries from JSON to just include the
     // non-empty ones.
-    IVector<NTMEModel> result{ winrt::single_threaded_vector<NTMEModel>() };
+    IVector<NewTabMenuEntryModel> result{ winrt::single_threaded_vector<NewTabMenuEntryModel>() };
 
     for (const auto& entry : _Entries)
     {
