@@ -54,7 +54,7 @@ Json::Value AppearanceConfig::ToJson() const
     JsonUtils::SetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
     JsonUtils::SetValueForKey(json, CursorColorKey, _CursorColor);
     JsonUtils::SetValueForKey(json, OpacityKey, _Opacity, JsonUtils::OptionalConverter<double, IntAsFloatPercentConversionTrait>{});
-    if (HasDarkColorSchemeName() && HasLightColorSchemeName())
+    if (HasDarkColorSchemeName() || HasLightColorSchemeName())
     {
         // check if the setting is coming from the UI, if so grab the ColorSchemeName until the settings UI is fixed.
         if (_LightColorSchemeName != _DarkColorSchemeName)
