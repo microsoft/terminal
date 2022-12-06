@@ -4,14 +4,14 @@
 #include "precomp.h"
 
 #include "conimeinfo.h"
-#include "conareainfo.h"
 
+#include <til/unicode.h>
+
+#include "conareainfo.h"
 #include "_output.h"
 #include "dbcs.h"
-
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/GlyphWidth.hpp"
-#include "../types/inc/Utf16Parser.hpp"
 
 // Attributes flags:
 #define COMMON_LVB_GRID_SINGLEFLAG 0x2000 // DBCS: Grid attribute: use for ime cursor.
@@ -146,7 +146,7 @@ void ConsoleImeInfo::ClearAllAreas()
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     auto bufferSize = gci.GetActiveOutputBuffer().GetBufferSize().Dimensions();
-    bufferSize.Y = 1;
+    bufferSize.height = 1;
 
     const auto windowSize = gci.GetActiveOutputBuffer().GetViewport().Dimensions();
 
@@ -223,12 +223,9 @@ std::vector<OutputCell> ConsoleImeInfo::s_ConvertToCells(const std::wstring_view
 {
     std::vector<OutputCell> cells;
 
-    // - Convert incoming wchar_t stream into UTF-16 units.
-    const auto glyphs = Utf16Parser::Parse(text);
-
     // - Walk through all of the grouped up text, match up the correct attribute to it, and make a new cell.
     size_t attributesUsed = 0;
-    for (const auto& parsedGlyph : glyphs)
+    for (const auto& parsedGlyph : til::utf16_iterator{ text })
     {
         const std::wstring_view glyph{ parsedGlyph.data(), parsedGlyph.size() };
         // Collect up attributes that apply to this glyph range.
@@ -321,14 +318,14 @@ std::vector<OutputCell>::const_iterator ConsoleImeInfo::_WriteConversionArea(con
 
     // Advance the cursor position to set up the next call for success (insert the next conversion area
     // at the beginning of the following line)
-    pos.X = view.Left();
-    pos.Y++;
+    pos.x = view.Left();
+    pos.y++;
 
     // The index of the last column in the viewport. (view is inclusive)
     const auto finalViewColumn = view.RightInclusive();
 
     // The maximum number of cells we can insert into a line.
-    const auto lineWidth = finalViewColumn - insertionPos.X + 1; // +1 because view was inclusive
+    const auto lineWidth = finalViewColumn - insertionPos.x + 1; // +1 because view was inclusive
 
     // The iterator to the beginning position to form our line
     const auto lineBegin = begin;
@@ -368,13 +365,13 @@ std::vector<OutputCell>::const_iterator ConsoleImeInfo::_WriteConversionArea(con
     auto& area = ConvAreaCompStr.back();
 
     // Write our text into the conversion area.
-    area.WriteText(lineVec, insertionPos.X);
+    area.WriteText(lineVec, insertionPos.x);
 
     // Set the viewport and positioning parameters for the conversion area to describe to the renderer
     // the appropriate location to overlay this conversion area on top of the main screen buffer inside the viewport.
-    const til::inclusive_rect region{ insertionPos.X, 0, gsl::narrow<til::CoordType>(insertionPos.X + lineVec.size() - 1), 0 };
+    const til::inclusive_rect region{ insertionPos.x, 0, gsl::narrow<til::CoordType>(insertionPos.x + lineVec.size() - 1), 0 };
     area.SetWindowInfo(region);
-    area.SetViewPos({ 0 - view.Left(), insertionPos.Y - view.Top() });
+    area.SetViewPos({ 0 - view.Left(), insertionPos.y - view.Top() });
 
     // Make it visible and paint it.
     area.SetHidden(false);
@@ -383,7 +380,7 @@ std::vector<OutputCell>::const_iterator ConsoleImeInfo::_WriteConversionArea(con
     // Notify accessibility that we have updated the text in this display region within the viewport.
     if (screenInfo.HasAccessibilityEventing())
     {
-        screenInfo.NotifyAccessibilityEventing(region.left, insertionPos.Y, region.right, insertionPos.Y);
+        screenInfo.NotifyAccessibilityEventing(region.left, insertionPos.y, region.right, insertionPos.y);
     }
 
     // Hand back the iterator representing the end of what we used to be fed into the beginning of the next call.

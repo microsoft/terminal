@@ -11,10 +11,8 @@
 #include "../../terminal/adapter/ITerminalApi.hpp"
 #include "../../terminal/parser/StateMachine.hpp"
 #include "../../terminal/input/terminalInput.hpp"
-
 #include "../../types/inc/Viewport.hpp"
 #include "../../types/inc/GlyphWidth.hpp"
-#include "../../types/IUiaData.h"
 #include "../../cascadia/terminalcore/ITerminalInput.hpp"
 
 #include <til/ticket_lock.h>
@@ -57,8 +55,7 @@ namespace TerminalCoreUnitTests
 class Microsoft::Terminal::Core::Terminal final :
     public Microsoft::Console::VirtualTerminal::ITerminalApi,
     public Microsoft::Terminal::Core::ITerminalInput,
-    public Microsoft::Console::Render::IRenderData,
-    public Microsoft::Console::Types::IUiaData
+    public Microsoft::Console::Render::IRenderData
 {
     using RenderSettings = Microsoft::Console::Render::RenderSettings;
 
@@ -103,7 +100,8 @@ public:
     const std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark>& GetScrollMarks() const noexcept;
     void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark,
                  const til::point& start,
-                 const til::point& end);
+                 const til::point& end,
+                 const bool fromUi);
 
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp
@@ -115,6 +113,7 @@ public:
     void SetViewportPosition(const til::point position) noexcept override;
     void SetTextAttributes(const TextAttribute& attrs) noexcept override;
     void SetAutoWrapMode(const bool wrapAtEOL) noexcept override;
+    bool GetAutoWrapMode() const noexcept override;
     void SetScrollingRegion(const til::inclusive_rect& scrollMargins) noexcept override;
     void WarningBell() override;
     bool GetLineFeedMode() const noexcept override;
@@ -124,7 +123,8 @@ public:
     bool ResizeWindow(const til::CoordType width, const til::CoordType height) noexcept override;
     void SetConsoleOutputCP(const unsigned int codepage) noexcept override;
     unsigned int GetConsoleOutputCP() const noexcept override;
-    void EnableXtermBracketedPasteMode(const bool enabled) noexcept override;
+    void SetBracketedPasteMode(const bool enabled) noexcept override;
+    std::optional<bool> GetBracketedPasteMode() const noexcept override;
     void CopyToClipboard(std::wstring_view content) override;
     void SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) override;
     void SetWorkingDirectory(std::wstring_view uri) override;
@@ -133,7 +133,10 @@ public:
     void UseAlternateScreenBuffer() override;
     void UseMainScreenBuffer() override;
 
-    void AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) override;
+    void MarkPrompt(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) override;
+    void MarkCommandStart() override;
+    void MarkOutputStart() override;
+    void MarkCommandFinish(std::optional<unsigned int> error) override;
 
     bool IsConsolePty() const noexcept override;
     bool IsVtInputEnabled() const noexcept override;
@@ -166,7 +169,7 @@ public:
     std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> GetHyperlinkIntervalFromViewportPosition(const til::point viewportPos);
 #pragma endregion
 
-#pragma region IBaseData(base to IRenderData and IUiaData)
+#pragma region IRenderData
     Microsoft::Console::Types::Viewport GetViewport() noexcept override;
     til::point GetTextBufferEndPosition() const noexcept override;
     const TextBuffer& GetTextBuffer() const noexcept override;
@@ -174,9 +177,7 @@ public:
 
     void LockConsole() noexcept override;
     void UnlockConsole() noexcept override;
-#pragma endregion
 
-#pragma region IRenderData
     // These methods are defined in TerminalRenderData.cpp
     til::point GetCursorPosition() const noexcept override;
     bool IsCursorVisible() const noexcept override;
@@ -190,9 +191,7 @@ public:
     const std::wstring GetHyperlinkUri(uint16_t id) const override;
     const std::wstring GetHyperlinkCustomId(uint16_t id) const override;
     const std::vector<size_t> GetPatternId(const til::point location) const override;
-#pragma endregion
 
-#pragma region IUiaData
     std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept override;
     std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override;
     const bool IsSelectionActive() const noexcept override;
@@ -380,7 +379,7 @@ private:
     //   to the region they scrolled to. If that were the case, then every time we move _mutableViewport,
     //   we'd also need to update _offset.
     // However, if we just stored it as a _visibleTop, then that point would remain fixed -
-    //      Though if _visibleTop == _mutableViewport.Top, then we'd need to make sure to update
+    //      Though if _visibleTop == _mutableViewport.top, then we'd need to make sure to update
     //      _visibleTop as well.
     // Additionally, maybe some people want to scroll into the history, then have that scroll out from
     //      underneath them, while others would prefer to anchor it in place.
@@ -399,6 +398,14 @@ private:
     std::optional<KeyEventCodes> _lastKeyEventCodes;
 
     std::vector<Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark> _scrollMarks;
+    enum class PromptState : uint32_t
+    {
+        None = 0,
+        Prompt,
+        Command,
+        Output,
+    };
+    PromptState _currentPromptState{ PromptState::None };
 
     static WORD _ScanCodeFromVirtualKey(const WORD vkey) noexcept;
     static WORD _VirtualKeyFromScanCode(const WORD scanCode) noexcept;

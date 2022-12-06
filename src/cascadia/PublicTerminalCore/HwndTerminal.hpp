@@ -49,7 +49,7 @@ __declspec(dllexport) void _stdcall TerminalKillFocus(void* terminal);
 struct HwndTerminal : ::Microsoft::Console::Types::IControlAccessibilityInfo
 {
 public:
-    HwndTerminal(HWND hwnd);
+    HwndTerminal(HWND hwnd) noexcept;
 
     HwndTerminal(const HwndTerminal&) = default;
     HwndTerminal(HwndTerminal&&) = default;
@@ -63,7 +63,7 @@ public:
     HRESULT Refresh(const til::size windowSize, _Out_ til::size* dimensions);
     void RegisterScrollCallback(std::function<void(int, int, int)> callback);
     void RegisterWriteCallback(const void _stdcall callback(wchar_t*));
-    ::Microsoft::Console::Types::IUiaData* GetUiaData() const noexcept;
+    ::Microsoft::Console::Render::IRenderData* GetRenderData() const noexcept;
     HWND GetHwnd() const noexcept;
 
     static LRESULT CALLBACK HwndTerminalWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept;

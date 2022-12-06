@@ -390,6 +390,7 @@ void AppHost::Initialize()
     _window->DragRegionClicked([this]() { _logic.TitlebarClicked(); });
 
     _window->WindowVisibilityChanged([this](bool showOrHide) { _logic.WindowVisibilityChanged(showOrHide); });
+    _window->UpdateSettingsRequested([this]() { _logic.ReloadSettings(); });
 
     _revokers.RequestedThemeChanged = _logic.RequestedThemeChanged(winrt::auto_revoke, { this, &AppHost::_UpdateTheme });
     _revokers.FullscreenChanged = _logic.FullscreenChanged(winrt::auto_revoke, { this, &AppHost::_FullscreenChanged });

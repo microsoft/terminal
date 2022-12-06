@@ -37,8 +37,8 @@ public:
     OutputCellIterator(const TextAttribute& attr, const size_t fillLimit = 0) noexcept;
     OutputCellIterator(const wchar_t& wch, const TextAttribute& attr, const size_t fillLimit = 0) noexcept;
     OutputCellIterator(const CHAR_INFO& charInfo, const size_t fillLimit = 0) noexcept;
-    OutputCellIterator(const std::wstring_view utf16Text);
-    OutputCellIterator(const std::wstring_view utf16Text, const TextAttribute& attribute, const size_t fillLimit = 0);
+    OutputCellIterator(const std::wstring_view utf16Text) noexcept;
+    OutputCellIterator(const std::wstring_view utf16Text, const TextAttribute& attribute, const size_t fillLimit = 0) noexcept;
     OutputCellIterator(const gsl::span<const WORD> legacyAttributes) noexcept;
     OutputCellIterator(const gsl::span<const CHAR_INFO> charInfos) noexcept;
     OutputCellIterator(const gsl::span<const OutputCell> cells);
@@ -100,15 +100,9 @@ private:
 
     bool _TryMoveTrailing() noexcept;
 
-    static OutputCellView s_GenerateView(const std::wstring_view view);
-
-    static OutputCellView s_GenerateView(const std::wstring_view view,
-                                         const TextAttribute attr);
-
-    static OutputCellView s_GenerateView(const std::wstring_view view,
-                                         const TextAttribute attr,
-                                         const TextAttributeBehavior behavior);
-
+    static OutputCellView s_GenerateView(const std::wstring_view view) noexcept;
+    static OutputCellView s_GenerateView(const std::wstring_view view, const TextAttribute attr) noexcept;
+    static OutputCellView s_GenerateView(const std::wstring_view view, const TextAttribute attr, const TextAttributeBehavior behavior) noexcept;
     static OutputCellView s_GenerateView(const wchar_t& wch) noexcept;
     static OutputCellView s_GenerateViewLegacyAttr(const WORD& legacyAttr) noexcept;
     static OutputCellView s_GenerateView(const TextAttribute& attr) noexcept;
