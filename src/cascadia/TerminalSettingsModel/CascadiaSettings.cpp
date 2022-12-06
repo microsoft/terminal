@@ -1193,7 +1193,7 @@ void CascadiaSettings::_validateThemeExists()
     }
     else
     {
-        // Two different themes. Check each sererately, and fall back to a
+        // Two different themes. Check each seperately, and fall back to a
         // reasonable default contextually
         if (!_globals->Themes().HasKey(_globals->Theme().LightName()))
         {
