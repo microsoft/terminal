@@ -5,8 +5,9 @@
 
 #include "OutputCellIterator.hpp"
 
+#include <til/unicode.h>
+
 #include "../../types/inc/convert.hpp"
-#include "../../types/inc/Utf16Parser.hpp"
 #include "../../types/inc/GlyphWidth.hpp"
 #include "../../inc/conattrs.hpp"
 
@@ -81,7 +82,7 @@ OutputCellIterator::OutputCellIterator(const CHAR_INFO& charInfo, const size_t f
 // - This is an iterator over a range of text only. No color data will be modified as the text is inserted.
 // Arguments:
 // - utf16Text - UTF-16 text range
-OutputCellIterator::OutputCellIterator(const std::wstring_view utf16Text) :
+OutputCellIterator::OutputCellIterator(const std::wstring_view utf16Text) noexcept :
     _mode(Mode::LooseTextOnly),
     _currentView(s_GenerateView(utf16Text)),
     _run(utf16Text),
@@ -97,7 +98,7 @@ OutputCellIterator::OutputCellIterator(const std::wstring_view utf16Text) :
 // Arguments:
 // - utf16Text - UTF-16 text range
 // - attribute - Color to apply over the entire range
-OutputCellIterator::OutputCellIterator(const std::wstring_view utf16Text, const TextAttribute& attribute, const size_t fillLimit) :
+OutputCellIterator::OutputCellIterator(const std::wstring_view utf16Text, const TextAttribute& attribute, const size_t fillLimit) noexcept :
     _mode(Mode::Loose),
     _currentView(s_GenerateView(utf16Text, attribute)),
     _run(utf16Text),
@@ -356,7 +357,7 @@ bool OutputCellIterator::_TryMoveTrailing() noexcept
 // - view - View representing characters corresponding to a single glyph
 // Return Value:
 // - Object representing the view into this cell
-OutputCellView OutputCellIterator::s_GenerateView(const std::wstring_view view)
+OutputCellView OutputCellIterator::s_GenerateView(const std::wstring_view view) noexcept
 {
     return s_GenerateView(view, InvalidTextAttribute, TextAttributeBehavior::Current);
 }
@@ -371,8 +372,7 @@ OutputCellView OutputCellIterator::s_GenerateView(const std::wstring_view view)
 // - attr - Color attributes to apply to the text
 // Return Value:
 // - Object representing the view into this cell
-OutputCellView OutputCellIterator::s_GenerateView(const std::wstring_view view,
-                                                  const TextAttribute attr)
+OutputCellView OutputCellIterator::s_GenerateView(const std::wstring_view view, const TextAttribute attr) noexcept
 {
     return s_GenerateView(view, attr, TextAttributeBehavior::Stored);
 }
@@ -388,11 +388,9 @@ OutputCellView OutputCellIterator::s_GenerateView(const std::wstring_view view,
 // - behavior - Behavior of the given text attribute (used when writing)
 // Return Value:
 // - Object representing the view into this cell
-OutputCellView OutputCellIterator::s_GenerateView(const std::wstring_view view,
-                                                  const TextAttribute attr,
-                                                  const TextAttributeBehavior behavior)
+OutputCellView OutputCellIterator::s_GenerateView(const std::wstring_view view, const TextAttribute attr, const TextAttributeBehavior behavior) noexcept
 {
-    const auto glyph = Utf16Parser::ParseNext(view);
+    const auto glyph = til::utf16_next(view);
     const auto dbcsAttr = IsGlyphFullWidth(glyph) ? DbcsAttribute::Leading : DbcsAttribute::Single;
     return OutputCellView(glyph, dbcsAttr, attr, behavior);
 }

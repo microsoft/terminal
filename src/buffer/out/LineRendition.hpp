@@ -25,19 +25,19 @@ constexpr til::inclusive_rect ScreenToBufferLine(const til::inclusive_rect& line
 {
     // Use shift right to quickly divide the Left and Right by 2 for double width lines.
     const auto scale = lineRendition == LineRendition::SingleWidth ? 0 : 1;
-    return { line.Left >> scale, line.Top, line.Right >> scale, line.Bottom };
+    return { line.left >> scale, line.top, line.right >> scale, line.bottom };
 }
 
 constexpr til::point ScreenToBufferLine(const til::point& line, const LineRendition lineRendition)
 {
     // Use shift right to quickly divide the Left and Right by 2 for double width lines.
     const auto scale = lineRendition == LineRendition::SingleWidth ? 0 : 1;
-    return { line.X >> scale, line.Y };
+    return { line.x >> scale, line.y };
 }
 
 constexpr til::inclusive_rect BufferToScreenLine(const til::inclusive_rect& line, const LineRendition lineRendition)
 {
     // Use shift left to quickly multiply the Left and Right by 2 for double width lines.
     const auto scale = lineRendition == LineRendition::SingleWidth ? 0 : 1;
-    return { line.Left << scale, line.Top, (line.Right << scale) + scale, line.Bottom };
+    return { line.left << scale, line.top, (line.right << scale) + scale, line.bottom };
 }

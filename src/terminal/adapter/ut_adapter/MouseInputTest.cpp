@@ -303,8 +303,8 @@ public:
         for (auto i = 0; i < s_iTestCoordsLength; i++)
         {
             auto Coord = s_rgTestCoords[i];
-            fExpectedKeyHandled = (Coord.X <= 94 && Coord.Y <= 94);
-            Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
+            fExpectedKeyHandled = (Coord.x <= 94 && Coord.y <= 94);
+            Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.x, Coord.y));
 
             s_pwszInputExpected = BuildDefaultTestOutput(s_rgDefaultTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
 
@@ -315,15 +315,15 @@ public:
                                                      sModifierKeystate,
                                                      sScrollDelta,
                                                      {}),
-                             NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
+                             NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.x, Coord.y));
         }
 
         mouseInput->SetInputMode(TerminalInput::Mode::ButtonEventMouseTracking, true);
         for (auto i = 0; i < s_iTestCoordsLength; i++)
         {
             auto Coord = s_rgTestCoords[i];
-            fExpectedKeyHandled = (Coord.X <= 94 && Coord.Y <= 94);
-            Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
+            fExpectedKeyHandled = (Coord.x <= 94 && Coord.y <= 94);
+            Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.x, Coord.y));
 
             s_pwszInputExpected = BuildDefaultTestOutput(s_rgDefaultTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
 
@@ -334,15 +334,15 @@ public:
                                                      sModifierKeystate,
                                                      sScrollDelta,
                                                      {}),
-                             NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
+                             NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.x, Coord.y));
         }
 
         mouseInput->SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, true);
         for (auto i = 0; i < s_iTestCoordsLength; i++)
         {
             auto Coord = s_rgTestCoords[i];
-            fExpectedKeyHandled = (Coord.X <= 94 && Coord.Y <= 94);
-            Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
+            fExpectedKeyHandled = (Coord.x <= 94 && Coord.y <= 94);
+            Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.x, Coord.y));
 
             s_pwszInputExpected = BuildDefaultTestOutput(s_rgDefaultTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
 
@@ -353,7 +353,7 @@ public:
                                                      sModifierKeystate,
                                                      sScrollDelta,
                                                      {}),
-                             NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
+                             NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.x, Coord.y));
         }
     }
     TEST_METHOD(Utf8ModeTests)
@@ -390,8 +390,8 @@ public:
         {
             auto Coord = s_rgTestCoords[i];
 
-            fExpectedKeyHandled = (Coord.X <= MaxCoord && Coord.Y <= MaxCoord);
-            Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
+            fExpectedKeyHandled = (Coord.x <= MaxCoord && Coord.y <= MaxCoord);
+            Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.x, Coord.y));
             s_pwszInputExpected = BuildDefaultTestOutput(s_rgDefaultTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
 
             // validate translation
@@ -401,7 +401,7 @@ public:
                                                      sModifierKeystate,
                                                      sScrollDelta,
                                                      {}),
-                             NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
+                             NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.x, Coord.y));
         }
 
         mouseInput->SetInputMode(TerminalInput::Mode::ButtonEventMouseTracking, true);
@@ -409,8 +409,8 @@ public:
         {
             auto Coord = s_rgTestCoords[i];
 
-            fExpectedKeyHandled = (Coord.X <= MaxCoord && Coord.Y <= MaxCoord);
-            Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
+            fExpectedKeyHandled = (Coord.x <= MaxCoord && Coord.y <= MaxCoord);
+            Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.x, Coord.y));
             s_pwszInputExpected = BuildDefaultTestOutput(s_rgDefaultTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
 
             // validate translation
@@ -420,7 +420,7 @@ public:
                                                      sModifierKeystate,
                                                      sScrollDelta,
                                                      {}),
-                             NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
+                             NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.x, Coord.y));
         }
 
         mouseInput->SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, true);
@@ -428,8 +428,8 @@ public:
         {
             auto Coord = s_rgTestCoords[i];
 
-            fExpectedKeyHandled = (Coord.X <= MaxCoord && Coord.Y <= MaxCoord);
-            Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
+            fExpectedKeyHandled = (Coord.x <= MaxCoord && Coord.y <= MaxCoord);
+            Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.x, Coord.y));
             s_pwszInputExpected = BuildDefaultTestOutput(s_rgDefaultTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
 
             // validate translation
@@ -439,7 +439,7 @@ public:
                                                      sModifierKeystate,
                                                      sScrollDelta,
                                                      {}),
-                             NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
+                             NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.x, Coord.y));
         }
     }
 
@@ -478,13 +478,13 @@ public:
         {
             auto Coord = s_rgTestCoords[i];
 
-            Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
+            Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.x, Coord.y));
             s_pwszInputExpected = BuildSGRTestOutput(s_rgSgrTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
 
             // validate translation
             VERIFY_ARE_EQUAL(fExpectedKeyHandled,
                              mouseInput->HandleMouse(Coord, uiButton, sModifierKeystate, sScrollDelta, {}),
-                             NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
+                             NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.x, Coord.y));
         }
 
         mouseInput->SetInputMode(TerminalInput::Mode::ButtonEventMouseTracking, true);
@@ -492,7 +492,7 @@ public:
         {
             auto Coord = s_rgTestCoords[i];
 
-            Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
+            Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.x, Coord.y));
             s_pwszInputExpected = BuildSGRTestOutput(s_rgSgrTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
 
             // validate translation
@@ -502,7 +502,7 @@ public:
                                                      sModifierKeystate,
                                                      sScrollDelta,
                                                      {}),
-                             NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
+                             NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.x, Coord.y));
         }
 
         fExpectedKeyHandled = true;
@@ -511,7 +511,7 @@ public:
         {
             auto Coord = s_rgTestCoords[i];
 
-            Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
+            Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.x, Coord.y));
             s_pwszInputExpected = BuildSGRTestOutput(s_rgSgrTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
 
             // validate translation
@@ -521,7 +521,7 @@ public:
                                                      sModifierKeystate,
                                                      sScrollDelta,
                                                      {}),
-                             NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
+                             NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.x, Coord.y));
         }
     }
 
@@ -555,9 +555,9 @@ public:
         for (auto i = 0; i < s_iTestCoordsLength; i++)
         {
             auto Coord = s_rgTestCoords[i];
-            fExpectedKeyHandled = (Coord.X <= 94 && Coord.Y <= 94);
+            fExpectedKeyHandled = (Coord.x <= 94 && Coord.y <= 94);
 
-            Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
+            Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.x, Coord.y));
             s_pwszInputExpected = BuildDefaultTestOutput(s_rgDefaultTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
 
             // validate translation
@@ -567,7 +567,7 @@ public:
                                                      sModifierKeystate,
                                                      sScrollDelta,
                                                      {}),
-                             NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
+                             NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.x, Coord.y));
         }
 
         // Default Tracking, UTF8 Encoding
@@ -576,9 +576,9 @@ public:
         for (auto i = 0; i < s_iTestCoordsLength; i++)
         {
             auto Coord = s_rgTestCoords[i];
-            fExpectedKeyHandled = (Coord.X <= MaxCoord && Coord.Y <= MaxCoord);
+            fExpectedKeyHandled = (Coord.x <= MaxCoord && Coord.y <= MaxCoord);
 
-            Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
+            Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.x, Coord.y));
             s_pwszInputExpected = BuildDefaultTestOutput(s_rgDefaultTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
 
             // validate translation
@@ -588,7 +588,7 @@ public:
                                                      sModifierKeystate,
                                                      sScrollDelta,
                                                      {}),
-                             NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
+                             NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.x, Coord.y));
         }
 
         // Default Tracking, SGR Encoding
@@ -598,7 +598,7 @@ public:
         {
             auto Coord = s_rgTestCoords[i];
 
-            Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
+            Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.x, Coord.y));
             s_pwszInputExpected = BuildSGRTestOutput(s_rgSgrTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
 
             // validate translation
@@ -608,7 +608,7 @@ public:
                                                      sModifierKeystate,
                                                      sScrollDelta,
                                                      {}),
-                             NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
+                             NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.x, Coord.y));
         }
     }
 

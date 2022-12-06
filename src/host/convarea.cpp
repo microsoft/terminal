@@ -34,22 +34,22 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
 
             // Do clipping region
             til::inclusive_rect Region;
-            Region.Left = currentViewport.Left + areaInfo.rcViewCaWindow.Left + areaInfo.coordConView.X;
-            Region.Right = Region.Left + (areaInfo.rcViewCaWindow.Right - areaInfo.rcViewCaWindow.Left);
-            Region.Top = currentViewport.Top + areaInfo.rcViewCaWindow.Top + areaInfo.coordConView.Y;
-            Region.Bottom = Region.Top + (areaInfo.rcViewCaWindow.Bottom - areaInfo.rcViewCaWindow.Top);
+            Region.left = currentViewport.left + areaInfo.rcViewCaWindow.left + areaInfo.coordConView.x;
+            Region.right = Region.left + (areaInfo.rcViewCaWindow.right - areaInfo.rcViewCaWindow.left);
+            Region.top = currentViewport.top + areaInfo.rcViewCaWindow.top + areaInfo.coordConView.y;
+            Region.bottom = Region.top + (areaInfo.rcViewCaWindow.bottom - areaInfo.rcViewCaWindow.top);
 
-            Region.Left = std::max(Region.Left, currentViewport.Left);
-            Region.Top = std::max(Region.Top, currentViewport.Top);
-            Region.Right = std::min(Region.Right, currentViewport.Right);
-            Region.Bottom = std::min(Region.Bottom, currentViewport.Bottom);
+            Region.left = std::max(Region.left, currentViewport.left);
+            Region.top = std::max(Region.top, currentViewport.top);
+            Region.right = std::min(Region.right, currentViewport.right);
+            Region.bottom = std::min(Region.bottom, currentViewport.bottom);
 
             if (Region)
             {
-                Region.Left = std::max(Region.Left, convRegion.Left());
-                Region.Top = std::max(Region.Top, convRegion.Top());
-                Region.Right = std::min(Region.Right, convRegion.RightInclusive());
-                Region.Bottom = std::min(Region.Bottom, convRegion.BottomInclusive());
+                Region.left = std::max(Region.left, convRegion.Left());
+                Region.top = std::max(Region.top, convRegion.Top());
+                Region.right = std::min(Region.right, convRegion.RightInclusive());
+                Region.bottom = std::min(Region.bottom, convRegion.BottomInclusive());
                 if (Region)
                 {
                     // if we have a renderer, we need to update.

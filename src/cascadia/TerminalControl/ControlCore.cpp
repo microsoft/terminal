@@ -10,7 +10,6 @@
 
 #include <DefaultSettings.h>
 #include <unicode.hpp>
-#include <Utf16Parser.hpp>
 #include <WinUser.h>
 #include <LibraryResources.h>
 
@@ -64,25 +63,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return result;
     }
 
-    // Helper static function to ensure that all ambiguous-width glyphs are reported as narrow.
-    // See microsoft/terminal#2066 for more info.
-    static bool _IsGlyphWideForceNarrowFallback(const std::wstring_view /* glyph */)
-    {
-        return false; // glyph is not wide.
-    }
-
-    static bool _EnsureStaticInitialization()
-    {
-        // use C++11 magic statics to make sure we only do this once.
-        static auto initialized = []() {
-            // *** THIS IS A SINGLETON ***
-            SetGlyphWidthFallback(_IsGlyphWideForceNarrowFallback);
-
-            return true;
-        }();
-        return initialized;
-    }
-
     TextColor SelectionColor::AsTextColor() const noexcept
     {
         if (_IsIndex16)
@@ -102,8 +82,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _desiredFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, DEFAULT_FONT_SIZE, CP_UTF8 },
         _actualFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false }
     {
-        _EnsureStaticInitialization();
-
         _settings = winrt::make_self<implementation::ControlSettings>(settings, unfocusedAppearance);
 
         _terminal = std::make_shared<::Microsoft::Terminal::Core::Terminal>();
@@ -871,7 +849,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         const auto actualNewSize = _actualFont.GetSize();
-        _FontSizeChangedHandlers(actualNewSize.X, actualNewSize.Y, initialUpdate);
+        _FontSizeChangedHandlers(actualNewSize.width, actualNewSize.height, initialUpdate);
     }
 
     // Method Description:
@@ -949,8 +927,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Don't actually resize so small that a single character wouldn't fit
         // in either dimension. The buffer really doesn't like being size 0.
-        cx = std::max(cx, _actualFont.GetSize().X);
-        cy = std::max(cy, _actualFont.GetSize().Y);
+        cx = std::max(cx, _actualFont.GetSize().width);
+        cy = std::max(cy, _actualFont.GetSize().height);
 
         // Convert our new dimensions to characters
         const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, { cx, cy });
@@ -1030,10 +1008,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Control::SelectionData info;
 
         const auto start{ _terminal->SelectionStartForRendering() };
-        info.StartPos = { start.X, start.Y };
+        info.StartPos = { start.x, start.y };
 
         const auto end{ _terminal->SelectionEndForRendering() };
-        info.EndPos = { end.X, end.Y };
+        info.EndPos = { end.x, end.y };
 
         info.Endpoint = static_cast<SelectionEndpointTarget>(_terminal->SelectionEndpointTarget());
 
@@ -1110,7 +1088,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // content, which is unexpected.
         const auto htmlData = formats == nullptr || WI_IsFlagSet(formats.Value(), CopyFormat::HTML) ?
                                   TextBuffer::GenHTML(bufferData,
-                                                      _actualFont.GetUnscaledSize().Y,
+                                                      _actualFont.GetUnscaledSize().width,
                                                       _actualFont.GetFaceName(),
                                                       bgColor) :
                                   "";
@@ -1118,7 +1096,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // convert to RTF format
         const auto rtfData = formats == nullptr || WI_IsFlagSet(formats.Value(), CopyFormat::RTF) ?
                                  TextBuffer::GenRTF(bufferData,
-                                                    _actualFont.GetUnscaledSize().Y,
+                                                    _actualFont.GetUnscaledSize().height,
                                                     _actualFont.GetFaceName(),
                                                     bgColor) :
                                  "";
@@ -1215,8 +1193,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const auto fontSize = _actualFont.GetSize();
         return {
-            ::base::saturated_cast<float>(fontSize.X),
-            ::base::saturated_cast<float>(fontSize.Y)
+            ::base::saturated_cast<float>(fontSize.width),
+            ::base::saturated_cast<float>(fontSize.height)
         };
     }
     winrt::hstring ControlCore::FontFaceName() const noexcept
@@ -1444,7 +1422,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return result;
     }
 
-    ::Microsoft::Console::Types::IUiaData* ControlCore::GetUiaData() const
+    ::Microsoft::Console::Render::IRenderData* ControlCore::GetRenderData() const
     {
         return _terminal.get();
     }
@@ -1475,7 +1453,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                      Search::Sensitivity::CaseSensitive :
                                      Search::Sensitivity::CaseInsensitive;
 
-        ::Search search(*GetUiaData(), text.c_str(), direction, sensitivity);
+        ::Search search(*GetRenderData(), text.c_str(), direction, sensitivity);
         auto lock = _terminal->LockForWriting();
         const auto foundMatch{ search.FindNext() };
         if (foundMatch)
@@ -1736,7 +1714,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto& textBuffer = _terminal->GetTextBuffer();
 
         std::wstring str;
-        const auto lastRow = textBuffer.GetLastNonSpaceCharacter().Y;
+        const auto lastRow = textBuffer.GetLastNonSpaceCharacter().y;
         for (auto rowIndex = 0; rowIndex <= lastRow; rowIndex++)
         {
             const auto& row = textBuffer.GetRowByOffset(rowIndex);
@@ -2021,7 +1999,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // The version of this that only accepts a ScrollMark will automatically
         // set the start & end to the cursor position.
-        _terminal->AddMark(m, m.start, m.end);
+        _terminal->AddMark(m, m.start, m.end, true);
     }
     void ControlCore::ClearMark() { _terminal->ClearMark(); }
     void ControlCore::ClearAllMarks() { _terminal->ClearAllMarks(); }

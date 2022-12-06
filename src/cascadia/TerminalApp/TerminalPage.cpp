@@ -928,7 +928,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - For a given list of tabmenu entries, this method will create the corresponding
+    // - For a given list of tab menu entries, this method will create the corresponding
     //   list of flyout items. This is a recursive method that calls itself when it comes
     //   across a folder entry.
     std::vector<WUX::Controls::MenuFlyoutItemBase> TerminalPage::_CreateNewTabFlyoutItems(IVector<NewTabMenuEntry> entries)
@@ -2760,6 +2760,12 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_SetBackgroundImage(const winrt::Microsoft::Terminal::Settings::Model::IAppearanceConfig& newAppearance)
     {
+        if (!_settings.GlobalSettings().UseBackgroundImageForWindow())
+        {
+            _tabContent.Background(nullptr);
+            return;
+        }
+
         const auto path = newAppearance.ExpandedBackgroundImagePath();
         if (path.empty())
         {
@@ -2797,9 +2803,14 @@ namespace winrt::TerminalApp::implementation
             Media::Imaging::BitmapImage image(imageUri);
             b.ImageSource(image);
             _tabContent.Background(b);
+        }
 
-            b.Stretch(newAppearance.BackgroundImageStretchMode());
-            b.Opacity(newAppearance.BackgroundImageOpacity());
+        // Pull this into a separate block. If the image didn't change, but the
+        // properties of the image did, we should still update them.
+        if (const auto newBrush{ _tabContent.Background().try_as<Media::ImageBrush>() })
+        {
+            newBrush.Stretch(newAppearance.BackgroundImageStretchMode());
+            newBrush.Opacity(newAppearance.BackgroundImageOpacity());
         }
     }
 
@@ -2833,18 +2844,6 @@ namespace winrt::TerminalApp::implementation
             profileGuidSettingsMap.insert_or_assign(newProfile.Guid(), std::pair{ newProfile, nullptr });
         }
 
-        if (_settings.GlobalSettings().UseBackgroundImageForWindow())
-        {
-            const auto focusedTab{ _GetFocusedTabImpl() };
-            if (focusedTab)
-            {
-                auto profile = focusedTab->GetFocusedProfile();
-                if (profile)
-                {
-                    _SetBackgroundImage(profile.DefaultAppearance());
-                }
-            }
-        }
         for (const auto& tab : _tabs)
         {
             if (auto terminalTab{ _GetTerminalTabImpl(tab) })
@@ -2888,6 +2887,14 @@ namespace winrt::TerminalApp::implementation
 
             auto tabImpl{ winrt::get_self<TabBase>(tab) };
             tabImpl->SetActionMap(_settings.ActionMap());
+        }
+
+        if (const auto focusedTab{ _GetFocusedTabImpl() })
+        {
+            if (const auto profile{ focusedTab->GetFocusedProfile() })
+            {
+                _SetBackgroundImage(profile.DefaultAppearance());
+            }
         }
 
         // repopulate the new tab button's flyout with entries for each

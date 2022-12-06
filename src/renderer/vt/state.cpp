@@ -272,7 +272,7 @@ CATCH_RETURN();
         // Don't emit a resize event if we've requested it be suppressed
         if (!_suppressResizeRepaint)
         {
-            hr = _ResizeWindow(newSize.X, newSize.Y);
+            hr = _ResizeWindow(newSize.width, newSize.height);
         }
 
         if (_resizeQuirk)
@@ -291,7 +291,7 @@ CATCH_RETURN();
                 _invalidMap.resize(newSize, true); // resize while filling in new space with repaint requests.
 
                 // Viewport is smaller now - just update it all.
-                if (oldSize.Y > newSize.Y || oldSize.X > newSize.X)
+                if (oldSize.height > newSize.height || oldSize.width > newSize.width)
                 {
                     hr = InvalidateAll();
                 }
@@ -401,7 +401,7 @@ bool VtEngine::_AllIsInvalid() const
 // - S_OK
 [[nodiscard]] HRESULT VtEngine::InheritCursor(const til::point coordCursor) noexcept
 {
-    _virtualTop = coordCursor.Y;
+    _virtualTop = coordCursor.y;
     _lastText = coordCursor;
     _skipCursor = true;
     // Prevent us from clearing the entire viewport on the first paint

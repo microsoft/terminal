@@ -365,8 +365,8 @@ VOID ConIoSrvComm::HandleFocusEvent(const CIS_EVENT* const Event)
                     til::size coordFont;
                     LOG_IF_FAILED(pWddmConEngine->GetFontSize(&coordFont));
 
-                    rcDisplay.right *= coordFont.X;
-                    rcDisplay.bottom *= coordFont.Y;
+                    rcDisplay.right *= coordFont.width;
+                    rcDisplay.bottom *= coordFont.height;
 
                     // Ask the screen buffer to resize itself (and all related components) based on the screen size.
                     globals.getConsoleInformation().GetActiveOutputBuffer().ProcessResizeWindow(&rcDisplay, &rcOld);

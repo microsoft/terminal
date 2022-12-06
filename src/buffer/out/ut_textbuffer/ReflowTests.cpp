@@ -7,7 +7,6 @@
 
 #include "../textBuffer.hpp"
 #include "../../renderer/inc/DummyRenderer.hpp"
-#include "../../types/inc/Utf16Parser.hpp"
 #include "../../types/inc/GlyphWidth.hpp"
 
 #include <IDataSource.h>
@@ -831,7 +830,7 @@ class ReflowTests
         for (size_t bufferIndex{ 1 }; bufferIndex < testCase.buffers.size(); ++bufferIndex)
         {
             const auto& testBuffer{ til::at(testCase.buffers, bufferIndex) };
-            Log::Comment(NoThrowString().Format(L"[%zu.%zu] Resizing to %dx%d", i, bufferIndex, testBuffer.size.X, testBuffer.size.Y));
+            Log::Comment(NoThrowString().Format(L"[%zu.%zu] Resizing to %dx%d", i, bufferIndex, testBuffer.size.width, testBuffer.size.height));
 
             auto newBuffer{ _textBufferByReflowingTextBuffer(*textBuffer, testBuffer.size) };
 

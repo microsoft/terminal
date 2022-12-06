@@ -81,13 +81,14 @@ public:
 
     WINRT_CALLBACK(WindowMoved, winrt::delegate<void()>);
     WINRT_CALLBACK(WindowVisibilityChanged, winrt::delegate<void(bool)>);
+    WINRT_CALLBACK(UpdateSettingsRequested, winrt::delegate<void()>);
 
 protected:
     void ForceResize()
     {
         // Do a quick resize to force the island to paint
         const auto size = GetPhysicalSize();
-        OnSize(size.cx, size.cy);
+        OnSize(size.width, size.height);
     }
 
     HWND _interopWindowHandle;
