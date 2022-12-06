@@ -53,9 +53,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         double LineHeight() const noexcept;
         void LineHeight(const double value);
-        bool HasLineHeight();
+        bool HasLineHeight() const;
         void ClearLineHeight();
-        Model::Profile LineHeightOverrideSource();
+        Model::FontConfig LineHeightOverrideSource() const;
         void SetFontWeightFromDouble(double fontWeight);
         void SetBackgroundImageOpacityFromPercentageValue(double percentageValue);
         void SetBackgroundImagePath(winrt::hstring path);

@@ -51,8 +51,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     double AppearanceViewModel::LineHeight() const noexcept
     {
-        const auto cellSizeY = _appearance.SourceProfile().CellSizeY();
-        const auto str = cellSizeY.c_str();
+        const auto fontInfo = _appearance.SourceProfile().FontInfo();
+        const auto cellHeight = fontInfo.CellHeight();
+        const auto str = cellHeight.c_str();
 
         auto& errnoRef = errno; // Nonzero cost, pay it once.
         errnoRef = 0;
@@ -65,45 +66,33 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void AppearanceViewModel::LineHeight(const double value)
     {
-        wchar_t buffer[16];
-        std::wstring_view view;
+        std::wstring str;
 
         if (value >= 0.1 && value <= 10.0)
         {
-            auto length = gsl::narrow<size_t>(swprintf_s(&buffer[0], std::size(buffer), L"%.6f", value));
-            const auto separator = std::wstring_view{ &buffer[0], length }.find(L'.');
-
-            if (separator != std::wstring_view::npos)
-            {
-                for (; length > separator && buffer[length - 1] == L'0'; --length)
-                {
-                }
-                // winrt::hstring expects a null-terminated string
-                buffer[length] = L'\0';
-            }
-
-            view = { &buffer[0], length };
+            str = fmt::format(FMT_STRING(L"{:.6g}"), value);
         }
 
-        const auto profile = _appearance.SourceProfile();
+        const auto fontInfo = _appearance.SourceProfile().FontInfo();
 
-        if (profile.CellSizeY() != view)
+        if (fontInfo.CellHeight() != str)
         {
-            if (view.empty())
+            if (str.empty())
             {
-                profile.ClearCellSizeY();
+                fontInfo.ClearCellHeight();
             }
             else
             {
-                profile.CellSizeY(view);
+                fontInfo.CellHeight(str);
             }
             _NotifyChanges(L"HasLineHeight", L"LineHeight");
         }
     }
 
-    bool AppearanceViewModel::HasLineHeight()
+    bool AppearanceViewModel::HasLineHeight() const
     {
-        return _appearance.SourceProfile().HasCellSizeY();
+        const auto fontInfo = _appearance.SourceProfile().FontInfo();
+        return fontInfo.HasCellHeight();
     }
 
     void AppearanceViewModel::ClearLineHeight()
@@ -111,9 +100,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         LineHeight(NAN);
     }
 
-    Model::Profile AppearanceViewModel::LineHeightOverrideSource()
+    Model::FontConfig AppearanceViewModel::LineHeightOverrideSource() const
     {
-        return _appearance.SourceProfile().CellSizeYOverrideSource();
+        const auto fontInfo = _appearance.SourceProfile().FontInfo();
+        return fontInfo.CellHeightOverrideSource();
     }
 
     void AppearanceViewModel::SetFontWeightFromDouble(double fontWeight)

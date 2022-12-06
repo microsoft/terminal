@@ -34,10 +34,10 @@ public:
 
     bool operator==(const FontInfoDesired& other) = delete;
 
-    void SetCellSizes(const CSSLengthPercentage& adjustmentX, const CSSLengthPercentage& adjustmentY) noexcept;
+    void SetCellSize(const CSSLengthPercentage& cellWidth, const CSSLengthPercentage& cellHeight) noexcept;
 
-    const CSSLengthPercentage& GetCellSizeX() const noexcept;
-    const CSSLengthPercentage& GetCellSizeY() const noexcept;
+    const CSSLengthPercentage& GetCellWidth() const noexcept;
+    const CSSLengthPercentage& GetCellHeight() const noexcept;
     float GetFontSize() const noexcept;
     til::size GetEngineSize() const noexcept;
     bool IsDefaultRasterFont() const noexcept;
@@ -45,6 +45,6 @@ public:
 private:
     til::size _coordSizeDesired;
     float _fontSize;
-    CSSLengthPercentage _adjustmentX;
-    CSSLengthPercentage _adjustmentY;
+    CSSLengthPercentage _cellWidth;
+    CSSLengthPercentage _cellHeight;
 };

@@ -27,9 +27,6 @@ static constexpr std::string_view SourceKey{ "source" };
 static constexpr std::string_view HiddenKey{ "hidden" };
 
 static constexpr std::string_view FontInfoKey{ "font" };
-static constexpr std::string_view CellSizeKey{ "cellSize" };
-static constexpr std::string_view CellSizeXKey{ "width" };
-static constexpr std::string_view CellSizeYKey{ "height" };
 static constexpr std::string_view PaddingKey{ "padding" };
 static constexpr std::string_view TabColorKey{ "tabColor" };
 static constexpr std::string_view UnfocusedAppearanceKey{ "unfocusedAppearance" };
@@ -105,8 +102,6 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     profile->_Name = _Name;
     profile->_Source = _Source;
     profile->_Hidden = _Hidden;
-    profile->_CellSizeX = _CellSizeX;
-    profile->_CellSizeY = _CellSizeY;
     profile->_TabColor = _TabColor;
     profile->_Padding = _Padding;
 
@@ -176,14 +171,10 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
     JsonUtils::GetValueForKey(json, SourceKey, _Source);
 
-    if (const auto& cellSizeJSON = json[JsonKey(CellSizeKey)])
-    {
-        JsonUtils::GetValueForKey(cellSizeJSON, CellSizeXKey, _CellSizeX);
-        JsonUtils::GetValueForKey(cellSizeJSON, CellSizeYKey, _CellSizeY);
-    }
     // Padding was never specified as an integer, but it was a common working mistake.
     // Allow it to be permissive.
     JsonUtils::GetValueForKey(json, PaddingKey, _Padding, JsonUtils::OptionalConverter<hstring, JsonUtils::PermissiveStringConverter<std::wstring>>{});
+
     JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
 
 #define PROFILE_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
@@ -322,14 +313,9 @@ Json::Value Profile::ToJson() const
     JsonUtils::SetValueForKey(json, HiddenKey, writeBasicSettings ? Hidden() : _Hidden);
     JsonUtils::SetValueForKey(json, SourceKey, writeBasicSettings ? Source() : _Source);
 
-    if (_CellSizeX || _CellSizeY)
-    {
-        Json::Value cellSizeJSON{ Json::ValueType::objectValue };
-        JsonUtils::SetValueForKey(cellSizeJSON, CellSizeXKey, _CellSizeX);
-        JsonUtils::SetValueForKey(cellSizeJSON, CellSizeYKey, _CellSizeY);
-        json[JsonKey(CellSizeKey)] = std::move(cellSizeJSON);
-    }
+    // PermissiveStringConverter is unnecessary for serialization
     JsonUtils::SetValueForKey(json, PaddingKey, _Padding);
+
     JsonUtils::SetValueForKey(json, TabColorKey, _TabColor);
 
 #define PROFILE_SETTINGS_TO_JSON(type, name, jsonKey, ...) \

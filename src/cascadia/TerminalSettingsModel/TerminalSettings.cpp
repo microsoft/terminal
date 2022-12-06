@@ -248,13 +248,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _ProfileSource = profile.Source();
         _UseAcrylic = profile.UseAcrylic();
 
-        _FontFace = profile.FontInfo().FontFace();
-        _FontSize = profile.FontInfo().FontSize();
-        _FontWeight = profile.FontInfo().FontWeight();
-        _FontFeatures = profile.FontInfo().FontFeatures();
-        _FontAxes = profile.FontInfo().FontAxes();
-        _CellSizeX = profile.CellSizeX();
-        _CellSizeY = profile.CellSizeY();
+        const auto fontInfo = profile.FontInfo();
+        _FontFace = fontInfo.FontFace();
+        _FontSize = fontInfo.FontSize();
+        _FontWeight = fontInfo.FontWeight();
+        _FontFeatures = fontInfo.FontFeatures();
+        _FontAxes = fontInfo.FontAxes();
+        _CellWidth = fontInfo.CellWidth();
+        _CellHeight = fontInfo.CellHeight();
         _Padding = profile.Padding();
 
         _Commandline = profile.Commandline();

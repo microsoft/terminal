@@ -804,7 +804,7 @@ void DxFontRenderData::_BuildFontRenderData(const FontInfoDesired& desired, Font
     const auto fullPixelAscent = ceil(ascent + halfGap);
     const auto fullPixelDescent = ceil(descent + halfGap);
     const auto defaultHeight = fullPixelAscent + fullPixelDescent;
-    const auto lineHeight = desired.GetCellSizeY().Resolve(defaultHeight, dpiF, heightDesired, widthAdvanceInPx);
+    const auto lineHeight = desired.GetCellHeight().Resolve(defaultHeight, dpiF, heightDesired, widthAdvanceInPx);
     const auto baseline = fullPixelAscent + (lineHeight - defaultHeight) / 2.0f;
 
     lineSpacing.height = roundf(lineHeight);
@@ -816,7 +816,7 @@ void DxFontRenderData::_BuildFontRenderData(const FontInfoDesired& desired, Font
 
     _lineSpacing = lineSpacing;
 
-    const auto widthApprox = desired.GetCellSizeX().Resolve(widthAdvanceInPx, dpiF, heightDesired, widthAdvanceInPx);
+    const auto widthApprox = desired.GetCellWidth().Resolve(widthAdvanceInPx, dpiF, heightDesired, widthAdvanceInPx);
     const auto widthExact = roundf(widthApprox);
 
     // The scaled size needs to represent the pixel box that each character will fit within for the purposes

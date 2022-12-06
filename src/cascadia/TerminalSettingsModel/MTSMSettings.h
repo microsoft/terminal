@@ -99,7 +99,9 @@ Author(s):
     X(float, FontSize, "size", DEFAULT_FONT_SIZE)                                      \
     X(winrt::Windows::UI::Text::FontWeight, FontWeight, "weight", DEFAULT_FONT_WEIGHT) \
     X(IFontAxesMap, FontAxes, "axes")                                                  \
-    X(IFontFeatureMap, FontFeatures, "features")
+    X(IFontFeatureMap, FontFeatures, "features")                                       \
+    X(winrt::hstring, CellWidth, "cellWidth")                                          \
+    X(winrt::hstring, CellHeight, "cellHeight")
 
 #define MTSM_APPEARANCE_SETTINGS(X)                                                                                                                                \
     X(Core::CursorStyle, CursorShape, "cursorShape", Core::CursorStyle::Bar)                                                                                       \

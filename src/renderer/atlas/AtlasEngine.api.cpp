@@ -635,10 +635,10 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     const auto advanceWidth = static_cast<float>(glyphMetrics.advanceWidth) * designUnitsPerPx;
     const auto advanceHeight = ascent + descent + lineGap;
 
-    auto adjustedWidth = std::roundf(fontInfoDesired.GetCellSizeX().Resolve(advanceWidth, _api.dpi, fontSizeInPx, advanceWidth));
-    auto adjustedHeight = std::roundf(fontInfoDesired.GetCellSizeY().Resolve(advanceHeight, _api.dpi, fontSizeInPx, advanceWidth));
+    auto adjustedWidth = std::roundf(fontInfoDesired.GetCellWidth().Resolve(advanceWidth, _api.dpi, fontSizeInPx, advanceWidth));
+    auto adjustedHeight = std::roundf(fontInfoDesired.GetCellHeight().Resolve(advanceHeight, _api.dpi, fontSizeInPx, advanceWidth));
 
-    // Protection against bad user values in GetCellSizeX/Y.
+    // Protection against bad user values in GetCellWidth/Y.
     // AtlasEngine fails hard with 0 cell sizes.
     adjustedWidth = std::max(1.0f, adjustedWidth);
     adjustedHeight = std::max(1.0f, adjustedHeight);
