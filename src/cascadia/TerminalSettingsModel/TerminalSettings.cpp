@@ -7,22 +7,23 @@
 
 #include "TerminalSettings.g.cpp"
 #include "TerminalSettingsCreateResult.g.cpp"
+#include "SettingsUtils.h"
 
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace Microsoft::Console::Utils;
 
+// I'm not even joking, this is the recommended way to do this:
+// https://learn.microsoft.com/en-us/windows/apps/desktop/modernize/apply-windows-themes#know-when-dark-mode-is-enabled
+bool IsSystemInDarkTheme()
+{
+    static auto isColorLight = [](const winrt::Windows::UI::Color& clr) -> bool {
+        return (((5 * clr.G) + (2 * clr.R) + clr.B) > (8 * 128));
+    };
+    return isColorLight(winrt::Windows::UI::ViewManagement::UISettings().GetColorValue(winrt::Windows::UI::ViewManagement::UIColorType::Foreground));
+};
+
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    // I'm not even joking, this is the recommended way to do this:
-    // https://learn.microsoft.com/en-us/windows/apps/desktop/modernize/apply-windows-themes#know-when-dark-mode-is-enabled
-    bool IsSystemInDarkTheme()
-    {
-        static auto isColorLight = [](const winrt::Windows::UI::Color& clr) -> bool {
-            return (((5 * clr.G) + (2 * clr.R) + clr.B) > (8 * 128));
-        };
-        return isColorLight(winrt::Windows::UI::ViewManagement::UISettings().GetColorValue(winrt::Windows::UI::ViewManagement::UIColorType::Foreground));
-    }
-
     static std::tuple<Windows::UI::Xaml::HorizontalAlignment, Windows::UI::Xaml::VerticalAlignment> ConvertConvergedAlignment(ConvergedAlignment alignment)
     {
         // extract horizontal alignment

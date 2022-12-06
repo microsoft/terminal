@@ -6,6 +6,7 @@
 #include "../../types/inc/Utils.hpp"
 #include "JsonUtils.h"
 #include "KeyChordSerialization.h"
+#include "SettingsUtils.h"
 
 #include "GlobalAppSettings.g.cpp"
 
@@ -208,16 +209,6 @@ Json::Value GlobalAppSettings::ToJson() const
 
     json[JsonKey(ActionsKey)] = _actionMap->ToJson();
     return json;
-}
-
-// I'm not even joking, this is the recommended way to do this:
-// https://learn.microsoft.com/en-us/windows/apps/desktop/modernize/apply-windows-themes#know-when-dark-mode-is-enabled
-bool IsSystemInDarkTheme()
-{
-    static auto isColorLight = [](const winrt::Windows::UI::Color& clr) -> bool {
-        return (((5 * clr.G) + (2 * clr.R) + clr.B) > (8 * 128));
-    };
-    return isColorLight(winrt::Windows::UI::ViewManagement::UISettings().GetColorValue(winrt::Windows::UI::ViewManagement::UIColorType::Foreground));
 }
 
 winrt::Microsoft::Terminal::Settings::Model::Theme GlobalAppSettings::CurrentTheme() noexcept
