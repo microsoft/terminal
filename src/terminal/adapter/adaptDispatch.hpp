@@ -47,7 +47,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool CursorPosition(const VTInt line, const VTInt column) override; // CUP, HVP
         bool CursorSaveState() override; // DECSC
         bool CursorRestoreState() override; // DECRC
-        bool CursorVisibility(const bool isVisible) override; // DECTCEM
         bool EraseInDisplay(const DispatchTypes::EraseType eraseType) override; // ED
         bool EraseInLine(const DispatchTypes::EraseType eraseType) override; // EL
         bool EraseCharacters(const VTInt numChars) override; // ECH
@@ -55,12 +54,19 @@ namespace Microsoft::Console::VirtualTerminal
         bool SelectiveEraseInLine(const DispatchTypes::EraseType eraseType) override; // DECSEL
         bool InsertCharacter(const VTInt count) override; // ICH
         bool DeleteCharacter(const VTInt count) override; // DCH
+        bool ChangeAttributesRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const VTParameters attrs) override; // DECCARA
+        bool ReverseAttributesRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const VTParameters attrs) override; // DECRARA
+        bool CopyRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const VTInt page, const VTInt dstTop, const VTInt dstLeft, const VTInt dstPage) override; // DECCRA
+        bool FillRectangularArea(const VTParameter ch, const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) override; // DECFRA
+        bool EraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) override; // DECERA
+        bool SelectiveEraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) override; // DECSERA
+        bool SelectAttributeChangeExtent(const DispatchTypes::ChangeExtent changeExtent) noexcept override; // DECSACE
         bool SetGraphicsRendition(const VTParameters options) override; // SGR
         bool SetLineRendition(const LineRendition rendition) override; // DECSWL, DECDWL, DECDHL
         bool SetCharacterProtectionAttribute(const VTParameters options) override; // DECSCA
         bool PushGraphicsRendition(const VTParameters options) override; // XTPUSHSGR
         bool PopGraphicsRendition() override; // XTPOPSGR
-        bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) override; // DSR, DSR-OS, DSR-CPR
+        bool DeviceStatusReport(const DispatchTypes::StatusType statusType) override; // DSR, DSR-OS, DSR-CPR
         bool DeviceAttributes() override; // DA1
         bool SecondaryDeviceAttributes() override; // DA2
         bool TertiaryDeviceAttributes() override; // DA3
@@ -70,17 +76,11 @@ namespace Microsoft::Console::VirtualTerminal
         bool ScrollDown(const VTInt distance) override; // SD
         bool InsertLine(const VTInt distance) override; // IL
         bool DeleteLine(const VTInt distance) override; // DL
-        bool SetColumns(const VTInt columns) override; // DECCOLM
         bool SetMode(const DispatchTypes::ModeParams param) override; // DECSET
         bool ResetMode(const DispatchTypes::ModeParams param) override; // DECRST
-        bool SetCursorKeysMode(const bool applicationMode) override; // DECCKM
+        bool RequestMode(const DispatchTypes::ModeParams param) override; // DECRQM
         bool SetKeypadMode(const bool applicationMode) override; // DECKPAM, DECKPNM
-        bool EnableWin32InputMode(const bool win32InputMode) override; // win32-input-mode
-        bool EnableCursorBlinking(const bool enable) override; // ATT610
         bool SetAnsiMode(const bool ansiMode) override; // DECANM
-        bool SetScreenMode(const bool reverseMode) override; // DECSCNM
-        bool SetOriginMode(const bool relativeMode) noexcept override; // DECOM
-        bool SetAutoWrapMode(const bool wrapAtEOL) override; // DECAWM
         bool SetTopBottomScrollingMargins(const VTInt topMargin,
                                           const VTInt bottomMargin) override; // DECSTBM
         bool WarningBell() override; // BEL
@@ -88,8 +88,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool LineFeed(const DispatchTypes::LineFeedType lineFeedType) override; // IND, NEL, LF, FF, VT
         bool ReverseLineFeed() override; // RI
         bool SetWindowTitle(const std::wstring_view title) override; // OSCWindowTitle
-        bool UseAlternateScreenBuffer() override; // ASBSET
-        bool UseMainScreenBuffer() override; // ASBRST
         bool HorizontalTabSet() override; // HTS
         bool ForwardTab(const VTInt numTabs) override; // CHT, HT
         bool BackwardsTab(const VTInt numTabs) override; // CBT
@@ -104,15 +102,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool SoftReset() override; // DECSTR
         bool HardReset() override; // RIS
         bool ScreenAlignmentPattern() override; // DECALN
-        bool EnableDECCOLMSupport(const bool enabled) noexcept override; // ?40
-        bool EnableVT200MouseMode(const bool enabled) override; // ?1000
-        bool EnableUTF8ExtendedMouseMode(const bool enabled) override; // ?1005
-        bool EnableSGRExtendedMouseMode(const bool enabled) override; // ?1006
-        bool EnableButtonEventMouseMode(const bool enabled) override; // ?1002
-        bool EnableAnyEventMouseMode(const bool enabled) override; // ?1003
-        bool EnableFocusEventMode(const bool enabled) override; // ?1004
-        bool EnableAlternateScroll(const bool enabled) override; // ?1007
-        bool EnableXtermBracketedPasteMode(const bool enabled) override; // ?2004
         bool SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) override; // DECSCUSR
         bool SetCursorColor(const COLORREF cursorColor) override;
 
@@ -153,6 +142,13 @@ namespace Microsoft::Console::VirtualTerminal
         bool PlaySounds(const VTParameters parameters) override; // DECPS
 
     private:
+        enum class Mode
+        {
+            Origin,
+            Column,
+            AllowDECCOLM,
+            RectangularChangeExtent
+        };
         enum class ScrollDirection
         {
             Up,
@@ -178,12 +174,22 @@ namespace Microsoft::Console::VirtualTerminal
             static constexpr Offset Backward(const VTInt value) { return { -value, false }; };
             static constexpr Offset Unchanged() { return Forward(0); };
         };
+        struct ChangeOps
+        {
+            CharacterAttributes andAttrMask = CharacterAttributes::All;
+            CharacterAttributes xorAttrMask = CharacterAttributes::Normal;
+            std::optional<TextColor> foreground;
+            std::optional<TextColor> background;
+        };
 
         std::pair<int, int> _GetVerticalMargins(const til::rect& viewport, const bool absolute);
         bool _CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins);
         void _ApplyCursorMovementFlags(Cursor& cursor) noexcept;
         void _FillRect(TextBuffer& textBuffer, const til::rect& fillRect, const wchar_t fillChar, const TextAttribute fillAttrs);
         void _SelectiveEraseRect(TextBuffer& textBuffer, const til::rect& eraseRect);
+        void _ChangeRectAttributes(TextBuffer& textBuffer, const til::rect& changeRect, const ChangeOps& changeOps);
+        void _ChangeRectOrStreamAttributes(const til::rect& changeArea, const ChangeOps& changeOps);
+        til::rect _CalculateRectArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const til::size bufferSize);
         void _EraseScrollback();
         void _EraseAll();
         void _ScrollRectVertically(TextBuffer& textBuffer, const til::rect& scrollRect, const VTInt delta);
@@ -195,13 +201,12 @@ namespace Microsoft::Console::VirtualTerminal
         void _DoSetTopBottomScrollingMargins(const VTInt topMargin,
                                              const VTInt bottomMargin);
         void _OperatingStatus() const;
-        void _CursorPositionReport();
+        void _CursorPositionReport(const bool extendedReport);
 
-        bool _GetParserMode(const StateMachine::Mode mode) const;
-        void _SetParserMode(const StateMachine::Mode mode, const bool enable);
-        bool _SetInputMode(const TerminalInput::Mode mode, const bool enable);
+        void _SetColumnMode(const bool enable);
+        void _SetAlternateScreenBufferMode(const bool enable);
+        bool _PassThroughInputModes();
         bool _ModeParamsHelper(const DispatchTypes::ModeParams param, const bool enable);
-        bool _DoDECCOLMHelper(const VTInt columns);
 
         void _ClearSingleTabStop();
         void _ClearAllTabStops() noexcept;
@@ -213,6 +218,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _ReportSGRSetting() const;
         void _ReportDECSTBMSetting();
         void _ReportDECSCASetting() const;
+        void _ReportDECSACESetting() const;
 
         StringHandler _CreateDrcsPassthroughHandler(const DispatchTypes::DrcsCharsetSize charsetSize);
         StringHandler _CreatePassthroughHandler();
@@ -238,14 +244,17 @@ namespace Microsoft::Console::VirtualTerminal
 
         til::inclusive_rect _scrollMargins;
 
-        bool _isOriginModeRelative;
-
-        bool _isDECCOLMAllowed;
+        til::enumset<Mode> _modes;
 
         SgrStack _sgrStack;
 
         size_t _SetRgbColorsHelper(const VTParameters options,
                                    TextAttribute& attr,
                                    const bool isForeground) noexcept;
+        size_t _ApplyGraphicsOption(const VTParameters options,
+                                    const size_t optionIndex,
+                                    TextAttribute& attr) noexcept;
+        void _ApplyGraphicsOptions(const VTParameters options,
+                                   TextAttribute& attr) noexcept;
     };
 }

@@ -113,7 +113,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::hstring HoveredUriText() const;
         Windows::Foundation::IReference<Core::Point> HoveredCell() const;
 
-        ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
+        ::Microsoft::Console::Render::IRenderData* GetRenderData() const;
 
         void ColorSelection(const Control::SelectionColor& fg, const Control::SelectionColor& bg, Core::MatchMode matchMode);
 
@@ -290,6 +290,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _updateSelectionUI();
         bool _shouldTryUpdateSelection(const WORD vkey);
 
+        void _handleControlC();
         void _sendInputToConnection(std::wstring_view wstr);
 
 #pragma region TerminalCoreCallbacks
@@ -307,10 +308,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                    const std::chrono::microseconds duration);
 #pragma endregion
 
-        std::unique_ptr<MidiAudio> _midiAudio;
-
-        MidiAudio& _getMidiAudio();
-        void _shutdownMidiAudio();
+        MidiAudio _midiAudio;
+        winrt::Windows::System::DispatcherQueueTimer _midiAudioSkipTimer{ nullptr };
 
 #pragma region RendererCallbacks
         void _rendererWarning(const HRESULT hr);

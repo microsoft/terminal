@@ -5,7 +5,6 @@
 #include "TermControl.h"
 
 #include <unicode.hpp>
-#include <Utf16Parser.hpp>
 #include <LibraryResources.h>
 
 #include "TermControlAutomationPeer.h"
@@ -2125,7 +2124,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // ComCtl scrollbars, but it's certainly close enough.
         const auto scrollbarSize = GetSystemMetricsForDpi(SM_CXVSCROLL, dpi);
 
-        double width = cols * actualFontSize.X;
+        double width = cols * actualFontSize.width;
 
         // Reserve additional space if scrollbar is intended to be visible
         if (scrollState != ScrollbarState::Hidden)
@@ -2133,7 +2132,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             width += scrollbarSize;
         }
 
-        double height = rows * actualFontSize.Y;
+        double height = rows * actualFontSize.height;
         const auto thickness = ParseThicknessFromPadding(padding);
         // GH#2061 - make sure to account for the size the padding _will be_ scaled to
         width += scale * (thickness.Left + thickness.Right);
@@ -2187,7 +2186,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         else
         {
             // If the terminal hasn't been initialized yet, then the font size will
-            // have dimensions {1, fontSize.Y}, which can mess with consumers of
+            // have dimensions {1, fontSize.height}, which can mess with consumers of
             // this method. In that case, we'll need to pre-calculate the font
             // width, before we actually have a renderer or swapchain.
             const winrt::Windows::Foundation::Size minSize{ 1, 1 };
@@ -2738,8 +2737,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _bellLightAnimation = Window::Current().Compositor().CreateScalarKeyFrameAnimation();
             // Add key frames and a duration to our bell light animation
-            _bellLightAnimation.InsertKeyFrame(0.0, 4.0);
-            _bellLightAnimation.InsertKeyFrame(1.0, 1.9);
+            _bellLightAnimation.InsertKeyFrame(0.0f, 4.0f);
+            _bellLightAnimation.InsertKeyFrame(1.0f, 1.9f);
             _bellLightAnimation.Duration(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(TerminalWarningBellInterval)));
         }
 
@@ -2748,8 +2747,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _bellDarkAnimation = Window::Current().Compositor().CreateScalarKeyFrameAnimation();
             // reversing the order of the intensity values produces a similar effect as the light version
-            _bellDarkAnimation.InsertKeyFrame(0.0, 1.0);
-            _bellDarkAnimation.InsertKeyFrame(1.0, 2.0);
+            _bellDarkAnimation.InsertKeyFrame(0.0f, 1.0f);
+            _bellDarkAnimation.InsertKeyFrame(1.0f, 2.0f);
             _bellDarkAnimation.Duration(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(TerminalWarningBellInterval)));
         }
 

@@ -24,7 +24,7 @@
 
     <Type Name="Microsoft::Console::Types::Viewport">
         <!-- Can't call functions in here -->
-        <DisplayString>{{LT({_sr.Left}, {_sr.Top}) RB({_sr.Right}, {_sr.Bottom}) [{_sr.Right-_sr.Left+1} x { _sr.Bottom-_sr.Top+1}]}}</DisplayString>
+        <DisplayString>{{LT({_sr.left}, {_sr.top}) RB({_sr.right}, {_sr.bottom}) [{_sr.right-_sr.left+1} x { _sr.bottom-_sr.top+1}]}}</DisplayString>
         <Expand>
             <ExpandedItem>_sr</ExpandedItem>
         </Expand>
