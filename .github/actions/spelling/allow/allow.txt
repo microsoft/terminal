@@ -12,6 +12,7 @@ clickable
 clig
 CMMI
 copyable
+CtrlDToClose
 cybersecurity
 dalet
 Dcs
