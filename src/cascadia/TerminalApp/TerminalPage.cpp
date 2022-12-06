@@ -1091,13 +1091,14 @@ namespace winrt::TerminalApp::implementation
     // - the terminal settings
     // Return value:
     // - the desired connection
-    TerminalConnection::ITerminalConnection TerminalPage::_CreateConnectionFromSettings(Profile profile,
-                                                                                        TerminalSettings settings)
+    TerminalConnection::ConnectionInformation TerminalPage::_CreateConnectionInfoFromSettings(Profile profile,
+                                                                                              TerminalSettings settings)
     {
-        TerminalConnection::ITerminalConnection connection{ nullptr };
-
         auto connectionType = profile.ConnectionType();
         winrt::guid sessionGuid{};
+
+        Windows::Foundation::Collections::ValueSet connectionSettings{ nullptr };
+        winrt::hstring className;
 
         if (connectionType == TerminalConnection::AzureConnection::ConnectionType() &&
             TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
@@ -1105,21 +1106,19 @@ namespace winrt::TerminalApp::implementation
             // TODO GH#4661: Replace this with directly using the AzCon when our VT is better
             std::filesystem::path azBridgePath{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
             azBridgePath.replace_filename(L"TerminalAzBridge.exe");
-            connection = TerminalConnection::ConptyConnection();
-            auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(azBridgePath.wstring(),
-                                                                                 L".",
-                                                                                 L"Azure",
-                                                                                 nullptr,
-                                                                                 settings.InitialRows(),
-                                                                                 settings.InitialCols(),
-                                                                                 winrt::guid());
+            className = winrt::name_of<TerminalConnection::ConptyConnection>();
+            connectionSettings = TerminalConnection::ConptyConnection::CreateSettings(azBridgePath.wstring(),
+                                                                                      L".",
+                                                                                      L"Azure",
+                                                                                      nullptr,
+                                                                                      settings.InitialRows(),
+                                                                                      settings.InitialCols(),
+                                                                                      winrt::guid());
 
             if constexpr (Feature_VtPassthroughMode::IsEnabled())
             {
-                valueSet.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
+                connectionSettings.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
             }
-
-            connection.Initialize(valueSet);
         }
 
         else
@@ -1155,33 +1154,41 @@ namespace winrt::TerminalApp::implementation
                 cwd /= settings.StartingDirectory().c_str();
                 newWorkingDirectory = winrt::hstring{ cwd.wstring() };
             }
+            className = winrt::name_of<TerminalConnection::ConptyConnection>();
 
-            auto conhostConn = TerminalConnection::ConptyConnection();
-            auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(settings.Commandline(),
-                                                                                 newWorkingDirectory,
-                                                                                 settings.StartingTitle(),
-                                                                                 envMap.GetView(),
-                                                                                 settings.InitialRows(),
-                                                                                 settings.InitialCols(),
-                                                                                 winrt::guid());
+            connectionSettings = TerminalConnection::ConptyConnection::CreateSettings(settings.Commandline(),
+                                                                                      newWorkingDirectory,
+                                                                                      settings.StartingTitle(),
+                                                                                      envMap.GetView(),
+                                                                                      settings.InitialRows(),
+                                                                                      settings.InitialCols(),
+                                                                                      winrt::guid());
 
-            valueSet.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
-
-            conhostConn.Initialize(valueSet);
-
-            sessionGuid = conhostConn.Guid();
-            connection = conhostConn;
+            connectionSettings.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
         }
 
-        TraceLoggingWrite(
-            g_hTerminalAppProvider,
-            "ConnectionCreated",
-            TraceLoggingDescription("Event emitted upon the creation of a connection"),
-            TraceLoggingGuid(connectionType, "ConnectionTypeGuid", "The type of the connection"),
-            TraceLoggingGuid(profile.Guid(), "ProfileGuid", "The profile's GUID"),
-            TraceLoggingGuid(sessionGuid, "SessionGuid", "The WT_SESSION's GUID"),
-            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+        return TerminalConnection::ConnectionInformation(className, connectionSettings);
+    }
+
+    TerminalConnection::ITerminalConnection TerminalPage::_CreateConnectionFromSettings(Profile profile,
+                                                                                        TerminalSettings settings)
+    {
+        TerminalConnection::ConnectionInformation connectInfo{ _CreateConnectionInfoFromSettings(profile, settings) };
+        auto connection = ConnectionInformation::CreateConnection(connectInfo);
+
+        if (auto conpty{ connection.try_as<TerminalConnection::ConptyConnection>() })
+        {
+            auto sessionGuid = conpty.Guid();
+            TraceLoggingWrite(
+                g_hTerminalAppProvider,
+                "ConnectionCreated",
+                TraceLoggingDescription("Event emitted upon the creation of a connection"),
+                TraceLoggingGuid(profile.ConnectionType(), "ConnectionTypeGuid", "The type of the connection"),
+                TraceLoggingGuid(profile.Guid(), "ProfileGuid", "The profile's GUID"),
+                TraceLoggingGuid(sessionGuid, "SessionGuid", "The WT_SESSION's GUID"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+        }
 
         return connection;
     }

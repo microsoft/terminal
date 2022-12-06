@@ -25,6 +25,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     TerminalConnection::ITerminalConnection ConnectionInformation::CreateConnection(TerminalConnection::ConnectionInformation info)
     try
     {
+        // pilfered from `winrt_get_activation_factory` in module.g.cpp. Does a
+        // reverse string match, so that we check the classname first, skipping
+        // the namespace prefixes.
+        static auto requal = [](std::wstring_view const& left, std::wstring_view const& right) noexcept -> bool {
+            return std::equal(left.rbegin(), left.rend(), right.rbegin(), right.rend());
+        };
+
         Windows::Foundation::IInspectable inspectable{};
 
         const auto name = static_cast<HSTRING>(winrt::get_abi(info.ClassName()));
@@ -36,21 +43,58 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         auto raw = reinterpret_cast<::IInspectable**>(pointer);
 #pragma warning(pop)
 
-        // RoActivateInstance() will try to create an instance of the object,
-        // who's fully qualified name is the string in Name().
+        TerminalConnection::ITerminalConnection connection{ nullptr };
+
+        // A couple short-circuits, for connections that _we_ implement.
+        // Sometimes, RoActivateInstance is weird and fails with errors like the
+        // following:
         //
-        // The class has to be activatable. For the Terminal, this is easy
-        // enough - we're not hosting anything that's not already in our
-        // manifest, or living as a .dll & .winmd SxS.
+        /*
+        onecore\com\combase\inc\RegistryKey.hpp(527)\combase.dll!01234:
+        (caller: 01234) LogHr(2) tid(83a8) 800700A1 The specified
+        path is invalid.
+            Msg:[StaticNtOpen failed with
+            path:\REGISTRY\A\{A41685A4-AD85-4C4C-BA5D-A849ADBF3C40}\ActivatableClassId
+            \REGISTRY\MACHINE\Software\Classes\ActivatableClasses]
+        ...\src\cascadia\TerminalConnection\ConnectionInformation.cpp(47)\TerminalConnection.dll!01234:
+        (caller: 01234) LogHr(1) tid(83a8) 800700A1 The specified
+        path is invalid.
+            [...TerminalConnection::implementation::ConnectionInformation::CreateConnection(RoActivateInstance(name,
+            raw))]
+        */
         //
-        // When we get to extensions (GH#4000), we may want to revisit.
-        if (LOG_IF_FAILED(RoActivateInstance(name, raw)))
+        // So to avoid those, we'll manually instantiate these
+        if (requal(info.ClassName(), winrt::name_of<TerminalConnection::ConptyConnection>()))
         {
-            return nullptr;
+            connection = TerminalConnection::ConptyConnection();
+        }
+        else if (requal(info.ClassName(), winrt::name_of<TerminalConnection::AzureConnection>()))
+        {
+            connection = TerminalConnection::AzureConnection();
+        }
+        else if (requal(info.ClassName(), winrt::name_of<TerminalConnection::EchoConnection>()))
+        {
+            connection = TerminalConnection::EchoConnection();
+        }
+        else
+        {
+            // RoActivateInstance() will try to create an instance of the object,
+            // who's fully qualified name is the string in Name().
+            //
+            // The class has to be activatable. For the Terminal, this is easy
+            // enough - we're not hosting anything that's not already in our
+            // manifest, or living as a .dll & .winmd SxS.
+            //
+            // When we get to extensions (GH#4000), we may want to revisit.
+            if (LOG_IF_FAILED(RoActivateInstance(name, raw)))
+            {
+                return nullptr;
+            }
+            connection = inspectable.try_as<TerminalConnection::ITerminalConnection>();
         }
 
         // Now that thing we made, make sure it's actually a ITerminalConnection
-        if (const auto connection{ inspectable.try_as<TerminalConnection::ITerminalConnection>() })
+        if (connection)
         {
             // Initialize it, and return it.
             connection.Initialize(info.Settings());
