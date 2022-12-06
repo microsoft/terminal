@@ -188,15 +188,18 @@ namespace winrt::TerminalApp::implementation
         _isElevated = ::Microsoft::Console::Utils::IsElevated();
         _root = winrt::make_self<TerminalPage>();
 
-        _reloadSettings = std::make_shared<ThrottledFuncTrailing<>>(winrt::Windows::System::DispatcherQueue::GetForCurrentThread(), std::chrono::milliseconds(100), [weakSelf = get_weak()]() {
-            if (auto self{ weakSelf.get() })
-            {
-                self->_ReloadSettings();
-            }
-        });
+        _reloadSettings = std::make_shared<ThrottledFuncTrailing<const bool>>(
+            winrt::Windows::System::DispatcherQueue::GetForCurrentThread(),
+            std::chrono::milliseconds(100),
+            [weakSelf = get_weak()](const bool keybindingsOnly) {
+                if (auto self{ weakSelf.get() })
+                {
+                    self->_ReloadSettings(keybindingsOnly);
+                }
+            });
 
         _languageProfileNotifier = winrt::make_self<LanguageProfileNotifier>([this]() {
-            _reloadSettings->Run();
+            _reloadSettings->Run(true);
         });
     }
 
@@ -956,7 +959,7 @@ namespace winrt::TerminalApp::implementation
 
                 if (modifiedBasename == settingsBasename)
                 {
-                    _reloadSettings->Run();
+                    _reloadSettings->Run(false);
                 }
                 else if (ApplicationState::SharedInstance().IsStatePath(modifiedBasename))
                 {
@@ -1055,7 +1058,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Reloads the settings from the settings.json file.
-    void AppLogic::_ReloadSettings()
+    void AppLogic::_ReloadSettings(const bool keybindingsOnly)
     {
         // Attempt to load our settings.
         // If it fails,
@@ -1081,7 +1084,7 @@ namespace winrt::TerminalApp::implementation
         // TerminalSettings object.
 
         // Update the settings in TerminalPage
-        _root->SetSettings(_settings, true);
+        _root->SetSettings(_settings, !keybindingsOnly);
 
         _ApplyLanguageSettingChange();
         _RefreshThemeRoutine();

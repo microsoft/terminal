@@ -170,7 +170,7 @@ namespace winrt::TerminalApp::implementation
         ::TerminalApp::AppCommandlineArgs _appArgs;
         ::TerminalApp::AppCommandlineArgs _settingsAppArgs;
 
-        std::shared_ptr<ThrottledFuncTrailing<>> _reloadSettings;
+        std::shared_ptr<ThrottledFuncTrailing<const bool>> _reloadSettings;
         til::throttled_func_trailing<> _reloadState;
 
         // These fields invoke _reloadSettings and must be destroyed before _reloadSettings.
@@ -195,7 +195,7 @@ namespace winrt::TerminalApp::implementation
         void _ProcessLazySettingsChanges();
         void _RegisterSettingsChange();
         fire_and_forget _DispatchReloadSettings();
-        void _ReloadSettings();
+        void _ReloadSettings(const bool keybindingsOnly = false);
         void _OpenSettingsUI();
 
         bool _hasCommandLineArguments{ false };
