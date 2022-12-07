@@ -39,29 +39,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _ViewModel.CurrentPage(ColorSchemesSubPage::Base);
     }
 
-    void ColorSchemes::DeleteConfirmation_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
-    {
-        _ViewModel.RequestDeleteCurrentScheme();
-
-        // GH#11971, part 2. If we delete a scheme, and the next scheme we've
-        // loaded is an inbox one that _can't_ be deleted, then we need to toss
-        // focus to something sensible, rather than letting it fall out to the
-        // tab item.
-        //
-        // When deleting a scheme and the next scheme _is_ deletable, this isn't
-        // an issue, we'll already correctly focus the Delete button.
-        //
-        // However, it seems even more useful for focus to ALWAYS land on the
-        // scheme list view. This forces Narrator to read the name of the
-        // newly selected color scheme, which seemed more useful.
-
-        // For some reason, if we just call ColorSchemeListView().Focus(FocusState::Programmatic),
-        // focus always lands on the _first_ item of the list view, regardless of what the currently
-        // selected item is. So we need to grab the item container and focus that.
-        const auto itemContainer = ColorSchemeListView().ContainerFromIndex(ColorSchemeListView().SelectedIndex());
-        itemContainer.as<ContentControl>().Focus(FocusState::Programmatic);
-    }
-
     void ColorSchemes::AddNew_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         if (const auto newSchemeVM{ _ViewModel.RequestAddNew() })
@@ -81,8 +58,25 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Delete)
         {
-            // Treat this as if 'delete' was clicked
-            DeleteConfirmation_Click(nullptr, nullptr);
+            _ViewModel.RequestDeleteCurrentScheme();
+
+            // GH#11971, part 2. If we delete a scheme, and the next scheme we've
+            // loaded is an inbox one that _can't_ be deleted, then we need to toss
+            // focus to something sensible, rather than letting it fall out to the
+            // tab item.
+            //
+            // When deleting a scheme and the next scheme _is_ deletable, this isn't
+            // an issue, we'll already correctly focus the Delete button.
+            //
+            // However, it seems even more useful for focus to ALWAYS land on the
+            // scheme list view. This forces Narrator to read the name of the
+            // newly selected color scheme, which seemed more useful.
+
+            // For some reason, if we just call ColorSchemeListView().Focus(FocusState::Programmatic),
+            // focus always lands on the _first_ item of the list view, regardless of what the currently
+            // selected item is. So we need to grab the item container and focus that.
+            const auto itemContainer = ColorSchemeListView().ContainerFromIndex(ColorSchemeListView().SelectedIndex());
+            itemContainer.as<ContentControl>().Focus(FocusState::Programmatic);
             e.Handled(true);
         }
     }
@@ -95,6 +89,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 if (selectedScheme.IsInBoxScheme())
                 {
+                    // Visibility::Collapsed means that the element doesn't tell xaml about the space it needs when Visible,
+                    // so what happens when the element changes from Collapsed to Visible is that the stuff below it shifts
+                    // down to accommodate the now visible element. I found this to be jarring when using keyboard navigation
+                    // as the disclaimer might be appearing/disappearing repeatedly, causing the ListView below it to constantly
+                    // shift down/up.
+                    //
+                    // Using Opacity means that we get the same appearing/disappearing text behaviour, but we always allocate
+                    // space for the text, to prevent the shifting of the ListView.
+
                     // display disclaimer that this scheme can't be deleted
                     SelectedSchemeDisclaimer().Text(RS_(L"ColorScheme_DeleteDisclaimerInBox"));
                     SelectedSchemeDisclaimer().Opacity(1);

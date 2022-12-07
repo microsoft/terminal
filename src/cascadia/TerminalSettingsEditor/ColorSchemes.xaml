@@ -40,11 +40,11 @@
           RowSpacing="8">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <TextBlock x:Uid="ColorSchemesDisclaimer"
-                   Grid.Row="0"
+        <StackPanel Grid.Row="0"
+                    Spacing="8">
+            <TextBlock x:Uid="ColorSchemesDisclaimer"
                    Style="{StaticResource DisclaimerStyle}" />
 
         <StackPanel Grid.Row="1"
@@ -65,6 +65,7 @@
                        Margin="0,4,0,0"
                        VerticalAlignment="Center"
                        Style="{StaticResource DisclaimerStyle}" />
+        </StackPanel>
         </StackPanel>
 
         <ListView x:Name="ColorSchemeListView"
