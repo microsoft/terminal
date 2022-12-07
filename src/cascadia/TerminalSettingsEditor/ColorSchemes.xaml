@@ -45,27 +45,27 @@
         <StackPanel Grid.Row="0"
                     Spacing="8">
             <TextBlock x:Uid="ColorSchemesDisclaimer"
-                   Style="{StaticResource DisclaimerStyle}" />
-
-        <StackPanel Grid.Row="1"
-                    MaxWidth="{StaticResource StandardControlMaxWidth}">
-            <Button x:Name="AddNewButton"
-                    Margin="4,0,0,0"
-                    Click="AddNew_Click"
-                    Style="{StaticResource BrowseButtonStyle}">
-                <StackPanel Orientation="Horizontal">
-                    <FontIcon FontSize="{StaticResource StandardIconSize}"
-                              Glyph="&#xE710;" />
-                    <TextBlock x:Uid="ColorScheme_AddNewButton"
-                               Style="{StaticResource IconButtonTextBlockStyle}" />
-                </StackPanel>
-            </Button>
-
-            <TextBlock x:Name="SelectedSchemeDisclaimer"
-                       Margin="0,4,0,0"
-                       VerticalAlignment="Center"
                        Style="{StaticResource DisclaimerStyle}" />
-        </StackPanel>
+
+            <StackPanel Grid.Row="1"
+                        MaxWidth="{StaticResource StandardControlMaxWidth}">
+                <Button x:Name="AddNewButton"
+                        Margin="4,0,0,0"
+                        Click="AddNew_Click"
+                        Style="{StaticResource BrowseButtonStyle}">
+                    <StackPanel Orientation="Horizontal">
+                        <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                  Glyph="&#xE710;" />
+                        <TextBlock x:Uid="ColorScheme_AddNewButton"
+                                   Style="{StaticResource IconButtonTextBlockStyle}" />
+                    </StackPanel>
+                </Button>
+
+                <TextBlock x:Name="SelectedSchemeDisclaimer"
+                           Margin="0,4,0,0"
+                           VerticalAlignment="Center"
+                           Style="{StaticResource DisclaimerStyle}" />
+            </StackPanel>
         </StackPanel>
 
         <ListView x:Name="ColorSchemeListView"
