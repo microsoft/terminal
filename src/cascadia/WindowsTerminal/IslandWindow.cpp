@@ -1895,7 +1895,7 @@ void IslandWindow::RemoveFromSystemMenu(const winrt::hstring& itemLabel)
     _systemMenuItems.erase(it->first);
 }
 
-void IslandWindow::UseMica(const bool newValue)
+void IslandWindow::UseMica(const bool newValue, const double /*titlebarOpacity*/)
 {
     // This block of code enables Mica for our window. By all accounts, this
     // version of the code will only work on Windows 11, SV2. There's a slightly

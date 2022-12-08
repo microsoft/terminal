@@ -1350,7 +1350,9 @@ void AppHost::_updateTheme()
 
     _window->OnApplicationThemeChanged(theme.RequestedTheme());
 
-    _window->UseMica(theme.Window().UseMica());
+    const auto b = _logic.TitlebarBrush();   
+    const auto opacity = b ? ThemeColor::ColorFromBrush(b).A / 255.0 : 0.0;
+    _window->UseMica(theme.Window().UseMica(), opacity);
 }
 
 void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,
