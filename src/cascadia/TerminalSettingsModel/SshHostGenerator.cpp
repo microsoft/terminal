@@ -22,8 +22,8 @@ static constexpr std::wstring_view SSH_EXE_PATH2 = L"%ProgramFiles%\\OpenSSH\\ss
 // OpenSSH (x86) is installed under Program Files x86 when installed via MSI on x64 machine
 static constexpr std::wstring_view SSH_EXE_PATH3 = L"%ProgramFiles(x86)%\\OpenSSH\\ssh.exe";
 
-static constexpr std::wstring_view SSH_SYSTEMCONFIG_PATH = L"%ProgramData%\\ssh\\ssh_config";
-static constexpr std::wstring_view SSH_USERCONFIG_PATH = L"%UserProfile%\\.ssh\\config";
+static constexpr std::wstring_view SSH_SYSTEM_CONFIG_PATH = L"%ProgramData%\\ssh\\ssh_config";
+static constexpr std::wstring_view SSH_USER_CONFIG_PATH = L"%UserProfile%\\.ssh\\config";
 
 static constexpr std::wstring_view SSH_CONFIG_HOST_KEY{ L"Host" };
 static constexpr std::wstring_view SSH_CONFIG_HOSTNAME_KEY{ L"HostName" };
@@ -145,8 +145,8 @@ void SshHostGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementatio
     {
         std::vector<std::wstring> hostNames;
 
-        _getHostNamesFromConfigFile(SSH_SYSTEMCONFIG_PATH, hostNames);
-        _getHostNamesFromConfigFile(SSH_USERCONFIG_PATH, hostNames);
+        _getHostNamesFromConfigFile(SSH_SYSTEM_CONFIG_PATH, hostNames);
+        _getHostNamesFromConfigFile(SSH_USER_CONFIG_PATH, hostNames);
 
         for (const auto& hostName : hostNames)
         {
