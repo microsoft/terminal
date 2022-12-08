@@ -242,7 +242,7 @@ namespace winrt::TerminalApp::implementation
         void _CreateNewTabFlyout();
         void _OpenNewTabDropdown();
         HRESULT _OpenNewTab(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
-        void _CreateNewTabFromPane(std::shared_ptr<Pane> pane);
+        void _CreateNewTabFromPane(std::shared_ptr<Pane> pane, bool isDuplicate = false);
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(Microsoft::Terminal::Settings::Model::Profile profile, Microsoft::Terminal::Settings::Model::TerminalSettings settings);
 
         winrt::fire_and_forget _OpenNewWindow(const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
@@ -284,7 +284,7 @@ namespace winrt::TerminalApp::implementation
         void _RemoveTab(const winrt::TerminalApp::TabBase& tab);
         winrt::fire_and_forget _RemoveTabs(const std::vector<winrt::TerminalApp::TabBase> tabs);
 
-        void _InitializeTab(winrt::com_ptr<TerminalTab> newTabImpl);
+        void _InitializeTab(winrt::com_ptr<TerminalTab> newTabImpl, bool isDuplicate = false);
         void _RegisterTerminalEvents(Microsoft::Terminal::Control::TermControl term);
         void _RegisterTabEvents(TerminalTab& hostingTab);
 
