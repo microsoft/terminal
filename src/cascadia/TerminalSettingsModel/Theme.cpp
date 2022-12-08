@@ -407,32 +407,3 @@ winrt::com_ptr<ThemePair> ThemePair::Copy() const
     pair->_LightName = _LightName;
     return pair;
 }
-
-// namespace Microsoft::Terminal::Settings::Model::JsonUtils
-// {
-//     using namespace winrt::Microsoft::Terminal::Settings::Model;
-
-//     template<>
-//     struct ConversionTrait<winrt::Microsoft::Terminal::Settings::Model::ThemePair>
-//     {
-//         winrt::Microsoft::Terminal::Settings::Model::ThemePair FromJson(const Json::Value& json)
-//         {
-//             return *implementation::ThemePair::FromJson(json);
-//         }
-
-//         bool CanConvert(const Json::Value& json) const
-//         {
-//             return json.isObject() || json.isString();
-//         }
-
-//         Json::Value ToJson(const winrt::Microsoft::Terminal::Settings::Model::ThemePair& val)
-//         {
-//             return winrt::get_self<implementation::ThemePair>(val)->ToJson();
-//         }
-
-//         std::string TypeDescription() const
-//         {
-//             return "ThemePair";
-//         }
-//     };
-// }
