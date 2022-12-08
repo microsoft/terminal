@@ -22,10 +22,33 @@ Author(s):
 #include "WindowTheme.g.h"
 #include "TabRowTheme.g.h"
 #include "TabTheme.g.h"
+#include "ThemePair.g.h"
 #include "Theme.g.h"
+
+#include "JsonUtils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
+    struct ThemePair : ThemePairT<ThemePair>
+    {
+    public:
+        ThemePair() = default;
+        explicit ThemePair(const winrt::hstring& name) noexcept :
+            _DarkName{ name },
+            _LightName{ name } {};
+
+        explicit ThemePair(const winrt::hstring& lightName, const winrt::hstring& darkName) noexcept :
+            _DarkName{ darkName },
+            _LightName{ lightName } {};
+
+        static com_ptr<ThemePair> FromJson(const Json::Value& json);
+        Json::Value ToJson() const;
+        com_ptr<ThemePair> Copy() const;
+
+        WINRT_PROPERTY(winrt::hstring, DarkName);
+        WINRT_PROPERTY(winrt::hstring, LightName);
+    };
+
     struct ThemeColor : ThemeColorT<ThemeColor>
     {
     public:
@@ -76,6 +99,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Json::Value ToJson() const;
 
         winrt::Windows::UI::Xaml::ElementTheme RequestedTheme() const noexcept;
+        bool IsActuallyDarkTheme() const;
 
         WINRT_PROPERTY(winrt::hstring, Name);
 
@@ -92,4 +116,34 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
 {
     BASIC_FACTORY(ThemeColor);
     BASIC_FACTORY(Theme);
+    BASIC_FACTORY(ThemePair);
+}
+
+namespace Microsoft::Terminal::Settings::Model::JsonUtils
+{
+    // using namespace winrt::Microsoft::Terminal::Settings::Model;
+
+    template<>
+    struct ConversionTrait<winrt::Microsoft::Terminal::Settings::Model::ThemePair>
+    {
+        winrt::Microsoft::Terminal::Settings::Model::ThemePair FromJson(const Json::Value& json)
+        {
+            return *winrt::Microsoft::Terminal::Settings::Model::implementation::ThemePair::FromJson(json);
+        }
+
+        bool CanConvert(const Json::Value& json) const
+        {
+            return json.isObject() || json.isString();
+        }
+
+        Json::Value ToJson(const winrt::Microsoft::Terminal::Settings::Model::ThemePair& val)
+        {
+            return winrt::get_self<winrt::Microsoft::Terminal::Settings::Model::implementation::ThemePair>(val)->ToJson();
+        }
+
+        std::string TypeDescription() const
+        {
+            return "ThemePair{ string, string }";
+        }
+    };
 }
