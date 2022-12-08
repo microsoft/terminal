@@ -44,6 +44,7 @@ Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFo
 
     _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
     _warningBellToken = _control.WarningBell({ this, &Pane::_ControlWarningBellHandler });
+    _closeTerminalRequestedToken = _control.CloseTerminalRequested({ this, &Pane::_CloseTerminalRequestedHandler });
 
     // On the first Pane's creation, lookup resources we'll use to theme the
     // Pane, including the brushed to use for the focused/unfocused border
@@ -993,7 +994,7 @@ void Pane::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundatio
     // actually no longer _our_ control, and instead could be a descendant.
     //
     // When the control's new Pane takes ownership of the control, the new
-    // parent will register it's own event handler. That event handler will get
+    // parent will register its own event handler. That event handler will get
     // fired after this handler returns, and will properly cleanup state.
     if (!_IsLeaf())
     {
@@ -1034,6 +1035,26 @@ void Pane::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundatio
             Close();
         }
     }
+}
+
+void Pane::_CloseTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                          const winrt::Windows::Foundation::IInspectable& /*args*/)
+{
+    std::unique_lock lock{ _createCloseLock };
+
+    // It's possible that this event handler started being executed, then before
+    // we got the lock, another thread created another child. So our control is
+    // actually no longer _our_ control, and instead could be a descendant.
+    //
+    // When the control's new Pane takes ownership of the control, the new
+    // parent will register its own event handler. That event handler will get
+    // fired after this handler returns, and will properly cleanup state.
+    if (!_IsLeaf())
+    {
+        return;
+    }
+
+    Close();
 }
 
 winrt::fire_and_forget Pane::_playBellSound(winrt::Windows::Foundation::Uri uri)
@@ -1586,6 +1607,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         // Add our new event handler before revoking the old one.
         _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
         _warningBellToken = _control.WarningBell({ this, &Pane::_ControlWarningBellHandler });
+        _closeTerminalRequestedToken = _control.CloseTerminalRequested({ this, &Pane::_CloseTerminalRequestedHandler });
 
         // Revoke the old event handlers. Remove both the handlers for the panes
         // themselves closing, and remove their handlers for their controls
@@ -1601,6 +1623,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
                 {
                     p->_control.ConnectionStateChanged(p->_connectionStateChangedToken);
                     p->_control.WarningBell(p->_warningBellToken);
+                    p->_control.CloseTerminalRequested(p->_closeTerminalRequestedToken);
                 }
             });
         }
@@ -1609,6 +1632,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         remainingChild->Closed(remainingChildClosedToken);
         remainingChild->_control.ConnectionStateChanged(remainingChild->_connectionStateChangedToken);
         remainingChild->_control.WarningBell(remainingChild->_warningBellToken);
+        remainingChild->_control.CloseTerminalRequested(remainingChild->_closeTerminalRequestedToken);
 
         // If we or either of our children was focused, we want to take that
         // focus from them.
@@ -1690,6 +1714,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
                 {
                     p->_control.ConnectionStateChanged(p->_connectionStateChangedToken);
                     p->_control.WarningBell(p->_warningBellToken);
+                    p->_control.CloseTerminalRequested(p->_closeTerminalRequestedToken);
                 }
             });
         }
@@ -2448,6 +2473,8 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
         _connectionStateChangedToken.value = 0;
         _control.WarningBell(_warningBellToken);
         _warningBellToken.value = 0;
+        _control.CloseTerminalRequested(_closeTerminalRequestedToken);
+        _closeTerminalRequestedToken.value = 0;
 
         // Remove our old GotFocus handler from the control. We don't want the
         // control telling us that it's now focused, we want it telling its new
