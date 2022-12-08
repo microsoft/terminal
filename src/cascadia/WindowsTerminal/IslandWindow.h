@@ -66,6 +66,7 @@ public:
     void RemoveFromSystemMenu(const winrt::hstring& itemLabel);
 
     virtual void UseMica(const bool newValue, const double titlebarOpacity);
+    virtual [[nodiscard]] LRESULT _OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept override;
 
     WINRT_CALLBACK(DragRegionClicked, winrt::delegate<>);
     WINRT_CALLBACK(WindowCloseButtonClicked, winrt::delegate<>);

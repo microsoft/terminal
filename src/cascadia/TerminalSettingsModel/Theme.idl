@@ -68,6 +68,7 @@ namespace Microsoft.Terminal.Settings.Model
 
         // A helper for retrieving the RequestedTheme out of the window property
         Windows.UI.Xaml.ElementTheme RequestedTheme { get; };
+        Boolean IsActuallyDarkTheme();
 
     }
 }

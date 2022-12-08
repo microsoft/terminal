@@ -1350,9 +1350,15 @@ void AppHost::_updateTheme()
 
     _window->OnApplicationThemeChanged(theme.RequestedTheme());
 
-    const auto b = _logic.TitlebarBrush();   
+    const auto b = _logic.TitlebarBrush();
     const auto opacity = b ? ThemeColor::ColorFromBrush(b).A / 255.0 : 0.0;
     _window->UseMica(theme.Window().UseMica(), opacity);
+
+    // This is a hack to make the window borders dark instead of light.
+    // It must be done before WM_NCPAINT so that the borders are rendered with
+    // the correct theme.
+    // For more information, see GH#6620.
+    LOG_IF_FAILED(TerminalTrySetDarkTheme(_window->GetHandle(), theme.IsActuallyDarkTheme()));
 }
 
 void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,

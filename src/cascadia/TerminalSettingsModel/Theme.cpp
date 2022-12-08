@@ -320,3 +320,17 @@ winrt::WUX::ElementTheme Theme::RequestedTheme() const noexcept
 {
     return _Window ? _Window.RequestedTheme() : winrt::WUX::ElementTheme::Default;
 }
+
+Boolean IsActuallyDarkTheme()
+{
+    switch (RequestedTheme())
+    {
+    case winrt::Windows::UI::Xaml::ElementTheme::Light:
+        return false;
+    case winrt::Windows::UI::Xaml::ElementTheme::Dark:
+        return true;
+    case winrt::Windows::UI::Xaml::ElementTheme::Default:
+    default:
+        return _isSystemInDarkTheme();
+    }
+}
