@@ -148,11 +148,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         INITIALIZE_BINDABLE_ENUM_SETTING(IntenseTextStyle, IntenseTextStyle, winrt::Microsoft::Terminal::Settings::Model::IntenseStyle, L"Appearance_IntenseTextStyle", L"Content");
     }
 
-    bool Appearances::ShowIndistinguishableColorsItem() const noexcept
-    {
-        return Feature_AdjustIndistinguishableText::IsEnabled();
-    }
-
     // Method Description:
     // - Searches through our list of monospace fonts to determine if the settings model's current font face is a monospace font
     bool Appearances::UsingMonospaceFont() const noexcept
@@ -248,7 +243,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentCursorShape" });
                     _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsVintageCursor" });
                 }
-                else if (settingName == L"ColorSchemeName")
+                else if (settingName == L"DarkColorSchemeName" || settingName == L"LightColorSchemeName")
                 {
                     _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentColorScheme" });
                 }
@@ -360,7 +355,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     ColorScheme Appearances::CurrentColorScheme()
     {
-        const auto schemeName{ Appearance().ColorSchemeName() };
+        const auto schemeName{ Appearance().DarkColorSchemeName() };
         if (const auto scheme{ Appearance().Schemes().TryLookup(schemeName) })
         {
             return scheme;
@@ -375,7 +370,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Appearances::CurrentColorScheme(const ColorScheme& val)
     {
-        Appearance().ColorSchemeName(val.Name());
+        Appearance().DarkColorSchemeName(val.Name());
+        Appearance().LightColorSchemeName(val.Name());
     }
 
     bool Appearances::IsVintageCursor() const

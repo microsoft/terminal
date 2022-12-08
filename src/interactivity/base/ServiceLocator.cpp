@@ -3,6 +3,10 @@
 
 #include "precomp.h"
 
+// MidiAudio
+#include <mmeapi.h>
+#include <dsound.h>
+
 #include "../inc/ServiceLocator.hpp"
 
 #include "InteractivityFactory.hpp"
@@ -41,13 +45,21 @@ void ServiceLocator::SetOneCoreTeardownFunction(void (*pfn)()) noexcept
 
 void ServiceLocator::RundownAndExit(const HRESULT hr)
 {
-    static std::atomic<bool> locked;
+    // The TriggerTeardown() call below depends on the render thread being able to acquire the
+    // console lock, so that it can safely progress with flushing the last frame. Since there's no
+    // coming back from this function (it's [[noreturn]]), it's safe to unlock the console here.
+    auto& gci = s_globals.getConsoleInformation();
+    while (gci.IsConsoleLocked())
+    {
+        gci.UnlockConsole();
+    }
 
     // MSFT:40146639
     //   The premise of this function is that 1 thread enters and 0 threads leave alive.
     //   We need to prevent anyone from calling us until we actually ExitProcess(),
     //   so that we don't TriggerTeardown() twice. LockConsole() can't be used here,
     //   because doing so would prevent the render thread from progressing.
+    static std::atomic<bool> locked;
     if (locked.exchange(true, std::memory_order_relaxed))
     {
         // If we reach this point, another thread is already in the process of exiting.

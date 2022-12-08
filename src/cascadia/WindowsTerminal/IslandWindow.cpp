@@ -211,10 +211,10 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
 
     const auto nonClientSize = GetTotalNonClientExclusiveSize(dpix);
 
-    auto clientWidth = winRect->right - winRect->left - nonClientSize.cx;
+    auto clientWidth = winRect->right - winRect->left - nonClientSize.width;
     clientWidth = std::max(minWidthScaled, clientWidth);
 
-    auto clientHeight = winRect->bottom - winRect->top - nonClientSize.cy;
+    auto clientHeight = winRect->bottom - winRect->top - nonClientSize.height;
 
     // If we're the quake window, prevent resizing on all sides except the
     // bottom. This also applies to resizing with the Alt+Space menu
@@ -251,12 +251,12 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
     case WMSZ_LEFT:
     case WMSZ_TOPLEFT:
     case WMSZ_BOTTOMLEFT:
-        winRect->left = winRect->right - (clientWidth + nonClientSize.cx);
+        winRect->left = winRect->right - (clientWidth + nonClientSize.width);
         break;
     case WMSZ_RIGHT:
     case WMSZ_TOPRIGHT:
     case WMSZ_BOTTOMRIGHT:
-        winRect->right = winRect->left + (clientWidth + nonClientSize.cx);
+        winRect->right = winRect->left + (clientWidth + nonClientSize.width);
         break;
     }
 
@@ -266,12 +266,12 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
     case WMSZ_BOTTOM:
     case WMSZ_BOTTOMLEFT:
     case WMSZ_BOTTOMRIGHT:
-        winRect->bottom = winRect->top + (clientHeight + nonClientSize.cy);
+        winRect->bottom = winRect->top + (clientHeight + nonClientSize.height);
         break;
     case WMSZ_TOP:
     case WMSZ_TOPLEFT:
     case WMSZ_TOPRIGHT:
-        winRect->top = winRect->bottom - (clientHeight + nonClientSize.cy);
+        winRect->top = winRect->bottom - (clientHeight + nonClientSize.height);
         break;
     }
 
@@ -389,8 +389,8 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
     const auto nonClientSizeScaled = GetTotalNonClientExclusiveSize(dpix);
 
     auto lpMinMaxInfo = reinterpret_cast<LPMINMAXINFO>(lParam);
-    lpMinMaxInfo->ptMinTrackSize.x = _calculateTotalSize(true, minimumWidth * dpix / USER_DEFAULT_SCREEN_DPI, nonClientSizeScaled.cx);
-    lpMinMaxInfo->ptMinTrackSize.y = _calculateTotalSize(false, minimumHeight * dpiy / USER_DEFAULT_SCREEN_DPI, nonClientSizeScaled.cy);
+    lpMinMaxInfo->ptMinTrackSize.x = _calculateTotalSize(true, minimumWidth * dpix / USER_DEFAULT_SCREEN_DPI, nonClientSizeScaled.width);
+    lpMinMaxInfo->ptMinTrackSize.y = _calculateTotalSize(false, minimumHeight * dpiy / USER_DEFAULT_SCREEN_DPI, nonClientSizeScaled.height);
 }
 
 // Method Description:
@@ -658,6 +658,18 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         }
         break;
     }
+    case WM_SETTINGCHANGE:
+    {
+        const std::wstring param{ (wchar_t*)lparam };
+        // ImmersiveColorSet seems to be the notification that the OS theme
+        // changed. If that happens, let the app know, so it can hot-reload
+        // themes, color schemes that might depend on the OS theme
+        if (param == L"ImmersiveColorSet")
+        {
+            _UpdateSettingsRequestedHandlers();
+        }
+        break;
+    }
     case WM_ENDSESSION:
     {
         // For WM_QUERYENDSESSION and WM_ENDSESSION, refer to:
@@ -793,7 +805,7 @@ void IslandWindow::OnAppInitialized()
 {
     // Do a quick resize to force the island to paint
     const auto size = GetPhysicalSize();
-    OnSize(size.cx, size.cy);
+    OnSize(size.width, size.height);
 }
 
 // Method Description:
@@ -1509,7 +1521,7 @@ void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration,
     else
     {
         // Try first to send a message to the current foreground window. If it's not responding, it may
-        // be waiting on us to finsh launching. Passing SMTO_NOTIMEOUTIFNOTHUNG means that we get the same
+        // be waiting on us to finish launching. Passing SMTO_NOTIMEOUTIFNOTHUNG means that we get the same
         // behavior as before--that is, waiting for the message loop--but we've done an early return if
         // it turns out that it was hung.
         // SendMessageTimeoutW returns nonzero if it succeeds.

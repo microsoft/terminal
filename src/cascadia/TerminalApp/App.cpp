@@ -54,7 +54,7 @@ namespace winrt::TerminalApp::implementation
             {
                 auto logic = Logic();
                 logic.RunAsUwp(); // Must set UWP status first, settings might change based on it.
-                logic.LoadSettings();
+                logic.ReloadSettings();
                 logic.Create();
 
                 auto page = logic.GetRoot().as<TerminalPage>();

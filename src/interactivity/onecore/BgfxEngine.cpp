@@ -29,8 +29,8 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
 {
     _runLength = sizeof(CD_IO_CHARACTER) * DisplayWidth;
 
-    _fontSize.X = FontWidth > SHORT_MAX ? SHORT_MAX : gsl::narrow_cast<til::CoordType>(FontWidth);
-    _fontSize.Y = FontHeight > SHORT_MAX ? SHORT_MAX : gsl::narrow_cast<til::CoordType>(FontHeight);
+    _fontSize.width = FontWidth > SHORT_MAX ? SHORT_MAX : gsl::narrow_cast<til::CoordType>(FontWidth);
+    _fontSize.height = FontHeight > SHORT_MAX ? SHORT_MAX : gsl::narrow_cast<til::CoordType>(FontHeight);
 }
 
 [[nodiscard]] HRESULT BgfxEngine::Invalidate(const til::rect* /*psrRegion*/) noexcept
@@ -133,13 +133,13 @@ CATCH_RETURN()
 {
     try
     {
-        const auto y = gsl::narrow_cast<SIZE_T>(coord.Y);
+        const auto y = gsl::narrow_cast<SIZE_T>(coord.y);
         const auto NewRun = reinterpret_cast<PCD_IO_CHARACTER>(_sharedViewBase + (y * 2 * _runLength) + _runLength);
 
         for (SIZE_T i = 0; i < clusters.size() && i < _displayWidth; i++)
         {
-            NewRun[coord.X + i].Character = til::at(clusters, i).GetTextAsSingle();
-            NewRun[coord.X + i].Attribute = _currentLegacyColorAttribute;
+            NewRun[coord.x + i].Character = til::at(clusters, i).GetTextAsSingle();
+            NewRun[coord.x + i].Attribute = _currentLegacyColorAttribute;
         }
 
         return S_OK;
@@ -166,8 +166,8 @@ try
     // TODO: MSFT: 11448021 - Modify BGFX to support rendering full-width
     // characters and a full-width cursor.
     CD_IO_CURSOR_INFORMATION CursorInfo;
-    CursorInfo.Row = gsl::narrow<USHORT>(options.coordCursor.Y);
-    CursorInfo.Column = gsl::narrow<USHORT>(options.coordCursor.X);
+    CursorInfo.Row = gsl::narrow<USHORT>(options.coordCursor.y);
+    CursorInfo.Column = gsl::narrow<USHORT>(options.coordCursor.x);
     CursorInfo.Height = options.ulCursorHeightPercent;
     CursorInfo.IsVisible = TRUE;
 

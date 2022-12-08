@@ -144,8 +144,8 @@ namespace ControlUnitTests
             // The Settings object's opacity shouldn't be changed
             VERIFY_ARE_EQUAL(0.5, settings->Opacity());
 
-            auto expectedUseAcrylic = winrt::Microsoft::Terminal::Control::implementation::ControlCore::IsVintageOpacityAvailable() ? useAcrylic :
-                                                                                                                                      (expectedOpacity < 1.0 ? true : false);
+            auto expectedUseAcrylic = expectedOpacity < 1.0 &&
+                                      (!winrt::Microsoft::Terminal::Control::implementation::ControlCore::IsVintageOpacityAvailable() || useAcrylic);
             VERIFY_ARE_EQUAL(useAcrylic, settings->UseAcrylic());
             VERIFY_ARE_EQUAL(expectedUseAcrylic, core->UseAcrylic());
         };
@@ -810,7 +810,7 @@ namespace ControlUnitTests
 
         Log::Comment(L"Verify the location of the selection");
         // The selection should now be 1 row lower
-        expectedAnchor.Y -= 1;
+        expectedAnchor.y -= 1;
         VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionAnchor());
         VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionEnd());
 

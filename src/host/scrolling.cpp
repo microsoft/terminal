@@ -84,16 +84,16 @@ void Scrolling::s_ScrollIfNecessary(const SCREEN_INFORMATION& ScreenInfo)
             pWindow->ConvertScreenToClient(&CursorPos);
 
             til::point MousePosition;
-            MousePosition.X = CursorPos.x;
-            MousePosition.Y = CursorPos.y;
+            MousePosition.x = CursorPos.x;
+            MousePosition.y = CursorPos.y;
 
             auto coordFontSize = ScreenInfo.GetScreenFontSize();
 
-            MousePosition.X /= coordFontSize.X;
-            MousePosition.Y /= coordFontSize.Y;
+            MousePosition.x /= coordFontSize.width;
+            MousePosition.y /= coordFontSize.height;
 
-            MousePosition.X += ScreenInfo.GetViewport().Left();
-            MousePosition.Y += ScreenInfo.GetViewport().Top();
+            MousePosition.x += ScreenInfo.GetViewport().Left();
+            MousePosition.y += ScreenInfo.GetViewport().Top();
 
             pSelection->ExtendSelection(MousePosition);
         }
@@ -146,15 +146,15 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel,
                 ScreenInfo.WheelDelta %= ulActualDelta;
             }
 
-            NewOrigin.Y -= delta;
+            NewOrigin.y -= delta;
             const auto coordBufferSize = ScreenInfo.GetBufferSize().Dimensions();
-            if (NewOrigin.Y < 0)
+            if (NewOrigin.y < 0)
             {
-                NewOrigin.Y = 0;
+                NewOrigin.y = 0;
             }
-            else if (NewOrigin.Y + ScreenInfo.GetViewport().Height() > coordBufferSize.Y)
+            else if (NewOrigin.y + ScreenInfo.GetViewport().Height() > coordBufferSize.height)
             {
-                NewOrigin.Y = coordBufferSize.Y - ScreenInfo.GetViewport().Height();
+                NewOrigin.y = coordBufferSize.height - ScreenInfo.GetViewport().Height();
             }
             LOG_IF_FAILED(ScreenInfo.SetViewportOrigin(true, NewOrigin, false));
         }
@@ -184,15 +184,15 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel,
             delta *= (ScreenInfo.HWheelDelta / ulActualDelta);
             ScreenInfo.HWheelDelta %= ulActualDelta;
 
-            NewOrigin.X += delta;
+            NewOrigin.x += delta;
             const auto coordBufferSize = ScreenInfo.GetBufferSize().Dimensions();
-            if (NewOrigin.X < 0)
+            if (NewOrigin.x < 0)
             {
-                NewOrigin.X = 0;
+                NewOrigin.x = 0;
             }
-            else if (NewOrigin.X + ScreenInfo.GetViewport().Width() > coordBufferSize.X)
+            else if (NewOrigin.x + ScreenInfo.GetViewport().Width() > coordBufferSize.width)
             {
-                NewOrigin.X = coordBufferSize.X - ScreenInfo.GetViewport().Width();
+                NewOrigin.x = coordBufferSize.width - ScreenInfo.GetViewport().Width();
             }
 
             LOG_IF_FAILED(ScreenInfo.SetViewportOrigin(true, NewOrigin, false));

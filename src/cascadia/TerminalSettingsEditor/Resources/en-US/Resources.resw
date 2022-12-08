@@ -380,7 +380,7 @@
   </data>
   <data name="Globals_LaunchParameters.Header" xml:space="preserve">
     <value>Launch parameters</value>
-    <comment>Header for a set of settings that determine how terminal launches. These settings include the launch mode, launch position and whether the teminal should center itself on launch.</comment>
+    <comment>Header for a set of settings that determine how terminal launches. These settings include the launch mode, launch position and whether the terminal should center itself on launch.</comment>
   </data>
   <data name="Globals_LaunchParameters.HelpText" xml:space="preserve">
     <value>Settings that control how the terminal launches</value>
@@ -439,7 +439,7 @@
     <comment>A description for what the "show titlebar" setting does. Presented near "Globals_ShowTitlebar.Header".</comment>
   </data>
   <data name="Globals_AcrylicTabRow.Header" xml:space="preserve">
-    <value>Use acrylic material in the tab row (requires relaunch)</value>
+    <value>Use acrylic material in the tab row</value>
     <comment>Header for a control to toggle whether "acrylic material" is used. "Acrylic material" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
   </data>
   <data name="Globals_AcrylicTabRow.HelpText" xml:space="preserve">
@@ -550,33 +550,17 @@
     <value>Appearance</value>
     <comment>Header for the "appearance" menu item. This navigates to a page that lets you see and modify settings related to the app's appearance.</comment>
   </data>
-  <data name="Nav_Appearance.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Appearance</value>
-    <comment>Tooltip for the "appearance" menu item.</comment>
-  </data>
   <data name="Nav_ColorSchemes.Content" xml:space="preserve">
     <value>Color schemes</value>
     <comment>Header for the "color schemes" menu item. This navigates to a page that lets you see and modify schemes of colors that can be used by the terminal.</comment>
-  </data>
-  <data name="Nav_ColorSchemes.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Color schemes</value>
-    <comment>Tooltip for the "color schemes" menu item.</comment>
   </data>
   <data name="Nav_Interaction.Content" xml:space="preserve">
     <value>Interaction</value>
     <comment>Header for the "interaction" menu item. This navigates to a page that lets you see and modify settings related to the user's mouse and touch interactions with the app.</comment>
   </data>
-  <data name="Nav_Interaction.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Interaction</value>
-    <comment>Tooltip for the "interaction" menu item.</comment>
-  </data>
   <data name="Nav_Launch.Content" xml:space="preserve">
     <value>Startup</value>
     <comment>Header for the "startup" menu item. This navigates to a page that lets you see and modify settings related to the app's launch experience (i.e. screen position, mode, etc.)</comment>
-  </data>
-  <data name="Nav_Launch.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Startup</value>
-    <comment>Tooltip for the "startup" menu item.</comment>
   </data>
   <data name="Nav_OpenJSON.Content" xml:space="preserve">
     <value>Open JSON file</value>
@@ -586,25 +570,13 @@
     <value>Defaults</value>
     <comment>Header for the "defaults" menu item. This navigates to a page that lets you see and modify settings that affect profiles. This is the lowest layer of profile settings that all other profile settings are based on. If a profile doesn't define a setting, this page is responsible for figuring out what that setting is supposed to be.</comment>
   </data>
-  <data name="Nav_ProfileDefaults.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Defaults</value>
-    <comment>Tooltip for the "profile defaults" menu item.</comment>
-  </data>
   <data name="Nav_Rendering.Content" xml:space="preserve">
     <value>Rendering</value>
     <comment>Header for the "rendering" menu item. This navigates to a page that lets you see and modify settings related to the app's rendering of text in the terminal.</comment>
   </data>
-  <data name="Nav_Rendering.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Rendering</value>
-    <comment>Tooltip for the "rendering" menu item.</comment>
-  </data>
   <data name="Nav_Actions.Content" xml:space="preserve">
     <value>Actions</value>
     <comment>Header for the "actions" menu item. This navigates to a page that lets you see and modify commands, key bindings, and actions that can be done in the app.</comment>
-  </data>
-  <data name="Nav_Actions.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Actions</value>
-    <comment>Tooltip for the "actions" menu item.</comment>
   </data>
   <data name="Profile_OpacitySlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Background opacity</value>
@@ -1584,5 +1556,9 @@
   <data name="ColorScheme_SetAsDefaultButton.Content" xml:space="preserve">
     <value>Set as default</value>
     <comment>Text label for a button that, when invoked, sets the selected color scheme as the default scheme to use.</comment>
+  </data>
+  <data name="Globals_ConfirmCloseAllTabs.Header" xml:space="preserve">
+    <value>Confirm before closing all tabs</value>
+    <comment>Header for a control to toggle whether to show a confirm dialog box when closing the application with multiple tabs open.</comment>
   </data>
 </root>

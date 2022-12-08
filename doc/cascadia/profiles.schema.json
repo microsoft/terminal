@@ -82,7 +82,14 @@
       "properties": {
         "colorScheme": {
           "description": "The name of a color scheme to use when unfocused.",
-          "type": "string"
+          "oneOf": [
+            {
+              "$ref": "#/$defs/SchemePair"
+            },
+            {
+              "type": "string"
+            }
+          ]
         },
         "foreground": {
           "$ref": "#/$defs/Color",
@@ -232,6 +239,21 @@
         }
       },
       "type": "object"
+    },
+    "SchemePair": {
+      "description": "Contains both a light and dark color scheme for the Terminal to use, depending on the theme of the application.",
+      "properties": {
+        "light": {
+          "default": "Campbell",
+          "description": "Name of the scheme to use when the app is using light theme",
+          "type": "string"
+        },
+        "dark": {
+          "default": "Campbell",
+          "description": "Name of the scheme to use when the app is using dark theme",
+          "type": "string"
+        },
+      }
     },
     "FontConfig": {
       "properties": {
@@ -2170,7 +2192,14 @@
         "colorScheme": {
           "default": "Campbell",
           "description": "Name of the terminal color scheme to use. Color schemes are defined under \"schemes\".",
-          "type": "string"
+          "oneOf": [
+            {
+              "$ref": "#/$defs/SchemePair"
+            },
+            {
+              "type": "string"
+            }
+          ]
         },
         "commandline": {
           "description": "Executable used in the profile.",
@@ -2396,7 +2425,10 @@
         },
         "startingDirectory": {
           "description": "The directory the shell starts in when it is loaded.",
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "suppressApplicationTitle": {
           "description": "When set to true, tabTitle overrides the default title of the tab and any title change messages from the application will be suppressed. When set to false, tabTitle behaves as normal.",

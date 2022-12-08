@@ -39,10 +39,11 @@
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
 
             <!--  Color Scheme  -->
+            <!--  This currently only display the Dark color scheme, even if the user has a pair of schemes set.  -->
             <local:SettingContainer x:Uid="Profile_ColorScheme"
-                                    ClearSettingValue="{x:Bind Appearance.ClearColorSchemeName}"
-                                    HasSettingValue="{x:Bind Appearance.HasColorSchemeName, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Appearance.ColorSchemeNameOverrideSource, Mode=OneWay}">
+                                    ClearSettingValue="{x:Bind Appearance.ClearDarkColorSchemeName}"
+                                    HasSettingValue="{x:Bind Appearance.HasDarkColorSchemeName, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Appearance.DarkColorSchemeNameOverrideSource, Mode=OneWay}">
                 <ComboBox ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
                           SelectedItem="{x:Bind CurrentColorScheme, Mode=TwoWay}"
                           Style="{StaticResource ComboBoxSettingStyle}">
@@ -156,8 +157,7 @@
             <local:SettingContainer x:Uid="Profile_AdjustIndistinguishableColors"
                                     ClearSettingValue="{x:Bind Appearance.ClearAdjustIndistinguishableColors}"
                                     HasSettingValue="{x:Bind Appearance.HasAdjustIndistinguishableColors, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Appearance.AdjustIndistinguishableColorsOverrideSource, Mode=OneWay}"
-                                    Visibility="{x:Bind ShowIndistinguishableColorsItem}">
+                                    SettingOverrideSource="{x:Bind Appearance.AdjustIndistinguishableColorsOverrideSource, Mode=OneWay}">
                 <ComboBox AutomationProperties.AccessibilityView="Content"
                           ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                           ItemsSource="{x:Bind AdjustIndistinguishableColorsList, Mode=OneWay}"
