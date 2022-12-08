@@ -2834,7 +2834,7 @@ bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
     {
         DispatchTypes::ScrollMark mark;
         mark.category = DispatchTypes::MarkCategory::Prompt;
-        _api.AddMark(mark);
+        _api.MarkPrompt(mark);
         return true;
     }
     return false;
@@ -2873,14 +2873,52 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
     }
 
     const auto action = til::at(parts, 0);
-
-    if (action == L"A") // FTCS_PROMPT
+    if (action.size() == 1)
     {
-        // Simply just mark this line as a prompt line.
-        DispatchTypes::ScrollMark mark;
-        mark.category = DispatchTypes::MarkCategory::Prompt;
-        _api.AddMark(mark);
-        return true;
+        switch (til::at(action, 0))
+        {
+        case L'A': // FTCS_PROMPT
+        {
+            // Simply just mark this line as a prompt line.
+            DispatchTypes::ScrollMark mark;
+            mark.category = DispatchTypes::MarkCategory::Prompt;
+            _api.MarkPrompt(mark);
+            return true;
+        }
+        case L'B': // FTCS_COMMAND_START
+        {
+            _api.MarkCommandStart();
+            return true;
+        }
+        case L'C': // FTCS_COMMAND_EXECUTED
+        {
+            _api.MarkOutputStart();
+            return true;
+        }
+        case L'D': // FTCS_COMMAND_FINISHED
+        {
+            std::optional<unsigned int> error = std::nullopt;
+            if (parts.size() >= 2)
+            {
+                const auto errorString = til::at(parts, 1);
+
+                // If we fail to parse the code, then it was gibberish, or it might
+                // have just started with "-". Either way, let's just treat it as an
+                // error and move on.
+                //
+                // We know that "0" will be successfully parsed, and that's close enough.
+                unsigned int parsedError = 0;
+                error = Utils::StringToUint(errorString, parsedError) ? parsedError :
+                                                                        UINT_MAX;
+            }
+            _api.MarkCommandFinish(error);
+            return true;
+        }
+        default:
+        {
+            return false;
+        }
+        }
     }
 
     // When we add the rest of the FTCS sequences (GH#11000), we should add a

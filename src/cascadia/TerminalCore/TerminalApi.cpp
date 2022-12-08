@@ -332,7 +332,8 @@ void Terminal::UseMainScreenBuffer()
     CATCH_LOG();
 }
 
-void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark)
+// NOTE: This is the version of AddMark that comes from VT
+void Terminal::MarkPrompt(const DispatchTypes::ScrollMark& mark)
 {
     static bool logged = false;
     if (!logged)
@@ -348,7 +349,100 @@ void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes:
     }
 
     const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
-    AddMark(mark, cursorPos, cursorPos);
+    AddMark(mark, cursorPos, cursorPos, false);
+
+    if (mark.category == DispatchTypes::MarkCategory::Prompt)
+    {
+        _currentPromptState = PromptState::Prompt;
+    }
+}
+
+void Terminal::MarkCommandStart()
+{
+    const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
+
+    if ((_currentPromptState == PromptState::Prompt) &&
+        (_scrollMarks.size() > 0))
+    {
+        // We were in the right state, and there's a previous mark to work
+        // with.
+        //
+        //We can just do the work below safely.
+    }
+    else
+    {
+        // If there was no last mark, or we're in a weird state,
+        // then abandon the current state, and just insert a new Prompt mark that
+        // start's & ends here, and got to State::Command.
+
+        DispatchTypes::ScrollMark mark;
+        mark.category = DispatchTypes::MarkCategory::Prompt;
+        AddMark(mark, cursorPos, cursorPos, false);
+    }
+    _scrollMarks.back().end = cursorPos;
+    _currentPromptState = PromptState::Command;
+}
+
+void Terminal::MarkOutputStart()
+{
+    const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
+
+    if ((_currentPromptState == PromptState::Command) &&
+        (_scrollMarks.size() > 0))
+    {
+        // We were in the right state, and there's a previous mark to work
+        // with.
+        //
+        //We can just do the work below safely.
+    }
+    else
+    {
+        // If there was no last mark, or we're in a weird state,
+        // then abandon the current state, and just insert a new Prompt mark that
+        // start's & ends here, and the command ends here, and go to State::Output.
+
+        DispatchTypes::ScrollMark mark;
+        mark.category = DispatchTypes::MarkCategory::Prompt;
+        AddMark(mark, cursorPos, cursorPos, false);
+    }
+    _scrollMarks.back().commandEnd = cursorPos;
+    _currentPromptState = PromptState::Output;
+}
+
+void Terminal::MarkCommandFinish(std::optional<unsigned int> error)
+{
+    const til::point cursorPos{ _activeBuffer().GetCursor().GetPosition() };
+    auto category = DispatchTypes::MarkCategory::Prompt;
+    if (error.has_value())
+    {
+        category = *error == 0u ?
+                       DispatchTypes::MarkCategory::Success :
+                       DispatchTypes::MarkCategory::Error;
+    }
+
+    if ((_currentPromptState == PromptState::Output) &&
+        (_scrollMarks.size() > 0))
+    {
+        // We were in the right state, and there's a previous mark to work
+        // with.
+        //
+        //We can just do the work below safely.
+    }
+    else
+    {
+        // If there was no last mark, or we're in a weird state, then abandon
+        // the current state, and just insert a new Prompt mark that start's &
+        // ends here, and the command ends here, AND the output ends here. and
+        // go to State::Output.
+
+        DispatchTypes::ScrollMark mark;
+        mark.category = DispatchTypes::MarkCategory::Prompt;
+        AddMark(mark, cursorPos, cursorPos, false);
+        _scrollMarks.back().commandEnd = cursorPos;
+    }
+    _scrollMarks.back().outputEnd = cursorPos;
+    _scrollMarks.back().category = category;
+    _currentPromptState = PromptState::None;
 }
 
 // Method Description:

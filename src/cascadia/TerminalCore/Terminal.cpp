@@ -804,11 +804,20 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
     // Then treat this line like it's a prompt mark.
     if (_autoMarkPrompts && vkey == VK_RETURN && !_inAltBuffer())
     {
-        DispatchTypes::ScrollMark mark;
-        mark.category = DispatchTypes::MarkCategory::Prompt;
-        // Don't set the color - we'll automatically use the DEFAULT_FOREGROUND
-        // color for any MarkCategory::Prompt marks without one set.
-        AddMark(mark);
+        // * If we have a current prompt:
+        //   - Then we did know that the prompt started, (we may have also
+        //     already gotten a MarkCommandStart sequence). The user has pressed
+        //     enter, and we're treating that like the prompt has now ended.
+        //     - Perform a FTCS_COMMAND_EXECUTED, so that we start marking this
+        //       as output.
+        //     - This enables CMD to have full FTCS support, even though there's
+        //       no point in CMD to insert a "pre exec" hook
+        // * Else: We don't have a prompt. We don't know anything else, but we
+        //   can set the whole line as the prompt, no command, and start the
+        //   command_executed now.
+        //
+        // Fortunately, MarkOutputStart will do all this logic for us!
+        MarkOutputStart();
     }
 
     // Unfortunately, the UI doesn't give us both a character down and a
@@ -1251,8 +1260,20 @@ void Terminal::_AdjustCursorPosition(const til::point proposedPosition)
         {
             for (auto& mark : _scrollMarks)
             {
+                // Move the mark up
                 mark.start.y -= rowsPushedOffTopOfBuffer;
+
+                // If the mark had sub-regions, then move those pointers too
+                if (mark.commandEnd.has_value())
+                {
+                    (*mark.commandEnd).y -= rowsPushedOffTopOfBuffer;
+                }
+                if (mark.outputEnd.has_value())
+                {
+                    (*mark.outputEnd).y -= rowsPushedOffTopOfBuffer;
+                }
             }
+
             _scrollMarks.erase(std::remove_if(_scrollMarks.begin(),
                                               _scrollMarks.end(),
                                               [](const VirtualTerminal::DispatchTypes::ScrollMark& m) { return m.start.y < 0; }),
@@ -1542,9 +1563,11 @@ void Terminal::_updateUrlDetection()
     }
 }
 
+// NOTE: This is the version of AddMark that comes from the UI. The VT api call into this too.
 void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark,
                        const til::point& start,
-                       const til::point& end)
+                       const til::point& end,
+                       const bool fromUi)
 {
     if (_inAltBuffer())
     {
@@ -1555,11 +1578,21 @@ void Terminal::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes:
     m.start = start;
     m.end = end;
 
-    _scrollMarks.push_back(m);
+    if (fromUi)
+    {
+        _scrollMarks.insert(_scrollMarks.begin(), m);
+    }
+    else
+    {
+        _scrollMarks.push_back(m);
+    }
 
     // Tell the control that the scrollbar has somehow changed. Used as a
     // workaround to force the control to redraw any scrollbar marks
     _NotifyScrollEvent();
+
+    // DON'T set _currentPrompt. The VT impl will do that for you. We don't want
+    // UI-driven marks to set that.
 }
 
 void Terminal::ClearMark()
@@ -1576,13 +1609,14 @@ void Terminal::ClearMark()
         start = til::point{ GetSelectionAnchor() };
         end = til::point{ GetSelectionEnd() };
     }
+    auto inSelection = [&start, &end](const DispatchTypes::ScrollMark& m) {
+        return (m.start >= start && m.start <= end) ||
+               (m.end >= start && m.end <= end);
+    };
 
     _scrollMarks.erase(std::remove_if(_scrollMarks.begin(),
                                       _scrollMarks.end(),
-                                      [&start, &end](const auto& m) {
-                                          return (m.start >= start && m.start <= end) ||
-                                                 (m.end >= start && m.end <= end);
-                                      }),
+                                      inSelection),
                        _scrollMarks.end());
 
     // Tell the control that the scrollbar has somehow changed. Used as a

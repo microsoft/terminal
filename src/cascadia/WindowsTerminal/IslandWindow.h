@@ -81,6 +81,7 @@ public:
 
     WINRT_CALLBACK(WindowMoved, winrt::delegate<void()>);
     WINRT_CALLBACK(WindowVisibilityChanged, winrt::delegate<void(bool)>);
+    WINRT_CALLBACK(UpdateSettingsRequested, winrt::delegate<void()>);
 
 protected:
     void ForceResize()

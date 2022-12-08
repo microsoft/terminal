@@ -63,25 +63,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return result;
     }
 
-    // Helper static function to ensure that all ambiguous-width glyphs are reported as narrow.
-    // See microsoft/terminal#2066 for more info.
-    static bool _IsGlyphWideForceNarrowFallback(const std::wstring_view /* glyph */)
-    {
-        return false; // glyph is not wide.
-    }
-
-    static bool _EnsureStaticInitialization()
-    {
-        // use C++11 magic statics to make sure we only do this once.
-        static auto initialized = []() {
-            // *** THIS IS A SINGLETON ***
-            SetGlyphWidthFallback(_IsGlyphWideForceNarrowFallback);
-
-            return true;
-        }();
-        return initialized;
-    }
-
     TextColor SelectionColor::AsTextColor() const noexcept
     {
         if (_IsIndex16)
@@ -101,8 +82,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _desiredFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, DEFAULT_FONT_SIZE, CP_UTF8 },
         _actualFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false }
     {
-        _EnsureStaticInitialization();
-
         _settings = winrt::make_self<implementation::ControlSettings>(settings, unfocusedAppearance);
 
         _terminal = std::make_shared<::Microsoft::Terminal::Core::Terminal>();
@@ -1443,7 +1422,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return result;
     }
 
-    ::Microsoft::Console::Types::IUiaData* ControlCore::GetUiaData() const
+    ::Microsoft::Console::Render::IRenderData* ControlCore::GetRenderData() const
     {
         return _terminal.get();
     }
@@ -1474,7 +1453,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                      Search::Sensitivity::CaseSensitive :
                                      Search::Sensitivity::CaseInsensitive;
 
-        ::Search search(*GetUiaData(), text.c_str(), direction, sensitivity);
+        ::Search search(*GetRenderData(), text.c_str(), direction, sensitivity);
         auto lock = _terminal->LockForWriting();
         const auto foundMatch{ search.FindNext() };
         if (foundMatch)
@@ -2020,7 +1999,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // The version of this that only accepts a ScrollMark will automatically
         // set the start & end to the cursor position.
-        _terminal->AddMark(m, m.start, m.end);
+        _terminal->AddMark(m, m.start, m.end, true);
     }
     void ControlCore::ClearMark() { _terminal->ClearMark(); }
     void ControlCore::ClearAllMarks() { _terminal->ClearAllMarks(); }
