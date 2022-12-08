@@ -1894,3 +1894,16 @@ void IslandWindow::RemoveFromSystemMenu(const winrt::hstring& itemLabel)
     }
     _systemMenuItems.erase(it->first);
 }
+
+void IslandWindow::UseMica(const bool newValue)
+{
+    // This block of code enables Mica for our window. By all accounts, this
+    // version of the code will only work on Windows 11, SV2. There's a slightly
+    // different API surface for enabling Mica on Windows 11 22000.0.
+    //
+    // This API was only publicly supported as of Windows 11 SV2, 22621. Before
+    // that version, this API will just return an error and do nothing silently.
+
+    const int attribute = newValue ? DWMSBT_MAINWINDOW : DWMSBT_NONE;
+    std::ignore = DwmSetWindowAttribute(GetHandle(), DWMWA_SYSTEMBACKDROP_TYPE, &attribute, sizeof(attribute));
+}

@@ -513,8 +513,8 @@ void NonClientIslandWindow::_OnMaximizeChange() noexcept
         const auto isIconified = WI_IsFlagSet(windowStyle, WS_ICONIC);
 
         const auto state = _isMaximized ? winrt::TerminalApp::WindowVisualState::WindowVisualStateMaximized :
-                           isIconified  ? winrt::TerminalApp::WindowVisualState::WindowVisualStateIconified :
-                                          winrt::TerminalApp::WindowVisualState::WindowVisualStateNormal;
+                                          isIconified ? winrt::TerminalApp::WindowVisualState::WindowVisualStateIconified :
+                                                        winrt::TerminalApp::WindowVisualState::WindowVisualStateNormal;
 
         try
         {
@@ -890,22 +890,25 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         //  bug and it's what a lot of Win32 apps that customize the title bar do
         //  so it should work fine.
         //
-        // Note #3 (circa late 2022): It seems like we can just set this to 0,
-        //  and have it work. This is LOAD-BEARING. By having the titlebar a
-        //  totally empty rect, DWM will know that we don't have the traditional
-        //  titlebar, and will use NCHITTEST to determine where to place the
-        //  Snap Flyout. The drag rect will handle that.
-        //
-        //  FURTHERMORE: If we leave the titlebar visible AT ALL, then a
-        //  transparent titlebar (theme.tabRow.background:#ff00ff00 for example)
-        //  will allow the DWM titlebar to be visible, which will look insane.
-        //  EVEN MORE SO: Mica + "show accent color on title bars" will _always_
-        //  show the accent-colored strip of the titlebar, even on top of the
-        //  Mica.
-        //
-        //  So REALLY REALLY get rid of the titlebar entirely.
+        // Notes #3 (circa late 2022): We want to make some changes here to
+        // support Mica. This introduces some complications.
+        // - If we leave the titlebar visible AT ALL, then a transparent
+        //   titlebar (theme.tabRow.background:#ff00ff00 for example) will allow
+        //   the DWM titlebar to be visible, underneath our content. EVEN MORE
+        //   SO: Mica + "show accent color on title bars" will _always_ show the
+        //   accent-colored strip of the titlebar, even on top of the Mica.
+        // - It _seems_ like we can just set this to 0, and have it work. You'd
+        //   be wrong. On Windows 10, setting this to 0 will cause the topmost
+        //   pixel of our window to be just a little darker than the rest of the
+        //   frame. So ONLY set this to 0 when the user has explicitly asked for
+        //   Mica. Though it won't do anything on Windows 10, they should be
+        //   able to opt back out of having that weird dark pixel.
+        // - This is LOAD-BEARING. By having the titlebar a totally empty rect,
+        //   DWM will know that we don't have the traditional titlebar, and will
+        //   use NCHITTEST to determine where to place the Snap Flyout. The drag
+        //   rect will handle that.
 
-        margins.cyTopHeight = 0;
+        margins.cyTopHeight = _useMica ? 0 : -frame.top;
     }
 
     // Extend the frame into the client area. microsoft/terminal#2735 - Just log
@@ -1157,4 +1160,16 @@ bool NonClientIslandWindow::_IsTitlebarVisible() const
 void NonClientIslandWindow::SetTitlebarBackground(winrt::Windows::UI::Xaml::Media::Brush brush)
 {
     _titlebar.Background(brush);
+}
+
+void NonClientIslandWindow::UseMica(const bool newValue)
+{
+    // Stash internally if we're using Mica. If we aren't, we don't want to
+    // totally blow away our titlebar with DwmExtendFrameIntoClientArea,
+    // especially on Windows 10
+    _useMica = newValue;
+
+    IslandWindow::UseMica(newValue);
+
+    _UpdateFrameMargins();
 }

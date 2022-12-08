@@ -49,6 +49,8 @@ public:
 
     void SetTitlebarBackground(winrt::Windows::UI::Xaml::Media::Brush brush);
 
+    virtual void UseMica(const bool newValue) override;
+
 private:
     std::optional<til::point> _oldIslandPos;
 
@@ -62,6 +64,8 @@ private:
     wil::unique_hwnd _dragBarWindow;
 
     winrt::Windows::UI::Xaml::ElementTheme _theme;
+
+    bool _useMica{ false };
 
     bool _isMaximized;
     bool _trackingMouse{ false };
