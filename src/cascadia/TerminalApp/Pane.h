@@ -237,6 +237,7 @@ private:
     winrt::event_token _firstClosedToken{ 0 };
     winrt::event_token _secondClosedToken{ 0 };
     winrt::event_token _warningBellToken{ 0 };
+    winrt::event_token _closeTerminalRequestedToken{ 0 };
 
     winrt::Windows::UI::Xaml::UIElement::GotFocus_revoker _gotFocusRevoker;
     winrt::Windows::UI::Xaml::UIElement::LostFocus_revoker _lostFocusRevoker;
@@ -290,6 +291,7 @@ private:
                                  const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
     void _ControlLostFocusHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                   const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+    void _CloseTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
 
     std::pair<float, float> _CalcChildrenSizes(const float fullSize) const;
     SnapChildrenSizeResult _CalcSnappedChildrenSizes(const bool widthOrHeight, const float fullSize) const;
