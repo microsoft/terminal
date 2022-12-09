@@ -92,6 +92,7 @@
     <ClInclude Include="VsDevShellGenerator.h" />
     <ClInclude Include="VsSetupConfiguration.h" />
     <ClInclude Include="WslDistroGenerator.h" />
+    <ClInclude Include="SshHostGenerator.h" />
     <ClInclude Include="ModelSerializationHelpers.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
@@ -166,6 +167,7 @@
     <ClCompile Include="VsDevShellGenerator.cpp" />
     <ClCompile Include="VsSetupConfiguration.cpp" />
     <ClCompile Include="WslDistroGenerator.cpp" />
+    <ClCompile Include="SshHostGenerator.cpp" />
     <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
     you want to use jsoncpp -->
     <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
