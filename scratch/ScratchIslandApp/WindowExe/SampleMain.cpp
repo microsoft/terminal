@@ -75,6 +75,7 @@ static bool _messageIsAltKeyup(const MSG& message)
 }
 
 int foo();
+winrt::SampleApp::App g_app{ nullptr };
 
 int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 {
@@ -93,6 +94,11 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     // Make sure to call this so we get WM_POINTER messages.
     EnableMouseInPointer(true);
 
+    winrt::init_apartment(winrt::apartment_type::single_threaded);
+
+    // Create the App first, on the main thread
+    g_app = winrt::SampleApp::App();
+
     std::thread one(foo);
 
     Sleep(2000);
@@ -100,6 +106,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 
     one.join();
     // two.join();
+
     return 0;
 }
 
@@ -119,7 +126,9 @@ int foo(){
     // Create the SampleAppHost object, which will create both the window and the
     // Terminal App. This MUST BE constructed before the Xaml manager as TermApp
     // provides an implementation of Windows.UI.Xaml.Application.
-    SampleAppHost host;
+    SampleAppHost host{ nullptr };
+
+    host._logic = winrt::SampleApp::SampleAppLogic(); // This calls to winrt::make_self<MyPage>();
 
     // Initialize the xaml content. This must be called AFTER the
     // WindowsXamlManager is initialized.

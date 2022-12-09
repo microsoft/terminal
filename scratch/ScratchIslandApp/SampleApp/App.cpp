@@ -66,8 +66,7 @@ namespace winrt::SampleApp::implementation
 
     SampleAppLogic App::Logic()
     {
-        static SampleAppLogic logic;
-        return logic;
+        return nullptr;
     }
 
     /// <summary>

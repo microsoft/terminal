@@ -8,13 +8,13 @@
 class SampleAppHost
 {
 public:
-    SampleAppHost() noexcept;
+    SampleAppHost(winrt::SampleApp::SampleAppLogic l) noexcept;
     virtual ~SampleAppHost();
 
     void Initialize();
 
+    winrt::SampleApp::SampleAppLogic _logic{ nullptr };
+
 private:
     std::unique_ptr<SampleIslandWindow> _window;
-    winrt::SampleApp::App _app;
-    winrt::SampleApp::SampleAppLogic _logic;
 };
