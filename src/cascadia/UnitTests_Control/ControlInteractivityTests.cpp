@@ -144,7 +144,7 @@ namespace ControlUnitTests
             // The Settings object's opacity shouldn't be changed
             VERIFY_ARE_EQUAL(0.5, settings->Opacity());
 
-            auto expectedUseAcrylic = expectedOpacity < 1.0 ||
+            auto expectedUseAcrylic = expectedOpacity < 1.0 &&
                                       (useAcrylic);
             VERIFY_ARE_EQUAL(useAcrylic, settings->UseAcrylic());
             VERIFY_ARE_EQUAL(expectedUseAcrylic, core->UseAcrylic());
