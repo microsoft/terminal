@@ -13,7 +13,6 @@
   </PropertyGroup>
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
-    <TerminalXamlApplicationToolkit>true</TerminalXamlApplicationToolkit>
   </PropertyGroup>
   <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
