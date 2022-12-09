@@ -93,7 +93,7 @@ public:
     virtual bool ResetMode(const DispatchTypes::ModeParams param) = 0; // DECRST
     virtual bool RequestMode(const DispatchTypes::ModeParams param) = 0; // DECRQM
 
-    virtual bool DeviceStatusReport(const DispatchTypes::StatusType statusType) = 0; // DSR, DSR-OS, DSR-CPR
+    virtual bool DeviceStatusReport(const DispatchTypes::StatusType statusType, const VTParameter id) = 0; // DSR
     virtual bool DeviceAttributes() = 0; // DA1
     virtual bool SecondaryDeviceAttributes() = 0; // DA2
     virtual bool TertiaryDeviceAttributes() = 0; // DA3
@@ -139,6 +139,11 @@ public:
                                        const DispatchTypes::DrcsFontUsage fontUsage,
                                        const VTParameter cellHeight,
                                        const DispatchTypes::DrcsCharsetSize charsetSize) = 0; // DECDLD
+
+    virtual StringHandler DefineMacro(const VTInt macroId,
+                                      const DispatchTypes::MacroDeleteControl deleteControl,
+                                      const DispatchTypes::MacroEncoding encoding) = 0; // DECDMAC
+    virtual bool InvokeMacro(const VTInt macroId) = 0; // DECINVM
 
     virtual StringHandler RestoreTerminalState(const DispatchTypes::ReportFormat format) = 0; // DECRSTS
 

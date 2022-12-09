@@ -4175,6 +4175,22 @@ namespace winrt::TerminalApp::implementation
         const auto theme = _settings.GlobalSettings().CurrentTheme();
         auto requestedTheme{ theme.RequestedTheme() };
 
+        {
+            // Update the brushes that Pane's use...
+            Pane::SetupResources(requestedTheme);
+            // ... then trigger a visual update for all the pane borders to
+            // apply the new ones.
+            for (const auto& tab : _tabs)
+            {
+                if (auto terminalTab{ _GetTerminalTabImpl(tab) })
+                {
+                    terminalTab->GetRootPane()->WalkTree([&](auto&& pane) {
+                        pane->UpdateVisuals();
+                    });
+                }
+            }
+        }
+
         const auto res = Application::Current().Resources();
 
         // Use our helper to lookup the theme-aware version of the resource.

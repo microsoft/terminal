@@ -601,13 +601,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Update our runtime opacity value
         _runtimeOpacity = newOpacity;
 
-        // GH#11285 - If the user is on Windows 10, and they changed the
-        // transparency of the control s.t. it should be partially opaque, then
-        // opt them in to acrylic. It's the only way to have transparency on
-        // Windows 10.
-        // We'll also turn the acrylic back off when they're fully opaque, which
-        // is what the Terminal did prior to 1.12.
-        _runtimeUseAcrylic = newOpacity < 1.0 && (!IsVintageOpacityAvailable() || _settings->UseAcrylic());
+        // Manually turn off acrylic if they turn off transparency.
+        _runtimeUseAcrylic = newOpacity < 1.0 && _settings->UseAcrylic();
 
         // Update the renderer as well. It might need to fall back from
         // cleartype -> grayscale if the BG is transparent / acrylic.
@@ -733,12 +728,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         auto lock = _terminal->LockForWriting();
 
-        // GH#11285 - If the user is on Windows 10, and they wanted opacity, but
-        // didn't explicitly request acrylic, then opt them in to acrylic.
-        // On Windows 11+, this isn't needed, because we can have vintage opacity.
-        // Instead, disable acrylic while the opacity is 100%
-        _runtimeUseAcrylic = _settings->Opacity() < 1.0 && (!IsVintageOpacityAvailable() || _settings->UseAcrylic());
         _runtimeOpacity = std::nullopt;
+
+        // Manually turn off acrylic if they turn off transparency.
+        _runtimeUseAcrylic = _settings->Opacity() < 1.0 && _settings->UseAcrylic();
 
         const auto sizeChanged = _setFontSizeUnderLock(_settings->FontSize());
 
@@ -1751,22 +1744,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         return hstring{ str };
-    }
-
-    // Helper to check if we're on Windows 11 or not. This is used to check if
-    // we need to use acrylic to achieve transparency, because vintage opacity
-    // doesn't work in islands on win10.
-    // Remove when we can remove the rest of GH#11285
-    bool ControlCore::IsVintageOpacityAvailable() noexcept
-    {
-        OSVERSIONINFOEXW osver{};
-        osver.dwOSVersionInfoSize = sizeof(osver);
-        osver.dwBuildNumber = 22000;
-
-        DWORDLONG dwlConditionMask = 0;
-        VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
-
-        return VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask) != FALSE;
     }
 
     Core::Scheme ControlCore::ColorScheme() const noexcept
