@@ -74,6 +74,8 @@ static bool _messageIsAltKeyup(const MSG& message)
     return (message.message == WM_KEYUP || message.message == WM_SYSKEYUP) && message.wParam == VK_MENU;
 }
 
+int foo();
+
 int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 {
     // If Terminal is spawned by a shortcut that requests that it run in a new process group
@@ -90,6 +92,18 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 
     // Make sure to call this so we get WM_POINTER messages.
     EnableMouseInPointer(true);
+
+    std::thread one(foo);
+
+    Sleep(2000);
+    std::thread two(foo);
+
+    one.join();
+    // two.join();
+    return 0;
+}
+
+int foo(){
 
     // !!! LOAD BEARING !!!
     // We must initialize the main thread as a single-threaded apartment before
