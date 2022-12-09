@@ -52,6 +52,8 @@ namespace Microsoft.Terminal.Control
 
         event Windows.Foundation.TypedEventHandler<Object, ShowWindowArgs> ShowWindowChanged;
 
+        event Windows.Foundation.TypedEventHandler<Object, Object> CloseTerminalRequested;
+
         Boolean CopySelectionToClipboard(Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
         void PasteTextFromClipboard();
         void SelectAll();

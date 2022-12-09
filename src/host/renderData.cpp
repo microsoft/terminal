@@ -15,7 +15,6 @@ using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Interactivity;
 using Microsoft::Console::Interactivity::ServiceLocator;
 
-#pragma region IBaseData
 // Routine Description:
 // - Retrieves the viewport that applies over the data available in the GetTextBuffer() call
 // Return Value:
@@ -98,9 +97,6 @@ void RenderData::UnlockConsole() noexcept
     ::UnlockConsole();
 }
 
-#pragma endregion
-
-#pragma region IRenderData
 // Method Description:
 // - Gets the cursor's position in the buffer, relative to the buffer origin.
 // Arguments:
@@ -327,9 +323,7 @@ const std::vector<size_t> RenderData::GetPatternId(const til::point /*location*/
 {
     return {};
 }
-#pragma endregion
 
-#pragma region IUiaData
 // Routine Description:
 // - Converts a text attribute into the RGB values that should be presented, applying
 //   relevant table translation information and preferences.
@@ -443,4 +437,3 @@ void RenderData::ColorSelection(const til::point coordSelectionStart, const til:
 {
     Selection::Instance().ColorSelection(coordSelectionStart, coordSelectionEnd, attr);
 }
-#pragma endregion

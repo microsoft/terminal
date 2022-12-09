@@ -22,8 +22,8 @@ Author(s):
 #pragma once
 
 #include "../buffer/out/textBuffer.hpp"
+#include "../renderer/inc/IRenderData.hpp"
 #include "UiaTextRangeBase.hpp"
-#include "IUiaData.h"
 #include "IUiaTraceable.h"
 
 #include <UIAutomationCore.h>
@@ -39,7 +39,7 @@ namespace Microsoft::Console::Types
         public IUiaTraceable
     {
     public:
-        virtual HRESULT RuntimeClassInitialize(_In_ IUiaData* pData, _In_ std::wstring_view wordDelimiters = UiaTextRangeBase::DefaultWordDelimiter) noexcept;
+        virtual HRESULT RuntimeClassInitialize(_In_ Render::IRenderData* pData, _In_ std::wstring_view wordDelimiters = UiaTextRangeBase::DefaultWordDelimiter) noexcept;
 
         ScreenInfoUiaProviderBase(const ScreenInfoUiaProviderBase&) = delete;
         ScreenInfoUiaProviderBase(ScreenInfoUiaProviderBase&&) = delete;
@@ -104,8 +104,8 @@ namespace Microsoft::Console::Types
                                         const std::wstring_view wordDelimiters,
                                         _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr) = 0;
 
-        // weak reference to IUiaData
-        IUiaData* _pData{ nullptr };
+        // weak reference to IRenderData
+        Render::IRenderData* _pData{ nullptr };
 
         std::wstring _wordDelimiters{};
 

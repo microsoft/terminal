@@ -35,6 +35,7 @@
 #include <winrt/Windows.Storage.Streams.h>
 #include <winrt/Windows.System.h>
 #include <winrt/Windows.UI.Core.h>
+#include <winrt/Windows.UI.ViewManagement.h>
 #include <winrt/Windows.UI.Xaml.Controls.h>
 #include <winrt/Windows.UI.Xaml.Media.h>
 #include <winrt/Windows.UI.Xaml.Media.Imaging.h>
