@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "SearchBoxControl.h"
 #include "SearchBoxControl.g.cpp"
+#include <LibraryResources.h>
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -19,11 +20,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         this->CharacterReceived({ this, &SearchBoxControl::_CharacterHandler });
         this->KeyDown({ this, &SearchBoxControl::_KeyDownHandler });
 
-        _focusableElements.insert(TextBox());
+        auto textBox = TextBox();
+        _focusableElements.insert(textBox);
         _focusableElements.insert(CloseButton());
         _focusableElements.insert(CaseSensitivityButton());
         _focusableElements.insert(GoForwardButton());
         _focusableElements.insert(GoBackwardButton());
+
+        // GH#14398: Visible text should match the placeholder text
+        Automation::AutomationProperties::SetName(textBox, RS_(L"SearchBox_TextBox/PlaceholderText"));
     }
 
     // Method Description:
