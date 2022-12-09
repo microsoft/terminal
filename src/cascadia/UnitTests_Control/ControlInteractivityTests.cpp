@@ -145,7 +145,7 @@ namespace ControlUnitTests
             VERIFY_ARE_EQUAL(0.5, settings->Opacity());
 
             auto expectedUseAcrylic = expectedOpacity < 1.0 &&
-                                      (!winrt::Microsoft::Terminal::Control::implementation::ControlCore::IsVintageOpacityAvailable() || useAcrylic);
+                                      (useAcrylic);
             VERIFY_ARE_EQUAL(useAcrylic, settings->UseAcrylic());
             VERIFY_ARE_EQUAL(expectedUseAcrylic, core->UseAcrylic());
         };

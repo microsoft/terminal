@@ -142,8 +142,8 @@ namespace ControlUnitTests
             // requested acrylic.
 
             auto expectedUseAcrylic = expectedOpacity < 1.0;
+            VERIFY_IS_TRUE(core->_settings->UseAcrylic());
             VERIFY_ARE_EQUAL(expectedUseAcrylic, core->UseAcrylic());
-            VERIFY_ARE_EQUAL(true, core->_settings->UseAcrylic());
         };
         core->TransparencyChanged(opacityCallback);
 
