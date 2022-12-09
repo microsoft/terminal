@@ -4178,7 +4178,7 @@ namespace winrt::TerminalApp::implementation
         {
             // Update the brushes that Pane's use...
             Pane::SetupResources(requestedTheme);
-            // ... then trigger a visual update for all the bane borders to
+            // ... then trigger a visual update for all the pane borders to
             // apply the new ones.
             for (const auto& tab : _tabs)
             {
