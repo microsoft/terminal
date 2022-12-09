@@ -459,10 +459,12 @@ namespace Microsoft.Terminal.Wpf
 
         private void Connection_TerminalOutput(object sender, TerminalOutputEventArgs e)
         {
-            if (this.terminal != IntPtr.Zero)
+            if (this.terminal == IntPtr.Zero || string.IsNullOrEmpty(e.Data))
             {
-                NativeMethods.TerminalSendOutput(this.terminal, e.Data);
+                return;
             }
+
+            NativeMethods.TerminalSendOutput(this.terminal, e.Data);
         }
 
         private void OnScroll(int viewTop, int viewHeight, int bufferSize)
