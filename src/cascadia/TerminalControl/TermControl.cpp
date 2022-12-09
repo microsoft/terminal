@@ -630,7 +630,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //
         // Firing it manually makes sure it does.
         _BackgroundBrush = RootGrid().Background();
-        _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"BackgroundBrush" });
+        _PropertyChangedHandlers(*this, Data::PropertyChangedEventArgs{ L"BackgroundBrush" });
 
         _isBackgroundLight = _isColorLight(bg);
     }
@@ -652,7 +652,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const auto opacity{ _core.Opacity() };
         const auto useAcrylic{ _core.UseAcrylic() };
-
+        auto changed = false;
         // GH#11743, #11619: If we're changing whether or not acrylic is used,
         // then just entirely reinitialize the brush. The primary way that this
         // happens is on Windows 10, where we need to enable acrylic when the
@@ -666,6 +666,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _InitializeBackgroundBrush();
                 return;
             }
+            changed = acrylic.TintOpacity() != opacity;
             acrylic.TintOpacity(opacity);
         }
         else if (auto solidColor = RootGrid().Background().try_as<Media::SolidColorBrush>())
@@ -675,7 +676,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _InitializeBackgroundBrush();
                 return;
             }
+            changed = solidColor.Opacity() != opacity;
             solidColor.Opacity(opacity);
+        }
+        // Send a BG brush changed event, so you can mouse wheel the
+        // transparency of the titlebar too.
+        if (changed)
+        {
+            _PropertyChangedHandlers(*this, Data::PropertyChangedEventArgs{ L"BackgroundBrush" });
         }
     }
 
