@@ -4,9 +4,7 @@
 #include "precomp.h"
 #include "inc/IInputEvent.hpp"
 
-WindowBufferSizeEvent::~WindowBufferSizeEvent()
-{
-}
+WindowBufferSizeEvent::~WindowBufferSizeEvent() = default;
 
 INPUT_RECORD WindowBufferSizeEvent::ToInputRecord() const noexcept
 {

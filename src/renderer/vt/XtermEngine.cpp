@@ -201,7 +201,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     // the last cell of the row. We're in a deferred wrap, but the host
     // thinks the cursor is actually in-frame.
     // See ConptyRoundtripTests::DontWrapMoveCursorInSingleFrame
-    const auto cursorIsInDeferredWrap = (nextCursorPosition.X == _lastText.X - 1) && (nextCursorPosition.Y == _lastText.Y);
+    const auto cursorIsInDeferredWrap = (nextCursorPosition.x == _lastText.x - 1) && (nextCursorPosition.y == _lastText.y);
     // If all three of these conditions are true, then:
     //   * cursorIsInDeferredWrap: The cursor is in a position where the line
     //     filled the last cell of the row, but the host tried to paint it in
@@ -242,9 +242,9 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     const auto originalPos = _lastText;
     _trace.TraceMoveCursor(_lastText, coord);
     auto performedSoftWrap = false;
-    if (coord.X != _lastText.X || coord.Y != _lastText.Y)
+    if (coord.x != _lastText.x || coord.y != _lastText.y)
     {
-        if (coord.X == 0 && coord.Y == 0)
+        if (coord.x == 0 && coord.y == 0)
         {
             _needToDisableCursor = true;
             hr = _CursorHome();
@@ -253,7 +253,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
         {
             hr = _CursorPosition(coord);
         }
-        else if (coord.X == 0 && coord.Y == (_lastText.Y + 1))
+        else if (coord.x == 0 && coord.y == (_lastText.y + 1))
         {
             // Down one line, at the start of the line.
 
@@ -262,7 +262,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
             auto previousLineWrapped = false;
             if (_wrappedRow.has_value())
             {
-                previousLineWrapped = coord.Y == _wrappedRow.value() + 1;
+                previousLineWrapped = coord.y == _wrappedRow.value() + 1;
             }
 
             if (previousLineWrapped)
@@ -291,28 +291,28 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
             // otherwise we might accidentally break wrapped lines (GH#405)
             hr = _CursorPosition(coord);
         }
-        else if (coord.X == 0 && coord.Y == _lastText.Y)
+        else if (coord.x == 0 && coord.y == _lastText.y)
         {
             // Start of this line
             std::string seq = "\r";
             hr = _Write(seq);
         }
-        else if (coord.X == _lastText.X && coord.Y == (_lastText.Y + 1))
+        else if (coord.x == _lastText.x && coord.y == (_lastText.y + 1))
         {
             // Down one line, same X position
             std::string seq = "\n";
             hr = _Write(seq);
         }
-        else if (coord.X == (_lastText.X - 1) && coord.Y == (_lastText.Y))
+        else if (coord.x == (_lastText.x - 1) && coord.y == (_lastText.y))
         {
             // Back one char, same Y position
             std::string seq = "\b";
             hr = _Write(seq);
         }
-        else if (coord.Y == _lastText.Y && coord.X > _lastText.X)
+        else if (coord.y == _lastText.y && coord.x > _lastText.x)
         {
             // Same line, forward some distance
-            auto distance = coord.X - _lastText.X;
+            auto distance = coord.x - _lastText.x;
             hr = _CursorForward(distance);
         }
         else
@@ -381,7 +381,7 @@ try
         // tell us to do is print the new line at the bottom of the viewport,
         // and _MoveCursor will automatically give us the newline we want.
         // When that's implemented, we'll probably want to make sure to add a
-        //   _lastText.Y += dy;
+        //   _lastText.y += dy;
         // statement here.
 
         // Move the cursor to the bottom of the current viewport

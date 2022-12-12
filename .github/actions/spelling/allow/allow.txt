@@ -12,6 +12,7 @@ clickable
 clig
 CMMI
 copyable
+CtrlDToClose
 cybersecurity
 dalet
 Dcs
@@ -22,6 +23,7 @@ downside
 downsides
 dze
 dzhe
+DTo
 EDDB
 EDDC
 Enum'd

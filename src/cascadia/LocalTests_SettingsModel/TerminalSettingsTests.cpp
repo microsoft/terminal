@@ -779,21 +779,22 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(6u, settings->ActiveProfiles().Size());
         VERIFY_ARE_EQUAL(2u, settings->GlobalSettings().ColorSchemes().Size());
 
-        auto createTerminalSettings = [&](const auto& profile, const auto& schemes) {
+        auto createTerminalSettings = [&](const auto& profile, const auto& schemes, const auto& Theme) {
             auto terminalSettings{ winrt::make_self<implementation::TerminalSettings>() };
             terminalSettings->_ApplyProfileSettings(profile);
-            terminalSettings->_ApplyAppearanceSettings(profile.DefaultAppearance(), schemes);
+            terminalSettings->_ApplyAppearanceSettings(profile.DefaultAppearance(), schemes, Theme);
             return terminalSettings;
         };
 
         const auto activeProfiles = settings->ActiveProfiles();
         const auto colorSchemes = settings->GlobalSettings().ColorSchemes();
-        const auto terminalSettings0 = createTerminalSettings(activeProfiles.GetAt(0), colorSchemes);
-        const auto terminalSettings1 = createTerminalSettings(activeProfiles.GetAt(1), colorSchemes);
-        const auto terminalSettings2 = createTerminalSettings(activeProfiles.GetAt(2), colorSchemes);
-        const auto terminalSettings3 = createTerminalSettings(activeProfiles.GetAt(3), colorSchemes);
-        const auto terminalSettings4 = createTerminalSettings(activeProfiles.GetAt(4), colorSchemes);
-        const auto terminalSettings5 = createTerminalSettings(activeProfiles.GetAt(5), colorSchemes);
+        const auto currentTheme = settings->GlobalSettings().CurrentTheme();
+        const auto terminalSettings0 = createTerminalSettings(activeProfiles.GetAt(0), colorSchemes, currentTheme);
+        const auto terminalSettings1 = createTerminalSettings(activeProfiles.GetAt(1), colorSchemes, currentTheme);
+        const auto terminalSettings2 = createTerminalSettings(activeProfiles.GetAt(2), colorSchemes, currentTheme);
+        const auto terminalSettings3 = createTerminalSettings(activeProfiles.GetAt(3), colorSchemes, currentTheme);
+        const auto terminalSettings4 = createTerminalSettings(activeProfiles.GetAt(4), colorSchemes, currentTheme);
+        const auto terminalSettings5 = createTerminalSettings(activeProfiles.GetAt(5), colorSchemes, currentTheme);
 
         VERIFY_ARE_EQUAL(til::color(0x12, 0x34, 0x56), terminalSettings0->CursorColor()); // from color scheme
         VERIFY_ARE_EQUAL(DEFAULT_CURSOR_COLOR, terminalSettings1->CursorColor()); // default

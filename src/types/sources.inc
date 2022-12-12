@@ -12,7 +12,7 @@
 # Preprocessor Settings
 # -------------------------------------
 
-C_DEFINES               = $(C_DEFINES) -DBUILD_ONECORE_INTERACTIVITY
+C_DEFINES               = $(C_DEFINES)
 
 # -------------------------------------
 # Build System Settings
@@ -41,7 +41,6 @@ SOURCES= \
     ..\WindowBufferSizeEvent.cpp \
     ..\convert.cpp \
     ..\colorTable.cpp \
-    ..\Utf16Parser.cpp \
     ..\utils.cpp \
     ..\ThemeUtils.cpp \
     ..\ScreenInfoUiaProviderBase.cpp \

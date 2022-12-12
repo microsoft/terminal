@@ -136,6 +136,8 @@ namespace winrt::TerminalApp::implementation
         void OpenSettingsUI();
         void WindowActivated(const bool activated);
 
+        bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
+
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
         // -------------------------------- WinRT Events ---------------------------------
@@ -238,6 +240,10 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowLargePasteWarningDialog();
 
         void _CreateNewTabFlyout();
+        std::vector<winrt::Windows::UI::Xaml::Controls::MenuFlyoutItemBase> _CreateNewTabFlyoutItems(winrt::Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::NewTabMenuEntry> entries);
+        winrt::Windows::UI::Xaml::Controls::IconElement _CreateNewTabFlyoutIcon(const winrt::hstring& icon);
+        winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _CreateNewTabFlyoutProfile(const Microsoft::Terminal::Settings::Model::Profile profile, int profileIndex);
+
         void _OpenNewTabDropdown();
         HRESULT _OpenNewTab(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
         void _CreateNewTabFromPane(std::shared_ptr<Pane> pane);
@@ -388,7 +394,7 @@ namespace winrt::TerminalApp::implementation
                                                                       const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
 
         std::shared_ptr<Pane> _MakePane(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs = nullptr,
-                                        const bool duplicate = false,
+                                        const winrt::TerminalApp::TabBase& sourceTab = nullptr,
                                         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
 
         void _RefreshUIForSettingsReload();

@@ -205,8 +205,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                        const HANDLE hServerProcess,
                                        const HANDLE hClientProcess,
                                        TERMINAL_STARTUP_INFO startupInfo) :
-        _initialRows{ 25 },
-        _initialCols{ 80 },
+        _rows{ 25 },
+        _cols{ 80 },
         _guid{ Utils::CreateGuid() },
         _inPipe{ hIn },
         _outPipe{ hOut }
@@ -215,10 +215,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _piClient.hProcess = hClientProcess;
 
         _startupInfo.title = winrt::hstring{ startupInfo.pszTitle, SysStringLen(startupInfo.pszTitle) };
-        SysFreeString(startupInfo.pszTitle);
         _startupInfo.iconPath = winrt::hstring{ startupInfo.pszIconPath, SysStringLen(startupInfo.pszIconPath) };
-        SysFreeString(startupInfo.pszIconPath);
         _startupInfo.iconIndex = startupInfo.iconIndex;
+        _startupInfo.showWindow = startupInfo.wShowWindow;
 
         try
         {
@@ -269,8 +268,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _commandline = winrt::unbox_value_or<winrt::hstring>(settings.TryLookup(L"commandline").try_as<Windows::Foundation::IPropertyValue>(), _commandline);
             _startingDirectory = winrt::unbox_value_or<winrt::hstring>(settings.TryLookup(L"startingDirectory").try_as<Windows::Foundation::IPropertyValue>(), _startingDirectory);
             _startingTitle = winrt::unbox_value_or<winrt::hstring>(settings.TryLookup(L"startingTitle").try_as<Windows::Foundation::IPropertyValue>(), _startingTitle);
-            _initialRows = winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialRows").try_as<Windows::Foundation::IPropertyValue>(), _initialRows);
-            _initialCols = winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialCols").try_as<Windows::Foundation::IPropertyValue>(), _initialCols);
+            _rows = winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialRows").try_as<Windows::Foundation::IPropertyValue>(), _rows);
+            _cols = winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialCols").try_as<Windows::Foundation::IPropertyValue>(), _cols);
             _guid = winrt::unbox_value_or<winrt::guid>(settings.TryLookup(L"guid").try_as<Windows::Foundation::IPropertyValue>(), _guid);
             _environment = settings.TryLookup(L"environment").try_as<Windows::Foundation::Collections::ValueSet>();
             if constexpr (Feature_VtPassthroughMode::IsEnabled())
@@ -300,18 +299,40 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         return _startupInfo.title;
     }
 
+    WORD ConptyConnection::ShowWindow() const noexcept
+    {
+        return _startupInfo.showWindow;
+    }
+
     void ConptyConnection::Start()
     try
     {
+        bool usingExistingBuffer = false;
+        if (_isStateAtOrBeyond(ConnectionState::Closed))
+        {
+            _resetConnectionState();
+            usingExistingBuffer = true;
+        }
+
         _transitionToState(ConnectionState::Connecting);
 
-        const til::size dimensions{ gsl::narrow<til::CoordType>(_initialCols), gsl::narrow<til::CoordType>(_initialRows) };
+        const til::size dimensions{ gsl::narrow<til::CoordType>(_cols), gsl::narrow<til::CoordType>(_rows) };
 
         // If we do not have pipes already, then this is a fresh connection... not an inbound one that is a received
         // handoff from an already-started PTY process.
         if (!_inPipe)
         {
             DWORD flags = PSEUDOCONSOLE_RESIZE_QUIRK | PSEUDOCONSOLE_WIN32_INPUT_MODE;
+
+            // If we're using an existing buffer, we want the new connection
+            // to reuse the existing cursor. When not setting this flag, the
+            // PseudoConsole sends a clear screen VT code which our renderer
+            // interprets into making all the previous lines be outside the
+            // current viewport.
+            if (usingExistingBuffer)
+            {
+                flags |= PSEUDOCONSOLE_INHERIT_CURSOR;
+            }
 
             if constexpr (Feature_VtPassthroughMode::IsEnabled())
             {
@@ -436,6 +457,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             winrt::hstring exitText{ fmt::format(std::wstring_view{ RS_(L"ProcessExited") }, fmt::format(_errorFormat, status)) };
             _TerminalOutputHandlers(L"\r\n");
             _TerminalOutputHandlers(exitText);
+            _TerminalOutputHandlers(L"\r\n");
+            _TerminalOutputHandlers(RS_(L"CtrlDToClose"));
+            _TerminalOutputHandlers(L"\r\n");
         }
         CATCH_LOG();
     }
@@ -488,15 +512,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     void ConptyConnection::Resize(uint32_t rows, uint32_t columns)
     {
-        // If we haven't started connecting at all, it's still fair to update
-        // the initial rows and columns before we set things up.
-        if (!_isStateAtOrBeyond(ConnectionState::Connecting))
-        {
-            _initialRows = rows;
-            _initialCols = columns;
-        }
-        // Otherwise, we can really only dispatch a resize if we're already connected.
-        else if (_isConnected())
+        // Always keep these in case we ever want to disconnect/restart
+        _rows = rows;
+        _cols = columns;
+
+        if (_isConnected())
         {
             THROW_IF_FAILED(ConptyResizePseudoConsole(_hPC.get(), { Utils::ClampToShortMax(columns, 1), Utils::ClampToShortMax(rows, 1) }));
         }
@@ -544,7 +564,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     void ConptyConnection::Close() noexcept
     try
     {
-        if (_transitionToState(ConnectionState::Closing))
+        const bool isClosing = _transitionToState(ConnectionState::Closing);
+        if (isClosing || _isStateAtOrBeyond(ConnectionState::Closed))
         {
             // EXIT POINT
 
@@ -553,6 +574,15 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _clientExitWait.reset();
 
             _hPC.reset(); // tear down the pseudoconsole (this is like clicking X on a console window)
+
+            // CloseHandle() on pipes blocks until any current WriteFile()/ReadFile() has returned.
+            // CancelSynchronousIo prevents us from deadlocking ourselves.
+            // At this point in Close(), _inPipe won't be used anymore since the UI parts are torn down.
+            // _outPipe is probably still stuck in ReadFile() and might currently be written to.
+            if (_hOutputThread)
+            {
+                CancelSynchronousIo(_hOutputThread.get());
+            }
 
             _inPipe.reset(); // break the pipes
             _outPipe.reset();
@@ -566,7 +596,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 _hOutputThread.reset();
             }
 
-            _transitionToState(ConnectionState::Closed);
+            if (isClosing)
+            {
+                _transitionToState(ConnectionState::Closed);
+            }
         }
     }
     CATCH_LOG()
@@ -615,10 +648,17 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             DWORD read{};
 
             const auto readFail{ !ReadFile(_outPipe.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), &read, nullptr) };
+
+            // When we call CancelSynchronousIo() in Close() this is the branch that's taken and gets us out of here.
+            if (_isStateAtOrBeyond(ConnectionState::Closing))
+            {
+                return 0;
+            }
+
             if (readFail) // reading failed (we must check this first, because read will also be 0.)
             {
                 const auto lastError = GetLastError();
-                if (lastError != ERROR_BROKEN_PIPE && !_isStateAtOrBeyond(ConnectionState::Closing))
+                if (lastError != ERROR_BROKEN_PIPE)
                 {
                     // EXIT POINT
                     _indicateExitWithStatus(HRESULT_FROM_WIN32(lastError)); // print a message
@@ -631,12 +671,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             const auto result{ til::u8u16(std::string_view{ _buffer.data(), read }, _u16Str, _u8State) };
             if (FAILED(result))
             {
-                if (_isStateAtOrBeyond(ConnectionState::Closing))
-                {
-                    // This termination was expected.
-                    return 0;
-                }
-
                 // EXIT POINT
                 _indicateExitWithStatus(result); // print a message
                 _transitionToState(ConnectionState::Failed);

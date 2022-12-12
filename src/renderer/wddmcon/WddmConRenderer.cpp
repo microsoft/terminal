@@ -269,8 +269,8 @@ CATCH_RETURN()
 
         for (size_t i = 0; i < clusters.size() && i < gsl::narrow_cast<size_t>(_displayWidth); i++)
         {
-            const auto OldChar = &_displayState[coord.Y]->Old[coord.X + i];
-            const auto NewChar = &_displayState[coord.Y]->New[coord.X + i];
+            const auto OldChar = &_displayState[coord.y]->Old[coord.x + i];
+            const auto NewChar = &_displayState[coord.y]->New[coord.x + i];
 
             OldChar->Character = NewChar->Character;
             OldChar->Attribute = NewChar->Attribute;
@@ -279,7 +279,7 @@ CATCH_RETURN()
             NewChar->Attribute = _currentLegacyColorAttribute;
         }
 
-        return WDDMConUpdateDisplay(_hWddmConCtx, _displayState[coord.Y], FALSE);
+        return WDDMConUpdateDisplay(_hWddmConCtx, _displayState[coord.y], FALSE);
     }
     CATCH_RETURN();
 }
