@@ -153,7 +153,7 @@
                                              Color="#2e2e2e" />
 
                             <StaticResource x:Key="UnfocusedBorderBrush"
-                                            ResourceKey="ApplicationPageBackgroundThemeBrush" />
+                                            ResourceKey="TabViewBackground" />
 
                             <SolidColorBrush x:Key="SettingsUiTabBrush"
                                              Color="#0c0c0c" />
@@ -169,7 +169,7 @@
                                              Color="#e8e8e8" />
 
                             <StaticResource x:Key="UnfocusedBorderBrush"
-                                            ResourceKey="ApplicationPageBackgroundThemeBrush" />
+                                            ResourceKey="TabViewBackground" />
 
                             <SolidColorBrush x:Key="SettingsUiTabBrush"
                                              Color="#ffffff" />

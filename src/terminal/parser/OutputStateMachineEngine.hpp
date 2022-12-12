@@ -157,6 +157,7 @@ namespace Microsoft::Console::VirtualTerminal
             DECSERA_SelectiveEraseRectangularArea = VTID("${"),
             DECSCPP_SetColumnsPerPage = VTID("$|"),
             DECSACE_SelectAttributeChangeExtent = VTID("*x"),
+            DECINVM_InvokeMacro = VTID("*z"),
             DECAC_AssignColor = VTID(",|"),
             DECPS_PlaySound = VTID(",~")
         };
@@ -164,6 +165,7 @@ namespace Microsoft::Console::VirtualTerminal
         enum DcsActionCodes : uint64_t
         {
             DECDLD_DownloadDRCS = VTID("{"),
+            DECDMAC_DefineMacro = VTID("!z"),
             DECRSTS_RestoreTerminalState = VTID("$p"),
             DECRQSS_RequestSetting = VTID("$q")
         };

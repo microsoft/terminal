@@ -52,6 +52,7 @@ static const std::array settingsLoadWarningsLabels {
     USES_RESOURCE(L"FailedToParseStartupActions"),
     USES_RESOURCE(L"FailedToParseSubCommands"),
     USES_RESOURCE(L"UnknownTheme"),
+    USES_RESOURCE(L"DuplicateRemainingProfilesEntry"),
 };
 static const std::array settingsLoadErrorsLabels {
     USES_RESOURCE(L"NoProfilesText"),

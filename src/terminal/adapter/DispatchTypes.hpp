@@ -386,6 +386,8 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         OS_OperatingStatus = ANSIStandardStatus(5),
         CPR_CursorPositionReport = ANSIStandardStatus(6),
         ExCPR_ExtendedCursorPositionReport = DECPrivateStatus(6),
+        MSR_MacroSpaceReport = DECPrivateStatus(62),
+        MEM_MemoryChecksum = DECPrivateStatus(63),
     };
 
     using ANSIStandardMode = FlaggedEnumValue<0x00000000>;
@@ -506,6 +508,18 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
     {
         Size94 = 0,
         Size96 = 1
+    };
+
+    enum class MacroDeleteControl : VTInt
+    {
+        DeleteId = 0,
+        DeleteAll = 1
+    };
+
+    enum class MacroEncoding : VTInt
+    {
+        Text = 0,
+        HexPair = 1
     };
 
     enum class ReportFormat : VTInt
