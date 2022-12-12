@@ -18,16 +18,23 @@ Revision History:
 --*/
 #pragma once
 
-#include "../buffer/out/TextAttribute.hpp"
-
 // To prevent invisible windows, set a lower threshold on window alpha channel.
 constexpr unsigned short MIN_WINDOW_OPACITY = 0x4D; // 0x4D is approximately 30% visible/opaque (70% transparent). Valid range is 0x00-0xff.
 
 #include "ConsoleArguments.hpp"
-#include "../inc/conattrs.hpp"
+#include "../renderer/inc/RenderSettings.hpp"
+
+enum class UseDx : DWORD
+{
+    Disabled = 0,
+    DxEngine,
+    AtlasEngine,
+};
 
 class Settings
 {
+    using RenderSettings = Microsoft::Console::Render::RenderSettings;
+
 public:
     Settings();
 
@@ -40,6 +47,9 @@ public:
 
     CONSOLE_STATE_INFO CreateConsoleStateInfo() const;
 
+    RenderSettings& GetRenderSettings() noexcept { return _renderSettings; };
+    const RenderSettings& GetRenderSettings() const noexcept { return _renderSettings; };
+
     DWORD GetVirtTermLevel() const;
     void SetVirtTermLevel(const DWORD dwVirtTermLevel);
 
@@ -51,9 +61,6 @@ public:
 
     bool IsGridRenderingAllowedWorldwide() const;
     void SetGridRenderingAllowedWorldwide(const bool fGridRenderingAllowed);
-
-    bool IsScreenReversed() const;
-    void SetScreenReversed(const bool fScreenReversed);
 
     bool GetFilterOnPaste() const;
     void SetFilterOnPaste(const bool fFilterOnPaste);
@@ -106,24 +113,24 @@ public:
     WORD GetReserved() const;
     void SetReserved(const WORD wReserved);
 
-    COORD GetScreenBufferSize() const;
-    void SetScreenBufferSize(const COORD dwScreenBufferSize);
+    til::size GetScreenBufferSize() const;
+    void SetScreenBufferSize(const til::size dwScreenBufferSize);
 
-    COORD GetWindowSize() const;
-    void SetWindowSize(const COORD dwWindowSize);
+    til::size GetWindowSize() const;
+    void SetWindowSize(const til::size dwWindowSize);
 
     bool IsWindowSizePixelsValid() const;
-    COORD GetWindowSizePixels() const;
-    void SetWindowSizePixels(const COORD dwWindowSizePixels);
+    til::size GetWindowSizePixels() const;
+    void SetWindowSizePixels(const til::size dwWindowSizePixels);
 
-    COORD GetWindowOrigin() const;
-    void SetWindowOrigin(const COORD dwWindowOrigin);
+    til::size GetWindowOrigin() const;
+    void SetWindowOrigin(const til::size dwWindowOrigin);
 
     DWORD GetFont() const;
     void SetFont(const DWORD dwFont);
 
-    COORD GetFontSize() const;
-    void SetFontSize(const COORD dwFontSize);
+    til::size GetFontSize() const;
+    void SetFontSize(const til::size dwFontSize);
 
     UINT GetFontFamily() const;
     void SetFontFamily(const UINT uFontFamily);
@@ -159,37 +166,28 @@ public:
     bool GetHistoryNoDup() const;
     void SetHistoryNoDup(const bool fHistoryNoDup);
 
-    // The first 16 items of the color table are the same as the 16-color palette.
-    inline const std::array<COLORREF, XTERM_COLOR_TABLE_SIZE>& GetColorTable() const noexcept
-    {
-        return _colorTable;
-    }
-
-    void SetColorTableEntry(const size_t index, const COLORREF ColorValue);
+    void SetColorTableEntry(const size_t index, const COLORREF color);
     COLORREF GetColorTableEntry(const size_t index) const;
+    void SetLegacyColorTableEntry(const size_t index, const COLORREF color);
+    COLORREF GetLegacyColorTableEntry(const size_t index) const;
 
-    COLORREF GetCursorColor() const noexcept;
     CursorType GetCursorType() const noexcept;
-
-    void SetCursorColor(const COLORREF CursorColor) noexcept;
     void SetCursorType(const CursorType cursorType) noexcept;
 
     bool GetInterceptCopyPaste() const noexcept;
     void SetInterceptCopyPaste(const bool interceptCopyPaste) noexcept;
 
-    COLORREF GetDefaultForegroundColor() const noexcept;
-    void SetDefaultForegroundColor(const COLORREF defaultForeground) noexcept;
-
-    COLORREF GetDefaultBackgroundColor() const noexcept;
-    void SetDefaultBackgroundColor(const COLORREF defaultBackground) noexcept;
+    void CalculateDefaultColorIndices() noexcept;
 
     bool IsTerminalScrolling() const noexcept;
     void SetTerminalScrolling(const bool terminalScrollingEnabled) noexcept;
 
-    bool GetUseDx() const noexcept;
+    UseDx GetUseDx() const noexcept;
     bool GetCopyColor() const noexcept;
 
 private:
+    RenderSettings _renderSettings;
+
     DWORD _dwHotKey;
     DWORD _dwStartupFlags;
     WORD _wFillAttribute;
@@ -229,24 +227,17 @@ private:
     DWORD _dwVirtTermLevel;
     bool _fAutoReturnOnNewline;
     bool _fRenderGridWorldwide;
-    bool _fScreenReversed;
-    bool _fUseDx;
+    UseDx _fUseDx;
     bool _fCopyColor;
-
-    std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;
 
     // this is used for the special STARTF_USESIZE mode.
     bool _fUseWindowSizePixels;
     COORD _dwWindowSizePixels;
 
-    // Technically a COLORREF, but using INVALID_COLOR as "Invert Colors"
-    unsigned int _CursorColor;
     CursorType _CursorType;
 
     bool _fInterceptCopyPaste;
 
-    COLORREF _DefaultForeground;
-    COLORREF _DefaultBackground;
     bool _TerminalScrolling;
     friend class RegistrySerialization;
 };

@@ -5,7 +5,16 @@
 
 #include "globals.h"
 
+// MidiAudio
+#include <mmeapi.h>
+#include <dsound.h>
+
 #pragma hdrstop
+
+Globals::Globals()
+{
+    api = &defaultApiRoutines;
+}
 
 CONSOLE_INFORMATION& Globals::getConsoleInformation()
 {

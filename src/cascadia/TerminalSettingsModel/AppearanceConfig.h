@@ -18,8 +18,8 @@ Author(s):
 
 #include "AppearanceConfig.g.h"
 #include "JsonUtils.h"
-#include "../inc/cppwinrt_utils.h"
 #include "IInheritable.h"
+#include "MTSMSettings.h"
 #include <DefaultSettings.h>
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
@@ -27,8 +27,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct AppearanceConfig : AppearanceConfigT<AppearanceConfig>, IInheritable<AppearanceConfig>
     {
     public:
-        AppearanceConfig(const winrt::weak_ref<Profile> sourceProfile);
-        static winrt::com_ptr<AppearanceConfig> CopyAppearance(const winrt::com_ptr<AppearanceConfig> source, const winrt::weak_ref<Profile> sourceProfile);
+        AppearanceConfig(winrt::weak_ref<Profile> sourceProfile);
+        static winrt::com_ptr<AppearanceConfig> CopyAppearance(const AppearanceConfig* source, winrt::weak_ref<Profile> sourceProfile);
         Json::Value ToJson() const;
         void LayerJson(const Json::Value& json);
 
@@ -36,23 +36,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         winrt::hstring ExpandedBackgroundImagePath();
 
-        INHERITABLE_SETTING(Model::IAppearanceConfig, ConvergedAlignment, BackgroundImageAlignment, ConvergedAlignment::Horizontal_Center | ConvergedAlignment::Vertical_Center);
-
-        INHERITABLE_SETTING(Model::IAppearanceConfig, uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
-        INHERITABLE_SETTING(Model::IAppearanceConfig, hstring, ColorSchemeName, L"Campbell");
         INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, Foreground, nullptr);
         INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, Background, nullptr);
         INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, SelectionBackground, nullptr);
         INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, CursorColor, nullptr);
-        INHERITABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::CursorStyle, CursorShape, Microsoft::Terminal::Core::CursorStyle::Bar);
-        INHERITABLE_SETTING(Model::IAppearanceConfig, hstring, BackgroundImagePath);
+        INHERITABLE_SETTING(Model::IAppearanceConfig, double, Opacity, 1.0);
 
-        INHERITABLE_SETTING(Model::IAppearanceConfig, double, BackgroundImageOpacity, 1.0);
-        INHERITABLE_SETTING(Model::IAppearanceConfig, Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch::UniformToFill);
+        INHERITABLE_SETTING(Model::IAppearanceConfig, hstring, DarkColorSchemeName, L"Campbell");
+        INHERITABLE_SETTING(Model::IAppearanceConfig, hstring, LightColorSchemeName, L"Campbell");
 
-        INHERITABLE_SETTING(Model::IAppearanceConfig, bool, RetroTerminalEffect, false);
-        INHERITABLE_SETTING(Model::IAppearanceConfig, hstring, PixelShaderPath, L"");
-        INHERITABLE_SETTING(Model::IAppearanceConfig, Model::IntenseStyle, IntenseTextStyle, Model::IntenseStyle::Bright);
+#define APPEARANCE_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
+    INHERITABLE_SETTING(Model::IAppearanceConfig, type, name, ##__VA_ARGS__)
+        MTSM_APPEARANCE_SETTINGS(APPEARANCE_SETTINGS_INITIALIZE)
+#undef APPEARANCE_SETTINGS_INITIALIZE
 
     private:
         winrt::weak_ref<Profile> _sourceProfile;

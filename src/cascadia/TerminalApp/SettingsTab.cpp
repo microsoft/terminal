@@ -23,9 +23,11 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    SettingsTab::SettingsTab(MainPage settingsUI)
+    SettingsTab::SettingsTab(MainPage settingsUI,
+                             winrt::Windows::UI::Xaml::ElementTheme requestedTheme)
     {
         Content(settingsUI);
+        _requestedTheme = requestedTheme;
 
         _MakeTabViewItem();
         _CreateContextMenu();
@@ -36,6 +38,26 @@ namespace winrt::TerminalApp::implementation
     {
         auto settingsUI{ Content().as<MainPage>() };
         settingsUI.UpdateSettings(settings);
+
+        // Stash away the current requested theme of the app. We'll need that in
+        // _BackgroundBrush() to do a theme-aware resource lookup
+        _requestedTheme = settings.GlobalSettings().CurrentTheme().RequestedTheme();
+    }
+
+    // Method Description:
+    // - Creates a list of actions that can be run to recreate the state of this tab
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - The list of actions.
+    std::vector<ActionAndArgs> SettingsTab::BuildStartupActions() const
+    {
+        ActionAndArgs action;
+        action.Action(ShortcutAction::OpenSettings);
+        OpenSettingsArgs args{ SettingsTarget::SettingsUI };
+        action.Args(args);
+
+        return std::vector{ std::move(action) };
     }
 
     // Method Description:
@@ -78,16 +100,27 @@ namespace winrt::TerminalApp::implementation
     {
         auto weakThis{ get_weak() };
 
-        co_await winrt::resume_foreground(TabViewItem().Dispatcher());
+        co_await wil::resume_foreground(TabViewItem().Dispatcher());
 
         if (auto tab{ weakThis.get() })
         {
-            auto fontFamily = winrt::WUX::Media::FontFamily(L"Segoe MDL2 Assets");
             auto glyph = L"\xE713"; // This is the Setting icon (looks like a gear)
 
             // The TabViewItem Icon needs MUX while the IconSourceElement in the CommandPalette needs WUX...
             Icon(glyph);
             TabViewItem().IconSource(IconPathConverter::IconSourceMUX(glyph));
         }
+    }
+
+    winrt::Windows::UI::Xaml::Media::Brush SettingsTab::_BackgroundBrush()
+    {
+        // Look up the color we should use for the settings tab item from our
+        // resources. This should only be used for when "terminalBackground" is
+        // requested.
+        static const auto key = winrt::box_value(L"SettingsUiTabBrush");
+        // You can't just do a Application::Current().Resources().TryLookup
+        // lookup, cause the app theme never changes! Do the hacky version
+        // instead.
+        return ThemeLookup(Application::Current().Resources(), _requestedTheme, key).try_as<winrt::Windows::UI::Xaml::Media::Brush>();
     }
 }

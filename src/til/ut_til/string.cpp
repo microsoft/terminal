@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "precomp.h"
@@ -53,9 +53,9 @@ class StringTests
         VERIFY_IS_TRUE(til::ends_with("0abc", "abc"));
     }
 
-    // Normally this would be the spot where you'd find a TEST_METHOD(from_wchars).
+    // Normally this would be the spot where you'd find a TEST_METHOD(to_ulong).
     // I didn't quite trust my coding skills and thus opted to use fuzz-testing.
-    // The below function was used to test from_wchars for unsafety and conformance with clang's strtoul.
+    // The below function was used to test to_ulong for unsafety and conformance with clang's strtoul.
     // The test was run as:
     //   clang++ -fsanitize=address,undefined,fuzzer -std=c++17 file.cpp
     // and was run for 20min across 16 jobs in parallel.
@@ -93,7 +93,7 @@ class StringTests
             return 0;
         }
 
-        const auto actual = from_wchars({ wide_buffer, size });
+        const auto actual = to_ulong({ wide_buffer, size });
         if (expected != actual)
         {
             __builtin_trap();
@@ -168,5 +168,17 @@ class StringTests
             VERIFY_ARE_EQUAL("", til::prefix_split(s, ""));
             VERIFY_ARE_EQUAL("", s);
         }
+    }
+
+    TEST_METHOD(CleanPathAndFilename)
+    {
+        VERIFY_ARE_EQUAL(LR"(CUsersGeddyMusicAnalog Man)", til::clean_filename(LR"(C:\Users\Geddy\Music\"Analog Man")"));
+        VERIFY_ARE_EQUAL(LR"(C:\Users\Geddy\Music\Analog Man)", til::clean_path(LR"(C:\Users\Geddy\Music\"Analog Man")"));
+    }
+
+    TEST_METHOD(LegalPath)
+    {
+        VERIFY_IS_TRUE(til::is_legal_path(LR"(C:\Users\Documents and Settings\Users\;\Why not)"));
+        VERIFY_IS_FALSE(til::is_legal_path(LR"(C:\Users\Documents and Settings\"Quote-un-quote users")"));
     }
 };

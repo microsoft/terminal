@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="..\alias.cpp" />
     <ClCompile Include="..\cmdline.cpp" />
@@ -7,7 +7,6 @@
     <ClCompile Include="..\CommandListPopup.cpp" />
     <ClCompile Include="..\CopyFromCharPopup.cpp" />
     <ClCompile Include="..\CopyToCharPopup.cpp" />
-    <ClCompile Include="..\conattrs.cpp" />
     <ClCompile Include="..\ConsoleArguments.cpp" />
     <ClCompile Include="..\CursorBlinker.cpp" />
     <ClCompile Include="..\readDataCooked.cpp" />
@@ -42,7 +41,6 @@
     <ClCompile Include="..\renderData.cpp" />
     <ClCompile Include="..\renderFontDefaults.cpp" />
     <ClCompile Include="..\screenInfo.cpp" />
-    <ClCompile Include="..\ScreenBufferRenderTarget.cpp" />
     <ClCompile Include="..\scrolling.cpp" />
     <ClCompile Include="..\selection.cpp" />
     <ClCompile Include="..\selectionInput.cpp" />
@@ -54,6 +52,7 @@
     <ClCompile Include="..\tracing.cpp" />
     <ClCompile Include="..\utils.cpp" />
     <ClCompile Include="..\utf8ToWideCharParser.cpp" />
+    <ClCompile Include="..\VtApiRoutines.cpp" />
     <ClCompile Include="..\VtInputThread.cpp" />
     <ClCompile Include="..\VtIo.cpp" />
     <ClCompile Include="..\writeData.cpp" />
@@ -102,7 +101,6 @@
     <ClInclude Include="..\renderFontDefaults.hpp" />
     <ClInclude Include="..\resource.h" />
     <ClInclude Include="..\screenInfo.hpp" />
-    <ClInclude Include="..\ScreenBufferRenderTarget.hpp" />
     <ClInclude Include="..\scrolling.hpp" />
     <ClInclude Include="..\selection.hpp" />
     <ClInclude Include="..\server.h" />
@@ -113,11 +111,17 @@
     <ClInclude Include="..\tracing.hpp" />
     <ClInclude Include="..\utils.hpp" />
     <ClInclude Include="..\utf8ToWideCharParser.hpp" />
+    <ClInclude Include="..\VtApiRoutines.h" />
     <ClInclude Include="..\VtInputThread.hpp" />
     <ClInclude Include="..\VtIo.hpp" />
     <ClInclude Include="..\writeData.hpp" />
     <ClInclude Include="..\_output.h" />
     <ClInclude Include="..\_stream.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\audio\midi\lib\midi.vcxproj">
+      <Project>{3c67784e-1453-49c2-9660-483e2cc7f7ad}</Project>
+    </ProjectReference>
   </ItemGroup>
   <ItemDefinitionGroup>
     <ClCompile>

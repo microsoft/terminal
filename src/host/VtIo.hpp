@@ -4,20 +4,23 @@
 #pragma once
 
 #include "../inc/VtIoModes.hpp"
-#include "../inc/ITerminalOwner.hpp"
 #include "../renderer/vt/vtrenderer.hpp"
 #include "VtInputThread.hpp"
 #include "PtySignalInputThread.hpp"
 
 class ConsoleArguments;
 
+namespace Microsoft::Console::Render
+{
+    class VtEngine;
+}
+
 namespace Microsoft::Console::VirtualTerminal
 {
-    class VtIo : public Microsoft::Console::ITerminalOwner
+    class VtIo
     {
     public:
         VtIo();
-        virtual ~VtIo() override = default;
 
         [[nodiscard]] HRESULT Initialize(const ConsoleArguments* const pArgs);
 
@@ -31,10 +34,12 @@ namespace Microsoft::Console::VirtualTerminal
         [[nodiscard]] static HRESULT ParseIoMode(const std::wstring& VtMode, _Out_ VtIoMode& ioMode);
 
         [[nodiscard]] HRESULT SuppressResizeRepaint();
-        [[nodiscard]] HRESULT SetCursorPosition(const COORD coordCursor);
+        [[nodiscard]] HRESULT SetCursorPosition(const til::point coordCursor);
 
-        void CloseInput() override;
-        void CloseOutput() override;
+        [[nodiscard]] HRESULT SwitchScreenBuffer(const bool useAltBuffer);
+
+        void CloseInput();
+        void CloseOutput();
 
         void BeginResize();
         void EndResize();
@@ -46,6 +51,9 @@ namespace Microsoft::Console::VirtualTerminal
         bool IsResizeQuirkEnabled() const;
 
         [[nodiscard]] HRESULT ManuallyClearScrollback() const noexcept;
+
+        void CreatePseudoWindow();
+        void SetWindowVisibility(bool showOrHide) noexcept;
 
     private:
         // After CreateIoHandlers is called, these will be invalid.
@@ -59,10 +67,10 @@ namespace Microsoft::Console::VirtualTerminal
         bool _objectsCreated;
 
         bool _lookingForCursorPosition;
-        std::mutex _shutdownLock;
 
         bool _resizeQuirk{ false };
         bool _win32InputMode{ false };
+        bool _passthroughMode{ false };
 
         std::unique_ptr<Microsoft::Console::Render::VtEngine> _pVtRenderEngine;
         std::unique_ptr<Microsoft::Console::VtInputThread> _pVtInputThread;
@@ -70,7 +78,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         [[nodiscard]] HRESULT _Initialize(const HANDLE InHandle, const HANDLE OutHandle, const std::wstring& VtMode, _In_opt_ const HANDLE SignalHandle);
 
-        void _ShutdownIfNeeded();
+        void _shutdownNow();
 
 #ifdef UNIT_TESTING
         friend class VtIoTests;

@@ -1,5 +1,5 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
   </ItemGroup>
@@ -32,10 +32,6 @@
   </ItemDefinitionGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-
-  <!-- PGO -->
-  <Import Condition="'$(PgoTarget)' == 'true' And '$(PGOBuildMode)' == 'Optimize'" Project="$(SolutionDir)packages\$(PGODatabaseId).$(PGODatabaseVersion)\build\PGO.targets" />
-  <Import Condition="'$(PgoTarget)' == 'true' And '$(PGOBuildMode)' == 'Instrument'" Project="$(SolutionDir)\src\common.pgo.runtime.props" />
 
   <!-- Exclude our dependencies from static analysis. CAExcludePath can only be
        set after we've imported Microsoft.Cpp.targets -->

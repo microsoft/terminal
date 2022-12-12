@@ -9,33 +9,107 @@
       xmlns:local="using:TerminalApp"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:mux="using:Microsoft.UI.Xaml.Controls"
+      Background="Transparent"
       mc:Ignorable="d">
 
     <Grid x:Name="Root"
-          Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+          Background="Transparent">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
         <local:TabRowControl x:Name="TabRow"
-                             Grid.Row="0" />
+                             Grid.Row="0"
+                             KeyUp="_KeyDownHandler" />
+
+        <StackPanel Grid.Row="1"
+                    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+            <mux:InfoBar x:Name="KeyboardServiceWarningInfoBar"
+                         x:Load="False"
+                         CornerRadius="0"
+                         IsClosable="True"
+                         IsIconVisible="True"
+                         IsOpen="False"
+                         Message="{x:Bind KeyboardServiceDisabledText, Mode=OneWay}"
+                         Severity="Warning">
+                <mux:InfoBar.ActionButton>
+                    <Button x:Uid="InfoBarDismissButton"
+                            Click="_KeyboardServiceWarningInfoDismissHandler" />
+                </mux:InfoBar.ActionButton>
+            </mux:InfoBar>
+
+            <mux:InfoBar x:Name="CloseOnExitInfoBar"
+                         x:Uid="CloseOnExitInfoBar"
+                         x:Load="False"
+                         CornerRadius="0"
+                         IsClosable="True"
+                         IsIconVisible="True"
+                         IsOpen="False"
+                         Severity="Informational">
+                <mux:InfoBar.ActionButton>
+                    <Button x:Uid="InfoBarDismissButton"
+                            Click="_CloseOnExitInfoDismissHandler" />
+                </mux:InfoBar.ActionButton>
+            </mux:InfoBar>
+
+            <mux:InfoBar x:Name="SetAsDefaultInfoBar"
+                         x:Uid="SetAsDefaultInfoBar"
+                         x:Load="False"
+                         CloseButtonClick="_SetAsDefaultDismissHandler"
+                         CornerRadius="0"
+                         IsClosable="True"
+                         IsIconVisible="True"
+                         IsOpen="False"
+                         Severity="Informational">
+                <mux:InfoBar.ActionButton>
+                    <HyperlinkButton x:Uid="SetAsDefaultTip_OpenSettingsLink"
+                                     Click="_SetAsDefaultOpenSettingsHandler" />
+                </mux:InfoBar.ActionButton>
+            </mux:InfoBar>
+        </StackPanel>
 
         <Grid x:Name="TabContent"
-              Grid.Row="1"
+              Grid.Row="2"
               HorizontalAlignment="Stretch"
-              VerticalAlignment="Stretch" />
+              VerticalAlignment="Stretch">
+            <Grid.Background>
+                <ImageBrush />
+            </Grid.Background>
+        </Grid>
+
+        <!--
+            GH#12775 et. al: After switching to ControlsV2, it seems that
+            delay-loading a dialog causes the ContentDialog to be assigned a
+            Height equal to it's content size. If we DON'T assign the
+            ContentDialog a Row, I believe it's assigned Row 0 by default. So,
+            when the dialog gets opened, the dialog seemingly causes a giant
+            hole to appear in the body of the app.
+            
+            Assigning all the dialogs to Row 2 (where the rest of the content
+            is) makes the "hole" appear in the same space as the rest of the
+            TabContent, fixing the issue.
+            
+            Note that the actual content in a content dialog gets parented to
+            the PopupRoot, so it actually always appeared in the correct place, it's
+            just this weird hole that appeared in Row 0.
+        -->
 
         <ContentDialog x:Name="AboutDialog"
                        x:Uid="AboutDialog"
+                       Grid.Row="2"
                        x:Load="False"
-                       DefaultButton="Close">
+                       DefaultButton="Close"
+                       PrimaryButtonClick="_SendFeedbackOnClick">
             <StackPanel Orientation="Vertical">
                 <TextBlock IsTextSelectionEnabled="True">
                     <Run Text="{x:Bind ApplicationDisplayName}" /> <LineBreak />
                     <Run x:Uid="AboutDialog_VersionLabel" />
                     <Run Text="{x:Bind ApplicationVersion}" />
                 </TextBlock>
+                <HyperlinkButton x:Uid="AboutDialog_SourceCodeLink"
+                                 NavigateUri="https://go.microsoft.com/fwlink/?linkid=2203152" />
                 <HyperlinkButton x:Uid="AboutDialog_DocumentationLink"
                                  NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125416" />
                 <HyperlinkButton x:Uid="AboutDialog_ReleaseNotesLink"
@@ -47,18 +121,27 @@
             </StackPanel>
         </ContentDialog>
 
+        <ContentDialog x:Name="QuitDialog"
+                       x:Uid="QuitDialog"
+                       Grid.Row="2"
+                       x:Load="False"
+                       DefaultButton="Primary" />
+
         <ContentDialog x:Name="CloseAllDialog"
                        x:Uid="CloseAllDialog"
+                       Grid.Row="2"
                        x:Load="False"
                        DefaultButton="Primary" />
 
         <ContentDialog x:Name="CloseReadOnlyDialog"
                        x:Uid="CloseReadOnlyDialog"
+                       Grid.Row="2"
                        x:Load="False"
                        DefaultButton="Close" />
 
         <ContentDialog x:Name="MultiLinePasteDialog"
                        x:Uid="MultiLinePasteDialog"
+                       Grid.Row="2"
                        x:Load="False"
                        DefaultButton="Primary">
             <StackPanel>
@@ -78,11 +161,13 @@
 
         <ContentDialog x:Name="LargePasteDialog"
                        x:Uid="LargePasteDialog"
+                       Grid.Row="2"
                        x:Load="False"
                        DefaultButton="Primary" />
 
         <ContentDialog x:Name="ControlNoticeDialog"
                        x:Uid="ControlNoticeDialog"
+                       Grid.Row="2"
                        x:Load="False"
                        DefaultButton="Primary">
             <TextBlock IsTextSelectionEnabled="True"
@@ -93,6 +178,7 @@
 
         <ContentDialog x:Name="CouldNotOpenUriDialog"
                        x:Uid="CouldNotOpenUriDialog"
+                       Grid.Row="2"
                        x:Load="False"
                        DefaultButton="Primary">
             <TextBlock IsTextSelectionEnabled="True"
@@ -104,18 +190,10 @@
         </ContentDialog>
 
         <local:CommandPalette x:Name="CommandPalette"
-                              Grid.Row="1"
+                              Grid.Row="2"
                               VerticalAlignment="Stretch"
                               PreviewKeyDown="_KeyDownHandler"
                               Visibility="Collapsed" />
-
-        <mux:InfoBar x:Name="KeyboardWarningInfoBar"
-                     x:Load="False"
-                     IsClosable="True"
-                     IsIconVisible="True"
-                     IsOpen="False"
-                     Message="{x:Bind KeyboardServiceDisabledText, Mode=OneWay}"
-                     Severity="Warning" />
 
         <!--
             A TeachingTip with IsLightDismissEnabled="True" will immediately
@@ -142,6 +220,7 @@
                          IsLightDismissEnabled="True">
             <mux:TeachingTip.Content>
                 <TextBox x:Name="WindowRenamerTextBox"
+                         KeyDown="_WindowRenamerKeyDown"
                          KeyUp="_WindowRenamerKeyUp"
                          Text="{x:Bind WindowName, Mode=OneWay}" />
             </mux:TeachingTip.Content>

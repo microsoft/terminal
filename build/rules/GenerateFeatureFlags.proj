@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- THIS PROJECT CANNOT BE LOADED INTO THE SOLUTION. -->
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
 
@@ -63,8 +63,14 @@
     Outputs="$(OpenConsoleCommonOutDir)\inc\TilFeatureStaging.h"
     DependsOnTargets="_GenerateBranchAndBrandingCache">
     <MakeDir Directories="$(OpenConsoleCommonOutDir)\inc" />
+    <!-- This commandline is escaped like:
+
+    powershell -Command "&'$(SolutionDir)\tools\Generate-FeatureStagingHeader.ps1' -Path '%(FeatureFlagFile.FullPath)'' -Branding $(_WTBrandingName)"
+
+    which was the only way I could find to get it to obey spaces in the SolutionDir
+    -->
     <Exec
-      Command="powershell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy ByPass -Command &quot;$(SolutionDir)\tools\Generate-FeatureStagingHeader.ps1&quot; -Path &quot;%(FeatureFlagFile.FullPath)&quot; -Branding $(_WTBrandingName)"
+      Command="powershell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy ByPass -Command &quot;&amp;&apos;$(SolutionDir)\tools\Generate-FeatureStagingHeader.ps1&apos; -Path &apos;%(FeatureFlagFile.FullPath)&apos; -Branding $(_WTBrandingName)&quot;"
       ConsoleToMsBuild="true"
       StandardOutputImportance="low">
       <Output TaskParameter="ConsoleOutput" ItemName="_FeatureFlagFileLines" />

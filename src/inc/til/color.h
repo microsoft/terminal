@@ -70,7 +70,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
         }
 
-        operator COLORREF() const noexcept
+        constexpr operator COLORREF() const noexcept
         {
             return static_cast<COLORREF>(abgr & 0x00FFFFFFu);
         }
@@ -134,6 +134,26 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             };
         }
 
+        // source-over alpha blending/composition.
+        // `this` (source/top) will be blended "over" `destination` (bottom).
+        // `this` and `destination` are expected to be in straight alpha.
+        // See https://en.wikipedia.org/wiki/Alpha_compositing#Description
+        constexpr color layer_over(const color& destination) const
+        {
+            const auto aInverse = (255 - a) / 255.0f;
+            const auto resultA = a + destination.a * aInverse;
+            const auto resultR = (r * a + destination.r * destination.a * aInverse) / resultA;
+            const auto resultG = (g * a + destination.g * destination.a * aInverse) / resultA;
+            const auto resultB = (b * a + destination.b * destination.a * aInverse) / resultA;
+
+            return {
+                static_cast<uint8_t>(resultR + 0.5f),
+                static_cast<uint8_t>(resultG + 0.5f),
+                static_cast<uint8_t>(resultB + 0.5f),
+                static_cast<uint8_t>(resultA + 0.5f),
+            };
+        }
+
 #ifdef D3DCOLORVALUE_DEFINED
         constexpr operator D3DCOLORVALUE() const
         {
@@ -147,14 +167,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
         }
 
-        operator winrt::Windows::UI::Color() const
+        constexpr operator winrt::Windows::UI::Color() const
         {
-            winrt::Windows::UI::Color ret;
-            ret.R = r;
-            ret.G = g;
-            ret.B = b;
-            ret.A = a;
-            return ret;
+            return { a, r, g, b };
         }
 #endif
 
@@ -164,14 +179,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
         }
 
-        operator winrt::Microsoft::Terminal::Core::Color() const noexcept
+        constexpr operator winrt::Microsoft::Terminal::Core::Color() const noexcept
         {
-            winrt::Microsoft::Terminal::Core::Color ret;
-            ret.R = r;
-            ret.G = g;
-            ret.B = b;
-            ret.A = a;
-            return ret;
+            return { r, g, b, a };
         }
 #endif
 
@@ -197,14 +207,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             wss << L"#" << std::uppercase << std::setfill(L'0') << std::hex;
             // Force the compiler to promote from byte to int. Without it, the
             // stringstream will try to write the components as chars
+            wss << std::setw(2) << static_cast<int>(r);
+            wss << std::setw(2) << static_cast<int>(g);
+            wss << std::setw(2) << static_cast<int>(b);
             if (!omitAlpha)
             {
                 wss << std::setw(2) << static_cast<int>(a);
             }
-            wss << std::setw(2) << static_cast<int>(r);
-            wss << std::setw(2) << static_cast<int>(g);
-            wss << std::setw(2) << static_cast<int>(b);
-
             return wss.str();
         }
     };

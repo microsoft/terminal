@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "Terminal.hpp"
 #include <DefaultSettings.h>
+
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Render;
@@ -13,21 +14,20 @@ Viewport Terminal::GetViewport() noexcept
     return _GetVisibleViewport();
 }
 
-COORD Terminal::GetTextBufferEndPosition() const noexcept
+til::point Terminal::GetTextBufferEndPosition() const noexcept
 {
     // We use the end line of mutableViewport as the end
     // of the text buffer, it always moves with the written
     // text
-    COORD endPosition{ _GetMutableViewport().Width() - 1, gsl::narrow<short>(ViewEndIndex()) };
-    return endPosition;
+    return { _GetMutableViewport().Width() - 1, ViewEndIndex() };
 }
 
-const TextBuffer& Terminal::GetTextBuffer() noexcept
+const TextBuffer& Terminal::GetTextBuffer() const noexcept
 {
-    return *_buffer;
+    return _activeBuffer();
 }
 
-const FontInfo& Terminal::GetFontInfo() noexcept
+const FontInfo& Terminal::GetFontInfo() const noexcept
 {
     return _fontInfo;
 }
@@ -37,46 +37,21 @@ void Terminal::SetFontInfo(const FontInfo& fontInfo)
     _fontInfo = fontInfo;
 }
 
-const TextAttribute Terminal::GetDefaultBrushColors() noexcept
+til::point Terminal::GetCursorPosition() const noexcept
 {
-    return TextAttribute{};
-}
-
-std::pair<COLORREF, COLORREF> Terminal::GetAttributeColors(const TextAttribute& attr) const noexcept
-{
-    _blinkingState.RecordBlinkingUsage(attr);
-    auto colors = attr.CalculateRgbColors(
-        _colorTable,
-        _defaultFg,
-        _defaultBg,
-        _screenReversed,
-        _blinkingState.IsBlinkingFaint(),
-        _intenseIsBright);
-    colors.first |= 0xff000000;
-    // We only care about alpha for the default BG (which enables acrylic)
-    // If the bg isn't the default bg color, or reverse video is enabled, make it fully opaque.
-    if (!attr.BackgroundIsDefault() || (attr.IsReverseVideo() ^ _screenReversed))
-    {
-        colors.second |= 0xff000000;
-    }
-    return colors;
-}
-
-COORD Terminal::GetCursorPosition() const noexcept
-{
-    const auto& cursor = _buffer->GetCursor();
+    const auto& cursor = _activeBuffer().GetCursor();
     return cursor.GetPosition();
 }
 
 bool Terminal::IsCursorVisible() const noexcept
 {
-    const auto& cursor = _buffer->GetCursor();
+    const auto& cursor = _activeBuffer().GetCursor();
     return cursor.IsVisible() && !cursor.IsPopupShown();
 }
 
 bool Terminal::IsCursorOn() const noexcept
 {
-    const auto& cursor = _buffer->GetCursor();
+    const auto& cursor = _activeBuffer().GetCursor();
     return cursor.IsOn();
 }
 
@@ -87,24 +62,19 @@ ULONG Terminal::GetCursorPixelWidth() const noexcept
 
 ULONG Terminal::GetCursorHeight() const noexcept
 {
-    return _buffer->GetCursor().GetSize();
+    return _activeBuffer().GetCursor().GetSize();
 }
 
 CursorType Terminal::GetCursorStyle() const noexcept
 {
-    return _buffer->GetCursor().GetType();
+    return _activeBuffer().GetCursor().GetType();
 }
 
-COLORREF Terminal::GetCursorColor() const noexcept
+bool Terminal::IsCursorDoubleWidth() const noexcept
 {
-    return _buffer->GetCursor().GetColor();
-}
-
-bool Terminal::IsCursorDoubleWidth() const
-{
-    const auto position = _buffer->GetCursor().GetPosition();
-    TextBufferTextIterator it(TextBufferCellIterator(*_buffer, position));
-    return IsGlyphFullWidth(*it);
+    const auto& buffer = _activeBuffer();
+    const auto position = buffer.GetCursor().GetPosition();
+    return buffer.GetRowByOffset(position.y).DbcsAttrAt(position.x) != DbcsAttribute::Single;
 }
 
 const std::vector<RenderOverlay> Terminal::GetOverlays() const noexcept
@@ -117,14 +87,14 @@ const bool Terminal::IsGridLineDrawingAllowed() noexcept
     return true;
 }
 
-const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkUri(uint16_t id) const noexcept
+const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkUri(uint16_t id) const
 {
-    return _buffer->GetHyperlinkUriFromId(id);
+    return _activeBuffer().GetHyperlinkUriFromId(id);
 }
 
-const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkCustomId(uint16_t id) const noexcept
+const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkCustomId(uint16_t id) const
 {
-    return _buffer->GetCustomIdFromId(id);
+    return _activeBuffer().GetCustomIdFromId(id);
 }
 
 // Method Description:
@@ -133,10 +103,10 @@ const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkCustomId(uin
 // - The location
 // Return value:
 // - The pattern IDs of the location
-const std::vector<size_t> Terminal::GetPatternId(const COORD location) const noexcept
+const std::vector<size_t> Terminal::GetPatternId(const til::point location) const
 {
     // Look through our interval tree for this location
-    const auto intervals = _patternIntervalTree.findOverlapping(COORD{ location.X + 1, location.Y }, location);
+    const auto intervals = _patternIntervalTree.findOverlapping({ location.x + 1, location.y }, location);
     if (intervals.size() == 0)
     {
         return {};
@@ -151,6 +121,11 @@ const std::vector<size_t> Terminal::GetPatternId(const COORD location) const noe
         return result;
     }
     return {};
+}
+
+std::pair<COLORREF, COLORREF> Terminal::GetAttributeColors(const TextAttribute& attr) const noexcept
+{
+    return _renderSettings.GetAttributeColors(attr);
 }
 
 std::vector<Microsoft::Console::Types::Viewport> Terminal::GetSelectionRects() noexcept
@@ -171,42 +146,42 @@ catch (...)
     return {};
 }
 
-void Terminal::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
+void Terminal::SelectNewRegion(const til::point coordStart, const til::point coordEnd)
 {
 #pragma warning(push)
 #pragma warning(disable : 26496) // cpp core checks wants these const, but they're decremented below.
-    COORD realCoordStart = coordStart;
-    COORD realCoordEnd = coordEnd;
+    auto realCoordStart = coordStart;
+    auto realCoordEnd = coordEnd;
 #pragma warning(pop)
 
-    bool notifyScrollChange = false;
-    if (coordStart.Y < _VisibleStartIndex())
+    auto notifyScrollChange = false;
+    if (coordStart.y < _VisibleStartIndex())
     {
         // recalculate the scrollOffset
-        _scrollOffset = ViewStartIndex() - coordStart.Y;
+        _scrollOffset = ViewStartIndex() - coordStart.y;
         notifyScrollChange = true;
     }
-    else if (coordEnd.Y > _VisibleEndIndex())
+    else if (coordEnd.y > _VisibleEndIndex())
     {
         // recalculate the scrollOffset, note that if the found text is
         // beneath the current visible viewport, it may be within the
         // current mutableViewport and the scrollOffset will be smaller
         // than 0
-        _scrollOffset = std::max(0, ViewStartIndex() - coordStart.Y);
+        _scrollOffset = std::max(0, ViewStartIndex() - coordStart.y);
         notifyScrollChange = true;
     }
 
     if (notifyScrollChange)
     {
-        _buffer->GetRenderTarget().TriggerScroll();
+        _activeBuffer().TriggerScroll();
         _NotifyScrollEvent();
     }
 
-    realCoordStart.Y -= gsl::narrow<short>(_VisibleStartIndex());
-    realCoordEnd.Y -= gsl::narrow<short>(_VisibleStartIndex());
+    realCoordStart.y -= _VisibleStartIndex();
+    realCoordEnd.y -= _VisibleStartIndex();
 
     SetSelectionAnchor(realCoordStart);
-    SetSelectionEnd(realCoordEnd, SelectionExpansionMode::Cell);
+    SetSelectionEnd(realCoordEnd, SelectionExpansion::Char);
 }
 
 const std::wstring_view Terminal::GetConsoleTitle() const noexcept
@@ -242,11 +217,11 @@ void Terminal::UnlockConsole() noexcept
     _readWriteLock.unlock();
 }
 
-// Method Description:
-// - Returns whether the screen is inverted;
-// Return Value:
-// - false.
-bool Terminal::IsScreenReversed() const noexcept
+const bool Terminal::IsUiaDataInitialized() const noexcept
 {
-    return _screenReversed;
+    // GH#11135: Windows Terminal needs to create and return an automation peer
+    // when a screen reader requests it. However, the terminal might not be fully
+    // initialized yet. So we use this to check if any crucial components of
+    // UiaData are not yet initialized.
+    return !!_mainBuffer;
 }

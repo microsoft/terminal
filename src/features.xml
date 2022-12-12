@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="utf-8"?>
 <featureStaging xmlns="http://microsoft.com/TilFeatureStaging-Schema.xsd">
     <!-- See doc/feature_flags.md for more info.  -->
     <feature>
@@ -8,13 +8,6 @@
         <alwaysDisabledBrandingTokens>
             <brandingToken>WindowsInbox</brandingToken>
         </alwaysDisabledBrandingTokens>
-    </feature>
-
-    <feature>
-        <name>Feature_EditableActionsPage</name>
-        <description>The Actions page in the settings UI should allow users to edit actions.</description>
-        <stage>AlwaysEnabled</stage>
-        <alwaysDisabledReleaseTokens/>
     </feature>
 
     <feature>
@@ -41,6 +34,16 @@
             <brandingToken>WindowsInbox</brandingToken>
         </alwaysDisabledBrandingTokens>
     </feature>
+
+    <feature>
+        <name>Feature_ConhostAtlasEngine</name>
+        <description>Controls whether conhost supports the Atlas engine</description>
+        <stage>AlwaysEnabled</stage>
+        <alwaysDisabledBrandingTokens>
+            <brandingToken>WindowsInbox</brandingToken>
+        </alwaysDisabledBrandingTokens>
+    </feature>
+
     <feature>
         <name>Feature_DxEngineShaderSupport</name>
         <description>Controls whether the DX engine is built with shader support.</description>
@@ -65,18 +68,81 @@
     </feature>
 
     <feature>
-        <name>Feature_TrayIcon</name>
-        <description>Controls whether the Tray Icon and related settings (aka. MinimizeToTray and AlwaysShowTrayIcon) are enabled</description>
+        <name>Feature_AtlasEngine</name>
+        <description>If enabled, AtlasEngine is used by default</description>
         <stage>AlwaysEnabled</stage>
-        <alwaysDisabledReleaseTokens/>
+        <alwaysDisabledBrandingTokens>
+            <brandingToken>Release</brandingToken>
+            <brandingToken>WindowsInbox</brandingToken>
+        </alwaysDisabledBrandingTokens>
     </feature>
 
     <feature>
-        <name>Feature_ShowProfileDefaultsInSettings</name>
-        <description>Whether to show the "defaults" page in the Terminal settings UI</description>
-        <id>10430</id>
+        <name>Feature_NearbyFontLoading</name>
+        <description>Controls whether fonts in the same directory as the binary are used during rendering. Disabled for conhost so that it doesn't iterate the entire system32 directory.</description>
         <stage>AlwaysEnabled</stage>
-        <!-- This feature will not ship to Stable until it is complete. -->
-        <alwaysDisabledReleaseTokens />
+        <alwaysDisabledBrandingTokens>
+            <brandingToken>WindowsInbox</brandingToken>
+        </alwaysDisabledBrandingTokens>
     </feature>
+
+    <feature>
+        <name>Feature_AdjustIndistinguishableText</name>
+        <description>If enabled, the foreground color will, when necessary, be automatically adjusted to make it more visible.</description>
+        <stage>AlwaysEnabled</stage>
+        <alwaysDisabledBrandingTokens>
+            <brandingToken>WindowsInbox</brandingToken>
+        </alwaysDisabledBrandingTokens>
+    </feature>
+
+    <feature>
+        <name>Feature_VtPassthroughMode</name>
+        <description>Enables passthrough option per profile in Terminal and ConPTY ability to use passthrough API dispatch engine</description>
+        <stage>AlwaysDisabled</stage>
+        <!-- Did it this way instead of "release tokens" to ensure it won't go into Windows Inbox either... -->
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+            <brandingToken>Preview</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
+    <feature>
+        <name>Feature_VtPassthroughModeSettingInUI</name>
+        <description>Enables the setting gated by Feature_VtPassthroughMode to appear in the UI</description>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+	    <!-- Unlike Feature_VtPassthroughMode, this is not enabled in Preview -->
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
+    <feature>
+        <name>Feature_IsolatedMonarchMode</name>
+        <description>Enables a test flag for MSFT:38540483. When enabled, if we ever create a null Monarch, we'll stealthily try to fall back to an in-proc monarch instance.</description>
+        <stage>AlwaysEnabled</stage>
+        <!-- Did it this way instead of "release tokens" to ensure it will go into Windows Inbox -->
+        <alwaysDisabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+            <brandingToken>Preview</brandingToken>
+        </alwaysDisabledBrandingTokens>
+    </feature>
+
+    <feature>
+        <name>Feature_ScrollbarMarks</name>
+        <description>Enables the experimental scrollbar marks feature.</description>
+        <stage>AlwaysDisabled</stage>
+        <!-- Did it this way instead of "release tokens" to ensure it won't go into Windows Inbox either... -->
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+            <brandingToken>Preview</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
+    <feature>
+        <name>Feature_DynamicSSHProfiles</name>
+        <description>Enables the dynamic profile generator for OpenSSH config files</description>
+        <id>9031</id>
+        <stage>AlwaysDisabled</stage>
+    </feature>
+
 </featureStaging>

@@ -46,8 +46,8 @@ Author(s):
 
 #include "Profile.g.h"
 #include "IInheritable.h"
+#include "MTSMSettings.h"
 
-#include "../inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
 #include <DefaultSettings.h>
 #include "AppearanceConfig.h"
@@ -76,8 +76,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct Profile : ProfileT<Profile>, IInheritable<Profile>
     {
     public:
-        Profile();
-        Profile(guid guid);
+        Profile() noexcept = default;
+        Profile(guid guid) noexcept;
 
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();
@@ -87,69 +87,48 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return Name();
         }
 
-        static com_ptr<Profile> CloneInheritanceGraph(com_ptr<Profile> oldProfile, com_ptr<Profile> newProfile, std::unordered_map<void*, com_ptr<Profile>>& visited);
-        static com_ptr<Profile> CopySettings(com_ptr<Profile> source);
-        static void InsertParentHelper(com_ptr<Profile> child, com_ptr<Profile> parent, std::optional<size_t> index = std::nullopt);
+        static void CopyInheritanceGraphs(std::unordered_map<const Profile*, winrt::com_ptr<Profile>>& visited, const std::vector<winrt::com_ptr<Profile>>& source, std::vector<winrt::com_ptr<Profile>>& target);
+        winrt::com_ptr<Profile>& CopyInheritanceGraph(std::unordered_map<const Profile*, winrt::com_ptr<Profile>>& visited) const;
+        winrt::com_ptr<Profile> CopySettings() const;
 
-        Json::Value GenerateStub() const;
         static com_ptr<Profile> FromJson(const Json::Value& json);
-        bool ShouldBeLayered(const Json::Value& json) const;
         void LayerJson(const Json::Value& json);
-        static bool IsDynamicProfileObject(const Json::Value& json);
         Json::Value ToJson() const;
 
         hstring EvaluatedStartingDirectory() const;
-        static guid GetGuidOrGenerateForJson(const Json::Value& json) noexcept;
 
         Model::IAppearanceConfig DefaultAppearance();
         Model::FontConfig FontInfo();
 
         void _FinalizeInheritance() override;
 
+        // Special fields
         WINRT_PROPERTY(bool, Deleted, false);
         WINRT_PROPERTY(OriginTag, Origin, OriginTag::None);
+        WINRT_PROPERTY(guid, Updates);
 
-        INHERITABLE_SETTING(Model::Profile, guid, Guid, _GenerateGuidForProfile(Name(), Source()));
+        // Nullable/optional settings
+        INHERITABLE_NULLABLE_SETTING(Model::Profile, Microsoft::Terminal::Core::Color, TabColor, nullptr);
+        INHERITABLE_SETTING(Model::Profile, Model::IAppearanceConfig, UnfocusedAppearance, nullptr);
+
+        // Settings that cannot be put in the macro because of how they are handled in ToJson/LayerJson
         INHERITABLE_SETTING(Model::Profile, hstring, Name, L"Default");
         INHERITABLE_SETTING(Model::Profile, hstring, Source);
         INHERITABLE_SETTING(Model::Profile, bool, Hidden, false);
-        INHERITABLE_SETTING(Model::Profile, guid, ConnectionType);
-
-        // Default Icon: Segoe MDL2 CommandPrompt icon
-        INHERITABLE_SETTING(Model::Profile, hstring, Icon, L"\uE756");
-
-        INHERITABLE_SETTING(Model::Profile, CloseOnExitMode, CloseOnExit, CloseOnExitMode::Graceful);
-        INHERITABLE_SETTING(Model::Profile, hstring, TabTitle);
-        INHERITABLE_NULLABLE_SETTING(Model::Profile, Microsoft::Terminal::Core::Color, TabColor, nullptr);
-        INHERITABLE_SETTING(Model::Profile, bool, SuppressApplicationTitle, false);
-
-        INHERITABLE_SETTING(Model::Profile, bool, UseAcrylic, false);
-        INHERITABLE_SETTING(Model::Profile, double, AcrylicOpacity, 0.5);
-        INHERITABLE_SETTING(Model::Profile, Microsoft::Terminal::Control::ScrollbarState, ScrollState, Microsoft::Terminal::Control::ScrollbarState::Visible);
-
+        INHERITABLE_SETTING(Model::Profile, guid, Guid, _GenerateGuidForProfile(Name(), Source()));
         INHERITABLE_SETTING(Model::Profile, hstring, Padding, DEFAULT_PADDING);
 
-        INHERITABLE_SETTING(Model::Profile, hstring, Commandline, L"cmd.exe");
-        INHERITABLE_SETTING(Model::Profile, hstring, StartingDirectory);
-
-        INHERITABLE_SETTING(Model::Profile, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale);
-        INHERITABLE_SETTING(Model::Profile, bool, ForceFullRepaintRendering, false);
-        INHERITABLE_SETTING(Model::Profile, bool, SoftwareRendering, false);
-
-        INHERITABLE_SETTING(Model::Profile, int32_t, HistorySize, DEFAULT_HISTORY_SIZE);
-        INHERITABLE_SETTING(Model::Profile, bool, SnapOnInput, true);
-        INHERITABLE_SETTING(Model::Profile, bool, AltGrAliasing, true);
-
-        INHERITABLE_SETTING(Model::Profile, Model::BellStyle, BellStyle, BellStyle::Audible);
-
-        INHERITABLE_SETTING(Model::Profile, Model::IAppearanceConfig, UnfocusedAppearance, nullptr);
+#define PROFILE_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
+    INHERITABLE_SETTING(Model::Profile, type, name, ##__VA_ARGS__)
+        MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_INITIALIZE)
+#undef PROFILE_SETTINGS_INITIALIZE
 
     private:
         Model::IAppearanceConfig _DefaultAppearance{ winrt::make<AppearanceConfig>(weak_ref<Model::Profile>(*this)) };
         Model::FontConfig _FontInfo{ winrt::make<FontConfig>(weak_ref<Model::Profile>(*this)) };
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
-        static guid _GenerateGuidForProfile(const hstring& name, const hstring& source) noexcept;
+        static guid _GenerateGuidForProfile(const std::wstring_view& name, const std::wstring_view& source) noexcept;
 
         friend class SettingsModelLocalTests::DeserializationTests;
         friend class SettingsModelLocalTests::ProfileTests;

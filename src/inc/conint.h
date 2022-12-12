@@ -47,6 +47,7 @@ namespace Microsoft::Console::Internal
 
     namespace DefaultApp
     {
-        [[nodiscard]] HRESULT CheckDefaultAppPolicy(bool& isEnabled) noexcept;
+        [[nodiscard]] bool CheckDefaultAppPolicy() noexcept;
+        [[nodiscard]] bool CheckShouldTerminalBeDefault() noexcept;
     }
 }

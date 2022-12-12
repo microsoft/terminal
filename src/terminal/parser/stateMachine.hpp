@@ -21,11 +21,11 @@ Abstract:
 
 namespace Microsoft::Console::VirtualTerminal
 {
-    // The DEC STD 070 reference recommends supporting up to at least 16384 for
-    // parameter values, so 32767 should be more than enough. At most we might
-    // want to increase this to 65535, since that is what XTerm and VTE support,
-    // but for now 32767 is the safest limit for our existing code base.
-    constexpr size_t MAX_PARAMETER_VALUE = 32767;
+    // The DEC STD 070 reference recommends supporting up to at least 16384
+    // for parameter values. 65535 is what XTerm and VTE support.
+    // GH#12977: We must use 65535 to properly parse win32-input-mode
+    // sequences, which transmit the UTF-16 character value as a parameter.
+    constexpr VTInt MAX_PARAMETER_VALUE = 65535;
 
     // The DEC STD 070 reference requires that a minimum of 16 parameter values
     // are supported, but most modern terminal emulators will allow around twice
@@ -40,12 +40,28 @@ namespace Microsoft::Console::VirtualTerminal
 #endif
 
     public:
-        StateMachine(std::unique_ptr<IStateMachineEngine> engine);
+        template<typename T>
+        StateMachine(std::unique_ptr<T> engine) :
+            StateMachine(std::move(engine), std::is_same_v<T, class InputStateMachineEngine>)
+        {
+        }
+        StateMachine(std::unique_ptr<IStateMachineEngine> engine, const bool isEngineForInput);
 
-        void SetAnsiMode(bool ansiMode) noexcept;
+        enum class Mode : size_t
+        {
+            AcceptC1,
+            AlwaysAcceptC1,
+            Ansi,
+        };
+
+        void SetParserMode(const Mode mode, const bool enabled) noexcept;
+        bool GetParserMode(const Mode mode) const noexcept;
 
         void ProcessCharacter(const wchar_t wch);
         void ProcessString(const std::wstring_view string);
+        bool IsProcessingLastCharacter() const noexcept;
+
+        void OnCsiComplete(const std::function<void()> callback);
 
         void ResetState() noexcept;
 
@@ -54,10 +70,18 @@ namespace Microsoft::Console::VirtualTerminal
         const IStateMachineEngine& Engine() const noexcept;
         IStateMachineEngine& Engine() noexcept;
 
+        class ShutdownException : public wil::ResultException
+        {
+        public:
+            ShutdownException() noexcept :
+                ResultException(E_ABORT) {}
+        };
+
     private:
         void _ActionExecute(const wchar_t wch);
         void _ActionExecuteFromEscape(const wchar_t wch);
         void _ActionPrint(const wchar_t wch);
+        void _ActionPrintString(const std::wstring_view string);
         void _ActionEscDispatch(const wchar_t wch);
         void _ActionVt52EscDispatch(const wchar_t wch);
         void _ActionCollect(const wchar_t wch) noexcept;
@@ -113,7 +137,14 @@ namespace Microsoft::Console::VirtualTerminal
         void _EventDcsPassThrough(const wchar_t wch);
         void _EventSosPmApcString(const wchar_t wch) noexcept;
 
-        void _AccumulateTo(const wchar_t wch, size_t& value) noexcept;
+        void _AccumulateTo(const wchar_t wch, VTInt& value) noexcept;
+
+        template<typename TLambda>
+        bool _SafeExecute(TLambda&& lambda);
+        template<typename TLambda>
+        bool _SafeExecuteWithLog(const wchar_t wch, TLambda&& lambda);
+
+        void _ExecuteCsiCompleteCallback();
 
         enum class VTStates
         {
@@ -141,10 +172,11 @@ namespace Microsoft::Console::VirtualTerminal
         Microsoft::Console::VirtualTerminal::ParserTracing _trace;
 
         std::unique_ptr<IStateMachineEngine> _engine;
+        const bool _isEngineForInput;
 
         VTStates _state;
 
-        bool _isInAnsiMode;
+        til::enumset<Mode> _parserMode{ Mode::Ansi };
 
         std::wstring_view _currentString;
         size_t _runOffset;
@@ -164,7 +196,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _parameterLimitReached;
 
         std::wstring _oscString;
-        size_t _oscParameter;
+        VTInt _oscParameter;
 
         IStateMachineEngine::StringHandler _dcsStringHandler;
 
@@ -173,5 +205,8 @@ namespace Microsoft::Console::VirtualTerminal
         // This is tracked per state machine instance so that separate calls to Process*
         //   can start and finish a sequence.
         bool _processingIndividually;
+        bool _processingLastCharacter;
+
+        std::function<void()> _onCsiCompleteCallback;
     };
 }

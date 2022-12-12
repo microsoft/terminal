@@ -3,14 +3,14 @@
 # - Common Project Configuration
 # -------------------------------------
 
-!include $(OSDEPENDSROOT)\OSS\gsl\3.1.0\consume.inc
+!include $(PROJECT_ROOT)\vcpkg\consume.inc
 
 # -------------------------------------
 # Preprocessor Settings
 # -------------------------------------
 
 UNICODE                 = 1
-C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE -DFMT_HEADER_ONLY -D__INSIDE_WINDOWS
+C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE -DFMT_HEADER_ONLY -D__INSIDE_WINDOWS -DBUILD_ONECORE_INTERACTIVITY
 
 # -------------------------------------
 # CRT Configuration
@@ -19,6 +19,8 @@ C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE -DFMT_HEADER_ONLY -D
 USE_UNICRT              = 1
 USE_MSVCRT              = 1
 NO_WCHAR_T              = 1 # use native wchar_t
+USE_CXX17_STD_BYTE      = 1 # Windows disables std::byte by default...
+
 
 USE_STL                 = 1
 STL_VER                 = STL_VER_CURRENT
@@ -28,8 +30,9 @@ USE_NATIVE_EH           = 1
 # Compiler Settings
 # -------------------------------------
 
+USE_STD_CPP20           = 1
 MSC_WARNING_LEVEL       = /W4 /WX
-USER_C_FLAGS            = $(USER_C_FLAGS) /utf-8
+USER_C_FLAGS            = $(USER_C_FLAGS) /fp:contract /utf-8
 
 # -------------------------------------
 # Common Console Includes and Libraries
@@ -48,7 +51,7 @@ INCLUDES= \
     $(CONSOLE_SRC_PATH)\..\oss\chromium; \
     $(CONSOLE_SRC_PATH)\..\oss\fmt\include; \
     $(CONSOLE_SRC_PATH)\..\oss\interval_tree; \
-    $(CONSOLE_SRC_PATH)\..\oss\boost\boost_1_73_0; \
+    $(CONSOLE_SRC_PATH)\..\oss\pcg\include; \
     $(MINWIN_INTERNAL_PRIV_SDK_INC_PATH_L); \
     $(MINWIN_RESTRICTED_PRIV_SDK_INC_PATH_L); \
     $(MINCORE_INTERNAL_PRIV_SDK_INC_PATH_L); \

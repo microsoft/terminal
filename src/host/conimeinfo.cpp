@@ -4,14 +4,14 @@
 #include "precomp.h"
 
 #include "conimeinfo.h"
-#include "conareainfo.h"
 
+#include <til/unicode.h>
+
+#include "conareainfo.h"
 #include "_output.h"
 #include "dbcs.h"
-
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/GlyphWidth.hpp"
-#include "../types/inc/Utf16Parser.hpp"
 
 // Attributes flags:
 #define COMMON_LVB_GRID_SINGLEFLAG 0x2000 // DBCS: Grid attribute: use for ime cursor.
@@ -119,7 +119,7 @@ void ConsoleImeInfo::ClearAllAreas()
 // - newSize - New size for conversion areas
 // Return Value:
 // - S_OK or appropriate failure HRESULT.
-[[nodiscard]] HRESULT ConsoleImeInfo::ResizeAllAreas(const COORD newSize)
+[[nodiscard]] HRESULT ConsoleImeInfo::ResizeAllAreas(const til::size newSize)
 {
     for (auto& area : ConvAreaCompStr)
     {
@@ -143,18 +143,18 @@ void ConsoleImeInfo::ClearAllAreas()
 // - Status successful or appropriate HRESULT response.
 [[nodiscard]] HRESULT ConsoleImeInfo::_AddConversionArea()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    COORD bufferSize = gci.GetActiveOutputBuffer().GetBufferSize().Dimensions();
-    bufferSize.Y = 1;
+    auto bufferSize = gci.GetActiveOutputBuffer().GetBufferSize().Dimensions();
+    bufferSize.height = 1;
 
-    const COORD windowSize = gci.GetActiveOutputBuffer().GetViewport().Dimensions();
+    const auto windowSize = gci.GetActiveOutputBuffer().GetViewport().Dimensions();
 
-    const TextAttribute fill = gci.GetActiveOutputBuffer().GetAttributes();
+    const auto fill = gci.GetActiveOutputBuffer().GetAttributes();
 
-    const TextAttribute popupFill = gci.GetActiveOutputBuffer().GetPopupAttributes();
+    const auto popupFill = gci.GetActiveOutputBuffer().GetPopupAttributes();
 
-    const FontInfo& fontInfo = gci.GetActiveOutputBuffer().GetCurrentFont();
+    const auto& fontInfo = gci.GetActiveOutputBuffer().GetCurrentFont();
 
     try
     {
@@ -192,7 +192,7 @@ TextAttribute ConsoleImeInfo::s_RetrieveAttributeAt(const size_t pos,
     // Legacy attribute is in the color/line format that is understood for drawing
     // We use the lower 3 bits (0-7) from the encoded attribute as the array index to start
     // creating our legacy attribute.
-    WORD legacyAttribute = colorArray[encodedAttribute & (CONIME_ATTRCOLOR_SIZE - 1)];
+    auto legacyAttribute = colorArray[encodedAttribute & (CONIME_ATTRCOLOR_SIZE - 1)];
 
     if (WI_IsFlagSet(encodedAttribute, CONIME_CURSOR_RIGHT))
     {
@@ -223,12 +223,9 @@ std::vector<OutputCell> ConsoleImeInfo::s_ConvertToCells(const std::wstring_view
 {
     std::vector<OutputCell> cells;
 
-    // - Convert incoming wchar_t stream into UTF-16 units.
-    const auto glyphs = Utf16Parser::Parse(text);
-
     // - Walk through all of the grouped up text, match up the correct attribute to it, and make a new cell.
     size_t attributesUsed = 0;
-    for (const auto& parsedGlyph : glyphs)
+    for (const auto& parsedGlyph : til::utf16_iterator{ text })
     {
         const std::wstring_view glyph{ parsedGlyph.data(), parsedGlyph.size() };
         // Collect up attributes that apply to this glyph range.
@@ -240,7 +237,7 @@ std::vector<OutputCell> ConsoleImeInfo::s_ConvertToCells(const std::wstring_view
         // Check all additional attributes to see if the cursor resides on top of them.
         for (size_t i = 1; i < glyph.size(); i++)
         {
-            TextAttribute additionalAttr = s_RetrieveAttributeAt(attributesUsed, attributes, colorArray);
+            auto additionalAttr = s_RetrieveAttributeAt(attributesUsed, attributes, colorArray);
             attributesUsed++;
             if (additionalAttr.IsLeftVerticalDisplayed())
             {
@@ -256,7 +253,7 @@ std::vector<OutputCell> ConsoleImeInfo::s_ConvertToCells(const std::wstring_view
         // If it's full width, it's two, and we need to make sure we don't draw the cursor
         // right down the middle of the character.
         // Otherwise it's one column and we'll push it in with the default empty DbcsAttribute.
-        DbcsAttribute dbcsAttr;
+        DbcsAttribute dbcsAttr = DbcsAttribute::Single;
         if (IsGlyphFullWidth(glyph))
         {
             auto leftHalfAttr = drawingAttr;
@@ -269,9 +266,9 @@ std::vector<OutputCell> ConsoleImeInfo::s_ConvertToCells(const std::wstring_view
                 leftHalfAttr.SetRightVerticalDisplayed(false);
             }
 
-            dbcsAttr.SetLeading();
+            dbcsAttr = DbcsAttribute::Leading;
             cells.emplace_back(glyph, dbcsAttr, leftHalfAttr);
-            dbcsAttr.SetTrailing();
+            dbcsAttr = DbcsAttribute::Trailing;
 
             // If we need a left vertical, don't apply it to the right side of the character
             if (rightHalfAttr.IsLeftVerticalDisplayed())
@@ -310,7 +307,7 @@ std::vector<OutputCell> ConsoleImeInfo::s_ConvertToCells(const std::wstring_view
 //   If the viewport is deemed too small, we'll skip past it and advance begin past the entire full-width character.
 std::vector<OutputCell>::const_iterator ConsoleImeInfo::_WriteConversionArea(const std::vector<OutputCell>::const_iterator begin,
                                                                              const std::vector<OutputCell>::const_iterator end,
-                                                                             COORD& pos,
+                                                                             til::point& pos,
                                                                              const Microsoft::Console::Types::Viewport view,
                                                                              SCREEN_INFORMATION& screenInfo)
 {
@@ -321,14 +318,14 @@ std::vector<OutputCell>::const_iterator ConsoleImeInfo::_WriteConversionArea(con
 
     // Advance the cursor position to set up the next call for success (insert the next conversion area
     // at the beginning of the following line)
-    pos.X = view.Left();
-    pos.Y++;
+    pos.x = view.Left();
+    pos.y++;
 
     // The index of the last column in the viewport. (view is inclusive)
     const auto finalViewColumn = view.RightInclusive();
 
     // The maximum number of cells we can insert into a line.
-    const auto lineWidth = finalViewColumn - insertionPos.X + 1; // +1 because view was inclusive
+    const auto lineWidth = finalViewColumn - insertionPos.x + 1; // +1 because view was inclusive
 
     // The iterator to the beginning position to form our line
     const auto lineBegin = begin;
@@ -343,14 +340,19 @@ std::vector<OutputCell>::const_iterator ConsoleImeInfo::_WriteConversionArea(con
 
     // We must attempt to compensate for ending on a leading byte. We can't split a full-width character across lines.
     // As such, if the last item is a leading byte, back the end up by one.
-    FAIL_FAST_IF(lineEnd <= lineBegin); // We should have at least 1 space we can back up.
-
     // Get the last cell in the run and if it's a leading byte, move the end position back one so we don't
     // try to insert it.
     const auto lastCell = lineEnd - 1;
-    if (lastCell->DbcsAttr().IsLeading())
+    if (lastCell->DbcsAttr() == DbcsAttribute::Leading)
     {
         lineEnd--;
+    }
+
+    // GH#12730 - if the lineVec would now be empty, just return early. Failing
+    // to do so will later cause a crash trying to construct an empty view.
+    if (lineEnd <= lineBegin)
+    {
+        return lineEnd;
     }
 
     // Copy out the substring into a vector.
@@ -363,13 +365,13 @@ std::vector<OutputCell>::const_iterator ConsoleImeInfo::_WriteConversionArea(con
     auto& area = ConvAreaCompStr.back();
 
     // Write our text into the conversion area.
-    area.WriteText(lineVec, insertionPos.X);
+    area.WriteText(lineVec, insertionPos.x);
 
     // Set the viewport and positioning parameters for the conversion area to describe to the renderer
     // the appropriate location to overlay this conversion area on top of the main screen buffer inside the viewport.
-    const SMALL_RECT region{ insertionPos.X, 0, gsl::narrow<SHORT>(insertionPos.X + lineVec.size() - 1), 0 };
+    const til::inclusive_rect region{ insertionPos.x, 0, gsl::narrow<til::CoordType>(insertionPos.x + lineVec.size() - 1), 0 };
     area.SetWindowInfo(region);
-    area.SetViewPos({ 0 - view.Left(), insertionPos.Y - view.Top() });
+    area.SetViewPos({ 0 - view.Left(), insertionPos.y - view.Top() });
 
     // Make it visible and paint it.
     area.SetHidden(false);
@@ -378,7 +380,7 @@ std::vector<OutputCell>::const_iterator ConsoleImeInfo::_WriteConversionArea(con
     // Notify accessibility that we have updated the text in this display region within the viewport.
     if (screenInfo.HasAccessibilityEventing())
     {
-        screenInfo.NotifyAccessibilityEventing(insertionPos.X, insertionPos.Y, gsl::narrow<SHORT>(insertionPos.X + lineVec.size() - 1), insertionPos.Y);
+        screenInfo.NotifyAccessibilityEventing(region.left, insertionPos.y, region.right, insertionPos.y);
     }
 
     // Hand back the iterator representing the end of what we used to be fed into the beginning of the next call.
@@ -399,8 +401,8 @@ void ConsoleImeInfo::_WriteUndeterminedChars(const std::wstring_view text,
                                              const gsl::span<const BYTE> attributes,
                                              const gsl::span<const WORD> colorArray)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& screenInfo = gci.GetActiveOutputBuffer();
 
     // Ensure cursor is visible for prompt line
     screenInfo.MakeCurrentCursorVisible();
@@ -451,7 +453,7 @@ void ConsoleImeInfo::_WriteUndeterminedChars(const std::wstring_view text,
 // - text - The text to inject into the input buffer
 void ConsoleImeInfo::_InsertConvertedString(const std::wstring_view text)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     auto& screenInfo = gci.GetActiveOutputBuffer();
     if (screenInfo.GetTextBuffer().GetCursor().IsOn())
@@ -459,7 +461,7 @@ void ConsoleImeInfo::_InsertConvertedString(const std::wstring_view text)
         gci.GetCursorBlinker().TimerRoutine(screenInfo);
     }
 
-    const DWORD dwControlKeyState = GetControlKeyState(0);
+    const auto dwControlKeyState = GetControlKeyState(0);
     std::deque<std::unique_ptr<IInputEvent>> inEvents;
     KeyEvent keyEvent{ TRUE, // keydown
                        1, // repeatCount
@@ -482,8 +484,8 @@ void ConsoleImeInfo::_InsertConvertedString(const std::wstring_view text)
 //   it while we work on the conversion areas.
 void ConsoleImeInfo::SaveCursorVisibility()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    Cursor& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
 
     // Cursor turn OFF.
     if (cursor.IsVisible())
@@ -502,8 +504,8 @@ void ConsoleImeInfo::RestoreCursorVisibility()
     {
         _isSavedCursorVisible = false;
 
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        Cursor& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
 
         cursor.SetIsVisible(true);
     }

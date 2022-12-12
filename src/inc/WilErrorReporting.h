@@ -16,6 +16,16 @@ namespace Microsoft::Console::ErrorReporting
     __declspec(noinline) inline void WINAPI ReportFailureToFallbackProvider(bool alreadyReported, const wil::FailureInfo& failure) noexcept
     try
     {
+        if (failure.hr == 0x80131515L)
+        {
+            // XAML requires that we reply with this HR for the accessibility code in XamlUiaTextRange to work.
+            // Unfortunately, due to C++/WinRT, we have to _throw_ it. That results in us ending up here,
+            // trying to report the error to telemetry. It's not an actual error, per se, so we don't
+            // want to log it. It's also incredibly noisy, which results in bugs getting filed on us.
+            // See https://github.com/microsoft/cppwinrt/issues/798 for more discussion about throwing HRESULTs.
+            return;
+        }
+
         if (!alreadyReported && FallbackProvider)
         {
 #pragma warning(suppress : 26477) // Use 'nullptr' rather than 0 or NULL
@@ -23,7 +33,6 @@ namespace Microsoft::Console::ErrorReporting
                 FallbackProvider,
                 "FallbackError",
                 TraceLoggingKeyword(MICROSOFT_KEYWORD_TELEMETRY),
-                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage),
                 TraceLoggingLevel(WINEVENT_LEVEL_ERROR),
                 TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance),
                 TraceLoggingStruct(14, "wilResult", "wilResult"),
@@ -34,13 +43,13 @@ namespace Microsoft::Console::ErrorReporting
                 TraceLoggingUInt32(static_cast<DWORD>(failure.type), "failureType", "Indicates what type of failure was observed (exception, returned error, logged error or fail fast"),
                 TraceLoggingWideString(failure.pszMessage, "message", "Custom message associated with the failure (if any)"),
                 TraceLoggingUInt32(failure.threadId, "threadId", "Identifier of the thread the error occurred on"),
-                TraceLoggingString(failure.pszCallContext, "callContext", "List of containing this error"),
-                TraceLoggingUInt32(failure.callContextOriginating.contextId, "originatingContextId", "Identifier for the oldest activity containing this error"),
-                TraceLoggingString(failure.callContextOriginating.contextName, "originatingContextName", "Name of the oldest activity containing this error"),
-                TraceLoggingWideString(failure.callContextOriginating.contextMessage, "originatingContextMessage", "Custom message associated with the oldest activity containing this error (if any)"),
-                TraceLoggingUInt32(failure.callContextCurrent.contextId, "currentContextId", "Identifier for the newest activity containing this error"),
-                TraceLoggingString(failure.callContextCurrent.contextName, "currentContextName", "Name of the newest activity containing this error"),
-                TraceLoggingWideString(failure.callContextCurrent.contextMessage, "currentContextMessage", "Custom message associated with the newest activity containing this error (if any)"));
+                TraceLoggingString(failure.pszCallContext, "callContext", "List of telemetry activities containing this error"),
+                TraceLoggingUInt32(failure.callContextOriginating.contextId, "originatingContextId", "Identifier for the oldest telemetry activity containing this error"),
+                TraceLoggingString(failure.callContextOriginating.contextName, "originatingContextName", "Name of the oldest telemetry activity containing this error"),
+                TraceLoggingWideString(failure.callContextOriginating.contextMessage, "originatingContextMessage", "Custom message associated with the oldest telemetry activity containing this error (if any)"),
+                TraceLoggingUInt32(failure.callContextCurrent.contextId, "currentContextId", "Identifier for the newest telemetry activity containing this error"),
+                TraceLoggingString(failure.callContextCurrent.contextName, "currentContextName", "Name of the newest telemetry activity containing this error"),
+                TraceLoggingWideString(failure.callContextCurrent.contextMessage, "currentContextMessage", "Custom message associated with the newest telemetry activity containing this error (if any)"));
         }
     }
     catch (...)

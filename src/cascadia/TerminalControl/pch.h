@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 //
 // pch.h
@@ -45,8 +45,10 @@
 #include <winrt/Windows.UI.Xaml.Input.h>
 #include <winrt/Windows.UI.Xaml.Interop.h>
 #include <winrt/Windows.ui.xaml.markup.h>
+#include <winrt/Windows.ui.xaml.shapes.h>
 #include <winrt/Windows.ApplicationModel.DataTransfer.h>
 #include <winrt/Windows.Storage.h>
+#include <winrt/Windows.UI.Xaml.Shapes.h>
 
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include <winrt/Microsoft.Terminal.Core.h>
@@ -57,8 +59,12 @@
 TRACELOGGING_DECLARE_PROVIDER(g_hTerminalControlProvider);
 #include <telemetry/ProjectTelemetry.h>
 
+#include <ShlObj_core.h>
 #include <WinUser.h>
 
 #include "til.h"
 
 #include "ThrottledFunc.h"
+
+#include <cppwinrt_utils.h>
+#include <wil/cppwinrt_helpers.h> // must go after the CoreDispatcher type is defined

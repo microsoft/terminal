@@ -4,13 +4,11 @@
 #include "precomp.h"
 #include "inc/IInputEvent.hpp"
 
-KeyEvent::~KeyEvent()
-{
-}
+KeyEvent::~KeyEvent() = default;
 
 INPUT_RECORD KeyEvent::ToInputRecord() const noexcept
 {
-    INPUT_RECORD record{ 0 };
+    INPUT_RECORD record{};
     record.EventType = KEY_EVENT;
     record.Event.KeyEvent.bKeyDown = !!_keyDown;
     record.Event.KeyEvent.wRepeatCount = _repeatCount;
@@ -58,7 +56,7 @@ void KeyEvent::SetActiveModifierKeys(const DWORD activeModifierKeys) noexcept
 
 void KeyEvent::DeactivateModifierKey(const ModifierKeyState modifierKey) noexcept
 {
-    DWORD const bitFlag = ToConsoleControlKeyFlag(modifierKey);
+    const auto bitFlag = ToConsoleControlKeyFlag(modifierKey);
     auto keys = GetActiveModifierKeys();
     WI_ClearAllFlags(keys, bitFlag);
     SetActiveModifierKeys(keys);
@@ -66,7 +64,7 @@ void KeyEvent::DeactivateModifierKey(const ModifierKeyState modifierKey) noexcep
 
 void KeyEvent::ActivateModifierKey(const ModifierKeyState modifierKey) noexcept
 {
-    DWORD const bitFlag = ToConsoleControlKeyFlag(modifierKey);
+    const auto bitFlag = ToConsoleControlKeyFlag(modifierKey);
     auto keys = GetActiveModifierKeys();
     WI_SetAllFlags(keys, bitFlag);
     SetActiveModifierKeys(keys);
@@ -75,7 +73,7 @@ void KeyEvent::ActivateModifierKey(const ModifierKeyState modifierKey) noexcept
 bool KeyEvent::DoActiveModifierKeysMatch(const std::unordered_set<ModifierKeyState>& consoleModifiers) const noexcept
 {
     DWORD consoleBits = 0;
-    for (const ModifierKeyState& mod : consoleModifiers)
+    for (const auto& mod : consoleModifiers)
     {
         WI_SetAllFlags(consoleBits, ToConsoleControlKeyFlag(mod));
     }

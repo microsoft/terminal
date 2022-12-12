@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 //
 // pch.h
@@ -24,6 +24,7 @@
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Globalization.h>
+#include <winrt/Windows.Globalization.NumberFormatting.h>
 #include <winrt/Windows.System.h>
 #include <winrt/Windows.UI.h>
 #include <winrt/Windows.UI.Core.h>
@@ -51,8 +52,9 @@
 
 #include <shlobj.h>
 #include <shobjidl_core.h>
-#include <dwrite.h>
-#include <dwrite_1.h>
+#include <dwrite_3.h>
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"
+
+#include <cppwinrt_utils.h>

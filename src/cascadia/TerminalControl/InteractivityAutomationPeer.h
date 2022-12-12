@@ -43,11 +43,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void SetControlBounds(const Windows::Foundation::Rect bounds);
         void SetControlPadding(const Core::Padding padding);
+        void ParentProvider(Windows::UI::Xaml::Automation::Peers::AutomationPeer parentProvider);
 
 #pragma region IUiaEventDispatcher
         void SignalSelectionChanged() override;
         void SignalTextChanged() override;
         void SignalCursorChanged() override;
+        void NotifyNewOutput(std::wstring_view newOutput) override;
 #pragma endregion
 
 #pragma region ITextProvider Pattern
@@ -61,24 +63,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
 #pragma region IControlAccessibilityInfo Pattern
         // Inherited via IControlAccessibilityInfo
-        virtual COORD GetFontSize() const override;
-        virtual RECT GetBounds() const override;
-        virtual RECT GetPadding() const override;
-        virtual double GetScaleFactor() const override;
-        virtual void ChangeViewport(SMALL_RECT NewWindow) override;
+        virtual til::size GetFontSize() const noexcept override;
+        virtual til::rect GetBounds() const noexcept override;
+        virtual til::rect GetPadding() const noexcept override;
+        virtual double GetScaleFactor() const noexcept override;
+        virtual void ChangeViewport(const til::inclusive_rect& NewWindow) override;
         virtual HRESULT GetHostUiaProvider(IRawElementProviderSimple** provider) override;
 #pragma endregion
 
         TYPED_EVENT(SelectionChanged, IInspectable, IInspectable);
         TYPED_EVENT(TextChanged, IInspectable, IInspectable);
         TYPED_EVENT(CursorChanged, IInspectable, IInspectable);
+        TYPED_EVENT(NewOutput, IInspectable, hstring);
 
     private:
+        Windows::UI::Xaml::Automation::Provider::ITextRangeProvider _CreateXamlUiaTextRange(::ITextRangeProvider* returnVal) const;
+
         ::Microsoft::WRL::ComPtr<::Microsoft::Terminal::TermControlUiaProvider> _uiaProvider;
         winrt::Microsoft::Terminal::Control::implementation::ControlInteractivity* _interactivity;
+        weak_ref<Windows::UI::Xaml::Automation::Peers::AutomationPeer> _parentProvider;
 
-        til::rectangle _controlBounds{};
-        til::rectangle _controlPadding{};
+        til::rect _controlBounds{};
+        til::rect _controlPadding{};
 
         winrt::com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> WrapArrayOfTextRangeProviders(SAFEARRAY* textRanges);
     };

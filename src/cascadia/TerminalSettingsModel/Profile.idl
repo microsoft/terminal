@@ -26,7 +26,8 @@ namespace Microsoft.Terminal.Settings.Model
     {
         Never = 0,
         Graceful,
-        Always
+        Always,
+        Automatic
     };
 
     [flags]
@@ -50,27 +51,21 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean Deleted { get; };
         OriginTag Origin { get; };
 
+        INHERITABLE_PROFILE_SETTING(Guid, Guid);
         INHERITABLE_PROFILE_SETTING(String, Name);
-
-        Boolean HasGuid();
-        Guid Guid;
-
         INHERITABLE_PROFILE_SETTING(String, Source);
-
-        Boolean HasConnectionType();
-        Guid ConnectionType;
-
         INHERITABLE_PROFILE_SETTING(Boolean, Hidden);
+        INHERITABLE_PROFILE_SETTING(Guid, ConnectionType);
         INHERITABLE_PROFILE_SETTING(String, Icon);
         INHERITABLE_PROFILE_SETTING(CloseOnExitMode, CloseOnExit);
         INHERITABLE_PROFILE_SETTING(String, TabTitle);
         INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, TabColor);
         INHERITABLE_PROFILE_SETTING(Boolean, SuppressApplicationTitle);
         INHERITABLE_PROFILE_SETTING(Boolean, UseAcrylic);
-        INHERITABLE_PROFILE_SETTING(Double, AcrylicOpacity);
         INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.Control.ScrollbarState, ScrollState);
         INHERITABLE_PROFILE_SETTING(String, Padding);
         INHERITABLE_PROFILE_SETTING(String, Commandline);
+        INHERITABLE_PROFILE_SETTING(Boolean, VtPassthrough);
 
         INHERITABLE_PROFILE_SETTING(String, StartingDirectory);
         String EvaluatedStartingDirectory { get; };
@@ -81,12 +76,16 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(IAppearanceConfig, UnfocusedAppearance);
 
         INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.Control.TextAntialiasingMode, AntialiasingMode);
-        INHERITABLE_PROFILE_SETTING(Boolean, ForceFullRepaintRendering);
-        INHERITABLE_PROFILE_SETTING(Boolean, SoftwareRendering);
 
         INHERITABLE_PROFILE_SETTING(Int32, HistorySize);
         INHERITABLE_PROFILE_SETTING(Boolean, SnapOnInput);
         INHERITABLE_PROFILE_SETTING(Boolean, AltGrAliasing);
         INHERITABLE_PROFILE_SETTING(BellStyle, BellStyle);
+        INHERITABLE_PROFILE_SETTING(Boolean, UseAtlasEngine);
+        INHERITABLE_PROFILE_SETTING(Windows.Foundation.Collections.IVector<String>, BellSound);
+
+        INHERITABLE_PROFILE_SETTING(Boolean, Elevate);
+        INHERITABLE_PROFILE_SETTING(Boolean, AutoMarkPrompts);
+        INHERITABLE_PROFILE_SETTING(Boolean, ShowMarks);
     }
 }

@@ -1,20 +1,18 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #pragma once
-
-#include "../inc/cppwinrt_utils.h"
 
 template<typename T>
 struct ViewModelHelper
 {
 public:
-    winrt::event_token PropertyChanged(::winrt::Windows::UI::Xaml::Data::PropertyChangedEventHandler const& handler)
+    winrt::event_token PropertyChanged(const ::winrt::Windows::UI::Xaml::Data::PropertyChangedEventHandler& handler)
     {
         return _propertyChangedHandlers.add(handler);
     }
 
-    void PropertyChanged(winrt::event_token const& token)
+    void PropertyChanged(const winrt::event_token& token)
     {
         _propertyChangedHandlers.remove(token);
     }
@@ -35,7 +33,7 @@ protected:
         _NotifyChanges(std::forward<Args>(more)...);
     }
 
-private:
+protected:
     winrt::event<::winrt::Windows::UI::Xaml::Data::PropertyChangedEventHandler> _propertyChangedHandlers;
 };
 

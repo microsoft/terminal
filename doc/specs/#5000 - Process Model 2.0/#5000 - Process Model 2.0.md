@@ -317,7 +317,7 @@ Some things we considered during this investigation:
   - We could theoretically build an RPC tunnel between content and window
     processes, and use the RPC connection to marshal the content process to the
     elevated window. However, then _we_ would need to be responsible for
-    securing access the the RPC endpoint, and we feel even less confident doing
+    securing access the RPC endpoint, and we feel even less confident doing
     that.
   - Attempts were also made to use a window-broker-content architecture, with
     the broker process having a static CLSID in the registry, and having the
@@ -1123,7 +1123,7 @@ elevated windows, when they trust the extension. We could have an additional set
 of settings the user could use to enable certain extensions in elevated windows.
 However, this setting cannot live in the normal `settings.json` or even
 `state.json` (see [#7972], since those files are writable by any medium-IL
-process. Instead, this setting would ned to live in a separate file that's
+process. Instead, this setting would need to live in a separate file that's
 protected to only be writable by elevated processes. This would ensure that an
 attacker could not just add their extension to the list of white-listed
 extensions. When the settings UI wants to modify that setting, it'll need to

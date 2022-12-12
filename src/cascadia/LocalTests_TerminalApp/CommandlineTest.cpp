@@ -199,7 +199,7 @@ namespace TerminalAppLocalTests
         VERIFY_SUCCEEDED(TestData::TryGetValue(L"testPass", testPass), L"Get a commandline to test");
 
         AppCommandlineArgs appArgs{};
-        std::vector<const wchar_t*>& rawCommands{ commandsToTest.at(testPass) };
+        auto& rawCommands{ commandsToTest.at(testPass) };
         _logCommandline(rawCommands);
 
         auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
@@ -232,7 +232,7 @@ namespace TerminalAppLocalTests
         VERIFY_SUCCEEDED(TestData::TryGetValue(L"testPass", testPass), L"Get a commandline to test");
 
         AppCommandlineArgs appArgs{};
-        std::vector<const wchar_t*>& rawCommands{ commandsToTest.at(testPass) };
+        auto& rawCommands{ commandsToTest.at(testPass) };
         _logCommandline(rawCommands);
 
         auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
@@ -266,7 +266,7 @@ namespace TerminalAppLocalTests
         VERIFY_SUCCEEDED(TestData::TryGetValue(L"testPass", testPass), L"Get a commandline to test");
 
         AppCommandlineArgs appArgs{};
-        std::vector<const wchar_t*>& rawCommands{ commandsToTest.at(testPass) };
+        auto& rawCommands{ commandsToTest.at(testPass) };
         _logCommandline(rawCommands);
 
         auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
@@ -348,6 +348,21 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(2u, commandlines.at(3).Argc());
             VERIFY_ARE_EQUAL("wt.exe", commandlines.at(3).Args().at(0));
             VERIFY_ARE_EQUAL("baz", commandlines.at(3).Args().at(1));
+        }
+        {
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"-p", L"u;", L"nt", L"-p", L"u" };
+
+            auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
+            VERIFY_ARE_EQUAL(2u, commandlines.size());
+            VERIFY_ARE_EQUAL(3u, commandlines.at(0).Argc());
+            VERIFY_ARE_EQUAL("wt.exe", commandlines.at(0).Args().at(0));
+            VERIFY_ARE_EQUAL("-p", commandlines.at(0).Args().at(1));
+            VERIFY_ARE_EQUAL("u", commandlines.at(0).Args().at(2));
+            VERIFY_ARE_EQUAL(4u, commandlines.at(1).Argc());
+            VERIFY_ARE_EQUAL("wt.exe", commandlines.at(1).Args().at(0));
+            VERIFY_ARE_EQUAL("nt", commandlines.at(1).Args().at(1));
+            VERIFY_ARE_EQUAL("-p", commandlines.at(1).Args().at(2));
+            VERIFY_ARE_EQUAL("u", commandlines.at(1).Args().at(3));
         }
     }
 
@@ -439,7 +454,7 @@ namespace TerminalAppLocalTests
         END_TEST_METHOD_PROPERTIES()
 
         INIT_TEST_PROPERTY(bool, useShortForm, L"If true, use `nt` instead of `new-tab`");
-        const wchar_t* subcommand = useShortForm ? L"nt" : L"new-tab";
+        auto subcommand = useShortForm ? L"nt" : L"new-tab";
 
         {
             AppCommandlineArgs appArgs{};
@@ -697,7 +712,7 @@ namespace TerminalAppLocalTests
         END_TEST_METHOD_PROPERTIES()
 
         INIT_TEST_PROPERTY(bool, useShortForm, L"If true, use `sp` instead of `split-pane`");
-        const wchar_t* subcommand = useShortForm ? L"sp" : L"split-pane";
+        auto subcommand = useShortForm ? L"sp" : L"split-pane";
 
         {
             AppCommandlineArgs appArgs{};
@@ -715,7 +730,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(actionAndArgs.Args());
             auto myArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(myArgs);
-            VERIFY_ARE_EQUAL(SplitState::Automatic, myArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Automatic, myArgs.SplitDirection());
             VERIFY_ARE_EQUAL(SplitType::Manual, myArgs.SplitMode());
             VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
         }
@@ -735,7 +750,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(actionAndArgs.Args());
             auto myArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(myArgs);
-            VERIFY_ARE_EQUAL(SplitState::Horizontal, myArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Down, myArgs.SplitDirection());
             VERIFY_ARE_EQUAL(SplitType::Manual, myArgs.SplitMode());
             VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
         }
@@ -757,7 +772,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(actionAndArgs.Args());
             auto myArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(myArgs);
-            VERIFY_ARE_EQUAL(SplitState::Vertical, myArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Right, myArgs.SplitDirection());
             VERIFY_ARE_EQUAL(SplitType::Manual, myArgs.SplitMode());
             VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
         }
@@ -799,7 +814,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(actionAndArgs.Args());
             auto myArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(myArgs);
-            VERIFY_ARE_EQUAL(SplitState::Automatic, myArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Automatic, myArgs.SplitDirection());
             VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
             VERIFY_IS_FALSE(myArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
@@ -828,7 +843,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(actionAndArgs.Args());
             auto myArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(myArgs);
-            VERIFY_ARE_EQUAL(SplitState::Horizontal, myArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Down, myArgs.SplitDirection());
             VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
             VERIFY_IS_FALSE(myArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
@@ -857,7 +872,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(actionAndArgs.Args());
             auto myArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(myArgs);
-            VERIFY_ARE_EQUAL(SplitState::Automatic, myArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Automatic, myArgs.SplitDirection());
             VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
             VERIFY_IS_FALSE(myArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
@@ -880,8 +895,8 @@ namespace TerminalAppLocalTests
 
         INIT_TEST_PROPERTY(bool, useShortFormNewTab, L"If true, use `nt` instead of `new-tab`");
         INIT_TEST_PROPERTY(bool, useShortFormSplitPane, L"If true, use `sp` instead of `split-pane`");
-        const wchar_t* ntSubcommand = useShortFormNewTab ? L"nt" : L"new-tab";
-        const wchar_t* spSubcommand = useShortFormSplitPane ? L"sp" : L"split-pane";
+        auto ntSubcommand = useShortFormNewTab ? L"nt" : L"new-tab";
+        auto spSubcommand = useShortFormSplitPane ? L"sp" : L"split-pane";
 
         AppCommandlineArgs appArgs{};
         std::vector<const wchar_t*> rawCommands{ L"wt.exe", ntSubcommand, L";", spSubcommand };
@@ -1009,7 +1024,7 @@ namespace TerminalAppLocalTests
         END_TEST_METHOD_PROPERTIES()
 
         INIT_TEST_PROPERTY(bool, useShortForm, L"If true, use `ft` instead of `focus-tab`");
-        const wchar_t* subcommand = useShortForm ? L"ft" : L"focus-tab";
+        auto subcommand = useShortForm ? L"ft" : L"focus-tab";
 
         {
             AppCommandlineArgs appArgs{};
@@ -1031,9 +1046,11 @@ namespace TerminalAppLocalTests
             // The first action is going to always be a new-tab action
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, appArgs._startupActions.at(0).Action());
 
-            auto actionAndArgs = appArgs._startupActions.at(1);
+            const auto actionAndArgs = appArgs._startupActions.at(1);
             VERIFY_ARE_EQUAL(ShortcutAction::NextTab, actionAndArgs.Action());
-            VERIFY_IS_NULL(actionAndArgs.Args());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            const auto myArgs = actionAndArgs.Args().as<NextTabArgs>();
+            VERIFY_ARE_EQUAL(TabSwitcherMode::Disabled, myArgs.SwitcherMode().Value());
         }
         {
             AppCommandlineArgs appArgs{};
@@ -1047,7 +1064,9 @@ namespace TerminalAppLocalTests
 
             auto actionAndArgs = appArgs._startupActions.at(1);
             VERIFY_ARE_EQUAL(ShortcutAction::PrevTab, actionAndArgs.Action());
-            VERIFY_IS_NULL(actionAndArgs.Args());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            const auto myArgs = actionAndArgs.Args().as<PrevTabArgs>();
+            VERIFY_ARE_EQUAL(TabSwitcherMode::Disabled, myArgs.SwitcherMode().Value());
         }
         {
             AppCommandlineArgs appArgs{};
@@ -1097,7 +1116,7 @@ namespace TerminalAppLocalTests
         END_TEST_METHOD_PROPERTIES()
 
         INIT_TEST_PROPERTY(bool, useShortForm, L"If true, use `mf` instead of `move-focus`");
-        const wchar_t* subcommand = useShortForm ? L"mf" : L"move-focus";
+        auto subcommand = useShortForm ? L"mf" : L"move-focus";
 
         {
             AppCommandlineArgs appArgs{};
@@ -1210,7 +1229,7 @@ namespace TerminalAppLocalTests
 
     void CommandlineTest::ParseSwapPaneArgs()
     {
-        const wchar_t* subcommand = L"swap-pane";
+        auto subcommand = L"swap-pane";
 
         {
             AppCommandlineArgs appArgs{};
@@ -1328,7 +1347,7 @@ namespace TerminalAppLocalTests
         END_TEST_METHOD_PROPERTIES()
 
         INIT_TEST_PROPERTY(bool, useShortForm, L"If true, use `fp` instead of `focus-pane`");
-        const wchar_t* subcommand = useShortForm ? L"fp" : L"focus-pane";
+        auto subcommand = useShortForm ? L"fp" : L"focus-pane";
 
         {
             AppCommandlineArgs appArgs{};
@@ -1761,7 +1780,7 @@ namespace TerminalAppLocalTests
         END_TEST_METHOD_PROPERTIES()
 
         INIT_TEST_PROPERTY(bool, useShortForm, L"If true, use `sp` instead of `split-pane`");
-        const wchar_t* subcommand = useShortForm ? L"sp" : L"split-pane";
+        auto subcommand = useShortForm ? L"sp" : L"split-pane";
 
         {
             AppCommandlineArgs appArgs{};
@@ -1779,7 +1798,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(actionAndArgs.Args());
             auto myArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(myArgs);
-            VERIFY_ARE_EQUAL(SplitState::Automatic, myArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Automatic, myArgs.SplitDirection());
             VERIFY_ARE_EQUAL(0.5f, myArgs.SplitSize());
             VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
         }
@@ -1799,7 +1818,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(actionAndArgs.Args());
             auto myArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(myArgs);
-            VERIFY_ARE_EQUAL(SplitState::Automatic, myArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Automatic, myArgs.SplitDirection());
             VERIFY_ARE_EQUAL(0.3f, myArgs.SplitSize());
             VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
         }
@@ -1820,7 +1839,7 @@ namespace TerminalAppLocalTests
                 VERIFY_IS_NOT_NULL(actionAndArgs.Args());
                 auto myArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
                 VERIFY_IS_NOT_NULL(myArgs);
-                VERIFY_ARE_EQUAL(SplitState::Automatic, myArgs.SplitStyle());
+                VERIFY_ARE_EQUAL(SplitDirection::Automatic, myArgs.SplitDirection());
                 VERIFY_ARE_EQUAL(0.3f, myArgs.SplitSize());
                 VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
             }
@@ -1830,7 +1849,7 @@ namespace TerminalAppLocalTests
                 VERIFY_IS_NOT_NULL(actionAndArgs.Args());
                 auto myArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
                 VERIFY_IS_NOT_NULL(myArgs);
-                VERIFY_ARE_EQUAL(SplitState::Automatic, myArgs.SplitStyle());
+                VERIFY_ARE_EQUAL(SplitDirection::Automatic, myArgs.SplitDirection());
                 VERIFY_ARE_EQUAL(0.5f, myArgs.SplitSize());
                 VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
             }
@@ -1852,7 +1871,7 @@ namespace TerminalAppLocalTests
                 VERIFY_IS_NOT_NULL(actionAndArgs.Args());
                 auto myArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
                 VERIFY_IS_NOT_NULL(myArgs);
-                VERIFY_ARE_EQUAL(SplitState::Automatic, myArgs.SplitStyle());
+                VERIFY_ARE_EQUAL(SplitDirection::Automatic, myArgs.SplitDirection());
                 VERIFY_ARE_EQUAL(0.3f, myArgs.SplitSize());
                 VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
             }
@@ -1862,7 +1881,7 @@ namespace TerminalAppLocalTests
                 VERIFY_IS_NOT_NULL(actionAndArgs.Args());
                 auto myArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
                 VERIFY_IS_NOT_NULL(myArgs);
-                VERIFY_ARE_EQUAL(SplitState::Automatic, myArgs.SplitStyle());
+                VERIFY_ARE_EQUAL(SplitDirection::Automatic, myArgs.SplitDirection());
                 VERIFY_ARE_EQUAL(0.7f, myArgs.SplitSize());
                 VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
             }

@@ -7,11 +7,12 @@ Licensed under the MIT license.
 #define FG_ATTRS (FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY)
 #define BG_ATTRS (BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY)
 #define META_ATTRS (COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE | COMMON_LVB_GRID_HORIZONTAL | COMMON_LVB_GRID_LVERTICAL | COMMON_LVB_GRID_RVERTICAL | COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE)
+#define USED_META_ATTRS (META_ATTRS & ~COMMON_LVB_SBCSDBCS) // We don't retain lead/trailing byte information in the TextAttribute class
 
-enum class ExtendedAttributes : BYTE
+enum class CharacterAttributes : uint16_t
 {
     Normal = 0x00,
-    Bold = 0x01,
+    Intense = 0x01,
     Italics = 0x02,
     Blinking = 0x04,
     Invisible = 0x08,
@@ -19,22 +20,19 @@ enum class ExtendedAttributes : BYTE
     Underlined = 0x20,
     DoublyUnderlined = 0x40,
     Faint = 0x80,
+    Unused1 = 0x100,
+    Unused2 = 0x200,
+    TopGridline = COMMON_LVB_GRID_HORIZONTAL, // 0x400
+    LeftGridline = COMMON_LVB_GRID_LVERTICAL, // 0x800
+    RightGridline = COMMON_LVB_GRID_RVERTICAL, // 0x1000
+    Protected = 0x2000,
+    ReverseVideo = COMMON_LVB_REVERSE_VIDEO, // 0x4000
+    BottomGridline = COMMON_LVB_UNDERSCORE, // 0x8000
+
+    All = 0xFFFF, // All character attributes
+    Rendition = All & ~Protected // Only rendition attributes (everything except Protected)
 };
-DEFINE_ENUM_FLAG_OPERATORS(ExtendedAttributes);
-
-WORD XtermToWindowsIndex(const size_t index) noexcept;
-WORD Xterm256ToWindowsIndex(const size_t index) noexcept;
-WORD XtermToLegacy(const size_t xtermForeground, const size_t xtermBackground);
-
-constexpr WORD WINDOWS_RED_ATTR = FOREGROUND_RED;
-constexpr WORD WINDOWS_GREEN_ATTR = FOREGROUND_GREEN;
-constexpr WORD WINDOWS_BLUE_ATTR = FOREGROUND_BLUE;
-constexpr WORD WINDOWS_BRIGHT_ATTR = FOREGROUND_INTENSITY;
-
-constexpr WORD XTERM_RED_ATTR = 0x01;
-constexpr WORD XTERM_GREEN_ATTR = 0x02;
-constexpr WORD XTERM_BLUE_ATTR = 0x04;
-constexpr WORD XTERM_BRIGHT_ATTR = 0x08;
+DEFINE_ENUM_FLAG_OPERATORS(CharacterAttributes);
 
 enum class CursorType : unsigned int
 {
@@ -51,4 +49,3 @@ enum class CursorType : unsigned int
 constexpr COLORREF INVALID_COLOR = 0xffffffff;
 
 constexpr WORD COLOR_TABLE_SIZE = 16;
-constexpr WORD XTERM_COLOR_TABLE_SIZE = 256;

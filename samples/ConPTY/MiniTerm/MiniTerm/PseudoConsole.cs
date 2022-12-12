@@ -1,4 +1,4 @@
-﻿using Microsoft.Win32.SafeHandles;
+using Microsoft.Win32.SafeHandles;
 using System;
 using static MiniTerm.Native.PseudoConsoleApi;
 
@@ -26,7 +26,7 @@ namespace MiniTerm
                 0, out IntPtr hPC);
             if(createResult != 0)
             {
-                throw new InvalidOperationException("Could not create psuedo console. Error Code " + createResult);
+                throw new InvalidOperationException("Could not create pseudo console. Error Code " + createResult);
             }
             return new PseudoConsole(hPC);
         }

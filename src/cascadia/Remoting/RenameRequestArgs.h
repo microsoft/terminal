@@ -9,7 +9,6 @@ Class Name:
 #pragma once
 
 #include "RenameRequestArgs.g.h"
-#include "../cascadia/inc/cppwinrt_utils.h"
 
 namespace winrt::Microsoft::Terminal::Remoting::implementation
 {

@@ -44,7 +44,7 @@ namespace Microsoft::Console::VirtualTerminal
     }
 
     // Note that the 94-character sets are deliberately defined with a size of
-    // 95 to avoid having to test the lower bound. We just alway leave the first
+    // 95 to avoid having to test the lower bound. We just always leave the first
     // entry - which is not meant to be mapped - as a SPACE or NBSP, which is at
     // least visually equivalent to leaving it untranslated.
 

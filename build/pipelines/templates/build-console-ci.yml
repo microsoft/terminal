@@ -1,22 +1,23 @@
 parameters:
   configuration: 'Release'
+  branding: 'Dev'
   platform: ''
   additionalBuildArguments: ''
-  minimumExpectedTestsExecutedCount: 10  # Sanity check for minimum expected tests to be reported
-  rerunPassesRequiredToAvoidFailure: 5
 
 jobs:
-- job: Build${{ parameters.platform }}${{ parameters.configuration }}
-  displayName: Build ${{ parameters.platform }} ${{ parameters.configuration }}
+- job: Build${{ parameters.platform }}${{ parameters.configuration }}${{ parameters.branding }}
+  displayName: Build ${{ parameters.platform }} ${{ parameters.configuration }} ${{ parameters.branding }}
   variables:
     BuildConfiguration: ${{ parameters.configuration }}
     BuildPlatform: ${{ parameters.platform }}
-  pool: 
+    WindowsTerminalBranding: ${{ parameters.branding }}
+    EnableRichCodeNavigation: true
+  pool:
     ${{ if eq(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
       name: WinDevPoolOSS-L
     ${{ if ne(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
       name: WinDevPool-L
-    demands: ImageOverride -equals WinDevVS16-latest
+    demands: ImageOverride -equals WinDevVS17-latest
 
   steps:
   - template: build-console-steps.yml
@@ -28,21 +29,3 @@ jobs:
   - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
     displayName: 'Component Detection'
     condition: and(succeededOrFailed(), not(eq(variables['Build.Reason'], 'PullRequest')))
-
-- template: helix-runtests-job.yml
-  parameters:
-    name: 'RunTestsInHelix'
-    dependsOn: Build${{ parameters.platform }}${{ parameters.configuration }}
-    condition: and(succeeded(), and(eq('${{ parameters.platform }}', 'x64'), not(eq(variables['Build.Reason'], 'PullRequest')))) 
-    testSuite: 'DevTestSuite'
-    platform: ${{ parameters.platform }}
-    configuration: ${{ parameters.configuration }}
-    rerunPassesRequiredToAvoidFailure: ${{ parameters.rerunPassesRequiredToAvoidFailure }}
-    
-- template: helix-processtestresults-job.yml
-  parameters:
-    dependsOn:
-    - RunTestsInHelix
-    condition: and(succeededOrFailed(), and(eq('${{ parameters.platform }}', 'x64'), not(eq(variables['Build.Reason'], 'PullRequest')))) 
-    rerunPassesRequiredToAvoidFailure: ${{ parameters.rerunPassesRequiredToAvoidFailure }}
-    minimumExpectedTestsExecutedCount: ${{ parameters.minimumExpectedTestsExecutedCount }}

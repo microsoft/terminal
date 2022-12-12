@@ -5,14 +5,13 @@
 
 #include "PaletteItem.h"
 #include "TabPaletteItem.g.h"
-#include "inc/cppwinrt_utils.h"
 
 namespace winrt::TerminalApp::implementation
 {
     struct TabPaletteItem : TabPaletteItemT<TabPaletteItem, PaletteItem>
     {
         TabPaletteItem() = default;
-        TabPaletteItem(winrt::TerminalApp::TabBase const& tab);
+        TabPaletteItem(const winrt::TerminalApp::TabBase& tab);
 
         winrt::TerminalApp::TabBase Tab() const noexcept
         {

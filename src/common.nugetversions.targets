@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!--===============================================================================================================
+    SPECIAL SAUCE
+    ===================================================================================================================  
+    This section contains any special sauce needed to implement Global NuGet Management.-->
+
+  <!--Since Global NuGet Management requires having a single [packages.config] file that's located in a special
+        global location, its existence won't be known by default to Projects when they are opened/built.  As such,
+        we need the following target that runs before Project References are resolved, which is responsible for
+        downloading and using [NuGet.exe] to perform a manual restore operation on the global [packages.config]
+        file.  We run this target only for local developer inner loop scenarios (BuildingInsideVisualStudio=true).  For
+        Azure DevOps builds, a NuGet Restore pipeline task is run against the [packages.config] file instead.-->
+
+  <PropertyGroup>
+    <Terminal_NuGetEXE>&quot;$(SolutionDir)dep\nuget\nuget.exe&quot;</Terminal_NuGetEXE>
+    <Terminal_GlobalPackagesConfigPath>$(SolutionDir)dep\nuget\packages.config</Terminal_GlobalPackagesConfigPath>
+  </PropertyGroup>
+
+  <Target Name="_Terminal_NuGetPackageManager"
+      BeforeTargets="ResolveProjectReferences"
+      Inputs="$(Terminal_GlobalPackagesConfigPath)"
+      Outputs="$(SolutionDir)packages\packages.config"
+      Condition="'$(BuildingInsideVisualStudio)' == 'true'">
+
+    <!--Have the [nuget.exe] tool do a restore on the global [packages.config] file for the repository.-->
+    <Exec Command="$(Terminal_NuGetEXE) install $(Terminal_GlobalPackagesConfigPath)" />
+
+    <!--Copy this version of [packages.config] to the output directory to allow us to skip this work in the future if nothing changed.-->
+    <Copy SourceFiles="$(Terminal_GlobalPackagesConfigPath)"
+          DestinationFiles="$(SolutionDir)packages\packages.config" />
+    <Message Importance="high" Text="Restoring global NuGet configuration"/>
+  </Target>
+
+  <ImportGroup Label="ExtensionTargets">
+    <!--  PGO -->
+    <Import Condition="'$(PgoTarget)' == 'true' And '$(Platform)'=='x64' And '$(PGOBuildMode)'!='' and Exists('$(PkgMicrosoft_PGO_Helpers_Cpp)\build\Microsoft.PGO-Helpers.Cpp.targets')" Project="$(PkgMicrosoft_PGO_Helpers_Cpp)\build\Microsoft.PGO-Helpers.Cpp.targets" />
+
+    <!-- CppWinrt -->
+    <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.CppWinRT.2.0.210825.3\build\native\Microsoft.Windows.CppWinRT.targets" Condition="'$(TerminalCppWinrt)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.CppWinRT.2.0.210825.3\build\native\Microsoft.Windows.CppWinRT.targets')" />
+
+    <!-- TAEF -->
+    <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.60.210621002\build\Microsoft.Taef.targets" Condition="'$(TerminalTAEF)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.60.210621002\build\Microsoft.Taef.targets')" />
+    
+    <!-- CppRestSDK -->
+    <Import Project="$(MSBuildThisFileDirectory)..\packages\vcpkg-cpprestsdk.2.10.14\build\native\vcpkg-cpprestsdk.targets" Condition="'$(TerminalCppRestSDK)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\vcpkg-cpprestsdk.2.10.14\build\native\vcpkg-cpprestsdk.targets')" />
+
+    <!-- VCRTForwarders -->
+    <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.VCRTForwarders.140.1.0.4\build\native\Microsoft.VCRTForwarders.140.targets" Condition="'$(TerminalVCRTForwarders)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.VCRTForwarders.140.1.0.4\build\native\Microsoft.VCRTForwarders.140.targets')" />
+
+    <!-- TerminalThemeHelpers -->
+    <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.6.220404001\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets" Condition="'$(TerminalThemeHelpers)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.6.220404001\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets')" />
+
+    <!-- VisualStudioSetup -->
+    <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.VisualStudio.Setup.Configuration.Native.2.3.2262\build\native\Microsoft.VisualStudio.Setup.Configuration.Native.targets" Condition="'$(TerminalVisualStudioSetup)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.VisualStudio.Setup.Configuration.Native.2.3.2262\build\native\Microsoft.VisualStudio.Setup.Configuration.Native.targets')" />
+
+    <!-- WinUI (which depends on WebView2 as of 2.8.0) -->
+    <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets" Condition="'$(TerminalMUX)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets')" />
+
+    <!-- WIL (so widely used that this one does not have a TerminalWIL opt-in property; it is automatic) -->
+    <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.220201.1\build\native\Microsoft.Windows.ImplementationLibrary.targets" Condition="Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.220201.1\build\native\Microsoft.Windows.ImplementationLibrary.targets')" />
+
+  </ImportGroup>
+
+  <Target Name="Terminal_EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+
+    <!--  PGO -->
+    <Import Condition="'$(PgoTarget)' == 'true' And '$(Platform)'=='x64' And '$(PGOBuildMode)'!='' AND !Exists('$(PkgMicrosoft_PGO_Helpers_Cpp)\build\Microsoft.PGO-Helpers.Cpp.props')" Text="$([System.String]::Format('$(ErrorText)', '$(PkgMicrosoft_PGO_Helpers_Cpp)\build\Microsoft.PGO-Helpers.Cpp.props))" />
+    <Import Condition="'$(PgoTarget)' == 'true' And '$(Platform)'=='x64' And '$(PGOBuildMode)'!='' AND !Exists('$(PkgMicrosoft_PGO_Helpers_Cpp)\build\Microsoft.PGO-Helpers.Cpp.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(PkgMicrosoft_PGO_Helpers_Cpp)\build\Microsoft.PGO-Helpers.Cpp.targets))" />
+
+    <!-- CppWinrt -->
+    <Error Condition="'$(TerminalCppWinrt)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.CppWinRT.2.0.210825.3\build\native\Microsoft.Windows.CppWinRT.props')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.CppWinRT.2.0.210825.3\build\native\Microsoft.Windows.CppWinRT.props'))" />
+    <Error Condition="'$(TerminalCppWinrt)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.CppWinRT.2.0.210825.3\build\native\Microsoft.Windows.CppWinRT.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.CppWinRT.2.0.210825.3\build\native\Microsoft.Windows.CppWinRT.targets'))" />
+
+    <!-- TAEF -->
+    <Error Condition="'$(TerminalTAEF)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.60.210621002\build\Microsoft.Taef.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.60.210621002\build\Microsoft.Taef.targets'))" />
+
+    <!-- CppRestSDK -->
+    <Error Condition="'$(TerminalCppRestSDK)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\vcpkg-cpprestsdk.2.10.14\build\native\vcpkg-cpprestsdk.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\vcpkg-cpprestsdk.2.10.14\build\native\vcpkg-cpprestsdk.targets'))" />
+
+    <!-- VCRTForwarders -->
+    <Error Condition="'$(TerminalVCRTForwarders)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.VCRTForwarders.140.1.0.4\build\native\Microsoft.VCRTForwarders.140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.VCRTForwarders.140.1.0.4\build\native\Microsoft.VCRTForwarders.140.targets'))" />
+
+    <!-- TerminalThemeHelpers -->
+    <Error Condition="'$(TerminalThemeHelpers)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.6.220404001\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.6.220404001\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets'))" />
+
+    <!-- VisualStudioSetup -->
+    <Error Condition="'$(TerminalVisualStudioSetup)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.VisualStudio.Setup.Configuration.Native.2.3.2262\build\native\Microsoft.VisualStudio.Setup.Configuration.Native.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.VisualStudio.Setup.Configuration.Native.2.3.2262\build\native\Microsoft.VisualStudio.Setup.Configuration.Native.targets'))" />
+
+    <!-- WinUI (which depends on WebView2 as of 2.8.0) -->
+    <Error Condition="'$(TerminalMUX)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets'))" />
+
+    <!-- WIL (so widely used that this one does not have a TerminalWIL opt-in property; it is automatic) -->
+    <Error Condition="!Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.220201.1\build\native\Microsoft.Windows.ImplementationLibrary.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.220201.1\build\native\Microsoft.Windows.ImplementationLibrary.targets'))" />
+
+  </Target>
+
+</Project>

@@ -31,7 +31,7 @@ $totalTestsExecutedCount = 0
 
 # We assume that we only have one testRun with a given name that we care about
 # We only process the last testRun with a given name (based on completedDate)
-# The name of a testRun is set to the Helix queue that it was run on (e.g. windows.10.amd64.client19h1.xaml)
+# The name of a testRun is set to the Helix queue that it was run on (e.g. windows.10.amd64.client21h1.xaml)
 # If we have multiple test runs on the same queue that we care about, we will need to re-visit this logic
 foreach ($testRun in ($testRuns.value | Sort-Object -Property "completedDate" -Descending))
 {

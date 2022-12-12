@@ -10,10 +10,8 @@
 
 // Routine Description:
 // - Ensures the SxS initialization for the process.
-void InitSideBySide(_Out_writes_(ScratchBufferSize) PWSTR ScratchBuffer, __range(MAX_PATH, MAX_PATH) DWORD ScratchBufferSize)
+void InitSideBySide()
 {
-    ACTCTXW actctx = { 0 };
-
     // Account for the fact that sidebyside stuff happens in CreateProcess
     // but conhost is run with RtlCreateUserProcess.
 
@@ -30,44 +28,14 @@ void InitSideBySide(_Out_writes_(ScratchBufferSize) PWSTR ScratchBuffer, __range
     // make references to DLLs in the system that are in the SxS cache (ex. a 3rd party IME is loaded and asks for
     // comctl32.dll. The load will fail if SxS wasn't initialized.) This was bug# WIN7:681280.
 
-    // We look at the first few chars without being careful about a terminal nul, so init them.
-    ScratchBuffer[0] = 0;
-    ScratchBuffer[1] = 0;
-    ScratchBuffer[2] = 0;
-    ScratchBuffer[3] = 0;
-    ScratchBuffer[4] = 0;
-    ScratchBuffer[5] = 0;
-    ScratchBuffer[6] = 0;
-
-    // GetModuleFileNameW truncates its result to fit in the buffer, so to detect if we fit, we have to do this.
-    ScratchBuffer[ScratchBufferSize - 2] = 0;
-    DWORD const dwModuleFileNameLength = GetModuleFileNameW(nullptr, ScratchBuffer, ScratchBufferSize);
-    if (dwModuleFileNameLength == 0)
-    {
-        RIPMSG1(RIP_ERROR, "GetModuleFileNameW failed %d.\n", GetLastError());
-        goto Exit;
-    }
-    if (ScratchBuffer[ScratchBufferSize - 2] != 0)
-    {
-        RIPMSG1(RIP_ERROR, "GetModuleFileNameW requires more than ScratchBufferSize(%d) - 1.\n", ScratchBufferSize);
-        goto Exit;
-    }
-
-    // We get an NT path from the Win32 api. Fix it to be Win32.
-    UINT NtToWin32PathOffset = 0;
-    if (ScratchBuffer[0] == '\\' && ScratchBuffer[1] == '?' && ScratchBuffer[2] == '?' && ScratchBuffer[3] == '\\'
-        //&& ScratchBuffer[4] == a drive letter
-        && ScratchBuffer[5] == ':' && ScratchBuffer[6] == '\\')
-    {
-        NtToWin32PathOffset = 4;
-    }
-
+    ACTCTXW actctx{};
     actctx.cbSize = sizeof(actctx);
-    actctx.dwFlags = (ACTCTX_FLAG_RESOURCE_NAME_VALID | ACTCTX_FLAG_SET_PROCESS_DEFAULT);
+    // We set ACTCTX_FLAG_HMODULE_VALID, but leave hModule as nullptr.
+    // A nullptr HMODULE refers to the current process/executable.
     actctx.lpResourceName = MAKEINTRESOURCE(IDR_SYSTEM_MANIFEST);
-    actctx.lpSource = ScratchBuffer + NtToWin32PathOffset;
+    actctx.dwFlags = ACTCTX_FLAG_RESOURCE_NAME_VALID | ACTCTX_FLAG_SET_PROCESS_DEFAULT | ACTCTX_FLAG_HMODULE_VALID;
 
-    HANDLE const hActCtx = CreateActCtxW(&actctx);
+    const auto hActCtx = CreateActCtxW(&actctx);
 
     // The error value is INVALID_HANDLE_VALUE.
     // ACTCTX_FLAG_SET_PROCESS_DEFAULT has nothing to return upon success, so it returns nullptr.
@@ -75,19 +43,16 @@ void InitSideBySide(_Out_writes_(ScratchBufferSize) PWSTR ScratchBuffer, __range
     // is referenced in the PEB, and lasts till process shutdown.
     if (hActCtx == INVALID_HANDLE_VALUE)
     {
-        auto const error = GetLastError();
+        const auto error = GetLastError();
 
-        // Don't log if it's already set. This whole ordeal is to make sure one is set if there isn't one already.
-        // If one is already set... good!
+        // OpenConsole ships with a single manifest at ID 1, while conhost ships with 2 at ID 1
+        // and IDR_SYSTEM_MANIFEST. If we call CreateActCtxW() with IDR_SYSTEM_MANIFEST inside
+        // OpenConsole anyways, nothing happens and we get ERROR_SXS_PROCESS_DEFAULT_ALREADY_SET.
         if (ERROR_SXS_PROCESS_DEFAULT_ALREADY_SET != error)
         {
             RIPMSG1(RIP_WARNING, "InitSideBySide failed create an activation context. Error: %d\r\n", error);
         }
-        goto Exit;
     }
-
-Exit:
-    ScratchBuffer[0] = 0;
 }
 
 // Routine Description:
@@ -130,5 +95,5 @@ void InitEnvironmentVariables()
     }
 
     // Initialize SxS for the process.
-    InitSideBySide(wchValue, ARRAYSIZE(wchValue));
+    InitSideBySide();
 }

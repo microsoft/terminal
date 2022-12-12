@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "Command.idl";
+
 namespace Microsoft.Terminal.Settings.Model
 {
     interface IActionArgs
@@ -36,15 +38,18 @@ namespace Microsoft.Terminal.Settings.Model
         Previous,
         PreviousInOrder,
         NextInOrder,
-        First
+        First,
+        Parent,
+        Child
     };
 
-    enum SplitState
+    enum SplitDirection
     {
-        Automatic = -1,
-        None = 0,
-        Vertical = 1,
-        Horizontal = 2
+        Automatic = 0,
+        Up,
+        Right,
+        Down,
+        Left
     };
 
     enum SplitType
@@ -112,13 +117,20 @@ namespace Microsoft.Terminal.Settings.Model
         String TabTitle;
         Windows.Foundation.IReference<Windows.UI.Color> TabColor;
         String Profile; // Either a GUID or a profile's name if the GUID isn't a match
+
+        // We use IReference<> to treat some args as nullable where null means
+        // "use the inherited value". See ProfileIndex,
+        // SuppressApplicationTitle, Elevate. Strings that behave this way just
+        // use `null` as "use the inherited value".
+
         // ProfileIndex can be null (for "use the default"), so this needs to be
         // a IReference, so it's nullable
         Windows.Foundation.IReference<Int32> ProfileIndex { get; };
-
         Windows.Foundation.IReference<Boolean> SuppressApplicationTitle;
-
         String ColorScheme;
+        // This needs to be an optional so that the default value (null) does
+        // not modify whatever the profile's value is (either true or false)
+        Windows.Foundation.IReference<Boolean> Elevate;
 
         Boolean Equals(NewTerminalArgs other);
         String GenerateName();
@@ -175,7 +187,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass AdjustFontSizeArgs : IActionArgs
     {
-        Int32 Delta { get; };
+        Single Delta { get; };
     };
 
     [default_interface] runtimeclass SendInputArgs : IActionArgs
@@ -185,12 +197,12 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass SplitPaneArgs : IActionArgs
     {
-        SplitPaneArgs(SplitType splitMode, SplitState split, Double size, NewTerminalArgs terminalArgs);
-        SplitPaneArgs(SplitState split, Double size, NewTerminalArgs terminalArgs);
-        SplitPaneArgs(SplitState split, NewTerminalArgs terminalArgs);
+        SplitPaneArgs(SplitType splitMode, SplitDirection split, Double size, NewTerminalArgs terminalArgs);
+        SplitPaneArgs(SplitDirection split, Double size, NewTerminalArgs terminalArgs);
+        SplitPaneArgs(SplitDirection split, NewTerminalArgs terminalArgs);
         SplitPaneArgs(SplitType splitMode);
 
-        SplitState SplitStyle { get; };
+        SplitDirection SplitDirection { get; };
         NewTerminalArgs TerminalArgs { get; };
         SplitType SplitMode { get; };
         Double SplitSize { get; };
@@ -202,6 +214,24 @@ namespace Microsoft.Terminal.Settings.Model
         SettingsTarget Target { get; };
     };
 
+    [default_interface] runtimeclass SetFocusModeArgs : IActionArgs
+    {
+        SetFocusModeArgs(Boolean isFocusMode);
+        Boolean IsFocusMode { get; };
+    };
+
+    [default_interface] runtimeclass SetFullScreenArgs : IActionArgs
+    {
+        SetFullScreenArgs(Boolean isFullScreen);
+        Boolean IsFullScreen { get; };
+    };
+
+    [default_interface] runtimeclass SetMaximizedArgs : IActionArgs
+    {
+        SetMaximizedArgs(Boolean isMaximized);
+        Boolean IsMaximized { get; };
+    };
+
     [default_interface] runtimeclass SetColorSchemeArgs : IActionArgs
     {
         SetColorSchemeArgs(String name);
@@ -210,11 +240,13 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass SetTabColorArgs : IActionArgs
     {
+        SetTabColorArgs(Windows.UI.Color tabColor);
         Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
     };
 
     [default_interface] runtimeclass RenameTabArgs : IActionArgs
     {
+        RenameTabArgs(String title);
         String Title { get; };
     };
 
@@ -258,6 +290,17 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.Foundation.IReference<UInt32> RowsToScroll { get; };
     };
 
+
+    [default_interface] runtimeclass ScrollToMarkArgs : IActionArgs
+    {
+        Microsoft.Terminal.Control.ScrollToMarkDirection Direction { get; };
+    };
+
+    [default_interface] runtimeclass AddMarkArgs : IActionArgs
+    {
+        Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> Color { get; };
+    };
+
     [default_interface] runtimeclass ToggleCommandPaletteArgs : IActionArgs
     {
         CommandPaletteLaunchMode LaunchMode { get; };
@@ -291,6 +334,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass RenameWindowArgs : IActionArgs
     {
+        RenameWindowArgs(String name);
         String Name { get; };
     };
 
@@ -307,5 +351,37 @@ namespace Microsoft.Terminal.Settings.Model
     {
         FocusPaneArgs(UInt32 Id);
         UInt32 Id { get; };
+    };
+
+    [default_interface] runtimeclass ExportBufferArgs : IActionArgs
+    {
+        ExportBufferArgs(String path);
+        String Path { get; };
+    };
+
+    [default_interface] runtimeclass ClearBufferArgs : IActionArgs
+    {
+        ClearBufferArgs(Microsoft.Terminal.Control.ClearBufferType clear);
+        Microsoft.Terminal.Control.ClearBufferType Clear { get; };
+    };
+
+    [default_interface] runtimeclass MultipleActionsArgs : IActionArgs
+    {
+        MultipleActionsArgs();
+        Windows.Foundation.Collections.IVector<ActionAndArgs> Actions;
+    };
+
+    [default_interface] runtimeclass AdjustOpacityArgs : IActionArgs
+    {
+        AdjustOpacityArgs();
+        Int32 Opacity { get; };
+        Boolean Relative { get; };
+    };
+
+    [default_interface] runtimeclass ColorSelectionArgs : IActionArgs
+    {
+        Microsoft.Terminal.Control.SelectionColor Foreground;
+        Microsoft.Terminal.Control.SelectionColor Background;
+        Microsoft.Terminal.Core.MatchMode MatchMode { get; };
     };
 }

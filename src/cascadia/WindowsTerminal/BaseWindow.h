@@ -101,7 +101,7 @@ public:
     [[nodiscard]] LRESULT HandleDpiChange(const HWND hWnd, const WPARAM wParam, const LPARAM lParam)
     {
         _inDpiChange = true;
-        const HWND hWndStatic = GetWindow(hWnd, GW_CHILD);
+        const auto hWndStatic = GetWindow(hWnd, GW_CHILD);
         if (hWndStatic != nullptr)
         {
             const UINT uDpi = HIWORD(wParam);
@@ -133,6 +133,11 @@ public:
         return _window.get();
     }
 
+    UINT GetCurrentDpi() const noexcept
+    {
+        return ::GetDpiForWindow(_window.get());
+    }
+
     float GetCurrentDpiScale() const noexcept
     {
         const auto dpi = ::GetDpiForWindow(_window.get());
@@ -141,13 +146,13 @@ public:
     }
 
     //// Gets the physical size of the client area of the HWND in _window
-    SIZE GetPhysicalSize() const noexcept
+    til::size GetPhysicalSize() const noexcept
     {
         RECT rect = {};
         GetClientRect(_window.get(), &rect);
         const auto windowsWidth = rect.right - rect.left;
         const auto windowsHeight = rect.bottom - rect.top;
-        return SIZE{ windowsWidth, windowsHeight };
+        return { windowsWidth, windowsHeight };
     }
 
     //// Gets the logical (in DIPs) size of a physical size specified by the parameter physicalSize
@@ -159,12 +164,12 @@ public:
     //// See also:
     ////   https://docs.microsoft.com/en-us/windows/desktop/LearnWin32/dpi-and-device-independent-pixels
     ////   https://docs.microsoft.com/en-us/windows/desktop/hidpi/high-dpi-desktop-application-development-on-windows#per-monitor-and-per-monitor-v2-dpi-awareness
-    winrt::Windows::Foundation::Size GetLogicalSize(const SIZE physicalSize) const noexcept
+    winrt::Windows::Foundation::Size GetLogicalSize(const til::size physicalSize) const noexcept
     {
         const auto scale = GetCurrentDpiScale();
         // 0.5 is to ensure that we pixel snap correctly at the edges, this is necessary with odd DPIs like 1.25, 1.5, 1, .75
-        const auto logicalWidth = (physicalSize.cx / scale) + 0.5f;
-        const auto logicalHeight = (physicalSize.cy / scale) + 0.5f;
+        const auto logicalWidth = (physicalSize.width / scale) + 0.5f;
+        const auto logicalHeight = (physicalSize.height / scale) + 0.5f;
         return winrt::Windows::Foundation::Size(logicalWidth, logicalHeight);
     }
 

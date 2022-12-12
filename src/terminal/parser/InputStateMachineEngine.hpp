@@ -58,6 +58,8 @@ namespace Microsoft::Console::VirtualTerminal
         ArrowLeft = VTID("D"),
         Home = VTID("H"),
         End = VTID("F"),
+        FocusIn = VTID("I"),
+        FocusOut = VTID("O"),
         MouseDown = VTID("<M"),
         MouseUp = VTID("<m"),
         Generic = VTID("~"), // Used for a whole bunch of possible keys
@@ -131,6 +133,8 @@ namespace Microsoft::Console::VirtualTerminal
         InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch,
                                 const bool lookingForDSR);
 
+        void SetLookingForDSR(const bool looking) noexcept;
+
         bool ActionExecute(const wchar_t wch) override;
         bool ActionExecuteFromEscape(const wchar_t wch) override;
 
@@ -157,11 +161,6 @@ namespace Microsoft::Console::VirtualTerminal
                                const std::wstring_view string) noexcept override;
 
         bool ActionSs3Dispatch(const wchar_t wch, const VTParameters parameters) override;
-
-        bool ParseControlSequenceAfterSs3() const noexcept override;
-        bool FlushAtEndOfString() const noexcept override;
-        bool DispatchControlCharsFromEscape() const noexcept override;
-        bool DispatchIntermediatesFromEscape() const noexcept override;
 
         void SetFlushToInputQueueCallback(std::function<bool()> pfnFlushToInputQueue);
 

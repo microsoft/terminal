@@ -204,7 +204,7 @@ We need a way to determine where an action came from to minimize how many action
          - Construct the `Command` (basically the `Command::LayerJson` we have today)
          - Add it to the `ActionMap`
            - this should update the internal state of `ActionMap` appropriately
-           - if the newly added key chord conflicts with a pre-existing one,
+           - if the newly added key chord conflicts with a preexisting one,
               redirect `_KeyMap` to the newly added `Command` instead,
               and update the conflicting one.
 2. Load settings.json

@@ -18,6 +18,9 @@
 #include "SendInputArgs.g.cpp"
 #include "SplitPaneArgs.g.cpp"
 #include "OpenSettingsArgs.g.cpp"
+#include "SetFocusModeArgs.g.cpp"
+#include "SetFullScreenArgs.g.cpp"
+#include "SetMaximizedArgs.g.cpp"
 #include "SetColorSchemeArgs.g.cpp"
 #include "SetTabColorArgs.g.cpp"
 #include "RenameTabArgs.g.cpp"
@@ -26,6 +29,8 @@
 #include "CloseTabsAfterArgs.g.cpp"
 #include "CloseTabArgs.g.cpp"
 #include "MoveTabArgs.g.cpp"
+#include "ScrollToMarkArgs.g.cpp"
+#include "AddMarkArgs.g.cpp"
 #include "FindMatchArgs.g.cpp"
 #include "ToggleCommandPaletteArgs.g.cpp"
 #include "NewWindowArgs.g.cpp"
@@ -34,8 +39,14 @@
 #include "RenameWindowArgs.g.cpp"
 #include "GlobalSummonArgs.g.cpp"
 #include "FocusPaneArgs.g.cpp"
+#include "ExportBufferArgs.g.cpp"
+#include "ClearBufferArgs.g.cpp"
+#include "MultipleActionsArgs.g.cpp"
+#include "AdjustOpacityArgs.g.cpp"
+#include "ColorSelectionArgs.g.cpp"
 
 #include <LibraryResources.h>
+#include <WtExeUtils.h>
 
 using namespace winrt::Microsoft::Terminal::Control;
 
@@ -91,6 +102,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
         }
 
+        if (Elevate())
+        {
+            ss << fmt::format(L"elevate: {}, ", Elevate().Value());
+        }
+
         auto s = ss.str();
         if (s.empty())
         {
@@ -119,15 +135,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         if (!StartingDirectory().empty())
         {
-            // If the directory ends in a '\', we need to add another one on so that the enclosing quote added
-            // afterwards isn't escaped
-            const auto trailingBackslashEscape = StartingDirectory().back() == L'\\' ? L"\\" : L"";
-            ss << fmt::format(L"--startingDirectory \"{}{}\" ", StartingDirectory(), trailingBackslashEscape);
+            ss << fmt::format(L"--startingDirectory {} ", QuoteAndEscapeCommandlineArg(StartingDirectory()));
         }
 
         if (!TabTitle().empty())
         {
-            ss << fmt::format(L"--title \"{}\" ", TabTitle());
+            ss << fmt::format(L"--title {} ", QuoteAndEscapeCommandlineArg(TabTitle()));
         }
 
         if (TabColor())
@@ -150,7 +163,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         if (!ColorScheme().empty())
         {
-            ss << fmt::format(L"--colorScheme \"{}\" ", ColorScheme());
+            ss << fmt::format(L"--colorScheme {} ", QuoteAndEscapeCommandlineArg(ColorScheme()));
         }
 
         if (!Commandline().empty())
@@ -298,6 +311,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return RS_(L"MoveFocusPreviousInOrder");
         case FocusDirection::First:
             return RS_(L"MoveFocusFirstPane");
+        case FocusDirection::Parent:
+            return RS_(L"MoveFocusParentPane");
+        case FocusDirection::Child:
+            return RS_(L"MoveFocusChildPane");
         }
 
         return winrt::hstring{
@@ -397,13 +414,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // This text is intentionally _not_ localized, to attempt to mirror the
         // exact syntax that the property would have in JSON.
-        switch (SplitStyle())
+        switch (SplitDirection())
         {
-        case SplitState::Vertical:
-            ss << L"split: vertical, ";
+        case SplitDirection::Up:
+            ss << L"split: up, ";
             break;
-        case SplitState::Horizontal:
-            ss << L"split: horizontal, ";
+        case SplitDirection::Right:
+            ss << L"split: right, ";
+            break;
+        case SplitDirection::Down:
+            ss << L"split: down, ";
+            break;
+        case SplitDirection::Left:
+            ss << L"split: left, ";
             break;
         }
 
@@ -443,6 +466,33 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         default:
             return RS_(L"OpenSettingsUICommandKey");
         }
+    }
+
+    winrt::hstring SetFocusModeArgs::GenerateName() const
+    {
+        if (IsFocusMode())
+        {
+            return RS_(L"EnableFocusModeCommandKey");
+        }
+        return RS_(L"DisableFocusModeCommandKey");
+    }
+
+    winrt::hstring SetFullScreenArgs::GenerateName() const
+    {
+        if (IsFullScreen())
+        {
+            return RS_(L"EnableFullScreenCommandKey");
+        }
+        return RS_(L"DisableFullScreenCommandKey");
+    }
+
+    winrt::hstring SetMaximizedArgs::GenerateName() const
+    {
+        if (IsMaximized())
+        {
+            return RS_(L"EnableMaximizedCommandKey");
+        }
+        return RS_(L"DisableMaximizedCommandKey");
     }
 
     winrt::hstring SetColorSchemeArgs::GenerateName() const
@@ -562,6 +612,38 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             };
         }
         return RS_(L"ScrollDownCommandKey");
+    }
+
+    winrt::hstring ScrollToMarkArgs::GenerateName() const
+    {
+        switch (Direction())
+        {
+        case Microsoft::Terminal::Control::ScrollToMarkDirection::Last:
+            return winrt::hstring{ RS_(L"ScrollToLastMarkCommandKey") };
+        case Microsoft::Terminal::Control::ScrollToMarkDirection::First:
+            return winrt::hstring{ RS_(L"ScrollToFirstMarkCommandKey") };
+        case Microsoft::Terminal::Control::ScrollToMarkDirection::Next:
+            return winrt::hstring{ RS_(L"ScrollToNextMarkCommandKey") };
+        case Microsoft::Terminal::Control::ScrollToMarkDirection::Previous:
+        default:
+            return winrt::hstring{ RS_(L"ScrollToPreviousMarkCommandKey") };
+        }
+        return winrt::hstring{ RS_(L"ScrollToPreviousMarkCommandKey") };
+    }
+
+    winrt::hstring AddMarkArgs::GenerateName() const
+    {
+        if (Color())
+        {
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"AddMarkWithColorCommandKey")),
+                            til::color{ Color().Value() }.ToHexString(true))
+            };
+        }
+        else
+        {
+            return RS_(L"AddMarkCommandKey");
+        }
     }
 
     winrt::hstring MoveTabArgs::GenerateName() const
@@ -686,5 +768,192 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             fmt::format(std::wstring_view(RS_(L"FocusPaneCommandKey")),
                         Id())
         };
+    }
+
+    winrt::hstring ExportBufferArgs::GenerateName() const
+    {
+        if (!Path().empty())
+        {
+            // "Export text to {path}"
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"ExportBufferToPathCommandKey")),
+                            Path())
+            };
+        }
+        else
+        {
+            // "Export text"
+            return RS_(L"ExportBufferCommandKey");
+        }
+    }
+
+    winrt::hstring ClearBufferArgs::GenerateName() const
+    {
+        // "Clear Buffer"
+        // "Clear Viewport"
+        // "Clear Scrollback"
+        switch (Clear())
+        {
+        case Control::ClearBufferType::All:
+            return RS_(L"ClearAllCommandKey");
+        case Control::ClearBufferType::Screen:
+            return RS_(L"ClearViewportCommandKey");
+        case Control::ClearBufferType::Scrollback:
+            return RS_(L"ClearScrollbackCommandKey");
+        }
+
+        // Return the empty string - the Clear() should be one of these values
+        return winrt::hstring{ L"" };
+    }
+
+    winrt::hstring MultipleActionsArgs::GenerateName() const
+    {
+        return L"";
+    }
+
+    winrt::hstring AdjustOpacityArgs::GenerateName() const
+    {
+        if (Relative())
+        {
+            if (Opacity() >= 0)
+            {
+                // "Increase background opacity by {Opacity}%"
+                return winrt::hstring{
+                    fmt::format(std::wstring_view(RS_(L"IncreaseOpacityCommandKey")),
+                                Opacity())
+                };
+            }
+            else
+            {
+                // "Decrease background opacity by {Opacity}%"
+                return winrt::hstring{
+                    fmt::format(std::wstring_view(RS_(L"DecreaseOpacityCommandKey")),
+                                Opacity())
+                };
+            }
+        }
+        else
+        {
+            // "Set background opacity to {Opacity}%"
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"AdjustOpacityCommandKey")),
+                            Opacity())
+            };
+        }
+    }
+
+    static winrt::hstring _FormatColorString(const Control::SelectionColor& selectionColor)
+    {
+        if (!selectionColor)
+        {
+            return RS_(L"ColorSelection_defaultColor");
+        }
+
+        const auto color = selectionColor.Color();
+        const auto isIndexed16 = selectionColor.IsIndex16();
+        winrt::hstring colorStr;
+
+        if (isIndexed16)
+        {
+            static const std::array indexedColorNames{
+                USES_RESOURCE(L"ColorSelection_Black"),
+                USES_RESOURCE(L"ColorSelection_Red"),
+                USES_RESOURCE(L"ColorSelection_Green"),
+                USES_RESOURCE(L"ColorSelection_Yellow"),
+                USES_RESOURCE(L"ColorSelection_Blue"),
+                USES_RESOURCE(L"ColorSelection_Purple"),
+                USES_RESOURCE(L"ColorSelection_Cyan"),
+                USES_RESOURCE(L"ColorSelection_White"),
+                USES_RESOURCE(L"ColorSelection_BrightBlack"),
+                USES_RESOURCE(L"ColorSelection_BrightRed"),
+                USES_RESOURCE(L"ColorSelection_BrightGreen"),
+                USES_RESOURCE(L"ColorSelection_BrightYellow"),
+                USES_RESOURCE(L"ColorSelection_BrightBlue"),
+                USES_RESOURCE(L"ColorSelection_BrightPurple"),
+                USES_RESOURCE(L"ColorSelection_BrightCyan"),
+                USES_RESOURCE(L"ColorSelection_BrightWhite"),
+            };
+            static_assert(indexedColorNames.size() == 16);
+
+            if (color.R < indexedColorNames.size())
+            {
+                colorStr = GetLibraryResourceString(til::at(indexedColorNames, color.R));
+            }
+            else
+            {
+                wchar_t tempBuf[9] = { 0 };
+                swprintf_s(tempBuf, L"i%02i", color.R);
+                colorStr = tempBuf;
+            }
+        }
+        else
+        {
+            colorStr = til::color{ color }.ToHexString(true);
+        }
+
+        return colorStr;
+    }
+
+    static bool _isBoringColor(const Control::SelectionColor& selectionColor)
+    {
+        if (!selectionColor)
+        {
+            return true;
+        }
+
+        const til::color color{ selectionColor.Color() };
+        return color.with_alpha(0) == til::color{};
+    }
+
+    winrt::hstring ColorSelectionArgs::GenerateName() const
+    {
+        auto matchModeStr = winrt::hstring{};
+        if (MatchMode() == Core::MatchMode::All)
+        {
+            matchModeStr = fmt::format(L", {}", RS_(L"ColorSelection_allMatches")); // ", all matches"
+        }
+
+        const auto foreground = Foreground();
+        const auto background = Background();
+        const auto fgStr = _FormatColorString(foreground);
+        const auto bgStr = _FormatColorString(background);
+
+        // To try to keep things simple for the user, we'll try to show only the
+        // "interesting" color (i.e. leave off the bg or fg if it is either unspecified or
+        // black or index 0).
+        //
+        // Note that we mask off the alpha channel, which is used to indicate if it's an
+        // indexed color.
+        const auto foregroundIsBoring = _isBoringColor(foreground);
+        const auto backgroundIsBoring = _isBoringColor(background);
+
+        if (foreground && backgroundIsBoring)
+        {
+            const auto str = RS_(L"ColorSelection_fg_action"); // "Color selection, foreground: {0}{1}"
+            return winrt::hstring{
+                fmt::format(std::wstring_view{ str }, fgStr, matchModeStr)
+            };
+        }
+        else if (background && foregroundIsBoring)
+        {
+            const auto str = RS_(L"ColorSelection_bg_action"); // "Color selection, background: {0}{1}"
+            return winrt::hstring{
+                fmt::format(std::wstring_view{ str }, bgStr, matchModeStr)
+            };
+        }
+        else if (foreground && background)
+        {
+            const auto str = RS_(L"ColorSelection_fg_bg_action"); // "Color selection, foreground: {0}, background: {1}{2}"
+            return winrt::hstring{
+                fmt::format(std::wstring_view{ str }, fgStr, bgStr, matchModeStr)
+            };
+        }
+        else
+        {
+            const auto str = RS_(L"ColorSelection_default_action"); // "Color selection, (default foreground/background){0}"
+            return winrt::hstring{
+                fmt::format(std::wstring_view{ str }, matchModeStr)
+            };
+        }
     }
 }

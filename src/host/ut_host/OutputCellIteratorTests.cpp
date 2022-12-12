@@ -23,18 +23,18 @@ class OutputCellIteratorTests
     {
         SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
 
-        const wchar_t wch = L'\x30a2'; // katakana A
+        const auto wch = L'\x30a2'; // katakana A
         const size_t limit = 5;
 
         OutputCellIterator it(wch, limit);
 
         OutputCellView expectedLead({ &wch, 1 },
-                                    DbcsAttribute(DbcsAttribute::Attribute::Leading),
+                                    DbcsAttribute::Leading,
                                     InvalidTextAttribute,
                                     TextAttributeBehavior::Current);
 
         OutputCellView expectedTrail({ &wch, 1 },
-                                     DbcsAttribute(DbcsAttribute::Attribute::Trailing),
+                                     DbcsAttribute::Trailing,
                                      InvalidTextAttribute,
                                      TextAttributeBehavior::Current);
 
@@ -55,7 +55,7 @@ class OutputCellIteratorTests
     {
         SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
 
-        const wchar_t wch = L'Q';
+        const auto wch = L'Q';
         const size_t limit = 5;
 
         OutputCellIterator it(wch, limit);
@@ -79,7 +79,7 @@ class OutputCellIteratorTests
     {
         SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
 
-        const wchar_t wch = L'Q';
+        const auto wch = L'Q';
 
         OutputCellIterator it(wch);
 
@@ -150,7 +150,7 @@ class OutputCellIteratorTests
     {
         SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
 
-        const wchar_t wch = L'Q';
+        const auto wch = L'Q';
 
         const TextAttribute attr(FOREGROUND_RED | BACKGROUND_BLUE);
 
@@ -177,7 +177,7 @@ class OutputCellIteratorTests
     {
         SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
 
-        const wchar_t wch = L'Q';
+        const auto wch = L'Q';
 
         const TextAttribute attr(FOREGROUND_RED | BACKGROUND_BLUE);
 
@@ -284,7 +284,7 @@ class OutputCellIteratorTests
         for (const auto& wch : testText)
         {
             auto expected = OutputCellView({ &wch, 1 },
-                                           DbcsAttribute(DbcsAttribute::Attribute::Leading),
+                                           DbcsAttribute::Leading,
                                            InvalidTextAttribute,
                                            TextAttributeBehavior::Current);
 
@@ -293,7 +293,7 @@ class OutputCellIteratorTests
             it++;
 
             expected = OutputCellView({ &wch, 1 },
-                                      DbcsAttribute(DbcsAttribute::Attribute::Trailing),
+                                      DbcsAttribute::Trailing,
                                       InvalidTextAttribute,
                                       TextAttributeBehavior::Current);
 
@@ -341,7 +341,7 @@ class OutputCellIteratorTests
         for (const auto& wch : testText)
         {
             auto expected = OutputCellView({ &wch, 1 },
-                                           DbcsAttribute(DbcsAttribute::Attribute::Leading),
+                                           DbcsAttribute::Leading,
                                            color,
                                            TextAttributeBehavior::Stored);
 
@@ -350,7 +350,7 @@ class OutputCellIteratorTests
             it++;
 
             expected = OutputCellView({ &wch, 1 },
-                                      DbcsAttribute(DbcsAttribute::Attribute::Trailing),
+                                      DbcsAttribute::Trailing,
                                       color,
                                       TextAttributeBehavior::Stored);
 
@@ -496,7 +496,7 @@ class OutputCellIteratorTests
             const auto value = *it;
             it++;
 
-            if (value.DbcsAttr().IsLeading() || value.DbcsAttr().IsTrailing())
+            if (value.DbcsAttr() == DbcsAttribute::Leading || value.DbcsAttr() == DbcsAttribute::Trailing)
             {
                 VERIFY_IS_TRUE(it);
                 it++;

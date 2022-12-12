@@ -104,7 +104,7 @@ try
     {
         RETURN_HR_IF(E_FAIL, State.ReadOffset > Descriptor.InputSize);
 
-        const ULONG cbReadSize = Descriptor.InputSize - State.ReadOffset;
+        const auto cbReadSize = Descriptor.InputSize - State.ReadOffset;
 
         // If we were previously called with a huge buffer we have an equally large _inputBuffer.
         // We shouldn't just keep this huge buffer around, if no one needs it anymore.
@@ -149,7 +149,7 @@ try
     {
         RETURN_HR_IF(E_FAIL, State.WriteOffset > Descriptor.OutputSize);
 
-        ULONG cbWriteSize = Descriptor.OutputSize - State.WriteOffset;
+        auto cbWriteSize = Descriptor.OutputSize - State.WriteOffset;
         RETURN_IF_FAILED(ULongMult(cbWriteSize, cbFactor, &cbWriteSize));
 
         // If we were previously called with a huge buffer we have an equally large _outputBuffer.
@@ -202,7 +202,7 @@ CATCH_RETURN();
 // - HRESULT indicating if the payload was successfully written if applicable.
 [[nodiscard]] HRESULT _CONSOLE_API_MSG::ReleaseMessageBuffers()
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
 
     if (State.InputBuffer != nullptr)
     {

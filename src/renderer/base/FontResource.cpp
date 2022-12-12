@@ -107,8 +107,8 @@ FontResource::operator HFONT()
 
 void FontResource::_regenerateFont()
 {
-    const auto targetWidth = _targetSize.width<WORD>();
-    const auto targetHeight = _targetSize.height<WORD>();
+    const auto targetWidth = _targetSize.narrow_width<WORD>();
+    const auto targetHeight = _targetSize.narrow_height<WORD>();
     const auto charSizeInBytes = (targetWidth + 7) / 8 * targetHeight;
 
     const DWORD fontBitmapSize = charSizeInBytes * CHAR_COUNT;
@@ -171,10 +171,10 @@ void FontResource::_regenerateFont()
 
 void FontResource::_resizeBitPattern(gsl::span<byte> targetBuffer)
 {
-    auto sourceWidth = _sourceSize.width<int>();
-    auto targetWidth = _targetSize.width<int>();
-    const auto sourceHeight = _sourceSize.height<int>();
-    const auto targetHeight = _targetSize.height<int>();
+    auto sourceWidth = _sourceSize.width;
+    auto targetWidth = _targetSize.width;
+    const auto sourceHeight = _sourceSize.height;
+    const auto targetHeight = _targetSize.height;
 
     // If the text in the font is not perfectly centered, the _centeringHint
     // gives us the offset needed to correct that misalignment. So to ensure
@@ -214,7 +214,7 @@ void FontResource::_resizeBitPattern(gsl::span<byte> targetBuffer)
 
     // Once we've calculated the scaling increments, taking the centering hint
     // into account, we reset the target width back to its original value.
-    targetWidth = _targetSize.width<int>();
+    targetWidth = _targetSize.width;
 
     auto targetBufferPointer = targetBuffer.begin();
     for (auto ch = 0; ch < CHAR_COUNT; ch++)

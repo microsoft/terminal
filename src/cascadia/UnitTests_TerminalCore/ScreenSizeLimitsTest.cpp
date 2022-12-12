@@ -6,7 +6,7 @@
 
 #include "../cascadia/TerminalCore/Terminal.hpp"
 #include "MockTermSettings.h"
-#include "../renderer/inc/DummyRenderTarget.hpp"
+#include "../renderer/inc/DummyRenderer.hpp"
 #include "consoletaeftemplates.hpp"
 
 using namespace winrt::Microsoft::Terminal::Core;
@@ -35,24 +35,23 @@ using namespace TerminalCoreUnitTests;
 
 void ScreenSizeLimitsTest::ScreenWidthAndHeightAreClampedToBounds()
 {
-    DummyRenderTarget emptyRenderTarget;
-
     // Negative values for initial visible row count or column count
     // are clamped to 1. Too-large positive values are clamped to SHRT_MAX.
     auto negativeColumnsSettings = winrt::make<MockTermSettings>(10000, 9999999, -1234);
     Terminal negativeColumnsTerminal;
-    negativeColumnsTerminal.CreateFromSettings(negativeColumnsSettings, emptyRenderTarget);
-    COORD actualDimensions = negativeColumnsTerminal.GetViewport().Dimensions();
-    VERIFY_ARE_EQUAL(actualDimensions.Y, SHRT_MAX, L"Row count clamped to SHRT_MAX == " WCS(SHRT_MAX));
-    VERIFY_ARE_EQUAL(actualDimensions.X, 1, L"Column count clamped to 1");
+    DummyRenderer renderer{ &negativeColumnsTerminal };
+    negativeColumnsTerminal.CreateFromSettings(negativeColumnsSettings, renderer);
+    auto actualDimensions = negativeColumnsTerminal.GetViewport().Dimensions();
+    VERIFY_ARE_EQUAL(actualDimensions.height, SHRT_MAX, L"Row count clamped to SHRT_MAX == " WCS(SHRT_MAX));
+    VERIFY_ARE_EQUAL(actualDimensions.width, 1, L"Column count clamped to 1");
 
     // Zero values are clamped to 1 as well.
     auto zeroRowsSettings = winrt::make<MockTermSettings>(10000, 0, 9999999);
     Terminal zeroRowsTerminal;
-    zeroRowsTerminal.CreateFromSettings(zeroRowsSettings, emptyRenderTarget);
+    zeroRowsTerminal.CreateFromSettings(zeroRowsSettings, renderer);
     actualDimensions = zeroRowsTerminal.GetViewport().Dimensions();
-    VERIFY_ARE_EQUAL(actualDimensions.Y, 1, L"Row count clamped to 1");
-    VERIFY_ARE_EQUAL(actualDimensions.X, SHRT_MAX, L"Column count clamped to SHRT_MAX == " WCS(SHRT_MAX));
+    VERIFY_ARE_EQUAL(actualDimensions.height, 1, L"Row count clamped to 1");
+    VERIFY_ARE_EQUAL(actualDimensions.width, SHRT_MAX, L"Column count clamped to SHRT_MAX == " WCS(SHRT_MAX));
 }
 
 void ScreenSizeLimitsTest::ScrollbackHistorySizeIsClampedToBounds()
@@ -61,38 +60,38 @@ void ScreenSizeLimitsTest::ScrollbackHistorySizeIsClampedToBounds()
     // which is the *sum* of the history size plus the number of rows
     // actually visible on screen at the moment.
 
-    const unsigned int visibleRowCount = 100;
-    DummyRenderTarget emptyRenderTarget;
+    static constexpr til::CoordType visibleRowCount = 100;
 
     // Zero history size is acceptable.
     auto noHistorySettings = winrt::make<MockTermSettings>(0, visibleRowCount, 100);
     Terminal noHistoryTerminal;
-    noHistoryTerminal.CreateFromSettings(noHistorySettings, emptyRenderTarget);
+    DummyRenderer renderer{ &noHistoryTerminal };
+    noHistoryTerminal.CreateFromSettings(noHistorySettings, renderer);
     VERIFY_ARE_EQUAL(noHistoryTerminal.GetTextBuffer().TotalRowCount(), visibleRowCount, L"History size of 0 is accepted");
 
     // Negative history sizes are clamped to zero.
     auto negativeHistorySizeSettings = winrt::make<MockTermSettings>(-100, visibleRowCount, 100);
     Terminal negativeHistorySizeTerminal;
-    negativeHistorySizeTerminal.CreateFromSettings(negativeHistorySizeSettings, emptyRenderTarget);
+    negativeHistorySizeTerminal.CreateFromSettings(negativeHistorySizeSettings, renderer);
     VERIFY_ARE_EQUAL(negativeHistorySizeTerminal.GetTextBuffer().TotalRowCount(), visibleRowCount, L"Negative history size is clamped to 0");
 
     // History size + initial visible rows == SHRT_MAX is acceptable.
     auto maxHistorySizeSettings = winrt::make<MockTermSettings>(SHRT_MAX - visibleRowCount, visibleRowCount, 100);
     Terminal maxHistorySizeTerminal;
-    maxHistorySizeTerminal.CreateFromSettings(maxHistorySizeSettings, emptyRenderTarget);
-    VERIFY_ARE_EQUAL(maxHistorySizeTerminal.GetTextBuffer().TotalRowCount(), static_cast<unsigned int>(SHRT_MAX), L"History size == SHRT_MAX - initial row count is accepted");
+    maxHistorySizeTerminal.CreateFromSettings(maxHistorySizeSettings, renderer);
+    VERIFY_ARE_EQUAL(maxHistorySizeTerminal.GetTextBuffer().TotalRowCount(), SHRT_MAX, L"History size == SHRT_MAX - initial row count is accepted");
 
     // History size + initial visible rows == SHRT_MAX + 1 will be clamped slightly.
     auto justTooBigHistorySizeSettings = winrt::make<MockTermSettings>(SHRT_MAX - visibleRowCount + 1, visibleRowCount, 100);
     Terminal justTooBigHistorySizeTerminal;
-    justTooBigHistorySizeTerminal.CreateFromSettings(justTooBigHistorySizeSettings, emptyRenderTarget);
-    VERIFY_ARE_EQUAL(justTooBigHistorySizeTerminal.GetTextBuffer().TotalRowCount(), static_cast<unsigned int>(SHRT_MAX), L"History size == 1 + SHRT_MAX - initial row count is clamped to SHRT_MAX - initial row count");
+    justTooBigHistorySizeTerminal.CreateFromSettings(justTooBigHistorySizeSettings, renderer);
+    VERIFY_ARE_EQUAL(justTooBigHistorySizeTerminal.GetTextBuffer().TotalRowCount(), SHRT_MAX, L"History size == 1 + SHRT_MAX - initial row count is clamped to SHRT_MAX - initial row count");
 
     // Ridiculously large history sizes are also clamped.
     auto farTooBigHistorySizeSettings = winrt::make<MockTermSettings>(99999999, visibleRowCount, 100);
     Terminal farTooBigHistorySizeTerminal;
-    farTooBigHistorySizeTerminal.CreateFromSettings(farTooBigHistorySizeSettings, emptyRenderTarget);
-    VERIFY_ARE_EQUAL(farTooBigHistorySizeTerminal.GetTextBuffer().TotalRowCount(), static_cast<unsigned int>(SHRT_MAX), L"History size that is far too large is clamped to SHRT_MAX - initial row count");
+    farTooBigHistorySizeTerminal.CreateFromSettings(farTooBigHistorySizeSettings, renderer);
+    VERIFY_ARE_EQUAL(farTooBigHistorySizeTerminal.GetTextBuffer().TotalRowCount(), SHRT_MAX, L"History size that is far too large is clamped to SHRT_MAX - initial row count");
 }
 
 void ScreenSizeLimitsTest::ResizeIsClampedToBounds()
@@ -103,10 +102,9 @@ void ScreenSizeLimitsTest::ResizeIsClampedToBounds()
     //
     // This is a test for GH#2630, GH#2815.
 
-    const unsigned int initialVisibleColCount = 50;
-    const unsigned int initialVisibleRowCount = 50;
+    static constexpr til::CoordType initialVisibleColCount = 50;
+    static constexpr til::CoordType initialVisibleRowCount = 50;
     const auto historySize = SHRT_MAX - (initialVisibleRowCount * 2);
-    DummyRenderTarget emptyRenderTarget;
 
     Log::Comment(L"Watch out - this test takes a while on debug, because "
                  L"ResizeWithReflow takes a while on debug. This is expected.");
@@ -114,19 +112,20 @@ void ScreenSizeLimitsTest::ResizeIsClampedToBounds()
     auto settings = winrt::make<MockTermSettings>(historySize, initialVisibleRowCount, initialVisibleColCount);
     Log::Comment(L"First create a terminal with fewer than SHRT_MAX lines");
     Terminal terminal;
-    terminal.CreateFromSettings(settings, emptyRenderTarget);
-    VERIFY_ARE_EQUAL(terminal.GetTextBuffer().TotalRowCount(), static_cast<unsigned int>(historySize + initialVisibleRowCount));
+    DummyRenderer renderer{ &terminal };
+    terminal.CreateFromSettings(settings, renderer);
+    VERIFY_ARE_EQUAL(terminal.GetTextBuffer().TotalRowCount(), historySize + initialVisibleRowCount);
 
     Log::Comment(L"Resize the terminal to have exactly SHRT_MAX lines");
     VERIFY_SUCCEEDED(terminal.UserResize({ initialVisibleColCount, initialVisibleRowCount * 2 }));
 
-    VERIFY_ARE_EQUAL(terminal.GetTextBuffer().TotalRowCount(), static_cast<unsigned int>(SHRT_MAX));
+    VERIFY_ARE_EQUAL(terminal.GetTextBuffer().TotalRowCount(), SHRT_MAX);
 
     Log::Comment(L"Resize the terminal to have MORE than SHRT_MAX lines - we should clamp to SHRT_MAX");
     VERIFY_SUCCEEDED(terminal.UserResize({ initialVisibleColCount, initialVisibleRowCount * 3 }));
-    VERIFY_ARE_EQUAL(terminal.GetTextBuffer().TotalRowCount(), static_cast<unsigned int>(SHRT_MAX));
+    VERIFY_ARE_EQUAL(terminal.GetTextBuffer().TotalRowCount(), SHRT_MAX);
 
     Log::Comment(L"Resize back down to the original size");
     VERIFY_SUCCEEDED(terminal.UserResize({ initialVisibleColCount, initialVisibleRowCount }));
-    VERIFY_ARE_EQUAL(terminal.GetTextBuffer().TotalRowCount(), static_cast<unsigned int>(historySize + initialVisibleRowCount));
+    VERIFY_ARE_EQUAL(terminal.GetTextBuffer().TotalRowCount(), historySize + initialVisibleRowCount);
 }

@@ -1,0 +1,24 @@
+{
+    "Branch": [
+      {
+        "collection": "microsoft",
+        "project": "OS",
+        "repo": "os.2020",
+        "name": "official/rs_we_adept_e4d2",
+        "workitem": "38106206",
+        "CheckinFiles": [
+          {
+            "source": "WindowsTerminal.app.man",
+            "path": "/redist/mspartners/ipa/WindowsTerminal",
+            "type": "File"
+          }
+        ]
+      }
+    ],
+    "Email": [
+      {
+        "sendTo": "condev",
+        "sendOnErrorOnly": "False"
+      }
+    ]
+  }

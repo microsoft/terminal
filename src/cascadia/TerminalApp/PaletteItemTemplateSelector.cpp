@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "pch.h"
@@ -8,7 +8,7 @@
 
 namespace winrt::TerminalApp::implementation
 {
-    Windows::UI::Xaml::DataTemplate PaletteItemTemplateSelector::SelectTemplateCore(winrt::Windows::Foundation::IInspectable const& item, winrt::Windows::UI::Xaml::DependencyObject const& /*container*/)
+    Windows::UI::Xaml::DataTemplate PaletteItemTemplateSelector::SelectTemplateCore(const winrt::Windows::Foundation::IInspectable& item, const winrt::Windows::UI::Xaml::DependencyObject& /*container*/)
     {
         return SelectTemplateCore(item);
     }
@@ -22,7 +22,7 @@ namespace winrt::TerminalApp::implementation
     // - item - an instance of filtered command to render
     // Return Value:
     // - data template to use for rendering
-    Windows::UI::Xaml::DataTemplate PaletteItemTemplateSelector::SelectTemplateCore(winrt::Windows::Foundation::IInspectable const& item)
+    Windows::UI::Xaml::DataTemplate PaletteItemTemplateSelector::SelectTemplateCore(const winrt::Windows::Foundation::IInspectable& item)
     {
         if (const auto filteredCommand{ item.try_as<winrt::TerminalApp::FilteredCommand>() })
         {

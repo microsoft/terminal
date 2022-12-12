@@ -11,7 +11,8 @@
     // Selection
     "copyOnSelect": false,
     "copyFormatting": true,
-    "trimBlockSelection": false,
+    "trimBlockSelection": true,
+    "trimPaste": true,
     "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",
 
     // Tab UI
@@ -20,17 +21,18 @@
     "showTerminalTitleInTitlebar": true,
     "tabWidthMode": "equal",
     "tabSwitcherMode": "inOrder",
+    "showAdminShield": true,
 
     // Miscellaneous
     "confirmCloseAllTabs": true,
-    "startOnUserLogin":  false,
-    "theme": "system",
+    "startOnUserLogin": false,
+    "theme": "dark",
     "snapToGridOnResize": true,
     "disableAnimations": false,
     "startupActions": "",
     "focusFollowMouse": false,
-    "minimizeToTray": false,
-    "alwaysShowTrayIcon": false,
+    "minimizeToNotificationArea": false,
+    "alwaysShowNotificationIcon": false,
 
     "profiles":
     [
@@ -41,7 +43,7 @@
             "icon": "ms-appx:///ProfileIcons/{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.png",
             "colorScheme": "Campbell",
             "antialiasingMode": "grayscale",
-            "closeOnExit": "graceful",
+            "closeOnExit": "automatic",
             "cursorShape": "bar",
             "fontFace": "Cascadia Mono",
             "fontSize": 12,
@@ -60,7 +62,7 @@
             "icon": "ms-appx:///ProfileIcons/{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.png",
             "colorScheme": "Campbell",
             "antialiasingMode": "grayscale",
-            "closeOnExit": "graceful",
+            "closeOnExit": "automatic",
             "cursorShape": "bar",
             "fontFace": "Cascadia Mono",
             "fontSize": 12,
@@ -278,6 +280,44 @@
             "brightWhite": "#EEEEEC"
         }
     ],
+    "themes": [
+        {
+            "name": "light",
+            "window": {
+                "applicationTheme": "light"
+            },
+            "tab": {
+                "background": "terminalBackground",
+                "unfocusedBackground": "#00000000"
+            },
+            "tabRow": {
+                "unfocusedBackground": "#FFFFFFFF"
+            }
+        },
+        {
+            "name": "dark",
+            "window": {
+                "applicationTheme": "dark"
+            },
+            "tab": {
+                "background": "terminalBackground",
+                "unfocusedBackground": "#00000000"
+            },
+            "tabRow": {
+                "unfocusedBackground": "#333333FF"
+            }
+        },
+        {
+            "name": "system",
+            "window": {
+                "applicationTheme": "system"
+            },
+            "tab": {
+                "background": "terminalBackground",
+                "unfocusedBackground": "#00000000"
+            }
+        }
+    ],
     "actions":
     [
         // Application-level Keys
@@ -301,6 +341,9 @@
         { "command": "identifyWindow" },
         { "command": "openWindowRenamer" },
         { "command": "quakeMode", "keys":"win+sc(41)" },
+        { "command": "openSystemMenu", "keys": "alt+space" },
+        { "command": "quit" },
+        { "command": "restoreLastClosed"},
 
         // Tab Management
         // "command": "closeTab" is unbound by default.
@@ -334,9 +377,12 @@
         { "command": { "action": "switchToTab", "index": 4294967295 }, "keys": "ctrl+alt+9" },
 
         // Pane Management
+        { "command": "closeOtherPanes" },
         { "command": "closePane", "keys": "ctrl+shift+w" },
-        { "command": { "action": "splitPane", "split": "horizontal" }, "keys": "alt+shift+-" },
-        { "command": { "action": "splitPane", "split": "vertical" }, "keys": "alt+shift+plus" },
+        { "command": { "action": "splitPane", "split": "up" } },
+        { "command": { "action": "splitPane", "split": "down" }, "keys": "alt+shift+-" },
+        { "command": { "action": "splitPane", "split": "left" } },
+        { "command": { "action": "splitPane", "split": "right" }, "keys": "alt+shift+plus" },
         { "command": { "action": "resizePane", "direction": "down" }, "keys": "alt+shift+down" },
         { "command": { "action": "resizePane", "direction": "left" }, "keys": "alt+shift+left" },
         { "command": { "action": "resizePane", "direction": "right" }, "keys": "alt+shift+right" },
@@ -349,6 +395,8 @@
         { "command": { "action": "moveFocus", "direction": "previousInOrder" } },
         { "command": { "action": "moveFocus", "direction": "nextInOrder" } },
         { "command": { "action": "moveFocus", "direction": "first" } },
+        { "command": { "action": "moveFocus", "direction": "parent" } },
+        { "command": { "action": "moveFocus", "direction": "child" } },
         { "command": { "action": "swapPane", "direction": "down" } },
         { "command": { "action": "swapPane", "direction": "left" } },
         { "command": { "action": "swapPane", "direction": "right" } },
@@ -373,8 +421,14 @@
         // Clipboard Integration
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+shift+c" },
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+insert" },
+        { "command": { "action": "copy", "singleLine": false }, "keys": "enter" },
         { "command": "paste", "keys": "ctrl+shift+v" },
         { "command": "paste", "keys": "shift+insert" },
+        { "command": "selectAll", "keys": "ctrl+shift+a" },
+        { "command": "markMode", "keys": "ctrl+shift+m" },
+        { "command": "toggleBlockSelection" },
+        { "command": "switchSelectionEndpoint" },
+        { "command": "expandSelectionToWord" },
 
         // Scrollback
         { "command": "scrollDown", "keys": "ctrl+shift+down" },
@@ -383,6 +437,8 @@
         { "command": "scrollUpPage", "keys": "ctrl+shift+pgup" },
         { "command": "scrollToTop", "keys": "ctrl+shift+home" },
         { "command": "scrollToBottom", "keys": "ctrl+shift+end" },
+        { "command": { "action": "clearBuffer", "clear": "all" } },
+        { "command": "exportBuffer" },
 
         // Visual Adjustments
         { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+plus" },
@@ -390,6 +446,7 @@
         { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+numpad_plus" },
         { "command": { "action": "adjustFontSize", "delta": -1 }, "keys": "ctrl+numpad_minus" },
         { "command": "resetFontSize", "keys": "ctrl+0" },
+        { "command": "resetFontSize", "keys": "ctrl+numpad_0" },
 
         // Other commands
         {
@@ -428,13 +485,30 @@
                             "command": { "action": "splitPane", "profile": "${profile.name}", "split": "auto" }
                         },
                         {
-                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "vertical" }
+                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "up" }
                         },
                         {
-                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "horizontal" }
+                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "down" }
+                        },
+                        {
+                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "left" }
+                        },
+                        {
+                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "right" }
                         }
                     ]
                 }
+            ]
+        },
+        {
+            // Set opacity...
+            "name": { "key": "SetOpacityParentCommandName" },
+            "commands": [
+                { "command": { "action": "adjustOpacity", "opacity": 0, "relative": false } },
+                { "command": { "action": "adjustOpacity", "opacity": 25, "relative": false } },
+                { "command": { "action": "adjustOpacity", "opacity": 50, "relative": false } },
+                { "command": { "action": "adjustOpacity", "opacity": 75, "relative": false } },
+                { "command": { "action": "adjustOpacity", "opacity": 100, "relative": false } }
             ]
         }
     ]

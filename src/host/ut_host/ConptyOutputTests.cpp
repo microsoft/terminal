@@ -29,8 +29,8 @@ class ConptyOutputTests
     // !!! DANGER: Many tests in this class expect the Terminal and Host buffers
     // to be 80x32. If you change these, you'll probably inadvertently break a
     // bunch of tests !!!
-    static const SHORT TerminalViewWidth = 80;
-    static const SHORT TerminalViewHeight = 32;
+    static const til::CoordType TerminalViewWidth = 80;
+    static const til::CoordType TerminalViewHeight = 32;
 
     // This test class is to write some things into the PTY and then check that
     // the rendering that is coming out of the VT-sequence generator is exactly
@@ -45,8 +45,8 @@ class ConptyOutputTests
 
         m_state->InitEvents();
         m_state->PrepareGlobalFont();
-        m_state->PrepareGlobalScreenBuffer(TerminalViewWidth, TerminalViewHeight, TerminalViewWidth, TerminalViewHeight);
         m_state->PrepareGlobalInputBuffer();
+        m_state->PrepareGlobalScreenBuffer(TerminalViewWidth, TerminalViewHeight, TerminalViewWidth, TerminalViewHeight);
 
         return true;
     }
@@ -67,22 +67,23 @@ class ConptyOutputTests
         // Set up some sane defaults
         auto& g = ServiceLocator::LocateGlobals();
         auto& gci = g.getConsoleInformation();
-        gci.SetDefaultForegroundColor(INVALID_COLOR);
-        gci.SetDefaultBackgroundColor(INVALID_COLOR);
+        gci.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, INVALID_COLOR);
+        gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, INVALID_COLOR);
         gci.SetFillAttribute(0x07); // DARK_WHITE on DARK_BLACK
+        gci.CalculateDefaultColorIndices();
+
+        g.pRender = new Renderer(gci.GetRenderSettings(), &gci.renderData, nullptr, 0, nullptr);
 
         m_state->PrepareNewTextBufferInfo(true, TerminalViewWidth, TerminalViewHeight);
         auto& currentBuffer = gci.GetActiveOutputBuffer();
         // Make sure a test hasn't left us in the alt buffer on accident
         VERIFY_IS_FALSE(currentBuffer._IsAltBuffer());
         VERIFY_SUCCEEDED(currentBuffer.SetViewportOrigin(true, { 0, 0 }, true));
-        VERIFY_ARE_EQUAL(COORD({ 0, 0 }), currentBuffer.GetTextBuffer().GetCursor().GetPosition());
-
-        g.pRender = new Renderer(&gci.renderData, nullptr, 0, nullptr);
+        VERIFY_ARE_EQUAL(til::point{}, currentBuffer.GetTextBuffer().GetCursor().GetPosition());
 
         // Set up an xterm-256 renderer for conpty
-        wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-        Viewport initialViewport = currentBuffer.GetViewport();
+        auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+        auto initialViewport = currentBuffer.GetViewport();
 
         auto vtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hFile),
                                                                initialViewport);
@@ -120,26 +121,27 @@ class ConptyOutputTests
     TEST_METHOD(WriteAFewSimpleLines);
     TEST_METHOD(InvalidateUntilOneBeforeEnd);
     TEST_METHOD(SetConsoleTitleWithControlChars);
+    TEST_METHOD(IncludeBackgroundColorChangesInFirstFrame);
 
 private:
-    bool _writeCallback(const char* const pch, size_t const cch);
+    bool _writeCallback(const char* const pch, const size_t cch);
     void _flushFirstFrame();
     std::deque<std::string> expectedOutput;
     std::unique_ptr<CommonState> m_state;
 };
 
-bool ConptyOutputTests::_writeCallback(const char* const pch, size_t const cch)
+bool ConptyOutputTests::_writeCallback(const char* const pch, const size_t cch)
 {
     // Since rendering happens on a background thread that doesn't have the exception handler on it
     // we need to rely on VERIFY's return codes instead of exceptions.
     const WEX::TestExecution::DisableVerifyExceptions disableExceptionsScope;
 
-    std::string actualString = std::string(pch, cch);
+    auto actualString = std::string(pch, cch);
     RETURN_BOOL_IF_FALSE(VERIFY_IS_GREATER_THAN(expectedOutput.size(),
                                                 static_cast<size_t>(0),
                                                 NoThrowString().Format(L"writing=\"%hs\", expecting %u strings", actualString.c_str(), expectedOutput.size())));
 
-    std::string first = expectedOutput.front();
+    auto first = expectedOutput.front();
     expectedOutput.pop_front();
 
     Log::Comment(NoThrowString().Format(L"Expected =\t\"%hs\"", first.c_str()));
@@ -181,7 +183,7 @@ void _verifySpanOfText(const wchar_t* const expectedChar,
                        const int start,
                        const int end)
 {
-    for (int x = start; x < end; x++)
+    for (auto x = start; x < end; x++)
     {
         SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
         if (iter->Chars() != expectedChar)
@@ -370,6 +372,7 @@ void ConptyOutputTests::SetConsoleTitleWithControlChars()
 {
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"Data:control", L"{0x00, 0x0A, 0x1B, 0x80, 0x9B, 0x9C}")
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
     END_TEST_METHOD_PROPERTIES()
 
     int control;
@@ -383,7 +386,7 @@ void ConptyOutputTests::SetConsoleTitleWithControlChars()
 
     std::wstringstream titleText;
     titleText << L"Hello " << wchar_t(control) << L"World!";
-    VERIFY_SUCCEEDED(DoSrvSetConsoleTitleW(titleText.str()));
+    g.getConsoleInformation().SetTitle(titleText.str());
 
     // This is the standard init sequences for the first frame.
     expectedOutput.push_back("\x1b[2J");
@@ -393,6 +396,32 @@ void ConptyOutputTests::SetConsoleTitleWithControlChars()
     // The title change is propagated as an OSC 0 sequence.
     // Control characters are stripped, so it's always "Hello World".
     expectedOutput.push_back("\x1b]0;Hello World!\a");
+
+    // This is also part of the standard init sequence.
+    expectedOutput.push_back("\x1b[?25h");
+
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+}
+
+void ConptyOutputTests::IncludeBackgroundColorChangesInFirstFrame()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+
+    sm.ProcessString(L"\x1b[41mRun 1     \x1b[42mRun 2     \x1b[43mRun 3     \x1b[m");
+
+    expectedOutput.push_back("\x1b[2J"); // standard init sequence for the first frame
+    expectedOutput.push_back("\x1b[m"); // standard init sequence for the first frame
+    expectedOutput.push_back("\x1b[41m");
+    expectedOutput.push_back("\x1b[H"); // standard init sequence for the first frame
+    expectedOutput.push_back("Run 1     ");
+    expectedOutput.push_back("\x1b[42m");
+    expectedOutput.push_back("Run 2     ");
+    expectedOutput.push_back("\x1b[43m");
+    expectedOutput.push_back("Run 3     ");
 
     // This is also part of the standard init sequence.
     expectedOutput.push_back("\x1b[?25h");

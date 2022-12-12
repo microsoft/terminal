@@ -22,7 +22,7 @@
 // Return Value:
 // - THROW: Throws if space cannot be allocated to copy the given string
 WriteData::WriteData(SCREEN_INFORMATION& siContext,
-                     _In_reads_bytes_(cbContext) wchar_t* const pwchContext,
+                     _In_reads_bytes_(cbContext) PCWCHAR pwchContext,
                      const size_t cbContext,
                      const UINT uiOutputCodepage,
                      const bool requiresVtQuirk) :
@@ -122,12 +122,12 @@ bool WriteData::Notify(const WaitTerminationReason TerminationReason,
     FAIL_FAST_IF(!(Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked()));
 
     std::unique_ptr<WriteData> waiter;
-    size_t cbContext = _cbContext;
-    NTSTATUS Status = DoWriteConsole(_pwchContext,
-                                     &cbContext,
-                                     _siContext,
-                                     _requiresVtQuirk,
-                                     waiter);
+    auto cbContext = _cbContext;
+    auto Status = DoWriteConsole(_pwchContext,
+                                 &cbContext,
+                                 _siContext,
+                                 _requiresVtQuirk,
+                                 waiter);
 
     if (Status == CONSOLE_STATUS_WAIT)
     {
@@ -145,7 +145,7 @@ bool WriteData::Notify(const WaitTerminationReason TerminationReason,
         {
             // At this level with WriteConsole, everything is byte counts, so change back to char counts for
             // GetALengthFromW to work correctly.
-            const size_t cchContext = cbContext / sizeof(wchar_t);
+            const auto cchContext = cbContext / sizeof(wchar_t);
 
             // For non-UTF-8 codepages, we need to back convert the amount consumed and then
             // correlate that with any lead bytes we may have kept for later or reintroduced

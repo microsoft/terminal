@@ -24,21 +24,20 @@ Author(s):
 class FontInfoDesired : public FontInfoBase
 {
 public:
-    FontInfoDesired(const std::wstring_view faceName,
+    FontInfoDesired(const std::wstring_view& faceName,
                     const unsigned char family,
                     const unsigned int weight,
-                    const COORD coordSizeDesired,
-                    const unsigned int uiCodePage);
+                    const float fontSize,
+                    const unsigned int uiCodePage) noexcept;
+    FontInfoDesired(const FontInfo& fiFont) noexcept;
 
-    FontInfoDesired(const FontInfo& fiFont);
+    bool operator==(const FontInfoDesired& other) = delete;
 
-    COORD GetEngineSize() const;
-    bool IsDefaultRasterFont() const;
-
-    friend bool operator==(const FontInfoDesired& a, const FontInfoDesired& b);
+    float GetFontSize() const noexcept;
+    til::size GetEngineSize() const noexcept;
+    bool IsDefaultRasterFont() const noexcept;
 
 private:
-    COORD _coordSizeDesired;
+    til::size _coordSizeDesired;
+    float _fontSize;
 };
-
-bool operator==(const FontInfoDesired& a, const FontInfoDesired& b);

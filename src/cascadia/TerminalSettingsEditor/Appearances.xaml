@@ -19,12 +19,7 @@
                 <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <DataTemplate x:Key="EnumRadioButtonTemplate"
-                          x:DataType="local:EnumEntry">
-                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}" />
-            </DataTemplate>
-
-            <DataTemplate x:Key="EnumComboBoxItemTemplate"
+            <DataTemplate x:Key="EnumComboBoxTemplate"
                           x:DataType="local:EnumEntry">
                 <TextBlock Text="{x:Bind EnumName, Mode=OneWay}" />
             </DataTemplate>
@@ -41,14 +36,14 @@
         <StackPanel Style="{StaticResource PivotStackStyle}">
             <!--  Grouping: Text  -->
             <TextBlock x:Uid="Profile_TextHeader"
-                       Style="{StaticResource SubtitleTextBlockStyle}" />
+                       Style="{StaticResource TextBlockSubHeaderStyle}" />
 
             <!--  Color Scheme  -->
+            <!--  This currently only display the Dark color scheme, even if the user has a pair of schemes set.  -->
             <local:SettingContainer x:Uid="Profile_ColorScheme"
-                                    Margin="0"
-                                    ClearSettingValue="{x:Bind Appearance.ClearColorSchemeName}"
-                                    HasSettingValue="{x:Bind Appearance.HasColorSchemeName, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Appearance.ColorSchemeNameOverrideSource, Mode=OneWay}">
+                                    ClearSettingValue="{x:Bind Appearance.ClearDarkColorSchemeName}"
+                                    HasSettingValue="{x:Bind Appearance.HasDarkColorSchemeName, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Appearance.DarkColorSchemeNameOverrideSource, Mode=OneWay}">
                 <ComboBox ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
                           SelectedItem="{x:Bind CurrentColorScheme, Mode=TwoWay}"
                           Style="{StaticResource ComboBoxSettingStyle}">
@@ -66,19 +61,21 @@
                                     HasSettingValue="{x:Bind Appearance.HasFontFace, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.FontFaceOverrideSource, Mode=OneWay}"
                                     Visibility="{x:Bind Appearance.IsDefault, Mode=OneWay}">
-                <StackPanel>
+                <StackPanel Margin="0,8,0,0">
                     <!--
                         Binding the ItemsSource to a separate variable that switches between the
                         two font lists causes a crash within the ComboBox code.
                         As a workaround, introduce two ComboBox controls and only display one at a time.
                     -->
-                    <ComboBox ItemTemplate="{StaticResource FontFaceComboBoxItemTemplate}"
+                    <ComboBox x:Uid="Profile_FontFaceBox"
+                              ItemTemplate="{StaticResource FontFaceComboBoxItemTemplate}"
                               ItemsSource="{x:Bind SourceProfile.MonospaceFontList, Mode=OneWay}"
                               SelectedItem="{x:Bind CurrentFontFace, Mode=OneWay}"
                               SelectionChanged="FontFace_SelectionChanged"
                               Style="{StaticResource ComboBoxSettingStyle}"
                               Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(ShowAllFonts), Mode=OneWay}" />
-                    <ComboBox ItemTemplate="{StaticResource FontFaceComboBoxItemTemplate}"
+                    <ComboBox x:Uid="Profile_FontFaceBox"
+                              ItemTemplate="{StaticResource FontFaceComboBoxItemTemplate}"
                               ItemsSource="{x:Bind SourceProfile.CompleteFontList, Mode=OneWay}"
                               SelectedItem="{x:Bind CurrentFontFace, Mode=OneWay}"
                               SelectionChanged="FontFace_SelectionChanged"
@@ -97,7 +94,9 @@
                                     HasSettingValue="{x:Bind Appearance.HasFontSize, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.FontSizeOverrideSource, Mode=OneWay}"
                                     Visibility="{x:Bind Appearance.IsDefault, Mode=OneWay}">
-                <muxc:NumberBox AcceptsExpression="False"
+                <muxc:NumberBox x:Name="_fontSizeBox"
+                                x:Uid="Profile_FontSizeBox"
+                                AcceptsExpression="False"
                                 LargeChange="10"
                                 Maximum="128"
                                 Minimum="1"
@@ -115,7 +114,8 @@
                                     Visibility="{x:Bind Appearance.IsDefault, Mode=OneWay}">
                 <StackPanel>
                     <ComboBox x:Name="FontWeightComboBox"
-                              ItemTemplate="{StaticResource EnumComboBoxItemTemplate}"
+                              x:Uid="Profile_FontWeightComboBox"
+                              ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                               ItemsSource="{x:Bind FontWeightList, Mode=OneWay}"
                               SelectedItem="{x:Bind CurrentFontWeight, Mode=TwoWay}"
                               Style="{StaticResource ComboBoxSettingStyle}" />
@@ -129,6 +129,7 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <Slider x:Name="FontWeightSlider"
+                                x:Uid="Profile_FontWeightSlider"
                                 Grid.Column="0"
                                 Maximum="1000"
                                 Minimum="0"
@@ -148,24 +149,38 @@
                                     ClearSettingValue="{x:Bind Appearance.ClearRetroTerminalEffect}"
                                     HasSettingValue="{x:Bind Appearance.HasRetroTerminalEffect, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.RetroTerminalEffectOverrideSource, Mode=OneWay}">
-                <ToggleSwitch IsOn="{x:Bind Appearance.RetroTerminalEffect, Mode=TwoWay}" />
+                <ToggleSwitch IsOn="{x:Bind Appearance.RetroTerminalEffect, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Adjust Indistinguishable Colors  -->
+            <local:SettingContainer x:Uid="Profile_AdjustIndistinguishableColors"
+                                    ClearSettingValue="{x:Bind Appearance.ClearAdjustIndistinguishableColors}"
+                                    HasSettingValue="{x:Bind Appearance.HasAdjustIndistinguishableColors, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Appearance.AdjustIndistinguishableColorsOverrideSource, Mode=OneWay}">
+                <ComboBox AutomationProperties.AccessibilityView="Content"
+                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                          ItemsSource="{x:Bind AdjustIndistinguishableColorsList, Mode=OneWay}"
+                          SelectedItem="{x:Bind CurrentAdjustIndistinguishableColors, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
         </StackPanel>
 
         <!--  Grouping: Cursor  -->
         <StackPanel Style="{StaticResource PivotStackStyle}">
             <TextBlock x:Uid="Profile_CursorHeader"
-                       Style="{StaticResource SubtitleTextBlockStyle}" />
+                       Style="{StaticResource TextBlockSubHeaderStyle}" />
 
             <!--  Cursor Shape  -->
             <local:SettingContainer x:Uid="Profile_CursorShape"
-                                    Margin="0"
                                     ClearSettingValue="{x:Bind Appearance.ClearCursorShape}"
                                     HasSettingValue="{x:Bind Appearance.HasCursorShape, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.CursorShapeOverrideSource, Mode=OneWay}">
-                <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                   ItemsSource="{x:Bind CursorShapeList, Mode=OneWay}"
-                                   SelectedItem="{x:Bind CurrentCursorShape, Mode=TwoWay}" />
+                <ComboBox AutomationProperties.AccessibilityView="Content"
+                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                          ItemsSource="{x:Bind CursorShapeList, Mode=OneWay}"
+                          SelectedItem="{x:Bind CurrentCursorShape, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
 
             <!--  Cursor Height  -->
@@ -194,28 +209,33 @@
         <!--  Grouping: Background  -->
         <StackPanel Style="{StaticResource PivotStackStyle}">
             <TextBlock x:Uid="Profile_BackgroundHeader"
-                       Style="{StaticResource SubtitleTextBlockStyle}" />
+                       Style="{StaticResource TextBlockSubHeaderStyle}" />
 
             <!--  Background Image  -->
             <local:SettingContainer x:Name="BackgroundImageContainer"
                                     x:Uid="Profile_BackgroundImage"
-                                    Margin="0"
                                     ClearSettingValue="{x:Bind Appearance.ClearBackgroundImagePath}"
+                                    CurrentValue="{x:Bind Appearance.BackgroundImagePath, Mode=OneWay}"
                                     HasSettingValue="{x:Bind Appearance.HasBackgroundImagePath, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Appearance.BackgroundImagePathOverrideSource, Mode=OneWay}">
+                                    SettingOverrideSource="{x:Bind Appearance.BackgroundImagePathOverrideSource, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
                 <StackPanel Orientation="Vertical">
+                    <TextBox x:Uid="Profile_BackgroundImageBox"
+                             IsEnabled="{x:Bind local:Converters.StringsAreNotEqual('desktopWallpaper', Appearance.BackgroundImagePath), Mode=OneWay}"
+                             IsSpellCheckEnabled="False"
+                             Style="{StaticResource TextBoxSettingStyle}"
+                             Text="{x:Bind local:Converters.StringOrEmptyIfPlaceholder('desktopWallpaper', Appearance.BackgroundImagePath), Mode=TwoWay, BindBack=Appearance.SetBackgroundImagePath}" />
                     <StackPanel Orientation="Horizontal">
-                        <TextBox IsEnabled="{x:Bind local:Converters.StringsAreNotEqual('desktopWallpaper', Appearance.BackgroundImagePath), Mode=OneWay}"
-                                 Style="{StaticResource TextBoxSettingStyle}"
-                                 Text="{x:Bind local:Converters.StringFallBackToEmptyString('desktopWallpaper', Appearance.BackgroundImagePath), Mode=TwoWay, BindBack=Appearance.SetBackgroundImagePath}" />
                         <Button x:Uid="Profile_BackgroundImageBrowse"
+                                Margin="0,10,10,0"
                                 Click="BackgroundImage_Click"
                                 IsEnabled="{x:Bind local:Converters.StringsAreNotEqual('desktopWallpaper', Appearance.BackgroundImagePath), Mode=OneWay}"
                                 Style="{StaticResource BrowseButtonStyle}" />
+                        <CheckBox x:Name="UseDesktopImageCheckBox"
+                                  x:Uid="Profile_UseDesktopImage"
+                                  Margin="0,5,0,0"
+                                  IsChecked="{x:Bind Appearance.UseDesktopBGImage, Mode=TwoWay}" />
                     </StackPanel>
-                    <CheckBox x:Name="UseDesktopImageCheckBox"
-                              x:Uid="Profile_UseDesktopImage"
-                              IsChecked="{x:Bind Appearance.UseDesktopBGImage, Mode=TwoWay}" />
                 </StackPanel>
             </local:SettingContainer>
 
@@ -225,9 +245,11 @@
                                     HasSettingValue="{x:Bind Appearance.HasBackgroundImageStretchMode, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.BackgroundImageStretchModeOverrideSource, Mode=OneWay}"
                                     Visibility="{x:Bind Appearance.BackgroundImageSettingsVisible, Mode=OneWay}">
-                <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                   ItemsSource="{x:Bind BackgroundImageStretchModeList, Mode=OneWay}"
-                                   SelectedItem="{x:Bind CurrentBackgroundImageStretchMode, Mode=TwoWay}" />
+                <ComboBox AutomationProperties.AccessibilityView="Content"
+                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                          ItemsSource="{x:Bind BackgroundImageStretchModeList, Mode=OneWay}"
+                          SelectedItem="{x:Bind CurrentBackgroundImageStretchMode, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
 
             <!--  Background Image Alignment  -->
@@ -235,6 +257,7 @@
                                     ClearSettingValue="{x:Bind Appearance.ClearBackgroundImageAlignment}"
                                     HasSettingValue="{x:Bind Appearance.HasBackgroundImageAlignment, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.BackgroundImageAlignmentOverrideSource, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}"
                                     Visibility="{x:Bind Appearance.BackgroundImageSettingsVisible, Mode=OneWay}">
                 <Grid HorizontalAlignment="Left">
                     <Grid.RowDefinitions>
@@ -263,13 +286,14 @@
                                   x:Uid="Profile_BackgroundImageAlignmentTopLeft"
                                   Grid.Row="0"
                                   Grid.Column="0"
-                                  Click="BIAlignment_Click">
+                                  Click="BIAlignment_Click"
+                                  Style="{StaticResource BIAlignmentToggleButtonStyle}">
                         <ToggleButton.Tag>
                             <!--  ConvergedAlignment: Vertical_Top (0x10) | Horizontal_Left (0x01)  -->
                             <x:Int32>17</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe MDL2 Assets"
+                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                       Glyph="&#xE744;"
                                       RenderTransformOrigin="0.5,0.5">
                                 <FontIcon.RenderTransform>
@@ -282,13 +306,14 @@
                                   x:Uid="Profile_BackgroundImageAlignmentTop"
                                   Grid.Row="0"
                                   Grid.Column="1"
-                                  Click="BIAlignment_Click">
+                                  Click="BIAlignment_Click"
+                                  Style="{StaticResource BIAlignmentToggleButtonStyle}">
                         <ToggleButton.Tag>
                             <!--  ConvergedAlignment: Vertical_Top (0x10) | Horizontal_Center (0x00)  -->
                             <x:Int32>16</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe MDL2 Assets"
+                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                       Glyph="&#xE745;"
                                       RenderTransformOrigin="0.5,0.5">
                                 <FontIcon.RenderTransform>
@@ -301,13 +326,14 @@
                                   x:Uid="Profile_BackgroundImageAlignmentTopRight"
                                   Grid.Row="0"
                                   Grid.Column="2"
-                                  Click="BIAlignment_Click">
+                                  Click="BIAlignment_Click"
+                                  Style="{StaticResource BIAlignmentToggleButtonStyle}">
                         <ToggleButton.Tag>
                             <!--  ConvergedAlignment: Vertical_Top (0x10) | Horizontal_Right (0x02)  -->
                             <x:Int32>18</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe MDL2 Assets"
+                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                       Glyph="&#xEA5F;"
                                       RenderTransformOrigin="0.5,0.5">
                                 <FontIcon.RenderTransform>
@@ -322,13 +348,14 @@
                                   x:Uid="Profile_BackgroundImageAlignmentLeft"
                                   Grid.Row="1"
                                   Grid.Column="0"
-                                  Click="BIAlignment_Click">
+                                  Click="BIAlignment_Click"
+                                  Style="{StaticResource BIAlignmentToggleButtonStyle}">
                         <ToggleButton.Tag>
                             <!--  ConvergedAlignment: Vertical_Center (0x00) | Horizontal_Left (0x01)  -->
                             <x:Int32>1</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe MDL2 Assets"
+                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                       Glyph="&#xE746;" />
                         </ToggleButton.Content>
                     </ToggleButton>
@@ -336,13 +363,14 @@
                                   x:Uid="Profile_BackgroundImageAlignmentCenter"
                                   Grid.Row="1"
                                   Grid.Column="1"
-                                  Click="BIAlignment_Click">
+                                  Click="BIAlignment_Click"
+                                  Style="{StaticResource BIAlignmentToggleButtonStyle}">
                         <ToggleButton.Tag>
                             <!--  ConvergedAlignment: Vertical_Center (0x00) | Horizontal_Center (0x00)  -->
                             <x:Int32>0</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe MDL2 Assets"
+                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                       Glyph="&#xF16E;" />
                         </ToggleButton.Content>
                     </ToggleButton>
@@ -350,13 +378,14 @@
                                   x:Uid="Profile_BackgroundImageAlignmentRight"
                                   Grid.Row="1"
                                   Grid.Column="2"
-                                  Click="BIAlignment_Click">
+                                  Click="BIAlignment_Click"
+                                  Style="{StaticResource BIAlignmentToggleButtonStyle}">
                         <ToggleButton.Tag>
                             <!--  ConvergedAlignment: Vertical_Center (0x00) | Horizontal_Right (0x02)  -->
                             <x:Int32>2</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe MDL2 Assets"
+                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                       Glyph="&#xEA61;" />
                         </ToggleButton.Content>
                     </ToggleButton>
@@ -366,13 +395,14 @@
                                   x:Uid="Profile_BackgroundImageAlignmentBottomLeft"
                                   Grid.Row="2"
                                   Grid.Column="0"
-                                  Click="BIAlignment_Click">
+                                  Click="BIAlignment_Click"
+                                  Style="{StaticResource BIAlignmentToggleButtonStyle}">
                         <ToggleButton.Tag>
                             <!--  ConvergedAlignment: Vertical_Bottom (0x20) | Horizontal_Left (0x01)  -->
                             <x:Int32>33</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe MDL2 Assets"
+                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                       Glyph="&#xE744;" />
                         </ToggleButton.Content>
                     </ToggleButton>
@@ -380,13 +410,14 @@
                                   x:Uid="Profile_BackgroundImageAlignmentBottom"
                                   Grid.Row="2"
                                   Grid.Column="1"
-                                  Click="BIAlignment_Click">
+                                  Click="BIAlignment_Click"
+                                  Style="{StaticResource BIAlignmentToggleButtonStyle}">
                         <ToggleButton.Tag>
                             <!--  ConvergedAlignment: Vertical_Bottom (0x20) | Horizontal_Center (0x00)  -->
                             <x:Int32>32</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe MDL2 Assets"
+                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                       Glyph="&#xE745;" />
                         </ToggleButton.Content>
                     </ToggleButton>
@@ -394,13 +425,14 @@
                                   x:Uid="Profile_BackgroundImageAlignmentBottomRight"
                                   Grid.Row="2"
                                   Grid.Column="2"
-                                  Click="BIAlignment_Click">
+                                  Click="BIAlignment_Click"
+                                  Style="{StaticResource BIAlignmentToggleButtonStyle}">
                         <ToggleButton.Tag>
                             <!--  ConvergedAlignment: Vertical_Top (0x20) | Horizontal_Right (0x02)  -->
                             <x:Int32>34</x:Int32>
                         </ToggleButton.Tag>
                         <ToggleButton.Content>
-                            <FontIcon FontFamily="Segoe MDL2 Assets"
+                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                       Glyph="&#xEA5F;" />
                         </ToggleButton.Content>
                     </ToggleButton>
@@ -420,6 +452,7 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <Slider x:Name="BIOpacitySlider"
+                            x:Uid="Profile_BackgroundImageOpacitySlider"
                             Grid.Column="0"
                             Value="{x:Bind local:Converters.PercentageToPercentageValue(Appearance.BackgroundImageOpacity), BindBack=Appearance.SetBackgroundImageOpacityFromPercentageValue, Mode=TwoWay}" />
                     <TextBlock Grid.Column="1"
@@ -432,17 +465,18 @@
         <!--  Grouping: Text Formatting  -->
         <StackPanel Style="{StaticResource PivotStackStyle}">
             <TextBlock x:Uid="Appearance_TextFormattingHeader"
-                       Style="{StaticResource SubtitleTextBlockStyle}" />
+                       Style="{StaticResource TextBlockSubHeaderStyle}" />
 
             <!--  Intense is bold, bright  -->
             <local:SettingContainer x:Uid="Appearance_IntenseTextStyle"
-                                    Margin="0"
                                     ClearSettingValue="{x:Bind Appearance.ClearIntenseTextStyle}"
                                     HasSettingValue="{x:Bind Appearance.HasIntenseTextStyle, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.IntenseTextStyleOverrideSource, Mode=OneWay}">
-                <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                   ItemsSource="{x:Bind IntenseTextStyleList, Mode=OneWay}"
-                                   SelectedItem="{x:Bind CurrentIntenseTextStyle, Mode=TwoWay}" />
+                <ComboBox AutomationProperties.AccessibilityView="Content"
+                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                          ItemsSource="{x:Bind IntenseTextStyleList, Mode=OneWay}"
+                          SelectedItem="{x:Bind CurrentIntenseTextStyle, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
         </StackPanel>
 

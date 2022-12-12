@@ -1,4 +1,4 @@
-﻿//----------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // <copyright file="SmokeTests.cs" company="Microsoft">
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
@@ -155,13 +155,13 @@ namespace WindowsTerminal.UIA.Tests
             {
                 var root = app.GetRoot();
 
-                root.SendKeys(Keys.LeftAlt + Keys.LeftShift + "T");
+                root.SendKeys(Keys.LeftControl + Keys.LeftShift + "T");
                 Globals.WaitForTimeout();
-                root.SendKeys(Keys.LeftAlt + Keys.LeftShift + "T");
+                root.SendKeys(Keys.LeftControl + Keys.LeftShift + "T");
                 Globals.WaitForTimeout();
-                root.SendKeys(Keys.LeftAlt + Keys.LeftShift + "T");
+                root.SendKeys(Keys.LeftControl + Keys.LeftShift + "T");
                 Globals.WaitForTimeout();
-                root.SendKeys(Keys.LeftAlt + Keys.LeftShift + "T");
+                root.SendKeys(Keys.LeftControl + Keys.LeftShift + "T");
                 Globals.WaitForTimeout();
                 root.SendKeys(Keys.LeftControl + Keys.LeftShift + "W");
                 Globals.WaitForTimeout();

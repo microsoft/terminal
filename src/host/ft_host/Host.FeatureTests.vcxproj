@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ProjectGuid>{8CDB8850-7484-4EC7-B45B-181F85B2EE54}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -9,6 +9,7 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
+  <Import Project="$(SolutionDir)\src\common.nugetversions.props" />
   <ItemGroup>
     <ClCompile Include="API_AliasTests.cpp" />
     <ClCompile Include="API_BufferTests.cpp" />
@@ -54,10 +55,13 @@
   </ItemGroup>
   <ItemDefinitionGroup>
     <ClCompile>
+      <!-- By defining this here, we ensure that we don't try to dllimport conpty -->
+      <PreprocessorDefinitions>CONPTY_IMPEXP=;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.post.props" />
   <Import Project="$(SolutionDir)src\common.build.tests.props" />
+  <Import Project="$(SolutionDir)src\common.nugetversions.targets" />
 </Project>
