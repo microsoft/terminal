@@ -372,7 +372,7 @@ Json::Value ThemePair::ToJson() const
 }
 winrt::com_ptr<ThemePair> ThemePair::Copy() const
 {
-    auto pair{ winrt::make_self<ThemePair>(L"dark") };
+    auto pair{ winrt::make_self<ThemePair>() };
     pair->_DarkName = _DarkName;
     pair->_LightName = _LightName;
     return pair;

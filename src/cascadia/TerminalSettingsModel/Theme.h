@@ -121,8 +121,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
 
 namespace Microsoft::Terminal::Settings::Model::JsonUtils
 {
-    // using namespace winrt::Microsoft::Terminal::Settings::Model;
-
     template<>
     struct ConversionTrait<winrt::Microsoft::Terminal::Settings::Model::ThemePair>
     {
