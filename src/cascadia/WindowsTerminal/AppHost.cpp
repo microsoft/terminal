@@ -390,6 +390,7 @@ void AppHost::Initialize()
     _window->DragRegionClicked([this]() { _logic.TitlebarClicked(); });
 
     _window->WindowVisibilityChanged([this](bool showOrHide) { _logic.WindowVisibilityChanged(showOrHide); });
+    _window->UpdateSettingsRequested([this]() { _logic.ReloadSettings(); });
 
     _revokers.RequestedThemeChanged = _logic.RequestedThemeChanged(winrt::auto_revoke, { this, &AppHost::_UpdateTheme });
     _revokers.FullscreenChanged = _logic.FullscreenChanged(winrt::auto_revoke, { this, &AppHost::_FullscreenChanged });
@@ -1349,17 +1350,9 @@ void AppHost::_updateTheme()
 
     _window->OnApplicationThemeChanged(theme.RequestedTheme());
 
-    // This block of code enables Mica for our window. By all accounts, this
-    // version of the code will only work on Windows 11, SV2. There's a slightly
-    // different API surface for enabling Mica on Windows 11 22000.0.
-    //
-    // This code is left here, commented out, for future enablement of Mica.
-    // We'll revisit this in GH#10509. Because we can't enable transparent
-    // titlebars for showing Mica currently, we're just gonna disable it
-    // entirely while we sort that out.
-    //
-    // const int attribute = theme.Window().UseMica() ? /*DWMSBT_MAINWINDOW*/ 2 : /*DWMSBT_NONE*/ 1;
-    // DwmSetWindowAttribute(_window->GetHandle(), /* DWMWA_SYSTEMBACKDROP_TYPE */ 38, &attribute, sizeof(attribute));
+    const auto b = _logic.TitlebarBrush();
+    const auto opacity = b ? ThemeColor::ColorFromBrush(b).A / 255.0 : 0.0;
+    _window->UseMica(theme.Window().UseMica(), opacity);
 }
 
 void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,

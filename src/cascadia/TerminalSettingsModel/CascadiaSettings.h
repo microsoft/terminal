@@ -124,7 +124,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::Profile ProfileDefaults() const;
         Model::Profile CreateNewProfile();
         Model::Profile FindProfile(const winrt::guid& guid) const noexcept;
-        Model::ColorScheme GetColorSchemeForProfile(const Model::Profile& profile) const;
         void UpdateColorSchemeReferences(const winrt::hstring& oldName, const winrt::hstring& newName);
         Model::Profile GetProfileForArgs(const Model::NewTerminalArgs& newTerminalArgs) const;
         Model::Profile GetProfileByName(const winrt::hstring& name) const;
@@ -154,6 +153,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _refreshDefaultTerminals();
 
         void _resolveDefaultProfile() const;
+        void _resolveNewTabMenuProfiles() const;
+        void _resolveNewTabMenuProfilesSet(const winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry> entries, winrt::Windows::Foundation::Collections::IMap<int, Model::Profile>& remainingProfiles, Model::RemainingProfilesEntry& remainingProfilesEntry) const;
 
         void _validateSettings();
         void _validateAllSchemesExist();

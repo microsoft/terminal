@@ -283,7 +283,7 @@ void HwndTerminal::RegisterWriteCallback(const void _stdcall callback(wchar_t*))
     _pfnWriteCallback = callback;
 }
 
-::Microsoft::Console::Types::IUiaData* HwndTerminal::GetUiaData() const noexcept
+::Microsoft::Console::Render::IRenderData* HwndTerminal::GetRenderData() const noexcept
 {
     return _terminal.get();
 }
@@ -312,7 +312,7 @@ IRawElementProviderSimple* HwndTerminal::_GetUiaProvider() noexcept
         try
         {
             auto lock = _terminal->LockForWriting();
-            LOG_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<HwndTerminalAutomationPeer>(&_uiaProvider, this->GetUiaData(), this));
+            LOG_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<HwndTerminalAutomationPeer>(&_uiaProvider, this->GetRenderData(), this));
             _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(_uiaProvider.Get());
             LOG_IF_FAILED(_uiaEngine->Enable());
             _renderer->AddRenderEngine(_uiaEngine.get());
@@ -344,15 +344,20 @@ HRESULT HwndTerminal::Refresh(const til::size windowSize, _Out_ til::size* dimen
     const auto viewInPixels = Viewport::FromDimensions(windowSize);
     const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
 
+    // Guard against resizing the window to 0 columns/rows, which the text buffer classes don't really support.
+    auto size = vp.Dimensions();
+    size.width = std::max(size.width, 1);
+    size.height = std::max(size.height, 1);
+
     // If this function succeeds with S_FALSE, then the terminal didn't
     //      actually change size. No need to notify the connection of this
     //      no-op.
     // TODO: MSFT:20642295 Resizing the buffer will corrupt it
     // I believe we'll need support for CSI 2J, and additionally I think
     //      we're resetting the viewport to the top
-    RETURN_IF_FAILED(_terminal->UserResize({ vp.Width(), vp.Height() }));
-    dimensions->width = vp.Width();
-    dimensions->height = vp.Height();
+    RETURN_IF_FAILED(_terminal->UserResize(size));
+    dimensions->width = size.width;
+    dimensions->height = size.height;
 
     return S_OK;
 }
@@ -452,7 +457,7 @@ HRESULT _stdcall TerminalCalculateResize(_In_ void* terminal, _In_ til::CoordTyp
 {
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
 
-    const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, { width, height });
+    const auto viewInPixels = Viewport::FromDimensions({ width, height });
     const auto viewInCharacters = publicTerminal->_renderEngine->GetViewportInCharacters(viewInPixels);
 
     dimensions->width = viewInCharacters.Width();

@@ -281,7 +281,7 @@ class UiaTextRangeTests
     SCREEN_INFORMATION* _pScreenInfo;
     TextBuffer* _pTextBuffer;
     UiaTextRange* _range;
-    IUiaData* _pUiaData;
+    Microsoft::Console::Render::IRenderData* _pUiaData;
 
     struct ExpectedResult
     {

@@ -243,7 +243,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentCursorShape" });
                     _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsVintageCursor" });
                 }
-                else if (settingName == L"ColorSchemeName")
+                else if (settingName == L"DarkColorSchemeName" || settingName == L"LightColorSchemeName")
                 {
                     _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentColorScheme" });
                 }
@@ -355,7 +355,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     ColorScheme Appearances::CurrentColorScheme()
     {
-        const auto schemeName{ Appearance().ColorSchemeName() };
+        const auto schemeName{ Appearance().DarkColorSchemeName() };
         if (const auto scheme{ Appearance().Schemes().TryLookup(schemeName) })
         {
             return scheme;
@@ -370,7 +370,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Appearances::CurrentColorScheme(const ColorScheme& val)
     {
-        Appearance().ColorSchemeName(val.Name());
+        Appearance().DarkColorSchemeName(val.Name());
+        Appearance().LightColorSchemeName(val.Name());
     }
 
     bool Appearances::IsVintageCursor() const

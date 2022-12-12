@@ -447,7 +447,7 @@
     <comment>A description for what the "show titlebar" setting does. Presented near "Globals_ShowTitlebar.Header".</comment>
   </data>
   <data name="Globals_AcrylicTabRow.Header" xml:space="preserve">
-    <value>Use acrylic material in the tab row (requires relaunch)</value>
+    <value>Use acrylic material in the tab row</value>
     <comment>Header for a control to toggle whether "acrylic material" is used. "Acrylic material" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
   </data>
   <data name="Globals_AcrylicTabRow.HelpText" xml:space="preserve">
@@ -1566,7 +1566,7 @@
     <comment>Text label for a button that, when invoked, sets the selected color scheme as the default scheme to use.</comment>
   </data>
   <data name="Globals_ConfirmCloseAllTabs.Header" xml:space="preserve">
-    <value>Confirm before closing all tabs</value>
+    <value>Warn when closing more than one tab</value>
     <comment>Header for a control to toggle whether to show a confirm dialog box when closing the application with multiple tabs open.</comment>
   </data>
 </root>

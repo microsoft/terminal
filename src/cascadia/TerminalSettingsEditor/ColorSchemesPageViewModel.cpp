@@ -195,7 +195,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (_CurrentScheme)
         {
-            _settings.ProfileDefaults().DefaultAppearance().ColorSchemeName(_CurrentScheme.Name());
+            _settings.ProfileDefaults().DefaultAppearance().LightColorSchemeName(_CurrentScheme.Name());
+            _settings.ProfileDefaults().DefaultAppearance().DarkColorSchemeName(_CurrentScheme.Name());
             for (const auto scheme : _AllColorSchemes)
             {
                 auto schemeImpl{ get_self<ColorSchemeViewModel>(scheme) };

@@ -461,10 +461,11 @@ namespace Microsoft.Terminal.Wpf
 
         private void Connection_TerminalOutput(object sender, TerminalOutputEventArgs e)
         {
-            if (this.terminal == IntPtr.Zero)
+            if (this.terminal == IntPtr.Zero || string.IsNullOrEmpty(e.Data))
             {
                 return;
             }
+
             NativeMethods.TerminalSendOutput(this.terminal, e.Data);
         }
 

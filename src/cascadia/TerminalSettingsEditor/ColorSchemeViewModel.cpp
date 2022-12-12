@@ -52,7 +52,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool ColorSchemeViewModel::IsDefaultScheme()
     {
-        return _Name == _settings.ProfileDefaults().DefaultAppearance().ColorSchemeName();
+        const auto defaultAppearance = _settings.ProfileDefaults().DefaultAppearance();
+        return defaultAppearance.LightColorSchemeName() == defaultAppearance.DarkColorSchemeName() &&
+               _Name == defaultAppearance.LightColorSchemeName();
     }
 
     void ColorSchemeViewModel::RefreshIsDefault()
