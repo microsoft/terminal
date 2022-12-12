@@ -8,6 +8,7 @@
 #include "ApiDetector.hpp"
 
 #include "../inc/IInteractivityFactory.hpp"
+#include <wrl/implements.h>
 
 #include <map>
 
@@ -15,6 +16,34 @@
 
 namespace Microsoft::Console::Interactivity
 {
+    class PseudoConsoleWindowAccessibilityProvider final :
+        public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom | WRL::InhibitFtmBase>, IRawElementProviderSimple>
+    {
+    public:
+        PseudoConsoleWindowAccessibilityProvider() = default;
+        ~PseudoConsoleWindowAccessibilityProvider() = default;
+        HRESULT RuntimeClassInitialize(HWND pseudoConsoleHwnd) noexcept;
+
+        PseudoConsoleWindowAccessibilityProvider(const PseudoConsoleWindowAccessibilityProvider&) = delete;
+        PseudoConsoleWindowAccessibilityProvider(PseudoConsoleWindowAccessibilityProvider&&) = delete;
+        PseudoConsoleWindowAccessibilityProvider& operator=(const PseudoConsoleWindowAccessibilityProvider&) = delete;
+        PseudoConsoleWindowAccessibilityProvider& operator=(PseudoConsoleWindowAccessibilityProvider&&) = delete;
+
+        // IRawElementProviderSimple methods
+        IFACEMETHODIMP get_ProviderOptions(_Out_ ProviderOptions* pOptions) override;
+        IFACEMETHODIMP GetPatternProvider(_In_ PATTERNID iid,
+                                          _COM_Outptr_result_maybenull_ IUnknown** ppInterface) override;
+        IFACEMETHODIMP GetPropertyValue(_In_ PROPERTYID idProp,
+                                        _Out_ VARIANT* pVariant) override;
+        IFACEMETHODIMP get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider) override;
+
+    private:
+        HWND _pseudoConsoleHwnd;
+
+        const OLECHAR* AutomationPropertyName = L"PseudoConsoleWindow";
+        const OLECHAR* ProviderDescriptionPropertyName = L"Pseudo Console Window";
+    };
+
     class InteractivityFactory final : public IInteractivityFactory
     {
     public:
@@ -40,5 +69,8 @@ namespace Microsoft::Console::Interactivity
 
     private:
         void _WritePseudoWindowCallback(bool showOrHide);
+
+        HWND _pseudoConsoleWindowHwnd{ nullptr };
+        WRL::ComPtr<PseudoConsoleWindowAccessibilityProvider> _pUiaProvider{ nullptr };
     };
 }

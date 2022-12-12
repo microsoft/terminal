@@ -29,6 +29,88 @@
 using namespace std;
 using namespace Microsoft::Console::Interactivity;
 
+HRESULT PseudoConsoleWindowAccessibilityProvider::RuntimeClassInitialize(HWND pseudoConsoleHwnd) noexcept
+{
+    RETURN_HR_IF_NULL(E_INVALIDARG, pseudoConsoleHwnd);
+    _pseudoConsoleHwnd = pseudoConsoleHwnd;
+    return S_OK;
+}
+
+IFACEMETHODIMP PseudoConsoleWindowAccessibilityProvider::get_ProviderOptions(_Out_ ProviderOptions* pOptions)
+{
+    RETURN_HR_IF_NULL(E_INVALIDARG, pOptions);
+    *pOptions = ProviderOptions_ServerSideProvider;
+    return S_OK;
+}
+
+IFACEMETHODIMP PseudoConsoleWindowAccessibilityProvider::GetPatternProvider(_In_ PATTERNID /*iid*/,
+                                                                            _COM_Outptr_result_maybenull_ IUnknown** ppInterface)
+{
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppInterface);
+    *ppInterface = nullptr;
+    return S_OK;
+}
+
+IFACEMETHODIMP PseudoConsoleWindowAccessibilityProvider::GetPropertyValue(_In_ PROPERTYID propertyId,
+                                                                          _Out_ VARIANT* pVariant)
+{
+    RETURN_HR_IF_NULL(E_INVALIDARG, pVariant);
+
+    pVariant->vt = VT_EMPTY;
+
+    // Returning the default will leave the property as the default
+    // so we only really need to touch it for the properties we want to implement
+    if (propertyId == UIA_ControlTypePropertyId)
+    {
+        pVariant->vt = VT_I4;
+        pVariant->lVal = UIA_WindowControlTypeId;
+    }
+    else if (propertyId == UIA_NamePropertyId)
+    {
+        pVariant->bstrVal = SysAllocString(AutomationPropertyName);
+        if (pVariant->bstrVal != nullptr)
+        {
+            pVariant->vt = VT_BSTR;
+        }
+    }
+    else if (propertyId == UIA_IsControlElementPropertyId)
+    {
+        pVariant->vt = VT_BOOL;
+        pVariant->boolVal = VARIANT_FALSE;
+    }
+    else if (propertyId == UIA_IsContentElementPropertyId)
+    {
+        pVariant->vt = VT_BOOL;
+        pVariant->boolVal = VARIANT_FALSE;
+    }
+    else if (propertyId == UIA_IsKeyboardFocusablePropertyId)
+    {
+        pVariant->vt = VT_BOOL;
+        pVariant->boolVal = VARIANT_FALSE;
+    }
+    else if (propertyId == UIA_HasKeyboardFocusPropertyId)
+    {
+        pVariant->vt = VT_BOOL;
+        pVariant->boolVal = VARIANT_FALSE;
+    }
+    else if (propertyId == UIA_ProviderDescriptionPropertyId)
+    {
+        pVariant->bstrVal = SysAllocString(ProviderDescriptionPropertyName);
+        if (pVariant->bstrVal != nullptr)
+        {
+            pVariant->vt = VT_BSTR;
+        }
+    }
+    return S_OK;
+}
+
+IFACEMETHODIMP PseudoConsoleWindowAccessibilityProvider::get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider)
+{
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppProvider);
+    RETURN_HR_IF_NULL(gsl::narrow_cast<HRESULT>(UIA_E_ELEMENTNOTAVAILABLE), _pseudoConsoleHwnd);
+    return UiaHostProviderFromHwnd(_pseudoConsoleHwnd, ppProvider);
+}
+
 #pragma region Public Methods
 
 [[nodiscard]] NTSTATUS InteractivityFactory::CreateConsoleControl(_Inout_ std::unique_ptr<IConsoleControl>& control)
@@ -334,18 +416,18 @@ using namespace Microsoft::Console::Interactivity;
                 const auto exStyles = WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_LAYERED | WS_EX_NOACTIVATE;
 
                 // Attempt to create window.
-                hwnd = CreateWindowExW(exStyles,
-                                       reinterpret_cast<LPCWSTR>(windowClassAtom),
-                                       nullptr,
-                                       windowStyle,
-                                       0,
-                                       0,
-                                       0,
-                                       0,
-                                       owner,
-                                       nullptr,
-                                       nullptr,
-                                       this);
+                _pseudoConsoleWindowHwnd = hwnd = CreateWindowExW(exStyles,
+                                                                  reinterpret_cast<LPCWSTR>(windowClassAtom),
+                                                                  nullptr,
+                                                                  windowStyle,
+                                                                  0,
+                                                                  0,
+                                                                  0,
+                                                                  0,
+                                                                  owner,
+                                                                  nullptr,
+                                                                  nullptr,
+                                                                  this);
 
                 if (hwnd == nullptr)
                 {
@@ -463,6 +545,18 @@ using namespace Microsoft::Console::Interactivity;
         {
             _WritePseudoWindowCallback((bool)wParam);
         }
+    }
+    case WM_GETOBJECT:
+    {
+        if (static_cast<long>(lParam) == static_cast<long>(UiaRootObjectId))
+        {
+            if (nullptr == _pUiaProvider)
+            {
+                LOG_IF_FAILED(WRL::MakeAndInitialize<PseudoConsoleWindowAccessibilityProvider>(&_pUiaProvider, _pseudoConsoleWindowHwnd));
+            }
+            return UiaReturnRawElementProvider(hWnd, wParam, lParam, _pUiaProvider.Get());
+        }
+        return 0;
     }
     }
     // If we get this far, call the default window proc
