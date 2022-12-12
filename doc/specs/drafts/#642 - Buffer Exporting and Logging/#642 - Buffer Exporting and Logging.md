@@ -206,9 +206,9 @@ where that's a cross-process hop. Instead, we'll want the `ControlCore` /
 
 When do we decide to actually log? Take for example typing in a `pwsh` or
 `bash` prompt. Imagine the user types
-<kbd>a</kbd><kbd>s</kbd><kbd>d</kbd><kbd>f</kbd>, then hits
-<kbd>Bksp</kbd><kbd>Bksp</kbd>, such that the prompt is just `as`. What should
-the log contain? `asdf^h ^h^h ^h`<sup>[[1]](#footnote-1)</sup>? `as`?
+<kbd>w</kbd><kbd>h</kbd><kbd>a</kbd><kbd>t</kbd>, then hits
+<kbd>Bksp</kbd><kbd>Bksp</kbd>, such that the prompt is just `wh`. What should
+the log contain? `what^h ^h^h ^h`<sup>[[1]](#footnote-1)</sup>? `wh`?
 
 My worry with logging the backspaces is that conpty is sometimes a bit noisier
 than it needs to be with using `^H` as a cursor positioning sequence. Should we
@@ -250,7 +250,7 @@ When logging, it's expected there will be a measurable performance hit. We can
 try to mitigate this by only writing to the file on a background thread,
 separate from the connection or rendering thread. Since auto-logging will only
 take place in the content process, we're not worried about the file writing
-occuring on the UI thread.
+occurring on the UI thread.
 
 </td>
 </tr>
@@ -308,7 +308,7 @@ lop-level checkbox could be its own PR, following from [#11062].
   - What format do we want? `yyyy-mm-dd`? `%Y-%m-%D`? `&Y-&m-&D`? `${year}-${month}-${day}`?
   - What are all the variables we want?
     - Year, month, day, hour, minute - those are easy
-    - `WT_SESSION`, for a uuid for eash session maybe?
+    - `WT_SESSION`, for a uuid for each session maybe?
     - Profile name perhaps? Commandline?
 * [ ] more...
 
@@ -343,7 +343,7 @@ lop-level checkbox could be its own PR, following from [#11062].
   currently logging to a file. I don't believe PuTTY displays any sort of
   indicator. SecureCRT only displays a checkbox within the context menus of the
   application itself.
-  ![securecrt context menu](securecrt-context-menu.png)
+  ![SecureCRT context menu](SecureCRT-context-menu.png)
 
   Maybe when logging to a file, we could replace the "Export Text" context menu
   entry with "Stop Logging"
@@ -363,15 +363,15 @@ ConEmu Logging documentation: https://conemu.github.io/en/AnsiLogFiles.html
 
 ### Footnotes
 
-<a name="footnote-1"><a>[1]: Remember that `^H` is non-desructive, so the
-sequence `asdf^h ^h^h ^h` is can be read as:
-  * print "asdf"
+<a name="footnote-1"><a>[1]: Remember that `^H` is non-destructive, so the
+sequence `what^h ^h^h ^h` is can be read as:
+  * print "what"
   * move the cursor back one
-  * print a space (overwriting 'f')
-  * move the cursor back one (now it's on the space where 'f' was)
+  * print a space (overwriting 't')
+  * move the cursor back one (now it's on the space where 't' was)
   * move the cursor back one
-  * print a space (overwriting 'd')
-  * move the cursor back one (now it's on the space where 'd' was)
+  * print a space (overwriting 'a')
+  * move the cursor back one (now it's on the space where 'a' was)
 
 [#642]: https://github.com/microsoft/terminal/issues/642
 [#5000]: https://github.com/microsoft/terminal/issues/5000
