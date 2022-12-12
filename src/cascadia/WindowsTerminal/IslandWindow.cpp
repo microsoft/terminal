@@ -1912,9 +1912,9 @@ void IslandWindow::UseMica(const bool newValue, const double /*titlebarOpacity*/
 // - This method is called when the window receives the WM_NCCREATE message.
 // Return Value:
 // - The value returned from the window proc.
-[[nodiscard]] LRESULT IslandWindow::_OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept
+[[nodiscard]] LRESULT IslandWindow::OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept
 {
-    const auto ret = BaseWindow::_OnNcCreate(wParam, lParam);
+    const auto ret = BaseWindow::OnNcCreate(wParam, lParam);
     if (!ret)
     {
         return FALSE;

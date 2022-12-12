@@ -26,6 +26,9 @@ public:
     HWND GetInteropHandle() const;
 
     [[nodiscard]] virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
+
+    virtual [[nodiscard]] LRESULT OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept override;
+
     void OnResize(const UINT width, const UINT height) override;
     void OnMinimize() override;
     void OnRestore() override;
@@ -66,7 +69,6 @@ public:
     void RemoveFromSystemMenu(const winrt::hstring& itemLabel);
 
     virtual void UseMica(const bool newValue, const double titlebarOpacity);
-    virtual [[nodiscard]] LRESULT _OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept override;
 
     WINRT_CALLBACK(DragRegionClicked, winrt::delegate<>);
     WINRT_CALLBACK(WindowCloseButtonClicked, winrt::delegate<>);

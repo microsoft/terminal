@@ -98,7 +98,7 @@ using PointTree = interval_tree::IntervalTree<til::point, size_t>;
 // Return Value:
 // - constructed object
 // Note: may throw exception
-TextBuffer::TextBuffer(const til::size screenBufferSize,
+TextBuffer::TextBuffer(til::size screenBufferSize,
                        const TextAttribute defaultAttributes,
                        const UINT cursorSize,
                        const bool isActiveBuffer,
@@ -108,6 +108,10 @@ TextBuffer::TextBuffer(const til::size screenBufferSize,
     _cursor{ cursorSize, *this },
     _isActiveBuffer{ isActiveBuffer }
 {
+    // Guard against resizing the text buffer to 0 columns/rows, which would break being able to insert text.
+    screenBufferSize.width = std::max(screenBufferSize.width, 1);
+    screenBufferSize.height = std::max(screenBufferSize.height, 1);
+
     BufferAllocator allocator{ screenBufferSize };
 
     _storage.reserve(allocator.height());
@@ -963,8 +967,12 @@ void TextBuffer::Reset()
 // - newSize - new size of screen.
 // Return Value:
 // - Success if successful. Invalid parameter if screen buffer size is unexpected. No memory if allocation failed.
-[[nodiscard]] NTSTATUS TextBuffer::ResizeTraditional(const til::size newSize) noexcept
+[[nodiscard]] NTSTATUS TextBuffer::ResizeTraditional(til::size newSize) noexcept
 {
+    // Guard against resizing the text buffer to 0 columns/rows, which would break being able to insert text.
+    newSize.width = std::max(newSize.width, 1);
+    newSize.height = std::max(newSize.height, 1);
+
     try
     {
         BufferAllocator allocator{ newSize };

@@ -1048,9 +1048,9 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 // - This method is called when the window receives the WM_NCCREATE message.
 // Return Value:
 // - The value returned from the window proc.
-[[nodiscard]] LRESULT NonClientIslandWindow::_OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept
+[[nodiscard]] LRESULT NonClientIslandWindow::OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept
 {
-    return IslandWindow::_OnNcCreate(wParam, lParam);
+    return IslandWindow::OnNcCreate(wParam, lParam);
 }
 
 // Method Description:
