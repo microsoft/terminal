@@ -45,7 +45,7 @@ SampleAppHost::~SampleAppHost()
 void SampleAppHost::Initialize()
 {
     _window->Initialize();
-
+    _logic = winrt::SampleApp::SampleAppLogic();
     _logic.Create();
 
     _window->UpdateTitle(_logic.Title());

@@ -128,7 +128,7 @@ int foo(){
     // provides an implementation of Windows.UI.Xaml.Application.
     SampleAppHost host{ nullptr };
 
-    host._logic = winrt::SampleApp::SampleAppLogic(); // This calls to winrt::make_self<MyPage>();
+    // host._logic = winrt::SampleApp::SampleAppLogic(); // This calls to winrt::make_self<MyPage>();
 
     // Initialize the xaml content. This must be called AFTER the
     // WindowsXamlManager is initialized.
