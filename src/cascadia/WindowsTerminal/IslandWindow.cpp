@@ -660,13 +660,19 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     }
     case WM_SETTINGCHANGE:
     {
-        const std::wstring param{ (wchar_t*)lparam };
-        // ImmersiveColorSet seems to be the notification that the OS theme
-        // changed. If that happens, let the app know, so it can hot-reload
-        // themes, color schemes that might depend on the OS theme
-        if (param == L"ImmersiveColorSet")
+        // Currently, we only support checking when the OS theme changes. In
+        // that case, wParam is 0. Re-evaluate when we decide to reload env vars
+        // (GH#1125)
+        if (wparam == 0)
         {
-            _UpdateSettingsRequestedHandlers();
+            const std::wstring param{ (wchar_t*)lparam };
+            // ImmersiveColorSet seems to be the notification that the OS theme
+            // changed. If that happens, let the app know, so it can hot-reload
+            // themes, color schemes that might depend on the OS theme
+            if (param == L"ImmersiveColorSet")
+            {
+                _UpdateSettingsRequestedHandlers();
+            }
         }
         break;
     }
