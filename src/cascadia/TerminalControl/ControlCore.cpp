@@ -2149,7 +2149,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (_ConnectionInfo != nullptr)
         {
-            // Manully update the startingDirectory. If we had a CWD set
+            // Manually update the startingDirectory. If we had a CWD set
             // by the client, then let's try and use that as the CWD for
             // a restart, so it's more "seamless"
             _ConnectionInfo.Settings().Insert(L"startingDirectory", Windows::Foundation::PropertyValue::CreateString(WorkingDirectory()));
