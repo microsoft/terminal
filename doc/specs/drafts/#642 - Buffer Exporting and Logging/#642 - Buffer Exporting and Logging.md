@@ -52,7 +52,7 @@ on the time & date of the session, or based on the session name.
   - similar to **B**, but allowing for declaring the path to a file rather than
     prompting at runtime.
 * **Story D**: The user can choose to append to a file when exporting, rather
-  than overwritting.
+  than overwriting.
 * **Story E**: The user can specify a format string in the path to the file to
   export to, which the Terminal will automatically replace with variables like
   the time, date, and profile name.
