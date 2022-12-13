@@ -12,6 +12,7 @@ ATL
 backplating
 bitmaps
 BOMs
+combase
 CPLs
 cpptools
 cppvsdbg

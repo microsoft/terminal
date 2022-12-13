@@ -2746,7 +2746,7 @@ namespace winrt::TerminalApp::implementation
                 std::tie(connection, debugConnection) = OpenDebugTapConnection(connection);
                 // Debug Tap connections aren't really restartable. The
                 // underlying connection is, but it would require some _gnarly_
-                // plumbling to connect the recreated connection back up to the
+                // plumbing to connect the recreated connection back up to the
                 // debug connection.
             }
         }
