@@ -78,7 +78,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     ControlCore::ControlCore(Control::IControlSettings settings,
                              Control::IControlAppearance unfocusedAppearance,
                              TerminalConnection::ITerminalConnection connection) :
-        // _connection{ connection },
         _desiredFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, DEFAULT_FONT_SIZE, CP_UTF8 },
         _actualFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false }
     {
@@ -86,20 +85,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _terminal = std::make_shared<::Microsoft::Terminal::Core::Terminal>();
 
-        //// Subscribe to the connection's disconnected event and call our connection closed handlers.
-        //_connectionStateChangedRevoker = _connection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
-        //    _ConnectionStateChangedHandlers(*this, nullptr);
-        //});
-
-        //// This event is explicitly revoked in the destructor: does not need weak_ref
-        //_connectionOutputEventToken = _connection.TerminalOutput({ this, &ControlCore::_connectionOutputHandler });
-
         _setConnection(connection);
 
         _terminal->SetWriteInputCallback([this](std::wstring_view wstr) {
             _sendInputToConnection(wstr);
         });
-
 
         // GH#8969: pre-seed working directory to prevent potential races
         _terminal->SetWorkingDirectory(_settings->StartingDirectory());
@@ -334,8 +324,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return true;
     }
 
-
-
+    // Method Description:
+    // - Setup our event handlers for this connection. If we've currently got a
+    //   connection, then this'll revoke the existing connection's handlers.
     void ControlCore::_setConnection(TerminalConnection::ITerminalConnection connection)
     {
         if (_connection)
@@ -350,13 +341,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _connectionStateChangedRevoker.swap(r);
 
         _connection = connection;
-        //_connectionStateChangedRevoker = _connection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
-        //    _ConnectionStateChangedHandlers(*this, nullptr);
-        //});
 
         // This event is explicitly revoked in the destructor: does not need weak_ref
         _connectionOutputEventToken = _connection.TerminalOutput({ this, &ControlCore::_connectionOutputHandler });
-
     }
 
     // Method Description:
@@ -420,14 +407,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 return true;
             }
 
+            // If we have a connection info with which to try and re-create the
+            // connection, then let's try doing that on Enter
             if (_ConnectionInfo != nullptr)
             {
                 if (ch == Enter)
                 {
+                    // Manully update the startingDirectory. If we had a CWD set
+                    // by the client, then let's try and use that as the CWD for
+                    // a restart, so it's more "seamless"
                     _ConnectionInfo.Settings().Insert(L"startingDirectory", Windows::Foundation::PropertyValue::CreateString(WorkingDirectory()));
+                    // pass in the magic "inheritCursor" setting to the
+                    // connection's settings. This'll cause conpty to restart
+                    // the connection at the current place in the buffer.
                     _ConnectionInfo.Settings().Insert(L"inheritCursor", Windows::Foundation::PropertyValue::CreateBoolean(true));
                     auto c = TerminalConnection::ConnectionInformation::CreateConnection(_ConnectionInfo);
 
+                    // Get our current size in rows/cols, and hook them up to
+                    // this connection too.
                     {
                         auto cx = gsl::narrow_cast<til::CoordType>(_panelWidth * _compositionScale);
                         auto cy = gsl::narrow_cast<til::CoordType>(_panelHeight * _compositionScale);
@@ -441,8 +438,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                         c.Resize(height, width);
                     }
 
+                    // Window owner too.
+                    if (auto conpty{ c.try_as<TerminalConnection::ConptyConnection>() })
+                    {
+                        conpty.ReparentWindow(_owningHwnd);
+                    }
+
                     _connection.Close();
-                    // _connection = c;
                     _setConnection(c);
                     _connection.Start();
                     return true;

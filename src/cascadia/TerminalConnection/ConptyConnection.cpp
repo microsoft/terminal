@@ -330,13 +330,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     void ConptyConnection::Start()
     try
     {
-        // bool usingExistingBuffer = false;
-        // if (_isStateAtOrBeyond(ConnectionState::Closed))
-        // {
-        //     _resetConnectionState();
-        //     usingExistingBuffer = true;
-        // }
-
         _transitionToState(ConnectionState::Connecting);
 
         const til::size dimensions{ gsl::narrow<til::CoordType>(_cols), gsl::narrow<til::CoordType>(_rows) };
