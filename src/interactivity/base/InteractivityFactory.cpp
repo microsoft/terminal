@@ -416,25 +416,25 @@ IFACEMETHODIMP PseudoConsoleWindowAccessibilityProvider::get_HostRawElementProvi
                 const auto exStyles = WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_LAYERED | WS_EX_NOACTIVATE;
 
                 // Attempt to create window.
-                _pseudoConsoleWindowHwnd = hwnd = CreateWindowExW(exStyles,
-                                                                  reinterpret_cast<LPCWSTR>(windowClassAtom),
-                                                                  nullptr,
-                                                                  windowStyle,
-                                                                  0,
-                                                                  0,
-                                                                  0,
-                                                                  0,
-                                                                  owner,
-                                                                  nullptr,
-                                                                  nullptr,
-                                                                  this);
+                hwnd = CreateWindowExW(exStyles,
+                                       reinterpret_cast<LPCWSTR>(windowClassAtom),
+                                       nullptr,
+                                       windowStyle,
+                                       0,
+                                       0,
+                                       0,
+                                       0,
+                                       owner,
+                                       nullptr,
+                                       nullptr,
+                                       this);
 
                 if (hwnd == nullptr)
                 {
                     const auto gle = GetLastError();
                     status = NTSTATUS_FROM_WIN32(gle);
                 }
-
+                _pseudoConsoleWindowHwnd = hwnd;
                 break;
             }
 #ifdef BUILD_ONECORE_INTERACTIVITY
