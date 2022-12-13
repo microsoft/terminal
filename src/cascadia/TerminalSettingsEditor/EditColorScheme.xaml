@@ -415,6 +415,14 @@
                 </Grid>
             </local:SettingContainer>
 
+            <local:SettingContainer x:Name="SetAsDefaultContainer"
+                                    x:Uid="ColorScheme_SetAsDefault">
+                <Button x:Uid="ColorScheme_SetAsDefaultButton"
+                        x:Name="SetAsDefaultButton"
+                        Click="{x:Bind ViewModel.SetAsDefault_Click}"
+                        Style="{StaticResource BrowseButtonStyle}" />
+            </local:SettingContainer>
+
             <local:SettingContainer x:Name="RenameContainer"
                                     x:Uid="ColorScheme_Rename"
                                     IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.IsInBoxScheme), Mode=OneWay}"
@@ -450,19 +458,18 @@
                     </Button>
                 </StackPanel>
             </local:SettingContainer>
-
-            <local:SettingContainer x:Name="SetAsDefaultContainer"
-                                    x:Uid="ColorScheme_SetAsDefault">
-                <Button x:Uid="ColorScheme_SetAsDefaultButton"
-                        Click="{x:Bind ViewModel.SetAsDefault_Click}"
-                        Style="{StaticResource BrowseButtonStyle}" />
-            </local:SettingContainer>
-
-            <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
+            
+            <Grid Margin="2,6,0,0"
+                  MaxWidth="1000"
+                  ColumnSpacing="4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
                 <Button x:Name="DeleteButton"
-                        Margin="2,10,0,0"
+                        Grid.Column="0"
                         Style="{StaticResource DeleteButtonStyle}"
-                        Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(ViewModel.IsInBoxScheme)}">
+                        IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.IsInBoxScheme)}">
                     <Button.Content>
                         <StackPanel Orientation="Horizontal">
                             <FontIcon FontSize="{StaticResource StandardIconSize}"
@@ -482,7 +489,15 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-            </Border>
+                <TextBlock x:Name="SelectedSchemeDisclaimer"
+                           x:Uid="ColorScheme_DeleteButtonDisclaimerInBox"
+                           VerticalAlignment="Center"
+                           Grid.Column="1"
+                           TextWrapping="Wrap"
+                           Style="{StaticResource DisclaimerStyle}"
+                           Visibility="{x:Bind ViewModel.IsInBoxScheme, Mode=OneTime}">
+                </TextBlock>
+            </Grid>
         </StackPanel>
     </ScrollViewer>
 </Page>
