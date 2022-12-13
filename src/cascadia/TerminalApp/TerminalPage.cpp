@@ -1317,30 +1317,7 @@ namespace winrt::TerminalApp::implementation
 
     TerminalConnection::ITerminalConnection TerminalPage::_CreateConnectionFromInfo(TerminalConnection::ConnectionInformation connectInfo)
     {
-        auto connection = ConnectionInformation::CreateConnection(connectInfo);
-
-        if (auto conpty{ connection.try_as<TerminalConnection::ConptyConnection>() })
-        {
-            auto sessionGuid = conpty.Guid();
-            TraceLoggingWrite(
-                g_hTerminalAppProvider,
-                "ConnectionCreated",
-                TraceLoggingDescription("Event emitted upon the creation of a connection"),
-                //TODO!TraceLoggingGuid(profile.ConnectionType(), "ConnectionTypeGuid", "The type of the connection"),
-                //TODO!TraceLoggingGuid(profile.Guid(), "ProfileGuid", "The profile's GUID"),
-                TraceLoggingGuid(sessionGuid, "SessionGuid", "The WT_SESSION's GUID"),
-                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-        }
-
-        return connection;
-    }
-
-    TerminalConnection::ITerminalConnection TerminalPage::_CreateConnectionFromSettings(Profile profile,
-                                                                                        TerminalSettings settings)
-    {
-        TerminalConnection::ConnectionInformation connectInfo{ _CreateConnectionInfoFromSettings(profile, settings) };
-        return _CreateConnectionFromInfo(connectInfo);
+        return ConnectionInformation::CreateConnection(connectInfo);
     }
 
     // Method Description:
@@ -2716,10 +2693,15 @@ namespace winrt::TerminalApp::implementation
             return nullptr;
         }
 
+        // Get the connection info for this set of settings.
         auto connectionInfo = existingConnection ? nullptr :
                                                    _CreateConnectionInfoFromSettings(profile, controlSettings.DefaultSettings());
 
+        // If we need to create a new connection, do that now, from the settings
+        // we just built.
         auto connection = existingConnection ? existingConnection : _CreateConnectionFromInfo(connectionInfo);
+
+        // Finalize some defterm properties
         if (existingConnection)
         {
             connection.Resize(controlSettings.DefaultSettings().InitialRows(), controlSettings.DefaultSettings().InitialCols());
@@ -2731,6 +2713,23 @@ namespace winrt::TerminalApp::implementation
             {
                 connectionInfo = TerminalConnection::ConnectionInformation(winrt::name_of<TerminalConnection::ConptyConnection>(),
                                                                            conpty.ToSettings());
+            }
+        }
+        else
+        {
+            // trace log an event if we made the connection ourselves.
+            if (auto conpty{ connection.try_as<TerminalConnection::ConptyConnection>() })
+            {
+                auto sessionGuid = conpty.Guid();
+                TraceLoggingWrite(
+                    g_hTerminalAppProvider,
+                    "ConnectionCreated",
+                    TraceLoggingDescription("Event emitted upon the creation of a connection"),
+                    TraceLoggingGuid(profile.ConnectionType(), "ConnectionTypeGuid", "The type of the connection"),
+                    TraceLoggingGuid(profile.Guid(), "ProfileGuid", "The profile's GUID"),
+                    TraceLoggingGuid(sessionGuid, "SessionGuid", "The WT_SESSION's GUID"),
+                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
             }
         }
 
