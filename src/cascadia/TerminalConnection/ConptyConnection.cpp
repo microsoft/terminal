@@ -257,6 +257,28 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         return vs;
     }
 
+    // This is used for defterm connections. The app will get these from the
+    // connection when we create the pane, and stash them in the ControlCore.
+    // The core can later use these to attempt to "restart" this defterm
+    // connection. It likely won't be perfect - for example, any env vars that
+    // were used to create the initial client process will be lost in this
+    // process.
+    //
+    // Rows, Columns, guid - none of that should be persisted. That's irrelevant.
+    //
+    // Starting Directory - alas, we don't know that for a defterm connection.
+    // The Core might be able to fill it in, if the client app ever tells the
+    // Terminal.
+    Windows::Foundation::Collections::ValueSet ConptyConnection::ToSettings()
+    {
+        Windows::Foundation::Collections::ValueSet vs{};
+
+        vs.Insert(L"commandline", Windows::Foundation::PropertyValue::CreateString(_commandline));
+        vs.Insert(L"startingTitle", Windows::Foundation::PropertyValue::CreateString(_startupInfo.title));
+
+        return vs;
+    }
+
     void ConptyConnection::Initialize(const Windows::Foundation::Collections::ValueSet& settings)
     {
         if (settings)

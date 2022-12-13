@@ -2723,6 +2723,15 @@ namespace winrt::TerminalApp::implementation
         if (existingConnection)
         {
             connection.Resize(controlSettings.DefaultSettings().InitialRows(), controlSettings.DefaultSettings().InitialCols());
+
+            // If we had an existing connection (i.e., defterm), then get the
+            // current settings out of it and stash those with the control. It
+            // won't be perfect, but it'll be good enough.
+            if (auto conpty{ existingConnection.try_as<ConptyConnection>() })
+            {
+                connectionInfo = TerminalConnection::ConnectionInformation(winrt::name_of<TerminalConnection::ConptyConnection>(),
+                                                                           conpty.ToSettings());
+            }
         }
 
         TerminalConnection::ITerminalConnection debugConnection{ nullptr };
@@ -2736,6 +2745,8 @@ namespace winrt::TerminalApp::implementation
             if (bothAltsPressed)
             {
                 std::tie(connection, debugConnection) = OpenDebugTapConnection(connection);
+
+                // We can't really restart a debug tap connection, so clear out our connectionInfo so the TODO!
                 connectionInfo = nullptr;
             }
         }

@@ -61,6 +61,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                                                          uint32_t rows,
                                                                          uint32_t columns,
                                                                          const winrt::guid& guid);
+        Windows::Foundation::Collections::ValueSet ToSettings();
 
         WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
 
