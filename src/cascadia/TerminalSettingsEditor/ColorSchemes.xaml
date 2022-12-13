@@ -43,8 +43,8 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0"
-                    Spacing="8"
-                    MaxWidth="{StaticResource StandardControlMaxWidth}">
+                    MaxWidth="{StaticResource StandardControlMaxWidth}"
+                    Spacing="8">
             <TextBlock x:Uid="ColorSchemesDisclaimer"
                        Style="{StaticResource DisclaimerStyle}" />
 
