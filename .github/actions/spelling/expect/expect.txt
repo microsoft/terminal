@@ -2113,7 +2113,6 @@ webpage
 websites
 websockets
 wekyb
-WEOF
 wex
 wextest
 wextestclass
