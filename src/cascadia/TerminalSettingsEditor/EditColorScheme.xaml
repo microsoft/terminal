@@ -495,7 +495,7 @@
                            VerticalAlignment="Center"
                            Style="{StaticResource DisclaimerStyle}"
                            TextWrapping="Wrap"
-                           Visibility="{x:Bind ViewModel.IsInBoxScheme, Mode=OneTime}" />
+                           Visibility="{x:Bind ViewModel.IsInBoxScheme}" />
             </Grid>
         </StackPanel>
     </ScrollViewer>
