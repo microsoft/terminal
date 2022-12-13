@@ -277,7 +277,7 @@ input. Something a bit like:
 
 ![A sample of using the border to indicate the broadcasted-to panes](broadcast-input-borders.gif)
 
-This should obviously be able to be overriden in the user's theme, similar to
+This should obviously be able to be overridden in the user's theme, similar to
 the pane border colors.
 
 iTerm2 also supports displaying "stripes" in the background of all the panes
@@ -325,7 +325,7 @@ reflect the current broadcast state.
 Doing the first element here is probably the most important one for most users,
 and can be done regardless of the proposal chosen here. As such, we could even
 suggest the default value of `scope` be `tab`. If we did that, then we wouldn't
-need to do any args at all in the intial version.
+need to do any args at all in the initial version.
 
 ## Future Considerations
 
