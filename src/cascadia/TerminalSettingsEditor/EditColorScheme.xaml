@@ -417,8 +417,8 @@
 
             <local:SettingContainer x:Name="SetAsDefaultContainer"
                                     x:Uid="ColorScheme_SetAsDefault">
-                <Button x:Uid="ColorScheme_SetAsDefaultButton"
-                        x:Name="SetAsDefaultButton"
+                <Button x:Name="SetAsDefaultButton"
+                        x:Uid="ColorScheme_SetAsDefaultButton"
                         Click="{x:Bind ViewModel.SetAsDefault_Click}"
                         Style="{StaticResource BrowseButtonStyle}" />
             </local:SettingContainer>
@@ -458,9 +458,9 @@
                     </Button>
                 </StackPanel>
             </local:SettingContainer>
-            
-            <Grid Margin="2,6,0,0"
-                  MaxWidth="1000"
+
+            <Grid MaxWidth="1000"
+                  Margin="2,6,0,0"
                   ColumnSpacing="4">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -468,8 +468,8 @@
                 </Grid.ColumnDefinitions>
                 <Button x:Name="DeleteButton"
                         Grid.Column="0"
-                        Style="{StaticResource DeleteButtonStyle}"
-                        IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.IsInBoxScheme)}">
+                        IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.IsInBoxScheme)}"
+                        Style="{StaticResource DeleteButtonStyle}">
                     <Button.Content>
                         <StackPanel Orientation="Horizontal">
                             <FontIcon FontSize="{StaticResource StandardIconSize}"
@@ -491,12 +491,11 @@
                 </Button>
                 <TextBlock x:Name="SelectedSchemeDisclaimer"
                            x:Uid="ColorScheme_DeleteButtonDisclaimerInBox"
-                           VerticalAlignment="Center"
                            Grid.Column="1"
-                           TextWrapping="Wrap"
+                           VerticalAlignment="Center"
                            Style="{StaticResource DisclaimerStyle}"
-                           Visibility="{x:Bind ViewModel.IsInBoxScheme, Mode=OneTime}">
-                </TextBlock>
+                           TextWrapping="Wrap"
+                           Visibility="{x:Bind ViewModel.IsInBoxScheme, Mode=OneTime}" />
             </Grid>
         </StackPanel>
     </ScrollViewer>

@@ -53,9 +53,9 @@
                     Style="{StaticResource BrowseButtonStyle}">
                 <StackPanel Orientation="Horizontal">
                     <FontIcon FontSize="{StaticResource StandardIconSize}"
-                                Glyph="&#xE710;" />
+                              Glyph="&#xE710;" />
                     <TextBlock x:Uid="ColorScheme_AddNewButton"
-                                Style="{StaticResource IconButtonTextBlockStyle}" />
+                               Style="{StaticResource IconButtonTextBlockStyle}" />
                 </StackPanel>
             </Button>
         </StackPanel>
