@@ -5,7 +5,10 @@
 
 #include "ProcessList.h"
 
+#include "../host/conwinuserrefs.h"
 #include "../host/globals.h"
+#include "../host/telemetry.hpp"
+
 #include "../interactivity/inc/ServiceLocator.hpp"
 
 using namespace Microsoft::Console::Interactivity;
@@ -22,31 +25,56 @@ using namespace Microsoft::Console::Interactivity;
 //                 - If not used, return code will specify whether this process is known to the list or not.
 // Return Value:
 // - S_OK if the process was recorded in the list successfully or already existed.
-// - S_FALSE if we're running into an LPC port conflict by nature of the process chain.
+// - E_FAIL if we're running into an LPC port conflict by nature of the process chain.
 // - E_OUTOFMEMORY if there wasn't space to allocate a handle or push it into the list.
 [[nodiscard]] HRESULT ConsoleProcessList::AllocProcessData(const DWORD dwProcessId,
                                                            const DWORD dwThreadId,
                                                            const ULONG ulProcessGroupId,
+                                                           _In_opt_ ConsoleProcessHandle* const pParentProcessData,
                                                            _Outptr_opt_ ConsoleProcessHandle** const ppProcessData)
 {
-    assert(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
+    FAIL_FAST_IF(!(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked()));
 
-    if (FindProcessInList(dwProcessId))
+    auto pProcessData = FindProcessInList(dwProcessId);
+    if (nullptr != pProcessData)
     {
-        return S_FALSE;
+        // In the GenerateConsoleCtrlEvent it's OK for this process to already have a ProcessData object. However, the other case is someone
+        // connecting to our LPC port and they should only do that once, so we fail subsequent connection attempts.
+        if (nullptr == pParentProcessData)
+        {
+            return E_FAIL;
+            // TODO: MSFT: 9574803 - This fires all the time. Did it always do that?
+            //RETURN_HR(E_FAIL);
+        }
+        else
+        {
+            if (nullptr != ppProcessData)
+            {
+                *ppProcessData = pProcessData;
+            }
+            RETURN_HR(S_OK);
+        }
     }
 
-    std::unique_ptr<ConsoleProcessHandle> pProcessData;
     try
     {
-        pProcessData = std::make_unique<ConsoleProcessHandle>(dwProcessId, dwThreadId, ulProcessGroupId);
-        _processes.emplace_back(pProcessData.get());
+        pProcessData = new ConsoleProcessHandle(dwProcessId,
+                                                dwThreadId,
+                                                ulProcessGroupId);
+
+        // Some applications, when reading the process list through the GetConsoleProcessList API, are expecting
+        // the returned list of attached process IDs to be from newest to oldest.
+        // As such, we have to put the newest process into the head of the list.
+        _processes.push_front(pProcessData);
+
+        if (nullptr != ppProcessData)
+        {
+            *ppProcessData = pProcessData;
+        }
     }
     CATCH_RETURN();
 
-    wil::assign_to_opt_param(ppProcessData, pProcessData.release());
-
-    return S_OK;
+    RETURN_HR(S_OK);
 }
 
 // Routine Description:
@@ -57,39 +85,47 @@ using namespace Microsoft::Console::Interactivity;
 // - <none>
 void ConsoleProcessList::FreeProcessData(_In_ ConsoleProcessHandle* const pProcessData)
 {
-    assert(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
+    FAIL_FAST_IF(!(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked()));
 
-    const auto it = std::ranges::find(_processes, pProcessData);
-    if (it != _processes.end())
-    {
-        _processes.erase(it);
-        delete pProcessData;
-    }
-    else
-    {
-        // The pointer not existing in the process list would be similar to a heap corruption,
-        // as the only code allowed to allocate a `ConsoleProcessHandle` is us, in AllocProcessData().
-        // An assertion here would indicate a double-free or similar.
-        assert(false);
-    }
+    // Assert that the item exists in the list. If it doesn't exist, the end/last will be returned.
+    FAIL_FAST_IF(!(_processes.cend() != std::find(_processes.cbegin(), _processes.cend(), pProcessData)));
+
+    _processes.remove(pProcessData);
+
+    delete pProcessData;
 }
 
 // Routine Description:
 // - Locates a process handle in this list.
+// - NOTE: Calling FindProcessInList(0) means you want the root process.
 // Arguments:
-// - dwProcessId - ID of the process to search for.
+// - dwProcessId - ID of the process to search for or ROOT_PROCESS_ID to find the root process.
 // Return Value:
 // - Pointer to the process handle information or nullptr if no match was found.
 ConsoleProcessHandle* ConsoleProcessList::FindProcessInList(const DWORD dwProcessId) const
 {
-    assert(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
+    auto it = _processes.cbegin();
 
-    for (const auto& p : _processes)
+    while (it != _processes.cend())
     {
-        if (p->dwProcessId == dwProcessId)
+        const auto pProcessHandleRecord = *it;
+
+        if (ROOT_PROCESS_ID != dwProcessId)
         {
-            return p;
+            if (pProcessHandleRecord->dwProcessId == dwProcessId)
+            {
+                return pProcessHandleRecord;
+            }
         }
+        else
+        {
+            if (pProcessHandleRecord->fRootProcess)
+            {
+                return pProcessHandleRecord;
+            }
+        }
+
+        it = std::next(it);
     }
 
     return nullptr;
@@ -103,53 +139,17 @@ ConsoleProcessHandle* ConsoleProcessList::FindProcessInList(const DWORD dwProces
 // - Pointer to first matching process handle with given group ID. nullptr if no match was found.
 ConsoleProcessHandle* ConsoleProcessList::FindProcessByGroupId(_In_ ULONG ulProcessGroupId) const
 {
-    assert(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
+    auto it = _processes.cbegin();
 
-    for (const auto& p : _processes)
+    while (it != _processes.cend())
     {
-        if (p->_ulProcessGroupId == ulProcessGroupId)
+        const auto pProcessHandleRecord = *it;
+        if (pProcessHandleRecord->_ulProcessGroupId == ulProcessGroupId)
         {
-            return p;
+            return pProcessHandleRecord;
         }
-    }
 
-    return nullptr;
-}
-
-// Routine Description:
-// - Locates the root process handle in this list.
-// Return Value:
-// - Pointer to the process handle information or nullptr if no match was found.
-ConsoleProcessHandle* ConsoleProcessList::GetRootProcess() const
-{
-    assert(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
-
-    for (const auto& p : _processes)
-    {
-        if (p->fRootProcess)
-        {
-            return p;
-        }
-    }
-
-    return nullptr;
-}
-
-// Routine Description:
-// - Gets the first process in the list.
-// - Used for reassigning a new root process.
-// TODO: MSFT 9450737 - encapsulate root process logic. https://osgvsowi/9450737
-// Arguments:
-// - <none>
-// Return Value:
-// - Pointer to the first item in the list or nullptr if there are no items.
-ConsoleProcessHandle* ConsoleProcessList::GetOldestProcess() const
-{
-    assert(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
-
-    if (!_processes.empty())
-    {
-        return _processes.front();
+        it = std::next(it);
     }
 
     return nullptr;
@@ -157,6 +157,7 @@ ConsoleProcessHandle* ConsoleProcessList::GetOldestProcess() const
 
 // Routine Description:
 // - Retrieves the entire list of process IDs that is known to this list.
+// - Requires caller to allocate space. If not enough space, pcProcessList will be filled with count of array necessary.
 // Arguments:
 // - pProcessList - Pointer to buffer to store process IDs. Caller allocated.
 // - pcProcessList - On the way in, the length of the buffer given. On the way out, the amount of the buffer used.
@@ -164,30 +165,36 @@ ConsoleProcessHandle* ConsoleProcessList::GetOldestProcess() const
 // Return Value:
 // - S_OK if buffer was filled successfully and resulting count of items is in pcProcessList.
 // - E_NOT_SUFFICIENT_BUFFER if the buffer given was too small. Refer to pcProcessList for size requirement.
-[[nodiscard]] HRESULT ConsoleProcessList::GetProcessList(_Inout_updates_(*pcProcessList) DWORD* pProcessList,
+[[nodiscard]] HRESULT ConsoleProcessList::GetProcessList(_Inout_updates_(*pcProcessList) DWORD* const pProcessList,
                                                          _Inout_ size_t* const pcProcessList) const
 {
-    assert(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
+    auto hr = S_OK;
 
-    if (*pcProcessList < _processes.size())
+    const auto cProcesses = _processes.size();
+
+    // If we can fit inside the given list space, copy out the data.
+    if (cProcesses <= *pcProcessList)
     {
-        *pcProcessList = _processes.size();
-        return E_NOT_SUFFICIENT_BUFFER;
+        size_t cFilled = 0;
+
+        // Loop over the list of processes and fill in the caller's buffer.
+        auto it = _processes.cbegin();
+        while (it != _processes.cend() && cFilled < *pcProcessList)
+        {
+            pProcessList[cFilled] = (*it)->dwProcessId;
+            cFilled++;
+            it = std::next(it);
+        }
+    }
+    else
+    {
+        hr = E_NOT_SUFFICIENT_BUFFER;
     }
 
-    // Some applications, when reading the process list through the GetConsoleProcessList API,
-    // are expecting the returned list of attached process IDs to be from newest to oldest.
-    // As such, we have to put the newest process into the head of the list.
-    auto it = _processes.crbegin();
-    const auto end = _processes.crend();
+    // Return how many items were copied (or how many values we would need to fit).
+    *pcProcessList = cProcesses;
 
-    for (; it != end; ++it)
-    {
-        *pProcessList++ = (*it)->dwProcessId;
-    }
-
-    *pcProcessList = _processes.size();
-    return S_OK;
+    return hr;
 }
 
 // Routine Description
@@ -203,48 +210,85 @@ ConsoleProcessHandle* ConsoleProcessList::GetOldestProcess() const
 // - E_OUTOFMEMORY in a low memory situation.
 [[nodiscard]] HRESULT ConsoleProcessList::GetTerminationRecordsByGroupId(const DWORD dwLimitingProcessId,
                                                                          const bool fCtrlClose,
-                                                                         _Out_ std::vector<ConsoleProcessTerminationRecord>& termRecords) const
+                                                                         _Outptr_result_buffer_all_(*pcRecords) ConsoleProcessTerminationRecord** prgRecords,
+                                                                         _Out_ size_t* const pcRecords) const
 {
-    assert(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
+    *pcRecords = 0;
 
     try
     {
-        termRecords.clear();
+        std::deque<std::unique_ptr<ConsoleProcessTerminationRecord>> TermRecords;
 
         // Dig through known processes looking for a match
-        for (const auto& p : _processes)
+        auto it = _processes.cbegin();
+        while (it != _processes.cend())
         {
-            // If no limit was specified OR if we have a match, generate a new termination record.
-            if (!dwLimitingProcessId ||
-                p->_ulProcessGroupId == dwLimitingProcessId)
-            {
-                // If we're hard closing the window, increment the counter.
-                if (fCtrlClose)
-                {
-                    p->_ulTerminateCount++;
-                }
+            const auto pProcessHandleRecord = *it;
 
-                wil::unique_handle process;
+            // If no limit was specified OR if we have a match, generate a new termination record.
+            if (0 == dwLimitingProcessId ||
+                pProcessHandleRecord->_ulProcessGroupId == dwLimitingProcessId)
+            {
+                auto pNewRecord = std::make_unique<ConsoleProcessTerminationRecord>();
+
                 // If the duplicate failed, the best we can do is to skip including the process in the list and hope it goes away.
                 LOG_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(),
-                                                        p->_hProcess.get(),
+                                                        pProcessHandleRecord->_hProcess.get(),
                                                         GetCurrentProcess(),
-                                                        &process,
+                                                        &pNewRecord->hProcess,
                                                         0,
                                                         0,
                                                         DUPLICATE_SAME_ACCESS));
 
-                termRecords.emplace_back(ConsoleProcessTerminationRecord{
-                    .hProcess = std::move(process),
-                    .dwProcessID = p->dwProcessId,
-                    .ulTerminateCount = p->_ulTerminateCount,
-                });
+                pNewRecord->dwProcessID = pProcessHandleRecord->dwProcessId;
+
+                // If we're hard closing the window, increment the counter.
+                if (fCtrlClose)
+                {
+                    pProcessHandleRecord->_ulTerminateCount++;
+                }
+
+                pNewRecord->ulTerminateCount = pProcessHandleRecord->_ulTerminateCount;
+
+                TermRecords.push_back(std::move(pNewRecord));
             }
+
+            it = std::next(it);
         }
 
-        return S_OK;
+        // From all found matches, convert to C-style array to return
+        const auto cchRetVal = TermRecords.size();
+        auto pRetVal = new ConsoleProcessTerminationRecord[cchRetVal];
+
+        for (size_t i = 0; i < cchRetVal; i++)
+        {
+            pRetVal[i] = *TermRecords.at(i);
+        }
+
+        *prgRecords = pRetVal;
+        *pcRecords = cchRetVal;
     }
     CATCH_RETURN();
+
+    return S_OK;
+}
+
+// Routine Description:
+// - Gets the first process in the list.
+// - Used for reassigning a new root process.
+// TODO: MSFT 9450737 - encapsulate root process logic. https://osgvsowi/9450737
+// Arguments:
+// - <none>
+// Return Value:
+// - Pointer to the first item in the list or nullptr if there are no items.
+ConsoleProcessHandle* ConsoleProcessList::GetFirstProcess() const
+{
+    if (!_processes.empty())
+    {
+        return _processes.front();
+    }
+
+    return nullptr;
 }
 
 // Routine Description:
@@ -256,14 +300,17 @@ ConsoleProcessHandle* ConsoleProcessList::GetOldestProcess() const
 // - NOTE: Will attempt to request a change, but it's non fatal if it doesn't work. Failures will be logged to debug channel.
 void ConsoleProcessList::ModifyConsoleProcessFocus(const bool fForeground)
 {
-    assert(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
-
-    for (const auto& pProcessHandle : _processes)
+    auto it = _processes.cbegin();
+    while (it != _processes.cend())
     {
+        const auto pProcessHandle = *it;
+
         if (pProcessHandle->_hProcess)
         {
             _ModifyProcessForegroundRights(pProcessHandle->_hProcess.get(), fForeground);
         }
+
+        it = std::next(it);
     }
 
     // Do this for conhost.exe itself, too.
@@ -279,7 +326,6 @@ void ConsoleProcessList::ModifyConsoleProcessFocus(const bool fForeground)
 // - True if the list is empty. False if we have known processes.
 bool ConsoleProcessList::IsEmpty() const
 {
-    assert(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
     return _processes.empty();
 }
 

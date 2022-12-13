@@ -93,6 +93,7 @@ using Microsoft::Console::Interactivity::ServiceLocator;
             RETURN_IF_FAILED(gci.ProcessHandleList.AllocProcessData(a->ProcessGroupId,
                                                                     0,
                                                                     a->ProcessGroupId,
+                                                                    ProcessHandle,
                                                                     nullptr));
         }
     }

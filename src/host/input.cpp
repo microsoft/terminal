@@ -274,21 +274,27 @@ void ProcessCtrlEvents()
     const auto LimitingProcessId = gci.LimitingProcessId;
     gci.LimitingProcessId = 0;
 
-    std::vector<ConsoleProcessTerminationRecord> termRecords;
-    const auto hr = gci.ProcessHandleList
-                        .GetTerminationRecordsByGroupId(LimitingProcessId,
-                                                        WI_IsFlagSet(gci.CtrlFlags,
-                                                                     CONSOLE_CTRL_CLOSE_FLAG),
-                                                        termRecords);
+    ConsoleProcessTerminationRecord* rgProcessHandleList;
+    size_t cProcessHandleList;
 
-    if (FAILED(hr) || termRecords.empty())
+    auto hr = gci.ProcessHandleList
+                  .GetTerminationRecordsByGroupId(LimitingProcessId,
+                                                  WI_IsFlagSet(gci.CtrlFlags,
+                                                               CONSOLE_CTRL_CLOSE_FLAG),
+                                                  &rgProcessHandleList,
+                                                  &cProcessHandleList);
+
+    if (FAILED(hr) || cProcessHandleList == 0)
     {
         gci.UnlockConsole();
         return;
     }
 
     // Copy ctrl flags.
-    const auto CtrlFlags = std::exchange(gci.CtrlFlags, 0);
+    auto CtrlFlags = gci.CtrlFlags;
+    FAIL_FAST_IF(!(!((CtrlFlags & (CONSOLE_CTRL_CLOSE_FLAG | CONSOLE_CTRL_BREAK_FLAG | CONSOLE_CTRL_C_FLAG)) && (CtrlFlags & (CONSOLE_CTRL_LOGOFF_FLAG | CONSOLE_CTRL_SHUTDOWN_FLAG)))));
+
+    gci.CtrlFlags = 0;
 
     gci.UnlockConsole();
 
@@ -323,13 +329,10 @@ void ProcessCtrlEvents()
     case CONSOLE_CTRL_SHUTDOWN_FLAG:
         EventType = CTRL_SHUTDOWN_EVENT;
         break;
-
-    default:
-        return;
     }
 
     auto Status = STATUS_SUCCESS;
-    for (const auto& r : termRecords)
+    for (size_t i = 0; i < cProcessHandleList; i++)
     {
         /*
          * Status will be non-successful if a process attached to this console
@@ -343,13 +346,20 @@ void ProcessCtrlEvents()
         if (NT_SUCCESS(Status))
         {
             Status = ServiceLocator::LocateConsoleControl()
-                         ->EndTask(r.dwProcessID,
+                         ->EndTask(rgProcessHandleList[i].dwProcessID,
                                    EventType,
                                    CtrlFlags);
-            if (!r.hProcess)
+            if (rgProcessHandleList[i].hProcess == nullptr)
             {
                 Status = STATUS_SUCCESS;
             }
         }
+
+        if (rgProcessHandleList[i].hProcess != nullptr)
+        {
+            CloseHandle(rgProcessHandleList[i].hProcess);
+        }
     }
+
+    delete[] rgProcessHandleList;
 }

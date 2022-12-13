@@ -435,6 +435,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
     Status = NTSTATUS_FROM_HRESULT(gci.ProcessHandleList.AllocProcessData(dwProcessId,
                                                                           dwThreadId,
                                                                           Cac.ProcessGroupId,
+                                                                          nullptr,
                                                                           &ProcessData));
 
     if (!NT_SUCCESS(Status))
