@@ -115,7 +115,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             InitialPosX(NAN);
             InitialPosY(NAN);
         }
-        _NotifyChanges(L"UseDefaultLaunchPosition", L"LaunchParametersCurrentValue");
+        _NotifyChanges(L"UseDefaultLaunchPosition", L"LaunchParametersCurrentValue", L"InitialPosX", L"InitialPosY");
     }
 
     bool LaunchViewModel::UseDefaultLaunchPosition()
