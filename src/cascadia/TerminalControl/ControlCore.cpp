@@ -78,7 +78,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     ControlCore::ControlCore(Control::IControlSettings settings,
                              Control::IControlAppearance unfocusedAppearance,
                              TerminalConnection::ITerminalConnection connection) :
-        _connection{ connection },
+        // _connection{ connection },
         _desiredFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, DEFAULT_FONT_SIZE, CP_UTF8 },
         _actualFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false }
     {
@@ -86,17 +86,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _terminal = std::make_shared<::Microsoft::Terminal::Core::Terminal>();
 
-        // Subscribe to the connection's disconnected event and call our connection closed handlers.
-        _connectionStateChangedRevoker = _connection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
-            _ConnectionStateChangedHandlers(*this, nullptr);
-        });
+        //// Subscribe to the connection's disconnected event and call our connection closed handlers.
+        //_connectionStateChangedRevoker = _connection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
+        //    _ConnectionStateChangedHandlers(*this, nullptr);
+        //});
 
-        // This event is explicitly revoked in the destructor: does not need weak_ref
-        _connectionOutputEventToken = _connection.TerminalOutput({ this, &ControlCore::_connectionOutputHandler });
+        //// This event is explicitly revoked in the destructor: does not need weak_ref
+        //_connectionOutputEventToken = _connection.TerminalOutput({ this, &ControlCore::_connectionOutputHandler });
+
+        _setConnection(connection);
 
         _terminal->SetWriteInputCallback([this](std::wstring_view wstr) {
             _sendInputToConnection(wstr);
         });
+
 
         // GH#8969: pre-seed working directory to prevent potential races
         _terminal->SetWorkingDirectory(_settings->StartingDirectory());
@@ -331,6 +334,31 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return true;
     }
 
+
+
+    void ControlCore::_setConnection(TerminalConnection::ITerminalConnection connection)
+    {
+        if (_connection)
+        {
+            _connection.TerminalOutput(_connectionOutputEventToken);
+        }
+
+        // Subscribe to the connection's disconnected event and call our connection closed handlers.
+        auto r = connection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
+            _ConnectionStateChangedHandlers(*this, nullptr);
+        });
+        _connectionStateChangedRevoker.swap(r);
+
+        _connection = connection;
+        //_connectionStateChangedRevoker = _connection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
+        //    _ConnectionStateChangedHandlers(*this, nullptr);
+        //});
+
+        // This event is explicitly revoked in the destructor: does not need weak_ref
+        _connectionOutputEventToken = _connection.TerminalOutput({ this, &ControlCore::_connectionOutputHandler });
+
+    }
+
     // Method Description:
     // - Tell the renderer to start painting.
     // - !! IMPORTANT !! Make sure that we've attached our swap chain to an
@@ -392,11 +420,33 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 return true;
             }
 
-            if (ch == Enter)
+            if (_ConnectionInfo != nullptr)
             {
-                _connection.Close();
-                _connection.Start();
-                return true;
+                if (ch == Enter)
+                {
+                    _ConnectionInfo.Settings().Insert(L"startingDirectory", Windows::Foundation::PropertyValue::CreateString(WorkingDirectory()));
+                    _ConnectionInfo.Settings().Insert(L"inheritCursor", Windows::Foundation::PropertyValue::CreateBoolean(true));
+                    auto c = TerminalConnection::ConnectionInformation::CreateConnection(_ConnectionInfo);
+
+                    {
+                        auto cx = gsl::narrow_cast<til::CoordType>(_panelWidth * _compositionScale);
+                        auto cy = gsl::narrow_cast<til::CoordType>(_panelHeight * _compositionScale);
+                        cx = std::max(cx, _actualFont.GetSize().width);
+                        cy = std::max(cy, _actualFont.GetSize().height);
+                        const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, { cx, cy });
+                        const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
+                        const auto width = vp.Width();
+                        const auto height = vp.Height();
+
+                        c.Resize(height, width);
+                    }
+
+                    _connection.Close();
+                    // _connection = c;
+                    _setConnection(c);
+                    _connection.Start();
+                    return true;
+                }
             }
         }
 

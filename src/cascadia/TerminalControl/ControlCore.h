@@ -207,6 +207,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         RUNTIME_SETTING(double, Opacity, _settings->Opacity());
         RUNTIME_SETTING(bool, UseAcrylic, _settings->UseAcrylic());
+        WINRT_PROPERTY(TerminalConnection::ConnectionInformation, ConnectionInfo, nullptr);
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
@@ -325,6 +326,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool _isBackgroundTransparent();
         void _focusChanged(bool focused);
+
+        void _setConnection(TerminalConnection::ITerminalConnection connection);
 
         inline bool _IsClosing() const noexcept
         {

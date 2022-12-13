@@ -1315,10 +1315,8 @@ namespace winrt::TerminalApp::implementation
         return TerminalConnection::ConnectionInformation(className, connectionSettings);
     }
 
-    TerminalConnection::ITerminalConnection TerminalPage::_CreateConnectionFromSettings(Profile profile,
-                                                                                        TerminalSettings settings)
+    TerminalConnection::ITerminalConnection TerminalPage::_CreateConnectionFromInfo(TerminalConnection::ConnectionInformation connectInfo)
     {
-        TerminalConnection::ConnectionInformation connectInfo{ _CreateConnectionInfoFromSettings(profile, settings) };
         auto connection = ConnectionInformation::CreateConnection(connectInfo);
 
         if (auto conpty{ connection.try_as<TerminalConnection::ConptyConnection>() })
@@ -1328,14 +1326,21 @@ namespace winrt::TerminalApp::implementation
                 g_hTerminalAppProvider,
                 "ConnectionCreated",
                 TraceLoggingDescription("Event emitted upon the creation of a connection"),
-                TraceLoggingGuid(profile.ConnectionType(), "ConnectionTypeGuid", "The type of the connection"),
-                TraceLoggingGuid(profile.Guid(), "ProfileGuid", "The profile's GUID"),
+                //TODO!TraceLoggingGuid(profile.ConnectionType(), "ConnectionTypeGuid", "The type of the connection"),
+                //TODO!TraceLoggingGuid(profile.Guid(), "ProfileGuid", "The profile's GUID"),
                 TraceLoggingGuid(sessionGuid, "SessionGuid", "The WT_SESSION's GUID"),
                 TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                 TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
         }
 
         return connection;
+    }
+
+    TerminalConnection::ITerminalConnection TerminalPage::_CreateConnectionFromSettings(Profile profile,
+                                                                                        TerminalSettings settings)
+    {
+        TerminalConnection::ConnectionInformation connectInfo{ _CreateConnectionInfoFromSettings(profile, settings) };
+        return _CreateConnectionFromInfo(connectInfo);
     }
 
     // Method Description:
@@ -2711,7 +2716,10 @@ namespace winrt::TerminalApp::implementation
             return nullptr;
         }
 
-        auto connection = existingConnection ? existingConnection : _CreateConnectionFromSettings(profile, controlSettings.DefaultSettings());
+        auto connectionInfo = existingConnection ? nullptr :
+                                                   _CreateConnectionInfoFromSettings(profile, controlSettings.DefaultSettings());
+
+        auto connection = existingConnection ? existingConnection : _CreateConnectionFromInfo(connectionInfo);
         if (existingConnection)
         {
             connection.Resize(controlSettings.DefaultSettings().InitialRows(), controlSettings.DefaultSettings().InitialCols());
@@ -2728,10 +2736,12 @@ namespace winrt::TerminalApp::implementation
             if (bothAltsPressed)
             {
                 std::tie(connection, debugConnection) = OpenDebugTapConnection(connection);
+                connectionInfo = nullptr;
             }
         }
 
         const auto control = _InitControl(controlSettings, connection);
+        control.ConnectionInfo(connectionInfo);
         _RegisterTerminalEvents(control);
 
         auto resultPane = std::make_shared<Pane>(profile, control);

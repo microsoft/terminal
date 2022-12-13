@@ -3127,4 +3127,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _core.ColorSelection(fg, bg, matchMode);
     }
+
+    TerminalConnection::ConnectionInformation TermControl::ConnectionInfo()
+    {
+        return _core.ConnectionInfo();
+    }
+    void TermControl::ConnectionInfo(TerminalConnection::ConnectionInformation info)
+    {
+        _core.ConnectionInfo(info);
+    }
 }

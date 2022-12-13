@@ -68,6 +68,8 @@ namespace Microsoft.Terminal.Control
                            Double actualHeight,
                            Double compositionScale);
 
+        Microsoft.Terminal.TerminalConnection.ConnectionInformation ConnectionInfo{ get; set; };
+
         void UpdateSettings(IControlSettings settings, IControlAppearance appearance);
         void ApplyAppearance(Boolean focused);
 
