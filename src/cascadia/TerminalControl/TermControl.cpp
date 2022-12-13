@@ -3136,4 +3136,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _core.ConnectionInfo(info);
     }
+
+    void TermControl::RestartConnection()
+    {
+        _core.RestartConnection();
+    }
 }

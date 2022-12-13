@@ -1182,4 +1182,14 @@ namespace winrt::TerminalApp::implementation
             args.Handled(handled);
         }
     }
+
+    void TerminalPage::_HandleRestartConnection(const IInspectable& /*sender*/,
+                                                const ActionEventArgs& args)
+    {
+        if (const auto& control{ _GetActiveControl() })
+        {
+            control.RestartConnection();
+            args.Handled(true);
+        }
+    }
 }

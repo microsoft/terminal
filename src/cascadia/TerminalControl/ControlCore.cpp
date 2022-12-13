@@ -409,46 +409,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // If we have a connection info with which to try and re-create the
             // connection, then let's try doing that on Enter
-            if (_ConnectionInfo != nullptr)
+            if (ch == Enter)
             {
-                if (ch == Enter)
-                {
-                    // Manully update the startingDirectory. If we had a CWD set
-                    // by the client, then let's try and use that as the CWD for
-                    // a restart, so it's more "seamless"
-                    _ConnectionInfo.Settings().Insert(L"startingDirectory", Windows::Foundation::PropertyValue::CreateString(WorkingDirectory()));
-                    // pass in the magic "inheritCursor" setting to the
-                    // connection's settings. This'll cause conpty to restart
-                    // the connection at the current place in the buffer.
-                    _ConnectionInfo.Settings().Insert(L"inheritCursor", Windows::Foundation::PropertyValue::CreateBoolean(true));
-                    auto c = TerminalConnection::ConnectionInformation::CreateConnection(_ConnectionInfo);
-
-                    // Get our current size in rows/cols, and hook them up to
-                    // this connection too.
-                    {
-                        auto cx = gsl::narrow_cast<til::CoordType>(_panelWidth * _compositionScale);
-                        auto cy = gsl::narrow_cast<til::CoordType>(_panelHeight * _compositionScale);
-                        cx = std::max(cx, _actualFont.GetSize().width);
-                        cy = std::max(cy, _actualFont.GetSize().height);
-                        const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, { cx, cy });
-                        const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
-                        const auto width = vp.Width();
-                        const auto height = vp.Height();
-
-                        c.Resize(height, width);
-                    }
-
-                    // Window owner too.
-                    if (auto conpty{ c.try_as<TerminalConnection::ConptyConnection>() })
-                    {
-                        conpty.ReparentWindow(_owningHwnd);
-                    }
-
-                    _connection.Close();
-                    _setConnection(c);
-                    _connection.Start();
-                    return true;
-                }
+                RestartConnection();
+                return true;
             }
         }
 
@@ -2180,4 +2144,46 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
         }
     }
+
+    void ControlCore::RestartConnection()
+    {
+        if (_ConnectionInfo != nullptr)
+        {
+            // Manully update the startingDirectory. If we had a CWD set
+            // by the client, then let's try and use that as the CWD for
+            // a restart, so it's more "seamless"
+            _ConnectionInfo.Settings().Insert(L"startingDirectory", Windows::Foundation::PropertyValue::CreateString(WorkingDirectory()));
+            // pass in the magic "inheritCursor" setting to the
+            // connection's settings. This'll cause conpty to restart
+            // the connection at the current place in the buffer.
+            _ConnectionInfo.Settings().Insert(L"inheritCursor", Windows::Foundation::PropertyValue::CreateBoolean(true));
+            auto c = TerminalConnection::ConnectionInformation::CreateConnection(_ConnectionInfo);
+
+            // Get our current size in rows/cols, and hook them up to
+            // this connection too.
+            {
+                auto cx = gsl::narrow_cast<til::CoordType>(_panelWidth * _compositionScale);
+                auto cy = gsl::narrow_cast<til::CoordType>(_panelHeight * _compositionScale);
+                cx = std::max(cx, _actualFont.GetSize().width);
+                cy = std::max(cy, _actualFont.GetSize().height);
+                const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, { cx, cy });
+                const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
+                const auto width = vp.Width();
+                const auto height = vp.Height();
+
+                c.Resize(height, width);
+            }
+
+            // Window owner too.
+            if (auto conpty{ c.try_as<TerminalConnection::ConptyConnection>() })
+            {
+                conpty.ReparentWindow(_owningHwnd);
+            }
+
+            _connection.Close();
+            _setConnection(c);
+            _connection.Start();
+        }
+    }
+
 }
