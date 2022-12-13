@@ -70,6 +70,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     const auto crumb = winrt::make<Breadcrumb>(box_value(colorSchemesTag), currentScheme.Name(), BreadcrumbSubPage::ColorSchemes_Edit);
                     _breadcrumbs.Append(crumb);
                 }
+                else if (_colorSchemesPageVM.CurrentPage() == ColorSchemesSubPage::Base)
+                {
+                    _Navigate(winrt::hstring{ colorSchemesTag }, BreadcrumbSubPage::None);
+                }
             }
             else if (settingName == L"CurrentSchemeName")
             {
@@ -410,9 +414,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == colorSchemesTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), _colorSchemesPageVM);
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_ColorSchemes/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
+            contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), _colorSchemesPageVM);
 
             if (subPage == BreadcrumbSubPage::ColorSchemes_Edit)
             {
