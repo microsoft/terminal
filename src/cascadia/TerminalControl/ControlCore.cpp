@@ -2104,11 +2104,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto marks{ std::ranges::reverse_view(_terminal->GetScrollMarks()) };
         for (auto&& m : marks)
         {
+            if (!m.commandEnd.has_value())
+            {
+                continue;
+            }
             // If this mark is before the start of our search in the buffer,
-            if (m.start < start)
+            if (m.commandEnd < start)
             {
                 // and we either haven't found a match, or the current nearest is after this mark in the buffer
-                if (!nearest.has_value() || m.start > nearest->start)
+                if (!nearest.has_value() || (*m.commandEnd > *nearest->commandEnd))
                 {
                     // stash this as the new match
                     nearest = m;
@@ -2118,7 +2122,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (nearest.has_value())
         {
-            _terminal->SelectNewRegion(nearest->start, nearest->end/* - til::point{1, 0}*/);
+            _terminal->SelectNewRegion(nearest->end, *nearest->commandEnd /* - til::point{1, 0}*/);
             // _terminal->SetSelectionAnchor(nearest->start);
             // _terminal->SetSelectionEnd(nearest->end/*, ::Microsoft::Terminal::Core::Terminal::SelectionExpansion::Char*/);
             _renderer->TriggerSelection();
