@@ -1705,7 +1705,7 @@ void UiaTextRangeBase::_moveEndpointByUnitDocument(_In_ const int moveCount,
         }
         CATCH_LOG();
 
-        if (preventBoundary || target>= documentEnd)
+        if (preventBoundary || target >= documentEnd)
         {
             return;
         }
