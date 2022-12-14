@@ -12,6 +12,7 @@
 #include <unicode.hpp>
 #include <WinUser.h>
 #include <LibraryResources.h>
+#include <ranges>
 
 #include "EventArgs.h"
 #include "../../types/inc/GlyphWidth.hpp"
@@ -2091,6 +2092,44 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _terminalScrollPositionChanged(0, viewHeight, bufferSize);
             }
         }
+    }
+
+    void ControlCore::SelectCommand(const bool goUp)
+    {
+        // TODO!
+        til::point start = HasSelection() ? _terminal->GetSelectionAnchor() :
+                                            _terminal->GetTextBuffer().GetCursor().GetPosition();
+        start;
+        std::optional<DispatchTypes::ScrollMark> nearest{ std::nullopt };
+        auto marks{ std::ranges::reverse_view(_terminal->GetScrollMarks()) };
+        for (auto&& m : marks)
+        {
+            // If this mark is before the start of our search in the buffer,
+            if (m.start < start)
+            {
+                // and we either haven't found a match, or the current nearest is after this mark in the buffer
+                if (!nearest.has_value() || m.start > nearest->start)
+                {
+                    // stash this as the new match
+                    nearest = m;
+                }
+            }
+        }
+
+        if (nearest.has_value())
+        {
+            _terminal->SelectNewRegion(nearest->start, nearest->end/* - til::point{1, 0}*/);
+            // _terminal->SetSelectionAnchor(nearest->start);
+            // _terminal->SetSelectionEnd(nearest->end/*, ::Microsoft::Terminal::Core::Terminal::SelectionExpansion::Char*/);
+            _renderer->TriggerSelection();
+        }
+        goUp;
+    }
+
+    void ControlCore::SelectOutput(const bool goUp)
+    {
+        // TODO!
+        goUp;
     }
 
     void ControlCore::ColorSelection(const Control::SelectionColor& fg, const Control::SelectionColor& bg, Core::MatchMode matchMode)
