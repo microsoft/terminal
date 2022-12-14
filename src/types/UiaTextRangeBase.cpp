@@ -69,18 +69,9 @@ try
 {
     RETURN_IF_FAILED(RuntimeClassInitialize(pData, pProvider, wordDelimiters));
 
-    // start is before/at end, so this is valid
-    if (start <= end)
-    {
-        _start = start;
-        _end = end;
-    }
-    else
-    {
-        // start is after end, so we need to flip our concept of start/end
-        _start = end;
-        _end = start;
-    }
+    // start must be before or equal to end
+    _start = std::min(start, end);
+    _end = std::max(start, end);
 
     // This should be the only way to set if we are a blockRange
     // This is used for blockSelection
@@ -165,21 +156,13 @@ bool UiaTextRangeBase::SetEndpoint(TextPatternRangeEndpoint endpoint, const til:
     {
     case TextPatternRangeEndpoint_End:
         _end = val;
-        // if end is before start...
-        if (_end < _start)
-        {
-            // make this range degenerate at end
-            _start = _end;
-        }
+        // if start is past end, make this a degenerate range
+        _start = std::min(_start, _end);
         break;
     case TextPatternRangeEndpoint_Start:
         _start = val;
-        // if start is after end...
-        if (_start > _end)
-        {
-            // make this range degenerate at start
-            _end = _start;
-        }
+        // if end is before start, make this a degenerate range
+        _end = std::max(_start, _end);
         break;
     default:
         break;
@@ -870,21 +853,11 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
         const auto viewportOrigin = viewport.Origin();
         const auto viewportEnd = viewport.EndExclusive();
 
-        // startAnchor: the earliest til::point we will get a bounding rect for
-        auto startAnchor = GetEndpoint(TextPatternRangeEndpoint_Start);
-        if (startAnchor < viewportOrigin)
-        {
-            // earliest we can be is the origin
-            startAnchor = viewportOrigin;
-        }
+        // startAnchor: the earliest til::point we will get a bounding rect for; at least the viewport origin
+        const auto startAnchor = std::max(GetEndpoint(TextPatternRangeEndpoint_Start), viewportOrigin);
 
-        // endAnchor: the latest til::point we will get a bounding rect for
-        auto endAnchor = GetEndpoint(TextPatternRangeEndpoint_End);
-        if (endAnchor > viewportEnd)
-        {
-            // latest we can be is the viewport end
-            endAnchor = viewportEnd;
-        }
+        // endAnchor: the latest til::point we will get a bounding rect for; at most the viewport end
+        auto endAnchor = std::min(GetEndpoint(TextPatternRangeEndpoint_End), viewportEnd);
 
         // _end is exclusive, let's be inclusive so we don't have to think about it anymore for bounding rects
         bufferSize.DecrementInBounds(endAnchor, true);
@@ -1052,14 +1025,8 @@ try
     constexpr auto endpoint = TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start;
     const auto bufferSize{ _pData->GetTextBuffer().GetSize() };
     const auto documentEnd = _getDocumentEnd();
-    if (_start > documentEnd)
-    {
-        _start = documentEnd;
-    }
-    if (_end > documentEnd)
-    {
-        _end = documentEnd;
-    }
+    _start = std::min(_start, documentEnd);
+    _end = std::min(_end, documentEnd);
 
     const auto wasDegenerate = IsDegenerate();
     if (count != 0)
@@ -1126,14 +1093,8 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoin
     }
     CATCH_LOG();
 
-    if (_start > documentEnd)
-    {
-        _start = documentEnd;
-    }
-    if (_end > documentEnd)
-    {
-        _end = documentEnd;
-    }
+    _start = std::min(_start, documentEnd);
+    _end = std::min(_end, documentEnd);
 
     try
     {
