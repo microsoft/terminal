@@ -62,7 +62,8 @@ namespace winrt::TerminalApp::implementation
         bool IsUwp() const noexcept;
         void RunAsUwp();
         bool IsElevated() const noexcept;
-        void LoadSettings();
+        void ReloadSettings(const bool keybindingsOnly = false);
+
         [[nodiscard]] Microsoft::Terminal::Settings::Model::CascadiaSettings GetSettings() const noexcept;
 
         void Quit();
@@ -195,7 +196,6 @@ namespace winrt::TerminalApp::implementation
         void _ProcessLazySettingsChanges();
         void _RegisterSettingsChange();
         fire_and_forget _DispatchReloadSettings();
-        void _ReloadSettings(const bool keybindingsOnly = false);
         void _OpenSettingsUI();
 
         bool _hasCommandLineArguments{ false };

@@ -52,6 +52,7 @@ static const std::array settingsLoadWarningsLabels {
     USES_RESOURCE(L"FailedToParseStartupActions"),
     USES_RESOURCE(L"FailedToParseSubCommands"),
     USES_RESOURCE(L"UnknownTheme"),
+    USES_RESOURCE(L"DuplicateRemainingProfilesEntry"),
 };
 static const std::array settingsLoadErrorsLabels {
     USES_RESOURCE(L"NoProfilesText"),
@@ -194,7 +195,7 @@ namespace winrt::TerminalApp::implementation
             [weakSelf = get_weak()](const bool keybindingsOnly) {
                 if (auto self{ weakSelf.get() })
                 {
-                    self->_ReloadSettings(keybindingsOnly);
+                    self->ReloadSettings(keybindingsOnly);
                 }
             });
 
@@ -618,7 +619,7 @@ namespace winrt::TerminalApp::implementation
         if (!_loadedInitialSettings)
         {
             // Load settings if we haven't already
-            LoadSettings();
+            ReloadSettings();
         }
 
         winrt::Windows::Foundation::Size proposedSize{};
@@ -699,7 +700,7 @@ namespace winrt::TerminalApp::implementation
         if (!_loadedInitialSettings)
         {
             // Load settings if we haven't already
-            LoadSettings();
+            ReloadSettings();
         }
 
         // GH#4620/#5801 - If the user passed --maximized or --fullscreen on the
@@ -733,7 +734,7 @@ namespace winrt::TerminalApp::implementation
         if (!_loadedInitialSettings)
         {
             // Load settings if we haven't already
-            LoadSettings();
+            ReloadSettings();
         }
 
         auto initialPosition{ _settings.GlobalSettings().InitialPosition() };
@@ -763,7 +764,7 @@ namespace winrt::TerminalApp::implementation
         if (!_loadedInitialSettings)
         {
             // Load settings if we haven't already
-            LoadSettings();
+            ReloadSettings();
         }
         // If the position has been specified on the commandline, don't center on launch
         return _settings.GlobalSettings().CenterOnLaunch() && !_appArgs.GetPosition().has_value();
@@ -779,7 +780,7 @@ namespace winrt::TerminalApp::implementation
         if (!_loadedInitialSettings)
         {
             // Load settings if we haven't already
-            LoadSettings();
+            ReloadSettings();
         }
 
         return _settings.GlobalSettings().ShowTabsInTitlebar();
@@ -790,7 +791,7 @@ namespace winrt::TerminalApp::implementation
         if (!_loadedInitialSettings)
         {
             // Load settings if we haven't already
-            LoadSettings();
+            ReloadSettings();
         }
 
         return _settings.GlobalSettings().AlwaysOnTop();
@@ -870,36 +871,6 @@ namespace winrt::TerminalApp::implementation
         return hr;
     }
 
-    // Method Description:
-    // - Initialized our settings. See CascadiaSettings for more details.
-    //      Additionally hooks up our callbacks for keybinding events to the
-    //      keybindings object.
-    // NOTE: This must be called from a MTA if we're running as a packaged
-    //      application. The Windows.Storage APIs require a MTA. If this isn't
-    //      happening during startup, it'll need to happen on a background thread.
-    void AppLogic::LoadSettings()
-    {
-        // Attempt to load the settings.
-        // If it fails,
-        //  - use Default settings,
-        //  - don't persist them (LoadAll won't save them in this case).
-        //  - _settingsLoadedResult will be set to an error, indicating that
-        //    we should display the loading error.
-        //    * We can't display the error now, because we might not have a
-        //      UI yet. We'll display the error in _OnLoaded.
-        _settingsLoadedResult = _TryLoadSettings();
-
-        if (FAILED(_settingsLoadedResult))
-        {
-            _settings = CascadiaSettings::LoadDefaults();
-        }
-
-        _loadedInitialSettings = true;
-
-        // Register for directory change notification.
-        _RegisterSettingsChange();
-    }
-
     // Call this function after loading your _settings.
     // It handles any CPU intensive settings updates (like updating the Jumplist)
     // which should thus only occur if the settings file actually changed.
@@ -923,7 +894,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Registers for changes to the settings folder and upon a updated settings
-    //      profile calls _ReloadSettings().
+    //      profile calls ReloadSettings().
     // Arguments:
     // - <none>
     // Return Value:
@@ -1058,7 +1029,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Reloads the settings from the settings.json file.
-    void AppLogic::_ReloadSettings(const bool keybindingsOnly)
+    void AppLogic::ReloadSettings(const bool keybindingsOnly)
     {
         // Attempt to load our settings.
         // If it fails,
@@ -1067,11 +1038,28 @@ namespace winrt::TerminalApp::implementation
         //  - display a loading error
         _settingsLoadedResult = _TryLoadSettings();
 
+        const auto initialLoad = !_loadedInitialSettings;
+        _loadedInitialSettings = true;
+
         if (FAILED(_settingsLoadedResult))
         {
-            const winrt::hstring titleKey = USES_RESOURCE(L"ReloadJsonParseErrorTitle");
-            const winrt::hstring textKey = USES_RESOURCE(L"ReloadJsonParseErrorText");
-            _ShowLoadErrorsDialog(titleKey, textKey, _settingsLoadedResult);
+            if (initialLoad)
+            {
+                _settings = CascadiaSettings::LoadDefaults();
+            }
+            else
+            {
+                const winrt::hstring titleKey = USES_RESOURCE(L"ReloadJsonParseErrorTitle");
+                const winrt::hstring textKey = USES_RESOURCE(L"ReloadJsonParseErrorText");
+                _ShowLoadErrorsDialog(titleKey, textKey, _settingsLoadedResult);
+                return;
+            }
+        }
+
+        if (initialLoad)
+        {
+            // Register for directory change notification.
+            _RegisterSettingsChange();
             return;
         }
 
@@ -1378,7 +1366,7 @@ namespace winrt::TerminalApp::implementation
         if (!_loadedInitialSettings)
         {
             // Load settings if we haven't already
-            LoadSettings();
+            ReloadSettings();
         }
 
         return AppLogic::_doFindTargetWindow(args, _settings.GlobalSettings().WindowingBehavior());
@@ -1535,7 +1523,7 @@ namespace winrt::TerminalApp::implementation
         if (!_loadedInitialSettings)
         {
             // Load settings if we haven't already
-            LoadSettings();
+            ReloadSettings();
         }
 
         return _settings.GlobalSettings().AutoHideWindow();
@@ -1556,7 +1544,7 @@ namespace winrt::TerminalApp::implementation
         if (!_loadedInitialSettings)
         {
             // Load settings if we haven't already
-            LoadSettings();
+            ReloadSettings();
         }
 
         return _root != nullptr ? _root->ShouldImmediatelyHandoffToElevated(_settings) : false;
@@ -1669,7 +1657,7 @@ namespace winrt::TerminalApp::implementation
         if (!_loadedInitialSettings)
         {
             // Load settings if we haven't already
-            LoadSettings();
+            ReloadSettings();
         }
 
         return _settings.GlobalSettings().MinimizeToNotificationArea();
@@ -1680,7 +1668,7 @@ namespace winrt::TerminalApp::implementation
         if (!_loadedInitialSettings)
         {
             // Load settings if we haven't already
-            LoadSettings();
+            ReloadSettings();
         }
 
         return _settings.GlobalSettings().AlwaysShowNotificationIcon();
@@ -1696,7 +1684,7 @@ namespace winrt::TerminalApp::implementation
         if (!_loadedInitialSettings)
         {
             // Load settings if we haven't already
-            LoadSettings();
+            ReloadSettings();
         }
         return _settings.GlobalSettings().CurrentTheme();
     }

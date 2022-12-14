@@ -68,7 +68,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto x = _Settings.GlobalSettings().InitialPosition().X;
         // If there's no value here, return NAN - XAML will ignore it and
         // put the placeholder text in the box instead
-        const auto xCoord = x.try_as<int64_t>();
+        const auto xCoord = x.try_as<int32_t>();
         return xCoord.has_value() ? gsl::narrow_cast<double>(xCoord.value()) : NAN;
     }
 
@@ -77,7 +77,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto y = _Settings.GlobalSettings().InitialPosition().Y;
         // If there's no value here, return NAN - XAML will ignore it and
         // put the placeholder text in the box instead
-        const auto yCoord = y.try_as<int64_t>();
+        const auto yCoord = y.try_as<int32_t>();
         return yCoord.has_value() ? gsl::narrow_cast<double>(yCoord.value()) : NAN;
     }
 
@@ -115,7 +115,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             InitialPosX(NAN);
             InitialPosY(NAN);
         }
-        _NotifyChanges(L"UseDefaultLaunchPosition", L"LaunchParametersCurrentValue");
+        _NotifyChanges(L"UseDefaultLaunchPosition", L"LaunchParametersCurrentValue", L"InitialPosX", L"InitialPosY");
     }
 
     bool LaunchViewModel::UseDefaultLaunchPosition()

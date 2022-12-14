@@ -1175,6 +1175,7 @@ void StateMachine::_EventCsiEntry(const wchar_t wch)
     {
         _ActionCsiDispatch(wch);
         _EnterGround();
+        _ExecuteCsiCompleteCallback();
     }
 }
 
@@ -1213,6 +1214,7 @@ void StateMachine::_EventCsiIntermediate(const wchar_t wch)
     {
         _ActionCsiDispatch(wch);
         _EnterGround();
+        _ExecuteCsiCompleteCallback();
     }
 }
 
@@ -1294,6 +1296,7 @@ void StateMachine::_EventCsiParam(const wchar_t wch)
     {
         _ActionCsiDispatch(wch);
         _EnterGround();
+        _ExecuteCsiCompleteCallback();
     }
 }
 
@@ -1997,6 +2000,18 @@ bool StateMachine::IsProcessingLastCharacter() const noexcept
 }
 
 // Routine Description:
+// - Registers a function that will be called once the current CSI action is
+//   complete and the state machine has returned to the ground state.
+// Arguments:
+// - callback - The function that will be called
+// Return Value:
+// - <none>
+void StateMachine::OnCsiComplete(const std::function<void()> callback)
+{
+    _onCsiCompleteCallback = callback;
+}
+
+// Routine Description:
 // - Wherever the state machine is, whatever it's going, go back to ground.
 //     This is used by conhost to "jiggle the handle" - when VT support is
 //     turned off, we don't want any bad state left over for the next input it's turned on for
@@ -2057,4 +2072,25 @@ bool StateMachine::_SafeExecuteWithLog(const wchar_t wch, TLambda&& lambda)
         TermTelemetry::Instance().LogFailed(wch);
     }
     return success;
+}
+
+void StateMachine::_ExecuteCsiCompleteCallback()
+{
+    if (_onCsiCompleteCallback)
+    {
+        // We need to save the state of the string that we're currently
+        // processing in case the callback injects another string.
+        const auto savedCurrentString = _currentString;
+        const auto savedRunOffset = _runOffset;
+        const auto savedRunSize = _runSize;
+        // We also need to take ownership of the callback function before
+        // executing it so there's no risk of it being run more than once.
+        const auto callback = std::move(_onCsiCompleteCallback);
+        callback();
+        // Once the callback has returned, we can restore the original state
+        // and continue where we left off.
+        _currentString = savedCurrentString;
+        _runOffset = savedRunOffset;
+        _runSize = savedRunSize;
+    }
 }

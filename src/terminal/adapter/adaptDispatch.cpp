@@ -1151,9 +1151,10 @@ bool AdaptDispatch::SetLineRendition(const LineRendition rendition)
 // - DSR - Reports status of a console property back to the STDIN based on the type of status requested.
 // Arguments:
 // - statusType - status type indicating what property we should report back
+// - id - a numeric label used to identify the request in DECCKSR reports
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::DeviceStatusReport(const DispatchTypes::StatusType statusType)
+bool AdaptDispatch::DeviceStatusReport(const DispatchTypes::StatusType statusType, const VTParameter id)
 {
     switch (statusType)
     {
@@ -1165,6 +1166,12 @@ bool AdaptDispatch::DeviceStatusReport(const DispatchTypes::StatusType statusTyp
         return true;
     case DispatchTypes::StatusType::ExCPR_ExtendedCursorPositionReport:
         _CursorPositionReport(true);
+        return true;
+    case DispatchTypes::StatusType::MSR_MacroSpaceReport:
+        _MacroSpaceReport();
+        return true;
+    case DispatchTypes::StatusType::MEM_MemoryChecksum:
+        _MacroChecksumReport(id);
         return true;
     default:
         return false;
@@ -1319,6 +1326,34 @@ void AdaptDispatch::_CursorPositionReport(const bool extendedReport)
         const auto response = wil::str_printf<std::wstring>(L"\x1b[%d;%dR", cursorPosition.y, cursorPosition.x);
         _api.ReturnResponse(response);
     }
+}
+
+// Routine Description:
+// - DECMSR - Reports the amount of space available for macro definitions.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void AdaptDispatch::_MacroSpaceReport() const
+{
+    const auto spaceInBytes = _macroBuffer ? _macroBuffer->GetSpaceAvailable() : MacroBuffer::MAX_SPACE;
+    // The available space is measured in blocks of 16 bytes, so we need to divide by 16.
+    const auto response = wil::str_printf<std::wstring>(L"\x1b[%zu*{", spaceInBytes / 16);
+    _api.ReturnResponse(response);
+}
+
+// Routine Description:
+// - DECCKSR - Reports a checksum of the current macro definitions.
+// Arguments:
+// - id - a numeric label used to identify the DSR request
+// Return Value:
+// - <none>
+void AdaptDispatch::_MacroChecksumReport(const VTParameter id) const
+{
+    const auto requestId = id.value_or(0);
+    const auto checksum = _macroBuffer ? _macroBuffer->CalculateChecksum() : 0;
+    const auto response = wil::str_printf<std::wstring>(L"\033P%d!~%04X\033\\", requestId, checksum);
+    _api.ReturnResponse(response);
 }
 
 // Routine Description:
@@ -2314,6 +2349,13 @@ bool AdaptDispatch::HardReset()
     // Reset internal modes to their initial state
     _modes = {};
 
+    // Clear and release the macro buffer.
+    if (_macroBuffer)
+    {
+        _macroBuffer->ClearMacrosIfInUse();
+        _macroBuffer = nullptr;
+    }
+
     // GH#2715 - If all this succeeded, but we're in a conpty, return `false` to
     // make the state machine propagate this RIS sequence to the connected
     // terminal application. We've reset our state, but the connected terminal
@@ -3052,6 +3094,60 @@ ITermDispatch::StringHandler AdaptDispatch::_CreateDrcsPassthroughHandler(const 
         };
     }
     return nullptr;
+}
+
+// Method Description:
+// - DECDMAC - Defines a string of characters as a macro that can later be
+//   invoked with a DECINVM sequence.
+// Arguments:
+// - macroId - a number to identify the macro when invoked.
+// - deleteControl - what gets deleted before loading the new macro data.
+// - encoding - whether the data is encoded as plain text or hex digits.
+// Return Value:
+// - a function to receive the macro data or nullptr if parameters are invalid.
+ITermDispatch::StringHandler AdaptDispatch::DefineMacro(const VTInt macroId,
+                                                        const DispatchTypes::MacroDeleteControl deleteControl,
+                                                        const DispatchTypes::MacroEncoding encoding)
+{
+    if (!_macroBuffer)
+    {
+        _macroBuffer = std::make_shared<MacroBuffer>();
+    }
+
+    if (_macroBuffer->InitParser(macroId, deleteControl, encoding))
+    {
+        return [&](const auto ch) {
+            return _macroBuffer->ParseDefinition(ch);
+        };
+    }
+
+    return nullptr;
+}
+
+// Method Description:
+// - DECINVM - Invokes a previously defined macro, executing the macro content
+//   as if it had been received directly from the host.
+// Arguments:
+// - macroId - the id number of the macro to be invoked.
+// Return Value:
+// - True
+bool AdaptDispatch::InvokeMacro(const VTInt macroId)
+{
+    if (_macroBuffer)
+    {
+        // In order to inject our macro sequence into the state machine
+        // we need to register a callback that will be executed only
+        // once it has finished processing the current operation, and
+        // has returned to the ground state. Note that we're capturing
+        // a copy of the _macroBuffer pointer here to make sure it won't
+        // be deleted (e.g. from an invoked RIS) while still in use.
+        const auto macroBuffer = _macroBuffer;
+        auto& stateMachine = _api.GetStateMachine();
+        stateMachine.OnCsiComplete([=, &stateMachine]() {
+            macroBuffer->InvokeMacro(macroId, stateMachine);
+        });
+    }
+    return true;
 }
 
 // Method Description:

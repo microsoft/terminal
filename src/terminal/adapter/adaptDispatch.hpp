@@ -17,9 +17,15 @@ Author(s):
 #include "termDispatch.hpp"
 #include "ITerminalApi.hpp"
 #include "FontBuffer.hpp"
+#include "MacroBuffer.hpp"
 #include "terminalOutput.hpp"
 #include "../input/terminalInput.hpp"
 #include "../../types/inc/sgrStack.hpp"
+
+// fwdecl unittest classes
+#ifdef UNIT_TESTING
+class AdapterTest;
+#endif
 
 namespace Microsoft::Console::VirtualTerminal
 {
@@ -66,7 +72,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool SetCharacterProtectionAttribute(const VTParameters options) override; // DECSCA
         bool PushGraphicsRendition(const VTParameters options) override; // XTPUSHSGR
         bool PopGraphicsRendition() override; // XTPOPSGR
-        bool DeviceStatusReport(const DispatchTypes::StatusType statusType) override; // DSR, DSR-OS, DSR-CPR
+        bool DeviceStatusReport(const DispatchTypes::StatusType statusType, const VTParameter id) override; // DSR
         bool DeviceAttributes() override; // DA1
         bool SecondaryDeviceAttributes() override; // DA2
         bool TertiaryDeviceAttributes() override; // DA3
@@ -135,6 +141,11 @@ namespace Microsoft::Console::VirtualTerminal
                                    const VTParameter cellHeight,
                                    const DispatchTypes::DrcsCharsetSize charsetSize) override; // DECDLD
 
+        StringHandler DefineMacro(const VTInt macroId,
+                                  const DispatchTypes::MacroDeleteControl deleteControl,
+                                  const DispatchTypes::MacroEncoding encoding) override; // DECDMAC
+        bool InvokeMacro(const VTInt macroId) override; // DECINVM
+
         StringHandler RestoreTerminalState(const DispatchTypes::ReportFormat format) override; // DECRSTS
 
         StringHandler RequestSetting() override; // DECRQSS
@@ -202,6 +213,8 @@ namespace Microsoft::Console::VirtualTerminal
                                              const VTInt bottomMargin);
         void _OperatingStatus() const;
         void _CursorPositionReport(const bool extendedReport);
+        void _MacroSpaceReport() const;
+        void _MacroChecksumReport(const VTParameter id) const;
 
         void _SetColumnMode(const bool enable);
         void _SetAlternateScreenBufferMode(const bool enable);
@@ -232,6 +245,7 @@ namespace Microsoft::Console::VirtualTerminal
         TerminalInput& _terminalInput;
         TerminalOutput _termOutput;
         std::unique_ptr<FontBuffer> _fontBuffer;
+        std::shared_ptr<MacroBuffer> _macroBuffer;
         std::optional<unsigned int> _initialCodePage;
 
         // We have two instances of the saved cursor state, because we need
@@ -256,5 +270,9 @@ namespace Microsoft::Console::VirtualTerminal
                                     TextAttribute& attr) noexcept;
         void _ApplyGraphicsOptions(const VTParameters options,
                                    TextAttribute& attr) noexcept;
+
+#ifdef UNIT_TESTING
+        friend class AdapterTest;
+#endif
     };
 }

@@ -82,7 +82,14 @@
       "properties": {
         "colorScheme": {
           "description": "The name of a color scheme to use when unfocused.",
-          "type": "string"
+          "oneOf": [
+            {
+              "$ref": "#/$defs/SchemePair"
+            },
+            {
+              "type": "string"
+            }
+          ]
         },
         "foreground": {
           "$ref": "#/$defs/Color",
@@ -232,6 +239,21 @@
         }
       },
       "type": "object"
+    },
+    "SchemePair": {
+      "description": "Contains both a light and dark color scheme for the Terminal to use, depending on the theme of the application.",
+      "properties": {
+        "light": {
+          "default": "Campbell",
+          "description": "Name of the scheme to use when the app is using light theme",
+          "type": "string"
+        },
+        "dark": {
+          "default": "Campbell",
+          "description": "Name of the scheme to use when the app is using dark theme",
+          "type": "string"
+        },
+      }
     },
     "FontConfig": {
       "properties": {
@@ -538,6 +560,160 @@
         }
       },
       "type": "object"
+    },
+    "NewTabMenuEntryType": {
+      "enum": [
+        "source",
+        "profile",
+        "folder",
+        "separator",
+        "remainingProfiles",
+        "matchProfiles"
+      ]
+    },
+    "NewTabMenuEntry": {
+      "properties": {
+        "type": {
+          "description": "The type of menu entry",
+          "$ref": "#/$defs/NewTabMenuEntryType"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "type": "object"
+    },
+    "FolderEntryInlining": {
+      "enum": [
+        "never",
+        "auto"
+      ]
+    },
+    "FolderEntry": {
+      "description": "A folder entry in the new tab dropdown",
+      "allOf": [
+        {
+          "$ref": "#/$defs/NewTabMenuEntry"
+        },
+        {
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "folder"
+            },
+            "name": {
+              "type": "string",
+              "default": "",
+              "description": "The name of the folder to show in the menu"
+            },
+            "icon": {
+              "$ref": "#/$defs/Icon"
+            },
+            "entries": {
+              "type": "array",
+              "description": "The entries to put inside this folder",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/NewTabMenuEntry"
+              }
+            },
+            "inline": {
+              "description": "When set to auto and the folder only has a single entry, the entry will show directly and no folder will be rendered",
+              "default": "never",
+              "$ref": "#/$defs/FolderEntryInlining"
+            },
+            "allowEmpty": {
+              "description": "Whether to render a folder without entries, or to hide it",
+              "default": "false",
+              "type": "boolean"
+            }
+          }
+        }
+      ]
+    },
+    "SeparatorEntry": {
+      "description": "A separator in the new tab dropdown",
+      "allOf": [
+        {
+          "$ref": "#/$defs/NewTabMenuEntry"
+        },
+        {
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "separator"
+            }
+          }
+        }
+      ]
+    },
+    "ProfileEntry": {
+      "description": "A profile in the new tab dropdown",
+      "allOf": [
+        {
+          "$ref": "#/$defs/NewTabMenuEntry"
+        },
+        {
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "profile"
+            },
+            "profile": {
+              "type": "string",
+              "default": "",
+              "description": "The name or GUID of the profile to show in this entry"
+            }
+          }
+        }
+      ]
+    },
+    "RemainingProfilesEntry": {
+      "description": "The set of profiles that are not yet explicitly included in another entry, such as the profile or source entries. This entry can be used at most one time!",
+      "allOf": [
+        {
+          "$ref": "#/$defs/NewTabMenuEntry"
+        },
+        {
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "remainingProfiles"
+            }
+          }
+        }
+      ]
+    },
+    "MatchProfilesEntry": {
+      "description": "A set of profiles all matching the given name, source, or command line, to show in the new tab dropdown",
+      "allOf": [
+        {
+          "$ref": "#/$defs/NewTabMenuEntry"
+        },
+        {
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "matchProfiles"
+            },
+            "name": {
+              "type": "string",
+              "default": "",
+              "description": "The name of the profiles to match"
+            },
+            "source": {
+              "type": "string",
+              "default": "",
+              "description": "The source of the profiles to match"
+            },
+            "commandline": {
+              "type": "string",
+              "default": "",
+              "description": "The command line of the profiles to match"
+            }
+          }
+        }
+      ]
     },
     "SwitchToAdjacentTabArgs": {
       "oneOf": [
@@ -1546,6 +1722,29 @@
         }
       ]
     },
+    "NewTabMenu": {
+      "description": "Defines the order and structure of the 'new tab' menu. It can consist of e.g. profiles, folders, and separators.",
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/$defs/FolderEntry"
+          },
+          {
+            "$ref": "#/$defs/SeparatorEntry"
+          },
+          {
+            "$ref": "#/$defs/ProfileEntry"
+          },
+          {
+            "$ref": "#/$defs/MatchProfilesEntry"
+          },
+          {
+            "$ref": "#/$defs/RemainingProfilesEntry"
+          }
+        ]
+      }
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -1924,6 +2123,9 @@
           },
           "type": "array"
         },
+        "newTabMenu": {
+          "$ref": "#/$defs/NewTabMenu"
+        },
         "language": {
           "default": "",
           "description": "Sets an override for the app's preferred language, expressed as a BCP-47 language tag like en-US.",
@@ -2170,7 +2372,14 @@
         "colorScheme": {
           "default": "Campbell",
           "description": "Name of the terminal color scheme to use. Color schemes are defined under \"schemes\".",
-          "type": "string"
+          "oneOf": [
+            {
+              "$ref": "#/$defs/SchemePair"
+            },
+            {
+              "type": "string"
+            }
+          ]
         },
         "commandline": {
           "description": "Executable used in the profile.",
