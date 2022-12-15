@@ -650,8 +650,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto& theme = _settingsSource.GlobalSettings().CurrentTheme();
 
         const auto bgKey = (theme.Window() != nullptr && theme.Window().UseMica()) ?
-                         L"SettingsPageMicaBackground" :
-                         L"SettingsPageBackground";
+                               L"SettingsPageMicaBackground" :
+                               L"SettingsPageBackground";
 
         if (const auto bgColor = Resources().TryLookup(winrt::box_value(bgKey)))
         {
