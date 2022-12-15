@@ -55,7 +55,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _settingsClone{ settings.Copy() }
     {
         InitializeComponent();
-        _updateBackgroundForMica();
+        _UpdateBackgroundForMica();
         _InitializeProfilesList();
 
         _colorSchemesPageVM = winrt::make<ColorSchemesPageViewModel>(_settingsClone);
@@ -102,7 +102,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _settingsSource = settings;
         _settingsClone = settings.Copy();
 
-        _updateBackgroundForMica();
+        _UpdateBackgroundForMica();
 
         // Deduce information about the currently selected item
         IInspectable lastBreadcrumb;
@@ -644,16 +644,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     // If the theme asks for Mica, then drop out our background, so that we
     // can have mica too.
-    void MainPage::_updateBackgroundForMica()
+    void MainPage::_UpdateBackgroundForMica()
 
     {
         const auto& theme = _settingsSource.GlobalSettings().CurrentTheme();
 
-        auto bgKey = (theme.Window() != nullptr && theme.Window().UseMica()) ?
+        const auto bgKey = (theme.Window() != nullptr && theme.Window().UseMica()) ?
                          L"SettingsPageMicaBackground" :
                          L"SettingsPageBackground";
 
-        if (auto bgColor = Resources().TryLookup(winrt::box_value(bgKey)))
+        if (const auto bgColor = Resources().TryLookup(winrt::box_value(bgKey)))
         {
             SettingsNav().Background(winrt::WUX::Media::SolidColorBrush(winrt::unbox_value<Windows::UI::Color>(bgColor)));
         }
