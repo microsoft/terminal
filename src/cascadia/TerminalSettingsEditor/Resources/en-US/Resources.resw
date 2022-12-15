@@ -1047,7 +1047,7 @@
     <comment>The header for the section where the unfocused appearance settings can be changed.</comment>
   </data>
   <data name="Profile_AddAppearanceButton.Text" xml:space="preserve">
-    <value>Add</value>
+    <value>Create Appearance</value>
     <comment>Button label that adds an unfocused appearance for this profile.</comment>
   </data>
   <data name="Profile_DeleteAppearanceButton.Text" xml:space="preserve">
@@ -1435,7 +1435,7 @@
   </data>
   <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Create Appearance</value>
-    <comment>Name for a control which creates an the unfocused appearance settings for this profile.</comment>
+    <comment>Name for a control which creates an the unfocused appearance settings for this profile. Text must match that of "Profile_AddAppearanceButton.Text".</comment>
   </data>
   <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Create an unfocused appearance for this profile. This will be the appearance of the profile when it is inactive.</value>
