@@ -31,15 +31,19 @@
 
                         <ResourceDictionary x:Key="Dark">
                             <Color x:Key="SettingsPageBackground">#282828</Color>
+                            <Color x:Key="SettingsPageMicaBackground">#00000000</Color>
                         </ResourceDictionary>
 
                         <ResourceDictionary x:Key="Light">
                             <Color x:Key="SettingsPageBackground">#F9F9F9</Color>
+                            <Color x:Key="SettingsPageMicaBackground">#00000000</Color>
                         </ResourceDictionary>
 
                         <ResourceDictionary x:Key="HighContrast">
                             <!--  Define resources for HighContrast mode here  -->
                             <StaticResource x:Key="SettingsPageBackground"
+                                            ResourceKey="SystemColorWindowColorBrush" />
+                            <StaticResource x:Key="SettingsPageMicaBackground"
                                             ResourceKey="SystemColorWindowColorBrush" />
                         </ResourceDictionary>
 
@@ -60,7 +64,7 @@
     </Page.Resources>
 
     <muxc:NavigationView x:Name="SettingsNav"
-                         Background="{ThemeResource SettingsPageBackground}"
+                         Background="Transparent"
                          IsBackButtonVisible="Collapsed"
                          IsSettingsVisible="False"
                          ItemInvoked="SettingsNav_ItemInvoked"

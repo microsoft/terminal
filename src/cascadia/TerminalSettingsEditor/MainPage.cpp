@@ -102,6 +102,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _settingsSource = settings;
         _settingsClone = settings.Copy();
 
+        {
+            const auto& theme = _settingsSource.GlobalSettings().CurrentTheme();
+
+            auto bgKey = (theme.Window() != nullptr && theme.Window().UseMica()) ?
+                             L"SettingsPageMicaBackground" :
+                             L"SettingsPageBackground";
+
+            if (auto bgColor = Resources().TryLookup(winrt::box_value(bgKey)))
+            {
+                SettingsNav().Background(winrt::WUX::Media::SolidColorBrush(winrt::unbox_value<Windows::UI::Color>(bgColor)));
+            }
+        }
+
         // Deduce information about the currently selected item
         IInspectable lastBreadcrumb;
         const auto size = _breadcrumbs.Size();
