@@ -2138,6 +2138,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             const auto bufferSize{ _terminal->GetTextBuffer().GetSize() };
             bufferSize.DecrementInBounds(end);
+            _renderer->TriggerSelection();
             _terminal->SelectNewRegion(start, end);
             _renderer->TriggerSelection();
         }
@@ -2185,6 +2186,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             const auto bufferSize{ _terminal->GetTextBuffer().GetSize() };
             bufferSize.DecrementInBounds(end);
+            _renderer->TriggerSelection();
             _terminal->SelectNewRegion(start, end);
             _renderer->TriggerSelection();
         }
