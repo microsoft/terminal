@@ -21,14 +21,23 @@ typedef struct _PseudoConsole
 #define PTY_SIGNAL_SHOWHIDE_WINDOW (1u)
 #define PTY_SIGNAL_CLEAR_WINDOW (2u)
 #define PTY_SIGNAL_REPARENT_WINDOW (3u)
+#define PTY_SIGNAL_SET_AUTO_EXIT (4u)
 #define PTY_SIGNAL_RESIZE_WINDOW (8u)
 
 // CreatePseudoConsole Flags
 // The other flag (PSEUDOCONSOLE_INHERIT_CURSOR) is actually defined in consoleapi.h in the OS repo
-// #define PSEUDOCONSOLE_INHERIT_CURSOR (0x1)
+#ifndef PSEUDOCONSOLE_INHERIT_CURSOR
+#define PSEUDOCONSOLE_INHERIT_CURSOR (0x1)
+#endif
+#ifndef PSEUDOCONSOLE_RESIZE_QUIRK
 #define PSEUDOCONSOLE_RESIZE_QUIRK (0x2)
+#endif
+#ifndef PSEUDOCONSOLE_WIN32_INPUT_MODE
 #define PSEUDOCONSOLE_WIN32_INPUT_MODE (0x4)
+#endif
+#ifndef PSEUDOCONSOLE_PASSTHROUGH_MODE
 #define PSEUDOCONSOLE_PASSTHROUGH_MODE (0x8)
+#endif
 
 // Implementations of the various PseudoConsole functions.
 HRESULT _CreatePseudoConsole(const HANDLE hToken,
@@ -42,7 +51,7 @@ HRESULT _ResizePseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const CO
 HRESULT _ClearPseudoConsole(_In_ const PseudoConsole* const pPty);
 HRESULT _ShowHidePseudoConsole(_In_ const PseudoConsole* const pPty, const bool show);
 HRESULT _ReparentPseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const HWND newParent);
-void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty, BOOL wait);
+void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty, _In_ DWORD dwMilliseconds);
 
 HRESULT ConptyCreatePseudoConsoleAsUser(_In_ HANDLE hToken,
                                         _In_ COORD size,

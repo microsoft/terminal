@@ -112,6 +112,14 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
     wil::unique_handle serverHandle;
     RETURN_IF_NTSTATUS_FAILED(CreateServerHandle(serverHandle.addressof(), TRUE));
 
+    // The hPtyReference we create here is used when the PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE attribute is processed.
+    // This ensures that conhost's client processes inherit the correct (= our) console handle.
+    wil::unique_handle referenceHandle;
+    RETURN_IF_NTSTATUS_FAILED(CreateClientHandle(referenceHandle.addressof(),
+                                                 serverHandle.get(),
+                                                 L"\\Reference",
+                                                 FALSE));
+
     wil::unique_handle signalPipeConhostSide;
     wil::unique_handle signalPipeOurSide;
 
@@ -226,18 +234,9 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
         }
     }
 
-    // Move the process handle out of the PROCESS_INFORMATION into out Pseudoconsole
-    pPty->hConPtyProcess = pi.hProcess;
-    pi.hProcess = nullptr;
-
-    // The hPtyReference we create here is used when the PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE attribute is processed.
-    // This ensures that conhost's client processes inherit the correct (= our) console handle.
-    RETURN_IF_NTSTATUS_FAILED(CreateClientHandle(&pPty->hPtyReference,
-                                                 serverHandle.get(),
-                                                 L"\\Reference",
-                                                 FALSE));
-
     pPty->hSignal = signalPipeOurSide.release();
+    pPty->hPtyReference = referenceHandle.release();
+    pPty->hConPtyProcess = std::exchange(pi.hProcess, nullptr);
 
     return S_OK;
 }
@@ -352,7 +351,7 @@ HRESULT _ReparentPseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const 
 // - wait: If true, waits for conhost/OpenConsole to exit first.
 // Return Value:
 // - <none>
-void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty, BOOL wait)
+void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty, _In_ DWORD dwMilliseconds)
 {
     if (pPty != nullptr)
     {
@@ -376,9 +375,9 @@ void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty, BOOL wait)
         //      has yet to send before we hard kill it.
         if (_HandleIsValid(pPty->hConPtyProcess))
         {
-            if (wait)
+            if (dwMilliseconds)
             {
-                WaitForSingleObject(pPty->hConPtyProcess, INFINITE);
+                WaitForSingleObject(pPty->hConPtyProcess, dwMilliseconds);
             }
 
             CloseHandle(pPty->hConPtyProcess);
@@ -396,11 +395,11 @@ void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty, BOOL wait)
 // - wait: If true, waits for conhost/OpenConsole to exit first.
 // Return Value:
 // - <none>
-static void _ClosePseudoConsole(_In_ PseudoConsole* pPty, BOOL wait) noexcept
+static void _ClosePseudoConsole(_In_ PseudoConsole* pPty, _In_ DWORD dwMilliseconds) noexcept
 {
     if (pPty != nullptr)
     {
-        _ClosePseudoConsoleMembers(pPty, wait);
+        _ClosePseudoConsoleMembers(pPty, dwMilliseconds);
         HeapFree(GetProcessHeap(), 0, pPty);
     }
 }
@@ -461,7 +460,7 @@ extern "C" HRESULT ConptyCreatePseudoConsoleAsUser(_In_ HANDLE hToken,
     auto pPty = (PseudoConsole*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(PseudoConsole));
     RETURN_IF_NULL_ALLOC(pPty);
     auto cleanupPty = wil::scope_exit([&]() noexcept {
-        _ClosePseudoConsole(pPty, TRUE);
+        _ClosePseudoConsole(pPty, 0);
     });
 
     wil::unique_handle duplicatedInput;
@@ -525,13 +524,28 @@ extern "C" HRESULT WINAPI ConptyShowHidePseudoConsole(_In_ HPCON hPC, bool show)
 // - Used to support GH#2988
 extern "C" HRESULT WINAPI ConptyReparentPseudoConsole(_In_ HPCON hPC, HWND newParent)
 {
-    const PseudoConsole* const pPty = (PseudoConsole*)hPC;
-    auto hr = pPty == nullptr ? E_INVALIDARG : S_OK;
-    if (SUCCEEDED(hr))
+    return _ReparentPseudoConsole((PseudoConsole*)hPC, newParent);
+}
+
+// The \Reference handle ensures that conhost keeps running by keeping the ConDrv server pipe open.
+// After you've finished setting up your PTY via PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE, this method may be called
+// to release that handle, allowing conhost to shut down automatically once the last client has disconnected.
+// You'll know when this happens, because a ReadFile() on the output pipe will return ERROR_BROKEN_PIPE.
+extern "C" HRESULT WINAPI ConptyReleasePseudoConsole(_In_ HPCON hPC)
+{
+    const auto pPty = (PseudoConsole*)hPC;
+    if (pPty == nullptr)
     {
-        hr = _ReparentPseudoConsole(pPty, newParent);
+        return E_INVALIDARG;
     }
-    return hr;
+
+    if (_HandleIsValid(pPty->hPtyReference))
+    {
+        CloseHandle(pPty->hPtyReference);
+        pPty->hPtyReference = nullptr;
+    }
+
+    return S_OK;
 }
 
 // Function Description:
@@ -543,7 +557,7 @@ extern "C" HRESULT WINAPI ConptyReparentPseudoConsole(_In_ HPCON hPC, HWND newPa
 // Waits for conhost/OpenConsole to exit first.
 extern "C" VOID WINAPI ConptyClosePseudoConsole(_In_ HPCON hPC)
 {
-    _ClosePseudoConsole((PseudoConsole*)hPC, TRUE);
+    _ClosePseudoConsole((PseudoConsole*)hPC, INFINITE);
 }
 
 // Function Description:
@@ -553,9 +567,9 @@ extern "C" VOID WINAPI ConptyClosePseudoConsole(_In_ HPCON hPC)
 // This can fail if the conhost hosting the pseudoconsole failed to be
 //      terminated, or if the pseudoconsole was already terminated.
 // Doesn't wait for conhost/OpenConsole to exit.
-extern "C" VOID WINAPI ConptyClosePseudoConsoleNoWait(_In_ HPCON hPC)
+extern "C" VOID WINAPI ConptyClosePseudoConsoleTimeout(_In_ HPCON hPC, _In_ DWORD dwMilliseconds)
 {
-    _ClosePseudoConsole((PseudoConsole*)hPC, FALSE);
+    _ClosePseudoConsole((PseudoConsole*)hPC, dwMilliseconds);
 }
 
 // NOTE: This one is not defined in the Windows headers but is
