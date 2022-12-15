@@ -440,12 +440,12 @@ extern "C" HRESULT WINAPI ConptyCreatePseudoConsole(_In_ COORD size,
     return ConptyCreatePseudoConsoleAsUser(INVALID_HANDLE_VALUE, size, hInput, hOutput, dwFlags, phPC);
 }
 
-extern "C" HRESULT ConptyCreatePseudoConsoleAsUser(_In_ HANDLE hToken,
-                                                   _In_ COORD size,
-                                                   _In_ HANDLE hInput,
-                                                   _In_ HANDLE hOutput,
-                                                   _In_ DWORD dwFlags,
-                                                   _Out_ HPCON* phPC)
+extern "C" HRESULT WINAPI ConptyCreatePseudoConsoleAsUser(_In_ HANDLE hToken,
+                                                          _In_ COORD size,
+                                                          _In_ HANDLE hInput,
+                                                          _In_ HANDLE hOutput,
+                                                          _In_ DWORD dwFlags,
+                                                          _Out_ HPCON* phPC)
 {
     if (phPC == nullptr)
     {
