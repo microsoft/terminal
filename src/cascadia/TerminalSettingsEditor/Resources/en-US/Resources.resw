@@ -135,6 +135,14 @@
     <value>Duplicate</value>
     <comment>Button label that duplicates the selected profile and navigates to the duplicate's page.</comment>
   </data>
+  <data name="ColorScheme_SetAsDefault.Header" xml:space="preserve">
+    <value>Set color scheme as default</value>
+    <comment>This is the header for a control that allows the user to set the currently selected color scheme as their default.</comment>
+  </data>
+  <data name="ColorScheme_SetAsDefault.HelpText" xml:space="preserve">
+    <value>Apply this color scheme to all your profiles. This sets this color scheme in your 'Defaults' profile, it can still be overridden in each individual profile.</value>
+    <comment>A description explaining how this control changes the user's default color scheme.</comment>
+  </data>
   <data name="ColorScheme_Rename.Header" xml:space="preserve">
     <value>Rename color scheme</value>
     <comment>This is the header for a control that allows the user to rename the currently selected color scheme.</comment>

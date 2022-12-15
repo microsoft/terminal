@@ -46,7 +46,6 @@
 #include "winrt/Windows.UI.Xaml.Markup.h"
 #include "winrt/Windows.UI.ViewManagement.h"
 
-#include <winrt/Microsoft.Toolkit.Win32.UI.XamlHost.h>
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
 #include <winrt/Microsoft.UI.Xaml.Controls.Primitives.h>
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>

@@ -2,6 +2,7 @@ admins
 allcolors
 Apc
 apc
+backpressure
 breadcrumb
 breadcrumbs
 bsd
@@ -17,7 +18,9 @@ cybersecurity
 dalet
 Dcs
 dcs
+deselection
 dialytika
+diffing
 dje
 downside
 downsides
@@ -26,6 +29,7 @@ dzhe
 DTo
 EDDB
 EDDC
+Emacspeak
 Enum'd
 Fitt
 formattings
@@ -62,6 +66,7 @@ lol
 lorem
 Lorigin
 maxed
+megathread
 minimalistic
 mkmk
 mnt
@@ -87,6 +92,7 @@ shcha
 slnt
 Sos
 ssh
+stakeholders
 timeline
 timelines
 timestamped
