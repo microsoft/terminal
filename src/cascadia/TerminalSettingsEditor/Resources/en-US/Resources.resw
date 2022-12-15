@@ -356,8 +356,8 @@
     <comment>The string to be displayed when there is no current value in the y-coordinate number box.</comment>
   </data>
   <data name="Globals_DefaultLaunchPositionCheckbox.Content" xml:space="preserve">
-    <value>Use system default</value>
-    <comment>A checkbox for the "launch position" setting. Toggling this control sets the launch position to the system default.</comment>
+    <value>Let system position window</value>
+    <comment>A checkbox for the "launch position" setting. Toggling this control sets the launch position to whatever the operating system decides.</comment>
   </data>
   <data name="Globals_DefaultLaunchPositionCheckbox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>If enabled, use the system default launch position.</value>
