@@ -14,7 +14,7 @@ using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
-using unique_hpcon = wil::unique_any_handle_null_only<decltype(&::ClosePseudoConsole), ::ClosePseudoConsole>;
+using unique_hpcon = wil::unique_any<HPCON, decltype(&::ClosePseudoConsole), ::ClosePseudoConsole>;
 
 struct InOut
 {
@@ -381,6 +381,5 @@ void ConPtyTests::ReleasePseudoConsole()
     VERIFY_SUCCEEDED(ConptyReleasePseudoConsole(pty.hpcon.get()));
 
     const auto output = readOutputToEOF(pty.pipes);
-    Log::Comment(NoThrowString(output.c_str()));
     VERIFY_ARE_NOT_EQUAL(std::string::npos, output.find("foobar"));
 }
