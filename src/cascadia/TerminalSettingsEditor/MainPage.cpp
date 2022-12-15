@@ -55,7 +55,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _settingsClone{ settings.Copy() }
     {
         InitializeComponent();
-
+        _updateBackgroundForMica();
         _InitializeProfilesList();
 
         _colorSchemesPageVM = winrt::make<ColorSchemesPageViewModel>(_settingsClone);
@@ -102,18 +102,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _settingsSource = settings;
         _settingsClone = settings.Copy();
 
-        {
-            const auto& theme = _settingsSource.GlobalSettings().CurrentTheme();
-
-            auto bgKey = (theme.Window() != nullptr && theme.Window().UseMica()) ?
-                             L"SettingsPageMicaBackground" :
-                             L"SettingsPageBackground";
-
-            if (auto bgColor = Resources().TryLookup(winrt::box_value(bgKey)))
-            {
-                SettingsNav().Background(winrt::WUX::Media::SolidColorBrush(winrt::unbox_value<Windows::UI::Color>(bgColor)));
-            }
-        }
+        _updateBackgroundForMica();
 
         // Deduce information about the currently selected item
         IInspectable lastBreadcrumb;
@@ -651,6 +640,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     winrt::Windows::UI::Xaml::Media::Brush MainPage::BackgroundBrush()
     {
         return SettingsNav().Background();
+    }
+
+    // If the theme asks for Mica, then drop out our background, so that we
+    // can have mica too.
+    void MainPage::_updateBackgroundForMica()
+
+    {
+        const auto& theme = _settingsSource.GlobalSettings().CurrentTheme();
+
+        auto bgKey = (theme.Window() != nullptr && theme.Window().UseMica()) ?
+                         L"SettingsPageMicaBackground" :
+                         L"SettingsPageBackground";
+
+        if (auto bgColor = Resources().TryLookup(winrt::box_value(bgKey)))
+        {
+            SettingsNav().Background(winrt::WUX::Media::SolidColorBrush(winrt::unbox_value<Windows::UI::Color>(bgColor)));
+        }
     }
 
 }

@@ -64,7 +64,7 @@
     </Page.Resources>
 
     <muxc:NavigationView x:Name="SettingsNav"
-                         Background="Transparent"
+                         Background="{ThemeResource SettingsPageBackground}"
                          IsBackButtonVisible="Collapsed"
                          IsSettingsVisible="False"
                          ItemInvoked="SettingsNav_ItemInvoked"
