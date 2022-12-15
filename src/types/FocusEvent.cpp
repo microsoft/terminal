@@ -17,9 +17,7 @@
 #include "precomp.h"
 #include "inc/IInputEvent.hpp"
 
-FocusEvent::~FocusEvent()
-{
-}
+FocusEvent::~FocusEvent() = default;
 
 INPUT_RECORD FocusEvent::ToInputRecord() const noexcept
 {

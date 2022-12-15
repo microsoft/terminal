@@ -53,7 +53,8 @@ static winrt::com_ptr<implementation::Profile> makeProfile(const std::wstring& d
     std::wstring command{};
     THROW_IF_FAILED(wil::GetSystemDirectoryW<std::wstring>(command));
     WSLDistro->Commandline(winrt::hstring{ command + L"\\wsl.exe -d " + distName });
-    WSLDistro->DefaultAppearance().ColorSchemeName(L"Campbell");
+    WSLDistro->DefaultAppearance().DarkColorSchemeName(L"Campbell");
+    WSLDistro->DefaultAppearance().LightColorSchemeName(L"Campbell");
     if (isWslDashDashCdAvailableForLinuxPaths())
     {
         WSLDistro->StartingDirectory(winrt::hstring{ WslHomeDirectory });

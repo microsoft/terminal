@@ -2,16 +2,16 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-#include <windows.h>
 #include "terminalInput.hpp"
 
-#include "strsafe.h"
+#include <til/unicode.h>
+#include <strsafe.h>
 
 #define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
 #include <wil/Common.h>
 
+#include "../../interactivity/inc/VtApiRedirection.hpp"
 #include "../../inc/unicode.hpp"
-#include "../../types/inc/Utf16Parser.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -266,6 +266,13 @@ bool TerminalInput::GetInputMode(const Mode mode) const noexcept
     return _inputMode.test(mode);
 }
 
+void TerminalInput::ResetInputModes() noexcept
+{
+    _inputMode = { Mode::Ansi, Mode::AutoRepeat };
+    _mouseInputState.lastPos = { -1, -1 };
+    _mouseInputState.lastButton = 0;
+}
+
 void TerminalInput::ForceDisableWin32InputMode(const bool win32InputMode) noexcept
 {
     _forceDisableWin32InputMode = win32InputMode;
@@ -422,8 +429,8 @@ static bool _searchWithModifier(const KeyEvent& keyEvent, InputSender sender)
             // VkKeyScan will give us both the Vkey of the key needed for this
             // character, and the modifiers the user might need to press to get
             // this character.
-            const auto slashKeyScan = VkKeyScan(L'/'); // On USASCII: 0x00bf
-            const auto questionMarkKeyScan = VkKeyScan(L'?'); //On USASCII: 0x01bf
+            const auto slashKeyScan = OneCoreSafeVkKeyScanW(L'/'); // On USASCII: 0x00bf
+            const auto questionMarkKeyScan = OneCoreSafeVkKeyScanW(L'?'); //On USASCII: 0x01bf
 
             const auto slashVkey = LOBYTE(slashKeyScan);
             const auto questionMarkVkey = LOBYTE(questionMarkKeyScan);
@@ -550,11 +557,29 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
         return true;
     }
 
+    // Check if this key matches the last recorded key code.
+    const auto matchingLastKeyPress = _lastVirtualKeyCode == keyEvent.GetVirtualKeyCode();
+
     // Only need to handle key down. See raw key handler (see RawReadWaitRoutine in stream.cpp)
     if (!keyEvent.IsKeyDown())
     {
+        // If this is a release of the last recorded key press, we can reset that.
+        if (matchingLastKeyPress)
+        {
+            _lastVirtualKeyCode = std::nullopt;
+        }
         return false;
     }
+
+    // If this is a repeat of the last recorded key press, and Auto Repeat Mode
+    // is disabled, then we should suppress this event.
+    if (matchingLastKeyPress && !_inputMode.test(Mode::AutoRepeat))
+    {
+        // Note that we must return true here to say we've handled the event,
+        // otherwise the key press can still end up being submitted.
+        return true;
+    }
+    _lastVirtualKeyCode = keyEvent.GetVirtualKeyCode();
 
     // The VK_BACK key depends on the state of Backarrow Key mode (DECBKM).
     // If the mode is set, we should send BS. If reset, we should send DEL.
@@ -619,7 +644,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
         // Currently, when we're called with Alt+Ctrl+@, ch will be 0, since Ctrl+@ equals a null byte.
         // VkKeyScanW(0) in turn returns the vkey for the null character (ASCII @).
         // -> Use the vkey to determine if Ctrl+@ is being pressed and produce ^[^@.
-        if (ch == UNICODE_NULL && vkey == LOBYTE(VkKeyScanW(0)))
+        if (ch == UNICODE_NULL && vkey == LOBYTE(OneCoreSafeVkKeyScanW(0)))
         {
             _SendEscapedInputSequence(L'\0');
             return true;
@@ -660,7 +685,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
         // Currently, when we're called with Ctrl+@, ch will be 0, since Ctrl+@ equals a null byte.
         // VkKeyScanW(0) in turn returns the vkey for the null character (ASCII @).
         // -> Use the vkey to alternatively determine if Ctrl+@ is being pressed.
-        if (ch == UNICODE_SPACE || (ch == UNICODE_NULL && vkey == LOBYTE(VkKeyScanW(0))))
+        if (ch == UNICODE_SPACE || (ch == UNICODE_NULL && vkey == LOBYTE(OneCoreSafeVkKeyScanW(0))))
         {
             _SendNullInputSequence(keyEvent.GetActiveModifierKeys());
             return true;
@@ -672,7 +697,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
         if (ch == UNICODE_NULL)
         {
             // -> Try to infer the character from the vkey.
-            auto mappedChar = LOWORD(MapVirtualKeyW(keyEvent.GetVirtualKeyCode(), MAPVK_VK_TO_CHAR));
+            auto mappedChar = LOWORD(OneCoreSafeMapVirtualKeyW(keyEvent.GetVirtualKeyCode(), MAPVK_VK_TO_CHAR));
             if (mappedChar)
             {
                 // Pressing the control key causes all bits but the 5 least
@@ -720,7 +745,7 @@ bool TerminalInput::HandleFocus(const bool focused) noexcept
 // - ch: The UTF-16 character to send.
 void TerminalInput::_SendChar(const wchar_t ch)
 {
-    if (Utf16Parser::IsLeadingSurrogate(ch))
+    if (til::is_leading_surrogate(ch))
     {
         if (_leadingSurrogate.has_value())
         {
@@ -773,7 +798,7 @@ void TerminalInput::_SendNullInputSequence(const DWORD controlKeyState) const
         std::deque<std::unique_ptr<IInputEvent>> inputEvents;
         inputEvents.push_back(std::make_unique<KeyEvent>(true,
                                                          1ui16,
-                                                         LOBYTE(VkKeyScanW(0)),
+                                                         LOBYTE(OneCoreSafeVkKeyScanW(0)),
                                                          0ui16,
                                                          L'\x0',
                                                          controlKeyState));

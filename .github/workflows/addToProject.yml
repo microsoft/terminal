@@ -5,6 +5,7 @@ on:
   issues:
     types:
       - labeled
+      - unlabeled
 
 jobs:
   add-to-project:

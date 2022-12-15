@@ -31,31 +31,26 @@ class TextAttribute final
 {
 public:
     constexpr TextAttribute() noexcept :
-        _wAttrLegacy{ 0 },
+        _attrs{ CharacterAttributes::Normal },
         _foreground{},
         _background{},
-        _extendedAttrs{ ExtendedAttributes::Normal },
         _hyperlinkId{ 0 }
     {
     }
 
     explicit constexpr TextAttribute(const WORD wLegacyAttr) noexcept :
-        _wAttrLegacy{ gsl::narrow_cast<WORD>(wLegacyAttr & META_ATTRS) },
+        _attrs{ gsl::narrow_cast<WORD>(wLegacyAttr & USED_META_ATTRS) },
         _foreground{ gsl::at(s_legacyForegroundColorMap, wLegacyAttr & FG_ATTRS) },
         _background{ gsl::at(s_legacyBackgroundColorMap, (wLegacyAttr & BG_ATTRS) >> 4) },
-        _extendedAttrs{ ExtendedAttributes::Normal },
         _hyperlinkId{ 0 }
     {
-        // If we're given lead/trailing byte information with the legacy color, strip it.
-        WI_ClearAllFlags(_wAttrLegacy, COMMON_LVB_SBCSDBCS);
     }
 
     constexpr TextAttribute(const COLORREF rgbForeground,
                             const COLORREF rgbBackground) noexcept :
-        _wAttrLegacy{ 0 },
+        _attrs{ CharacterAttributes::Normal },
         _foreground{ rgbForeground },
         _background{ rgbBackground },
-        _extendedAttrs{ ExtendedAttributes::Normal },
         _hyperlinkId{ 0 }
     {
     }
@@ -64,8 +59,6 @@ public:
     static TextAttribute StripErroneousVT16VersionsOfLegacyDefaults(const TextAttribute& attribute) noexcept;
     WORD GetLegacyAttributes() const noexcept;
 
-    bool IsLeadingByte() const noexcept;
-    bool IsTrailingByte() const noexcept;
     bool IsTopHorizontalDisplayed() const noexcept;
     bool IsBottomHorizontalDisplayed() const noexcept;
     bool IsLeftVerticalDisplayed() const noexcept;
@@ -97,6 +90,7 @@ public:
     bool IsDoublyUnderlined() const noexcept;
     bool IsOverlined() const noexcept;
     bool IsReverseVideo() const noexcept;
+    bool IsProtected() const noexcept;
 
     void SetIntense(bool isIntense) noexcept;
     void SetFaint(bool isFaint) noexcept;
@@ -108,10 +102,15 @@ public:
     void SetDoublyUnderlined(bool isDoublyUnderlined) noexcept;
     void SetOverlined(bool isOverlined) noexcept;
     void SetReverseVideo(bool isReversed) noexcept;
+    void SetProtected(bool isProtected) noexcept;
 
-    constexpr ExtendedAttributes GetExtendedAttributes() const noexcept
+    constexpr void SetCharacterAttributes(const CharacterAttributes attrs) noexcept
     {
-        return _extendedAttrs;
+        _attrs = attrs;
+    }
+    constexpr CharacterAttributes GetCharacterAttributes() const noexcept
+    {
+        return _attrs;
     }
 
     bool IsHyperlink() const noexcept;
@@ -132,7 +131,7 @@ public:
 
     void SetDefaultForeground() noexcept;
     void SetDefaultBackground() noexcept;
-    void SetDefaultMetaAttrs() noexcept;
+    void SetDefaultRenditionAttributes() noexcept;
 
     bool BackgroundIsDefault() const noexcept;
 
@@ -149,38 +148,33 @@ public:
         const auto checkForeground = (inverted != IsReverseVideo());
         return !IsAnyGridLineEnabled() && // grid lines have a visual representation
                // crossed out, doubly and singly underlined have a visual representation
-               WI_AreAllFlagsClear(_extendedAttrs, ExtendedAttributes::CrossedOut | ExtendedAttributes::DoublyUnderlined | ExtendedAttributes::Underlined) &&
+               WI_AreAllFlagsClear(_attrs, CharacterAttributes::CrossedOut | CharacterAttributes::DoublyUnderlined | CharacterAttributes::Underlined) &&
                // hyperlinks have a visual representation
                !IsHyperlink() &&
                // all other attributes do not have a visual representation
-               (_wAttrLegacy & META_ATTRS) == (other._wAttrLegacy & META_ATTRS) &&
+               _attrs == other._attrs &&
                ((checkForeground && _foreground == other._foreground) ||
                 (!checkForeground && _background == other._background)) &&
-               _extendedAttrs == other._extendedAttrs &&
                IsHyperlink() == other.IsHyperlink();
     }
 
     constexpr bool IsAnyGridLineEnabled() const noexcept
     {
-        return WI_IsAnyFlagSet(_wAttrLegacy, COMMON_LVB_GRID_HORIZONTAL | COMMON_LVB_GRID_LVERTICAL | COMMON_LVB_GRID_RVERTICAL | COMMON_LVB_UNDERSCORE);
+        return WI_IsAnyFlagSet(_attrs, CharacterAttributes::TopGridline | CharacterAttributes::LeftGridline | CharacterAttributes::RightGridline | CharacterAttributes::BottomGridline);
     }
-    constexpr bool HasAnyExtendedAttributes() const noexcept
+    constexpr bool HasAnyVisualAttributes() const noexcept
     {
-        return GetExtendedAttributes() != ExtendedAttributes::Normal ||
-               IsAnyGridLineEnabled() ||
-               GetHyperlinkId() != 0 ||
-               IsReverseVideo();
+        return GetCharacterAttributes() != CharacterAttributes::Normal || GetHyperlinkId() != 0;
     }
 
 private:
     static std::array<TextColor, 16> s_legacyForegroundColorMap;
     static std::array<TextColor, 16> s_legacyBackgroundColorMap;
 
-    uint16_t _wAttrLegacy; // sizeof: 2, alignof: 2
+    CharacterAttributes _attrs; // sizeof: 2, alignof: 2
     uint16_t _hyperlinkId; // sizeof: 2, alignof: 2
     TextColor _foreground; // sizeof: 4, alignof: 1
     TextColor _background; // sizeof: 4, alignof: 1
-    ExtendedAttributes _extendedAttrs; // sizeof: 2, alignof: 2
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;
@@ -213,12 +207,11 @@ namespace WEX
             static WEX::Common::NoThrowString ToString(const TextAttribute& attr)
             {
                 return WEX::Common::NoThrowString().Format(
-                    L"{FG:%s,BG:%s,intense:%d,wLegacy:(0x%04x),ext:(0x%02x)}",
+                    L"{FG:%s,BG:%s,intense:%d,attrs:(0x%02x)}",
                     VerifyOutputTraits<TextColor>::ToString(attr._foreground).GetBuffer(),
                     VerifyOutputTraits<TextColor>::ToString(attr._background).GetBuffer(),
                     attr.IsIntense(),
-                    attr._wAttrLegacy,
-                    static_cast<DWORD>(attr._extendedAttrs));
+                    static_cast<DWORD>(attr._attrs));
             }
         };
     }

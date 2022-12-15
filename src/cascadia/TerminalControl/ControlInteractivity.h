@@ -45,7 +45,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Control::ControlCore Core();
 
         Control::InteractivityAutomationPeer OnCreateAutomationPeer();
-        ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
+        ::Microsoft::Console::Render::IRenderData* GetRenderData() const;
 
 #pragma region Input Methods
         void PointerPressed(Control::MouseButtonState buttonState,
@@ -132,9 +132,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         unsigned int _numberOfClicks(Core::Point clickPos, Timestamp clickTime);
         void _updateSystemParameterSettings() noexcept;
 
-        void _mouseTransparencyHandler(const double mouseDelta);
-        void _mouseZoomHandler(const double mouseDelta);
-        void _mouseScrollHandler(const double mouseDelta,
+        void _mouseTransparencyHandler(const int32_t mouseDelta) const;
+        void _mouseZoomHandler(const int32_t mouseDelta) const;
+        void _mouseScrollHandler(const int32_t mouseDelta,
                                  const Core::Point terminalPosition,
                                  const bool isLeftButtonPressed);
 

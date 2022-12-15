@@ -67,7 +67,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool _objectsCreated;
 
         bool _lookingForCursorPosition;
-        std::mutex _shutdownLock;
 
         bool _resizeQuirk{ false };
         bool _win32InputMode{ false };
@@ -79,7 +78,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         [[nodiscard]] HRESULT _Initialize(const HANDLE InHandle, const HANDLE OutHandle, const std::wstring& VtMode, _In_opt_ const HANDLE SignalHandle);
 
-        void _ShutdownIfNeeded();
+        void _shutdownNow();
 
 #ifdef UNIT_TESTING
         friend class VtIoTests;

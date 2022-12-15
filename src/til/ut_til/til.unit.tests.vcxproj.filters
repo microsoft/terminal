@@ -26,6 +26,7 @@
     <ClCompile Include="string.cpp" />
     <ClCompile Include="throttled_func.cpp" />
     <ClCompile Include="u8u16convertTests.cpp" />
+    <ClCompile Include="UnicodeTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\precomp.h" />
@@ -108,6 +109,9 @@
       <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\til\u8u16convert.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\til\unicode.h">
       <Filter>inc</Filter>
     </ClInclude>
   </ItemGroup>

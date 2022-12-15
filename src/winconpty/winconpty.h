@@ -7,6 +7,7 @@
 extern "C" {
 #endif
 
+// This structure is part of an ABI shared with the rest of the operating system.
 typedef struct _PseudoConsole
 {
     HANDLE hSignal;
@@ -41,8 +42,7 @@ HRESULT _ResizePseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const CO
 HRESULT _ClearPseudoConsole(_In_ const PseudoConsole* const pPty);
 HRESULT _ShowHidePseudoConsole(_In_ const PseudoConsole* const pPty, const bool show);
 HRESULT _ReparentPseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const HWND newParent);
-void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty);
-VOID _ClosePseudoConsole(_In_ PseudoConsole* pPty);
+void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty, BOOL wait);
 
 HRESULT ConptyCreatePseudoConsoleAsUser(_In_ HANDLE hToken,
                                         _In_ COORD size,

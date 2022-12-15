@@ -13,7 +13,7 @@
 namespace wil
 {
     // These belong in WIL upstream, so when we reingest the change that has them we'll get rid of ours.
-    using unique_static_pseudoconsole_handle = wil::unique_any<HPCON, decltype(&::ConptyClosePseudoConsole), ::ConptyClosePseudoConsole>;
+    using unique_static_pseudoconsole_handle = wil::unique_any<HPCON, decltype(&::ConptyClosePseudoConsole), ::ConptyClosePseudoConsoleNoWait>;
 }
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
@@ -46,6 +46,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         winrt::guid Guid() const noexcept;
         winrt::hstring Commandline() const;
         winrt::hstring StartingTitle() const;
+        WORD ShowWindow() const noexcept;
 
         static void StartInboundListener();
         static void StopInboundListener();
@@ -71,8 +72,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void _indicateExitWithStatus(unsigned int status) noexcept;
         void _ClientTerminated() noexcept;
 
-        til::CoordType _initialRows{};
-        til::CoordType _initialCols{};
+        til::CoordType _rows{};
+        til::CoordType _cols{};
         uint64_t _initialParentHwnd{ 0 };
         hstring _commandline{};
         hstring _startingDirectory{};
@@ -102,6 +103,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             winrt::hstring title{};
             winrt::hstring iconPath{};
             int32_t iconIndex{};
+            WORD showWindow{};
 
         } _startupInfo{};
 

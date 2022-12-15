@@ -249,6 +249,13 @@ try
     _r.dirtyRect = _api.dirtyRect;
     _r.scrollOffset = _api.scrollOffset;
 
+    // Clear the previous cursor. PaintCursor() is only called if the cursor is on.
+    if (const auto r = _api.invalidatedCursorArea; r.non_empty())
+    {
+        _setCellFlags(r, CellFlags::Cursor, CellFlags::None);
+        _r.dirtyRect |= til::rect{ r.left, r.top, r.right, r.bottom };
+    }
+
     // This is an important block of code for our TileHashMap.
     // We only process glyphs within the dirtyRect, but glyphs outside of the
     // dirtyRect are still in use and shouldn't be discarded. This is critical
@@ -335,28 +342,51 @@ CATCH_RETURN()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT AtlasEngine::PaintBufferLine(const gsl::span<const Cluster> clusters, const til::point coord, const bool fTrimLeft, const bool lineWrapped) noexcept
+[[nodiscard]] HRESULT AtlasEngine::PaintBufferLine(gsl::span<const Cluster> clusters, til::point coord, const bool fTrimLeft, const bool lineWrapped) noexcept
 try
 {
-    const auto x = gsl::narrow_cast<u16>(clamp<int>(coord.X, 0, _api.cellCount.x));
-    const auto y = gsl::narrow_cast<u16>(clamp<int>(coord.Y, 0, _api.cellCount.y));
+    const auto y = gsl::narrow_cast<u16>(clamp<int>(coord.y, 0, _api.cellCount.y));
 
     if (_api.lastPaintBufferLineCoord.y != y)
     {
         _flushBufferLine();
     }
 
-    _api.lastPaintBufferLineCoord = { x, y };
-    _api.bufferLineWasHyperlinked = false;
+    // _api.bufferLineColumn contains 1 more item than _api.bufferLine, as it represents the
+    // past-the-end index. It'll get appended again later once we built our new _api.bufferLine.
+    if (!_api.bufferLineColumn.empty())
+    {
+        _api.bufferLineColumn.pop_back();
+    }
+
+    // `TextBuffer` is buggy and allows a `Trailing` `DbcsAttribute` to be written
+    // into the first column. Since other code then blindly assumes that there's a
+    // preceding `Leading` character, we'll get called with a X coordinate of -1.
+    //
+    // This block can be removed after GH#13626 is merged.
+    if (coord.x < 0)
+    {
+        size_t offset = 0;
+        for (const auto& cluster : clusters)
+        {
+            offset++;
+            coord.x += cluster.GetColumns();
+            if (coord.x >= 0)
+            {
+                _api.bufferLine.insert(_api.bufferLine.end(), coord.x, L' ');
+                _api.bufferLineColumn.insert(_api.bufferLineColumn.end(), coord.x, 0u);
+                break;
+            }
+        }
+
+        clusters = clusters.subspan(offset);
+    }
+
+    const auto x = gsl::narrow_cast<u16>(clamp<int>(coord.x, 0, _api.cellCount.x));
 
     // Due to the current IRenderEngine interface (that wasn't refactored yet) we need to assemble
     // the current buffer line first as the remaining function operates on whole lines of text.
     {
-        if (!_api.bufferLineColumn.empty())
-        {
-            _api.bufferLineColumn.pop_back();
-        }
-
         auto column = x;
         for (const auto& cluster : clusters)
         {
@@ -372,8 +402,12 @@ try
         _api.bufferLineColumn.emplace_back(column);
 
         const BufferLineMetadata metadata{ _api.currentColor, _api.flags };
+        FAIL_FAST_IF(column > _api.bufferLineMetadata.size());
         std::fill_n(_api.bufferLineMetadata.data() + x, column - x, metadata);
     }
+
+    _api.lastPaintBufferLineCoord = { x, y };
+    _api.bufferLineWasHyperlinked = false;
 
     return S_OK;
 }
@@ -437,20 +471,13 @@ try
         }
     }
 
-    // Clear the previous cursor
-    if (const auto r = _api.invalidatedCursorArea; r.non_empty())
-    {
-        _setCellFlags(r, CellFlags::Cursor, CellFlags::None);
-        _r.dirtyRect |= til::rect{ r.left, r.top, r.right, r.bottom };
-    }
-
     if (options.isOn)
     {
         const auto point = options.coordCursor;
         // TODO: options.coordCursor can contain invalid out of bounds coordinates when
         // the window is being resized and the cursor is on the last line of the viewport.
-        const auto x = gsl::narrow_cast<uint16_t>(clamp(point.X, 0, _r.cellCount.x - 1));
-        const auto y = gsl::narrow_cast<uint16_t>(clamp(point.Y, 0, _r.cellCount.y - 1));
+        const auto x = gsl::narrow_cast<uint16_t>(clamp(point.x, 0, _r.cellCount.x - 1));
+        const auto y = gsl::narrow_cast<uint16_t>(clamp(point.y, 0, _r.cellCount.y - 1));
         const auto cursorWidth = 1 + (options.fIsDoubleWidth & (options.cursorType != CursorType::VerticalBar));
         const auto right = gsl::narrow_cast<uint16_t>(clamp(x + cursorWidth, 0, _r.cellCount.x - 0));
         const auto bottom = gsl::narrow_cast<uint16_t>(y + 1);
@@ -956,6 +983,21 @@ void AtlasEngine::_recreateSizeDependentResources()
         _api.glyphProps = Buffer<DWRITE_SHAPING_GLYPH_PROPERTIES>{ projectedGlyphSize };
         _api.glyphAdvances = Buffer<f32>{ projectedGlyphSize };
         _api.glyphOffsets = Buffer<DWRITE_GLYPH_OFFSET>{ projectedGlyphSize };
+
+        // Initialize cellGlyphMapping with valid data (whitespace), so that it can be
+        // safely used by the TileHashMap refresh logic via makeNewest() in StartPaint().
+        {
+            u16x2* coords{};
+            AtlasKey key{ { .cellCount = 1 }, 1, L" " };
+            AtlasValue value{ CellFlags::None, 1, &coords };
+
+            coords[0] = _r.tileAllocator.allocate(_r.glyphs);
+
+            const auto it = _r.glyphs.insert(std::move(key), std::move(value));
+            _r.glyphQueue.emplace_back(it);
+
+            std::fill(_r.cellGlyphMapping.begin(), _r.cellGlyphMapping.end(), it);
+        }
     }
 
     if (!_r.d2dMode)
@@ -1086,8 +1128,11 @@ void AtlasEngine::_recreateFontDependentResources()
                 const auto fontStyle = italic ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL;
                 auto& textFormat = _r.textFormats[italic][bold];
 
+                wil::com_ptr<IDWriteFont> font;
+                THROW_IF_FAILED(_r.fontMetrics.fontFamily->GetFirstMatchingFont(fontWeight, DWRITE_FONT_STRETCH_NORMAL, fontStyle, font.addressof()));
+                THROW_IF_FAILED(font->CreateFontFace(_r.fontFaces[italic << 1 | bold].put()));
+
                 THROW_IF_FAILED(_sr.dwriteFactory->CreateTextFormat(_api.fontMetrics.fontName.c_str(), _api.fontMetrics.fontCollection.get(), fontWeight, fontStyle, DWRITE_FONT_STRETCH_NORMAL, _api.fontMetrics.fontSizeInDIP, L"", textFormat.put()));
-                THROW_IF_FAILED(textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER));
                 THROW_IF_FAILED(textFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
 
                 // DWRITE_LINE_SPACING_METHOD_UNIFORM:
@@ -1096,11 +1141,16 @@ void AtlasEngine::_recreateFontDependentResources()
                 // We want that. Otherwise fallback fonts might be rendered with an incorrect baseline and get cut off vertically.
                 THROW_IF_FAILED(textFormat->SetLineSpacing(DWRITE_LINE_SPACING_METHOD_UNIFORM, _r.cellSizeDIP.y, _api.fontMetrics.baselineInDIP));
 
-                if (const auto textFormat3 = textFormat.try_query<IDWriteTextFormat3>())
-                {
-                    THROW_IF_FAILED(textFormat3->SetAutomaticFontAxes(DWRITE_AUTOMATIC_FONT_AXES_OPTICAL_SIZE));
+                // NOTE: SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER) breaks certain
+                // bitmap fonts which expect glyphs to be laid out left-aligned.
 
-                    if (!_api.fontAxisValues.empty())
+                // NOTE: SetAutomaticFontAxes(DWRITE_AUTOMATIC_FONT_AXES_OPTICAL_SIZE) breaks certain
+                // fonts making them look fairly unslightly. With no option to easily disable this
+                // feature in Windows Terminal, it's better left disabled by default.
+
+                if (!_api.fontAxisValues.empty())
+                {
+                    if (const auto textFormat3 = textFormat.try_query<IDWriteTextFormat3>())
                     {
                         // The wght axis defaults to the font weight.
                         _api.fontAxisValues[0].value = bold || standardAxes[0].value == -1.0f ? static_cast<float>(fontWeight) : standardAxes[0].value;
@@ -1196,6 +1246,15 @@ void AtlasEngine::_flushBufferLine()
 
     // This would seriously blow us up otherwise.
     Expects(_api.bufferLineColumn.size() == _api.bufferLine.size() + 1);
+
+    // GH#13962: With the lack of proper LineRendition support, just fill
+    // the remaining columns with whitespace to prevent any weird artifacts.
+    for (auto lastColumn = _api.bufferLineColumn.back(); lastColumn < _api.cellCount.x;)
+    {
+        ++lastColumn;
+        _api.bufferLine.emplace_back(L' ');
+        _api.bufferLineColumn.emplace_back(lastColumn);
+    }
 
     // NOTE:
     // This entire function is one huge hack to see if it works.

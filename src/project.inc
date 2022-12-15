@@ -3,14 +3,14 @@
 # - Common Project Configuration
 # -------------------------------------
 
-!include $(OSDEPENDSROOT)\OSS\gsl\3.1.0\consume.inc
+!include $(PROJECT_ROOT)\vcpkg\consume.inc
 
 # -------------------------------------
 # Preprocessor Settings
 # -------------------------------------
 
 UNICODE                 = 1
-C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE -DFMT_HEADER_ONLY -D__INSIDE_WINDOWS
+C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE -DFMT_HEADER_ONLY -D__INSIDE_WINDOWS -DBUILD_ONECORE_INTERACTIVITY
 
 # -------------------------------------
 # CRT Configuration
@@ -32,7 +32,7 @@ USE_NATIVE_EH           = 1
 
 USE_STD_CPP20           = 1
 MSC_WARNING_LEVEL       = /W4 /WX
-USER_C_FLAGS            = $(USER_C_FLAGS) /fp:fast /utf-8
+USER_C_FLAGS            = $(USER_C_FLAGS) /fp:contract /utf-8
 
 # -------------------------------------
 # Common Console Includes and Libraries

@@ -5,10 +5,10 @@
 
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
+#include "../../renderer/uia/UiaRenderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
-#include <UIAutomationCore.h>
 #include "../../types/IControlAccessibilityInfo.h"
-#include "../../types/TermControlUiaProvider.hpp"
+#include "HwndTerminalAutomationPeer.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -49,7 +49,7 @@ __declspec(dllexport) void _stdcall TerminalKillFocus(void* terminal);
 struct HwndTerminal : ::Microsoft::Console::Types::IControlAccessibilityInfo
 {
 public:
-    HwndTerminal(HWND hwnd);
+    HwndTerminal(HWND hwnd) noexcept;
 
     HwndTerminal(const HwndTerminal&) = default;
     HwndTerminal(HwndTerminal&&) = default;
@@ -63,7 +63,7 @@ public:
     HRESULT Refresh(const til::size windowSize, _Out_ til::size* dimensions);
     void RegisterScrollCallback(std::function<void(int, int, int)> callback);
     void RegisterWriteCallback(const void _stdcall callback(wchar_t*));
-    ::Microsoft::Console::Types::IUiaData* GetUiaData() const noexcept;
+    ::Microsoft::Console::Render::IRenderData* GetRenderData() const noexcept;
     HWND GetHwnd() const noexcept;
 
     static LRESULT CALLBACK HwndTerminalWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept;
@@ -74,15 +74,15 @@ private:
     FontInfo _actualFont;
     int _currentDpi;
     std::function<void(wchar_t*)> _pfnWriteCallback;
-    ::Microsoft::WRL::ComPtr<::Microsoft::Terminal::TermControlUiaProvider> _uiaProvider;
+    ::Microsoft::WRL::ComPtr<HwndTerminalAutomationPeer> _uiaProvider;
 
     std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal;
 
     std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer;
     std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
+    std::unique_ptr<::Microsoft::Console::Render::UiaEngine> _uiaEngine;
 
     bool _focused{ false };
-    bool _uiaProviderInitialized{ false };
 
     std::chrono::milliseconds _multiClickTime;
     unsigned int _multiClickCounter{};

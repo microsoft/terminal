@@ -23,7 +23,6 @@
 
   <PropertyGroup Label="NuGet Dependencies">
     <!-- TerminalCppWinrt is intentionally not set -->
-    <TerminalXamlApplicationToolkit>true</TerminalXamlApplicationToolkit>
   </PropertyGroup>
 
   <Import Project="$(SolutionDir)\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />

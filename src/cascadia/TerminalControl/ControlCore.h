@@ -76,10 +76,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SizeChanged(const double width, const double height);
         void ScaleChanged(const double scale);
 
-        void AdjustFontSize(int fontSizeDelta);
+        void AdjustFontSize(float fontSizeDelta);
         void ResetFontSize();
         FontInfo GetFont() const;
-        til::size FontSizeInDips() const;
+        winrt::Windows::Foundation::Size FontSizeInDips() const;
 
         winrt::Windows::Foundation::Size FontSize() const noexcept;
         winrt::hstring FontFaceName() const noexcept;
@@ -113,7 +113,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::hstring HoveredUriText() const;
         Windows::Foundation::IReference<Core::Point> HoveredCell() const;
 
-        ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
+        ::Microsoft::Console::Render::IRenderData* GetRenderData() const;
 
         void ColorSelection(const Control::SelectionColor& fg, const Control::SelectionColor& bg, Core::MatchMode matchMode);
 
@@ -232,6 +232,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(ShowWindowChanged,         IInspectable, Control::ShowWindowArgs);
         TYPED_EVENT(UpdateSelectionMarkers,    IInspectable, Control::UpdateSelectionMarkersEventArgs);
         TYPED_EVENT(OpenHyperlink,             IInspectable, Control::OpenHyperlinkEventArgs);
+        TYPED_EVENT(CloseTerminalRequested,    IInspectable, IInspectable);
         // clang-format on
 
     private:
@@ -282,12 +283,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::unique_ptr<til::throttled_func_trailing<>> _updatePatternLocations;
         std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> _updateScrollBar;
 
-        bool _setFontSizeUnderLock(int fontSize);
+        bool _setFontSizeUnderLock(float fontSize);
         void _updateFont(const bool initialUpdate = false);
         void _refreshSizeUnderLock();
         void _updateSelectionUI();
         bool _shouldTryUpdateSelection(const WORD vkey);
 
+        void _handleControlC();
         void _sendInputToConnection(std::wstring_view wstr);
 
 #pragma region TerminalCoreCallbacks
@@ -305,10 +307,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                    const std::chrono::microseconds duration);
 #pragma endregion
 
-        std::unique_ptr<MidiAudio> _midiAudio;
-
-        MidiAudio& _getMidiAudio();
-        void _shutdownMidiAudio();
+        MidiAudio _midiAudio;
+        winrt::Windows::System::DispatcherQueueTimer _midiAudioSkipTimer{ nullptr };
 
 #pragma region RendererCallbacks
         void _rendererWarning(const HRESULT hr);

@@ -31,7 +31,7 @@ SAFEARRAY* BuildIntSafeArray(gsl::span<const int> data)
 }
 
 #pragma warning(suppress : 26434) // WRL RuntimeClassInitialize base is a no-op and we need this for MakeAndInitialize
-HRESULT ScreenInfoUiaProviderBase::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ std::wstring_view wordDelimiters) noexcept
+HRESULT ScreenInfoUiaProviderBase::RuntimeClassInitialize(_In_ Render::IRenderData* pData, _In_ std::wstring_view wordDelimiters) noexcept
 try
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pData);

@@ -1,15 +1,17 @@
-<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-    <RuntimeFrameworkVersion>3.1.18</RuntimeFrameworkVersion>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <RuntimeFrameworkVersion>6.0.9</RuntimeFrameworkVersion>
     <UseWPF>true</UseWPF>
-    <Platforms>AnyCPU;x64;x86</Platforms>
+    <Platforms>AnyCPU;x64;x86;ARM64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(SolutionDir)src\cascadia\PublicTerminalCore\PublicTerminalCore.vcxproj" />
+    <ProjectReference Include="$(SolutionDir)src\cascadia\PublicTerminalCore\PublicTerminalCore.vcxproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
     <ProjectReference Include="$(SolutionDir)src\cascadia\WpfTerminalControl\WpfTerminalControl.csproj" />
   </ItemGroup>
 
@@ -23,5 +25,8 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+
+  <!-- Install an empty one for CSPROJ projects as they don't PGO. -->
+  <Target Name="MergePGOCounts" />
 
 </Project>

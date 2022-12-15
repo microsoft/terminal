@@ -10,15 +10,16 @@ using namespace WEX::TestExecution;
 
 class ConPtyTests
 {
-    TEST_CLASS(ConPtyTests);
+    BEGIN_TEST_CLASS(ConPtyTests)
+        TEST_CLASS_PROPERTY(L"TestTimeout", L"0:0:15") // 15s timeout
+    END_TEST_CLASS()
+
     const COORD defaultSize = { 80, 30 };
     TEST_METHOD(CreateConPtyNoPipes);
     TEST_METHOD(CreateConPtyBadSize);
     TEST_METHOD(GoodCreate);
     TEST_METHOD(GoodCreateMultiple);
-    TEST_METHOD(SurvivesOnBreakInput);
     TEST_METHOD(SurvivesOnBreakOutput);
-    TEST_METHOD(DiesOnBreakBoth);
     TEST_METHOD(DiesOnClose);
 };
 
@@ -84,10 +85,10 @@ void ConPtyTests::CreateConPtyNoPipes()
     VERIFY_FAILED(_CreatePseudoConsole(defaultSize, nullptr, nullptr, 0, &pcon));
 
     VERIFY_SUCCEEDED(_CreatePseudoConsole(defaultSize, nullptr, goodOut, 0, &pcon));
-    _ClosePseudoConsoleMembers(&pcon);
+    _ClosePseudoConsoleMembers(&pcon, TRUE);
 
     VERIFY_SUCCEEDED(_CreatePseudoConsole(defaultSize, goodIn, nullptr, 0, &pcon));
-    _ClosePseudoConsoleMembers(&pcon);
+    _ClosePseudoConsoleMembers(&pcon, TRUE);
 }
 
 void ConPtyTests::CreateConPtyBadSize()
@@ -131,7 +132,7 @@ void ConPtyTests::GoodCreate()
                              &pcon));
 
     auto closePty = wil::scope_exit([&] {
-        _ClosePseudoConsoleMembers(&pcon);
+        _ClosePseudoConsoleMembers(&pcon, TRUE);
     });
 }
 
@@ -160,7 +161,7 @@ void ConPtyTests::GoodCreateMultiple()
                              0,
                              &pcon1));
     auto closePty1 = wil::scope_exit([&] {
-        _ClosePseudoConsoleMembers(&pcon1);
+        _ClosePseudoConsoleMembers(&pcon1, TRUE);
     });
 
     VERIFY_SUCCEEDED(
@@ -170,53 +171,8 @@ void ConPtyTests::GoodCreateMultiple()
                              0,
                              &pcon2));
     auto closePty2 = wil::scope_exit([&] {
-        _ClosePseudoConsoleMembers(&pcon2);
+        _ClosePseudoConsoleMembers(&pcon2, TRUE);
     });
-}
-
-void ConPtyTests::SurvivesOnBreakInput()
-{
-    PseudoConsole pty = { 0 };
-    wil::unique_handle outPipeOurSide;
-    wil::unique_handle inPipeOurSide;
-    wil::unique_handle outPipePseudoConsoleSide;
-    wil::unique_handle inPipePseudoConsoleSide;
-    SECURITY_ATTRIBUTES sa;
-    sa.nLength = sizeof(sa);
-    sa.bInheritHandle = TRUE;
-    sa.lpSecurityDescriptor = nullptr;
-    VERIFY_IS_TRUE(CreatePipe(inPipePseudoConsoleSide.addressof(), inPipeOurSide.addressof(), &sa, 0));
-    VERIFY_IS_TRUE(CreatePipe(outPipeOurSide.addressof(), outPipePseudoConsoleSide.addressof(), &sa, 0));
-    VERIFY_IS_TRUE(SetHandleInformation(inPipeOurSide.get(), HANDLE_FLAG_INHERIT, 0));
-    VERIFY_IS_TRUE(SetHandleInformation(outPipeOurSide.get(), HANDLE_FLAG_INHERIT, 0));
-
-    VERIFY_SUCCEEDED(
-        _CreatePseudoConsole(defaultSize,
-                             inPipePseudoConsoleSide.get(),
-                             outPipePseudoConsoleSide.get(),
-                             0,
-                             &pty));
-    auto closePty1 = wil::scope_exit([&] {
-        _ClosePseudoConsoleMembers(&pty);
-    });
-
-    DWORD dwExit;
-    VERIFY_IS_TRUE(GetExitCodeProcess(pty.hConPtyProcess, &dwExit));
-    VERIFY_ARE_EQUAL(dwExit, (DWORD)STILL_ACTIVE);
-
-    wil::unique_process_information piClient;
-    std::wstring realCommand = L"cmd.exe";
-    VERIFY_SUCCEEDED(AttachPseudoConsole(&pty, realCommand, piClient.addressof()));
-
-    VERIFY_IS_TRUE(GetExitCodeProcess(piClient.hProcess, &dwExit));
-    VERIFY_ARE_EQUAL(dwExit, (DWORD)STILL_ACTIVE);
-
-    VERIFY_IS_TRUE(CloseHandle(inPipeOurSide.get()));
-
-    // Wait for a couple seconds, make sure the child is still alive.
-    VERIFY_ARE_EQUAL(WaitForSingleObject(pty.hConPtyProcess, 2000), (DWORD)WAIT_TIMEOUT);
-    VERIFY_IS_TRUE(GetExitCodeProcess(pty.hConPtyProcess, &dwExit));
-    VERIFY_ARE_EQUAL(dwExit, (DWORD)STILL_ACTIVE);
 }
 
 void ConPtyTests::SurvivesOnBreakOutput()
@@ -242,7 +198,7 @@ void ConPtyTests::SurvivesOnBreakOutput()
                              0,
                              &pty));
     auto closePty1 = wil::scope_exit([&] {
-        _ClosePseudoConsoleMembers(&pty);
+        _ClosePseudoConsoleMembers(&pty, TRUE);
     });
 
     DWORD dwExit;
@@ -262,63 +218,6 @@ void ConPtyTests::SurvivesOnBreakOutput()
     VERIFY_ARE_EQUAL(WaitForSingleObject(pty.hConPtyProcess, 2000), (DWORD)WAIT_TIMEOUT);
     VERIFY_IS_TRUE(GetExitCodeProcess(pty.hConPtyProcess, &dwExit));
     VERIFY_ARE_EQUAL(dwExit, (DWORD)STILL_ACTIVE);
-}
-
-void ConPtyTests::DiesOnBreakBoth()
-{
-    PseudoConsole pty = { 0 };
-    wil::unique_handle outPipeOurSide;
-    wil::unique_handle inPipeOurSide;
-    wil::unique_handle outPipePseudoConsoleSide;
-    wil::unique_handle inPipePseudoConsoleSide;
-    SECURITY_ATTRIBUTES sa;
-    sa.nLength = sizeof(sa);
-    sa.bInheritHandle = TRUE;
-    sa.lpSecurityDescriptor = nullptr;
-    VERIFY_IS_TRUE(CreatePipe(inPipePseudoConsoleSide.addressof(), inPipeOurSide.addressof(), &sa, 0));
-    VERIFY_IS_TRUE(CreatePipe(outPipeOurSide.addressof(), outPipePseudoConsoleSide.addressof(), &sa, 0));
-    VERIFY_IS_TRUE(SetHandleInformation(inPipeOurSide.get(), HANDLE_FLAG_INHERIT, 0));
-    VERIFY_IS_TRUE(SetHandleInformation(outPipeOurSide.get(), HANDLE_FLAG_INHERIT, 0));
-
-    VERIFY_SUCCEEDED(
-        _CreatePseudoConsole(defaultSize,
-                             inPipePseudoConsoleSide.get(),
-                             outPipePseudoConsoleSide.get(),
-                             0,
-                             &pty));
-    auto closePty1 = wil::scope_exit([&] {
-        _ClosePseudoConsoleMembers(&pty);
-    });
-
-    DWORD dwExit;
-    VERIFY_IS_TRUE(GetExitCodeProcess(pty.hConPtyProcess, &dwExit));
-    VERIFY_ARE_EQUAL(dwExit, (DWORD)STILL_ACTIVE);
-
-    wil::unique_process_information piClient;
-    std::wstring realCommand = L"cmd.exe";
-    VERIFY_SUCCEEDED(AttachPseudoConsole(&pty, realCommand, piClient.addressof()));
-
-    VERIFY_IS_TRUE(GetExitCodeProcess(piClient.hProcess, &dwExit));
-    VERIFY_ARE_EQUAL(dwExit, (DWORD)STILL_ACTIVE);
-
-    // Close one of the pipes...
-    VERIFY_IS_TRUE(CloseHandle(outPipeOurSide.get()));
-
-    // ... Wait for a couple seconds, make sure the child is still alive.
-    VERIFY_ARE_EQUAL(WaitForSingleObject(pty.hConPtyProcess, 2000), (DWORD)WAIT_TIMEOUT);
-    VERIFY_IS_TRUE(GetExitCodeProcess(pty.hConPtyProcess, &dwExit));
-    VERIFY_ARE_EQUAL(dwExit, (DWORD)STILL_ACTIVE);
-
-    // Tricky - write some input to the pcon. We need to do this so conhost can
-    //      realize that the output pipe has broken.
-    VERIFY_SUCCEEDED(WriteFile(inPipeOurSide.get(), L"a", sizeof(wchar_t), nullptr, nullptr));
-
-    // Close the other pipe, and make sure conhost dies
-    VERIFY_IS_TRUE(CloseHandle(inPipeOurSide.get()));
-
-    VERIFY_ARE_EQUAL(WaitForSingleObject(pty.hConPtyProcess, 10000), (DWORD)WAIT_OBJECT_0);
-    VERIFY_IS_TRUE(GetExitCodeProcess(pty.hConPtyProcess, &dwExit));
-    VERIFY_ARE_NOT_EQUAL(dwExit, (DWORD)STILL_ACTIVE);
 }
 
 void ConPtyTests::DiesOnClose()
@@ -358,7 +257,7 @@ void ConPtyTests::DiesOnClose()
                              0,
                              &pty));
     auto closePty1 = wil::scope_exit([&] {
-        _ClosePseudoConsoleMembers(&pty);
+        _ClosePseudoConsoleMembers(&pty, TRUE);
     });
 
     DWORD dwExit;
@@ -382,7 +281,7 @@ void ConPtyTests::DiesOnClose()
     Log::Comment(NoThrowString().Format(L"Sleep a bit to let the process attach"));
     Sleep(100);
 
-    _ClosePseudoConsoleMembers(&pty);
+    _ClosePseudoConsoleMembers(&pty, TRUE);
 
     GetExitCodeProcess(hConPtyProcess.get(), &dwExit);
     VERIFY_ARE_NOT_EQUAL(dwExit, (DWORD)STILL_ACTIVE);
