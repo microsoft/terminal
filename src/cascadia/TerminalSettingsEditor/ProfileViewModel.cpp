@@ -212,16 +212,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return nullptr;
     }
 
-    Editor::ColorSchemesPageViewModel ProfileViewModel::SchemesPageVM() const noexcept
-    {
-        return _SchemesPageVM;
-    }
-
-    void ProfileViewModel::SchemesPageVM(const Editor::ColorSchemesPageViewModel& val) noexcept
-    {
-        _SchemesPageVM = val;
-    }
-
     winrt::guid ProfileViewModel::OriginalProfileGuid() const noexcept
     {
         return _originalProfileGuid;
@@ -257,7 +247,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _profile.CreateUnfocusedAppearance();
 
         _unfocusedAppearanceViewModel = winrt::make<implementation::AppearanceViewModel>(_profile.UnfocusedAppearance().try_as<AppearanceConfig>());
-        _unfocusedAppearanceViewModel.SchemesPageVM(_SchemesPageVM);
+        _unfocusedAppearanceViewModel.SchemesPageVM(DefaultAppearance().SchemesPageVM());
         _unfocusedAppearanceViewModel.WindowRoot(_WindowRoot);
 
         _NotifyChanges(L"UnfocusedAppearance", L"HasUnfocusedAppearance", L"ShowUnfocusedAppearance");

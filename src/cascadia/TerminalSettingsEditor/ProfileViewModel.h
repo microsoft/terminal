@@ -23,9 +23,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Model::TerminalSettings TermSettings() const;
         void DeleteProfile();
 
-        Editor::ColorSchemesPageViewModel SchemesPageVM() const noexcept;
-        void SchemesPageVM(const Editor::ColorSchemesPageViewModel& val) noexcept;
-
         // bell style bits
         bool IsBellStyleFlagSet(const uint32_t flag);
         void SetBellStyleAudible(winrt::Windows::Foundation::IReference<bool> on);
@@ -104,7 +101,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring _lastBgImagePath;
         winrt::hstring _lastStartingDirectoryPath;
         Editor::AppearanceViewModel _defaultAppearanceViewModel;
-        Editor::ColorSchemesPageViewModel _SchemesPageVM{ nullptr };
 
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _MonospaceFontList;
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _FontList;
