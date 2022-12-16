@@ -46,11 +46,9 @@ typedef struct _PseudoConsole
 #define PTY_SIGNAL_SHOWHIDE_WINDOW (1u)
 #define PTY_SIGNAL_CLEAR_WINDOW (2u)
 #define PTY_SIGNAL_REPARENT_WINDOW (3u)
-#define PTY_SIGNAL_SET_AUTO_EXIT (4u)
 #define PTY_SIGNAL_RESIZE_WINDOW (8u)
 
 // CreatePseudoConsole Flags
-// The other flag (PSEUDOCONSOLE_INHERIT_CURSOR) is actually defined in consoleapi.h in the OS repo
 #ifndef PSEUDOCONSOLE_INHERIT_CURSOR
 #define PSEUDOCONSOLE_INHERIT_CURSOR (0x1)
 #endif

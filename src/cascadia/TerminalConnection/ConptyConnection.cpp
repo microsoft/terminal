@@ -24,13 +24,9 @@ static constexpr auto _errorFormat = L"{0} ({0:#010x})"sv;
 // There is a number of ways that the Conpty connection can be terminated (voluntarily or not):
 // 1. The connection is Close()d
 // 2. The pseudoconsole or process cannot be spawned during Start()
-// 3. The client process exits with a code.
-//    (Successful (0) or any other code)
-// 4. The read handle is terminated.
-//    (This usually happens when the pseudoconsole host crashes.)
+// 3. The read handle is terminated (when OpenConsole exits)
 // In each of these termination scenarios, we need to be mindful of tripping the others.
-// Closing the pseudoconsole in response to the client exiting (3) can trigger (4).
-// Close() (1) will cause the automatic triggering of (3) and (4).
+// Close() (1) will cause the automatic triggering of (3).
 // In a lot of cases, we use the connection state to stop "flapping."
 //
 // To figure out where we handle these, search for comments containing "EXIT POINT"
@@ -536,23 +532,38 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     void ConptyConnection::Close() noexcept
     try
     {
+        _transitionToState(ConnectionState::Closing);
+
         // .reset()ing either of these two will signal ConPTY to send out a CTRL_CLOSE_EVENT to all attached clients.
         // FYI: The other members of this class are concurrently read by the _hOutputThread
         // thread running in the background and so they're not safe to be .reset().
         _hPC.reset();
         _inPipe.reset();
 
-        _transitionToState(ConnectionState::Closing);
+        if (_hOutputThread)
+        {
+            // Loop around `CancelSynchronousIo()` just in case the signal to shut down was missed.
+            // This may happen if we called `CancelSynchronousIo()` while not being stuck
+            // in `ReadFile()` and if OpenConsole refuses to exit in a timely manner.
+            for (;;)
+            {
+                // ConptyConnection::Close() blocks the UI thread, because `_TerminalOutputHandlers` might indirectly
+                // reference UI objects like `ControlCore`. CancelSynchronousIo() allows us to have the background
+                // thread exit as fast as possible by aborting any ongoing writes coming from OpenConsole.
+                CancelSynchronousIo(_hOutputThread.get());
 
-        // CloseHandle() on pipes blocks until any current WriteFile()/ReadFile() has returned.
-        // CancelSynchronousIo prevents us from deadlocking ourselves.
-        // At this point in Close(), _inPipe won't be used anymore since the UI parts are torn down.
-        // _outPipe is probably still stuck in ReadFile() and might currently be written to.
-        CancelSynchronousIo(_hOutputThread.get());
-        // Waiting for the output thread to exit ensures that all pending _TerminalOutputHandlers()
-        // calls have returned and won't notify our caller (ControlCore) anymore. This ensures that
-        // we don't call a destroyed event handler asynchronously from a background thread (GH#13880).
-        LOG_LAST_ERROR_IF(WAIT_FAILED == WaitForSingleObject(_hOutputThread.get(), INFINITE));
+                // Waiting for the output thread to exit ensures that all pending _TerminalOutputHandlers()
+                // calls have returned and won't notify our caller (ControlCore) anymore. This ensures that
+                // we don't call a destroyed event handler asynchronously from a background thread (GH#13880).
+                const auto result = WaitForSingleObject(_hOutputThread.get(), 1000);
+                if (result == WAIT_OBJECT_0)
+                {
+                    break;
+                }
+
+                LOG_LAST_ERROR();
+            }
+        }
 
         // Now that the background thread is done, we can safely clean up the other system objects, without
         // race conditions, or fear of deadlocking ourselves (e.g. by calling CloseHandle() on _outPipe).

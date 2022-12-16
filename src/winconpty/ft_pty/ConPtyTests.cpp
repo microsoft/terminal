@@ -3,9 +3,6 @@
 
 #include "precomp.h"
 
-// We statically link with winconpty.cpp and so we need to prevent the functions
-// from being marked as __declspec(dllimport) by overriding CONPTY_IMPEXP.
-#define CONPTY_IMPEXP
 #include <conpty-static.h>
 
 #include "../winconpty.h"
