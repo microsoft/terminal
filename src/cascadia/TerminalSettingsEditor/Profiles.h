@@ -15,20 +15,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
     public:
         ProfilePageNavigationState(const Editor::ProfileViewModel& viewModel,
-                                   const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& schemes,
+                                   const Editor::ColorSchemesPageViewModel& schemesPageVM,
                                    const IHostedInWindow& windowRoot) :
             _Profile{ viewModel }
         {
             auto profile{ winrt::get_self<ProfileViewModel>(viewModel) };
-            profile->Schemes(schemes);
+            profile->SchemesPageVM(schemesPageVM);
             profile->WindowRoot(windowRoot);
 
-            viewModel.DefaultAppearance().Schemes(schemes);
+            viewModel.DefaultAppearance().SchemesPageVM(schemesPageVM);
             viewModel.DefaultAppearance().WindowRoot(windowRoot);
 
             if (viewModel.UnfocusedAppearance())
             {
-                viewModel.UnfocusedAppearance().Schemes(schemes);
+                viewModel.UnfocusedAppearance().SchemesPageVM(schemesPageVM);
                 viewModel.UnfocusedAppearance().WindowRoot(windowRoot);
             }
         }

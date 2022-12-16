@@ -87,7 +87,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     Appearances::Appearances() :
         _ShowAllFonts{ false },
-        _ColorSchemeList{ single_threaded_observable_vector<ColorScheme>() }
+        _ColorSchemeList{ single_threaded_observable_vector<ColorSchemeViewModel>() }
     {
         InitializeComponent();
 
@@ -224,11 +224,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (Appearance())
         {
-            const auto& colorSchemeMap{ Appearance().Schemes() };
-            for (const auto& pair : colorSchemeMap)
-            {
-                _ColorSchemeList.Append(pair.Value());
-            }
+            _ColorSchemeList = Appearance().SchemesPageVM().AllColorSchemes();
 
             const auto& biAlignmentVal{ static_cast<int32_t>(Appearance().BackgroundImageAlignment()) };
             for (const auto& biButton : _BIAlignmentButtons)
@@ -353,22 +349,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    ColorScheme Appearances::CurrentColorScheme()
+    Editor::ColorSchemeViewModel Appearances::CurrentColorScheme()
     {
         const auto schemeName{ Appearance().DarkColorSchemeName() };
-        if (const auto scheme{ Appearance().Schemes().TryLookup(schemeName) })
+        const auto allSchemes{ Appearance().SchemesPageVM().AllColorSchemes() };
+        for (const auto& scheme : allSchemes)
         {
-            return scheme;
+            if (scheme.Name() == schemeName)
+            {
+                return scheme;
+            }
         }
-        else
-        {
-            // This Appearance points to a color scheme that was renamed or deleted.
-            // Fallback to Campbell.
-            return Appearance().Schemes().TryLookup(L"Campbell");
-        }
+        // This Appearance points to a color scheme that was renamed or deleted.
+        // Fallback to the first one in the list.
+        return allSchemes.GetAt(0);
     }
 
-    void Appearances::CurrentColorScheme(const ColorScheme& val)
+    void Appearances::CurrentColorScheme(const ColorSchemeViewModel& val)
     {
         Appearance().DarkColorSchemeName(val.Name());
         Appearance().LightColorSchemeName(val.Name());

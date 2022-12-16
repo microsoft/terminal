@@ -393,7 +393,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             auto profileVM{ _viewModelForProfile(_settingsClone.ProfileDefaults(), _settingsClone) };
             profileVM.IsBaseLayer(true);
             auto state{ winrt::make<ProfilePageNavigationState>(profileVM,
-                                                                _settingsClone.GlobalSettings().ColorSchemes(),
+                                                                _colorSchemesPageVM,
                                                                 *this) };
 
             _SetupProfileEventHandling(state);
@@ -447,7 +447,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void MainPage::_Navigate(const Editor::ProfileViewModel& profile, BreadcrumbSubPage subPage, const bool focusDeleteButton)
     {
         auto state{ winrt::make<ProfilePageNavigationState>(profile,
-                                                            _settingsClone.GlobalSettings().ColorSchemes(),
+                                                            _colorSchemesPageVM,
                                                             *this) };
         state.FocusDeleteButton(focusDeleteButton);
 

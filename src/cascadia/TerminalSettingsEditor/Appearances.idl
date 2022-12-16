@@ -4,6 +4,8 @@
 import "EnumEntry.idl";
 import "MainPage.idl";
 import "Profiles.idl";
+import "ColorSchemeViewModel.idl";
+import "ColorSchemesPageViewModel.idl";
 
 #include "ViewModelHelpers.idl.h"
 
@@ -30,7 +32,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean UseDesktopBGImage;
         Boolean BackgroundImageSettingsVisible { get; };
 
-        Windows.Foundation.Collections.IMapView<String, Microsoft.Terminal.Settings.Model.ColorScheme> Schemes;
+        ColorSchemesPageViewModel SchemesPageVM;
         IHostedInWindow WindowRoot; // necessary to send the right HWND into the file picker dialogs.
 
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, FontFace);
@@ -67,8 +69,8 @@ namespace Microsoft.Terminal.Settings.Editor
         IInspectable CurrentAdjustIndistinguishableColors;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> AdjustIndistinguishableColorsList { get; };
 
-        Microsoft.Terminal.Settings.Model.ColorScheme CurrentColorScheme;
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Model.ColorScheme> ColorSchemeList { get; };
+        ColorSchemeViewModel CurrentColorScheme;
+        Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> ColorSchemeList { get; };
 
         IInspectable CurrentBackgroundImageStretchMode;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> BackgroundImageStretchModeList { get; };

@@ -48,7 +48,7 @@
                           SelectedItem="{x:Bind CurrentColorScheme, Mode=TwoWay}"
                           Style="{StaticResource ComboBoxSettingStyle}">
                     <ComboBox.ItemTemplate>
-                        <DataTemplate x:DataType="model:ColorScheme">
+                        <DataTemplate x:DataType="local:ColorSchemeViewModel">
                             <TextBlock Text="{x:Bind Name, Mode=OneWay}" />
                         </DataTemplate>
                     </ComboBox.ItemTemplate>

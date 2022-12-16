@@ -212,14 +212,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return nullptr;
     }
 
-    Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> ProfileViewModel::Schemes() const noexcept
+    Editor::ColorSchemesPageViewModel ProfileViewModel::SchemesPageVM() const noexcept
     {
-        return _Schemes;
+        return _SchemesPageVM;
     }
 
-    void ProfileViewModel::Schemes(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& val) noexcept
+    void ProfileViewModel::SchemesPageVM(const Editor::ColorSchemesPageViewModel& val) noexcept
     {
-        _Schemes = val;
+        _SchemesPageVM = val;
     }
 
     winrt::guid ProfileViewModel::OriginalProfileGuid() const noexcept
@@ -257,7 +257,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _profile.CreateUnfocusedAppearance();
 
         _unfocusedAppearanceViewModel = winrt::make<implementation::AppearanceViewModel>(_profile.UnfocusedAppearance().try_as<AppearanceConfig>());
-        _unfocusedAppearanceViewModel.Schemes(_Schemes);
+        _unfocusedAppearanceViewModel.SchemesPageVM(_SchemesPageVM);
         _unfocusedAppearanceViewModel.WindowRoot(_WindowRoot);
 
         _NotifyChanges(L"UnfocusedAppearance", L"HasUnfocusedAppearance", L"ShowUnfocusedAppearance");

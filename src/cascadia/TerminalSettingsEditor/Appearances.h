@@ -69,8 +69,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void UseDesktopBGImage(const bool useDesktop);
         bool BackgroundImageSettingsVisible();
 
-        Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> Schemes() { return _Schemes; }
-        void Schemes(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& val) { _Schemes = val; }
+        Editor::ColorSchemesPageViewModel SchemesPageVM() { return _SchemesPageVM; }
+        void SchemesPageVM(const Editor::ColorSchemesPageViewModel& val) { _SchemesPageVM = val; }
 
         WINRT_PROPERTY(bool, IsDefault, false);
         WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
@@ -99,7 +99,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     private:
         Model::AppearanceConfig _appearance;
         winrt::hstring _lastBgImagePath;
-        Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> _Schemes;
+        Editor::ColorSchemesPageViewModel _SchemesPageVM{ nullptr };
     };
 
     struct Appearances : AppearancesT<Appearances>
@@ -113,8 +113,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // CursorShape visibility logic
         bool IsVintageCursor() const;
 
-        Model::ColorScheme CurrentColorScheme();
-        void CurrentColorScheme(const Model::ColorScheme& val);
+        Editor::ColorSchemeViewModel CurrentColorScheme();
+        void CurrentColorScheme(const Editor::ColorSchemeViewModel& val);
 
         bool UsingMonospaceFont() const noexcept;
         bool ShowAllFonts() const noexcept;
@@ -132,7 +132,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         GETSET_BINDABLE_ENUM_SETTING(CursorShape, Microsoft::Terminal::Core::CursorStyle, Appearance().CursorShape);
         GETSET_BINDABLE_ENUM_SETTING(AdjustIndistinguishableColors, Microsoft::Terminal::Core::AdjustTextMode, Appearance().AdjustIndistinguishableColors);
-        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Model::ColorScheme>, ColorSchemeList, nullptr);
+        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel>, ColorSchemeList, nullptr);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         DEPENDENCY_PROPERTY(Editor::AppearanceViewModel, Appearance);
