@@ -44,6 +44,7 @@ IFACEMETHODIMP PseudoConsoleWindowAccessibilityProvider::GetPropertyValue(_In_ P
     {
         pVariant->vt = VT_I4;
         pVariant->lVal = UIA_WindowControlTypeId;
+        break;
     }
     case UIA_NamePropertyId:
     {
@@ -52,6 +53,7 @@ IFACEMETHODIMP PseudoConsoleWindowAccessibilityProvider::GetPropertyValue(_In_ P
         {
             pVariant->vt = VT_BSTR;
         }
+        break;
     }
     case UIA_IsControlElementPropertyId:
     case UIA_IsContentElementPropertyId:
@@ -60,6 +62,7 @@ IFACEMETHODIMP PseudoConsoleWindowAccessibilityProvider::GetPropertyValue(_In_ P
     {
         pVariant->vt = VT_BOOL;
         pVariant->boolVal = VARIANT_FALSE;
+        break;
     }
     default:
         break;
