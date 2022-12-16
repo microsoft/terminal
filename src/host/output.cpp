@@ -499,9 +499,6 @@ void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo)
 // TODO: MSFT 9450717 This should join the ProcessList class when CtrlEvents become moved into the server. https://osgvsowi/9450717
 void CloseConsoleProcessState()
 {
-    LockConsole();
-    const auto unlock = wil::scope_exit([] { UnlockConsole(); });
-
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     // If there are no connected processes, sending control events is pointless as there's no one do send them to. In
