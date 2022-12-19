@@ -446,7 +446,7 @@ void VtIo::SetWindowVisibility(bool showOrHide) noexcept
 void VtIo::CloseInput()
 {
     _pVtInputThread = nullptr;
-    _shutdownNow();
+    SendCloseEvent();
 }
 
 void VtIo::CloseOutput()
@@ -455,14 +455,18 @@ void VtIo::CloseOutput()
     g.getConsoleInformation().GetActiveOutputBuffer().SetTerminalConnection(nullptr);
 }
 
-void VtIo::_shutdownNow()
+void VtIo::SendCloseEvent()
 {
-    // At this point, we no longer have a renderer or inthread. So we've
-    //      effectively been disconnected from the terminal.
+    LockConsole();
+    const auto unlock = wil::scope_exit([] { UnlockConsole(); });
 
-    // If we have any remaining attached processes, this will prepare us to send a ctrl+close to them
-    // if we don't, this will cause us to rundown and exit.
-    CloseConsoleProcessState();
+    // This function is called when the ConPTY signal pipe is closed (PtySignalInputThread) and when the input
+    // pipe is closed (VtIo). Usually these two happen at about the same time. This if condition is a bit of
+    // a premature optimization and prevents us from sending out a CTRL_CLOSE_EVENT right after another.
+    if (!std::exchange(_closeEventSent, true))
+    {
+        CloseConsoleProcessState();
+    }
 }
 
 // Method Description:
