@@ -3,7 +3,7 @@
 
 import "EnumEntry.idl";
 import "MainPage.idl";
-import "Profiles.idl";
+import "ProfileViewModel.idl";
 import "ColorSchemeViewModel.idl";
 import "ColorSchemesPageViewModel.idl";
 

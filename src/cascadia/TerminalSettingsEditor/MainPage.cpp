@@ -9,7 +9,6 @@
 #include "Rendering.h"
 #include "RenderingViewModel.h"
 #include "Actions.h"
-#include "Profiles.h"
 #include "ProfileViewModel.h"
 #include "GlobalAppearance.h"
 #include "GlobalAppearanceViewModel.h"
@@ -314,7 +313,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _breadcrumbs.Clear();
     }
 
-    void MainPage::_SetupProfileEventHandling(const Editor::ProfilePageNavigationState state)
+    void MainPage::_SetupProfileEventHandling(const Editor::ProfileViewModel profile)
     {
         // Add an event handler to navigate to Profiles_Appearance or Profiles_Advanced
         // Some notes on this:
@@ -326,7 +325,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         //   We decided that it's better for the owner of the BreadcrumbBar to also be responsible
         //   for navigation, so the navigation to Profiles_Advanced/Profiles_Appearance from
         //   Profiles_Base got moved here.
-        const auto profile = state.Profile();
 
         // If this is the base layer, the breadcrumb tag should be the globalProfileTag instead of the
         // ProfileViewModel, because the navigation menu item for this profile is the globalProfileTag.
@@ -340,20 +338,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 const auto currentPage = profile.CurrentPage();
                 if (currentPage == ProfileSubPage::Base)
                 {
-                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), state);
+                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), profile);
                     _breadcrumbs.Clear();
                     const auto crumb = winrt::make<Breadcrumb>(breadcrumbTag, breadcrumbText, BreadcrumbSubPage::None);
                     _breadcrumbs.Append(crumb);
                 }
                 else if (currentPage == ProfileSubPage::Appearance)
                 {
-                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Appearance>(), state);
+                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Appearance>(), profile);
                     const auto crumb = winrt::make<Breadcrumb>(breadcrumbTag, RS_(L"Profile_Appearance/Header"), BreadcrumbSubPage::Profile_Appearance);
                     _breadcrumbs.Append(crumb);
                 }
                 else if (currentPage == ProfileSubPage::Advanced)
                 {
-                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), state);
+                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), profile);
                     const auto crumb = winrt::make<Breadcrumb>(breadcrumbTag, RS_(L"Profile_Advanced/Header"), BreadcrumbSubPage::Profile_Advanced);
                     _breadcrumbs.Append(crumb);
                 }
@@ -393,17 +391,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             auto profileVM{ _viewModelForProfile(_settingsClone.ProfileDefaults(), _settingsClone) };
             profileVM.DefaultAppearance().SchemesPageVM(_colorSchemesPageVM);
+            profileVM.DefaultAppearance().WindowRoot(*this);
             if (profileVM.UnfocusedAppearance())
             {
                 profileVM.UnfocusedAppearance().SchemesPageVM(_colorSchemesPageVM);
+                profileVM.UnfocusedAppearance().WindowRoot(*this);
             }
             profileVM.IsBaseLayer(true);
-            auto state{ winrt::make<ProfilePageNavigationState>(profileVM,
-                                                                *this) };
 
-            _SetupProfileEventHandling(state);
+            _SetupProfileEventHandling(profileVM);
 
-            contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), state);
+            contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), profileVM);
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_ProfileDefaults/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
 
@@ -449,22 +447,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - NOTE: this does not update the selected item.
     // Arguments:
     // - profile - the profile object we are getting a view of
-    void MainPage::_Navigate(const Editor::ProfileViewModel& profile, BreadcrumbSubPage subPage, const bool focusDeleteButton)
+    void MainPage::_Navigate(const Editor::ProfileViewModel& profile, BreadcrumbSubPage subPage)
     {
         profile.DefaultAppearance().SchemesPageVM(_colorSchemesPageVM);
+        profile.DefaultAppearance().WindowRoot(*this);
         if (profile.UnfocusedAppearance())
         {
             profile.UnfocusedAppearance().SchemesPageVM(_colorSchemesPageVM);
+            profile.UnfocusedAppearance().WindowRoot(*this);
         }
-        auto state{ winrt::make<ProfilePageNavigationState>(profile,
-                                                            *this) };
-        state.FocusDeleteButton(focusDeleteButton);
 
         _PreNavigateHelper();
 
-        _SetupProfileEventHandling(state);
+        _SetupProfileEventHandling(profile);
 
-        contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), state);
+        contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), profile);
         const auto crumb = winrt::make<Breadcrumb>(box_value(profile), profile.Name(), BreadcrumbSubPage::None);
         _breadcrumbs.Append(crumb);
 
@@ -546,9 +543,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 auto profileVM = _viewModelForProfile(profile, _settingsClone);
                 profileVM.DefaultAppearance().SchemesPageVM(_colorSchemesPageVM);
+                profileVM.DefaultAppearance().WindowRoot(*this);
                 if (profileVM.UnfocusedAppearance())
                 {
                     profileVM.UnfocusedAppearance().SchemesPageVM(_colorSchemesPageVM);
+                    profileVM.UnfocusedAppearance().WindowRoot(*this);
                 }
                 auto navItem = _CreateProfileNavViewItem(profileVM);
                 menuItems.Append(navItem);
@@ -573,9 +572,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto newProfile{ profile ? profile : _settingsClone.CreateNewProfile() };
         const auto profileViewModel{ _viewModelForProfile(newProfile, _settingsClone) };
         profileViewModel.DefaultAppearance().SchemesPageVM(_colorSchemesPageVM);
+        profileViewModel.DefaultAppearance().WindowRoot(*this);
         if (profileViewModel.UnfocusedAppearance())
         {
             profileViewModel.UnfocusedAppearance().SchemesPageVM(_colorSchemesPageVM);
+            profileViewModel.UnfocusedAppearance().WindowRoot(*this);
         }
         const auto navItem{ _CreateProfileNavViewItem(profileViewModel) };
         SettingsNav().MenuItems().InsertAt(index, navItem);
