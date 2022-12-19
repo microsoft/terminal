@@ -390,13 +390,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         else if (clickedItemTag == globalProfileTag)
         {
             auto profileVM{ _viewModelForProfile(_settingsClone.ProfileDefaults(), _settingsClone) };
-            profileVM.DefaultAppearance().SchemesPageVM(_colorSchemesPageVM);
-            profileVM.DefaultAppearance().WindowRoot(*this);
-            if (profileVM.UnfocusedAppearance())
-            {
-                profileVM.UnfocusedAppearance().SchemesPageVM(_colorSchemesPageVM);
-                profileVM.UnfocusedAppearance().WindowRoot(*this);
-            }
+            profileVM.SetupAppearances(_colorSchemesPageVM, *this);
             profileVM.IsBaseLayer(true);
 
             _SetupProfileEventHandling(profileVM);
@@ -449,13 +443,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - profile - the profile object we are getting a view of
     void MainPage::_Navigate(const Editor::ProfileViewModel& profile, BreadcrumbSubPage subPage)
     {
-        profile.DefaultAppearance().SchemesPageVM(_colorSchemesPageVM);
-        profile.DefaultAppearance().WindowRoot(*this);
-        if (profile.UnfocusedAppearance())
-        {
-            profile.UnfocusedAppearance().SchemesPageVM(_colorSchemesPageVM);
-            profile.UnfocusedAppearance().WindowRoot(*this);
-        }
+        profile.SetupAppearances(_colorSchemesPageVM, *this);
 
         _PreNavigateHelper();
 
@@ -542,13 +530,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (!profile.Deleted())
             {
                 auto profileVM = _viewModelForProfile(profile, _settingsClone);
-                profileVM.DefaultAppearance().SchemesPageVM(_colorSchemesPageVM);
-                profileVM.DefaultAppearance().WindowRoot(*this);
-                if (profileVM.UnfocusedAppearance())
-                {
-                    profileVM.UnfocusedAppearance().SchemesPageVM(_colorSchemesPageVM);
-                    profileVM.UnfocusedAppearance().WindowRoot(*this);
-                }
+                profileVM.SetupAppearances(_colorSchemesPageVM, *this);
                 auto navItem = _CreateProfileNavViewItem(profileVM);
                 menuItems.Append(navItem);
             }
@@ -571,13 +553,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         const auto newProfile{ profile ? profile : _settingsClone.CreateNewProfile() };
         const auto profileViewModel{ _viewModelForProfile(newProfile, _settingsClone) };
-        profileViewModel.DefaultAppearance().SchemesPageVM(_colorSchemesPageVM);
-        profileViewModel.DefaultAppearance().WindowRoot(*this);
-        if (profileViewModel.UnfocusedAppearance())
-        {
-            profileViewModel.UnfocusedAppearance().SchemesPageVM(_colorSchemesPageVM);
-            profileViewModel.UnfocusedAppearance().WindowRoot(*this);
-        }
+        profileViewModel.SetupAppearances(_colorSchemesPageVM, *this);
         const auto navItem{ _CreateProfileNavViewItem(profileViewModel) };
         SettingsNav().MenuItems().InsertAt(index, navItem);
 

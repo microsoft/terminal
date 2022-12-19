@@ -349,4 +349,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         auto deleteProfileArgs{ winrt::make_self<DeleteProfileEventArgs>(Guid()) };
         _DeleteProfileHandlers(*this, *deleteProfileArgs);
     }
+
+    void ProfileViewModel::SetupAppearances(Editor::ColorSchemesPageViewModel colorSchemesPageVM, Editor::IHostedInWindow windowRoot)
+    {
+        DefaultAppearance().SchemesPageVM(colorSchemesPageVM);
+        DefaultAppearance().WindowRoot(windowRoot);
+        if (UnfocusedAppearance())
+        {
+            UnfocusedAppearance().SchemesPageVM(colorSchemesPageVM);
+            UnfocusedAppearance().WindowRoot(windowRoot);
+        }
+    }
 }

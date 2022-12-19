@@ -23,6 +23,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Model::TerminalSettings TermSettings() const;
         void DeleteProfile();
 
+        void SetupAppearances(Editor::ColorSchemesPageViewModel colorSchemesPageVM, Editor::IHostedInWindow windowRoot);
+
         // bell style bits
         bool IsBellStyleFlagSet(const uint32_t flag);
         void SetBellStyleAudible(winrt::Windows::Foundation::IReference<bool> on);

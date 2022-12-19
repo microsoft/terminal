@@ -4,6 +4,7 @@
 import "EnumEntry.idl";
 import "MainPage.idl";
 import "Appearances.idl";
+import "ColorSchemesPageViewModel.idl";
 
 #include "ViewModelHelpers.idl.h"
 
@@ -33,6 +34,8 @@ namespace Microsoft.Terminal.Settings.Editor
         Microsoft.Terminal.Settings.Model.TerminalSettings TermSettings { get; };
 
         event Windows.Foundation.TypedEventHandler<ProfileViewModel, DeleteProfileEventArgs> DeleteProfile;
+
+        void SetupAppearances(ColorSchemesPageViewModel colorSchemesPageVM, IHostedInWindow windowRoot);
 
         void SetAcrylicOpacityPercentageValue(Double value);
         void SetPadding(Double value);
