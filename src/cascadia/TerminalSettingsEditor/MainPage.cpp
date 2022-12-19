@@ -56,8 +56,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         InitializeComponent();
 
-        _InitializeProfilesList();
-
         _colorSchemesPageVM = winrt::make<ColorSchemesPageViewModel>(_settingsClone);
         _colorSchemesPageViewModelChangedRevoker = _colorSchemesPageVM.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
             const auto settingName{ args.PropertyName() };
@@ -83,6 +81,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 _breadcrumbs.Append(crumb);
             }
         });
+
+        // Make sure to initialize the profiles _after_ we have initialized the color schemes page VM, because we pass
+        // that VM into the appearance VMs within the profiles
+        _InitializeProfilesList();
 
         Automation::AutomationProperties::SetHelpText(SaveButton(), RS_(L"Settings_SaveSettingsButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
         Automation::AutomationProperties::SetHelpText(ResetButton(), RS_(L"Settings_ResetSettingsButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
@@ -443,8 +445,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - profile - the profile object we are getting a view of
     void MainPage::_Navigate(const Editor::ProfileViewModel& profile, BreadcrumbSubPage subPage)
     {
-        profile.SetupAppearances(_colorSchemesPageVM, *this);
-
         _PreNavigateHelper();
 
         _SetupProfileEventHandling(profile);
