@@ -227,25 +227,41 @@
                                    Grid.Row="1"
                                    Grid.Column="0"
                                    VerticalAlignment="Center" />
-                        <StackPanel Grid.Row="1"
-                                    Grid.Column="1">
-                            <StackPanel Orientation="Horizontal"
-                                        Spacing="4">
-                                <muxc:NumberBox x:Name="PosXBox"
-                                                x:Uid="Globals_InitialPosXBox"
-                                                IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.UseDefaultLaunchPosition), Mode=OneWay}"
-                                                Style="{StaticResource LaunchSizeNumberBoxStyle}"
-                                                Value="{x:Bind ViewModel.InitialPosX, Mode=TwoWay}" />
-                                <muxc:NumberBox x:Name="PosYBox"
-                                                x:Uid="Globals_InitialPosYBox"
-                                                IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.UseDefaultLaunchPosition), Mode=OneWay}"
-                                                Style="{StaticResource LaunchSizeNumberBoxStyle}"
-                                                Value="{x:Bind ViewModel.InitialPosY, Mode=TwoWay}" />
-                            </StackPanel>
+                        <Grid Grid.Row="1"
+                              Grid.Column="1"
+                              ColumnSpacing="4">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <!--  Match the width of these NumberBoxes to the Width of the LaunchModeComboBox above minus the Grid's ColumnSpacing  -->
+                            <muxc:NumberBox x:Name="PosXBox"
+                                            x:Uid="Globals_InitialPosXBox"
+                                            Grid.Row="0"
+                                            Grid.Column="0"
+                                            Width="118"
+                                            IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.UseDefaultLaunchPosition), Mode=OneWay}"
+                                            Style="{StaticResource LaunchSizeNumberBoxStyle}"
+                                            Value="{x:Bind ViewModel.InitialPosX, Mode=TwoWay}" />
+                            <muxc:NumberBox x:Name="PosYBox"
+                                            x:Uid="Globals_InitialPosYBox"
+                                            Grid.Row="0"
+                                            Grid.Column="1"
+                                            Width="118"
+                                            IsEnabled="{x:Bind local:Converters.InvertBoolean(ViewModel.UseDefaultLaunchPosition), Mode=OneWay}"
+                                            Style="{StaticResource LaunchSizeNumberBoxStyle}"
+                                            Value="{x:Bind ViewModel.InitialPosY, Mode=TwoWay}" />
                             <CheckBox x:Name="UseDefaultLaunchPositionCheckbox"
                                       x:Uid="Globals_DefaultLaunchPositionCheckbox"
+                                      Grid.Row="1"
+                                      Grid.Column="0"
+                                      Grid.ColumnSpan="2"
                                       IsChecked="{x:Bind ViewModel.UseDefaultLaunchPosition, Mode=TwoWay}" />
-                        </StackPanel>
+                        </Grid>
                         <TextBlock x:Uid="Globals_CenterOnLaunch"
                                    Grid.Row="2"
                                    Grid.Column="0"

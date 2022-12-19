@@ -817,6 +817,7 @@ HORZ
 hostable
 hostlib
 HPA
+hpcon
 HPCON
 hpj
 HPR
