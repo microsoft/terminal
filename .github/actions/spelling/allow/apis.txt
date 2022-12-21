@@ -61,6 +61,7 @@ hrgn
 HTCLOSE
 hwinsta
 HWINSTA
+IAccessible
 IActivation
 IApp
 IAppearance

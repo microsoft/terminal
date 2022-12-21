@@ -12,6 +12,7 @@ changelog
 clickable
 clig
 CMMI
+colsize
 copyable
 CtrlDToClose
 cybersecurity
@@ -87,12 +88,14 @@ reserialization
 reserialize
 reserializes
 rlig
+rowsize
 runtimes
 shcha
 slnt
 Sos
 ssh
 stakeholders
+takeaways
 timeline
 timelines
 timestamped
