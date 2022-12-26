@@ -1269,6 +1269,23 @@ bool AdaptDispatch::SelectAttributeChangeExtent(const DispatchTypes::ChangeExten
 }
 
 // Routine Description:
+// - DECRQCRA - Computes and reports a checksum of the specified area of
+//   the buffer memory.
+// Arguments:
+// - id - a numeric label used to identify the request.
+// - page - The page number (unused for now).
+// - top - The first row of the area.
+// - left - The first column of the area.
+// - bottom - The last row of the area (inclusive).
+// - right - The last column of the area (inclusive).
+// Return value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::RequestChecksumRectangularArea(const VTInt /*id*/, const VTInt /*page*/, const VTInt /*top*/, const VTInt /*left*/, const VTInt /*bottom*/, const VTInt /*right*/)
+{
+    return false;
+}
+
+// Routine Description:
 // - DECSWL/DECDWL/DECDHL - Sets the line rendition attribute for the current line.
 // Arguments:
 // - rendition - Determines whether the line will be rendered as single width, double
