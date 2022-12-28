@@ -24,39 +24,6 @@ ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider& io) :
 {
 }
 
-// Routine Description:
-// - Handles the print action from the state machine
-// Arguments:
-// - string - The string to be printed.
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::PrintString(const std::wstring_view string)
-{
-    auto dwNumBytes = string.size() * sizeof(wchar_t);
-
-    auto& cursor = _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
-    if (!cursor.IsOn())
-    {
-        cursor.SetIsOn(true);
-    }
-
-    // Defer the cursor drawing while we are iterating the string, for a better performance.
-    // We can not waste time displaying a cursor event when we know more text is coming right behind it.
-    cursor.StartDeferDrawing();
-    const auto ntstatus = WriteCharsLegacy(_io.GetActiveOutputBuffer(),
-                                           string.data(),
-                                           string.data(),
-                                           string.data(),
-                                           &dwNumBytes,
-                                           nullptr,
-                                           _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor().GetPosition().x,
-                                           WC_LIMIT_BACKSPACE | WC_DELAY_EOL_WRAP,
-                                           nullptr);
-    cursor.EndDeferDrawing();
-
-    THROW_IF_NTSTATUS_FAILED(ntstatus);
-}
-
 // - Sends a string response to the input stream of the console.
 // - Used by various commands where the program attached would like a reply to one of the commands issued.
 // - This will generate two "key presses" (one down, one up) for every character in the string and place them into the head of the console's input stream.

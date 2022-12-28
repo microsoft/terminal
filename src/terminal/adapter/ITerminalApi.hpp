@@ -37,7 +37,6 @@ namespace Microsoft::Console::VirtualTerminal
         ITerminalApi& operator=(const ITerminalApi&) = delete;
         ITerminalApi& operator=(ITerminalApi&&) = delete;
 
-        virtual void PrintString(const std::wstring_view string) = 0;
         virtual void ReturnResponse(const std::wstring_view response) = 0;
 
         virtual StateMachine& GetStateMachine() = 0;

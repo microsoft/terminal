@@ -60,11 +60,6 @@ using namespace Microsoft::Console::VirtualTerminal;
 class TestGetSet final : public ITerminalApi
 {
 public:
-    void PrintString(const std::wstring_view string) override
-    {
-        _printed += string;
-    }
-
     void ReturnResponse(const std::wstring_view response) override
     {
         Log::Comment(L"ReturnResponse MOCK called...");

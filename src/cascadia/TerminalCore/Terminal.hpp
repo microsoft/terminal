@@ -105,7 +105,6 @@ public:
 
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp
-    void PrintString(const std::wstring_view string) override;
     void ReturnResponse(const std::wstring_view response) override;
     Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine() noexcept override;
     TextBuffer& GetTextBuffer() noexcept override;
@@ -420,8 +419,6 @@ private:
 
     Microsoft::Console::Types::Viewport _GetMutableViewport() const noexcept;
     Microsoft::Console::Types::Viewport _GetVisibleViewport() const noexcept;
-
-    void _WriteBuffer(const std::wstring_view& stringView);
 
     void _AdjustCursorPosition(const til::point proposedPosition);
 

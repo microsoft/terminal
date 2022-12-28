@@ -20,12 +20,6 @@ TRACELOGGING_DEFINE_PROVIDER(g_hCTerminalCoreProvider,
                              (0x103ac8cf, 0x97d2, 0x51aa, 0xb3, 0xba, 0x5f, 0xfd, 0x55, 0x28, 0xfa, 0x5f),
                              TraceLoggingOptionMicrosoftTelemetry());
 
-// Print puts the text in the buffer and moves the cursor
-void Terminal::PrintString(const std::wstring_view string)
-{
-    _WriteBuffer(string);
-}
-
 void Terminal::ReturnResponse(const std::wstring_view response)
 {
     if (_pfnWriteInput)
