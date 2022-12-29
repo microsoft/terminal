@@ -109,7 +109,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             try
             {
                 // MSFT:38542548 _We believe_ that this is the source of the
-                // crash here. After we get the result, stash it's values into a
+                // crash here. After we get the result, stash its values into a
                 // local copy, so that we can check them later. If the Monarch
                 // dies between now and the inspection of
                 // `result.ShouldCreateWindow` below, we don't want to explode
@@ -488,7 +488,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             {
                 try
                 {
-                    // Wrap this in it's own try/catch, because this can throw.
+                    // Wrap this in its own try/catch, because this can throw.
                     _createMonarchAndCallbacks();
                 }
                 catch (...)
@@ -572,7 +572,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             // monarch.
             try
             {
-                // This might fail to even ask the monarch for it's PID.
+                // This might fail to even ask the monarch for its PID.
                 wil::unique_handle hMonarch{ OpenProcess(PROCESS_ALL_ACCESS,
                                                          FALSE,
                                                          static_cast<DWORD>(_monarch.GetPID())) };
@@ -647,7 +647,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             catch (...)
             {
                 // Theoretically, if window[1] dies when we're trying to get
-                // it's PID we'll get here. If we just try to do the election
+                // its PID we'll get here. If we just try to do the election
                 // once here, it's possible we might elect window[2], but have
                 // it die before we add ourselves as a peasant. That
                 // _performElection call will throw, and we wouldn't catch it

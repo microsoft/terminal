@@ -1801,7 +1801,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //        when the control is visible as the DPI changes.
     //      - The CompositionScale will be the new DPI. This happens when the
     //        control wasn't focused as the window's DPI changed, so it only got
-    //        these messages after XAML updated it's scaling.
+    //        these messages after XAML updated its scaling.
     //   - 3. Finally, a CompositionScaleChanged with the _new_ DPI.
     //   - 4. We'll usually get another SizeChanged some time after this last
     //     ScaleChanged. This usually seems to happen after something triggers
@@ -2540,7 +2540,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     // Fix path for WSL
                     // In the fullness of time, we should likely plumb this up
                     // to the TerminalApp layer, and have it make the decision
-                    // if this control should have it's path mangled (and do the
+                    // if this control should have its path mangled (and do the
                     // mangling), rather than exposing the source concept to the
                     // Control layer.
                     //
