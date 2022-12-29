@@ -174,16 +174,18 @@ bool ConhostInternalGetSet::GetLineFeedMode() const
 // - Performs a line feed, possibly preceded by carriage return.
 // Arguments:
 // - withReturn - Set to true if a carriage return should be performed as well.
+// - wrapForced - Set to true is the line feed was the result of the line wrapping.
 // Return Value:
 // - <none>
-void ConhostInternalGetSet::LineFeed(const bool withReturn)
+void ConhostInternalGetSet::LineFeed(const bool withReturn, const bool wrapForced)
 {
     auto& screenInfo = _io.GetActiveOutputBuffer();
     auto& textBuffer = screenInfo.GetTextBuffer();
     auto cursorPosition = textBuffer.GetCursor().GetPosition();
 
-    // Since we are explicitly moving down a row, clear the wrap status on the row we're leaving
-    textBuffer.GetRowByOffset(cursorPosition.y).SetWrapForced(false);
+    // If the line was forced to wrap, set the wrap status.
+    // When explicitly moving down a row, clear the wrap status.
+    textBuffer.GetRowByOffset(cursorPosition.y).SetWrapForced(wrapForced);
 
     cursorPosition.y += 1;
     if (withReturn)

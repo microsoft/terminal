@@ -143,7 +143,7 @@ public:
         return _getLineFeedModeResult;
     }
 
-    void LineFeed(const bool withReturn) override
+    void LineFeed(const bool withReturn, const bool /*wrapForced*/) override
     {
         Log::Comment(L"LineFeed MOCK called...");
 

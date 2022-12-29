@@ -86,13 +86,13 @@ bool Terminal::GetLineFeedMode() const noexcept
     return false;
 }
 
-void Terminal::LineFeed(const bool withReturn)
+void Terminal::LineFeed(const bool withReturn, const bool wrapForced)
 {
     auto cursorPos = _activeBuffer().GetCursor().GetPosition();
 
-    // since we explicitly just moved down a row, clear the wrap status on the
-    // row we just came from
-    _activeBuffer().GetRowByOffset(cursorPos.y).SetWrapForced(false);
+    // If the line was forced to wrap, set the wrap status.
+    // When explicitly moving down a row, clear the wrap status.
+    _activeBuffer().GetRowByOffset(cursorPos.y).SetWrapForced(wrapForced);
 
     cursorPos.y++;
     if (withReturn)

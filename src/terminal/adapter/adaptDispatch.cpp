@@ -94,8 +94,7 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
             // different position from where the EOL was marked.
             if (delayedCursorPosition == cursorPosition)
             {
-                // TODO: We need to update this API so it doesn't clear the wrap status on this line
-                _api.LineFeed(true);
+                _api.LineFeed(true, true);
                 cursorPosition = cursor.GetPosition();
                 // We need to recalculate the width when moving to a new line.
                 lineWidth = textBuffer.GetLineWidth(cursorPosition.y);
@@ -1967,13 +1966,13 @@ bool AdaptDispatch::LineFeed(const DispatchTypes::LineFeedType lineFeedType)
     switch (lineFeedType)
     {
     case DispatchTypes::LineFeedType::DependsOnMode:
-        _api.LineFeed(_api.GetLineFeedMode());
+        _api.LineFeed(_api.GetLineFeedMode(), false);
         return true;
     case DispatchTypes::LineFeedType::WithoutReturn:
-        _api.LineFeed(false);
+        _api.LineFeed(false, false);
         return true;
     case DispatchTypes::LineFeedType::WithReturn:
-        _api.LineFeed(true);
+        _api.LineFeed(true, false);
         return true;
     default:
         return false;
