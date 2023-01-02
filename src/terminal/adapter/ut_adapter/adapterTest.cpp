@@ -311,8 +311,6 @@ public:
 
         _response.clear();
         _retainResponse = false;
-
-        _printed.clear();
     }
 
     void PrepCursor(CursorX xact, CursorY yact)
@@ -403,8 +401,6 @@ public:
     til::inclusive_rect _viewport;
     til::inclusive_rect _expectedScrollRegion;
     til::inclusive_rect _activeScrollRegion;
-
-    std::wstring _printed;
 
     til::point _expectedCursorPos;
 
@@ -2529,44 +2525,50 @@ public:
         setMacroText(2, L"Macro 2");
         setMacroText(63, L"Macro 63");
 
+        const auto getBufferOutput = [&]() {
+            const auto& textBuffer = _testGetSet->GetTextBuffer();
+            const auto cursorPos = textBuffer.GetCursor().GetPosition();
+            return textBuffer.GetRowByOffset(cursorPos.y).GetText().substr(0, cursorPos.x);
+        };
+
         Log::Comment(L"Simple macro invoke");
-        _testGetSet->_printed.clear();
+        _testGetSet->PrepData();
         _stateMachine->ProcessString(L"\033[2*z");
-        VERIFY_ARE_EQUAL(L"Macro 2", _testGetSet->_printed);
+        VERIFY_ARE_EQUAL(L"Macro 2", getBufferOutput());
 
         Log::Comment(L"Default macro invoke");
-        _testGetSet->_printed.clear();
+        _testGetSet->PrepData();
         _stateMachine->ProcessString(L"\033[*z");
-        VERIFY_ARE_EQUAL(L"Macro 0", _testGetSet->_printed);
+        VERIFY_ARE_EQUAL(L"Macro 0", getBufferOutput());
 
         Log::Comment(L"Maximum ID number");
-        _testGetSet->_printed.clear();
+        _testGetSet->PrepData();
         _stateMachine->ProcessString(L"\033[63*z");
-        VERIFY_ARE_EQUAL(L"Macro 63", _testGetSet->_printed);
+        VERIFY_ARE_EQUAL(L"Macro 63", getBufferOutput());
 
         Log::Comment(L"Out of range ID number");
-        _testGetSet->_printed.clear();
+        _testGetSet->PrepData();
         _stateMachine->ProcessString(L"\033[64*z");
-        VERIFY_ARE_EQUAL(L"", _testGetSet->_printed);
+        VERIFY_ARE_EQUAL(L"", getBufferOutput());
 
         Log::Comment(L"Only one ID parameter allowed");
-        _testGetSet->_printed.clear();
+        _testGetSet->PrepData();
         _stateMachine->ProcessString(L"\033[2;0;1*z");
-        VERIFY_ARE_EQUAL(L"Macro 2", _testGetSet->_printed);
+        VERIFY_ARE_EQUAL(L"Macro 2", getBufferOutput());
 
         Log::Comment(L"DECDMAC ignored when inside a macro");
         setMacroText(10, L"[\033P1;0;0!zReplace Macro 1\033\\]");
-        _testGetSet->_printed.clear();
+        _testGetSet->PrepData();
         _stateMachine->ProcessString(L"\033[10*z");
         _stateMachine->ProcessString(L"\033[1*z");
-        VERIFY_ARE_EQUAL(L"[]Macro 1", _testGetSet->_printed);
+        VERIFY_ARE_EQUAL(L"[]Macro 1", getBufferOutput());
 
         Log::Comment(L"Maximum recursive depth is 16");
         setMacroText(0, L"<\033[1*z>");
         setMacroText(1, L"[\033[0*z]");
-        _testGetSet->_printed.clear();
+        _testGetSet->PrepData();
         _stateMachine->ProcessString(L"\033[0*z");
-        VERIFY_ARE_EQUAL(L"<[<[<[<[<[<[<[<[]>]>]>]>]>]>]>]>", _testGetSet->_printed);
+        VERIFY_ARE_EQUAL(L"<[<[<[<[<[<[<[<[]>]>]>]>]>]>]>]>", getBufferOutput());
 
         _pDispatch->_macroBuffer = nullptr;
     }
