@@ -69,18 +69,9 @@ try
 {
     RETURN_IF_FAILED(RuntimeClassInitialize(pData, pProvider, wordDelimiters));
 
-    // start is before/at end, so this is valid
-    if (_pData->GetTextBuffer().GetSize().CompareInBounds(start, end, true) <= 0)
-    {
-        _start = start;
-        _end = end;
-    }
-    else
-    {
-        // start is after end, so we need to flip our concept of start/end
-        _start = end;
-        _end = start;
-    }
+    // start must be before or equal to end
+    _start = std::min(start, end);
+    _end = std::max(start, end);
 
     // This should be the only way to set if we are a blockRange
     // This is used for blockSelection
@@ -165,21 +156,13 @@ bool UiaTextRangeBase::SetEndpoint(TextPatternRangeEndpoint endpoint, const til:
     {
     case TextPatternRangeEndpoint_End:
         _end = val;
-        // if end is before start...
-        if (bufferSize.CompareInBounds(_end, _start, true) < 0)
-        {
-            // make this range degenerate at end
-            _start = _end;
-        }
+        // if start is past end, make this a degenerate range
+        _start = std::min(_start, _end);
         break;
     case TextPatternRangeEndpoint_Start:
         _start = val;
-        // if start is after end...
-        if (bufferSize.CompareInBounds(_start, _end, true) > 0)
-        {
-            // make this range degenerate at start
-            _end = _start;
-        }
+        // if end is before start, make this a degenerate range
+        _end = std::max(_start, _end);
         break;
     default:
         break;
@@ -293,7 +276,7 @@ void UiaTextRangeBase::_expandToEnclosingUnit(TextUnit unit)
     // If we're past document end,
     // set us to ONE BEFORE the document end.
     // This allows us to expand properly.
-    if (bufferSize.CompareInBounds(_start, documentEnd, true) >= 0)
+    if (_start >= documentEnd)
     {
         _start = documentEnd;
         bufferSize.DecrementInBounds(_start, true);
@@ -653,8 +636,8 @@ try
         bufferSize.IncrementInBounds(end, true);
 
         // make sure what was found is within the bounds of the current range
-        if ((searchDirection == Search::Direction::Forward && bufferSize.CompareInBounds(end, _end, true) < 0) ||
-            (searchDirection == Search::Direction::Backward && bufferSize.CompareInBounds(start, _start) > 0))
+        if ((searchDirection == Search::Direction::Forward && end < _end) ||
+            (searchDirection == Search::Direction::Backward && start > _start))
         {
             RETURN_IF_FAILED(Clone(ppRetVal));
             auto& range = static_cast<UiaTextRangeBase&>(**ppRetVal);
@@ -870,26 +853,16 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
         const auto viewportOrigin = viewport.Origin();
         const auto viewportEnd = viewport.EndExclusive();
 
-        // startAnchor: the earliest til::point we will get a bounding rect for
-        auto startAnchor = GetEndpoint(TextPatternRangeEndpoint_Start);
-        if (bufferSize.CompareInBounds(startAnchor, viewportOrigin, true) < 0)
-        {
-            // earliest we can be is the origin
-            startAnchor = viewportOrigin;
-        }
+        // startAnchor: the earliest til::point we will get a bounding rect for; at least the viewport origin
+        const auto startAnchor = std::max(GetEndpoint(TextPatternRangeEndpoint_Start), viewportOrigin);
 
-        // endAnchor: the latest til::point we will get a bounding rect for
-        auto endAnchor = GetEndpoint(TextPatternRangeEndpoint_End);
-        if (bufferSize.CompareInBounds(endAnchor, viewportEnd, true) > 0)
-        {
-            // latest we can be is the viewport end
-            endAnchor = viewportEnd;
-        }
+        // endAnchor: the latest til::point we will get a bounding rect for; at most the viewport end
+        auto endAnchor = std::min(GetEndpoint(TextPatternRangeEndpoint_End), viewportEnd);
 
         // _end is exclusive, let's be inclusive so we don't have to think about it anymore for bounding rects
         bufferSize.DecrementInBounds(endAnchor, true);
 
-        if (IsDegenerate() || bufferSize.CompareInBounds(_start, viewportEnd, true) > 0 || bufferSize.CompareInBounds(_end, viewportOrigin, true) < 0)
+        if (IsDegenerate() || _start > viewportEnd || _end < viewportOrigin)
         {
             // An empty array is returned for a degenerate (empty) text range.
             // reference: https://docs.microsoft.com/en-us/windows/win32/api/uiautomationclient/nf-uiautomationclient-iuiautomationtextrange-getboundingrectangles
@@ -1052,14 +1025,8 @@ try
     constexpr auto endpoint = TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start;
     const auto bufferSize{ _pData->GetTextBuffer().GetSize() };
     const auto documentEnd = _getDocumentEnd();
-    if (bufferSize.CompareInBounds(_start, documentEnd, true) > 0)
-    {
-        _start = documentEnd;
-    }
-    if (bufferSize.CompareInBounds(_end, documentEnd, true) > 0)
-    {
-        _end = documentEnd;
-    }
+    _start = std::min(_start, documentEnd);
+    _end = std::min(_end, documentEnd);
 
     const auto wasDegenerate = IsDegenerate();
     if (count != 0)
@@ -1126,14 +1093,8 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoin
     }
     CATCH_LOG();
 
-    if (bufferSize.CompareInBounds(_start, documentEnd, true) > 0)
-    {
-        _start = documentEnd;
-    }
-    if (bufferSize.CompareInBounds(_end, documentEnd, true) > 0)
-    {
-        _end = documentEnd;
-    }
+    _start = std::min(_start, documentEnd);
+    _end = std::min(_end, documentEnd);
 
     try
     {
@@ -1523,7 +1484,7 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
         {
         case MovementDirection::Forward:
         {
-            if (bufferSize.CompareInBounds(nextPos, documentEnd, true) >= 0)
+            if (nextPos >= documentEnd)
             {
                 success = false;
             }
@@ -1744,7 +1705,7 @@ void UiaTextRangeBase::_moveEndpointByUnitDocument(_In_ const int moveCount,
         }
         CATCH_LOG();
 
-        if (preventBoundary || bufferSize.CompareInBounds(target, documentEnd, true) >= 0)
+        if (preventBoundary || target >= documentEnd)
         {
             return;
         }
