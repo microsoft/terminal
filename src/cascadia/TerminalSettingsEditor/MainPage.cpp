@@ -622,6 +622,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto newTag = newSelectedItem.as<MUX::Controls::NavigationViewItem>().Tag();
         if (const auto profileViewModel = newTag.try_as<ProfileViewModel>())
         {
+            profileViewModel->FocusDeleteButton(true);
             _Navigate(*profileViewModel, BreadcrumbSubPage::None);
         }
         else

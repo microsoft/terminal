@@ -132,7 +132,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         GETSET_BINDABLE_ENUM_SETTING(CursorShape, Microsoft::Terminal::Core::CursorStyle, Appearance().CursorShape);
         GETSET_BINDABLE_ENUM_SETTING(AdjustIndistinguishableColors, Microsoft::Terminal::Core::AdjustTextMode, Appearance().AdjustIndistinguishableColors);
-        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel>, ColorSchemeList, nullptr);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         DEPENDENCY_PROPERTY(Editor::AppearanceViewModel, Appearance);

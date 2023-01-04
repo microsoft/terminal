@@ -86,8 +86,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     DependencyProperty Appearances::_AppearanceProperty{ nullptr };
 
     Appearances::Appearances() :
-        _ShowAllFonts{ false },
-        _ColorSchemeList{ single_threaded_observable_vector<ColorSchemeViewModel>() }
+        _ShowAllFonts{ false }
     {
         InitializeComponent();
 
@@ -224,8 +223,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (Appearance())
         {
-            _ColorSchemeList = Appearance().SchemesPageVM().AllColorSchemes();
-
             const auto& biAlignmentVal{ static_cast<int32_t>(Appearance().BackgroundImageAlignment()) };
             for (const auto& biButton : _BIAlignmentButtons)
             {

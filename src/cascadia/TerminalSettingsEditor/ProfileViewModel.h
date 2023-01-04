@@ -90,6 +90,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, VtPassthrough)
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
+        WINRT_PROPERTY(bool, FocusDeleteButton, false);
         WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
         GETSET_BINDABLE_ENUM_SETTING(AntiAliasingMode, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode);
         GETSET_BINDABLE_ENUM_SETTING(CloseOnExitMode, Microsoft::Terminal::Settings::Model::CloseOnExitMode, CloseOnExit);

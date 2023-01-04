@@ -70,7 +70,6 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> AdjustIndistinguishableColorsList { get; };
 
         ColorSchemeViewModel CurrentColorScheme;
-        Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> ColorSchemeList { get; };
 
         IInspectable CurrentBackgroundImageStretchMode;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> BackgroundImageStretchModeList { get; };

@@ -55,6 +55,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> ScrollStateList { get; };
 
         Boolean CanDeleteProfile { get; };
+        Boolean FocusDeleteButton;
         Boolean IsBaseLayer;
         ProfileSubPage CurrentPage;
         Boolean UseParentProcessDirectory;
