@@ -56,6 +56,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         InitializeComponent();
         _UpdateBackgroundForMica();
+        _SetupNavViewItems();
         _InitializeProfilesList();
 
         _colorSchemesPageVM = winrt::make<ColorSchemesPageViewModel>(_settingsClone);
@@ -112,6 +113,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             lastBreadcrumb = _breadcrumbs.GetAt(size - 1);
         }
 
+        // Collect all the values out of the old nav view item source
         auto menuItems{ SettingsNav().MenuItems() };
 
         // We'll remove a bunch of items and iterate over it twice.
@@ -151,7 +153,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }),
             menuItemsSTL.end());
 
-        menuItems.ReplaceAll(menuItemsSTL);
+        // Now, we've got a list of just the static entries again. Lets take
+        // those and stick them back into a new winrt vector, and set that as
+        // the source again.
+        //
+        // By setting MenuItemsSource in its entirety, rather than manipulating
+        // MenuItems, we avoid a crash in WinUI.
+        auto newSource = winrt::single_threaded_vector<IInspectable>(std::move(menuItemsSTL));
+        SettingsNav().MenuItemsSource(newSource);
 
         // Repopulate profile-related menu items
         _InitializeProfilesList();
@@ -204,7 +213,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Couldn't find the selected item, fallback to first menu item
         // This happens when the selected item was a profile which doesn't exist in the new configuration
         // We can use menuItemsSTL here because the only things they miss are profile entries.
-        const auto& firstItem{ menuItemsSTL.at(0).as<MUX::Controls::NavigationViewItem>() };
+        // const auto& firstItem{ menuItemsSTL.at(0).as<MUX::Controls::NavigationViewItem>() };
+        const auto& firstItem{ SettingsNav().MenuItems().GetAt(0).as<MUX::Controls::NavigationViewItem>() };
         SettingsNav().SelectedItem(firstItem);
         _Navigate(unbox_value<hstring>(firstItem.Tag()), BreadcrumbSubPage::None);
     }
@@ -527,7 +537,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::_InitializeProfilesList()
     {
-        const auto menuItems = SettingsNav().MenuItems();
+        const auto menuItems = SettingsNav().MenuItemsSource().try_as<Windows::Foundation::Collections::IVector<IInspectable>>();
+        // if (!menuItems)
+        //     return;
 
         // Manually create a NavigationViewItem for each profile
         // and keep a reference to them in a map so that we
@@ -553,6 +565,30 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         addProfileItem.Icon(icon);
 
         menuItems.Append(addProfileItem);
+    }
+
+    void MainPage::_SetupNavViewItems()
+    {
+        if (SettingsNav().MenuItemsSource())
+        {
+            // We've already copied over the origina items to a source. Wek can
+            // just skip this now.
+            return;
+        }
+
+        auto menuItems{ SettingsNav().MenuItems() };
+        // Remove all the existing items, and move them to a separate vector
+        // that we'll use as a MenuItemsSource. By doing this, we avoid a WinUI
+        // bug (MUX#6302) where modifying the NavView.Items() directly causes a
+        // crash. By leaving these static entries in XAML, we maintain the
+        // benefit of istantiating them from the XBF, rather than at runtime.
+        //
+        // --> Copy it into an STL vector to simplify our code and reduce COM overhead.
+        std::vector<IInspectable> menuItemsSTL(menuItems.Size(), nullptr);
+        menuItems.GetMany(0, menuItemsSTL);
+
+        auto newSource = winrt::single_threaded_vector<IInspectable>(std::move(menuItemsSTL));
+        SettingsNav().MenuItemsSource(newSource);
     }
 
     void MainPage::_CreateAndNavigateToNewProfile(const uint32_t index, const Model::Profile& profile)
