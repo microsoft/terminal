@@ -48,7 +48,10 @@ winrt::com_ptr<NewTabMenuEntry> FolderEntry::FromJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, NameKey, entry->_Name);
     JsonUtils::GetValueForKey(json, IconKey, entry->_Icon);
-    JsonUtils::GetValueForKey(json, EntriesKey, entry->_Entries);
+    if (const auto& entries{ JsonUtils::GetValueForKey<decltype(entry->_Entries)>(json, EntriesKey) })
+    {
+        entry->_Entries = entries;
+    }
     JsonUtils::GetValueForKey(json, InliningKey, entry->_Inlining);
     JsonUtils::GetValueForKey(json, AllowEmptyKey, entry->_AllowEmpty);
 
@@ -63,6 +66,10 @@ IVector<NewTabMenuEntryModel> FolderEntry::Entries() const
     // We filter the full list of entries from JSON to just include the
     // non-empty ones.
     IVector<NewTabMenuEntryModel> result{ winrt::single_threaded_vector<NewTabMenuEntryModel>() };
+    if (_Entries == nullptr)
+    {
+        return result;
+    }
 
     for (const auto& entry : _Entries)
     {
