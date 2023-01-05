@@ -43,7 +43,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 
     // The cmdline argument in WinMain is stripping the first argument.
     // Using GetCommandLine() and global command line arguments instead.
-    int argc = __argc;
+    const int argc = __argc;
     LPWSTR* argv = __wargv;
     if (argv == nullptr)
     {
