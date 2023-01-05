@@ -225,7 +225,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - <none>
     // Return Value:
-    // - Empty if inaccessible; an invocable shell appfolder path otherwise e.g. WindowsTerminalDev_8wekyb3d8bbwe!App
+    // - Empty if inaccessible; an invocable shell app folder path otherwise e.g. WindowsTerminalDev_8wekyb3d8bbwe!App
     winrt::hstring AppLogic::GetApplicationUserModelId()
     {
         winrt::hstring _applicationUserModelId = {};

@@ -42,7 +42,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     DebugBreak();
 
     // The cmdline argument in WinMain is stripping the first argument.
-    // Using GetCommandLine() and __wargv instead.
+    // Using GetCommandLine() and global command line arguments instead.
     int argc = __argc;
     LPWSTR* argv = __wargv;
     if (argv == nullptr)
@@ -69,8 +69,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 
         // We don't want to reconstruct the args with proper quoting and escaping.
         // Let's remove the first arg instead. This assumes it was not unescaped
-        // when processed to __wargv. We might leave a pair of empty quotes if it
-        // was quoted.
+        // when processed. We might leave a pair of empty quotes if it was quoted.
         args = cmdLine.replace(cmdLine.find(arg0), arg0.length(), L"");
     }
     else
