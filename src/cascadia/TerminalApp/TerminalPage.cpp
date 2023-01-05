@@ -4117,7 +4117,7 @@ namespace winrt::TerminalApp::implementation
         std::wstring shellCommand = {};
 
         auto appUserModelId = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().GetApplicationUserModelId();
-        if (appUserModelId.length() > 0)
+        if (appUserModelId.size() > 0)
         {
             // See GH#14501 for background. If you quote this string, you'll have
             // to update elevate-shim to strip the quotes when constructing the arguments.
