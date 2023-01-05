@@ -4114,9 +4114,22 @@ namespace winrt::TerminalApp::implementation
         std::filesystem::path exePath = wil::GetModuleFileNameW<std::wstring>(nullptr);
         exePath.replace_filename(L"elevate-shim.exe");
 
+        std::wstring shellCommand = {};
+
+        auto appUserModelId = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().GetApplicationUserModelId();
+        if (appUserModelId.length() > 0)
+        {
+            // See GH#14501 for background. If you quote this string, you'll have
+            // to update elevate-shim to strip the quotes when constructing the arguments.
+            shellCommand = fmt::format(L"shell:AppsFolder\\{}", appUserModelId);
+        }
+        // else leave shellCommand empty; fallback to invoking WindowsTerminal.exe
+
         // Build the commandline to pass to wt for this set of NewTerminalArgs
+        // The shellCommand argument is used if we're using shell:AppsFolder to launch the app;
+        // else, leave it empty.
         auto cmdline{
-            fmt::format(L"new-tab {}", newTerminalArgs.ToCommandline().c_str())
+            fmt::format(L"{} new-tab {}", shellCommand, newTerminalArgs.ToCommandline().c_str())
         };
 
         wil::unique_process_information pi;

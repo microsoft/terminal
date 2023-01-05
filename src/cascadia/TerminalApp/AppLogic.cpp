@@ -11,6 +11,7 @@
 #include <LibraryResources.h>
 #include <WtExeUtils.h>
 #include <wil/token_helpers.h>
+#include <appmodel.h>
 
 #include "../../types/inc/utils.hpp"
 
@@ -217,6 +218,43 @@ namespace winrt::TerminalApp::implementation
     bool AppLogic::IsUwp() const noexcept
     {
         return _isUwp;
+    }
+
+    // Method Description:
+    // - Called by _OpenElevatedWT to determine the app name to invoke with shell:AppFolder
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - Empty if inaccessible; an invocable shell appfolder path otherwise e.g. WindowsTerminalDev_8wekyb3d8bbwe!App
+    winrt::hstring AppLogic::GetApplicationUserModelId()
+    {
+        winrt::hstring _applicationUserModelId = {};
+        UINT32 length = 0;
+        LONG rc = GetCurrentApplicationUserModelId(&length, NULL);
+        switch (rc)
+        {
+        case ERROR_INSUFFICIENT_BUFFER:
+            break; // expected
+        case APPMODEL_ERROR_NO_PACKAGE:
+            return _applicationUserModelId;
+        default: // unexpected
+            return _applicationUserModelId;
+        }
+
+        wchar_t* packageId = new wchar_t[length];
+        if (packageId == nullptr)
+        {
+            return _applicationUserModelId; // doh
+        }
+
+        rc = GetCurrentApplicationUserModelId(&length, packageId);
+        if (rc != ERROR_SUCCESS)
+        {
+            return _applicationUserModelId;
+        }
+        _applicationUserModelId = packageId;
+        delete[] packageId;
+        return _applicationUserModelId;
     }
 
     // Method Description:

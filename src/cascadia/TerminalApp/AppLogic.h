@@ -64,6 +64,8 @@ namespace winrt::TerminalApp::implementation
         bool IsElevated() const noexcept;
         void ReloadSettings();
 
+        winrt::hstring GetApplicationUserModelId();
+
         [[nodiscard]] Microsoft::Terminal::Settings::Model::CascadiaSettings GetSettings() const noexcept;
 
         void Quit();
