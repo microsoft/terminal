@@ -570,22 +570,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
             // WCL-NOTE: wrong place (typically inside another character).
             CursorPosition.x = XPosition;
 
-            // enforce a delayed newline if we're about to pass the end and the WC_DELAY_EOL_WRAP flag is set.
-            if (WI_IsFlagSet(dwFlags, WC_DELAY_EOL_WRAP) && CursorPosition.x >= coordScreenBufferSize.width && fWrapAtEOL)
-            {
-                // Our cursor position as of this time is going to remain on the last position in this column.
-                CursorPosition.x = coordScreenBufferSize.width - 1;
-
-                // Update in the structures that we're still pointing to the last character in the row
-                cursor.SetPosition(CursorPosition);
-
-                // Record for the delay comparison that we're delaying on the last character in the row
-                cursor.DelayEOLWrap(CursorPosition);
-            }
-            else
-            {
-                Status = AdjustCursorPosition(screenInfo, CursorPosition, WI_IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
-            }
+            Status = AdjustCursorPosition(screenInfo, CursorPosition, WI_IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
 
             // WCL-NOTE: If we have processed the entire input string during our "fast one-line print" handler,
             // WCL-NOTE: we are done as there is nothing more to do. Neat!
