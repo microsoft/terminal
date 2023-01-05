@@ -1041,6 +1041,9 @@ namespace ControlUnitTests
         VERIFY_IS_TRUE(core->HasSelection());
 
         Log::Comment(L" --- Right-click to paste --- ");
+        // Note from GH#14464: we don't want to copy _again_ at this point. The
+        // copy occured when the selection was made, we shouldn't stealth-update
+        // the clipboard again.
         expectedCopyContents = std::nullopt;
         expectedPaste = true;
         interactivity->PointerPressed(rightMouseDown,
@@ -1053,6 +1056,9 @@ namespace ControlUnitTests
 
     void ControlInteractivityTests::CopyOnSelectAltBuffer()
     {
+        // This test was inspired by GH#14464. Ultimately, it's similar to the
+        // CopyOnSelectSimple, just with an alt buffer, and outputting text
+        // after the selection was made.
         auto [settings, conn] = _createSettingsAndConnection();
         settings->CopyOnSelect(true);
         auto [core, interactivity] = _createCoreAndInteractivity(*settings, *conn);

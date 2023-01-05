@@ -255,10 +255,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else if (WI_IsFlagSet(buttonState, MouseButtonState::IsRightButtonDown))
         {
-            // Try to copy the text and clear the selection
-            const auto successfulCopy = CopySelectionToClipboard(shiftEnabled, nullptr);
+            const auto copyOnSelect{ _core->CopyOnSelect() };
+            bool successfulCopy = false;
+
+            // Don't try to copy if we're in copyOnSelect mode and have already
+            // copied this selection. GH#14464 demonstrates a scenario where the
+            // buffer contents might have changed since the selection was made,
+            // and copying here would cause weirdness.
+            if (_selectionNeedsToBeCopied || !copyOnSelect)
+            {
+                // Try to copy the text and clear the selection
+                successfulCopy = CopySelectionToClipboard(shiftEnabled, nullptr);
+            }
             _core->ClearSelection();
-            if (_core->CopyOnSelect() || !successfulCopy)
+
+            if (copyOnSelect || !successfulCopy)
             {
                 // CopyOnSelect: right click always pastes!
                 // Otherwise: no selection --> paste
