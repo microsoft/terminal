@@ -155,6 +155,7 @@ namespace Microsoft::Console::VirtualTerminal
     private:
         enum class Mode
         {
+            InsertReplace,
             Origin,
             Column,
             AllowDECCOLM,
