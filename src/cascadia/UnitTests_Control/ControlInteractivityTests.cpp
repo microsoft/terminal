@@ -43,6 +43,8 @@ namespace ControlUnitTests
         TEST_METHOD(GetMouseEventsInTest);
         TEST_METHOD(AltBufferClampMouse);
 
+        TEST_METHOD(CopyOnSelectSimple);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             winrt::init_apartment(winrt::apartment_type::single_threaded);
@@ -965,5 +967,86 @@ namespace ControlUnitTests
                                       modifiers,
                                       cursorPosition1.to_core_point());
         VERIFY_ARE_EQUAL(0u, expectedOutput.size(), L"Validate we drained all the expected output");
+    }
+
+    void ControlInteractivityTests::CopyOnSelectSimple()
+    {
+        WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
+
+        auto [settings, conn] = _createSettingsAndConnection();
+        settings->CopyOnSelect(true);
+        auto [core, interactivity] = _createCoreAndInteractivity(*settings, *conn);
+        _standardInit(core, interactivity);
+        auto& term{ *core->_terminal };
+
+        // Output some text
+        for (auto i = 0; i < core->ViewHeight() / 2; ++i)
+        {
+            conn->WriteInput(winrt::hstring{ fmt::format(L"line {}\r\n", i) });
+        }
+
+        std::optional<std::wstring> expectedCopyContents{ std::nullopt };
+        core->CopyToClipboard([&](auto&&, auto& args) {
+            VERIFY_IS_TRUE(expectedCopyContents.has_value());
+            const std::wstring expected{ expectedCopyContents->c_str() };
+            const std::wstring actual{ args.Text().c_str() };
+            VERIFY_ARE_EQUAL(expected, actual);
+        });
+        // Start checking output
+        // std::deque<std::wstring> expectedOutput{};
+        // auto validateDrained = _addInputCallback(conn, expectedOutput);
+
+        const auto originalViewport{ term.GetViewport() };
+        VERIFY_ARE_EQUAL(originalViewport.Width(), 30);
+
+        // Log::Comment(L" --- Enable mouse mode ---");
+        // term.Write(L"\x1b[?1000h");
+
+        // Log::Comment(L" --- Click on the terminal ---");
+        // // Recall:
+        // //
+        // // >  !  specifies the value 1.  The upper left character position on
+        // // >  the terminal is denoted as 1,1
+        // //
+        // // So 5 in our buffer is 32+5+1 = '&'
+        // expectedOutput.push_back(L"\x1b[M &&");
+        // For this test, don't use any modifiers
+        const auto modifiers = ControlKeyStates();
+        const auto leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
+        const Control::MouseButtonState noMouseDown{};
+        const til::size fontSize{ 9, 21 };
+        const til::point terminalPosition0{ 0, 5 };
+        const til::point terminalPosition1{ 5, 5 };
+        const auto cursorPosition0{ terminalPosition0 * fontSize };
+        const auto cursorPosition1{ terminalPosition1 * fontSize };
+
+        Log::Comment(L" --- Click on the terminal at 0,5 ---");
+
+        interactivity->PointerPressed(leftMouseDown,
+                                      WM_LBUTTONDOWN, //pointerUpdateKind
+                                      0, // timestamp
+                                      modifiers,
+                                      cursorPosition0.to_core_point());
+        // VERIFY_ARE_EQUAL(0u, expectedOutput.size(), L"Validate we drained all the expected output");
+        VERIFY_IS_FALSE(core->HasSelection());
+
+        Log::Comment(L" --- Drag to 5,5 ---");
+
+        interactivity->PointerMoved(leftMouseDown,
+                                    WM_LBUTTONDOWN, //pointerUpdateKind
+                                    modifiers,
+                                    true, // focused,
+                                    cursorPosition1.to_core_point(),
+                                    true); // pointerPressedInBounds
+        VERIFY_IS_TRUE(core->HasSelection());
+        // expectedCopyContents being nullopt here will ensure that we don't send the copy event till the pointer released
+
+        Log::Comment(L" --- Release the mouse --- ");
+        expectedCopyContents = L"line 5";
+        interactivity->PointerReleased(noMouseDown,
+                                       WM_LBUTTONUP, //pointerUpdateKind
+                                       modifiers,
+                                       cursorPosition1.to_core_point());
+        VERIFY_IS_TRUE(core->HasSelection());
     }
 }
