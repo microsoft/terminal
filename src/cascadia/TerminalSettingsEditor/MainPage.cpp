@@ -17,6 +17,7 @@
 #include "InteractionViewModel.h"
 #include "LaunchViewModel.h"
 #include "..\types\inc\utils.hpp"
+#include <..\WinRTUtils\inc\Utils.h>
 
 #include <LibraryResources.h>
 
@@ -648,12 +649,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     {
         const auto& theme = _settingsSource.GlobalSettings().CurrentTheme();
+        const auto& requestedTheme = _settingsSource.GlobalSettings().CurrentTheme().RequestedTheme();
+
+        RequestedTheme(requestedTheme);
 
         const auto bgKey = (theme.Window() != nullptr && theme.Window().UseMica()) ?
                                L"SettingsPageMicaBackground" :
                                L"SettingsPageBackground";
 
-        if (const auto bgColor = Resources().TryLookup(winrt::box_value(bgKey)))
+        // remember to use ThemeLookup to get the actual correct color for the
+        // currently requested theme.
+        if (const auto bgColor = ThemeLookup(Resources(), requestedTheme, winrt::box_value(bgKey)))
         {
             SettingsNav().Background(winrt::WUX::Media::SolidColorBrush(winrt::unbox_value<Windows::UI::Color>(bgColor)));
         }
