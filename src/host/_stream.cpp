@@ -350,12 +350,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
 
     auto lpString = pwchRealUnicode;
 
-    auto coordScreenBufferSize = screenInfo.GetBufferSize().Dimensions();
-    // In VT mode, the width at which we wrap is determined by the line rendition attribute.
-    if (WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
-    {
-        coordScreenBufferSize.width = textBuffer.GetLineWidth(CursorPosition.y);
-    }
+    const auto coordScreenBufferSize = screenInfo.GetBufferSize().Dimensions();
 
     static constexpr til::CoordType LOCAL_BUFFER_SIZE = 1024;
     WCHAR LocalBuffer[LOCAL_BUFFER_SIZE];
@@ -376,11 +371,6 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
                 Status = AdjustCursorPosition(screenInfo, CursorPosition, WI_IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
 
                 CursorPosition = cursor.GetPosition();
-                // In VT mode, we need to recalculate the width when moving to a new line.
-                if (WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
-                {
-                    coordScreenBufferSize.width = textBuffer.GetLineWidth(CursorPosition.y);
-                }
             }
         }
 
