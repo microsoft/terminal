@@ -31,7 +31,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     //
     // #1 Invoke the AppX package using shell:AppsFolder\package!appid if
     // the first argument starts with shell:AppsFolder. The first argument
-    // is used as teh cmd to ShellExecuteEx and the remainder is passed as
+    // is used as the cmd to ShellExecuteEx and the remainder is passed as
     // the parameters.  e.g.
     //  cmd:    shell:AppsFolder\WindowsTerminalDev_8wekyb3d8bbwe!App
     //  params: new-tab -p {guid}`
