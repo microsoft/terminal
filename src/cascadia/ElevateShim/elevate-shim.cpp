@@ -29,39 +29,29 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 {
     // This supports being invoked in two possible ways. See GH#14501
     //
-    // #1 Invoke the AppX package using shell:AppsFolder\app!id. The callers passes
-    // the cmd as the first argument in the form of shell:AppsFolder\app!id. We parse
-    // this out of the command line as the cmd and pass the remainder as the cmdline
-    //      `shell:AppsFolder\WindowsTerminalDev_8wekyb3d8bbwe!App new-tab -p {guid}`
+    // #1 Invoke the AppX package using shell:AppsFolder\package!appid if
+    // the first argument starts with shell:AppsFolder. The first argument
+    // is used as teh cmd to ShellExecuteEx and the remainder is passed as
+    // the parameters.  e.g.
+    //  cmd:    shell:AppsFolder\WindowsTerminalDev_8wekyb3d8bbwe!App
+    //  params: new-tab -p {guid}`
     //
-    // #2 in this scenario we find and execute WindowsTerminal.exe and pass the
-    // cmdline args as-is.
-    //      `new-tab -p {guid}`
+    // #2 In this scenario we will find and execute WindowsTerminal.exe and pass
+    // the entire cmdline as-is to the new process.  e.g.
+    //  cmd:    {same path as this binary}\WindowsTerminal.exe
+    //  params: new-tab -p {guid}`
     //
 
-    DebugBreak();
-
-    // The cmdline argument in WinMain is stripping the first argument.
+    // The cmdline argument passed to WinMain is stripping the first argument.
     // Using GetCommandLine() and global command line arguments instead.
-    const int argc = __argc;
-    LPWSTR* argv = __wargv;
-    if (argv == nullptr)
-    {
-        OutputDebugString(L"elevate-shim: no arguments found, argv == nullptr");
-        LOG_LAST_ERROR_IF_NULL(argv);
-        return -1;
-    }
-    if (argc == 0)
-    {
-        OutputDebugString(L"elevate-shim: no arguments found, argc == 0");
-        return -1;
-    }
+    RETURN_HR_IF_MSG(E_UNEXPECTED, __argc <= 0, "elevate-shim: no arguments found, argc <= 0");
+    RETURN_HR_IF_NULL_MSG(E_UNEXPECTED, __wargv, "elevate-shim: no arguments found, argv is null");
 
     std::wstring cmdLine = GetCommandLine();
     std::wstring cmd = {};
     std::wstring args = {};
 
-    std::wstring arg0 = argv[0];
+    std::wstring arg0 = __wargv[0];
     if (arg0.starts_with(L"shell:AppsFolder"))
     {
         // scenario #1

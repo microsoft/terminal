@@ -50,8 +50,6 @@ namespace TerminalApp
         void RunAsUwp();
         Boolean IsElevated();
 
-        String GetApplicationUserModelId();
-
         Boolean HasCommandlineArguments();
         Boolean HasSettingsStartupActions();
         Int32 SetStartupCommandline(String[] commands);
@@ -70,7 +68,7 @@ namespace TerminalApp
 
         Boolean FocusMode { get; };
         Boolean Fullscreen { get; };
-        void Maximized(Boolean newMaximized);
+        void Maximized(Boolean newMaximized); 
         Boolean AlwaysOnTop { get; };
         Boolean AutoHideWindow { get; };
 

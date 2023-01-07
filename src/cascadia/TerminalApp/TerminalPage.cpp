@@ -13,6 +13,7 @@
 #include <LibraryResources.h>
 #include <TerminalCore/ControlKeyStates.hpp>
 #include <til/latch.h>
+#include <appmodel.h>
 
 #include "../../types/inc/utils.hpp"
 #include "ColorHelper.h"
@@ -4116,8 +4117,29 @@ namespace winrt::TerminalApp::implementation
 
         std::wstring shellCommand = {};
 
-        auto appUserModelId = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().GetApplicationUserModelId();
-        if (appUserModelId.size() > 0)
+        std::wstring appUserModelId;
+        auto result = wil::AdaptFixedSizeToAllocatedResult<std::wstring, APPLICATION_USER_MODEL_ID_MAX_LENGTH>(appUserModelId, [&](PWSTR value, size_t valueLength, size_t* valueLengthNeededWithNull) -> HRESULT {
+            UINT32 length = static_cast<UINT32>(valueLength);
+            LONG rc = GetCurrentApplicationUserModelId(&length, value);
+            switch (rc)
+            {
+            case S_OK:
+                *valueLengthNeededWithNull = length;
+                return S_OK;
+
+            case ERROR_INSUFFICIENT_BUFFER:
+                *valueLengthNeededWithNull = length;
+                return S_FALSE; // trigger allocation loop
+
+            case APPMODEL_ERROR_NO_APPLICATION:
+                return E_FAIL; // we are not running as a store app
+
+            default:
+                return E_UNEXPECTED;
+            }
+        });
+
+        if (result == S_OK && appUserModelId.length() > 0)
         {
             // See GH#14501 for background. If you quote this string, you'll have
             // to update elevate-shim to strip the quotes when constructing the arguments.
