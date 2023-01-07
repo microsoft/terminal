@@ -25,6 +25,7 @@ using namespace winrt::Windows::UI::ViewManagement;
 using namespace winrt::Windows::UI::Input;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
+using namespace winrt::Windows::Storage::Streams;
 
 // The minimum delay between updates to the scroll bar's values.
 // The updates are throttled to limit power usage.
@@ -2526,16 +2527,55 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             if (items.Size() > 0)
             {
-                std::wstring allPaths;
-                for (auto item : items)
+                std::vector<std::wstring> fullPaths;
+
+                // GH#14628: Workaround for GetStorageItemsAsync() only returning 16 items
+                // at most when dragging and dropping from archives (zip, 7z, rar, etc.)
+                if (items.Size() == 16 && e.DataView().Contains(winrt::hstring{ L"FileDrop" }))
+                {
+                    auto fileDropData = co_await e.DataView().GetDataAsync(winrt::hstring{ L"FileDrop" });
+                    if (fileDropData != nullptr)
+                    {
+                        auto stream = fileDropData.as<IRandomAccessStream>();
+                        stream.Seek(0);
+
+                        uint32_t streamSize = (uint32_t)stream.Size();
+                        Buffer buf(streamSize);
+                        auto buffer = co_await stream.ReadAsync(buf, streamSize, InputStreamOptions::None);
+
+                        const HGLOBAL hGlobal = buffer.data();
+                        auto count = DragQueryFile((HDROP)hGlobal, 0xFFFFFFFF, nullptr, 0);
+                        fullPaths.reserve(count);
+
+                        for (unsigned int i = 0; i < count; i++)
+                        {
+                            WCHAR szPath[MAX_PATH];
+                            auto charsCopied = DragQueryFile((HDROP)hGlobal, i, szPath, MAX_PATH);
+
+                            if (charsCopied > 0)
+                            {
+                                fullPaths.push_back(std::wstring{ szPath });
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    fullPaths.reserve(items.Size());
+                    for (auto item : items)
+                    {
+                        fullPaths.push_back(std::wstring{ item.Path() });
+                    }
+                }
+
+                std::wstring allPathsString;
+                for (auto fullPath : fullPaths)
                 {
                     // Join the paths with spaces
-                    if (!allPaths.empty())
+                    if (!allPathsString.empty())
                     {
-                        allPaths += L" ";
+                        allPathsString += L" ";
                     }
-
-                    std::wstring fullPath{ item.Path() };
 
                     // Fix path for WSL
                     // In the fullness of time, we should likely plumb this up
@@ -2591,10 +2631,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                         fullPath += L"\"";
                     }
 
-                    allPaths += fullPath;
+                    allPathsString += fullPath;
                 }
 
-                _core.PasteText(winrt::hstring{ allPaths });
+                _core.PasteText(winrt::hstring{ allPathsString });
             }
         }
     }
