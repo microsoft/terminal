@@ -53,7 +53,7 @@ However, this still does not address the other concerns, so it has also been dec
 
 ### Option 2: Decorative Tags
 This is a more fine-tuned solution designed to hide data from the screen reader.
-> `OSC 200; Ps`
+> `OSC 200; Ps ST`
 > - `Ps = 0` -> Stop announcing incoming data to screen reader. The screen reader will resume announcing incoming data if any key is pressed.
 > - `Ps = 1` -> Resume announcing incoming data to screen reader.
 > Note that the reason any key press will force the screen reader to announce again is to prevent situations where applications are terminated while the screen reader is not announcing or where applications are misbehaving.
@@ -81,10 +81,10 @@ This solution builds on the the positive takeaways from option 2 by providing a 
 ### Option 4: Screen Reader Flag
 This is a simple solution that allows the command-line application to know if a screen reader is attached.
 > `DSR` - Screen Reader
-> - command-line application query: `CSI ? 2577 n`
-> - terminal emulator response: `CSI ? 2577; Ps`
->    - `Ps = 0` -> Screen reader is not attached
->    - `Ps = 1` -> Screen reader is attached
+> - command-line application query: `DSR ? 2575 n`
+> - terminal emulator response: `DSR ? Ps n`
+>    - `Ps = 2570` -> Screen reader is not attached
+>    - `Ps = 2571` -> Screen reader is attached
 `DSR` is already a standard method for command-line applications to query the capabilities of the attached terminal emulator. By claiming a value, the terminal can easily respond to let the command-line application know if a screen reader is attached or not. In the event the terminal emulator does not support this feature, no response is given, which is common practice.
 
 Introducing a formal `DSR` query can be used by command-line applications to make changes on their end if they decide there is a more accessible way to represent their content. PowerShell, for example, disables PSReadline if they detect a screen reader is attached. However, PowerShell's method of doing so can be inconsistent and is a Windows-specific approach. By defining this method via control sequences, other command-line applications can achieve a similar benefit across platforms outside of Windows.
@@ -155,10 +155,10 @@ The ARIA spec relies on nested roles to provide header context to cells. this sp
 
 As mentioned earlier, `DSR` is already a standard method for command-line applications to query the capabilities of the attached terminal emulator. By claiming a value, the terminal can easily respond to let the command-line application know if a screen reader is attached or not. In the event the terminal emulator does not support this feature, no response is given, which is common practice.
 > `DSR` - Screen Reader
-> - command-line application query: `CSI ? 2577 n`
-> - terminal emulator response: `CSI ? 2577; Ps`
->    - `Ps = 0` -> Screen reader is not attached
->    - `Ps = 1` -> Screen reader is attached
+> - command-line application query: `DSR ? 2575 n`
+> - terminal emulator response: `DSR ? Ps n`
+>    - `Ps = 2570` -> Screen reader is not attached
+>    - `Ps = 2571` -> Screen reader is attached
 
 Introducing a formal `DSR` query can be used by command-line applications to make changes on their end if they decide there is a more accessible way to represent their content. PowerShell, for example, disables PSReadline if they detect a screen reader is attached. However, PowerShell's method of doing so can be inconsistent and is a Windows-specific approach. By defining this method via control sequences, other command-line applications can achieve a similar benefit across platforms outside of Windows.
 
