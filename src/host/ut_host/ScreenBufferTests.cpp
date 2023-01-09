@@ -7392,7 +7392,7 @@ void ScreenBufferTests::RectangularAreaOperations()
         _FillLines(viewport.Top() + 10, viewport.BottomExclusive(), expectedChar, expectedAttr);
         // Copy a rectangle from that lower part up to the top with DECCRA.
         stateMachine.ProcessString(L"\033[11;27;14;54;1;3;27;1;4$v");
-        // Reset the lower part back to it's original content.
+        // Reset the lower part back to its original content.
         _FillLines(viewport.Top() + 10, viewport.BottomExclusive(), bufferChar, bufferAttr);
         break;
     default:
