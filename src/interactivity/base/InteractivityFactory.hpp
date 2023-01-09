@@ -9,7 +9,6 @@
 
 #include "../inc/IInteractivityFactory.hpp"
 #include "PseudoConsoleWindowAccessibilityProvider.hpp"
-#include <wrl/implements.h>
 
 #include <map>
 

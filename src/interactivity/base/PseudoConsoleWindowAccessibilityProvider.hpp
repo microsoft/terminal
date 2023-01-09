@@ -30,7 +30,5 @@ namespace Microsoft::Console::Interactivity
 
     private:
         HWND _pseudoConsoleHwnd;
-
-        const OLECHAR* AutomationPropertyName = L"Internal Console Management Window";
     };
 }

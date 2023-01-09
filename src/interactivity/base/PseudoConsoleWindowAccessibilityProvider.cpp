@@ -48,6 +48,7 @@ IFACEMETHODIMP PseudoConsoleWindowAccessibilityProvider::GetPropertyValue(_In_ P
     }
     case UIA_NamePropertyId:
     {
+        static constexpr auto AutomationPropertyName = L"Internal Console Management Window";
         pVariant->bstrVal = SysAllocString(AutomationPropertyName);
         if (pVariant->bstrVal != nullptr)
         {
