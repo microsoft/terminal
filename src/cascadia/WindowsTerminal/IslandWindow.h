@@ -65,6 +65,8 @@ public:
     void AddToSystemMenu(const winrt::hstring& itemLabel, winrt::delegate<void()> callback);
     void RemoveFromSystemMenu(const winrt::hstring& itemLabel);
 
+    virtual void UseMica(const bool newValue, const double titlebarOpacity);
+
     WINRT_CALLBACK(DragRegionClicked, winrt::delegate<>);
     WINRT_CALLBACK(WindowCloseButtonClicked, winrt::delegate<>);
     WINRT_CALLBACK(MouseScrolled, winrt::delegate<void(til::point, int32_t)>);
@@ -81,13 +83,14 @@ public:
 
     WINRT_CALLBACK(WindowMoved, winrt::delegate<void()>);
     WINRT_CALLBACK(WindowVisibilityChanged, winrt::delegate<void(bool)>);
+    WINRT_CALLBACK(UpdateSettingsRequested, winrt::delegate<void()>);
 
 protected:
     void ForceResize()
     {
         // Do a quick resize to force the island to paint
         const auto size = GetPhysicalSize();
-        OnSize(size.cx, size.cy);
+        OnSize(size.width, size.height);
     }
 
     HWND _interopWindowHandle;

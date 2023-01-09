@@ -45,43 +45,24 @@ public:
     virtual bool CursorPosition(const VTInt line, const VTInt column) = 0; // CUP, HVP
     virtual bool CursorSaveState() = 0; // DECSC
     virtual bool CursorRestoreState() = 0; // DECRC
-    virtual bool CursorVisibility(const bool isVisible) = 0; // DECTCEM
     virtual bool InsertCharacter(const VTInt count) = 0; // ICH
     virtual bool DeleteCharacter(const VTInt count) = 0; // DCH
     virtual bool ScrollUp(const VTInt distance) = 0; // SU
     virtual bool ScrollDown(const VTInt distance) = 0; // SD
     virtual bool InsertLine(const VTInt distance) = 0; // IL
     virtual bool DeleteLine(const VTInt distance) = 0; // DL
-    virtual bool SetColumns(const VTInt columns) = 0; // DECCOLM
-    virtual bool SetCursorKeysMode(const bool applicationMode) = 0; // DECCKM
     virtual bool SetKeypadMode(const bool applicationMode) = 0; // DECKPAM, DECKPNM
-    virtual bool EnableWin32InputMode(const bool win32InputMode) = 0; // win32-input-mode
-    virtual bool EnableCursorBlinking(const bool enable) = 0; // ATT610
     virtual bool SetAnsiMode(const bool ansiMode) = 0; // DECANM
-    virtual bool SetScreenMode(const bool reverseMode) = 0; // DECSCNM
-    virtual bool SetOriginMode(const bool relativeMode) = 0; // DECOM
-    virtual bool SetAutoWrapMode(const bool wrapAtEOL) = 0; // DECAWM
     virtual bool SetTopBottomScrollingMargins(const VTInt topMargin, const VTInt bottomMargin) = 0; // DECSTBM
     virtual bool WarningBell() = 0; // BEL
     virtual bool CarriageReturn() = 0; // CR
     virtual bool LineFeed(const DispatchTypes::LineFeedType lineFeedType) = 0; // IND, NEL, LF, FF, VT
     virtual bool ReverseLineFeed() = 0; // RI
     virtual bool SetWindowTitle(std::wstring_view title) = 0; // OscWindowTitle
-    virtual bool UseAlternateScreenBuffer() = 0; // ASBSET
-    virtual bool UseMainScreenBuffer() = 0; // ASBRST
     virtual bool HorizontalTabSet() = 0; // HTS
     virtual bool ForwardTab(const VTInt numTabs) = 0; // CHT, HT
     virtual bool BackwardsTab(const VTInt numTabs) = 0; // CBT
     virtual bool TabClear(const DispatchTypes::TabClearType clearType) = 0; // TBC
-    virtual bool EnableDECCOLMSupport(const bool enabled) = 0; // ?40
-    virtual bool EnableVT200MouseMode(const bool enabled) = 0; // ?1000
-    virtual bool EnableUTF8ExtendedMouseMode(const bool enabled) = 0; // ?1005
-    virtual bool EnableSGRExtendedMouseMode(const bool enabled) = 0; // ?1006
-    virtual bool EnableButtonEventMouseMode(const bool enabled) = 0; // ?1002
-    virtual bool EnableAnyEventMouseMode(const bool enabled) = 0; // ?1003
-    virtual bool EnableFocusEventMode(const bool enabled) = 0; // ?1004
-    virtual bool EnableAlternateScroll(const bool enabled) = 0; // ?1007
-    virtual bool EnableXtermBracketedPasteMode(const bool enabled) = 0; // ?2004
     virtual bool SetColorTableEntry(const size_t tableIndex, const DWORD color) = 0; // OSCColorTable
     virtual bool SetDefaultForeground(const DWORD color) = 0; // OSCDefaultForeground
     virtual bool SetDefaultBackground(const DWORD color) = 0; // OSCDefaultBackground
@@ -93,6 +74,14 @@ public:
     virtual bool SelectiveEraseInDisplay(const DispatchTypes::EraseType eraseType) = 0; // DECSED
     virtual bool SelectiveEraseInLine(const DispatchTypes::EraseType eraseType) = 0; // DECSEL
 
+    virtual bool ChangeAttributesRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const VTParameters attrs) = 0; // DECCARA
+    virtual bool ReverseAttributesRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const VTParameters attrs) = 0; // DECRARA
+    virtual bool CopyRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const VTInt page, const VTInt dstTop, const VTInt dstLeft, const VTInt dstPage) = 0; // DECCRA
+    virtual bool FillRectangularArea(const VTParameter ch, const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) = 0; // DECFRA
+    virtual bool EraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) = 0; // DECERA
+    virtual bool SelectiveEraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) = 0; // DECSERA
+    virtual bool SelectAttributeChangeExtent(const DispatchTypes::ChangeExtent changeExtent) = 0; // DECSACE
+
     virtual bool SetGraphicsRendition(const VTParameters options) = 0; // SGR
     virtual bool SetLineRendition(const LineRendition rendition) = 0; // DECSWL, DECDWL, DECDHL
     virtual bool SetCharacterProtectionAttribute(const VTParameters options) = 0; // DECSCA
@@ -101,10 +90,10 @@ public:
     virtual bool PopGraphicsRendition() = 0; // XTPOPSGR
 
     virtual bool SetMode(const DispatchTypes::ModeParams param) = 0; // DECSET
-
     virtual bool ResetMode(const DispatchTypes::ModeParams param) = 0; // DECRST
+    virtual bool RequestMode(const DispatchTypes::ModeParams param) = 0; // DECRQM
 
-    virtual bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) = 0; // DSR, DSR-OS, DSR-CPR
+    virtual bool DeviceStatusReport(const DispatchTypes::StatusType statusType, const VTParameter id) = 0; // DSR
     virtual bool DeviceAttributes() = 0; // DA1
     virtual bool SecondaryDeviceAttributes() = 0; // DA2
     virtual bool TertiaryDeviceAttributes() = 0; // DA3
@@ -150,6 +139,11 @@ public:
                                        const DispatchTypes::DrcsFontUsage fontUsage,
                                        const VTParameter cellHeight,
                                        const DispatchTypes::DrcsCharsetSize charsetSize) = 0; // DECDLD
+
+    virtual StringHandler DefineMacro(const VTInt macroId,
+                                      const DispatchTypes::MacroDeleteControl deleteControl,
+                                      const DispatchTypes::MacroEncoding encoding) = 0; // DECDMAC
+    virtual bool InvokeMacro(const VTInt macroId) = 0; // DECINVM
 
     virtual StringHandler RestoreTerminalState(const DispatchTypes::ReportFormat format) = 0; // DECRSTS
 

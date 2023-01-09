@@ -57,7 +57,7 @@
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
-    <!-- Reference TerminalControlLib here, so we can use it's Microsoft.Terminal.Control.winmd as
+    <!-- Reference TerminalControlLib here, so we can use its Microsoft.Terminal.Control.winmd as
     our Microsoft.Terminal.Control.winmd. This didn't work correctly in VS2017, you'd need to
     manually reference the lib -->
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControlLib.vcxproj">

@@ -6,6 +6,7 @@
 import "Theme.idl";
 import "ColorScheme.idl";
 import "ActionMap.idl";
+import "NewTabMenuEntry.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
@@ -94,6 +95,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, AlwaysShowNotificationIcon);
         INHERITABLE_SETTING(IVector<String>, DisabledProfileSources);
         INHERITABLE_SETTING(Boolean, ShowAdminShield);
+        INHERITABLE_SETTING(IVector<NewTabMenuEntry>, NewTabMenu);
         INHERITABLE_SETTING(Boolean, EnableColorSelection);
 
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();

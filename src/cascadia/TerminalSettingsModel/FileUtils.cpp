@@ -258,7 +258,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
             // Programs running in an elevated context will be free to write the
             // file, and unelevated processes will be able to read the file. An
             // unelevated process could always delete the file and rename a new
-            // file in it's place (a la the way `vim.exe` saves files), but if
+            // file in its place (a la the way `vim.exe` saves files), but if
             // they do that, the new file _won't_ be owned by Administrators,
             // failing the above check.
         }

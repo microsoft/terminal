@@ -95,17 +95,22 @@ namespace winrt::TerminalApp::implementation
     // - Sets up state, event handlers, etc on a tab object that was just made.
     // Arguments:
     // - newTabImpl: the uninitialized tab.
-    void TerminalPage::_InitializeTab(winrt::com_ptr<TerminalTab> newTabImpl)
+    // - insertPosition: Optional parameter to indicate the position of tab.
+    void TerminalPage::_InitializeTab(winrt::com_ptr<TerminalTab> newTabImpl, uint32_t insertPosition)
     {
         newTabImpl->Initialize();
 
-        uint32_t insertPosition = _tabs.Size();
-        if (_settings.GlobalSettings().NewTabPosition() == NewTabPosition::AfterCurrentTab)
+        // If insert position is not passed, calculate it
+        if (insertPosition == -1)
         {
-            auto currentTabIndex = _GetFocusedTabIndex();
-            if (currentTabIndex.has_value())
+            insertPosition = _tabs.Size();
+            if (_settings.GlobalSettings().NewTabPosition() == NewTabPosition::AfterCurrentTab)
             {
-                insertPosition = currentTabIndex.value() + 1;
+                auto currentTabIndex = _GetFocusedTabIndex();
+                if (currentTabIndex.has_value())
+                {
+                    insertPosition = currentTabIndex.value() + 1;
+                }
             }
         }
 
@@ -259,12 +264,13 @@ namespace winrt::TerminalApp::implementation
     // - Create a new tab using a specified pane as the root.
     // Arguments:
     // - pane: The pane to use as the root.
-    void TerminalPage::_CreateNewTabFromPane(std::shared_ptr<Pane> pane)
+    // - insertPosition: Optional parameter to indicate the position of tab.
+    void TerminalPage::_CreateNewTabFromPane(std::shared_ptr<Pane> pane, uint32_t insertPosition)
     {
         if (pane)
         {
             auto newTabImpl = winrt::make_self<TerminalTab>(pane);
-            _InitializeTab(newTabImpl);
+            _InitializeTab(newTabImpl, insertPosition);
         }
     }
 
@@ -337,7 +343,7 @@ namespace winrt::TerminalApp::implementation
             // In the future, it may be preferable to just duplicate the
             // current control's live settings (which will include changes
             // made through VT).
-            _CreateNewTabFromPane(_MakePane(nullptr, tab, nullptr));
+            _CreateNewTabFromPane(_MakePane(nullptr, tab, nullptr), tab.TabViewIndex() + 1);
 
             const auto runtimeTabText{ tab.GetTabText() };
             if (!runtimeTabText.empty())

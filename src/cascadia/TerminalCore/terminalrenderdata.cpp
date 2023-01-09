@@ -70,11 +70,11 @@ CursorType Terminal::GetCursorStyle() const noexcept
     return _activeBuffer().GetCursor().GetType();
 }
 
-bool Terminal::IsCursorDoubleWidth() const
+bool Terminal::IsCursorDoubleWidth() const noexcept
 {
-    const auto position = _activeBuffer().GetCursor().GetPosition();
-    TextBufferTextIterator it(TextBufferCellIterator(_activeBuffer(), position));
-    return IsGlyphFullWidth(*it);
+    const auto& buffer = _activeBuffer();
+    const auto position = buffer.GetCursor().GetPosition();
+    return buffer.GetRowByOffset(position.y).DbcsAttrAt(position.x) != DbcsAttribute::Single;
 }
 
 const std::vector<RenderOverlay> Terminal::GetOverlays() const noexcept
@@ -87,12 +87,12 @@ const bool Terminal::IsGridLineDrawingAllowed() noexcept
     return true;
 }
 
-const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkUri(uint16_t id) const noexcept
+const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkUri(uint16_t id) const
 {
     return _activeBuffer().GetHyperlinkUriFromId(id);
 }
 
-const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkCustomId(uint16_t id) const noexcept
+const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkCustomId(uint16_t id) const
 {
     return _activeBuffer().GetCustomIdFromId(id);
 }
@@ -103,10 +103,10 @@ const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkCustomId(uin
 // - The location
 // Return value:
 // - The pattern IDs of the location
-const std::vector<size_t> Terminal::GetPatternId(const til::point location) const noexcept
+const std::vector<size_t> Terminal::GetPatternId(const til::point location) const
 {
     // Look through our interval tree for this location
-    const auto intervals = _patternIntervalTree.findOverlapping({ location.X + 1, location.Y }, location);
+    const auto intervals = _patternIntervalTree.findOverlapping({ location.x + 1, location.y }, location);
     if (intervals.size() == 0)
     {
         return {};
@@ -155,19 +155,19 @@ void Terminal::SelectNewRegion(const til::point coordStart, const til::point coo
 #pragma warning(pop)
 
     auto notifyScrollChange = false;
-    if (coordStart.Y < _VisibleStartIndex())
+    if (coordStart.y < _VisibleStartIndex())
     {
         // recalculate the scrollOffset
-        _scrollOffset = ViewStartIndex() - coordStart.Y;
+        _scrollOffset = ViewStartIndex() - coordStart.y;
         notifyScrollChange = true;
     }
-    else if (coordEnd.Y > _VisibleEndIndex())
+    else if (coordEnd.y > _VisibleEndIndex())
     {
         // recalculate the scrollOffset, note that if the found text is
         // beneath the current visible viewport, it may be within the
         // current mutableViewport and the scrollOffset will be smaller
         // than 0
-        _scrollOffset = std::max(0, ViewStartIndex() - coordStart.Y);
+        _scrollOffset = std::max(0, ViewStartIndex() - coordStart.y);
         notifyScrollChange = true;
     }
 
@@ -177,8 +177,8 @@ void Terminal::SelectNewRegion(const til::point coordStart, const til::point coo
         _NotifyScrollEvent();
     }
 
-    realCoordStart.Y -= _VisibleStartIndex();
-    realCoordEnd.Y -= _VisibleStartIndex();
+    realCoordStart.y -= _VisibleStartIndex();
+    realCoordEnd.y -= _VisibleStartIndex();
 
     SetSelectionAnchor(realCoordStart);
     SetSelectionEnd(realCoordEnd, SelectionExpansion::Char);
@@ -208,9 +208,6 @@ catch (...)
 void Terminal::LockConsole() noexcept
 {
     _readWriteLock.lock();
-#ifndef NDEBUG
-    _lastLocker = GetCurrentThreadId();
-#endif
 }
 
 // Method Description:

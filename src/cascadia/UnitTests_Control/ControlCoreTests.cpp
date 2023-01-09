@@ -36,6 +36,7 @@ namespace ControlUnitTests
         TEST_METHOD(TestClearScrollback);
         TEST_METHOD(TestClearScreen);
         TEST_METHOD(TestClearAll);
+        TEST_METHOD(TestReadEntireBuffer);
 
         TEST_CLASS_SETUP(ModuleSetup)
         {
@@ -141,10 +142,9 @@ namespace ControlUnitTests
             // GH#603: Adjusting opacity shouldn't change whether or not we
             // requested acrylic.
 
-            auto expectedUseAcrylic = winrt::Microsoft::Terminal::Control::implementation::ControlCore::IsVintageOpacityAvailable() ? true :
-                                                                                                                                      (expectedOpacity < 1.0 ? true : false);
+            auto expectedUseAcrylic = expectedOpacity < 1.0;
+            VERIFY_IS_TRUE(core->_settings->UseAcrylic());
             VERIFY_ARE_EQUAL(expectedUseAcrylic, core->UseAcrylic());
-            VERIFY_ARE_EQUAL(true, core->_settings->UseAcrylic());
         };
         core->TransparencyChanged(opacityCallback);
 
@@ -339,6 +339,24 @@ namespace ControlUnitTests
         // clear scrollback.
         //
         // The ConptyRoundtripTests test the actual clearing of the contents.
+    }
+
+    void ControlCoreTests::TestReadEntireBuffer()
+    {
+        auto [settings, conn] = _createSettingsAndConnection();
+        Log::Comment(L"Create ControlCore object");
+        auto core = createCore(*settings, *conn);
+        VERIFY_IS_NOT_NULL(core);
+        _standardInit(core);
+
+        Log::Comment(L"Print some text");
+        conn->WriteInput(L"This is some text     \r\n");
+        conn->WriteInput(L"with varying amounts  \r\n");
+        conn->WriteInput(L"of whitespace         \r\n");
+
+        Log::Comment(L"Check the buffer contents");
+        VERIFY_ARE_EQUAL(L"This is some text\r\nwith varying amounts\r\nof whitespace\r\n",
+                         core->ReadEntireBuffer());
     }
 
 }

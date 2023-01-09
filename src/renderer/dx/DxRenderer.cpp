@@ -1229,10 +1229,10 @@ CATCH_RETURN();
 // - <none> - Updates reference
 void _ScaleByFont(til::rect& cellsToPixels, til::size fontSize) noexcept
 {
-    cellsToPixels.left *= fontSize.cx;
-    cellsToPixels.right *= fontSize.cx;
-    cellsToPixels.top *= fontSize.cy;
-    cellsToPixels.bottom *= fontSize.cy;
+    cellsToPixels.left *= fontSize.width;
+    cellsToPixels.right *= fontSize.width;
+    cellsToPixels.top *= fontSize.height;
+    cellsToPixels.bottom *= fontSize.height;
 }
 
 // Routine Description:
@@ -1715,7 +1715,7 @@ try
     _d2dBrushForeground->SetColor(_ColorFFromColorRef(color | 0xff000000));
 
     const auto font = _fontRenderData->GlyphCell().to_d2d_size();
-    const D2D_POINT_2F target = { coordTarget.X * font.width, coordTarget.Y * font.height };
+    const D2D_POINT_2F target = { coordTarget.x * font.width, coordTarget.y * font.height };
     const auto fullRunWidth = font.width * gsl::narrow_cast<unsigned>(cchLine);
 
     const auto DrawLine = [=](const auto x0, const auto y0, const auto x1, const auto y1, const auto strokeWidth) noexcept {
