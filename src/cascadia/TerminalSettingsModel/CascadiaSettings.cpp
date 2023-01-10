@@ -1015,7 +1015,12 @@ winrt::hstring CascadiaSettings::ApplicationVersion()
     {
         const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
         const auto version{ package.Id().Version() };
-        winrt::hstring formatted{ wil::str_printf<std::wstring>(L"%u.%u.%u.%u", version.Major, version.Minor, version.Build, version.Revision) };
+        // As of about 2022, the one's digit of the Build of our version is a
+        // placeholder value to differentiate the Windows 10 build from the
+        // Windows 11 build. Let's trim that out. For additional clarity,
+        // let's omit the Revision, which _must_ be .0, and doesn't provide any
+        // value.to report.
+        winrt::hstring formatted{ wil::str_printf<std::wstring>(L"%u.%u.%u", version.Major, version.Minor, version.Build / 10) };
         return formatted;
     }
     CATCH_LOG();
