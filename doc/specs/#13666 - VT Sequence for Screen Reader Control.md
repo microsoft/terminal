@@ -81,8 +81,8 @@ This solution builds on the the positive takeaways from option 2 by providing a 
 ### Option 4: Screen Reader Flag
 This is a simple solution that allows the command-line application to know if a screen reader is attached.
 > `DSR` - Screen Reader
-> - command-line application query: `DSR ? 2575 n`
-> - terminal emulator response: `DSR ? Ps n`
+> - command-line application query: `CSI ? 2575 n`
+> - terminal emulator response: `CSI ? Ps n`
 >    - `Ps = 2570` -> Screen reader is not attached
 >    - `Ps = 2571` -> Screen reader is attached
 `DSR` is already a standard method for command-line applications to query the capabilities of the attached terminal emulator. By claiming a value, the terminal can easily respond to let the command-line application know if a screen reader is attached or not. In the event the terminal emulator does not support this feature, no response is given, which is common practice.
@@ -155,8 +155,8 @@ The ARIA spec relies on nested roles to provide header context to cells. this sp
 
 As mentioned earlier, `DSR` is already a standard method for command-line applications to query the capabilities of the attached terminal emulator. By claiming a value, the terminal can easily respond to let the command-line application know if a screen reader is attached or not. In the event the terminal emulator does not support this feature, no response is given, which is common practice.
 > `DSR` - Screen Reader
-> - command-line application query: `DSR ? 2575 n`
-> - terminal emulator response: `DSR ? Ps n`
+> - command-line application query: `CSI ? 2575 n`
+> - terminal emulator response: `CSI ? Ps n`
 >    - `Ps = 2570` -> Screen reader is not attached
 >    - `Ps = 2571` -> Screen reader is attached
 
