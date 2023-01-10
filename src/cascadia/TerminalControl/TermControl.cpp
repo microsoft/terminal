@@ -2539,7 +2539,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                         auto stream = fileDropData.as<IRandomAccessStream>();
                         stream.Seek(0);
 
-                        const uint32_t streamSize = gsl::narrow_cast<uint32_t>stream.Size();
+                        const uint32_t streamSize = gsl::narrow_cast<uint32_t>(stream.Size());
                         const Buffer buf(streamSize);
                         const auto buffer = co_await stream.ReadAsync(buf, streamSize, InputStreamOptions::None);
 
