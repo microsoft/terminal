@@ -2549,12 +2549,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
                         for (unsigned int i = 0; i < count; i++)
                         {
-                            WCHAR szPath[MAX_PATH];
-                            const auto charsCopied = DragQueryFileW(static_cast<HDROP>(hGlobal), i, szPath, MAX_PATH);
+                            std::wstring path;
+                            path.resize(wil::max_path_length);
+                            const auto charsCopied = DragQueryFileW(static_cast<HDROP>(hGlobal), i, path.data(), wil::max_path_length);
 
                             if (charsCopied > 0)
                             {
-                                fullPaths.emplace_back(szPath);
+                                path.resize(charsCopied);
+                                fullPaths.emplace_back(std::move(path));
                             }
                         }
                     }
