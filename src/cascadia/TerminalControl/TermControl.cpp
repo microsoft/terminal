@@ -2539,18 +2539,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                         auto stream = fileDropData.as<IRandomAccessStream>();
                         stream.Seek(0);
 
-                        uint32_t streamSize = (uint32_t)stream.Size();
-                        Buffer buf(streamSize);
-                        auto buffer = co_await stream.ReadAsync(buf, streamSize, InputStreamOptions::None);
+                        const uint32_t streamSize = gsl::narrow_cast<uint32_t>stream.Size();
+                        const Buffer buf(streamSize);
+                        const auto buffer = co_await stream.ReadAsync(buf, streamSize, InputStreamOptions::None);
 
                         const HGLOBAL hGlobal = buffer.data();
-                        auto count = DragQueryFile((HDROP)hGlobal, 0xFFFFFFFF, nullptr, 0);
+                        const auto count = DragQueryFile((HDROP)hGlobal, 0xFFFFFFFF, nullptr, 0);
                         fullPaths.reserve(count);
 
                         for (unsigned int i = 0; i < count; i++)
                         {
                             WCHAR szPath[MAX_PATH];
-                            auto charsCopied = DragQueryFile((HDROP)hGlobal, i, szPath, MAX_PATH);
+                            const auto charsCopied = DragQueryFile((HDROP)hGlobal, i, szPath, MAX_PATH);
 
                             if (charsCopied > 0)
                             {
