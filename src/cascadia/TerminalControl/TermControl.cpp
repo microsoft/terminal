@@ -2562,10 +2562,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 else
                 {
                     fullPaths.reserve(items.Size());
-                    for (auto item : items)
+                    for (const auto& item : items)
                     {
                         fullPaths.emplace_back(item.Path());
-
                     }
                 }
 
