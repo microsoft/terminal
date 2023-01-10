@@ -252,7 +252,7 @@
           "default": "Campbell",
           "description": "Name of the scheme to use when the app is using dark theme",
           "type": "string"
-        },
+        }
       }
     },
     "FontConfig": {
@@ -1722,18 +1722,79 @@
         }
       ]
     },
+    "ShowCloseButton": {
+      "enum": [
+        "always",
+        "hover",
+        "never"
+      ],
+      "type": "string"
+    },
+    "ThemeColor": {
+      "description": "A special kind of color for use in themes. Can be an #rrggbb color, #rrggbbaa color, or a special value. 'accent' is evaluated as the user's selected Accent color in the OS, and 'terminalBackground' will be evaluated as the background color of the active terminal pane.",
+      "oneOf": [
+        {
+          "pattern": "^#[A-Fa-f0-9]{3}(?:[A-Fa-f0-9]{3}(?:[A-Fa-f0-9]{2})?)?$",
+          "type": "string",
+          "format": "color"
+        },
+        {
+          "const": "accent",
+          "type": "string"
+        },
+        {
+          "const": "terminalBackground",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "TabTheme": {
+      "additionalProperties": false,
+      "description": "A set of properties for customizing the appearance of the tabs",
+      "properties": {
+        "background": {
+          "description": "The color of a tab when it is the active tab",
+          "$ref": "#/$defs/ThemeColor"
+        },
+        "unfocusedBackground": {
+          "description": "The color of a tab when it is not the active tab",
+          "$ref": "#/$defs/ThemeColor"
+        },
+        "showCloseButton": {
+          "description": "Controls the visibility of the close button on the tab",
+          "$ref": "#/$defs/ShowCloseButton"
+        }
+      }
+    },
+    "TabRowTheme": {
       "additionalProperties": false,
       "description": "A set of properties for customizing the appearance of the tab row",
       "properties": {
         "background": {
+          "description": "The color of the tab row when the window is the foreground window.",
           "$ref": "#/$defs/ThemeColor"
         },
         "unfocusedBackground": {
+          "description": "The color of the tab row when the window is inactive",
           "$ref": "#/$defs/ThemeColor"
+        }
+      }
+    },
+    "WindowTheme": {
+      "additionalProperties": false,
+      "description": "A set of properties for customizing the appearance of the window itself",
+      "properties": {
+        "applicationTheme": {
+          "description": "Which UI theme the Terminal should use for controls",
+          "oneOf": [ "light", "dark", "system" ]
         },
-        "showCloseButton": {
-          "$ref": "#/$defs/ShowCloseButton"
+        "useMica": {
+          "description": "True if the Terminal should use a Mica backdrop for the window. This will apply underneath all controls (including the terminal panes and the titlebar)",
+          "type": "boolean",
+          "default": false
         }
       }
     },
