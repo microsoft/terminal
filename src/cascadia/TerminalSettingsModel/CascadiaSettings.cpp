@@ -1019,7 +1019,7 @@ winrt::hstring CascadiaSettings::ApplicationVersion()
         // placeholder value to differentiate the Windows 10 build from the
         // Windows 11 build. Let's trim that out. For additional clarity,
         // let's omit the Revision, which _must_ be .0, and doesn't provide any
-        // value.to report.
+        // value to report.
         winrt::hstring formatted{ wil::str_printf<std::wstring>(L"%u.%u.%u", version.Major, version.Minor, version.Build / 10) };
         return formatted;
     }
