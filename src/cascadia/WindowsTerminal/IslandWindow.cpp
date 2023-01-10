@@ -663,7 +663,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         // Currently, we only support checking when the OS theme changes. In
         // that case, wParam is 0. Re-evaluate when we decide to reload env vars
         // (GH#1125)
-        if (wparam == 0)
+        if (wparam == 0 && lparam != 0)
         {
             const std::wstring param{ (wchar_t*)lparam };
             // ImmersiveColorSet seems to be the notification that the OS theme
