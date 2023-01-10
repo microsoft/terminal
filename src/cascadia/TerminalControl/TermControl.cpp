@@ -2544,17 +2544,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                         const auto buffer = co_await stream.ReadAsync(buf, streamSize, InputStreamOptions::None);
 
                         const HGLOBAL hGlobal = buffer.data();
-                        const auto count = DragQueryFile((HDROP)hGlobal, 0xFFFFFFFF, nullptr, 0);
+                        const auto count = DragQueryFileW(static_cast<HDROP>(hGlobal), 0xFFFFFFFF, nullptr, 0);
                         fullPaths.reserve(count);
 
                         for (unsigned int i = 0; i < count; i++)
                         {
                             WCHAR szPath[MAX_PATH];
-                            const auto charsCopied = DragQueryFile((HDROP)hGlobal, i, szPath, MAX_PATH);
+                            const auto charsCopied = DragQueryFileW(static_cast<HDROP>(hGlobal), i, szPath, MAX_PATH);
 
                             if (charsCopied > 0)
                             {
-                                fullPaths.push_back(std::wstring{ szPath });
+                                fullPaths.emplace_back(szPath);
                             }
                         }
                     }
@@ -2564,12 +2564,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     fullPaths.reserve(items.Size());
                     for (auto item : items)
                     {
-                        fullPaths.push_back(std::wstring{ item.Path() });
+                        fullPaths.emplace_back(item.Path());
+
                     }
                 }
 
                 std::wstring allPathsString;
-                for (auto fullPath : fullPaths)
+                for (auto& fullPath : fullPaths)
                 {
                     // Join the paths with spaces
                     if (!allPathsString.empty())
