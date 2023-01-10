@@ -846,7 +846,7 @@ namespace ControlUnitTests
         Log::Comment(L"Move the mouse a little, to update the selection");
         // At this point, there should only be one selection region! The
         // viewport moved up to keep the selection at the same relative spot. So
-        // wiggling the cursor shoudld continue to select only the same
+        // wiggling the cursor should continue to select only the same
         // character in the buffer (if, albeit in a new location).
         //
         // This helps test GH #14462, a regression from #10749.
