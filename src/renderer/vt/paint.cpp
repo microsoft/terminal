@@ -43,6 +43,12 @@ using namespace Microsoft::Console::Types;
                            _cursorMoved,
                            _wrappedRow);
 
+    //if (_buffer.size() > 0 && _quickReturn)
+    //{
+    //    RETURN_IF_FAILED(_Flush());
+    //    return S_FALSE;
+    //}
+
     return _quickReturn ? S_FALSE : S_OK;
 }
 
@@ -94,7 +100,14 @@ using namespace Microsoft::Console::Types;
         RETURN_IF_FAILED(_MoveCursor(_deferredCursorPos));
     }
 
-    RETURN_IF_FAILED(_Flush());
+    if (_noFlushOnEnd)
+    {
+        _noFlushOnEnd = false;
+    }
+    else
+    {
+        RETURN_IF_FAILED(_Flush());
+    }
 
     return S_OK;
 }
@@ -538,10 +551,11 @@ using namespace Microsoft::Console::Types;
     // Write the actual text string. If we're using a soft font, the character
     // set should have already been selected, so we just need to map our internal
     // representation back to ASCII (handled by the _WriteTerminalDrcs method).
-    if (_usingSoftFont) [[unlikely]]
-    {
-        RETURN_IF_FAILED(VtEngine::_WriteTerminalDrcs({ _bufferLine.data(), cchActual }));
-    }
+    if (_usingSoftFont)
+        [[unlikely]]
+        {
+            RETURN_IF_FAILED(VtEngine::_WriteTerminalDrcs({ _bufferLine.data(), cchActual }));
+        }
     else
     {
         RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8({ _bufferLine.data(), cchActual }));

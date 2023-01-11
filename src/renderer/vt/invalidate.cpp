@@ -120,6 +120,12 @@ CATCH_RETURN();
         _circled = circled;
     }
 
+    // If we flushed for any reason other than circling, we don't need to push
+    // the buffer out on EndPaint. We're doing this because we encountered some
+    // VT sequence that required we sync the state of the buffers before passing
+    // it through.
+    _noFlushOnEnd = !circled;
+
     _trace.TraceTriggerCircling(*pForcePaint);
 
     return S_OK;

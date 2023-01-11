@@ -234,6 +234,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_METHOD(TestNoExtendedAttrsOptimization);
     TEST_METHOD(TestNoBackgroundAttrsOptimization);
 
+    TEST_METHOD(TestShellIntegrationFlickering);
+
 private:
     bool _writeCallback(const char* const pch, const size_t cch);
     void _flushFirstFrame();

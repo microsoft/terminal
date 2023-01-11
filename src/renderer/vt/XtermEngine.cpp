@@ -537,7 +537,7 @@ CATCH_RETURN();
     // To fix this, flush here, so this string is sent to the connected terminal
     // application.
 
-    return _Flush();
+    return S_OK; // _Flush();
 }
 
 // Method Description:

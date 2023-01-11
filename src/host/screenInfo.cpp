@@ -2349,7 +2349,10 @@ void SCREEN_INFORMATION::SetTerminalConnection(_In_ VtEngine* const pTtyConnecti
     if (pTtyConnection)
     {
         engine.SetTerminalConnection(pTtyConnection,
-                                     std::bind(&StateMachine::FlushToTerminal, _stateMachine.get()));
+                                     [this]() -> bool {
+                                         ServiceLocator::LocateGlobals().pRender->NotifyPaintFrame();
+                                         return _stateMachine->FlushToTerminal();
+                                     });
     }
     else
     {
