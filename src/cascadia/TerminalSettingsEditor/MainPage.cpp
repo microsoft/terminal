@@ -213,7 +213,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Couldn't find the selected item, fallback to first menu item
         // This happens when the selected item was a profile which doesn't exist in the new configuration
         // We can use menuItemsSTL here because the only things they miss are profile entries.
-        // const auto& firstItem{ menuItemsSTL.at(0).as<MUX::Controls::NavigationViewItem>() };
         const auto& firstItem{ SettingsNav().MenuItems().GetAt(0).as<MUX::Controls::NavigationViewItem>() };
         SettingsNav().SelectedItem(firstItem);
         _Navigate(unbox_value<hstring>(firstItem.Tag()), BreadcrumbSubPage::None);
@@ -538,8 +537,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void MainPage::_InitializeProfilesList()
     {
         const auto menuItems = SettingsNav().MenuItemsSource().try_as<Windows::Foundation::Collections::IVector<IInspectable>>();
-        // if (!menuItems)
-        //     return;
 
         // Manually create a NavigationViewItem for each profile
         // and keep a reference to them in a map so that we
@@ -571,7 +568,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (SettingsNav().MenuItemsSource())
         {
-            // We've already copied over the origina items to a source. Wek can
+            // We've already copied over the original items to a source. We can
             // just skip this now.
             return;
         }
@@ -581,7 +578,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // that we'll use as a MenuItemsSource. By doing this, we avoid a WinUI
         // bug (MUX#6302) where modifying the NavView.Items() directly causes a
         // crash. By leaving these static entries in XAML, we maintain the
-        // benefit of istantiating them from the XBF, rather than at runtime.
+        // benefit of instantiating them from the XBF, rather than at runtime.
         //
         // --> Copy it into an STL vector to simplify our code and reduce COM overhead.
         std::vector<IInspectable> menuItemsSTL(menuItems.Size(), nullptr);
