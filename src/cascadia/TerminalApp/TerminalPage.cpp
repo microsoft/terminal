@@ -2318,6 +2318,18 @@ namespace winrt::TerminalApp::implementation
     fire_and_forget TerminalPage::_PasteFromClipboardHandler(const IInspectable /*sender*/,
                                                              const PasteFromClipboardEventArgs eventArgs)
     {
+        // Checking here if we are currently renaming any tab so that we should not paste content into our tab.
+        for (const auto item : _tabs)
+        {
+            if (const auto tabItem = item.try_as<TerminalTab>())
+            {
+                if (tabItem->InRename())
+                {
+                    co_return;
+                }
+            }
+        }
+
         const auto data = Clipboard::GetContent();
 
         // This will switch the execution of the function to a background (not

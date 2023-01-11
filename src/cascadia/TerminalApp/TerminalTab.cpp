@@ -1555,6 +1555,11 @@ namespace winrt::TerminalApp::implementation
         return _zoomedPane != nullptr;
     }
 
+    bool TerminalTab::InRename()
+    {
+        return _headerControl.InRename();
+    }
+
     // Method Description:
     // - Toggle read-only mode on the active pane
     // - If a parent pane is selected, this will ensure that all children have
