@@ -1736,7 +1736,8 @@
         {
           "pattern": "^#[A-Fa-f0-9]{3}(?:[A-Fa-f0-9]{3}(?:[A-Fa-f0-9]{2})?)?$",
           "type": "string",
-          "format": "color"
+          "format": "color",
+          "default": "#000000ff"
         },
         {
           "const": "accent",
@@ -1789,7 +1790,8 @@
       "properties": {
         "applicationTheme": {
           "description": "Which UI theme the Terminal should use for controls",
-          "oneOf": [ "light", "dark", "system" ]
+          "enum": [ "light", "dark", "system" ],
+          "type": "string"
         },
         "useMica": {
           "description": "True if the Terminal should use a Mica backdrop for the window. This will apply underneath all controls (including the terminal panes and the titlebar)",
@@ -1805,7 +1807,9 @@
         "name": {
           "type": "string",
           "description": "The name of the theme. This will be displayed in the settings UI.",
-          "noneOf": [ "light", "dark", "system" ]
+          "not": { 
+            "enum": [ "light", "dark", "system" ]
+          }
         },
         "tab": {
           "$ref": "#/$defs/TabTheme"
