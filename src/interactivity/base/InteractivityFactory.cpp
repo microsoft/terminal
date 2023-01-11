@@ -464,6 +464,17 @@ using namespace Microsoft::Console::Interactivity;
             _WritePseudoWindowCallback((bool)wParam);
         }
     }
+
+    case WM_ACTIVATE:
+    {
+        if (const auto ownerHwnd{ ::GetAncestor(hWnd, GA_ROOTOWNER) })
+        {
+            if (LOWORD(wParam) != WA_INACTIVE)
+            {
+                SetActiveWindow(ownerHwnd);
+            }
+        }
+    }
     }
     // If we get this far, call the default window proc
     return DefWindowProcW(hWnd, Message, wParam, lParam);
