@@ -342,7 +342,7 @@ winrt::com_ptr<ThemePair> ThemePair::FromJson(const Json::Value& json)
 
 Json::Value ThemePair::ToJson() const
 {
-    if (DarkName() == LightName())
+    if (_DarkName == _LightName)
     {
         return JsonUtils::ConversionTrait<winrt::hstring>().ToJson(DarkName());
     }
