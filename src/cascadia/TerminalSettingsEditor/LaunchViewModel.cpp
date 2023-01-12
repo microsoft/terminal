@@ -49,7 +49,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Append the launch position part
         if (UseDefaultLaunchPosition())
         {
-            result = fmt::format(L"{}, {}", launchModeString, RS_(L"Globals_LaunchModeDefault/Content"));
+            result = fmt::format(L"{}, {}", launchModeString, RS_(L"Globals_DefaultLaunchPositionCheckbox/Content"));
         }
         else
         {
@@ -115,7 +115,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             InitialPosX(NAN);
             InitialPosY(NAN);
         }
-        _NotifyChanges(L"UseDefaultLaunchPosition", L"LaunchParametersCurrentValue");
+        _NotifyChanges(L"UseDefaultLaunchPosition", L"LaunchParametersCurrentValue", L"InitialPosX", L"InitialPosY");
     }
 
     bool LaunchViewModel::UseDefaultLaunchPosition()
