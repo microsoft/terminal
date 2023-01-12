@@ -1822,6 +1822,22 @@
         }
       }
     },
+    "ThemePair": {
+      "additionalProperties": false,
+      "description": "A pair of Theme names, to allow the Terminal to switch theme based on the OS theme",
+      "properties": {
+        "light": {
+          "type": "string",
+          "description": "The name of the theme to use when the OS is in Light theme",
+          "default": "light"
+        },
+        "dark": {
+          "type": "string",
+          "description": "The name of the theme to use when the OS is in Dark theme",
+          "default": "dark"
+        }
+      }
+    },
     "NewTabMenu": {
       "description": "Defines the order and structure of the 'new tab' menu. It can consist of e.g. profiles, folders, and separators.",
       "type": "array",
@@ -2234,7 +2250,14 @@
         "theme": {
           "default": "dark",
           "description": "Sets the theme of the application. This value should be the name of one of the themes defined in `themes`. The Terminal also includes the themes `dark`, `light`, and `system`.",
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/ThemePair"
+            }
+          ]
         },
         "themes": {
           "description": "The list of available themes",
