@@ -1616,11 +1616,6 @@
           "description": "Which UI theme the Terminal should use for controls",
           "enum": [ "light", "dark", "system" ],
           "type": "string"
-        },
-        "useMica": {
-          "description": "True if the Terminal should use a Mica backdrop for the window. This will apply underneath all controls (including the terminal panes and the titlebar)",
-          "type": "boolean",
-          "default": false
         }
       }
     },
