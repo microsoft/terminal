@@ -42,6 +42,7 @@ SOURCES = \
     ..\EventSynthesis.cpp \
     ..\RemoteConsoleControl.cpp \
     ..\HostSignalInputThread.cpp \
+    ..\PseudoConsoleWindowAccessibilityProvider.cpp \
 
 INCLUDES = \
     $(INCLUDES); \
