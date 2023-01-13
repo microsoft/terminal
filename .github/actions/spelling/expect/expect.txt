@@ -107,6 +107,7 @@ bgidx
 Bgk
 BGR
 bgra
+BGRA
 BHID
 bigobj
 binplace
