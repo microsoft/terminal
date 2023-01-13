@@ -2349,9 +2349,9 @@ void SCREEN_INFORMATION::SetTerminalConnection(_In_ VtEngine* const pTtyConnecti
     if (pTtyConnection)
     {
         engine.SetTerminalConnection(pTtyConnection,
-                                     [this]() -> bool {
+                                     [&stateMachine = *_stateMachine]() -> bool {
                                          ServiceLocator::LocateGlobals().pRender->NotifyPaintFrame();
-                                         return _stateMachine->FlushToTerminal();
+                                         return stateMachine.FlushToTerminal();
                                      });
     }
     else

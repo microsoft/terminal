@@ -534,10 +534,16 @@ CATCH_RETURN();
     // decided to pass through would have gotten buffered here until the next
     // actual frame is triggered.
     //
-    // To fix this, flush here, so this string is sent to the connected terminal
-    // application.
+    // Originally, we would _Flush()  here, so this string (and anything buffered) is sent to the connected
+    // terminal application. As of GH#13710, we won't. We'll just buffer the string.
+    //
+    // Now, we've added a NotifyPaintFrame to the state machine's
+    // FlushToTerminal callback. That callback will allow us to add this wstr to
+    // the buffer now, without pushing the entire buffer out to the pipe right
+    // now. The NotifyPaintFrame in that callback will ensure that a Flush
+    // definitely _does_ happen (after this whole string is processed).
 
-    return S_OK; // _Flush();
+    return S_OK;
 }
 
 // Method Description:
