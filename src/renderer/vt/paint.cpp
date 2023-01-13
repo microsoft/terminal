@@ -94,18 +94,18 @@ using namespace Microsoft::Console::Types;
         RETURN_IF_FAILED(_MoveCursor(_deferredCursorPos));
     }
 
-    // If this frame was triggered because we encoutnered a VT sequence which
+    // If this frame was triggered because we encountered a VT sequence which
     // required the buffered state to get printed, we don't want to flush this
     // frame to the pipe. That might result in us rendering half the output of a
     // particular frame (as emitted by the client).
     //
-    // Instead, we'll leave this frame in _bufffer, and just keep appending to
+    // Instead, we'll leave this frame in _buffer, and just keep appending to
     // it as needed.
     if (_noFlushOnEnd)
         [[unlikely]]
-    {
-        _noFlushOnEnd = false;
-    }
+        {
+            _noFlushOnEnd = false;
+        }
     else
     {
         RETURN_IF_FAILED(_Flush());
@@ -555,9 +555,9 @@ using namespace Microsoft::Console::Types;
     // representation back to ASCII (handled by the _WriteTerminalDrcs method).
     if (_usingSoftFont)
         [[unlikely]]
-    {
-        RETURN_IF_FAILED(VtEngine::_WriteTerminalDrcs({ _bufferLine.data(), cchActual }));
-    }
+        {
+            RETURN_IF_FAILED(VtEngine::_WriteTerminalDrcs({ _bufferLine.data(), cchActual }));
+        }
     else
     {
         RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8({ _bufferLine.data(), cchActual }));
