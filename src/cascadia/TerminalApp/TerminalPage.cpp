@@ -1290,7 +1290,7 @@ namespace winrt::TerminalApp::implementation
             // The connection must be informed of the current CWD on
             // construction, because the connection might not spawn the child
             // process until later, on another thread, after we've already
-            // restored the CWD to it's original value.
+            // restored the CWD to its original value.
             auto newWorkingDirectory{ settings.StartingDirectory() };
             if (newWorkingDirectory.size() == 0 || newWorkingDirectory.size() == 1 &&
                                                        !(newWorkingDirectory[0] == L'~' || newWorkingDirectory[0] == L'/'))
@@ -2255,7 +2255,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Place `copiedData` into the clipboard as text. Triggered when a
-    //   terminal control raises it's CopyToClipboard event.
+    //   terminal control raises its CopyToClipboard event.
     // Arguments:
     // - copiedData: the new string content to place on the clipboard.
     winrt::fire_and_forget TerminalPage::_CopyToClipboardHandler(const IInspectable /*sender*/,

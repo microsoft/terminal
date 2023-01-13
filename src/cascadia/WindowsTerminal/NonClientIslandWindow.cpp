@@ -358,7 +358,7 @@ void NonClientIslandWindow::Initialize()
     Controls::Grid::SetRow(_titlebar, 0);
 
     // GH#3440 - When the titlebar is loaded (officially added to our UI tree),
-    // then make sure to update it's visual state to reflect if we're in the
+    // then make sure to update its visual state to reflect if we're in the
     // maximized state on launch.
     _titlebar.Loaded([this](auto&&, auto&&) { _OnMaximizeChange(); });
 }
@@ -398,7 +398,7 @@ void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIEleme
     // GH#4288 - add a SizeChanged handler to this content. It's possible that
     // this element's size will change after the dragbar's. When that happens,
     // the drag bar won't send another SizeChanged event, because the dragbar's
-    // _size_ didn't change, only it's position.
+    // _size_ didn't change, only its position.
     const auto fwe = content.try_as<winrt::Windows::UI::Xaml::FrameworkElement>();
     if (fwe)
     {

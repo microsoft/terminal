@@ -134,7 +134,7 @@ winrt::WUX::Media::Brush ThemeColor::Evaluate(const winrt::WUX::ResourceDictiona
     case ThemeColorType::Accent:
     {
         // NOTE: There is no canonical way to get the unfocused ACCENT titlebar
-        // color in Windows. Edge uses it's own heuristic, and in Windows 11,
+        // color in Windows. Edge uses its own heuristic, and in Windows 11,
         // much of this logic is rapidly changing. We're not gonna mess with
         // that, since it seems there's no good way to reverse engineer that.
         til::color accentColor = forTitlebar ?
@@ -357,7 +357,7 @@ winrt::com_ptr<ThemePair> ThemePair::FromJson(const Json::Value& json)
 
 Json::Value ThemePair::ToJson() const
 {
-    if (DarkName() == LightName())
+    if (_DarkName == _LightName)
     {
         return JsonUtils::ConversionTrait<winrt::hstring>().ToJson(DarkName());
     }
