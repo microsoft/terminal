@@ -466,11 +466,16 @@ void AdaptDispatch::_ScrollRectHorizontally(TextBuffer& textBuffer, const til::r
         const auto walkDirection = Viewport::DetermineWalkDirection(source, target);
         auto sourcePos = source.GetWalkOrigin(walkDirection);
         auto targetPos = target.GetWalkOrigin(walkDirection);
+        // Note that we read two cells from the source before we start writing
+        // to the target, so a two-cell DBCS character can't accidentally delete
+        // itself when moving one cell horizontally.
+        auto next = OutputCell(*textBuffer.GetCellDataAt(sourcePos));
         do
         {
-            const auto data = OutputCell(*textBuffer.GetCellDataAt(sourcePos));
-            textBuffer.Write(OutputCellIterator({ &data, 1 }), targetPos);
+            const auto current = next;
             source.WalkInBounds(sourcePos, walkDirection);
+            next = OutputCell(*textBuffer.GetCellDataAt(sourcePos));
+            textBuffer.WriteLine(OutputCellIterator({ &current, 1 }), targetPos);
         } while (target.WalkInBounds(targetPos, walkDirection));
     }
 
@@ -1017,16 +1022,21 @@ bool AdaptDispatch::CopyRectangularArea(const VTInt top, const VTInt left, const
         const auto walkDirection = Viewport::DetermineWalkDirection(srcView, dstView);
         auto srcPos = srcView.GetWalkOrigin(walkDirection);
         auto dstPos = dstView.GetWalkOrigin(walkDirection);
+        // Note that we read two cells from the source before we start writing
+        // to the target, so a two-cell DBCS character can't accidentally delete
+        // itself when moving one cell horizontally.
+        auto next = OutputCell(*textBuffer.GetCellDataAt(srcPos));
         do
         {
+            const auto current = next;
+            srcView.WalkInBounds(srcPos, walkDirection);
+            next = OutputCell(*textBuffer.GetCellDataAt(srcPos));
             // If the source position is offscreen (which can occur on double
             // width lines), then we shouldn't copy anything to the destination.
             if (srcPos.x < textBuffer.GetLineWidth(srcPos.y))
             {
-                const auto data = OutputCell(*textBuffer.GetCellDataAt(srcPos));
-                textBuffer.Write(OutputCellIterator({ &data, 1 }), dstPos);
+                textBuffer.WriteLine(OutputCellIterator({ &current, 1 }), dstPos);
             }
-            srcView.WalkInBounds(srcPos, walkDirection);
         } while (dstView.WalkInBounds(dstPos, walkDirection));
         _api.NotifyAccessibilityChange(dstRect);
     }
