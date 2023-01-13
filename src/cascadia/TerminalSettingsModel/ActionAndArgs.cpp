@@ -191,7 +191,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //   * If json is a string, we'll attempt to treat it as an action name,
     //     without arguments.
     //   * If json is an object, we'll attempt to retrieve the action name from
-    //     its "action" property, and we'll use that name to fine a deserializer
+    //     its "action" property, and we'll use that name to find a deserializer
     //     to process the rest of the arguments in the json object.
     // - If the action name is null or "unbound", or we don't understand the
     //   action name, or we failed to parse the arguments to this action, we'll
