@@ -102,7 +102,7 @@ try
             }
             break;
         case WM_RBUTTONDOWN:
-            if (auto& termCore{ terminal->_terminal }; termCore && termCore->IsSelectionActive())
+            if (const auto& termCore{ terminal->_terminal }; termCore && termCore->IsSelectionActive())
             {
                 try
                 {
