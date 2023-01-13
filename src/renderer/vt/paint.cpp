@@ -103,9 +103,9 @@ using namespace Microsoft::Console::Types;
     // it as needed.
     if (_noFlushOnEnd)
         [[unlikely]]
-        {
-            _noFlushOnEnd = false;
-        }
+    {
+        _noFlushOnEnd = false;
+    }
     else
     {
         RETURN_IF_FAILED(_Flush());
@@ -555,9 +555,9 @@ using namespace Microsoft::Console::Types;
     // representation back to ASCII (handled by the _WriteTerminalDrcs method).
     if (_usingSoftFont)
         [[unlikely]]
-        {
-            RETURN_IF_FAILED(VtEngine::_WriteTerminalDrcs({ _bufferLine.data(), cchActual }));
-        }
+    {
+        RETURN_IF_FAILED(VtEngine::_WriteTerminalDrcs({ _bufferLine.data(), cchActual }));
+    }
     else
     {
         RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8({ _bufferLine.data(), cchActual }));
