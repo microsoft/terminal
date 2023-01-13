@@ -310,7 +310,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             }
 
             // This right here will just tell us to stash the args away for the
-            // future. The AppHost hasnt yet set up the callbacks, and the rest
+            // future. The AppHost hasn't yet set up the callbacks, and the rest
             // of the app hasn't started at all. We'll note them and come back
             // later.
             _peasant.ExecuteCommandline(args);
