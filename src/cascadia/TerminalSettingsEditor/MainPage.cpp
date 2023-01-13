@@ -645,8 +645,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // If the theme asks for Mica, then drop out our background, so that we
     // can have mica too.
     void MainPage::_UpdateBackgroundForMica()
-
     {
+        // DWMWA_SYSTEMBACKDROP_TYPE, which we use for mica, is only available
+        // on builds >=2261
+        static const bool isMicaAvailable = []() -> bool {
+            OSVERSIONINFOEXW osver{};
+            osver.dwOSVersionInfoSize = sizeof(osver);
+            osver.dwBuildNumber = 22621;
+            DWORDLONG dwlConditionMask = 0;
+            VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
+            return VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask) != FALSE;
+        }();
+
+        if (!isMicaAvailable)
+        {
+            return;
+        }
+
         const auto& theme = _settingsSource.GlobalSettings().CurrentTheme();
 
         const auto bgKey = (theme.Window() != nullptr && theme.Window().UseMica()) ?
