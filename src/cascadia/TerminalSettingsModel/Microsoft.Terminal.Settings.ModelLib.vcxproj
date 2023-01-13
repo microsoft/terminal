@@ -115,6 +115,7 @@
     <ClInclude Include="WslDistroGenerator.h" />
     <ClInclude Include="SshHostGenerator.h" />
     <ClInclude Include="ModelSerializationHelpers.h" />
+    <ClInclude Include="SettingsUtils.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>

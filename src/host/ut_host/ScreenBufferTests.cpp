@@ -12,6 +12,7 @@
 #include "input.h"
 #include "getset.h"
 #include "_stream.h" // For WriteCharsLegacy
+#include "output.h" // For ScrollRegion
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../../inc/conattrs.hpp"
@@ -183,6 +184,7 @@ class ScreenBufferTests
     TEST_METHOD(ScrollOperations);
     TEST_METHOD(InsertChars);
     TEST_METHOD(DeleteChars);
+    TEST_METHOD(ScrollingWideCharsHorizontally);
 
     TEST_METHOD(EraseScrollbackTests);
     TEST_METHOD(EraseTests);
@@ -4088,6 +4090,54 @@ void ScreenBufferTests::DeleteChars()
                    L"A whole line of spaces was inserted from the right, erasing the line.");
 }
 
+void ScreenBufferTests::ScrollingWideCharsHorizontally()
+{
+    // The point of this test is to make sure wide characters can be
+    // moved horizontally by one cell without erasing themselves.
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    const auto viewport = si.GetViewport();
+    const auto testRow = viewport.Top();
+
+    Log::Comment(L"Fill the test row with content containing wide chars");
+    const auto testChars = L"こんにちは World";
+    const auto testAttr = TextAttribute{ FOREGROUND_RED | BACKGROUND_BLUE };
+    _FillLine(testRow, testChars, testAttr);
+
+    Log::Comment(L"Position the cursor at the start of the test row");
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ 0, testRow }, true));
+
+    Log::Comment(L"Insert 1 cell at the start of the test row");
+    stateMachine.ProcessString(L"\033[@");
+    VERIFY_IS_TRUE(_ValidateLineContains({ 1, testRow }, testChars, testAttr));
+
+    Log::Comment(L"Delete 1 cell from the start of the test row");
+    stateMachine.ProcessString(L"\033[P");
+    VERIFY_IS_TRUE(_ValidateLineContains(testRow, testChars, testAttr));
+
+    Log::Comment(L"Copy the test row 1 cell to the right");
+    stateMachine.ProcessString(L"\033[1;1;1;;;1;2$v");
+    VERIFY_IS_TRUE(_ValidateLineContains({ 1, testRow }, testChars, testAttr));
+
+    Log::Comment(L"Copy the test row 1 cell to the left");
+    stateMachine.ProcessString(L"\033[1;2;1;;;1;1$v");
+    VERIFY_IS_TRUE(_ValidateLineContains(testRow, testChars, testAttr));
+
+    Log::Comment(L"Scroll the test row 1 cell to the right");
+    const auto testRect = til::inclusive_rect{ 0, testRow, viewport.Width() - 2, testRow };
+    ScrollRegion(si, testRect, std::nullopt, { 1, testRow }, L' ', testAttr);
+    VERIFY_IS_TRUE(_ValidateLineContains({ 1, testRow }, testChars, testAttr));
+
+    Log::Comment(L"Scroll the test row 1 cell to the left");
+    const auto testRect2 = til::inclusive_rect{ 1, testRow, viewport.Width() - 1, testRow };
+    ScrollRegion(si, testRect2, std::nullopt, { 0, testRow }, L' ', testAttr);
+    VERIFY_IS_TRUE(_ValidateLineContains(testRow, testChars, testAttr));
+}
+
 void ScreenBufferTests::EraseScrollbackTests()
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -7392,7 +7442,7 @@ void ScreenBufferTests::RectangularAreaOperations()
         _FillLines(viewport.Top() + 10, viewport.BottomExclusive(), expectedChar, expectedAttr);
         // Copy a rectangle from that lower part up to the top with DECCRA.
         stateMachine.ProcessString(L"\033[11;27;14;54;1;3;27;1;4$v");
-        // Reset the lower part back to it's original content.
+        // Reset the lower part back to its original content.
         _FillLines(viewport.Top() + 10, viewport.BottomExclusive(), bufferChar, bufferAttr);
         break;
     default:

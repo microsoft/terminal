@@ -82,7 +82,7 @@
         <!--
             GH#12775 et. al: After switching to ControlsV2, it seems that
             delay-loading a dialog causes the ContentDialog to be assigned a
-            Height equal to it's content size. If we DON'T assign the
+            Height equal to its content size. If we DON'T assign the
             ContentDialog a Row, I believe it's assigned Row 0 by default. So,
             when the dialog gets opened, the dialog seemingly causes a giant
             hole to appear in the body of the app.

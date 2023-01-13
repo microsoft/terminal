@@ -798,7 +798,7 @@ void ConptyRoundtripTests::TestResizeHeight()
         hostSm.ProcessString(L"\r\n");
     }
 
-    // Conpty doesn't have a scrollback, it's view's origin is always 0,0
+    // Conpty doesn't have a scrollback, its view's origin is always 0,0
     const auto secondHostView = si.GetViewport();
     VERIFY_ARE_EQUAL(0, secondHostView.Top());
     VERIFY_ARE_EQUAL(TerminalViewHeight, secondHostView.BottomExclusive());
@@ -905,7 +905,7 @@ void ConptyRoundtripTests::TestResizeHeight()
     // After we resize, make sure to get the new textBuffers
     std::tie(hostTb, termTb) = _performResize(newViewportSize);
 
-    // Conpty's doesn't have a scrollback, it's view's origin is always 0,0
+    // Conpty's doesn't have a scrollback, its view's origin is always 0,0
     const auto thirdHostView = si.GetViewport();
     VERIFY_ARE_EQUAL(0, thirdHostView.Top());
     VERIFY_ARE_EQUAL(newViewportSize.height, thirdHostView.BottomExclusive());
@@ -933,7 +933,7 @@ void ConptyRoundtripTests::TestResizeHeight()
     Log::Comment(NoThrowString().Format(L"Paint a frame to update the Terminal"));
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 
-    // Conpty's doesn't have a scrollback, it's view's origin is always 0,0
+    // Conpty's doesn't have a scrollback, its view's origin is always 0,0
     const auto fourthHostView = si.GetViewport();
     VERIFY_ARE_EQUAL(0, fourthHostView.Top());
     VERIFY_ARE_EQUAL(newViewportSize.height, fourthHostView.BottomExclusive());
@@ -3430,7 +3430,7 @@ void ConptyRoundtripTests::WrapNewLineAtBottomLikeMSYS()
     //
     // The last line of the buffer will be used as a "prompt" line, with a
     // single ':' in it. This is similar to the way `less` typically displays
-    // it's prompt at the bottom of the buffer.
+    // its prompt at the bottom of the buffer.
 
     // First, print a whole viewport full of text.
     for (auto i = 0; i < (TerminalViewHeight) / 2; i++)

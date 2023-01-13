@@ -218,7 +218,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (const auto& theme{ tag.try_as<Model::Theme>() })
         {
-            _GlobalSettings.Theme(theme.Name());
+            _GlobalSettings.Theme(Model::ThemePair{ theme.Name() });
         }
     }
 
