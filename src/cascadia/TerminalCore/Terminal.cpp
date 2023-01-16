@@ -1177,6 +1177,8 @@ void Terminal::_AdjustCursorPosition(const til::point proposedPosition)
             // Update our selection too, so it doesn't move as the buffer is cycled
             if (_selection)
             {
+                // Stash this, so we can make sure to update the pivot to match later
+                const auto pivotWasStart = _selection->start == _selection->pivot;
                 // If the start of the selection is above 0, we can reduce both the start and end by 1
                 if (_selection->start.y > 0)
                 {
@@ -1196,6 +1198,15 @@ void Terminal::_AdjustCursorPosition(const til::point proposedPosition)
                         // Both the start and end of the selection are at 0, clear the selection
                         _selection.reset();
                     }
+                }
+
+                // If we still have a selection, make sure to sync the pivot
+                // with whichever value is the right one.
+                //
+                // Failure to do this might lead to GH #14462
+                if (_selection.has_value())
+                {
+                    _selection->pivot = pivotWasStart ? _selection->start : _selection->end;
                 }
             }
         }
