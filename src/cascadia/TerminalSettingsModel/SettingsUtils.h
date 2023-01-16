@@ -2,5 +2,3 @@
 // Licensed under the MIT license.
 
 #pragma once
-
-bool IsSystemInDarkTheme();

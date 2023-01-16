@@ -325,20 +325,6 @@ winrt::WUX::ElementTheme Theme::RequestedTheme() const noexcept
     return _Window ? _Window.RequestedTheme() : winrt::WUX::ElementTheme::Default;
 }
 
-bool Theme::IsActuallyDarkTheme() const
-{
-    switch (RequestedTheme())
-    {
-    case winrt::Windows::UI::Xaml::ElementTheme::Light:
-        return false;
-    case winrt::Windows::UI::Xaml::ElementTheme::Dark:
-        return true;
-    case winrt::Windows::UI::Xaml::ElementTheme::Default:
-    default:
-        return IsSystemInDarkTheme();
-    }
-}
-
 winrt::com_ptr<ThemePair> ThemePair::FromJson(const Json::Value& json)
 {
     auto result = winrt::make_self<ThemePair>(L"dark");
@@ -377,3 +363,13 @@ winrt::com_ptr<ThemePair> ThemePair::Copy() const
     pair->_LightName = _LightName;
     return pair;
 }
+
+// I'm not even joking, this is the recommended way to do this:
+// https://learn.microsoft.com/en-us/windows/apps/desktop/modernize/apply-windows-themes#know-when-dark-mode-is-enabled
+bool Theme::IsSystemInDarkTheme()
+{
+    static auto isColorLight = [](const winrt::Windows::UI::Color& clr) -> bool {
+        return (((5 * clr.G) + (2 * clr.R) + clr.B) > (8 * 128));
+    };
+    return isColorLight(winrt::Windows::UI::ViewManagement::UISettings().GetColorValue(winrt::Windows::UI::ViewManagement::UIColorType::Foreground));
+};

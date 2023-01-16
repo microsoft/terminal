@@ -213,7 +213,7 @@ Json::Value GlobalAppSettings::ToJson() const
 
 winrt::Microsoft::Terminal::Settings::Model::Theme GlobalAppSettings::CurrentTheme() noexcept
 {
-    auto requestedTheme = IsSystemInDarkTheme() ?
+    auto requestedTheme = Model::Theme::IsSystemInDarkTheme() ?
                               winrt::Windows::UI::Xaml::ElementTheme::Dark :
                               winrt::Windows::UI::Xaml::ElementTheme::Light;
 

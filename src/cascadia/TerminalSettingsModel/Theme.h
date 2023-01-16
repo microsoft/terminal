@@ -99,7 +99,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Json::Value ToJson() const;
 
         winrt::Windows::UI::Xaml::ElementTheme RequestedTheme() const noexcept;
-        bool IsActuallyDarkTheme() const;
+
+        static bool IsSystemInDarkTheme();
 
         WINRT_PROPERTY(winrt::hstring, Name);
 
