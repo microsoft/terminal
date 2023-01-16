@@ -194,9 +194,9 @@ namespace winrt::TerminalApp::implementation
 
             if (page && tab)
             {
-                // Passing null args to the ExportBuffer handler will default it
-                // to prompting for the path
-                page->_HandleExportBuffer(nullptr, nullptr);
+                // Passing empty string as the path to export tab will make it
+                // prompt for the path
+                page->_ExportTab(*tab, L"");
             }
         });
 
@@ -206,7 +206,8 @@ namespace winrt::TerminalApp::implementation
 
             if (page && tab)
             {
-                page->_Find();
+                page->_SetFocusedTab(*tab);
+                page->_Find(*tab);
             }
         });
 

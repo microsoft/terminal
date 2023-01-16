@@ -388,7 +388,7 @@ namespace winrt::TerminalApp::implementation
         void _OnCommandLineExecutionRequested(const IInspectable& sender, const winrt::hstring& commandLine);
         void _OnSwitchToTabRequested(const IInspectable& sender, const winrt::TerminalApp::TabBase& tab);
 
-        void _Find();
+        void _Find(const TerminalTab& tab);
 
         winrt::Microsoft::Terminal::Control::TermControl _InitControl(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
                                                                       const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
