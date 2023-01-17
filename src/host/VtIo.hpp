@@ -71,6 +71,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _win32InputMode{ false };
         bool _passthroughMode{ false };
         bool _closeEventSent{ false };
+        HWND _originalOwnerHwnd{ HWND_DESKTOP };
 
         std::unique_ptr<Microsoft::Console::Render::VtEngine> _pVtRenderEngine;
         std::unique_ptr<Microsoft::Console::VtInputThread> _pVtInputThread;

@@ -74,6 +74,7 @@ VtIo::VtIo() :
     _resizeQuirk = pArgs->IsResizeQuirkEnabled();
     _win32InputMode = pArgs->IsWin32InputModeEnabled();
     _passthroughMode = pArgs->IsPassthroughMode();
+    _originalOwnerHwnd = pArgs->GetOwnerHwnd();
 
     // If we were already given VT handles, set up the VT IO engine to use those.
     if (pArgs->InConptyMode())
@@ -329,7 +330,7 @@ void VtIo::CreatePseudoWindow()
 {
     if (_pPtySignalInputThread)
     {
-        _pPtySignalInputThread->CreatePseudoWindow();
+        _pPtySignalInputThread->CreatePseudoWindow(_originalOwnerHwnd);
     }
     else
     {

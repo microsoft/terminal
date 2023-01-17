@@ -41,7 +41,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - phOutput: Receives the handle to the newly-created anonymous pipe for reading the output of the conpty.
     // - phPc: Receives a token value to identify this conpty
 #pragma warning(suppress : 26430) // This statement sufficiently checks the out parameters. Analyzer cannot find this.
-    static HRESULT _CreatePseudoConsoleAndPipes(const COORD size, const DWORD dwFlags, HANDLE* phInput, HANDLE* phOutput, HPCON* phPC) noexcept
+    static HRESULT _CreatePseudoConsoleAndPipes(const COORD size, const DWORD dwFlags, HWND ownerHwnd, HANDLE* phInput, HANDLE* phOutput, HPCON* phPC) noexcept
     {
         RETURN_HR_IF(E_INVALIDARG, phPC == nullptr || phInput == nullptr || phOutput == nullptr);
 
@@ -50,7 +50,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(&inPipePseudoConsoleSide, &inPipeOurSide, nullptr, 0));
         RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(&outPipeOurSide, &outPipePseudoConsoleSide, nullptr, 0));
-        RETURN_IF_FAILED(ConptyCreatePseudoConsole(size, inPipePseudoConsoleSide.get(), outPipePseudoConsoleSide.get(), dwFlags, phPC));
+        RETURN_IF_FAILED(ConptyCreatePseudoConsoleWithWindow(ownerHwnd, INVALID_HANDLE_VALUE, size, inPipePseudoConsoleSide.get(), outPipePseudoConsoleSide.get(), dwFlags, phPC));
         *phInput = inPipeOurSide.release();
         *phOutput = outPipeOurSide.release();
         return S_OK;
@@ -338,12 +338,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 }
             }
 
-            THROW_IF_FAILED(_CreatePseudoConsoleAndPipes(til::unwrap_coord_size(dimensions), flags, &_inPipe, &_outPipe, &_hPC));
+            THROW_IF_FAILED(_CreatePseudoConsoleAndPipes(til::unwrap_coord_size(dimensions), flags, reinterpret_cast<HWND>(_initialParentHwnd), &_inPipe, &_outPipe, &_hPC));
 
-            if (_initialParentHwnd != 0)
-            {
-                THROW_IF_FAILED(ConptyReparentPseudoConsole(_hPC.get(), reinterpret_cast<HWND>(_initialParentHwnd)));
-            }
+            // if (_initialParentHwnd != 0)
+            // {
+            //     THROW_IF_FAILED(ConptyReparentPseudoConsole(_hPC.get(), reinterpret_cast<HWND>(_initialParentHwnd)));
+            // }
 
             // GH#12515: The conpty assumes it's hidden at the start. If we're visible, let it know now.
             if (_initialVisibility)

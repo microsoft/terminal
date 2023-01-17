@@ -25,6 +25,7 @@ const std::wstring_view ConsoleArguments::FEATURE_ARG = L"--feature";
 const std::wstring_view ConsoleArguments::FEATURE_PTY_ARG = L"pty";
 const std::wstring_view ConsoleArguments::COM_SERVER_ARG = L"-Embedding";
 const std::wstring_view ConsoleArguments::PASSTHROUGH_ARG = L"--passthrough";
+const std::wstring_view ConsoleArguments::OWNER_ARG = L"--owner";
 // NOTE: Thinking about adding more commandline args that control conpty, for
 // the Terminal? Make sure you add them to the commandline in
 // ConsoleEstablishHandoff. We use that to initialize the ConsoleArguments for a
@@ -124,6 +125,7 @@ ConsoleArguments::ConsoleArguments(const std::wstring& commandline,
     _width = 0;
     _height = 0;
     _inheritCursor = false;
+    _ownerHwnd = 0;
 }
 
 ConsoleArguments::ConsoleArguments() :
@@ -150,6 +152,7 @@ ConsoleArguments& ConsoleArguments::operator=(const ConsoleArguments& other)
         _inheritCursor = other._inheritCursor;
         _runAsComServer = other._runAsComServer;
         _forceNoHandoff = other._forceNoHandoff;
+        _ownerHwnd = other._ownerHwnd;
     }
 
     return *this;
@@ -521,6 +524,17 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
             s_ConsumeArg(args, i);
             hr = S_OK;
         }
+        else if (arg == OWNER_ARG)
+        {
+            std::wstring ownerHwndVal;
+            hr = s_GetArgumentValue(args, i, &ownerHwndVal);
+
+            if (SUCCEEDED(hr))
+            {
+                std::ignore = s_ParseHandleArg(ownerHwndVal, _ownerHwnd);
+                // We actually don't care if this fails to parse. "0x0" is gonna parse as 0 and return E_INVALIDARG, and that's a totally fine result to return
+            }
+        }
         else if (arg == CLIENT_COMMANDLINE_ARG)
         {
             // Everything after this is the explicit commandline
@@ -680,6 +694,10 @@ bool ConsoleArguments::IsResizeQuirkEnabled() const
 bool ConsoleArguments::IsWin32InputModeEnabled() const
 {
     return _win32InputMode;
+}
+HWND ConsoleArguments::GetOwnerHwnd() const
+{
+    return static_cast<HWND>(ULongToHandle( _ownerHwnd ));
 }
 
 #ifdef UNIT_TESTING

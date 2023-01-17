@@ -63,7 +63,8 @@ typedef struct _PseudoConsole
 #endif
 
 // Implementations of the various PseudoConsole functions.
-HRESULT _CreatePseudoConsole(const HANDLE hToken,
+HRESULT _CreatePseudoConsole(const HWND hOwner,
+                             const HANDLE hToken,
                              const COORD size,
                              const HANDLE hInput,
                              const HANDLE hOutput,

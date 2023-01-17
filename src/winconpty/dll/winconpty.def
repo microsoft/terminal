@@ -2,6 +2,7 @@ EXPORTS
     ; Plain old normal aliases
     ConptyCreatePseudoConsole
     ConptyCreatePseudoConsoleAsUser
+    ConptyCreatePseudoConsoleWithWindow
     ConptyResizePseudoConsole
     ConptyClosePseudoConsole
     ConptyClosePseudoConsoleTimeout

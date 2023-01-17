@@ -85,9 +85,9 @@ void PtySignalInputThread::ConnectConsole() noexcept
 //   this here ensures that the window is first created with the initial owner
 //   set up (if so specified).
 // - Refer to GH#13066 for details.
-void PtySignalInputThread::CreatePseudoWindow()
+void PtySignalInputThread::CreatePseudoWindow(HWND ownerHwnd /*= HWND_DESKTOP*/)
 {
-    HWND owner = _earlyReparent.has_value() ? reinterpret_cast<HWND>((*_earlyReparent).handle) : HWND_DESKTOP;
+    HWND owner = _earlyReparent.has_value() ? reinterpret_cast<HWND>((*_earlyReparent).handle) : ownerHwnd;
     ServiceLocator::LocatePseudoWindow(owner);
 }
 

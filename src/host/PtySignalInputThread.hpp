@@ -33,7 +33,7 @@ namespace Microsoft::Console
         PtySignalInputThread& operator=(const PtySignalInputThread&) = delete;
 
         void ConnectConsole() noexcept;
-        void CreatePseudoWindow();
+        void CreatePseudoWindow(HWND ownerHwnd);
 
     private:
         enum class PtySignal : unsigned short

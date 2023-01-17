@@ -57,6 +57,8 @@ public:
     bool IsResizeQuirkEnabled() const;
     bool IsWin32InputModeEnabled() const;
 
+    HWND GetOwnerHwnd() const;
+
 #ifdef UNIT_TESTING
     void EnableConptyModeForTests();
 #endif
@@ -79,6 +81,7 @@ public:
     static const std::wstring_view FEATURE_PTY_ARG;
     static const std::wstring_view COM_SERVER_ARG;
     static const std::wstring_view PASSTHROUGH_ARG;
+    static const std::wstring_view OWNER_ARG;
 
 private:
 #ifdef UNIT_TESTING
@@ -98,7 +101,8 @@ private:
                      const DWORD signalHandle,
                      const bool inheritCursor,
                      const bool runAsComServer,
-                     const bool passthroughMode) :
+                     const bool passthroughMode,
+                     const DWORD ownerHwnd = 0) :
         _commandline(commandline),
         _clientCommandline(clientCommandline),
         _vtInHandle(vtInHandle),
@@ -115,7 +119,8 @@ private:
         _inheritCursor(inheritCursor),
         _resizeQuirk(false),
         _runAsComServer{ runAsComServer },
-        _passthroughMode{ passthroughMode }
+        _passthroughMode{ passthroughMode },
+        _ownerHwnd{ ownerHwnd }
     {
     }
 #endif
@@ -145,6 +150,7 @@ private:
     bool _inheritCursor;
     bool _resizeQuirk{ false };
     bool _win32InputMode{ false };
+    DWORD _ownerHwnd{ 0 };
 
     [[nodiscard]] HRESULT _GetClientCommandline(_Inout_ std::vector<std::wstring>& args,
                                                 const size_t index,
@@ -195,6 +201,7 @@ namespace WEX
                                                            L"Inherit Cursor: '%ws'\r\n",
                                                            L"Run As Com Server: '%ws'\r\n",
                                                            L"Passthrough Mode: '%ws'\r\n",
+                                                           L"Owner HWND: '0x%x'\r\n",
                                                            ci.GetClientCommandline().c_str(),
                                                            s_ToBoolString(ci.HasVtHandles()),
                                                            ci.GetVtInHandle(),
@@ -210,7 +217,8 @@ namespace WEX
                                                            ci.GetSignalHandle(),
                                                            s_ToBoolString(ci.GetInheritCursor()),
                                                            s_ToBoolString(ci.ShouldRunAsComServer()),
-                                                           s_ToBoolString(ci.IsPassthroughMode()));
+                                                           s_ToBoolString(ci.IsPassthroughMode()),
+                                                           ci.GetOwnerHwnd(), );
             }
 
         private:
@@ -241,7 +249,8 @@ namespace WEX
                        expected.GetSignalHandle() == actual.GetSignalHandle() &&
                        expected.GetInheritCursor() == actual.GetInheritCursor() &&
                        expected.ShouldRunAsComServer() == actual.ShouldRunAsComServer() &&
-                       expected.IsPassthroughMode() == actual.IsPassthroughMode();
+                       expected.IsPassthroughMode() == actual.IsPassthroughMode() &&
+                       expected.GetOwnerHwnd() == actual.GetOwnerHwnd();
             }
 
             static bool AreSame(const ConsoleArguments& expected, const ConsoleArguments& actual)
@@ -268,7 +277,8 @@ namespace WEX
                        (object.GetSignalHandle() == 0 || object.GetSignalHandle() == INVALID_HANDLE_VALUE) &&
                        !object.GetInheritCursor() &&
                        !object.ShouldRunAsComServer() &&
-                       !object.IsPassthroughMode();
+                       !object.IsPassthroughMode() &&
+                       object.GetOwnerHwnd() == 0;
             }
         };
     }

@@ -93,7 +93,8 @@ static bool _HandleIsValid(HANDLE h) noexcept
     return (h != INVALID_HANDLE_VALUE) && (h != nullptr);
 }
 
-HRESULT _CreatePseudoConsole(const HANDLE hToken,
+HRESULT _CreatePseudoConsole(const HWND hOwner,
+                             const HANDLE hToken,
                              const COORD size,
                              const HANDLE hInput,
                              const HANDLE hOutput,
@@ -133,7 +134,7 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
     RETURN_IF_WIN32_BOOL_FALSE(SetHandleInformation(signalPipeConhostSide.get(), HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT));
 
     // GH4061: Ensure that the path to executable in the format is escaped so C:\Program.exe cannot collide with C:\Program Files
-    auto pwszFormat = L"\"%s\" --headless %s%s%s%s--width %hu --height %hu --signal 0x%x --server 0x%x";
+    auto pwszFormat = L"\"%s\" --headless %s%s%s%s--width %hu --height %hu --signal 0x%x --server 0x%x --owner 0x%x";
     // This is plenty of space to hold the formatted string
     wchar_t cmd[MAX_PATH]{};
     const BOOL bInheritCursor = (dwFlags & PSEUDOCONSOLE_INHERIT_CURSOR) == PSEUDOCONSOLE_INHERIT_CURSOR;
@@ -151,7 +152,8 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
                size.X,
                size.Y,
                signalPipeConhostSide.get(),
-               serverHandle.get());
+               serverHandle.get(),
+               hOwner);
 
     STARTUPINFOEXW siEx{ 0 };
     siEx.StartupInfo.cb = sizeof(STARTUPINFOEXW);
@@ -440,12 +442,13 @@ extern "C" HRESULT WINAPI ConptyCreatePseudoConsole(_In_ COORD size,
     return ConptyCreatePseudoConsoleAsUser(INVALID_HANDLE_VALUE, size, hInput, hOutput, dwFlags, phPC);
 }
 
-extern "C" HRESULT WINAPI ConptyCreatePseudoConsoleAsUser(_In_ HANDLE hToken,
-                                                          _In_ COORD size,
-                                                          _In_ HANDLE hInput,
-                                                          _In_ HANDLE hOutput,
-                                                          _In_ DWORD dwFlags,
-                                                          _Out_ HPCON* phPC)
+extern "C" HRESULT WINAPI ConptyCreatePseudoConsoleWithWindow(_In_ HWND hOwner,
+                                                              _In_ HANDLE hToken,
+                                                              _In_ COORD size,
+                                                              _In_ HANDLE hInput,
+                                                              _In_ HANDLE hOutput,
+                                                              _In_ DWORD dwFlags,
+                                                              _Out_ HPCON* phPC)
 {
     if (phPC == nullptr)
     {
@@ -468,12 +471,22 @@ extern "C" HRESULT WINAPI ConptyCreatePseudoConsoleAsUser(_In_ HANDLE hToken,
     RETURN_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(), hInput, GetCurrentProcess(), duplicatedInput.addressof(), 0, TRUE, DUPLICATE_SAME_ACCESS));
     RETURN_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(), hOutput, GetCurrentProcess(), duplicatedOutput.addressof(), 0, TRUE, DUPLICATE_SAME_ACCESS));
 
-    RETURN_IF_FAILED(_CreatePseudoConsole(hToken, size, duplicatedInput.get(), duplicatedOutput.get(), dwFlags, pPty));
+    RETURN_IF_FAILED(_CreatePseudoConsole(hOwner, hToken, size, duplicatedInput.get(), duplicatedOutput.get(), dwFlags, pPty));
 
     *phPC = (HPCON)pPty;
     cleanupPty.release();
 
     return S_OK;
+}
+
+extern "C" HRESULT WINAPI ConptyCreatePseudoConsoleAsUser(_In_ HANDLE hToken,
+                                                          _In_ COORD size,
+                                                          _In_ HANDLE hInput,
+                                                          _In_ HANDLE hOutput,
+                                                          _In_ DWORD dwFlags,
+                                                          _Out_ HPCON* phPC)
+{
+    return ConptyCreatePseudoConsoleWithWindow(HWND_DESKTOP, hToken, size, hInput, hOutput, dwFlags, phPC);
 }
 
 // Function Description:
