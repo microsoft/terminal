@@ -218,7 +218,7 @@ namespace WEX
                                                            s_ToBoolString(ci.GetInheritCursor()),
                                                            s_ToBoolString(ci.ShouldRunAsComServer()),
                                                            s_ToBoolString(ci.IsPassthroughMode()),
-                                                           ci.GetOwnerHwnd(), );
+                                                           ci.GetOwnerHwnd());
             }
 
         private:

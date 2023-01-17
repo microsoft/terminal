@@ -527,7 +527,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
         else if (arg == OWNER_ARG)
         {
             std::wstring ownerHwndVal;
-            hr = s_GetArgumentValue(args, i, &ownerHwndVal);
+                hr = s_GetArgumentValue(args, i, &ownerHwndVal);
 
             if (SUCCEEDED(hr))
             {

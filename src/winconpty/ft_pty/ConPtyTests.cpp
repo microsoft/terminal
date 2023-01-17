@@ -109,7 +109,7 @@ static HRESULT _CreatePseudoConsole(const COORD size,
                                     const DWORD dwFlags,
                                     _Inout_ PseudoConsole* pPty)
 {
-    return _CreatePseudoConsole(INVALID_HANDLE_VALUE, size, hInput, hOutput, dwFlags, pPty);
+    return _CreatePseudoConsole(HWND_DESKTOP, INVALID_HANDLE_VALUE, size, hInput, hOutput, dwFlags, pPty);
 }
 
 static HRESULT AttachPseudoConsole(HPCON hPC, std::wstring command, PROCESS_INFORMATION* ppi)
