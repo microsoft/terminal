@@ -234,6 +234,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_METHOD(TestNoExtendedAttrsOptimization);
     TEST_METHOD(TestNoBackgroundAttrsOptimization);
 
+    TEST_METHOD(TestLotsOfOutputOnFirstFrame);
+
 private:
     bool _writeCallback(const char* const pch, const size_t cch);
     void _flushFirstFrame();
@@ -4324,6 +4326,57 @@ void ConptyRoundtripTests::TestNoBackgroundAttrsOptimization()
 
     Log::Comment(L"========== Check host buffer ==========");
     verifyBuffer(*hostTb);
+
+    Log::Comment(L"Painting the frame");
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    Log::Comment(L"========== Check terminal buffer ==========");
+    verifyBuffer(*termTb);
+}
+
+void ConptyRoundtripTests::TestLotsOfOutputOnFirstFrame()
+{
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+        TEST_METHOD_PROPERTY(L"Data:linesBeforeFirstPrint", L"{0, 5, 10, 20, 30, 40, 50}")
+    END_TEST_METHOD_PROPERTIES();
+
+    INIT_TEST_PROPERTY(int, linesBeforeFirstPrint, L"number of lines to print before doing the first print");
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+
+    // auto* hostTb = &si.GetTextBuffer();
+    auto* termTb = term->_mainBuffer.get();
+
+    _checkConptyOutput = false;
+
+    auto linesPrinted = 0;
+
+    TextAttribute defaultAttrs{};
+
+    auto verifyBuffer = [&](const TextBuffer& tb) {
+        for (auto i = 0; i < 100; i++)
+        {
+            if (i < linesPrinted)
+            {
+                TestUtils::VerifyExpectedString(tb, fmt::format(L"line {}", i), { 0, i });
+            }
+            else
+            {
+                TestUtils::VerifyLineContains(tb, { 0, i }, L' ', defaultAttrs, static_cast<uint32_t>(TerminalViewWidth));
+            }
+        }
+    };
+
+    Log::Comment(L"========== Fill test content ==========");
+    for (linesPrinted = 0; linesPrinted < linesBeforeFirstPrint; linesPrinted++)
+    {
+        sm.ProcessString(fmt::format(L"line {}\r\n", linesPrinted));
+    }
 
     Log::Comment(L"Painting the frame");
     VERIFY_SUCCEEDED(renderer.PaintFrame());
