@@ -476,6 +476,29 @@ using namespace Microsoft::Console::Interactivity;
         }
         return 0;
     }
+    case WM_ACTIVATE:
+    {
+        // Get the top-level HWND hosting us
+        if (const auto ownerHwnd{ ::GetAncestor(hWnd, GA_ROOTOWNER) })
+        {
+            // If we were activated....
+            if (LOWORD(wParam) != WA_INACTIVE)
+            {
+                // And the currently active HWND was our owner
+                if (ownerHwnd == GetActiveWindow())
+                {
+                    // Just toss the focus back
+                    SetActiveWindow(ownerHwnd);
+                }
+            }
+        }
+    }
+    case WM_MOUSEACTIVATE:
+    {
+        // This was another thing that was considered. This _should_ help
+        // prevent activations of certain kinds.
+        return MA_NOACTIVATEANDEAT;
+    }
     }
     // If we get this far, call the default window proc
     return DefWindowProcW(hWnd, Message, wParam, lParam);
