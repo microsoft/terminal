@@ -48,10 +48,7 @@ winrt::com_ptr<NewTabMenuEntry> FolderEntry::FromJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, NameKey, entry->_Name);
     JsonUtils::GetValueForKey(json, IconKey, entry->_Icon);
-    if (const auto& entries{ JsonUtils::GetValueForKey<decltype(entry->_Entries)>(json, EntriesKey) })
-    {
-        entry->_Entries = entries;
-    }
+    JsonUtils::GetValueForKey(json, EntriesKey, entry->_Entries);
     JsonUtils::GetValueForKey(json, InliningKey, entry->_Inlining);
     JsonUtils::GetValueForKey(json, AllowEmptyKey, entry->_AllowEmpty);
 
