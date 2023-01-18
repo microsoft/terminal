@@ -4,7 +4,7 @@
 #include "pch.h"
 #include "Profiles_Appearance.h"
 #include "Profiles_Appearance.g.cpp"
-#include "Profiles.h"
+#include "ProfileViewModel.h"
 #include "PreviewConnection.h"
 #include "EnumEntry.h"
 
@@ -28,8 +28,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Profiles_Appearance::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        auto state{ e.Parameter().as<Editor::ProfilePageNavigationState>() };
-        _Profile = state.Profile();
+        _Profile = e.Parameter().as<Editor::ProfileViewModel>();
 
         // generate the font list, if we don't have one
         if (_Profile.CompleteFontList() || !_Profile.MonospaceFontList())
