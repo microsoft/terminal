@@ -3160,15 +3160,15 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Called when the user tries to do a search using keybindings.
-    //   This will tell the current focused terminal control to create
-    //   a search box and enable find process.
+    //   This will tell the active terminal control of the passed tab
+    //   to create a search box and enable find process.
     // Arguments:
-    // - <none>
+    // - tab: the tab where the search box should be created
     // Return Value:
     // - <none>
-    void TerminalPage::_Find()
+    void TerminalPage::_Find(const TerminalTab& tab)
     {
-        if (const auto& control{ _GetActiveControl() })
+        if (const auto& control{ tab.GetActiveTerminalControl() })
         {
             control.CreateSearchBoxControl();
         }
