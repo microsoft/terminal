@@ -24,39 +24,6 @@ ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider& io) :
 {
 }
 
-// Routine Description:
-// - Handles the print action from the state machine
-// Arguments:
-// - string - The string to be printed.
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::PrintString(const std::wstring_view string)
-{
-    auto dwNumBytes = string.size() * sizeof(wchar_t);
-
-    auto& cursor = _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
-    if (!cursor.IsOn())
-    {
-        cursor.SetIsOn(true);
-    }
-
-    // Defer the cursor drawing while we are iterating the string, for a better performance.
-    // We can not waste time displaying a cursor event when we know more text is coming right behind it.
-    cursor.StartDeferDrawing();
-    const auto ntstatus = WriteCharsLegacy(_io.GetActiveOutputBuffer(),
-                                           string.data(),
-                                           string.data(),
-                                           string.data(),
-                                           &dwNumBytes,
-                                           nullptr,
-                                           _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor().GetPosition().x,
-                                           WC_LIMIT_BACKSPACE | WC_DELAY_EOL_WRAP,
-                                           nullptr);
-    cursor.EndDeferDrawing();
-
-    THROW_IF_NTSTATUS_FAILED(ntstatus);
-}
-
 // - Sends a string response to the input stream of the console.
 // - Used by various commands where the program attached would like a reply to one of the commands issued.
 // - This will generate two "key presses" (one down, one up) for every character in the string and place them into the head of the console's input stream.
@@ -207,20 +174,18 @@ bool ConhostInternalGetSet::GetLineFeedMode() const
 // - Performs a line feed, possibly preceded by carriage return.
 // Arguments:
 // - withReturn - Set to true if a carriage return should be performed as well.
+// - wrapForced - Set to true is the line feed was the result of the line wrapping.
 // Return Value:
 // - <none>
-void ConhostInternalGetSet::LineFeed(const bool withReturn)
+void ConhostInternalGetSet::LineFeed(const bool withReturn, const bool wrapForced)
 {
     auto& screenInfo = _io.GetActiveOutputBuffer();
     auto& textBuffer = screenInfo.GetTextBuffer();
     auto cursorPosition = textBuffer.GetCursor().GetPosition();
 
-    // We turn the cursor on before an operation that might scroll the viewport, otherwise
-    // that can result in an old copy of the cursor being left behind on the screen.
-    textBuffer.GetCursor().SetIsOn(true);
-
-    // Since we are explicitly moving down a row, clear the wrap status on the row we're leaving
-    textBuffer.GetRowByOffset(cursorPosition.y).SetWrapForced(false);
+    // If the line was forced to wrap, set the wrap status.
+    // When explicitly moving down a row, clear the wrap status.
+    textBuffer.GetRowByOffset(cursorPosition.y).SetWrapForced(wrapForced);
 
     cursorPosition.y += 1;
     if (withReturn)
