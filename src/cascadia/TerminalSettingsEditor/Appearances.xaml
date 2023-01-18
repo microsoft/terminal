@@ -44,8 +44,8 @@
                                     ClearSettingValue="{x:Bind Appearance.ClearDarkColorSchemeName}"
                                     HasSettingValue="{x:Bind Appearance.HasDarkColorSchemeName, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.DarkColorSchemeNameOverrideSource, Mode=OneWay}">
-                <ComboBox ItemsSource="{x:Bind Appearance.SchemesPageVM.AllColorSchemes, Mode=OneWay}"
-                          SelectedItem="{x:Bind CurrentColorScheme, Mode=TwoWay}"
+                <ComboBox ItemsSource="{x:Bind Appearance.SchemesList, Mode=OneWay}"
+                          SelectedItem="{x:Bind Appearance.CurrentColorScheme, Mode=TwoWay}"
                           Style="{StaticResource ComboBoxSettingStyle}">
                     <ComboBox.ItemTemplate>
                         <DataTemplate x:DataType="local:ColorSchemeViewModel">

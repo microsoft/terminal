@@ -32,7 +32,8 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean UseDesktopBGImage;
         Boolean BackgroundImageSettingsVisible { get; };
 
-        ColorSchemesPageViewModel SchemesPageVM;
+        ColorSchemeViewModel CurrentColorScheme;
+        Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> SchemesList;
         IHostedInWindow WindowRoot; // necessary to send the right HWND into the file picker dialogs.
 
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, FontFace);
@@ -68,8 +69,6 @@ namespace Microsoft.Terminal.Settings.Editor
 
         IInspectable CurrentAdjustIndistinguishableColors;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> AdjustIndistinguishableColorsList { get; };
-
-        ColorSchemeViewModel CurrentColorScheme;
 
         IInspectable CurrentBackgroundImageStretchMode;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> BackgroundImageStretchModeList { get; };

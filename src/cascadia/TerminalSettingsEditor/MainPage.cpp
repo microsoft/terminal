@@ -395,7 +395,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         else if (clickedItemTag == globalProfileTag)
         {
             auto profileVM{ _viewModelForProfile(_settingsClone.ProfileDefaults(), _settingsClone) };
-            profileVM.SetupAppearances(_colorSchemesPageVM, *this);
+            profileVM.SetupAppearances(_colorSchemesPageVM.AllColorSchemes(), *this);
             profileVM.IsBaseLayer(true);
 
             _SetupProfileEventHandling(profileVM);
@@ -533,7 +533,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (!profile.Deleted())
             {
                 auto profileVM = _viewModelForProfile(profile, _settingsClone);
-                profileVM.SetupAppearances(_colorSchemesPageVM, *this);
+                profileVM.SetupAppearances(_colorSchemesPageVM.AllColorSchemes(), *this);
                 auto navItem = _CreateProfileNavViewItem(profileVM);
                 menuItems.Append(navItem);
             }
@@ -556,7 +556,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         const auto newProfile{ profile ? profile : _settingsClone.CreateNewProfile() };
         const auto profileViewModel{ _viewModelForProfile(newProfile, _settingsClone) };
-        profileViewModel.SetupAppearances(_colorSchemesPageVM, *this);
+        profileViewModel.SetupAppearances(_colorSchemesPageVM.AllColorSchemes(), *this);
         const auto navItem{ _CreateProfileNavViewItem(profileViewModel) };
         SettingsNav().MenuItems().InsertAt(index, navItem);
 
