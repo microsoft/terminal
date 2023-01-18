@@ -40,7 +40,7 @@ void AdaptDispatch::Print(const wchar_t wchPrintable)
     // a character is only output if the DEL is translated to something else.
     if (wchTranslated != AsciiChars::DEL)
     {
-        _api.PrintString({ &wchTranslated, 1 });
+        _WriteToBuffer({ &wchTranslated, 1 });
     }
 }
 
@@ -61,12 +61,96 @@ void AdaptDispatch::PrintString(const std::wstring_view string)
         {
             buffer.push_back(_termOutput.TranslateKey(wch));
         }
-        _api.PrintString(buffer);
+        _WriteToBuffer(buffer);
     }
     else
     {
-        _api.PrintString(string);
+        _WriteToBuffer(string);
     }
+}
+
+void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
+{
+    auto& textBuffer = _api.GetTextBuffer();
+    auto& cursor = textBuffer.GetCursor();
+    auto cursorPosition = cursor.GetPosition();
+    const auto wrapAtEOL = _api.GetAutoWrapMode();
+    const auto attributes = textBuffer.GetCurrentAttributes();
+
+    // Turn off the cursor until we're done, so it isn't refreshed unnecessarily.
+    cursor.SetIsOn(false);
+
+    // The width at which we wrap is determined by the line rendition attribute.
+    auto lineWidth = textBuffer.GetLineWidth(cursorPosition.y);
+
+    auto stringPosition = string.cbegin();
+    while (stringPosition < string.cend())
+    {
+        if (cursor.IsDelayedEOLWrap() && wrapAtEOL)
+        {
+            const auto delayedCursorPosition = cursor.GetDelayedAtPosition();
+            cursor.ResetDelayEOLWrap();
+            // Only act on a delayed EOL if we didn't move the cursor to a
+            // different position from where the EOL was marked.
+            if (delayedCursorPosition == cursorPosition)
+            {
+                _api.LineFeed(true, true);
+                cursorPosition = cursor.GetPosition();
+                // We need to recalculate the width when moving to a new line.
+                lineWidth = textBuffer.GetLineWidth(cursorPosition.y);
+            }
+        }
+
+        const OutputCellIterator it(std::wstring_view{ stringPosition, string.cend() }, attributes);
+        const auto itEnd = textBuffer.WriteLine(it, cursorPosition, wrapAtEOL, lineWidth - 1);
+
+        if (itEnd.GetInputDistance(it) == 0)
+        {
+            // If we haven't written anything out because there wasn't enough space,
+            // we move the cursor to the end of the line so that it's forced to wrap.
+            cursorPosition.x = lineWidth;
+            // But if wrapping is disabled, we also need to move to the next string
+            // position, otherwise we'll be stuck in this loop forever.
+            if (!wrapAtEOL)
+            {
+                stringPosition++;
+            }
+        }
+        else
+        {
+            const auto cellCount = itEnd.GetCellDistance(it);
+            const auto changedRect = til::rect{ cursorPosition, til::size{ cellCount, 1 } };
+            _api.NotifyAccessibilityChange(changedRect);
+
+            stringPosition += itEnd.GetInputDistance(it);
+            cursorPosition.x += cellCount;
+        }
+
+        if (cursorPosition.x >= lineWidth)
+        {
+            // If we're past the end of the line, we need to clamp the cursor
+            // back into range, and if wrapping is enabled, set the delayed wrap
+            // flag. The wrapping only occurs once another character is output.
+            cursorPosition.x = lineWidth - 1;
+            cursor.SetPosition(cursorPosition);
+            if (wrapAtEOL)
+            {
+                cursor.DelayEOLWrap(cursorPosition);
+            }
+        }
+        else
+        {
+            cursor.SetPosition(cursorPosition);
+        }
+    }
+
+    _ApplyCursorMovementFlags(cursor);
+
+    // Notify UIA of new text.
+    // It's important to do this here instead of in TextBuffer, because here you
+    // have access to the entire line of text, whereas TextBuffer writes it one
+    // character at a time via the OutputCellIterator.
+    textBuffer.TriggerNewTextNotification(string);
 }
 
 // Routine Description:
@@ -1892,13 +1976,13 @@ bool AdaptDispatch::LineFeed(const DispatchTypes::LineFeedType lineFeedType)
     switch (lineFeedType)
     {
     case DispatchTypes::LineFeedType::DependsOnMode:
-        _api.LineFeed(_api.GetLineFeedMode());
+        _api.LineFeed(_api.GetLineFeedMode(), false);
         return true;
     case DispatchTypes::LineFeedType::WithoutReturn:
-        _api.LineFeed(false);
+        _api.LineFeed(false, false);
         return true;
     case DispatchTypes::LineFeedType::WithReturn:
-        _api.LineFeed(true);
+        _api.LineFeed(true, false);
         return true;
     default:
         return false;

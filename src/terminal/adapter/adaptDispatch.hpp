@@ -193,6 +193,7 @@ namespace Microsoft::Console::VirtualTerminal
             std::optional<TextColor> background;
         };
 
+        void _WriteToBuffer(const std::wstring_view string);
         std::pair<int, int> _GetVerticalMargins(const til::rect& viewport, const bool absolute);
         bool _CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins);
         void _ApplyCursorMovementFlags(Cursor& cursor) noexcept;
