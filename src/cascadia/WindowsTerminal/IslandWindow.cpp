@@ -1911,7 +1911,7 @@ void IslandWindow::UseMica(const bool newValue, const double /*titlebarOpacity*/
     // that version, this API will just return an error and do nothing silently.
 
     const int attribute = newValue ? DWMSBT_MAINWINDOW : DWMSBT_NONE;
-    LOG_IF_FAILED(DwmSetWindowAttribute(GetHandle(), DWMWA_SYSTEMBACKDROP_TYPE, &attribute, sizeof(attribute)));
+    std::ignore = DwmSetWindowAttribute(GetHandle(), DWMWA_SYSTEMBACKDROP_TYPE, &attribute, sizeof(attribute));
 }
 
 // Method Description:
@@ -1925,12 +1925,6 @@ void IslandWindow::UseMica(const bool newValue, const double /*titlebarOpacity*/
     {
         return FALSE;
     }
-
-    // This is a hack to make the window borders dark instead of light.
-    // It must be done before WM_NCPAINT so that the borders are rendered with
-    // the correct theme.
-    // For more information, see GH#6620.
-    LOG_IF_FAILED(TerminalTrySetDarkTheme(_window.get(), true));
 
     return TRUE;
 }
