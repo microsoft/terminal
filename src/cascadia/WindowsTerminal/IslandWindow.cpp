@@ -1926,5 +1926,16 @@ void IslandWindow::UseMica(const bool newValue, const double /*titlebarOpacity*/
         return FALSE;
     }
 
+    // This is a hack to make the window borders dark instead of light.
+    // It must be done before WM_NCPAINT so that the borders are rendered with
+    // the correct theme.
+    // For more information, see GH#6620.
+    //
+    // Theoretically, we don't need this anymore, since _updateTheme will update
+    // the darkness of our window. However, we're keeping this call to prevent
+    // the window from appearing as a white rectangle for a frame before we load
+    // the rest of the settings.
+    LOG_IF_FAILED(TerminalTrySetDarkTheme(_window.get(), true));
+
     return TRUE;
 }

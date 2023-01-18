@@ -6,7 +6,6 @@
 #include "../../types/inc/Utils.hpp"
 #include "JsonUtils.h"
 #include "KeyChordSerialization.h"
-#include "SettingsUtils.h"
 
 #include "GlobalAppSettings.g.cpp"
 

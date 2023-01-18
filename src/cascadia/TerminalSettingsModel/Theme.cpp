@@ -6,7 +6,6 @@
 #include "../../types/inc/Utils.hpp"
 #include "../../types/inc/colorTable.hpp"
 #include "Utils.h"
-#include "SettingsUtils.h"
 #include "JsonUtils.h"
 #include "TerminalSettingsSerializationHelpers.h"
 

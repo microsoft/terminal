@@ -7,7 +7,6 @@
 
 #include "TerminalSettings.g.cpp"
 #include "TerminalSettingsCreateResult.g.cpp"
-#include "SettingsUtils.h"
 
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace Microsoft::Console::Utils;
