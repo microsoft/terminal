@@ -32,6 +32,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean UseDesktopBGImage;
         Boolean BackgroundImageSettingsVisible { get; };
 
+        void ClearColorScheme();
         ColorSchemeViewModel CurrentColorScheme;
         Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> SchemesList;
         IHostedInWindow WindowRoot; // necessary to send the right HWND into the file picker dialogs.

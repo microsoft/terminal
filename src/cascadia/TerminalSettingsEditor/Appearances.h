@@ -69,6 +69,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void UseDesktopBGImage(const bool useDesktop);
         bool BackgroundImageSettingsVisible();
 
+        void ClearColorScheme();
         Editor::ColorSchemeViewModel CurrentColorScheme();
         void CurrentColorScheme(const Editor::ColorSchemeViewModel& val);
 

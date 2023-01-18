@@ -83,6 +83,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return BackgroundImagePath() != L"";
     }
 
+    void AppearanceViewModel::ClearColorScheme()
+    {
+        ClearDarkColorSchemeName();
+        _NotifyChanges(L"CurrentColorScheme");
+    }
+
     Editor::ColorSchemeViewModel AppearanceViewModel::CurrentColorScheme()
     {
         const auto schemeName{ DarkColorSchemeName() };

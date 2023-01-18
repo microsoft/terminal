@@ -41,7 +41,7 @@
             <!--  Color Scheme  -->
             <!--  This currently only display the Dark color scheme, even if the user has a pair of schemes set.  -->
             <local:SettingContainer x:Uid="Profile_ColorScheme"
-                                    ClearSettingValue="{x:Bind Appearance.ClearDarkColorSchemeName}"
+                                    ClearSettingValue="{x:Bind Appearance.ClearColorScheme}"
                                     HasSettingValue="{x:Bind Appearance.HasDarkColorSchemeName, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.DarkColorSchemeNameOverrideSource, Mode=OneWay}">
                 <ComboBox ItemsSource="{x:Bind Appearance.SchemesList, Mode=OneWay}"
