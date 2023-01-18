@@ -138,7 +138,7 @@
                                 evaluated as SolidBackgroundFillColorBase. If we try
                                 to use those resources directly though, we don't get
                                 the properly themed versions. Presumably because the
-                                App itself can't have it's RequestedTheme changed at
+                                App itself can't have its RequestedTheme changed at
                                 runtime.
                                 
                                 However, after more discussion with the WinUI
