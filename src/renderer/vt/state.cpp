@@ -279,7 +279,7 @@ CATCH_RETURN();
         {
             // GH#3490 - When the viewport width changed, don't do anything extra here.
             // If the buffer had areas that were invalid due to the resize, then the
-            // buffer will have triggered it's own invalidations for what it knows is
+            // buffer will have triggered its own invalidations for what it knows is
             // invalid. Previously, we'd invalidate everything if the width changed,
             // because we couldn't be sure if lines were reflowed.
             _invalidMap.resize(newSize);
@@ -478,7 +478,7 @@ void VtEngine::EndResizeRequest()
 // - Configure the renderer for the resize quirk. This changes the behavior of
 //   conpty to _not_ InvalidateAll the entire viewport on a resize operation.
 //   This is used by the Windows Terminal, because it is prepared to be
-//   connected to a conpty, and handles it's own buffer specifically for a
+//   connected to a conpty, and handles its own buffer specifically for a
 //   conpty scenario.
 // - See also: GH#3490, #4354, #4741
 // Arguments:

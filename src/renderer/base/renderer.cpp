@@ -276,15 +276,16 @@ void Renderer::TriggerRedrawCursor(const til::point* const pcoord)
         // cells for the cursor, taking line rendition into account.
         const auto lineRendition = buffer.GetLineRendition(pcoord->y);
         const auto cursorWidth = _pData->IsCursorDoubleWidth() ? 2 : 1;
-        const til::inclusive_rect cursorRect = { pcoord->x, pcoord->y, pcoord->x + cursorWidth - 1, pcoord->y };
-        auto cursorView = Viewport::FromInclusive(BufferToScreenLine(cursorRect, lineRendition));
+        til::inclusive_rect cursorRect = { pcoord->x, pcoord->y, pcoord->x + cursorWidth - 1, pcoord->y };
+        cursorRect = BufferToScreenLine(cursorRect, lineRendition);
 
-        // The region is clamped within the viewport boundaries and we only
-        // trigger a redraw if the region is not empty.
+        // That region is then clipped within the viewport boundaries and we
+        // only trigger a redraw if the resulting region is not empty.
         auto view = _pData->GetViewport();
-        if (view.IsInBounds(cursorView))
+        auto updateRect = til::rect{ cursorRect };
+        if (view.TrimToViewport(&updateRect))
         {
-            const auto updateRect = view.ConvertToOrigin(cursorView).ToExclusive();
+            view.ConvertToOrigin(&updateRect);
             FOREACH_ENGINE(pEngine)
             {
                 LOG_IF_FAILED(pEngine->InvalidateCursor(&updateRect));

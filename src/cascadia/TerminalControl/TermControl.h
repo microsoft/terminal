@@ -34,7 +34,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         IControlSettings Settings() const;
 
         TerminalConnection::ConnectionInformation ConnectionInfo();
-        void ConnectionInfo(TerminalConnection::ConnectionInformation info);
+        void ConnectionInfo(const TerminalConnection::ConnectionInformation& info);
 
         hstring GetProfileName() const;
 

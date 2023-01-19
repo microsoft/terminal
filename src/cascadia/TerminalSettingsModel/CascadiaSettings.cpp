@@ -1167,7 +1167,8 @@ void CascadiaSettings::ExportFile(winrt::hstring path, winrt::hstring content)
 
 void CascadiaSettings::_validateThemeExists()
 {
-    if (_globals->Themes().Size() == 0)
+    const auto& themes{ _globals->Themes() };
+    if (themes.Size() == 0)
     {
         // We didn't even load the default themes. This should only be possible
         // if the defaults.json didn't include any themes, or if no
@@ -1178,14 +1179,33 @@ void CascadiaSettings::_validateThemeExists()
         auto newTheme = winrt::make_self<Theme>();
         newTheme->Name(L"system");
         _globals->AddTheme(*newTheme);
-        _globals->Theme(L"system");
+        _globals->Theme(Model::ThemePair{ L"system" });
     }
 
-    if (!_globals->Themes().HasKey(_globals->Theme()))
+    const auto& theme{ _globals->Theme() };
+    if (theme.DarkName() == theme.LightName())
     {
-        _warnings.Append(SettingsLoadWarnings::UnknownTheme);
-
-        // safely fall back to system as the theme.
-        _globals->Theme(L"system");
+        // Only one theme. We'll treat it as such.
+        if (!themes.HasKey(theme.DarkName()))
+        {
+            _warnings.Append(SettingsLoadWarnings::UnknownTheme);
+            // safely fall back to system as the theme.
+            _globals->Theme(*winrt::make_self<ThemePair>(L"system"));
+        }
+    }
+    else
+    {
+        // Two different themes. Check each separately, and fall back to a
+        // reasonable default contextually
+        if (!themes.HasKey(theme.LightName()))
+        {
+            _warnings.Append(SettingsLoadWarnings::UnknownTheme);
+            theme.LightName(L"light");
+        }
+        if (!themes.HasKey(theme.DarkName()))
+        {
+            _warnings.Append(SettingsLoadWarnings::UnknownTheme);
+            theme.DarkName(L"dark");
+        }
     }
 }

@@ -36,6 +36,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool IsDefaultScheme();
         void RefreshIsDefault();
 
+        void DeleteConfirmation_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+        void SetAsDefault_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+
         // DON'T YOU DARE ADD A `WINRT_CALLBACK(PropertyChanged` TO A CLASS DERIVED FROM ViewModelHelper. Do this instead:
         using ViewModelHelper<ColorSchemeViewModel>::PropertyChanged;
 
