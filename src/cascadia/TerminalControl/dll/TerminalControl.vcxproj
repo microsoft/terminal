@@ -21,6 +21,7 @@
          projects compile properly when they depend on this "Microsoft.winmd."
     -->
     <CppWinRTNamespaceMergeDepth>3</CppWinRTNamespaceMergeDepth>
+    <DisableEmbeddedXbf>false</DisableEmbeddedXbf>
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet Dependencies">

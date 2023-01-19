@@ -164,6 +164,32 @@
     </ItemGroup>
   </Target>
 
+  <PropertyGroup>
+    <_GenerateProjectPriFileDependsOn>
+      _IReallyHateDoingThisCrap;$(_GenerateProjectPriFileDependsOn)
+    </_GenerateProjectPriFileDependsOn>
+  </PropertyGroup>
+
+  <Target Name="_IReallyHateDoingThisCrap" AfterTargets="GetPackagingOutputs">
+    <ItemGroup>
+      <!-- can't do this one; their PRI file contains an entry that overrides this resulting in a conflict
+      <_PackagingOutputsToConvertToEmbedded Include="@(PackagingOutputs)" Condition="'%(FileName)' == 'NoiseAsset_256X256_PNG'"/> -->
+      <_PackagingOutputsToConvertToEmbedded Include="@(PackagingOutputs)" Condition="('%(OutputGroup)' == 'ContentFilesProjectOutputGroup' or '%(OutputGroup)' == 'CustomOutputGroupForPackaging')
+        and '%(FileName)' != 'SmallTile.scale-100'
+        and '%(FileName)' != 'Square150x150Logo.scale-100'
+        and '%(FileName)' != 'Wide310x150Logo.scale-100'
+        and '%(FileName)' != 'LargeTile.scale-100'
+        and '%(FileName)' != 'Square44x44Logo.scale-100'
+        and '%(FileName)' != 'StoreLogo.scale-100'
+        "/>
+      <PackagingOutputs Remove="@(_PackagingOutputsToConvertToEmbedded)" />
+      <PackagingOutputs Include="@(_PackagingOutputsToConvertToEmbedded)">
+        <OutputGroup>EmbedOutputGroupForPackaging</OutputGroup>
+        <OngeAgainIHateIt>%(FileName)</OngeAgainIHateIt>
+      </PackagingOutputs>
+    </ItemGroup>
+  </Target>
+
   <!-- This is required to get the package dependency in the AppXManifest. -->
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 

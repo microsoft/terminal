@@ -20,6 +20,7 @@
     -->
     <CppWinRTNamespaceMergeDepth>3</CppWinRTNamespaceMergeDepth>
     <XamlComponentResourceLocation>nested</XamlComponentResourceLocation>
+    <DisableEmbeddedXbf>false</DisableEmbeddedXbf>
 
   </PropertyGroup>
 
