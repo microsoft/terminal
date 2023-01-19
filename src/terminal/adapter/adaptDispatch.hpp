@@ -82,8 +82,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool ScrollDown(const VTInt distance) override; // SD
         bool InsertLine(const VTInt distance) override; // IL
         bool DeleteLine(const VTInt distance) override; // DL
-        bool SetMode(const DispatchTypes::ModeParams param) override; // DECSET
-        bool ResetMode(const DispatchTypes::ModeParams param) override; // DECRST
+        bool SetMode(const DispatchTypes::ModeParams param) override; // SM, DECSET
+        bool ResetMode(const DispatchTypes::ModeParams param) override; // RM, DECRST
         bool RequestMode(const DispatchTypes::ModeParams param) override; // DECRQM
         bool SetKeypadMode(const bool applicationMode) override; // DECKPAM, DECKPNM
         bool SetAnsiMode(const bool ansiMode) override; // DECANM
@@ -155,6 +155,7 @@ namespace Microsoft::Console::VirtualTerminal
     private:
         enum class Mode
         {
+            InsertReplace,
             Origin,
             Column,
             AllowDECCOLM,

@@ -182,6 +182,7 @@ class ScreenBufferTests
     TEST_METHOD(DontResetColorsAboveVirtualBottom);
 
     TEST_METHOD(ScrollOperations);
+    TEST_METHOD(InsertReplaceMode);
     TEST_METHOD(InsertChars);
     TEST_METHOD(DeleteChars);
     TEST_METHOD(ScrollingWideCharsHorizontally);
@@ -3780,6 +3781,82 @@ void ScreenBufferTests::ScrollOperations()
     const auto revealedStart = scrollDirection == Up ? viewportEnd - deletedLines : scrollStart;
     const auto revealedEnd = revealedStart + scrollMagnitude;
     VERIFY_IS_TRUE(_ValidateLinesContain(revealedStart, revealedEnd, L' ', expectedFillAttr));
+}
+
+void ScreenBufferTests::InsertReplaceMode()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    const auto bufferHeight = si.GetBufferSize().Height();
+    const auto viewport = si.GetViewport();
+    const auto targetRow = viewport.Top() + 5;
+    const auto targetCol = til::CoordType{ 10 };
+
+    // Fill the entire buffer with Zs. Blue on Green.
+    const auto bufferChar = L'Z';
+    const auto bufferAttr = TextAttribute{ FOREGROUND_BLUE | BACKGROUND_GREEN };
+    _FillLines(0, bufferHeight, bufferChar, bufferAttr);
+
+    // Fill the target row with asterisks and a range of letters at the start. Red on Blue.
+    const auto initialChars = L"ABCDEFGHIJKLMNOPQRST";
+    const auto initialAttr = TextAttribute{ FOREGROUND_RED | BACKGROUND_BLUE };
+    _FillLine(targetRow, L'*', initialAttr);
+    _FillLine(targetRow, initialChars, initialAttr);
+
+    // Set the attributes that will be used for the new content.
+    auto newAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
+    newAttr.SetCrossedOut(true);
+    newAttr.SetReverseVideo(true);
+    newAttr.SetUnderlined(true);
+    si.SetAttributes(newAttr);
+
+    Log::Comment(L"Write additional content into a line of text with IRM mode enabled.");
+
+    // Set the cursor position partway through the target row.
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ targetCol, targetRow }, true));
+    // Enable Insert/Replace mode.
+    stateMachine.ProcessString(L"\033[4h");
+    // Write out some new content.
+    const auto newChars = L"12345";
+    stateMachine.ProcessString(newChars);
+
+    VERIFY_IS_TRUE(_ValidateLineContains({ 0, targetRow }, L"ABCDEFGHIJ", initialAttr),
+                   L"First half of the line should remain unchanged.");
+    VERIFY_IS_TRUE(_ValidateLineContains({ targetCol, targetRow }, newChars, newAttr),
+                   L"New content should be inserted at the cursor position with active attributes.");
+    VERIFY_IS_TRUE(_ValidateLineContains({ targetCol + 5, targetRow }, L"KLMNOPQRST", initialAttr),
+                   L"Second half of the line should have moved 5 columns across.");
+    VERIFY_IS_TRUE(_ValidateLineContains({ targetCol + 25, targetRow }, L'*', initialAttr),
+                   L"With the remainder of the line filled with asterisks.");
+    VERIFY_IS_TRUE(_ValidateLineContains(targetRow + 1, bufferChar, bufferAttr),
+                   L"The following line should be unaffected.");
+
+    // Fill the target row with the initial content again.
+    _FillLine(targetRow, L'*', initialAttr);
+    _FillLine(targetRow, initialChars, initialAttr);
+
+    Log::Comment(L"Write additional content into a line of text with IRM mode disabled.");
+
+    // Set the cursor position partway through the target row.
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ targetCol, targetRow }, true));
+    // Disable Insert/Replace mode.
+    stateMachine.ProcessString(L"\033[4l");
+    // Write out some new content.
+    stateMachine.ProcessString(newChars);
+
+    VERIFY_IS_TRUE(_ValidateLineContains({ 0, targetRow }, L"ABCDEFGHIJ", initialAttr),
+                   L"First half of the line should remain unchanged.");
+    VERIFY_IS_TRUE(_ValidateLineContains({ targetCol, targetRow }, newChars, newAttr),
+                   L"New content should be added at the cursor position with active attributes.");
+    VERIFY_IS_TRUE(_ValidateLineContains({ targetCol + 5, targetRow }, L"PQRST", initialAttr),
+                   L"Second half of the line should have been partially overwritten.");
+    VERIFY_IS_TRUE(_ValidateLineContains({ targetCol + 25, targetRow }, L'*', initialAttr),
+                   L"With the remainder of the line filled with asterisks.");
+    VERIFY_IS_TRUE(_ValidateLineContains(targetRow + 1, bufferChar, bufferAttr),
+                   L"The following line should be unaffected.");
 }
 
 void ScreenBufferTests::InsertChars()
