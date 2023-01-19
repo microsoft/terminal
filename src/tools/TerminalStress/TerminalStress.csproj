@@ -6,4 +6,7 @@
     <RuntimeFrameworkVersion>6.0.9</RuntimeFrameworkVersion>
   </PropertyGroup>
 
+  <!-- This project has no PGO, but the build will fail if the target doesn't exist. -->
+  <Target Name="MergePGOCounts" />
+
 </Project>
