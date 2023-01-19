@@ -37,6 +37,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _ViewModel = e.Parameter().as<Editor::ColorSchemesPageViewModel>();
         _ViewModel.CurrentPage(ColorSchemesSubPage::Base);
+
+        _layoutUpdatedRevoker = LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
+            // Only let this succeed once.
+            _layoutUpdatedRevoker.revoke();
+
+            for (const auto scheme : _ViewModel.AllColorSchemes())
+            {
+                if (scheme.IsDefaultScheme())
+                {
+                    winrt::hstring newName{ fmt::format(L"{} ({})", scheme.Name(), RS_(L"ColorScheme_DefaultTag/Text")) };
+                    Automation::AutomationProperties::SetName(ColorSchemeListView().ContainerFromItem(scheme), newName);
+                    break;
+                }
+            }
+        });
     }
 
     void ColorSchemes::AddNew_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
