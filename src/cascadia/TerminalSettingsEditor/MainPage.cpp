@@ -20,6 +20,7 @@
 #include <..\WinRTUtils\inc\Utils.h>
 
 #include <LibraryResources.h>
+#include <dwmapi.h>
 
 namespace winrt
 {
@@ -216,6 +217,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void MainPage::SetHostingWindow(uint64_t hostingWindow) noexcept
     {
         _hostingHwnd.emplace(reinterpret_cast<HWND>(hostingWindow));
+        // Now that we have a HWND, update our own BG to account for if that
+        // window is using mica or not.
+        _UpdateBackgroundForMica();
     }
 
     bool MainPage::TryPropagateHostingWindow(IInspectable object) noexcept
@@ -645,8 +649,30 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // If the theme asks for Mica, then drop out our background, so that we
     // can have mica too.
     void MainPage::_UpdateBackgroundForMica()
-
     {
+        bool isMicaAvailable = false;
+
+        // Check to see if our hosting window supports Mica at all. We'll check
+        // to see if the window has Mica enabled - if it does, then we can
+        // assume that it supports Mica.
+        //
+        // We're doing this instead of checking if we're on Windows build 22621
+        // or higher.
+        if (_hostingHwnd.has_value())
+        {
+            int attribute = DWMSBT_NONE;
+            const auto hr = DwmGetWindowAttribute(*_hostingHwnd, DWMWA_SYSTEMBACKDROP_TYPE, &attribute, sizeof(attribute));
+            if (SUCCEEDED(hr))
+            {
+                isMicaAvailable = attribute == DWMSBT_MAINWINDOW;
+            }
+        }
+
+        if (!isMicaAvailable)
+        {
+            return;
+        }
+
         const auto& theme = _settingsSource.GlobalSettings().CurrentTheme();
         const auto& requestedTheme = _settingsSource.GlobalSettings().CurrentTheme().RequestedTheme();
 
