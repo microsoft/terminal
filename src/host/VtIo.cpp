@@ -523,7 +523,7 @@ void VtIo::EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::
 // - Returns true if the Resize Quirk is enabled. This changes the behavior of
 //   conpty to _not_ InvalidateAll the entire viewport on a resize operation.
 //   This is used by the Windows Terminal, because it is prepared to be
-//   connected to a conpty, and handles it's own buffer specifically for a
+//   connected to a conpty, and handles its own buffer specifically for a
 //   conpty scenario.
 // - See also: GH#3490, #4354, #4741
 // Arguments:

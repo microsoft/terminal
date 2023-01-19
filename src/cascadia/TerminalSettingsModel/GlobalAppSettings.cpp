@@ -6,6 +6,7 @@
 #include "../../types/inc/Utils.hpp"
 #include "JsonUtils.h"
 #include "KeyChordSerialization.h"
+#include "SettingsUtils.h"
 
 #include "GlobalAppSettings.g.cpp"
 
@@ -212,7 +213,22 @@ Json::Value GlobalAppSettings::ToJson() const
 
 winrt::Microsoft::Terminal::Settings::Model::Theme GlobalAppSettings::CurrentTheme() noexcept
 {
-    return _themes.TryLookup(Theme());
+    auto requestedTheme = IsSystemInDarkTheme() ?
+                              winrt::Windows::UI::Xaml::ElementTheme::Dark :
+                              winrt::Windows::UI::Xaml::ElementTheme::Light;
+
+    switch (requestedTheme)
+    {
+    case winrt::Windows::UI::Xaml::ElementTheme::Light:
+        return _themes.TryLookup(Theme().LightName());
+
+    case winrt::Windows::UI::Xaml::ElementTheme::Dark:
+        return _themes.TryLookup(Theme().DarkName());
+
+    case winrt::Windows::UI::Xaml::ElementTheme::Default:
+    default:
+        return nullptr;
+    }
 }
 
 void GlobalAppSettings::AddTheme(const Model::Theme& theme)

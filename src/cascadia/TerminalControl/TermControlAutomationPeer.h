@@ -80,6 +80,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     private:
         winrt::weak_ref<Microsoft::Terminal::Control::implementation::TermControl> _termControl;
         Control::InteractivityAutomationPeer _contentAutomationPeer;
-        std::deque<wchar_t> _keyEvents;
+        til::shared_mutex<std::deque<wchar_t>> _keyEvents;
     };
 }

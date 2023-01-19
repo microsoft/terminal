@@ -17,6 +17,7 @@
 #include "InteractionViewModel.h"
 #include "LaunchViewModel.h"
 #include "..\types\inc\utils.hpp"
+#include <..\WinRTUtils\inc\Utils.h>
 
 #include <LibraryResources.h>
 
@@ -395,7 +396,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         else if (clickedItemTag == globalProfileTag)
         {
             auto profileVM{ _viewModelForProfile(_settingsClone.ProfileDefaults(), _settingsClone) };
-            profileVM.SetupAppearances(_colorSchemesPageVM, *this);
+            profileVM.SetupAppearances(_colorSchemesPageVM.AllColorSchemes(), *this);
             profileVM.IsBaseLayer(true);
 
             _SetupProfileEventHandling(profileVM);
@@ -533,7 +534,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (!profile.Deleted())
             {
                 auto profileVM = _viewModelForProfile(profile, _settingsClone);
-                profileVM.SetupAppearances(_colorSchemesPageVM, *this);
+                profileVM.SetupAppearances(_colorSchemesPageVM.AllColorSchemes(), *this);
                 auto navItem = _CreateProfileNavViewItem(profileVM);
                 menuItems.Append(navItem);
             }
@@ -556,7 +557,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         const auto newProfile{ profile ? profile : _settingsClone.CreateNewProfile() };
         const auto profileViewModel{ _viewModelForProfile(newProfile, _settingsClone) };
-        profileViewModel.SetupAppearances(_colorSchemesPageVM, *this);
+        profileViewModel.SetupAppearances(_colorSchemesPageVM.AllColorSchemes(), *this);
         const auto navItem{ _CreateProfileNavViewItem(profileViewModel) };
         SettingsNav().MenuItems().InsertAt(index, navItem);
 
@@ -622,6 +623,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto newTag = newSelectedItem.as<MUX::Controls::NavigationViewItem>().Tag();
         if (const auto profileViewModel = newTag.try_as<ProfileViewModel>())
         {
+            profileViewModel->FocusDeleteButton(true);
             _Navigate(*profileViewModel, BreadcrumbSubPage::None);
         }
         else
@@ -646,12 +648,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     {
         const auto& theme = _settingsSource.GlobalSettings().CurrentTheme();
+        const auto& requestedTheme = _settingsSource.GlobalSettings().CurrentTheme().RequestedTheme();
+
+        RequestedTheme(requestedTheme);
 
         const auto bgKey = (theme.Window() != nullptr && theme.Window().UseMica()) ?
                                L"SettingsPageMicaBackground" :
                                L"SettingsPageBackground";
 
-        if (const auto bgColor = Resources().TryLookup(winrt::box_value(bgKey)))
+        // remember to use ThemeLookup to get the actual correct color for the
+        // currently requested theme.
+        if (const auto bgColor = ThemeLookup(Resources(), requestedTheme, winrt::box_value(bgKey)))
         {
             SettingsNav().Background(winrt::WUX::Media::SolidColorBrush(winrt::unbox_value<Windows::UI::Color>(bgColor)));
         }

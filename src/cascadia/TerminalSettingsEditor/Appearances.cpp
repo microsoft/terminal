@@ -83,11 +83,38 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return BackgroundImagePath() != L"";
     }
 
+    void AppearanceViewModel::ClearColorScheme()
+    {
+        ClearDarkColorSchemeName();
+        _NotifyChanges(L"CurrentColorScheme");
+    }
+
+    Editor::ColorSchemeViewModel AppearanceViewModel::CurrentColorScheme()
+    {
+        const auto schemeName{ DarkColorSchemeName() };
+        const auto allSchemes{ SchemesList() };
+        for (const auto& scheme : allSchemes)
+        {
+            if (scheme.Name() == schemeName)
+            {
+                return scheme;
+            }
+        }
+        // This Appearance points to a color scheme that was renamed or deleted.
+        // Fallback to the first one in the list.
+        return allSchemes.GetAt(0);
+    }
+
+    void AppearanceViewModel::CurrentColorScheme(const ColorSchemeViewModel& val)
+    {
+        DarkColorSchemeName(val.Name());
+        LightColorSchemeName(val.Name());
+    }
+
     DependencyProperty Appearances::_AppearanceProperty{ nullptr };
 
     Appearances::Appearances() :
-        _ShowAllFonts{ false },
-        _ColorSchemeList{ single_threaded_observable_vector<ColorSchemeViewModel>() }
+        _ShowAllFonts{ false }
     {
         InitializeComponent();
 
@@ -224,8 +251,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (Appearance())
         {
-            _ColorSchemeList = Appearance().SchemesPageVM().AllColorSchemes();
-
             const auto& biAlignmentVal{ static_cast<int32_t>(Appearance().BackgroundImageAlignment()) };
             for (const auto& biButton : _BIAlignmentButtons)
             {
@@ -347,28 +372,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 biButton.IsChecked(biButtonAlignment == val);
             }
         }
-    }
-
-    Editor::ColorSchemeViewModel Appearances::CurrentColorScheme()
-    {
-        const auto schemeName{ Appearance().DarkColorSchemeName() };
-        const auto allSchemes{ Appearance().SchemesPageVM().AllColorSchemes() };
-        for (const auto& scheme : allSchemes)
-        {
-            if (scheme.Name() == schemeName)
-            {
-                return scheme;
-            }
-        }
-        // This Appearance points to a color scheme that was renamed or deleted.
-        // Fallback to the first one in the list.
-        return allSchemes.GetAt(0);
-    }
-
-    void Appearances::CurrentColorScheme(const ColorSchemeViewModel& val)
-    {
-        Appearance().DarkColorSchemeName(val.Name());
-        Appearance().LightColorSchemeName(val.Name());
     }
 
     bool Appearances::IsVintageCursor() const
