@@ -90,7 +90,7 @@
     Particularly tricky is Microsoft.Terminal.Core.winmd. That winmd doesn't
     have its own DLL (it doesn't have any activatable classes, only structs and
     interfaces). However, it too is necessary for Terminal.Control to be able to
-    marshall the Core types across the boundary.
+    marshal the Core types across the boundary.
     -->
     <Reference Include="Microsoft.Terminal.Core">
       <HintPath>$(OpenConsoleCommonOutDir)TerminalCore\Microsoft.Terminal.Core.winmd</HintPath>

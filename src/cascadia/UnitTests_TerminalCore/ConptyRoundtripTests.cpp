@@ -3207,7 +3207,7 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
 
     // GH#5839 -
     // This test does expose a real bug when using WriteCharsLegacy to emit
-    // wrapped lines in conpty without WC_DELAY_EOL_WRAP. However, this fix has
+    // wrapped lines in conpty without delayed EOL wrap. However, this fix has
     // not yet been made, so for now, we need to just skip the cases that cause
     // this.
     if (writingMethod == PrintWithWriteCharsLegacy && paintEachNewline == PaintEveryLine)

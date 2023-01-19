@@ -112,7 +112,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             if (const auto keyEventChar{ gsl::narrow_cast<wchar_t>(charCode) }; IsReadable({ &keyEventChar, 1 }))
             {
-                _keyEvents.emplace_back(keyEventChar);
+                _keyEvents.lock()->emplace_back(keyEventChar);
             }
         }
     }
@@ -202,27 +202,30 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControlAutomationPeer::NotifyNewOutput(std::wstring_view newOutput)
     {
-        // Try to suppress any events (or event data)
-        // that is just the keypress the user made
         auto sanitized{ Sanitize(newOutput) };
-        while (!_keyEvents.empty() && IsReadable(sanitized))
+        // Try to suppress any events (or event data)
+        // that are just the keypresses the user made
         {
-            if (til::toupper_ascii(sanitized.front()) == _keyEvents.front())
+            auto keyEvents = _keyEvents.lock();
+            while (!keyEvents->empty() && IsReadable(sanitized))
             {
-                // the key event's character (i.e. the "A" key) matches
-                // the output character (i.e. "a" or "A" text).
-                // We can assume that the output character resulted from
-                // the pressed key, so we can ignore it.
-                sanitized = sanitized.substr(1);
-                _keyEvents.pop_front();
-            }
-            else
-            {
-                // The output doesn't match,
-                // so clear the input stack and
-                // move on to fire the event.
-                _keyEvents.clear();
-                break;
+                if (til::toupper_ascii(sanitized.front()) == keyEvents->front())
+                {
+                    // the key event's character (i.e. the "A" key) matches
+                    // the output character (i.e. "a" or "A" text).
+                    // We can assume that the output character resulted from
+                    // the pressed key, so we can ignore it.
+                    sanitized = sanitized.substr(1);
+                    keyEvents->pop_front();
+                }
+                else
+                {
+                    // The output doesn't match,
+                    // so clear the input stack and
+                    // move on to fire the event.
+                    keyEvents->clear();
+                    break;
+                }
             }
         }
 

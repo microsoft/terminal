@@ -23,8 +23,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Model::TerminalSettings TermSettings() const;
         void DeleteProfile();
 
-        Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> Schemes() const noexcept;
-        void Schemes(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& val) noexcept;
+        void SetupAppearances(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList, Editor::IHostedInWindow windowRoot);
 
         // bell style bits
         bool IsBellStyleFlagSet(const uint32_t flag);
@@ -91,6 +90,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, VtPassthrough)
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
+        WINRT_PROPERTY(bool, FocusDeleteButton, false);
         WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
         GETSET_BINDABLE_ENUM_SETTING(AntiAliasingMode, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode);
         GETSET_BINDABLE_ENUM_SETTING(CloseOnExitMode, Microsoft::Terminal::Settings::Model::CloseOnExitMode, CloseOnExit);
@@ -104,7 +104,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring _lastBgImagePath;
         winrt::hstring _lastStartingDirectoryPath;
         Editor::AppearanceViewModel _defaultAppearanceViewModel;
-        Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> _Schemes;
 
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _MonospaceFontList;
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _FontList;

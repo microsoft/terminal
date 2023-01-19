@@ -816,7 +816,7 @@ namespace Microsoft::Console::Render
             u16x2 _size;
             u16x2 _limit;
             // Since _pos starts at {0, 0}, it'll result in the first allocate()d tile to be at {_tileSize.x, 0}.
-            // Coincidentially that's exactly what we want as the cursor texture lives at {0, 0}.
+            // Coincidentally that's exactly what we want as the cursor texture lives at {0, 0}.
             u16x2 _pos;
             u16 _originX = 0;
             // Indicates whether we've exhausted our Z pattern across the atlas texture.
