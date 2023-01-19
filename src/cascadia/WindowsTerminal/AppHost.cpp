@@ -1344,7 +1344,7 @@ winrt::fire_and_forget AppHost::_RenameWindowRequested(const winrt::Windows::Fou
     }
 }
 
-double _opacityFromBrush(const winrt::Windows::UI::Xaml::Media::Brush& brush)
+static double _opacityFromBrush(const winrt::Windows::UI::Xaml::Media::Brush& brush)
 {
     if (auto acrylic = brush.try_as<winrt::Windows::UI::Xaml::Media::AcrylicBrush>())
     {
