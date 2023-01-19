@@ -51,6 +51,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     break;
                 }
             }
+
+            ColorSchemeListView().Focus(FocusState::Programmatic);
         });
     }
 
