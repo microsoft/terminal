@@ -20,6 +20,7 @@
 #include <..\WinRTUtils\inc\Utils.h>
 
 #include <LibraryResources.h>
+#include <dwmapi.h>
 
 namespace winrt
 {
@@ -216,6 +217,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void MainPage::SetHostingWindow(uint64_t hostingWindow) noexcept
     {
         _hostingHwnd.emplace(reinterpret_cast<HWND>(hostingWindow));
+        // Now that we have a HWND, update our own BG to account for if that
+        // window is using mica or not.
+        _UpdateBackgroundForMica();
     }
 
     bool MainPage::TryPropagateHostingWindow(IInspectable object) noexcept
@@ -646,16 +650,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // can have mica too.
     void MainPage::_UpdateBackgroundForMica()
     {
-        // DWMWA_SYSTEMBACKDROP_TYPE, which we use for mica, is only available
-        // on builds >=2261
-        static const bool isMicaAvailable = []() -> bool {
-            OSVERSIONINFOEXW osver{};
-            osver.dwOSVersionInfoSize = sizeof(osver);
-            osver.dwBuildNumber = 22621;
-            DWORDLONG dwlConditionMask = 0;
-            VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
-            return VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask) != FALSE;
-        }();
+        bool isMicaAvailable = false;
+
+        // Check to see if our hosting window supports Mica at all. We'll check
+        // to see if the window has Mica enabled - if it does, then we can
+        // assume that it supports Mica.
+        //
+        // We're doing this instead of checking if we're on Windows build 22621
+        // or higher.
+        if (_hostingHwnd.has_value())
+        {
+            int attribute = DWMSBT_NONE;
+            const auto hr = DwmGetWindowAttribute(*_hostingHwnd, DWMWA_SYSTEMBACKDROP_TYPE, &attribute, sizeof(attribute));
+            if (SUCCEEDED(hr))
+            {
+                isMicaAvailable = attribute == DWMSBT_MAINWINDOW;
+            }
+        }
 
         if (!isMicaAvailable)
         {
