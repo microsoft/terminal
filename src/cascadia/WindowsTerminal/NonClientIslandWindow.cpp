@@ -1045,15 +1045,6 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 }
 
 // Method Description:
-// - This method is called when the window receives the WM_NCCREATE message.
-// Return Value:
-// - The value returned from the window proc.
-[[nodiscard]] LRESULT NonClientIslandWindow::OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept
-{
-    return IslandWindow::OnNcCreate(wParam, lParam);
-}
-
-// Method Description:
 // - Called when the app wants to change its theme. We'll update the frame
 //   theme to match the new theme.
 // Arguments:
