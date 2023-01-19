@@ -1290,7 +1290,7 @@ namespace winrt::TerminalApp::implementation
             // The connection must be informed of the current CWD on
             // construction, because the connection might not spawn the child
             // process until later, on another thread, after we've already
-            // restored the CWD to it's original value.
+            // restored the CWD to its original value.
             auto newWorkingDirectory{ settings.StartingDirectory() };
             if (newWorkingDirectory.size() == 0 || newWorkingDirectory.size() == 1 &&
                                                        !(newWorkingDirectory[0] == L'~' || newWorkingDirectory[0] == L'/'))
@@ -2255,7 +2255,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Place `copiedData` into the clipboard as text. Triggered when a
-    //   terminal control raises it's CopyToClipboard event.
+    //   terminal control raises its CopyToClipboard event.
     // Arguments:
     // - copiedData: the new string content to place on the clipboard.
     winrt::fire_and_forget TerminalPage::_CopyToClipboardHandler(const IInspectable /*sender*/,
@@ -3160,15 +3160,15 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Called when the user tries to do a search using keybindings.
-    //   This will tell the current focused terminal control to create
-    //   a search box and enable find process.
+    //   This will tell the active terminal control of the passed tab
+    //   to create a search box and enable find process.
     // Arguments:
-    // - <none>
+    // - tab: the tab where the search box should be created
     // Return Value:
     // - <none>
-    void TerminalPage::_Find()
+    void TerminalPage::_Find(const TerminalTab& tab)
     {
-        if (const auto& control{ _GetActiveControl() })
+        if (const auto& control{ tab.GetActiveTerminalControl() })
         {
             control.CreateSearchBoxControl();
         }

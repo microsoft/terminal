@@ -2,17 +2,17 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-
 #include "ConptyConnection.h"
 
+#include <conpty-static.h>
 #include <winternl.h>
 
-#include "ConptyConnection.g.cpp"
 #include "CTerminalHandoff.h"
-
-#include "../../types/inc/utils.hpp"
-#include "../../types/inc/Environment.hpp"
 #include "LibraryResources.h"
+#include "../../types/inc/Environment.hpp"
+#include "../../types/inc/utils.hpp"
+
+#include "ConptyConnection.g.cpp"
 
 using namespace ::Microsoft::Console;
 using namespace std::string_view_literals;
@@ -24,13 +24,9 @@ static constexpr auto _errorFormat = L"{0} ({0:#010x})"sv;
 // There is a number of ways that the Conpty connection can be terminated (voluntarily or not):
 // 1. The connection is Close()d
 // 2. The pseudoconsole or process cannot be spawned during Start()
-// 3. The client process exits with a code.
-//    (Successful (0) or any other code)
-// 4. The read handle is terminated.
-//    (This usually happens when the pseudoconsole host crashes.)
+// 3. The read handle is terminated (when OpenConsole exits)
 // In each of these termination scenarios, we need to be mindful of tripping the others.
-// Closing the pseudoconsole in response to the client exiting (3) can trigger (4).
-// Close() (1) will cause the automatic triggering of (3) and (4).
+// Close() (1) will cause the automatic triggering of (3).
 // In a lot of cases, we use the connection state to stop "flapping."
 //
 // To figure out where we handle these, search for comments containing "EXIT POINT"
@@ -380,6 +376,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             }
         }
 
+        THROW_IF_FAILED(ConptyReleasePseudoConsole(_hPC.get()));
+
         _startTime = std::chrono::high_resolution_clock::now();
 
         // Create our own output handling thread
@@ -403,19 +401,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         THROW_LAST_ERROR_IF_NULL(_hOutputThread);
 
         LOG_IF_FAILED(SetThreadDescription(_hOutputThread.get(), L"ConptyConnection Output Thread"));
-
-        _clientExitWait.reset(CreateThreadpoolWait(
-            [](PTP_CALLBACK_INSTANCE /*callbackInstance*/, PVOID context, PTP_WAIT /*wait*/, TP_WAIT_RESULT /*waitResult*/) noexcept {
-                const auto pInstance = static_cast<ConptyConnection*>(context);
-                if (pInstance)
-                {
-                    pInstance->_ClientTerminated();
-                }
-            },
-            this,
-            nullptr));
-
-        SetThreadpoolWait(_clientExitWait.get(), _piClient.hProcess, nullptr);
 
         _transitionToState(ConnectionState::Connected);
     }
@@ -466,34 +451,17 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     // Method Description:
     // - called when the client application (not necessarily its pty) exits for any reason
-    void ConptyConnection::_ClientTerminated() noexcept
+    void ConptyConnection::_LastConPtyClientDisconnected() noexcept
     try
     {
-        if (_isStateAtOrBeyond(ConnectionState::Closing))
-        {
-            // This termination was expected.
-            return;
-        }
-
-        // EXIT POINT
         DWORD exitCode{ 0 };
         GetExitCodeProcess(_piClient.hProcess, &exitCode);
 
         // Signal the closing or failure of the process.
-        // Load bearing. Terminating the pseudoconsole will make the output thread exit unexpectedly,
-        // so we need to signal entry into the correct closing state before we do that.
-        _transitionToState(exitCode == 0 ? ConnectionState::Closed : ConnectionState::Failed);
-
-        // Close the pseudoconsole and wait for all output to drain.
-        _hPC.reset();
-        if (auto localOutputThreadHandle = std::move(_hOutputThread))
-        {
-            LOG_LAST_ERROR_IF(WAIT_FAILED == WaitForSingleObject(localOutputThreadHandle.get(), INFINITE));
-        }
-
+        // exitCode might be STILL_ACTIVE if a client has called FreeConsole() and
+        // thus caused the tab to close, even though the CLI app is still running.
+        _transitionToState(exitCode == 0 || exitCode == STILL_ACTIVE ? ConnectionState::Closed : ConnectionState::Failed);
         _indicateExitWithStatus(exitCode);
-
-        _piClient.reset();
     }
     CATCH_LOG()
 
@@ -564,43 +532,46 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     void ConptyConnection::Close() noexcept
     try
     {
-        const bool isClosing = _transitionToState(ConnectionState::Closing);
-        if (isClosing || _isStateAtOrBeyond(ConnectionState::Closed))
+        _transitionToState(ConnectionState::Closing);
+
+        // .reset()ing either of these two will signal ConPTY to send out a CTRL_CLOSE_EVENT to all attached clients.
+        // FYI: The other members of this class are concurrently read by the _hOutputThread
+        // thread running in the background and so they're not safe to be .reset().
+        _hPC.reset();
+        _inPipe.reset();
+
+        if (_hOutputThread)
         {
-            // EXIT POINT
-
-            // _clientExitWait holds a CreateThreadpoolWait() which holds a weak reference to "this".
-            // This manual reset() ensures we wait for it to be teared down via WaitForThreadpoolWaitCallbacks().
-            _clientExitWait.reset();
-
-            _hPC.reset(); // tear down the pseudoconsole (this is like clicking X on a console window)
-
-            // CloseHandle() on pipes blocks until any current WriteFile()/ReadFile() has returned.
-            // CancelSynchronousIo prevents us from deadlocking ourselves.
-            // At this point in Close(), _inPipe won't be used anymore since the UI parts are torn down.
-            // _outPipe is probably still stuck in ReadFile() and might currently be written to.
-            if (_hOutputThread)
+            // Loop around `CancelSynchronousIo()` just in case the signal to shut down was missed.
+            // This may happen if we called `CancelSynchronousIo()` while not being stuck
+            // in `ReadFile()` and if OpenConsole refuses to exit in a timely manner.
+            for (;;)
             {
+                // ConptyConnection::Close() blocks the UI thread, because `_TerminalOutputHandlers` might indirectly
+                // reference UI objects like `ControlCore`. CancelSynchronousIo() allows us to have the background
+                // thread exit as fast as possible by aborting any ongoing writes coming from OpenConsole.
                 CancelSynchronousIo(_hOutputThread.get());
-            }
 
-            _inPipe.reset(); // break the pipes
-            _outPipe.reset();
-
-            if (_hOutputThread)
-            {
                 // Waiting for the output thread to exit ensures that all pending _TerminalOutputHandlers()
                 // calls have returned and won't notify our caller (ControlCore) anymore. This ensures that
                 // we don't call a destroyed event handler asynchronously from a background thread (GH#13880).
-                LOG_LAST_ERROR_IF(WAIT_FAILED == WaitForSingleObject(_hOutputThread.get(), INFINITE));
-                _hOutputThread.reset();
-            }
+                const auto result = WaitForSingleObject(_hOutputThread.get(), 1000);
+                if (result == WAIT_OBJECT_0)
+                {
+                    break;
+                }
 
-            if (isClosing)
-            {
-                _transitionToState(ConnectionState::Closed);
+                LOG_LAST_ERROR();
             }
         }
+
+        // Now that the background thread is done, we can safely clean up the other system objects, without
+        // race conditions, or fear of deadlocking ourselves (e.g. by calling CloseHandle() on _outPipe).
+        _outPipe.reset();
+        _hOutputThread.reset();
+        _piClient.reset();
+
+        _transitionToState(ConnectionState::Closed);
     }
     CATCH_LOG()
 
@@ -657,15 +628,19 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
             if (readFail) // reading failed (we must check this first, because read will also be 0.)
             {
+                // EXIT POINT
                 const auto lastError = GetLastError();
-                if (lastError != ERROR_BROKEN_PIPE)
+                if (lastError == ERROR_BROKEN_PIPE)
                 {
-                    // EXIT POINT
+                    _LastConPtyClientDisconnected();
+                    return S_OK;
+                }
+                else
+                {
                     _indicateExitWithStatus(HRESULT_FROM_WIN32(lastError)); // print a message
                     _transitionToState(ConnectionState::Failed);
                     return gsl::narrow_cast<DWORD>(HRESULT_FROM_WIN32(lastError));
                 }
-                // else we call convertUTF8ChunkToUTF16 with an empty string_view to convert possible remaining partials to U+FFFD
             }
 
             const auto result{ til::u8u16(std::string_view{ _buffer.data(), read }, _u16Str, _u8State) };
@@ -709,6 +684,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     winrt::event_token ConptyConnection::NewConnection(const NewConnectionHandler& handler) { return _newConnectionHandlers.add(handler); };
     void ConptyConnection::NewConnection(const winrt::event_token& token) { _newConnectionHandlers.remove(token); };
+
+    void ConptyConnection::closePseudoConsoleAsync(HPCON hPC) noexcept
+    {
+        ::ConptyClosePseudoConsoleTimeout(hPC, 0);
+    }
 
     HRESULT ConptyConnection::NewHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE ref, HANDLE server, HANDLE client, TERMINAL_STARTUP_INFO startupInfo) noexcept
     try

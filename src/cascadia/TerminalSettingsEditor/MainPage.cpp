@@ -17,6 +17,7 @@
 #include "InteractionViewModel.h"
 #include "LaunchViewModel.h"
 #include "..\types\inc\utils.hpp"
+#include <..\WinRTUtils\inc\Utils.h>
 
 #include <LibraryResources.h>
 
@@ -55,7 +56,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _settingsClone{ settings.Copy() }
     {
         InitializeComponent();
-
+        _UpdateBackgroundForMica();
         _InitializeProfilesList();
 
         _colorSchemesPageVM = winrt::make<ColorSchemesPageViewModel>(_settingsClone);
@@ -101,6 +102,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _settingsSource = settings;
         _settingsClone = settings.Copy();
+
+        _UpdateBackgroundForMica();
 
         // Deduce information about the currently selected item
         IInspectable lastBreadcrumb;
@@ -638,6 +641,28 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     winrt::Windows::UI::Xaml::Media::Brush MainPage::BackgroundBrush()
     {
         return SettingsNav().Background();
+    }
+
+    // If the theme asks for Mica, then drop out our background, so that we
+    // can have mica too.
+    void MainPage::_UpdateBackgroundForMica()
+
+    {
+        const auto& theme = _settingsSource.GlobalSettings().CurrentTheme();
+        const auto& requestedTheme = _settingsSource.GlobalSettings().CurrentTheme().RequestedTheme();
+
+        RequestedTheme(requestedTheme);
+
+        const auto bgKey = (theme.Window() != nullptr && theme.Window().UseMica()) ?
+                               L"SettingsPageMicaBackground" :
+                               L"SettingsPageBackground";
+
+        // remember to use ThemeLookup to get the actual correct color for the
+        // currently requested theme.
+        if (const auto bgColor = ThemeLookup(Resources(), requestedTheme, winrt::box_value(bgKey)))
+        {
+            SettingsNav().Background(winrt::WUX::Media::SolidColorBrush(winrt::unbox_value<Windows::UI::Color>(bgColor)));
+        }
     }
 
 }

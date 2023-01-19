@@ -29,7 +29,7 @@ bool SignalResizeWindow(const HANDLE hSignal,
 //      this pipe. For keys that don't have character representations, the
 //      caller should use the `TERM=xterm` VT sequences for encoding the input.
 //   * hOutput: The caller should read from this pipe. The headless conhost will
-//      "render" it's state to a stream of utf-8 encoded text with VT sequences.
+//      "render" its state to a stream of utf-8 encoded text with VT sequences.
 //   * hSignal: The caller can use this to resize the size of the underlying PTY
 //      using the SignalResizeWindow function.
 // Arguments:
