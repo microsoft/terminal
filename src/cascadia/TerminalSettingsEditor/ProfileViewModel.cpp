@@ -212,16 +212,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return nullptr;
     }
 
-    Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> ProfileViewModel::Schemes() const noexcept
-    {
-        return _Schemes;
-    }
-
-    void ProfileViewModel::Schemes(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& val) noexcept
-    {
-        _Schemes = val;
-    }
-
     winrt::guid ProfileViewModel::OriginalProfileGuid() const noexcept
     {
         return _originalProfileGuid;
@@ -257,8 +247,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _profile.CreateUnfocusedAppearance();
 
         _unfocusedAppearanceViewModel = winrt::make<implementation::AppearanceViewModel>(_profile.UnfocusedAppearance().try_as<AppearanceConfig>());
-        _unfocusedAppearanceViewModel.Schemes(_Schemes);
-        _unfocusedAppearanceViewModel.WindowRoot(_WindowRoot);
+        _unfocusedAppearanceViewModel.SchemesList(DefaultAppearance().SchemesList());
+        _unfocusedAppearanceViewModel.WindowRoot(DefaultAppearance().WindowRoot());
 
         _NotifyChanges(L"UnfocusedAppearance", L"HasUnfocusedAppearance", L"ShowUnfocusedAppearance");
     }
@@ -358,5 +348,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         auto deleteProfileArgs{ winrt::make_self<DeleteProfileEventArgs>(Guid()) };
         _DeleteProfileHandlers(*this, *deleteProfileArgs);
+    }
+
+    void ProfileViewModel::SetupAppearances(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList, Editor::IHostedInWindow windowRoot)
+    {
+        DefaultAppearance().SchemesList(schemesList);
+        DefaultAppearance().WindowRoot(windowRoot);
+        if (UnfocusedAppearance())
+        {
+            UnfocusedAppearance().SchemesList(schemesList);
+            UnfocusedAppearance().WindowRoot(windowRoot);
+        }
     }
 }
