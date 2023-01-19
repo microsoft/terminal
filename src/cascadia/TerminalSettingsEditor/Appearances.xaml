@@ -54,6 +54,7 @@
                                     SettingOverrideSource="{x:Bind Appearance.DarkColorSchemeNameOverrideSource, Mode=OneWay}">
                 <ComboBox ItemsSource="{x:Bind Appearance.SchemesList, Mode=OneWay}"
                           SelectedItem="{x:Bind Appearance.CurrentColorScheme, Mode=TwoWay}"
+                          Padding="4"
                           Style="{StaticResource ComboBoxSettingStyle}">
                     <ComboBox.ItemTemplate>
                         <DataTemplate x:DataType="local:ColorSchemeViewModel">
@@ -166,6 +167,7 @@
                                            Margin="4,0,4,0"
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center"
+                                           TextTrimming="WordEllipsis"
                                            AutomationProperties.AccessibilityView="Raw"
                                            FontFamily="Cascadia Code"
                                            Foreground="{x:Bind local:Converters.ColorToBrush(ForegroundColor.Color), Mode=OneWay}"
