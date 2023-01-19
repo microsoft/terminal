@@ -1569,7 +1569,7 @@ bool AdaptDispatch::_PassThroughInputModes()
 }
 
 // Routine Description:
-// - Support routine for routing private mode parameters to be set/reset as flags
+// - Support routine for routing mode parameters to be set/reset as flags
 // Arguments:
 // - param - mode parameter to set/reset
 // - enable - True for set, false for unset.
@@ -1664,7 +1664,7 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
 }
 
 // Routine Description:
-// - DECSET - Enables the given DEC private mode params.
+// - SM/DECSET - Enables the given mode parameter (both ANSI and private).
 // Arguments:
 // - param - mode parameter to set
 // Return Value:
@@ -1675,7 +1675,7 @@ bool AdaptDispatch::SetMode(const DispatchTypes::ModeParams param)
 }
 
 // Routine Description:
-// - DECRST - Disables the given DEC private mode params.
+// - RM/DECRST - Disables the given mode parameter (both ANSI and private).
 // Arguments:
 // - param - mode parameter to reset
 // Return Value:
