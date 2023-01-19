@@ -29,7 +29,6 @@ class ConhostInternalGetSet final : public Microsoft::Console::VirtualTerminal::
 public:
     ConhostInternalGetSet(_In_ Microsoft::Console::IIoProvider& io);
 
-    void PrintString(const std::wstring_view string) override;
     void ReturnResponse(const std::wstring_view response) override;
 
     Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine() override;
@@ -47,7 +46,7 @@ public:
     void WarningBell() override;
 
     bool GetLineFeedMode() const override;
-    void LineFeed(const bool withReturn) override;
+    void LineFeed(const bool withReturn, const bool wrapForced) override;
 
     void SetWindowTitle(const std::wstring_view title) override;
 
