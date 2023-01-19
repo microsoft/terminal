@@ -1344,6 +1344,20 @@ winrt::fire_and_forget AppHost::_RenameWindowRequested(const winrt::Windows::Fou
     }
 }
 
+bool _isActuallyDarkTheme(const auto requestedTheme)
+{
+    switch (requestedTheme)
+    {
+    case winrt::Windows::UI::Xaml::ElementTheme::Light:
+        return false;
+    case winrt::Windows::UI::Xaml::ElementTheme::Dark:
+        return true;
+    case winrt::Windows::UI::Xaml::ElementTheme::Default:
+    default:
+        return Theme::IsSystemInDarkTheme();
+    }
+}
+
 void AppHost::_updateTheme()
 {
     auto theme = _logic.Theme();
@@ -1353,6 +1367,12 @@ void AppHost::_updateTheme()
     const auto b = _logic.TitlebarBrush();
     const auto opacity = b ? ThemeColor::ColorFromBrush(b).A / 255.0 : 0.0;
     _window->UseMica(theme.Window() ? theme.Window().UseMica() : false, opacity);
+
+    // This is a hack to make the window borders dark instead of light.
+    // It must be done before WM_NCPAINT so that the borders are rendered with
+    // the correct theme.
+    // For more information, see GH#6620.
+    LOG_IF_FAILED(TerminalTrySetDarkTheme(_window->GetHandle(), _isActuallyDarkTheme(theme.RequestedTheme())));
 }
 
 void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,

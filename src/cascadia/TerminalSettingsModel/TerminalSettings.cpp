@@ -7,20 +7,9 @@
 
 #include "TerminalSettings.g.cpp"
 #include "TerminalSettingsCreateResult.g.cpp"
-#include "SettingsUtils.h"
 
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace Microsoft::Console::Utils;
-
-// I'm not even joking, this is the recommended way to do this:
-// https://learn.microsoft.com/en-us/windows/apps/desktop/modernize/apply-windows-themes#know-when-dark-mode-is-enabled
-bool IsSystemInDarkTheme()
-{
-    static auto isColorLight = [](const winrt::Windows::UI::Color& clr) -> bool {
-        return (((5 * clr.G) + (2 * clr.R) + clr.B) > (8 * 128));
-    };
-    return isColorLight(winrt::Windows::UI::ViewManagement::UISettings().GetColorValue(winrt::Windows::UI::ViewManagement::UIColorType::Foreground));
-};
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -204,7 +193,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto requestedTheme = currentTheme.RequestedTheme();
         if (requestedTheme == winrt::Windows::UI::Xaml::ElementTheme::Default)
         {
-            requestedTheme = IsSystemInDarkTheme() ?
+            requestedTheme = Model::Theme::IsSystemInDarkTheme() ?
                                  winrt::Windows::UI::Xaml::ElementTheme::Dark :
                                  winrt::Windows::UI::Xaml::ElementTheme::Light;
         }
