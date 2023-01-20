@@ -1993,7 +1993,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (_automationPeer)
             {
                 auto autoPeerImpl{ winrt::get_self<implementation::TermControlAutomationPeer>(_automationPeer) };
-                autoPeerImpl->IsClosing(true);
+                autoPeerImpl->Close();
             }
 
             _RestorePointerCursorHandlers(*this, nullptr);

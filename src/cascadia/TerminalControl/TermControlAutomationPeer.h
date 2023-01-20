@@ -49,7 +49,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void UpdateControlBounds();
         void SetControlPadding(const Core::Padding padding);
         void RecordKeyEvent(const WORD vkey);
-        void IsClosing(bool closing);
+        void Close();
 
 #pragma region FrameworkElementAutomationPeer
         hstring GetClassNameCore() const;
@@ -82,6 +82,5 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::weak_ref<Microsoft::Terminal::Control::implementation::TermControl> _termControl;
         Control::InteractivityAutomationPeer _contentAutomationPeer;
         til::shared_mutex<std::deque<wchar_t>> _keyEvents;
-        bool _closing;
     };
 }

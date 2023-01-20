@@ -72,8 +72,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                          Control::InteractivityAutomationPeer impl) :
         TermControlAutomationPeerT<TermControlAutomationPeer>(*owner.get()), // pass owner to FrameworkElementAutomationPeer
         _termControl{ owner },
-        _contentAutomationPeer{ impl },
-        _closing{ false }
+        _contentAutomationPeer{ impl }
     {
         UpdateControlBounds();
         SetControlPadding(padding);
@@ -118,9 +117,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void TermControlAutomationPeer::IsClosing(bool closing)
+    void TermControlAutomationPeer::Close()
     {
-        _closing = closing;
+        // GH#13978: If the TermControl has already been removed from the UI tree, XAML might run into weird bugs.
+        // This will prevent the `dispatcher.RunAsync` calls below from raising UIA events on the main thread.
+        _termControl.reset();
     }
 
     // Method Description:
@@ -140,7 +141,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         dispatcher.RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [weakThis{ get_weak() }]() {
             if (auto strongThis{ weakThis.get() })
             {
-                if (auto control{ strongThis->_termControl.get() }; control && !strongThis->_closing)
+                if (auto control{ strongThis->_termControl.get() })
                 {
                     // The event that is raised when the text selection is modified.
                     strongThis->RaiseAutomationEvent(AutomationEvents::TextPatternOnTextSelectionChanged);
@@ -166,7 +167,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         dispatcher.RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [weakThis{ get_weak() }]() {
             if (auto strongThis{ weakThis.get() })
             {
-                if (auto control{ strongThis->_termControl.get() }; control && !strongThis->_closing)
+                if (auto control{ strongThis->_termControl.get() })
                 {
                     // The event that is raised when textual content is modified.
                     strongThis->RaiseAutomationEvent(AutomationEvents::TextPatternOnTextChanged);
@@ -192,7 +193,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         dispatcher.RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [weakThis{ get_weak() }]() {
             if (auto strongThis{ weakThis.get() })
             {
-                if (auto control{ strongThis->_termControl.get() }; control && !strongThis->_closing)
+                if (auto control{ strongThis->_termControl.get() })
                 {
                     // The event that is raised when the text was changed in an edit control.
                     // Do NOT fire a TextEditTextChanged. Generally, an app on the other side
@@ -254,7 +255,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         dispatcher.RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [weakThis{ get_weak() }, sanitizedCopy{ hstring{ sanitized } }]() {
             if (auto strongThis{ weakThis.get() })
             {
-                if (auto control{ strongThis->_termControl.get() }; control && !strongThis->_closing)
+                if (auto control{ strongThis->_termControl.get() })
                 {
                     try
                     {
