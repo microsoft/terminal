@@ -1913,3 +1913,29 @@ void IslandWindow::UseMica(const bool newValue, const double /*titlebarOpacity*/
     const int attribute = newValue ? DWMSBT_MAINWINDOW : DWMSBT_NONE;
     std::ignore = DwmSetWindowAttribute(GetHandle(), DWMWA_SYSTEMBACKDROP_TYPE, &attribute, sizeof(attribute));
 }
+
+// Method Description:
+// - This method is called when the window receives the WM_NCCREATE message.
+// Return Value:
+// - The value returned from the window proc.
+[[nodiscard]] LRESULT IslandWindow::OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept
+{
+    const auto ret = BaseWindow::OnNcCreate(wParam, lParam);
+    if (!ret)
+    {
+        return FALSE;
+    }
+
+    // This is a hack to make the window borders dark instead of light.
+    // It must be done before WM_NCPAINT so that the borders are rendered with
+    // the correct theme.
+    // For more information, see GH#6620.
+    //
+    // Theoretically, we don't need this anymore, since _updateTheme will update
+    // the darkness of our window. However, we're keeping this call to prevent
+    // the window from appearing as a white rectangle for a frame before we load
+    // the rest of the settings.
+    LOG_IF_FAILED(TerminalTrySetDarkTheme(_window.get(), true));
+
+    return TRUE;
+}
