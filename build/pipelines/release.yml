@@ -289,6 +289,7 @@ jobs:
 
     - pwsh: |-
         $PackageFilename = "$(WindowsTerminalPackagePath)"
+        Remove-Item "$(Build.SourcesDirectory)\UnpackedTerminalPackage\CodeSignSummary*"
         & "$(MakeAppxPath)" pack /h SHA256 /o /p $PackageFilename /d "$(Build.SourcesDirectory)\UnpackedTerminalPackage"
       displayName: Re-pack the new Terminal package after signing
 
