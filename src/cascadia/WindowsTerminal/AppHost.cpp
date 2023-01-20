@@ -1344,7 +1344,20 @@ winrt::fire_and_forget AppHost::_RenameWindowRequested(const winrt::Windows::Fou
     }
 }
 
-bool _isActuallyDarkTheme(const auto requestedTheme)
+static double _opacityFromBrush(const winrt::Windows::UI::Xaml::Media::Brush& brush)
+{
+    if (auto acrylic = brush.try_as<winrt::Windows::UI::Xaml::Media::AcrylicBrush>())
+    {
+        return acrylic.TintOpacity();
+    }
+    else if (auto solidColor = brush.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>())
+    {
+        return solidColor.Opacity();
+    }
+    return 1.0;
+}
+
+static bool _isActuallyDarkTheme(const auto requestedTheme)
 {
     switch (requestedTheme)
     {
@@ -1365,7 +1378,10 @@ void AppHost::_updateTheme()
     _window->OnApplicationThemeChanged(theme.RequestedTheme());
 
     const auto b = _logic.TitlebarBrush();
-    const auto opacity = b ? ThemeColor::ColorFromBrush(b).A / 255.0 : 0.0;
+    const auto color = ThemeColor::ColorFromBrush(b);
+    const auto colorOpacity = b ? color.A / 255.0 : 0.0;
+    const auto brushOpacity = _opacityFromBrush(b);
+    const auto opacity = std::min(colorOpacity, brushOpacity);
     _window->UseMica(theme.Window() ? theme.Window().UseMica() : false, opacity);
 
     // This is a hack to make the window borders dark instead of light.
@@ -1639,6 +1655,7 @@ void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspect
         {
             auto nonClientWindow{ static_cast<NonClientIslandWindow*>(_window.get()) };
             nonClientWindow->SetTitlebarBackground(_logic.TitlebarBrush());
+            _updateTheme();
         }
     }
 }
