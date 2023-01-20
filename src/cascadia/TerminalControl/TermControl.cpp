@@ -109,12 +109,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // These three throttled functions are triggered by terminal output and interact with the UI.
         // Since Close() is the point after which we are removed from the UI, but before the
-        // destructor has run, we MUST check control->IsClosing() before actually doing anything.
+        // destructor has run, we MUST check control->_IsClosing() before actually doing anything.
         _playWarningBell = std::make_shared<ThrottledFuncLeading>(
             dispatcher,
             TerminalWarningBellInterval,
             [weakThis = get_weak()]() {
-                if (auto control{ weakThis.get() }; !control->IsClosing())
+                if (auto control{ weakThis.get() }; !control->_IsClosing())
                 {
                     control->_WarningBellHandlers(*control, nullptr);
                 }
@@ -124,7 +124,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             dispatcher,
             ScrollBarUpdateInterval,
             [weakThis = get_weak()](const auto& update) {
-                if (auto control{ weakThis.get() }; !control->IsClosing())
+                if (auto control{ weakThis.get() }; !control->_IsClosing())
                 {
                     control->_throttledUpdateScrollbar(update);
                 }
@@ -223,7 +223,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControl::SearchMatch(const bool goForward)
     {
-        if (IsClosing())
+        if (_IsClosing())
         {
             return;
         }
@@ -329,7 +329,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - newSettings: the new settings to set
     void TermControl::_UpdateSettingsFromUIThread()
     {
-        if (IsClosing())
+        if (_IsClosing())
         {
             return;
         }
@@ -345,7 +345,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - newAppearance: the new appearance to set
     void TermControl::_UpdateAppearanceFromUIThread(Control::IControlAppearance newAppearance)
     {
-        if (IsClosing())
+        if (_IsClosing())
         {
             return;
         }
@@ -704,7 +704,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // MSFT 33353327: We're purposefully not using _initializedTerminal to ensure we're fully initialized.
         // Doing so makes us return nullptr when XAML requests an automation peer.
         // Instead, we need to give XAML an automation peer, then fix it later.
-        if (!IsClosing())
+        if (!_IsClosing())
         {
             // create a custom automation peer with this code pattern:
             // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
@@ -926,7 +926,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_CharacterHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                         const Input::CharacterReceivedRoutedEventArgs& e)
     {
-        if (IsClosing())
+        if (_IsClosing())
         {
             return;
         }
@@ -1075,7 +1075,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // win32-input-mode, then we'll send all these keystrokes to the
         // terminal - it's smart enough to ignore the keys it doesn't care
         // about.
-        if (IsClosing() || vkey == VK_LWIN || vkey == VK_RWIN)
+        if (_IsClosing() || vkey == VK_LWIN || vkey == VK_RWIN)
         {
             e.Handled(true);
             return;
@@ -1260,7 +1260,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_PointerPressedHandler(const Windows::Foundation::IInspectable& sender,
                                              const Input::PointerRoutedEventArgs& args)
     {
-        if (IsClosing())
+        if (_IsClosing())
         {
             return;
         }
@@ -1315,7 +1315,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_PointerMovedHandler(const Windows::Foundation::IInspectable& /*sender*/,
                                            const Input::PointerRoutedEventArgs& args)
     {
-        if (IsClosing())
+        if (_IsClosing())
         {
             return;
         }
@@ -1397,7 +1397,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_PointerReleasedHandler(const Windows::Foundation::IInspectable& sender,
                                               const Input::PointerRoutedEventArgs& args)
     {
-        if (IsClosing())
+        if (_IsClosing())
         {
             return;
         }
@@ -1441,7 +1441,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_MouseWheelHandler(const Windows::Foundation::IInspectable& /*sender*/,
                                          const Input::PointerRoutedEventArgs& args)
     {
-        if (IsClosing())
+        if (_IsClosing())
         {
             return;
         }
@@ -1533,7 +1533,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_ScrollbarChangeHandler(const Windows::Foundation::IInspectable& /*sender*/,
                                               const Controls::Primitives::RangeBaseValueChangedEventArgs& args)
     {
-        if (_isInternalScrollBarUpdate || IsClosing())
+        if (_isInternalScrollBarUpdate || _IsClosing())
         {
             // The update comes from ourselves, more specifically from the
             // terminal. So we don't have to update the terminal because it
@@ -1675,7 +1675,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_GotFocusHandler(const Windows::Foundation::IInspectable& /* sender */,
                                        const RoutedEventArgs& /* args */)
     {
-        if (IsClosing())
+        if (_IsClosing())
         {
             return;
         }
@@ -1731,7 +1731,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_LostFocusHandler(const Windows::Foundation::IInspectable& /* sender */,
                                         const RoutedEventArgs& /* args */)
     {
-        if (IsClosing())
+        if (_IsClosing())
         {
             return;
         }
@@ -1776,7 +1776,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_SwapChainSizeChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                             const SizeChangedEventArgs& e)
     {
-        if (!_initializedTerminal || IsClosing())
+        if (!_initializedTerminal || _IsClosing())
         {
             return;
         }
@@ -1833,7 +1833,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_CursorTimerTick(const Windows::Foundation::IInspectable& /* sender */,
                                        const Windows::Foundation::IInspectable& /* e */)
     {
-        if (!IsClosing())
+        if (!_IsClosing())
         {
             _core.BlinkCursor();
         }
@@ -1847,7 +1847,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_BlinkTimerTick(const Windows::Foundation::IInspectable& /* sender */,
                                       const Windows::Foundation::IInspectable& /* e */)
     {
-        if (!IsClosing())
+        if (!_IsClosing())
         {
             _core.BlinkAttributeTick();
         }
@@ -1907,7 +1907,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // This can come in off the COM thread - hop back to the UI thread.
         auto weakThis{ get_weak() };
         co_await wil::resume_foreground(Dispatcher());
-        if (auto control{ weakThis.get() }; !control->IsClosing())
+        if (auto control{ weakThis.get() }; !control->_IsClosing())
         {
             control->TSFInputControl().TryRedrawCanvas();
         }
@@ -1943,7 +1943,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //             if we should defer which formats are copied to the global setting
     bool TermControl::CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats)
     {
-        if (IsClosing())
+        if (_IsClosing())
         {
             return false;
         }
@@ -1987,9 +1987,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControl::Close()
     {
-        if (!IsClosing())
+        if (!_IsClosing())
         {
             _closing = true;
+            if (_automationPeer)
+            {
+                auto autoPeerImpl{ winrt::get_self<implementation::TermControlAutomationPeer>(_automationPeer) };
+                autoPeerImpl->IsClosing(true);
+            }
 
             _RestorePointerCursorHandlers(*this, nullptr);
 
@@ -2406,7 +2411,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void TermControl::_CompositionCompleted(winrt::hstring text)
     {
-        if (IsClosing())
+        if (_IsClosing())
         {
             return;
         }
@@ -2480,7 +2485,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     winrt::fire_and_forget TermControl::_DragDropHandler(Windows::Foundation::IInspectable /*sender*/,
                                                          DragEventArgs e)
     {
-        if (IsClosing())
+        if (_IsClosing())
         {
             co_return;
         }
@@ -2654,7 +2659,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_DragOverHandler(const Windows::Foundation::IInspectable& /*sender*/,
                                        const DragEventArgs& e)
     {
-        if (IsClosing())
+        if (_IsClosing())
         {
             return;
         }
@@ -2840,7 +2845,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Stop the timer and switch off the light
             _bellLightTimer.Stop();
 
-            if (!IsClosing())
+            if (!_IsClosing())
             {
                 VisualBellLight::SetIsTarget(RootGrid(), false);
             }

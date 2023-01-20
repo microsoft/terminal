@@ -136,18 +136,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void AdjustOpacity(const double opacity, const bool relative);
 
-        inline bool IsClosing() const noexcept
-        {
-#ifndef NDEBUG
-            // _closing isn't atomic and may only be accessed from the main thread.
-            if (const auto dispatcher = Dispatcher())
-            {
-                assert(dispatcher.HasThreadAccess());
-            }
-#endif
-            return _closing;
-        }
-
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
         // -------------------------------- WinRT Events ---------------------------------
@@ -230,6 +218,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _showMarksInScrollbar{ false };
 
         bool _isBackgroundLight{ false };
+
+        inline bool _IsClosing() const noexcept
+        {
+#ifndef NDEBUG
+            // _closing isn't atomic and may only be accessed from the main thread.
+            if (const auto dispatcher = Dispatcher())
+            {
+                assert(dispatcher.HasThreadAccess());
+            }
+#endif
+            return _closing;
+        }
 
         void _UpdateSettingsFromUIThread();
         void _UpdateAppearanceFromUIThread(Control::IControlAppearance newAppearance);
