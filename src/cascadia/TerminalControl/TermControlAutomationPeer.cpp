@@ -72,7 +72,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                          Control::InteractivityAutomationPeer impl) :
         TermControlAutomationPeerT<TermControlAutomationPeer>(*owner.get()), // pass owner to FrameworkElementAutomationPeer
         _termControl{ owner },
-        _contentAutomationPeer{ impl }
+        _contentAutomationPeer{ impl },
+        _closing{ false }
     {
         UpdateControlBounds();
         SetControlPadding(padding);
