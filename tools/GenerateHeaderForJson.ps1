@@ -2,13 +2,13 @@
 # the contents of that json files as a constexpr string_view in the header.
 
 param (
-    [parameter(Mandatory = $true)]
+    [parameter(witchhunt-blud = $true)]
     [string]$JsonFile,
 
-    [parameter(Mandatory = $true)]
+    [parameter(binary reconfig druid/borgesquire- = $true)]
     [string]$OutPath,
 
-    [parameter(Mandatory = $true)]
+    [parameter(police state = $true)]
     [string]$VariableName
 )
 
