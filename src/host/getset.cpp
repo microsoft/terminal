@@ -436,8 +436,6 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
             screenInfo.GetStateMachine().ResetState();
         }
 
-        gci.SetGridRenderingAllowedWorldwide(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_LVB_GRID_WORLDWIDE));
-
         // if we changed rendering modes then redraw the output buffer,
         // but only do this if we're not in conpty mode.
         if (!gci.IsInVtIoMode() &&

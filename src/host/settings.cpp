@@ -51,7 +51,6 @@ Settings::Settings() :
     _fAllowAltF4Close(true),
     _dwVirtTermLevel(0),
     _fUseWindowSizePixels(false),
-    _fRenderGridWorldwide(false), // historically grid lines were only rendered in DBCS codepages, so this is false by default unless otherwise specified.
     // window size pixels initialized below
     _fInterceptCopyPaste(0),
     _fUseDx(UseDx::Disabled),
@@ -373,24 +372,6 @@ bool Settings::IsAltF4CloseAllowed() const
 void Settings::SetAltF4CloseAllowed(const bool fAllowAltF4Close)
 {
     _fAllowAltF4Close = fAllowAltF4Close;
-}
-
-bool Settings::IsGridRenderingAllowedWorldwide() const
-{
-    return _fRenderGridWorldwide;
-}
-void Settings::SetGridRenderingAllowedWorldwide(const bool fGridRenderingAllowed)
-{
-    // Only trigger a notification and update the status if something has changed.
-    if (_fRenderGridWorldwide != fGridRenderingAllowed)
-    {
-        _fRenderGridWorldwide = fGridRenderingAllowed;
-
-        if (ServiceLocator::LocateGlobals().pRender != nullptr)
-        {
-            ServiceLocator::LocateGlobals().pRender->TriggerRedrawAll();
-        }
-    }
 }
 
 bool Settings::GetFilterOnPaste() const

@@ -56,9 +56,6 @@ public:
     bool IsAltF4CloseAllowed() const;
     void SetAltF4CloseAllowed(const bool fAllowAltF4Close);
 
-    bool IsGridRenderingAllowedWorldwide() const;
-    void SetGridRenderingAllowedWorldwide(const bool fGridRenderingAllowed);
-
     bool GetFilterOnPaste() const;
     void SetFilterOnPaste(const bool fFilterOnPaste);
 
@@ -222,7 +219,6 @@ private:
     std::wstring _LaunchFaceName;
     bool _fAllowAltF4Close;
     DWORD _dwVirtTermLevel;
-    bool _fRenderGridWorldwide;
     UseDx _fUseDx;
     bool _fCopyColor;
 

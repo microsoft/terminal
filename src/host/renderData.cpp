@@ -261,15 +261,16 @@ bool RenderData::IsCursorDoubleWidth() const noexcept
 const bool RenderData::IsGridLineDrawingAllowed() noexcept
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto outputMode = gci.GetActiveOutputBuffer().OutputMode;
     // If virtual terminal output is set, grid line drawing is a must. It is always allowed.
-    if (WI_IsFlagSet(gci.GetActiveOutputBuffer().OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+    if (WI_IsFlagSet(outputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
     {
         return true;
     }
     else
     {
         // If someone explicitly asked for worldwide line drawing, enable it.
-        if (gci.IsGridRenderingAllowedWorldwide())
+        if (WI_IsFlagSet(outputMode, ENABLE_LVB_GRID_WORLDWIDE))
         {
             return true;
         }
