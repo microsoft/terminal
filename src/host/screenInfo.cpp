@@ -1914,6 +1914,8 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
         auto altCursorPos = myCursor.GetPosition();
         altCursorPos.y -= GetVirtualViewport().Top();
         altCursor.SetPosition(altCursorPos);
+        // The alt buffer's output mode should match the main buffer.
+        createdBuffer->OutputMode = OutputMode;
 
         s_InsertScreenBuffer(createdBuffer);
 
@@ -2078,6 +2080,9 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
         mainCursor.SetStyle(altCursor.GetSize(), altCursor.GetType());
         mainCursor.SetIsVisible(altCursor.IsVisible());
         mainCursor.SetBlinkingAllowed(altCursor.IsBlinkingAllowed());
+
+        // Copy the alt buffer's output mode back to the main buffer.
+        psiMain->OutputMode = psiAlt->OutputMode;
 
         s_RemoveScreenBuffer(psiAlt); // this will also delete the alt buffer
         // deleting the alt buffer will give the GetSet back to its main
