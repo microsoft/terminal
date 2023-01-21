@@ -56,9 +56,6 @@ public:
     bool IsAltF4CloseAllowed() const;
     void SetAltF4CloseAllowed(const bool fAllowAltF4Close);
 
-    bool IsReturnOnNewlineAutomatic() const;
-    void SetAutomaticReturnOnNewline(const bool fAutoReturnOnNewline);
-
     bool IsGridRenderingAllowedWorldwide() const;
     void SetGridRenderingAllowedWorldwide(const bool fGridRenderingAllowed);
 
@@ -225,7 +222,6 @@ private:
     std::wstring _LaunchFaceName;
     bool _fAllowAltF4Close;
     DWORD _dwVirtTermLevel;
-    bool _fAutoReturnOnNewline;
     bool _fRenderGridWorldwide;
     UseDx _fUseDx;
     bool _fCopyColor;

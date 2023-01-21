@@ -51,7 +51,6 @@ Settings::Settings() :
     _fAllowAltF4Close(true),
     _dwVirtTermLevel(0),
     _fUseWindowSizePixels(false),
-    _fAutoReturnOnNewline(true), // the historic Windows behavior defaults this to on.
     _fRenderGridWorldwide(false), // historically grid lines were only rendered in DBCS codepages, so this is false by default unless otherwise specified.
     // window size pixels initialized below
     _fInterceptCopyPaste(0),
@@ -374,15 +373,6 @@ bool Settings::IsAltF4CloseAllowed() const
 void Settings::SetAltF4CloseAllowed(const bool fAllowAltF4Close)
 {
     _fAllowAltF4Close = fAllowAltF4Close;
-}
-
-bool Settings::IsReturnOnNewlineAutomatic() const
-{
-    return _fAutoReturnOnNewline;
-}
-void Settings::SetAutomaticReturnOnNewline(const bool fAutoReturnOnNewline)
-{
-    _fAutoReturnOnNewline = fAutoReturnOnNewline;
 }
 
 bool Settings::IsGridRenderingAllowedWorldwide() const

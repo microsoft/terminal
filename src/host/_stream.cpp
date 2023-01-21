@@ -805,7 +805,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
             // move cursor to the next line.
             pwchBuffer++;
 
-            if (gci.IsReturnOnNewlineAutomatic())
+            if (WI_IsFlagClear(screenInfo.OutputMode, DISABLE_NEWLINE_AUTO_RETURN))
             {
                 // Traditionally, we reset the X position to 0 with a newline automatically.
                 // Some things might not want this automatic "ONLCR line discipline" (for example, things that are expecting a *NIX behavior.)
