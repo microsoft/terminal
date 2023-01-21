@@ -50,8 +50,8 @@ public:
     RenderSettings& GetRenderSettings() noexcept { return _renderSettings; };
     const RenderSettings& GetRenderSettings() const noexcept { return _renderSettings; };
 
-    DWORD GetVirtTermLevel() const;
-    void SetVirtTermLevel(const DWORD dwVirtTermLevel);
+    DWORD GetDefaultVirtTermLevel() const;
+    void SetDefaultVirtTermLevel(const DWORD dwVirtTermLevel);
 
     bool IsAltF4CloseAllowed() const;
     void SetAltF4CloseAllowed(const bool fAllowAltF4Close);

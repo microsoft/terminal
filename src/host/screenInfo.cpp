@@ -58,10 +58,11 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _desiredFont{ fontInfo },
     _ignoreLegacyEquivalentVTAttributes{ false }
 {
-    // Check if VT mode is enabled. Note that this can be true w/o calling
-    // SetConsoleMode, if VirtualTerminalLevel is set to !=0 in the registry.
+    // Check if VT mode should be enabled by default. This can be true if
+    // VirtualTerminalLevel is set to !=0 in the registry, or when conhost
+    // is started in conpty mode.
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    if (gci.GetVirtTermLevel() != 0)
+    if (gci.GetDefaultVirtTermLevel() != 0)
     {
         OutputMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
     }

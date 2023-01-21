@@ -198,7 +198,7 @@ static bool s_IsOnDesktop()
         // We want everyone to be using VT by default anyways, so this is a
         // strong nudge in that direction. If an application _doesn't_ want VT
         // processing, it's free to disable this setting, even in conpty mode.
-        settings.SetVirtTermLevel(1);
+        settings.SetDefaultVirtTermLevel(1);
 
         // GH#9458 - In the case of a DefTerm handoff, the OriginalTitle might
         // be stashed in the lnk. We want to crack that lnk open, so we can get

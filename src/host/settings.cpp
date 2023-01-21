@@ -358,11 +358,11 @@ void Settings::Validate()
     FAIL_FAST_IF(!(_dwScreenBufferSize.Y > 0));
 }
 
-DWORD Settings::GetVirtTermLevel() const
+DWORD Settings::GetDefaultVirtTermLevel() const
 {
     return _dwVirtTermLevel;
 }
-void Settings::SetVirtTermLevel(const DWORD dwVirtTermLevel)
+void Settings::SetDefaultVirtTermLevel(const DWORD dwVirtTermLevel)
 {
     _dwVirtTermLevel = dwVirtTermLevel;
 }
