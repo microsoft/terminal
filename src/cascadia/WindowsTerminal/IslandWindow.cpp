@@ -9,6 +9,7 @@
 #include "NotificationIcon.h"
 #include <dwmapi.h>
 #include <TerminalThemeHelpers.h>
+#include <CoreWindow.h>
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
@@ -499,6 +500,21 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
                 return 0;
             }
         }
+
+        if (const auto& coreWindow{ winrt::Windows::UI::Core::CoreWindow::GetForCurrentThread() })
+        {
+            if (const auto& interop{ coreWindow.as<ICoreWindowInterop>() })
+            {
+                //
+                //
+                // https://github.com/microsoft/microsoft-ui-xaml/issues/3577
+                //
+                HWND coreWindowInterop;
+                interop->get_WindowHandle(&coreWindowInterop);
+                PostMessage(coreWindowInterop, message, wparam, lparam);
+            }
+        }
+
         break;
     }
     case WM_MOVING:
