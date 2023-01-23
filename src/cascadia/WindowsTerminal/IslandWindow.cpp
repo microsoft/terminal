@@ -501,14 +501,17 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
             }
         }
 
+        // BODGY This is a fix for the upstream:
+        //
+        // https://github.com/microsoft/microsoft-ui-xaml/issues/3577
+        //
+        // ContentDialog's don't resize themselves when the XAML island resizes.
+        // However, if we manually resize our CoreWindow, that'll actually
+        // trigger a resize of the ContentDialog.
         if (const auto& coreWindow{ winrt::Windows::UI::Core::CoreWindow::GetForCurrentThread() })
         {
             if (const auto& interop{ coreWindow.as<ICoreWindowInterop>() })
             {
-                //
-                //
-                // https://github.com/microsoft/microsoft-ui-xaml/issues/3577
-                //
                 HWND coreWindowInterop;
                 interop->get_WindowHandle(&coreWindowInterop);
                 PostMessage(coreWindowInterop, message, wparam, lparam);
