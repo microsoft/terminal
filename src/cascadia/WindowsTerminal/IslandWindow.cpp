@@ -505,7 +505,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         //
         // https://github.com/microsoft/microsoft-ui-xaml/issues/3577
         //
-        // ContentDialog's don't resize themselves when the XAML island resizes.
+        // ContentDialogs don't resize themselves when the XAML island resizes.
         // However, if we manually resize our CoreWindow, that'll actually
         // trigger a resize of the ContentDialog.
         if (const auto& coreWindow{ winrt::Windows::UI::Core::CoreWindow::GetForCurrentThread() })
