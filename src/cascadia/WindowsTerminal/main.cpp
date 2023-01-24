@@ -99,12 +99,6 @@ static bool _messageIsAltSpaceKeypress(const MSG& message)
 int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 {
     TraceLoggingRegister(g_hWindowsTerminalProvider);
-    TraceLoggingWrite(
-        g_hWindowsTerminalProvider,
-        "ExecutableStarted",
-        TraceLoggingDescription("Event emitted immediately on startup"),
-        TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-        TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     ::Microsoft::Console::ErrorReporting::EnableFallbackFailureReporting(g_hWindowsTerminalProvider);
 
     // If Terminal is spawned by a shortcut that requests that it run in a new process group

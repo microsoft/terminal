@@ -38,9 +38,7 @@ RAW_READ_DATA::RAW_READ_DATA(_In_ InputBuffer* const pInputBuffer,
 // Routine Description:
 // - Destructs a read data class.
 // - Decrements count of readers waiting on the given handle.
-RAW_READ_DATA::~RAW_READ_DATA()
-{
-}
+RAW_READ_DATA::~RAW_READ_DATA() = default;
 
 // Routine Description:
 // - This routine is called to complete a raw read that blocked in ReadInputBuffer.
@@ -87,9 +85,9 @@ bool RAW_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     size_t NumBytes = 0;
 
     PWCHAR lpBuffer;
-    bool RetVal = true;
-    bool fAddDbcsLead = false;
-    bool fSkipFinally = false;
+    auto RetVal = true;
+    auto fAddDbcsLead = false;
+    auto fSkipFinally = false;
 
     // If a ctrl-c is seen, don't terminate read. If ctrl-break is seen, terminate read.
     if (WI_IsFlagSet(TerminationReason, WaitTerminationReason::CtrlC))
@@ -123,8 +121,8 @@ bool RAW_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
 
         if (!fIsUnicode && _pInputBuffer->IsReadPartialByteSequenceAvailable())
         {
-            std::unique_ptr<IInputEvent> event = _pInputBuffer->FetchReadPartialByteSequence(false);
-            const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(event.get());
+            auto event = _pInputBuffer->FetchReadPartialByteSequence(false);
+            const auto pKeyEvent = static_cast<const KeyEvent* const>(event.get());
             *lpBuffer = static_cast<char>(pKeyEvent->GetCharData());
             _BufferSize -= sizeof(wchar_t);
             *pReplyStatus = STATUS_SUCCESS;

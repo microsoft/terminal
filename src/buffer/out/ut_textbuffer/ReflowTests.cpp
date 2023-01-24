@@ -6,8 +6,7 @@
 #include "../../inc/consoletaeftemplates.hpp"
 
 #include "../textBuffer.hpp"
-#include "../../renderer/inc/DummyRenderTarget.hpp"
-#include "../../types/inc/Utf16Parser.hpp"
+#include "../../renderer/inc/DummyRenderer.hpp"
 #include "../../types/inc/GlyphWidth.hpp"
 
 #include <IDataSource.h>
@@ -36,9 +35,9 @@ namespace
 
     struct TestBuffer
     {
-        COORD size;
+        til::size size;
         std::vector<TestRow> rows;
-        COORD cursor;
+        til::point cursor;
     };
 
     struct TestCase
@@ -683,7 +682,7 @@ namespace
     {
         STDMETHODIMP Advance(IDataRow** ppDataRow) override
         {
-            if (_index < std::extent<decltype(testCases)>::value)
+            if (_index < std::extent_v<decltype(testCases)>)
             {
                 Microsoft::WRL::MakeAndInitialize<ArrayIndexTaefAdapterRow>(ppDataRow, _index++);
             }
@@ -732,48 +731,36 @@ class ReflowTests
 {
     TEST_CLASS(ReflowTests);
 
-    static DummyRenderTarget target;
+    static DummyRenderer renderer;
     static std::unique_ptr<TextBuffer> _textBufferFromTestBuffer(const TestBuffer& testBuffer)
     {
-        auto buffer = std::make_unique<TextBuffer>(testBuffer.size, TextAttribute{ 0x7 }, 0, target);
+        auto buffer = std::make_unique<TextBuffer>(testBuffer.size, TextAttribute{ 0x7 }, 0, false, renderer);
 
-        size_t i{};
+        til::CoordType y = 0;
         for (const auto& testRow : testBuffer.rows)
         {
-            auto& row{ buffer->GetRowByOffset(i) };
+            auto& row{ buffer->GetRowByOffset(y) };
 
-            auto& charRow{ row.GetCharRow() };
             row.SetWrapForced(testRow.wrap);
 
-            size_t j{};
-            for (auto it{ charRow.begin() }; it != charRow.end(); ++it)
+            til::CoordType x = 0;
+            for (const auto& ch : testRow.text)
             {
-                // Yes, we're about to manually create a buffer. It is unpleasant.
-                const auto ch{ til::at(testRow.text, j) };
-                it->Char() = ch;
-                if (IsGlyphFullWidth(ch))
-                {
-                    it->DbcsAttr().SetLeading();
-                    it++;
-                    it->Char() = ch;
-                    it->DbcsAttr().SetTrailing();
-                }
-                else
-                {
-                    it->DbcsAttr().SetSingle();
-                }
-                j++;
+                const til::CoordType width = IsGlyphFullWidth(ch) ? 2 : 1;
+                row.ReplaceCharacters(x, width, { &ch, 1 });
+                x += width;
             }
-            i++;
+
+            y++;
         }
 
         buffer->GetCursor().SetPosition(testBuffer.cursor);
         return buffer;
     }
 
-    static std::unique_ptr<TextBuffer> _textBufferByReflowingTextBuffer(TextBuffer& originalBuffer, const COORD newSize)
+    static std::unique_ptr<TextBuffer> _textBufferByReflowingTextBuffer(TextBuffer& originalBuffer, const til::size newSize)
     {
-        auto buffer = std::make_unique<TextBuffer>(newSize, TextAttribute{ 0x7 }, 0, target);
+        auto buffer = std::make_unique<TextBuffer>(newSize, TextAttribute{ 0x7 }, 0, false, renderer);
         TextBuffer::Reflow(originalBuffer, *buffer, std::nullopt, std::nullopt);
         return buffer;
     }
@@ -783,42 +770,44 @@ class ReflowTests
         VERIFY_ARE_EQUAL(testBuffer.cursor, buffer.GetCursor().GetPosition());
         VERIFY_ARE_EQUAL(testBuffer.size, buffer.GetSize().Dimensions());
 
-        size_t i{};
+        til::CoordType y = 0;
         for (const auto& testRow : testBuffer.rows)
         {
             NoThrowString indexString;
-            const auto& row{ buffer.GetRowByOffset(i) };
+            const auto& row{ buffer.GetRowByOffset(y) };
 
-            const auto& charRow{ row.GetCharRow() };
-
-            indexString.Format(L"[Row %d]", i);
+            indexString.Format(L"[Row %d]", y);
             VERIFY_ARE_EQUAL(testRow.wrap, row.WasWrapForced(), indexString);
 
-            size_t j{};
-            for (auto it{ charRow.begin() }; it != charRow.end(); ++it)
+            til::CoordType x = 0;
+            til::CoordType j = 0;
+            for (const auto& ch : testRow.text)
             {
-                indexString.Format(L"[Cell %d, %d; Text line index %d]", it - charRow.begin(), i, j);
-                // Yes, we're about to manually create a buffer. It is unpleasant.
-                const auto ch{ til::at(testRow.text, j) };
+                indexString.Format(L"[Cell %d, %d; Text line index %d]", x, y, j);
+
                 if (IsGlyphFullWidth(ch))
                 {
                     // Char is full width in test buffer, so
                     // ensure that real buffer is LEAD, TRAIL (ch)
-                    VERIFY_IS_TRUE(it->DbcsAttr().IsLeading(), indexString);
-                    VERIFY_ARE_EQUAL(ch, it->Char(), indexString);
+                    VERIFY_ARE_EQUAL(row.DbcsAttrAt(x), DbcsAttribute::Leading, indexString);
+                    VERIFY_ARE_EQUAL(ch, row.GlyphAt(x).front(), indexString);
+                    ++x;
 
-                    it++;
-                    VERIFY_IS_TRUE(it->DbcsAttr().IsTrailing(), indexString);
+                    VERIFY_ARE_EQUAL(row.DbcsAttrAt(x), DbcsAttribute::Trailing, indexString);
+                    VERIFY_ARE_EQUAL(ch, row.GlyphAt(x).front(), indexString);
+                    ++x;
                 }
                 else
                 {
-                    VERIFY_IS_TRUE(it->DbcsAttr().IsSingle(), indexString);
+                    VERIFY_ARE_EQUAL(row.DbcsAttrAt(x), DbcsAttribute::Single, indexString);
+                    VERIFY_ARE_EQUAL(ch, row.GlyphAt(x).front(), indexString);
+                    ++x;
                 }
 
-                VERIFY_ARE_EQUAL(ch, it->Char(), indexString);
                 j++;
             }
-            i++;
+
+            y++;
         }
     }
 
@@ -841,7 +830,7 @@ class ReflowTests
         for (size_t bufferIndex{ 1 }; bufferIndex < testCase.buffers.size(); ++bufferIndex)
         {
             const auto& testBuffer{ til::at(testCase.buffers, bufferIndex) };
-            Log::Comment(NoThrowString().Format(L"[%zu.%zu] Resizing to %dx%d", i, bufferIndex, testBuffer.size.X, testBuffer.size.Y));
+            Log::Comment(NoThrowString().Format(L"[%zu.%zu] Resizing to %dx%d", i, bufferIndex, testBuffer.size.width, testBuffer.size.height));
 
             auto newBuffer{ _textBufferByReflowingTextBuffer(*textBuffer, testBuffer.size) };
 
@@ -853,4 +842,4 @@ class ReflowTests
     }
 };
 
-DummyRenderTarget ReflowTests::target{};
+DummyRenderer ReflowTests::renderer{};

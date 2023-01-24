@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA5CAD1A-082C-4476-9F33-94B339494076}</ProjectGuid>
     <ProjectName>Microsoft.Terminal.Settings.Model</ProjectName>
@@ -12,7 +12,12 @@
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
     <PgoTarget>true</PgoTarget>
   </PropertyGroup>
+  <PropertyGroup Label="NuGet Dependencies">
+    <TerminalCppWinrt>true</TerminalCppWinrt>
+    <TerminalMUX>true</TerminalMUX>
+  </PropertyGroup>
   <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
@@ -33,6 +38,25 @@
     <ClInclude Include="../Profile.h" />
     <ClInclude Include="../TerminalWarnings.h" />
     <ClInclude Include="../IconPathConverter.h" />
+    <ClInclude Include="../NewTabMenuEntry.h" />
+    <ClInclude Include="../SeparatorEntry.h">
+      <DependentUpon>../NewTabMenuEntry.h</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="../FolderEntry.h">
+      <DependentUpon>../NewTabMenuEntry.h</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="../ProfileEntry.h">
+      <DependentUpon>../NewTabMenuEntry.h</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="../RemainingProfilesEntry.h">
+      <DependentUpon>../NewTabMenuEntry.h</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="../ProfileCollectionEntry.h">
+      <DependentUpon>../NewTabMenuEntry.h</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="../MatchProfilesEntry.h">
+      <DependentUpon>../NewTabMenuEntry.h</DependentUpon>
+    </ClInclude>
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <!-- Don't put source files in here - put them in the lib's vcxproj instead! -->
@@ -73,7 +97,7 @@
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
 
-    <!-- Reference Microsoft.Terminal.Settings.ModelLib here, so we can use it's winmd as
+    <!-- Reference Microsoft.Terminal.Settings.ModelLib here, so we can use its winmd as
     our winmd. This didn't work correctly in VS2017, you'd need to
     manually reference the lib -->
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\Microsoft.Terminal.Settings.ModelLib.vcxproj">
@@ -101,14 +125,6 @@
     </Reference>
   </ItemGroup>
 
-  <Import Project="$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.7.0-prerelease.210913003\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.7.0-prerelease.210913003\build\native\Microsoft.UI.Xaml.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.7.0-prerelease.210913003\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.7.0-prerelease.210913003\build\native\Microsoft.UI.Xaml.targets'))" />
-  </Target>
-
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(OpenConsoleDir)\dep\jsoncpp\json;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
@@ -125,4 +141,7 @@
     </Reference>
   </ItemDefinitionGroup>
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+
+  <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 </Project>

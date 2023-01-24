@@ -64,7 +64,16 @@ Openconsole has three configuration types:
 
 AuditMode is an experimental mode that enables some additional static analysis from CppCoreCheck.
 
-## Updating Nuget package references
+## Updating Nuget package references - Globally versioned
+Most Nuget package references in this project are centralized in a single configuration so that there is a single canonical version for everything.  This canonical version is restored before builds by the build pipeline, environment initialization scripts, or Visual Studio (as appropriate).
+
+The canonical version numbers are defined in dep/nuget/packages.config.  That defines what will be downloaded by nuget.exe.  Most Nuget packages also have a .props and/or .targets file that must be imported by every project that consumes it.  Those import statements are consolidated in:
+- src/common.nugetversions.props
+- src/common.nugetversions.targets
+
+When a globally managed version changes all three of those files must be changed in unison.
+
+## Updating Nuget package references - Locally versioned
 Certain Nuget package references in this project, like `Microsoft.UI.Xaml`, must be updated outside of the Visual Studio NuGet package manager. This can be done using the snippet below.
 > Note that to run this snippet, you need to use WSL as the command uses `sed`.
 To update the version of a given package, use the following snippet
@@ -101,7 +110,7 @@ This takes quite some time, and only generates an `msix`. It does not install th
 
 ```powershell
 # If you haven't already:
-Import-Module tools\OpenConsole.psm1;
+Import-Module .\tools\OpenConsole.psm1;
 Set-MsBuildDevEnvironment;
 
 # The Set-MsBuildDevEnvironment call is needed for finding the path to
@@ -112,7 +121,7 @@ if ((Get-AppxPackage -Name 'WindowsTerminalDev*') -ne $null) {
 Remove-AppxPackage 'WindowsTerminalDev_0.0.1.0_x64__8wekyb3d8bbwe'
 };
 New-Item ..\loose -Type Directory -Force;
-makeappx unpack /v /o /p .\CascadiaPackage_0.0.1.0_x64_Debug.msix /d ..\Loose\;
+makeappx unpack /v /o /p .\CascadiaPackage_0.0.1.0_x64_Debug.msix /d ..\loose\;
 Add-AppxPackage -Path ..\loose\AppxManifest.xml -Register -ForceUpdateFromAnyVersion -ForceApplicationShutdown
 ```
 
@@ -130,3 +139,18 @@ powershell -Command Set-Location -Path %OPENCON%\src\cascadia\CascadiaPackage\Ap
 (yes, the cmd version is just calling powershell to do the powershell version. Too lazy to convert the rest by hand, I'm already copying from `.vscode\tasks.json`)
 
 Building the package from VS generates the loose layout to begin with, and then registers the loose manifest, skipping the msix stop. It's a lot faster than the commandline inner loop here, unfortunately.
+
+### 2022 Update
+
+The following command can be used to build the terminal package, and then deploy it.
+
+```cmd
+pushd %OPENCON%\src\cascadia\CascadiaPackage
+bx
+"C:\Program Files\Microsoft Visual Studio\2022\Preview\Common7\IDE\DeployAppRecipe.exe" bin\%ARCH%\%_LAST_BUILD_CONF%\CascadiaPackage.build.appxrecipe
+popd
+```
+
+The `bx` will build just the Terminal package, critically, populating the `CascadiaPackage.build.appxrecipe` file. Once that's been built, then the `DeployAppRecipe.exe` command can be used to deploy a loose layout in the same way that Visual Studio does.
+
+Notably, this method of building the Terminal package can't leverage the FastUpToDate check in Visual Studio, so the builds end up being considerably slower for the whole package, as cppwinrt does a lot of work before confirming that it's up to date and doing nothing.

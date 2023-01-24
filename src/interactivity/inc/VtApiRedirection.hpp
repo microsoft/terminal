@@ -20,10 +20,14 @@ Author:
 
 #pragma once
 
-#define MapVirtualKeyW(x, y) VTRedirMapVirtualKeyW(x, y)
-#define VkKeyScanW(x) VTRedirVkKeyScanW(x)
-#define GetKeyState(x) VTRedirGetKeyState(x)
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-UINT VTRedirMapVirtualKeyW(_In_ UINT uCode, _In_ UINT uMapType);
-SHORT VTRedirVkKeyScanW(_In_ WCHAR ch);
-SHORT VTRedirGetKeyState(_In_ int nVirtKey);
+UINT OneCoreSafeMapVirtualKeyW(_In_ UINT uCode, _In_ UINT uMapType);
+SHORT OneCoreSafeVkKeyScanW(_In_ WCHAR ch);
+SHORT OneCoreSafeGetKeyState(_In_ int nVirtKey);
+
+#ifdef __cplusplus
+}
+#endif

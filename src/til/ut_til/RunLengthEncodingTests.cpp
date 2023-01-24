@@ -141,7 +141,7 @@ class RunLengthEncodingTests
         }
 
         rle_container to;
-        value_type value = from.front();
+        auto value = from.front();
         size_type length = 0;
 
         for (auto v : from)
@@ -352,7 +352,7 @@ class RunLengthEncodingTests
             }
         };
 
-        int idx = 0;
+        auto idx = 0;
 
         for (const auto& test_case : test_cases)
         {
@@ -407,7 +407,7 @@ class RunLengthEncodingTests
             }
         };
 
-        int idx = 0;
+        auto idx = 0;
 
         for (const auto& test_case : test_cases)
         {
@@ -456,7 +456,7 @@ class RunLengthEncodingTests
     TEST_METHOD(Comparison)
     {
         rle_vector rle1{ { { 1, 1 }, { 3, 2 }, { 2, 1 } } };
-        rle_vector rle2{ rle1 };
+        auto rle2{ rle1 };
 
         VERIFY_IS_TRUE(rle1 == rle2);
         VERIFY_IS_FALSE(rle1 != rle2);
@@ -490,7 +490,7 @@ class RunLengthEncodingTests
         // linear backward iteration
         {
             std::string reverse_expectation{ expected };
-            std::reverse(reverse_expectation.begin(), reverse_expectation.end());
+            std::ranges::reverse(reverse_expectation);
 
             std::string actual;
             actual.reserve(reverse_expectation.size());
@@ -574,7 +574,7 @@ class RunLengthEncodingTests
             const auto beg = rle.begin();
             auto it = beg;
 
-            for (size_t i = 0; i <= expected.size(); ++i, ++it)
+            for (size_t i = 0; i < expected.size(); ++i, ++it)
             {
                 VERIFY_ARE_EQUAL(static_cast<difference_type>(i), it - beg);
                 VERIFY_ARE_EQUAL(-static_cast<difference_type>(i), beg - it);

@@ -72,7 +72,8 @@ if "%_SKIP_NUGET_RESTORE%" == "1" (
     nuget.exe restore %OPENCON%\OpenConsole.sln
 )
 
-set _BUILD_CMDLINE="%MSBUILD%" %OPENCON%\OpenConsole.sln /t:"%_MSBUILD_TARGET%" /m /p:Configuration=%_LAST_BUILD_CONF% /p:Platform=%ARCH% %_APPX_ARGS%
+@rem /p:GenerateAppxPackageOnBuild=false will prevent us from building the whole .msix package when building the wapproj project.
+set _BUILD_CMDLINE="%MSBUILD%" %OPENCON%\OpenConsole.sln /t:"%_MSBUILD_TARGET%" /m /p:Configuration=%_LAST_BUILD_CONF% /p:GenerateAppxPackageOnBuild=false /p:Platform=%ARCH% %_APPX_ARGS%
 
 echo %_BUILD_CMDLINE%
 echo Starting build...
@@ -122,8 +123,8 @@ rem ############################################################################
 rem The code to figure out what project we're building needs to be in its own
 rem function. Otherwise, when cmd evaluates the if statement above `if
 rem "%_EXCLUSIVE%" == "1"`, it'll evaluate the entire block with the value of
-rem the the variables at the time the if was executed. So instead, make a
-rem function here with `enabledelayedexpansion` set.
+rem the variables at the time the if was executed. So instead, make a function
+rem here with `enabledelayedexpansion` set.
 :get_project
 setlocal enabledelayedexpansion
 

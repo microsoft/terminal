@@ -38,22 +38,9 @@ OutputCellView::OutputCellView(const std::wstring_view view,
 // - Reports how many columns we expect the Chars() text data to consume
 // Return Value:
 // - Count of column cells on the screen
-size_t OutputCellView::Columns() const noexcept
+til::CoordType OutputCellView::Columns() const noexcept
 {
-    if (DbcsAttr().IsSingle())
-    {
-        return 1;
-    }
-    else if (DbcsAttr().IsLeading())
-    {
-        return 2;
-    }
-    else if (DbcsAttr().IsTrailing())
-    {
-        return 1;
-    }
-
-    return 1;
+    return DbcsAttr() == DbcsAttribute::Leading ? 2 : 1;
 }
 
 // Routine Description:

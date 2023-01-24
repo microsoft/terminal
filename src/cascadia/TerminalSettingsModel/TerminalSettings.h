@@ -55,6 +55,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         TerminalSettings() = default;
 
+        static Model::TerminalSettings CreateForPreview(const Model::CascadiaSettings& appSettings, const Model::Profile& profile);
+
         static Model::TerminalSettingsCreateResult CreateWithProfile(const Model::CascadiaSettings& appSettings,
                                                                      const Model::Profile& profile,
                                                                      const Control::IKeyBindings& keybindings);
@@ -89,8 +91,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, CopyOnSelect, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, FocusFollowMouse, false);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, TrimBlockSelection, false);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, TrimBlockSelection, true);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, DetectURLs, true);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, VtPassthrough, false);
 
         INHERITABLE_SETTING(Model::TerminalSettings, Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>, TabColor, nullptr);
 
@@ -104,9 +107,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // passed to the terminal only upon creation.
         INHERITABLE_SETTING(Model::TerminalSettings, Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>, StartingTabColor, nullptr);
 
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, IntenseIsBold);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, IntenseIsBright);
 
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, AdjustIndistinguishableColors);
+        INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Core::AdjustTextMode, AdjustIndistinguishableColors, Core::AdjustTextMode::Never);
 
         // ------------------------ End of Core Settings -----------------------
 
@@ -117,7 +121,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, double, Opacity, UseAcrylic() ? 0.5 : 1.0);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, Padding, DEFAULT_PADDING);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, FontFace, DEFAULT_FONT_FACE);
-        INHERITABLE_SETTING(Model::TerminalSettings, int32_t, FontSize, DEFAULT_FONT_SIZE);
+        INHERITABLE_SETTING(Model::TerminalSettings, float, FontSize, DEFAULT_FONT_SIZE);
 
         INHERITABLE_SETTING(Model::TerminalSettings, winrt::Windows::UI::Text::FontWeight, FontWeight);
         INHERITABLE_SETTING(Model::TerminalSettings, IFontAxesMap, FontAxes);
@@ -147,21 +151,27 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, bool, RetroTerminalEffect, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, ForceFullRepaintRendering, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, SoftwareRendering, false);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, UseBackgroundImageForWindow, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, ForceVTInput, false);
 
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, PixelShaderPath);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, IntenseIsBold);
 
         INHERITABLE_SETTING(Model::TerminalSettings, bool, Elevate, false);
+
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, AutoMarkPrompts, false);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, ShowMarks, false);
 
     private:
         std::optional<std::array<Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE>> _ColorTable;
         gsl::span<Microsoft::Terminal::Core::Color> _getColorTableImpl();
+
+        static winrt::com_ptr<implementation::TerminalSettings> _CreateWithProfileCommon(const Model::CascadiaSettings& appSettings, const Model::Profile& profile);
         void _ApplyProfileSettings(const Model::Profile& profile);
 
         void _ApplyGlobalSettings(const Model::GlobalAppSettings& globalSettings) noexcept;
         void _ApplyAppearanceSettings(const Microsoft::Terminal::Settings::Model::IAppearanceConfig& appearance,
-                                      const Windows::Foundation::Collections::IMapView<hstring, Microsoft::Terminal::Settings::Model::ColorScheme>& schemes);
+                                      const Windows::Foundation::Collections::IMapView<hstring, Microsoft::Terminal::Settings::Model::ColorScheme>& schemes,
+                                      const winrt::Microsoft::Terminal::Settings::Model::Theme currentTheme);
 
         friend class SettingsModelLocalTests::TerminalSettingsTests;
     };

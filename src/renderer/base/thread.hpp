@@ -26,11 +26,10 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT Initialize(Renderer* const pRendererParent) noexcept;
 
-        void NotifyPaint();
-
-        void EnablePainting();
-        void DisablePainting();
-        void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs);
+        void NotifyPaint() noexcept;
+        void EnablePainting() noexcept;
+        void DisablePainting() noexcept;
+        void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) noexcept;
 
     private:
         static DWORD WINAPI s_ThreadProc(_In_ LPVOID lpParameter);

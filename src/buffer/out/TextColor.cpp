@@ -54,6 +54,8 @@ constexpr std::array<BYTE, 256> Index256ToIndex16 = {
 
 // We should only need 4B for TextColor. Any more than that is just waste.
 static_assert(sizeof(TextColor) == 4);
+// Assert that the use of memcmp() for comparisons is safe.
+static_assert(std::has_unique_object_representations_v<TextColor>);
 
 bool TextColor::CanBeBrightened() const noexcept
 {
@@ -111,6 +113,8 @@ void TextColor::SetIndex(const BYTE index, const bool isIndex256) noexcept
 {
     _meta = isIndex256 ? ColorType::IsIndex256 : ColorType::IsIndex16;
     _index = index;
+    _green = 0;
+    _blue = 0;
 }
 
 // Method Description:
@@ -123,6 +127,9 @@ void TextColor::SetIndex(const BYTE index, const bool isIndex256) noexcept
 void TextColor::SetDefault() noexcept
 {
     _meta = ColorType::IsDefault;
+    _red = 0;
+    _green = 0;
+    _blue = 0;
 }
 
 // Method Description:
@@ -133,8 +140,8 @@ void TextColor::SetDefault() noexcept
 //     - If brighten is true, and we've got a 16 color index in the "dark"
 //       portion of the color table (indices [0,7]), then we'll look up the
 //       bright version of this color (from indices [8,15]). This should be
-//       true for TextAttributes that are "Bold" and we're treating bold as
-//       bright (which is the default behavior of most terminals.)
+//       true for TextAttributes that are "intense" and we're treating intense
+//       as bright (which is the default behavior of most terminals.)
 //   * If we're a default color, we'll return the default color provided.
 // Arguments:
 // - colorTable: The table of colors we should use to look up the value of

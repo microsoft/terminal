@@ -8,31 +8,32 @@
 FontInfoDesired::FontInfoDesired(const std::wstring_view& faceName,
                                  const unsigned char family,
                                  const unsigned int weight,
-                                 const COORD coordSizeDesired,
+                                 const float fontSize,
                                  const unsigned int codePage) noexcept :
     FontInfoBase(faceName, family, weight, false, codePage),
-    _coordSizeDesired(coordSizeDesired)
+    _coordSizeDesired{ 0, lroundf(fontSize) },
+    _fontSize{ fontSize }
 {
 }
 
 FontInfoDesired::FontInfoDesired(const FontInfo& fiFont) noexcept :
     FontInfoBase(fiFont),
-    _coordSizeDesired(fiFont.GetUnscaledSize())
+    _coordSizeDesired{ fiFont.GetUnscaledSize() },
+    _fontSize{ static_cast<float>(_coordSizeDesired.height) }
 {
 }
 
-bool FontInfoDesired::operator==(const FontInfoDesired& other) noexcept
+float FontInfoDesired::GetFontSize() const noexcept
 {
-    return FontInfoBase::operator==(other) &&
-           _coordSizeDesired == other._coordSizeDesired;
+    return _fontSize;
 }
 
-COORD FontInfoDesired::GetEngineSize() const noexcept
+til::size FontInfoDesired::GetEngineSize() const noexcept
 {
-    COORD coordSize = _coordSizeDesired;
+    auto coordSize = _coordSizeDesired;
     if (IsTrueTypeFont())
     {
-        coordSize.X = 0; // Don't tell the engine about the width for a TrueType font. It makes a mess.
+        coordSize.width = 0; // Don't tell the engine about the width for a TrueType font. It makes a mess.
     }
 
     return coordSize;
@@ -46,6 +47,6 @@ bool FontInfoDesired::IsDefaultRasterFont() const noexcept
     // Either the raster was set from the engine...
     // OR the face name is empty with a size of 0x0 or 8x12.
     return WasDefaultRasterSetFromEngine() || (GetFaceName().empty() &&
-                                               (_coordSizeDesired == COORD{ 0, 0 } ||
-                                                _coordSizeDesired == COORD{ 8, 12 }));
+                                               (_coordSizeDesired == til::size{ 0, 0 } ||
+                                                _coordSizeDesired == til::size{ 8, 12 }));
 }

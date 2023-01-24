@@ -6,22 +6,14 @@
 #define _TIL_INLINEPREFIX __declspec(noinline) inline
 
 #include "til/at.h"
-#include "til/color.h"
-#include "til/math.h"
-#include "til/some.h"
-#include "til/size.h"
-#include "til/point.h"
-#include "til/operators.h"
-#include "til/rectangle.h"
-#include "til/rle.h"
 #include "til/bitmap.h"
-#include "til/u8u16convert.h"
-#include "til/spsc.h"
 #include "til/coalesce.h"
+#include "til/color.h"
+#include "til/enumset.h"
+#include "til/pmr.h"
 #include "til/replace.h"
 #include "til/string.h"
-#include "til/pmr.h"
-#include "til/enumset.h"
+#include "til/u8u16convert.h"
 
 // Use keywords on TraceLogging providers to specify the category
 // of event that we are emitting for filtering purposes.
@@ -127,3 +119,15 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }                                             \
         }                                                 \
     } while (0, 0)
+
+// clang-format off
+#define TIL_FAST_MATH_BEGIN                \
+    _Pragma("float_control(push)")         \
+    _Pragma("float_control(precise, off)") \
+    _Pragma("float_control(except, off)")  \
+    _Pragma("fenv_access(off)")            \
+    _Pragma("fp_contract(on)")
+
+#define TIL_FAST_MATH_END \
+    _Pragma("float_control(pop)")
+// clang-format on

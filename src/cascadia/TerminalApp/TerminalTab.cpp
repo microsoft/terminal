@@ -15,6 +15,7 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace winrt::Microsoft::UI::Xaml::Controls;
 using namespace winrt::Windows::System;
 
 namespace winrt
@@ -110,7 +111,7 @@ namespace winrt::TerminalApp::implementation
     // - Removes the bell indicator from the tab header
     // Arguments:
     // - sender, e: not used
-    void TerminalTab::_BellIndicatorTimerTick(Windows::Foundation::IInspectable const& /*sender*/, Windows::Foundation::IInspectable const& /*e*/)
+    void TerminalTab::_BellIndicatorTimerTick(const Windows::Foundation::IInspectable& /*sender*/, const Windows::Foundation::IInspectable& /*e*/)
     {
         ShowBellIndicator(false);
         // Just do a sanity check that the timer still exists before we stop it
@@ -146,7 +147,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto weakThis{ get_weak() };
 
-        co_await winrt::resume_foreground(TabViewItem().Dispatcher());
+        co_await wil::resume_foreground(TabViewItem().Dispatcher());
 
         if (auto tab{ weakThis.get() })
         {
@@ -274,7 +275,7 @@ namespace winrt::TerminalApp::implementation
         // Don't reload our icon if it hasn't changed.
         if (iconPath == _lastIconPath)
         {
-            return;
+            co_return;
         }
 
         _lastIconPath = iconPath;
@@ -283,12 +284,12 @@ namespace winrt::TerminalApp::implementation
         // for when we show the icon again)
         if (_iconHidden)
         {
-            return;
+            co_return;
         }
 
         auto weakThis{ get_weak() };
 
-        co_await winrt::resume_foreground(TabViewItem().Dispatcher());
+        co_await wil::resume_foreground(TabViewItem().Dispatcher());
 
         if (auto tab{ weakThis.get() })
         {
@@ -307,7 +308,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto weakThis{ get_weak() };
 
-        co_await winrt::resume_foreground(TabViewItem().Dispatcher());
+        co_await wil::resume_foreground(TabViewItem().Dispatcher());
 
         if (auto tab{ weakThis.get() })
         {
@@ -316,7 +317,7 @@ namespace winrt::TerminalApp::implementation
                 if (hide)
                 {
                     Icon({});
-                    TabViewItem().IconSource(IconPathConverter::IconSourceMUX({}));
+                    TabViewItem().IconSource(IconSource{ nullptr });
                 }
                 else
                 {
@@ -336,7 +337,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto weakThis{ get_weak() };
 
-        co_await winrt::resume_foreground(TabViewItem().Dispatcher());
+        co_await wil::resume_foreground(TabViewItem().Dispatcher());
 
         if (auto tab{ weakThis.get() })
         {
@@ -351,7 +352,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto weakThis{ get_weak() };
 
-        co_await winrt::resume_foreground(TabViewItem().Dispatcher());
+        co_await wil::resume_foreground(TabViewItem().Dispatcher());
 
         if (auto tab{ weakThis.get() })
         {
@@ -398,7 +399,7 @@ namespace winrt::TerminalApp::implementation
     winrt::fire_and_forget TerminalTab::UpdateTitle()
     {
         auto weakThis{ get_weak() };
-        co_await winrt::resume_foreground(TabViewItem().Dispatcher());
+        co_await wil::resume_foreground(TabViewItem().Dispatcher());
         if (auto tab{ weakThis.get() })
         {
             const auto activeTitle = _GetActiveTitle();
@@ -424,7 +425,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto control = GetActiveTerminalControl();
 
-        co_await winrt::resume_foreground(control.Dispatcher());
+        co_await wil::resume_foreground(control.Dispatcher());
 
         const auto currentOffset = control.ScrollOffset();
         control.ScrollViewport(::base::ClampAdd(currentOffset, delta));
@@ -649,6 +650,46 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Attaches the given color picker to ourselves
+    // - Typically will be called after we have sent a request for the color picker
+    // Arguments:
+    // - colorPicker: The color picker that we should attach to ourselves
+    // Return Value:
+    // - <none>
+    void TerminalTab::AttachColorPicker(TerminalApp::ColorPickupFlyout& colorPicker)
+    {
+        auto weakThis{ get_weak() };
+
+        _tabColorPickup = colorPicker;
+
+        _colorSelectedToken = _tabColorPickup.ColorSelected([weakThis](auto newTabColor) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->SetRuntimeTabColor(newTabColor);
+            }
+        });
+
+        _colorClearedToken = _tabColorPickup.ColorCleared([weakThis]() {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->ResetRuntimeTabColor();
+            }
+        });
+
+        _pickerClosedToken = _tabColorPickup.Closed([weakThis](auto&&, auto&&) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_tabColorPickup.ColorSelected(tab->_colorSelectedToken);
+                tab->_tabColorPickup.ColorCleared(tab->_colorClearedToken);
+                tab->_tabColorPickup.Closed(tab->_pickerClosedToken);
+                tab->_tabColorPickup = nullptr;
+            }
+        });
+
+        _tabColorPickup.ShowAt(TabViewItem());
+    }
+
+    // Method Description:
     // - Find the currently active pane, and then switch the split direction of
     //   its parent. E.g. switch from Horizontal to Vertical.
     // Return Value:
@@ -864,8 +905,8 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        events.taskbarToken = control.SetTaskbarProgress([dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
-            co_await winrt::resume_foreground(dispatcher);
+        events.taskbarToken = control.SetTaskbarProgress([dispatcher, weakThis](auto&&, auto&&) -> winrt::fire_and_forget {
+            co_await wil::resume_foreground(dispatcher);
             // Check if Tab's lifetime has expired
             if (auto tab{ weakThis.get() })
             {
@@ -1069,12 +1110,12 @@ namespace winrt::TerminalApp::implementation
         // Add a Closed event handler to the Pane. If the pane closes out from
         // underneath us, and it's zoomed, we want to be able to make sure to
         // update our state accordingly to un-zoom that pane. See GH#7252.
-        auto closedToken = pane->Closed([weakThis, weakPane](auto&& /*s*/, auto && /*e*/) -> winrt::fire_and_forget {
+        auto closedToken = pane->Closed([weakThis, weakPane](auto&& /*s*/, auto&& /*e*/) -> winrt::fire_and_forget {
             if (auto tab{ weakThis.get() })
             {
                 if (tab->_zoomedPane)
                 {
-                    co_await winrt::resume_foreground(tab->Content().Dispatcher());
+                    co_await wil::resume_foreground(tab->Content().Dispatcher());
 
                     tab->Content(tab->_rootPane->GetRootElement());
                     tab->ExitZoom();
@@ -1088,7 +1129,7 @@ namespace winrt::TerminalApp::implementation
                     // did not actually change. Triggering
                     if (pane != tab->_activePane && !tab->_activePane->_IsLeaf())
                     {
-                        co_await winrt::resume_foreground(tab->Content().Dispatcher());
+                        co_await wil::resume_foreground(tab->Content().Dispatcher());
                         tab->_UpdateActivePane(tab->_activePane);
                     }
 
@@ -1178,38 +1219,28 @@ namespace winrt::TerminalApp::implementation
         // "Color..."
         Controls::MenuFlyoutItem chooseColorMenuItem;
         Controls::FontIcon colorPickSymbol;
-        colorPickSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+        colorPickSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
         colorPickSymbol.Glyph(L"\xE790");
 
         chooseColorMenuItem.Click([weakThis](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
-                tab->ActivateColorPicker();
+                tab->RequestColorPicker();
             }
         });
         chooseColorMenuItem.Text(RS_(L"TabColorChoose"));
         chooseColorMenuItem.Icon(colorPickSymbol);
 
-        // Color Picker (it's convenient to have it here)
-        _tabColorPickup.ColorSelected([weakThis](auto newTabColor) {
-            if (auto tab{ weakThis.get() })
-            {
-                tab->SetRuntimeTabColor(newTabColor);
-            }
-        });
+        const auto chooseColorToolTip = RS_(L"ChooseColorToolTip");
 
-        _tabColorPickup.ColorCleared([weakThis]() {
-            if (auto tab{ weakThis.get() })
-            {
-                tab->ResetRuntimeTabColor();
-            }
-        });
+        WUX::Controls::ToolTipService::SetToolTip(chooseColorMenuItem, box_value(chooseColorToolTip));
+        Automation::AutomationProperties::SetHelpText(chooseColorMenuItem, chooseColorToolTip);
 
         Controls::MenuFlyoutItem renameTabMenuItem;
         {
             // "Rename Tab"
             Controls::FontIcon renameTabSymbol;
-            renameTabSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+            renameTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             renameTabSymbol.Glyph(L"\xE8AC"); // Rename
 
             renameTabMenuItem.Click([weakThis](auto&&, auto&&) {
@@ -1220,13 +1251,18 @@ namespace winrt::TerminalApp::implementation
             });
             renameTabMenuItem.Text(RS_(L"RenameTabText"));
             renameTabMenuItem.Icon(renameTabSymbol);
+
+            const auto renameTabToolTip = RS_(L"RenameTabToolTip");
+
+            WUX::Controls::ToolTipService::SetToolTip(renameTabMenuItem, box_value(renameTabToolTip));
+            Automation::AutomationProperties::SetHelpText(renameTabMenuItem, renameTabToolTip);
         }
 
         Controls::MenuFlyoutItem duplicateTabMenuItem;
         {
             // "Duplicate Tab"
             Controls::FontIcon duplicateTabSymbol;
-            duplicateTabSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+            duplicateTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             duplicateTabSymbol.Glyph(L"\xF5ED");
 
             duplicateTabMenuItem.Click([weakThis](auto&&, auto&&) {
@@ -1237,13 +1273,18 @@ namespace winrt::TerminalApp::implementation
             });
             duplicateTabMenuItem.Text(RS_(L"DuplicateTabText"));
             duplicateTabMenuItem.Icon(duplicateTabSymbol);
+
+            const auto duplicateTabToolTip = RS_(L"DuplicateTabToolTip");
+
+            WUX::Controls::ToolTipService::SetToolTip(duplicateTabMenuItem, box_value(duplicateTabToolTip));
+            Automation::AutomationProperties::SetHelpText(duplicateTabMenuItem, duplicateTabToolTip);
         }
 
         Controls::MenuFlyoutItem splitTabMenuItem;
         {
             // "Split Tab"
             Controls::FontIcon splitTabSymbol;
-            splitTabSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+            splitTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             splitTabSymbol.Glyph(L"\xF246"); // ViewDashboard
 
             splitTabMenuItem.Click([weakThis](auto&&, auto&&) {
@@ -1254,13 +1295,18 @@ namespace winrt::TerminalApp::implementation
             });
             splitTabMenuItem.Text(RS_(L"SplitTabText"));
             splitTabMenuItem.Icon(splitTabSymbol);
+
+            const auto splitTabToolTip = RS_(L"SplitTabToolTip");
+
+            WUX::Controls::ToolTipService::SetToolTip(splitTabMenuItem, box_value(splitTabToolTip));
+            Automation::AutomationProperties::SetHelpText(splitTabMenuItem, splitTabToolTip);
         }
 
         Controls::MenuFlyoutItem exportTabMenuItem;
         {
-            // "Split Tab"
+            // "Export Tab"
             Controls::FontIcon exportTabSymbol;
-            exportTabSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+            exportTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             exportTabSymbol.Glyph(L"\xE74E"); // Save
 
             exportTabMenuItem.Click([weakThis](auto&&, auto&&) {
@@ -1271,6 +1317,33 @@ namespace winrt::TerminalApp::implementation
             });
             exportTabMenuItem.Text(RS_(L"ExportTabText"));
             exportTabMenuItem.Icon(exportTabSymbol);
+
+            const auto exportTabToolTip = RS_(L"ExportTabToolTip");
+
+            WUX::Controls::ToolTipService::SetToolTip(exportTabMenuItem, box_value(exportTabToolTip));
+            Automation::AutomationProperties::SetHelpText(exportTabMenuItem, exportTabToolTip);
+        }
+
+        Controls::MenuFlyoutItem findMenuItem;
+        {
+            // "Find"
+            Controls::FontIcon findSymbol;
+            findSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
+            findSymbol.Glyph(L"\xF78B"); // SearchMedium
+
+            findMenuItem.Click([weakThis](auto&&, auto&&) {
+                if (auto tab{ weakThis.get() })
+                {
+                    tab->_FindRequestedHandlers();
+                }
+            });
+            findMenuItem.Text(RS_(L"FindText"));
+            findMenuItem.Icon(findSymbol);
+
+            const auto findToolTip = RS_(L"FindToolTip");
+
+            WUX::Controls::ToolTipService::SetToolTip(findMenuItem, box_value(findToolTip));
+            Automation::AutomationProperties::SetHelpText(findMenuItem, findToolTip);
         }
 
         // Build the menu
@@ -1281,6 +1354,7 @@ namespace winrt::TerminalApp::implementation
         contextMenuFlyout.Items().Append(duplicateTabMenuItem);
         contextMenuFlyout.Items().Append(splitTabMenuItem);
         contextMenuFlyout.Items().Append(exportTabMenuItem);
+        contextMenuFlyout.Items().Append(findMenuItem);
         contextMenuFlyout.Items().Append(menuSeparator);
 
         // GH#5750 - When the context menu is dismissed with ESC, toss the focus
@@ -1291,7 +1365,7 @@ namespace winrt::TerminalApp::implementation
                 // GH#10112 - if we're opening the tab renamer, don't
                 // immediately toss focus to the control. We don't want to steal
                 // focus from the tab renamer.
-                if (!tab->_headerControl.InRename())
+                if (!tab->_headerControl.InRename() && !tab->GetActiveTerminalControl().SearchBoxEditInFocus())
                 {
                     tab->_RequestFocusActiveControlHandlers();
                 }
@@ -1325,7 +1399,7 @@ namespace winrt::TerminalApp::implementation
         // -------------------- | --          | --
         // Runtime Color        | _optional_  | Color Picker / `setTabColor` action
         // Control Tab Color    | _optional_  | Profile's `tabColor`, or a color set by VT
-        // Theme Tab Background | _optional_  | `tab.backgroundColor` in the theme
+        // Theme Tab Background | _optional_  | `tab.backgroundColor` in the theme (handled in _RecalculateAndApplyTabColor)
         // Tab Default Color    | **default** | TabView in XAML
         //
         // coalesce will get us the first of these values that's
@@ -1334,7 +1408,6 @@ namespace winrt::TerminalApp::implementation
 
         return til::coalesce(_runtimeTabColor,
                              controlTabColor,
-                             _themeTabColor,
                              std::optional<Windows::UI::Color>(std::nullopt));
     }
 
@@ -1353,108 +1426,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - This function dispatches a function to the UI thread to recalculate
-    //   what this tab's current background color should be. If a color is set,
-    //   it will apply the given color to the tab's background. Otherwise, it
-    //   will clear the tab's background color.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TerminalTab::_RecalculateAndApplyTabColor()
-    {
-        auto weakThis{ get_weak() };
-
-        TabViewItem().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis]() {
-            auto ptrTab = weakThis.get();
-            if (!ptrTab)
-                return;
-
-            auto tab{ ptrTab };
-
-            std::optional<winrt::Windows::UI::Color> currentColor = tab->GetTabColor();
-            if (currentColor.has_value())
-            {
-                tab->_ApplyTabColor(currentColor.value());
-            }
-            else
-            {
-                tab->_ClearTabBackgroundColor();
-            }
-        });
-    }
-
-    // Method Description:
-    // - Applies the given color to the background of this tab's TabViewItem.
-    // - Sets the tab foreground color depending on the luminance of
-    // the background color
-    // - This method should only be called on the UI thread.
-    // Arguments:
-    // - color: the color the user picked for their tab
-    // Return Value:
-    // - <none>
-    void TerminalTab::_ApplyTabColor(const winrt::Windows::UI::Color& color)
-    {
-        Media::SolidColorBrush selectedTabBrush{};
-        Media::SolidColorBrush deselectedTabBrush{};
-        Media::SolidColorBrush fontBrush{};
-        Media::SolidColorBrush hoverTabBrush{};
-        // calculate the luminance of the current color and select a font
-        // color based on that
-        // see https://www.w3.org/TR/WCAG20/#relativeluminancedef
-        if (TerminalApp::ColorHelper::IsBrightColor(color))
-        {
-            fontBrush.Color(winrt::Windows::UI::Colors::Black());
-        }
-        else
-        {
-            fontBrush.Color(winrt::Windows::UI::Colors::White());
-        }
-
-        hoverTabBrush.Color(TerminalApp::ColorHelper::GetAccentColor(color));
-        selectedTabBrush.Color(color);
-
-        // currently if a tab has a custom color, a deselected state is
-        // signified by using the same color with a bit ot transparency
-        auto deselectedTabColor = color;
-        deselectedTabColor.A = 64;
-        deselectedTabBrush.Color(deselectedTabColor);
-
-        // currently if a tab has a custom color, a deselected state is
-        // signified by using the same color with a bit of transparency
-        //
-        // Prior to MUX 2.7, we set TabViewItemHeaderBackground, but now we can
-        // use TabViewItem().Background() for that. HOWEVER,
-        // TabViewItem().Background() only sets the color of the tab background
-        // when the TabViewItem is unselected. So we still need to set the other
-        // properties ourselves.
-        //
-        // In GH#11294 we thought we'd still need to set
-        // TabViewItemHeaderBackground manually, but GH#11382 discovered that
-        // Background() was actually okay after all.
-        TabViewItem().Background(deselectedTabBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
-
-        // TabViewItem().Foreground() unfortunately does not work for us. It
-        // sets the color for the text when the TabViewItem isn't selected, but
-        // not when it is hovered, pressed, dragged, or selected, so we'll need
-        // to just set them all anyways.
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForeground"), fontBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundSelected"), fontBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPointerOver"), fontBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPressed"), fontBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewButtonForegroundActiveTab"), fontBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewButtonForegroundPressed"), fontBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewButtonForegroundPointerOver"), fontBrush);
-
-        _RefreshVisualState();
-
-        _ColorSelectedHandlers(color);
-    }
-
-    // Method Description:
     // - Clear the custom runtime color of the tab, if any color is set. This
     //   will re-apply whatever the tab's base color should be (either the color
     //   from the control, the theme, or the default tab color.)
@@ -1468,76 +1439,26 @@ namespace winrt::TerminalApp::implementation
         _RecalculateAndApplyTabColor();
     }
 
-    // Method Description:
-    // - Clear out any color we've set for the TabViewItem.
-    // - This method should only be called on the UI thread.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TerminalTab::_ClearTabBackgroundColor()
+    winrt::Windows::UI::Xaml::Media::Brush TerminalTab::_BackgroundBrush()
     {
-        winrt::hstring keys[] = {
-            L"TabViewItemHeaderBackground",
-            L"TabViewItemHeaderBackgroundSelected",
-            L"TabViewItemHeaderBackgroundPointerOver",
-            L"TabViewItemHeaderForeground",
-            L"TabViewItemHeaderForegroundSelected",
-            L"TabViewItemHeaderForegroundPointerOver",
-            L"TabViewItemHeaderBackgroundPressed",
-            L"TabViewItemHeaderForegroundPressed",
-            L"TabViewButtonForegroundActiveTab"
-        };
-
-        // simply clear any of the colors in the tab's dict
-        for (auto keyString : keys)
+        Media::Brush terminalBrush{ nullptr };
+        if (const auto& c{ GetActiveTerminalControl() })
         {
-            auto key = winrt::box_value(keyString);
-            if (TabViewItem().Resources().HasKey(key))
-            {
-                TabViewItem().Resources().Remove(key);
-            }
+            terminalBrush = c.BackgroundBrush();
         }
-
-        // GH#11382 DON'T set the background to null. If you do that, then the
-        // tab won't be hit testable at all. Transparent, however, is a totally
-        // valid hit test target. That makes sense.
-        TabViewItem().Background(WUX::Media::SolidColorBrush{ Windows::UI::Colors::Transparent() });
-
-        _RefreshVisualState();
-        _ColorClearedHandlers();
+        return terminalBrush;
     }
 
     // Method Description:
-    // - Display the tab color picker at the location of the TabViewItem for this tab.
+    // - Send an event to request for the color picker
+    // - The listener should attach the color picker via AttachColorPicker()
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalTab::ActivateColorPicker()
+    void TerminalTab::RequestColorPicker()
     {
-        _tabColorPickup.ShowAt(TabViewItem());
-    }
-
-    // Method Description:
-    // Toggles the visual state of the tab view item,
-    // so that changes to the tab color are reflected immediately
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TerminalTab::_RefreshVisualState()
-    {
-        if (TabViewItem().IsSelected())
-        {
-            VisualStateManager::GoToState(TabViewItem(), L"Normal", true);
-            VisualStateManager::GoToState(TabViewItem(), L"Selected", true);
-        }
-        else
-        {
-            VisualStateManager::GoToState(TabViewItem(), L"Selected", true);
-            VisualStateManager::GoToState(TabViewItem(), L"Normal", true);
-        }
+        _ColorPickerRequestedHandlers();
     }
 
     // - Get the total number of leaf panes in this tab. This will be the number

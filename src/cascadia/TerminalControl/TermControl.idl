@@ -14,13 +14,17 @@ namespace Microsoft.Terminal.Control
     [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl,
                                                    IDirectKeyListener,
                                                    IMouseWheelListener,
-                                                   ICoreState
+                                                   ICoreState,
+                                                   Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         TermControl(IControlSettings settings,
                     IControlAppearance unfocusedAppearance,
                     Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
-        static Windows.Foundation.Size GetProposedDimensions(IControlSettings settings, UInt32 dpi);
+        static Windows.Foundation.Size GetProposedDimensions(IControlSettings settings,
+                                                             UInt32 dpi,
+                                                             Int32 commandlineCols,
+                                                             Int32 commandlineRows);
 
         void UpdateControlSettings(IControlSettings settings);
         void UpdateControlSettings(IControlSettings settings, IControlAppearance unfocusedAppearance);
@@ -46,21 +50,33 @@ namespace Microsoft.Terminal.Control
         // We expose this and ConnectionState here so that it might eventually be data bound.
         event Windows.Foundation.TypedEventHandler<Object, IInspectable> ConnectionStateChanged;
 
+        event Windows.Foundation.TypedEventHandler<Object, ShowWindowArgs> ShowWindowChanged;
+
+        event Windows.Foundation.TypedEventHandler<Object, Object> CloseTerminalRequested;
+
         Boolean CopySelectionToClipboard(Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
         void PasteTextFromClipboard();
+        void SelectAll();
+        Boolean ToggleBlockSelection();
+        void ToggleMarkMode();
+        Boolean SwitchSelectionEndpoint();
+        Boolean ExpandSelectionToWord();
         void ClearBuffer(ClearBufferType clearType);
         void Close();
         Windows.Foundation.Size CharacterDimensions { get; };
         Windows.Foundation.Size MinimumSize { get; };
         Single SnapDimensionToGrid(Boolean widthOrHeight, Single dimension);
 
+        void WindowVisibilityChanged(Boolean showOrHide);
+
         void ScrollViewport(Int32 viewTop);
 
         void CreateSearchBoxControl();
+        Boolean SearchBoxEditInFocus();
 
         void SearchMatch(Boolean goForward);
 
-        void AdjustFontSize(Int32 fontSizeDelta);
+        void AdjustFontSize(Single fontSizeDelta);
         void ResetFontSize();
 
         void ToggleShaderEffects();
@@ -73,7 +89,7 @@ namespace Microsoft.Terminal.Control
 
         String ReadEntireBuffer();
 
-        void AdjustOpacity(Int32 Opacity, Boolean relative);
+        void AdjustOpacity(Double Opacity, Boolean relative);
 
         // You'd think this should just be "Opacity", but UIElement already
         // defines an "Opacity", which we're actually not setting at all. We're
@@ -81,5 +97,8 @@ namespace Microsoft.Terminal.Control
         // opacity set by the settings should call this instead.
         Double BackgroundOpacity { get; };
 
+        Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
+
+        void ColorSelection(SelectionColor fg, SelectionColor bg, Microsoft.Terminal.Core.MatchMode matchMode);
     }
 }

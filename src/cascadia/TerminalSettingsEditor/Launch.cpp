@@ -4,9 +4,11 @@
 #include "pch.h"
 #include "Launch.h"
 #include "Launch.g.cpp"
-#include "LaunchPageNavigationState.g.cpp"
 #include "EnumEntry.h"
 
+#include <LibraryResources.h>
+
+using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Navigation;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
@@ -17,15 +19,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         InitializeComponent();
 
-        INITIALIZE_BINDABLE_ENUM_SETTING(FirstWindowPreference, FirstWindowPreference, FirstWindowPreference, L"Globals_FirstWindowPreference", L"Content");
-        INITIALIZE_BINDABLE_ENUM_SETTING(LaunchMode, LaunchMode, LaunchMode, L"Globals_LaunchMode", L"Content");
-        // More options were added to the JSON mapper when the enum was made into [Flags]
-        // but we want to preserve the previous set of options in the UI.
-        _LaunchModeList.RemoveAt(7); // maximizedFullscreenFocus
-        _LaunchModeList.RemoveAt(6); // fullscreenFocus
-        _LaunchModeList.RemoveAt(3); // maximizedFullscreen
-        INITIALIZE_BINDABLE_ENUM_SETTING(WindowingBehavior, WindowingMode, WindowingMode, L"Globals_WindowingBehavior", L"Content");
-
         // BODGY
         // Xaml code generator for x:Bind to this will fail to find UnloadObject() on Launch class.
         // To work around, check it ourselves on construction and FindName to force load.
@@ -34,48 +27,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             FindName(L"DefaultTerminalDropdown");
         }
+
+        Automation::AutomationProperties::SetName(LaunchModeComboBox(), RS_(L"Globals_LaunchModeSetting/Text"));
+        Automation::AutomationProperties::SetHelpText(LaunchModeComboBox(), RS_(L"Globals_LaunchModeSetting/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        Automation::AutomationProperties::SetHelpText(PosXBox(), RS_(L"Globals_InitialPosXBox/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        Automation::AutomationProperties::SetHelpText(PosYBox(), RS_(L"Globals_InitialPosYBox/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        Automation::AutomationProperties::SetHelpText(UseDefaultLaunchPositionCheckbox(), RS_(L"Globals_DefaultLaunchPositionCheckbox/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        Automation::AutomationProperties::SetName(CenterOnLaunchToggle(), RS_(L"Globals_CenterOnLaunch/Text"));
+        Automation::AutomationProperties::SetHelpText(CenterOnLaunchToggle(), RS_(L"Globals_CenterOnLaunch/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
     }
 
     void Launch::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _State = e.Parameter().as<Editor::LaunchPageNavigationState>();
-    }
-
-    IInspectable Launch::CurrentDefaultProfile()
-    {
-        const auto defaultProfileGuid{ _State.Settings().GlobalSettings().DefaultProfile() };
-        return winrt::box_value(_State.Settings().FindProfile(defaultProfileGuid));
-    }
-
-    void Launch::CurrentDefaultProfile(const IInspectable& value)
-    {
-        const auto profile{ winrt::unbox_value<Model::Profile>(value) };
-        _State.Settings().GlobalSettings().DefaultProfile(profile.Guid());
-    }
-
-    winrt::Windows::Foundation::Collections::IObservableVector<IInspectable> Launch::DefaultProfiles() const
-    {
-        const auto allProfiles = _State.Settings().AllProfiles();
-
-        std::vector<IInspectable> profiles;
-        profiles.reserve(allProfiles.Size());
-
-        // Remove profiles from the selection which have been explicitly deleted.
-        // We do want to show hidden profiles though, as they are just hidden
-        // from menus, but still work as the startup profile for instance.
-        for (const auto& profile : allProfiles)
-        {
-            if (!profile.Deleted())
-            {
-                profiles.emplace_back(profile);
-            }
-        }
-
-        return winrt::single_threaded_observable_vector(std::move(profiles));
-    }
-
-    bool Launch::ShowFirstWindowPreference() const noexcept
-    {
-        return Feature_PersistedWindowLayout::IsEnabled();
+        _ViewModel = e.Parameter().as<Editor::LaunchViewModel>();
     }
 }

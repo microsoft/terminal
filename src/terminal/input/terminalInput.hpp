@@ -34,12 +34,15 @@ namespace Microsoft::Console::VirtualTerminal
         ~TerminalInput() = default;
 
         bool HandleKey(const IInputEvent* const pInEvent);
+        bool HandleFocus(const bool focused) noexcept;
 
         enum class Mode : size_t
         {
             Ansi,
+            AutoRepeat,
             Keypad,
             CursorKey,
+            BackarrowKey,
             Win32,
 
             Utf8MouseEncoding,
@@ -49,11 +52,14 @@ namespace Microsoft::Console::VirtualTerminal
             ButtonEventMouseTracking,
             AnyEventMouseTracking,
 
+            FocusEvent,
+
             AlternateScroll
         };
 
         void SetInputMode(const Mode mode, const bool enabled) noexcept;
         bool GetInputMode(const Mode mode) const noexcept;
+        void ResetInputModes() noexcept;
         void ForceDisableWin32InputMode(const bool win32InputMode) noexcept;
 
 #pragma region MouseInput
@@ -66,13 +72,14 @@ namespace Microsoft::Console::VirtualTerminal
             bool isRightButtonDown;
         };
 
-        bool HandleMouse(const COORD position,
+        bool HandleMouse(const til::point position,
                          const unsigned int button,
                          const short modifierKeyState,
                          const short delta,
                          const MouseButtonState state);
 
         bool IsTrackingMouseInput() const noexcept;
+        bool ShouldSendAlternateScroll(const unsigned int button, const short delta) const noexcept;
 #pragma endregion
 
 #pragma region MouseInputState Management
@@ -87,7 +94,9 @@ namespace Microsoft::Console::VirtualTerminal
         // storage location for the leading surrogate of a utf-16 surrogate pair
         std::optional<wchar_t> _leadingSurrogate;
 
-        til::enumset<Mode> _inputMode{ Mode::Ansi };
+        std::optional<WORD> _lastVirtualKeyCode;
+
+        til::enumset<Mode> _inputMode{ Mode::Ansi, Mode::AutoRepeat };
         bool _forceDisableWin32InputMode{ false };
 
         void _SendChar(const wchar_t ch);
@@ -101,7 +110,7 @@ namespace Microsoft::Console::VirtualTerminal
         struct MouseInputState
         {
             bool inAlternateBuffer{ false };
-            COORD lastPos{ -1, -1 };
+            til::point lastPos{ -1, -1 };
             unsigned int lastButton{ 0 };
             int accumulatedDelta{ 0 };
         };
@@ -110,24 +119,23 @@ namespace Microsoft::Console::VirtualTerminal
 #pragma endregion
 
 #pragma region MouseInput
-        static std::wstring _GenerateDefaultSequence(const COORD position,
+        static std::wstring _GenerateDefaultSequence(const til::point position,
                                                      const unsigned int button,
                                                      const bool isHover,
                                                      const short modifierKeyState,
                                                      const short delta);
-        static std::wstring _GenerateUtf8Sequence(const COORD position,
+        static std::wstring _GenerateUtf8Sequence(const til::point position,
                                                   const unsigned int button,
                                                   const bool isHover,
                                                   const short modifierKeyState,
                                                   const short delta);
-        static std::wstring _GenerateSGRSequence(const COORD position,
+        static std::wstring _GenerateSGRSequence(const til::point position,
                                                  const unsigned int button,
                                                  const bool isDown,
                                                  const bool isHover,
                                                  const short modifierKeyState,
                                                  const short delta);
 
-        bool _ShouldSendAlternateScroll(const unsigned int button, const short delta) const noexcept;
         bool _SendAlternateScroll(const short delta) const noexcept;
 
         static constexpr unsigned int s_GetPressedButton(const MouseButtonState state) noexcept;

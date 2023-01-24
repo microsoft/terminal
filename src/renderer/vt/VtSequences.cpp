@@ -81,7 +81,7 @@ using namespace Microsoft::Console::Render;
 // - chars: a number of characters to erase (by overwriting with space)
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_EraseCharacter(const short chars) noexcept
+[[nodiscard]] HRESULT VtEngine::_EraseCharacter(const til::CoordType chars) noexcept
 {
     return _WriteFormatted(FMT_COMPILE("\x1b[{}X"), chars);
 }
@@ -92,7 +92,7 @@ using namespace Microsoft::Console::Render;
 // - chars: a number of characters to move cursor right by.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_CursorForward(const short chars) noexcept
+[[nodiscard]] HRESULT VtEngine::_CursorForward(const til::CoordType chars) noexcept
 {
     return _WriteFormatted(FMT_COMPILE("\x1b[{}C"), chars);
 }
@@ -122,7 +122,7 @@ using namespace Microsoft::Console::Render;
 // - fInsertLine: true iff we should insert the lines, false to delete them.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_InsertDeleteLine(const short sLines, const bool fInsertLine) noexcept
+[[nodiscard]] HRESULT VtEngine::_InsertDeleteLine(const til::CoordType sLines, const bool fInsertLine) noexcept
 {
     if (sLines <= 0)
     {
@@ -143,7 +143,7 @@ using namespace Microsoft::Console::Render;
 // - sLines: a number of lines to insert
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_DeleteLine(const short sLines) noexcept
+[[nodiscard]] HRESULT VtEngine::_DeleteLine(const til::CoordType sLines) noexcept
 {
     return _InsertDeleteLine(sLines, false);
 }
@@ -155,7 +155,7 @@ using namespace Microsoft::Console::Render;
 // - sLines: a number of lines to insert
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_InsertLine(const short sLines) noexcept
+[[nodiscard]] HRESULT VtEngine::_InsertLine(const til::CoordType sLines) noexcept
 {
     return _InsertDeleteLine(sLines, true);
 }
@@ -168,14 +168,14 @@ using namespace Microsoft::Console::Render;
 // - coord: Console coordinates to move the cursor to.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_CursorPosition(const COORD coord) noexcept
+[[nodiscard]] HRESULT VtEngine::_CursorPosition(const til::point coord) noexcept
 {
     // VT coords start at 1,1
-    COORD coordVt = coord;
-    coordVt.X++;
-    coordVt.Y++;
+    auto coordVt = coord;
+    coordVt.x++;
+    coordVt.y++;
 
-    return _WriteFormatted(FMT_COMPILE("\x1b[{};{}H"), coordVt.Y, coordVt.X);
+    return _WriteFormatted(FMT_COMPILE("\x1b[{};{}H"), coordVt.y, coordVt.x);
 }
 
 // Method Description:
@@ -216,12 +216,12 @@ using namespace Microsoft::Console::Render;
     // Foreground sequences are in [30,37] U [90,97]
     // Background sequences are in [40,47] U [100,107]
     // The "dark" sequences are in the first 7 values, the bright sequences in the second set.
-    // Note that text brightness and boldness are different in VT. Boldness is
-    //      handled by _SetGraphicsBoldness. Here, we can emit either bright or
+    // Note that text brightness and intensity are different in VT. Intensity is
+    //      handled by _SetIntense. Here, we can emit either bright or
     //      dark colors. For conhost as a terminal, it can't draw bold
-    //      characters, so it displays "bold" as bright, and in fact most
-    //      terminals display the bright color when displaying bolded text.
-    // By specifying the boldness and brightness separately, we'll make sure the
+    //      characters, so it displays "intense" as bright, and in fact most
+    //      terminals display the bright color when displaying intense text.
+    // By specifying the intensity and brightness separately, we'll make sure the
     //      terminal has an accurate representation of our buffer.
     const auto prefix = WI_IsFlagSet(index, FOREGROUND_INTENSITY) ? (fIsForeground ? 90 : 100) : (fIsForeground ? 30 : 40);
     return _WriteFormatted(FMT_COMPILE("\x1b[{}m"), prefix + (index & 7));
@@ -252,15 +252,15 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT VtEngine::_SetGraphicsRenditionRGBColor(const COLORREF color,
                                                               const bool fIsForeground) noexcept
 {
-    const uint8_t r = GetRValue(color);
-    const uint8_t g = GetGValue(color);
-    const uint8_t b = GetBValue(color);
+    const auto r = GetRValue(color);
+    const auto g = GetGValue(color);
+    const auto b = GetBValue(color);
     return _WriteFormatted(FMT_COMPILE("\x1b[{}8;2;{};{};{}m"), fIsForeground ? '3' : '4', r, g, b);
 }
 
 // Method Description:
 // - Formats and writes a sequence to change the current text attributes to the
-//      default foreground or background. Does not affect the boldness of text.
+//      default foreground or background. Does not affect the intensity of text.
 // Arguments:
 // - fIsForeground: true if we should emit the foreground sequence, false for background
 // Return Value:
@@ -277,7 +277,7 @@ using namespace Microsoft::Console::Render;
 // - sHeight: number of rows the terminal should display
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_ResizeWindow(const short sWidth, const short sHeight) noexcept
+[[nodiscard]] HRESULT VtEngine::_ResizeWindow(const til::CoordType sWidth, const til::CoordType sHeight) noexcept
 {
     if (sWidth < 0 || sHeight < 0)
     {
@@ -311,14 +311,14 @@ using namespace Microsoft::Console::Render;
 }
 
 // Method Description:
-// - Formats and writes a sequence to change the boldness of the following text.
+// - Formats and writes a sequence to change the intensity of the following text.
 // Arguments:
-// - isBold: If true, we'll embolden the text. Otherwise we'll debolden the text.
+// - isIntense: If true, we'll make the text intense. Otherwise we'll remove the intensity.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_SetBold(const bool isBold) noexcept
+[[nodiscard]] HRESULT VtEngine::_SetIntense(const bool isIntense) noexcept
 {
-    return _Write(isBold ? "\x1b[1m" : "\x1b[22m");
+    return _Write(isIntense ? "\x1b[1m" : "\x1b[22m");
 }
 
 // Method Description:
@@ -432,6 +432,22 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT VtEngine::_RequestWin32Input() noexcept
 {
     return _Write("\x1b[?9001h");
+}
+
+[[nodiscard]] HRESULT VtEngine::_RequestFocusEventMode() noexcept
+{
+    return _Write("\x1b[?1004h");
+}
+
+// Method Description:
+// - Send a sequence to the connected terminal to switch to the alternate or main screen buffer.
+// Arguments:
+// - useAltBuffer: if true, switch to the alt buffer, otherwise to the main buffer.
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_SwitchScreenBuffer(const bool useAltBuffer) noexcept
+{
+    return _Write(useAltBuffer ? "\x1b[?1049h" : "\x1b[?1049l");
 }
 
 // Method Description:

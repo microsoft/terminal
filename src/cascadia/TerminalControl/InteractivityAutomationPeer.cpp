@@ -32,16 +32,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     InteractivityAutomationPeer::InteractivityAutomationPeer(Control::implementation::ControlInteractivity* owner) :
         _interactivity{ owner }
     {
-        THROW_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<::Microsoft::Terminal::TermControlUiaProvider>(&_uiaProvider, _interactivity->GetUiaData(), this));
+        THROW_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<::Microsoft::Terminal::TermControlUiaProvider>(&_uiaProvider, _interactivity->GetRenderData(), this));
     };
 
     void InteractivityAutomationPeer::SetControlBounds(const Windows::Foundation::Rect bounds)
     {
-        _controlBounds = til::rectangle{ til::math::rounding, bounds };
+        _controlBounds = til::rect{ til::math::rounding, bounds };
     }
     void InteractivityAutomationPeer::SetControlPadding(const Core::Padding padding)
     {
-        _controlPadding = padding;
+        _controlPadding = til::rect{ til::math::rounding, padding };
     }
     void InteractivityAutomationPeer::ParentProvider(AutomationPeer parentProvider)
     {
@@ -93,6 +93,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _CursorChangedHandlers(*this, nullptr);
     }
 
+    void InteractivityAutomationPeer::NotifyNewOutput(std::wstring_view newOutput)
+    {
+        _NewOutputHandlers(*this, hstring{ newOutput });
+    }
+
 #pragma region ITextProvider
     com_array<XamlAutomation::ITextRangeProvider> InteractivityAutomationPeer::GetSelection()
     {
@@ -141,12 +146,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 #pragma endregion
 
 #pragma region IControlAccessibilityInfo
-    COORD InteractivityAutomationPeer::GetFontSize() const noexcept
+    til::size InteractivityAutomationPeer::GetFontSize() const noexcept
     {
-        return til::size{ til::math::rounding, _interactivity->Core().FontSize() };
+        return { til::math::rounding, _interactivity->Core().FontSize() };
     }
 
-    RECT InteractivityAutomationPeer::GetBounds() const noexcept
+    til::rect InteractivityAutomationPeer::GetBounds() const noexcept
     {
         return _controlBounds;
     }
@@ -159,7 +164,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return S_OK;
     }
 
-    RECT InteractivityAutomationPeer::GetPadding() const noexcept
+    til::rect InteractivityAutomationPeer::GetPadding() const noexcept
     {
         return _controlPadding;
     }
@@ -169,9 +174,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
     }
 
-    void InteractivityAutomationPeer::ChangeViewport(const SMALL_RECT NewWindow)
+    void InteractivityAutomationPeer::ChangeViewport(const til::inclusive_rect& NewWindow)
     {
-        _interactivity->UpdateScrollbar(NewWindow.Top);
+        _interactivity->UpdateScrollbar(NewWindow.top);
     }
 #pragma endregion
 
@@ -199,11 +204,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         // transfer ownership of UiaTextRanges to this new vector
         auto providers = SafeArrayToOwningVector<::Microsoft::Terminal::TermControlUiaTextRange>(textRanges);
-        int count = gsl::narrow<int>(providers.size());
+        auto count = gsl::narrow<int>(providers.size());
 
         std::vector<XamlAutomation::ITextRangeProvider> vec;
         vec.reserve(count);
-        for (int i = 0; i < count; i++)
+        for (auto i = 0; i < count; i++)
         {
             if (auto xutr = _CreateXamlUiaTextRange(providers[i].detach()))
             {

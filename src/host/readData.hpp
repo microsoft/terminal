@@ -24,6 +24,8 @@ Revision History:
 #include "../server/IWaitRoutine.h"
 #include "../server/WaitTerminationReason.h"
 
+class InputBuffer;
+
 class ReadData : public IWaitRoutine
 {
 public:

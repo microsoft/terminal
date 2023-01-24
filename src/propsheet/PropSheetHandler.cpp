@@ -39,7 +39,7 @@ public:
     STDMETHODIMP Initialize(_In_ PCIDLIST_ABSOLUTE /*pidlFolder*/, _In_ IDataObject* pdtobj, _In_ HKEY /*hkeyProgID*/)
     {
         WCHAR szLinkFileName[MAX_PATH];
-        HRESULT hr = _ShouldAddPropertySheet(pdtobj, szLinkFileName, ARRAYSIZE(szLinkFileName));
+        auto hr = _ShouldAddPropertySheet(pdtobj, szLinkFileName, ARRAYSIZE(szLinkFileName));
         if (SUCCEEDED(hr))
         {
             hr = InitializeConsoleState() ? S_OK : E_FAIL;
@@ -56,12 +56,12 @@ public:
     STDMETHODIMP AddPages(_In_ LPFNADDPROPSHEETPAGE pfnAddPage, _In_ LPARAM lParam)
     {
         PROPSHEETPAGE psp[NUMBER_OF_PAGES] = {};
-        HRESULT hr = PopulatePropSheetPageArray(psp, ARRAYSIZE(psp), TRUE /*fRegisterCallbacks*/) ? S_OK : E_FAIL;
+        auto hr = PopulatePropSheetPageArray(psp, ARRAYSIZE(psp), TRUE /*fRegisterCallbacks*/) ? S_OK : E_FAIL;
         if (SUCCEEDED(hr))
         {
             for (UINT ipsp = 0; ipsp < ARRAYSIZE(psp) && SUCCEEDED(hr); ipsp++)
             {
-                HPROPSHEETPAGE hPage = CreatePropertySheetPage(&psp[ipsp]);
+                auto hPage = CreatePropertySheetPage(&psp[ipsp]);
                 hr = (hPage == nullptr) ? E_FAIL : S_OK;
                 if (SUCCEEDED(hr))
                 {
@@ -98,7 +98,7 @@ private:
         GetRegistryValues(gpStateInfo);
 
         PWSTR pszAllocatedFileName;
-        HRESULT hr = SHStrDup(pszLinkFileName, &pszAllocatedFileName);
+        auto hr = SHStrDup(pszLinkFileName, &pszAllocatedFileName);
         if (SUCCEEDED(hr))
         {
             hr = StringCchCopyW(pszAllocatedFileName, MAX_PATH, pszLinkFileName);
@@ -110,8 +110,8 @@ private:
 
                 // Not all console shortcuts have console-specific properties. We just take the registry defaults in
                 // those cases.
-                BOOL readSettings = FALSE;
-                NTSTATUS s = ShortcutSerialization::s_GetLinkValues(gpStateInfo, &readSettings, nullptr, 0, nullptr, 0, nullptr, 0, nullptr, nullptr, nullptr);
+                auto readSettings = FALSE;
+                auto s = ShortcutSerialization::s_GetLinkValues(gpStateInfo, &readSettings, nullptr, 0, nullptr, 0, nullptr, 0, nullptr, nullptr, nullptr);
                 hr = HRESULT_FROM_NT(s);
             }
             else
@@ -137,7 +137,7 @@ private:
         *ppidl = nullptr;
 
         IShellLink* psl;
-        HRESULT hr = psiLink->BindToHandler(nullptr, BHID_SFUIObject, IID_PPV_ARGS(&psl));
+        auto hr = psiLink->BindToHandler(nullptr, BHID_SFUIObject, IID_PPV_ARGS(&psl));
         if (SUCCEEDED(hr))
         {
             hr = psl->GetIDList(ppidl);
@@ -154,7 +154,7 @@ private:
         *ppv = nullptr;
 
         PIDLIST_ABSOLUTE pidl;
-        HRESULT hr = GetTargetIdList(psiLink, &pidl);
+        auto hr = GetTargetIdList(psiLink, &pidl);
         if (SUCCEEDED(hr))
         {
             hr = SHCreateItemFromIDList(pidl, riid, ppv);
@@ -169,7 +169,7 @@ private:
                                             const size_t cchFilePathExtended)
     {
         ComPtr<IShellItem> shellItemLinkTarget;
-        HRESULT hr = GetTargetItem(pShellItem, IID_PPV_ARGS(&shellItemLinkTarget));
+        auto hr = GetTargetItem(pShellItem, IID_PPV_ARGS(&shellItemLinkTarget));
         if (SUCCEEDED(hr))
         {
             wil::unique_cotaskmem_string linkTargetPath;
@@ -188,7 +188,7 @@ private:
                                     const size_t cchLinkFileName)
     {
         ComPtr<IShellItemArray> shellItemArray;
-        HRESULT hr = SHCreateShellItemArrayFromDataObject(pdtobj, IID_PPV_ARGS(&shellItemArray));
+        auto hr = SHCreateShellItemArrayFromDataObject(pdtobj, IID_PPV_ARGS(&shellItemArray));
         if (SUCCEEDED(hr))
         {
             DWORD dwItemCount;
@@ -212,11 +212,11 @@ private:
                             // if it's an executable
                             SHFILEINFO sfi = { 0 };
 
-                            DWORD_PTR dwFileType = SHGetFileInfo(szFileExpanded,
-                                                                 0 /*dwFileAttributes*/,
-                                                                 &sfi,
-                                                                 sizeof(sfi),
-                                                                 SHGFI_EXETYPE);
+                            auto dwFileType = SHGetFileInfo(szFileExpanded,
+                                                            0 /*dwFileAttributes*/,
+                                                            &sfi,
+                                                            sizeof(sfi),
+                                                            SHGFI_EXETYPE);
                             if (HIWORD(dwFileType) == 0 &&
                                 LOWORD(dwFileType) == PEMAGIC)
                             {

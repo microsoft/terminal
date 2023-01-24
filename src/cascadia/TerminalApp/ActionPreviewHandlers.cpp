@@ -35,18 +35,18 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Stop previewing the currently previewed action. We can use this to
     //   clean up any state from that action's preview.
-    // - We use _lastPreviewedCommand to determine what type of action to clean up.
+    // - We use _lastPreviewedAction to determine what type of action to clean up.
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
     void TerminalPage::_EndPreview()
     {
-        if (_lastPreviewedCommand == nullptr || _lastPreviewedCommand.ActionAndArgs() == nullptr)
+        if (_lastPreviewedAction == nullptr)
         {
             return;
         }
-        switch (_lastPreviewedCommand.ActionAndArgs().Action())
+        switch (_lastPreviewedAction.Action())
         {
         case ShortcutAction::SetColorScheme:
         case ShortcutAction::AdjustOpacity:
@@ -55,7 +55,7 @@ namespace winrt::TerminalApp::implementation
             break;
         }
         }
-        _lastPreviewedCommand = nullptr;
+        _lastPreviewedAction = nullptr;
     }
 
     // Method Description:
@@ -70,12 +70,14 @@ namespace winrt::TerminalApp::implementation
         // Apply the reverts in reverse order - If we had multiple previews
         // stacked on top of each other, then this will ensure the first one in
         // is the last one out.
-        for (auto i{ _restorePreviewFuncs.rbegin() }; i < _restorePreviewFuncs.rend(); i++)
+        const auto cleanup = wil::scope_exit([this]() {
+            _restorePreviewFuncs.clear();
+        });
+
+        for (const auto& f : _restorePreviewFuncs)
         {
-            auto f = *i;
             f();
         }
-        _restorePreviewFuncs.clear();
     }
 
     // Method Description:
@@ -94,6 +96,8 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& scheme{ _settings.GlobalSettings().ColorSchemes().TryLookup(args.SchemeName()) })
         {
+            const auto backup = _restorePreviewFuncs.empty();
+
             _ApplyToActiveControls([&](const auto& control) {
                 // Stash a copy of the current scheme.
                 auto originalScheme{ control.ColorScheme() };
@@ -101,35 +105,62 @@ namespace winrt::TerminalApp::implementation
                 // Apply the new scheme.
                 control.ColorScheme(scheme.ToCoreScheme());
 
-                // Each control will emplace a revert into the
-                // _restorePreviewFuncs for itself.
-                _restorePreviewFuncs.emplace_back([=]() {
-                    // On dismiss, restore the original scheme.
-                    control.ColorScheme(originalScheme);
-                });
+                if (backup)
+                {
+                    // Each control will emplace a revert into the
+                    // _restorePreviewFuncs for itself.
+                    _restorePreviewFuncs.emplace_back([=]() {
+                        // On dismiss, restore the original scheme.
+                        control.ColorScheme(originalScheme);
+                    });
+                }
             });
         }
     }
 
     void TerminalPage::_PreviewAdjustOpacity(const Settings::Model::AdjustOpacityArgs& args)
     {
-        // Clear the saved preview funcs because we don't need to add a restore each time
-        // the preview changes, we only need to be able to restore the last one.
-        _restorePreviewFuncs.clear();
+        const auto backup = _restorePreviewFuncs.empty();
 
         _ApplyToActiveControls([&](const auto& control) {
             // Stash a copy of the original opacity.
             auto originalOpacity{ control.BackgroundOpacity() };
 
             // Apply the new opacity
-            control.AdjustOpacity(args.Opacity(), args.Relative());
+            control.AdjustOpacity(args.Opacity() / 100.0, args.Relative());
 
-            _restorePreviewFuncs.emplace_back([=]() {
-                // On dismiss:
-                // Don't adjust relatively, just set outright.
-                control.AdjustOpacity(::base::saturated_cast<int>(originalOpacity * 100), false);
-            });
+            if (backup)
+            {
+                _restorePreviewFuncs.emplace_back([=]() {
+                    // On dismiss:
+                    // Don't adjust relatively, just set outright.
+                    control.AdjustOpacity(originalOpacity, false);
+                });
+            }
         });
+    }
+
+    void TerminalPage::_PreviewAction(const Settings::Model::ActionAndArgs& args)
+    {
+        switch (args.Action())
+        {
+        case ShortcutAction::SetColorScheme:
+            _PreviewColorScheme(args.Args().try_as<SetColorSchemeArgs>());
+            break;
+        case ShortcutAction::AdjustOpacity:
+            _PreviewAdjustOpacity(args.Args().try_as<AdjustOpacityArgs>());
+            break;
+        }
+
+        // GH#9818 Other ideas for actions that could be preview-able:
+        // * Set Font size
+        // * Set acrylic true/false/opacity?
+        // * SetPixelShaderPath?
+        // * SetWindowTheme (light/dark/system/<some theme from #3327>)?
+
+        // Stash this action, so we know what to do when we're done
+        // previewing.
+        _lastPreviewedAction = args;
     }
 
     // Method Description:
@@ -156,29 +187,7 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            switch (args.ActionAndArgs().Action())
-            {
-            case ShortcutAction::SetColorScheme:
-            {
-                _PreviewColorScheme(args.ActionAndArgs().Args().try_as<SetColorSchemeArgs>());
-                break;
-            }
-            case ShortcutAction::AdjustOpacity:
-            {
-                _PreviewAdjustOpacity(args.ActionAndArgs().Args().try_as<AdjustOpacityArgs>());
-                break;
-            }
-            }
-
-            // GH#9818 Other ideas for actions that could be preview-able:
-            // * Set Font size
-            // * Set acrylic true/false/opacity?
-            // * SetPixelShaderPath?
-            // * SetWindowTheme (light/dark/system/<some theme from #3327>)?
-
-            // Stash this action, so we know what to do when we're done
-            // previewing.
-            _lastPreviewedCommand = args;
+            _PreviewAction(args.ActionAndArgs());
         }
     }
 }

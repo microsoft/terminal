@@ -24,7 +24,7 @@
 
     <Type Name="Microsoft::Console::Types::Viewport">
         <!-- Can't call functions in here -->
-        <DisplayString>{{LT({_sr.Left}, {_sr.Top}) RB({_sr.Right}, {_sr.Bottom}) [{_sr.Right-_sr.Left+1} x { _sr.Bottom-_sr.Top+1}]}}</DisplayString>
+        <DisplayString>{{LT({_sr.left}, {_sr.top}) RB({_sr.right}, {_sr.bottom}) [{_sr.right-_sr.left+1} x { _sr.bottom-_sr.top+1}]}}</DisplayString>
         <Expand>
             <ExpandedItem>_sr</ExpandedItem>
         </Expand>
@@ -85,7 +85,7 @@
         <DisplayString>{{X: {_x,d}, Y: {_y,d}}}</DisplayString>
     </Type>
 
-    <Type Name="til::rectangle">
+    <Type Name="til::rect">
         <DisplayString>{{L: {_topLeft._x}, T: {_topLeft._y}, R: {_bottomRight._x} B: {_bottomRight._y}   [W: {_bottomRight._x - _topLeft._x} x H: {_bottomRight._y - _topLeft._y} -> A: {(_bottomRight._x - _topLeft._x) * (_bottomRight._y - _topLeft._y)}]}}</DisplayString>
     </Type>
 
@@ -105,13 +105,23 @@
         <DisplayString>{{run of {_it->first,d} for {_it->second,d} at {_usage,d}}}</DisplayString>
     </Type>
 
-    <Type Name="boost::container::small_vector&lt;*&gt;">
+    <Type Name="til::small_vector&lt;*&gt;">
+        <DisplayString>{{ size={_size} }}</DisplayString>
         <Expand>
-            <Item Name="[size]">m_holder.m_size</Item>
+            <Item Name="[capacity]" ExcludeView="simple">_capacity</Item>
+            <Item Name="[size]" ExcludeView="simple">_size</Item>
             <ArrayItems>
-                <Size>m_holder.m_size</Size>
-                <ValuePointer>m_holder.m_start</ValuePointer>
+                <Size>_size</Size>
+                <ValuePointer>_data</ValuePointer>
             </ArrayItems>
+        </Expand>
+    </Type>
+
+    <Type Name="til::small_vector_iterator&lt;*&gt;">
+        <AlternativeType Name="til::small_vector_const_iterator&lt;*&gt;" />
+        <SmartPointer Usage="Indexable">_ptr,na</SmartPointer>
+        <Expand>
+            <Item Name="[ptr]">_ptr</Item>
         </Expand>
     </Type>
 </AutoVisualizer>

@@ -64,6 +64,7 @@ Abstract:
 #include <winrt/Windows.UI.Core.h>
 #include <winrt/Windows.UI.Xaml.Controls.h>
 #include <winrt/Windows.UI.Xaml.Controls.Primitives.h>
+#include <winrt/Windows.UI.Xaml.Data.h>
 #include <winrt/Windows.ui.xaml.media.h>
 #include <winrt/Windows.ApplicationModel.h>
 #include <winrt/Windows.ApplicationModel.Resources.Core.h>
@@ -91,3 +92,4 @@ TRACELOGGING_DECLARE_PROVIDER(g_hWindowsTerminalProvider);
 #include "til.h"
 
 #include <cppwinrt_utils.h>
+#include <wil/cppwinrt_helpers.h> // must go after the CoreDispatcher type is defined

@@ -60,7 +60,7 @@ it could host any arbitrary content.
 
 ### Security
 
-I don't forsee this implementation by itself raising security concerns. This
+I don't foresee this implementation by itself raising security concerns. This
 feature is mostly concerned with adding support for arbitrary controls, not
 actually implementing some arbitrary controls.
 
@@ -77,7 +77,7 @@ is a bigger discussion than the feature at hand, however.
 ### Performance, Power, and Efficiency
 
 decide to host a WebView in a pane, then it surely could impact these measures.
-I don't believe this will have a noticable impact _on its own_. Should the user
+I don't believe this will have a noticeable impact _on its own_. Should the user
 However, I leave that discussion to the implementation of the actual alternative
 pane content itself.
 

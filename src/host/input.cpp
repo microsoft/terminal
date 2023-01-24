@@ -20,13 +20,13 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 
 bool IsInProcessedInputMode()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return (gci.pInputBuffer->InputMode & ENABLE_PROCESSED_INPUT) != 0;
 }
 
 bool IsInVirtualTerminalInputMode()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return WI_IsFlagSet(gci.pInputBuffer->InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT);
 }
 
@@ -44,43 +44,44 @@ BOOL IsSystemKey(const WORD wVirtualKeyCode)
     case VK_NUMLOCK:
     case VK_SCROLL:
         return TRUE;
+    default:
+        return FALSE;
     }
-    return FALSE;
 }
 
 ULONG GetControlKeyState(const LPARAM lParam)
 {
     ULONG ControlKeyState = 0;
 
-    if (ServiceLocator::LocateInputServices()->GetKeyState(VK_LMENU) & KEY_PRESSED)
+    if (OneCoreSafeGetKeyState(VK_LMENU) & KEY_PRESSED)
     {
         ControlKeyState |= LEFT_ALT_PRESSED;
     }
-    if (ServiceLocator::LocateInputServices()->GetKeyState(VK_RMENU) & KEY_PRESSED)
+    if (OneCoreSafeGetKeyState(VK_RMENU) & KEY_PRESSED)
     {
         ControlKeyState |= RIGHT_ALT_PRESSED;
     }
-    if (ServiceLocator::LocateInputServices()->GetKeyState(VK_LCONTROL) & KEY_PRESSED)
+    if (OneCoreSafeGetKeyState(VK_LCONTROL) & KEY_PRESSED)
     {
         ControlKeyState |= LEFT_CTRL_PRESSED;
     }
-    if (ServiceLocator::LocateInputServices()->GetKeyState(VK_RCONTROL) & KEY_PRESSED)
+    if (OneCoreSafeGetKeyState(VK_RCONTROL) & KEY_PRESSED)
     {
         ControlKeyState |= RIGHT_CTRL_PRESSED;
     }
-    if (ServiceLocator::LocateInputServices()->GetKeyState(VK_SHIFT) & KEY_PRESSED)
+    if (OneCoreSafeGetKeyState(VK_SHIFT) & KEY_PRESSED)
     {
         ControlKeyState |= SHIFT_PRESSED;
     }
-    if (ServiceLocator::LocateInputServices()->GetKeyState(VK_NUMLOCK) & KEY_TOGGLED)
+    if (OneCoreSafeGetKeyState(VK_NUMLOCK) & KEY_TOGGLED)
     {
         ControlKeyState |= NUMLOCK_ON;
     }
-    if (ServiceLocator::LocateInputServices()->GetKeyState(VK_SCROLL) & KEY_TOGGLED)
+    if (OneCoreSafeGetKeyState(VK_SCROLL) & KEY_TOGGLED)
     {
         ControlKeyState |= SCROLLLOCK_ON;
     }
-    if (ServiceLocator::LocateInputServices()->GetKeyState(VK_CAPITAL) & KEY_TOGGLED)
+    if (OneCoreSafeGetKeyState(VK_CAPITAL) & KEY_TOGGLED)
     {
         ControlKeyState |= CAPSLOCK_ON;
     }
@@ -98,7 +99,7 @@ ULONG GetControlKeyState(const LPARAM lParam)
 // - returns true if we're in a mode amenable to us taking over keyboard shortcuts
 bool ShouldTakeOverKeyboardShortcuts()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return !gci.GetCtrlKeyShortcutsDisabled() && IsInProcessedInputMode();
 }
 
@@ -106,8 +107,8 @@ bool ShouldTakeOverKeyboardShortcuts()
 // - handles key events without reference to Win32 elements.
 void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, const bool generateBreak)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    bool ContinueProcessing = true;
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto ContinueProcessing = true;
 
     if (keyEvent.IsCtrlPressed() &&
         !keyEvent.IsAltPressed() &&
@@ -190,11 +191,11 @@ void HandleFocusEvent(const BOOL fSetFocus)
     }
 #endif
 
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     try
     {
-        const size_t EventsWritten = gci.pInputBuffer->Write(std::make_unique<FocusEvent>(!!fSetFocus));
+        const auto EventsWritten = gci.pInputBuffer->Write(std::make_unique<FocusEvent>(!!fSetFocus));
         FAIL_FAST_IF(EventsWritten != 1);
     }
     catch (...)
@@ -205,7 +206,7 @@ void HandleFocusEvent(const BOOL fSetFocus)
 
 void HandleMenuEvent(const DWORD wParam)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     size_t EventsWritten = 0;
     try
@@ -224,7 +225,7 @@ void HandleMenuEvent(const DWORD wParam)
 
 void HandleCtrlEvent(const DWORD EventType)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     switch (EventType)
     {
     case CTRL_C_EVENT:
@@ -241,40 +242,54 @@ void HandleCtrlEvent(const DWORD EventType)
     }
 }
 
+static void CALLBACK midiSkipTimerCallback(HWND, UINT, UINT_PTR idEvent, DWORD) noexcept
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& midiAudio = gci.GetMidiAudio();
+
+    KillTimer(nullptr, idEvent);
+    midiAudio.EndSkip();
+}
+
+static void beginMidiSkip() noexcept
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& midiAudio = gci.GetMidiAudio();
+
+    midiAudio.BeginSkip();
+    SetTimer(nullptr, 0, 1000, midiSkipTimerCallback);
+}
+
 void ProcessCtrlEvents()
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (gci.CtrlFlags == 0)
     {
         gci.UnlockConsole();
         return;
     }
 
+    beginMidiSkip();
+
     // Make our own copy of the console process handle list.
-    DWORD const LimitingProcessId = gci.LimitingProcessId;
+    const auto LimitingProcessId = gci.LimitingProcessId;
     gci.LimitingProcessId = 0;
 
-    ConsoleProcessTerminationRecord* rgProcessHandleList;
-    size_t cProcessHandleList;
+    std::vector<ConsoleProcessTerminationRecord> termRecords;
+    const auto hr = gci.ProcessHandleList
+                        .GetTerminationRecordsByGroupId(LimitingProcessId,
+                                                        WI_IsFlagSet(gci.CtrlFlags,
+                                                                     CONSOLE_CTRL_CLOSE_FLAG),
+                                                        termRecords);
 
-    HRESULT hr = gci.ProcessHandleList
-                     .GetTerminationRecordsByGroupId(LimitingProcessId,
-                                                     WI_IsFlagSet(gci.CtrlFlags,
-                                                                  CONSOLE_CTRL_CLOSE_FLAG),
-                                                     &rgProcessHandleList,
-                                                     &cProcessHandleList);
-
-    if (FAILED(hr) || cProcessHandleList == 0)
+    if (FAILED(hr) || termRecords.empty())
     {
         gci.UnlockConsole();
         return;
     }
 
     // Copy ctrl flags.
-    ULONG CtrlFlags = gci.CtrlFlags;
-    FAIL_FAST_IF(!(!((CtrlFlags & (CONSOLE_CTRL_CLOSE_FLAG | CONSOLE_CTRL_BREAK_FLAG | CONSOLE_CTRL_C_FLAG)) && (CtrlFlags & (CONSOLE_CTRL_LOGOFF_FLAG | CONSOLE_CTRL_SHUTDOWN_FLAG)))));
-
-    gci.CtrlFlags = 0;
+    const auto CtrlFlags = std::exchange(gci.CtrlFlags, 0);
 
     gci.UnlockConsole();
 
@@ -287,7 +302,7 @@ void ProcessCtrlEvents()
     //        CONSOLE_CTRL_LOGOFF_FLAG
     //        CONSOLE_CTRL_SHUTDOWN_FLAG
 
-    DWORD EventType = (DWORD)-1;
+    auto EventType = (DWORD)-1;
     switch (CtrlFlags & (CONSOLE_CTRL_CLOSE_FLAG | CONSOLE_CTRL_BREAK_FLAG | CONSOLE_CTRL_C_FLAG | CONSOLE_CTRL_LOGOFF_FLAG | CONSOLE_CTRL_SHUTDOWN_FLAG))
     {
     case CONSOLE_CTRL_CLOSE_FLAG:
@@ -309,10 +324,13 @@ void ProcessCtrlEvents()
     case CONSOLE_CTRL_SHUTDOWN_FLAG:
         EventType = CTRL_SHUTDOWN_EVENT;
         break;
+
+    default:
+        return;
     }
 
-    NTSTATUS Status = STATUS_SUCCESS;
-    for (size_t i = 0; i < cProcessHandleList; i++)
+    auto Status = STATUS_SUCCESS;
+    for (const auto& r : termRecords)
     {
         /*
          * Status will be non-successful if a process attached to this console
@@ -326,20 +344,13 @@ void ProcessCtrlEvents()
         if (NT_SUCCESS(Status))
         {
             Status = ServiceLocator::LocateConsoleControl()
-                         ->EndTask((HANDLE)rgProcessHandleList[i].dwProcessID,
+                         ->EndTask(r.dwProcessID,
                                    EventType,
                                    CtrlFlags);
-            if (rgProcessHandleList[i].hProcess == nullptr)
+            if (!r.hProcess)
             {
                 Status = STATUS_SUCCESS;
             }
         }
-
-        if (rgProcessHandleList[i].hProcess != nullptr)
-        {
-            CloseHandle(rgProcessHandleList[i].hProcess);
-        }
     }
-
-    delete[] rgProcessHandleList;
 }

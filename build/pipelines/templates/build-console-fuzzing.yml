@@ -1,0 +1,90 @@
+parameters:
+  configuration: 'Fuzzing'
+  platform: ''
+  additionalBuildArguments: ''
+
+jobs:
+- job: Build${{ parameters.platform }}${{ parameters.configuration }}
+  displayName: Build ${{ parameters.platform }} ${{ parameters.configuration }}
+  variables:
+    BuildConfiguration: ${{ parameters.configuration }}
+    BuildPlatform: ${{ parameters.platform }}
+  pool:
+    ${{ if eq(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
+      name: WinDevPoolOSS-L
+    ${{ if ne(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
+      name: WinDevPool-L
+    demands: ImageOverride -equals WinDevVS17-latest
+
+  steps:
+  - checkout: self
+    submodules: true
+    clean: true
+
+  - template: restore-nuget-steps.yml
+
+  # The environment variable VCToolsInstallDir isn't defined on lab machines, so we need to retrieve it ourselves.
+  - script: |
+      "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -Latest -requires Microsoft.Component.MSBuild -property InstallationPath > %TEMP%\vsinstalldir.txt
+      set /p _VSINSTALLDIR15=<%TEMP%\vsinstalldir.txt
+      del %TEMP%\vsinstalldir.txt
+      call "%_VSINSTALLDIR15%\Common7\Tools\VsDevCmd.bat"
+      echo VCToolsInstallDir = %VCToolsInstallDir%
+      echo ##vso[task.setvariable variable=VCToolsInstallDir]%VCToolsInstallDir%
+    displayName: 'Retrieve VC tools directory'
+
+  - task: VSBuild@1
+    displayName: 'Build solution **\OpenConsole.sln'
+    inputs:
+      solution: '**\OpenConsole.sln'
+      platform: '$(BuildPlatform)'
+      configuration: '$(BuildConfiguration)'
+      msbuildArgs: "${{ parameters.additionalBuildArguments }}"
+      clean: true
+      maximumCpuCount: true
+
+  - task: PowerShell@2
+    displayName: 'Rationalize build platform'
+    inputs:
+      targetType: inline
+      script: |
+        $Arch = "$(BuildPlatform)"
+        If ($Arch -Eq "x86") { $Arch = "Win32" }
+        Write-Host "##vso[task.setvariable variable=RationalizedBuildPlatform]${Arch}"
+
+  - task: CopyFiles@2
+    displayName: 'Copy result logs to Artifacts'
+    inputs:
+      Contents: |
+       **/*.wtl
+       **/*onBuildMachineResults.xml
+       ${{ parameters.testLogPath }}
+      TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test'
+      OverWrite: true
+      flattenFolders: true
+
+  - task: CopyFiles@2
+    displayName: 'Copy outputs needed for test runs to Artifacts'
+    inputs:
+      Contents: |
+       $(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/*.exe
+       $(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/*.dll
+       $(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/*.xml
+       **/Microsoft.VCLibs.*.appx
+       **/TestHostApp/*.exe
+       **/TestHostApp/*.dll
+       **/TestHostApp/*.xml
+       !**/*.pdb
+       !**/*.ipdb
+       !**/*.obj
+       !**/*.pch
+      TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test'
+      OverWrite: true
+      flattenFolders: true
+    condition: succeeded()
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish All Build Artifacts'
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      ArtifactName: 'fuzzingBuildOutput'

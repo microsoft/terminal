@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
     <!-- this will trigger the use of a project-specific out dir -->
@@ -8,14 +8,12 @@
 
   <Import Project="..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
 
-  <Import Project="$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.210825.3\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.210825.3\build\native\Microsoft.Windows.CppWinRT.props')" />
-
   <PropertyGroup Label="Globals">
     <CppWinRTHeapEnforcement>AnyValueHereWillDisableTheOptOut</CppWinRTHeapEnforcement>
     <CppWinRTEnabled>true</CppWinRTEnabled>
     <CppWinRTOptimized>true</CppWinRTOptimized>
     <DefaultLanguage>en-US</DefaultLanguage>
-    <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
+    <MinimumVisualStudioVersion>17.0</MinimumVisualStudioVersion>
     <ApplicationTypeRevision>10.0</ApplicationTypeRevision>
   </PropertyGroup>
 
@@ -43,17 +41,15 @@
   <!-- This is magic that tells msbuild to link against the Desktop platform
        instead of the App platform. This you definitely want, because we're not
        building a true universal "app", we're building a desktop application
-       with xaml. APIs like CreatePseudoConsole won't always be linkable without Desktop platform,
-       but we now carry our own copy of them in the winconpty library which works everywhere.
-       For future reference, _VC_Target_Library_Platform can be configured to say which CRT to link against.
-       Now that this doesn't say anything, the implicit is 'Store' which links against the App CRT.
-       The alternative is 'Desktop' which links against the usual CRT redistributable.
+       with xaml.
        Linking against the App CRT will require the VCRT forwarders to be dropped next to the final binary for
        desktop situations, but it will let non-desktop situations work since there is no redist off desktop.
        The forwarders can be found at https://github.com/microsoft/vcrt-forwarders and are already included
        in our CascadiaPackage project.
   -->
   <PropertyGroup>
+    <!-- We have to use the Desktop platform for Hybrid CRT to work. -->
+    <_VC_Target_Library_Platform>Desktop</_VC_Target_Library_Platform>
     <_NoWinAPIFamilyApp>true</_NoWinAPIFamilyApp>
   </PropertyGroup>
 
@@ -66,7 +62,7 @@
   <!-- Overrides for common build settings -->
   <ItemDefinitionGroup>
     <ClCompile>
-      <!-- C++/WinRT hardcodes pch.h -->
+      <!-- C++/WinRT hard-codes pch.h -->
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>

@@ -70,7 +70,6 @@ SOURCES = \
     ..\dbcs.cpp      \
     ..\convarea.cpp  \
     ..\screenInfo.cpp \
-    ..\ScreenBufferRenderTarget.cpp \
     ..\_output.cpp   \
     ..\_stream.cpp   \
     ..\utils.cpp     \
@@ -94,6 +93,7 @@ SOURCES = \
     ..\CommandListPopup.cpp \
     ..\CopyFromCharPopup.cpp \
     ..\CopyToCharPopup.cpp \
+    ..\VtApiRoutines.cpp \
 
 
 # -------------------------------------
@@ -170,11 +170,13 @@ TARGETLIBS = \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-rawinput-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-sysparams-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-window-ext-l1.lib \
+    $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-winstamin-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-shell-shell32-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-uxtheme-themes-l1.lib \
     $(ONECORESHELL_INTERNAL_LIB_VPATH_L)\api-ms-win-shell-dataobject-l1.lib \
     $(ONECORESHELL_INTERNAL_LIB_VPATH_L)\api-ms-win-shell-namespace-l1.lib \
     $(MODERNCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-uiacore-l1.lib \
+    $(MODERNCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-usp10-l1.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\host\lib\$(O)\conhostv2.lib \
     $(WINCORE_OBJ_PATH)\console\conint\$(O)\conint.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\buffer\out\lib\$(O)\conbufferout.lib \
@@ -183,6 +185,7 @@ TARGETLIBS = \
     $(CONSOLE_OBJ_PATH)\terminal\input\lib\$(O)\ConTermInput.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\terminal\adapter\lib\$(O)\ConTermAdapter.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\terminal\parser\lib\$(O)\ConTermParser.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\audio\midi\lib\$(O)\ConAudioMidi.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\renderer\base\lib\$(O)\ConRenderBase.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\renderer\gdi\lib\$(O)\ConRenderGdi.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\renderer\vt\lib\$(O)\ConRenderVt.lib \
@@ -209,6 +212,7 @@ DELAYLOAD = \
     api-ms-win-shell-namespace-l1.dll; \
     ext-ms-win-dwmapi-ext-l1.dll; \
     ext-ms-win-edputil-policy-l1.dll; \
+    ext-ms-win-usp10-l1.dll; \
     ext-ms-win-gdi-dc-l1.dll; \
     ext-ms-win-gdi-dc-create-l1.dll; \
     ext-ms-win-gdi-draw-l1.dll; \
@@ -234,6 +238,7 @@ DELAYLOAD = \
     ext-ms-win-rtcore-ntuser-rawinput-l1.dll; \
     ext-ms-win-rtcore-ntuser-sysparams-l1.dll; \
     ext-ms-win-rtcore-ntuser-window-ext-l1.dll; \
+    ext-ms-win-rtcore-ntuser-winstamin-l1.dll; \
     ext-ms-win-shell-shell32-l1.dll; \
     ext-ms-win-uiacore-l1.dll; \
     ext-ms-win-uxtheme-themes-l1.dll; \

@@ -26,7 +26,8 @@ namespace Microsoft.Terminal.Settings.Model
     {
         Never = 0,
         Graceful,
-        Always
+        Always,
+        Automatic
     };
 
     [flags]
@@ -64,6 +65,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.Control.ScrollbarState, ScrollState);
         INHERITABLE_PROFILE_SETTING(String, Padding);
         INHERITABLE_PROFILE_SETTING(String, Commandline);
+        INHERITABLE_PROFILE_SETTING(Boolean, VtPassthrough);
 
         INHERITABLE_PROFILE_SETTING(String, StartingDirectory);
         String EvaluatedStartingDirectory { get; };
@@ -83,5 +85,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(Windows.Foundation.Collections.IVector<String>, BellSound);
 
         INHERITABLE_PROFILE_SETTING(Boolean, Elevate);
+        INHERITABLE_PROFILE_SETTING(Boolean, AutoMarkPrompts);
+        INHERITABLE_PROFILE_SETTING(Boolean, ShowMarks);
     }
 }

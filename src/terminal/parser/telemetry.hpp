@@ -42,11 +42,15 @@ namespace Microsoft::Console::VirtualTerminal
             CHA,
             CUP,
             ED,
+            DECSED,
             EL,
+            DECSEL,
             SGR,
             DECSC,
             DECRC,
+            SM,
             DECSET,
+            RM,
             DECRST,
             DECKPAM,
             DECKPNM,
@@ -92,6 +96,7 @@ namespace Microsoft::Console::VirtualTerminal
             DECSTR,
             RIS,
             DECSCUSR,
+            DECSCA,
             DTTERM_WM,
             OSCCT,
             OSCSCC,
@@ -107,6 +112,17 @@ namespace Microsoft::Console::VirtualTerminal
             OSCSCB,
             XTPUSHSGR,
             XTPOPSGR,
+            DECRQM,
+            DECCARA,
+            DECRARA,
+            DECCRA,
+            DECFRA,
+            DECERA,
+            DECSERA,
+            DECSACE,
+            DECINVM,
+            DECAC,
+            DECPS,
             // Only use this last enum as a count of the number of codes.
             NUMBER_OF_CODES
         };
@@ -122,7 +138,7 @@ namespace Microsoft::Console::VirtualTerminal
         // Used to prevent multiple instances
         TermTelemetry() noexcept;
         ~TermTelemetry();
-        TermTelemetry(TermTelemetry const&) = delete;
+        TermTelemetry(const TermTelemetry&) = delete;
         TermTelemetry(TermTelemetry&&) = delete;
         TermTelemetry& operator=(const TermTelemetry&) = delete;
         TermTelemetry& operator=(TermTelemetry&&) = delete;

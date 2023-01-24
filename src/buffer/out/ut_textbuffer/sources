@@ -21,6 +21,7 @@ SOURCES = \
 
 TARGETLIBS = \
     $(CONSOLE_OBJ_PATH)\buffer\out\lib\$(O)\ConBufferOut.lib \
+    $(CONSOLE_OBJ_PATH)\renderer\base\lib\$(O)\ConRenderBase.lib \
     $(CONSOLE_OBJ_PATH)\types\lib\$(O)\ConTypes.lib \
     $(TARGETLIBS) \
 

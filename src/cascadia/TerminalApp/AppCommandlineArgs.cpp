@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "AppCommandlineArgs.h"
 #include "../types/inc/utils.hpp"
+#include "TerminalSettingsModel/ModelSerializationHelpers.h"
 #include <LibraryResources.h>
 
 using namespace winrt::Microsoft::Terminal::Settings::Model;
@@ -30,7 +31,7 @@ AppCommandlineArgs::AppCommandlineArgs()
 // - nonzero return values are defined in CLI::ExitCodes
 int AppCommandlineArgs::ParseCommand(const Commandline& command)
 {
-    const int argc = static_cast<int>(command.Argc());
+    const auto argc = static_cast<int>(command.Argc());
 
     // Stash a pointer to the current Commandline instance we're parsing.
     // When we're trying to parse the commandline for a new-tab/split-pane
@@ -96,7 +97,7 @@ int AppCommandlineArgs::ParseCommand(const Commandline& command)
 }
 
 // Method Description:
-// - Calls App::exit() for the provided command, and collects it's output into
+// - Calls App::exit() for the provided command, and collects its output into
 //   our _exitMessage buffer.
 // Arguments:
 // - command: Either the root App object, or a subcommand for which to call exit() on.
@@ -182,6 +183,15 @@ void AppCommandlineArgs::_buildParser()
     auto focus = _app.add_flag_function("-f,--focus", focusCallback, RS_A(L"CmdFocusDesc"));
     maximized->excludes(fullscreen);
     focus->excludes(fullscreen);
+
+    auto positionCallback = [this](std::string string) {
+        _position = LaunchPositionFromString(string);
+    };
+    _app.add_option_function<std::string>("--pos", positionCallback, RS_A(L"CmdPositionDesc"));
+    auto sizeCallback = [this](std::string string) {
+        _size = SizeFromString(string);
+    };
+    _app.add_option_function<std::string>("--size", sizeCallback, RS_A(L"CmdSizeDesc"));
 
     _app.add_option("-w,--window",
                     _windowTarget,
@@ -709,7 +719,7 @@ void AppCommandlineArgs::_resetStateToDefault()
     // DON'T clear _launchMode here! This will get called once for every
     // subcommand, so we don't want `wt -F new-tab ; split-pane` clearing out
     // the "global" fullscreen flag (-F).
-    // Same with _windowTarget.
+    // Same with _windowTarget, _position and _size.
 }
 
 // Function Description:
@@ -809,7 +819,11 @@ void AppCommandlineArgs::_addCommandsForArg(std::vector<Commandline>& commands, 
         else
         {
             // Harder case: There was a match.
-            const bool matchedFirstChar = match.position(0) == 0;
+
+            // Regex will include the last character of the string before the delimiter. (see _commandDelimiterRegex)
+            // If the match was at the beginning of the string then there is no last character
+            // so we can use the length of the match to determine if it was at the beginning.
+            const auto matchedFirstChar = match[0].length() == 1;
             // If the match was at the beginning of the string, then the
             // next arg should be "", since there was no content before the
             // delimiter. Otherwise, add one, since the regex will include
@@ -932,6 +946,16 @@ std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchMode> AppComman
     return _launchMode;
 }
 
+std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchPosition> AppCommandlineArgs::GetPosition() const noexcept
+{
+    return _position;
+}
+
+std::optional<til::size> AppCommandlineArgs::GetSize() const noexcept
+{
+    return _size;
+}
+
 // Method Description:
 // - Attempts to parse an array of commandline args into a list of
 //   commands to execute, and then parses these commands. As commands are
@@ -1013,7 +1037,7 @@ int AppCommandlineArgs::ParseArgs(const winrt::Microsoft::Terminal::Settings::Mo
     // Convert the commandline into an array of args with
     // CommandLineToArgvW, similar to how the app typically does when
     // called from the commandline.
-    int argc = 0;
+    auto argc = 0;
     wil::unique_any<LPWSTR*, decltype(&::LocalFree), ::LocalFree> argv{ CommandLineToArgvW(args.Commandline().c_str(), &argc) };
     if (argv)
     {

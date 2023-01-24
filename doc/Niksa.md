@@ -145,7 +145,7 @@ Our only backport successes really come from corporations with massive addressab
 
 It's also costly in terms of time, effort, and testing for us to validate a modification to a released OS. We have a mindbogglingly massive amount of automated machinery dedicated to processing and validating the things that we check in while developing the current OS builds. But it's a special costly ask to spin up some to all of those activities to validate backported fixes. We do it all the time for Patch Tuesday, but in those patches, they only pass through the minimum number of fixes required to maximize the restoration of productivity/security/revenue/etc. because every additional fix adds additional complexity and additional risk. 
 
-So from our little team working hard to make developers happy, we virtually never make the cut for servicing. We're sorry, but we hope you can understand. It's just the reality of the situation to say "nope" when people ask for a backport. In our team's ideal world, you would all be running the latest console bits everywhere everytime we make a change. But that's just not how it is today.
+So from our little team working hard to make developers happy, we virtually never make the cut for servicing. We're sorry, but we hope you can understand. It's just the reality of the situation to say "nope" when people ask for a backport. In our team's ideal world, you would all be running the latest console bits everywhere every time we make a change. But that's just not how it is today.
 
 Original Source: https://github.com/microsoft/terminal/issues/279#issuecomment-439179675
 
@@ -163,7 +163,7 @@ Given that we're using Xaml islands to host a modern UI and stitching a DirectX 
 
 Now, the obvious followup question is _"why can't you have one elevated connection in a tab next to a non-elevated connection?"_ This is where @sba923 should pick up reading (:smile:). I'm probably going to cover some things that you (@robomac) know already.
 
-[2] When you have two windows on the same desktop in the same window station, they can communicate with eachother. I can use `SendKeys` easily through `WScript.Shell` to send keyboard input to any window that the shell can see.
+[2] When you have two windows on the same desktop in the same window station, they can communicate with each other. I can use `SendKeys` easily through `WScript.Shell` to send keyboard input to any window that the shell can see.
 
 Running a process elevated _severs_ that connection. The shell can't see the elevated window. No other program at the same integrity level as the shell can see the elevated window. Even if it has its window handle, it can't really interact with it. This is also why you can't drag/drop from explorer into notepad if notepad is running elevated. Only another elevated process can interact with another elevated window.
 

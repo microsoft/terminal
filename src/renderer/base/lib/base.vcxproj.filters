@@ -42,7 +42,7 @@
     <ClCompile Include="..\RenderEngineBase.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\BlinkingState.cpp">
+    <ClCompile Include="..\RenderSettings.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -80,14 +80,14 @@
     <ClInclude Include="..\..\inc\RenderEngineBase.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\BlinkingState.hpp">
-      <Filter>Header Files\inc</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\inc\Cluster.hpp">
       <Filter>Header Files\inc</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\IRenderTarget.hpp">
+    <ClInclude Include="..\..\inc\RenderSettings.hpp">
       <Filter>Header Files\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\FontCache.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -303,7 +303,7 @@ std::wstring_view PowershellCoreProfileGenerator::GetNamespace() const noexcept
 void PowershellCoreProfileGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const
 {
     const auto psInstances = _collectPowerShellInstances();
-    bool first = true;
+    auto first = true;
 
     for (const auto& psI : psInstances)
     {
@@ -319,7 +319,8 @@ void PowershellCoreProfileGenerator::GenerateProfiles(std::vector<winrt::com_ptr
         profile->Commandline(winrt::hstring{ quotedCommandline });
 
         profile->StartingDirectory(winrt::hstring{ DEFAULT_STARTING_DIRECTORY });
-        profile->DefaultAppearance().ColorSchemeName(L"Campbell");
+        profile->DefaultAppearance().DarkColorSchemeName(L"Campbell");
+        profile->DefaultAppearance().LightColorSchemeName(L"Campbell");
         profile->Icon(winrt::hstring{ WI_IsFlagSet(psI.flags, PowerShellFlags::Preview) ? POWERSHELL_PREVIEW_ICON : POWERSHELL_ICON });
 
         if (first)

@@ -5,6 +5,8 @@
 #include "Pane.h"
 #include "AppLogic.h"
 
+#include "Utils.h"
+
 #include <Mmsystem.h>
 
 using namespace winrt::Windows::Foundation;
@@ -33,7 +35,6 @@ static const Duration AnimationDuration = DurationHelper::FromTimeSpan(winrt::Wi
 
 winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_focusedBorderBrush = { nullptr };
 winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_unfocusedBorderBrush = { nullptr };
-winrt::Windows::Media::Playback::MediaPlayer Pane::s_bellPlayer = { nullptr };
 
 Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFocused) :
     _control{ control },
@@ -45,14 +46,7 @@ Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFo
 
     _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
     _warningBellToken = _control.WarningBell({ this, &Pane::_ControlWarningBellHandler });
-
-    // On the first Pane's creation, lookup resources we'll use to theme the
-    // Pane, including the brushed to use for the focused/unfocused border
-    // color.
-    if (s_focusedBorderBrush == nullptr || s_unfocusedBorderBrush == nullptr)
-    {
-        _SetupResources();
-    }
+    _closeTerminalRequestedToken = _control.CloseTerminalRequested({ this, &Pane::_CloseTerminalRequestedHandler });
 
     // Register an event with the control to have it inform us when it gains focus.
     _gotFocusRevoker = _control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
@@ -70,36 +64,6 @@ Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFo
         _FocusFirstChild();
         e.Handled(true);
     });
-
-    if (!s_bellPlayer)
-    {
-        try
-        {
-            s_bellPlayer = winrt::Windows::Media::Playback::MediaPlayer();
-            if (s_bellPlayer)
-            {
-                // BODGY
-                //
-                // Manually leak a ref to the MediaPlayer we just instantiated.
-                // We're doing this just like the way we do in AppHost with the
-                // App itself.
-                //
-                // We have to do this because there's some bug in the OS with
-                // the way a MediaPlayer gets torn down. At time of writing (Nov
-                // 2021), if you search for `remove_SoundLevelChanged` in the OS
-                // repo, you'll find a pile of bugs.
-                //
-                // We tried moving the MediaPlayer singleton up to the
-                // TerminalPage, but alas, that teardown had the same problem.
-                // So _whatever_. We'll leak it here. It needs to last the
-                // lifetime of the app anyways, and it'll get cleaned up when the
-                // Terminal is closed, so whatever.
-                winrt::Windows::Media::Playback::MediaPlayer p{ s_bellPlayer };
-                ::winrt::detach_abi(p);
-            }
-        }
-        CATCH_LOG();
-    }
 }
 
 Pane::Pane(std::shared_ptr<Pane> first,
@@ -320,14 +284,14 @@ bool Pane::_Resize(const ResizeDirection& direction)
         return false;
     }
 
-    float amount = .05f;
+    auto amount = .05f;
     if (direction == ResizeDirection::Right || direction == ResizeDirection::Down)
     {
         amount = -amount;
     }
 
     // Make sure we're not making a pane explode here by resizing it to 0 characters.
-    const bool changeWidth = _splitState == SplitState::Vertical;
+    const auto changeWidth = _splitState == SplitState::Vertical;
 
     const Size actualSize{ gsl::narrow_cast<float>(_root.ActualWidth()),
                            gsl::narrow_cast<float>(_root.ActualHeight()) };
@@ -367,8 +331,8 @@ bool Pane::ResizePane(const ResizeDirection& direction)
     // If it is, and the requested resize direction matches our separator, then
     // we're the pane that needs to adjust its separator.
     // If our separator is the wrong direction, then we can't handle it.
-    const bool firstIsFocused = _firstChild->_lastActive;
-    const bool secondIsFocused = _secondChild->_lastActive;
+    const auto firstIsFocused = _firstChild->_lastActive;
+    const auto secondIsFocused = _secondChild->_lastActive;
     if (firstIsFocused || secondIsFocused)
     {
         return _Resize(direction);
@@ -503,7 +467,7 @@ std::shared_ptr<Pane> Pane::NavigateDirection(const std::shared_ptr<Pane> source
     }
 
     // Since the direction is the same as our split, it is possible that we must
-    // move focus from from one child to another child.
+    // move focus from one child to another child.
     // We now must keep track of state while we recurse.
     // If we have it, get the size of this pane.
     const auto scaleX = _root.ActualWidth() > 0 ? gsl::narrow_cast<float>(_root.ActualWidth()) : 1.f;
@@ -535,7 +499,7 @@ std::shared_ptr<Pane> Pane::NextPane(const std::shared_ptr<Pane> targetPane)
 
     std::shared_ptr<Pane> firstLeaf = nullptr;
     std::shared_ptr<Pane> nextPane = nullptr;
-    bool foundTarget = false;
+    auto foundTarget = false;
 
     auto foundNext = WalkTree([&](auto pane) {
         // If we are a parent pane we don't want to move to one of our children
@@ -597,7 +561,7 @@ std::shared_ptr<Pane> Pane::PreviousPane(const std::shared_ptr<Pane> targetPane)
     }
 
     std::shared_ptr<Pane> lastLeaf = nullptr;
-    bool foundTarget = false;
+    auto foundTarget = false;
 
     WalkTree([&](auto pane) {
         if (pane == targetPane)
@@ -670,8 +634,8 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
 
     // Recurse through the tree to find the parent panes of each pane that is
     // being swapped.
-    std::shared_ptr<Pane> firstParent = _FindParentOfPane(first);
-    std::shared_ptr<Pane> secondParent = _FindParentOfPane(second);
+    auto firstParent = _FindParentOfPane(first);
+    auto secondParent = _FindParentOfPane(second);
 
     // We should have found either no elements, or both elements.
     // If we only found one parent then the pane SwapPane was called on did not
@@ -1024,7 +988,7 @@ void Pane::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundatio
     // actually no longer _our_ control, and instead could be a descendant.
     //
     // When the control's new Pane takes ownership of the control, the new
-    // parent will register it's own event handler. That event handler will get
+    // parent will register its own event handler. That event handler will get
     // fired after this handler returns, and will properly cleanup state.
     if (!_IsLeaf())
     {
@@ -1050,28 +1014,93 @@ void Pane::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundatio
 
     if (_profile)
     {
+        if (_isDefTermSession && _profile.CloseOnExit() == CloseOnExitMode::Automatic)
+        {
+            // For 'automatic', we only care about the connection state if we were launched by Terminal
+            // Since we were launched via defterm, ignore the connection state (i.e. we treat the
+            // close on exit mode as 'always', see GH #13325 for discussion)
+            Close();
+        }
+
         const auto mode = _profile.CloseOnExit();
         if ((mode == CloseOnExitMode::Always) ||
-            (mode == CloseOnExitMode::Graceful && newConnectionState == ConnectionState::Closed))
+            ((mode == CloseOnExitMode::Graceful || mode == CloseOnExitMode::Automatic) && newConnectionState == ConnectionState::Closed))
         {
             Close();
         }
     }
 }
 
+void Pane::_CloseTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                          const winrt::Windows::Foundation::IInspectable& /*args*/)
+{
+    std::unique_lock lock{ _createCloseLock };
+
+    // It's possible that this event handler started being executed, then before
+    // we got the lock, another thread created another child. So our control is
+    // actually no longer _our_ control, and instead could be a descendant.
+    //
+    // When the control's new Pane takes ownership of the control, the new
+    // parent will register its own event handler. That event handler will get
+    // fired after this handler returns, and will properly cleanup state.
+    if (!_IsLeaf())
+    {
+        return;
+    }
+
+    Close();
+}
+
 winrt::fire_and_forget Pane::_playBellSound(winrt::Windows::Foundation::Uri uri)
 {
-    auto weakThis{ shared_from_this() };
+    auto weakThis{ weak_from_this() };
 
-    co_await winrt::resume_foreground(_root.Dispatcher());
-    if (auto pane{ weakThis.get() })
+    co_await wil::resume_foreground(_root.Dispatcher());
+    if (auto pane{ weakThis.lock() })
     {
-        if (s_bellPlayer)
+        // BODGY
+        // GH#12258: We learned that if you leave the MediaPlayer open, and
+        // press the media keys (like play/pause), then the OS will _replay the
+        // bell_. So we have to re-create the MediaPlayer each time we want to
+        // play the bell, to make sure a subsequent play doesn't come through
+        // and reactivate the old one.
+
+        if (!_bellPlayer)
+        {
+            // The MediaPlayer might not exist on Windows N SKU.
+            try
+            {
+                _bellPlayer = winrt::Windows::Media::Playback::MediaPlayer();
+            }
+            CATCH_LOG();
+        }
+        if (_bellPlayer)
         {
             const auto source{ winrt::Windows::Media::Core::MediaSource::CreateFromUri(uri) };
             const auto item{ winrt::Windows::Media::Playback::MediaPlaybackItem(source) };
-            s_bellPlayer.Source(item);
-            s_bellPlayer.Play();
+            _bellPlayer.Source(item);
+            _bellPlayer.Play();
+
+            // This lambda will clean up the bell player when we're done with it.
+            auto weakThis2{ weak_from_this() };
+            _mediaEndedRevoker = _bellPlayer.MediaEnded(winrt::auto_revoke, [weakThis2](auto&&, auto&&) {
+                if (auto self{ weakThis2.lock() })
+                {
+                    if (self->_bellPlayer)
+                    {
+                        // We need to make sure clear out the current track
+                        // that's being played, again, so that the system can't
+                        // come through and replay it. In testing, we needed to
+                        // do this, closing the MediaPlayer alone wasn't good
+                        // enough.
+                        self->_bellPlayer.Pause();
+                        self->_bellPlayer.Source(nullptr);
+                        self->_bellPlayer.Close();
+                    }
+                    self->_mediaEndedRevoker.revoke();
+                    self->_bellPlayer = nullptr;
+                }
+            });
         }
     }
 }
@@ -1132,10 +1161,10 @@ void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspect
 // - <unused>
 // Return Value:
 // - <none>
-void Pane::_ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& sender,
-                                   RoutedEventArgs const& /* args */)
+void Pane::_ControlGotFocusHandler(const winrt::Windows::Foundation::IInspectable& sender,
+                                   const RoutedEventArgs& /* args */)
 {
-    FocusState f = FocusState::Programmatic;
+    auto f = FocusState::Programmatic;
     if (const auto o = sender.try_as<winrt::Windows::UI::Xaml::Controls::Control>())
     {
         f = o.FocusState();
@@ -1147,8 +1176,8 @@ void Pane::_ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable cons
 // - Called when our control loses focus. We'll use this to trigger our LostFocus
 //   callback. The tab that's hosting us should have registered a callback which
 //   can be used to update its own internal focus state
-void Pane::_ControlLostFocusHandler(winrt::Windows::Foundation::IInspectable const& /* sender */,
-                                    RoutedEventArgs const& /* args */)
+void Pane::_ControlLostFocusHandler(const winrt::Windows::Foundation::IInspectable& /* sender */,
+                                    const RoutedEventArgs& /* args */)
 {
     _LostFocusHandlers(shared_from_this());
 }
@@ -1173,6 +1202,19 @@ void Pane::Shutdown()
     // Lock the create/close lock so that another operation won't concurrently
     // modify our tree
     std::unique_lock lock{ _createCloseLock };
+
+    // Clear out our media player callbacks, and stop any playing media. This
+    // will prevent the callback from being triggered after we've closed, and
+    // also make sure that our sound stops when we're closed.
+    _mediaEndedRevoker.revoke();
+    if (_bellPlayer)
+    {
+        _bellPlayer.Pause();
+        _bellPlayer.Source(nullptr);
+        _bellPlayer.Close();
+    }
+    _bellPlayer = nullptr;
+
     if (_IsLeaf())
     {
         _control.Close();
@@ -1225,7 +1267,7 @@ TermControl Pane::GetLastFocusedTerminalControl()
     {
         if (_lastActive)
         {
-            std::shared_ptr<Pane> pane = shared_from_this();
+            auto pane = shared_from_this();
             while (const auto p = pane->_parentChildPath.lock())
             {
                 if (p->_IsLeaf())
@@ -1254,7 +1296,7 @@ TermControl Pane::GetTerminalControl()
 }
 
 // Method Description:
-// - Recursively remove the "Active" state from this Pane and all it's children.
+// - Recursively remove the "Active" state from this Pane and all its children.
 // - Updates our visuals to match our new state, including highlighting our borders.
 // Arguments:
 // - <none>
@@ -1533,7 +1575,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
 
     // If we were a parent pane, and we pointed into the now closed child
     // clear it. We will set it to something else later if
-    bool usedToFocusClosedChildsTerminal = false;
+    auto usedToFocusClosedChildsTerminal = false;
     if (const auto prev = _parentChildPath.lock())
     {
         if (closedChild == prev)
@@ -1549,15 +1591,17 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         // Find what borders need to persist after we close the child
         _borders = _GetCommonBorders();
 
-        // take the control, profile and id of the pane that _wasn't_ closed.
+        // take the control, profile, id and isDefTermSession of the pane that _wasn't_ closed.
         _control = remainingChild->_control;
         _connectionState = remainingChild->_connectionState;
         _profile = remainingChild->_profile;
         _id = remainingChild->Id();
+        _isDefTermSession = remainingChild->_isDefTermSession;
 
         // Add our new event handler before revoking the old one.
         _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
         _warningBellToken = _control.WarningBell({ this, &Pane::_ControlWarningBellHandler });
+        _closeTerminalRequestedToken = _control.CloseTerminalRequested({ this, &Pane::_CloseTerminalRequestedHandler });
 
         // Revoke the old event handlers. Remove both the handlers for the panes
         // themselves closing, and remove their handlers for their controls
@@ -1573,6 +1617,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
                 {
                     p->_control.ConnectionStateChanged(p->_connectionStateChangedToken);
                     p->_control.WarningBell(p->_warningBellToken);
+                    p->_control.CloseTerminalRequested(p->_closeTerminalRequestedToken);
                 }
             });
         }
@@ -1581,6 +1626,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         remainingChild->Closed(remainingChildClosedToken);
         remainingChild->_control.ConnectionStateChanged(remainingChild->_connectionStateChangedToken);
         remainingChild->_control.WarningBell(remainingChild->_warningBellToken);
+        remainingChild->_control.CloseTerminalRequested(remainingChild->_closeTerminalRequestedToken);
 
         // If we or either of our children was focused, we want to take that
         // focus from them.
@@ -1662,6 +1708,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
                 {
                     p->_control.ConnectionStateChanged(p->_connectionStateChangedToken);
                     p->_control.WarningBell(p->_warningBellToken);
+                    p->_control.CloseTerminalRequested(p->_closeTerminalRequestedToken);
                 }
             });
         }
@@ -1736,13 +1783,16 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         remainingChild->_firstChild = nullptr;
         remainingChild->_secondChild = nullptr;
     }
+
+    // Notify the discarded child that it was closed by its parent
+    closedChild->_ClosedByParentHandlers();
 }
 
 winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
 {
     auto weakThis{ shared_from_this() };
 
-    co_await winrt::resume_foreground(_root.Dispatcher());
+    co_await wil::resume_foreground(_root.Dispatcher());
 
     if (auto pane{ weakThis.get() })
     {
@@ -1753,7 +1803,7 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
         const auto animationsEnabledInApp = Media::Animation::Timeline::AllowDependentAnimations();
 
         // GH#7252: If either child is zoomed, just skip the animation. It won't work.
-        const bool eitherChildZoomed = pane->_firstChild->_zoomed || pane->_secondChild->_zoomed;
+        const auto eitherChildZoomed = pane->_firstChild->_zoomed || pane->_secondChild->_zoomed;
         // If animations are disabled, just skip this and go straight to
         // _CloseChild. Curiously, the pane opening animation doesn't need this,
         // and will skip straight to Completed when animations are disabled, but
@@ -1768,7 +1818,7 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
 
         auto removedChild = closeFirst ? _firstChild : _secondChild;
         auto remainingChild = closeFirst ? _secondChild : _firstChild;
-        const bool splitWidth = _splitState == SplitState::Vertical;
+        const auto splitWidth = _splitState == SplitState::Vertical;
 
         Size removedOriginalSize{
             ::base::saturated_cast<float>(removedChild->_root.ActualWidth()),
@@ -2056,7 +2106,7 @@ void Pane::_SetupEntranceAnimation()
     const auto animationsEnabledInOS = uiSettings.AnimationsEnabled();
     const auto animationsEnabledInApp = Media::Animation::Timeline::AllowDependentAnimations();
 
-    const bool splitWidth = _splitState == SplitState::Vertical;
+    const auto splitWidth = _splitState == SplitState::Vertical;
     const auto totalSize = splitWidth ? _root.ActualWidth() : _root.ActualHeight();
     // If we don't have a size yet, it's likely that we're in startup, or we're
     // being executed as a sequence of actions. In that case, just skip the
@@ -2235,7 +2285,7 @@ std::optional<std::optional<SplitDirection>> Pane::PreCalculateCanSplit(const st
         const auto secondPercent = splitSize;
         // If this pane is the pane we're looking for, use
         // the available space to calculate which direction to split in.
-        const Size minSize = _GetMinSize();
+        const auto minSize = _GetMinSize();
 
         if (splitType == SplitDirection::Automatic)
         {
@@ -2271,19 +2321,19 @@ std::optional<std::optional<SplitDirection>> Pane::PreCalculateCanSplit(const st
         // If this pane is a parent, calculate how much space our children will
         // be able to use, and recurse into them.
 
-        const bool isVerticalSplit = _splitState == SplitState::Vertical;
-        const float firstWidth = isVerticalSplit ?
-                                     (availableSpace.Width * _desiredSplitPosition) - PaneBorderSize :
+        const auto isVerticalSplit = _splitState == SplitState::Vertical;
+        const auto firstWidth = isVerticalSplit ?
+                                    (availableSpace.Width * _desiredSplitPosition) - PaneBorderSize :
+                                    availableSpace.Width;
+        const auto secondWidth = isVerticalSplit ?
+                                     (availableSpace.Width - firstWidth) - PaneBorderSize :
                                      availableSpace.Width;
-        const float secondWidth = isVerticalSplit ?
-                                      (availableSpace.Width - firstWidth) - PaneBorderSize :
-                                      availableSpace.Width;
-        const float firstHeight = !isVerticalSplit ?
-                                      (availableSpace.Height * _desiredSplitPosition) - PaneBorderSize :
+        const auto firstHeight = !isVerticalSplit ?
+                                     (availableSpace.Height * _desiredSplitPosition) - PaneBorderSize :
+                                     availableSpace.Height;
+        const auto secondHeight = !isVerticalSplit ?
+                                      (availableSpace.Height - firstHeight) - PaneBorderSize :
                                       availableSpace.Height;
-        const float secondHeight = !isVerticalSplit ?
-                                       (availableSpace.Height - firstHeight) - PaneBorderSize :
-                                       availableSpace.Height;
 
         const auto firstResult = _firstChild->PreCalculateCanSplit(target, splitType, splitSize, { firstWidth, firstHeight });
         return firstResult.has_value() ? firstResult : _secondChild->PreCalculateCanSplit(target, splitType, splitSize, { secondWidth, secondHeight });
@@ -2340,8 +2390,8 @@ bool Pane::ToggleSplitOrientation()
 
     // If a parent pane is focused, or if one of its children are a leaf and is
     // focused then switch the split orientation on the current pane.
-    const bool firstIsFocused = _firstChild->_IsLeaf() && _firstChild->_lastActive;
-    const bool secondIsFocused = _secondChild->_IsLeaf() && _secondChild->_lastActive;
+    const auto firstIsFocused = _firstChild->_IsLeaf() && _firstChild->_lastActive;
+    const auto secondIsFocused = _secondChild->_IsLeaf() && _secondChild->_lastActive;
     if (_lastActive || firstIsFocused || secondIsFocused)
     {
         // Switch the split orientation
@@ -2417,6 +2467,8 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
         _connectionStateChangedToken.value = 0;
         _control.WarningBell(_warningBellToken);
         _warningBellToken.value = 0;
+        _control.CloseTerminalRequested(_closeTerminalRequestedToken);
+        _closeTerminalRequestedToken.value = 0;
 
         // Remove our old GotFocus handler from the control. We don't want the
         // control telling us that it's now focused, we want it telling its new
@@ -2445,11 +2497,12 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
     }
     else
     {
-        //   Move our control, guid into the first one.
+        //   Move our control, guid, isDefTermSession into the first one.
         _firstChild = std::make_shared<Pane>(_profile, _control);
         _firstChild->_connectionState = std::exchange(_connectionState, ConnectionState::NotConnected);
         _profile = nullptr;
         _control = { nullptr };
+        _firstChild->_isDefTermSession = _isDefTermSession;
     }
 
     _splitState = actualSplitType;
@@ -2519,7 +2572,7 @@ void Pane::Maximize(std::shared_ptr<Pane> zoomedPane)
         }
 
         // Always recurse into both children. If the (un)zoomed pane was one of
-        // our direct children, we'll still want to update it's borders.
+        // our direct children, we'll still want to update its borders.
         _firstChild->Maximize(zoomedPane);
         _secondChild->Maximize(zoomedPane);
     }
@@ -2556,7 +2609,7 @@ void Pane::Restore(std::shared_ptr<Pane> zoomedPane)
         }
 
         // Always recurse into both children. If the (un)zoomed pane was one of
-        // our direct children, we'll still want to update it's borders.
+        // our direct children, we'll still want to update its borders.
         _firstChild->Restore(zoomedPane);
         _secondChild->Restore(zoomedPane);
     }
@@ -2626,7 +2679,7 @@ bool Pane::FocusPane(const std::shared_ptr<Pane> pane)
 }
 
 // Method Description:
-// - Check if this pane contains the the argument as a child anywhere along the tree.
+// - Check if this pane contains the argument as a child anywhere along the tree.
 // Arguments:
 // - child: the child to search for.
 // Return Value:
@@ -2720,7 +2773,7 @@ Pane::SnapChildrenSizeResult Pane::_CalcSnappedChildrenSizes(const bool widthOrH
     // size, but it doesn't seem to be beneficial.
 
     auto sizeTree = _CreateMinSizeTree(widthOrHeight);
-    LayoutSizeNode lastSizeTree{ sizeTree };
+    auto lastSizeTree{ sizeTree };
 
     while (sizeTree.size < fullSize)
     {
@@ -2766,7 +2819,7 @@ float Pane::CalcSnappedDimension(const bool widthOrHeight, const float dimension
 // - widthOrHeight: if true operates on width, otherwise on height
 // - dimension: a dimension (width or height) to be snapped
 // Return Value:
-// - pair of floats, where first value is the size snapped downward (not greater then
+// - pair of floats, where first value is the size snapped downward (not greater than
 //   requested size) and second is the size snapped upward (not lower than requested size).
 //   If requested size is already snapped, then both returned values equal this value.
 Pane::SnapSizeResult Pane::_CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
@@ -2783,7 +2836,7 @@ Pane::SnapSizeResult Pane::_CalcSnappedDimension(const bool widthOrHeight, const
             return { minDimension, minDimension };
         }
 
-        float lower = _control.SnapDimensionToGrid(widthOrHeight, dimension);
+        auto lower = _control.SnapDimensionToGrid(widthOrHeight, dimension);
         if (widthOrHeight)
         {
             lower += WI_IsFlagSet(_borders, Borders::Left) ? PaneBorderSize : 0;
@@ -3045,16 +3098,16 @@ float Pane::_ClampSplitPosition(const bool widthOrHeight, const float requestedV
 //   * The Brush we'll use for inactive Panes - TabViewBackground (to match the
 //     color of the titlebar)
 // Arguments:
-// - <none>
+// - requestedTheme: this should be the currently active Theme for the app
 // Return Value:
 // - <none>
-void Pane::_SetupResources()
+void Pane::SetupResources(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme)
 {
     const auto res = Application::Current().Resources();
     const auto accentColorKey = winrt::box_value(L"SystemAccentColor");
     if (res.HasKey(accentColorKey))
     {
-        const auto colorFromResources = res.Lookup(accentColorKey);
+        const auto colorFromResources = ThemeLookup(res, requestedTheme, accentColorKey);
         // If SystemAccentColor is _not_ a Color for some reason, use
         // Transparent as the color, so we don't do this process again on
         // the next pane (by leaving s_focusedBorderBrush nullptr)
@@ -3072,7 +3125,10 @@ void Pane::_SetupResources()
     const auto unfocusedBorderBrushKey = winrt::box_value(L"UnfocusedBorderBrush");
     if (res.HasKey(unfocusedBorderBrushKey))
     {
-        winrt::Windows::Foundation::IInspectable obj = res.Lookup(unfocusedBorderBrushKey);
+        // MAKE SURE TO USE ThemeLookup, so that we get the correct resource for
+        // the requestedTheme, not just the value from the resources (which
+        // might not respect the settings' requested theme)
+        auto obj = ThemeLookup(res, requestedTheme, unfocusedBorderBrushKey);
         s_unfocusedBorderBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
     }
     else
@@ -3087,6 +3143,15 @@ void Pane::_SetupResources()
 int Pane::GetLeafPaneCount() const noexcept
 {
     return _IsLeaf() ? 1 : (_firstChild->GetLeafPaneCount() + _secondChild->GetLeafPaneCount());
+}
+
+// Method Description:
+// - Should be called when this pane is created via a default terminal handoff
+// - Finalizes our configuration given the information that we have been
+//   created via default handoff
+void Pane::FinalizeConfigurationGivenDefault()
+{
+    _isDefTermSession = true;
 }
 
 // Method Description:

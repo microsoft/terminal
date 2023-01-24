@@ -10,7 +10,7 @@
 
 #include <LibraryResources.h>
 #include <WtExeUtils.h>
-#include <wil/token_helpers.h >
+#include <wil/token_helpers.h>
 
 #include "../../types/inc/utils.hpp"
 
@@ -51,6 +51,8 @@ static const std::array settingsLoadWarningsLabels {
     USES_RESOURCE(L"InvalidSplitSize"),
     USES_RESOURCE(L"FailedToParseStartupActions"),
     USES_RESOURCE(L"FailedToParseSubCommands"),
+    USES_RESOURCE(L"UnknownTheme"),
+    USES_RESOURCE(L"DuplicateRemainingProfilesEntry"),
 };
 static const std::array settingsLoadErrorsLabels {
     USES_RESOURCE(L"NoProfilesText"),
@@ -122,10 +124,10 @@ static Documents::Run _BuildErrorRun(const winrt::hstring& text, const ResourceD
     textRun.Text(text);
 
     // Color the text red (light theme) or yellow (dark theme) based on the system theme
-    winrt::IInspectable key = winrt::box_value(L"ErrorTextBrush");
+    auto key = winrt::box_value(L"ErrorTextBrush");
     if (resources.HasKey(key))
     {
-        winrt::IInspectable g = resources.Lookup(key);
+        auto g = resources.Lookup(key);
         auto brush = g.try_as<winrt::Windows::UI::Xaml::Media::Brush>();
         textRun.Foreground(brush);
     }
@@ -190,7 +192,7 @@ namespace winrt::TerminalApp::implementation
         _reloadSettings = std::make_shared<ThrottledFuncTrailing<>>(winrt::Windows::System::DispatcherQueue::GetForCurrentThread(), std::chrono::milliseconds(100), [weakSelf = get_weak()]() {
             if (auto self{ weakSelf.get() })
             {
-                self->_ReloadSettings();
+                self->ReloadSettings();
             }
         });
 
@@ -292,9 +294,40 @@ namespace winrt::TerminalApp::implementation
                 _root->Maximized(true);
             }
 
-            if (WI_IsFlagSet(launchMode, LaunchMode::FullscreenMode))
+            if (WI_IsFlagSet(launchMode, LaunchMode::FullscreenMode) && !IsQuakeWindow())
             {
                 _root->SetFullscreen(true);
+            }
+
+            // Both LoadSettings and ReloadSettings are supposed to call this function,
+            // but LoadSettings skips it, so that the UI starts up faster.
+            // Now that the UI is present we can do them with a less significant UX impact.
+            _ProcessLazySettingsChanges();
+
+            FILETIME creationTime, exitTime, kernelTime, userTime, now;
+            if (GetThreadTimes(GetCurrentThread(), &creationTime, &exitTime, &kernelTime, &userTime))
+            {
+                static constexpr auto asInteger = [](const FILETIME& f) {
+                    ULARGE_INTEGER i;
+                    i.LowPart = f.dwLowDateTime;
+                    i.HighPart = f.dwHighDateTime;
+                    return i.QuadPart;
+                };
+                static constexpr auto asSeconds = [](uint64_t v) {
+                    return v * 1e-7f;
+                };
+
+                GetSystemTimeAsFileTime(&now);
+
+                const auto latency = asSeconds(asInteger(now) - asInteger(creationTime));
+
+                TraceLoggingWrite(
+                    g_hTerminalAppProvider,
+                    "AppInitialized",
+                    TraceLoggingDescription("Event emitted once the app is initialized"),
+                    TraceLoggingFloat32(latency, "latency"),
+                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
             }
         });
         _root->Create();
@@ -312,7 +345,7 @@ namespace winrt::TerminalApp::implementation
             TraceLoggingDescription("Event emitted when the application is started"),
             TraceLoggingBool(_settings.GlobalSettings().ShowTabsInTitlebar(), "TabsInTitlebar"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
     void AppLogic::Quit()
@@ -367,11 +400,12 @@ namespace winrt::TerminalApp::implementation
         // details here, but it does have the desired effect.
         // It's not enough to set the theme on the dialog alone.
         auto themingLambda{ [this](const Windows::Foundation::IInspectable& sender, const RoutedEventArgs&) {
-            auto theme{ _settings.GlobalSettings().Theme() };
+            auto theme{ _settings.GlobalSettings().CurrentTheme() };
+            auto requestedTheme{ theme.RequestedTheme() };
             auto element{ sender.try_as<winrt::Windows::UI::Xaml::FrameworkElement>() };
             while (element)
             {
-                element.RequestedTheme(theme);
+                element.RequestedTheme(requestedTheme);
                 element = element.Parent().try_as<winrt::Windows::UI::Xaml::FrameworkElement>();
             }
         } };
@@ -539,7 +573,7 @@ namespace winrt::TerminalApp::implementation
         // not be noisy with this dialog if we failed for some reason.
 
         // Open the service manager. This will return 0 if it failed.
-        wil::unique_schandle hManager{ OpenSCManager(nullptr, nullptr, 0) };
+        wil::unique_schandle hManager{ OpenSCManagerW(nullptr, nullptr, 0) };
 
         if (LOG_LAST_ERROR_IF(!hManager.is_valid()))
         {
@@ -547,8 +581,12 @@ namespace winrt::TerminalApp::implementation
         }
 
         // Get a handle to the keyboard service
-        wil::unique_schandle hService{ OpenService(hManager.get(), TabletInputServiceKey.data(), SERVICE_QUERY_STATUS) };
-        if (LOG_LAST_ERROR_IF(!hService.is_valid()))
+        wil::unique_schandle hService{ OpenServiceW(hManager.get(), TabletInputServiceKey.data(), SERVICE_QUERY_STATUS) };
+
+        // Windows 11 doesn't have a TabletInputService.
+        // (It was renamed to TextInputManagementService, because people kept thinking that a
+        // service called "tablet-something" is system-irrelevant on PCs and can be disabled.)
+        if (!hService.is_valid())
         {
             return true;
         }
@@ -578,12 +616,12 @@ namespace winrt::TerminalApp::implementation
         if (!_loadedInitialSettings)
         {
             // Load settings if we haven't already
-            LoadSettings();
+            ReloadSettings();
         }
 
         winrt::Windows::Foundation::Size proposedSize{};
 
-        const float scale = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
+        const auto scale = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
         if (const auto layout = _root->LoadPersistedLayout(_settings))
         {
             if (layout.InitialSize())
@@ -596,12 +634,17 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        if (proposedSize.Width == 0 && proposedSize.Height == 0)
+        if (_appArgs.GetSize().has_value() || (proposedSize.Width == 0 && proposedSize.Height == 0))
         {
             // Use the default profile to determine how big of a window we need.
             const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, nullptr, nullptr) };
 
-            proposedSize = TermControl::GetProposedDimensions(settings.DefaultSettings(), dpi);
+            const til::size emptySize{};
+            const auto commandlineSize = _appArgs.GetSize().value_or(emptySize);
+            proposedSize = TermControl::GetProposedDimensions(settings.DefaultSettings(),
+                                                              dpi,
+                                                              commandlineSize.width,
+                                                              commandlineSize.height);
         }
 
         // GH#2061 - If the global setting "Always show tab bar" is
@@ -654,7 +697,7 @@ namespace winrt::TerminalApp::implementation
         if (!_loadedInitialSettings)
         {
             // Load settings if we haven't already
-            LoadSettings();
+            ReloadSettings();
         }
 
         // GH#4620/#5801 - If the user passed --maximized or --fullscreen on the
@@ -688,7 +731,7 @@ namespace winrt::TerminalApp::implementation
         if (!_loadedInitialSettings)
         {
             // Load settings if we haven't already
-            LoadSettings();
+            ReloadSettings();
         }
 
         auto initialPosition{ _settings.GlobalSettings().InitialPosition() };
@@ -699,6 +742,12 @@ namespace winrt::TerminalApp::implementation
             {
                 initialPosition = layout.InitialPosition().Value();
             }
+        }
+
+        // Commandline args trump everything else
+        if (_appArgs.GetPosition().has_value())
+        {
+            initialPosition = _appArgs.GetPosition().value();
         }
 
         return {
@@ -712,20 +761,15 @@ namespace winrt::TerminalApp::implementation
         if (!_loadedInitialSettings)
         {
             // Load settings if we haven't already
-            LoadSettings();
+            ReloadSettings();
         }
-        return _settings.GlobalSettings().CenterOnLaunch();
+        // If the position has been specified on the commandline, don't center on launch
+        return _settings.GlobalSettings().CenterOnLaunch() && !_appArgs.GetPosition().has_value();
     }
 
     winrt::Windows::UI::Xaml::ElementTheme AppLogic::GetRequestedTheme()
     {
-        if (!_loadedInitialSettings)
-        {
-            // Load settings if we haven't already
-            LoadSettings();
-        }
-
-        return _settings.GlobalSettings().Theme();
+        return Theme().RequestedTheme();
     }
 
     bool AppLogic::GetShowTabsInTitlebar()
@@ -733,7 +777,7 @@ namespace winrt::TerminalApp::implementation
         if (!_loadedInitialSettings)
         {
             // Load settings if we haven't already
-            LoadSettings();
+            ReloadSettings();
         }
 
         return _settings.GlobalSettings().ShowTabsInTitlebar();
@@ -744,7 +788,7 @@ namespace winrt::TerminalApp::implementation
         if (!_loadedInitialSettings)
         {
             // Load settings if we haven't already
-            LoadSettings();
+            ReloadSettings();
         }
 
         return _settings.GlobalSettings().AlwaysOnTop();
@@ -763,37 +807,36 @@ namespace winrt::TerminalApp::implementation
     // - S_OK if we successfully parsed the settings, otherwise an appropriate HRESULT.
     [[nodiscard]] HRESULT AppLogic::_TryLoadSettings() noexcept
     {
-        HRESULT hr = E_FAIL;
+        auto hr = E_FAIL;
 
         try
         {
             auto newSettings = _isUwp ? CascadiaSettings::LoadUniversal() : CascadiaSettings::LoadAll();
-            _settings = newSettings;
 
-            if (_settings.GetLoadingError())
+            if (newSettings.GetLoadingError())
             {
-                _settingsLoadExceptionText = _GetErrorText(_settings.GetLoadingError().Value());
+                _settingsLoadExceptionText = _GetErrorText(newSettings.GetLoadingError().Value());
                 return E_INVALIDARG;
             }
-            else if (!_settings.GetSerializationErrorMessage().empty())
+            else if (!newSettings.GetSerializationErrorMessage().empty())
             {
-                _settingsLoadExceptionText = _settings.GetSerializationErrorMessage();
+                _settingsLoadExceptionText = newSettings.GetSerializationErrorMessage();
                 return E_INVALIDARG;
             }
 
             _warnings.clear();
-            for (uint32_t i = 0; i < _settings.Warnings().Size(); i++)
+            for (uint32_t i = 0; i < newSettings.Warnings().Size(); i++)
             {
-                _warnings.push_back(_settings.Warnings().GetAt(i));
+                _warnings.push_back(newSettings.Warnings().GetAt(i));
             }
 
             _hasSettingsStartupActions = false;
-            const auto startupActions = _settings.GlobalSettings().StartupActions();
+            const auto startupActions = newSettings.GlobalSettings().StartupActions();
             if (!startupActions.empty())
             {
                 _settingsAppArgs.FullResetState();
 
-                ExecuteCommandlineArgs args{ _settings.GlobalSettings().StartupActions() };
+                ExecuteCommandlineArgs args{ newSettings.GlobalSettings().StartupActions() };
                 auto result = _settingsAppArgs.ParseArgs(args);
                 if (result == 0)
                 {
@@ -808,6 +851,7 @@ namespace winrt::TerminalApp::implementation
                 }
             }
 
+            _settings = std::move(newSettings);
             hr = _warnings.empty() ? S_OK : S_FALSE;
         }
         catch (const winrt::hresult_error& e)
@@ -824,61 +868,30 @@ namespace winrt::TerminalApp::implementation
         return hr;
     }
 
-    // Method Description:
-    // - Initialized our settings. See CascadiaSettings for more details.
-    //      Additionally hooks up our callbacks for keybinding events to the
-    //      keybindings object.
-    // NOTE: This must be called from a MTA if we're running as a packaged
-    //      application. The Windows.Storage APIs require a MTA. If this isn't
-    //      happening during startup, it'll need to happen on a background thread.
-    void AppLogic::LoadSettings()
+    // Call this function after loading your _settings.
+    // It handles any CPU intensive settings updates (like updating the Jumplist)
+    // which should thus only occur if the settings file actually changed.
+    void AppLogic::_ProcessLazySettingsChanges()
     {
-        auto start = std::chrono::high_resolution_clock::now();
+        const auto hash = _settings.Hash();
+        const auto applicationState = ApplicationState::SharedInstance();
+        const auto cachedHash = applicationState.SettingsHash();
 
-        TraceLoggingWrite(
-            g_hTerminalAppProvider,
-            "SettingsLoadStarted",
-            TraceLoggingDescription("Event emitted before loading the settings"),
-            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
-
-        // Attempt to load the settings.
-        // If it fails,
-        //  - use Default settings,
-        //  - don't persist them (LoadAll won't save them in this case).
-        //  - _settingsLoadedResult will be set to an error, indicating that
-        //    we should display the loading error.
-        //    * We can't display the error now, because we might not have a
-        //      UI yet. We'll display the error in _OnLoaded.
-        _settingsLoadedResult = _TryLoadSettings();
-
-        if (FAILED(_settingsLoadedResult))
+        // The hash might be empty if LoadAll() failed and we're dealing with the defaults settings object.
+        // In that case we can just wait until the user fixed their settings or CascadiaSettings fixed
+        // itself and either will soon trigger a settings reload.
+        if (hash.empty() || hash == cachedHash)
         {
-            _settings = CascadiaSettings::LoadDefaults();
+            return;
         }
 
-        auto end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> delta = end - start;
-
-        TraceLoggingWrite(
-            g_hTerminalAppProvider,
-            "SettingsLoadComplete",
-            TraceLoggingDescription("Event emitted when loading the settings is finished"),
-            TraceLoggingFloat64(delta.count(), "Duration"),
-            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
-
-        _loadedInitialSettings = true;
-
-        // Register for directory change notification.
-        _RegisterSettingsChange();
-
         Jumplist::UpdateJumplist(_settings);
+        applicationState.SettingsHash(hash);
     }
 
     // Method Description:
     // - Registers for changes to the settings folder and upon a updated settings
-    //      profile calls _ReloadSettings().
+    //      profile calls ReloadSettings().
     // Arguments:
     // - <none>
     // Return Value:
@@ -944,9 +957,16 @@ namespace winrt::TerminalApp::implementation
     }
     CATCH_LOG()
 
+    // Method Description:
+    // - Update the current theme of the application. This will trigger our
+    //   RequestedThemeChanged event, to have our host change the theme of the
+    //   root of the application.
+    // Arguments:
+    // - newTheme: The ElementTheme to apply to our elements.
     void AppLogic::_RefreshThemeRoutine()
     {
-        _ApplyTheme(_settings.GlobalSettings().Theme());
+        // Propagate the event to the host layer, so it can update its own UI
+        _RequestedThemeChangedHandlers(*this, Theme());
     }
 
     // Function Description:
@@ -977,7 +997,7 @@ namespace winrt::TerminalApp::implementation
         const auto package{ GetCurrentPackageNoThrow() };
         if (package == nullptr)
         {
-            return;
+            co_return;
         }
 
         const auto tryEnableStartupTask = _settings.GlobalSettings().StartOnUserLogin();
@@ -1006,7 +1026,14 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Reloads the settings from the settings.json file.
-    void AppLogic::_ReloadSettings()
+    // - When this is called the first time, this initializes our settings. See
+    //   CascadiaSettings for more details. Additionally hooks up our callbacks
+    //   for keybinding events to the keybindings object.
+    //   - NOTE: when called initially, this must be called from a MTA if we're
+    //     running as a packaged application. The Windows.Storage APIs require a
+    //     MTA. If this isn't happening during startup, it'll need to happen on
+    //     a background thread.
+    void AppLogic::ReloadSettings()
     {
         // Attempt to load our settings.
         // If it fails,
@@ -1015,11 +1042,28 @@ namespace winrt::TerminalApp::implementation
         //  - display a loading error
         _settingsLoadedResult = _TryLoadSettings();
 
+        const auto initialLoad = !_loadedInitialSettings;
+        _loadedInitialSettings = true;
+
         if (FAILED(_settingsLoadedResult))
         {
-            const winrt::hstring titleKey = USES_RESOURCE(L"ReloadJsonParseErrorTitle");
-            const winrt::hstring textKey = USES_RESOURCE(L"ReloadJsonParseErrorText");
-            _ShowLoadErrorsDialog(titleKey, textKey, _settingsLoadedResult);
+            if (initialLoad)
+            {
+                _settings = CascadiaSettings::LoadDefaults();
+            }
+            else
+            {
+                const winrt::hstring titleKey = USES_RESOURCE(L"ReloadJsonParseErrorTitle");
+                const winrt::hstring textKey = USES_RESOURCE(L"ReloadJsonParseErrorText");
+                _ShowLoadErrorsDialog(titleKey, textKey, _settingsLoadedResult);
+                return;
+            }
+        }
+
+        if (initialLoad)
+        {
+            // Register for directory change notification.
+            _RegisterSettingsChange();
             return;
         }
 
@@ -1037,8 +1081,7 @@ namespace winrt::TerminalApp::implementation
         _ApplyLanguageSettingChange();
         _RefreshThemeRoutine();
         _ApplyStartupTaskStateChange();
-
-        Jumplist::UpdateJumplist(_settings);
+        _ProcessLazySettingsChanges();
 
         _SettingsChangedHandlers(*this, nullptr);
     }
@@ -1055,18 +1098,6 @@ namespace winrt::TerminalApp::implementation
         return _settings;
     }
 
-    // Method Description:
-    // - Update the current theme of the application. This will trigger our
-    //   RequestedThemeChanged event, to have our host change the theme of the
-    //   root of the application.
-    // Arguments:
-    // - newTheme: The ElementTheme to apply to our elements.
-    void AppLogic::_ApplyTheme(const Windows::UI::Xaml::ElementTheme& newTheme)
-    {
-        // Propagate the event to the host layer, so it can update its own UI
-        _RequestedThemeChangedHandlers(*this, newTheme);
-    }
-
     UIElement AppLogic::GetRoot() noexcept
     {
         return _root.as<winrt::Windows::UI::Xaml::Controls::Control>();
@@ -1074,18 +1105,18 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Gets the title of the currently focused terminal control. If there
-    //   isn't a control selected for any reason, returns "Windows Terminal"
+    //   isn't a control selected for any reason, returns "Terminal"
     // Arguments:
     // - <none>
     // Return Value:
-    // - the title of the focused control if there is one, else "Windows Terminal"
+    // - the title of the focused control if there is one, else "Terminal"
     hstring AppLogic::Title()
     {
         if (_root)
         {
             return _root->Title();
         }
-        return { L"Windows Terminal" };
+        return { L"Terminal" };
     }
 
     // Method Description:
@@ -1102,6 +1133,22 @@ namespace winrt::TerminalApp::implementation
         if (_root)
         {
             _root->TitlebarClicked();
+        }
+    }
+
+    // Method Description:
+    // - Used to tell the PTY connection that the window visibility has changed.
+    //   The underlying PTY might need to expose window visibility status to the
+    //   client application for the `::GetConsoleWindow()` API.
+    // Arguments:
+    // - showOrHide - True is show; false is hide.
+    // Return Value:
+    // - <none>
+    void AppLogic::WindowVisibilityChanged(const bool showOrHide)
+    {
+        if (_root)
+        {
+            _root->WindowVisibilityChanged(showOrHide);
         }
     }
 
@@ -1183,6 +1230,19 @@ namespace winrt::TerminalApp::implementation
             return _root->TaskbarState();
         }
         return {};
+    }
+
+    winrt::Windows::UI::Xaml::Media::Brush AppLogic::TitlebarBrush()
+    {
+        if (_root)
+        {
+            return _root->TitlebarBrush();
+        }
+        return { nullptr };
+    }
+    void AppLogic::WindowActivated(const bool activated)
+    {
+        _root->WindowActivated(activated);
     }
 
     bool AppLogic::HasCommandlineArguments() const noexcept
@@ -1310,7 +1370,7 @@ namespace winrt::TerminalApp::implementation
         if (!_loadedInitialSettings)
         {
             // Load settings if we haven't already
-            LoadSettings();
+            ReloadSettings();
         }
 
         return AppLogic::_doFindTargetWindow(args, _settings.GlobalSettings().WindowingBehavior());
@@ -1336,7 +1396,7 @@ namespace winrt::TerminalApp::implementation
             // now.
             if (parsedTarget.empty())
             {
-                int32_t windowId = WindowingBehaviorUseNew;
+                auto windowId = WindowingBehaviorUseNew;
                 switch (windowingBehavior)
                 {
                 case WindowingMode::UseNew:
@@ -1357,7 +1417,7 @@ namespace winrt::TerminalApp::implementation
             // window's ID:
             try
             {
-                int32_t windowId = ::base::saturated_cast<int32_t>(std::stoi(parsedTarget));
+                auto windowId = ::base::saturated_cast<int32_t>(std::stoi(parsedTarget));
 
                 // If the user provides _any_ negative number, then treat it as
                 // -1, for "use a new window".
@@ -1462,6 +1522,17 @@ namespace winrt::TerminalApp::implementation
         return _root ? _root->AlwaysOnTop() : false;
     }
 
+    bool AppLogic::AutoHideWindow()
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            ReloadSettings();
+        }
+
+        return _settings.GlobalSettings().AutoHideWindow();
+    }
+
     Windows::Foundation::Collections::IMapView<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::Command> AppLogic::GlobalHotkeys()
     {
         return _settings.GlobalSettings().ActionMap().GlobalHotkeys();
@@ -1470,6 +1541,24 @@ namespace winrt::TerminalApp::implementation
     bool AppLogic::ShouldUsePersistedLayout()
     {
         return _root != nullptr ? _root->ShouldUsePersistedLayout(_settings) : false;
+    }
+
+    bool AppLogic::ShouldImmediatelyHandoffToElevated()
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            ReloadSettings();
+        }
+
+        return _root != nullptr ? _root->ShouldImmediatelyHandoffToElevated(_settings) : false;
+    }
+    void AppLogic::HandoffToElevated()
+    {
+        if (_root)
+        {
+            _root->HandoffToElevated(_settings);
+        }
     }
 
     void AppLogic::SaveWindowLayoutJsons(const Windows::Foundation::Collections::IVector<hstring>& layouts)
@@ -1569,42 +1658,39 @@ namespace winrt::TerminalApp::implementation
 
     bool AppLogic::GetMinimizeToNotificationArea()
     {
-        if constexpr (Feature_NotificationIcon::IsEnabled())
+        if (!_loadedInitialSettings)
         {
-            if (!_loadedInitialSettings)
-            {
-                // Load settings if we haven't already
-                LoadSettings();
-            }
+            // Load settings if we haven't already
+            ReloadSettings();
+        }
 
-            return _settings.GlobalSettings().MinimizeToNotificationArea();
-        }
-        else
-        {
-            return false;
-        }
+        return _settings.GlobalSettings().MinimizeToNotificationArea();
     }
 
     bool AppLogic::GetAlwaysShowNotificationIcon()
     {
-        if constexpr (Feature_NotificationIcon::IsEnabled())
+        if (!_loadedInitialSettings)
         {
-            if (!_loadedInitialSettings)
-            {
-                // Load settings if we haven't already
-                LoadSettings();
-            }
+            // Load settings if we haven't already
+            ReloadSettings();
+        }
 
-            return _settings.GlobalSettings().AlwaysShowNotificationIcon();
-        }
-        else
-        {
-            return false;
-        }
+        return _settings.GlobalSettings().AlwaysShowNotificationIcon();
     }
 
     bool AppLogic::GetShowTitleInTitlebar()
     {
         return _settings.GlobalSettings().ShowTitleInTitlebar();
     }
+
+    Microsoft::Terminal::Settings::Model::Theme AppLogic::Theme()
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            ReloadSettings();
+        }
+        return _settings.GlobalSettings().CurrentTheme();
+    }
+
 }

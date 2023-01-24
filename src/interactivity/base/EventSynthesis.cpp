@@ -4,10 +4,7 @@
 #include "precomp.h"
 #include "../inc/EventSynthesis.hpp"
 #include "../../types/inc/convert.hpp"
-
-#ifdef BUILD_ONECORE_INTERACTIVITY
 #include "../inc/VtApiRedirection.hpp"
-#endif
 
 #pragma hdrstop
 
@@ -41,14 +38,14 @@ static CodepointWidth GetQuickCharWidthLegacyForNumpadEventSynthesis(const wchar
         return CodepointWidth::Wide;
     }
 
-    return CodepointWidth::Invalid;
+    return CodepointWidth::Narrow;
 }
 
 std::deque<std::unique_ptr<KeyEvent>> Microsoft::Console::Interactivity::CharToKeyEvents(const wchar_t wch,
                                                                                          const unsigned int codepage)
 {
     const short invalidKey = -1;
-    short keyState = VkKeyScanW(wch);
+    auto keyState = OneCoreSafeVkKeyScanW(wch);
 
     if (keyState == invalidKey)
     {
@@ -85,10 +82,10 @@ std::deque<std::unique_ptr<KeyEvent>> Microsoft::Console::Interactivity::CharToK
 // - will throw exception on error
 std::deque<std::unique_ptr<KeyEvent>> Microsoft::Console::Interactivity::SynthesizeKeyboardEvents(const wchar_t wch, const short keyState)
 {
-    const byte modifierState = HIBYTE(keyState);
+    const auto modifierState = HIBYTE(keyState);
 
-    bool altGrSet = false;
-    bool shiftSet = false;
+    auto altGrSet = false;
+    auto shiftSet = false;
     std::deque<std::unique_ptr<KeyEvent>> keyEvents;
 
     // add modifier key event if necessary
@@ -114,7 +111,7 @@ std::deque<std::unique_ptr<KeyEvent>> Microsoft::Console::Interactivity::Synthes
     }
 
     const auto vk = LOBYTE(keyState);
-    const WORD virtualScanCode = gsl::narrow<WORD>(MapVirtualKeyW(vk, MAPVK_VK_TO_VSC));
+    const auto virtualScanCode = gsl::narrow<WORD>(OneCoreSafeMapVirtualKeyW(vk, MAPVK_VK_TO_VSC));
     KeyEvent keyEvent{ true, 1, LOBYTE(keyState), virtualScanCode, wch, 0 };
 
     // add modifier flags if necessary
@@ -191,7 +188,7 @@ std::deque<std::unique_ptr<KeyEvent>> Microsoft::Console::Interactivity::Synthes
         // But it is absolutely valid as 0xFF or 255 unsigned as the correct CP437 character.
         // We need to treat it as unsigned because we're going to pretend it was a keypad entry
         // and you don't enter negative numbers on the keypad.
-        unsigned char const uch = static_cast<unsigned char>(convertedChars.at(0));
+        const auto uch = static_cast<unsigned char>(convertedChars.at(0));
 
         // unsigned char values are in the range [0, 255] so we need to be
         // able to store up to 4 chars from the conversion (including the end of string char)
@@ -204,7 +201,7 @@ std::deque<std::unique_ptr<KeyEvent>> Microsoft::Console::Interactivity::Synthes
                 break;
             }
             const WORD virtualKey = ch - '0' + VK_NUMPAD0;
-            const WORD virtualScanCode = gsl::narrow<WORD>(MapVirtualKeyW(virtualKey, MAPVK_VK_TO_VSC));
+            const auto virtualScanCode = gsl::narrow<WORD>(OneCoreSafeMapVirtualKeyW(virtualKey, MAPVK_VK_TO_VSC));
 
             keyEvents.push_back(std::make_unique<KeyEvent>(true,
                                                            1ui16,

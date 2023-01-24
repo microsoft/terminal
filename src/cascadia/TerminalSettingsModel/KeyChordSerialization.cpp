@@ -101,7 +101,7 @@ static int32_t parseNumericCode(const std::wstring_view& str, const std::wstring
         return 0;
     }
 
-    const auto value = til::from_wchars({ str.data() + prefix.size(), str.size() - prefix.size() - suffix.size() });
+    const auto value = til::to_ulong({ str.data() + prefix.size(), str.size() - prefix.size() - suffix.size() });
     if (value > 0 && value < 256)
     {
         return gsl::narrow_cast<int32_t>(value);
@@ -142,9 +142,9 @@ static KeyChord _fromString(std::wstring_view wstr)
         // clang-format on
     };
 
-    VirtualKeyModifiers modifiers = VirtualKeyModifiers::None;
-    int32_t vkey = 0;
-    int32_t scanCode = 0;
+    auto modifiers = VirtualKeyModifiers::None;
+    auto vkey = 0;
+    auto scanCode = 0;
 
     while (!wstr.empty())
     {

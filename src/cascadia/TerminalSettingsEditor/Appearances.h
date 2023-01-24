@@ -69,8 +69,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void UseDesktopBGImage(const bool useDesktop);
         bool BackgroundImageSettingsVisible();
 
-        Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> Schemes() { return _Schemes; }
-        void Schemes(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& val) { _Schemes = val; }
+        void ClearColorScheme();
+        Editor::ColorSchemeViewModel CurrentColorScheme();
+        void CurrentColorScheme(const Editor::ColorSchemeViewModel& val);
 
         WINRT_PROPERTY(bool, IsDefault, false);
         WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
@@ -87,18 +88,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_appearance, RetroTerminalEffect);
         OBSERVABLE_PROJECTED_SETTING(_appearance, CursorShape);
         OBSERVABLE_PROJECTED_SETTING(_appearance, CursorHeight);
-        OBSERVABLE_PROJECTED_SETTING(_appearance, ColorSchemeName);
+        OBSERVABLE_PROJECTED_SETTING(_appearance, DarkColorSchemeName);
+        OBSERVABLE_PROJECTED_SETTING(_appearance, LightColorSchemeName);
         OBSERVABLE_PROJECTED_SETTING(_appearance, BackgroundImagePath);
         OBSERVABLE_PROJECTED_SETTING(_appearance, BackgroundImageOpacity);
         OBSERVABLE_PROJECTED_SETTING(_appearance, BackgroundImageStretchMode);
         OBSERVABLE_PROJECTED_SETTING(_appearance, BackgroundImageAlignment);
         OBSERVABLE_PROJECTED_SETTING(_appearance, IntenseTextStyle);
         OBSERVABLE_PROJECTED_SETTING(_appearance, AdjustIndistinguishableColors);
+        WINRT_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel>, SchemesList, _propertyChangedHandlers, nullptr);
 
     private:
         Model::AppearanceConfig _appearance;
         winrt::hstring _lastBgImagePath;
-        Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> _Schemes;
     };
 
     struct Appearances : AppearancesT<Appearances>
@@ -112,16 +114,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // CursorShape visibility logic
         bool IsVintageCursor() const;
 
-        Model::ColorScheme CurrentColorScheme();
-        void CurrentColorScheme(const Model::ColorScheme& val);
-
         bool UsingMonospaceFont() const noexcept;
         bool ShowAllFonts() const noexcept;
         void ShowAllFonts(const bool& value);
 
-        fire_and_forget BackgroundImage_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
-        void BIAlignment_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
-        void FontFace_SelectionChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::SelectionChangedEventArgs const& e);
+        fire_and_forget BackgroundImage_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
+        void BIAlignment_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
+        void FontFace_SelectionChanged(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& e);
 
         // manually bind FontWeight
         Windows::Foundation::IInspectable CurrentFontWeight() const;
@@ -129,16 +128,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool IsCustomFontWeight();
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::EnumEntry>, FontWeightList);
 
-        GETSET_BINDABLE_ENUM_SETTING(CursorShape, Microsoft::Terminal::Core::CursorStyle, Appearance(), CursorShape);
-        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Model::ColorScheme>, ColorSchemeList, nullptr);
+        GETSET_BINDABLE_ENUM_SETTING(CursorShape, Microsoft::Terminal::Core::CursorStyle, Appearance().CursorShape);
+        GETSET_BINDABLE_ENUM_SETTING(AdjustIndistinguishableColors, Microsoft::Terminal::Core::AdjustTextMode, Appearance().AdjustIndistinguishableColors);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         DEPENDENCY_PROPERTY(Editor::AppearanceViewModel, Appearance);
         WINRT_PROPERTY(Editor::ProfileViewModel, SourceProfile, nullptr);
 
-        GETSET_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch, Appearance(), BackgroundImageStretchMode);
+        GETSET_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch, Appearance().BackgroundImageStretchMode);
 
-        GETSET_BINDABLE_ENUM_SETTING(IntenseTextStyle, Microsoft::Terminal::Settings::Model::IntenseStyle, Appearance(), IntenseTextStyle);
+        GETSET_BINDABLE_ENUM_SETTING(IntenseTextStyle, Microsoft::Terminal::Settings::Model::IntenseStyle, Appearance().IntenseTextStyle);
 
     private:
         bool _ShowAllFonts;
@@ -149,7 +148,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Editor::EnumEntry _CustomFontWeight{ nullptr };
 
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
-        static void _ViewModelChanged(Windows::UI::Xaml::DependencyObject const& d, Windows::UI::Xaml::DependencyPropertyChangedEventArgs const& e);
+        static void _ViewModelChanged(const Windows::UI::Xaml::DependencyObject& d, const Windows::UI::Xaml::DependencyPropertyChangedEventArgs& e);
         void _UpdateWithNewViewModel();
     };
 };

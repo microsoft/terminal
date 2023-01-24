@@ -86,7 +86,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // activated.
         _lastActivatedArgs = args;
 
-        bool successfullyNotified = false;
+        auto successfullyNotified = false;
         // Raise our WindowActivated event, to let the monarch know we've been
         // activated.
         try
@@ -148,7 +148,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     }
 
     // Method Description:
-    // - Tell this window to display it's window ID. We'll raise a
+    // - Tell this window to display its window ID. We'll raise a
     //   DisplayWindowIdRequested event, which will get handled in the AppHost,
     //   and used to tell the app to display the ID toast.
     // Arguments:
@@ -172,7 +172,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - <none>
     void Peasant::RequestIdentifyWindows()
     {
-        bool successfullyNotified = false;
+        auto successfullyNotified = false;
 
         try
         {
@@ -197,7 +197,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     void Peasant::RequestRename(const winrt::Microsoft::Terminal::Remoting::RenameRequestArgs& args)
     {
-        bool successfullyNotified = false;
+        auto successfullyNotified = false;
         const auto oldName{ _WindowName };
         try
         {

@@ -137,7 +137,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //   and resets it to the defaults. This will delete the state file! That's
     //   the sure-fire way to make sure the data doesn't come back. If we leave
     //   it untouched, then when we go to write the file back out, we'll first
-    //   re-read it's contents and try to overlay our new state. However,
+    //   re-read its contents and try to overlay our new state. However,
     //   nullopts won't remove keys from the JSON, so we'll end up with the
     //   original state in the file.
     // Arguments:
@@ -260,7 +260,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Returns the application-global ApplicationState object.
     Microsoft::Terminal::Settings::Model::ApplicationState ApplicationState::SharedInstance()
     {
-        std::filesystem::path root{ GetBaseSettingsPath() };
+        auto root{ GetBaseSettingsPath() };
         static auto state = winrt::make_self<ApplicationState>(root);
         return *state;
     }
@@ -380,7 +380,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // then rename that file to the final filename. That actually lets us
             // overwrite the elevate file's contents even when unelevated, because
             // we're effectively deleting the original file, then renaming a
-            // different file in it's place.
+            // different file in its place.
             //
             // We're not worried about someone else doing that though, if they do
             // that with the wrong permissions, then we'll just ignore the file and

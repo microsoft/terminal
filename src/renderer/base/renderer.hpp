@@ -16,47 +16,59 @@ Author(s):
 
 #pragma once
 
-#include "../inc/IRenderTarget.hpp"
+#include "../inc/IRenderEngine.hpp"
+#include "../inc/RenderSettings.hpp"
 
 #include "thread.hpp"
 
 #include "../../buffer/out/textBuffer.hpp"
-#include "../../buffer/out/CharRow.hpp"
+
+// fwdecl unittest classes
+#ifdef UNIT_TESTING
+namespace TerminalCoreUnitTests
+{
+    class ConptyRoundtripTests;
+};
+#endif
 
 namespace Microsoft::Console::Render
 {
-    class Renderer : public IRenderTarget
+    class Renderer
     {
     public:
-        Renderer(IRenderData* pData,
+        Renderer(const RenderSettings& renderSettings,
+                 IRenderData* pData,
                  _In_reads_(cEngines) IRenderEngine** const pEngine,
                  const size_t cEngines,
                  std::unique_ptr<RenderThread> thread);
 
-        virtual ~Renderer();
+        ~Renderer();
 
         [[nodiscard]] HRESULT PaintFrame();
 
-        void TriggerSystemRedraw(const RECT* const prcDirtyClient);
-        void TriggerRedraw(const Microsoft::Console::Types::Viewport& region) override;
-        void TriggerRedraw(const COORD* const pcoord) override;
-        void TriggerRedrawCursor(const COORD* const pcoord) override;
-        void TriggerRedrawAll() override;
-        void TriggerTeardown() noexcept override;
+        void NotifyPaintFrame() noexcept;
+        void TriggerSystemRedraw(const til::rect* const prcDirtyClient);
+        void TriggerRedraw(const Microsoft::Console::Types::Viewport& region);
+        void TriggerRedraw(const til::point* const pcoord);
+        void TriggerRedrawCursor(const til::point* const pcoord);
+        void TriggerRedrawAll(const bool backgroundChanged = false, const bool frameChanged = false);
+        void TriggerTeardown() noexcept;
 
-        void TriggerSelection() override;
-        void TriggerScroll() override;
-        void TriggerScroll(const COORD* const pcoordDelta) override;
+        void TriggerSelection();
+        void TriggerScroll();
+        void TriggerScroll(const til::point* const pcoordDelta);
 
-        void TriggerCircling() override;
-        void TriggerTitleChange() override;
+        void TriggerFlush(const bool circling);
+        void TriggerTitleChange();
+
+        void TriggerNewTextNotification(const std::wstring_view newText);
 
         void TriggerFontChange(const int iDpi,
                                const FontInfoDesired& FontInfoDesired,
                                _Out_ FontInfo& FontInfo);
 
         void UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
-                            const SIZE cellSize,
+                            const til::size cellSize,
                             const size_t centeringHint);
 
         [[nodiscard]] HRESULT GetProposedFont(const int iDpi,
@@ -71,6 +83,8 @@ namespace Microsoft::Console::Render
 
         void AddRenderEngine(_In_ IRenderEngine* const pEngine);
 
+        void SetBackgroundColorChangedCallback(std::function<void()> pfn);
+        void SetFrameColorChangedCallback(std::function<void()> pfn);
         void SetRendererEnteredErrorStateCallback(std::function<void()> pfn);
         void ResetErrorStateAndResume();
 
@@ -80,25 +94,25 @@ namespace Microsoft::Console::Render
         static IRenderEngine::GridLineSet s_GetGridlines(const TextAttribute& textAttribute) noexcept;
         static bool s_IsSoftFontChar(const std::wstring_view& v, const size_t firstSoftFontChar, const size_t lastSoftFontChar);
 
-        void _NotifyPaintFrame();
         [[nodiscard]] HRESULT _PaintFrameForEngine(_In_ IRenderEngine* const pEngine) noexcept;
         bool _CheckViewportAndScroll();
         [[nodiscard]] HRESULT _PaintBackground(_In_ IRenderEngine* const pEngine);
         void _PaintBufferOutput(_In_ IRenderEngine* const pEngine);
-        void _PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine, TextBufferCellIterator it, const COORD target, const bool lineWrapped);
-        void _PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine, const TextAttribute textAttribute, const size_t cchLine, const COORD coordTarget);
+        void _PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine, TextBufferCellIterator it, const til::point target, const bool lineWrapped);
+        void _PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine, const TextAttribute textAttribute, const size_t cchLine, const til::point coordTarget);
         void _PaintSelection(_In_ IRenderEngine* const pEngine);
         void _PaintCursor(_In_ IRenderEngine* const pEngine);
         void _PaintOverlays(_In_ IRenderEngine* const pEngine);
         void _PaintOverlay(IRenderEngine& engine, const RenderOverlay& overlay);
         [[nodiscard]] HRESULT _UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute attr, const bool usingSoftFont, const bool isSettingDefaultBrushes);
         [[nodiscard]] HRESULT _PerformScrolling(_In_ IRenderEngine* const pEngine);
-        std::vector<SMALL_RECT> _GetSelectionRects() const;
+        std::vector<til::rect> _GetSelectionRects() const;
         void _ScrollPreviousSelection(const til::point delta);
         [[nodiscard]] HRESULT _PaintTitle(IRenderEngine* const pEngine);
         [[nodiscard]] std::optional<CursorOptions> _GetCursorInfo();
         [[nodiscard]] HRESULT _PrepareRenderInfo(_In_ IRenderEngine* const pEngine);
 
+        const RenderSettings& _renderSettings;
         std::array<IRenderEngine*, 2> _engines{};
         IRenderData* _pData = nullptr; // Non-ownership pointer
         std::unique_ptr<RenderThread> _pThread;
@@ -107,12 +121,16 @@ namespace Microsoft::Console::Render
         std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _hoveredInterval;
         Microsoft::Console::Types::Viewport _viewport;
         std::vector<Cluster> _clusterBuffer;
-        std::vector<SMALL_RECT> _previousSelection;
+        std::vector<til::rect> _previousSelection;
+        std::function<void()> _pfnBackgroundColorChanged;
+        std::function<void()> _pfnFrameColorChanged;
         std::function<void()> _pfnRendererEnteredErrorState;
         bool _destructing = false;
+        bool _forceUpdateViewport = true;
 
 #ifdef UNIT_TESTING
         friend class ConptyOutputTests;
+        friend class TerminalCoreUnitTests::ConptyRoundtripTests;
 #endif
     };
 }

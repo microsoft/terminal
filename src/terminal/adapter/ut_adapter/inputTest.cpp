@@ -9,9 +9,7 @@
 
 #include "../../input/terminalInput.hpp"
 
-#ifdef BUILD_ONECORE_INTERACTIVITY
 #include "../../../interactivity/inc/VtApiRedirection.hpp"
-#endif
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
@@ -42,10 +40,13 @@ public:
     static void s_TerminalInputTestNullCallback(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
 
     TEST_METHOD(TerminalInputTests);
+    TEST_METHOD(TestFocusEvents);
     TEST_METHOD(TerminalInputModifierKeyTests);
     TEST_METHOD(TerminalInputNullKeyTests);
     TEST_METHOD(DifferentModifiersTest);
     TEST_METHOD(CtrlNumTest);
+    TEST_METHOD(BackarrowKeyModeTest);
+    TEST_METHOD(AutoRepeatModeTest);
 
     wchar_t GetModifierChar(const bool fShift, const bool fAlt, const bool fCtrl)
     {
@@ -112,7 +113,7 @@ void InputTest::s_TerminalInputTestNullCallback(_In_ std::deque<std::unique_ptr<
         irExpected.EventType = KEY_EVENT;
         irExpected.Event.KeyEvent.bKeyDown = TRUE;
         irExpected.Event.KeyEvent.wRepeatCount = 1;
-        irExpected.Event.KeyEvent.wVirtualKeyCode = LOBYTE(VkKeyScanW(0));
+        irExpected.Event.KeyEvent.wVirtualKeyCode = LOBYTE(OneCoreSafeVkKeyScanW(0));
         irExpected.Event.KeyEvent.dwControlKeyState = LEFT_CTRL_PRESSED;
         irExpected.Event.KeyEvent.wVirtualScanCode = 0;
         irExpected.Event.KeyEvent.uChar.UnicodeChar = L'\x0';
@@ -154,21 +155,21 @@ void InputTest::TerminalInputTests()
 {
     Log::Comment(L"Starting test...");
 
-    TerminalInput* const pInput = new TerminalInput(s_TerminalInputTestCallback);
+    const auto pInput = new TerminalInput(s_TerminalInputTestCallback);
 
     Log::Comment(L"Sending every possible VKEY at the input stream for interception during key DOWN.");
     for (BYTE vkey = 0; vkey < BYTE_MAX; vkey++)
     {
         Log::Comment(NoThrowString().Format(L"Testing Key 0x%x", vkey));
 
-        bool fExpectedKeyHandled = true;
+        auto fExpectedKeyHandled = true;
 
         INPUT_RECORD irTest = { 0 };
         irTest.EventType = KEY_EVENT;
         irTest.Event.KeyEvent.wRepeatCount = 1;
         irTest.Event.KeyEvent.wVirtualKeyCode = vkey;
         irTest.Event.KeyEvent.bKeyDown = TRUE;
-        irTest.Event.KeyEvent.uChar.UnicodeChar = LOWORD(MapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR));
+        irTest.Event.KeyEvent.uChar.UnicodeChar = LOWORD(OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR));
 
         // Set up expected result
         switch (vkey)
@@ -304,10 +305,62 @@ void InputTest::TerminalInputTests()
     inputEvent = IInputEvent::Create(irUnhandled);
     VERIFY_ARE_EQUAL(false, pInput->HandleKey(inputEvent.get()), L"Verify MENU_EVENT was NOT handled.");
 
-    Log::Comment(L"Testing FOCUS_EVENT");
-    irUnhandled.EventType = FOCUS_EVENT;
-    inputEvent = IInputEvent::Create(irUnhandled);
-    VERIFY_ARE_EQUAL(false, pInput->HandleKey(inputEvent.get()), L"Verify FOCUS_EVENT was NOT handled.");
+    // Testing FOCUS_EVENTs is handled by TestFocusEvents
+}
+
+void InputTest::TestFocusEvents()
+{
+    // GH#12900, #13238
+    // Focus events that come in from the API should never be translated to VT sequences.
+    // We're relying on the fact that the INPUT_RECORD version of the ctor is only called by the API
+    const auto pInput = new TerminalInput(s_TerminalInputTestCallback);
+
+    INPUT_RECORD irTest = { 0 };
+    irTest.EventType = FOCUS_EVENT;
+
+    {
+        irTest.Event.FocusEvent.bSetFocus = false;
+        auto inputEvent = IInputEvent::Create(irTest);
+        VERIFY_ARE_EQUAL(false, pInput->HandleKey(inputEvent.get()), L"Verify FOCUS_EVENT from API was NOT handled.");
+    }
+    {
+        irTest.Event.FocusEvent.bSetFocus = true;
+        auto inputEvent = IInputEvent::Create(irTest);
+        VERIFY_ARE_EQUAL(false, pInput->HandleKey(inputEvent.get()), L"Verify FOCUS_EVENT from API was NOT handled.");
+    }
+    {
+        auto inputEvent = std::make_unique<FocusEvent>(false);
+        VERIFY_ARE_EQUAL(false, pInput->HandleKey(inputEvent.get()), L"Verify FocusEvent from any other source was NOT handled.");
+    }
+    {
+        auto inputEvent = std::make_unique<FocusEvent>(true);
+        VERIFY_ARE_EQUAL(false, pInput->HandleKey(inputEvent.get()), L"Verify FocusEvent from any other source was NOT handled.");
+    }
+
+    Log::Comment(L"Enable focus event handling");
+
+    pInput->SetInputMode(TerminalInput::Mode::FocusEvent, true);
+
+    {
+        irTest.Event.FocusEvent.bSetFocus = false;
+        auto inputEvent = IInputEvent::Create(irTest);
+        VERIFY_ARE_EQUAL(false, pInput->HandleKey(inputEvent.get()), L"Verify FOCUS_EVENT from API was NOT handled.");
+    }
+    {
+        irTest.Event.FocusEvent.bSetFocus = true;
+        auto inputEvent = IInputEvent::Create(irTest);
+        VERIFY_ARE_EQUAL(false, pInput->HandleKey(inputEvent.get()), L"Verify FOCUS_EVENT from API was NOT handled.");
+    }
+    {
+        s_expectedInput = L"\x1b[O";
+        auto inputEvent = std::make_unique<FocusEvent>(false);
+        VERIFY_ARE_EQUAL(true, pInput->HandleKey(inputEvent.get()), L"Verify FocusEvent from any other source was handled.");
+    }
+    {
+        s_expectedInput = L"\x1b[I";
+        auto inputEvent = std::make_unique<FocusEvent>(true);
+        VERIFY_ARE_EQUAL(true, pInput->HandleKey(inputEvent.get()), L"Verify FocusEvent from any other source was handled.");
+    }
 }
 
 void InputTest::TerminalInputModifierKeyTests()
@@ -326,24 +379,24 @@ void InputTest::TerminalInputModifierKeyTests()
     unsigned int uiKeystate;
     VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiModifierKeystate", uiKeystate));
 
-    TerminalInput* const pInput = new TerminalInput(s_TerminalInputTestCallback);
-    const BYTE slashVkey = LOBYTE(VkKeyScanW(L'/'));
-    const BYTE nullVkey = LOBYTE(VkKeyScanW(0));
+    const auto pInput = new TerminalInput(s_TerminalInputTestCallback);
+    const auto slashVkey = LOBYTE(OneCoreSafeVkKeyScanW(L'/'));
+    const auto nullVkey = LOBYTE(OneCoreSafeVkKeyScanW(0));
 
     Log::Comment(L"Sending every possible VKEY at the input stream for interception during key DOWN.");
     for (BYTE vkey = 0; vkey < BYTE_MAX; vkey++)
     {
         Log::Comment(NoThrowString().Format(L"Testing Key 0x%x", vkey));
 
-        bool fExpectedKeyHandled = true;
-        bool fModifySequence = false;
+        auto fExpectedKeyHandled = true;
+        auto fModifySequence = false;
         INPUT_RECORD irTest = { 0 };
         irTest.EventType = KEY_EVENT;
         irTest.Event.KeyEvent.dwControlKeyState = uiKeystate;
         irTest.Event.KeyEvent.wRepeatCount = 1;
         irTest.Event.KeyEvent.wVirtualKeyCode = vkey;
         irTest.Event.KeyEvent.bKeyDown = TRUE;
-        irTest.Event.KeyEvent.uChar.UnicodeChar = LOWORD(MapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR));
+        irTest.Event.KeyEvent.uChar.UnicodeChar = LOWORD(OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR));
 
         if (ControlPressed(uiKeystate))
         {
@@ -464,7 +517,7 @@ void InputTest::TerminalInputModifierKeyTests()
         case VK_TAB:
             if (AltPressed(uiKeystate))
             {
-                // Alt+Tab isn't possible - thats reserved by the system.
+                // Alt+Tab isn't possible - that's reserved by the system.
                 continue;
             }
             else if (ShiftPressed(uiKeystate))
@@ -477,7 +530,7 @@ void InputTest::TerminalInputModifierKeyTests()
             }
             break;
         default:
-            wchar_t ch = irTest.Event.KeyEvent.uChar.UnicodeChar;
+            auto ch = irTest.Event.KeyEvent.uChar.UnicodeChar;
 
             // Alt+Key generates [0x1b, Ctrl+key] into the stream
             // Pressing the control key causes all bits but the 5 least
@@ -520,9 +573,9 @@ void InputTest::TerminalInputModifierKeyTests()
 
         if (fModifySequence && s_expectedInput.size() > 1)
         {
-            bool fShift = !!(uiKeystate & SHIFT_PRESSED);
-            bool fAlt = (uiKeystate & LEFT_ALT_PRESSED) || (uiKeystate & RIGHT_ALT_PRESSED);
-            bool fCtrl = (uiKeystate & LEFT_CTRL_PRESSED) || (uiKeystate & RIGHT_CTRL_PRESSED);
+            auto fShift = !!(uiKeystate & SHIFT_PRESSED);
+            auto fAlt = (uiKeystate & LEFT_ALT_PRESSED) || (uiKeystate & RIGHT_ALT_PRESSED);
+            auto fCtrl = (uiKeystate & LEFT_CTRL_PRESSED) || (uiKeystate & RIGHT_CTRL_PRESSED);
             s_expectedInput[s_expectedInput.size() - 2] = L'1' + (fShift ? 1 : 0) + (fAlt ? 2 : 0) + (fCtrl ? 4 : 0);
         }
 
@@ -540,11 +593,11 @@ void InputTest::TerminalInputNullKeyTests()
 
     unsigned int uiKeystate = LEFT_CTRL_PRESSED;
 
-    TerminalInput* const pInput = new TerminalInput(s_TerminalInputTestNullCallback);
+    const auto pInput = new TerminalInput(s_TerminalInputTestNullCallback);
 
     Log::Comment(L"Sending every possible VKEY at the input stream for interception during key DOWN.");
 
-    BYTE vkey = '2';
+    BYTE vkey = LOBYTE(OneCoreSafeVkKeyScanW(0));
     Log::Comment(NoThrowString().Format(L"Testing key, state =0x%x, 0x%x", vkey, uiKeystate));
 
     INPUT_RECORD irTest = { 0 };
@@ -599,7 +652,7 @@ void InputTest::DifferentModifiersTest()
 {
     Log::Comment(L"Starting test...");
 
-    TerminalInput* const pInput = new TerminalInput(s_TerminalInputTestCallback);
+    const auto pInput = new TerminalInput(s_TerminalInputTestCallback);
 
     Log::Comment(L"Sending a bunch of keystrokes that are a little weird.");
 
@@ -650,7 +703,7 @@ void InputTest::DifferentModifiersTest()
 
     // C-/ -> C-_ -> 0x1f
     uiKeystate = LEFT_CTRL_PRESSED;
-    vkey = LOBYTE(VkKeyScan(L'/'));
+    vkey = LOBYTE(OneCoreSafeVkKeyScanW(L'/'));
     s_expectedInput = L"\x1f";
     TestKey(pInput, uiKeystate, vkey, L'/');
     uiKeystate = RIGHT_CTRL_PRESSED;
@@ -658,7 +711,7 @@ void InputTest::DifferentModifiersTest()
 
     // M-/ -> ESC /
     uiKeystate = LEFT_ALT_PRESSED;
-    vkey = LOBYTE(VkKeyScan(L'/'));
+    vkey = LOBYTE(OneCoreSafeVkKeyScanW(L'/'));
     s_expectedInput = L"\x1b/";
     TestKey(pInput, uiKeystate, vkey, L'/');
     uiKeystate = RIGHT_ALT_PRESSED;
@@ -668,7 +721,7 @@ void InputTest::DifferentModifiersTest()
     // C-? -> DEL -> 0x7f
     Log::Comment(NoThrowString().Format(L"Checking C-?"));
     // Use SHIFT_PRESSED to force us into differentiating between '/' and '?'
-    vkey = LOBYTE(VkKeyScan(L'?'));
+    vkey = LOBYTE(OneCoreSafeVkKeyScanW(L'?'));
     s_expectedInput = L"\x7f";
     TestKey(pInput, SHIFT_PRESSED | LEFT_CTRL_PRESSED, vkey, L'?');
     TestKey(pInput, SHIFT_PRESSED | RIGHT_CTRL_PRESSED, vkey, L'?');
@@ -676,7 +729,7 @@ void InputTest::DifferentModifiersTest()
     // C-M-/ -> 0x1b0x1f
     Log::Comment(NoThrowString().Format(L"Checking C-M-/"));
     uiKeystate = LEFT_CTRL_PRESSED | LEFT_ALT_PRESSED;
-    vkey = LOBYTE(VkKeyScan(L'/'));
+    vkey = LOBYTE(OneCoreSafeVkKeyScanW(L'/'));
     s_expectedInput = L"\x1b\x1f";
     TestKey(pInput, LEFT_CTRL_PRESSED | LEFT_ALT_PRESSED, vkey, L'/');
     TestKey(pInput, RIGHT_CTRL_PRESSED | LEFT_ALT_PRESSED, vkey, L'/');
@@ -686,7 +739,7 @@ void InputTest::DifferentModifiersTest()
     // C-M-? -> 0x1b0x7f
     Log::Comment(NoThrowString().Format(L"Checking C-M-?"));
     uiKeystate = LEFT_CTRL_PRESSED | LEFT_ALT_PRESSED;
-    vkey = LOBYTE(VkKeyScan(L'?'));
+    vkey = LOBYTE(OneCoreSafeVkKeyScanW(L'?'));
     s_expectedInput = L"\x1b\x7f";
     TestKey(pInput, SHIFT_PRESSED | LEFT_CTRL_PRESSED | LEFT_ALT_PRESSED, vkey, L'?');
     TestKey(pInput, SHIFT_PRESSED | RIGHT_CTRL_PRESSED | LEFT_ALT_PRESSED, vkey, L'?');
@@ -698,7 +751,7 @@ void InputTest::CtrlNumTest()
 {
     Log::Comment(L"Starting test...");
 
-    TerminalInput* const pInput = new TerminalInput(s_TerminalInputTestCallback);
+    const auto pInput = new TerminalInput(s_TerminalInputTestCallback);
 
     Log::Comment(L"Sending the various Ctrl+Num keys.");
 
@@ -738,4 +791,119 @@ void InputTest::CtrlNumTest()
     vkey = static_cast<WORD>('9');
     s_expectedInput = L"9";
     TestKey(pInput, uiKeystate, vkey);
+}
+
+void InputTest::BackarrowKeyModeTest()
+{
+    Log::Comment(L"Starting test...");
+
+    const auto pInput = new TerminalInput(s_TerminalInputTestCallback);
+    const BYTE vkey = VK_BACK;
+
+    Log::Comment(L"Sending backspace key combos with DECBKM enabled.");
+    pInput->SetInputMode(TerminalInput::Mode::BackarrowKey, true);
+
+    s_expectedInput = L"\x8";
+    TestKey(pInput, 0, vkey);
+
+    s_expectedInput = L"\x8";
+    TestKey(pInput, SHIFT_PRESSED, vkey);
+
+    s_expectedInput = L"\x7f";
+    TestKey(pInput, LEFT_CTRL_PRESSED, vkey);
+
+    s_expectedInput = L"\x7f";
+    TestKey(pInput, LEFT_CTRL_PRESSED | SHIFT_PRESSED, vkey);
+
+    s_expectedInput = L"\x1b\x8";
+    TestKey(pInput, LEFT_ALT_PRESSED, vkey);
+
+    s_expectedInput = L"\x1b\x8";
+    TestKey(pInput, LEFT_ALT_PRESSED | SHIFT_PRESSED, vkey);
+
+    s_expectedInput = L"\x1b\x7f";
+    TestKey(pInput, LEFT_ALT_PRESSED | LEFT_CTRL_PRESSED, vkey);
+
+    s_expectedInput = L"\x1b\x7f";
+    TestKey(pInput, LEFT_ALT_PRESSED | LEFT_CTRL_PRESSED | SHIFT_PRESSED, vkey);
+
+    Log::Comment(L"Sending backspace key combos with DECBKM disabled.");
+    pInput->SetInputMode(TerminalInput::Mode::BackarrowKey, false);
+
+    s_expectedInput = L"\x7f";
+    TestKey(pInput, 0, vkey);
+
+    s_expectedInput = L"\x7f";
+    TestKey(pInput, SHIFT_PRESSED, vkey);
+
+    s_expectedInput = L"\x8";
+    TestKey(pInput, LEFT_CTRL_PRESSED, vkey);
+
+    s_expectedInput = L"\x8";
+    TestKey(pInput, LEFT_CTRL_PRESSED | SHIFT_PRESSED, vkey);
+
+    s_expectedInput = L"\x1b\x7f";
+    TestKey(pInput, LEFT_ALT_PRESSED, vkey);
+
+    s_expectedInput = L"\x1b\x7f";
+    TestKey(pInput, LEFT_ALT_PRESSED | SHIFT_PRESSED, vkey);
+
+    s_expectedInput = L"\x1b\x8";
+    TestKey(pInput, LEFT_ALT_PRESSED | LEFT_CTRL_PRESSED, vkey);
+
+    s_expectedInput = L"\x1b\x8";
+    TestKey(pInput, LEFT_ALT_PRESSED | LEFT_CTRL_PRESSED | SHIFT_PRESSED, vkey);
+}
+
+void InputTest::AutoRepeatModeTest()
+{
+    Log::Comment(L"Starting test...");
+
+    auto receivedChars = std::wstring{};
+    const auto pInput = new TerminalInput([&](auto& inEvents) {
+        for (auto& record : IInputEvent::ToInputRecords(inEvents))
+        {
+            receivedChars.push_back(record.Event.KeyEvent.uChar.UnicodeChar);
+        }
+    });
+
+    const auto repeatKey = [&](auto vKey, auto unicodeChar, int repeatCount) {
+        auto irTest = INPUT_RECORD{ 0 };
+        irTest.EventType = KEY_EVENT;
+        irTest.Event.KeyEvent.wRepeatCount = 1;
+        irTest.Event.KeyEvent.wVirtualKeyCode = vKey;
+        irTest.Event.KeyEvent.uChar.UnicodeChar = unicodeChar;
+        irTest.Event.KeyEvent.bKeyDown = TRUE;
+
+        // We're simulating a key being held down so that it repeats, by sending
+        // multiple KeyDown events followed by a single KeyUp event.
+
+        for (auto i = 0; i < repeatCount; i++)
+        {
+            auto keyDownEvent = IInputEvent::Create(irTest);
+            VERIFY_IS_TRUE(pInput->HandleKey(keyDownEvent.get()));
+        }
+
+        irTest.Event.KeyEvent.bKeyDown = FALSE;
+        auto keyUpEvent = IInputEvent::Create(irTest);
+        VERIFY_IS_FALSE(pInput->HandleKey(keyUpEvent.get()));
+    };
+
+    Log::Comment(L"Sending repeating keypresses with DECARM disabled.");
+
+    pInput->SetInputMode(TerminalInput::Mode::AutoRepeat, false);
+    receivedChars.clear();
+    repeatKey('A', L'a', 5);
+    repeatKey('B', L'b', 5);
+    repeatKey('C', L'c', 5);
+    VERIFY_ARE_EQUAL(L"abc", receivedChars);
+
+    Log::Comment(L"Sending repeating keypresses with DECARM enabled.");
+
+    pInput->SetInputMode(TerminalInput::Mode::AutoRepeat, true);
+    receivedChars.clear();
+    repeatKey('A', L'a', 5);
+    repeatKey('B', L'b', 5);
+    repeatKey('C', L'c', 5);
+    VERIFY_ARE_EQUAL(L"aaaaabbbbbccccc", receivedChars);
 }

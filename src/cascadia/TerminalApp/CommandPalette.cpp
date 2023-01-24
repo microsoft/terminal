@@ -39,17 +39,6 @@ namespace winrt::TerminalApp::implementation
 
         _switchToMode(CommandPaletteMode::ActionMode);
 
-        if (CommandPaletteShadow())
-        {
-            // Hook up the shadow on the command palette to the backdrop that
-            // will actually show it. This needs to be done at runtime, and only
-            // if the shadow actually exists. ThemeShadow isn't supported below
-            // version 18362.
-            CommandPaletteShadow().Receivers().Append(_shadowBackdrop());
-            // "raise" the command palette up by 16 units, so it will cast a shadow.
-            _backdrop().Translation({ 0, 0, 16 });
-        }
-
         // Whatever is hosting us will enable us by setting our visibility to
         // "Visible". When that happens, set focus to our search box.
         RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
@@ -81,7 +70,7 @@ namespace winrt::TerminalApp::implementation
                     TraceLoggingDescription("Event emitted when the Command Palette is opened"),
                     TraceLoggingWideString(L"Action", "Mode", "which mode the palette was opened in"),
                     TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                    TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
             }
             else
             {
@@ -119,7 +108,7 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::SelectNextItem(const bool moveDown)
     {
         auto selected = _filteredActionsView().SelectedIndex();
-        const int numItems = ::base::saturated_cast<int>(_filteredActionsView().Items().Size());
+        const auto numItems = ::base::saturated_cast<int>(_filteredActionsView().Items().Size());
 
         // Do not try to select an item if
         // - the list is empty
@@ -164,11 +153,16 @@ namespace winrt::TerminalApp::implementation
     // - the approximate number of items visible in the list (in other words the size of the page)
     uint32_t CommandPalette::_getNumVisibleItems()
     {
-        const auto container = _filteredActionsView().ContainerFromIndex(0);
-        const auto item = container.try_as<winrt::Windows::UI::Xaml::Controls::ListViewItem>();
-        const auto itemHeight = ::base::saturated_cast<int>(item.ActualHeight());
-        const auto listHeight = ::base::saturated_cast<int>(_filteredActionsView().ActualHeight());
-        return listHeight / itemHeight;
+        if (const auto container = _filteredActionsView().ContainerFromIndex(0))
+        {
+            if (const auto item = container.try_as<winrt::Windows::UI::Xaml::Controls::ListViewItem>())
+            {
+                const auto itemHeight = ::base::saturated_cast<int>(item.ActualHeight());
+                const auto listHeight = ::base::saturated_cast<int>(_filteredActionsView().ActualHeight());
+                return listHeight / itemHeight;
+            }
+        }
+        return 0;
     }
 
     // Method Description:
@@ -257,8 +251,8 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void CommandPalette::_previewKeyDownHandler(IInspectable const& /*sender*/,
-                                                Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
+    void CommandPalette::_previewKeyDownHandler(const IInspectable& /*sender*/,
+                                                const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
     {
         const auto key = e.OriginalKey();
         const auto scanCode = e.KeyStatus().ScanCode;
@@ -406,8 +400,8 @@ namespace winrt::TerminalApp::implementation
         return handled;
     }
 
-    void CommandPalette::_keyUpHandler(IInspectable const& /*sender*/,
-                                       Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
+    void CommandPalette::_keyUpHandler(const IInspectable& /*sender*/,
+                                       const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
     {
         if (_currentMode == CommandPaletteMode::TabSwitchMode)
         {
@@ -448,8 +442,8 @@ namespace winrt::TerminalApp::implementation
     // - <unused>
     // Return Value:
     // - <none>
-    void CommandPalette::_rootPointerPressed(Windows::Foundation::IInspectable const& /*sender*/,
-                                             Windows::UI::Xaml::Input::PointerRoutedEventArgs const& /*e*/)
+    void CommandPalette::_rootPointerPressed(const Windows::Foundation::IInspectable& /*sender*/,
+                                             const Windows::UI::Xaml::Input::PointerRoutedEventArgs& /*e*/)
     {
         if (Visibility() != Visibility::Collapsed)
         {
@@ -471,8 +465,8 @@ namespace winrt::TerminalApp::implementation
     // - <unused>
     // Return Value:
     // - <none>
-    void CommandPalette::_lostFocusHandler(Windows::Foundation::IInspectable const& /*sender*/,
-                                           Windows::UI::Xaml::RoutedEventArgs const& /*args*/)
+    void CommandPalette::_lostFocusHandler(const Windows::Foundation::IInspectable& /*sender*/,
+                                           const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
         const auto flyout = _searchBox().ContextFlyout();
         if (flyout && flyout.IsOpen())
@@ -480,7 +474,13 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        auto focusedElementOrAncestor = Input::FocusManager::GetFocusedElement(this->XamlRoot()).try_as<DependencyObject>();
+        auto root = this->XamlRoot();
+        if (!root)
+        {
+            return;
+        }
+
+        auto focusedElementOrAncestor = Input::FocusManager::GetFocusedElement(root).try_as<DependencyObject>();
         while (focusedElementOrAncestor)
         {
             if (focusedElementOrAncestor == *this)
@@ -506,8 +506,8 @@ namespace winrt::TerminalApp::implementation
     // - e: the PointerRoutedEventArgs that we want to mark as handled
     // Return Value:
     // - <none>
-    void CommandPalette::_backdropPointerPressed(Windows::Foundation::IInspectable const& /*sender*/,
-                                                 Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e)
+    void CommandPalette::_backdropPointerPressed(const Windows::Foundation::IInspectable& /*sender*/,
+                                                 const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e)
     {
         e.Handled(true);
     }
@@ -520,8 +520,8 @@ namespace winrt::TerminalApp::implementation
     // - e: an ItemClickEventArgs who's ClickedItem() will be the command that was clicked on.
     // Return Value:
     // - <none>
-    void CommandPalette::_listItemClicked(Windows::Foundation::IInspectable const& /*sender*/,
-                                          Windows::UI::Xaml::Controls::ItemClickEventArgs const& e)
+    void CommandPalette::_listItemClicked(const Windows::Foundation::IInspectable& /*sender*/,
+                                          const Windows::UI::Xaml::Controls::ItemClickEventArgs& e)
     {
         const auto selectedCommand = e.ClickedItem();
         if (const auto filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>())
@@ -530,24 +530,72 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void CommandPalette::_listItemSelectionChanged(const Windows::Foundation::IInspectable& /*sender*/, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& e)
+    {
+        // We don't care about...
+        // - CommandlineMode: it doesn't have any selectable items in the list view
+        // - TabSwitchMode: focus and selected item are in sync
+        if (_currentMode == CommandPaletteMode::ActionMode || _currentMode == CommandPaletteMode::TabSearchMode)
+        {
+            if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(_searchBox()) })
+            {
+                if (const auto selectedList = e.AddedItems(); selectedList.Size() > 0)
+                {
+                    const auto selectedCommand = selectedList.GetAt(0);
+                    if (const auto filteredCmd = selectedCommand.try_as<TerminalApp::FilteredCommand>())
+                    {
+                        if (const auto paletteItem = filteredCmd.Item().try_as<TerminalApp::PaletteItem>())
+                        {
+                            automationPeer.RaiseNotificationEvent(
+                                Automation::Peers::AutomationNotificationKind::ItemAdded,
+                                Automation::Peers::AutomationNotificationProcessing::MostRecent,
+                                paletteItem.Name() + L" " + paletteItem.KeyChordText(),
+                                L"CommandPaletteSelectedItemChanged" /* unique name for this notification category */);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // Method Description:
-    // This event is called when the user clicks on an ChevronLeft button right
+    // This event is called when the user clicks on a ChevronLeft button right
     // next to the ParentCommandName (e.g. New Tab...) above the subcommands list.
-    // It'll go up a level when the users click the button.
+    // It'll go up a single level when the user clicks the button.
     // Arguments:
     // - sender: the button that got clicked
     // Return Value:
     // - <none>
-    void CommandPalette::_moveBackButtonClicked(Windows::Foundation::IInspectable const& /*sender*/,
-                                                Windows::UI::Xaml::RoutedEventArgs const&)
+    void CommandPalette::_moveBackButtonClicked(const Windows::Foundation::IInspectable& /*sender*/,
+                                                const Windows::UI::Xaml::RoutedEventArgs&)
     {
         _PreviewActionHandlers(*this, nullptr);
-        _nestedActionStack.Clear();
-        ParentCommandName(L"");
-        _currentNestedCommands.Clear();
         _searchBox().Focus(FocusState::Programmatic);
+
+        const auto previousAction{ _nestedActionStack.GetAt(_nestedActionStack.Size() - 1) };
+        _nestedActionStack.RemoveAtEnd();
+
+        // Repopulate nested commands when the root has not been reached yet
+        if (_nestedActionStack.Size() > 0)
+        {
+            const auto newPreviousAction{ _nestedActionStack.GetAt(_nestedActionStack.Size() - 1) };
+            const auto actionPaletteItem{ newPreviousAction.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() };
+
+            ParentCommandName(actionPaletteItem.Command().Name());
+            _updateCurrentNestedCommands(actionPaletteItem.Command());
+        }
+        else
+        {
+            ParentCommandName(L"");
+            _currentNestedCommands.Clear();
+        }
         _updateFilteredActions();
-        _filteredActionsView().SelectedIndex(0);
+
+        const auto lastSelectedIt = std::find_if(begin(_filteredActions), end(_filteredActions), [&](const auto& filteredCommand) {
+            return filteredCommand.Item().Name() == previousAction.Item().Name();
+        });
+        const auto lastSelectedIndex = static_cast<int32_t>(std::distance(begin(_filteredActions), lastSelectedIt));
+        _scrollToIndex(lastSelectedIt != end(_filteredActions) ? lastSelectedIndex : 0);
     }
 
     // Method Description:
@@ -623,7 +671,7 @@ namespace winrt::TerminalApp::implementation
     // - command: the Command to dispatch. This might be null.
     // Return Value:
     // - <none>
-    void CommandPalette::_dispatchCommand(winrt::TerminalApp::FilteredCommand const& filteredCommand)
+    void CommandPalette::_dispatchCommand(const winrt::TerminalApp::FilteredCommand& filteredCommand)
     {
         if (_currentMode == CommandPaletteMode::CommandlineMode)
         {
@@ -645,14 +693,7 @@ namespace winrt::TerminalApp::implementation
                     // to pick from.
                     _nestedActionStack.Append(filteredCommand);
                     ParentCommandName(actionPaletteItem.Command().Name());
-                    _currentNestedCommands.Clear();
-                    for (const auto& nameAndCommand : actionPaletteItem.Command().NestedCommands())
-                    {
-                        const auto action = nameAndCommand.Value();
-                        auto nestedActionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action) };
-                        auto nestedFilteredCommand{ winrt::make<FilteredCommand>(nestedActionPaletteItem) };
-                        _currentNestedCommands.Append(nestedFilteredCommand);
-                    }
+                    _updateCurrentNestedCommands(actionPaletteItem.Command());
 
                     _updateUIForStackChange();
                 }
@@ -683,7 +724,7 @@ namespace winrt::TerminalApp::implementation
                         TraceLoggingUInt32(searchTextLength, "SearchTextLength", "Number of characters in the search string"),
                         TraceLoggingUInt32(nestedCommandDepth, "NestedCommandDepth", "the depth in the tree of commands for the dispatched action"),
                         TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                        TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+                        TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
                 }
             }
         }
@@ -719,7 +760,7 @@ namespace winrt::TerminalApp::implementation
     // - filteredCommand - Selected filtered command - might be null
     // Return Value:
     // - <none>
-    void CommandPalette::_switchToTab(winrt::TerminalApp::FilteredCommand const& filteredCommand)
+    void CommandPalette::_switchToTab(const winrt::TerminalApp::FilteredCommand& filteredCommand)
     {
         if (filteredCommand)
         {
@@ -739,7 +780,7 @@ namespace winrt::TerminalApp::implementation
     // - filteredCommand - Selected filtered command - might be null
     // Return Value:
     // - <none>
-    void CommandPalette::_dispatchCommandline(winrt::TerminalApp::FilteredCommand const& command)
+    void CommandPalette::_dispatchCommandline(const winrt::TerminalApp::FilteredCommand& command)
     {
         const auto filteredCommand = command ? command : _buildCommandLineCommand(winrt::hstring(_getTrimmedInput()));
         if (filteredCommand.has_value())
@@ -751,7 +792,7 @@ namespace winrt::TerminalApp::implementation
                 "CommandPaletteDispatchedCommandline",
                 TraceLoggingDescription("Event emitted when the user runs a commandline in the Command Palette"),
                 TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
             if (const auto commandLinePaletteItem{ filteredCommand.value().Item().try_as<winrt::TerminalApp::CommandLinePaletteItem>() })
             {
@@ -789,7 +830,7 @@ namespace winrt::TerminalApp::implementation
             "CommandPaletteDismissed",
             TraceLoggingDescription("Event emitted when the user dismisses the Command Palette without selecting an action"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
     // Method Description:
@@ -799,8 +840,8 @@ namespace winrt::TerminalApp::implementation
     // - <unused>
     // Return Value:
     // - <none>
-    void CommandPalette::_filterTextChanged(IInspectable const& /*sender*/,
-                                            Windows::UI::Xaml::RoutedEventArgs const& /*args*/)
+    void CommandPalette::_filterTextChanged(const IInspectable& /*sender*/,
+                                            const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
         if (_currentMode == CommandPaletteMode::CommandlineMode)
         {
@@ -822,16 +863,15 @@ namespace winrt::TerminalApp::implementation
         {
             const auto currentNeedleHasResults{ _filteredActions.Size() > 0 };
             _noMatchesText().Visibility(currentNeedleHasResults ? Visibility::Collapsed : Visibility::Visible);
-            if (!currentNeedleHasResults)
+            if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(_searchBox()) })
             {
-                if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(_searchBox()) })
-                {
-                    automationPeer.RaiseNotificationEvent(
-                        Automation::Peers::AutomationNotificationKind::ActionCompleted,
-                        Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
-                        NoMatchesText(), // NoMatchesText contains the right text for the current mode
-                        L"CommandPaletteResultAnnouncement" /* unique name for this notification */);
-                }
+                automationPeer.RaiseNotificationEvent(
+                    Automation::Peers::AutomationNotificationKind::ActionCompleted,
+                    Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
+                    currentNeedleHasResults ?
+                        winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"CommandPalette_MatchesAvailable") }, _filteredActions.Size()) } :
+                        NoMatchesText(), // what to announce if results were found
+                    L"CommandPaletteResultAnnouncement" /* unique name for this group of notifications */);
             }
         }
         else
@@ -902,7 +942,7 @@ namespace winrt::TerminalApp::implementation
         _actionMap = actionMap;
     }
 
-    void CommandPalette::SetCommands(Collections::IVector<Command> const& actions)
+    void CommandPalette::SetCommands(const Collections::IVector<Command>& actions)
     {
         _allCommands.Clear();
         for (const auto& action : actions)
@@ -930,8 +970,8 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - <none>
     void CommandPalette::_bindTabs(
-        Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::TabBase> const& source,
-        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> const& target)
+        const Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::TabBase>& source,
+        const Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand>& target)
     {
         target.Clear();
         for (const auto& tab : source)
@@ -942,13 +982,13 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void CommandPalette::SetTabs(Collections::IObservableVector<TabBase> const& tabs, Collections::IObservableVector<TabBase> const& mruTabs)
+    void CommandPalette::SetTabs(const Collections::IObservableVector<TabBase>& tabs, const Collections::IObservableVector<TabBase>& mruTabs)
     {
         _bindTabs(tabs, _tabActions);
         _bindTabs(mruTabs, _mruTabActions);
     }
 
-    void CommandPalette::EnableCommandPaletteMode(CommandPaletteLaunchMode const launchMode)
+    void CommandPalette::EnableCommandPaletteMode(const CommandPaletteLaunchMode launchMode)
     {
         const auto mode = (launchMode == CommandPaletteLaunchMode::CommandLine) ?
                               CommandPaletteMode::CommandlineMode :
@@ -1084,11 +1124,11 @@ namespace winrt::TerminalApp::implementation
         // This allows WinUI to nicely animate the ListView as it changes.
         for (uint32_t i = 0; i < _filteredActions.Size() && i < actions.size(); i++)
         {
-            for (uint32_t j = i; j < _filteredActions.Size(); j++)
+            for (auto j = i; j < _filteredActions.Size(); j++)
             {
                 if (_filteredActions.GetAt(j).Item() == actions[i].Item())
                 {
-                    for (uint32_t k = i; k < j; k++)
+                    for (auto k = i; k < j; k++)
                     {
                         _filteredActions.RemoveAt(i);
                     }
@@ -1112,6 +1152,25 @@ namespace winrt::TerminalApp::implementation
         while (_filteredActions.Size() < actions.size())
         {
             _filteredActions.Append(actions[_filteredActions.Size()]);
+        }
+    }
+
+    // Method Description:
+    // - Update the list of current nested commands to match that of the
+    //   given parent command.
+    // Arguments:
+    // - parentCommand: the command with an optional list of nested commands.
+    // Return Value:
+    // - <none>
+    void CommandPalette::_updateCurrentNestedCommands(const winrt::Microsoft::Terminal::Settings::Model::Command& parentCommand)
+    {
+        _currentNestedCommands.Clear();
+        for (const auto& nameAndCommand : parentCommand.NestedCommands())
+        {
+            const auto action = nameAndCommand.Value();
+            auto nestedActionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action) };
+            auto nestedFilteredCommand{ winrt::make<FilteredCommand>(nestedActionPaletteItem) };
+            _currentNestedCommands.Append(nestedFilteredCommand);
         }
     }
 
@@ -1170,8 +1229,8 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - <none>
     void CommandPalette::_choosingItemContainer(
-        Windows::UI::Xaml::Controls::ListViewBase const& /*sender*/,
-        Windows::UI::Xaml::Controls::ChoosingItemContainerEventArgs const& args)
+        const Windows::UI::Xaml::Controls::ListViewBase& /*sender*/,
+        const Windows::UI::Xaml::Controls::ChoosingItemContainerEventArgs& args)
     {
         const auto dataTemplate = _itemTemplateSelector.SelectTemplate(args.Item());
         const auto itemContainer = args.ItemContainer();
@@ -1219,8 +1278,8 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - <none>
     void CommandPalette::_containerContentChanging(
-        Windows::UI::Xaml::Controls::ListViewBase const& /*sender*/,
-        Windows::UI::Xaml::Controls::ContainerContentChangingEventArgs const& args)
+        const Windows::UI::Xaml::Controls::ListViewBase& /*sender*/,
+        const Windows::UI::Xaml::Controls::ContainerContentChangingEventArgs& args)
     {
         const auto itemContainer = args.ItemContainer();
         if (args.InRecycleQueue() && itemContainer && itemContainer.ContentTemplate())

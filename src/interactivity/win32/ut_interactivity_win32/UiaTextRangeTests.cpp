@@ -21,23 +21,23 @@ using namespace Microsoft::WRL;
 
 using namespace Microsoft::Console::Interactivity::Win32;
 
-static constexpr til::point point_offset_by_char(const til::point start, const til::rectangle bounds, ptrdiff_t amt)
+static constexpr til::point point_offset_by_char(const til::point start, const til::rect& bounds, til::CoordType amt)
 {
-    ptrdiff_t pos_x = start.x();
-    ptrdiff_t pos_y = start.y();
+    auto pos_x = start.x;
+    auto pos_y = start.y;
     while (amt != 0)
     {
         if (amt > 0)
         {
-            if (pos_x == bounds.left() && pos_y == bounds.bottom())
+            if (pos_x == bounds.left && pos_y == bounds.bottom)
             {
                 // end exclusive --> can't move any more
                 break;
             }
-            else if (pos_x == bounds.right() - 1)
+            else if (pos_x == bounds.right - 1)
             {
                 // right boundary --> wrap
-                pos_x = bounds.left();
+                pos_x = bounds.left;
                 ++pos_y;
             }
             else
@@ -49,15 +49,15 @@ static constexpr til::point point_offset_by_char(const til::point start, const t
         }
         else
         {
-            if (pos_x == bounds.left() && pos_y == bounds.top())
+            if (pos_x == bounds.left && pos_y == bounds.top)
             {
                 // origin --> can't move any more
                 break;
             }
-            else if (pos_x == bounds.left())
+            else if (pos_x == bounds.left)
             {
                 // left boundary --> wrap
-                pos_x = bounds.right() - 1;
+                pos_x = bounds.right - 1;
                 --pos_y;
             }
             else
@@ -71,16 +71,16 @@ static constexpr til::point point_offset_by_char(const til::point start, const t
     return { pos_x, pos_y };
 }
 
-static constexpr til::point point_offset_by_line(const til::point start, const til::rectangle bounds, ptrdiff_t amt)
+static constexpr til::point point_offset_by_line(const til::point start, const til::rect& bounds, til::CoordType amt)
 {
     // X = left boundary for UIA
-    ptrdiff_t pos_x = bounds.left();
-    ptrdiff_t pos_y = start.y();
+    auto pos_x = bounds.left;
+    auto pos_y = start.y;
     while (amt != 0)
     {
         if (amt > 0)
         {
-            if (pos_y == bounds.bottom() + 1)
+            if (pos_y == bounds.bottom + 1)
             {
                 break;
             }
@@ -92,7 +92,7 @@ static constexpr til::point point_offset_by_line(const til::point start, const t
         }
         else
         {
-            if (pos_y == bounds.top())
+            if (pos_y == bounds.top)
             {
                 break;
             }
@@ -227,7 +227,7 @@ public:
         return E_NOTIMPL;
     }
 
-    void ChangeViewport(const SMALL_RECT /*NewWindow*/)
+    void ChangeViewport(const til::inclusive_rect& /*NewWindow*/)
     {
         return;
     }
@@ -254,8 +254,8 @@ public:
 
     // specific endpoint range
     HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const /*pProvider*/,
-                            const COORD /*start*/,
-                            const COORD /*end*/,
+                            const til::point /*start*/,
+                            const til::point /*end*/,
                             const std::wstring_view /*wordDelimiters*/,
                             _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** /*ppUtr*/) override
     {
@@ -281,20 +281,20 @@ class UiaTextRangeTests
     SCREEN_INFORMATION* _pScreenInfo;
     TextBuffer* _pTextBuffer;
     UiaTextRange* _range;
-    IUiaData* _pUiaData;
+    Microsoft::Console::Render::IRenderData* _pUiaData;
 
     struct ExpectedResult
     {
         int moveAmt;
-        COORD start;
-        COORD end;
+        til::point start;
+        til::point end;
     };
 
     struct MoveTest
     {
         std::wstring comment;
-        COORD start;
-        COORD end;
+        til::point start;
+        til::point end;
         int moveAmt;
         ExpectedResult expected;
     };
@@ -302,8 +302,8 @@ class UiaTextRangeTests
     struct MoveEndpointTest
     {
         std::wstring comment;
-        COORD start;
-        COORD end;
+        til::point start;
+        til::point end;
         int moveAmt;
         TextPatternRangeEndpoint endpoint;
         ExpectedResult expected;
@@ -312,7 +312,7 @@ class UiaTextRangeTests
     struct ScrollTest
     {
         std::wstring comment;
-        short yPos;
+        til::CoordType yPos;
     };
 
     static constexpr const wchar_t* toString(TextUnit unit) noexcept
@@ -337,7 +337,7 @@ class UiaTextRangeTests
 
     TEST_METHOD_SETUP(MethodSetup)
     {
-        CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
+        auto& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         // set up common state
         _state = new CommonState();
         _state->PrepareGlobalFont();
@@ -358,20 +358,15 @@ class UiaTextRangeTests
         // the variables from the generated tests.
 
         // fill first half of text buffer with text
-        for (UINT i = 0; i < _pTextBuffer->TotalRowCount() / 2; ++i)
+        for (auto i = 0; i < _pTextBuffer->TotalRowCount() / 2; ++i)
         {
-            ROW& row = _pTextBuffer->GetRowByOffset(i);
-            auto& charRow = row.GetCharRow();
-            for (auto& cell : charRow)
+            const std::wstring_view glyph{ i % 2 == 0 ? L" " : L"X" };
+            auto& row = _pTextBuffer->GetRowByOffset(i);
+            const auto width = row.size();
+
+            for (uint16_t x = 0; x < width; ++x)
             {
-                if (i % 2 == 0)
-                {
-                    cell.Char() = L' ';
-                }
-                else
-                {
-                    cell.Char() = L'X';
-                }
+                row.ReplaceCharacters(x, 1, glyph);
             }
         }
 
@@ -492,23 +487,15 @@ class UiaTextRangeTests
     TEST_METHOD(ExpandToEnclosingUnit)
     {
         // Let's start by filling the text buffer with something useful:
-        for (UINT i = 0; i < _pTextBuffer->TotalRowCount(); ++i)
+        for (auto i = 0; i < _pTextBuffer->TotalRowCount(); ++i)
         {
-            ROW& row = _pTextBuffer->GetRowByOffset(i);
-            auto& charRow = row.GetCharRow();
-            for (size_t j = 0; j < charRow.size(); ++j)
+            auto& row = _pTextBuffer->GetRowByOffset(i);
+            const auto width = row.size();
+
+            for (uint16_t x = 0; x < width; ++x)
             {
-                // every 5th cell is a space, otherwise a letter
-                // this is used to simulate words
-                CharRowCellReference cell = charRow.GlyphAt(j);
-                if (j % 5 == 0)
-                {
-                    cell = L" ";
-                }
-                else
-                {
-                    cell = L"x";
-                }
+                const std::wstring_view glyph{ x % 5 == 0 ? L" " : L"x" };
+                row.ReplaceCharacters(x, 1, glyph);
             }
         }
 
@@ -541,8 +528,8 @@ class UiaTextRangeTests
 
         struct TextUnitBoundaries
         {
-            COORD start;
-            COORD end;
+            til::point start;
+            til::point end;
         };
 
         const std::map<TextUnit, TextUnitBoundaries> textUnitBoundaries = {
@@ -565,7 +552,7 @@ class UiaTextRangeTests
         };
 
         Microsoft::WRL::ComPtr<UiaTextRange> utr;
-        auto verifyExpansion = [&](TextUnit textUnit, COORD utrStart, COORD utrEnd) {
+        auto verifyExpansion = [&](TextUnit textUnit, til::point utrStart, til::point utrEnd) {
             THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr,
                                                                             _pUiaData,
                                                                             &_dummyProvider,
@@ -590,7 +577,7 @@ class UiaTextRangeTests
             if (textUnit != TextUnit_Character)
             {
                 Log::Comment(NoThrowString().Format(L"%s - Test 2", toString(textUnit)));
-                const COORD end = { boundaries.start.X + 1, boundaries.start.Y };
+                const til::point end = { boundaries.start.x + 1, boundaries.start.y };
                 verifyExpansion(textUnit, boundaries.start, end);
             }
 
@@ -602,7 +589,7 @@ class UiaTextRangeTests
             if (textUnit != TextUnit_Character && textUnit != TextUnit_Document)
             {
                 Log::Comment(NoThrowString().Format(L"%s - Test 4", toString(textUnit)));
-                const COORD end = { boundaries.end.X + 1, boundaries.end.Y };
+                const til::point end = { boundaries.end.x + 1, boundaries.end.y };
                 verifyExpansion(textUnit, boundaries.start, end);
             }
 
@@ -610,7 +597,7 @@ class UiaTextRangeTests
             if (textUnit != TextUnit_Character)
             {
                 Log::Comment(NoThrowString().Format(L"%s - Test 5", toString(textUnit)));
-                const COORD start = { boundaries.start.X + 1, boundaries.start.Y };
+                const til::point start = { boundaries.start.x + 1, boundaries.start.y };
                 verifyExpansion(textUnit, start, start);
             }
 
@@ -618,8 +605,8 @@ class UiaTextRangeTests
             if (textUnit != TextUnit_Character)
             {
                 Log::Comment(NoThrowString().Format(L"%s - Test 6", toString(textUnit)));
-                const COORD start = { boundaries.start.X + 1, boundaries.start.Y };
-                const COORD end = { start.X + 1, start.Y };
+                const til::point start = { boundaries.start.x + 1, boundaries.start.y };
+                const til::point end = { start.x + 1, start.y };
                 verifyExpansion(textUnit, start, end);
             }
 
@@ -627,7 +614,7 @@ class UiaTextRangeTests
             if (textUnit != TextUnit_Character)
             {
                 Log::Comment(NoThrowString().Format(L"%s - Test 7", toString(textUnit)));
-                const COORD start = { boundaries.start.X + 1, boundaries.start.Y };
+                const til::point start = { boundaries.start.x + 1, boundaries.start.y };
                 verifyExpansion(textUnit, start, boundaries.end);
             }
 
@@ -635,8 +622,8 @@ class UiaTextRangeTests
             if (textUnit != TextUnit_Character && textUnit != TextUnit_Document)
             {
                 Log::Comment(NoThrowString().Format(L"%s - Test 8", toString(textUnit)));
-                const COORD start = { boundaries.start.X + 1, boundaries.start.Y };
-                const COORD end = { boundaries.end.X + 1, boundaries.end.Y };
+                const til::point start = { boundaries.start.x + 1, boundaries.start.y };
+                const til::point end = { boundaries.end.x + 1, boundaries.end.y };
                 verifyExpansion(textUnit, start, end);
             }
         }
@@ -644,8 +631,8 @@ class UiaTextRangeTests
 
     TEST_METHOD(MoveEndpointByRange)
     {
-        const COORD start{ 0, 1 };
-        const COORD end{ 1, 2 };
+        const til::point start{ 0, 1 };
+        const til::point end{ 1, 2 };
         Microsoft::WRL::ComPtr<UiaTextRange> utr;
         THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr,
                                                                         _pUiaData,
@@ -734,11 +721,11 @@ class UiaTextRangeTests
 
     TEST_METHOD(CanMoveByCharacter)
     {
-        const SHORT lastColumnIndex = _pScreenInfo->GetBufferSize().RightInclusive();
+        const auto lastColumnIndex = _pScreenInfo->GetBufferSize().RightInclusive();
 
         // GH#6986: This is used as the "end of the buffer" to help screen readers run faster
         //          instead of parsing through thousands of empty lines of text.
-        const COORD documentEnd{ _pTextBuffer->GetSize().Left(), _pTextBuffer->GetLastNonSpaceCharacter().Y + 1 };
+        const til::point documentEnd{ _pTextBuffer->GetSize().Left(), _pTextBuffer->GetLastNonSpaceCharacter().y + 1 };
 
         // clang-format off
         const std::vector<MoveTest> testData
@@ -822,11 +809,11 @@ class UiaTextRangeTests
 
     TEST_METHOD(CanMoveByLine)
     {
-        const SHORT lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
+        const auto lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
 
         // GH#6986: This is used as the "end of the buffer" to help screen readers run faster
         //          instead of parsing through thousands of empty lines of text.
-        const COORD documentEnd{ _pTextBuffer->GetSize().Left(), _pTextBuffer->GetLastNonSpaceCharacter().Y + 1 };
+        const til::point documentEnd{ _pTextBuffer->GetSize().Left(), _pTextBuffer->GetLastNonSpaceCharacter().y + 1 };
 
         // clang-format off
         const std::vector<MoveTest> testData
@@ -857,13 +844,13 @@ class UiaTextRangeTests
 
             MoveTest{
                 L"can move backward from bottom row",
-                {0, documentEnd.Y},
-                {lastColumnIndex, documentEnd.Y},
+                {0, documentEnd.y},
+                {lastColumnIndex, documentEnd.y},
                 -3,
                 {
                     -3,
-                    {0, base::ClampSub(documentEnd.Y, 3)},
-                    {0, base::ClampSub(documentEnd.Y, 3)}
+                    {0, documentEnd.y - 3},
+                    {0, documentEnd.y - 3}
                 }
             },
 
@@ -910,14 +897,14 @@ class UiaTextRangeTests
 
     TEST_METHOD(CanMoveEndpointByUnitCharacter)
     {
-        const SHORT lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
+        const auto lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
 
         // GH#6986: This is used as the "end of the buffer" to help screen readers run faster
         //          instead of parsing through thousands of empty lines of text.
-        const COORD documentEnd{ _pTextBuffer->GetSize().RightInclusive(), _pTextBuffer->GetLastNonSpaceCharacter().Y };
+        const til::point documentEnd{ _pTextBuffer->GetSize().RightInclusive(), _pTextBuffer->GetLastNonSpaceCharacter().y };
 
         // clang-format off
-        const std::vector<MoveEndpointTest> testData
+        const std::array testData
         {
             MoveEndpointTest{
                 L"can't move _start past the beginning of the document when _start is positioned at the beginning",
@@ -967,7 +954,7 @@ class UiaTextRangeTests
                 {
                     1,
                     {0,0},
-                    {0, base::ClampAdd(documentEnd.Y,1)}
+                    {0, documentEnd.y + 1}
                 }
             },
 
@@ -986,40 +973,40 @@ class UiaTextRangeTests
 
             MoveEndpointTest{
                 L"can't move _end past the beginning of the document when _end is positioned at the end",
-                {0, documentEnd.Y},
-                {0, base::ClampAdd(documentEnd.Y,1)},
+                {0, documentEnd.y},
+                {0, documentEnd.y + 1},
                 1,
                 TextPatternRangeEndpoint_End,
                 {
                     0,
-                    {0, documentEnd.Y},
-                    {0, base::ClampAdd(documentEnd.Y,1)},
+                    {0, documentEnd.y},
+                    {0, documentEnd.y + 1},
                 }
             },
 
             MoveEndpointTest{
                 L"can partially move _end to the end of the document when it is closer than the move count requested",
                 {0, 0},
-                {base::ClampSub(lastColumnIndex, 3), documentEnd.Y},
+                {lastColumnIndex - 3, documentEnd.y},
                 5,
                 TextPatternRangeEndpoint_End,
                 {
                     4,
                     {0, 0},
-                    {0, base::ClampAdd(documentEnd.Y,1)},
+                    {0, documentEnd.y + 1},
                 }
             },
 
             MoveEndpointTest{
                 L"can't move _start past the end of the document",
-                {base::ClampSub(lastColumnIndex, 4), documentEnd.Y},
-                {0, base::ClampAdd(documentEnd.Y,1)},
+                {lastColumnIndex - 4, documentEnd.y},
+                {0, documentEnd.y + 1},
                 5,
                 TextPatternRangeEndpoint_Start,
                 {
                     5,
-                    {0, base::ClampAdd(documentEnd.Y,1)},
-                    {0, base::ClampAdd(documentEnd.Y,1)},
+                    {0, documentEnd.y + 1},
+                    {0, documentEnd.y + 1},
                 }
             },
 
@@ -1055,12 +1042,12 @@ class UiaTextRangeTests
 
     TEST_METHOD(CanMoveEndpointByUnitLine)
     {
-        const SHORT lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
-        const SHORT bottomRow = gsl::narrow<SHORT>(_pTextBuffer->TotalRowCount() - 1);
+        const auto lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
+        const auto bottomRow = _pTextBuffer->TotalRowCount() - 1;
 
         // GH#6986: This is used as the "end of the buffer" to help screen readers run faster
         //          instead of parsing through thousands of empty lines of text.
-        const COORD documentEnd{ _pTextBuffer->GetSize().Left(), _pTextBuffer->GetLastNonSpaceCharacter().Y + 1 };
+        const til::point documentEnd{ _pTextBuffer->GetSize().Left(), _pTextBuffer->GetLastNonSpaceCharacter().y + 1 };
 
         // clang-format off
         const std::vector<MoveEndpointTest> testData
@@ -1145,7 +1132,7 @@ class UiaTextRangeTests
             MoveEndpointTest{
                 L"can't move _end forwards when it's at the end of the buffer already (past doc end)",
                 {0, 0},
-                {0, bottomRow+1},
+                {0, bottomRow + 1},
                 1,
                 TextPatternRangeEndpoint_End,
                 0,
@@ -1194,11 +1181,11 @@ class UiaTextRangeTests
 
     TEST_METHOD(CanMoveEndpointByUnitDocument)
     {
-        const SHORT bottomRow = gsl::narrow<SHORT>(_pTextBuffer->TotalRowCount() - 1);
+        const auto bottomRow = _pTextBuffer->TotalRowCount() - 1;
 
         // GH#6986: This is used as the "end of the buffer" to help screen readers run faster
         //          instead of parsing through thousands of empty lines of text.
-        const COORD documentEnd{ _pTextBuffer->GetSize().Left(), _pTextBuffer->GetLastNonSpaceCharacter().Y + 1 };
+        const til::point documentEnd{ _pTextBuffer->GetSize().Left(), _pTextBuffer->GetLastNonSpaceCharacter().y + 1 };
 
         // clang-format off
         const std::vector<MoveEndpointTest> testData =
@@ -1232,7 +1219,7 @@ class UiaTextRangeTests
             MoveEndpointTest{
                 L"can't move _end forward when it's already at the end of the buffer (past doc end)",
                 {3, 2},
-                {0, bottomRow+1},
+                {0, bottomRow + 1},
                 1,
                 TextPatternRangeEndpoint_End,
                 {
@@ -1304,7 +1291,7 @@ class UiaTextRangeTests
         // at the end exclusive, the UTR should refuse to move past
         // the end.
         const auto lastNonspaceCharPos{ _pTextBuffer->GetLastNonSpaceCharacter() };
-        const COORD documentEnd{ 0, lastNonspaceCharPos.Y + 1 };
+        const til::point documentEnd{ 0, lastNonspaceCharPos.y + 1 };
 
         // Iterate over each TextUnit. If we don't support
         // the given TextUnit, we're supposed to fallback
@@ -1323,7 +1310,7 @@ class UiaTextRangeTests
         THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, bufferEnd, endExclusive));
         THROW_IF_FAILED(utr->ExpandToEnclosingUnit(static_cast<TextUnit>(textUnit)));
 
-        VERIFY_ARE_EQUAL(documentEnd, til::point{ utr->_end });
+        VERIFY_ARE_EQUAL(documentEnd, utr->_end);
     }
 
     TEST_METHOD(MovementAtExclusiveEnd)
@@ -1339,12 +1326,12 @@ class UiaTextRangeTests
 
         // GH#6986: This is used as the "end of the buffer" to help screen readers run faster
         //          instead of parsing through thousands of empty lines of text.
-        const COORD documentEndInclusive{ base::ClampSub<short, short>(static_cast<short>(bufferSize.right()), 1), _pTextBuffer->GetLastNonSpaceCharacter().Y };
-        const COORD documentEndExclusive{ static_cast<short>(bufferSize.left()), base::ClampAdd(documentEndInclusive.Y, 1) };
+        const til::point documentEndInclusive{ bufferSize.right - 1, _pTextBuffer->GetLastNonSpaceCharacter().y };
+        const til::point documentEndExclusive{ bufferSize.left, documentEndInclusive.y + 1 };
 
-        const COORD lastLineStart{ static_cast<short>(bufferSize.left()), documentEndInclusive.Y };
+        const til::point lastLineStart{ bufferSize.left, documentEndInclusive.y };
         const auto secondToLastLinePos{ point_offset_by_line(lastLineStart, bufferSize, -1) };
-        const COORD secondToLastCharacterPos{ documentEndInclusive.X - 1, documentEndInclusive.Y };
+        const til::point secondToLastCharacterPos{ documentEndInclusive.x - 1, documentEndInclusive.y };
 
         // Iterate over each TextUnit. If we don't support
         // the given TextUnit, we're supposed to fallback
@@ -1361,24 +1348,24 @@ class UiaTextRangeTests
         VERIFY_SUCCEEDED(TestData::TryGetValue(L"textUnit", unit), L"Get TextUnit variant");
         VERIFY_SUCCEEDED(TestData::TryGetValue(L"degenerate", degenerate), L"Get degenerate variant");
         VERIFY_SUCCEEDED(TestData::TryGetValue(L"atDocumentEnd", atDocumentEnd), L"Get atDocumentEnd variant");
-        TextUnit textUnit{ static_cast<TextUnit>(unit) };
+        auto textUnit{ static_cast<TextUnit>(unit) };
 
         Microsoft::WRL::ComPtr<UiaTextRange> utr;
         int moveAmt;
         Log::Comment(NoThrowString().Format(L"Forward by %s", toString(textUnit)));
 
         // Create an UTR at EndExclusive
-        const auto utrEnd{ atDocumentEnd ? documentEndExclusive : static_cast<COORD>(endExclusive) };
+        const auto utrEnd{ atDocumentEnd ? documentEndExclusive : endExclusive };
         if (degenerate)
         {
             // UTR: (exclusive, exclusive) range
-            const auto utrStart{ atDocumentEnd ? documentEndExclusive : static_cast<COORD>(endExclusive) };
+            const auto utrStart{ atDocumentEnd ? documentEndExclusive : endExclusive };
             THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, utrStart, utrEnd));
         }
         else
         {
             // UTR: (inclusive, exclusive) range
-            const auto utrStart{ atDocumentEnd ? documentEndInclusive : static_cast<COORD>(endInclusive) };
+            const auto utrStart{ atDocumentEnd ? documentEndInclusive : endInclusive };
             THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, utrStart, utrEnd));
         }
         THROW_IF_FAILED(utr->Move(textUnit, 1, &moveAmt));
@@ -1396,7 +1383,7 @@ class UiaTextRangeTests
         }
         else if (textUnit <= TextUnit::TextUnit_Word)
         {
-            VERIFY_ARE_EQUAL(writeTarget, til::point{ utr->_start });
+            VERIFY_ARE_EQUAL(writeTarget, utr->_start);
             VERIFY_ARE_EQUAL(documentEndExclusive, utr->_end);
         }
         else if (textUnit <= TextUnit::TextUnit_Line)
@@ -1406,7 +1393,7 @@ class UiaTextRangeTests
         }
         else // textUnit <= TextUnit::TextUnit_Document:
         {
-            VERIFY_ARE_EQUAL(origin, til::point{ utr->_start });
+            VERIFY_ARE_EQUAL(origin, utr->_start);
             VERIFY_ARE_EQUAL(documentEndExclusive, utr->_end);
         }
 
@@ -1414,13 +1401,13 @@ class UiaTextRangeTests
         if (degenerate)
         {
             // UTR: (exclusive, exclusive) range
-            const auto utrStart{ atDocumentEnd ? documentEndExclusive : static_cast<COORD>(endExclusive) };
+            const auto utrStart{ atDocumentEnd ? documentEndExclusive : endExclusive };
             THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, utrStart, utrEnd));
         }
         else
         {
             // UTR: (inclusive, exclusive) range
-            const auto utrStart{ atDocumentEnd ? documentEndInclusive : static_cast<COORD>(endInclusive) };
+            const auto utrStart{ atDocumentEnd ? documentEndInclusive : endInclusive };
             THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, utrStart, utrEnd));
         }
 
@@ -1441,20 +1428,20 @@ class UiaTextRangeTests
         else if (textUnit <= TextUnit::TextUnit_Word)
         {
             VERIFY_ARE_EQUAL(-1, moveAmt);
-            VERIFY_ARE_EQUAL(degenerate || !atDocumentEnd ? writeTarget : origin, til::point{ utr->_start });
-            VERIFY_ARE_EQUAL(writeTarget, til::point{ utr->_end });
+            VERIFY_ARE_EQUAL(degenerate || !atDocumentEnd ? writeTarget : origin, utr->_start);
+            VERIFY_ARE_EQUAL(writeTarget, utr->_end);
         }
         else if (textUnit <= TextUnit::TextUnit_Line)
         {
             VERIFY_ARE_EQUAL(-1, moveAmt);
-            VERIFY_ARE_EQUAL(degenerate || !atDocumentEnd ? til::point{ lastLineStart } : secondToLastLinePos, til::point{ utr->_start });
+            VERIFY_ARE_EQUAL(degenerate || !atDocumentEnd ? lastLineStart : secondToLastLinePos, utr->_start);
             VERIFY_ARE_EQUAL(lastLineStart, utr->_end);
         }
         else // textUnit <= TextUnit::TextUnit_Document:
         {
             VERIFY_ARE_EQUAL(degenerate || !atDocumentEnd ? -1 : 0, moveAmt);
-            VERIFY_ARE_EQUAL(origin, til::point{ utr->_start });
-            VERIFY_ARE_EQUAL(degenerate || !atDocumentEnd ? origin : til::point{ documentEndExclusive }, til::point{ utr->_end });
+            VERIFY_ARE_EQUAL(origin, utr->_start);
+            VERIFY_ARE_EQUAL(degenerate || !atDocumentEnd ? origin : documentEndExclusive, utr->_end);
         }
     }
 
@@ -1483,7 +1470,7 @@ class UiaTextRangeTests
         VERIFY_ARE_EQUAL(L"name ", std::wstring_view{ text });
 
         // Collapse utr (move end to start)
-        const COORD expectedStart{ 3, 0 };
+        const til::point expectedStart{ 3, 0 };
         THROW_IF_FAILED(utr->MoveEndpointByRange(TextPatternRangeEndpoint::TextPatternRangeEndpoint_End, utr.Get(), TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start));
         VERIFY_ARE_EQUAL(expectedStart, utr->_start);
         VERIFY_IS_TRUE(utr->IsDegenerate());
@@ -1503,17 +1490,17 @@ class UiaTextRangeTests
         const auto viewportSize{ _pUiaData->GetViewport() };
 
         const std::vector<ScrollTest> testData{
-            { L"Origin", gsl::narrow<short>(bufferSize.top()) },
-            { L"ViewportHeight From Top - 1", base::ClampedNumeric<short>(bufferSize.top()) + viewportSize.Height() - 1 },
-            { L"ViewportHeight From Top", base::ClampedNumeric<short>(bufferSize.top()) + viewportSize.Height() },
-            { L"ViewportHeight From Top + 1", base::ClampedNumeric<short>(bufferSize.top()) + viewportSize.Height() + 1 },
-            { L"ViewportHeight From Bottom - 1", base::ClampedNumeric<short>(bufferSize.bottom()) - viewportSize.Height() - 2 },
-            { L"ViewportHeight From Bottom", base::ClampedNumeric<short>(bufferSize.bottom()) - viewportSize.Height() - 1 },
-            { L"ViewportHeight From Bottom + 1", base::ClampedNumeric<short>(bufferSize.bottom()) - viewportSize.Height() + 1 },
+            { L"Origin", bufferSize.top },
+            { L"ViewportHeight From Top - 1", bufferSize.top + viewportSize.Height() - 1 },
+            { L"ViewportHeight From Top", bufferSize.top + viewportSize.Height() },
+            { L"ViewportHeight From Top + 1", bufferSize.top + viewportSize.Height() + 1 },
+            { L"ViewportHeight From Bottom - 1", bufferSize.bottom - viewportSize.Height() - 2 },
+            { L"ViewportHeight From Bottom", bufferSize.bottom - viewportSize.Height() - 1 },
+            { L"ViewportHeight From Bottom + 1", bufferSize.bottom - viewportSize.Height() + 1 },
 
-            // GH#7839: ExclusiveEnd is a non-existent space,
+            // GH#7839: ExclusiveEnd is a nonexistent space,
             // so scrolling to it when !alignToTop used to crash
-            { L"Exclusive End", gsl::narrow<short>(bufferSize.bottom()) }
+            { L"Exclusive End", bufferSize.bottom }
         };
 
         BEGIN_TEST_METHOD_PROPERTIES()
@@ -1527,7 +1514,7 @@ class UiaTextRangeTests
         for (const auto test : testData)
         {
             Log::Comment(test.comment.c_str());
-            const til::point pos{ bufferSize.left(), test.yPos };
+            const til::point pos{ bufferSize.left, test.yPos };
             THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, pos, pos));
             VERIFY_SUCCEEDED(utr->ScrollIntoView(alignToTop));
         }
@@ -1542,7 +1529,7 @@ class UiaTextRangeTests
         // Iterate over UIA's Text Attribute Identifiers
         // Validate that we know which ones are (not) supported
         // source: https://docs.microsoft.com/en-us/windows/win32/winauto/uiauto-textattribute-ids
-        for (long uiaAttributeId = UIA_AnimationStyleAttributeId; uiaAttributeId <= UIA_AfterParagraphSpacingAttributeId; ++uiaAttributeId)
+        for (auto uiaAttributeId = UIA_AnimationStyleAttributeId; uiaAttributeId <= UIA_AfterParagraphSpacingAttributeId; ++uiaAttributeId)
         {
             Microsoft::WRL::ComPtr<UiaTextRange> utr;
             THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider));
@@ -1603,18 +1590,18 @@ class UiaTextRangeTests
             VARIANT result;
             VERIFY_SUCCEEDED(utr->GetAttributeValue(UIA_BackgroundColorAttributeId, &result));
 
-            const COLORREF realBackgroundColor{ _pUiaData->GetAttributeColors(attr).second & 0x00ffffff };
+            const auto realBackgroundColor{ _pUiaData->GetAttributeColors(attr).second & 0x00ffffff };
             VERIFY_ARE_EQUAL(realBackgroundColor, static_cast<COLORREF>(result.lVal));
         }
         {
             Log::Comment(L"Test Font Weight");
-            attr.SetBold(true);
+            attr.SetIntense(true);
             updateBuffer(attr);
             VARIANT result;
             VERIFY_SUCCEEDED(utr->GetAttributeValue(UIA_FontWeightAttributeId, &result));
             VERIFY_ARE_EQUAL(FW_BOLD, result.lVal);
 
-            attr.SetBold(false);
+            attr.SetIntense(false);
             updateBuffer(attr);
             VERIFY_SUCCEEDED(utr->GetAttributeValue(UIA_FontWeightAttributeId, &result));
             VERIFY_ARE_EQUAL(FW_NORMAL, result.lVal);
@@ -1667,7 +1654,7 @@ class UiaTextRangeTests
             VERIFY_SUCCEEDED(utr->GetAttributeValue(UIA_UnderlineStyleAttributeId, &result));
             VERIFY_ARE_EQUAL(TextDecorationLineStyle_Single, result.lVal);
 
-            // Double underline (double supercedes single)
+            // Double underline (double supersedes single)
             attr.SetDoublyUnderlined(true);
             updateBuffer(attr);
             VERIFY_SUCCEEDED(utr->GetAttributeValue(UIA_UnderlineStyleAttributeId, &result));
@@ -1726,8 +1713,8 @@ class UiaTextRangeTests
     TEST_METHOD(FindAttribute)
     {
         Microsoft::WRL::ComPtr<UiaTextRange> utr;
-        const COORD startPos{ 0, 0 };
-        const COORD endPos{ 0, 2 };
+        const til::point startPos{ 0, 0 };
+        const til::point endPos{ 0, 2 };
         THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, startPos, endPos));
         {
             Log::Comment(L"Test Font Name (special)");
@@ -1839,13 +1826,13 @@ class UiaTextRangeTests
         Microsoft::WRL::ComPtr<ITextRangeProvider> clone1;
         THROW_IF_FAILED(utr->Clone(&clone1));
 
-        UiaTextRange* cloneUtr1 = static_cast<UiaTextRange*>(clone1.Get());
+        auto cloneUtr1 = static_cast<UiaTextRange*>(clone1.Get());
         VERIFY_IS_FALSE(cloneUtr1->_blockRange);
         cloneUtr1->_blockRange = true;
 
         Microsoft::WRL::ComPtr<ITextRangeProvider> clone2;
         cloneUtr1->Clone(&clone2);
-        UiaTextRange* cloneUtr2 = static_cast<UiaTextRange*>(clone2.Get());
+        auto cloneUtr2 = static_cast<UiaTextRange*>(clone2.Get());
         VERIFY_IS_TRUE(cloneUtr2->_blockRange);
     }
 
@@ -1856,7 +1843,7 @@ class UiaTextRangeTests
         const auto secondChar{ point_offset_by_char(origin, bufferSize, 2) };
         const auto fifthChar{ point_offset_by_char(origin, bufferSize, 5) };
         const auto sixthChar{ point_offset_by_char(origin, bufferSize, 6) };
-        const til::point documentEnd{ bufferSize.left(), (bufferSize.height() / 2) + 1 };
+        const til::point documentEnd{ bufferSize.left, bufferSize.height() / 2 + 1 };
 
         // Populate buffer
         //   Split the line into 5 segments alternating between "X" and whitespace
@@ -1867,12 +1854,12 @@ class UiaTextRangeTests
         //   |XXX   XXX   XXX|
         //   |_______________|
         {
-            short i = 0;
+            auto i = 0;
             auto iter{ _pTextBuffer->GetCellDataAt(origin) };
             const auto segment{ bufferSize.width() / 5 };
             while (iter.Pos() != documentEnd)
             {
-                bool fill{ true };
+                auto fill{ true };
                 if (i % segment == 0)
                 {
                     fill = !fill;
@@ -1935,13 +1922,13 @@ class UiaTextRangeTests
         // |                              |
         // +------------------------------+
         {
-            short i = 0;
+            auto i = 0;
             auto iter{ _pTextBuffer->GetCellDataAt(bufferSize.origin()) };
             const auto segment{ bufferSize.width() / 10 };
-            bool fill{ true };
+            auto fill{ true };
             while (iter.Pos() != docEnd)
             {
-                if (iter.Pos().X == bufferSize.left())
+                if (iter.Pos().x == bufferSize.left)
                 {
                     fill = true;
                 }
@@ -1981,8 +1968,8 @@ class UiaTextRangeTests
             THROW_IF_FAILED(utr->Move(testCase.input.unit, testCase.input.moveAmount, &amountMoved));
 
             VERIFY_ARE_EQUAL(testCase.expected.moveAmount, amountMoved);
-            VERIFY_ARE_EQUAL(testCase.expected.start, til::point{ utr->_start });
-            VERIFY_ARE_EQUAL(testCase.expected.end, til::point{ utr->_end });
+            VERIFY_ARE_EQUAL(testCase.expected.start, utr->_start);
+            VERIFY_ARE_EQUAL(testCase.expected.end, utr->_end);
         }
     }
 };

@@ -36,9 +36,7 @@ DirectReadData::DirectReadData(_In_ InputBuffer* const pInputBuffer,
 // Routine Description:
 // - Destructs a read data class.
 // - Decrements count of readers waiting on the given handle.
-DirectReadData::~DirectReadData()
-{
-}
+DirectReadData::~DirectReadData() = default;
 
 // Routine Description:
 // - This routine is called to complete a direct read that blocked in
@@ -75,13 +73,13 @@ bool DirectReadData::Notify(const WaitTerminationReason TerminationReason,
 
     FAIL_FAST_IF(_pInputReadHandleData->GetReadCount() == 0);
 
-    const CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
     FAIL_FAST_IF(!gci.IsConsoleLocked());
 
     *pReplyStatus = STATUS_SUCCESS;
     *pControlKeyState = 0;
     *pNumBytes = 0;
-    bool retVal = true;
+    auto retVal = true;
     std::deque<std::unique_ptr<IInputEvent>> readEvents;
 
     // If ctrl-c or ctrl-break was seen, ignore it.
@@ -184,7 +182,7 @@ bool DirectReadData::Notify(const WaitTerminationReason TerminationReason,
         }
 
         // move events to pOutputData
-        std::deque<std::unique_ptr<IInputEvent>>* const pOutputDeque = reinterpret_cast<std::deque<std::unique_ptr<IInputEvent>>* const>(pOutputData);
+        const auto pOutputDeque = reinterpret_cast<std::deque<std::unique_ptr<IInputEvent>>* const>(pOutputData);
         *pNumBytes = _outEvents.size() * sizeof(INPUT_RECORD);
         pOutputDeque->swap(_outEvents);
     }

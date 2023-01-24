@@ -83,15 +83,54 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return BackgroundImagePath() != L"";
     }
 
+    void AppearanceViewModel::ClearColorScheme()
+    {
+        ClearDarkColorSchemeName();
+        _NotifyChanges(L"CurrentColorScheme");
+    }
+
+    Editor::ColorSchemeViewModel AppearanceViewModel::CurrentColorScheme()
+    {
+        const auto schemeName{ DarkColorSchemeName() };
+        const auto allSchemes{ SchemesList() };
+        for (const auto& scheme : allSchemes)
+        {
+            if (scheme.Name() == schemeName)
+            {
+                return scheme;
+            }
+        }
+        // This Appearance points to a color scheme that was renamed or deleted.
+        // Fallback to the first one in the list.
+        return allSchemes.GetAt(0);
+    }
+
+    void AppearanceViewModel::CurrentColorScheme(const ColorSchemeViewModel& val)
+    {
+        DarkColorSchemeName(val.Name());
+        LightColorSchemeName(val.Name());
+    }
+
     DependencyProperty Appearances::_AppearanceProperty{ nullptr };
 
     Appearances::Appearances() :
-        _ShowAllFonts{ false },
-        _ColorSchemeList{ single_threaded_observable_vector<ColorScheme>() }
+        _ShowAllFonts{ false }
     {
         InitializeComponent();
 
+        {
+            using namespace winrt::Windows::Globalization::NumberFormatting;
+            // > .NET rounds to 12 significant digits when displaying doubles, so we will [...]
+            // ...obviously not do that, because this is an UI element for humans. This prevents
+            // issues when displaying 32-bit floats, because WinUI is unaware about their existence.
+            SignificantDigitsNumberRounder rounder;
+            rounder.SignificantDigits(6);
+            // BODGY: Depends on WinUI internals.
+            _fontSizeBox().NumberFormatter().as<DecimalFormatter>().NumberRounder(rounder);
+        }
+
         INITIALIZE_BINDABLE_ENUM_SETTING(CursorShape, CursorStyle, winrt::Microsoft::Terminal::Core::CursorStyle, L"Profile_CursorShape", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING(AdjustIndistinguishableColors, AdjustIndistinguishableColors, winrt::Microsoft::Terminal::Core::AdjustTextMode, L"Profile_AdjustIndistinguishableColors", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING_REVERSE_ORDER(BackgroundImageStretchMode, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch, L"Profile_BackgroundImageStretchMode", L"Content");
 
         // manually add Custom FontWeight option. Don't add it to the Map
@@ -140,7 +179,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - Searches through our list of monospace fonts to determine if the settings model's current font face is a monospace font
     bool Appearances::UsingMonospaceFont() const noexcept
     {
-        bool result{ false };
+        auto result{ false };
         const auto currentFont{ Appearance().FontFace() };
         for (const auto& font : ProfileViewModel::MonospaceFontList())
         {
@@ -193,7 +232,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return fallbackFont;
     }
 
-    void Appearances::FontFace_SelectionChanged(IInspectable const& /*sender*/, SelectionChangedEventArgs const& e)
+    void Appearances::FontFace_SelectionChanged(const IInspectable& /*sender*/, const SelectionChangedEventArgs& e)
     {
         // NOTE: We need to hook up a selection changed event handler here instead of directly binding to the appearance view model.
         //       A two way binding to the view model causes an infinite loop because both combo boxes keep fighting over which one's right.
@@ -202,7 +241,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Appearance().FontFace(newFontFace.LocalizedName());
     }
 
-    void Appearances::_ViewModelChanged(DependencyObject const& d, DependencyPropertyChangedEventArgs const& /*args*/)
+    void Appearances::_ViewModelChanged(const DependencyObject& d, const DependencyPropertyChangedEventArgs& /*args*/)
     {
         const auto& obj{ d.as<Editor::Appearances>() };
         get_self<Appearances>(obj)->_UpdateWithNewViewModel();
@@ -212,12 +251,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (Appearance())
         {
-            const auto& colorSchemeMap{ Appearance().Schemes() };
-            for (const auto& pair : colorSchemeMap)
-            {
-                _ColorSchemeList.Append(pair.Value());
-            }
-
             const auto& biAlignmentVal{ static_cast<int32_t>(Appearance().BackgroundImageAlignment()) };
             for (const auto& biButton : _BIAlignmentButtons)
             {
@@ -231,7 +264,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentCursorShape" });
                     _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsVintageCursor" });
                 }
-                else if (settingName == L"ColorSchemeName")
+                else if (settingName == L"DarkColorSchemeName" || settingName == L"LightColorSchemeName")
                 {
                     _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentColorScheme" });
                 }
@@ -263,6 +296,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentIntenseTextStyle" });
                 }
+                else if (settingName == L"AdjustIndistinguishableColors")
+                {
+                    _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentAdjustIndistinguishableColors" });
+                }
                 // YOU THERE ADDING A NEW APPEARANCE SETTING
                 // Make sure you add a block like
                 //
@@ -293,10 +330,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"ShowAllFonts" });
             _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"UsingMonospaceFont" });
             _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentIntenseTextStyle" });
+            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentAdjustIndistinguishableColors" });
         }
     }
 
-    fire_and_forget Appearances::BackgroundImage_Click(IInspectable const&, RoutedEventArgs const&)
+    fire_and_forget Appearances::BackgroundImage_Click(const IInspectable&, const RoutedEventArgs&)
     {
         auto lifetime = get_strong();
 
@@ -308,7 +346,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void Appearances::BIAlignment_Click(IInspectable const& sender, RoutedEventArgs const& /*e*/)
+    void Appearances::BIAlignment_Click(const IInspectable& sender, const RoutedEventArgs& /*e*/)
     {
         if (const auto& button{ sender.try_as<Primitives::ToggleButton>() })
         {
@@ -334,26 +372,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 biButton.IsChecked(biButtonAlignment == val);
             }
         }
-    }
-
-    ColorScheme Appearances::CurrentColorScheme()
-    {
-        const auto schemeName{ Appearance().ColorSchemeName() };
-        if (const auto scheme{ Appearance().Schemes().TryLookup(schemeName) })
-        {
-            return scheme;
-        }
-        else
-        {
-            // This Appearance points to a color scheme that was renamed or deleted.
-            // Fallback to Campbell.
-            return Appearance().Schemes().TryLookup(L"Campbell");
-        }
-    }
-
-    void Appearances::CurrentColorScheme(const ColorScheme& val)
-    {
-        Appearance().ColorSchemeName(val.Name());
     }
 
     bool Appearances::IsVintageCursor() const

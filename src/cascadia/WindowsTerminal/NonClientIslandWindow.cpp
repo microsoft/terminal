@@ -26,9 +26,7 @@ NonClientIslandWindow::NonClientIslandWindow(const ElementTheme& requestedTheme)
 {
 }
 
-NonClientIslandWindow::~NonClientIslandWindow()
-{
-}
+NonClientIslandWindow::~NonClientIslandWindow() = default;
 
 static constexpr const wchar_t* dragBarClassName{ L"DRAG_BAR_WINDOW_CLASS" };
 
@@ -55,7 +53,7 @@ void NonClientIslandWindow::MakeWindow() noexcept
 {
     IslandWindow::MakeWindow();
 
-    static ATOM dragBarWindowClass{ []() {
+    static auto dragBarWindowClass{ []() {
         WNDCLASSEX wcEx{};
         wcEx.cbSize = sizeof(wcEx);
         wcEx.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
@@ -87,9 +85,9 @@ void NonClientIslandWindow::MakeWindow() noexcept
     THROW_HR_IF_NULL(E_UNEXPECTED, _dragBarWindow);
 }
 
-LRESULT NonClientIslandWindow::_dragBarNcHitTest(const til::point& pointer)
+LRESULT NonClientIslandWindow::_dragBarNcHitTest(const til::point pointer)
 {
-    RECT rcParent = GetWindowRect();
+    auto rcParent = GetWindowRect();
     // The size of the buttons doesn't change over the life of the application.
     const auto buttonWidthInDips{ _titlebar.CaptionButtonWidth() };
 
@@ -97,23 +95,23 @@ LRESULT NonClientIslandWindow::_dragBarNcHitTest(const til::point& pointer)
     const auto buttonWidthInPixels{ buttonWidthInDips * GetCurrentDpiScale() };
 
     // make sure to account for the width of the window frame!
-    const til::rectangle nonClientFrame{ GetNonClientFrame(_currentDpi) };
-    const auto rightBorder{ rcParent.right - nonClientFrame.right<int>() };
+    const til::rect nonClientFrame{ GetNonClientFrame(_currentDpi) };
+    const auto rightBorder{ rcParent.right - nonClientFrame.right };
     // From the right to the left,
     // * are we in the close button?
     // * the maximize button?
     // * the minimize button?
     // If we're not, then we're in either the top resize border, or just
     // generally in the titlebar.
-    if ((rightBorder - pointer.x()) < (buttonWidthInPixels))
+    if ((rightBorder - pointer.x) < (buttonWidthInPixels))
     {
         return HTCLOSE;
     }
-    else if ((rightBorder - pointer.x()) < (buttonWidthInPixels * 2))
+    else if ((rightBorder - pointer.x) < (buttonWidthInPixels * 2))
     {
         return HTMAXBUTTON;
     }
-    else if ((rightBorder - pointer.x()) < (buttonWidthInPixels * 3))
+    else if ((rightBorder - pointer.x) < (buttonWidthInPixels * 3))
     {
         return HTMINBUTTON;
     }
@@ -123,7 +121,7 @@ LRESULT NonClientIslandWindow::_dragBarNcHitTest(const til::point& pointer)
         // border. If we're not on the top border, then we're just generally in
         // the caption area.
         const auto resizeBorderHeight = _GetResizeHandleHeight();
-        const auto isOnResizeBorder = pointer.y() < rcParent.top + resizeBorderHeight;
+        const auto isOnResizeBorder = pointer.y < rcParent.top + resizeBorderHeight;
 
         return isOnResizeBorder ? HTTOP : HTCAPTION;
     }
@@ -154,7 +152,7 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message,
     {
         // Try to determine what part of the window is being hovered here. This
         // is absolutely critical to making sure Snap Layouts (GH#9443) works!
-        return _dragBarNcHitTest(til::point{ GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) });
+        return _dragBarNcHitTest({ GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) });
     }
     break;
 
@@ -294,15 +292,15 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message,
 //   This window is used to capture clicks on the non-client area.
 void NonClientIslandWindow::_ResizeDragBarWindow() noexcept
 {
-    const til::rectangle rect{ _GetDragAreaRect() };
+    const til::rect rect{ _GetDragAreaRect() };
     if (_IsTitlebarVisible() && rect.size().area() > 0)
     {
         SetWindowPos(_dragBarWindow.get(),
                      HWND_TOP,
-                     rect.left<int>(),
-                     rect.top<int>() + _GetTopBorderHeight(),
-                     rect.width<int>(),
-                     rect.height<int>(),
+                     rect.left,
+                     rect.top + _GetTopBorderHeight(),
+                     rect.width(),
+                     rect.height(),
                      SWP_NOACTIVATE | SWP_SHOWWINDOW);
         SetLayeredWindowAttributes(_dragBarWindow.get(), 0, 255, LWA_ALPHA);
     }
@@ -360,7 +358,7 @@ void NonClientIslandWindow::Initialize()
     Controls::Grid::SetRow(_titlebar, 0);
 
     // GH#3440 - When the titlebar is loaded (officially added to our UI tree),
-    // then make sure to update it's visual state to reflect if we're in the
+    // then make sure to update its visual state to reflect if we're in the
     // maximized state on launch.
     _titlebar.Loaded([this](auto&&, auto&&) { _OnMaximizeChange(); });
 }
@@ -400,7 +398,7 @@ void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIEleme
     // GH#4288 - add a SizeChanged handler to this content. It's possible that
     // this element's size will change after the dragbar's. When that happens,
     // the drag bar won't send another SizeChanged event, because the dragbar's
-    // _size_ didn't change, only it's position.
+    // _size_ didn't change, only its position.
     const auto fwe = content.try_as<winrt::Windows::UI::Xaml::FrameworkElement>();
     if (fwe)
     {
@@ -425,7 +423,7 @@ int NonClientIslandWindow::_GetTopBorderHeight() const noexcept
     return topBorderVisibleHeight;
 }
 
-RECT NonClientIslandWindow::_GetDragAreaRect() const noexcept
+til::rect NonClientIslandWindow::_GetDragAreaRect() const noexcept
 {
     if (_dragBar && _dragBar.Visibility() == Visibility::Visible)
     {
@@ -444,17 +442,26 @@ RECT NonClientIslandWindow::_GetDragAreaRect() const noexcept
             static_cast<float>(_rootGrid.ActualWidth()),
             static_cast<float>(_dragBar.ActualHeight())
         };
+
         const auto clientDragBarRect = transform.TransformBounds(logicalDragBarRect);
-        RECT dragBarRect = {
-            static_cast<LONG>(clientDragBarRect.X * scale),
-            static_cast<LONG>(clientDragBarRect.Y * scale),
-            static_cast<LONG>((clientDragBarRect.Width + clientDragBarRect.X) * scale),
-            static_cast<LONG>((clientDragBarRect.Height + clientDragBarRect.Y) * scale),
+
+        // Make sure to trim the right side of the rectangle, so that it doesn't
+        // hang off the right side of the root window. This normally wouldn't
+        // matter, but UIA will still think its bounds can extend past the right
+        // of the parent HWND.
+        //
+        // x here is the width of the tabs.
+        const auto x = gsl::narrow_cast<til::CoordType>(clientDragBarRect.X * scale);
+
+        return {
+            x,
+            gsl::narrow_cast<til::CoordType>(clientDragBarRect.Y * scale),
+            gsl::narrow_cast<til::CoordType>((clientDragBarRect.Width + clientDragBarRect.X) * scale) - x,
+            gsl::narrow_cast<til::CoordType>((clientDragBarRect.Height + clientDragBarRect.Y) * scale),
         };
-        return dragBarRect;
     }
 
-    return RECT{};
+    return {};
 }
 
 // Method Description:
@@ -495,7 +502,7 @@ void NonClientIslandWindow::_UpdateMaximizedState()
 }
 
 // Method Description:
-// - Called when the the windows goes from restored to maximized or from
+// - Called when the windows goes from restored to maximized or from
 //   maximized to restored. Updates the maximize button's icon and the frame
 //   margins.
 void NonClientIslandWindow::_OnMaximizeChange() noexcept
@@ -506,8 +513,8 @@ void NonClientIslandWindow::_OnMaximizeChange() noexcept
         const auto isIconified = WI_IsFlagSet(windowStyle, WS_ICONIC);
 
         const auto state = _isMaximized ? winrt::TerminalApp::WindowVisualState::WindowVisualStateMaximized :
-                                          isIconified ? winrt::TerminalApp::WindowVisualState::WindowVisualStateIconified :
-                                                        winrt::TerminalApp::WindowVisualState::WindowVisualStateNormal;
+                           isIconified  ? winrt::TerminalApp::WindowVisualState::WindowVisualStateIconified :
+                                          winrt::TerminalApp::WindowVisualState::WindowVisualStateNormal;
 
         try
         {
@@ -539,14 +546,14 @@ void NonClientIslandWindow::_UpdateIslandPosition(const UINT windowWidth, const 
     // buttons, which will make them clickable. It's perhaps not the right fix,
     // but it works.
     // _GetTopBorderHeight() returns 0 when we're maximized.
-    const short topBorderHeight = ::base::saturated_cast<short>((originalTopHeight == 0) ? -1 : originalTopHeight);
+    const auto topBorderHeight = (originalTopHeight == 0) ? -1 : originalTopHeight;
 
-    const COORD newIslandPos = { 0, topBorderHeight };
+    const til::point newIslandPos = { 0, topBorderHeight };
 
     winrt::check_bool(SetWindowPos(_interopWindowHandle,
                                    HWND_BOTTOM,
-                                   newIslandPos.X,
-                                   newIslandPos.Y,
+                                   newIslandPos.x,
+                                   newIslandPos.y,
                                    windowWidth,
                                    windowHeight - topBorderHeight,
                                    SWP_SHOWWINDOW | SWP_NOACTIVATE));
@@ -588,7 +595,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
         return 0;
     }
 
-    NCCALCSIZE_PARAMS* params = reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
+    auto params = reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
 
     // Store the original top before the default window proc applies the
     // default frame.
@@ -629,7 +636,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
     // still mouse-over the taskbar to reveal it.
     // GH#5209 - make sure to use MONITOR_DEFAULTTONEAREST, so that this will
     // still find the right monitor even when we're restoring from minimized.
-    HMONITOR hMon = MonitorFromWindow(_window.get(), MONITOR_DEFAULTTONEAREST);
+    auto hMon = MonitorFromWindow(_window.get(), MONITOR_DEFAULTTONEAREST);
     if (hMon && (_isMaximized || _fullscreen))
     {
         MONITORINFO monInfo{ 0 };
@@ -639,7 +646,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
         // First, check if we have an auto-hide taskbar at all:
         APPBARDATA autohide{ 0 };
         autohide.cbSize = sizeof(autohide);
-        UINT state = (UINT)SHAppBarMessage(ABM_GETSTATE, &autohide);
+        auto state = (UINT)SHAppBarMessage(ABM_GETSTATE, &autohide);
         if (WI_IsFlagSet(state, ABS_AUTOHIDE))
         {
             // This helper can be used to determine if there's a auto-hide
@@ -649,14 +656,14 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
                 data.cbSize = sizeof(data);
                 data.uEdge = edge;
                 data.rc = monInfo.rcMonitor;
-                HWND hTaskbar = (HWND)SHAppBarMessage(ABM_GETAUTOHIDEBAREX, &data);
+                auto hTaskbar = (HWND)SHAppBarMessage(ABM_GETAUTOHIDEBAREX, &data);
                 return hTaskbar != nullptr;
             };
 
-            const bool onTop = hasAutohideTaskbar(ABE_TOP);
-            const bool onBottom = hasAutohideTaskbar(ABE_BOTTOM);
-            const bool onLeft = hasAutohideTaskbar(ABE_LEFT);
-            const bool onRight = hasAutohideTaskbar(ABE_RIGHT);
+            const auto onTop = hasAutohideTaskbar(ABE_TOP);
+            const auto onBottom = hasAutohideTaskbar(ABE_BOTTOM);
+            const auto onLeft = hasAutohideTaskbar(ABE_LEFT);
+            const auto onRight = hasAutohideTaskbar(ABE_RIGHT);
 
             // If there's a taskbar on any side of the monitor, reduce our size
             // a little bit on that edge.
@@ -770,7 +777,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
         // with that message at the time it was sent to handle the message
         // correctly.
         const auto screenPtLparam{ GetMessagePos() };
-        const LRESULT hitTest{ SendMessage(GetHandle(), WM_NCHITTEST, 0, screenPtLparam) };
+        const auto hitTest{ SendMessage(GetHandle(), WM_NCHITTEST, 0, screenPtLparam) };
         if (hitTest == HTTOP)
         {
             // We have to set the vertical resize cursor manually on
@@ -807,17 +814,17 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
 // Arguments:
 // - dpi: the scaling that we should use to calculate the border sizes.
 // Return Value:
-// - a RECT whose components represent the margins of the nonclient area,
+// - a til::rect whose components represent the margins of the nonclient area,
 //   relative to the client area.
-RECT NonClientIslandWindow::GetNonClientFrame(UINT dpi) const noexcept
+til::rect NonClientIslandWindow::GetNonClientFrame(UINT dpi) const noexcept
 {
     const auto windowStyle = static_cast<DWORD>(GetWindowLong(_window.get(), GWL_STYLE));
-    RECT islandFrame{};
+    til::rect islandFrame;
 
     // If we failed to get the correct window size for whatever reason, log
     // the error and go on. We'll use whatever the control proposed as the
     // size of our window, which will be at least close.
-    LOG_IF_WIN32_BOOL_FALSE(AdjustWindowRectExForDpi(&islandFrame, windowStyle, false, 0, dpi));
+    LOG_IF_WIN32_BOOL_FALSE(AdjustWindowRectExForDpi(islandFrame.as_win32_rect(), windowStyle, false, 0, dpi));
 
     islandFrame.top = -topBorderVisibleHeight;
     return islandFrame;
@@ -829,7 +836,7 @@ RECT NonClientIslandWindow::GetNonClientFrame(UINT dpi) const noexcept
 // - dpi: dpi of a monitor on which the window is placed
 // Return Value
 // - The size difference
-SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexcept
+til::size NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexcept
 {
     const auto islandFrame{ GetNonClientFrame(dpi) };
 
@@ -882,7 +889,26 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         //  at the top) in the WM_PAINT handler. This eliminates the transparency
         //  bug and it's what a lot of Win32 apps that customize the title bar do
         //  so it should work fine.
-        margins.cyTopHeight = -frame.top;
+        //
+        // Notes #3 (circa late 2022): We want to make some changes here to
+        // support Mica. This introduces some complications.
+        // - If we leave the titlebar visible AT ALL, then a transparent
+        //   titlebar (theme.tabRow.background:#ff00ff00 for example) will allow
+        //   the DWM titlebar to be visible, underneath our content. EVEN MORE
+        //   SO: Mica + "show accent color on title bars" will _always_ show the
+        //   accent-colored strip of the titlebar, even on top of the Mica.
+        // - It _seems_ like we can just set this to 0, and have it work. You'd
+        //   be wrong. On Windows 10, setting this to 0 will cause the topmost
+        //   pixel of our window to be just a little darker than the rest of the
+        //   frame. So ONLY set this to 0 when the user has explicitly asked for
+        //   Mica. Though it won't do anything on Windows 10, they should be
+        //   able to opt back out of having that weird dark pixel.
+        // - This is LOAD-BEARING. By having the titlebar a totally empty rect,
+        //   DWM will know that we don't have the traditional titlebar, and will
+        //   use NCHITTEST to determine where to place the Snap Flyout. The drag
+        //   rect will handle that.
+
+        margins.cyTopHeight = (_useMica || _titlebarOpacity < 1.0) ? 0 : -frame.top;
     }
 
     // Extend the frame into the client area. microsoft/terminal#2735 - Just log
@@ -960,7 +986,7 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 
     if (ps.rcPaint.top < topBorderHeight)
     {
-        RECT rcTopBorder = ps.rcPaint;
+        auto rcTopBorder = ps.rcPaint;
         rcTopBorder.bottom = topBorderHeight;
 
         // To show the original top border, we have to paint on top of it with
@@ -972,7 +998,7 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 
     if (ps.rcPaint.bottom > topBorderHeight)
     {
-        RECT rcRest = ps.rcPaint;
+        auto rcRest = ps.rcPaint;
         rcRest.top = topBorderHeight;
 
         const auto backgroundBrush = _titlebar.Background();
@@ -1000,7 +1026,7 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         // See NonClientIslandWindow::_UpdateFrameMargins for more information.
         HDC opaqueDc;
         BP_PAINTPARAMS params = { sizeof(params), BPPF_NOCLIP | BPPF_ERASE };
-        HPAINTBUFFER buf = BeginBufferedPaint(hdc.get(), &rcRest, BPBF_TOPDOWNDIB, &params, &opaqueDc);
+        auto buf = BeginBufferedPaint(hdc.get(), &rcRest, BPBF_TOPDOWNDIB, &params, &opaqueDc);
         if (!buf || !opaqueDc)
         {
             // MSFT:34673647 - BeginBufferedPaint can fail, but it probably
@@ -1016,27 +1042,6 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
     }
 
     return 0;
-}
-
-// Method Description:
-// - This method is called when the window receives the WM_NCCREATE message.
-// Return Value:
-// - The value returned from the window proc.
-[[nodiscard]] LRESULT NonClientIslandWindow::_OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept
-{
-    const auto ret = IslandWindow::_OnNcCreate(wParam, lParam);
-    if (!ret)
-    {
-        return FALSE;
-    }
-
-    // This is a hack to make the window borders dark instead of light.
-    // It must be done before WM_NCPAINT so that the borders are rendered with
-    // the correct theme.
-    // For more information, see GH#6620.
-    LOG_IF_FAILED(TerminalTrySetDarkTheme(_window.get(), true));
-
-    return TRUE;
 }
 
 // Method Description:
@@ -1087,13 +1092,13 @@ void NonClientIslandWindow::_SetIsBorderless(const bool borderlessEnabled)
 
     // Resize the window, with SWP_FRAMECHANGED, to trigger user32 to
     // recalculate the non/client areas
-    const til::rectangle windowPos{ GetWindowRect() };
+    const til::rect windowPos{ GetWindowRect() };
     SetWindowPos(GetHandle(),
                  HWND_TOP,
-                 windowPos.left<int>(),
-                 windowPos.top<int>(),
-                 windowPos.width<int>(),
-                 windowPos.height<int>(),
+                 windowPos.left,
+                 windowPos.top,
+                 windowPos.width(),
+                 windowPos.height(),
                  SWP_SHOWWINDOW | SWP_FRAMECHANGED | SWP_NOACTIVATE);
 }
 
@@ -1129,4 +1134,22 @@ void NonClientIslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 bool NonClientIslandWindow::_IsTitlebarVisible() const
 {
     return !(_fullscreen || _borderless);
+}
+
+void NonClientIslandWindow::SetTitlebarBackground(winrt::Windows::UI::Xaml::Media::Brush brush)
+{
+    _titlebar.Background(brush);
+}
+
+void NonClientIslandWindow::UseMica(const bool newValue, const double titlebarOpacity)
+{
+    // Stash internally if we're using Mica. If we aren't, we don't want to
+    // totally blow away our titlebar with DwmExtendFrameIntoClientArea,
+    // especially on Windows 10
+    _useMica = newValue;
+    _titlebarOpacity = titlebarOpacity;
+
+    IslandWindow::UseMica(newValue, titlebarOpacity);
+
+    _UpdateFrameMargins();
 }

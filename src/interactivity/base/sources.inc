@@ -13,7 +13,7 @@
 # Preprocessor Settings
 # -------------------------------------
 
-C_DEFINES               = $(C_DEFINES) -DBUILD_ONECORE_INTERACTIVITY
+C_DEFINES               = $(C_DEFINES)
 
 # -------------------------------------
 # Compiler Settings
@@ -43,6 +43,7 @@ SOURCES = \
     ..\EventSynthesis.cpp \
     ..\RemoteConsoleControl.cpp \
     ..\HostSignalInputThread.cpp \
+    ..\PseudoConsoleWindowAccessibilityProvider.cpp \
 
 INCLUDES = \
     $(INCLUDES); \

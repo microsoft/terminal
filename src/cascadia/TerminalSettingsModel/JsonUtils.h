@@ -101,7 +101,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     {
     public:
         DeserializationError(const Json::Value& value) :
-            runtime_error(std::string("failed to deserialize ") + (value.isNull() ? "" : value.asString())),
+            runtime_error(std::string{ "failed to deserialize JSON value" }),
             jsonValue{ value } {}
 
         void SetKey(std::string_view newKey)
@@ -181,7 +181,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     template<typename T>
     bool GetValue(const Json::Value& json, T& target)
     {
-        return GetValue(json, target, ConversionTrait<typename std::decay<T>::type>{});
+        return GetValue(json, target, ConversionTrait<std::decay_t<T>>{});
     }
 
     // GetValue, forced return type, with automatic converter
@@ -189,7 +189,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     std::decay_t<T> GetValue(const Json::Value& json)
     {
         std::decay_t<T> local{};
-        GetValue(json, local, ConversionTrait<typename std::decay<T>::type>{});
+        GetValue(json, local, ConversionTrait<std::decay_t<T>>{});
         return local; // returns zero-initialized or value
     }
 
@@ -197,14 +197,14 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     template<typename T>
     bool GetValueForKey(const Json::Value& json, std::string_view key, T& target)
     {
-        return GetValueForKey(json, key, target, ConversionTrait<typename std::decay<T>::type>{});
+        return GetValueForKey(json, key, target, ConversionTrait<std::decay_t<T>>{});
     }
 
     // GetValueForKey, forced return type, with automatic converter
     template<typename T>
     std::decay_t<T> GetValueForKey(const Json::Value& json, std::string_view key)
     {
-        return GetValueForKey<T>(json, key, ConversionTrait<typename std::decay<T>::type>{});
+        return GetValueForKey<T>(json, key, ConversionTrait<std::decay_t<T>>{});
     }
 
     // Get multiple values for keys (json, k, &v, k, &v, k, &v, ...).
@@ -235,7 +235,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     template<typename T>
     void SetValueForKey(Json::Value& json, std::string_view key, const T& target)
     {
-        SetValueForKey(json, key, target, ConversionTrait<typename std::decay<T>::type>{});
+        SetValueForKey(json, key, target, ConversionTrait<std::decay_t<T>>{});
     }
 
     template<typename T>
@@ -314,7 +314,10 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
                     val.push_back(trait.FromJson(element));
                 }
             }
-            else
+            // If the value was null, then we want to accept the value, with an
+            // empty array, not an array with a single empty string in it.
+            // See GH#12276
+            else if (!json.isNull())
             {
                 val.push_back(trait.FromJson(json));
             }
@@ -859,7 +862,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     };
 #endif
 
-    template<typename T, typename TDelegatedConverter = ConversionTrait<typename std::decay<T>::type>, typename TOpt = std::optional<typename std::decay<T>::type>>
+    template<typename T, typename TDelegatedConverter = ConversionTrait<std::decay_t<T>>, typename TOpt = std::optional<std::decay_t<T>>>
     struct OptionalConverter
     {
         using Oracle = OptionOracle<TOpt>;

@@ -1,0 +1,38 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "ColorSchemes.idl";
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    runtimeclass ColorSchemeViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged, Windows.Foundation.IStringable
+    {
+        String Name;
+        Boolean IsInBoxScheme;
+        Boolean IsDefaultScheme { get; };
+
+        Boolean RequestRename(String newName);
+
+        // Terminal Colors
+        Windows.Foundation.Collections.IVector<ColorTableEntry> NonBrightColorTable;
+        Windows.Foundation.Collections.IVector<ColorTableEntry> BrightColorTable;
+
+        ColorTableEntry ColorEntryAt(UInt32 Index);
+
+        // System Colors
+        ColorTableEntry ForegroundColor;
+        ColorTableEntry BackgroundColor;
+        ColorTableEntry CursorColor;
+        ColorTableEntry SelectionBackgroundColor;
+
+        void DeleteConfirmation_Click(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs args);
+        void SetAsDefault_Click(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs args);
+    }
+
+    [default_interface] runtimeclass ColorTableEntry : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        String Name { get; };
+        IInspectable Tag;
+        Windows.UI.Color Color;
+    }
+}

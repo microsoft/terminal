@@ -3,6 +3,12 @@
 
 namespace Microsoft.Terminal.Core
 {
+    enum MatchMode
+    {
+        None,
+        All
+    };
+
     enum CursorStyle
     {
         Vintage,
@@ -11,6 +17,13 @@ namespace Microsoft.Terminal.Core
         DoubleUnderscore,
         FilledBox,
         EmptyBox
+    };
+
+    enum AdjustTextMode
+    {
+        Never,
+        Indexed,
+        Always
     };
 
     // TerminalCore declares its own Color struct to avoid depending
@@ -22,6 +35,15 @@ namespace Microsoft.Terminal.Core
         UInt8 G;
         UInt8 B;
         UInt8 A;
+    };
+
+    // Yes, this is also just an IReference<Color>. However, IReference has some
+    // weird ownership semantics that just make it a pain for something as
+    // simple as "maybe this color doesn't have a value set".
+    struct OptionalColor
+    {
+        Boolean HasValue;
+        Microsoft.Terminal.Core.Color Color;
     };
 
     // TerminalCore declares its own Color struct to avoid depending on
@@ -97,7 +119,8 @@ namespace Microsoft.Terminal.Core
         Microsoft.Terminal.Core.Color CursorColor;
         CursorStyle CursorShape;
         UInt32 CursorHeight;
+        Boolean IntenseIsBold;
         Boolean IntenseIsBright;
-        Boolean AdjustIndistinguishableColors;
+        AdjustTextMode AdjustIndistinguishableColors;
     };
 }
