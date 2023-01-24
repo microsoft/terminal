@@ -490,7 +490,7 @@ class RunLengthEncodingTests
         // linear backward iteration
         {
             std::string reverse_expectation{ expected };
-            std::reverse(reverse_expectation.begin(), reverse_expectation.end());
+            std::ranges::reverse(reverse_expectation);
 
             std::string actual;
             actual.reserve(reverse_expectation.size());

@@ -2,17 +2,16 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-#include <windows.h>
 #include "terminalInput.hpp"
 
-#include "strsafe.h"
+#include <til/unicode.h>
+#include <strsafe.h>
 
 #define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
 #include <wil/Common.h>
 
 #include "../../interactivity/inc/VtApiRedirection.hpp"
 #include "../../inc/unicode.hpp"
-#include "../../types/inc/Utf16Parser.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -265,6 +264,13 @@ void TerminalInput::SetInputMode(const Mode mode, const bool enabled) noexcept
 bool TerminalInput::GetInputMode(const Mode mode) const noexcept
 {
     return _inputMode.test(mode);
+}
+
+void TerminalInput::ResetInputModes() noexcept
+{
+    _inputMode = { Mode::Ansi, Mode::AutoRepeat };
+    _mouseInputState.lastPos = { -1, -1 };
+    _mouseInputState.lastButton = 0;
 }
 
 void TerminalInput::ForceDisableWin32InputMode(const bool win32InputMode) noexcept
@@ -551,11 +557,29 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
         return true;
     }
 
+    // Check if this key matches the last recorded key code.
+    const auto matchingLastKeyPress = _lastVirtualKeyCode == keyEvent.GetVirtualKeyCode();
+
     // Only need to handle key down. See raw key handler (see RawReadWaitRoutine in stream.cpp)
     if (!keyEvent.IsKeyDown())
     {
+        // If this is a release of the last recorded key press, we can reset that.
+        if (matchingLastKeyPress)
+        {
+            _lastVirtualKeyCode = std::nullopt;
+        }
         return false;
     }
+
+    // If this is a repeat of the last recorded key press, and Auto Repeat Mode
+    // is disabled, then we should suppress this event.
+    if (matchingLastKeyPress && !_inputMode.test(Mode::AutoRepeat))
+    {
+        // Note that we must return true here to say we've handled the event,
+        // otherwise the key press can still end up being submitted.
+        return true;
+    }
+    _lastVirtualKeyCode = keyEvent.GetVirtualKeyCode();
 
     // The VK_BACK key depends on the state of Backarrow Key mode (DECBKM).
     // If the mode is set, we should send BS. If reset, we should send DEL.
@@ -721,7 +745,7 @@ bool TerminalInput::HandleFocus(const bool focused) noexcept
 // - ch: The UTF-16 character to send.
 void TerminalInput::_SendChar(const wchar_t ch)
 {
-    if (Utf16Parser::IsLeadingSurrogate(ch))
+    if (til::is_leading_surrogate(ch))
     {
         if (_leadingSurrogate.has_value())
         {

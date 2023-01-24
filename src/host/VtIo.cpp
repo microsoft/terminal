@@ -143,6 +143,8 @@ VtIo::VtIo() :
     auto& globals = ServiceLocator::LocateGlobals();
 
     const auto& gci = globals.getConsoleInformation();
+    // SetWindowVisibility uses the console lock to protect access to _pVtRenderEngine.
+    assert(gci.IsConsoleLocked());
 
     try
     {
@@ -154,8 +156,8 @@ VtIo::VtIo() :
         if (IsValidHandle(_hOutput.get()))
         {
             auto initialViewport = Viewport::FromDimensions({ 0, 0 },
-                                                            gci.GetWindowSize().X,
-                                                            gci.GetWindowSize().Y);
+                                                            gci.GetWindowSize().width,
+                                                            gci.GetWindowSize().height);
             switch (_IoMode)
             {
             case VtIoMode::XTERM_256:
@@ -337,20 +339,19 @@ void VtIo::CreatePseudoWindow()
 
 void VtIo::SetWindowVisibility(bool showOrHide) noexcept
 {
-    // MSFT:40853556 Grab the shutdown lock here, so that another
-    // thread can't trigger a CloseOutput and release the
-    // _pVtRenderEngine out from underneath us.
-    std::lock_guard<std::mutex> lk(_shutdownLock);
-
-    if (!_pVtRenderEngine)
-    {
-        return;
-    }
-
     auto& gci = ::Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
 
     gci.LockConsole();
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    // ConsoleInputThreadProcWin32 calls VtIo::CreatePseudoWindow,
+    // which calls CreateWindowExW, which causes a WM_SIZE message.
+    // In short, this function might be called before _pVtRenderEngine exists.
+    // See PtySignalInputThread::CreatePseudoWindow().
+    if (!_pVtRenderEngine)
+    {
+        return;
+    }
 
     LOG_IF_FAILED(_pVtRenderEngine->SetWindowVisibility(showOrHide));
 }
@@ -444,55 +445,27 @@ void VtIo::SetWindowVisibility(bool showOrHide) noexcept
 
 void VtIo::CloseInput()
 {
-    // This will release the lock when it goes out of scope
-    std::lock_guard<std::mutex> lk(_shutdownLock);
     _pVtInputThread = nullptr;
-    _ShutdownIfNeeded();
+    SendCloseEvent();
 }
 
 void VtIo::CloseOutput()
 {
-    // This will release the lock when it goes out of scope
-    std::lock_guard<std::mutex> lk(_shutdownLock);
-
     auto& g = ServiceLocator::LocateGlobals();
-    // DON'T RemoveRenderEngine, as that requires the engine list lock, and this
-    // is usually being triggered on a paint operation, when the lock is already
-    // owned by the paint.
-    // Instead we're releasing the Engine here. A pointer to it has already been
-    // given to the Renderer, so we don't want the unique_ptr to delete it. The
-    // Renderer will own its lifetime now.
-    _pVtRenderEngine.release();
-
     g.getConsoleInformation().GetActiveOutputBuffer().SetTerminalConnection(nullptr);
-
-    _ShutdownIfNeeded();
 }
 
-void VtIo::_ShutdownIfNeeded()
+void VtIo::SendCloseEvent()
 {
-    // The callers should have both acquired the _shutdownLock at this point -
-    //      we dont want a race on who is actually responsible for closing it.
-    if (_objectsCreated && _pVtInputThread == nullptr && _pVtRenderEngine == nullptr)
+    LockConsole();
+    const auto unlock = wil::scope_exit([] { UnlockConsole(); });
+
+    // This function is called when the ConPTY signal pipe is closed (PtySignalInputThread) and when the input
+    // pipe is closed (VtIo). Usually these two happen at about the same time. This if condition is a bit of
+    // a premature optimization and prevents us from sending out a CTRL_CLOSE_EVENT right after another.
+    if (!std::exchange(_closeEventSent, true))
     {
-        // At this point, we no longer have a renderer or inthread. So we've
-        //      effectively been disconnected from the terminal.
-
-        // If we have any remaining attached processes, this will prepare us to send a ctrl+close to them
-        // if we don't, this will cause us to rundown and exit.
         CloseConsoleProcessState();
-
-        // If we haven't terminated by now, that's because there's a client that's still attached.
-        // Force the handling of the control events by the attached clients.
-        // As of MSFT:19419231, CloseConsoleProcessState will make sure this
-        //      happens if this method is called outside of lock, but if we're
-        //      currently locked, we want to make sure ctrl events are handled
-        //      _before_ we RundownAndExit.
-        LockConsole();
-        ProcessCtrlEvents();
-
-        // Make sure we terminate.
-        ServiceLocator::RundownAndExit(ERROR_BROKEN_PIPE);
     }
 }
 
@@ -550,7 +523,7 @@ void VtIo::EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::
 // - Returns true if the Resize Quirk is enabled. This changes the behavior of
 //   conpty to _not_ InvalidateAll the entire viewport on a resize operation.
 //   This is used by the Windows Terminal, because it is prepared to be
-//   connected to a conpty, and handles it's own buffer specifically for a
+//   connected to a conpty, and handles its own buffer specifically for a
 //   conpty scenario.
 // - See also: GH#3490, #4354, #4741
 // Arguments:

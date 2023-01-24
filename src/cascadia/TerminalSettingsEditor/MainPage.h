@@ -16,6 +16,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _Label{ label },
             _SubPage{ subPage } {}
 
+        hstring ToString() { return _Label; }
+
         WINRT_PROPERTY(IInspectable, Tag);
         WINRT_PROPERTY(winrt::hstring, Label);
         WINRT_PROPERTY(BreadcrumbSubPage, SubPage);
@@ -59,11 +61,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _DeleteProfile(const Windows::Foundation::IInspectable sender, const Editor::DeleteProfileEventArgs& args);
         void _AddProfileHandler(const winrt::guid profileGuid);
 
-        void _SetupProfileEventHandling(const winrt::Microsoft::Terminal::Settings::Editor::ProfilePageNavigationState state);
+        void _SetupProfileEventHandling(const winrt::Microsoft::Terminal::Settings::Editor::ProfileViewModel profile);
 
         void _PreNavigateHelper();
         void _Navigate(hstring clickedItemTag, BreadcrumbSubPage subPage);
-        void _Navigate(const Editor::ProfileViewModel& profile, BreadcrumbSubPage subPage, const bool focusDeleteButton = false);
+        void _Navigate(const Editor::ProfileViewModel& profile, BreadcrumbSubPage subPage);
+
+        void _UpdateBackgroundForMica();
 
         winrt::Microsoft::Terminal::Settings::Editor::ColorSchemesPageViewModel _colorSchemesPageVM{ nullptr };
 

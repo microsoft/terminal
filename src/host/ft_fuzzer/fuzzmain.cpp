@@ -74,7 +74,6 @@ struct NullDeviceComm : public IDeviceComm
     RETURN_IF_FAILED(gci.ProcessHandleList.AllocProcessData(GetCurrentProcessId(),
                                                             GetCurrentThreadId(),
                                                             0,
-                                                            nullptr,
                                                             &pProcessHandle));
     pProcessHandle->fRootProcess = true;
 

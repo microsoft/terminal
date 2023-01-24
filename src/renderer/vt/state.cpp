@@ -46,7 +46,6 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _circled(false),
     _firstPaint(true),
     _skipCursor(false),
-    _pipeBroken(false),
     _exitResult{ S_OK },
     _terminalOwner{ nullptr },
     _newBottomLine{ false },
@@ -61,7 +60,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 {
 #ifndef UNIT_TESTING
     // When unit testing, we can instantiate a VtEngine without a pipe.
-    THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
+    THROW_HR_IF(E_HANDLE, !_hFile);
 #else
     // member is only defined when UNIT_TESTING is.
     _usingTestCallback = false;
@@ -139,22 +138,14 @@ CATCH_RETURN();
 
 [[nodiscard]] HRESULT VtEngine::_Flush() noexcept
 {
-#ifdef UNIT_TESTING
-    if (_hFile.get() == INVALID_HANDLE_VALUE)
-    {
-        // Do not flush during Unit Testing because we won't have a valid file.
-        return S_OK;
-    }
-#endif
-
-    if (!_pipeBroken)
+    if (_hFile)
     {
         auto fSuccess = !!WriteFile(_hFile.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), nullptr, nullptr);
         _buffer.clear();
         if (!fSuccess)
         {
             _exitResult = HRESULT_FROM_WIN32(GetLastError());
-            _pipeBroken = true;
+            _hFile.reset();
             if (_terminalOwner)
             {
                 _terminalOwner->CloseOutput();
@@ -281,14 +272,14 @@ CATCH_RETURN();
         // Don't emit a resize event if we've requested it be suppressed
         if (!_suppressResizeRepaint)
         {
-            hr = _ResizeWindow(newSize.X, newSize.Y);
+            hr = _ResizeWindow(newSize.width, newSize.height);
         }
 
         if (_resizeQuirk)
         {
             // GH#3490 - When the viewport width changed, don't do anything extra here.
             // If the buffer had areas that were invalid due to the resize, then the
-            // buffer will have triggered it's own invalidations for what it knows is
+            // buffer will have triggered its own invalidations for what it knows is
             // invalid. Previously, we'd invalidate everything if the width changed,
             // because we couldn't be sure if lines were reflowed.
             _invalidMap.resize(newSize);
@@ -300,7 +291,7 @@ CATCH_RETURN();
                 _invalidMap.resize(newSize, true); // resize while filling in new space with repaint requests.
 
                 // Viewport is smaller now - just update it all.
-                if (oldSize.Y > newSize.Y || oldSize.X > newSize.X)
+                if (oldSize.height > newSize.height || oldSize.width > newSize.width)
                 {
                     hr = InvalidateAll();
                 }
@@ -410,7 +401,7 @@ bool VtEngine::_AllIsInvalid() const
 // - S_OK
 [[nodiscard]] HRESULT VtEngine::InheritCursor(const til::point coordCursor) noexcept
 {
-    _virtualTop = coordCursor.Y;
+    _virtualTop = coordCursor.y;
     _lastText = coordCursor;
     _skipCursor = true;
     // Prevent us from clearing the entire viewport on the first paint
@@ -487,7 +478,7 @@ void VtEngine::EndResizeRequest()
 // - Configure the renderer for the resize quirk. This changes the behavior of
 //   conpty to _not_ InvalidateAll the entire viewport on a resize operation.
 //   This is used by the Windows Terminal, because it is prepared to be
-//   connected to a conpty, and handles it's own buffer specifically for a
+//   connected to a conpty, and handles its own buffer specifically for a
 //   conpty scenario.
 // - See also: GH#3490, #4354, #4741
 // Arguments:

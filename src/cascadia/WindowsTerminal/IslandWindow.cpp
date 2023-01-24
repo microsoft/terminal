@@ -9,6 +9,7 @@
 #include "NotificationIcon.h"
 #include <dwmapi.h>
 #include <TerminalThemeHelpers.h>
+#include <CoreWindow.h>
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
@@ -211,10 +212,10 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
 
     const auto nonClientSize = GetTotalNonClientExclusiveSize(dpix);
 
-    auto clientWidth = winRect->right - winRect->left - nonClientSize.cx;
+    auto clientWidth = winRect->right - winRect->left - nonClientSize.width;
     clientWidth = std::max(minWidthScaled, clientWidth);
 
-    auto clientHeight = winRect->bottom - winRect->top - nonClientSize.cy;
+    auto clientHeight = winRect->bottom - winRect->top - nonClientSize.height;
 
     // If we're the quake window, prevent resizing on all sides except the
     // bottom. This also applies to resizing with the Alt+Space menu
@@ -251,12 +252,12 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
     case WMSZ_LEFT:
     case WMSZ_TOPLEFT:
     case WMSZ_BOTTOMLEFT:
-        winRect->left = winRect->right - (clientWidth + nonClientSize.cx);
+        winRect->left = winRect->right - (clientWidth + nonClientSize.width);
         break;
     case WMSZ_RIGHT:
     case WMSZ_TOPRIGHT:
     case WMSZ_BOTTOMRIGHT:
-        winRect->right = winRect->left + (clientWidth + nonClientSize.cx);
+        winRect->right = winRect->left + (clientWidth + nonClientSize.width);
         break;
     }
 
@@ -266,12 +267,12 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
     case WMSZ_BOTTOM:
     case WMSZ_BOTTOMLEFT:
     case WMSZ_BOTTOMRIGHT:
-        winRect->bottom = winRect->top + (clientHeight + nonClientSize.cy);
+        winRect->bottom = winRect->top + (clientHeight + nonClientSize.height);
         break;
     case WMSZ_TOP:
     case WMSZ_TOPLEFT:
     case WMSZ_TOPRIGHT:
-        winRect->top = winRect->bottom - (clientHeight + nonClientSize.cy);
+        winRect->top = winRect->bottom - (clientHeight + nonClientSize.height);
         break;
     }
 
@@ -389,8 +390,8 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
     const auto nonClientSizeScaled = GetTotalNonClientExclusiveSize(dpix);
 
     auto lpMinMaxInfo = reinterpret_cast<LPMINMAXINFO>(lParam);
-    lpMinMaxInfo->ptMinTrackSize.x = _calculateTotalSize(true, minimumWidth * dpix / USER_DEFAULT_SCREEN_DPI, nonClientSizeScaled.cx);
-    lpMinMaxInfo->ptMinTrackSize.y = _calculateTotalSize(false, minimumHeight * dpiy / USER_DEFAULT_SCREEN_DPI, nonClientSizeScaled.cy);
+    lpMinMaxInfo->ptMinTrackSize.x = _calculateTotalSize(true, minimumWidth * dpix / USER_DEFAULT_SCREEN_DPI, nonClientSizeScaled.width);
+    lpMinMaxInfo->ptMinTrackSize.y = _calculateTotalSize(false, minimumHeight * dpiy / USER_DEFAULT_SCREEN_DPI, nonClientSizeScaled.height);
 }
 
 // Method Description:
@@ -499,6 +500,24 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
                 return 0;
             }
         }
+
+        // BODGY This is a fix for the upstream:
+        //
+        // https://github.com/microsoft/microsoft-ui-xaml/issues/3577
+        //
+        // ContentDialogs don't resize themselves when the XAML island resizes.
+        // However, if we manually resize our CoreWindow, that'll actually
+        // trigger a resize of the ContentDialog.
+        if (const auto& coreWindow{ winrt::Windows::UI::Core::CoreWindow::GetForCurrentThread() })
+        {
+            if (const auto& interop{ coreWindow.as<ICoreWindowInterop>() })
+            {
+                HWND coreWindowInterop;
+                interop->get_WindowHandle(&coreWindowInterop);
+                PostMessage(coreWindowInterop, message, wparam, lparam);
+            }
+        }
+
         break;
     }
     case WM_MOVING:
@@ -658,6 +677,24 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         }
         break;
     }
+    case WM_SETTINGCHANGE:
+    {
+        // Currently, we only support checking when the OS theme changes. In
+        // that case, wParam is 0. Re-evaluate when we decide to reload env vars
+        // (GH#1125)
+        if (wparam == 0 && lparam != 0)
+        {
+            const std::wstring param{ (wchar_t*)lparam };
+            // ImmersiveColorSet seems to be the notification that the OS theme
+            // changed. If that happens, let the app know, so it can hot-reload
+            // themes, color schemes that might depend on the OS theme
+            if (param == L"ImmersiveColorSet")
+            {
+                _UpdateSettingsRequestedHandlers();
+            }
+        }
+        break;
+    }
     case WM_ENDSESSION:
     {
         // For WM_QUERYENDSESSION and WM_ENDSESSION, refer to:
@@ -793,7 +830,7 @@ void IslandWindow::OnAppInitialized()
 {
     // Do a quick resize to force the island to paint
     const auto size = GetPhysicalSize();
-    OnSize(size.cx, size.cy);
+    OnSize(size.width, size.height);
 }
 
 // Method Description:
@@ -1508,23 +1545,31 @@ void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration,
     }
     else
     {
-        const auto windowThreadProcessId = GetWindowThreadProcessId(oldForegroundWindow, nullptr);
-        const auto currentThreadId = GetCurrentThreadId();
+        // Try first to send a message to the current foreground window. If it's not responding, it may
+        // be waiting on us to finish launching. Passing SMTO_NOTIMEOUTIFNOTHUNG means that we get the same
+        // behavior as before--that is, waiting for the message loop--but we've done an early return if
+        // it turns out that it was hung.
+        // SendMessageTimeoutW returns nonzero if it succeeds.
+        if (0 != SendMessageTimeoutW(oldForegroundWindow, WM_NULL, 0, 0, SMTO_NOTIMEOUTIFNOTHUNG | SMTO_BLOCK | SMTO_ABORTIFHUNG, 1000, nullptr))
+        {
+            const auto windowThreadProcessId = GetWindowThreadProcessId(oldForegroundWindow, nullptr);
+            const auto currentThreadId = GetCurrentThreadId();
 
-        LOG_IF_WIN32_BOOL_FALSE(AttachThreadInput(windowThreadProcessId, currentThreadId, true));
-        // Just in case, add the thread detach as a scope_exit, to make _sure_ we do it.
-        auto detachThread = wil::scope_exit([windowThreadProcessId, currentThreadId]() {
-            LOG_IF_WIN32_BOOL_FALSE(AttachThreadInput(windowThreadProcessId, currentThreadId, false));
-        });
-        LOG_IF_WIN32_BOOL_FALSE(BringWindowToTop(_window.get()));
-        ShowWindow(_window.get(), SW_SHOW);
+            LOG_IF_WIN32_BOOL_FALSE(AttachThreadInput(windowThreadProcessId, currentThreadId, true));
+            // Just in case, add the thread detach as a scope_exit, to make _sure_ we do it.
+            auto detachThread = wil::scope_exit([windowThreadProcessId, currentThreadId]() {
+                LOG_IF_WIN32_BOOL_FALSE(AttachThreadInput(windowThreadProcessId, currentThreadId, false));
+            });
+            LOG_IF_WIN32_BOOL_FALSE(BringWindowToTop(_window.get()));
+            ShowWindow(_window.get(), SW_SHOW);
 
-        // Activate the window too. This will force us to the virtual desktop this
-        // window is on, if it's on another virtual desktop.
-        LOG_LAST_ERROR_IF_NULL(SetActiveWindow(_window.get()));
+            // Activate the window too. This will force us to the virtual desktop this
+            // window is on, if it's on another virtual desktop.
+            LOG_LAST_ERROR_IF_NULL(SetActiveWindow(_window.get()));
 
-        // Throw us on the active monitor.
-        _moveToMonitor(oldForegroundWindow, toMonitor);
+            // Throw us on the active monitor.
+            _moveToMonitor(oldForegroundWindow, toMonitor);
+        }
     }
 }
 
@@ -1873,4 +1918,43 @@ void IslandWindow::RemoveFromSystemMenu(const winrt::hstring& itemLabel)
         return;
     }
     _systemMenuItems.erase(it->first);
+}
+
+void IslandWindow::UseMica(const bool newValue, const double /*titlebarOpacity*/)
+{
+    // This block of code enables Mica for our window. By all accounts, this
+    // version of the code will only work on Windows 11, SV2. There's a slightly
+    // different API surface for enabling Mica on Windows 11 22000.0.
+    //
+    // This API was only publicly supported as of Windows 11 SV2, 22621. Before
+    // that version, this API will just return an error and do nothing silently.
+
+    const int attribute = newValue ? DWMSBT_MAINWINDOW : DWMSBT_NONE;
+    std::ignore = DwmSetWindowAttribute(GetHandle(), DWMWA_SYSTEMBACKDROP_TYPE, &attribute, sizeof(attribute));
+}
+
+// Method Description:
+// - This method is called when the window receives the WM_NCCREATE message.
+// Return Value:
+// - The value returned from the window proc.
+[[nodiscard]] LRESULT IslandWindow::OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept
+{
+    const auto ret = BaseWindow::OnNcCreate(wParam, lParam);
+    if (!ret)
+    {
+        return FALSE;
+    }
+
+    // This is a hack to make the window borders dark instead of light.
+    // It must be done before WM_NCPAINT so that the borders are rendered with
+    // the correct theme.
+    // For more information, see GH#6620.
+    //
+    // Theoretically, we don't need this anymore, since _updateTheme will update
+    // the darkness of our window. However, we're keeping this call to prevent
+    // the window from appearing as a white rectangle for a frame before we load
+    // the rest of the settings.
+    LOG_IF_FAILED(TerminalTrySetDarkTheme(_window.get(), true));
+
+    return TRUE;
 }

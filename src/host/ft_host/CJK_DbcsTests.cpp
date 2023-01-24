@@ -154,6 +154,10 @@ class DbcsTests
     BEGIN_TEST_METHOD(TestDbcsStdCoutScenario)
         TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
     END_TEST_METHOD()
+
+    BEGIN_TEST_METHOD(TestDbcsBackupRestore)
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD()
 };
 
 bool DbcsTests::DbcsTestSetup()
@@ -2037,4 +2041,68 @@ void DbcsTests::TestDbcsStdCoutScenario()
     VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputCharacterA(hOut, psReadBack.get(), cchReadBack, coordReadPos, &dwRead), L"Read back std::cout line.");
     VERIFY_ARE_EQUAL(cchReadBack, dwRead, L"We should have read as many characters as we expected (length of original printed line.)");
     VERIFY_ARE_EQUAL(String(test), String(psReadBack.get()), L"String should match what we wrote.");
+}
+
+// Read/WriteConsoleOutput allow a user to implement a restricted form of buffer "backup" and "restore".
+// But what if the saved region clips ("bisects") a wide character? This test ensures that we restore proper
+// wide characters when given an unpaired trailing/leading CHAR_INFO in the first/last column of the given region.
+// In other words, writing a trailing CHAR_INFO will also automatically write a leading CHAR_INFO in the preceding cell.
+void DbcsTests::TestDbcsBackupRestore()
+{
+    const auto out = GetStdHandle(STD_OUTPUT_HANDLE);
+
+    std::array<CHAR_INFO, 16> expected = PrepPattern::DoubledW;
+    PrepPattern::replaceColorPlaceholders(expected, FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_GREEN);
+
+    // DoubledW will show up like this in the top/left corner of the terminal:
+    // +----------------
+    // |QいかなZYXWVUTに
+    //
+    // Since those 4 Japanese characters probably aren't going to be monospace for you in your editor
+    // (as they most likely aren't exactly 2 ASCII characters wide), I'll continue referring to them like this:
+    // +----------------
+    // |QaabbccZYXWVUTdd
+    {
+        SMALL_RECT region{ .Left = 0, .Right = 15 };
+        VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleOutputW(out, expected.data(), { 16, 1 }, {}, &region));
+    }
+
+    // Make a "backup" of the viewport. The twist is that our backup region only
+    // copies the trailing/leading half of the first/last glyph respectively like so:
+    // +----------------
+    // |  abbccZYXWVUTd
+    std::array<CHAR_INFO, 13> backup{};
+    constexpr COORD backupSize{ 13, 1 };
+    SMALL_RECT backupRegion{ .Left = 2, .Right = 14 };
+    VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputW(out, backup.data(), backupSize, {}, &backupRegion));
+
+    // Destroy the text with some narrow ASCII characters, resulting in:
+    // +----------------
+    // |Qxxxxxxxxxxxxxxx
+    {
+        DWORD ignored;
+        VERIFY_WIN32_BOOL_SUCCEEDED(FillConsoleOutputCharacterW(out, L'x', 15, { 1, 0 }, &ignored));
+    }
+
+    // Restore our "backup". The trailing half of the first wide glyph (indicated as "a" above)
+    // as well as the leading half of the last wide glyph ("d"), will automatically get a
+    // matching leading/trailing half respectively. In other words, this:
+    // +----------------
+    // |  abbccZYXWVUTd
+    //
+    // turns into this:
+    // +----------------
+    // | aabbccZYXWVUTdd
+    //
+    // and so we restore this, overwriting all the "x" characters in the process:
+    // +----------------
+    // |QいかなZYXWVUTに
+    VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleOutputW(out, backup.data(), backupSize, {}, &backupRegion));
+
+    std::array<CHAR_INFO, 16> infos{};
+    {
+        SMALL_RECT region{ .Left = 0, .Right = 15 };
+        VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputW(out, infos.data(), { 16, 1 }, {}, &region));
+    }
+    DbcsWriteRead::Verify(expected, infos);
 }

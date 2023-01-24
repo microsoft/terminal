@@ -79,6 +79,10 @@ namespace winrt::TerminalApp::implementation
             }
         });
         _closeTabsAfterMenuItem.Text(RS_(L"TabCloseAfter"));
+        const auto closeTabsAfterToolTip = RS_(L"TabCloseAfterToolTip");
+
+        WUX::Controls::ToolTipService::SetToolTip(_closeTabsAfterMenuItem, box_value(closeTabsAfterToolTip));
+        Automation::AutomationProperties::SetHelpText(_closeTabsAfterMenuItem, closeTabsAfterToolTip);
 
         // Close other tabs
         _closeOtherTabsMenuItem.Click([weakThis](auto&&, auto&&) {
@@ -88,6 +92,10 @@ namespace winrt::TerminalApp::implementation
             }
         });
         _closeOtherTabsMenuItem.Text(RS_(L"TabCloseOther"));
+        const auto closeOtherTabsToolTip = RS_(L"TabCloseOtherToolTip");
+
+        WUX::Controls::ToolTipService::SetToolTip(_closeOtherTabsMenuItem, box_value(closeOtherTabsToolTip));
+        Automation::AutomationProperties::SetHelpText(_closeOtherTabsMenuItem, closeOtherTabsToolTip);
 
         // Close
         Controls::MenuFlyoutItem closeTabMenuItem;
@@ -103,6 +111,10 @@ namespace winrt::TerminalApp::implementation
         });
         closeTabMenuItem.Text(RS_(L"TabClose"));
         closeTabMenuItem.Icon(closeSymbol);
+        const auto closeTabToolTip = RS_(L"TabCloseToolTip");
+
+        WUX::Controls::ToolTipService::SetToolTip(closeTabMenuItem, box_value(closeTabToolTip));
+        Automation::AutomationProperties::SetHelpText(closeTabMenuItem, closeTabToolTip);
 
         // GH#8238 append the close menu items to the flyout itself until crash in XAML is fixed
         //Controls::MenuFlyoutSubItem closeSubMenu;
@@ -344,16 +356,12 @@ namespace winrt::TerminalApp::implementation
         Media::SolidColorBrush hoverTabBrush{};
         Media::SolidColorBrush subtleFillColorSecondaryBrush;
         Media::SolidColorBrush subtleFillColorTertiaryBrush;
+
         // calculate the luminance of the current color and select a font
         // color based on that
         // see https://www.w3.org/TR/WCAG20/#relativeluminancedef
         if (TerminalApp::ColorHelper::IsBrightColor(color))
         {
-            fontBrush.Color(winrt::Windows::UI::Colors::Black());
-            auto secondaryFontColor = winrt::Windows::UI::Colors::Black();
-            // For alpha value see: https://github.com/microsoft/microsoft-ui-xaml/blob/7a33ad772d77d908aa6b316ec24e6d2eb3ebf571/dev/CommonStyles/Common_themeresources_any.xaml#L269
-            secondaryFontColor.A = 0x9E;
-            secondaryFontBrush.Color(secondaryFontColor);
             auto subtleFillColorSecondary = winrt::Windows::UI::Colors::Black();
             subtleFillColorSecondary.A = 0x09;
             subtleFillColorSecondaryBrush.Color(subtleFillColorSecondary);
@@ -363,17 +371,31 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            fontBrush.Color(winrt::Windows::UI::Colors::White());
-            auto secondaryFontColor = winrt::Windows::UI::Colors::White();
-            // For alpha value see: https://github.com/microsoft/microsoft-ui-xaml/blob/7a33ad772d77d908aa6b316ec24e6d2eb3ebf571/dev/CommonStyles/Common_themeresources_any.xaml#L14
-            secondaryFontColor.A = 0xC5;
-            secondaryFontBrush.Color(secondaryFontColor);
             auto subtleFillColorSecondary = winrt::Windows::UI::Colors::White();
             subtleFillColorSecondary.A = 0x0F;
             subtleFillColorSecondaryBrush.Color(subtleFillColorSecondary);
             auto subtleFillColorTertiary = winrt::Windows::UI::Colors::White();
             subtleFillColorTertiary.A = 0x0A;
             subtleFillColorTertiaryBrush.Color(subtleFillColorTertiary);
+        }
+
+        // The tab font should be based on the evaluated appearance of the tab color layered on tab row.
+        const auto layeredTabColor = til::color{ color }.layer_over(_tabRowColor);
+        if (TerminalApp::ColorHelper::IsBrightColor(layeredTabColor))
+        {
+            fontBrush.Color(winrt::Windows::UI::Colors::Black());
+            auto secondaryFontColor = winrt::Windows::UI::Colors::Black();
+            // For alpha value see: https://github.com/microsoft/microsoft-ui-xaml/blob/7a33ad772d77d908aa6b316ec24e6d2eb3ebf571/dev/CommonStyles/Common_themeresources_any.xaml#L269
+            secondaryFontColor.A = 0x9E;
+            secondaryFontBrush.Color(secondaryFontColor);
+        }
+        else
+        {
+            fontBrush.Color(winrt::Windows::UI::Colors::White());
+            auto secondaryFontColor = winrt::Windows::UI::Colors::White();
+            // For alpha value see: https://github.com/microsoft/microsoft-ui-xaml/blob/7a33ad772d77d908aa6b316ec24e6d2eb3ebf571/dev/CommonStyles/Common_themeresources_any.xaml#L14
+            secondaryFontColor.A = 0xC5;
+            secondaryFontBrush.Color(secondaryFontColor);
         }
 
         selectedTabBrush.Color(color);

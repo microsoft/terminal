@@ -235,10 +235,11 @@ namespace winrt::TerminalApp::implementation
                 }
             }
 
+            const auto& duplicateFromTab{ realArgs.SplitMode() == SplitType::Duplicate ? _GetFocusedTab() : nullptr };
             _SplitPane(realArgs.SplitDirection(),
                        // This is safe, we're already filtering so the value is (0, 1)
                        ::base::saturated_cast<float>(realArgs.SplitSize()),
-                       _MakePane(realArgs.TerminalArgs(), realArgs.SplitMode() == SplitType::Duplicate));
+                       _MakePane(realArgs.TerminalArgs(), duplicateFromTab));
             args.Handled(true);
         }
     }
@@ -509,7 +510,10 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleFind(const IInspectable& /*sender*/,
                                    const ActionEventArgs& args)
     {
-        _Find();
+        if (const auto activeTab{ _GetFocusedTabImpl() })
+        {
+            _Find(*activeTab);
+        }
         args.Handled(true);
     }
 

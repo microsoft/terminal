@@ -83,11 +83,38 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return BackgroundImagePath() != L"";
     }
 
+    void AppearanceViewModel::ClearColorScheme()
+    {
+        ClearDarkColorSchemeName();
+        _NotifyChanges(L"CurrentColorScheme");
+    }
+
+    Editor::ColorSchemeViewModel AppearanceViewModel::CurrentColorScheme()
+    {
+        const auto schemeName{ DarkColorSchemeName() };
+        const auto allSchemes{ SchemesList() };
+        for (const auto& scheme : allSchemes)
+        {
+            if (scheme.Name() == schemeName)
+            {
+                return scheme;
+            }
+        }
+        // This Appearance points to a color scheme that was renamed or deleted.
+        // Fallback to the first one in the list.
+        return allSchemes.GetAt(0);
+    }
+
+    void AppearanceViewModel::CurrentColorScheme(const ColorSchemeViewModel& val)
+    {
+        DarkColorSchemeName(val.Name());
+        LightColorSchemeName(val.Name());
+    }
+
     DependencyProperty Appearances::_AppearanceProperty{ nullptr };
 
     Appearances::Appearances() :
-        _ShowAllFonts{ false },
-        _ColorSchemeList{ single_threaded_observable_vector<ColorScheme>() }
+        _ShowAllFonts{ false }
     {
         InitializeComponent();
 
@@ -146,11 +173,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Automation::AutomationProperties::SetFullDescription(UseDesktopImageCheckBox(), unbox_value<hstring>(backgroundImgCheckboxTooltip));
 
         INITIALIZE_BINDABLE_ENUM_SETTING(IntenseTextStyle, IntenseTextStyle, winrt::Microsoft::Terminal::Settings::Model::IntenseStyle, L"Appearance_IntenseTextStyle", L"Content");
-    }
-
-    bool Appearances::ShowIndistinguishableColorsItem() const noexcept
-    {
-        return Feature_AdjustIndistinguishableText::IsEnabled();
     }
 
     // Method Description:
@@ -229,12 +251,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (Appearance())
         {
-            const auto& colorSchemeMap{ Appearance().Schemes() };
-            for (const auto& pair : colorSchemeMap)
-            {
-                _ColorSchemeList.Append(pair.Value());
-            }
-
             const auto& biAlignmentVal{ static_cast<int32_t>(Appearance().BackgroundImageAlignment()) };
             for (const auto& biButton : _BIAlignmentButtons)
             {
@@ -248,7 +264,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentCursorShape" });
                     _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsVintageCursor" });
                 }
-                else if (settingName == L"ColorSchemeName")
+                else if (settingName == L"DarkColorSchemeName" || settingName == L"LightColorSchemeName")
                 {
                     _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentColorScheme" });
                 }
@@ -356,26 +372,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 biButton.IsChecked(biButtonAlignment == val);
             }
         }
-    }
-
-    ColorScheme Appearances::CurrentColorScheme()
-    {
-        const auto schemeName{ Appearance().ColorSchemeName() };
-        if (const auto scheme{ Appearance().Schemes().TryLookup(schemeName) })
-        {
-            return scheme;
-        }
-        else
-        {
-            // This Appearance points to a color scheme that was renamed or deleted.
-            // Fallback to Campbell.
-            return Appearance().Schemes().TryLookup(L"Campbell");
-        }
-    }
-
-    void Appearances::CurrentColorScheme(const ColorScheme& val)
-    {
-        Appearance().ColorSchemeName(val.Name());
     }
 
     bool Appearances::IsVintageCursor() const

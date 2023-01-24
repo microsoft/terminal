@@ -297,6 +297,11 @@ bool TextAttribute::IsReverseVideo() const noexcept
     return WI_IsFlagSet(_attrs, CharacterAttributes::ReverseVideo);
 }
 
+bool TextAttribute::IsProtected() const noexcept
+{
+    return WI_IsFlagSet(_attrs, CharacterAttributes::Protected);
+}
+
 void TextAttribute::SetIntense(bool isIntense) noexcept
 {
     WI_UpdateFlag(_attrs, CharacterAttributes::Intense, isIntense);
@@ -347,6 +352,11 @@ void TextAttribute::SetReverseVideo(bool isReversed) noexcept
     WI_UpdateFlag(_attrs, CharacterAttributes::ReverseVideo, isReversed);
 }
 
+void TextAttribute::SetProtected(bool isProtected) noexcept
+{
+    WI_UpdateFlag(_attrs, CharacterAttributes::Protected, isProtected);
+}
+
 // Routine Description:
 // - swaps foreground and background color
 void TextAttribute::Invert() noexcept
@@ -365,10 +375,11 @@ void TextAttribute::SetDefaultBackground() noexcept
 }
 
 // Method description:
-// - Resets only the rendition character attributes
+// - Resets only the rendition character attributes, which includes everything
+//     except the Protected attribute.
 void TextAttribute::SetDefaultRenditionAttributes() noexcept
 {
-    _attrs = CharacterAttributes::Normal;
+    _attrs &= ~CharacterAttributes::Rendition;
 }
 
 // Method Description:
