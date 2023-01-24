@@ -26,6 +26,9 @@ public:
     HWND GetInteropHandle() const;
 
     [[nodiscard]] virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
+
+    [[nodiscard]] LRESULT OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept override;
+
     void OnResize(const UINT width, const UINT height) override;
     void OnMinimize() override;
     void OnRestore() override;
@@ -66,6 +69,8 @@ public:
     void AddToSystemMenu(const winrt::hstring& itemLabel, winrt::delegate<void()> callback);
     void RemoveFromSystemMenu(const winrt::hstring& itemLabel);
 
+    virtual void UseMica(const bool newValue, const double titlebarOpacity);
+
     WINRT_CALLBACK(DragRegionClicked, winrt::delegate<>);
     WINRT_CALLBACK(WindowCloseButtonClicked, winrt::delegate<>);
     WINRT_CALLBACK(MouseScrolled, winrt::delegate<void(til::point, int32_t)>);
@@ -82,13 +87,14 @@ public:
 
     WINRT_CALLBACK(WindowMoved, winrt::delegate<void()>);
     WINRT_CALLBACK(WindowVisibilityChanged, winrt::delegate<void(bool)>);
+    WINRT_CALLBACK(UpdateSettingsRequested, winrt::delegate<void()>);
 
 protected:
     void ForceResize()
     {
         // Do a quick resize to force the island to paint
         const auto size = GetPhysicalSize();
-        OnSize(size.cx, size.cy);
+        OnSize(size.width, size.height);
     }
 
     HWND _interopWindowHandle;

@@ -25,6 +25,7 @@ using namespace winrt::Windows::UI::ViewManagement;
 using namespace winrt::Windows::UI::Input;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
+using namespace winrt::Windows::Storage::Streams;
 
 // The minimum delay between updates to the scroll bar's values.
 // The updates are throttled to limit power usage.
@@ -630,7 +631,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //
         // Firing it manually makes sure it does.
         _BackgroundBrush = RootGrid().Background();
-        _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"BackgroundBrush" });
+        _PropertyChangedHandlers(*this, Data::PropertyChangedEventArgs{ L"BackgroundBrush" });
 
         _isBackgroundLight = _isColorLight(bg);
     }
@@ -652,7 +653,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const auto opacity{ _core.Opacity() };
         const auto useAcrylic{ _core.UseAcrylic() };
-
+        auto changed = false;
         // GH#11743, #11619: If we're changing whether or not acrylic is used,
         // then just entirely reinitialize the brush. The primary way that this
         // happens is on Windows 10, where we need to enable acrylic when the
@@ -666,6 +667,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _InitializeBackgroundBrush();
                 return;
             }
+            changed = acrylic.TintOpacity() != opacity;
             acrylic.TintOpacity(opacity);
         }
         else if (auto solidColor = RootGrid().Background().try_as<Media::SolidColorBrush>())
@@ -675,7 +677,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _InitializeBackgroundBrush();
                 return;
             }
+            changed = solidColor.Opacity() != opacity;
             solidColor.Opacity(opacity);
+        }
+        // Send a BG brush changed event, so you can mouse wheel the
+        // transparency of the titlebar too.
+        if (changed)
+        {
+            _PropertyChangedHandlers(*this, Data::PropertyChangedEventArgs{ L"BackgroundBrush" });
         }
     }
 
@@ -1793,7 +1802,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //        when the control is visible as the DPI changes.
     //      - The CompositionScale will be the new DPI. This happens when the
     //        control wasn't focused as the window's DPI changed, so it only got
-    //        these messages after XAML updated it's scaling.
+    //        these messages after XAML updated its scaling.
     //   - 3. Finally, a CompositionScaleChanged with the _new_ DPI.
     //   - 4. We'll usually get another SizeChanged some time after this last
     //     ScaleChanged. This usually seems to happen after something triggers
@@ -1981,6 +1990,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (!_IsClosing())
         {
             _closing = true;
+            if (_automationPeer)
+            {
+                auto autoPeerImpl{ winrt::get_self<implementation::TermControlAutomationPeer>(_automationPeer) };
+                autoPeerImpl->Close();
+            }
 
             _RestorePointerCursorHandlers(*this, nullptr);
 
@@ -2124,7 +2138,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // ComCtl scrollbars, but it's certainly close enough.
         const auto scrollbarSize = GetSystemMetricsForDpi(SM_CXVSCROLL, dpi);
 
-        double width = cols * actualFontSize.X;
+        double width = cols * actualFontSize.width;
 
         // Reserve additional space if scrollbar is intended to be visible
         if (scrollState != ScrollbarState::Hidden)
@@ -2132,7 +2146,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             width += scrollbarSize;
         }
 
-        double height = rows * actualFontSize.Y;
+        double height = rows * actualFontSize.height;
         const auto thickness = ParseThicknessFromPadding(padding);
         // GH#2061 - make sure to account for the size the padding _will be_ scaled to
         width += scale * (thickness.Left + thickness.Right);
@@ -2186,7 +2200,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         else
         {
             // If the terminal hasn't been initialized yet, then the font size will
-            // have dimensions {1, fontSize.Y}, which can mess with consumers of
+            // have dimensions {1, fontSize.height}, which can mess with consumers of
             // this method. In that case, we'll need to pre-calculate the font
             // width, before we actually have a renderer or swapchain.
             const winrt::Windows::Foundation::Size minSize{ 1, 1 };
@@ -2518,21 +2532,62 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             if (items.Size() > 0)
             {
-                std::wstring allPaths;
-                for (auto item : items)
+                std::vector<std::wstring> fullPaths;
+
+                // GH#14628: Workaround for GetStorageItemsAsync() only returning 16 items
+                // at most when dragging and dropping from archives (zip, 7z, rar, etc.)
+                if (items.Size() == 16 && e.DataView().Contains(winrt::hstring{ L"FileDrop" }))
+                {
+                    auto fileDropData = co_await e.DataView().GetDataAsync(winrt::hstring{ L"FileDrop" });
+                    if (fileDropData != nullptr)
+                    {
+                        auto stream = fileDropData.as<IRandomAccessStream>();
+                        stream.Seek(0);
+
+                        const uint32_t streamSize = gsl::narrow_cast<uint32_t>(stream.Size());
+                        const Buffer buf(streamSize);
+                        const auto buffer = co_await stream.ReadAsync(buf, streamSize, InputStreamOptions::None);
+
+                        const HGLOBAL hGlobal = buffer.data();
+                        const auto count = DragQueryFileW(static_cast<HDROP>(hGlobal), 0xFFFFFFFF, nullptr, 0);
+                        fullPaths.reserve(count);
+
+                        for (unsigned int i = 0; i < count; i++)
+                        {
+                            std::wstring path;
+                            path.resize(wil::max_path_length);
+                            const auto charsCopied = DragQueryFileW(static_cast<HDROP>(hGlobal), i, path.data(), wil::max_path_length);
+
+                            if (charsCopied > 0)
+                            {
+                                path.resize(charsCopied);
+                                fullPaths.emplace_back(std::move(path));
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    fullPaths.reserve(items.Size());
+                    for (const auto& item : items)
+                    {
+                        fullPaths.emplace_back(item.Path());
+                    }
+                }
+
+                std::wstring allPathsString;
+                for (auto& fullPath : fullPaths)
                 {
                     // Join the paths with spaces
-                    if (!allPaths.empty())
+                    if (!allPathsString.empty())
                     {
-                        allPaths += L" ";
+                        allPathsString += L" ";
                     }
-
-                    std::wstring fullPath{ item.Path() };
 
                     // Fix path for WSL
                     // In the fullness of time, we should likely plumb this up
                     // to the TerminalApp layer, and have it make the decision
-                    // if this control should have it's path mangled (and do the
+                    // if this control should have its path mangled (and do the
                     // mangling), rather than exposing the source concept to the
                     // Control layer.
                     //
@@ -2583,10 +2638,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                         fullPath += L"\"";
                     }
 
-                    allPaths += fullPath;
+                    allPathsString += fullPath;
                 }
 
-                _core.PasteText(winrt::hstring{ allPaths });
+                _core.PasteText(winrt::hstring{ allPathsString });
             }
         }
     }

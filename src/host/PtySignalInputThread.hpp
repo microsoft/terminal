@@ -64,8 +64,8 @@ namespace Microsoft::Console
         [[nodiscard]] bool _GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer, const DWORD cbBuffer);
         void _DoResizeWindow(const ResizeWindowData& data);
         void _DoSetWindowParent(const SetParentData& data);
-        void _DoClearBuffer();
-        void _DoShowHide(const bool show);
+        void _DoClearBuffer() const;
+        void _DoShowHide(const ShowHideData& data);
         void _Shutdown();
 
         wil::unique_hfile _hFile;

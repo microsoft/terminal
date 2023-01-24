@@ -266,6 +266,13 @@ bool TerminalInput::GetInputMode(const Mode mode) const noexcept
     return _inputMode.test(mode);
 }
 
+void TerminalInput::ResetInputModes() noexcept
+{
+    _inputMode = { Mode::Ansi, Mode::AutoRepeat };
+    _mouseInputState.lastPos = { -1, -1 };
+    _mouseInputState.lastButton = 0;
+}
+
 void TerminalInput::ForceDisableWin32InputMode(const bool win32InputMode) noexcept
 {
     _forceDisableWin32InputMode = win32InputMode;

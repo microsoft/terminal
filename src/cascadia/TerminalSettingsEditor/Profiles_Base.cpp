@@ -4,7 +4,7 @@
 #include "pch.h"
 #include "Profiles_Base.h"
 #include "Profiles_Base.g.cpp"
-#include "Profiles.h"
+#include "ProfileViewModel.h"
 
 #include <LibraryResources.h>
 #include "..\WinRTUtils\inc\Utils.h"
@@ -29,8 +29,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Profiles_Base::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        auto state{ e.Parameter().as<Editor::ProfilePageNavigationState>() };
-        _Profile = state.Profile();
+        _Profile = e.Parameter().as<Editor::ProfileViewModel>();
 
         // Check the use parent directory box if the starting directory is empty
         if (_Profile.StartingDirectory().empty())
@@ -38,7 +37,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             StartingDirectoryUseParentCheckbox().IsChecked(true);
         }
 
-        _layoutUpdatedRevoker = LayoutUpdated(winrt::auto_revoke, [state, this](auto /*s*/, auto /*e*/) {
+        _layoutUpdatedRevoker = LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
             // This event fires every time the layout changes, but it is always the last one to fire
             // in any layout change chain. That gives us great flexibility in finding the right point
             // at which to initialize our renderer (and our terminal).
@@ -47,10 +46,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // Only let this succeed once.
             _layoutUpdatedRevoker.revoke();
 
-            if (state.FocusDeleteButton())
+            if (_Profile.FocusDeleteButton())
             {
                 DeleteButton().Focus(FocusState::Programmatic);
-                state.FocusDeleteButton(false);
+                _Profile.FocusDeleteButton(false);
                 ProfilesBase_ScrollView().ChangeView(nullptr, ProfilesBase_ScrollView().ScrollableHeight(), nullptr);
             }
         });
