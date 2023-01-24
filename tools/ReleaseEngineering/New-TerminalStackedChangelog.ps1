@@ -80,7 +80,7 @@ For($c = 0; $c -Lt $i; $c++) {
     "   " + ("|" * $c) + "/ " + $RevisionRanges[$c]
 }
 
-$Unique = $Entries | Group-Object Subject #| %{ $_.Group[0] | Add-Member Count $_.Count -Force -PassThru }
+$Unique = $Entries | Group-Object Subject
 
 $Unique | % {
     $en = $_.Group[0]
