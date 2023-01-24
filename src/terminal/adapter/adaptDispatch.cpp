@@ -102,6 +102,20 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
         }
 
         const OutputCellIterator it(std::wstring_view{ stringPosition, string.cend() }, attributes);
+        if (_modes.test(Mode::InsertReplace))
+        {
+            // If insert-replace mode is enabled, we first measure how many cells
+            // the string will occupy, and scroll the target area right by that
+            // amount to make space for the incoming text.
+            auto measureIt = it;
+            while (measureIt && measureIt.GetCellDistance(it) < lineWidth)
+            {
+                measureIt++;
+            }
+            const auto row = cursorPosition.y;
+            const auto cellCount = measureIt.GetCellDistance(it);
+            _ScrollRectHorizontally(textBuffer, { cursorPosition.x, row, lineWidth, row + 1 }, cellCount);
+        }
         const auto itEnd = textBuffer.WriteLine(it, cursorPosition, wrapAtEOL, lineWidth - 1);
 
         if (itEnd.GetInputDistance(it) == 0)
@@ -1555,7 +1569,7 @@ bool AdaptDispatch::_PassThroughInputModes()
 }
 
 // Routine Description:
-// - Support routine for routing private mode parameters to be set/reset as flags
+// - Support routine for routing mode parameters to be set/reset as flags
 // Arguments:
 // - param - mode parameter to set/reset
 // - enable - True for set, false for unset.
@@ -1565,6 +1579,9 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
 {
     switch (param)
     {
+    case DispatchTypes::ModeParams::IRM_InsertReplaceMode:
+        _modes.set(Mode::InsertReplace, enable);
+        return true;
     case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
         _terminalInput.SetInputMode(TerminalInput::Mode::CursorKey, enable);
         return !_PassThroughInputModes();
@@ -1647,7 +1664,7 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
 }
 
 // Routine Description:
-// - DECSET - Enables the given DEC private mode params.
+// - SM/DECSET - Enables the given mode parameter (both ANSI and private).
 // Arguments:
 // - param - mode parameter to set
 // Return Value:
@@ -1658,7 +1675,7 @@ bool AdaptDispatch::SetMode(const DispatchTypes::ModeParams param)
 }
 
 // Routine Description:
-// - DECRST - Disables the given DEC private mode params.
+// - RM/DECRST - Disables the given mode parameter (both ANSI and private).
 // Arguments:
 // - param - mode parameter to reset
 // Return Value:
@@ -1681,6 +1698,9 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
 
     switch (param)
     {
+    case DispatchTypes::ModeParams::IRM_InsertReplaceMode:
+        enabled = _modes.test(Mode::InsertReplace);
+        break;
     case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
         enabled = _terminalInput.GetInputMode(TerminalInput::Mode::CursorKey);
         break;
@@ -2322,7 +2342,7 @@ bool AdaptDispatch::AcceptC1Controls(const bool enabled)
 //   we actually perform. As the appropriate functionality is added to our ANSI support,
 //   we should update this.
 //  X Text cursor enable          DECTCEM     Cursor enabled.
-//    Insert/replace              IRM         Replace mode.
+//  X Insert/replace              IRM         Replace mode.
 //  X Origin                      DECOM       Absolute (cursor origin at upper-left of screen.)
 //  X Autowrap                    DECAWM      Autowrap enabled (matches XTerm behavior).
 //    National replacement        DECNRCM     Multinational set.
@@ -2350,7 +2370,7 @@ bool AdaptDispatch::AcceptC1Controls(const bool enabled)
 bool AdaptDispatch::SoftReset()
 {
     _api.GetTextBuffer().GetCursor().SetIsVisible(true); // Cursor enabled.
-    _modes.reset(Mode::Origin); // Absolute cursor addressing.
+    _modes.reset(Mode::InsertReplace, Mode::Origin); // Replace mode; Absolute cursor addressing.
     _api.SetAutoWrapMode(true); // Wrap at end of line.
     _terminalInput.SetInputMode(TerminalInput::Mode::CursorKey, false); // Normal characters.
     _terminalInput.SetInputMode(TerminalInput::Mode::Keypad, false); // Numeric characters.

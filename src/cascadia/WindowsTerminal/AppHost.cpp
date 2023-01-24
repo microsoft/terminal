@@ -1344,6 +1344,33 @@ winrt::fire_and_forget AppHost::_RenameWindowRequested(const winrt::Windows::Fou
     }
 }
 
+static double _opacityFromBrush(const winrt::Windows::UI::Xaml::Media::Brush& brush)
+{
+    if (auto acrylic = brush.try_as<winrt::Windows::UI::Xaml::Media::AcrylicBrush>())
+    {
+        return acrylic.TintOpacity();
+    }
+    else if (auto solidColor = brush.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>())
+    {
+        return solidColor.Opacity();
+    }
+    return 1.0;
+}
+
+static bool _isActuallyDarkTheme(const auto requestedTheme)
+{
+    switch (requestedTheme)
+    {
+    case winrt::Windows::UI::Xaml::ElementTheme::Light:
+        return false;
+    case winrt::Windows::UI::Xaml::ElementTheme::Dark:
+        return true;
+    case winrt::Windows::UI::Xaml::ElementTheme::Default:
+    default:
+        return Theme::IsSystemInDarkTheme();
+    }
+}
+
 void AppHost::_updateTheme()
 {
     auto theme = _logic.Theme();
@@ -1351,8 +1378,17 @@ void AppHost::_updateTheme()
     _window->OnApplicationThemeChanged(theme.RequestedTheme());
 
     const auto b = _logic.TitlebarBrush();
-    const auto opacity = b ? ThemeColor::ColorFromBrush(b).A / 255.0 : 0.0;
+    const auto color = ThemeColor::ColorFromBrush(b);
+    const auto colorOpacity = b ? color.A / 255.0 : 0.0;
+    const auto brushOpacity = _opacityFromBrush(b);
+    const auto opacity = std::min(colorOpacity, brushOpacity);
     _window->UseMica(theme.Window() ? theme.Window().UseMica() : false, opacity);
+
+    // This is a hack to make the window borders dark instead of light.
+    // It must be done before WM_NCPAINT so that the borders are rendered with
+    // the correct theme.
+    // For more information, see GH#6620.
+    LOG_IF_FAILED(TerminalTrySetDarkTheme(_window->GetHandle(), _isActuallyDarkTheme(theme.RequestedTheme())));
 }
 
 void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,
@@ -1619,6 +1655,7 @@ void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspect
         {
             auto nonClientWindow{ static_cast<NonClientIslandWindow*>(_window.get()) };
             nonClientWindow->SetTitlebarBackground(_logic.TitlebarBrush());
+            _updateTheme();
         }
     }
 }
