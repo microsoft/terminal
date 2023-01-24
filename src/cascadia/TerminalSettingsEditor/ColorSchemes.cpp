@@ -42,16 +42,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // Only let this succeed once.
             _layoutUpdatedRevoker.revoke();
 
-            for (const auto scheme : _ViewModel.AllColorSchemes())
-            {
-                if (scheme.IsDefaultScheme())
-                {
-                    winrt::hstring newName{ fmt::format(L"{} ({})", scheme.Name(), RS_(L"ColorScheme_DefaultTag/Text")) };
-                    Automation::AutomationProperties::SetName(ColorSchemeListView().ContainerFromItem(scheme), newName);
-                    break;
-                }
-            }
-
             ColorSchemeListView().Focus(FocusState::Programmatic);
         });
     }
