@@ -7,7 +7,6 @@
     <RootNamespace>PublicTerminalCore</RootNamespace>
     <ProjectName>PublicTerminalCore</ProjectName>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <!-- Consumers of the WPF control need not bring a VC++ Runtime -->
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <Import Project="$(SolutionDir)src\common.nugetversions.props" />
