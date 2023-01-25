@@ -940,7 +940,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             {
                 begin->length = begin_pos;
                 // begin is part of the to-be-replaced range.
-                // We've used the run begin is pointing to adjust it's length.
+                // We've used the run begin is pointing to adjust its length.
                 // --> We must increment it in order to not overwrite it in [Step4].
                 ++begin;
             }

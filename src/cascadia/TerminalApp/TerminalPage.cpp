@@ -824,82 +824,14 @@ namespace winrt::TerminalApp::implementation
         auto newTabFlyout = WUX::Controls::MenuFlyout{};
         newTabFlyout.Placement(WUX::Controls::Primitives::FlyoutPlacementMode::BottomEdgeAlignedLeft);
 
-        auto actionMap = _settings.ActionMap();
-        const auto defaultProfileGuid = _settings.GlobalSettings().DefaultProfile();
-        // the number of profiles should not change in the loop for this to work
-        const auto profileCount = gsl::narrow_cast<int>(_settings.ActiveProfiles().Size());
-        for (auto profileIndex = 0; profileIndex < profileCount; profileIndex++)
+        // Create profile entries from the NewTabMenu configuration using a
+        // recursive helper function. This returns a std::vector of FlyoutItemBases,
+        // that we then add to our Flyout.
+        auto entries = _settings.GlobalSettings().NewTabMenu();
+        auto items = _CreateNewTabFlyoutItems(entries);
+        for (const auto& item : items)
         {
-            const auto profile = _settings.ActiveProfiles().GetAt(profileIndex);
-            auto profileMenuItem = WUX::Controls::MenuFlyoutItem{};
-
-            // Add the keyboard shortcuts based on the number of profiles defined
-            // Look for a keychord that is bound to the equivalent
-            // NewTab(ProfileIndex=N) action
-            NewTerminalArgs newTerminalArgs{ profileIndex };
-            NewTabArgs newTabArgs{ newTerminalArgs };
-            auto profileKeyChord{ actionMap.GetKeyBindingForAction(ShortcutAction::NewTab, newTabArgs) };
-
-            // make sure we find one to display
-            if (profileKeyChord)
-            {
-                _SetAcceleratorForMenuItem(profileMenuItem, profileKeyChord);
-            }
-
-            auto profileName = profile.Name();
-            profileMenuItem.Text(profileName);
-
-            // If there's an icon set for this profile, set it as the icon for
-            // this flyout item.
-            if (!profile.Icon().empty())
-            {
-                const auto iconSource{ IconPathConverter().IconSourceWUX(profile.Icon()) };
-
-                WUX::Controls::IconSourceElement iconElement;
-                iconElement.IconSource(iconSource);
-                profileMenuItem.Icon(iconElement);
-                Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
-            }
-
-            if (profile.Guid() == defaultProfileGuid)
-            {
-                // Contrast the default profile with others in font weight.
-                profileMenuItem.FontWeight(FontWeights::Bold());
-            }
-
-            auto newTabRun = WUX::Documents::Run();
-            newTabRun.Text(RS_(L"NewTabRun/Text"));
-            auto newPaneRun = WUX::Documents::Run();
-            newPaneRun.Text(RS_(L"NewPaneRun/Text"));
-            newPaneRun.FontStyle(FontStyle::Italic);
-            auto newWindowRun = WUX::Documents::Run();
-            newWindowRun.Text(RS_(L"NewWindowRun/Text"));
-            newWindowRun.FontStyle(FontStyle::Italic);
-            auto elevatedRun = WUX::Documents::Run();
-            elevatedRun.Text(RS_(L"ElevatedRun/Text"));
-            elevatedRun.FontStyle(FontStyle::Italic);
-
-            auto textBlock = WUX::Controls::TextBlock{};
-            textBlock.Inlines().Append(newTabRun);
-            textBlock.Inlines().Append(WUX::Documents::LineBreak{});
-            textBlock.Inlines().Append(newPaneRun);
-            textBlock.Inlines().Append(WUX::Documents::LineBreak{});
-            textBlock.Inlines().Append(newWindowRun);
-            textBlock.Inlines().Append(WUX::Documents::LineBreak{});
-            textBlock.Inlines().Append(elevatedRun);
-
-            auto toolTip = WUX::Controls::ToolTip{};
-            toolTip.Content(textBlock);
-            WUX::Controls::ToolTipService::SetToolTip(profileMenuItem, toolTip);
-
-            profileMenuItem.Click([profileIndex, weakThis{ get_weak() }](auto&&, auto&&) {
-                if (auto page{ weakThis.get() })
-                {
-                    NewTerminalArgs newTerminalArgs{ profileIndex };
-                    page->_OpenNewTerminalViaDropdown(newTerminalArgs);
-                }
-            });
-            newTabFlyout.Items().Append(profileMenuItem);
+            newTabFlyout.Items().Append(item);
         }
 
         // add menu separator
@@ -935,6 +867,7 @@ namespace winrt::TerminalApp::implementation
                 settingsItem.Click({ this, &TerminalPage::_SettingsButtonOnClick });
                 newTabFlyout.Items().Append(settingsItem);
 
+                auto actionMap = _settings.ActionMap();
                 const auto settingsKeyChord{ actionMap.GetKeyBindingForAction(ShortcutAction::OpenSettings, OpenSettingsArgs{ SettingsTarget::SettingsUI }) };
                 if (settingsKeyChord)
                 {
@@ -992,6 +925,215 @@ namespace winrt::TerminalApp::implementation
             _FocusCurrentTab(true);
         });
         _newTabButton.Flyout(newTabFlyout);
+    }
+
+    // Method Description:
+    // - For a given list of tab menu entries, this method will create the corresponding
+    //   list of flyout items. This is a recursive method that calls itself when it comes
+    //   across a folder entry.
+    std::vector<WUX::Controls::MenuFlyoutItemBase> TerminalPage::_CreateNewTabFlyoutItems(IVector<NewTabMenuEntry> entries)
+    {
+        std::vector<WUX::Controls::MenuFlyoutItemBase> items;
+
+        if (entries == nullptr || entries.Size() == 0)
+        {
+            return items;
+        }
+
+        for (const auto& entry : entries)
+        {
+            if (entry == nullptr)
+            {
+                continue;
+            }
+
+            switch (entry.Type())
+            {
+            case NewTabMenuEntryType::Separator:
+            {
+                items.push_back(WUX::Controls::MenuFlyoutSeparator{});
+                break;
+            }
+            // A folder has a custom name and icon, and has a number of entries that require
+            // us to call this method recursively.
+            case NewTabMenuEntryType::Folder:
+            {
+                const auto folderEntry = entry.as<FolderEntry>();
+                const auto folderEntries = folderEntry.Entries();
+
+                // If the folder is empty, we should skip the entry if AllowEmpty is false, or
+                // when the folder should inline.
+                // The IsEmpty check includes semantics for nested (empty) folders
+                if (folderEntries.Size() == 0 && (!folderEntry.AllowEmpty() || folderEntry.Inlining() == FolderEntryInlining::Auto))
+                {
+                    break;
+                }
+
+                // Recursively generate flyout items
+                auto folderEntryItems = _CreateNewTabFlyoutItems(folderEntries);
+
+                // If the folder should auto-inline and there is only one item, do so.
+                if (folderEntry.Inlining() == FolderEntryInlining::Auto && folderEntries.Size() == 1)
+                {
+                    for (auto const& folderEntryItem : folderEntryItems)
+                    {
+                        items.push_back(folderEntryItem);
+                    }
+
+                    break;
+                }
+
+                // Otherwise, create a flyout
+                auto folderItem = WUX::Controls::MenuFlyoutSubItem{};
+                folderItem.Text(folderEntry.Name());
+
+                auto icon = _CreateNewTabFlyoutIcon(folderEntry.Icon());
+                folderItem.Icon(icon);
+
+                for (const auto& folderEntryItem : folderEntryItems)
+                {
+                    folderItem.Items().Append(folderEntryItem);
+                }
+
+                // If the folder is empty, and by now we know we set AllowEmpty to true,
+                // create a placeholder item here
+                if (folderEntries.Size() == 0)
+                {
+                    auto placeholder = WUX::Controls::MenuFlyoutItem{};
+                    placeholder.Text(RS_(L"NewTabMenuFolderEmpty"));
+                    placeholder.IsEnabled(false);
+
+                    folderItem.Items().Append(placeholder);
+                }
+
+                items.push_back(folderItem);
+                break;
+            }
+            // Any "collection entry" will simply make us add each profile in the collection
+            // separately. This collection is stored as a map <int, Profile>, so the correct
+            // profile index is already known.
+            case NewTabMenuEntryType::RemainingProfiles:
+            case NewTabMenuEntryType::MatchProfiles:
+            {
+                const auto remainingProfilesEntry = entry.as<ProfileCollectionEntry>();
+                if (remainingProfilesEntry.Profiles() == nullptr)
+                {
+                    break;
+                }
+
+                for (auto&& [profileIndex, remainingProfile] : remainingProfilesEntry.Profiles())
+                {
+                    items.push_back(_CreateNewTabFlyoutProfile(remainingProfile, profileIndex));
+                }
+
+                break;
+            }
+            // A single profile, the profile index is also given in the entry
+            case NewTabMenuEntryType::Profile:
+            {
+                const auto profileEntry = entry.as<ProfileEntry>();
+                if (profileEntry.Profile() == nullptr)
+                {
+                    break;
+                }
+
+                auto profileItem = _CreateNewTabFlyoutProfile(profileEntry.Profile(), profileEntry.ProfileIndex());
+                items.push_back(profileItem);
+                break;
+            }
+            }
+        }
+
+        return items;
+    }
+
+    // Method Description:
+    // - This method creates a flyout menu item for a given profile with the given index.
+    //   It makes sure to set the correct icon, keybinding, and click-action.
+    WUX::Controls::MenuFlyoutItem TerminalPage::_CreateNewTabFlyoutProfile(const Profile profile, int profileIndex)
+    {
+        auto profileMenuItem = WUX::Controls::MenuFlyoutItem{};
+
+        // Add the keyboard shortcuts based on the number of profiles defined
+        // Look for a keychord that is bound to the equivalent
+        // NewTab(ProfileIndex=N) action
+        NewTerminalArgs newTerminalArgs{ profileIndex };
+        NewTabArgs newTabArgs{ newTerminalArgs };
+        auto profileKeyChord{ _settings.ActionMap().GetKeyBindingForAction(ShortcutAction::NewTab, newTabArgs) };
+
+        // make sure we find one to display
+        if (profileKeyChord)
+        {
+            _SetAcceleratorForMenuItem(profileMenuItem, profileKeyChord);
+        }
+
+        auto profileName = profile.Name();
+        profileMenuItem.Text(profileName);
+
+        // If there's an icon set for this profile, set it as the icon for
+        // this flyout item
+        if (!profile.Icon().empty())
+        {
+            const auto icon = _CreateNewTabFlyoutIcon(profile.Icon());
+            profileMenuItem.Icon(icon);
+        }
+
+        if (profile.Guid() == _settings.GlobalSettings().DefaultProfile())
+        {
+            // Contrast the default profile with others in font weight.
+            profileMenuItem.FontWeight(FontWeights::Bold());
+        }
+
+        auto newTabRun = WUX::Documents::Run();
+        newTabRun.Text(RS_(L"NewTabRun/Text"));
+        auto newPaneRun = WUX::Documents::Run();
+        newPaneRun.Text(RS_(L"NewPaneRun/Text"));
+        newPaneRun.FontStyle(FontStyle::Italic);
+        auto newWindowRun = WUX::Documents::Run();
+        newWindowRun.Text(RS_(L"NewWindowRun/Text"));
+        newWindowRun.FontStyle(FontStyle::Italic);
+        auto elevatedRun = WUX::Documents::Run();
+        elevatedRun.Text(RS_(L"ElevatedRun/Text"));
+        elevatedRun.FontStyle(FontStyle::Italic);
+
+        auto textBlock = WUX::Controls::TextBlock{};
+        textBlock.Inlines().Append(newTabRun);
+        textBlock.Inlines().Append(WUX::Documents::LineBreak{});
+        textBlock.Inlines().Append(newPaneRun);
+        textBlock.Inlines().Append(WUX::Documents::LineBreak{});
+        textBlock.Inlines().Append(newWindowRun);
+        textBlock.Inlines().Append(WUX::Documents::LineBreak{});
+        textBlock.Inlines().Append(elevatedRun);
+
+        auto toolTip = WUX::Controls::ToolTip{};
+        toolTip.Content(textBlock);
+        WUX::Controls::ToolTipService::SetToolTip(profileMenuItem, toolTip);
+
+        profileMenuItem.Click([profileIndex, weakThis{ get_weak() }](auto&&, auto&&) {
+            if (auto page{ weakThis.get() })
+            {
+                NewTerminalArgs newTerminalArgs{ profileIndex };
+                page->_OpenNewTerminalViaDropdown(newTerminalArgs);
+            }
+        });
+
+        return profileMenuItem;
+    }
+
+    // Method Description:
+    // - Helper method to create an IconElement that can be passed to MenuFlyoutItems and
+    //   MenuFlyoutSubItems
+    IconElement TerminalPage::_CreateNewTabFlyoutIcon(const winrt::hstring& iconSource)
+    {
+        if (iconSource.empty())
+        {
+            return nullptr;
+        }
+
+        auto icon = IconPathConverter::IconWUX(iconSource);
+        Automation::AutomationProperties::SetAccessibilityView(icon, Automation::Peers::AccessibilityView::Raw);
+
+        return icon;
     }
 
     // Function Description:
@@ -1148,7 +1290,7 @@ namespace winrt::TerminalApp::implementation
             // The connection must be informed of the current CWD on
             // construction, because the connection might not spawn the child
             // process until later, on another thread, after we've already
-            // restored the CWD to it's original value.
+            // restored the CWD to its original value.
             auto newWorkingDirectory{ settings.StartingDirectory() };
             if (newWorkingDirectory.size() == 0 || newWorkingDirectory.size() == 1 &&
                                                        !(newWorkingDirectory[0] == L'~' || newWorkingDirectory[0] == L'/'))
@@ -2113,7 +2255,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Place `copiedData` into the clipboard as text. Triggered when a
-    //   terminal control raises it's CopyToClipboard event.
+    //   terminal control raises its CopyToClipboard event.
     // Arguments:
     // - copiedData: the new string content to place on the clipboard.
     winrt::fire_and_forget TerminalPage::_CopyToClipboardHandler(const IInspectable /*sender*/,
@@ -2618,6 +2760,12 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_SetBackgroundImage(const winrt::Microsoft::Terminal::Settings::Model::IAppearanceConfig& newAppearance)
     {
+        if (!_settings.GlobalSettings().UseBackgroundImageForWindow())
+        {
+            _tabContent.Background(nullptr);
+            return;
+        }
+
         const auto path = newAppearance.ExpandedBackgroundImagePath();
         if (path.empty())
         {
@@ -2655,9 +2803,14 @@ namespace winrt::TerminalApp::implementation
             Media::Imaging::BitmapImage image(imageUri);
             b.ImageSource(image);
             _tabContent.Background(b);
+        }
 
-            b.Stretch(newAppearance.BackgroundImageStretchMode());
-            b.Opacity(newAppearance.BackgroundImageOpacity());
+        // Pull this into a separate block. If the image didn't change, but the
+        // properties of the image did, we should still update them.
+        if (const auto newBrush{ _tabContent.Background().try_as<Media::ImageBrush>() })
+        {
+            newBrush.Stretch(newAppearance.BackgroundImageStretchMode());
+            newBrush.Opacity(newAppearance.BackgroundImageOpacity());
         }
     }
 
@@ -2691,18 +2844,6 @@ namespace winrt::TerminalApp::implementation
             profileGuidSettingsMap.insert_or_assign(newProfile.Guid(), std::pair{ newProfile, nullptr });
         }
 
-        if (_settings.GlobalSettings().UseBackgroundImageForWindow())
-        {
-            const auto focusedTab{ _GetFocusedTabImpl() };
-            if (focusedTab)
-            {
-                auto profile = focusedTab->GetFocusedProfile();
-                if (profile)
-                {
-                    _SetBackgroundImage(profile.DefaultAppearance());
-                }
-            }
-        }
         for (const auto& tab : _tabs)
         {
             if (auto terminalTab{ _GetTerminalTabImpl(tab) })
@@ -2746,6 +2887,14 @@ namespace winrt::TerminalApp::implementation
 
             auto tabImpl{ winrt::get_self<TabBase>(tab) };
             tabImpl->SetActionMap(_settings.ActionMap());
+        }
+
+        if (const auto focusedTab{ _GetFocusedTabImpl() })
+        {
+            if (const auto profile{ focusedTab->GetFocusedProfile() })
+            {
+                _SetBackgroundImage(profile.DefaultAppearance());
+            }
         }
 
         // repopulate the new tab button's flyout with entries for each
@@ -3011,15 +3160,15 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Called when the user tries to do a search using keybindings.
-    //   This will tell the current focused terminal control to create
-    //   a search box and enable find process.
+    //   This will tell the active terminal control of the passed tab
+    //   to create a search box and enable find process.
     // Arguments:
-    // - <none>
+    // - tab: the tab where the search box should be created
     // Return Value:
     // - <none>
-    void TerminalPage::_Find()
+    void TerminalPage::_Find(const TerminalTab& tab)
     {
-        if (const auto& control{ _GetActiveControl() })
+        if (const auto& control{ tab.GetActiveTerminalControl() })
         {
             control.CreateSearchBoxControl();
         }
@@ -3334,6 +3483,22 @@ namespace winrt::TerminalApp::implementation
 
             const IInspectable unused{ nullptr };
             _SetAsDefaultDismissHandler(unused, unused);
+
+            // TEMPORARY SOLUTION
+            // If the connection has requested for the window to be maximized,
+            // manually maximize it here. Ideally, we should be _initializing_
+            // the session maximized, instead of manually maximizing it after initialization.
+            // However, because of the current way our defterm handoff works,
+            // we are unable to get the connection info before the terminal session
+            // has already started.
+
+            // Make sure that there were no other tabs already existing (in
+            // the case that we are in glomming mode), because we don't want
+            // to be maximizing other existing sessions that did not ask for it.
+            if (_tabs.Size() == 1 && connection.ShowWindow() == SW_SHOWMAXIMIZED)
+            {
+                RequestSetMaximized(true);
+            }
             return S_OK;
         }
         CATCH_RETURN()
@@ -4154,6 +4319,22 @@ namespace winrt::TerminalApp::implementation
 
         const auto theme = _settings.GlobalSettings().CurrentTheme();
         auto requestedTheme{ theme.RequestedTheme() };
+
+        {
+            // Update the brushes that Pane's use...
+            Pane::SetupResources(requestedTheme);
+            // ... then trigger a visual update for all the pane borders to
+            // apply the new ones.
+            for (const auto& tab : _tabs)
+            {
+                if (auto terminalTab{ _GetTerminalTabImpl(tab) })
+                {
+                    terminalTab->GetRootPane()->WalkTree([&](auto&& pane) {
+                        pane->UpdateVisuals();
+                    });
+                }
+            }
+        }
 
         const auto res = Application::Current().Resources();
 

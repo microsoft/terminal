@@ -156,8 +156,8 @@ VtIo::VtIo() :
         if (IsValidHandle(_hOutput.get()))
         {
             auto initialViewport = Viewport::FromDimensions({ 0, 0 },
-                                                            gci.GetWindowSize().X,
-                                                            gci.GetWindowSize().Y);
+                                                            gci.GetWindowSize().width,
+                                                            gci.GetWindowSize().height);
             switch (_IoMode)
             {
             case VtIoMode::XTERM_256:
@@ -446,7 +446,7 @@ void VtIo::SetWindowVisibility(bool showOrHide) noexcept
 void VtIo::CloseInput()
 {
     _pVtInputThread = nullptr;
-    _shutdownNow();
+    SendCloseEvent();
 }
 
 void VtIo::CloseOutput()
@@ -455,26 +455,18 @@ void VtIo::CloseOutput()
     g.getConsoleInformation().GetActiveOutputBuffer().SetTerminalConnection(nullptr);
 }
 
-void VtIo::_shutdownNow()
+void VtIo::SendCloseEvent()
 {
-    // At this point, we no longer have a renderer or inthread. So we've
-    //      effectively been disconnected from the terminal.
-
-    // If we have any remaining attached processes, this will prepare us to send a ctrl+close to them
-    // if we don't, this will cause us to rundown and exit.
-    CloseConsoleProcessState();
-
-    // If we haven't terminated by now, that's because there's a client that's still attached.
-    // Force the handling of the control events by the attached clients.
-    // As of MSFT:19419231, CloseConsoleProcessState will make sure this
-    //      happens if this method is called outside of lock, but if we're
-    //      currently locked, we want to make sure ctrl events are handled
-    //      _before_ we RundownAndExit.
     LockConsole();
-    ProcessCtrlEvents();
+    const auto unlock = wil::scope_exit([] { UnlockConsole(); });
 
-    // Make sure we terminate.
-    ServiceLocator::RundownAndExit(ERROR_BROKEN_PIPE);
+    // This function is called when the ConPTY signal pipe is closed (PtySignalInputThread) and when the input
+    // pipe is closed (VtIo). Usually these two happen at about the same time. This if condition is a bit of
+    // a premature optimization and prevents us from sending out a CTRL_CLOSE_EVENT right after another.
+    if (!std::exchange(_closeEventSent, true))
+    {
+        CloseConsoleProcessState();
+    }
 }
 
 // Method Description:
@@ -531,7 +523,7 @@ void VtIo::EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::
 // - Returns true if the Resize Quirk is enabled. This changes the behavior of
 //   conpty to _not_ InvalidateAll the entire viewport on a resize operation.
 //   This is used by the Windows Terminal, because it is prepared to be
-//   connected to a conpty, and handles it's own buffer specifically for a
+//   connected to a conpty, and handles its own buffer specifically for a
 //   conpty scenario.
 // - See also: GH#3490, #4354, #4741
 // Arguments:

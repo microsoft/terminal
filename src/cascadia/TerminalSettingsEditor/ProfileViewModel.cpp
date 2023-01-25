@@ -51,22 +51,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // NOTE: this is similar to what is done with BackgroundImagePath above
                 _NotifyChanges(L"UseParentProcessDirectory", L"UseCustomStartingDirectory");
             }
-            else if (viewModelProperty == L"UseAcrylic")
-            {
-                // GH#11372: If we're on Windows 10, and someone turns off
-                // acrylic, we're going to disable opacity for them. Opacity
-                // doesn't work without acrylic on Windows 10.
-                //
-                // BODGY: CascadiaSettings's function IsDefaultTerminalAvailable
-                // is basically a "are we on Windows 11" check, because defterm
-                // only works on Win11. So we'll use that.
-                //
-                // Remove when we can remove the rest of GH#11285
-                if (!UseAcrylic() && !CascadiaSettings::IsDefaultTerminalAvailable())
-                {
-                    Opacity(1.0);
-                }
-            }
             else if (viewModelProperty == L"AntialiasingMode")
             {
                 _NotifyChanges(L"CurrentAntiAliasingMode");
@@ -228,16 +212,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return nullptr;
     }
 
-    Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> ProfileViewModel::Schemes() const noexcept
-    {
-        return _Schemes;
-    }
-
-    void ProfileViewModel::Schemes(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& val) noexcept
-    {
-        _Schemes = val;
-    }
-
     winrt::guid ProfileViewModel::OriginalProfileGuid() const noexcept
     {
         return _originalProfileGuid;
@@ -273,8 +247,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _profile.CreateUnfocusedAppearance();
 
         _unfocusedAppearanceViewModel = winrt::make<implementation::AppearanceViewModel>(_profile.UnfocusedAppearance().try_as<AppearanceConfig>());
-        _unfocusedAppearanceViewModel.Schemes(_Schemes);
-        _unfocusedAppearanceViewModel.WindowRoot(_WindowRoot);
+        _unfocusedAppearanceViewModel.SchemesList(DefaultAppearance().SchemesList());
+        _unfocusedAppearanceViewModel.WindowRoot(DefaultAppearance().WindowRoot());
 
         _NotifyChanges(L"UnfocusedAppearance", L"HasUnfocusedAppearance", L"ShowUnfocusedAppearance");
     }
@@ -374,5 +348,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         auto deleteProfileArgs{ winrt::make_self<DeleteProfileEventArgs>(Guid()) };
         _DeleteProfileHandlers(*this, *deleteProfileArgs);
+    }
+
+    void ProfileViewModel::SetupAppearances(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList, Editor::IHostedInWindow windowRoot)
+    {
+        DefaultAppearance().SchemesList(schemesList);
+        DefaultAppearance().WindowRoot(windowRoot);
+        if (UnfocusedAppearance())
+        {
+            UnfocusedAppearance().SchemesList(schemesList);
+            UnfocusedAppearance().WindowRoot(windowRoot);
+        }
     }
 }

@@ -123,8 +123,8 @@ class InputBufferTests
         // check that the mouse position is being updated correctly
         const IInputEvent* const pOutEvent = inputBuffer._storage.front().get();
         const auto pMouseEvent = static_cast<const MouseEvent* const>(pOutEvent);
-        VERIFY_ARE_EQUAL(pMouseEvent->GetPosition().X, static_cast<SHORT>(RECORD_INSERT_COUNT));
-        VERIFY_ARE_EQUAL(pMouseEvent->GetPosition().Y, static_cast<SHORT>(RECORD_INSERT_COUNT * 2));
+        VERIFY_ARE_EQUAL(pMouseEvent->GetPosition().x, static_cast<SHORT>(RECORD_INSERT_COUNT));
+        VERIFY_ARE_EQUAL(pMouseEvent->GetPosition().y, static_cast<SHORT>(RECORD_INSERT_COUNT * 2));
 
         // add a key event and another mouse event to make sure that
         // an event between two mouse events stopped the coalescing.

@@ -88,6 +88,11 @@
                 <ToggleSwitch IsOn="{x:Bind ViewModel.DetectURLs, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
+
+            <local:SettingContainer x:Uid="Globals_ConfirmCloseAllTabs">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.ConfirmCloseAllTabs, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
         </StackPanel>
     </ScrollViewer>
 </Page>

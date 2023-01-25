@@ -358,7 +358,7 @@ void NonClientIslandWindow::Initialize()
     Controls::Grid::SetRow(_titlebar, 0);
 
     // GH#3440 - When the titlebar is loaded (officially added to our UI tree),
-    // then make sure to update it's visual state to reflect if we're in the
+    // then make sure to update its visual state to reflect if we're in the
     // maximized state on launch.
     _titlebar.Loaded([this](auto&&, auto&&) { _OnMaximizeChange(); });
 }
@@ -398,7 +398,7 @@ void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIEleme
     // GH#4288 - add a SizeChanged handler to this content. It's possible that
     // this element's size will change after the dragbar's. When that happens,
     // the drag bar won't send another SizeChanged event, because the dragbar's
-    // _size_ didn't change, only it's position.
+    // _size_ didn't change, only its position.
     const auto fwe = content.try_as<winrt::Windows::UI::Xaml::FrameworkElement>();
     if (fwe)
     {
@@ -442,11 +442,21 @@ til::rect NonClientIslandWindow::_GetDragAreaRect() const noexcept
             static_cast<float>(_rootGrid.ActualWidth()),
             static_cast<float>(_dragBar.ActualHeight())
         };
+
         const auto clientDragBarRect = transform.TransformBounds(logicalDragBarRect);
+
+        // Make sure to trim the right side of the rectangle, so that it doesn't
+        // hang off the right side of the root window. This normally wouldn't
+        // matter, but UIA will still think its bounds can extend past the right
+        // of the parent HWND.
+        //
+        // x here is the width of the tabs.
+        const auto x = gsl::narrow_cast<til::CoordType>(clientDragBarRect.X * scale);
+
         return {
-            gsl::narrow_cast<til::CoordType>(clientDragBarRect.X * scale),
+            x,
             gsl::narrow_cast<til::CoordType>(clientDragBarRect.Y * scale),
-            gsl::narrow_cast<til::CoordType>((clientDragBarRect.Width + clientDragBarRect.X) * scale),
+            gsl::narrow_cast<til::CoordType>((clientDragBarRect.Width + clientDragBarRect.X) * scale) - x,
             gsl::narrow_cast<til::CoordType>((clientDragBarRect.Height + clientDragBarRect.Y) * scale),
         };
     }
@@ -542,8 +552,8 @@ void NonClientIslandWindow::_UpdateIslandPosition(const UINT windowWidth, const 
 
     winrt::check_bool(SetWindowPos(_interopWindowHandle,
                                    HWND_BOTTOM,
-                                   newIslandPos.X,
-                                   newIslandPos.Y,
+                                   newIslandPos.x,
+                                   newIslandPos.y,
                                    windowWidth,
                                    windowHeight - topBorderHeight,
                                    SWP_SHOWWINDOW | SWP_NOACTIVATE));
@@ -879,7 +889,26 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         //  at the top) in the WM_PAINT handler. This eliminates the transparency
         //  bug and it's what a lot of Win32 apps that customize the title bar do
         //  so it should work fine.
-        margins.cyTopHeight = -frame.top;
+        //
+        // Notes #3 (circa late 2022): We want to make some changes here to
+        // support Mica. This introduces some complications.
+        // - If we leave the titlebar visible AT ALL, then a transparent
+        //   titlebar (theme.tabRow.background:#ff00ff00 for example) will allow
+        //   the DWM titlebar to be visible, underneath our content. EVEN MORE
+        //   SO: Mica + "show accent color on title bars" will _always_ show the
+        //   accent-colored strip of the titlebar, even on top of the Mica.
+        // - It _seems_ like we can just set this to 0, and have it work. You'd
+        //   be wrong. On Windows 10, setting this to 0 will cause the topmost
+        //   pixel of our window to be just a little darker than the rest of the
+        //   frame. So ONLY set this to 0 when the user has explicitly asked for
+        //   Mica. Though it won't do anything on Windows 10, they should be
+        //   able to opt back out of having that weird dark pixel.
+        // - This is LOAD-BEARING. By having the titlebar a totally empty rect,
+        //   DWM will know that we don't have the traditional titlebar, and will
+        //   use NCHITTEST to determine where to place the Snap Flyout. The drag
+        //   rect will handle that.
+
+        margins.cyTopHeight = (_useMica || _titlebarOpacity < 1.0) ? 0 : -frame.top;
     }
 
     // Extend the frame into the client area. microsoft/terminal#2735 - Just log
@@ -1016,27 +1045,6 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 }
 
 // Method Description:
-// - This method is called when the window receives the WM_NCCREATE message.
-// Return Value:
-// - The value returned from the window proc.
-[[nodiscard]] LRESULT NonClientIslandWindow::_OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept
-{
-    const auto ret = IslandWindow::_OnNcCreate(wParam, lParam);
-    if (!ret)
-    {
-        return FALSE;
-    }
-
-    // This is a hack to make the window borders dark instead of light.
-    // It must be done before WM_NCPAINT so that the borders are rendered with
-    // the correct theme.
-    // For more information, see GH#6620.
-    LOG_IF_FAILED(TerminalTrySetDarkTheme(_window.get(), true));
-
-    return TRUE;
-}
-
-// Method Description:
 // - Called when the app wants to change its theme. We'll update the frame
 //   theme to match the new theme.
 // Arguments:
@@ -1131,4 +1139,17 @@ bool NonClientIslandWindow::_IsTitlebarVisible() const
 void NonClientIslandWindow::SetTitlebarBackground(winrt::Windows::UI::Xaml::Media::Brush brush)
 {
     _titlebar.Background(brush);
+}
+
+void NonClientIslandWindow::UseMica(const bool newValue, const double titlebarOpacity)
+{
+    // Stash internally if we're using Mica. If we aren't, we don't want to
+    // totally blow away our titlebar with DwmExtendFrameIntoClientArea,
+    // especially on Windows 10
+    _useMica = newValue;
+    _titlebarOpacity = titlebarOpacity;
+
+    IslandWindow::UseMica(newValue, titlebarOpacity);
+
+    _UpdateFrameMargins();
 }

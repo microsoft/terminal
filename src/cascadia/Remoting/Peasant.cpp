@@ -148,7 +148,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     }
 
     // Method Description:
-    // - Tell this window to display it's window ID. We'll raise a
+    // - Tell this window to display its window ID. We'll raise a
     //   DisplayWindowIdRequested event, which will get handled in the AppHost,
     //   and used to tell the app to display the ID toast.
     // Arguments:

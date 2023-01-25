@@ -51,10 +51,10 @@
                         <!--  gutter for scrollbar  -->
                     </Grid.ColumnDefinitions>
 
-                    <IconSourceElement Grid.Column="0"
-                                       Width="16"
-                                       Height="16"
-                                       IconSource="{x:Bind Item.Icon, Mode=OneWay, Converter={StaticResource IconSourceConverter}}" />
+                    <ContentPresenter Grid.Column="0"
+                                      Width="16"
+                                      Height="16"
+                                      Content="{x:Bind Item.ResolvedIcon, Mode=OneWay}" />
 
                     <local:HighlightedTextControl Grid.Column="1"
                                                   HorizontalAlignment="Left"
@@ -101,10 +101,10 @@
                         <!--  gutter for scrollbar  -->
                     </Grid.ColumnDefinitions>
 
-                    <IconSourceElement Grid.Column="0"
-                                       Width="16"
-                                       Height="16"
-                                       IconSource="{x:Bind Item.Icon, Mode=OneWay, Converter={StaticResource IconSourceConverter}}" />
+                    <ContentPresenter Grid.Column="0"
+                                      Width="16"
+                                      Height="16"
+                                      Content="{x:Bind Item.ResolvedIcon, Mode=OneWay}" />
 
                     <local:HighlightedTextControl Grid.Column="1"
                                                   HorizontalAlignment="Left"
@@ -171,10 +171,10 @@
                                       Visibility="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsProgressRingActive, Mode=OneWay}"
                                       Value="{x:Bind Item.(local:TabPaletteItem.TabStatus).ProgressValue, Mode=OneWay}" />
 
-                    <IconSourceElement Grid.Column="0"
-                                       Width="16"
-                                       Height="16"
-                                       IconSource="{x:Bind Item.Icon, Mode=OneWay, Converter={StaticResource IconSourceConverter}}" />
+                    <ContentPresenter Grid.Column="0"
+                                      Width="16"
+                                      Height="16"
+                                      Content="{x:Bind Item.ResolvedIcon, Mode=OneWay}" />
 
                     <local:HighlightedTextControl Grid.Column="1"
                                                   HorizontalAlignment="Left"
