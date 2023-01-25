@@ -206,6 +206,14 @@ Function Read-ReleaseConfigFromHost([Release]$Release) {
 	}
 }
 
+Function New-ReleaseBody([Release]$Release) {
+	$body = "---`n`n### Asset Hashes`n`n";
+	ForEach($a in $Release.Assets) {
+		$body += "- {0}`n   - SHA256 ``{1}```n" -f ($a.IdealFilename(), (Get-FileHash $a.Path -Algorithm SHA256 | Select-Object -Expand Hash))
+	}
+	Return $body
+}
+
 # Get SHA1 from AppXManifest (no matter how deep)
 #
 # Create releases
@@ -255,11 +263,13 @@ ForEach($c in $ReleaseConfigs) {
 			Preview { $true }
 		}
 
+		$releaseParams.Body = New-ReleaseBody $c.Release
+
 		$GitHubRelease = New-GitHubRelease @releaseParams -Draft:$true
 
 		ForEach($a in $c.Release.Assets) {
 			$idealPath = (Join-Path $directory $a.IdealFilename())
-			Copy-Item $a.Path $idealPath
+			Copy-Item $a.Path $idealPath -Confirm:$false
 			Write-Verbose "Uploading $idealPath to Release $($GitHubRelease.id)"
 			New-GitHubReleaseAsset -UploadUrl $GitHubRelease.UploadUrl -Path $idealPath
 		}
