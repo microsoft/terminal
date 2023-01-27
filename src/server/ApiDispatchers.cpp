@@ -270,13 +270,8 @@
     // Get output parameter buffer.
     PVOID pvBuffer;
     ULONG cbBufferSize;
-    // TODO: This is dumb. We should find out how much we need, not guess.
-    // If the request is not in Unicode mode, we must allocate an output buffer that is twice as big as the actual caller buffer.
-    RETURN_IF_FAILED(m->GetAugmentedOutputBuffer((a->Unicode != FALSE) ? 1 : 2,
-                                                 &pvBuffer,
-                                                 &cbBufferSize));
+    RETURN_IF_FAILED(m->GetOutputBuffer(&pvBuffer, &cbBufferSize));
 
-    // TODO: This is also rather strange and will also probably make more sense if we stop guessing that we need 2x buffer to convert.
     // This might need to go on the other side of the fence (inside host) because the server doesn't know what we're going to do with initial num bytes.
     // (This restriction exists because it's going to copy initial into the final buffer, but we don't know that.)
     RETURN_HR_IF(E_INVALIDARG, a->InitialNumBytes > cbBufferSize);

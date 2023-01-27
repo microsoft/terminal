@@ -41,12 +41,13 @@ public:
     bool fInComposition; // specifies if there's an ongoing text composition
 
     InputBuffer();
-    ~InputBuffer();
 
-    // storage API for partial dbcs bytes being read from the buffer
-    bool IsReadPartialByteSequenceAvailable();
-    std::unique_ptr<IInputEvent> FetchReadPartialByteSequence(_In_ bool peek);
-    void StoreReadPartialByteSequence(std::unique_ptr<IInputEvent> event);
+    void ConsumeW(std::wstring_view& source, gsl::span<char>& target);
+
+    void ConsumeA(std::wstring_view& source, gsl::span<char>& target);
+    void ConsumeCachedA(gsl::span<char>& target);
+    void PeekCachedA(gsl::span<char>& target);
+    void CacheA(std::string_view source);
 
     // storage API for partial dbcs bytes being written to the buffer
     bool IsWritePartialByteSequenceAvailable();
@@ -84,8 +85,10 @@ public:
     void PassThroughWin32MouseRequest(bool enable);
 
 private:
+    std::string _aBuffer;
+    std::string_view _aBufferReader;
+
     std::deque<std::unique_ptr<IInputEvent>> _storage;
-    std::unique_ptr<IInputEvent> _readPartialByteSequence;
     std::unique_ptr<IInputEvent> _writePartialByteSequence;
     Microsoft::Console::VirtualTerminal::TerminalInput _termInput;
     Microsoft::Console::Render::VtEngine* _pTtyConnection;
@@ -95,6 +98,8 @@ private:
     //    we should suppress the wakeup functions.
     // Otherwise, we should be calling them.
     bool _vtInputShouldSuppress{ false };
+
+    void _resetBufferA();
 
     void _ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
                      const size_t readCount,

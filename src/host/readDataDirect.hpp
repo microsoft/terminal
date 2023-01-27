@@ -38,8 +38,6 @@ public:
 
     DirectReadData(DirectReadData&&) = default;
 
-    ~DirectReadData() override;
-
     void MigrateUserBuffersOnTransitionToBackgroundWait(const void* oldBuffer, void* newBuffer) override;
     bool Notify(const WaitTerminationReason TerminationReason,
                 const bool fIsUnicode,

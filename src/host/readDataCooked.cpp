@@ -1003,211 +1003,62 @@ void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline
 // - Status code that indicates success, out of memory, etc.
 [[nodiscard]] NTSTATUS COOKED_READ_DATA::_handlePostCharInputLoop(const bool isUnicode, size_t& numBytes, ULONG& controlKeyState) noexcept
 {
+    gsl::span writer{ reinterpret_cast<char*>(_userBuffer), _userBufferSize };
+    std::wstring_view input{ _backupLimit, _bytesRead / sizeof(wchar_t) };
     DWORD LineCount = 1;
 
     if (_echoInput)
     {
-        // Figure out where real string ends (at carriage return or end of buffer).
-        auto StringPtr = _backupLimit;
-        auto StringLength = _bytesRead / sizeof(WCHAR);
-        auto FoundCR = false;
-        for (size_t i = 0; i < StringLength; i++)
-        {
-            if (*StringPtr++ == UNICODE_CARRIAGERETURN)
-            {
-                StringLength = i;
-                FoundCR = true;
-                break;
-            }
-        }
-
-        if (FoundCR)
+        const auto idx = input.find(UNICODE_CARRIAGERETURN);
+        if (idx != decltype(input)::npos)
         {
             if (_commandHistory)
             {
-                // add to command line recall list if we have a history list.
                 auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-                LOG_IF_FAILED(_commandHistory->Add({ _backupLimit, StringLength },
-                                                   WI_IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP)));
+                LOG_IF_FAILED(_commandHistory->Add({ _backupLimit, idx }, WI_IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP)));
             }
 
-            Tracing::s_TraceCookedRead(_clientProcess,
-                                       _backupLimit,
-                                       base::saturated_cast<ULONG>(StringLength));
-
-            // check for alias
+            Tracing::s_TraceCookedRead(_clientProcess, _backupLimit, base::saturated_cast<ULONG>(idx));
             ProcessAliases(LineCount);
+
+            if (LineCount > 1)
+            {
+                input = input.substr(0, idx + 1);
+            }
         }
     }
 
-    auto fAddDbcsLead = false;
-    size_t NumBytes = 0;
-    // at this point, a->NumBytes contains the number of bytes in
-    // the UNICODE string read.  UserBufferSize contains the converted
-    // size of the app's buffer.
-    if (_bytesRead > _userBufferSize || LineCount > 1)
+    if (isUnicode)
     {
-        if (LineCount > 1)
-        {
-            PWSTR Tmp;
-            if (!isUnicode)
-            {
-                if (_pInputBuffer->IsReadPartialByteSequenceAvailable())
-                {
-                    fAddDbcsLead = true;
-                    auto event = GetInputBuffer()->FetchReadPartialByteSequence(false);
-                    const auto pKeyEvent = static_cast<const KeyEvent* const>(event.get());
-                    *_userBuffer = static_cast<char>(pKeyEvent->GetCharData());
-                    _userBuffer++;
-                    _userBufferSize -= sizeof(wchar_t);
-                }
-
-                NumBytes = 0;
-                for (Tmp = _backupLimit;
-                     *Tmp != UNICODE_LINEFEED && _userBufferSize / sizeof(WCHAR) > NumBytes;
-                     Tmp++)
-                {
-                    NumBytes += IsGlyphFullWidth(*Tmp) ? 2 : 1;
-                }
-            }
-
-            // clang-format off
-#pragma prefast(suppress: __WARNING_BUFFER_OVERFLOW, "LineCount > 1 means there's a UNICODE_LINEFEED")
-            // clang-format on
-            for (Tmp = _backupLimit; *Tmp != UNICODE_LINEFEED; Tmp++)
-            {
-                FAIL_FAST_IF(!(Tmp < (_backupLimit + _bytesRead)));
-            }
-
-            numBytes = (ULONG)(Tmp - _backupLimit + 1) * sizeof(*Tmp);
-        }
-        else
-        {
-            if (!isUnicode)
-            {
-                PWSTR Tmp;
-
-                if (_pInputBuffer->IsReadPartialByteSequenceAvailable())
-                {
-                    fAddDbcsLead = true;
-                    auto event = GetInputBuffer()->FetchReadPartialByteSequence(false);
-                    const auto pKeyEvent = static_cast<const KeyEvent* const>(event.get());
-                    *_userBuffer = static_cast<char>(pKeyEvent->GetCharData());
-                    _userBuffer++;
-                    _userBufferSize -= sizeof(wchar_t);
-                }
-                NumBytes = 0;
-                auto NumToWrite = _bytesRead;
-                for (Tmp = _backupLimit;
-                     NumToWrite && _userBufferSize / sizeof(WCHAR) > NumBytes;
-                     Tmp++, NumToWrite -= sizeof(WCHAR))
-                {
-                    NumBytes += IsGlyphFullWidth(*Tmp) ? 2 : 1;
-                }
-            }
-            numBytes = _userBufferSize;
-        }
-
-        __analysis_assume(numBytes <= _userBufferSize);
-        memmove(_userBuffer, _backupLimit, numBytes);
-
-        const auto pInputReadHandleData = GetInputReadHandleData();
-        const std::wstring_view pending{ _backupLimit + (numBytes / sizeof(wchar_t)), (_bytesRead - numBytes) / sizeof(wchar_t) };
-        if (LineCount > 1)
-        {
-            pInputReadHandleData->SaveMultilinePendingInput(pending);
-        }
-        else
-        {
-            pInputReadHandleData->SavePendingInput(pending);
-        }
+        GetInputBuffer()->ConsumeW(input, writer);
     }
     else
     {
-        if (!isUnicode)
-        {
-            PWSTR Tmp;
-
-            if (_pInputBuffer->IsReadPartialByteSequenceAvailable())
-            {
-                fAddDbcsLead = true;
-                auto event = GetInputBuffer()->FetchReadPartialByteSequence(false);
-                const auto pKeyEvent = static_cast<const KeyEvent* const>(event.get());
-                *_userBuffer = static_cast<char>(pKeyEvent->GetCharData());
-                _userBuffer++;
-                _userBufferSize -= sizeof(wchar_t);
-
-                if (_userBufferSize == 0)
-                {
-                    numBytes = 1;
-                    return STATUS_SUCCESS;
-                }
-            }
-            NumBytes = 0;
-            auto NumToWrite = _bytesRead;
-            for (Tmp = _backupLimit;
-                 NumToWrite && _userBufferSize / sizeof(WCHAR) > NumBytes;
-                 Tmp++, NumToWrite -= sizeof(WCHAR))
-            {
-                NumBytes += IsGlyphFullWidth(*Tmp) ? 2 : 1;
-            }
-        }
-
-        numBytes = _bytesRead;
-
-        if (numBytes > _userBufferSize)
-        {
-            return STATUS_BUFFER_OVERFLOW;
-        }
-
-        memmove(_userBuffer, _backupLimit, numBytes);
+        GetInputBuffer()->ConsumeA(input, writer);
     }
-    controlKeyState = _controlKeyState;
 
-    if (!isUnicode)
+    if (!input.empty())
     {
-        // if ansi, translate string.
-        std::unique_ptr<char[]> tempBuffer;
-        try
+        if (LineCount > 1)
         {
-            tempBuffer = std::make_unique<char[]>(NumBytes);
+            GetInputReadHandleData()->SaveMultilinePendingInput(input);
         }
-        catch (...)
+        else
         {
-            return STATUS_NO_MEMORY;
-        }
-
-        std::unique_ptr<IInputEvent> partialEvent;
-        numBytes = TranslateUnicodeToOem(_userBuffer,
-                                         gsl::narrow<ULONG>(numBytes / sizeof(wchar_t)),
-                                         tempBuffer.get(),
-                                         gsl::narrow<ULONG>(NumBytes),
-                                         partialEvent);
-
-        if (partialEvent.get())
-        {
-            GetInputBuffer()->StoreReadPartialByteSequence(std::move(partialEvent));
-        }
-
-        if (numBytes > _userBufferSize)
-        {
-            return STATUS_BUFFER_OVERFLOW;
-        }
-
-        memmove(_userBuffer, tempBuffer.get(), numBytes);
-        if (fAddDbcsLead)
-        {
-            numBytes++;
+            GetInputReadHandleData()->SavePendingInput(input);
         }
     }
+
+    numBytes = _userBufferSize - writer.size();
+    controlKeyState = _controlKeyState;
     return STATUS_SUCCESS;
 }
 
 void COOKED_READ_DATA::MigrateUserBuffersOnTransitionToBackgroundWait(const void* oldBuffer, void* newBuffer)
 {
     // See the comment in WaitBlock.cpp for more information.
-    if (_userBuffer == reinterpret_cast<const wchar_t*>(oldBuffer))
+    if (_userBuffer == static_cast<const wchar_t*>(oldBuffer))
     {
-        _userBuffer = reinterpret_cast<wchar_t*>(newBuffer);
+        _userBuffer = static_cast<wchar_t*>(newBuffer);
     }
 }

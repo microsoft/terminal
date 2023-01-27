@@ -44,6 +44,38 @@ int ConvertToOem(const UINT uiCodePage,
                  _Out_writes_(cchTarget) CHAR* const pchTarget,
                  const UINT cchTarget) noexcept;
 
+template<typename CharT, typename Traits>
+void StringToInputEvents(std::basic_string_view<CharT, Traits> str, std::deque<std::unique_ptr<IInputEvent>>& events)
+{
+    for (const auto& ch : str)
+    {
+        auto event = std::make_unique<KeyEvent>();
+        event->SetKeyDown(true);
+        event->SetRepeatCount(1);
+        event->SetCharData(ch);
+        events.push_back(std::move(event));
+    }
+}
+
+template<typename CharT, typename Traits>
+void InputEventsToString(std::deque<std::unique_ptr<IInputEvent>>& events, std::basic_string<CharT, Traits>& str)
+{
+    for (const auto& event : events)
+    {
+        if (event->EventType() == InputEventType::KeyEvent)
+        {
+            const auto keyEvent = static_cast<const KeyEvent*>(event.get());
+            // This keydown check prevents us from serializing ABC keypresses
+            // into AABBCC because each key-down is followed by a key-up.
+            if (keyEvent->IsKeyDown())
+            {
+                const auto wch = keyEvent->GetCharData();
+                str.push_back(static_cast<CharT>(wch));
+            }
+        }
+    }
+}
+
 void SplitToOem(std::deque<std::unique_ptr<IInputEvent>>& events);
 
 int ConvertInputToUnicode(const UINT uiCodePage,

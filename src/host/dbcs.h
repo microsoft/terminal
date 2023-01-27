@@ -29,10 +29,3 @@ bool IsDBCSLeadByteConsole(const CHAR ch, const CPINFO* const pCPInfo);
 BYTE CodePageToCharSet(const UINT uiCodePage);
 
 BOOL IsAvailableEastAsianCodePage(const UINT uiCodePage);
-
-_Ret_range_(0, cbAnsi)
-    ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
-                                const ULONG cchUnicode,
-                                _Out_writes_bytes_(cbAnsi) PCHAR pchAnsi,
-                                const ULONG cbAnsi,
-                                _Out_ std::unique_ptr<IInputEvent>& partialEvent);

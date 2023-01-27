@@ -3,29 +3,10 @@
 
 #pragma once
 
+#include "type_traits.h"
+
 namespace til
 {
-    namespace details
-    {
-        // This was lifted from gsl::details::is_span.
-        template<class T>
-        struct is_span_oracle : std::false_type
-        {
-        };
-
-#ifdef GSL_SPAN_H
-        template<class ElementType, std::size_t Extent>
-        struct is_span_oracle<gsl::span<ElementType, Extent>> : std::true_type
-        {
-        };
-#endif
-
-        template<class T>
-        struct is_span : public is_span_oracle<std::remove_cv_t<T>>
-        {
-        };
-    }
-
     // The at function declares that you've already sufficiently checked that your array access
     // is in range before retrieving an item inside it at an offset.
     // This is to save double/triple/quadruple testing in circumstances where you are already
@@ -37,8 +18,7 @@ namespace til
     template<typename T, typename I>
     constexpr auto at(T&& cont, const I i) noexcept -> decltype(auto)
     {
-#ifdef GSL_SPAN_H
-        if constexpr (details::is_span<T>::value)
+        if constexpr (ContiguousView<T>)
         {
 #pragma warning(suppress : 26481) // Suppress bounds.1 check for doing pointer arithmetic
 #pragma warning(suppress : 26482) // Suppress bounds.2 check for indexing with constant expressions
@@ -46,7 +26,6 @@ namespace til
             return cont.data()[i];
         }
         else
-#endif
         {
 #pragma warning(suppress : 26482) // Suppress bounds.2 check for indexing with constant expressions
 #pragma warning(suppress : 26446) // Suppress bounds.4 check for subscript operator.

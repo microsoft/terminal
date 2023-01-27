@@ -169,20 +169,30 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
+        auto amountToRead = eventReadCount;
+
         std::deque<std::unique_ptr<IInputEvent>> partialEvents;
         if (!IsUnicode)
         {
-            if (inputBuffer.IsReadPartialByteSequenceAvailable())
+            std::string buffer(eventReadCount, '\0');
+            gsl::span writer{ buffer };
+
+            if (IsPeek)
             {
-                partialEvents.push_back(inputBuffer.FetchReadPartialByteSequence(IsPeek));
+                inputBuffer.PeekCachedA(writer);
             }
+            else
+            {
+                inputBuffer.ConsumeCachedA(writer);
+            }
+
+            const auto read = buffer.size() - writer.size();
+            std::string_view str{ buffer.data(), read };
+            StringToInputEvents(str, partialEvents);
+
+            amountToRead -= read;
         }
 
-        size_t amountToRead;
-        if (FAILED(SizeTSub(eventReadCount, partialEvents.size(), &amountToRead)))
-        {
-            return STATUS_INTEGER_OVERFLOW;
-        }
         std::deque<std::unique_ptr<IInputEvent>> readEvents;
         auto Status = inputBuffer.Read(readEvents,
                                        amountToRead,
@@ -193,7 +203,6 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 
         if (CONSOLE_STATUS_WAIT == Status)
         {
-            FAIL_FAST_IF(!(readEvents.empty()));
             // If we're told to wait until later, move all of our context
             // to the read data object and send it back up to the server.
             waiter = std::make_unique<DirectReadData>(&inputBuffer,
@@ -206,11 +215,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
             // split key events to oem chars if necessary
             if (!IsUnicode)
             {
-                try
-                {
-                    SplitToOem(readEvents);
-                }
-                CATCH_LOG();
+                SplitToOem(readEvents);
             }
 
             // combine partial and readEvents
@@ -231,12 +236,11 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                 readEvents.pop_front();
             }
 
-            // store partial event if necessary
             if (!readEvents.empty())
             {
-                inputBuffer.StoreReadPartialByteSequence(std::move(readEvents.front()));
-                readEvents.pop_front();
-                FAIL_FAST_IF(!(readEvents.empty()));
+                std::string buffer;
+                InputEventsToString(readEvents, buffer);
+                inputBuffer.CacheA(buffer);
             }
         }
         return Status;

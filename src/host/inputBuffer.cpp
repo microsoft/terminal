@@ -7,8 +7,9 @@
 #include "stream.h"
 #include "../types/inc/GlyphWidth.hpp"
 
-#include <functional>
+#include <til/bytes.h>
 
+#include "misc.h"
 #include "../interactivity/inc/ServiceLocator.hpp"
 
 #define INPUT_BUFFER_DEFAULT_INPUT_MODE (ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_ECHO_INPUT | ENABLE_MOUSE_INPUT)
@@ -36,59 +37,129 @@ InputBuffer::InputBuffer() :
     fInComposition = false;
 }
 
-// Routine Description:
-// - This routine frees the resources associated with an input buffer.
-// Arguments:
-// - None
-// Return Value:
-InputBuffer::~InputBuffer() = default;
-
-// Routine Description:
-// - checks if any partial char data is available for reading operation
-// Arguments:
-// - None
-// Return Value:
-// - true if partial char data is available, false otherwise
-bool InputBuffer::IsReadPartialByteSequenceAvailable()
+// Transfer as many `wchar_t`s from source over to the `wchar_t` buffer `target`. After it returns,
+// the start of the `source` and `target` slices will be offset by as many bytes as have been copied
+// over, so that if you call this function again it'll continue copying from wherever it left off.
+// This function is intended for use with our W APIs.
+void InputBuffer::ConsumeW(std::wstring_view& source, gsl::span<char>& target)
 {
-    return _readPartialByteSequence.get() != nullptr;
+    if (!_aBuffer.empty())
+    {
+        _resetBufferA();
+    }
+
+    if (source.empty() || target.empty())
+    {
+        return;
+    }
+
+    til::bytes_transfer(target, source);
 }
 
-// Routine Description:
-// - reads any read partial char data available
-// Arguments:
-// - peek - if true, data will not be removed after being fetched
-// Return Value:
-// - the partial char data. may be nullptr if no data is available
-std::unique_ptr<IInputEvent> InputBuffer::FetchReadPartialByteSequence(_In_ bool peek)
+// Transfer as many `wchar_t`s from source over to the `char` buffer `target`. After it returns,
+// the start of the `source` and `target` slices will be offset by as many bytes as have been copied
+// over, so that if you call this function again it'll continue copying from wherever it left off.
+// This function is intended for use with our A APIs and performs the necessary `WideCharToMultiByte`
+// conversion. Since not all converted `char`s might fit into `target` it'll cache the remainder.
+// The next time this function is called those cached `char`s will then be the first to be copied over.
+void InputBuffer::ConsumeA(std::wstring_view& source, gsl::span<char>& target)
 {
-    if (!IsReadPartialByteSequenceAvailable())
+    // `_aBufferReader` might still contain target data from a previous invocation.
+    ConsumeCachedA(target);
+
+    if (source.empty() || target.empty())
     {
-        return std::unique_ptr<IInputEvent>();
+        return;
     }
 
-    if (peek)
+    // The above block should either leave `target` or `_aBufferReader` empty (or both).
+    // If we're here, `_aBufferReader` should be empty.
+    assert(_aBufferReader.empty());
+
+    const auto cp = ServiceLocator::LocateGlobals().getConsoleInformation().CP;
+
+    // Fast path: Batch convert all data in case the user provided buffer is large enough.
     {
-        return IInputEvent::Create(_readPartialByteSequence->ToInputRecord());
+        const auto wideLength = gsl::narrow<ULONG>(source.size());
+        const auto narrowLength = gsl::narrow<ULONG>(target.size());
+
+        const auto length = WideCharToMultiByte(cp, 0, source.data(), wideLength, target.data(), narrowLength, nullptr, nullptr);
+        if (length > 0)
+        {
+            source = {};
+            til::bytes_advance(target, gsl::narrow_cast<size_t>(length));
+            return;
+        }
+
+        const auto error = GetLastError();
+        THROW_HR_IF(HRESULT_FROM_WIN32(error), error != ERROR_INSUFFICIENT_BUFFER);
     }
-    else
+
+    // Slow path: Character-wise conversion otherwise. We do this in order to only
+    // consume as many characters from `source` as necessary to fill `target`.
     {
-        std::unique_ptr<IInputEvent> outEvent;
-        outEvent.swap(_readPartialByteSequence);
-        return outEvent;
+        size_t read = 0;
+
+        for (const auto& wch : source)
+        {
+            char buffer[8];
+            const auto length = WideCharToMultiByte(cp, 0, &wch, 1, &buffer[0], sizeof(buffer), nullptr, nullptr);
+            THROW_LAST_ERROR_IF(length <= 0);
+
+            std::string_view slice{ &buffer[0], gsl::narrow_cast<size_t>(length) };
+            til::bytes_transfer(target, slice);
+
+            ++read;
+
+            if (!slice.empty())
+            {
+                _aBuffer = slice;
+                _aBufferReader = _aBuffer;
+                break;
+            }
+        }
+
+        source = source.substr(read);
     }
 }
 
-// Routine Description:
-// - stores partial read char data for a later read. will overwrite
-// any previously stored data.
-// Arguments:
-// - event - The event to store
-// Return Value:
-// - None
-void InputBuffer::StoreReadPartialByteSequence(std::unique_ptr<IInputEvent> event)
+// Same as `ConsumeA`, but without any `source` characters.
+void InputBuffer::ConsumeCachedA(gsl::span<char>& target)
 {
-    _readPartialByteSequence.swap(event);
+    if (_aBufferReader.empty())
+    {
+        return;
+    }
+
+    til::bytes_transfer(target, _aBufferReader);
+
+    if (_aBufferReader.empty())
+    {
+        // This is just so that we release memory eagerly.
+        _aBuffer = std::string{};
+    }
+}
+
+// Same as `ConsumeCachedA`, but as the name indicates it doesn't "consume" the amount of data that has been copied
+// into `target`. Still, the `target` slice will have been offset the same way `ConsumeW` and `ConsumeA` do it.
+void InputBuffer::PeekCachedA(gsl::span<char>& target)
+{
+    auto reader = _aBufferReader;
+    til::bytes_transfer(target, reader);
+}
+
+// This function allows you to manually add some data into the internal buffer used by `ConsumeA`, etc.
+void InputBuffer::CacheA(std::string_view source)
+{
+    const auto off = _aBufferReader.size() - _aBuffer.size();
+    _aBuffer.append(source);
+    _aBufferReader = std::string_view{ _aBuffer }.substr(off);
+}
+
+void InputBuffer::_resetBufferA()
+{
+    _aBuffer = std::string{};
+    _aBufferReader = {};
 }
 
 // Routine Description:
