@@ -88,6 +88,7 @@
     <LinkIncremental>false</LinkIncremental>
     <PreferredToolArchitecture>x64</PreferredToolArchitecture>
     <EnableHybridCRT Condition="'$(EnableHybridCRT)'==''">true</EnableHybridCRT>
+    <UseCrtSDKReferenceStaticWarning Condition="'$(EnableHybridCRT)'=='true'">false</UseCrtSDKReferenceStaticWarning>
   </PropertyGroup>
 
   <ItemDefinitionGroup>
