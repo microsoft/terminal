@@ -65,8 +65,7 @@ try
     FAIL_FAST_IF_NULL(pOutputData);
     FAIL_FAST_IF(_pInputReadHandleData->GetReadCount() == 0);
 
-    const auto& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
-    assert(gci.IsConsoleLocked());
+    assert(Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
 
     *pReplyStatus = STATUS_SUCCESS;
     *pControlKeyState = 0;
