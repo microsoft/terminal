@@ -271,6 +271,29 @@ std::pair<int, int> AdaptDispatch::_GetVerticalMargins(const til::rect& viewport
 }
 
 // Routine Description:
+// - Returns the coordinates of the horizontal scroll margins.
+// Arguments:
+// - bufferWidth - The width of the buffer
+// Return Value:
+// - A std::pair containing the left and right coordinates (inclusive).
+std::pair<int, int> AdaptDispatch::_GetHorizontalMargins(const til::CoordType bufferWidth) noexcept
+{
+    // If the left is out of range, reset the margins completely.
+    const auto rightmostColumn = bufferWidth - 1;
+    if (_scrollMargins.left >= rightmostColumn)
+    {
+        _scrollMargins.left = _scrollMargins.right = 0;
+    }
+    // If margins aren't set, use the full extent of the buffer.
+    const auto marginsSet = _scrollMargins.left < _scrollMargins.right;
+    auto leftMargin = marginsSet ? _scrollMargins.left : 0;
+    auto rightMargin = marginsSet ? _scrollMargins.right : rightmostColumn;
+    // If the right is out of range, clamp it to the rightmost column.
+    rightMargin = std::min(rightMargin, rightmostColumn);
+    return { leftMargin, rightMargin };
+}
+
+// Routine Description:
 // - Generalizes cursor movement to a specific position, which can be absolute or relative.
 // Arguments:
 // - rowOffset - The row to move to
@@ -1610,6 +1633,7 @@ void AdaptDispatch::_SetColumnMode(const bool enable)
         CursorPosition(1, 1);
         EraseInDisplay(DispatchTypes::EraseType::All);
         _DoSetTopBottomScrollingMargins(0, 0);
+        _DoSetLeftRightScrollingMargins(0, 0);
     }
 }
 
@@ -2047,6 +2071,56 @@ bool AdaptDispatch::SetTopBottomScrollingMargins(const VTInt topMargin,
     _DoSetTopBottomScrollingMargins(topMargin, bottomMargin);
     CursorPosition(1, 1);
     return true;
+}
+
+// Routine Description:
+// - DECSLRM - Set Scrolling Region
+// This control function sets the left and right margins for the current page.
+//  You cannot perform scrolling outside the margins.
+//  Default: Margins are at the page limits.
+// Arguments:
+// - leftMargin - the column number for the left margin.
+// - rightMargin - the column number for the right margin.
+// Return Value:
+// - <none>
+void AdaptDispatch::_DoSetLeftRightScrollingMargins(const VTInt leftMargin,
+                                                    const VTInt rightMargin)
+{
+    til::CoordType actualLeft = leftMargin;
+    til::CoordType actualRight = rightMargin;
+
+    const auto& textBuffer = _api.GetTextBuffer();
+    const auto bufferWidth = textBuffer.GetSize().Width();
+    // The default left margin is column 1
+    if (actualLeft == 0)
+    {
+        actualLeft = 1;
+    }
+    // The default right margin is the buffer width
+    if (actualRight == 0)
+    {
+        actualRight = bufferWidth;
+    }
+    // The left margin must be less than the right margin, and the
+    // right margin must be less than or equal to the buffer width
+    if (actualLeft < actualRight && actualRight <= bufferWidth)
+    {
+        if (actualLeft == 1 && actualRight == bufferWidth)
+        {
+            // Client requests setting margins to the entire screen
+            //    - clear them instead of setting them.
+            actualLeft = 0;
+            actualRight = 0;
+        }
+        else
+        {
+            // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
+            actualLeft -= 1;
+            actualRight -= 1;
+        }
+        _scrollMargins.left = actualLeft;
+        _scrollMargins.right = actualRight;
+    }
 }
 
 // Routine Description:
@@ -2568,6 +2642,8 @@ bool AdaptDispatch::SoftReset()
 
     // Top margin = 1; bottom margin = page length.
     _DoSetTopBottomScrollingMargins(0, 0);
+    // Left margin = 1; right margin = page width.
+    _DoSetLeftRightScrollingMargins(0, 0);
 
     _termOutput = {}; // Reset all character set designations.
     if (_initialCodePage.has_value())
@@ -2694,6 +2770,7 @@ bool AdaptDispatch::ScreenAlignmentPattern()
     _modes.reset(Mode::Origin);
     // Clear the scrolling margins.
     _DoSetTopBottomScrollingMargins(0, 0);
+    _DoSetLeftRightScrollingMargins(0, 0);
     // Set the cursor position to home.
     CursorPosition(1, 1);
 
