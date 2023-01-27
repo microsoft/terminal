@@ -87,7 +87,7 @@
     <CharacterSet>Unicode</CharacterSet>
     <LinkIncremental>false</LinkIncremental>
     <PreferredToolArchitecture>x64</PreferredToolArchitecture>
-    <EnableHybridCRT Condition="'$(EnableHybridCRT)'==''">true</true>
+    <EnableHybridCRT Condition="'$(EnableHybridCRT)'==''">true</EnableHybridCRT>
   </PropertyGroup>
 
   <ItemDefinitionGroup>
