@@ -307,8 +307,10 @@ bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
     const auto viewport = _api.GetViewport();
     auto& textBuffer = _api.GetTextBuffer();
     auto& cursor = textBuffer.GetCursor();
+    const auto bufferWidth = textBuffer.GetSize().Width();
     const auto cursorPosition = cursor.GetPosition();
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(bufferWidth);
 
     // For relative movement, the given offsets will be relative to
     // the current cursor position.
@@ -322,39 +324,54 @@ bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
         row = _modes.test(Mode::Origin) ? topMargin : viewport.top;
     }
 
-    // And if the column is absolute, it'll be relative to column 0.
+    // And if the column is absolute, it'll be relative to column 0,
+    // or the left margin, depending on the origin mode.
     // Horizontal positions are not affected by the viewport.
     if (colOffset.IsAbsolute)
     {
-        col = 0;
+        col = _modes.test(Mode::Origin) ? leftMargin : 0;
     }
 
     // Adjust the base position by the given offsets and clamp the results.
     // The row is constrained within the viewport's vertical boundaries,
     // while the column is constrained by the buffer width.
     row = std::clamp(row + rowOffset.Value, viewport.top, viewport.bottom - 1);
-    col = std::clamp(col + colOffset.Value, 0, textBuffer.GetSize().Width() - 1);
+    col = std::clamp(col + colOffset.Value, 0, bufferWidth - 1);
 
     // If the operation needs to be clamped inside the margins, or the origin
     // mode is relative (which always requires margin clamping), then the row
-    // may need to be adjusted further.
+    // and column may need to be adjusted further.
     if (clampInMargins || _modes.test(Mode::Origin))
     {
-        // See microsoft/terminal#2929 - If the cursor is _below_ the top
-        // margin, it should stay below the top margin. If it's _above_ the
-        // bottom, it should stay above the bottom. Cursor movements that stay
-        // outside the margins shouldn't necessarily be affected. For example,
-        // moving up while below the bottom margin shouldn't just jump straight
-        // to the bottom margin. See
-        // ScreenBufferTests::CursorUpDownOutsideMargins for a test of that
-        // behavior.
-        if (cursorPosition.y >= topMargin)
+        // Vertical margins only apply if the original position is inside the
+        // horizontal margins. Also, the cursor will only be clamped inside the
+        // top margin if it was already below the top margin to start with, and
+        // it will only be clamped inside the bottom margin if it was already
+        // above the bottom margin to start with.
+        if (cursorPosition.x >= leftMargin && cursorPosition.x <= rightMargin)
         {
-            row = std::max(row, topMargin);
+            if (cursorPosition.y >= topMargin)
+            {
+                row = std::max(row, topMargin);
+            }
+            if (cursorPosition.y <= bottomMargin)
+            {
+                row = std::min(row, bottomMargin);
+            }
         }
-        if (cursorPosition.y <= bottomMargin)
+        // Similarly, horizontal margins only apply if the new row is inside the
+        // vertical margins. And the cursor is only clamped inside the horizontal
+        // margins if it was already inside to start with.
+        if (row >= topMargin && row <= bottomMargin)
         {
-            row = std::min(row, bottomMargin);
+            if (cursorPosition.x >= leftMargin)
+            {
+                col = std::max(col, leftMargin);
+            }
+            if (cursorPosition.x <= rightMargin)
+            {
+                col = std::min(col, rightMargin);
+            }
         }
     }
 
@@ -463,6 +480,7 @@ bool AdaptDispatch::CursorSaveState()
     // Although if origin mode is set, the cursor is relative to the margin origin.
     if (_modes.test(Mode::Origin))
     {
+        cursorPosition.x -= _GetHorizontalMargins(textBuffer.GetSize().Width()).first;
         cursorPosition.y -= _GetVerticalMargins(viewport, false).first;
     }
 
@@ -2414,12 +2432,19 @@ bool AdaptDispatch::ForwardTab(const VTInt numTabs)
 {
     auto& textBuffer = _api.GetTextBuffer();
     auto& cursor = textBuffer.GetCursor();
-    const auto width = textBuffer.GetLineWidth(cursor.GetPosition().y);
     auto column = cursor.GetPosition().x;
+    const auto row = cursor.GetPosition().y;
+    const auto width = textBuffer.GetLineWidth(row);
     auto tabsPerformed = 0;
 
+    const auto viewport = _api.GetViewport();
+    const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(width);
+    const auto clampToMargin = row >= topMargin && row <= bottomMargin && column <= rightMargin;
+    const auto maxColumn = clampToMargin ? rightMargin : width - 1;
+
     _InitTabStopsForWidth(width);
-    while (column + 1 < width && tabsPerformed < numTabs)
+    while (column < maxColumn && tabsPerformed < numTabs)
     {
         column++;
         if (til::at(_tabStopColumns, column))
@@ -2456,12 +2481,19 @@ bool AdaptDispatch::BackwardsTab(const VTInt numTabs)
 {
     auto& textBuffer = _api.GetTextBuffer();
     auto& cursor = textBuffer.GetCursor();
-    const auto width = textBuffer.GetLineWidth(cursor.GetPosition().y);
     auto column = cursor.GetPosition().x;
+    const auto row = cursor.GetPosition().y;
+    const auto width = textBuffer.GetLineWidth(row);
     auto tabsPerformed = 0;
 
+    const auto viewport = _api.GetViewport();
+    const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(width);
+    const auto clampToMargin = row >= topMargin && row <= bottomMargin && column >= leftMargin;
+    const auto minColumn = clampToMargin ? leftMargin : 0;
+
     _InitTabStopsForWidth(width);
-    while (column > 0 && tabsPerformed < numTabs)
+    while (column > minColumn && tabsPerformed < numTabs)
     {
         column--;
         if (til::at(_tabStopColumns, column))
