@@ -2124,6 +2124,26 @@ void AdaptDispatch::_DoSetLeftRightScrollingMargins(const VTInt leftMargin,
 }
 
 // Routine Description:
+// - DECSLRM - Set Scrolling Region
+// This control function sets the left and right margins for the current page.
+//  You cannot perform scrolling outside the margins.
+//  Default: Margins are at the page limits.
+// Arguments:
+// - leftMargin - the column number for the left margin.
+// - rightMargin - the column number for the right margin.
+// Return Value:
+// - True.
+bool AdaptDispatch::SetLeftRightScrollingMargins(const VTInt leftMargin,
+                                                 const VTInt rightMargin)
+{
+    // When this is called, the cursor should also be moved to home.
+    // Other functions that only need to set/reset the margins should call _DoSetLeftRightScrollingMargins
+    _DoSetLeftRightScrollingMargins(leftMargin, rightMargin);
+    CursorPosition(1, 1);
+    return true;
+}
+
+// Routine Description:
 // - BEL - Rings the warning bell.
 //    Causes the terminal to emit an audible tone of brief duration.
 // Arguments:

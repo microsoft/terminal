@@ -47,6 +47,7 @@ public:
     bool SetKeypadMode(const bool /*applicationMode*/) override { return false; } // DECKPAM, DECKPNM
     bool SetAnsiMode(const bool /*ansiMode*/) override { return false; } // DECANM
     bool SetTopBottomScrollingMargins(const VTInt /*topMargin*/, const VTInt /*bottomMargin*/) override { return false; } // DECSTBM
+    bool SetLeftRightScrollingMargins(const VTInt /*leftMargin*/, const VTInt /*rightMargin*/) override { return false; } // DECSLRM
     bool WarningBell() override { return false; } // BEL
     bool CarriageReturn() override { return false; } // CR
     bool LineFeed(const DispatchTypes::LineFeedType /*lineFeedType*/) override { return false; } // IND, NEL, LF, FF, VT
