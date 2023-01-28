@@ -77,12 +77,23 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
     const auto wrapAtEOL = _api.GetAutoWrapMode();
     const auto attributes = textBuffer.GetCurrentAttributes();
 
+    const auto viewport = _api.GetViewport();
+    const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(textBuffer.GetSize().Width());
+
+    auto lineWidth = textBuffer.GetLineWidth(cursorPosition.y);
+    auto insideVerticalMargins = cursorPosition.y >= topMargin && cursorPosition.y <= bottomMargin;
+    if (insideVerticalMargins && cursorPosition.x <= rightMargin)
+    {
+        lineWidth = std::min(lineWidth, rightMargin + 1);
+    }
+
     // Turn off the cursor until we're done, so it isn't refreshed unnecessarily.
     cursor.SetIsOn(false);
 
     RowWriteState state{
         .text = string,
-        .columnLimit = textBuffer.GetLineWidth(cursorPosition.y),
+        .columnLimit = lineWidth,
     };
 
     while (!state.text.empty())
@@ -95,10 +106,17 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
             // different position from where the EOL was marked.
             if (delayedCursorPosition == cursorPosition)
             {
-                _DoLineFeed(textBuffer, true, true);
+                cursor.SetXPosition(insideVerticalMargins ? leftMargin : 0);
+                _DoLineFeed(textBuffer, false, true);
                 cursorPosition = cursor.GetPosition();
                 // We need to recalculate the width when moving to a new line.
-                state.columnLimit = textBuffer.GetLineWidth(cursorPosition.y);
+                lineWidth = textBuffer.GetLineWidth(cursorPosition.y);
+                insideVerticalMargins = cursorPosition.y >= topMargin && cursorPosition.y <= bottomMargin;
+                if (insideVerticalMargins)
+                {
+                    lineWidth = std::min(lineWidth, rightMargin + 1);
+                }
+                state.columnLimit = lineWidth;
             }
         }
 
