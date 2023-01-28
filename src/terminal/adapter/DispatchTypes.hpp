@@ -430,6 +430,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         XTERM_EnableDECCOLMSupport = DECPrivateMode(40),
         DECNKM_NumericKeypadMode = DECPrivateMode(66),
         DECBKM_BackarrowKeyMode = DECPrivateMode(67),
+        DECLRMM_LeftRightMarginMode = DECPrivateMode(69),
         VT200_MOUSE_MODE = DECPrivateMode(1000),
         BUTTON_EVENT_MOUSE_MODE = DECPrivateMode(1002),
         ANY_EVENT_MOUSE_MODE = DECPrivateMode(1003),

@@ -1354,13 +1354,17 @@ bool AdaptDispatch::RequestChecksumRectangularArea(const VTInt id, const VTInt p
 // - True.
 bool AdaptDispatch::SetLineRendition(const LineRendition rendition)
 {
-    auto& textBuffer = _api.GetTextBuffer();
-    textBuffer.SetCurrentLineRendition(rendition);
-    // There is some variation in how this was handled by the different DEC
-    // terminals, but the STD 070 reference (on page D-13) makes it clear that
-    // the delayed wrap (aka the Last Column Flag) was expected to be reset when
-    // line rendition controls were executed.
-    textBuffer.GetCursor().ResetDelayEOLWrap();
+    // The line rendition can't be changed if left/right margins are allowed.
+    if (!_modes.test(Mode::AllowDECSLRM))
+    {
+        auto& textBuffer = _api.GetTextBuffer();
+        textBuffer.SetCurrentLineRendition(rendition);
+        // There is some variation in how this was handled by the different DEC
+        // terminals, but the STD 070 reference (on page D-13) makes it clear that
+        // the delayed wrap (aka the Last Column Flag) was expected to be reset when
+        // line rendition controls were executed.
+        textBuffer.GetCursor().ResetDelayEOLWrap();
+    }
     return true;
 }
 
@@ -1629,7 +1633,7 @@ void AdaptDispatch::_SetColumnMode(const bool enable)
         const auto viewportWidth = (enable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns);
         _api.ResizeWindow(viewportWidth, viewportHeight);
         _modes.set(Mode::Column, enable);
-        _modes.reset(Mode::Origin);
+        _modes.reset(Mode::Origin, Mode::AllowDECSLRM);
         CursorPosition(1, 1);
         EraseInDisplay(DispatchTypes::EraseType::All);
         _DoSetTopBottomScrollingMargins(0, 0);
@@ -1740,6 +1744,17 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
     case DispatchTypes::ModeParams::DECBKM_BackarrowKeyMode:
         _terminalInput.SetInputMode(TerminalInput::Mode::BackarrowKey, enable);
         return !_PassThroughInputModes();
+    case DispatchTypes::ModeParams::DECLRMM_LeftRightMarginMode:
+        _modes.set(Mode::AllowDECSLRM, enable);
+        _DoSetLeftRightScrollingMargins(0, 0);
+        if (enable)
+        {
+            // If we've allowed left/right margins, we can't have line renditions.
+            const auto viewport = _api.GetViewport();
+            auto& textBuffer = _api.GetTextBuffer();
+            textBuffer.ResetLineRenditionRange(viewport.top, viewport.bottom);
+        }
+        return true;
     case DispatchTypes::ModeParams::VT200_MOUSE_MODE:
         _terminalInput.SetInputMode(TerminalInput::Mode::DefaultMouseTracking, enable);
         return !_PassThroughInputModes();
@@ -1859,6 +1874,9 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         break;
     case DispatchTypes::ModeParams::DECBKM_BackarrowKeyMode:
         enabled = _terminalInput.GetInputMode(TerminalInput::Mode::BackarrowKey);
+        break;
+    case DispatchTypes::ModeParams::DECLRMM_LeftRightMarginMode:
+        enabled = _modes.test(Mode::AllowDECSLRM);
         break;
     case DispatchTypes::ModeParams::VT200_MOUSE_MODE:
         enabled = _terminalInput.GetInputMode(TerminalInput::Mode::DefaultMouseTracking);
@@ -2136,10 +2154,18 @@ void AdaptDispatch::_DoSetLeftRightScrollingMargins(const VTInt leftMargin,
 bool AdaptDispatch::SetLeftRightScrollingMargins(const VTInt leftMargin,
                                                  const VTInt rightMargin)
 {
-    // When this is called, the cursor should also be moved to home.
-    // Other functions that only need to set/reset the margins should call _DoSetLeftRightScrollingMargins
-    _DoSetLeftRightScrollingMargins(leftMargin, rightMargin);
-    CursorPosition(1, 1);
+    if (_modes.test(Mode::AllowDECSLRM))
+    {
+        // When this is called, the cursor should also be moved to home.
+        // Other functions that only need to set/reset the margins should call _DoSetLeftRightScrollingMargins
+        _DoSetLeftRightScrollingMargins(leftMargin, rightMargin);
+        CursorPosition(1, 1);
+    }
+    else
+    {
+        // When DECSLRM isn't allowed, `CSI s` is interpreted as ANSISYSSC.
+        CursorSaveState();
+    }
     return true;
 }
 
@@ -2655,7 +2681,10 @@ bool AdaptDispatch::AcceptC1Controls(const bool enabled)
 bool AdaptDispatch::SoftReset()
 {
     _api.GetTextBuffer().GetCursor().SetIsVisible(true); // Cursor enabled.
-    _modes.reset(Mode::InsertReplace, Mode::Origin); // Replace mode; Absolute cursor addressing.
+
+    // Replace mode; Absolute cursor addressing; Disallow left/right margins.
+    _modes.reset(Mode::InsertReplace, Mode::Origin, Mode::AllowDECSLRM);
+
     _api.SetAutoWrapMode(true); // Wrap at end of line.
     _terminalInput.SetInputMode(TerminalInput::Mode::CursorKey, false); // Normal characters.
     _terminalInput.SetInputMode(TerminalInput::Mode::Keypad, false); // Numeric characters.
@@ -2786,8 +2815,8 @@ bool AdaptDispatch::ScreenAlignmentPattern()
     auto attr = textBuffer.GetCurrentAttributes();
     attr.SetStandardErase();
     _api.SetTextAttributes(attr);
-    // Reset the origin mode to absolute.
-    _modes.reset(Mode::Origin);
+    // Reset the origin mode to absolute, and disallow left/right margins.
+    _modes.reset(Mode::Origin, Mode::AllowDECSLRM);
     // Clear the scrolling margins.
     _DoSetTopBottomScrollingMargins(0, 0);
     _DoSetLeftRightScrollingMargins(0, 0);

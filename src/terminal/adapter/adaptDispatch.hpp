@@ -165,6 +165,7 @@ namespace Microsoft::Console::VirtualTerminal
             Origin,
             Column,
             AllowDECCOLM,
+            AllowDECSLRM,
             RectangularChangeExtent
         };
         enum class ScrollDirection
