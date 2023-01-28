@@ -535,14 +535,35 @@ void AdaptDispatch::_ScrollRectVertically(TextBuffer& textBuffer, const til::rec
     const auto absoluteDelta = std::min(std::abs(delta), scrollRect.height());
     if (absoluteDelta < scrollRect.height())
     {
-        // For now we're assuming the scrollRect is always the full width of the
-        // buffer, but this will likely need to be extended to support scrolling
-        // of arbitrary widths at some point in the future.
         const auto top = delta > 0 ? scrollRect.top : scrollRect.top + absoluteDelta;
+        const auto width = scrollRect.width();
         const auto height = scrollRect.height() - absoluteDelta;
         const auto actualDelta = delta > 0 ? absoluteDelta : -absoluteDelta;
-        textBuffer.ScrollRows(top, height, actualDelta);
-        textBuffer.TriggerRedraw(Viewport::FromExclusive(scrollRect));
+        if (width == textBuffer.GetSize().Width())
+        {
+            // If the scrollRect is the full width of the buffer, we can scroll
+            // more efficiently by rotating the row storage.
+            textBuffer.ScrollRows(top, height, actualDelta);
+            textBuffer.TriggerRedraw(Viewport::FromExclusive(scrollRect));
+        }
+        else
+        {
+            // Otherwise we have to move the content up or down by copying the
+            // requested buffer range one cell at a time.
+            const auto srcOrigin = til::point{ scrollRect.left, top };
+            const auto dstOrigin = til::point{ scrollRect.left, top + actualDelta };
+            const auto srcView = Viewport::FromDimensions(srcOrigin, width, height);
+            const auto dstView = Viewport::FromDimensions(dstOrigin, width, height);
+            const auto walkDirection = Viewport::DetermineWalkDirection(srcView, dstView);
+            auto srcPos = srcView.GetWalkOrigin(walkDirection);
+            auto dstPos = dstView.GetWalkOrigin(walkDirection);
+            do
+            {
+                const auto current = OutputCell(*textBuffer.GetCellDataAt(srcPos));
+                textBuffer.WriteLine(OutputCellIterator({ &current, 1 }), dstPos);
+                srcView.WalkInBounds(srcPos, walkDirection);
+            } while (dstView.WalkInBounds(dstPos, walkDirection));
+        }
     }
 
     // Rows revealed by the scroll are filled with standard erase attributes.
@@ -612,13 +633,21 @@ void AdaptDispatch::_ScrollRectHorizontally(TextBuffer& textBuffer, const til::r
 // - <none>
 void AdaptDispatch::_InsertDeleteCharacterHelper(const VTInt delta)
 {
+    const auto viewport = _api.GetViewport();
     auto& textBuffer = _api.GetTextBuffer();
     const auto row = textBuffer.GetCursor().GetPosition().y;
-    const auto startCol = textBuffer.GetCursor().GetPosition().x;
-    const auto endCol = textBuffer.GetLineWidth(row);
-    _ScrollRectHorizontally(textBuffer, { startCol, row, endCol, row + 1 }, delta);
-    // The ICH and DCH controls are expected to reset the delayed wrap flag.
-    textBuffer.GetCursor().ResetDelayEOLWrap();
+    const auto col = textBuffer.GetCursor().GetPosition().x;
+    const auto lineWidth = textBuffer.GetLineWidth(row);
+    const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
+    const auto [leftMargin, rightMargin] = (row >= topMargin && row <= bottomMargin) ?
+                                               _GetHorizontalMargins(lineWidth) :
+                                               std::make_pair(0, lineWidth - 1);
+    if (col >= leftMargin && col <= rightMargin)
+    {
+        _ScrollRectHorizontally(textBuffer, { col, row, rightMargin + 1, row + 1 }, delta);
+        // The ICH and DCH controls are expected to reset the delayed wrap flag.
+        textBuffer.GetCursor().ResetDelayEOLWrap();
+    }
 }
 
 // Routine Description:
@@ -1589,7 +1618,8 @@ void AdaptDispatch::_ScrollMovement(const VTInt delta)
     auto& textBuffer = _api.GetTextBuffer();
     const auto bufferWidth = textBuffer.GetSize().Width();
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
-    _ScrollRectVertically(textBuffer, { 0, topMargin, bufferWidth, bottomMargin + 1 }, delta);
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(bufferWidth);
+    _ScrollRectVertically(textBuffer, { leftMargin, topMargin, rightMargin + 1, bottomMargin + 1 }, delta);
 }
 
 // Routine Description:
@@ -1948,17 +1978,18 @@ void AdaptDispatch::_InsertDeleteLineHelper(const int32_t delta)
     const auto bufferWidth = textBuffer.GetSize().Width();
 
     auto& cursor = textBuffer.GetCursor();
+    const auto col = cursor.GetPosition().x;
     const auto row = cursor.GetPosition().y;
 
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
-    if (row >= topMargin && row <= bottomMargin)
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(bufferWidth);
+    if (row >= topMargin && row <= bottomMargin && col >= leftMargin && col <= rightMargin)
     {
         // We emulate inserting and deleting by scrolling the area between the cursor and the bottom margin.
-        _ScrollRectVertically(textBuffer, { 0, row, bufferWidth, bottomMargin + 1 }, delta);
+        _ScrollRectVertically(textBuffer, { leftMargin, row, rightMargin + 1, bottomMargin + 1 }, delta);
 
         // The IL and DL controls are also expected to move the cursor to the left margin.
-        // For now this is just column 0, since we don't yet support DECSLRM.
-        cursor.SetXPosition(0);
+        cursor.SetXPosition(leftMargin);
         _ApplyCursorMovementFlags(cursor);
     }
 }
@@ -2321,14 +2352,15 @@ bool AdaptDispatch::ReverseLineFeed()
     auto& textBuffer = _api.GetTextBuffer();
     auto& cursor = textBuffer.GetCursor();
     const auto cursorPosition = cursor.GetPosition();
+    const auto bufferWidth = textBuffer.GetSize().Width();
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(bufferWidth);
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
 
     // If the cursor is at the top of the margin area, we shift the buffer
     // contents down, to emulate inserting a line at that point.
-    if (cursorPosition.y == topMargin)
+    if (cursorPosition.y == topMargin && cursorPosition.x >= leftMargin && cursorPosition.x <= rightMargin)
     {
-        const auto bufferWidth = textBuffer.GetSize().Width();
-        _ScrollRectVertically(textBuffer, { 0, topMargin, bufferWidth, bottomMargin + 1 }, 1);
+        _ScrollRectVertically(textBuffer, { leftMargin, topMargin, rightMargin + 1, bottomMargin + 1 }, 1);
     }
     else if (cursorPosition.y > viewport.top)
     {
