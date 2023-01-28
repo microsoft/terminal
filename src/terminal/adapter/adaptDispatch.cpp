@@ -3780,6 +3780,9 @@ ITermDispatch::StringHandler AdaptDispatch::RequestSetting()
             case VTID("r"):
                 _ReportDECSTBMSetting();
                 break;
+            case VTID("s"):
+                _ReportDECSLRMSetting();
+                break;
             case VTID("\"q"):
                 _ReportDECSCASetting();
                 break;
@@ -3905,6 +3908,30 @@ void AdaptDispatch::_ReportDECSTBMSetting()
 
     // The 'r' indicates this is an DECSTBM response, and ST ends the sequence.
     response.append(L"r\033\\"sv);
+    _api.ReturnResponse({ response.data(), response.size() });
+}
+
+// Method Description:
+// - Reports the DECSLRM margin range in response to a DECRQSS query.
+// Arguments:
+// - None
+// Return Value:
+// - None
+void AdaptDispatch::_ReportDECSLRMSetting()
+{
+    using namespace std::string_view_literals;
+
+    // A valid response always starts with DCS 1 $ r.
+    fmt::basic_memory_buffer<wchar_t, 64> response;
+    response.append(L"\033P1$r"sv);
+
+    const auto bufferWidth = _api.GetTextBuffer().GetSize().Width();
+    const auto [marginLeft, marginRight] = _GetHorizontalMargins(bufferWidth);
+    // VT origin is at 1,1 so we need to add 1 to these margins.
+    fmt::format_to(std::back_inserter(response), FMT_COMPILE(L"{};{}"), marginLeft + 1, marginRight + 1);
+
+    // The 's' indicates this is an DECSLRM response, and ST ends the sequence.
+    response.append(L"s\033\\"sv);
     _api.ReturnResponse({ response.data(), response.size() });
 }
 

@@ -1629,6 +1629,22 @@ public:
         requestSetting(L"r");
         _testGetSet->ValidateInputEvent(L"\033P1$r1;25r\033\\");
 
+        Log::Comment(L"Requesting DECSLRM margins (5 to 10).");
+        _testGetSet->PrepData();
+        // We need to enable DECLRMM for horizontal margins to work.
+        _pDispatch->SetMode(DispatchTypes::DECLRMM_LeftRightMarginMode);
+        _pDispatch->SetLeftRightScrollingMargins(5, 10);
+        requestSetting(L"s");
+        _testGetSet->ValidateInputEvent(L"\033P1$r5;10s\033\\");
+
+        Log::Comment(L"Requesting DECSLRM margins (full width).");
+        _testGetSet->PrepData();
+        _pDispatch->SetLeftRightScrollingMargins(0, 0);
+        requestSetting(L"s");
+        _testGetSet->ValidateInputEvent(L"\033P1$r1;100s\033\\");
+        // Reset DECLRMM once we're done with horizontal margin testing.
+        _pDispatch->ResetMode(DispatchTypes::DECLRMM_LeftRightMarginMode);
+
         Log::Comment(L"Requesting SGR attributes (default).");
         _testGetSet->PrepData();
         TextAttribute attribute = {};
