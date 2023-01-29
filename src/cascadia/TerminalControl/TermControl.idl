@@ -21,7 +21,10 @@ namespace Microsoft.Terminal.Control
                     IControlAppearance unfocusedAppearance,
                     Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
-        static Windows.Foundation.Size GetProposedDimensions(IControlSettings settings, UInt32 dpi);
+        static Windows.Foundation.Size GetProposedDimensions(IControlSettings settings,
+                                                             UInt32 dpi,
+                                                             Int32 commandlineCols,
+                                                             Int32 commandlineRows);
 
         void UpdateControlSettings(IControlSettings settings);
         void UpdateControlSettings(IControlSettings settings, IControlAppearance unfocusedAppearance);
@@ -49,6 +52,8 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, IInspectable> ConnectionStateChanged;
 
         event Windows.Foundation.TypedEventHandler<Object, ShowWindowArgs> ShowWindowChanged;
+
+        event Windows.Foundation.TypedEventHandler<Object, Object> CloseTerminalRequested;
 
         Boolean CopySelectionToClipboard(Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
         void PasteTextFromClipboard();

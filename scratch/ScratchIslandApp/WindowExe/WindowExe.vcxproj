@@ -90,7 +90,7 @@
     Particularly tricky is Microsoft.Terminal.Core.winmd. That winmd doesn't
     have its own DLL (it doesn't have any activatable classes, only structs and
     interfaces). However, it too is necessary for Terminal.Control to be able to
-    marshall the Core types across the boundary.
+    marshal the Core types across the boundary.
     -->
     <Reference Include="Microsoft.Terminal.Core">
       <HintPath>$(OpenConsoleCommonOutDir)TerminalCore\Microsoft.Terminal.Core.winmd</HintPath>
@@ -144,12 +144,12 @@
 
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 
-  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.7.1\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.7.1\build\native\Microsoft.UI.Xaml.targets')" />
+  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.7.3\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.7.3\build\native\Microsoft.UI.Xaml.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.7.1\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.7.1\build\native\Microsoft.UI.Xaml.targets'))" />
+    <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.7.3\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.7.3\build\native\Microsoft.UI.Xaml.targets'))" />
   </Target>
 
   <!-- Override GetPackagingOutputs to roll up all our dependencies.

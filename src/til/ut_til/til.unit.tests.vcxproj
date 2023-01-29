@@ -35,6 +35,7 @@
     <ClCompile Include="string.cpp" />
     <ClCompile Include="throttled_func.cpp" />
     <ClCompile Include="u8u16convertTests.cpp" />
+    <ClCompile Include="UnicodeTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\inc\til\at.h" />
@@ -64,6 +65,7 @@
     <ClInclude Include="..\..\inc\til\throttled_func.h" />
     <ClInclude Include="..\..\inc\til\ticket_lock.h" />
     <ClInclude Include="..\..\inc\til\u8u16convert.h" />
+    <ClInclude Include="..\..\inc\til\unicode.h" />
     <ClInclude Include="..\precomp.h" />
   </ItemGroup>
   <ItemDefinitionGroup>

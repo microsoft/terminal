@@ -34,7 +34,6 @@
     <ClCompile Include="TitleTests.cpp" />
     <ClCompile Include="UtilsTests.cpp" />
     <ClCompile Include="Utf8ToWideCharParserTests.cpp" />
-    <ClCompile Include="Utf16ParserTests.cpp" />
     <ClCompile Include="InputBufferTests.cpp" />
     <ClCompile Include="ReadWaitTests.cpp" />
     <ClCompile Include="ViewportTests.cpp" />

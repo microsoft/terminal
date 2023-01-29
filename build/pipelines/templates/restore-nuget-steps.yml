@@ -1,10 +1,14 @@
 steps:
 - task: NuGetToolInstaller@0
-  displayName: 'Use NuGet 5.2.0'
+  displayName: 'Use NuGet 6.3.0'
   inputs:
-    versionSpec: 5.2.0
+    versionSpec: 6.3.0
 
 - task: NuGetAuthenticate@0
+
+- script: |-
+    echo ##vso[task.setvariable variable=NUGET_RESTORE_MSBUILD_ARGS]/p:Platform=$(BuildPlatform)
+  displayName: Ensure NuGet restores for $(BuildPlatform)
 
 # In the Microsoft Azure DevOps tenant, NuGetCommand is ambiguous.
 # This should be `task: NuGetCommand@2`

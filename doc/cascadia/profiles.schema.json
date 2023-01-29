@@ -82,7 +82,14 @@
       "properties": {
         "colorScheme": {
           "description": "The name of a color scheme to use when unfocused.",
-          "type": "string"
+          "oneOf": [
+            {
+              "$ref": "#/$defs/SchemePair"
+            },
+            {
+              "type": "string"
+            }
+          ]
         },
         "foreground": {
           "$ref": "#/$defs/Color",
@@ -203,7 +210,7 @@
         },
         "intenseTextStyle": {
           "default": "bright",
-          "description": "Controls how 'intense' text is rendered. Values are \"bold\", \"bright\", \"all\" and \"none\"",
+          "description": "Controls how 'intense' text is rendered when unfocused. Values are \"bold\", \"bright\", \"all\" and \"none\"",
           "enum": [
             "none",
             "bold",
@@ -232,6 +239,21 @@
         }
       },
       "type": "object"
+    },
+    "SchemePair": {
+      "description": "Contains both a light and dark color scheme for the Terminal to use, depending on the theme of the application.",
+      "properties": {
+        "light": {
+          "default": "Campbell",
+          "description": "Name of the scheme to use when the app is using light theme",
+          "type": "string"
+        },
+        "dark": {
+          "default": "Campbell",
+          "description": "Name of the scheme to use when the app is using dark theme",
+          "type": "string"
+        }
+      }
     },
     "FontConfig": {
       "properties": {
@@ -538,6 +560,160 @@
         }
       },
       "type": "object"
+    },
+    "NewTabMenuEntryType": {
+      "enum": [
+        "source",
+        "profile",
+        "folder",
+        "separator",
+        "remainingProfiles",
+        "matchProfiles"
+      ]
+    },
+    "NewTabMenuEntry": {
+      "properties": {
+        "type": {
+          "description": "The type of menu entry",
+          "$ref": "#/$defs/NewTabMenuEntryType"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "type": "object"
+    },
+    "FolderEntryInlining": {
+      "enum": [
+        "never",
+        "auto"
+      ]
+    },
+    "FolderEntry": {
+      "description": "A folder entry in the new tab dropdown",
+      "allOf": [
+        {
+          "$ref": "#/$defs/NewTabMenuEntry"
+        },
+        {
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "folder"
+            },
+            "name": {
+              "type": "string",
+              "default": "",
+              "description": "The name of the folder to show in the menu"
+            },
+            "icon": {
+              "$ref": "#/$defs/Icon"
+            },
+            "entries": {
+              "type": "array",
+              "description": "The entries to put inside this folder",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/NewTabMenuEntry"
+              }
+            },
+            "inline": {
+              "description": "When set to auto and the folder only has a single entry, the entry will show directly and no folder will be rendered",
+              "default": "never",
+              "$ref": "#/$defs/FolderEntryInlining"
+            },
+            "allowEmpty": {
+              "description": "Whether to render a folder without entries, or to hide it",
+              "default": "false",
+              "type": "boolean"
+            }
+          }
+        }
+      ]
+    },
+    "SeparatorEntry": {
+      "description": "A separator in the new tab dropdown",
+      "allOf": [
+        {
+          "$ref": "#/$defs/NewTabMenuEntry"
+        },
+        {
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "separator"
+            }
+          }
+        }
+      ]
+    },
+    "ProfileEntry": {
+      "description": "A profile in the new tab dropdown",
+      "allOf": [
+        {
+          "$ref": "#/$defs/NewTabMenuEntry"
+        },
+        {
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "profile"
+            },
+            "profile": {
+              "type": "string",
+              "default": "",
+              "description": "The name or GUID of the profile to show in this entry"
+            }
+          }
+        }
+      ]
+    },
+    "RemainingProfilesEntry": {
+      "description": "The set of profiles that are not yet explicitly included in another entry, such as the profile or source entries. This entry can be used at most one time!",
+      "allOf": [
+        {
+          "$ref": "#/$defs/NewTabMenuEntry"
+        },
+        {
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "remainingProfiles"
+            }
+          }
+        }
+      ]
+    },
+    "MatchProfilesEntry": {
+      "description": "A set of profiles all matching the given name, source, or command line, to show in the new tab dropdown",
+      "allOf": [
+        {
+          "$ref": "#/$defs/NewTabMenuEntry"
+        },
+        {
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "matchProfiles"
+            },
+            "name": {
+              "type": "string",
+              "default": "",
+              "description": "The name of the profiles to match"
+            },
+            "source": {
+              "type": "string",
+              "default": "",
+              "description": "The source of the profiles to match"
+            },
+            "commandline": {
+              "type": "string",
+              "default": "",
+              "description": "The command line of the profiles to match"
+            }
+          }
+        }
+      ]
     },
     "SwitchToAdjacentTabArgs": {
       "oneOf": [
@@ -1546,6 +1722,145 @@
         }
       ]
     },
+    "ShowCloseButton": {
+      "enum": [
+        "always",
+        "hover",
+        "never"
+      ],
+      "type": "string"
+    },
+    "ThemeColor": {
+      "description": "A special kind of color for use in themes. Can be an #rrggbb color, #rrggbbaa color, or a special value. 'accent' is evaluated as the user's selected Accent color in the OS, and 'terminalBackground' will be evaluated as the background color of the active terminal pane.",
+      "oneOf": [
+        {
+          "pattern": "^#[A-Fa-f0-9]{3}(?:[A-Fa-f0-9]{3}(?:[A-Fa-f0-9]{2})?)?$",
+          "type": "string",
+          "format": "color",
+          "default": "#000000ff"
+        },
+        {
+          "const": "accent",
+          "type": "string"
+        },
+        {
+          "const": "terminalBackground",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "TabTheme": {
+      "additionalProperties": false,
+      "description": "A set of properties for customizing the appearance of the tabs",
+      "properties": {
+        "background": {
+          "description": "The color of a tab when it is the active tab",
+          "$ref": "#/$defs/ThemeColor"
+        },
+        "unfocusedBackground": {
+          "description": "The color of a tab when it is not the active tab",
+          "$ref": "#/$defs/ThemeColor"
+        },
+        "showCloseButton": {
+          "description": "Controls the visibility of the close button on the tab",
+          "$ref": "#/$defs/ShowCloseButton"
+        }
+      }
+    },
+    "TabRowTheme": {
+      "additionalProperties": false,
+      "description": "A set of properties for customizing the appearance of the tab row",
+      "properties": {
+        "background": {
+          "description": "The color of the tab row when the window is the foreground window.",
+          "$ref": "#/$defs/ThemeColor"
+        },
+        "unfocusedBackground": {
+          "description": "The color of the tab row when the window is inactive",
+          "$ref": "#/$defs/ThemeColor"
+        }
+      }
+    },
+    "WindowTheme": {
+      "additionalProperties": false,
+      "description": "A set of properties for customizing the appearance of the window itself",
+      "properties": {
+        "applicationTheme": {
+          "description": "Which UI theme the Terminal should use for controls",
+          "enum": [ "light", "dark", "system" ],
+          "type": "string"
+        },
+        "useMica": {
+          "description": "True if the Terminal should use a Mica backdrop for the window. This will apply underneath all controls (including the terminal panes and the titlebar)",
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "Theme": {
+      "additionalProperties": false,
+      "description": "A set of properties for customizing the appearance of the window. This controls things like the titlebar, the tabs, the application theme.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the theme. This will be displayed in the settings UI.",
+          "not": { 
+            "enum": [ "light", "dark", "system" ]
+          }
+        },
+        "tab": {
+          "$ref": "#/$defs/TabTheme"
+        },
+        "tabRow": {
+          "$ref": "#/$defs/TabRowTheme"
+        },
+        "window": {
+          "$ref": "#/$defs/WindowTheme"
+        }
+      }
+    },
+    "ThemePair": {
+      "additionalProperties": false,
+      "description": "A pair of Theme names, to allow the Terminal to switch theme based on the OS theme",
+      "properties": {
+        "light": {
+          "type": "string",
+          "description": "The name of the theme to use when the OS is in Light theme",
+          "default": "light"
+        },
+        "dark": {
+          "type": "string",
+          "description": "The name of the theme to use when the OS is in Dark theme",
+          "default": "dark"
+        }
+      }
+    },
+    "NewTabMenu": {
+      "description": "Defines the order and structure of the 'new tab' menu. It can consist of e.g. profiles, folders, and separators.",
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/$defs/FolderEntry"
+          },
+          {
+            "$ref": "#/$defs/SeparatorEntry"
+          },
+          {
+            "$ref": "#/$defs/ProfileEntry"
+          },
+          {
+            "$ref": "#/$defs/MatchProfilesEntry"
+          },
+          {
+            "$ref": "#/$defs/RemainingProfilesEntry"
+          }
+        ]
+      }
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -1924,20 +2239,32 @@
           },
           "type": "array"
         },
+        "newTabMenu": {
+          "$ref": "#/$defs/NewTabMenu"
+        },
         "language": {
           "default": "",
           "description": "Sets an override for the app's preferred language, expressed as a BCP-47 language tag like en-US.",
           "type": "string"
         },
         "theme": {
-          "default": "system",
-          "description": "Sets the theme of the application. The special value \"system\" refers to the active Windows system theme.",
-          "enum": [
-            "light",
-            "dark",
-            "system"
-          ],
-          "type": "string"
+          "default": "dark",
+          "description": "Sets the theme of the application. This value should be the name of one of the themes defined in `themes`. The Terminal also includes the themes `dark`, `light`, and `system`.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/ThemePair"
+            }
+          ]
+        },
+        "themes": {
+          "description": "The list of available themes",
+          "items": {
+            "$ref": "#/$defs/Theme"
+          },
+          "type": "array"
         },
         "showTabsInTitlebar": {
           "default": true,
@@ -2170,7 +2497,14 @@
         "colorScheme": {
           "default": "Campbell",
           "description": "Name of the terminal color scheme to use. Color schemes are defined under \"schemes\".",
-          "type": "string"
+          "oneOf": [
+            {
+              "$ref": "#/$defs/SchemePair"
+            },
+            {
+              "type": "string"
+            }
+          ]
         },
         "commandline": {
           "description": "Executable used in the profile.",
@@ -2283,6 +2617,17 @@
           ],
           "deprecated": true
         },
+        "intenseTextStyle": {
+          "default": "bright",
+          "description": "Controls how 'intense' text is rendered. Values are \"bold\", \"bright\", \"all\" and \"none\"",
+          "enum": [
+            "none",
+            "bold",
+            "bright",
+            "all"
+          ],
+          "type": "string"
+        },
         "foreground": {
           "$ref": "#/$defs/Color",
           "default": "#cccccc",
@@ -2350,7 +2695,8 @@
           "description": "Defines the visibility of the scrollbar.",
           "enum": [
             "visible",
-            "hidden"
+            "hidden",
+            "always"
           ],
           "type": "string"
         },
@@ -2384,7 +2730,10 @@
         },
         "startingDirectory": {
           "description": "The directory the shell starts in when it is loaded.",
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "suppressApplicationTitle": {
           "description": "When set to true, tabTitle overrides the default title of the tab and any title change messages from the application will be suppressed. When set to false, tabTitle behaves as normal.",

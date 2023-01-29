@@ -5,7 +5,6 @@
 #include "ControlInteractivity.h"
 #include <DefaultSettings.h>
 #include <unicode.hpp>
-#include <Utf16Parser.hpp>
 #include <Utils.h>
 #include <LibraryResources.h>
 #include "../../types/inc/GlyphWidth.hpp"
@@ -682,9 +681,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return nullptr;
     }
 
-    ::Microsoft::Console::Types::IUiaData* ControlInteractivity::GetUiaData() const
+    ::Microsoft::Console::Render::IRenderData* ControlInteractivity::GetRenderData() const
     {
-        return _core->GetUiaData();
+        return _core->GetRenderData();
     }
 
     // Method Description:

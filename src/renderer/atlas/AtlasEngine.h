@@ -410,6 +410,7 @@ namespace Microsoft::Console::Render
         struct FontMetrics
         {
             wil::com_ptr<IDWriteFontCollection> fontCollection;
+            wil::com_ptr<IDWriteFontFamily> fontFamily;
             std::wstring fontName;
             float baselineInDIP = 0.0f;
             float fontSizeInDIP = 0.0f;
@@ -515,7 +516,7 @@ namespace Microsoft::Console::Render
                 // This returns the actual byte size of a AtlasKeyData struct for the given charCount.
                 // The `wchar_t chars[2]` is only a buffer for the inlined variant after
                 // all and the actual charCount can be smaller or larger. Due to this we
-                // remove the size of the `chars` array and add it's true length on top.
+                // remove the size of the `chars` array and add its true length on top.
                 return sizeof(AtlasKeyData) - sizeof(AtlasKeyData::chars) + static_cast<size_t>(charCount) * sizeof(AtlasKeyData::chars[0]);
             }
         };
@@ -523,9 +524,9 @@ namespace Microsoft::Console::Render
         struct CachedGlyphLayout
         {
             wil::com_ptr<IDWriteTextLayout> textLayout;
-            f32x2 halfSize;
             f32x2 offset;
             f32x2 scale;
+            f32x2 scaleCenter;
             D2D1_DRAW_TEXT_OPTIONS options = D2D1_DRAW_TEXT_OPTIONS_NONE;
             bool scalingRequired = false;
 
@@ -771,7 +772,7 @@ namespace Microsoft::Console::Render
                 // alternating between an 1:1 and 2:1 aspect ratio, like so:
                 //   (64,64) -> (128,64) -> (128,128) -> (256,128) -> (256,256)
                 // This behavior is strictly dependent on setMaxArea(u16x2)'s
-                // behavior. See it's comment for an explanation.
+                // behavior. See its comment for an explanation.
                 if (_size.x == _size.y)
                 {
                     _size.x *= 2;
@@ -815,7 +816,7 @@ namespace Microsoft::Console::Render
             u16x2 _size;
             u16x2 _limit;
             // Since _pos starts at {0, 0}, it'll result in the first allocate()d tile to be at {_tileSize.x, 0}.
-            // Coincidentially that's exactly what we want as the cursor texture lives at {0, 0}.
+            // Coincidentally that's exactly what we want as the cursor texture lives at {0, 0}.
             u16x2 _pos;
             u16 _originX = 0;
             // Indicates whether we've exhausted our Z pattern across the atlas texture.
@@ -1010,6 +1011,7 @@ namespace Microsoft::Console::Render
             wil::com_ptr<ID3D11ShaderResourceView> atlasView;
             wil::com_ptr<ID2D1DeviceContext> d2dRenderTarget;
             wil::com_ptr<ID2D1SolidColorBrush> brush;
+            wil::com_ptr<IDWriteFontFace> fontFaces[4];
             wil::com_ptr<IDWriteTextFormat> textFormats[2][2];
             Buffer<DWRITE_FONT_AXIS_VALUE> textFormatAxes[2][2];
             wil::com_ptr<IDWriteTypography> typography;

@@ -74,4 +74,11 @@ template<typename T>
     return _SendTypedPacket(_pipe.get(), HostSignals::EndTask, data);
 }
 
+[[nodiscard]] NTSTATUS RemoteConsoleControl::SetWindowOwner(HWND hwnd, DWORD processId, DWORD threadId)
+{
+    // This call doesn't need to get forwarded to the root conhost. Just handle
+    // it in-proc, to set the owner of OpenConsole
+    return _control.SetWindowOwner(hwnd, processId, threadId);
+}
+
 #pragma endregion

@@ -12,9 +12,7 @@ static constexpr std::wstring_view PreviewText{ L"Windows Terminal\r\nCopyright 
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    PreviewConnection::PreviewConnection() noexcept
-    {
-    }
+    PreviewConnection::PreviewConnection() noexcept = default;
 
     void PreviewConnection::Start() noexcept
     {

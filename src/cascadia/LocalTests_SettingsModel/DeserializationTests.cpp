@@ -744,7 +744,8 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(3u, settings->AllProfiles().Size());
         for (const auto& profile : settings->AllProfiles())
         {
-            VERIFY_ARE_EQUAL(L"Campbell", profile.DefaultAppearance().ColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Campbell", profile.DefaultAppearance().DarkColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Campbell", profile.DefaultAppearance().LightColorSchemeName());
         }
     }
 
@@ -959,6 +960,10 @@ namespace SettingsModelLocalTests
                 },
                 {
                     "name": "profile3",
+                    "closeOnExit": "automatic"
+                },
+                {
+                    "name": "profile4",
                     "closeOnExit": null
                 }
             ]
@@ -968,9 +973,10 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(CloseOnExitMode::Graceful, settings->AllProfiles().GetAt(0).CloseOnExit());
         VERIFY_ARE_EQUAL(CloseOnExitMode::Always, settings->AllProfiles().GetAt(1).CloseOnExit());
         VERIFY_ARE_EQUAL(CloseOnExitMode::Never, settings->AllProfiles().GetAt(2).CloseOnExit());
+        VERIFY_ARE_EQUAL(CloseOnExitMode::Automatic, settings->AllProfiles().GetAt(3).CloseOnExit());
 
-        // Unknown modes parse as "Graceful"
-        VERIFY_ARE_EQUAL(CloseOnExitMode::Graceful, settings->AllProfiles().GetAt(3).CloseOnExit());
+        // Unknown modes parse as "Automatic"
+        VERIFY_ARE_EQUAL(CloseOnExitMode::Automatic, settings->AllProfiles().GetAt(4).CloseOnExit());
     }
 
     void DeserializationTests::TestCloseOnExitCompatibilityShim()
@@ -1524,7 +1530,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(0u, settings->Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings->AllProfiles().Size());
         // Because the "parent" command didn't have a name, it couldn't be
-        // placed into the list of commands. It and it's children are just
+        // placed into the list of commands. It and its children are just
         // ignored.
         VERIFY_ARE_EQUAL(0u, settings->ActionMap().NameMap().Size());
     }
