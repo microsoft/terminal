@@ -2046,7 +2046,7 @@ void DbcsTests::TestDbcsStdCoutScenario()
 // Read/WriteConsoleOutput allow a user to implement a restricted form of buffer "backup" and "restore".
 // But what if the saved region clips ("bisects") a wide character? This test ensures that we restore proper
 // wide characters when given an unpaired trailing/leading CHAR_INFO in the first/last column of the given region.
-// In other words, writing a trailing CHAR_INFO will also automatically write a leading CHAR_INFO in the preceeding cell.
+// In other words, writing a trailing CHAR_INFO will also automatically write a leading CHAR_INFO in the preceding cell.
 void DbcsTests::TestDbcsBackupRestore()
 {
     const auto out = GetStdHandle(STD_OUTPUT_HANDLE);

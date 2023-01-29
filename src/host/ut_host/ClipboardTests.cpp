@@ -99,7 +99,7 @@ class ClipboardTests
         // verify trailing bytes were trimmed
         // there are 2 double-byte characters in our sample string (see CommonState.hpp for sample)
         // the width is right - left
-        VERIFY_ARE_EQUAL((til::CoordType)wcslen(text[0].data()), selection[0].Right - selection[0].Left + 1);
+        VERIFY_ARE_EQUAL((til::CoordType)wcslen(text[0].data()), selection[0].right - selection[0].left + 1);
 
         // since we're not in line selection, the line should be \r\n terminated
         auto tempPtr = text[0].data();
@@ -109,7 +109,7 @@ class ClipboardTests
 
         // since we're not in line selection, spaces should be trimmed from the end
         tempPtr = text[0].data();
-        tempPtr += selection[0].Right - selection[0].Left - 2;
+        tempPtr += selection[0].right - selection[0].left - 2;
         tempPtr++;
         VERIFY_IS_NULL(wcsrchr(tempPtr, L' '));
 

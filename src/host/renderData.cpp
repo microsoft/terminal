@@ -15,7 +15,6 @@ using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Interactivity;
 using Microsoft::Console::Interactivity::ServiceLocator;
 
-#pragma region IBaseData
 // Routine Description:
 // - Retrieves the viewport that applies over the data available in the GetTextBuffer() call
 // Return Value:
@@ -98,9 +97,6 @@ void RenderData::UnlockConsole() noexcept
     ::UnlockConsole();
 }
 
-#pragma endregion
-
-#pragma region IRenderData
 // Method Description:
 // - Gets the cursor's position in the buffer, relative to the buffer origin.
 // Arguments:
@@ -265,26 +261,20 @@ bool RenderData::IsCursorDoubleWidth() const noexcept
 const bool RenderData::IsGridLineDrawingAllowed() noexcept
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    // If virtual terminal output is set, grid line drawing is a must. It is always allowed.
-    if (WI_IsFlagSet(gci.GetActiveOutputBuffer().OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+    const auto outputMode = gci.GetActiveOutputBuffer().OutputMode;
+    // If virtual terminal output is set, grid line drawing is a must. It is also enabled
+    // if someone explicitly asked for worldwide line drawing.
+    if (WI_IsAnyFlagSet(outputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING | ENABLE_LVB_GRID_WORLDWIDE))
     {
         return true;
     }
     else
     {
-        // If someone explicitly asked for worldwide line drawing, enable it.
-        if (gci.IsGridRenderingAllowedWorldwide())
-        {
-            return true;
-        }
-        else
-        {
-            // Otherwise, for compatibility reasons with legacy applications that used the additional CHAR_INFO bits by accident or for their own purposes,
-            // we must enable grid line drawing only in a DBCS output codepage. (Line drawing historically only worked in DBCS codepages.)
-            // The only known instance of this is Image for Windows by TeraByte, Inc. (TeraByte Unlimited) which used the bits accidentally and for no purpose
-            //   (according to the app developer) in conjunction with the Borland Turbo C cgscrn library.
-            return !!IsAvailableEastAsianCodePage(gci.OutputCP);
-        }
+        // Otherwise, for compatibility reasons with legacy applications that used the additional CHAR_INFO bits by accident or for their own purposes,
+        // we must enable grid line drawing only in a DBCS output codepage. (Line drawing historically only worked in DBCS codepages.)
+        // The only known instance of this is Image for Windows by TeraByte, Inc. (TeraByte Unlimited) which used the bits accidentally and for no purpose
+        //   (according to the app developer) in conjunction with the Borland Turbo C cgscrn library.
+        return !!IsAvailableEastAsianCodePage(gci.OutputCP);
     }
 }
 
@@ -327,9 +317,7 @@ const std::vector<size_t> RenderData::GetPatternId(const til::point /*location*/
 {
     return {};
 }
-#pragma endregion
 
-#pragma region IUiaData
 // Routine Description:
 // - Converts a text attribute into the RGB values that should be presented, applying
 //   relevant table translation information and preferences.
@@ -425,8 +413,8 @@ const til::point RenderData::GetSelectionEnd() const noexcept
     // Then choose the opposite corner.
     const auto anchor = Selection::Instance().GetSelectionAnchor();
 
-    const auto x_pos = (selectionRect.Left == anchor.X) ? selectionRect.Right : selectionRect.Left;
-    const auto y_pos = (selectionRect.Top == anchor.Y) ? selectionRect.Bottom : selectionRect.Top;
+    const auto x_pos = (selectionRect.left == anchor.x) ? selectionRect.right : selectionRect.left;
+    const auto y_pos = (selectionRect.top == anchor.y) ? selectionRect.bottom : selectionRect.top;
 
     return { x_pos, y_pos };
 }
@@ -443,4 +431,3 @@ void RenderData::ColorSelection(const til::point coordSelectionStart, const til:
 {
     Selection::Instance().ColorSelection(coordSelectionStart, coordSelectionEnd, attr);
 }
-#pragma endregion
