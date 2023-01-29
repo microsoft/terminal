@@ -327,23 +327,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Method Description:
     // - Setup our event handlers for this connection. If we've currently got a
     //   connection, then this'll revoke the existing connection's handlers.
-    void ControlCore::_setConnection(TerminalConnection::ITerminalConnection connection)
+    void ControlCore::_setConnection(const TerminalConnection::ITerminalConnection& connection)
     {
         if (_connection)
         {
-            _connection.TerminalOutput(_connectionOutputEventToken);
+            _connectionOutputEventRevoker.revoke();
         }
 
         // Subscribe to the connection's disconnected event and call our connection closed handlers.
-        auto r = connection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
+        _connectionStateChangedRevoker = connection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
             _ConnectionStateChangedHandlers(*this, nullptr);
         });
-        _connectionStateChangedRevoker.swap(r);
 
         _connection = connection;
 
         // This event is explicitly revoked in the destructor: does not need weak_ref
-        _connectionOutputEventToken = _connection.TerminalOutput({ this, &ControlCore::_connectionOutputHandler });
+        _connectionOutputEventRevoker = _connection.TerminalOutput(winrt::auto_revoke, { this, &ControlCore::_connectionOutputHandler });
     }
 
     // Method Description:
@@ -1512,7 +1511,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _midiAudio.BeginSkip();
 
             // Stop accepting new output and state changes before we disconnect everything.
-            _connection.TerminalOutput(_connectionOutputEventToken);
+            _connectionOutputEventRevoker.revoke();
             _connectionStateChangedRevoker.revoke();
             _connection.Close();
         }
@@ -1783,7 +1782,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // switched to an unfocused appearance.
         //
         // IF WE DON'T HAVE AN UNFOCUSED APPEARANCE: then just ask the Terminal
-        // for it's current color table. That way, we can restore those colors
+        // for its current color table. That way, we can restore those colors
         // back.
         if (HasUnfocusedAppearance())
         {
@@ -2162,12 +2161,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Get our current size in rows/cols, and hook them up to
             // this connection too.
             {
-                auto cx = gsl::narrow_cast<til::CoordType>(_panelWidth * _compositionScale);
-                auto cy = gsl::narrow_cast<til::CoordType>(_panelHeight * _compositionScale);
-                cx = std::max(cx, _actualFont.GetSize().width);
-                cy = std::max(cy, _actualFont.GetSize().height);
-                const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, { cx, cy });
-                const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
+                const auto vp = _terminal->GetViewport();
                 const auto width = vp.Width();
                 const auto height = vp.Height();
 

@@ -6,15 +6,7 @@
 #include "ConptyConnection.g.h"
 #include "ConnectionStateHolder.h"
 
-#include <conpty-static.h>
-
 #include "ITerminalHandoff.h"
-
-namespace wil
-{
-    // These belong in WIL upstream, so when we reingest the change that has them we'll get rid of ours.
-    using unique_static_pseudoconsole_handle = wil::unique_any<HPCON, decltype(&::ConptyClosePseudoConsole), ::ConptyClosePseudoConsoleNoWait>;
-}
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
@@ -61,17 +53,18 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                                                          uint32_t rows,
                                                                          uint32_t columns,
                                                                          const winrt::guid& guid);
-        Windows::Foundation::Collections::ValueSet ToSettings();
+        Windows::Foundation::Collections::ValueSet GetDeftermSettings();
 
         WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
 
     private:
+        static void closePseudoConsoleAsync(HPCON hPC) noexcept;
         static HRESULT NewHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE ref, HANDLE server, HANDLE client, TERMINAL_STARTUP_INFO startupInfo) noexcept;
         static winrt::hstring _commandlineFromProcess(HANDLE process);
 
         HRESULT _LaunchAttachedClient() noexcept;
         void _indicateExitWithStatus(unsigned int status) noexcept;
-        void _ClientTerminated() noexcept;
+        void _LastConPtyClientDisconnected() noexcept;
 
         til::CoordType _rows{};
         til::CoordType _cols{};
@@ -91,8 +84,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         wil::unique_hfile _outPipe; // The pipe for reading output from
         wil::unique_handle _hOutputThread;
         wil::unique_process_information _piClient;
-        wil::unique_static_pseudoconsole_handle _hPC;
-        wil::unique_threadpool_wait _clientExitWait;
+        wil::unique_any<HPCON, decltype(closePseudoConsoleAsync), closePseudoConsoleAsync> _hPC;
 
         til::u8state _u8State{};
         std::wstring _u16Str{};

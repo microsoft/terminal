@@ -458,6 +458,7 @@ DECSLRM
 DECSMKR
 DECSR
 DECSTBM
+DECSTGLT
 DECSTR
 DECSWL
 DECTCEM
@@ -816,6 +817,7 @@ HORZ
 hostable
 hostlib
 HPA
+hpcon
 HPCON
 hpj
 HPR
@@ -1823,6 +1825,7 @@ SYSCOMMAND
 SYSDEADCHAR
 SYSKEYDOWN
 SYSKEYUP
+SYSLIB
 SYSLINK
 SYSMENU
 sysparams
@@ -2113,7 +2116,6 @@ webpage
 websites
 websockets
 wekyb
-WEOF
 wex
 wextest
 wextestclass

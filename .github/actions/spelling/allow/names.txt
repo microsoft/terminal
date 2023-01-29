@@ -23,6 +23,7 @@ Griese
 Hernan
 Howett
 Illhardt
+Imms
 iquilezles
 italo
 jantari
@@ -34,6 +35,7 @@ KODELIFE
 Kodelife
 Kourosh
 kowalczyk
+leonardder
 leonmsft
 Lepilleur
 lhecker
@@ -88,6 +90,7 @@ zadjii
 Zamor
 Zamora
 zamora
+zljubisic
 Zoey
 zorio
 Zverovich

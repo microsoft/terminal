@@ -429,7 +429,7 @@ void Telemetry::WriteFinalTraceLog()
                                     TraceLoggingValue(gci.GetScreenBufferSize().width, "ScreenBufferSizeX"),
                                     TraceLoggingValue(gci.GetScreenBufferSize().height, "ScreenBufferSizeY"),
                                     TraceLoggingValue(gci.GetStartupFlags(), "StartupFlags"),
-                                    TraceLoggingValue(gci.GetVirtTermLevel(), "VirtualTerminalLevel"),
+                                    TraceLoggingValue(gci.GetDefaultVirtTermLevel(), "VirtualTerminalLevel"),
                                     TraceLoggingValue(gci.GetWindowSize().width, "WindowSizeX"),
                                     TraceLoggingValue(gci.GetWindowSize().height, "WindowSizeY"),
                                     TraceLoggingValue(gci.GetWindowOrigin().width, "WindowOriginX"),

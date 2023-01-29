@@ -32,6 +32,6 @@ namespace Microsoft.Terminal.TerminalConnection
                                                                       UInt32 rows,
                                                                       UInt32 columns,
                                                                       Guid guid);
-        Windows.Foundation.Collections.ValueSet ToSettings();
+        Windows.Foundation.Collections.ValueSet GetDeftermSettings();
     };
 }

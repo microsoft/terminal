@@ -102,12 +102,16 @@ static void _CopyRectangle(SCREEN_INFORMATION& screenInfo,
         auto sourcePos = source.GetWalkOrigin(walkDirection);
         auto targetPos = target.GetWalkOrigin(walkDirection);
 
+        // Note that we read two cells from the source before we start writing
+        // to the target, so a two-cell DBCS character can't accidentally delete
+        // itself when moving one cell horizontally.
+        auto next = OutputCell(*screenInfo.GetCellDataAt(sourcePos));
         do
         {
-            const auto data = OutputCell(*screenInfo.GetCellDataAt(sourcePos));
-            screenInfo.Write(OutputCellIterator({ &data, 1 }), targetPos);
-
+            const auto current = next;
             source.WalkInBounds(sourcePos, walkDirection);
+            next = OutputCell(*screenInfo.GetCellDataAt(sourcePos));
+            screenInfo.GetTextBuffer().WriteLine(OutputCellIterator({ &current, 1 }), targetPos);
         } while (target.WalkInBounds(targetPos, walkDirection));
     }
 }
@@ -499,9 +503,6 @@ void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo)
 // TODO: MSFT 9450717 This should join the ProcessList class when CtrlEvents become moved into the server. https://osgvsowi/9450717
 void CloseConsoleProcessState()
 {
-    LockConsole();
-    const auto unlock = wil::scope_exit([] { UnlockConsole(); });
-
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     // If there are no connected processes, sending control events is pointless as there's no one do send them to. In

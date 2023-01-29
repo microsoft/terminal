@@ -1537,7 +1537,6 @@ void TextBufferTests::TestBackspaceStringsAPI()
     const auto& tbi = si.GetTextBuffer();
     const auto& cursor = tbi.GetCursor();
 
-    gci.SetVirtTermLevel(0);
     WI_ClearFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     const auto x0 = cursor.GetPosition().x;

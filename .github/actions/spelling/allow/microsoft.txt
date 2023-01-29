@@ -12,6 +12,7 @@ ATL
 backplating
 bitmaps
 BOMs
+combase
 CPLs
 cpptools
 cppvsdbg
@@ -56,6 +57,7 @@ QWORD
 regedit
 robocopy
 SACLs
+segoe
 sdkddkver
 Shobjidl
 Skype
