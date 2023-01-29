@@ -335,10 +335,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // Subscribe to the connection's disconnected event and call our connection closed handlers.
-        auto r = connection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
+        _connectionStateChangedRevoker = connection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
             _ConnectionStateChangedHandlers(*this, nullptr);
         });
-        _connectionStateChangedRevoker.swap(r);
 
         _connection = connection;
 
