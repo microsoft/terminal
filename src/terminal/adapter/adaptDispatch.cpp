@@ -1592,11 +1592,11 @@ void AdaptDispatch::_CursorPositionReport(const bool extendedReport)
     cursorPosition.x++;
     cursorPosition.y++;
 
-    // If the origin mode is relative, line numbers start at top margin of the scrolling region.
+    // If the origin mode is set, the cursor is relative to the margin origin.
     if (_modes.test(Mode::Origin))
     {
-        const auto topMargin = _GetVerticalMargins(viewport, false).first;
-        cursorPosition.y -= topMargin;
+        cursorPosition.x -= _GetHorizontalMargins(textBuffer.GetSize().Width()).first;
+        cursorPosition.y -= _GetVerticalMargins(viewport, false).first;
     }
 
     // Now send it back into the input channel of the console.
@@ -4103,9 +4103,10 @@ void AdaptDispatch::_ReportCursorInformation()
     cursorPosition.x++;
     cursorPosition.y++;
 
-    // If the origin mode is relative, line numbers start at top of the scrolling region.
+    // If the origin mode is set, the cursor is relative to the margin origin.
     if (_modes.test(Mode::Origin))
     {
+        cursorPosition.x -= _GetHorizontalMargins(textBuffer.GetSize().Width()).first;
         cursorPosition.y -= _GetVerticalMargins(viewport, false).first;
     }
 
