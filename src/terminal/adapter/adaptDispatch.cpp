@@ -1052,15 +1052,17 @@ til::rect AdaptDispatch::_CalculateRectArea(const VTInt top, const VTInt left, c
     // We start by calculating the margin offsets and maximum dimensions.
     // If the origin mode isn't set, we use the viewport extent.
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, false);
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(bufferSize.width);
     const auto yOffset = _modes.test(Mode::Origin) ? topMargin : 0;
     const auto yMaximum = _modes.test(Mode::Origin) ? bottomMargin + 1 : viewport.height();
-    const auto xMaximum = bufferSize.width;
+    const auto xOffset = _modes.test(Mode::Origin) ? leftMargin : 0;
+    const auto xMaximum = _modes.test(Mode::Origin) ? rightMargin + 1 : bufferSize.width;
 
     auto fillRect = til::inclusive_rect{};
-    fillRect.left = left;
+    fillRect.left = left + xOffset;
     fillRect.top = top + yOffset;
     // Right and bottom default to the maximum dimensions.
-    fillRect.right = (right ? right : xMaximum);
+    fillRect.right = (right ? right + xOffset : xMaximum);
     fillRect.bottom = (bottom ? bottom + yOffset : yMaximum);
 
     // We also clamp everything to the maximum dimensions, and subtract 1
