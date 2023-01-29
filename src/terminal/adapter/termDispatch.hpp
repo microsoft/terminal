@@ -82,8 +82,8 @@ public:
     bool PushGraphicsRendition(const VTParameters /*options*/) override { return false; } // XTPUSHSGR
     bool PopGraphicsRendition() override { return false; } // XTPOPSGR
 
-    bool SetMode(const DispatchTypes::ModeParams /*param*/) override { return false; } // DECSET
-    bool ResetMode(const DispatchTypes::ModeParams /*param*/) override { return false; } // DECRST
+    bool SetMode(const DispatchTypes::ModeParams /*param*/) override { return false; } // SM, DECSET
+    bool ResetMode(const DispatchTypes::ModeParams /*param*/) override { return false; } // RM, DECRST
     bool RequestMode(const DispatchTypes::ModeParams /*param*/) override { return false; } // DECRQM
 
     bool DeviceStatusReport(const DispatchTypes::StatusType /*statusType*/, const VTParameter /*id*/) override { return false; } // DSR

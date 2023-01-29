@@ -175,6 +175,7 @@ try
     {
         _newOutput.append(newText);
         _newOutput.push_back(L'\n');
+        _textBufferChanged = true;
     }
     return S_OK;
 }

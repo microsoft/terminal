@@ -100,6 +100,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         winrt::Windows::UI::Xaml::ElementTheme RequestedTheme() const noexcept;
 
+        static bool IsSystemInDarkTheme();
+
         WINRT_PROPERTY(winrt::hstring, Name);
 
         MTSM_THEME_SETTINGS(THEME_SETTINGS_INITIALIZE)
