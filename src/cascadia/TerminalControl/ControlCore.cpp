@@ -1683,7 +1683,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             for (auto&& [start, end] : *(_searchState->matches))
             {
-                results.Append(start.Y);
+                results.Append(start.y);
             }
         }
         return results;
