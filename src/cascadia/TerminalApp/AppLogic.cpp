@@ -6,7 +6,6 @@
 #include "../inc/WindowingBehavior.h"
 #include "AppLogic.g.cpp"
 #include "FindTargetWindowResult.g.cpp"
-#include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 #include <LibraryResources.h>
 #include <WtExeUtils.h>
@@ -674,4 +673,8 @@ namespace winrt::TerminalApp::implementation
         return _settings.GlobalSettings().CurrentTheme();
     }
 
+    TerminalApp::TerminalWindow AppLogic::CreateNewWindow()
+    {
+        return *winrt::make_self<implementation::TerminalWindow>(_settings);
+    }
 }

@@ -56,7 +56,6 @@ namespace TerminalApp
 
         void Quit();
 
-
         Windows.UI.Xaml.UIElement GetRoot();
 
         String Title { get; };

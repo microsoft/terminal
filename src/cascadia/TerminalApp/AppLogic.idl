@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+import "TerminalWindow.idl";
 
 namespace TerminalApp
 {
@@ -33,6 +34,8 @@ namespace TerminalApp
         Microsoft.Terminal.Settings.Model.Theme Theme { get; };
 
         FindTargetWindowResult FindTargetWindow(String[] args);
+
+        TerminalWindow CreateNewWindow();
 
         Windows.Foundation.Collections.IMapView<Microsoft.Terminal.Control.KeyChord, Microsoft.Terminal.Settings.Model.Command> GlobalHotkeys();
 

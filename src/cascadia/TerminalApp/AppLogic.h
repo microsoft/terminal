@@ -9,6 +9,7 @@
 #include "Jumplist.h"
 #include "LanguageProfileNotifier.h"
 #include "AppCommandlineArgs.h"
+#include "TerminalWindow.h"
 
 #include <inc/cppwinrt_utils.h>
 #include <ThrottledFunc.h>
@@ -62,6 +63,8 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IMapView<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::Command> GlobalHotkeys();
 
         Microsoft::Terminal::Settings::Model::Theme Theme();
+
+        TerminalApp::TerminalWindow CreateNewWindow();
 
         TYPED_EVENT(SettingsChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
 
