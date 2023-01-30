@@ -70,6 +70,23 @@ IDI_APPICON_HC_WHITE    ICON                    "..\\..\\..\\res\\terminal\\imag
 
 /////////////////////////////////////////////////////////////////////////////
 //
+// Dialog
+//
+
+IDD_ERRDIALOG DIALOGEX 0, 0, 310, 177
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Dialog"
+FONT 10, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,253,156,50,14
+    ICON            32513,IDC_STATIC,7,7,20,20
+    LTEXT           "Windows Terminal has encountered an error and must exit.",IDC_STATIC,31,7,272,32
+    EDITTEXT        IDC_ERRVALUE,7,31,296,121,ES_MULTILINE | ES_READONLY
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
 // String Table
 //
 

@@ -68,6 +68,7 @@
     <ClCompile Include="NotificationIcon.cpp" />
     <ClCompile Include="VirtualDesktopUtils.cpp" />
     <ClCompile Include="icon.cpp" />
+    <ClCompile Include="ErrorDialog.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="WindowsTerminal.rc" />

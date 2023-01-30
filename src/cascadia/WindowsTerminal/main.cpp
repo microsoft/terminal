@@ -6,6 +6,8 @@
 #include "resource.h"
 #include "../types/inc/User32Utils.hpp"
 #include <WilErrorReporting.h>
+#include <winrt/Windows.ApplicationModel.Core.h>
+#include "ErrorDialog.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI;
@@ -127,24 +129,64 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     // doing that, we can safely init as STA before any WinRT dispatches.
     winrt::init_apartment(winrt::apartment_type::single_threaded);
 
-    // Create the AppHost object, which will create both the window and the
-    // Terminal App. This MUST BE constructed before the Xaml manager as TermApp
-    // provides an implementation of Windows.UI.Xaml.Application.
-    AppHost host;
-    if (!host.HasWindow())
+    auto unhandledErrorRevoker{
+        winrt::Windows::ApplicationModel::Core::CoreApplication::UnhandledErrorDetected(winrt::auto_revoke, [](auto&&...) {
+            winrt::com_ptr<IRestrictedErrorInfo> restrictedErrorInfo;
+            if (SUCCEEDED(GetRestrictedErrorInfo(restrictedErrorInfo.put())) && restrictedErrorInfo)
+            {
+                wil::unique_bstr description, restrictedDescription, unused;
+                HRESULT hr;
+                if (SUCCEEDED(restrictedErrorInfo->GetErrorDetails(description.put(), &hr, restrictedDescription.put(), unused.put())))
+                {
+                    DisplayErrorDialogBlockingAndReport(hr, restrictedDescription.get());
+                }
+            }
+        })
+    };
+
+    std::optional<AppHost> possiblyAppHost{ std::nullopt };
+    try
     {
-        // If we were told to not have a window, exit early. Make sure to use
-        // ExitProcess to die here. If you try just `return 0`, then
-        // the XAML app host will crash during teardown. ExitProcess avoids
-        // that.
-        ExitProcess(0);
+        // Create the AppHost object, which will create both the window and the
+        // Terminal App. This MUST BE constructed before the Xaml manager as TermApp
+        // provides an implementation of Windows.UI.Xaml.Application.
+        possiblyAppHost.emplace();
+        if (!possiblyAppHost->HasWindow())
+        {
+            // If we were told to not have a window, exit early. Make sure to use
+            // ExitProcess to die here. If you try just `return 0`, then
+            // the XAML app host will crash during teardown. ExitProcess avoids
+            // that.
+            ExitProcess(0);
+        }
+
+        // Initialize the xaml content. This must be called AFTER the
+        // WindowsXamlManager is initialized.
+        possiblyAppHost->Initialize();
+    }
+    catch (const std::exception& e)
+    {
+        const auto wideErrorMessage{ til::u8u16(e.what()) };
+        DisplayErrorDialogBlockingAndReport(E_FAIL, wideErrorMessage);
+    }
+    catch (const winrt::hresult_error& e)
+    {
+        DisplayErrorDialogBlockingAndReport(e.code(), e.message());
+    }
+    catch (...)
+    {
+        DisplayErrorDialogBlockingAndReport(E_FAIL, L"LOL");
     }
 
-    // Initialize the xaml content. This must be called AFTER the
-    // WindowsXamlManager is initialized.
-    host.Initialize();
+    AppHost& host{ *possiblyAppHost };
 
     MSG message;
+
+    if (!Feature_ReportErrorsThroughoutAppLifetime::IsEnabled())
+    {
+        // Disengage error reporting after XAML starts up.
+        unhandledErrorRevoker.revoke();
+    }
 
     while (GetMessage(&message, nullptr, 0, 0))
     {

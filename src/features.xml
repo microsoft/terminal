@@ -145,4 +145,14 @@
         <stage>AlwaysDisabled</stage>
     </feature>
 
+    <feature>
+        <name>Feature_ReportErrorsThroughoutAppLifetime</name>
+        <description>Keep the error handler enabled throughout the lifetime of the application rather than only during startup</description>
+        <stage>AlwaysEnabled</stage>
+        <alwaysDisabledBrandingTokens>
+            <!-- For now, let's just let Release crash. Seeing a bunch of error dialogs might, puzzlingly, make us seem *less* reliable -->
+            <brandingToken>Release</brandingToken>
+        </alwaysDisabledBrandingTokens>
+    </feature>
+
 </featureStaging>

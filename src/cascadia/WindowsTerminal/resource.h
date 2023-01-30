@@ -15,6 +15,10 @@
 #define IDS_ARM_ARCHITECTURE 114
 #define IDS_UNKNOWN_ARCHITECTURE 115
 
+#define IDD_ERRDIALOG                   129
+#define IDC_ERRVALUE                    1001
+#define IDC_STATIC                      -1
+
 // Next default values for new objects
 //
 #ifdef APSTUDIO_INVOKED
