@@ -230,7 +230,7 @@ void Tracing::s_TraceApi(const CONSOLE_MODE_MSG* const a, const std::wstring_vie
         g_hConhostV2EventTraceProvider,
         "API_GetConsoleMode",
         TraceLoggingHexUInt32(a->Mode, "Mode"),
-        TraceLoggingCountedWideString(handleType.data(), gsl::narrow_cast<ULONG>(handleType.size()), "Handle type"),
+        TraceLoggingCountedWideString(handleType.data(), til::safe_cast_nothrow<ULONG>(handleType.size()), "Handle type"),
         TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
         TraceLoggingKeyword(TIL_KEYWORD_TRACE),
         TraceLoggingKeyword(TraceKeywords::API));

@@ -294,8 +294,8 @@ class Utf8ToWideCharParserTests
 
         // clang-format on
 
-        const auto count = gsl::narrow_cast<unsigned int>(ARRAYSIZE(data));
-        const auto wideCount = gsl::narrow_cast<unsigned int>(ARRAYSIZE(wideData));
+        const auto count = til::safe_cast_nothrow<unsigned int>(ARRAYSIZE(data));
+        const auto wideCount = til::safe_cast_nothrow<unsigned int>(ARRAYSIZE(wideData));
         unsigned int consumed = 0;
         unsigned int generated = 0;
         unique_ptr<wchar_t[]> output{ nullptr };

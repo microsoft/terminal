@@ -80,7 +80,7 @@ DWORD UnicodeRasterFontCellMungeOnRead(const std::span<CHAR_INFO> buffer)
     }
 
     // Zero out the remaining part of the destination buffer that we didn't use.
-    const auto cchDstToClear = gsl::narrow<DWORD>(buffer.size()) - iDst;
+    const auto cchDstToClear = til::safe_cast<DWORD>(buffer.size()) - iDst;
 
     if (cchDstToClear > 0)
     {

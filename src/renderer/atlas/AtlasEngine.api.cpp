@@ -24,7 +24,7 @@ using namespace Microsoft::Console::Render;
 
 // Like gsl::narrow but returns a HRESULT.
 #pragma warning(push)
-#pragma warning(disable : 26472) // Don't use a static_cast for arithmetic conversions. Use brace initialization, gsl::narrow_cast or gsl::narrow (type.1).
+#pragma warning(disable : 26472) // Don't use a static_cast for arithmetic conversions. Use brace initialization, til::safe_cast_nothrow or gsl::narrow (type.1).
 template<typename T, typename U>
 constexpr HRESULT api_narrow(U val, T& out) noexcept
 {
@@ -46,8 +46,8 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
     //assert(psrRegion->top < psrRegion->bottom && psrRegion->top >= 0 && psrRegion->bottom <= _api.cellCount.y);
 
     // BeginPaint() protects against invalid out of bounds numbers.
-    _api.invalidatedRows.x = std::min(_api.invalidatedRows.x, gsl::narrow_cast<u16>(psrRegion->top));
-    _api.invalidatedRows.y = std::max(_api.invalidatedRows.y, gsl::narrow_cast<u16>(psrRegion->bottom));
+    _api.invalidatedRows.x = std::min(_api.invalidatedRows.x, til::safe_cast_nothrow<u16>(psrRegion->top));
+    _api.invalidatedRows.y = std::max(_api.invalidatedRows.y, til::safe_cast_nothrow<u16>(psrRegion->bottom));
     return S_OK;
 }
 
@@ -56,10 +56,10 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
     //assert(psrRegion->left <= psrRegion->right && psrRegion->left >= 0 && psrRegion->right <= _api.cellCount.x);
     //assert(psrRegion->top <= psrRegion->bottom && psrRegion->top >= 0 && psrRegion->bottom <= _api.cellCount.y);
 
-    const auto left = gsl::narrow_cast<u16>(psrRegion->left);
-    const auto top = gsl::narrow_cast<u16>(psrRegion->top);
-    const auto right = gsl::narrow_cast<u16>(psrRegion->right);
-    const auto bottom = gsl::narrow_cast<u16>(psrRegion->bottom);
+    const auto left = til::safe_cast_nothrow<u16>(psrRegion->left);
+    const auto top = til::safe_cast_nothrow<u16>(psrRegion->top);
+    const auto right = til::safe_cast_nothrow<u16>(psrRegion->right);
+    const auto bottom = til::safe_cast_nothrow<u16>(psrRegion->bottom);
 
     // BeginPaint() protects against invalid out of bounds numbers.
     _api.invalidatedCursorArea.left = std::min(_api.invalidatedCursorArea.left, left);
@@ -88,8 +88,8 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
         // BeginPaint() protects against invalid out of bounds numbers.
         // TODO: rect can contain invalid out of bounds coordinates when the selection is being
         // dragged outside of the viewport (and the window begins scrolling automatically).
-        _api.invalidatedRows.x = gsl::narrow_cast<u16>(std::min<int>(_api.invalidatedRows.x, std::max<int>(0, rect.top)));
-        _api.invalidatedRows.y = gsl::narrow_cast<u16>(std::max<int>(_api.invalidatedRows.y, std::max<int>(0, rect.bottom)));
+        _api.invalidatedRows.x = til::safe_cast_nothrow<u16>(std::min<int>(_api.invalidatedRows.x, std::max<int>(0, rect.top)));
+        _api.invalidatedRows.y = til::safe_cast_nothrow<u16>(std::max<int>(_api.invalidatedRows.y, std::max<int>(0, rect.bottom)));
     }
     return S_OK;
 }
@@ -102,28 +102,28 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
 
     if (const auto delta = pcoordDelta->x)
     {
-        _api.invalidatedCursorArea.left = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedCursorArea.left + delta, u16min, u16max));
-        _api.invalidatedCursorArea.right = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedCursorArea.right + delta, u16min, u16max));
+        _api.invalidatedCursorArea.left = til::safe_cast_nothrow<u16>(clamp<int>(_api.invalidatedCursorArea.left + delta, u16min, u16max));
+        _api.invalidatedCursorArea.right = til::safe_cast_nothrow<u16>(clamp<int>(_api.invalidatedCursorArea.right + delta, u16min, u16max));
 
         _api.invalidatedRows = invalidatedRowsAll;
     }
 
     if (const auto delta = pcoordDelta->y)
     {
-        _api.scrollOffset = gsl::narrow_cast<i16>(clamp<int>(_api.scrollOffset + delta, i16min, i16max));
+        _api.scrollOffset = til::safe_cast_nothrow<i16>(clamp<int>(_api.scrollOffset + delta, i16min, i16max));
 
-        _api.invalidatedCursorArea.top = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedCursorArea.top + delta, u16min, u16max));
-        _api.invalidatedCursorArea.bottom = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedCursorArea.bottom + delta, u16min, u16max));
+        _api.invalidatedCursorArea.top = til::safe_cast_nothrow<u16>(clamp<int>(_api.invalidatedCursorArea.top + delta, u16min, u16max));
+        _api.invalidatedCursorArea.bottom = til::safe_cast_nothrow<u16>(clamp<int>(_api.invalidatedCursorArea.bottom + delta, u16min, u16max));
 
         if (delta < 0)
         {
-            _api.invalidatedRows.x = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedRows.x + delta, u16min, u16max));
+            _api.invalidatedRows.x = til::safe_cast_nothrow<u16>(clamp<int>(_api.invalidatedRows.x + delta, u16min, u16max));
             _api.invalidatedRows.y = _api.cellCount.y;
         }
         else
         {
             _api.invalidatedRows.x = 0;
-            _api.invalidatedRows.y = gsl::narrow_cast<u16>(clamp<int>(_api.invalidatedRows.y + delta, u16min, u16max));
+            _api.invalidatedRows.y = til::safe_cast_nothrow<u16>(clamp<int>(_api.invalidatedRows.y + delta, u16min, u16max));
         }
     }
 
@@ -181,8 +181,8 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
 [[nodiscard]] HRESULT AtlasEngine::UpdateViewport(const til::inclusive_rect& srNewViewport) noexcept
 {
     const u16x2 cellCount{
-        gsl::narrow_cast<u16>(std::max(1, srNewViewport.right - srNewViewport.left + 1)),
-        gsl::narrow_cast<u16>(std::max(1, srNewViewport.bottom - srNewViewport.top + 1)),
+        til::safe_cast_nothrow<u16>(std::max(1, srNewViewport.right - srNewViewport.left + 1)),
+        til::safe_cast_nothrow<u16>(std::max(1, srNewViewport.bottom - srNewViewport.top + 1)),
     };
     if (_api.cellCount != cellCount)
     {
@@ -273,7 +273,7 @@ CATCH_RETURN()
     RETURN_HR_IF_NULL(E_INVALIDARG, pResult);
 
     wil::com_ptr<IDWriteTextLayout> textLayout;
-    RETURN_IF_FAILED(_sr.dwriteFactory->CreateTextLayout(glyph.data(), gsl::narrow_cast<uint32_t>(glyph.size()), _getTextFormat(false, false), FLT_MAX, FLT_MAX, textLayout.addressof()));
+    RETURN_IF_FAILED(_sr.dwriteFactory->CreateTextLayout(glyph.data(), til::safe_cast_nothrow<uint32_t>(glyph.size()), _getTextFormat(false, false), FLT_MAX, FLT_MAX, textLayout.addressof()));
 
     DWRITE_TEXT_METRICS metrics;
     RETURN_IF_FAILED(textLayout->GetMetrics(&metrics));
@@ -327,7 +327,7 @@ HRESULT AtlasEngine::Enable() noexcept
 
 void AtlasEngine::SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept
 {
-    const auto mode = gsl::narrow_cast<u8>(antialiasingMode);
+    const auto mode = til::safe_cast_nothrow<u8>(antialiasingMode);
     if (_api.antialiasingMode != mode)
     {
         _api.antialiasingMode = mode;
@@ -387,7 +387,7 @@ void AtlasEngine::SetRetroTerminalEffect(bool enable) noexcept
 
 void AtlasEngine::SetSelectionBackground(const COLORREF color, const float alpha) noexcept
 {
-    const u32 selectionColor = (color & 0xffffff) | gsl::narrow_cast<u32>(std::lroundf(alpha * 255.0f)) << 24;
+    const u32 selectionColor = (color & 0xffffff) | til::safe_cast_nothrow<u32>(std::lroundf(alpha * 255.0f)) << 24;
     if (_api.selectionColor != selectionColor)
     {
         _api.selectionColor = selectionColor;
@@ -669,8 +669,8 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     // Our cells can't overlap each other so we additionally clamp the bottom line to be inside the cell boundaries.
     doubleUnderlinePosBottom = std::min(doubleUnderlinePosBottom, lineHeight - thinLineWidth);
 
-    const auto cellWidth = gsl::narrow<u16>(std::lroundf(advanceWidth));
-    const auto cellHeight = gsl::narrow<u16>(lineHeight);
+    const auto cellWidth = til::safe_cast<u16>(std::lroundf(advanceWidth));
+    const auto cellHeight = til::safe_cast<u16>(lineHeight);
 
     {
         til::size coordSize;
@@ -682,7 +682,7 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
             // The coordSizeUnscaled parameter to SetFromEngine is used for API functions like GetConsoleFontSize.
             // Since clients expect that settings the font height to Y yields back a font height of Y,
             // we're scaling the X relative/proportional to the actual cellWidth/cellHeight ratio.
-            requestedSize.width = gsl::narrow_cast<til::CoordType>(std::lroundf(fontSize / cellHeight * cellWidth));
+            requestedSize.width = til::safe_cast_nothrow<til::CoordType>(std::lroundf(fontSize / cellHeight * cellWidth));
         }
 
         fontInfo.SetFromEngine(requestedFaceName, requestedFamily, requestedWeight, false, coordSize, requestedSize);
@@ -691,14 +691,14 @@ void AtlasEngine::_resolveFontMetrics(const wchar_t* requestedFaceName, const Fo
     if (fontMetrics)
     {
         std::wstring fontName{ requestedFaceName };
-        const auto fontWeightU16 = gsl::narrow_cast<u16>(requestedWeight);
-        const auto underlinePosU16 = gsl::narrow_cast<u16>(underlinePos);
-        const auto underlineWidthU16 = gsl::narrow_cast<u16>(underlineWidth);
-        const auto strikethroughPosU16 = gsl::narrow_cast<u16>(strikethroughPos);
-        const auto strikethroughWidthU16 = gsl::narrow_cast<u16>(strikethroughWidth);
-        const auto doubleUnderlinePosTopU16 = gsl::narrow_cast<u16>(doubleUnderlinePosTop);
-        const auto doubleUnderlinePosBottomU16 = gsl::narrow_cast<u16>(doubleUnderlinePosBottom);
-        const auto thinLineWidthU16 = gsl::narrow_cast<u16>(thinLineWidth);
+        const auto fontWeightU16 = til::safe_cast<u16>(requestedWeight);
+        const auto underlinePosU16 = til::safe_cast<u16>(underlinePos);
+        const auto underlineWidthU16 = til::safe_cast<u16>(underlineWidth);
+        const auto strikethroughPosU16 = til::safe_cast<u16>(strikethroughPos);
+        const auto strikethroughWidthU16 = til::safe_cast<u16>(strikethroughWidth);
+        const auto doubleUnderlinePosTopU16 = til::safe_cast<u16>(doubleUnderlinePosTop);
+        const auto doubleUnderlinePosBottomU16 = til::safe_cast<u16>(doubleUnderlinePosBottom);
+        const auto thinLineWidthU16 = til::safe_cast<u16>(thinLineWidth);
 
         // NOTE: From this point onward no early returns or throwing code should exist,
         // as we might cause _api to be in an inconsistent state otherwise.

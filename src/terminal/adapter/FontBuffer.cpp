@@ -219,7 +219,7 @@ bool FontBuffer::FinalizeSixelData()
 
 std::span<const uint16_t> FontBuffer::GetBitPattern() const noexcept
 {
-    return { _buffer.data(), gsl::narrow_cast<size_t>(MAX_CHARS * _fullHeight) };
+    return { _buffer.data(), til::safe_cast_nothrow<size_t>(MAX_CHARS * _fullHeight) };
 }
 
 til::size FontBuffer::GetCellSize() const noexcept
@@ -229,7 +229,7 @@ til::size FontBuffer::GetCellSize() const noexcept
 
 size_t FontBuffer::GetTextCenteringHint() const noexcept
 {
-    return gsl::narrow_cast<size_t>(_textCenteringHint);
+    return til::safe_cast_nothrow<size_t>(_textCenteringHint);
 }
 
 VTID FontBuffer::GetDesignation() const noexcept
@@ -297,7 +297,7 @@ void FontBuffer::_prepareCharacterBuffer()
 void FontBuffer::_prepareNextCharacter()
 {
     _lastChar = _currentChar;
-    _currentCharBuffer = std::next(_buffer.begin(), gsl::narrow_cast<size_t>(_currentChar * _fullHeight));
+    _currentCharBuffer = std::next(_buffer.begin(), til::safe_cast_nothrow<size_t>(_currentChar * _fullHeight));
     _sixelColumn = 0;
     _sixelRow = 0;
 
@@ -499,7 +499,7 @@ void FontBuffer::_packAndCenterBitPatterns() noexcept
     // that are required.
     for (size_t srcLine = 0, dstLine = 0; srcLine < _buffer.size(); srcLine++)
     {
-        if (gsl::narrow_cast<VTInt>(srcLine % MAX_HEIGHT) < _fullHeight)
+        if (til::safe_cast_nothrow<VTInt>(srcLine % MAX_HEIGHT) < _fullHeight)
         {
             auto characterScanline = til::at(_buffer, srcLine);
             characterScanline &= textClippingMask;
@@ -519,7 +519,7 @@ void FontBuffer::_fillUnusedCharacters()
     {
         if (ch < _startChar || ch > _lastChar)
         {
-            auto charBuffer = std::next(_buffer.begin(), gsl::narrow_cast<size_t>(ch * _fullHeight));
+            auto charBuffer = std::next(_buffer.begin(), til::safe_cast_nothrow<size_t>(ch * _fullHeight));
             std::copy_n(errorPattern.begin(), _fullHeight, charBuffer);
         }
     }

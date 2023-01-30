@@ -171,7 +171,7 @@ std::vector<wil::com_ptr<T>> SafeArrayToOwningVector(SAFEARRAY* safeArray)
     // any of the elements in the SAFEARRAY because we
     // cannot identify how many elements there are.
 
-    std::vector<wil::com_ptr<T>> result{ gsl::narrow<std::size_t>(count) };
+    std::vector<wil::com_ptr<T>> result{ til::safe_cast<std::size_t>(count) };
     for (int i = 0; i < count; i++)
     {
         result[i].attach(pVals[i]);

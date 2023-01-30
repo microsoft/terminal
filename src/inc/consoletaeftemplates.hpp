@@ -556,7 +556,7 @@ namespace WEX::TestExecution
             }
 
             WEX::Common::NoThrowString s;
-            s.AppendFormat(L"%.*hs", gsl::narrow_cast<unsigned int>(view.size()), view.data());
+            s.AppendFormat(L"%.*hs", view.size(), view.data());
             return s;
         }
     };
@@ -572,7 +572,7 @@ namespace WEX::TestExecution
                 return L"<empty>";
             }
 
-            return WEX::Common::NoThrowString(view.data(), gsl::narrow<int>(view.size()));
+            return WEX::Common::NoThrowString(view.data(), til::safe_cast<int>(view.size()));
         }
     };
 

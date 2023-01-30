@@ -74,6 +74,6 @@ IFACEMETHODIMP PseudoConsoleWindowAccessibilityProvider::GetPropertyValue(_In_ P
 IFACEMETHODIMP PseudoConsoleWindowAccessibilityProvider::get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppProvider);
-    RETURN_HR_IF_NULL(gsl::narrow_cast<HRESULT>(UIA_E_ELEMENTNOTAVAILABLE), _pseudoConsoleHwnd);
+    RETURN_HR_IF_NULL(til::safe_cast_nothrow<HRESULT>(UIA_E_ELEMENTNOTAVAILABLE), _pseudoConsoleHwnd);
     return UiaHostProviderFromHwnd(_pseudoConsoleHwnd, ppProvider);
 }

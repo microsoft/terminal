@@ -45,13 +45,13 @@ namespace Microsoft::Console::VirtualTerminal
             }
         }
 
-        if (_numSavedAttrs < gsl::narrow<int>(_storedSgrAttributes.size()))
+        if (_numSavedAttrs < til::safe_cast<int>(_storedSgrAttributes.size()))
         {
             _numSavedAttrs++;
         }
 
         _storedSgrAttributes.at(_nextPushIndex) = { currentAttributes, validParts };
-        _nextPushIndex = (_nextPushIndex + 1) % gsl::narrow<int>(_storedSgrAttributes.size());
+        _nextPushIndex = (_nextPushIndex + 1) % til::safe_cast<int>(_storedSgrAttributes.size());
     }
 
     const TextAttribute SgrStack::Pop(const TextAttribute& currentAttributes) noexcept
@@ -62,7 +62,7 @@ namespace Microsoft::Console::VirtualTerminal
 
             if (_nextPushIndex == 0)
             {
-                _nextPushIndex = gsl::narrow<int>(_storedSgrAttributes.size() - 1);
+                _nextPushIndex = til::safe_cast<int>(_storedSgrAttributes.size() - 1);
             }
             else
             {

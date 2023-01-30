@@ -685,7 +685,7 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
         {
             const auto indexStr = string.substr(1);
             const auto idx = til::to_ulong(indexStr, 16);
-            color.r = gsl::narrow_cast<uint8_t>(std::min(idx, 15ul));
+            color.r = til::safe_cast_nothrow<uint8_t>(std::min(idx, 15ul));
         }
         else
         {

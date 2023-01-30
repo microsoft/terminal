@@ -41,31 +41,23 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         return { rect.Left, rect.Top, rect.Right, rect.Bottom };
     }
 
-    constexpr SMALL_RECT unwrap_small_rect(const inclusive_rect& rect)
+    inline SMALL_RECT unwrap_small_rect(const inclusive_rect& rect)
     {
         return {
-            gsl::narrow<short>(rect.left),
-            gsl::narrow<short>(rect.top),
-            gsl::narrow<short>(rect.right),
-            gsl::narrow<short>(rect.bottom),
+            til::safe_cast<short>(rect.left),
+            til::safe_cast<short>(rect.top),
+            til::safe_cast<short>(rect.right),
+            til::safe_cast<short>(rect.bottom),
         };
     }
 
-    constexpr HRESULT unwrap_small_rect_hr(const inclusive_rect& rect, SMALL_RECT& out) noexcept
+    inline HRESULT unwrap_small_rect_hr(const inclusive_rect& rect, SMALL_RECT& out) noexcept
     {
-        short l = 0;
-        short t = 0;
-        short r = 0;
-        short b = 0;
-        if (narrow_maybe(rect.left, l) && narrow_maybe(rect.top, t) && narrow_maybe(rect.right, r) && narrow_maybe(rect.bottom, b))
-        {
-            out.Left = l;
-            out.Top = t;
-            out.Right = r;
-            out.Bottom = b;
-            return S_OK;
-        }
-        RETURN_WIN32(ERROR_UNHANDLED_EXCEPTION);
+        const auto hr1 = til::safe_cast_nothrow(rect.left, &out.Left);
+        const auto hr2 = til::safe_cast_nothrow(rect.top, &out.Top);
+        const auto hr3 = til::safe_cast_nothrow(rect.right, &out.Right);
+        const auto hr4 = til::safe_cast_nothrow(rect.bottom, &out.Bottom);
+        return hr1 | hr2 | hr3 | hr4;
     }
 
     namespace details
@@ -506,25 +498,25 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         template<typename T>
         constexpr T narrow_left() const
         {
-            return gsl::narrow<T>(left);
+            return til::safe_cast<T>(left);
         }
 
         template<typename T>
         constexpr T narrow_top() const
         {
-            return gsl::narrow<T>(top);
+            return til::safe_cast<T>(top);
         }
 
         template<typename T>
         constexpr T narrow_right() const
         {
-            return gsl::narrow<T>(right);
+            return til::safe_cast<T>(right);
         }
 
         template<typename T>
         constexpr T narrow_bottom() const
         {
-            return gsl::narrow<T>(bottom);
+            return til::safe_cast<T>(bottom);
         }
 
         constexpr CoordType width() const
@@ -602,11 +594,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             THROW_HR_IF(E_INVALIDARG, index >= area);
 
-            // Not checking math on these because we're presuming
-            // that the point can't be in bounds of a rect where
-            // this would overflow on addition after the division.
-            const auto quot = gsl::narrow_cast<CoordType>(index / width);
-            const auto rem = gsl::narrow_cast<CoordType>(index % width);
+            const auto quot = til::unsafe_cast<CoordType>(index / width);
+            const auto rem = til::unsafe_cast<CoordType>(index % width);
             return point{ left + rem, top + quot };
         }
 
@@ -729,31 +718,23 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         return { rect.Left, rect.Top, rect.Right, rect.Bottom };
     }
 
-    constexpr SMALL_RECT unwrap_exclusive_small_rect(const rect& rect)
+    inline SMALL_RECT unwrap_exclusive_small_rect(const rect& rect)
     {
         return {
-            gsl::narrow<short>(rect.left),
-            gsl::narrow<short>(rect.top),
-            gsl::narrow<short>(rect.right),
-            gsl::narrow<short>(rect.bottom),
+            til::safe_cast<short>(rect.left),
+            til::safe_cast<short>(rect.top),
+            til::safe_cast<short>(rect.right),
+            til::safe_cast<short>(rect.bottom),
         };
     }
 
-    constexpr HRESULT unwrap_exclusive_small_rect_hr(const rect& rect, SMALL_RECT& out) noexcept
+    inline HRESULT unwrap_exclusive_small_rect_hr(const rect& rect, SMALL_RECT& out) noexcept
     {
-        short l = 0;
-        short t = 0;
-        short r = 0;
-        short b = 0;
-        if (narrow_maybe(rect.left, l) && narrow_maybe(rect.top, t) && narrow_maybe(rect.right, r) && narrow_maybe(rect.bottom, b))
-        {
-            out.Left = l;
-            out.Top = t;
-            out.Right = r;
-            out.Bottom = b;
-            return S_OK;
-        }
-        RETURN_WIN32(ERROR_UNHANDLED_EXCEPTION);
+        const auto hr1 = til::safe_cast_nothrow(rect.left, &out.Left);
+        const auto hr2 = til::safe_cast_nothrow(rect.top, &out.Top);
+        const auto hr3 = til::safe_cast_nothrow(rect.right, &out.Right);
+        const auto hr4 = til::safe_cast_nothrow(rect.bottom, &out.Bottom);
+        return hr1 | hr2 | hr3 | hr4;
     }
 }
 

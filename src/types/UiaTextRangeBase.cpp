@@ -888,13 +888,13 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
         }
 
         // convert to a safearray
-        *ppRetVal = SafeArrayCreateVector(VT_R8, 0, gsl::narrow<ULONG>(coords.size()));
+        *ppRetVal = SafeArrayCreateVector(VT_R8, 0, til::safe_cast<ULONG>(coords.size()));
         if (*ppRetVal == nullptr)
         {
             return E_OUTOFMEMORY;
         }
         auto hr = E_UNEXPECTED;
-        const auto l = gsl::narrow<LONG>(coords.size());
+        const auto l = til::safe_cast<LONG>(coords.size());
         for (LONG i = 0; i < l; ++i)
         {
             hr = SafeArrayPutElement(*ppRetVal, &i, &coords.at(i));
@@ -966,7 +966,7 @@ std::wstring UiaTextRangeBase::_getTextValue(til::CoordType maxLength) const
 
         // -1 is supposed to be interpreted as "no limit",
         // so leverage size_t(-1) being converted to 0xffff...
-        const auto maxLengthAsSize = gsl::narrow_cast<size_t>(maxLength);
+        const auto maxLengthAsSize = til::safe_cast_nothrow<size_t>(maxLength);
 
         // TODO GH#5406: create a different UIA parent object for each TextBuffer
         // nvaccess/nvda#11428: Ensure our endpoints are in bounds
@@ -1747,10 +1747,10 @@ til::rect UiaTextRangeBase::_getTerminalRect() const
     }
 
     return {
-        gsl::narrow_cast<til::CoordType>(result.left),
-        gsl::narrow_cast<til::CoordType>(result.top),
-        gsl::narrow_cast<til::CoordType>(result.left + result.width),
-        gsl::narrow_cast<til::CoordType>(result.top + result.height),
+        til::safe_cast_nothrow<til::CoordType>(result.left),
+        til::safe_cast_nothrow<til::CoordType>(result.top),
+        til::safe_cast_nothrow<til::CoordType>(result.left + result.width),
+        til::safe_cast_nothrow<til::CoordType>(result.top + result.height),
     };
 }
 

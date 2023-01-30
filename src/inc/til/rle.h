@@ -97,7 +97,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                         {
                             // At this point: move <= std::numeric_limits<size_type>::max().
                             // --> the narrowing is safe.
-                            _pos += gsl::narrow_cast<size_type>(move);
+                            _pos += til::unsafe_cast<size_type>(move);
                             break;
                         }
 
@@ -124,7 +124,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                         {
                             // At this point: move <= std::numeric_limits<size_type>::max()
                             // --> the narrowing is safe.
-                            _pos -= gsl::narrow_cast<size_type>(move);
+                            _pos -= til::unsafe_cast<size_type>(move);
                             break;
                         }
 

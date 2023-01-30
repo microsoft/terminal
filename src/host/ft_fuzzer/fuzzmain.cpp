@@ -85,9 +85,9 @@ struct NullDeviceComm : public IDeviceComm
     fakeConnectInfo.ConsoleInfo.SetWindowSize({ 80, 25 });
     fakeConnectInfo.ConsoleInfo.SetStartupFlags(STARTF_USECOUNTCHARS);
     wcscpy_s(fakeConnectInfo.Title, fakeTitle.data());
-    fakeConnectInfo.TitleLength = gsl::narrow_cast<DWORD>(fakeTitle.size() * sizeof(wchar_t)); // bytes, not wchars
+    fakeConnectInfo.TitleLength = til::safe_cast_nothrow<DWORD>(fakeTitle.size() * sizeof(wchar_t)); // bytes, not wchars
     wcscpy_s(fakeConnectInfo.AppName, fakeTitle.data());
-    fakeConnectInfo.AppNameLength = gsl::narrow_cast<DWORD>(fakeTitle.size() * sizeof(wchar_t)); // bytes, not wchars
+    fakeConnectInfo.AppNameLength = til::safe_cast_nothrow<DWORD>(fakeTitle.size() * sizeof(wchar_t)); // bytes, not wchars
     fakeConnectInfo.ConsoleApp = TRUE;
     fakeConnectInfo.WindowVisible = TRUE;
     RETURN_IF_NTSTATUS_FAILED(ConsoleAllocateConsole(&fakeConnectInfo));

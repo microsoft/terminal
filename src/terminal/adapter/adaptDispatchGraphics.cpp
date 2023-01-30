@@ -48,7 +48,7 @@ size_t AdaptDispatch::_SetRgbColorsHelper(const VTParameters options,
         const size_t tableIndex = options.at(1).value_or(0);
         if (tableIndex <= 255)
         {
-            const auto adjustedIndex = gsl::narrow_cast<BYTE>(tableIndex);
+            const auto adjustedIndex = til::safe_cast_nothrow<BYTE>(tableIndex);
             if (isForeground)
             {
                 attr.SetIndexedForeground256(adjustedIndex);

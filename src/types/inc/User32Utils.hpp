@@ -27,5 +27,5 @@ __declspec(noinline) inline std::wstring GetStringResource(const UINT id)
     // zero-terminated string. So we're going to construct and return a
     // std::wstring copy from the pointer/length since those are certainly
     // zero-terminated.
-    return { readOnlyResource, gsl::narrow<size_t>(length) };
+    return { readOnlyResource, til::safe_cast<size_t>(length) };
 }

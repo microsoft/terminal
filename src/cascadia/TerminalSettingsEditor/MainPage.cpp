@@ -510,7 +510,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::BreadcrumbBar_ItemClicked(const Microsoft::UI::Xaml::Controls::BreadcrumbBar& /*sender*/, const Microsoft::UI::Xaml::Controls::BreadcrumbBarItemClickedEventArgs& args)
     {
-        if (gsl::narrow_cast<uint32_t>(args.Index()) < (_breadcrumbs.Size() - 1))
+        if (til::safe_cast_nothrow<uint32_t>(args.Index()) < (_breadcrumbs.Size() - 1))
         {
             const auto tag = args.Item().as<Breadcrumb>()->Tag();
             const auto subPage = args.Item().as<Breadcrumb>()->SubPage();

@@ -108,7 +108,7 @@ DWORD WINAPI ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
 // - Starts the OneCore-specific console input thread.
 HANDLE ConsoleInputThread::Start() noexcept
 {
-    auto dwThreadId = gsl::narrow_cast<DWORD>(-1);
+    auto dwThreadId = til::safe_cast_nothrow<DWORD>(-1);
 
     const auto hThread = CreateThread(nullptr,
                                       0,

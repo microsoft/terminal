@@ -687,7 +687,7 @@ namespace Microsoft::Console::Render
             {
                 const auto initialSize = std::max(u16{ _absoluteMinSize }, std::bit_ceil(std::max(tileSize.x, tileSize.y)));
                 _size = { initialSize, initialSize };
-                _limit = { gsl::narrow_cast<u16>(initialSize - _tileSize.x), gsl::narrow_cast<u16>(initialSize - _tileSize.y) };
+                _limit = { til::safe_cast_nothrow<u16>(initialSize - _tileSize.x), til::safe_cast_nothrow<u16>(initialSize - _tileSize.y) };
                 setMaxArea(windowSize);
             }
 
@@ -787,7 +787,7 @@ namespace Microsoft::Console::Render
                 _updateCanGenerate();
                 if (_canGenerate)
                 {
-                    _limit = { gsl::narrow_cast<u16>(_size.x - _tileSize.x), gsl::narrow_cast<u16>(_size.y - _tileSize.y) };
+                    _limit = { til::safe_cast_nothrow<u16>(_size.x - _tileSize.x), til::safe_cast_nothrow<u16>(_size.y - _tileSize.y) };
                     _originX = _pos.x;
                 }
                 else
@@ -827,7 +827,7 @@ namespace Microsoft::Console::Render
         struct CachedCursorOptions
         {
             u32 cursorColor = INVALID_COLOR;
-            u16 cursorType = gsl::narrow_cast<u16>(CursorType::Legacy);
+            u16 cursorType = til::safe_cast_nothrow<u16>(CursorType::Legacy);
             u8 heightPercentage = 20;
             u8 _padding = 0;
 

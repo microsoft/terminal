@@ -598,7 +598,7 @@ til::point CommandLine::_moveCursorToEndOfPrompt(COOKED_READ_DATA& cookedReadDat
     cookedReadData.InsertionPoint() = cookedReadData.BytesRead() / sizeof(WCHAR);
     cookedReadData.SetBufferCurrentPtr(cookedReadData.BufferStartPtr() + cookedReadData.InsertionPoint());
     til::point cursorPosition;
-    cursorPosition.x = gsl::narrow<til::CoordType>(cookedReadData.OriginalCursorPosition().x + cookedReadData.VisibleCharCount());
+    cursorPosition.x = til::safe_cast<til::CoordType>(cookedReadData.OriginalCursorPosition().x + cookedReadData.VisibleCharCount());
     cursorPosition.y = cookedReadData.OriginalCursorPosition().y;
 
     const auto sScreenBufferSizeX = cookedReadData.ScreenInfo().GetBufferSize().Width();

@@ -451,13 +451,13 @@ til::rect NonClientIslandWindow::_GetDragAreaRect() const noexcept
         // of the parent HWND.
         //
         // x here is the width of the tabs.
-        const auto x = gsl::narrow_cast<til::CoordType>(clientDragBarRect.X * scale);
+        const auto x = til::safe_cast_nothrow<til::CoordType>(clientDragBarRect.X * scale);
 
         return {
             x,
-            gsl::narrow_cast<til::CoordType>(clientDragBarRect.Y * scale),
-            gsl::narrow_cast<til::CoordType>((clientDragBarRect.Width + clientDragBarRect.X) * scale) - x,
-            gsl::narrow_cast<til::CoordType>((clientDragBarRect.Height + clientDragBarRect.Y) * scale),
+            til::safe_cast_nothrow<til::CoordType>(clientDragBarRect.Y * scale),
+            til::safe_cast_nothrow<til::CoordType>((clientDragBarRect.Width + clientDragBarRect.X) * scale) - x,
+            til::safe_cast_nothrow<til::CoordType>((clientDragBarRect.Height + clientDragBarRect.Y) * scale),
         };
     }
 

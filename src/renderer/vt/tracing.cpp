@@ -71,7 +71,7 @@ void RenderTracing::TraceStringFill(const size_t n, const char c) const
     {
         TraceLoggingWrite(g_hConsoleVtRendererTraceProvider,
                           "VtEngine_TraceStringFill",
-                          TraceLoggingUInt64(gsl::narrow_cast<uint64_t>(n)),
+                          TraceLoggingUInt64(til::safe_cast_nothrow<uint64_t>(n)),
                           TraceLoggingChar(c),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                           TraceLoggingKeyword(TIL_KEYWORD_TRACE));

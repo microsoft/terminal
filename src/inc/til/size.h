@@ -102,19 +102,19 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         template<typename T = CoordType>
         constexpr T narrow_width() const
         {
-            return gsl::narrow<T>(width);
+            return til::safe_cast<T>(width);
         }
 
         template<typename T = CoordType>
         constexpr T narrow_height() const
         {
-            return gsl::narrow<T>(height);
+            return til::safe_cast<T>(height);
         }
 
         template<typename T = CoordType>
         constexpr T area() const
         {
-            return gsl::narrow<T>(static_cast<int64_t>(width) * static_cast<int64_t>(height));
+            return til::safe_cast<T>(static_cast<int64_t>(width) * static_cast<int64_t>(height));
         }
 
 #ifdef _WINDEF_
@@ -184,25 +184,19 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         return { sz.X, sz.Y };
     }
 
-    constexpr COORD unwrap_coord_size(const size sz)
+    inline COORD unwrap_coord_size(const size sz)
     {
         return {
-            gsl::narrow<short>(sz.width),
-            gsl::narrow<short>(sz.height),
+            til::safe_cast<short>(sz.width),
+            til::safe_cast<short>(sz.height),
         };
     }
 
-    constexpr HRESULT unwrap_coord_size_hr(const size sz, COORD& out) noexcept
+    inline HRESULT unwrap_coord_size_hr(const size sz, COORD& out) noexcept
     {
-        short x = 0;
-        short y = 0;
-        if (narrow_maybe(sz.width, x) && narrow_maybe(sz.height, y))
-        {
-            out.X = x;
-            out.Y = y;
-            return S_OK;
-        }
-        RETURN_WIN32(ERROR_UNHANDLED_EXCEPTION);
+        const auto hr1 = til::safe_cast_nothrow(sz.width, &out.X);
+        const auto hr2 = til::safe_cast_nothrow(sz.height, &out.Y);
+        return hr1 | hr2;
     }
 };
 

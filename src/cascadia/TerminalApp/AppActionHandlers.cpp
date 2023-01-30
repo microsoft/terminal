@@ -227,7 +227,7 @@ namespace winrt::TerminalApp::implementation
             {
                 if (const auto index = realArgs.TerminalArgs().ProfileIndex())
                 {
-                    if (gsl::narrow<uint32_t>(index.Value()) >= _settings.ActiveProfiles().Size())
+                    if (til::safe_cast<uint32_t>(index.Value()) >= _settings.ActiveProfiles().Size())
                     {
                         args.Handled(false);
                         return;
@@ -405,7 +405,7 @@ namespace winrt::TerminalApp::implementation
             {
                 if (const auto index = newTerminalArgs.ProfileIndex())
                 {
-                    if (gsl::narrow<uint32_t>(index.Value()) >= _settings.ActiveProfiles().Size())
+                    if (til::safe_cast<uint32_t>(index.Value()) >= _settings.ActiveProfiles().Size())
                     {
                         args.Handled(false);
                         return;

@@ -30,9 +30,9 @@
 #include <gsl/pointers>
 #include <wil/com.h>
 #include <wil/filesystem.h>
-#include <wil/result_macros.h>
+#include <wil/nt_result_macros.h>
+#include <wil/safecast.h>
 #include <wil/stl.h>
-#include <wil/win32_helpers.h>
 
 // Dynamic Bitset (optional dependency on LibPopCnt for perf at bit counting)
 // Variable-size compressed-storage header-only bit flag storage library.

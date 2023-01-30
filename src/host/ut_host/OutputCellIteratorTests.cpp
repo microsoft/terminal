@@ -396,7 +396,7 @@ class OutputCellIteratorTests
         {
             CHAR_INFO ci;
             ci.Char.UnicodeChar = static_cast<wchar_t>(L'A' + i);
-            ci.Attributes = gsl::narrow<WORD>(i);
+            ci.Attributes = til::safe_cast<WORD>(i);
 
             charInfos.push_back(ci);
         }
@@ -429,7 +429,7 @@ class OutputCellIteratorTests
         for (auto i = 0; i < 5; i++)
         {
             const std::wstring pair(L"\xd834\xdd1e");
-            OutputCell cell(pair, {}, TextAttribute{ gsl::narrow<WORD>(i) });
+            OutputCell cell(pair, {}, TextAttribute{ til::safe_cast<WORD>(i) });
             cells.push_back(cell);
         }
 

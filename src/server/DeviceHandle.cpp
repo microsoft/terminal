@@ -100,7 +100,7 @@ DeviceHandle::_CreateHandle(
     UNICODE_STRING Name;
 #pragma warning(suppress : 26492) // const_cast is prohibited, but we can't avoid it for filling UNICODE_STRING.
     Name.Buffer = const_cast<wchar_t*>(DeviceName);
-    Name.Length = gsl::narrow_cast<USHORT>((wcslen(DeviceName) * sizeof(wchar_t)));
+    Name.Length = til::safe_cast_nothrow<USHORT>((wcslen(DeviceName) * sizeof(wchar_t)));
     Name.MaximumLength = Name.Length + sizeof(wchar_t);
 
     OBJECT_ATTRIBUTES ObjectAttributes;

@@ -186,8 +186,8 @@ try
         _api.invalidatedRows.y = clamp(_api.invalidatedRows.y, _api.invalidatedRows.x, _api.cellCount.y);
     }
     {
-        const auto limit = gsl::narrow_cast<i16>(_api.cellCount.y & 0x7fff);
-        _api.scrollOffset = gsl::narrow_cast<i16>(clamp<int>(_api.scrollOffset, -limit, limit));
+        const auto limit = til::safe_cast_nothrow<i16>(_api.cellCount.y & 0x7fff);
+        _api.scrollOffset = til::safe_cast_nothrow<i16>(clamp<int>(_api.scrollOffset, -limit, limit));
     }
 
     // Scroll the buffer by the given offset and mark the newly uncovered rows as "invalid".
@@ -345,7 +345,7 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT AtlasEngine::PaintBufferLine(std::span<const Cluster> clusters, til::point coord, const bool fTrimLeft, const bool lineWrapped) noexcept
 try
 {
-    const auto y = gsl::narrow_cast<u16>(clamp<int>(coord.y, 0, _api.cellCount.y));
+    const auto y = til::safe_cast_nothrow<u16>(clamp<int>(coord.y, 0, _api.cellCount.y));
 
     if (_api.lastPaintBufferLineCoord.y != y)
     {
@@ -382,7 +382,7 @@ try
         clusters = clusters.subspan(offset);
     }
 
-    const auto x = gsl::narrow_cast<u16>(clamp<int>(coord.x, 0, _api.cellCount.x));
+    const auto x = til::safe_cast_nothrow<u16>(clamp<int>(coord.x, 0, _api.cellCount.x));
 
     // Due to the current IRenderEngine interface (that wasn't refactored yet) we need to assemble
     // the current buffer line first as the remaining function operates on whole lines of text.
@@ -396,7 +396,7 @@ try
                 _api.bufferLineColumn.emplace_back(column);
             }
 
-            column += gsl::narrow_cast<u16>(cluster.GetColumns());
+            column += til::safe_cast_nothrow<u16>(cluster.GetColumns());
         }
 
         _api.bufferLineColumn.emplace_back(column);
@@ -460,9 +460,9 @@ try
 
     {
         const CachedCursorOptions cachedOptions{
-            gsl::narrow_cast<u32>(options.fUseColor ? options.cursorColor | 0xff000000 : INVALID_COLOR),
-            gsl::narrow_cast<u16>(options.cursorType),
-            gsl::narrow_cast<u8>(options.ulCursorHeightPercent),
+            til::safe_cast_nothrow<u32>(options.fUseColor ? options.cursorColor | 0xff000000 : INVALID_COLOR),
+            til::unsafe_cast<u16>(options.cursorType),
+            til::safe_cast_nothrow<u8>(options.ulCursorHeightPercent),
         };
         if (_r.cursorOptions != cachedOptions)
         {
@@ -476,11 +476,11 @@ try
         const auto point = options.coordCursor;
         // TODO: options.coordCursor can contain invalid out of bounds coordinates when
         // the window is being resized and the cursor is on the last line of the viewport.
-        const auto x = gsl::narrow_cast<uint16_t>(clamp(point.x, 0, _r.cellCount.x - 1));
-        const auto y = gsl::narrow_cast<uint16_t>(clamp(point.y, 0, _r.cellCount.y - 1));
+        const auto x = til::safe_cast_nothrow<uint16_t>(clamp(point.x, 0, _r.cellCount.x - 1));
+        const auto y = til::safe_cast_nothrow<uint16_t>(clamp(point.y, 0, _r.cellCount.y - 1));
         const auto cursorWidth = 1 + (options.fIsDoubleWidth & (options.cursorType != CursorType::VerticalBar));
-        const auto right = gsl::narrow_cast<uint16_t>(clamp(x + cursorWidth, 0, _r.cellCount.x - 0));
-        const auto bottom = gsl::narrow_cast<uint16_t>(y + 1);
+        const auto right = til::safe_cast_nothrow<uint16_t>(clamp(x + cursorWidth, 0, _r.cellCount.x - 0));
+        const auto bottom = til::safe_cast_nothrow<uint16_t>(y + 1);
         _setCellFlags({ x, y, right, bottom }, CellFlags::Cursor, CellFlags::Cursor);
         _r.dirtyRect |= til::rect{ x, y, right, bottom };
     }
@@ -516,7 +516,7 @@ try
             WI_ClearAllFlags(flags, CellFlags::UnderlineDotted | CellFlags::UnderlineDouble);
         }
 
-        const u32x2 newColors{ gsl::narrow_cast<u32>(fg), gsl::narrow_cast<u32>(bg) };
+        const u32x2 newColors{ til::safe_cast_nothrow<u32>(fg), til::safe_cast_nothrow<u32>(bg) };
         const AtlasKeyAttributes attributes{ 0, textAttributes.IsIntense() && renderSettings.GetRenderMode(RenderSettings::Mode::IntenseIsBold), textAttributes.IsItalic(), 0 };
 
         if (_api.attributes != attributes)
@@ -629,7 +629,7 @@ void AtlasEngine::_createResources()
                 /* Software */ nullptr,
                 /* Flags */ deviceFlags | D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS,
                 /* pFeatureLevels */ featureLevels.data(),
-                /* FeatureLevels */ gsl::narrow_cast<UINT>(featureLevels.size()),
+                /* FeatureLevels */ til::safe_cast_nothrow<UINT>(featureLevels.size()),
                 /* SDKVersion */ D3D11_SDK_VERSION,
                 /* ppDevice */ _r.device.put(),
                 /* pFeatureLevel */ nullptr,
@@ -643,7 +643,7 @@ void AtlasEngine::_createResources()
                 /* Software */ nullptr,
                 /* Flags */ deviceFlags,
                 /* pFeatureLevels */ featureLevels.data(),
-                /* FeatureLevels */ gsl::narrow_cast<UINT>(featureLevels.size()),
+                /* FeatureLevels */ til::safe_cast_nothrow<UINT>(featureLevels.size()),
                 /* SDKVersion */ D3D11_SDK_VERSION,
                 /* ppDevice */ _r.device.put(),
                 /* pFeatureLevel */ nullptr,
@@ -1036,7 +1036,7 @@ void AtlasEngine::_recreateSizeDependentResources()
         if (resize)
         {
             D3D11_BUFFER_DESC desc;
-            desc.ByteWidth = gsl::narrow<u32>(totalCellCount * sizeof(Cell)); // totalCellCount can theoretically be UINT32_MAX!
+            desc.ByteWidth = til::safe_cast<u32>(totalCellCount * sizeof(Cell)); // totalCellCount can theoretically be UINT32_MAX!
             desc.Usage = D3D11_USAGE_DYNAMIC;
             desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
             desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -1159,7 +1159,7 @@ void AtlasEngine::_recreateFontDependentResources()
                         // The slnt axis defaults to -12 if this is italic and 0 otherwise.
                         _api.fontAxisValues[2].value = italic ? -12.0f : (standardAxes[2].value == -1.0f ? 0.0f : standardAxes[2].value);
 
-                        THROW_IF_FAILED(textFormat3->SetFontAxisValues(_api.fontAxisValues.data(), gsl::narrow_cast<u32>(_api.fontAxisValues.size())));
+                        THROW_IF_FAILED(textFormat3->SetFontAxisValues(_api.fontAxisValues.data(), til::safe_cast_nothrow<u32>(_api.fontAxisValues.size())));
                         _r.textFormatAxes[italic][bold] = { _api.fontAxisValues.data(), _api.fontAxisValues.size() };
                     }
                 }
@@ -1292,7 +1292,7 @@ void AtlasEngine::_flushBufferLine()
     const auto textFormat = _getTextFormat(_api.attributes.bold, _api.attributes.italic);
     const auto& textFormatAxis = _getTextFormatAxis(_api.attributes.bold, _api.attributes.italic);
 
-    TextAnalysisSource analysisSource{ _api.bufferLine.data(), gsl::narrow<UINT32>(_api.bufferLine.size()) };
+    TextAnalysisSource analysisSource{ _api.bufferLine.data(), til::safe_cast<UINT32>(_api.bufferLine.size()) };
     TextAnalysisSink analysisSink{ _api.analysisResults };
 
     wil::com_ptr<IDWriteFontCollection> fontCollection;
@@ -1314,11 +1314,11 @@ void AtlasEngine::_flushBufferLine()
                 THROW_IF_FAILED(_sr.systemFontFallback.query<IDWriteFontFallback1>()->MapCharacters(
                     /* analysisSource */ &analysisSource,
                     /* textPosition */ idx,
-                    /* textLength */ gsl::narrow_cast<u32>(_api.bufferLine.size()) - idx,
+                    /* textLength */ til::safe_cast_nothrow<u32>(_api.bufferLine.size()) - idx,
                     /* baseFontCollection */ fontCollection.get(),
                     /* baseFamilyName */ _api.fontMetrics.fontName.c_str(),
                     /* fontAxisValues */ textFormatAxis.data(),
-                    /* fontAxisValueCount */ gsl::narrow_cast<u32>(textFormatAxis.size()),
+                    /* fontAxisValueCount */ til::safe_cast_nothrow<u32>(textFormatAxis.size()),
                     /* mappedLength */ &mappedLength,
                     /* scale */ &scale,
                     /* mappedFontFace */ fontFace5.put()));
@@ -1333,7 +1333,7 @@ void AtlasEngine::_flushBufferLine()
                 THROW_IF_FAILED(_sr.systemFontFallback->MapCharacters(
                     /* analysisSource     */ &analysisSource,
                     /* textPosition       */ idx,
-                    /* textLength         */ gsl::narrow_cast<u32>(_api.bufferLine.size()) - idx,
+                    /* textLength         */ til::safe_cast_nothrow<u32>(_api.bufferLine.size()) - idx,
                     /* baseFontCollection */ fontCollection.get(),
                     /* baseFamilyName     */ _api.fontMetrics.fontName.c_str(),
                     /* baseWeight         */ baseWeight,
@@ -1394,7 +1394,7 @@ void AtlasEngine::_flushBufferLine()
                 THROW_IF_FAILED(font->CreateFontFace(mappedFontFace.put()));
             }
 
-            mappedEnd = gsl::narrow_cast<u32>(_api.bufferLine.size());
+            mappedEnd = til::safe_cast_nothrow<u32>(_api.bufferLine.size());
         }
 
         // We can reuse idx here, as it'll be reset to "idx = mappedEnd" in the outer loop anyways.
@@ -1439,7 +1439,7 @@ void AtlasEngine::_flushBufferLine()
                     if (!_api.fontFeatures.empty())
                     {
                         feature.features = _api.fontFeatures.data();
-                        feature.featureCount = gsl::narrow_cast<u32>(_api.fontFeatures.size());
+                        feature.featureCount = til::safe_cast_nothrow<u32>(_api.fontFeatures.size());
                         features = &feature;
                         featureRangeLengths = a.textLength;
                         featureRanges = 1;
@@ -1465,7 +1465,7 @@ void AtlasEngine::_flushBufferLine()
                             /* features            */ &features,
                             /* featureRangeLengths */ &featureRangeLengths,
                             /* featureRanges       */ featureRanges,
-                            /* maxGlyphCount       */ gsl::narrow_cast<u32>(_api.glyphProps.size()),
+                            /* maxGlyphCount       */ til::safe_cast_nothrow<u32>(_api.glyphProps.size()),
                             /* clusterMap          */ _api.clusterMap.data(),
                             /* textProps           */ _api.textProps.data(),
                             /* glyphIndices        */ _api.glyphIndices.data(),
@@ -1578,7 +1578,7 @@ bool AtlasEngine::_emplaceGlyph(IDWriteFontFace* fontFace, size_t bufferPos1, si
     auto attributes = _api.attributes;
     attributes.cellCount = cellCount;
 
-    AtlasKey key{ attributes, gsl::narrow<u16>(charCount), chars };
+    AtlasKey key{ attributes, til::safe_cast<u16>(charCount), chars };
     auto it = _r.glyphs.find(key);
 
     if (it == _r.glyphs.end())

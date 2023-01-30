@@ -132,7 +132,7 @@ bool HostSignalInputThread::_AdvanceReader(DWORD byteCount)
 
     while (byteCount > 0)
     {
-        const auto advance = std::min(byteCount, gsl::narrow_cast<DWORD>(buffer.max_size()));
+        const auto advance = std::min(byteCount, til::safe_cast_nothrow<DWORD>(buffer.max_size()));
 
         if (!_GetData(buffer))
         {
@@ -159,7 +159,7 @@ bool HostSignalInputThread::_GetData(std::span<std::byte> buffer)
     //      to dying itself), close gracefully with ERROR_BROKEN_PIPE.
     // Otherwise throw an exception. ERROR_BROKEN_PIPE is the only case that
     //       we want to gracefully close in.
-    if (FALSE == ReadFile(_hFile.get(), buffer.data(), gsl::narrow_cast<DWORD>(buffer.size()), &bytesRead, nullptr))
+    if (FALSE == ReadFile(_hFile.get(), buffer.data(), til::safe_cast_nothrow<DWORD>(buffer.size()), &bytesRead, nullptr))
     {
         auto lastError = GetLastError();
         if (lastError == ERROR_BROKEN_PIPE)

@@ -15,7 +15,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             U val;
             if (!num.AssignIfValid(&val))
             {
-                throw gsl::narrowing_error{};
+                THROW_HR(INTSAFE_E_ARITHMETIC_OVERFLOW);
             }
             return val;
         }
@@ -154,13 +154,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         template<typename T>
         constexpr T narrow_x() const
         {
-            return gsl::narrow<T>(x);
+            return til::safe_cast<T>(x);
         }
 
         template<typename T>
         constexpr T narrow_y() const
         {
-            return gsl::narrow<T>(y);
+            return til::safe_cast<T>(y);
         }
 
 #ifdef _WINDEF_
@@ -239,25 +239,19 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         return { pt.X, pt.Y };
     }
 
-    constexpr COORD unwrap_coord(const point pt)
+    inline COORD unwrap_coord(const point pt)
     {
         return {
-            gsl::narrow<short>(pt.x),
-            gsl::narrow<short>(pt.y),
+            til::safe_cast<short>(pt.x),
+            til::safe_cast<short>(pt.y),
         };
     }
 
-    constexpr HRESULT unwrap_coord_hr(const point pt, COORD& out) noexcept
+    inline HRESULT unwrap_coord_hr(const point pt, COORD& out) noexcept
     {
-        short x = 0;
-        short y = 0;
-        if (narrow_maybe(pt.x, x) && narrow_maybe(pt.y, y))
-        {
-            out.X = x;
-            out.Y = y;
-            return S_OK;
-        }
-        RETURN_WIN32(ERROR_UNHANDLED_EXCEPTION);
+        const auto hr1 = til::safe_cast_nothrow(pt.x, &out.X);
+        const auto hr2 = til::safe_cast_nothrow(pt.y, &out.Y);
+        return hr1 | hr2;
     }
 
     // point_span can be pictured as a "selection" range inside our text buffer. So given

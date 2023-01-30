@@ -118,7 +118,7 @@ static HRESULT AttachPseudoConsole(HPCON hPC, std::wstring command, PROCESS_INFO
     InitializeProcThreadAttributeList(nullptr, 1, 0, &size);
     RETURN_LAST_ERROR_IF(size == 0);
 
-    const auto buffer = std::make_unique<std::byte[]>(gsl::narrow_cast<size_t>(size));
+    const auto buffer = std::make_unique<std::byte[]>(til::safe_cast_nothrow<size_t>(size));
 
     STARTUPINFOEXW siEx{};
     siEx.StartupInfo.cb = sizeof(STARTUPINFOEXW);

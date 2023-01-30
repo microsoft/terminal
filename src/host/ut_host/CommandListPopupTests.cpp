@@ -237,7 +237,7 @@ class CommandListPopupTests
 
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
         // selection should have moved to the bottom line
-        VERIFY_ARE_EQUAL(m_pHistory->GetNumberOfCommands() - 1, gsl::narrow<size_t>(popup._currentCommand));
+        VERIFY_ARE_EQUAL(m_pHistory->GetNumberOfCommands() - 1, til::safe_cast<size_t>(popup._currentCommand));
     }
 
     TEST_METHOD(HomeMovesSelectionToStart)

@@ -463,7 +463,7 @@ void ConptyRoundtripTests::TestWrappingALongString()
 
     const auto initialTermView = term->GetViewport();
 
-    const auto charsToWrite = gsl::narrow_cast<til::CoordType>(TestUtils::Test100CharsString.size());
+    const auto charsToWrite = til::safe_cast_nothrow<til::CoordType>(TestUtils::Test100CharsString.size());
     VERIFY_ARE_EQUAL(100, charsToWrite);
 
     VERIFY_ARE_EQUAL(0, initialTermView.Top());
@@ -512,7 +512,7 @@ void ConptyRoundtripTests::TestAdvancedWrapping()
 
     _flushFirstFrame();
 
-    const auto charsToWrite = gsl::narrow_cast<til::CoordType>(TestUtils::Test100CharsString.size());
+    const auto charsToWrite = til::safe_cast_nothrow<til::CoordType>(TestUtils::Test100CharsString.size());
     VERIFY_ARE_EQUAL(100, charsToWrite);
 
     hostSm.ProcessString(TestUtils::Test100CharsString);
@@ -2537,9 +2537,9 @@ void ConptyRoundtripTests::TestCursorInDeferredEOLPositionOnNewLineWithSpaces()
     _checkConptyOutput = false;
 
     // newline down to the bottom
-    hostSm.ProcessString(std::wstring(gsl::narrow_cast<size_t>(TerminalViewHeight), L'\n'));
+    hostSm.ProcessString(std::wstring(til::safe_cast_nothrow<size_t>(TerminalViewHeight), L'\n'));
     // fill width-1 with "A", then add one space and another character..
-    hostSm.ProcessString(std::wstring(gsl::narrow_cast<size_t>(TerminalViewWidth) - 1, L'A') + L" B");
+    hostSm.ProcessString(std::wstring(til::safe_cast_nothrow<size_t>(TerminalViewWidth) - 1, L'A') + L" B");
 
     auto verifyBuffer = [&](const TextBuffer& tb, til::CoordType bottomRow) {
         // Buffer contents should look like the following: (80 wide)
@@ -2561,7 +2561,7 @@ void ConptyRoundtripTests::TestCursorInDeferredEOLPositionOnNewLineWithSpaces()
         VERIFY_IS_TRUE(secondToLastRow.WasWrapForced());
         VERIFY_IS_FALSE(lastRow.WasWrapForced());
 
-        auto expectedStringSecondToLastRow{ std::wstring(gsl::narrow_cast<size_t>(tb.GetSize().Width()) - 1, L'A') + L" " };
+        auto expectedStringSecondToLastRow{ std::wstring(til::safe_cast_nothrow<size_t>(tb.GetSize().Width()) - 1, L'A') + L" " };
         TestUtils::VerifyExpectedString(tb, expectedStringSecondToLastRow, { 0, bottomRow - 1 });
         TestUtils::VerifyExpectedString(tb, L"B", { 0, bottomRow });
     };

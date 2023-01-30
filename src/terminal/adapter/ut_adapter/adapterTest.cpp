@@ -158,8 +158,8 @@ public:
         if (_setWindowTitleResult)
         {
             // Put into WEX strings for rich logging when they don't compare.
-            VERIFY_ARE_EQUAL(String(_expectedWindowTitle.data(), gsl::narrow<int>(_expectedWindowTitle.size())),
-                             String(title.data(), gsl::narrow<int>(title.size())));
+            VERIFY_ARE_EQUAL(String(_expectedWindowTitle.data(), til::safe_cast<int>(_expectedWindowTitle.size())),
+                             String(title.data(), til::safe_cast<int>(title.size())));
         }
     }
 
@@ -1541,7 +1541,7 @@ public:
         VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::MEM_MemoryChecksum, 34));
 
         // Checksum is a 16-bit negated sum of the macro buffer characters.
-        const auto checksum = gsl::narrow_cast<uint16_t>(-('A' + 'B' + 'C' + 'D' + 'a' + 'b' + 'c' + 'd'));
+        const auto checksum = til::safe_cast_nothrow<uint16_t>(-('A' + 'B' + 'C' + 'D' + 'a' + 'b' + 'c' + 'd'));
         wchar_t pwszBuffer[50];
         swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\033P34!~%04X\033\\", checksum);
         _testGetSet->ValidateInputEvent(pwszBuffer);

@@ -187,7 +187,7 @@ class AliasTests
         rgwchTarget[cbTargetUsed] = L'\0';
 
         VERIFY_ARE_EQUAL(cbTargetExpected, cbTargetUsed, L"Target bytes should be filled with target size.");
-        VERIFY_ARE_EQUAL(String(targetExpected.data()), String(rgwchTarget.get(), gsl::narrow<int>(cbTargetUsed / sizeof(wchar_t))), L"Target string should be filled with target data.");
+        VERIFY_ARE_EQUAL(String(targetExpected.data()), String(rgwchTarget.get(), til::safe_cast<int>(cbTargetUsed / sizeof(wchar_t))), L"Target string should be filled with target data.");
         VERIFY_ARE_EQUAL(1u, dwLines, L"Line count should be 1.");
     }
 

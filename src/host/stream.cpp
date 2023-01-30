@@ -407,9 +407,9 @@ til::CoordType RetrieveNumberOfSpaces(_In_ til::CoordType sOriginalCursorPositio
         std::unique_ptr<IInputEvent> partialEvent;
 
         NumToWrite = TranslateUnicodeToOem(pBuffer,
-                                           gsl::narrow<ULONG>(NumToWrite / sizeof(wchar_t)),
+                                           til::safe_cast<ULONG>(NumToWrite / sizeof(wchar_t)),
                                            tempBuffer.get(),
-                                           gsl::narrow<ULONG>(NumToBytes),
+                                           til::safe_cast<ULONG>(NumToBytes),
                                            partialEvent);
         if (partialEvent.get())
         {
@@ -575,7 +575,7 @@ til::CoordType RetrieveNumberOfSpaces(_In_ til::CoordType sOriginalCursorPositio
         {
             waiter = std::make_unique<RAW_READ_DATA>(&inputBuffer,
                                                      &readHandleState,
-                                                     gsl::narrow<ULONG>(buffer.size_bytes()),
+                                                     til::safe_cast<ULONG>(buffer.size_bytes()),
                                                      reinterpret_cast<wchar_t*>(buffer.data()));
         }
 
@@ -626,9 +626,9 @@ til::CoordType RetrieveNumberOfSpaces(_In_ til::CoordType sOriginalCursorPositio
             std::unique_ptr<IInputEvent> partialEvent;
 
             bytesRead = TranslateUnicodeToOem(pBuffer,
-                                              gsl::narrow<ULONG>(NumToWrite / sizeof(wchar_t)),
+                                              til::safe_cast<ULONG>(NumToWrite / sizeof(wchar_t)),
                                               tempBuffer.get(),
-                                              gsl::narrow<ULONG>(bytesRead),
+                                              til::safe_cast<ULONG>(bytesRead),
                                               partialEvent);
 
             if (partialEvent.get())

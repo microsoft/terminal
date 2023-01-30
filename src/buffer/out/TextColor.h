@@ -144,7 +144,7 @@ public:
         // 0 and 2. We do this by XORing the index with 00000101, but only if
         // one (but not both) of those bit positions is set.
         const auto oneBitSet = (index ^ (index >> 2)) & 1;
-        return gsl::narrow_cast<BYTE>(index ^ oneBitSet ^ (oneBitSet << 2));
+        return til::safe_cast_nothrow<BYTE>(index ^ oneBitSet ^ (oneBitSet << 2));
     }
 
 private:

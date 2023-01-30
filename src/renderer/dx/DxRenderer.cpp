@@ -574,7 +574,7 @@ try
                                            nullptr,
                                            DeviceFlags,
                                            FeatureLevels.data(),
-                                           gsl::narrow_cast<UINT>(FeatureLevels.size()),
+                                           til::safe_cast_nothrow<UINT>(FeatureLevels.size()),
                                            D3D11_SDK_VERSION,
                                            &_d3dDevice,
                                            nullptr,
@@ -588,7 +588,7 @@ try
                                            nullptr,
                                            DeviceFlags,
                                            FeatureLevels.data(),
-                                           gsl::narrow_cast<UINT>(FeatureLevels.size()),
+                                           til::safe_cast_nothrow<UINT>(FeatureLevels.size()),
                                            D3D11_SDK_VERSION,
                                            &_d3dDevice,
                                            nullptr,
@@ -820,7 +820,7 @@ static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noe
         // #   #   #   #
         // 1234123412341234
         static constexpr std::array<float, 2> hyperlinkDashes{ 1.f, 3.f };
-        RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_dashStrokeStyleProperties, hyperlinkDashes.data(), gsl::narrow_cast<UINT32>(hyperlinkDashes.size()), &_dashStrokeStyle));
+        RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_dashStrokeStyleProperties, hyperlinkDashes.data(), til::safe_cast_nothrow<UINT32>(hyperlinkDashes.size()), &_dashStrokeStyle));
         _hyperlinkStrokeStyle = _dashStrokeStyle;
 
         // If in composition mode, apply scaling factor matrix
@@ -953,7 +953,7 @@ void DxEngine::_ReleaseDeviceResources() noexcept
 try
 {
     return _dwriteFactory->CreateTextLayout(string,
-                                            gsl::narrow<UINT32>(stringLength),
+                                            til::safe_cast<UINT32>(stringLength),
                                             _fontRenderData->DefaultTextFormat().Get(),
                                             static_cast<float>(_displaySizePixels.width),
                                             _fontRenderData->GlyphCell().height != 0 ? _fontRenderData->GlyphCell().narrow_height<float>() : _displaySizePixels.narrow_height<float>(),
@@ -1400,7 +1400,7 @@ try
                 _presentOffset = scrollPixels.to_win32_point();
 
                 // Now fill up the parameters structure from the member variables.
-                _presentParams.DirtyRectsCount = gsl::narrow<UINT>(_presentDirty.size());
+                _presentParams.DirtyRectsCount = til::safe_cast<UINT>(_presentDirty.size());
 
                 // It's not nice to use reinterpret_cast between til::rect and RECT,
                 // but to be honest... it does save a ton of type juggling.
@@ -1716,7 +1716,7 @@ try
 
     const auto font = _fontRenderData->GlyphCell().to_d2d_size();
     const D2D_POINT_2F target = { coordTarget.x * font.width, coordTarget.y * font.height };
-    const auto fullRunWidth = font.width * gsl::narrow_cast<unsigned>(cchLine);
+    const auto fullRunWidth = font.width * til::safe_cast_nothrow<unsigned>(cchLine);
 
     const auto DrawLine = [=](const auto x0, const auto y0, const auto x1, const auto y1, const auto strokeWidth) noexcept {
         _d2dDeviceContext->DrawLine({ x0, y0 }, { x1, y1 }, _d2dBrushForeground.Get(), strokeWidth, _strokeStyle.Get());

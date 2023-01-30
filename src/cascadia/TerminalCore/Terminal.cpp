@@ -954,7 +954,7 @@ try
     // * If bit 0 is set, a menu is active.
     //   If this flag is not specified ToUnicodeEx will send us character events on certain Alt+Key combinations (e.g. Alt+Arrow-Up).
     // * If bit 2 is set, keyboard state is not changed (Windows 10, version 1607 and newer)
-    const auto result = ToUnicodeEx(vkey, scanCode, keyState.data(), buffer.data(), gsl::narrow_cast<int>(buffer.size()), 0b101, nullptr);
+    const auto result = ToUnicodeEx(vkey, scanCode, keyState.data(), buffer.data(), til::safe_cast_nothrow<int>(buffer.size()), 0b101, nullptr);
 
     // TODO:GH#2853 We're only handling single UTF-16 code points right now, since that's the only thing KeyEvent supports.
     return result == 1 || result == -1 ? buffer.at(0) : 0;

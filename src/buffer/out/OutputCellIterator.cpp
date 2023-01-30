@@ -508,7 +508,7 @@ OutputCellView OutputCellIterator::s_GenerateView(const OutputCell& cell)
 // - The number of items of the input run consumed between these two iterators.
 til::CoordType OutputCellIterator::GetInputDistance(OutputCellIterator other) const noexcept
 {
-    return gsl::narrow_cast<til::CoordType>(_pos - other._pos);
+    return til::safe_cast_nothrow<til::CoordType>(_pos - other._pos);
 }
 
 // Routine Description:
@@ -517,5 +517,5 @@ til::CoordType OutputCellIterator::GetInputDistance(OutputCellIterator other) co
 // - The number of cells in the backing buffer filled between these two iterators.
 til::CoordType OutputCellIterator::GetCellDistance(OutputCellIterator other) const noexcept
 {
-    return gsl::narrow_cast<til::CoordType>(_distance - other._distance);
+    return til::safe_cast_nothrow<til::CoordType>(_distance - other._distance);
 }

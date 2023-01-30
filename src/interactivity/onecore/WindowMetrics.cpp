@@ -75,11 +75,11 @@ til::rect WindowMetrics::GetMinClientRectInPixels()
             {
                 DisplaySize.top = 0;
                 DisplaySize.left = 0;
-                DisplaySize.bottom = gsl::narrow_cast<LONG>(DisplaySizeIoctl.Height);
-                DisplaySize.right = gsl::narrow_cast<LONG>(DisplaySizeIoctl.Width);
+                DisplaySize.bottom = til::safe_cast_nothrow<LONG>(DisplaySizeIoctl.Height);
+                DisplaySize.right = til::safe_cast_nothrow<LONG>(DisplaySizeIoctl.Width);
 
-                FontSize.width = gsl::narrow_cast<SHORT>(FontSizeIoctl.Width);
-                FontSize.height = gsl::narrow_cast<SHORT>(FontSizeIoctl.Height);
+                FontSize.width = til::safe_cast_nothrow<SHORT>(FontSizeIoctl.Width);
+                FontSize.height = til::safe_cast_nothrow<SHORT>(FontSizeIoctl.Height);
             }
         }
         else

@@ -155,7 +155,7 @@ HMENU NotificationIcon::_CreateContextMenu(const IVectorView<winrt::Microsoft::T
         SetMenuInfo(hMenu, &mi);
 
         // Focus Current Terminal Window
-        AppendMenu(hMenu, MF_STRING, gsl::narrow<UINT_PTR>(NotificationIconMenuItemAction::FocusTerminal), RS_(L"NotificationIconFocusTerminal").c_str());
+        AppendMenu(hMenu, MF_STRING, til::safe_cast<UINT_PTR>(NotificationIconMenuItemAction::FocusTerminal), RS_(L"NotificationIconFocusTerminal").c_str());
         AppendMenu(hMenu, MF_SEPARATOR, 0, L"");
 
         // Submenu for Windows
@@ -176,7 +176,7 @@ HMENU NotificationIcon::_CreateContextMenu(const IVectorView<winrt::Microsoft::T
                     displayText << L" [" << std::wstring_view{ p.Name } << L"]";
                 }
 
-                AppendMenu(submenu, MF_STRING, gsl::narrow<UINT_PTR>(p.Id), displayText.str().c_str());
+                AppendMenu(submenu, MF_STRING, til::safe_cast<UINT_PTR>(p.Id), displayText.str().c_str());
             }
 
             MENUINFO submenuInfo{};
@@ -209,7 +209,7 @@ void NotificationIcon::MenuItemSelected(const HMENU menu, const UINT menuItemInd
     GetMenuInfo(menu, &mi);
     if (mi.dwMenuData)
     {
-        if (gsl::narrow<NotificationIconMenuItemAction>(mi.dwMenuData) == NotificationIconMenuItemAction::SummonWindow)
+        if (til::safe_cast<NotificationIconMenuItemAction>(mi.dwMenuData) == NotificationIconMenuItemAction::SummonWindow)
         {
             winrt::Microsoft::Terminal::Remoting::SummonWindowSelectionArgs args{};
             args.WindowID(GetMenuItemID(menu, menuItemIndex));
@@ -222,7 +222,7 @@ void NotificationIcon::MenuItemSelected(const HMENU menu, const UINT menuItemInd
     }
 
     // Now check the menu item itself for an action.
-    const auto action = gsl::narrow<NotificationIconMenuItemAction>(GetMenuItemID(menu, menuItemIndex));
+    const auto action = til::safe_cast<NotificationIconMenuItemAction>(GetMenuItemID(menu, menuItemIndex));
     switch (action)
     {
     case NotificationIconMenuItemAction::FocusTerminal:

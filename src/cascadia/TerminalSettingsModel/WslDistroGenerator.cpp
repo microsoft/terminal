@@ -189,7 +189,7 @@ static bool getWslNames(const wil::unique_hkey& wslRootKey,
 
         std::wstring buffer;
         auto result = wil::AdaptFixedSizeToAllocatedResult<std::wstring, 256>(buffer, [&](PWSTR value, size_t valueLength, size_t* valueLengthNeededWithNull) -> HRESULT {
-            auto length = gsl::narrow<DWORD>(valueLength * sizeof(wchar_t));
+            auto length = til::safe_cast<DWORD>(valueLength * sizeof(wchar_t));
             const auto status = RegQueryValueExW(distroKey.get(), RegKeyDistroName, 0, nullptr, reinterpret_cast<BYTE*>(value), &length);
             // length will receive the number of bytes including trailing null byte. Convert to a number of wchar_t's.
             // AdaptFixedSizeToAllocatedResult will then resize buffer to valueLengthNeededWithNull.

@@ -23,14 +23,14 @@ using namespace Microsoft::Console::Interactivity::OneCore;
 BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWidth, LONG FontWidth, LONG FontHeight) noexcept :
     RenderEngineBase(),
     _sharedViewBase(static_cast<std::byte*>(SharedViewBase)),
-    _displayHeight(gsl::narrow_cast<SIZE_T>(DisplayHeight)),
-    _displayWidth(gsl::narrow_cast<SIZE_T>(DisplayWidth)),
+    _displayHeight(til::safe_cast_nothrow<SIZE_T>(DisplayHeight)),
+    _displayWidth(til::safe_cast_nothrow<SIZE_T>(DisplayWidth)),
     _currentLegacyColorAttribute(DEFAULT_COLOR_ATTRIBUTE)
 {
     _runLength = sizeof(CD_IO_CHARACTER) * DisplayWidth;
 
-    _fontSize.width = FontWidth > SHORT_MAX ? SHORT_MAX : gsl::narrow_cast<til::CoordType>(FontWidth);
-    _fontSize.height = FontHeight > SHORT_MAX ? SHORT_MAX : gsl::narrow_cast<til::CoordType>(FontHeight);
+    _fontSize.width = FontWidth > SHORT_MAX ? SHORT_MAX : til::safe_cast_nothrow<til::CoordType>(FontWidth);
+    _fontSize.height = FontHeight > SHORT_MAX ? SHORT_MAX : til::safe_cast_nothrow<til::CoordType>(FontHeight);
 }
 
 [[nodiscard]] HRESULT BgfxEngine::Invalidate(const til::rect* /*psrRegion*/) noexcept
@@ -133,7 +133,7 @@ CATCH_RETURN()
 {
     try
     {
-        const auto y = gsl::narrow_cast<SIZE_T>(coord.y);
+        const auto y = til::safe_cast_nothrow<SIZE_T>(coord.y);
         const auto NewRun = reinterpret_cast<PCD_IO_CHARACTER>(_sharedViewBase + (y * 2 * _runLength) + _runLength);
 
         for (SIZE_T i = 0; i < clusters.size() && i < _displayWidth; i++)
@@ -166,8 +166,8 @@ try
     // TODO: MSFT: 11448021 - Modify BGFX to support rendering full-width
     // characters and a full-width cursor.
     CD_IO_CURSOR_INFORMATION CursorInfo;
-    CursorInfo.Row = gsl::narrow<USHORT>(options.coordCursor.y);
-    CursorInfo.Column = gsl::narrow<USHORT>(options.coordCursor.x);
+    CursorInfo.Row = til::safe_cast<USHORT>(options.coordCursor.y);
+    CursorInfo.Column = til::safe_cast<USHORT>(options.coordCursor.x);
     CursorInfo.Height = options.ulCursorHeightPercent;
     CursorInfo.IsVisible = TRUE;
 
@@ -217,8 +217,8 @@ CATCH_RETURN()
 
 [[nodiscard]] HRESULT BgfxEngine::GetDirtyArea(std::span<const til::rect>& area) noexcept
 {
-    _dirtyArea.bottom = gsl::narrow_cast<til::CoordType>(std::max(static_cast<SIZE_T>(0), _displayHeight));
-    _dirtyArea.right = gsl::narrow_cast<til::CoordType>(std::max(static_cast<SIZE_T>(0), _displayWidth));
+    _dirtyArea.bottom = til::safe_cast_nothrow<til::CoordType>(std::max(static_cast<SIZE_T>(0), _displayHeight));
+    _dirtyArea.right = til::safe_cast_nothrow<til::CoordType>(std::max(static_cast<SIZE_T>(0), _displayWidth));
 
     area = { &_dirtyArea,
              1 };

@@ -102,13 +102,13 @@ void BufferTests::TestWritingInactiveScreenBuffer()
     Log::Comment(L"Write one line of text to the active/main output buffer.");
     DWORD written = 0;
     // Ok in legacy mode, ok in modern mode
-    VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleW(out, primary.data(), gsl::narrow<DWORD>(primary.size()), &written, nullptr));
+    VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleW(out, primary.data(), til::safe_cast<DWORD>(primary.size()), &written, nullptr));
     VERIFY_ARE_EQUAL(primary.size(), written);
 
     Log::Comment(L"Write a newline character to move the cursor down to the left most cell on the next line down.");
     // write a newline too to move the cursor down
     written = 0;
-    VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleW(out, newline.data(), gsl::narrow<DWORD>(newline.size()), &written, nullptr));
+    VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleW(out, newline.data(), til::safe_cast<DWORD>(newline.size()), &written, nullptr));
     VERIFY_ARE_EQUAL(newline.size(), written);
 
     Log::Comment(L"Create an alternative backing screen buffer that we will NOT be setting as active.");
@@ -118,7 +118,7 @@ void BufferTests::TestWritingInactiveScreenBuffer()
     // Ok in legacy mode, NOT ok in modern mode.
     Log::Comment(L"Try to write a second line of different text but to the alternative backing screen buffer.");
     written = 0;
-    VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleW(handle, alternative.data(), gsl::narrow<DWORD>(alternative.size()), &written, nullptr));
+    VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleW(handle, alternative.data(), til::safe_cast<DWORD>(alternative.size()), &written, nullptr));
     VERIFY_ARE_EQUAL(alternative.size(), written);
 
     auto primaryBuffer = std::make_unique<wchar_t[]>(primary.size());
@@ -126,22 +126,22 @@ void BufferTests::TestWritingInactiveScreenBuffer()
 
     Log::Comment(L"Read the first line out of the main/visible screen buffer. It should contain the first thing we wrote.");
     DWORD read = 0;
-    VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputCharacterW(out, primaryBuffer.get(), gsl::narrow<DWORD>(primary.size()), { 0, 0 }, &read));
+    VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputCharacterW(out, primaryBuffer.get(), til::safe_cast<DWORD>(primary.size()), { 0, 0 }, &read));
     VERIFY_ARE_EQUAL(primary.size(), read);
-    VERIFY_ARE_EQUAL(String(primary.data()), String(primaryBuffer.get(), gsl::narrow<int>(primary.size())));
+    VERIFY_ARE_EQUAL(String(primary.data()), String(primaryBuffer.get(), til::safe_cast<int>(primary.size())));
 
     Log::Comment(L"Read the second line out of the main/visible screen buffer. It should be full of blanks. The second thing we wrote wasn't to this buffer so it shouldn't show.");
     const std::wstring alternativeExpected(alternative.size(), L'\x20');
     read = 0;
-    VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputCharacterW(out, alternativeBuffer.get(), gsl::narrow<DWORD>(alternative.size()), { 0, 1 }, &read));
+    VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputCharacterW(out, alternativeBuffer.get(), til::safe_cast<DWORD>(alternative.size()), { 0, 1 }, &read));
     VERIFY_ARE_EQUAL(alternative.size(), read);
-    VERIFY_ARE_EQUAL(String(alternativeExpected.data()), String(alternativeBuffer.get(), gsl::narrow<int>(alternative.size())));
+    VERIFY_ARE_EQUAL(String(alternativeExpected.data()), String(alternativeBuffer.get(), til::safe_cast<int>(alternative.size())));
 
     Log::Comment(L"Now read the first line from the alternative/non-visible screen buffer. It should contain the second thing we wrote.");
     read = 0;
-    VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputCharacterW(handle, alternativeBuffer.get(), gsl::narrow<DWORD>(alternative.size()), { 0, 0 }, &read));
+    VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputCharacterW(handle, alternativeBuffer.get(), til::safe_cast<DWORD>(alternative.size()), { 0, 0 }, &read));
     VERIFY_ARE_EQUAL(alternative.size(), read);
-    VERIFY_ARE_EQUAL(String(alternative.data()), String(alternativeBuffer.get(), gsl::narrow<int>(alternative.size())));
+    VERIFY_ARE_EQUAL(String(alternative.data()), String(alternativeBuffer.get(), til::safe_cast<int>(alternative.size())));
 }
 
 void BufferTests::ScrollLargeBufferPerformance()

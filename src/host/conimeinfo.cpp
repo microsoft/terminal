@@ -369,7 +369,7 @@ std::vector<OutputCell>::const_iterator ConsoleImeInfo::_WriteConversionArea(con
 
     // Set the viewport and positioning parameters for the conversion area to describe to the renderer
     // the appropriate location to overlay this conversion area on top of the main screen buffer inside the viewport.
-    const til::inclusive_rect region{ insertionPos.x, 0, gsl::narrow<til::CoordType>(insertionPos.x + lineVec.size() - 1), 0 };
+    const til::inclusive_rect region{ insertionPos.x, 0, til::safe_cast<til::CoordType>(insertionPos.x + lineVec.size() - 1), 0 };
     area.SetWindowInfo(region);
     area.SetViewPos({ 0 - view.Left(), insertionPos.y - view.Top() });
 

@@ -531,7 +531,7 @@ namespace winrt::TerminalApp::implementation
 
             _LastTabClosedHandlers(*this, nullptr);
         }
-        else if (focusedTabIndex.has_value() && focusedTabIndex.value() == gsl::narrow_cast<uint32_t>(tabIndex))
+        else if (focusedTabIndex.has_value() && focusedTabIndex.value() == til::safe_cast_nothrow<uint32_t>(tabIndex))
         {
             // Manually select the new tab to get focus, rather than relying on TabView since:
             // 1. We want to customize this behavior (e.g., use MRU logic)
@@ -1010,7 +1010,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto tabView = sender.as<MUX::Controls::TabView>();
             auto selectedIndex = tabView.SelectedIndex();
-            if (selectedIndex >= 0 && selectedIndex < gsl::narrow_cast<int32_t>(_tabs.Size()))
+            if (selectedIndex >= 0 && selectedIndex < til::safe_cast_nothrow<int32_t>(_tabs.Size()))
             {
                 const auto tab{ _tabs.GetAt(selectedIndex) };
                 _UpdatedSelectedTab(tab);
@@ -1063,7 +1063,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_TryMoveTab(const uint32_t currentTabIndex, const int32_t suggestedNewTabIndex)
     {
-        auto newTabIndex = gsl::narrow_cast<uint32_t>(std::clamp<int32_t>(suggestedNewTabIndex, 0, _tabs.Size() - 1));
+        auto newTabIndex = til::safe_cast_nothrow<uint32_t>(std::clamp<int32_t>(suggestedNewTabIndex, 0, _tabs.Size() - 1));
         if (currentTabIndex != newTabIndex)
         {
             auto tab = _tabs.GetAt(currentTabIndex);

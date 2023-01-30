@@ -641,7 +641,7 @@ void AdaptDispatch::_FillRect(TextBuffer& textBuffer, const til::rect& fillRect,
 {
     if (fillRect.left < fillRect.right && fillRect.top < fillRect.bottom)
     {
-        const auto fillWidth = gsl::narrow_cast<size_t>(fillRect.right - fillRect.left);
+        const auto fillWidth = til::safe_cast_nothrow<size_t>(fillRect.right - fillRect.left);
         const auto fillData = OutputCellIterator{ fillChar, fillAttrs, fillWidth };
         const auto col = fillRect.left;
         for (auto row = fillRect.top; row < fillRect.bottom; row++)
@@ -1167,7 +1167,7 @@ bool AdaptDispatch::FillRectangularArea(const VTParameter ch, const VTInt top, c
     const auto unicodeChar = (charValue >= 256 && charValue <= 65535 && _api.GetConsoleOutputCP() == CP_UTF8);
     if (glChar || grChar || unicodeChar)
     {
-        const auto fillChar = _termOutput.TranslateKey(gsl::narrow_cast<wchar_t>(charValue));
+        const auto fillChar = _termOutput.TranslateKey(til::safe_cast_nothrow<wchar_t>(charValue));
         const auto fillAttributes = textBuffer.GetCurrentAttributes();
         if (IsGlyphFullWidth(fillChar))
         {
@@ -1487,7 +1487,7 @@ void AdaptDispatch::_ScrollMovement(const VTInt delta)
 // - True.
 bool AdaptDispatch::ScrollUp(const VTInt uiDistance)
 {
-    _ScrollMovement(-gsl::narrow_cast<int32_t>(uiDistance));
+    _ScrollMovement(-til::safe_cast_nothrow<int32_t>(uiDistance));
     return true;
 }
 
@@ -1499,7 +1499,7 @@ bool AdaptDispatch::ScrollUp(const VTInt uiDistance)
 // - True.
 bool AdaptDispatch::ScrollDown(const VTInt uiDistance)
 {
-    _ScrollMovement(gsl::narrow_cast<int32_t>(uiDistance));
+    _ScrollMovement(til::safe_cast_nothrow<int32_t>(uiDistance));
     return true;
 }
 
@@ -1840,7 +1840,7 @@ void AdaptDispatch::_InsertDeleteLineHelper(const int32_t delta)
 // - True.
 bool AdaptDispatch::InsertLine(const VTInt distance)
 {
-    _InsertDeleteLineHelper(gsl::narrow_cast<int32_t>(distance));
+    _InsertDeleteLineHelper(til::safe_cast_nothrow<int32_t>(distance));
     return true;
 }
 
@@ -1858,7 +1858,7 @@ bool AdaptDispatch::InsertLine(const VTInt distance)
 // - True.
 bool AdaptDispatch::DeleteLine(const VTInt distance)
 {
-    _InsertDeleteLineHelper(-gsl::narrow_cast<int32_t>(distance));
+    _InsertDeleteLineHelper(-til::safe_cast_nothrow<int32_t>(distance));
     return true;
 }
 
@@ -2207,7 +2207,7 @@ void AdaptDispatch::_ResetTabStops() noexcept
 // - <none>
 void AdaptDispatch::_InitTabStopsForWidth(const VTInt width)
 {
-    const auto screenWidth = gsl::narrow<size_t>(width);
+    const auto screenWidth = til::safe_cast<size_t>(width);
     const auto initialWidth = _tabStopColumns.size();
     if (screenWidth > initialWidth)
     {

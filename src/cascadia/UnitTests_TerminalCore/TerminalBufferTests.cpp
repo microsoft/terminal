@@ -103,7 +103,7 @@ void TerminalBufferTests::TestWrappingCharByChar()
     const auto initialView = term->GetViewport();
     auto& cursor = termTb.GetCursor();
 
-    const auto charsToWrite = gsl::narrow_cast<til::CoordType>(TestUtils::Test100CharsString.size());
+    const auto charsToWrite = til::safe_cast_nothrow<til::CoordType>(TestUtils::Test100CharsString.size());
 
     VERIFY_ARE_EQUAL(0, initialView.Top());
     VERIFY_ARE_EQUAL(32, initialView.BottomExclusive());
@@ -142,7 +142,7 @@ void TerminalBufferTests::TestWrappingALongString()
     const auto initialView = term->GetViewport();
     auto& cursor = termTb.GetCursor();
 
-    const auto charsToWrite = gsl::narrow_cast<til::CoordType>(TestUtils::Test100CharsString.size());
+    const auto charsToWrite = til::safe_cast_nothrow<til::CoordType>(TestUtils::Test100CharsString.size());
     VERIFY_ARE_EQUAL(100, charsToWrite);
 
     VERIFY_ARE_EQUAL(0, initialView.Top());

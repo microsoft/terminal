@@ -54,7 +54,7 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
     {
         std::array<wchar_t, LOCALE_NAME_MAX_LENGTH> localeName;
 
-        const auto returnCode = GetUserDefaultLocaleName(localeName.data(), gsl::narrow<int>(localeName.size()));
+        const auto returnCode = GetUserDefaultLocaleName(localeName.data(), til::safe_cast<int>(localeName.size()));
         if (returnCode)
         {
             _userLocaleName = { localeName.data() };
@@ -596,7 +596,7 @@ float DxFontRenderData::_FontStretchToWidthAxisValue(DWRITE_FONT_STRETCH fontStr
     // 10 elements from DWRITE_FONT_STRETCH_UNDEFINED (0) to DWRITE_FONT_STRETCH_ULTRA_EXPANDED (9)
     static constexpr auto fontStretchEnumToVal = std::array{ 100.0f, 50.0f, 62.5f, 75.0f, 87.5f, 100.0f, 112.5f, 125.0f, 150.0f, 200.0f };
 
-    if (gsl::narrow_cast<size_t>(fontStretch) > fontStretchEnumToVal.size())
+    if (til::safe_cast_nothrow<size_t>(fontStretch) > fontStretchEnumToVal.size())
     {
         fontStretch = DWRITE_FONT_STRETCH_NORMAL;
     }
@@ -621,7 +621,7 @@ float DxFontRenderData::_FontStyleToSlantFixedAxisValue(DWRITE_FONT_STYLE fontSt
     // vast majority of italic fonts are also slanted. Ideally the slant comes from the
     // 'slnt' value in the STAT or fvar table, or the post table italic angle.
 
-    if (gsl::narrow_cast<size_t>(fontStyle) > fontStyleEnumToVal.size())
+    if (til::safe_cast_nothrow<size_t>(fontStyle) > fontStyleEnumToVal.size())
     {
         fontStyle = DWRITE_FONT_STYLE_NORMAL;
     }
@@ -678,7 +678,7 @@ std::vector<DWRITE_FONT_AXIS_VALUE> DxFontRenderData::GetAxisVector(const DWRITE
 
     if (WI_IsFlagClear(axisTagPresence, AxisTagPresence::Weight))
     {
-        axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_WEIGHT, gsl::narrow<float>(fontWeight) });
+        axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_WEIGHT, til::safe_cast<float>(fontWeight) });
     }
     if (WI_IsFlagClear(axisTagPresence, AxisTagPresence::Width))
     {
@@ -911,11 +911,11 @@ Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::_BuildTextFormat(con
     {
         if (_inhibitUserWeight && !_axesVectorWithoutWeight.empty())
         {
-            format3->SetFontAxisValues(_axesVectorWithoutWeight.data(), gsl::narrow<uint32_t>(_axesVectorWithoutWeight.size()));
+            format3->SetFontAxisValues(_axesVectorWithoutWeight.data(), til::safe_cast<uint32_t>(_axesVectorWithoutWeight.size()));
         }
         else if (!_inhibitUserWeight && !_axesVector.empty())
         {
-            format3->SetFontAxisValues(_axesVector.data(), gsl::narrow<uint32_t>(_axesVector.size()));
+            format3->SetFontAxisValues(_axesVector.data(), til::safe_cast<uint32_t>(_axesVector.size()));
         }
     }
 

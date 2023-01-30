@@ -340,7 +340,7 @@ try
         wil::unique_cotaskmem_string str;
         RETURN_IF_FAILED(StringFromCLSID(clsid, &str));
 
-        RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_SetValue(startupKey.get(), value, REG_SZ, reinterpret_cast<BYTE*>(str.get()), gsl::narrow<DWORD>(wcslen(str.get()) * sizeof(wchar_t))));
+        RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_SetValue(startupKey.get(), value, REG_SZ, reinterpret_cast<BYTE*>(str.get()), til::safe_cast<DWORD>(wcslen(str.get()) * sizeof(wchar_t))));
 
         return S_OK;
     }

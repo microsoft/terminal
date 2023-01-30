@@ -75,8 +75,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         if (settings)
         {
-            _initialRows = gsl::narrow<til::CoordType>(winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialRows").try_as<Windows::Foundation::IPropertyValue>(), _initialRows));
-            _initialCols = gsl::narrow<til::CoordType>(winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialCols").try_as<Windows::Foundation::IPropertyValue>(), _initialCols));
+            _initialRows = til::safe_cast<til::CoordType>(winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialRows").try_as<Windows::Foundation::IPropertyValue>(), _initialRows));
+            _initialCols = til::safe_cast<til::CoordType>(winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialCols").try_as<Windows::Foundation::IPropertyValue>(), _initialCols));
         }
     }
 
@@ -126,7 +126,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 {
                     return pInstance->_OutputThread();
                 }
-                return gsl::narrow_cast<DWORD>(E_INVALIDARG);
+                return til::safe_cast_nothrow<DWORD>(E_INVALIDARG);
             },
             this,
             0,
@@ -615,7 +615,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - helper function to list the user's tenants and let them decide which tenant they wish to connect to
     void AzureConnection::_RunTenantChoiceState()
     {
-        auto numTenants = gsl::narrow<int>(_tenantList.size());
+        auto numTenants = til::safe_cast<int>(_tenantList.size());
         for (auto i = 0; i < numTenants; i++)
         {
             _WriteStringWithNewline(_formatTenant(i, til::at(_tenantList, i)));

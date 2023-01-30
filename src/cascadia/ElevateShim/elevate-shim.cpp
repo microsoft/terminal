@@ -46,7 +46,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     std::wstring appUserModelId;
     const auto result = wil::AdaptFixedSizeToAllocatedResult<std::wstring, APPLICATION_USER_MODEL_ID_MAX_LENGTH>(
         appUserModelId, [&](PWSTR value, size_t valueLength, gsl::not_null<size_t*> valueLengthNeededWithNull) noexcept -> HRESULT {
-            UINT32 length = gsl::narrow_cast<UINT32>(valueLength);
+            UINT32 length = til::safe_cast_nothrow<UINT32>(valueLength);
             const LONG rc = GetCurrentApplicationUserModelId(&length, value);
             switch (rc)
             {

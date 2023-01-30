@@ -156,7 +156,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
             // the file size changed and we've failed to read the full file.
             std::string buffer(static_cast<size_t>(fileSize) + 1, '\0');
             DWORD bytesRead = 0;
-            THROW_IF_WIN32_BOOL_FALSE(ReadFile(file.get(), buffer.data(), gsl::narrow<DWORD>(buffer.size()), &bytesRead, nullptr));
+            THROW_IF_WIN32_BOOL_FALSE(ReadFile(file.get(), buffer.data(), til::safe_cast<DWORD>(buffer.size()), &bytesRead, nullptr));
 
             // This implementation isn't atomic as we'd need to use an exclusive file lock.
             // But this would be annoying for users as it forces them to close the file in their editor.
@@ -272,7 +272,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
                                             nullptr) };
         THROW_LAST_ERROR_IF(!file);
 
-        const auto fileSize = gsl::narrow<DWORD>(content.size());
+        const auto fileSize = til::safe_cast<DWORD>(content.size());
         DWORD bytesWritten = 0;
         THROW_IF_WIN32_BOOL_FALSE(WriteFile(file.get(), content.data(), fileSize, &bytesWritten, nullptr));
 

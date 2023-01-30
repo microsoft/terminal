@@ -293,8 +293,8 @@ bool Pane::_Resize(const ResizeDirection& direction)
     // Make sure we're not making a pane explode here by resizing it to 0 characters.
     const auto changeWidth = _splitState == SplitState::Vertical;
 
-    const Size actualSize{ gsl::narrow_cast<float>(_root.ActualWidth()),
-                           gsl::narrow_cast<float>(_root.ActualHeight()) };
+    const Size actualSize{ static_cast<float>(_root.ActualWidth()),
+                           static_cast<float>(_root.ActualHeight()) };
     // actualDimension is the size in DIPs of this pane in the direction we're
     // resizing.
     const auto actualDimension = changeWidth ? actualSize.Width : actualSize.Height;
@@ -470,8 +470,8 @@ std::shared_ptr<Pane> Pane::NavigateDirection(const std::shared_ptr<Pane> source
     // move focus from one child to another child.
     // We now must keep track of state while we recurse.
     // If we have it, get the size of this pane.
-    const auto scaleX = _root.ActualWidth() > 0 ? gsl::narrow_cast<float>(_root.ActualWidth()) : 1.f;
-    const auto scaleY = _root.ActualHeight() > 0 ? gsl::narrow_cast<float>(_root.ActualHeight()) : 1.f;
+    const auto scaleX = _root.ActualWidth() > 0 ? static_cast<float>(_root.ActualWidth()) : 1.f;
+    const auto scaleY = _root.ActualHeight() > 0 ? static_cast<float>(_root.ActualHeight()) : 1.f;
     const auto paneNeighborPair = _FindPaneAndNeighbor(sourcePane, direction, { 0, 0, scaleX, scaleY });
 
     if (paneNeighborPair.source && paneNeighborPair.neighbor)
@@ -2429,8 +2429,8 @@ SplitState Pane::_convertAutomaticOrDirectionalSplitState(const SplitDirection& 
     {
         // If the requested split type was "auto", determine which direction to
         // split based on our current dimensions
-        const Size actualSize{ gsl::narrow_cast<float>(_root.ActualWidth()),
-                               gsl::narrow_cast<float>(_root.ActualHeight()) };
+        const Size actualSize{ static_cast<float>(_root.ActualWidth()),
+                               static_cast<float>(_root.ActualHeight()) };
         return actualSize.Width >= actualSize.Height ? SplitState::Vertical : SplitState::Horizontal;
     }
     if (splitType == SplitDirection::Up || splitType == SplitDirection::Down)

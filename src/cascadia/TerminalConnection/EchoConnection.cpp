@@ -22,7 +22,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         {
             if (wch < 0x20)
             {
-                prettyPrint << L"^" << gsl::narrow_cast<wchar_t>(wch + 0x40);
+                prettyPrint << L"^" << til::safe_cast_nothrow<wchar_t>(wch + 0x40);
             }
             else if (wch == 0x7f)
             {

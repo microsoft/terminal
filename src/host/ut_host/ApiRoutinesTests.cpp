@@ -248,7 +248,7 @@ class ApiRoutinesTests
         // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
         VERIFY_ARE_EQUAL(title.length(), cchWritten);
         VERIFY_ARE_EQUAL(title.length(), cchNeeded);
-        VERIFY_ARE_EQUAL(WEX::Common::String(title.data(), gsl::narrow_cast<int>(title.size())), WEX::Common::String(pwszTitle));
+        VERIFY_ARE_EQUAL(WEX::Common::String(title.data(), til::safe_cast_nothrow<int>(title.size())), WEX::Common::String(pwszTitle));
     }
 
     TEST_METHOD(ApiGetConsoleOriginalTitleA)
@@ -261,7 +261,7 @@ class ApiRoutinesTests
         const auto iBytesNeeded = WideCharToMultiByte(gci.OutputCP,
                                                       0,
                                                       originalTitle.data(),
-                                                      gsl::narrow_cast<int>(originalTitle.size()),
+                                                      til::safe_cast_nothrow<int>(originalTitle.size()),
                                                       nullptr,
                                                       0,
                                                       nullptr,
@@ -273,7 +273,7 @@ class ApiRoutinesTests
         VERIFY_WIN32_BOOL_SUCCEEDED(WideCharToMultiByte(gci.OutputCP,
                                                         0,
                                                         originalTitle.data(),
-                                                        gsl::narrow_cast<int>(originalTitle.size()),
+                                                        til::safe_cast_nothrow<int>(originalTitle.size()),
                                                         pszExpected.get(),
                                                         iBytesNeeded,
                                                         nullptr,
@@ -310,7 +310,7 @@ class ApiRoutinesTests
         // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
         VERIFY_ARE_EQUAL(originalTitle.length(), cchWritten);
         VERIFY_ARE_EQUAL(originalTitle.length(), cchNeeded);
-        VERIFY_ARE_EQUAL(WEX::Common::String(originalTitle.data(), gsl::narrow_cast<int>(originalTitle.size())), WEX::Common::String(pwszTitle));
+        VERIFY_ARE_EQUAL(WEX::Common::String(originalTitle.data(), til::safe_cast_nothrow<int>(originalTitle.size())), WEX::Common::String(pwszTitle));
     }
 
     static void s_AdjustOutputWait(const bool fShouldBlock)

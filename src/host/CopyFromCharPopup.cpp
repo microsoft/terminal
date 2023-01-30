@@ -49,7 +49,7 @@ CopyFromCharPopup::CopyFromCharPopup(SCREEN_INFORMATION& screenInfo) :
     {
         // char was found, delete everything between the cursor and it
         const auto difference = std::distance(span.begin(), foundLocation);
-        for (unsigned int i = 0; i < gsl::narrow<unsigned int>(difference); ++i)
+        for (unsigned int i = 0; i < til::safe_cast<unsigned int>(difference); ++i)
         {
             CommandLine::Instance().DeleteFromRightOfCursor(cookedReadData);
         }

@@ -27,11 +27,11 @@ CustomTextLayout::CustomTextLayout(const gsl::not_null<DxFontRenderData*> fontRe
     _runs{},
     _breakpoints{},
     _runIndex{ 0 },
-    _width{ gsl::narrow_cast<size_t>(fontRenderData->GlyphCell().width) },
+    _width{ til::safe_cast_nothrow<size_t>(fontRenderData->GlyphCell().width) },
     _isEntireTextSimple{ false }
 {
-    _localeName.resize(gsl::narrow_cast<size_t>(fontRenderData->DefaultTextFormat()->GetLocaleNameLength()) + 1); // +1 for null
-    THROW_IF_FAILED(fontRenderData->DefaultTextFormat()->GetLocaleName(_localeName.data(), gsl::narrow<UINT32>(_localeName.size())));
+    _localeName.resize(til::safe_cast_nothrow<size_t>(fontRenderData->DefaultTextFormat()->GetLocaleNameLength()) + 1); // +1 for null
+    THROW_IF_FAILED(fontRenderData->DefaultTextFormat()->GetLocaleName(_localeName.data(), til::safe_cast<UINT32>(_localeName.size())));
 }
 
 //Routine Description:
@@ -72,7 +72,7 @@ try
 
     for (const auto& cluster : clusters)
     {
-        const auto cols = gsl::narrow<UINT16>(cluster.GetColumns());
+        const auto cols = til::safe_cast<UINT16>(cluster.GetColumns());
         const auto text = cluster.GetText();
 
         // Push back the number of columns for this bit of text.
@@ -80,7 +80,7 @@ try
 
         // If there is more than one text character here, push 0s for the rest of the columns
         // of the text run.
-        _textClusterColumns.resize(_textClusterColumns.size() + base::ClampSub(text.size(), 1u), gsl::narrow_cast<UINT16>(0u));
+        _textClusterColumns.resize(_textClusterColumns.size() + base::ClampSub(text.size(), 1u), til::safe_cast_nothrow<UINT16>(0u));
 
         _text += text;
     }
@@ -189,7 +189,7 @@ CATCH_RETURN()
 {
     try
     {
-        const auto textLength = gsl::narrow<UINT32>(_text.size());
+        const auto textLength = til::safe_cast<UINT32>(_text.size());
 
         auto isTextSimple = FALSE;
         UINT32 uiLengthRead = 0;
@@ -231,7 +231,7 @@ CATCH_RETURN()
     {
         // We're going to need the text length in UINT32 format for the DWrite calls.
         // Convert it once up front.
-        const auto textLength = gsl::narrow<UINT32>(_text.size());
+        const auto textLength = til::safe_cast<UINT32>(_text.size());
 
         // Initially start out with one result that covers the entire range.
         // This result will be subdivided by the analysis processes.
@@ -282,7 +282,7 @@ CATCH_RETURN()
     try
     {
         // Shapes all the glyph runs in the layout.
-        const auto textLength = gsl::narrow<UINT32>(_text.size());
+        const auto textLength = til::safe_cast<UINT32>(_text.size());
 
         // Estimate the maximum number of glyph indices needed to hold a string.
         const auto estimatedGlyphCount = _EstimateGlyphCount(textLength);
@@ -339,7 +339,7 @@ CATCH_RETURN()
         Run& run = _runs.at(runIndex);
         const auto textStart = run.textStart;
         const auto textLength = run.textLength;
-        auto maxGlyphCount = gsl::narrow<UINT32>(_glyphIndices.size() - glyphStart);
+        auto maxGlyphCount = til::safe_cast<UINT32>(_glyphIndices.size() - glyphStart);
         UINT32 actualGlyphCount = 0;
 
         run.glyphStart = glyphStart;
@@ -392,7 +392,7 @@ CATCH_RETURN()
 
             // Set all the clusters as sequential. In a simple run, we're going 1 to 1.
             // Fill the clusters sequentially from 0 to N-1.
-            std::iota(_glyphClusters.begin(), _glyphClusters.end(), gsl::narrow_cast<unsigned short>(0));
+            std::iota(_glyphClusters.begin(), _glyphClusters.end(), til::safe_cast_nothrow<unsigned short>(0));
 
             run.glyphCount = textLength;
             glyphStart += textLength;
@@ -406,7 +406,7 @@ CATCH_RETURN()
         // Get the features to apply to the font
         const auto& features = _fontRenderData->DefaultFontFeatures();
 #pragma warning(suppress : 26492) // Don't use const_cast to cast away const or volatile (type.3).
-        DWRITE_TYPOGRAPHIC_FEATURES typographicFeatures = { const_cast<DWRITE_FONT_FEATURE*>(features.data()), gsl::narrow<uint32_t>(features.size()) };
+        DWRITE_TYPOGRAPHIC_FEATURES typographicFeatures = { const_cast<DWRITE_FONT_FEATURE*>(features.data()), til::safe_cast<uint32_t>(features.size()) };
         DWRITE_TYPOGRAPHIC_FEATURES const* typographicFeaturesPointer = &typographicFeatures;
         const uint32_t fontFeatureLengths[] = { textLength };
 
@@ -457,8 +457,8 @@ CATCH_RETURN()
 
         // Get the placement of the all the glyphs.
 
-        _glyphAdvances.resize(std::max(gsl::narrow_cast<size_t>(glyphStart) + gsl::narrow_cast<size_t>(actualGlyphCount), _glyphAdvances.size()));
-        _glyphOffsets.resize(std::max(gsl::narrow_cast<size_t>(glyphStart) + gsl::narrow_cast<size_t>(actualGlyphCount), _glyphOffsets.size()));
+        _glyphAdvances.resize(std::max(til::safe_cast_nothrow<size_t>(glyphStart) + til::safe_cast_nothrow<size_t>(actualGlyphCount), _glyphAdvances.size()));
+        _glyphOffsets.resize(std::max(til::safe_cast_nothrow<size_t>(glyphStart) + til::safe_cast_nothrow<size_t>(actualGlyphCount), _glyphOffsets.size()));
 
         const auto fontSizeFormat = _formatInUse->GetFontSize();
         const auto fontSize = fontSizeFormat * run.fontScale;
@@ -822,8 +822,8 @@ try
             // GH 4665: In theory, we could also store the length of the new run and coalesce
             //       in case two adjacent glyphs need the same scale factor.
             _glyphScaleCorrections.push_back(ScaleCorrection{
-                gsl::narrow<UINT32>(clusterTextBegin),
-                gsl::narrow<UINT32>(clusterTextLength),
+                til::safe_cast<UINT32>(clusterTextBegin),
+                til::safe_cast<UINT32>(clusterTextLength),
                 scaleProposed });
 
             // Adjust all relevant advances by the scale factor.
@@ -874,7 +874,7 @@ CATCH_RETURN();
         auto mutableOrigin = origin;
 
         // Draw each run separately.
-        for (auto runIndex = 0; runIndex < gsl::narrow<INT32>(_runs.size()); ++runIndex)
+        for (auto runIndex = 0; runIndex < til::safe_cast<INT32>(_runs.size()); ++runIndex)
         {
             // Get the run
             const Run& run = _runs.at(runIndex);
@@ -893,9 +893,9 @@ CATCH_RETURN();
                 auto lastIndexRTL = runIndex;
 
                 // Step 1: Get to the last contiguous RTL run from here
-                while (lastIndexRTL < gsl::narrow<INT32>(_runs.size()) - 1) // only could ever advance if there's something left
+                while (lastIndexRTL < til::safe_cast<INT32>(_runs.size()) - 1) // only could ever advance if there's something left
                 {
-                    const Run& nextRun = _runs.at(gsl::narrow_cast<size_t>(lastIndexRTL + 1));
+                    const Run& nextRun = _runs.at(til::safe_cast_nothrow<size_t>(lastIndexRTL + 1));
                     if (WI_IsFlagSet(nextRun.bidiLevel, 1))
                     {
                         lastIndexRTL++;
@@ -1026,7 +1026,7 @@ CATCH_RETURN();
     if (textPosition < _text.size())
     {
         *textString = &_text.at(textPosition);
-        *textLength = gsl::narrow<UINT32>(_text.size()) - textPosition;
+        *textLength = til::safe_cast<UINT32>(_text.size()) - textPosition;
     }
 
     return S_OK;
@@ -1090,7 +1090,7 @@ CATCH_RETURN();
     RETURN_HR_IF_NULL(E_INVALIDARG, localeName);
 
     *localeName = _localeName.data();
-    *textLength = gsl::narrow<UINT32>(_text.size()) - textPosition;
+    *textLength = til::safe_cast<UINT32>(_text.size()) - textPosition;
 
     return S_OK;
 }
@@ -1112,7 +1112,7 @@ CATCH_RETURN();
     RETURN_HR_IF_NULL(E_INVALIDARG, numberSubstitution);
 
     *numberSubstitution = nullptr;
-    *textLength = gsl::narrow<UINT32>(_text.size()) - textPosition;
+    *textLength = til::safe_cast<UINT32>(_text.size()) - textPosition;
 
     return S_OK;
 }
@@ -1267,8 +1267,8 @@ CATCH_RETURN();
         RETURN_IF_FAILED(format1->GetFontCollection(&collection));
 
         std::wstring familyName;
-        familyName.resize(gsl::narrow_cast<size_t>(format1->GetFontFamilyNameLength()) + 1);
-        RETURN_IF_FAILED(format1->GetFontFamilyName(familyName.data(), gsl::narrow<UINT32>(familyName.size())));
+        familyName.resize(til::safe_cast_nothrow<size_t>(format1->GetFontFamilyNameLength()) + 1);
+        RETURN_IF_FAILED(format1->GetFontFamilyName(familyName.data(), til::safe_cast<UINT32>(familyName.size())));
 
         const auto weight = format1->GetFontWeight();
         const auto style = format1->GetFontStyle();
@@ -1300,7 +1300,7 @@ CATCH_RETURN();
                                          collection.Get(),
                                          familyName.data(),
                                          axesVector.data(),
-                                         gsl::narrow<uint32_t>(axesVector.size()),
+                                         til::safe_cast<uint32_t>(axesVector.size()),
                                          &mappedLength,
                                          &scale,
                                          &mappedFont);
@@ -1423,7 +1423,7 @@ static constexpr bool _IsBoxDrawingCharacter(const wchar_t wch)
 [[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::_CorrectBoxDrawing() noexcept
 try
 {
-    RETURN_IF_FAILED(_AnalyzeBoxDrawing(this, 0, gsl::narrow<UINT32>(_text.size())));
+    RETURN_IF_FAILED(_AnalyzeBoxDrawing(this, 0, til::safe_cast<UINT32>(_text.size())));
     _OrderRuns();
     return S_OK;
 }
@@ -1600,7 +1600,7 @@ void CustomTextLayout::_SetCurrentRun(const UINT32 textPosition)
         return;
     }
 
-    _runIndex = gsl::narrow<UINT32>(
+    _runIndex = til::safe_cast<UINT32>(
         std::find(_runs.begin(), _runs.end(), textPosition) - _runs.begin());
 }
 
@@ -1638,8 +1638,8 @@ void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
     backHalf.textStart += splitPoint;
     backHalf.textLength -= splitPoint;
     frontHalf.textLength = splitPoint;
-    frontHalf.nextRunIndex = gsl::narrow<UINT32>(totalRuns);
-    _runIndex = gsl::narrow<UINT32>(totalRuns);
+    frontHalf.nextRunIndex = til::safe_cast<UINT32>(totalRuns);
+    _runIndex = til::safe_cast<UINT32>(totalRuns);
 
     // If there is already a glyph mapping in these runs,
     // we need to correct it for the split as well.

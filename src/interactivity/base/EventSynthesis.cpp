@@ -111,7 +111,7 @@ std::deque<std::unique_ptr<KeyEvent>> Microsoft::Console::Interactivity::Synthes
     }
 
     const auto vk = LOBYTE(keyState);
-    const auto virtualScanCode = gsl::narrow<WORD>(OneCoreSafeMapVirtualKeyW(vk, MAPVK_VK_TO_VSC));
+    const auto virtualScanCode = til::safe_cast<WORD>(OneCoreSafeMapVirtualKeyW(vk, MAPVK_VK_TO_VSC));
     KeyEvent keyEvent{ true, 1, LOBYTE(keyState), virtualScanCode, wch, 0 };
 
     // add modifier flags if necessary
@@ -201,7 +201,7 @@ std::deque<std::unique_ptr<KeyEvent>> Microsoft::Console::Interactivity::Synthes
                 break;
             }
             const WORD virtualKey = ch - '0' + VK_NUMPAD0;
-            const auto virtualScanCode = gsl::narrow<WORD>(OneCoreSafeMapVirtualKeyW(virtualKey, MAPVK_VK_TO_VSC));
+            const auto virtualScanCode = til::safe_cast<WORD>(OneCoreSafeMapVirtualKeyW(virtualKey, MAPVK_VK_TO_VSC));
 
             keyEvents.push_back(std::make_unique<KeyEvent>(true,
                                                            1ui16,

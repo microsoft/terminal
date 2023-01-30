@@ -19,8 +19,8 @@ namespace
     {
         BufferAllocator(til::size sz)
         {
-            const auto w = gsl::narrow<uint16_t>(sz.width);
-            const auto h = gsl::narrow<uint16_t>(sz.height);
+            const auto w = til::safe_cast<uint16_t>(sz.width);
+            const auto h = til::safe_cast<uint16_t>(sz.height);
 
             const auto charsBytes = w * sizeof(wchar_t);
             // The ROW::_indices array stores 1 more item than the buffer is wide.
@@ -29,7 +29,7 @@ namespace
             const auto rowStride = charsBytes + indicesBytes;
             // 65535*65535 cells would result in a charsAreaSize of 8GiB.
             // --> Use uint64_t so that we can safely do our calculations even on x86.
-            const auto allocSize = gsl::narrow<size_t>(::base::strict_cast<uint64_t>(rowStride) * ::base::strict_cast<uint64_t>(h));
+            const auto allocSize = til::safe_cast<size_t>(::base::strict_cast<uint64_t>(rowStride) * ::base::strict_cast<uint64_t>(h));
 
             _buffer = wil::unique_virtualalloc_ptr<std::byte>{ static_cast<std::byte*>(VirtualAlloc(nullptr, allocSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE)) };
             THROW_IF_NULL_ALLOC(_buffer);
@@ -144,7 +144,7 @@ void TextBuffer::CopyProperties(const TextBuffer& OtherBuffer) noexcept
 // - Total number of rows in the buffer
 til::CoordType TextBuffer::TotalRowCount() const noexcept
 {
-    return gsl::narrow_cast<til::CoordType>(_storage.size());
+    return til::safe_cast_nothrow<til::CoordType>(_storage.size());
 }
 
 // Routine Description:
@@ -157,7 +157,7 @@ til::CoordType TextBuffer::TotalRowCount() const noexcept
 const ROW& TextBuffer::GetRowByOffset(const til::CoordType index) const noexcept
 {
     // Rows are stored circularly, so the index you ask for is offset by the start position and mod the total of rows.
-    const auto offsetIndex = gsl::narrow_cast<size_t>(_firstRow + index) % _storage.size();
+    const auto offsetIndex = til::safe_cast_nothrow<size_t>(_firstRow + index) % _storage.size();
     return til::at(_storage, offsetIndex);
 }
 
@@ -171,7 +171,7 @@ const ROW& TextBuffer::GetRowByOffset(const til::CoordType index) const noexcept
 ROW& TextBuffer::GetRowByOffset(const til::CoordType index) noexcept
 {
     // Rows are stored circularly, so the index you ask for is offset by the start position and mod the total of rows.
-    const auto offsetIndex = gsl::narrow_cast<size_t>(_firstRow + index) % _storage.size();
+    const auto offsetIndex = til::safe_cast_nothrow<size_t>(_firstRow + index) % _storage.size();
     return til::at(_storage, offsetIndex);
 }
 
@@ -751,7 +751,7 @@ const Viewport TextBuffer::GetSize() const noexcept
 
 void TextBuffer::_UpdateSize()
 {
-    _size = Viewport::FromDimensions({ _storage.at(0).size(), gsl::narrow<til::CoordType>(_storage.size()) });
+    _size = Viewport::FromDimensions({ _storage.at(0).size(), til::safe_cast<til::CoordType>(_storage.size()) });
 }
 
 void TextBuffer::_SetFirstRowIndex(const til::CoordType FirstRowIndex) noexcept
@@ -893,7 +893,7 @@ void TextBuffer::SetCurrentLineRendition(const LineRendition lineRendition)
             auto fillAttrs = GetCurrentAttributes();
             fillAttrs.SetStandardErase();
             const auto fillOffset = GetLineWidth(rowIndex);
-            const auto fillLength = gsl::narrow<size_t>(GetSize().Width() - fillOffset);
+            const auto fillLength = til::safe_cast<size_t>(GetSize().Width() - fillOffset);
             const OutputCellIterator fillData{ fillChar, fillAttrs, fillLength };
             row.WriteCells(fillData, fillOffset, false);
             // We also need to make sure the cursor is clamped within the new width.
@@ -1798,11 +1798,11 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
         std::vector<COLORREF> selectionBkAttr;
 
         // preallocate to avoid reallocs
-        selectionText.reserve(gsl::narrow<size_t>(highlight.Width()) + 2); // + 2 for \r\n if we munged it
+        selectionText.reserve(til::safe_cast<size_t>(highlight.Width()) + 2); // + 2 for \r\n if we munged it
         if (copyTextColor)
         {
-            selectionFgAttr.reserve(gsl::narrow<size_t>(highlight.Width()) + 2);
-            selectionBkAttr.reserve(gsl::narrow<size_t>(highlight.Width()) + 2);
+            selectionFgAttr.reserve(til::safe_cast<size_t>(highlight.Width()) + 2);
+            selectionBkAttr.reserve(til::safe_cast<size_t>(highlight.Width()) + 2);
         }
 
         // copy char data into the string buffer, skipping trailing bytes
@@ -1888,7 +1888,7 @@ size_t TextBuffer::SpanLength(const til::point coordStart, const til::point coor
     const auto bufferSize = GetSize();
     // The coords are inclusive, so to get the (inclusive) length we add 1.
     const auto length = bufferSize.CompareInBounds(coordEnd, coordStart) + 1;
-    return gsl::narrow<size_t>(length);
+    return til::safe_cast<size_t>(length);
 }
 
 // Routine Description:
@@ -2085,8 +2085,8 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows,
 
         // these values are byte offsets from start of clipboard
         const auto htmlStartPos = ClipboardHeaderSize;
-        const auto htmlEndPos = ClipboardHeaderSize + gsl::narrow<size_t>(htmlBuilder.tellp());
-        const auto fragStartPos = ClipboardHeaderSize + gsl::narrow<size_t>(htmlHeader.length());
+        const auto htmlEndPos = ClipboardHeaderSize + til::safe_cast<size_t>(htmlBuilder.tellp());
+        const auto fragStartPos = ClipboardHeaderSize + til::safe_cast<size_t>(htmlHeader.length());
         const auto fragEndPos = htmlEndPos - HtmlFooter.length();
 
         // header required by HTML 0.9 format
@@ -2293,10 +2293,10 @@ void TextBuffer::_AppendRTFText(std::ostringstream& contentBuilder, const std::w
             case L'\\':
             case L'{':
             case L'}':
-                contentBuilder << "\\" << gsl::narrow<char>(codeUnit);
+                contentBuilder << "\\" << til::safe_cast<char>(codeUnit);
                 break;
             default:
-                contentBuilder << gsl::narrow<char>(codeUnit);
+                contentBuilder << til::safe_cast<char>(codeUnit);
             }
         }
         else
@@ -2791,7 +2791,7 @@ PointTree TextBuffer::GetPatterns(const til::CoordType firstRow, const til::Coor
 
     std::wstring concatAll;
     const auto rowSize = GetRowByOffset(0).size();
-    concatAll.reserve(gsl::narrow_cast<size_t>(rowSize) * gsl::narrow_cast<size_t>(lastRow - firstRow + 1));
+    concatAll.reserve(til::safe_cast_nothrow<size_t>(rowSize) * til::safe_cast_nothrow<size_t>(lastRow - firstRow + 1));
 
     // to deal with text that spans multiple lines, we will first concatenate
     // all the text into one string and find the patterns in that string

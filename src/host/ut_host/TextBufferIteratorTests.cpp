@@ -160,7 +160,7 @@ class TextBufferIteratorTests
 
         ptrdiff_t diffUnit = 3;
         auto expectedPos = it._pos;
-        expectedPos.x += gsl::narrow<til::CoordType>(diffUnit);
+        expectedPos.x += til::safe_cast<til::CoordType>(diffUnit);
         const auto itExpected = GetIteratorAt<T>(expectedPos);
 
         it += diffUnit;
@@ -178,7 +178,7 @@ class TextBufferIteratorTests
 
         ptrdiff_t diffUnit = 3;
         til::point pos = itExpected._pos;
-        pos.x += gsl::narrow<til::CoordType>(diffUnit);
+        pos.x += til::safe_cast<til::CoordType>(diffUnit);
         auto itOffset = GetIteratorAt<T>(pos);
 
         itOffset -= diffUnit;
@@ -264,7 +264,7 @@ class TextBufferIteratorTests
 
         ptrdiff_t diffUnit = 3;
         auto expectedPos = it._pos;
-        expectedPos.x += gsl::narrow<til::CoordType>(diffUnit);
+        expectedPos.x += til::safe_cast<til::CoordType>(diffUnit);
         const auto itExpected = GetIteratorAt<T>(expectedPos);
 
         const auto itActual = it + diffUnit;
@@ -282,7 +282,7 @@ class TextBufferIteratorTests
 
         ptrdiff_t diffUnit = 3;
         til::point pos = itExpected._pos;
-        pos.x += gsl::narrow<til::CoordType>(diffUnit);
+        pos.x += til::safe_cast<til::CoordType>(diffUnit);
         auto itOffset = GetIteratorAt<T>(pos);
 
         const auto itActual = itOffset - diffUnit;

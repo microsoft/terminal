@@ -30,7 +30,7 @@ void ParserTracing::TraceOnAction(_In_z_ const wchar_t* name) const noexcept
 
 void ParserTracing::TraceOnExecute(const wchar_t wch) const noexcept
 {
-    const auto sch = gsl::narrow_cast<INT16>(wch);
+    const auto sch = til::safe_cast_nothrow<INT16>(wch);
     TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                       "StateMachine_Execute",
                       TraceLoggingWChar(wch),
@@ -41,7 +41,7 @@ void ParserTracing::TraceOnExecute(const wchar_t wch) const noexcept
 
 void ParserTracing::TraceOnExecuteFromEscape(const wchar_t wch) const noexcept
 {
-    const auto sch = gsl::narrow_cast<INT16>(wch);
+    const auto sch = til::safe_cast_nothrow<INT16>(wch);
     TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                       "StateMachine_ExecuteFromEscape",
                       TraceLoggingWChar(wch),
@@ -66,7 +66,7 @@ void ParserTracing::TraceCharInput(const wchar_t wch)
     TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                       "StateMachine_NewChar",
                       TraceLoggingWChar(wch),
-                      TraceLoggingHexInt16(gsl::narrow_cast<INT16>(wch)),
+                      TraceLoggingHexInt16(til::safe_cast_nothrow<INT16>(wch)),
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 }
@@ -113,7 +113,7 @@ void ParserTracing::DispatchPrintRunTrace(const std::wstring_view& string) const
     if (string.size() == 1)
     {
         const auto wch = til::at(string, 0);
-        const auto sch = gsl::narrow_cast<INT16>(wch);
+        const auto sch = til::safe_cast_nothrow<INT16>(wch);
         TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                           "StateMachine_PrintRun",
                           TraceLoggingWChar(wch),
@@ -123,7 +123,7 @@ void ParserTracing::DispatchPrintRunTrace(const std::wstring_view& string) const
     }
     else
     {
-        const auto length = gsl::narrow_cast<ULONG>(string.size());
+        const auto length = til::safe_cast_nothrow<ULONG>(string.size());
 
         TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
                           "StateMachine_PrintRun",

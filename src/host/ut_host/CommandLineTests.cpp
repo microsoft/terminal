@@ -255,7 +255,7 @@ class CommandLineTests
 
         auto& commandLine = CommandLine::Instance();
         const auto cursorPos = commandLine._moveCursorToEndOfPrompt(cookedReadData);
-        VERIFY_ARE_EQUAL(cursorPos.x, gsl::narrow<til::CoordType>(expectedCursorPos));
+        VERIFY_ARE_EQUAL(cursorPos.x, til::safe_cast<til::CoordType>(expectedCursorPos));
         VERIFY_ARE_EQUAL(cookedReadData._currentPosition, expectedCursorPos);
         VERIFY_ARE_EQUAL(cookedReadData._bufPtr, expectedBufferPos);
     }
@@ -300,27 +300,27 @@ class CommandLineTests
         til::CoordType expectedPos = 10;
         auto cursorPos = commandLine._moveCursorLeftByWord(cookedReadData);
         VERIFY_ARE_EQUAL(cursorPos.x, expectedPos);
-        VERIFY_ARE_EQUAL(cookedReadData._currentPosition, gsl::narrow<size_t>(expectedPos));
+        VERIFY_ARE_EQUAL(cookedReadData._currentPosition, til::safe_cast<size_t>(expectedPos));
         VERIFY_ARE_EQUAL(cookedReadData._bufPtr, cookedReadData._backupLimit + expectedPos);
 
         // move again
         expectedPos = 5; // before "word"
         cursorPos = commandLine._moveCursorLeftByWord(cookedReadData);
         VERIFY_ARE_EQUAL(cursorPos.x, expectedPos);
-        VERIFY_ARE_EQUAL(cookedReadData._currentPosition, gsl::narrow<size_t>(expectedPos));
+        VERIFY_ARE_EQUAL(cookedReadData._currentPosition, til::safe_cast<size_t>(expectedPos));
         VERIFY_ARE_EQUAL(cookedReadData._bufPtr, cookedReadData._backupLimit + expectedPos);
 
         // move again
         expectedPos = 0; // before "test"
         cursorPos = commandLine._moveCursorLeftByWord(cookedReadData);
         VERIFY_ARE_EQUAL(cursorPos.x, expectedPos);
-        VERIFY_ARE_EQUAL(cookedReadData._currentPosition, gsl::narrow<size_t>(expectedPos));
+        VERIFY_ARE_EQUAL(cookedReadData._currentPosition, til::safe_cast<size_t>(expectedPos));
         VERIFY_ARE_EQUAL(cookedReadData._bufPtr, cookedReadData._backupLimit + expectedPos);
 
         // try to move again, nothing should happen
         cursorPos = commandLine._moveCursorLeftByWord(cookedReadData);
         VERIFY_ARE_EQUAL(cursorPos.x, expectedPos);
-        VERIFY_ARE_EQUAL(cookedReadData._currentPosition, gsl::narrow<size_t>(expectedPos));
+        VERIFY_ARE_EQUAL(cookedReadData._currentPosition, til::safe_cast<size_t>(expectedPos));
         VERIFY_ARE_EQUAL(cookedReadData._bufPtr, cookedReadData._backupLimit + expectedPos);
     }
 
@@ -506,7 +506,7 @@ class CommandLineTests
                 const String expectedText(&expectedTextValue, 1);
 
                 const auto actualTextValue = cellIterator->Chars();
-                const String actualText(actualTextValue.data(), gsl::narrow<int>(actualTextValue.size()));
+                const String actualText(actualTextValue.data(), til::safe_cast<int>(actualTextValue.size()));
 
                 VERIFY_ARE_EQUAL(expectedText, actualText);
                 cellIterator++;
@@ -527,7 +527,7 @@ class CommandLineTests
                 const String expectedText(L"\x20"); // unicode space character
 
                 const auto actualTextValue = cellIterator->Chars();
-                const String actualText(actualTextValue.data(), gsl::narrow<int>(actualTextValue.size()));
+                const String actualText(actualTextValue.data(), til::safe_cast<int>(actualTextValue.size()));
 
                 VERIFY_ARE_EQUAL(expectedText, actualText);
                 cellIterator++;

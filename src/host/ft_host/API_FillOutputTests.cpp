@@ -27,7 +27,7 @@ class FillOutputTests
         if (Common::_isV2)
         {
             VERIFY_WIN32_BOOL_FAILED(FillConsoleOutputCharacterA(handle, originalCh, 1, pos, &written));
-            VERIFY_ARE_EQUAL(gsl::narrow_cast<DWORD>(HRESULT_CODE(E_UNEXPECTED)), ::GetLastError());
+            VERIFY_ARE_EQUAL(til::safe_cast_nothrow<DWORD>(HRESULT_CODE(E_UNEXPECTED)), ::GetLastError());
         }
         else
         {
@@ -113,7 +113,7 @@ class FillOutputTests
         // Write until a wrap occurs
         VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleW(hConsole,
                                                   input.data(),
-                                                  gsl::narrow_cast<DWORD>(input.size()),
+                                                  til::safe_cast_nothrow<DWORD>(input.size()),
                                                   &charsWritten,
                                                   nullptr));
 

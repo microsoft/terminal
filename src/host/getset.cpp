@@ -315,7 +315,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
         RETURN_IF_FAILED(StringCchCopyW(FaceName, ARRAYSIZE(FaceName), consoleFontInfoEx.FaceName));
 
         FontInfo fi(FaceName,
-                    gsl::narrow_cast<unsigned char>(consoleFontInfoEx.FontFamily),
+                    til::safe_cast_nothrow<unsigned char>(consoleFontInfoEx.FontFamily),
                     consoleFontInfoEx.FontWeight,
                     til::wrap_coord_size(consoleFontInfoEx.dwFontSize),
                     gci.OutputCP);

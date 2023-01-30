@@ -504,7 +504,7 @@ namespace TerminalCoreUnitTests
             term.MultiClickSelection(clickPos, Terminal::SelectionExpansion::Word);
 
             // Validate selection area
-            ValidateSingleRowSelection(term, til::inclusive_rect{ 4, 10, gsl::narrow<til::CoordType>(4 + text.size() - 1), 10 });
+            ValidateSingleRowSelection(term, til::inclusive_rect{ 4, 10, til::safe_cast<til::CoordType>(4 + text.size() - 1), 10 });
         }
 
         TEST_METHOD(DoubleClick_Delimiter)

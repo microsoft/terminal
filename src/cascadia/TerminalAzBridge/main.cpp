@@ -98,8 +98,8 @@ int wmain(int /*argc*/, wchar_t** /*argv*/)
 
     AzureConnection azureConn{};
     winrt::Windows::Foundation::Collections::ValueSet vs{};
-    vs.Insert(L"initialRows", winrt::Windows::Foundation::PropertyValue::CreateUInt32(gsl::narrow_cast<uint32_t>(size.height)));
-    vs.Insert(L"initialCols", winrt::Windows::Foundation::PropertyValue::CreateUInt32(gsl::narrow_cast<uint32_t>(size.width)));
+    vs.Insert(L"initialRows", winrt::Windows::Foundation::PropertyValue::CreateUInt32(til::safe_cast_nothrow<uint32_t>(size.height)));
+    vs.Insert(L"initialCols", winrt::Windows::Foundation::PropertyValue::CreateUInt32(til::safe_cast_nothrow<uint32_t>(size.width)));
     azureConn.Initialize(vs);
 
     const auto state = RunConnectionToCompletion(azureConn, conOut, conIn);

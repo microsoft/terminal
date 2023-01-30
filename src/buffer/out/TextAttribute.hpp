@@ -39,7 +39,7 @@ public:
     }
 
     explicit constexpr TextAttribute(const WORD wLegacyAttr) noexcept :
-        _attrs{ gsl::narrow_cast<WORD>(wLegacyAttr & USED_META_ATTRS) },
+        _attrs{ til::safe_cast_nothrow<WORD>(wLegacyAttr & USED_META_ATTRS) },
         _foreground{ gsl::at(s_legacyForegroundColorMap, wLegacyAttr & FG_ATTRS) },
         _background{ gsl::at(s_legacyBackgroundColorMap, (wLegacyAttr & BG_ATTRS) >> 4) },
         _hyperlinkId{ 0 }

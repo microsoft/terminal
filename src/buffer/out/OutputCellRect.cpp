@@ -25,7 +25,7 @@ OutputCellRect::OutputCellRect(const til::CoordType rows, const til::CoordType c
     _rows(rows),
     _cols(cols)
 {
-    _storage.resize(gsl::narrow<size_t>(rows * cols));
+    _storage.resize(til::safe_cast<size_t>(rows * cols));
 }
 
 // Routine Description:
@@ -61,7 +61,7 @@ OutputCellIterator OutputCellRect::GetRowIter(const til::CoordType row) const
 // - Pointer to the location in the rectangle that represents the start of the requested row.
 OutputCell* OutputCellRect::_FindRowOffset(const til::CoordType row)
 {
-    return &_storage.at(gsl::narrow_cast<size_t>(row * _cols));
+    return &_storage.at(til::safe_cast_nothrow<size_t>(row * _cols));
 }
 
 // Routine Description:
@@ -73,7 +73,7 @@ OutputCell* OutputCellRect::_FindRowOffset(const til::CoordType row)
 // - Pointer to the location in the rectangle that represents the start of the requested row.
 const OutputCell* OutputCellRect::_FindRowOffset(const til::CoordType row) const
 {
-    return &_storage.at(gsl::narrow_cast<size_t>(row * _cols));
+    return &_storage.at(til::safe_cast_nothrow<size_t>(row * _cols));
 }
 
 // Routine Description:

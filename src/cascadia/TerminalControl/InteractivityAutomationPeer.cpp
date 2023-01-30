@@ -204,7 +204,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         // transfer ownership of UiaTextRanges to this new vector
         auto providers = SafeArrayToOwningVector<::Microsoft::Terminal::TermControlUiaTextRange>(textRanges);
-        auto count = gsl::narrow<int>(providers.size());
+        auto count = til::safe_cast<int>(providers.size());
 
         std::vector<XamlAutomation::ITextRangeProvider> vec;
         vec.reserve(count);

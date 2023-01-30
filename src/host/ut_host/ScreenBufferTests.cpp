@@ -2216,7 +2216,7 @@ void ScreenBufferTests::GetWordBoundary()
     const auto length = wcslen(text);
 
     // Make the buffer as big as our test text.
-    const til::size newBufferSize = { gsl::narrow<til::CoordType>(length), 10 };
+    const til::size newBufferSize = { til::safe_cast<til::CoordType>(length), 10 };
     VERIFY_SUCCEEDED(si.GetTextBuffer().ResizeTraditional(newBufferSize));
 
     const OutputCellIterator it(text, si.GetAttributes());
@@ -2292,7 +2292,7 @@ void ScreenBufferTests::GetWordBoundaryTrimZeros(const bool on)
     const auto length = wcslen(text);
 
     // Make the buffer as big as our test text.
-    const til::size newBufferSize = { gsl::narrow<til::CoordType>(length), 10 };
+    const til::size newBufferSize = { til::safe_cast<til::CoordType>(length), 10 };
     VERIFY_SUCCEEDED(si.GetTextBuffer().ResizeTraditional(newBufferSize));
 
     const OutputCellIterator it(text, si.GetAttributes());
@@ -3770,7 +3770,7 @@ void ScreenBufferTests::ScrollOperations()
     }
 
     Log::Comment(L"Scrolled area should have moved up/down by given magnitude.");
-    viewportChar += gsl::narrow<wchar_t>(deletedLines); // Characters dropped when deleting
+    viewportChar += til::safe_cast<wchar_t>(deletedLines); // Characters dropped when deleting
     viewportLine += insertedLines; // Lines skipped when inserting
     while (viewportLine < viewportEnd - deletedLines)
     {
@@ -4295,7 +4295,7 @@ void ScreenBufferTests::EraseTests()
     bool selectiveErase;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"selectiveErase", selectiveErase));
 
-    const auto eraseType = gsl::narrow<DispatchTypes::EraseType>(eraseTypeValue);
+    const auto eraseType = til::safe_cast<DispatchTypes::EraseType>(eraseTypeValue);
 
     std::wstringstream escapeSequence;
     escapeSequence << "\x1b[";

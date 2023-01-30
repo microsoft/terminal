@@ -162,7 +162,7 @@ void Popup::_DrawPrompt(const UINT id)
     WriteCoord.y = _region.top + 1;
 
     // write prompt to screen
-    lStringLength = gsl::narrow<til::CoordType>(text.size());
+    lStringLength = til::safe_cast<til::CoordType>(text.size());
     if (lStringLength > Width())
     {
         text = text.substr(0, Width());

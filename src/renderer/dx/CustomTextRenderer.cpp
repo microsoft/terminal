@@ -302,7 +302,7 @@ try
     {
         // Enforce min/max cursor height
         auto ulHeight = std::clamp(options.ulCursorHeightPercent, MinCursorHeightPercent, MaxCursorHeightPercent);
-        ulHeight = gsl::narrow_cast<ULONG>(drawingContext.cellSize.height * ulHeight) / 100;
+        ulHeight = til::safe_cast_nothrow<ULONG>(drawingContext.cellSize.height * ulHeight) / 100;
         ulHeight = std::max(ulHeight, MinCursorHeightPixels); // No smaller than 1px
 
         rect.top = rect.bottom - ulHeight;

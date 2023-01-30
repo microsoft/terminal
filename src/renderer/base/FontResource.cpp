@@ -182,7 +182,7 @@ void FontResource::_resizeBitPattern(std::span<byte> targetBuffer)
     // point of the glyphs, we need to adjust the source and target widths by
     // that amount (proportionally) before calculating the scaling increments.
     targetWidth -= std::lround((double)_centeringHint * targetWidth / sourceWidth);
-    sourceWidth -= gsl::narrow_cast<int>(_centeringHint);
+    sourceWidth -= til::safe_cast_nothrow<int>(_centeringHint);
 
     // The way the scaling works is by iterating over the target range, and
     // calculating the source offsets that correspond to each target position.

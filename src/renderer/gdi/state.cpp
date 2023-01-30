@@ -649,12 +649,12 @@ GdiEngine::~GdiEngine()
     // Now fill up the FontInfo we were passed with the full details of which font we actually chose
     {
         // Get the actual font face that we chose
-        const auto faceNameLength{ gsl::narrow<size_t>(GetTextFaceW(hdcTemp.get(), 0, nullptr)) };
+        const auto faceNameLength{ til::safe_cast<size_t>(GetTextFaceW(hdcTemp.get(), 0, nullptr)) };
 
         std::wstring currentFaceName{};
         currentFaceName.resize(faceNameLength);
 
-        RETURN_HR_IF(E_FAIL, !(GetTextFaceW(hdcTemp.get(), gsl::narrow_cast<int>(faceNameLength), currentFaceName.data())));
+        RETURN_HR_IF(E_FAIL, !(GetTextFaceW(hdcTemp.get(), til::safe_cast_nothrow<int>(faceNameLength), currentFaceName.data())));
 
         currentFaceName.resize(faceNameLength - 1); // remove the null terminator (wstring!)
 
@@ -669,7 +669,7 @@ GdiEngine::~GdiEngine()
 
         Font.SetFromEngine(currentFaceName,
                            tm.tmPitchAndFamily,
-                           gsl::narrow_cast<unsigned int>(tm.tmWeight),
+                           til::safe_cast_nothrow<unsigned int>(tm.tmWeight),
                            FontDesired.IsDefaultRasterFont(),
                            coordFont,
                            coordFontRequested);

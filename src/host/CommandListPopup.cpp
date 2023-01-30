@@ -36,7 +36,7 @@ static til::size calculatePopupSize(const CommandHistory& history)
     size_t width = minSize.width;
     for (size_t i = 0; i < history.GetNumberOfCommands(); ++i)
     {
-        const auto& historyItem = history.GetNth(gsl::narrow<short>(i));
+        const auto& historyItem = history.GetNth(til::safe_cast<short>(i));
         width = std::max(width, historyItem.size() + padding);
     }
     if (width > SHRT_MAX)
@@ -45,9 +45,9 @@ static til::size calculatePopupSize(const CommandHistory& history)
     }
 
     // calculate height, it can range up to 20 rows
-    auto height = std::clamp(gsl::narrow<til::CoordType>(history.GetNumberOfCommands()), minSize.height, 20);
+    auto height = std::clamp(til::safe_cast<til::CoordType>(history.GetNumberOfCommands()), minSize.height, 20);
 
-    return { gsl::narrow_cast<til::CoordType>(width), height };
+    return { til::safe_cast_nothrow<til::CoordType>(width), height };
 }
 
 CommandListPopup::CommandListPopup(SCREEN_INFORMATION& screenInfo, const CommandHistory& history) :
@@ -139,7 +139,7 @@ void CommandListPopup::_setBottomIndex()
 {
     if (_currentCommand < (SHORT)(_history.GetNumberOfCommands() - Height()))
     {
-        _bottomIndex = std::max(_currentCommand, gsl::narrow<SHORT>(Height() - 1));
+        _bottomIndex = std::max(_currentCommand, til::safe_cast<SHORT>(Height() - 1));
     }
     else
     {
@@ -204,7 +204,7 @@ void CommandListPopup::_setBottomIndex()
     {
         auto& history = cookedReadData.History();
 
-        if (history.GetNumberOfCommands() <= 1 || _currentCommand == gsl::narrow<short>(history.GetNumberOfCommands()) - 1)
+        if (history.GetNumberOfCommands() <= 1 || _currentCommand == til::safe_cast<short>(history.GetNumberOfCommands()) - 1)
         {
             return STATUS_SUCCESS;
         }
@@ -345,7 +345,7 @@ void CommandListPopup::_drawList()
     auto api = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().api;
 
     WriteCoord.y = _region.top + 1;
-    auto i = gsl::narrow<SHORT>(std::max(_bottomIndex - Height() + 1, 0));
+    auto i = til::safe_cast<SHORT>(std::max(_bottomIndex - Height() + 1, 0));
     for (; i <= _bottomIndex; i++)
     {
         CHAR CommandNumber[COMMAND_NUMBER_SIZE];
@@ -415,7 +415,7 @@ void CommandListPopup::_drawList()
             }
         }
 
-        WriteCoord.x = gsl::narrow<til::CoordType>(WriteCoord.x + CommandNumberLength);
+        WriteCoord.x = til::safe_cast<til::CoordType>(WriteCoord.x + CommandNumberLength);
         size_t used;
         LOG_IF_FAILED(api->WriteConsoleOutputCharacterWImpl(_screenInfo,
                                                             { command.data(), lStringLength },
@@ -466,9 +466,9 @@ void CommandListPopup::_update(const SHORT originalDelta, const bool wrap)
     }
     else
     {
-        if (NewCmdNum >= gsl::narrow<SHORT>(_history.GetNumberOfCommands()))
+        if (NewCmdNum >= til::safe_cast<SHORT>(_history.GetNumberOfCommands()))
         {
-            NewCmdNum = gsl::narrow<SHORT>(_history.GetNumberOfCommands()) - 1;
+            NewCmdNum = til::safe_cast<SHORT>(_history.GetNumberOfCommands()) - 1;
         }
         else if (NewCmdNum < 0)
         {
@@ -484,16 +484,16 @@ void CommandListPopup::_update(const SHORT originalDelta, const bool wrap)
         _bottomIndex += delta;
         if (_bottomIndex < Size - 1)
         {
-            _bottomIndex = gsl::narrow<SHORT>(Size - 1);
+            _bottomIndex = til::safe_cast<SHORT>(Size - 1);
         }
         Scroll = true;
     }
     else if (NewCmdNum > _bottomIndex)
     {
         _bottomIndex += delta;
-        if (_bottomIndex >= gsl::narrow<SHORT>(_history.GetNumberOfCommands()))
+        if (_bottomIndex >= til::safe_cast<SHORT>(_history.GetNumberOfCommands()))
         {
-            _bottomIndex = gsl::narrow<SHORT>(_history.GetNumberOfCommands()) - 1;
+            _bottomIndex = til::safe_cast<SHORT>(_history.GetNumberOfCommands()) - 1;
         }
         Scroll = true;
     }

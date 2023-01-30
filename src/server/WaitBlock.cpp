@@ -208,7 +208,7 @@ bool ConsoleWaitBlock::Notify(const WaitTerminationReason TerminationReason)
             // ReadConsole has this extra reply information with the control key state.
             auto a = &(_WaitReplyMessage.u.consoleMsgL1.ReadConsole);
             a->ControlKeyState = dwControlKeyState;
-            a->NumBytes = gsl::narrow<ULONG>(NumBytes);
+            a->NumBytes = til::safe_cast<ULONG>(NumBytes);
 
             // - This routine is called when a ReadConsole or ReadFile request is about to be completed.
             // - It sets the number of bytes written as the information to be written with the completion status and,
@@ -228,7 +228,7 @@ bool ConsoleWaitBlock::Notify(const WaitTerminationReason TerminationReason)
         else if (API_NUMBER_WRITECONSOLE == _WaitReplyMessage.msgHeader.ApiNumber)
         {
             auto a = &(_WaitReplyMessage.u.consoleMsgL1.WriteConsoleW);
-            a->NumBytes = gsl::narrow<ULONG>(NumBytes);
+            a->NumBytes = til::safe_cast<ULONG>(NumBytes);
         }
 
         LOG_IF_FAILED(_WaitReplyMessage.ReleaseMessageBuffers());

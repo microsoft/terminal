@@ -71,7 +71,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             RETURN_HR_IF(E_ABORT, !base::MakeCheckedNum(in.length()).AssignIfValid(&lengthRequired));
             out.resize(in.length()); // avoid to call MultiByteToWideChar twice only to get the required size
             const int lengthOut = MultiByteToWideChar(CP_UTF8, 0ul, in.data(), lengthRequired, out.data(), lengthRequired);
-            out.resize(gsl::narrow_cast<size_t>(lengthOut));
+            out.resize(til::unsafe_cast<size_t>(lengthOut));
 
             return lengthOut == 0 ? E_UNEXPECTED : S_OK;
         }
@@ -104,23 +104,23 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // The worst ratio of UTF-8 code units to UTF-16 code units is 1 to 1 if UTF-8 consists of ASCII only.
             RETURN_HR_IF(E_ABORT, !base::CheckAdd(in.length(), state.have).AssignIfValid(&capa16));
 
-            out.resize(gsl::narrow_cast<size_t>(capa16));
-            auto len8{ gsl::narrow_cast<int>(in.length()) };
+            out.resize(til::unsafe_cast<size_t>(capa16));
+            auto len8{ til::unsafe_cast<int>(in.length()) };
             int len16{};
             auto cursor8{ in.data() };
             if (state.have)
             {
                 const auto copyable{ std::min<int>(state.want, len8) };
                 std::move(cursor8, cursor8 + copyable, &state.partials[state.have]);
-                state.have += gsl::narrow_cast<uint8_t>(copyable);
-                state.want -= gsl::narrow_cast<uint8_t>(copyable);
+                state.have += til::unsafe_cast<uint8_t>(copyable);
+                state.want -= til::unsafe_cast<uint8_t>(copyable);
                 if (state.want) // we still didn't get enough data to complete the code point, however this is not an error
                 {
                     out.clear();
                     return S_OK;
                 }
 
-                len16 = MultiByteToWideChar(CP_UTF8, 0UL, &state.partials[0], gsl::narrow_cast<int>(state.have), out.data(), capa16);
+                len16 = MultiByteToWideChar(CP_UTF8, 0UL, &state.partials[0], til::unsafe_cast<int>(state.have), out.data(), capa16);
                 RETURN_HR_IF(E_UNEXPECTED, !len16);
 
                 capa16 -= len16;
@@ -145,14 +145,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 // credits go to Christopher Wellons for this algorithm to determine the length of a UTF-8 code point
                 // it is released into the Public Domain. https://github.com/skeeto/branchless-utf8
                 static constexpr uint8_t lengths[]{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 3, 3, 4, 0 };
-                const auto codePointLen{ lengths[gsl::narrow_cast<uint8_t>(*backIter) >> 3] };
+                const auto codePointLen{ lengths[til::unsafe_cast<uint8_t>(*backIter) >> 3] };
 
                 if (codePointLen > sequenceLen)
                 {
                     std::move(backIter, backIter + sequenceLen, &state.partials[0]);
                     len8 -= sequenceLen;
-                    state.have = gsl::narrow_cast<uint8_t>(sequenceLen);
-                    state.want = gsl::narrow_cast<uint8_t>(codePointLen - sequenceLen);
+                    state.have = til::unsafe_cast<uint8_t>(sequenceLen);
+                    state.want = til::unsafe_cast<uint8_t>(codePointLen - sequenceLen);
                 }
             }
 
@@ -164,7 +164,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 len16 += convLen;
             }
 
-            out.resize(gsl::narrow_cast<size_t>(len16));
+            out.resize(til::unsafe_cast<size_t>(len16));
             return S_OK;
         }
         CATCH_RETURN();
@@ -196,9 +196,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // Code Points >U+FFFF: 2 UTF-16 code units --> 4 UTF-8 code units.
             // Thus, the worst ratio of UTF-16 code units to UTF-8 code units is 1 to 3.
             RETURN_HR_IF(E_ABORT, !base::MakeCheckedNum(in.length()).AssignIfValid(&lengthIn) || !base::CheckMul(lengthIn, 3).AssignIfValid(&lengthRequired));
-            out.resize(gsl::narrow_cast<size_t>(lengthRequired)); // avoid to call WideCharToMultiByte twice only to get the required size
+            out.resize(til::unsafe_cast<size_t>(lengthRequired)); // avoid to call WideCharToMultiByte twice only to get the required size
             const int lengthOut = WideCharToMultiByte(CP_UTF8, 0ul, in.data(), lengthIn, out.data(), lengthRequired, nullptr, nullptr);
-            out.resize(gsl::narrow_cast<size_t>(lengthOut));
+            out.resize(til::unsafe_cast<size_t>(lengthOut));
 
             return lengthOut == 0 ? E_UNEXPECTED : S_OK;
         }
@@ -230,9 +230,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             int len16{};
             int capa8{};
             // The worst ratio of UTF-16 code units to UTF-8 code units is 1 to 3.
-            RETURN_HR_IF(E_ABORT, !base::MakeCheckedNum(in.length()).AssignIfValid(&len16) || !base::CheckAdd(len16, gsl::narrow_cast<int>(state.partials[0]) != 0).AssignIfValid(&capa8) || !base::CheckMul(capa8, 3).AssignIfValid(&capa8));
+            RETURN_HR_IF(E_ABORT, !base::MakeCheckedNum(in.length()).AssignIfValid(&len16) || !base::CheckAdd(len16, til::unsafe_cast<int>(state.partials[0]) != 0).AssignIfValid(&capa8) || !base::CheckMul(capa8, 3).AssignIfValid(&capa8));
 
-            out.resize(gsl::narrow_cast<size_t>(capa8));
+            out.resize(til::unsafe_cast<size_t>(capa8));
             int len8{};
             auto cursor16{ in.data() };
             if (state.partials[0])
@@ -265,7 +265,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 len8 += convLen;
             }
 
-            out.resize(gsl::narrow_cast<size_t>(len8));
+            out.resize(til::unsafe_cast<size_t>(len8));
             return S_OK;
         }
         CATCH_RETURN();

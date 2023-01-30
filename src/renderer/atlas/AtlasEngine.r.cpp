@@ -258,7 +258,7 @@ void AtlasEngine::_renderWithCustomShader() const
         _r.deviceContext->PSSetShader(_r.pixelShader.get(), nullptr, 0);
         _r.deviceContext->PSSetConstantBuffers(0, 1, _r.constantBuffer.addressof());
         const std::array resources{ _r.cellView.get(), _r.atlasView.get() };
-        _r.deviceContext->PSSetShaderResources(0, gsl::narrow_cast<UINT>(resources.size()), resources.data());
+        _r.deviceContext->PSSetShaderResources(0, til::safe_cast_nothrow<UINT>(resources.size()), resources.data());
         _r.deviceContext->PSSetSamplers(0, 0, nullptr);
     }
 }
@@ -281,7 +281,7 @@ void AtlasEngine::_setShaderResources() const
     _r.deviceContext->PSSetShader(_r.pixelShader.get(), nullptr, 0);
     _r.deviceContext->PSSetConstantBuffers(0, 1, _r.constantBuffer.addressof());
     const std::array resources{ _r.cellView.get(), _r.atlasView.get() };
-    _r.deviceContext->PSSetShaderResources(0, gsl::narrow_cast<UINT>(resources.size()), resources.data());
+    _r.deviceContext->PSSetShaderResources(0, til::safe_cast_nothrow<UINT>(resources.size()), resources.data());
 }
 
 void AtlasEngine::_updateConstantBuffer() const noexcept
@@ -556,8 +556,8 @@ AtlasEngine::CachedGlyphLayout AtlasEngine::_getCachedGlyphLayout(const wchar_t*
                     DWRITE_OVERHANG_METRICS overhang;
                     overhang.left = static_cast<f32>(glyphMetrics.leftSideBearing) * fontScale;
                     overhang.top = static_cast<f32>(glyphMetrics.verticalOriginY - glyphMetrics.topSideBearing) * fontScale - _r.fontMetrics.baselineInDIP;
-                    overhang.right = static_cast<f32>(gsl::narrow_cast<INT32>(glyphMetrics.advanceWidth) - glyphMetrics.rightSideBearing) * fontScale - layoutBox.x;
-                    overhang.bottom = static_cast<f32>(gsl::narrow_cast<INT32>(glyphMetrics.advanceHeight) - glyphMetrics.verticalOriginY - glyphMetrics.bottomSideBearing) * fontScale + _r.fontMetrics.baselineInDIP - layoutBox.y;
+                    overhang.right = static_cast<f32>(til::safe_cast_nothrow<INT32>(glyphMetrics.advanceWidth) - glyphMetrics.rightSideBearing) * fontScale - layoutBox.x;
+                    overhang.bottom = static_cast<f32>(til::safe_cast_nothrow<INT32>(glyphMetrics.advanceHeight) - glyphMetrics.verticalOriginY - glyphMetrics.bottomSideBearing) * fontScale + _r.fontMetrics.baselineInDIP - layoutBox.y;
 
                     scalingRequired = true;
                     // Center glyphs.
@@ -876,10 +876,10 @@ void AtlasEngine::_d2dDrawDirtyArea()
         CellFlagHandler{ CellFlags::Selected, &AtlasEngine::_d2dCellFlagRendererSelected },
     };
 
-    auto left = gsl::narrow<u16>(_r.dirtyRect.left);
-    auto top = gsl::narrow<u16>(_r.dirtyRect.top);
-    auto right = gsl::narrow<u16>(_r.dirtyRect.right);
-    auto bottom = gsl::narrow<u16>(_r.dirtyRect.bottom);
+    auto left = til::safe_cast<u16>(_r.dirtyRect.left);
+    auto top = til::safe_cast<u16>(_r.dirtyRect.top);
+    auto right = til::safe_cast<u16>(_r.dirtyRect.right);
+    auto bottom = til::safe_cast<u16>(_r.dirtyRect.bottom);
     if constexpr (debugGlyphGenerationPerformance)
     {
         left = 0;
@@ -909,7 +909,7 @@ void AtlasEngine::_d2dDrawDirtyArea()
         for (;;)
         {
             const auto cellCount = cellGlyphMappings[beg]->first.data()->attributes.cellCount;
-            const auto begNext = gsl::narrow_cast<u16>(beg + cellCount);
+            const auto begNext = til::safe_cast_nothrow<u16>(beg + cellCount);
 
             if (begNext > left)
             {
@@ -935,7 +935,7 @@ void AtlasEngine::_d2dDrawDirtyArea()
             _r.d2dRenderTarget->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_COPY);
 
             auto x1 = beg;
-            auto x2 = gsl::narrow_cast<u16>(x1 + 1);
+            auto x2 = til::safe_cast_nothrow<u16>(x1 + 1);
             auto currentColor = cells[x1].color.y;
 
             for (; x2 < end; ++x2)
@@ -944,7 +944,7 @@ void AtlasEngine::_d2dDrawDirtyArea()
 
                 if (currentColor != color)
                 {
-                    const u16r rect{ x1, y, x2, gsl::narrow_cast<u16>(y + 1) };
+                    const u16r rect{ x1, y, x2, til::safe_cast_nothrow<u16>(y + 1) };
                     _d2dFillRectangle(rect, currentColor);
                     x1 = x2;
                     currentColor = color;
@@ -952,7 +952,7 @@ void AtlasEngine::_d2dDrawDirtyArea()
             }
 
             {
-                const u16r rect{ x1, y, x2, gsl::narrow_cast<u16>(y + 1) };
+                const u16r rect{ x1, y, x2, til::safe_cast_nothrow<u16>(y + 1) };
                 _d2dFillRectangle(rect, currentColor);
             }
 
@@ -982,7 +982,7 @@ void AtlasEngine::_d2dDrawDirtyArea()
                 {
                     if (currentFlags != CellFlags::None)
                     {
-                        const u16r rect{ x1, y, x2, gsl::narrow_cast<u16>(y + 1) };
+                        const u16r rect{ x1, y, x2, til::safe_cast_nothrow<u16>(y + 1) };
                         const auto color = cells[x1].color.x;
                         (this->*handler.func)(rect, color);
                     }
@@ -994,7 +994,7 @@ void AtlasEngine::_d2dDrawDirtyArea()
 
             if (currentFlags != CellFlags::None)
             {
-                const u16r rect{ x1, y, right, gsl::narrow_cast<u16>(y + 1) };
+                const u16r rect{ x1, y, right, til::safe_cast_nothrow<u16>(y + 1) };
                 const auto color = cells[x1].color.x;
                 (this->*handler.func)(rect, color);
             }

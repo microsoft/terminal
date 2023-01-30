@@ -85,8 +85,8 @@ WddmConEngine::~WddmConEngine()
             {
                 DisplaySize.top = 0;
                 DisplaySize.left = 0;
-                DisplaySize.bottom = gsl::narrow_cast<LONG>(DisplaySizeIoctl.Height);
-                DisplaySize.right = gsl::narrow_cast<LONG>(DisplaySizeIoctl.Width);
+                DisplaySize.bottom = til::safe_cast_nothrow<LONG>(DisplaySizeIoctl.Height);
+                DisplaySize.right = til::safe_cast_nothrow<LONG>(DisplaySizeIoctl.Width);
 
                 _displayState = static_cast<PCD_IO_ROW_INFORMATION*>(calloc(DisplaySize.bottom, sizeof(PCD_IO_ROW_INFORMATION)));
 
@@ -102,7 +102,7 @@ WddmConEngine::~WddmConEngine()
                             break;
                         }
 
-                        _displayState[i]->Index = gsl::narrow_cast<SHORT>(i);
+                        _displayState[i]->Index = til::safe_cast_nothrow<SHORT>(i);
                         _displayState[i]->Old = static_cast<PCD_IO_CHARACTER>(calloc(DisplaySize.right, sizeof(CD_IO_CHARACTER)));
                         _displayState[i]->New = static_cast<PCD_IO_CHARACTER>(calloc(DisplaySize.right, sizeof(CD_IO_CHARACTER)));
 
@@ -267,7 +267,7 @@ CATCH_RETURN()
     {
         RETURN_LAST_ERROR_IF(_hWddmConCtx == INVALID_HANDLE_VALUE);
 
-        for (size_t i = 0; i < clusters.size() && i < gsl::narrow_cast<size_t>(_displayWidth); i++)
+        for (size_t i = 0; i < clusters.size() && i < til::safe_cast_nothrow<size_t>(_displayWidth); i++)
         {
             const auto OldChar = &_displayState[coord.y]->Old[coord.x + i];
             const auto NewChar = &_displayState[coord.y]->New[coord.x + i];

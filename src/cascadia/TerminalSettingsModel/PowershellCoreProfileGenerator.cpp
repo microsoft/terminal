@@ -217,7 +217,7 @@ static void _accumulateStorePowerShellInstances(std::vector<PowerShellInstance>&
             if (previewPackage)
             {
                 out.emplace_back(PowerShellInstance{
-                    gsl::narrow_cast<int>(previewPackage.Id().Version().Major),
+                    til::safe_cast_nothrow<int>(previewPackage.Id().Version().Major),
                     PowerShellFlags::Store | PowerShellFlags::Preview,
                     previewPath / PWSH_EXE });
             }

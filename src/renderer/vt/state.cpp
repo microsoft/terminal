@@ -140,7 +140,7 @@ CATCH_RETURN();
 {
     if (_hFile)
     {
-        auto fSuccess = !!WriteFile(_hFile.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), nullptr, nullptr);
+        auto fSuccess = !!WriteFile(_hFile.get(), _buffer.data(), til::safe_cast_nothrow<DWORD>(_buffer.size()), nullptr, nullptr);
         _buffer.clear();
         if (!fSuccess)
         {

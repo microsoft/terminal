@@ -11,7 +11,7 @@ using namespace Microsoft::Console::Types;
 // A helper function to create a SafeArray Version of an int array of a specified length
 SAFEARRAY* BuildIntSafeArray(std::span<const int> data)
 {
-    auto psa = SafeArrayCreateVector(VT_I4, 0, gsl::narrow<ULONG>(data.size()));
+    auto psa = SafeArrayCreateVector(VT_I4, 0, til::safe_cast<ULONG>(data.size()));
     if (psa != nullptr)
     {
         LONG lIndex{ 0 };

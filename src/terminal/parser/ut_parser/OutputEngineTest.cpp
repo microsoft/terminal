@@ -361,7 +361,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         for (size_t i = 0; i < MAX_PARAMETER_COUNT; i++)
         {
             VERIFY_IS_TRUE(mach._parameters.at(i).has_value());
-            VERIFY_ARE_EQUAL(mach._parameters.at(i).value(), gsl::narrow_cast<VTInt>(i % 10));
+            VERIFY_ARE_EQUAL(mach._parameters.at(i).value(), til::safe_cast_nothrow<VTInt>(i % 10));
         }
     }
 

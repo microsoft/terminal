@@ -110,7 +110,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (const auto charCode{ MapVirtualKey(vkey, MAPVK_VK_TO_CHAR) })
         {
-            if (const auto keyEventChar{ gsl::narrow_cast<wchar_t>(charCode) }; IsReadable({ &keyEventChar, 1 }))
+            if (const auto keyEventChar{ til::safe_cast_nothrow<wchar_t>(charCode) }; IsReadable({ &keyEventChar, 1 }))
             {
                 _keyEvents.lock()->emplace_back(keyEventChar);
             }

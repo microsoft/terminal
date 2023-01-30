@@ -64,7 +64,7 @@ void CommandHistory::s_ResizeAll(const size_t commands)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     FAIL_FAST_IF(commands > SHORT_MAX);
-    gci.SetHistoryBufferSize(gsl::narrow<UINT>(commands));
+    gci.SetHistoryBufferSize(til::safe_cast<UINT>(commands));
 
     for (auto& historyList : s_historyLists)
     {
@@ -74,14 +74,14 @@ void CommandHistory::s_ResizeAll(const size_t commands)
 
 bool CommandHistory::IsAppNameMatch(const std::wstring_view other) const
 {
-    return CompareStringOrdinal(_appName.data(), gsl::narrow<int>(_appName.size()), other.data(), gsl::narrow<int>(other.size()), TRUE) == CSTR_EQUAL;
+    return CompareStringOrdinal(_appName.data(), til::safe_cast<int>(_appName.size()), other.data(), til::safe_cast<int>(other.size()), TRUE) == CSTR_EQUAL;
 }
 
 // Routine Description:
 // - This routine is called when escape is entered or a command is added.
 void CommandHistory::_Reset()
 {
-    LastDisplayed = gsl::narrow<SHORT>(_commands.size()) - 1;
+    LastDisplayed = til::safe_cast<SHORT>(_commands.size()) - 1;
     WI_SetFlag(Flags, CLE_RESET);
 }
 
@@ -278,7 +278,7 @@ void CommandHistory::Realloc(const size_t commands)
     }
 
     const auto oldCommands = _commands;
-    const auto newNumberOfCommands = gsl::narrow<SHORT>(std::min(_commands.size(), commands));
+    const auto newNumberOfCommands = til::safe_cast<SHORT>(std::min(_commands.size(), commands));
 
     _commands.clear();
     for (SHORT i = 0; i < newNumberOfCommands; i++)
@@ -287,7 +287,7 @@ void CommandHistory::Realloc(const size_t commands)
     }
 
     WI_SetFlag(Flags, CLE_RESET);
-    LastDisplayed = gsl::narrow<SHORT>(_commands.size()) - 1;
+    LastDisplayed = til::safe_cast<SHORT>(_commands.size()) - 1;
     _maxCommands = (SHORT)commands;
 }
 
@@ -363,7 +363,7 @@ CommandHistory* CommandHistory::s_Allocate(const std::wstring_view appName, cons
         History._appName = appName;
         History.Flags = CLE_ALLOCATED;
         History.LastDisplayed = -1;
-        History._maxCommands = gsl::narrow<SHORT>(gci.GetHistoryBufferSize());
+        History._maxCommands = til::safe_cast<SHORT>(gci.GetHistoryBufferSize());
         History._processHandle = processHandle;
         return &s_historyLists.emplace_front(History);
     }
@@ -419,7 +419,7 @@ void CommandHistory::_Prev(SHORT& ind) const
 {
     if (ind <= 0)
     {
-        ind = gsl::narrow<SHORT>(_commands.size());
+        ind = til::safe_cast<SHORT>(_commands.size());
     }
     ind--;
 }
@@ -454,7 +454,7 @@ void CommandHistory::_Inc(SHORT& ind) const
 std::wstring CommandHistory::Remove(const SHORT iDel)
 {
     SHORT iFirst = 0;
-    auto iLast = gsl::narrow<SHORT>(_commands.size() - 1);
+    auto iLast = til::safe_cast<SHORT>(_commands.size() - 1);
     auto iDisp = LastDisplayed;
 
     if (_commands.size() == 0)
@@ -689,7 +689,7 @@ HRESULT GetConsoleCommandHistoryLengthImplHelper(const std::wstring_view exeName
         // Every command history item is made of a string length followed by 1 null character.
         const size_t cchNull = 1;
 
-        for (SHORT i = 0; i < gsl::narrow<SHORT>(pCommandHistory->GetNumberOfCommands()); i++)
+        for (SHORT i = 0; i < til::safe_cast<SHORT>(pCommandHistory->GetNumberOfCommands()); i++)
         {
             const auto command = pCommandHistory->GetNth(i);
             auto cchCommand = command.size();
@@ -796,7 +796,7 @@ HRESULT GetConsoleCommandHistoryWImplHelper(const std::wstring_view exeName,
 
         const size_t cchNull = 1;
 
-        for (SHORT i = 0; i < gsl::narrow<SHORT>(CommandHistory->GetNumberOfCommands()); i++)
+        for (SHORT i = 0; i < til::safe_cast<SHORT>(CommandHistory->GetNumberOfCommands()); i++)
         {
             const auto command = CommandHistory->GetNth(i);
 

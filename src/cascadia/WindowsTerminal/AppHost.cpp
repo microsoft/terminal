@@ -26,7 +26,7 @@ using namespace std::chrono_literals;
 
 // This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
 // "If the high-order bit is 1, the key is down; otherwise, it is up."
-static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
+static constexpr short KeyPressed{ til::safe_cast_nothrow<short>(0x8000) };
 
 AppHost::AppHost() noexcept :
     _app{},
@@ -172,8 +172,8 @@ void AppHost::SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable&
     if (_logic)
     {
         const auto state = _logic.TaskbarState();
-        _window->SetTaskbarProgress(gsl::narrow_cast<size_t>(state.State()),
-                                    gsl::narrow_cast<size_t>(state.Progress()));
+        _window->SetTaskbarProgress(til::safe_cast_nothrow<size_t>(state.State()),
+                                    til::safe_cast_nothrow<size_t>(state.Progress()));
     }
 }
 
@@ -569,8 +569,8 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, til::rect proposedRect, Launc
     // Acquire the actual initial position
     auto initialPos = _logic.GetInitialPosition(proposedRect.left, proposedRect.top);
     const auto centerOnLaunch = _logic.CenterOnLaunch();
-    proposedRect.left = gsl::narrow<til::CoordType>(initialPos.X);
-    proposedRect.top = gsl::narrow<til::CoordType>(initialPos.Y);
+    proposedRect.left = til::safe_cast<til::CoordType>(initialPos.X);
+    proposedRect.top = til::safe_cast<til::CoordType>(initialPos.Y);
 
     long adjustedHeight = 0;
     long adjustedWidth = 0;
@@ -1081,7 +1081,7 @@ winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
     // If a hotkey with a given HWND and ID combination already exists
     // then a duplicate one will be added, which we don't want.
     // (Additionally we want to remove hotkeys that were removed from the settings.)
-    for (auto i = 0, count = gsl::narrow_cast<int>(_hotkeys.size()); i < count; ++i)
+    for (auto i = 0, count = til::safe_cast_nothrow<int>(_hotkeys.size()); i < count; ++i)
     {
         _window->UnregisterHotKey(i);
     }
@@ -1093,7 +1093,7 @@ winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
     {
         if (auto summonArgs = cmd.ActionAndArgs().Args().try_as<Settings::Model::GlobalSummonArgs>())
         {
-            auto index = gsl::narrow_cast<int>(_hotkeys.size());
+            auto index = til::safe_cast_nothrow<int>(_hotkeys.size());
             const auto succeeded = _window->RegisterHotKey(index, keyChord);
 
             TraceLoggingWrite(g_hWindowsTerminalProvider,

@@ -117,7 +117,7 @@ void VtInputThread::DoReadInput(const bool throwOnFail)
         return;
     }
 
-    auto hr = _HandleRunInput({ buffer, gsl::narrow_cast<size_t>(dwRead) });
+    auto hr = _HandleRunInput({ buffer, til::safe_cast_nothrow<size_t>(dwRead) });
     if (FAILED(hr))
     {
         if (throwOnFail)

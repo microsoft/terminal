@@ -361,7 +361,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
             const auto text = cluster.GetText();
             polyString += text;
             polyString.back() &= softFontCharMask;
-            polyWidth.push_back(gsl::narrow<int>(cluster.GetColumns()) * coordFontSize.width);
+            polyWidth.push_back(til::safe_cast<int>(cluster.GetColumns()) * coordFontSize.width);
             cchCharWidths += polyWidth.back();
             polyWidth.append(text.size() - 1, 0);
         }
@@ -412,7 +412,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         const auto bottomOffset = _currentLineRendition == LineRendition::DoubleHeightTop ? halfHeight : 0;
 
         pPolyTextLine->lpstr = polyString.data();
-        pPolyTextLine->n = gsl::narrow<UINT>(polyString.size());
+        pPolyTextLine->n = til::safe_cast<UINT>(polyString.size());
         pPolyTextLine->x = ptDraw.x;
         pPolyTextLine->y = ptDraw.y;
         pPolyTextLine->uiFlags = ETO_OPAQUE | ETO_CLIPPED;
@@ -534,7 +534,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     // Get the font size so we know the size of the rectangle lines we'll be inscribing.
     const auto fontWidth = _GetFontSize().width;
     const auto fontHeight = _GetFontSize().height;
-    const auto widthOfAllCells = fontWidth * gsl::narrow_cast<unsigned>(cchLine);
+    const auto widthOfAllCells = fontWidth * til::safe_cast_nothrow<unsigned>(cchLine);
 
     const auto DrawLine = [=](const auto x, const auto y, const auto w, const auto h) {
         return PatBlt(_hdcMemoryContext, x, y, w, h, PATCOPY);

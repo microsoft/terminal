@@ -226,7 +226,7 @@ void ROW::Resize(wchar_t* charsBuffer, uint16_t* charOffsetsBuffer, uint16_t row
 void ROW::TransferAttributes(const til::small_rle<TextAttribute, uint16_t, 1>& attr, til::CoordType newWidth)
 {
     _attr = attr;
-    _attr.resize_trailing_extent(gsl::narrow<uint16_t>(newWidth));
+    _attr.resize_trailing_extent(til::safe_cast<uint16_t>(newWidth));
 }
 
 // Routine Description:
@@ -260,7 +260,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const til::CoordType c
 
     auto currentColor = it->TextAttr();
     uint16_t colorUses = 0;
-    auto colorStarts = gsl::narrow_cast<uint16_t>(columnBegin);
+    auto colorStarts = til::safe_cast_nothrow<uint16_t>(columnBegin);
     auto currentIndex = colorStarts;
 
     while (it && currentIndex <= finalColumnInRow)
@@ -451,8 +451,8 @@ void ROW::ReplaceCharacters(til::CoordType columnBegin, til::CoordType width, co
         it = iota_n_mut(it, leadingSpaces, chPos);
 
         *it++ = chPos;
-        it = fill_small(it, _charOffsets.begin() + colEnd, gsl::narrow_cast<uint16_t>(chPos | CharOffsetsTrailer));
-        chPos = gsl::narrow_cast<uint16_t>(chPos + chars.size());
+        it = fill_small(it, _charOffsets.begin() + colEnd, til::safe_cast_nothrow<uint16_t>(chPos | CharOffsetsTrailer));
+        chPos = til::safe_cast_nothrow<uint16_t>(chPos + chars.size());
 
         it = iota_n_mut(it, trailingSpaces, chPos);
     }
@@ -475,7 +475,7 @@ void ROW::_resizeChars(uint16_t colExtEnd, uint16_t chExtBeg, uint16_t chExtEnd,
     else
     {
         const auto minCapacity = std::min<size_t>(UINT16_MAX, _chars.size() + (_chars.size() >> 1));
-        const auto newCapacity = gsl::narrow<uint16_t>(std::max(newLength, minCapacity));
+        const auto newCapacity = til::safe_cast<uint16_t>(std::max(newLength, minCapacity));
 
         auto charsHeap = std::make_unique_for_overwrite<wchar_t[]>(newCapacity);
         const std::span chars{ charsHeap.get(), newCapacity };
@@ -491,7 +491,7 @@ void ROW::_resizeChars(uint16_t colExtEnd, uint16_t chExtBeg, uint16_t chExtEnd,
     const auto end = _charOffsets.end();
     for (; it != end; ++it)
     {
-        *it = gsl::narrow_cast<uint16_t>(*it + diff);
+        *it = til::safe_cast_nothrow<uint16_t>(*it + diff);
     }
 }
 
@@ -538,7 +538,7 @@ til::CoordType ROW::MeasureLeft() const noexcept
         }
     }
 
-    return gsl::narrow_cast<til::CoordType>(it - beg);
+    return til::safe_cast_nothrow<til::CoordType>(it - beg);
 }
 
 til::CoordType ROW::MeasureRight() const noexcept
@@ -562,7 +562,7 @@ til::CoordType ROW::MeasureRight() const noexcept
     //
     // An example: The row is 10 cells wide and `it` points to the second character.
     // `it - beg` would return 1, but it's possible it's actually 1 wide glyph and 8 whitespace.
-    return gsl::narrow_cast<til::CoordType>(_columnCount - (end - it));
+    return til::safe_cast_nothrow<til::CoordType>(_columnCount - (end - it));
 }
 
 bool ROW::ContainsText() const noexcept

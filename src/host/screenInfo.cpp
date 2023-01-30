@@ -2274,10 +2274,10 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
     // MSFT-33471786, GH#13193:
     // newViewport may reside anywhere outside of the valid coordScreenBufferSize.
     // For instance it might be scrolled down more than our text buffer allows to be scrolled.
-    const auto cx = gsl::narrow_cast<SHORT>(std::clamp(viewportRect.width(), 1, coordScreenBufferSize.width));
-    const auto cy = gsl::narrow_cast<SHORT>(std::clamp(viewportRect.height(), 1, coordScreenBufferSize.height));
-    const auto x = gsl::narrow_cast<SHORT>(std::clamp(viewportRect.left, 0, coordScreenBufferSize.width - cx));
-    const auto y = gsl::narrow_cast<SHORT>(std::clamp(viewportRect.top, 0, coordScreenBufferSize.height - cy));
+    const auto cx = til::safe_cast_nothrow<SHORT>(std::clamp(viewportRect.width(), 1, coordScreenBufferSize.width));
+    const auto cy = til::safe_cast_nothrow<SHORT>(std::clamp(viewportRect.height(), 1, coordScreenBufferSize.height));
+    const auto x = til::safe_cast_nothrow<SHORT>(std::clamp(viewportRect.left, 0, coordScreenBufferSize.width - cx));
+    const auto y = til::safe_cast_nothrow<SHORT>(std::clamp(viewportRect.top, 0, coordScreenBufferSize.height - cy));
 
     _viewport = Viewport::FromExclusive({ x, y, x + cx, y + cy });
 
@@ -2329,7 +2329,7 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
     // +1 on the y coord because we don't want to clear the attributes of the
     // cursor row, the one we saved.
     til::point fillPosition{ 0, _viewport.Top() + 1 };
-    auto fillLength = gsl::narrow<size_t>(_viewport.Height() * GetBufferSize().Width());
+    auto fillLength = til::safe_cast<size_t>(_viewport.Height() * GetBufferSize().Width());
     auto fillData = OutputCellIterator{ fillAttributes, fillLength };
     Write(fillData, fillPosition, false);
 

@@ -118,10 +118,10 @@ til::color Utils::ColorFromHexString(const std::string_view str)
         aStr = std::string(&str.at(7), 2);
     }
 
-    const auto r = gsl::narrow_cast<BYTE>(std::stoul(rStr, nullptr, 16));
-    const auto g = gsl::narrow_cast<BYTE>(std::stoul(gStr, nullptr, 16));
-    const auto b = gsl::narrow_cast<BYTE>(std::stoul(bStr, nullptr, 16));
-    const auto a = gsl::narrow_cast<BYTE>(std::stoul(aStr, nullptr, 16));
+    const auto r = til::safe_cast_nothrow<BYTE>(std::stoul(rStr, nullptr, 16));
+    const auto g = til::safe_cast_nothrow<BYTE>(std::stoul(gStr, nullptr, 16));
+    const auto b = til::safe_cast_nothrow<BYTE>(std::stoul(bStr, nullptr, 16));
+    const auto a = til::safe_cast_nothrow<BYTE>(std::stoul(aStr, nullptr, 16));
 
     return til::color{ r, g, b, a };
 }
@@ -347,7 +347,7 @@ til::color Utils::ColorFromRGB100(const int r, const int g, const int b) noexcep
         std::array<uint8_t, 101> lut{};
         for (size_t i = 0; i < std::size(lut); i++)
         {
-            lut.at(i) = gsl::narrow_cast<uint8_t>((i * 255 + 50) / 100);
+            lut.at(i) = til::safe_cast_nothrow<uint8_t>((i * 255 + 50) / 100);
         }
         return lut;
     }();
@@ -369,8 +369,8 @@ til::color Utils::ColorFromRGB100(const int r, const int g, const int b) noexcep
 til::color Utils::ColorFromHLS(const int h, const int l, const int s) noexcept
 {
     const auto hue = h % 360;
-    const auto lum = gsl::narrow_cast<float>(std::min(l, 100));
-    const auto sat = gsl::narrow_cast<float>(std::min(s, 100));
+    const auto lum = static_cast<float>(std::min(l, 100));
+    const auto sat = static_cast<float>(std::min(s, 100));
 
     // This calculation is based on the HSL to RGB algorithm described in
     // Wikipedia: https://en.wikipedia.org/wiki/HSL_and_HSV#HSL_to_RGB
@@ -386,9 +386,9 @@ til::color Utils::ColorFromHLS(const int h, const int l, const int s) noexcept
     // brightest, and 0 for the last. The values  are scaled by 255/100 to get
     // them in the range 0 to 255, as required by the color class.
     constexpr auto scale = 255.f / 100.f;
-    const auto comp1 = gsl::narrow_cast<uint8_t>((chroma + lightness) * scale + 0.5f);
-    const auto comp2 = gsl::narrow_cast<uint8_t>((x + lightness) * scale + 0.5f);
-    const auto comp3 = gsl::narrow_cast<uint8_t>((0 + lightness) * scale + 0.5f);
+    const auto comp1 = til::safe_cast_nothrow<uint8_t>((chroma + lightness) * scale + 0.5f);
+    const auto comp2 = til::safe_cast_nothrow<uint8_t>((x + lightness) * scale + 0.5f);
+    const auto comp3 = til::safe_cast_nothrow<uint8_t>((0 + lightness) * scale + 0.5f);
 
     // Finally we order the components based on the given hue. But note that the
     // DEC terminals used a different mapping for hue than is typical for modern
@@ -635,10 +635,10 @@ GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const std::span<const std::b
     // through unsigned char or char pointer *is defined*.
     THROW_IF_NTSTATUS_FAILED(BCryptHashData(hash.get(), reinterpret_cast<PUCHAR>(&correctEndianNamespaceGuid), sizeof(GUID), 0));
     // BCryptHashData is ill-specified in that it leaves off "const" qualification for pbInput
-    THROW_IF_NTSTATUS_FAILED(BCryptHashData(hash.get(), reinterpret_cast<PUCHAR>(const_cast<std::byte*>(name.data())), gsl::narrow<ULONG>(name.size()), 0));
+    THROW_IF_NTSTATUS_FAILED(BCryptHashData(hash.get(), reinterpret_cast<PUCHAR>(const_cast<std::byte*>(name.data())), til::safe_cast<ULONG>(name.size()), 0));
 
     std::array<uint8_t, 20> buffer;
-    THROW_IF_NTSTATUS_FAILED(BCryptFinishHash(hash.get(), buffer.data(), gsl::narrow<ULONG>(buffer.size()), 0));
+    THROW_IF_NTSTATUS_FAILED(BCryptFinishHash(hash.get(), buffer.data(), til::safe_cast<ULONG>(buffer.size()), 0));
 
     buffer.at(6) = (buffer.at(6) & 0x0F) | 0x50; // set the uuid version to 5
     buffer.at(8) = (buffer.at(8) & 0x3F) | 0x80; // set the variant to 2 (RFC4122)

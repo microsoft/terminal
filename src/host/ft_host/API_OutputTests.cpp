@@ -389,7 +389,7 @@ void OutputTests::WriteConsoleOutputCharacterWRunoff()
     DWORD charsWritten = 0;
     VERIFY_SUCCEEDED(WriteConsoleOutputCharacterW(consoleOutputHandle,
                                                   text.c_str(),
-                                                  gsl::narrow<DWORD>(text.size()),
+                                                  til::safe_cast<DWORD>(text.size()),
                                                   target,
                                                   &charsWritten));
     VERIFY_ARE_EQUAL(charsWritten, 1u);

@@ -725,7 +725,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
                 if (CheckBisectProcessW(screenInfo,
                                         pwchBufferBackupLimit,
                                         pwchBuffer + 1 - pwchBufferBackupLimit,
-                                        gsl::narrow_cast<size_t>(coordScreenBufferSize.width) - sOriginalXPosition,
+                                        til::safe_cast_nothrow<size_t>(coordScreenBufferSize.width) - sOriginalXPosition,
                                         sOriginalXPosition,
                                         dwFlags & WC_PRINTABLE_CONTROL_CHARS))
                 {
@@ -765,7 +765,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
             size_t NumChars = 0;
             if (CursorPosition.x >= coordScreenBufferSize.width)
             {
-                NumChars = gsl::narrow<size_t>(coordScreenBufferSize.width - cursor.GetPosition().x);
+                NumChars = til::safe_cast<size_t>(coordScreenBufferSize.width - cursor.GetPosition().x);
                 CursorPosition.x = 0;
                 CursorPosition.y = cursor.GetPosition().y + 1;
 
@@ -774,7 +774,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
             }
             else
             {
-                NumChars = gsl::narrow<size_t>(CursorPosition.x - cursor.GetPosition().x);
+                NumChars = til::safe_cast<size_t>(CursorPosition.x - cursor.GetPosition().x);
                 CursorPosition.y = cursor.GetPosition().y;
             }
 
@@ -1144,12 +1144,12 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
             auto wcPtr{ wstr.data() };
             auto mbPtr{ buffer.data() };
             size_t dbcsLength{};
-            if (screenInfo.WriteConsoleDbcsLeadByte[0] != 0 && gsl::narrow_cast<byte>(*mbPtr) >= byte{ ' ' })
+            if (screenInfo.WriteConsoleDbcsLeadByte[0] != 0 && til::safe_cast_nothrow<byte>(*mbPtr) >= byte{ ' ' })
             {
                 // there was a portion of a dbcs character stored from a previous
                 // call so we take the 2nd half from mbPtr[0], put them together
                 // and write the wide char to wcPtr[0]
-                screenInfo.WriteConsoleDbcsLeadByte[1] = gsl::narrow_cast<byte>(*mbPtr);
+                screenInfo.WriteConsoleDbcsLeadByte[1] = til::safe_cast_nothrow<byte>(*mbPtr);
 
                 try
                 {
@@ -1185,7 +1185,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
             // back together then
             if (mbPtrLength != 0 && CheckBisectStringA(const_cast<char*>(mbPtr), mbPtrLength, &consoleInfo.OutputCPInfo))
             {
-                screenInfo.WriteConsoleDbcsLeadByte[0] = gsl::narrow_cast<byte>(mbPtr[mbPtrLength - 1]);
+                screenInfo.WriteConsoleDbcsLeadByte[0] = til::safe_cast_nothrow<byte>(mbPtr[mbPtrLength - 1]);
                 mbPtrLength--;
 
                 // Note that we captured a lead byte during this call, but won't actually draw it until later.

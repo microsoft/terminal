@@ -42,7 +42,7 @@ void CopyToCharPopup::_copyToChar(COOKED_READ_DATA& cookedReadData, const std::w
     const auto startIt = std::next(LastCommand.cbegin(), cookedReadData.InsertionPoint());
     const auto endIt = location;
 
-    cookedReadData.Write({ &*startIt, gsl::narrow<size_t>(std::distance(startIt, endIt)) });
+    cookedReadData.Write({ &*startIt, til::safe_cast<size_t>(std::distance(startIt, endIt)) });
 }
 
 // Routine Description:

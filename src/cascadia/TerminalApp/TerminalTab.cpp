@@ -992,7 +992,7 @@ namespace winrt::TerminalApp::implementation
                 // any non-indeterminate state has a value, set the progress ring as such
                 _tabStatus.IsProgressRingIndeterminate(false);
 
-                const auto progressValue = gsl::narrow<uint32_t>(state.Progress());
+                const auto progressValue = til::safe_cast<uint32_t>(state.Progress());
                 _tabStatus.ProgressValue(progressValue);
             }
             // Hide the tab icon (the progress ring is placed over it)

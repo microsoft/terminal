@@ -974,7 +974,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
     else
     {
         // otherwise, we need to add the number of characters in the input line to the original cursor position
-        bufferSize.MoveInBounds(gsl::narrow<til::CoordType>(cookedRead.VisibleCharCount()), coordEnd);
+        bufferSize.MoveInBounds(til::safe_cast<til::CoordType>(cookedRead.VisibleCharCount()), coordEnd);
     }
 
     // - 1 so the coordinate is on top of the last position of the text, not one past it.

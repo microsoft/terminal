@@ -948,7 +948,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         const auto ch = e.Character();
         const auto keyStatus = e.KeyStatus();
-        const auto scanCode = gsl::narrow_cast<WORD>(keyStatus.ScanCode);
+        const auto scanCode = til::safe_cast_nothrow<WORD>(keyStatus.ScanCode);
         auto modifiers = _GetPressedModifierKeys();
 
         if (keyStatus.IsExtendedKey)
@@ -996,7 +996,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 modifiers.IsAltPressed(),
                 modifiers.IsShiftPressed(),
                 modifiers.IsWinPressed(),
-                gsl::narrow_cast<WORD>(vkey),
+                til::safe_cast_nothrow<WORD>(vkey),
                 0
             };
 
@@ -1015,7 +1015,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (!handled && sendToTerminal)
             {
                 // _TrySendKeyEvent pretends it didn't handle F7 for some unknown reason.
-                (void)_TrySendKeyEvent(gsl::narrow_cast<WORD>(vkey), scanCode, modifiers, true);
+                (void)_TrySendKeyEvent(til::safe_cast_nothrow<WORD>(vkey), scanCode, modifiers, true);
                 // GH#6438: Note that we're _not_ sending the key up here - that'll
                 // get passed through XAML to our KeyUp handler normally.
                 handled = true;
@@ -1046,8 +1046,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         const auto keyStatus = e.KeyStatus();
-        const auto vkey = gsl::narrow_cast<WORD>(e.OriginalKey());
-        const auto scanCode = gsl::narrow_cast<WORD>(keyStatus.ScanCode);
+        const auto vkey = til::safe_cast_nothrow<WORD>(e.OriginalKey());
+        const auto scanCode = til::safe_cast_nothrow<WORD>(keyStatus.ScanCode);
         auto modifiers = _GetPressedModifierKeys();
 
         if (keyStatus.IsExtendedKey)
@@ -1193,7 +1193,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //   http://archives.miloush.net/michkap/archive/2006/09/10/748775.html
         // > "The key here is to keep trying to pass stuff to ToUnicode until -1 is not returned."
         std::array<wchar_t, 16> buffer;
-        while (ToUnicodeEx(vkey, scanCode, keyState.data(), buffer.data(), gsl::narrow_cast<int>(buffer.size()), 0b1, nullptr) < 0)
+        while (ToUnicodeEx(vkey, scanCode, keyState.data(), buffer.data(), til::safe_cast_nothrow<int>(buffer.size()), 0b1, nullptr) < 0)
         {
         }
     }
@@ -2152,7 +2152,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         width += scale * (thickness.Left + thickness.Right);
         height += scale * (thickness.Top + thickness.Bottom);
 
-        return { gsl::narrow_cast<float>(width), gsl::narrow_cast<float>(height) };
+        return { static_cast<float>(width), static_cast<float>(height) };
     }
 
     // Method Description:
@@ -2195,7 +2195,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             width += padding.Left + padding.Right;
             height += padding.Top + padding.Bottom;
 
-            return { gsl::narrow_cast<float>(width), gsl::narrow_cast<float>(height) };
+            return { static_cast<float>(width), static_cast<float>(height) };
         }
         else
         {
@@ -2224,13 +2224,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto fontDimension = widthOrHeight ? fontSize.Width : fontSize.Height;
 
         const auto padding = GetPadding();
-        auto nonTerminalArea = gsl::narrow_cast<float>(widthOrHeight ?
+        auto nonTerminalArea = static_cast<float>(widthOrHeight ?
                                                            padding.Left + padding.Right :
                                                            padding.Top + padding.Bottom);
 
         if (widthOrHeight && _core.Settings().ScrollState() != ScrollbarState::Hidden)
         {
-            nonTerminalArea += gsl::narrow_cast<float>(ScrollBar().ActualWidth());
+            nonTerminalArea += static_cast<float>(ScrollBar().ActualWidth());
         }
 
         const auto gridSize = dimension - nonTerminalArea;
@@ -2544,7 +2544,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                         auto stream = fileDropData.as<IRandomAccessStream>();
                         stream.Seek(0);
 
-                        const uint32_t streamSize = gsl::narrow_cast<uint32_t>(stream.Size());
+                        const uint32_t streamSize = til::safe_cast_nothrow<uint32_t>(stream.Size());
                         const Buffer buf(streamSize);
                         const auto buffer = co_await stream.ReadAsync(buf, streamSize, InputStreamOptions::None);
 

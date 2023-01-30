@@ -1406,8 +1406,8 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_KeyDownHandler(const Windows::Foundation::IInspectable& /*sender*/, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
     {
         const auto keyStatus = e.KeyStatus();
-        const auto vkey = gsl::narrow_cast<WORD>(e.OriginalKey());
-        const auto scanCode = gsl::narrow_cast<WORD>(keyStatus.ScanCode);
+        const auto vkey = til::safe_cast_nothrow<WORD>(e.OriginalKey());
+        const auto scanCode = til::safe_cast_nothrow<WORD>(keyStatus.ScanCode);
         const auto modifiers = _GetPressedModifierKeys();
 
         // GH#11076:
@@ -1486,7 +1486,7 @@ namespace winrt::TerminalApp::implementation
                         modifiers.IsAltPressed(),
                         modifiers.IsShiftPressed(),
                         modifiers.IsWinPressed(),
-                        gsl::narrow_cast<int32_t>(vkey),
+                        til::safe_cast_nothrow<int32_t>(vkey),
                         scanCode,
                     }))
                 {
@@ -1565,7 +1565,7 @@ namespace winrt::TerminalApp::implementation
         //   http://archives.miloush.net/michkap/archive/2006/09/10/748775.html
         // > "The key here is to keep trying to pass stuff to ToUnicode until -1 is not returned."
         std::array<wchar_t, 16> buffer;
-        while (ToUnicodeEx(vkey, scanCode, keyState.data(), buffer.data(), gsl::narrow_cast<int>(buffer.size()), 0b1, nullptr) < 0)
+        while (ToUnicodeEx(vkey, scanCode, keyState.data(), buffer.data(), til::safe_cast_nothrow<int>(buffer.size()), 0b1, nullptr) < 0)
         {
         }
     }
@@ -2230,7 +2230,7 @@ namespace winrt::TerminalApp::implementation
             auto mappedCh = MapVirtualKeyW(keyChord.Vkey(), MAPVK_VK_TO_CHAR);
             if (mappedCh != 0)
             {
-                menuItem.KeyboardAcceleratorTextOverride(overrideString + gsl::narrow_cast<wchar_t>(mappedCh));
+                menuItem.KeyboardAcceleratorTextOverride(overrideString + til::safe_cast_nothrow<wchar_t>(mappedCh));
             }
         }
     }

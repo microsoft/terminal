@@ -783,7 +783,7 @@ void SettingsLoader::_executeGenerator(const IDynamicProfileGenerator& generator
     {
         generator.GenerateProfiles(inboxSettings.profiles);
     }
-    CATCH_LOG_MSG("Dynamic Profile Namespace: \"%.*s\"", gsl::narrow<int>(generatorNamespace.size()), generatorNamespace.data())
+    CATCH_LOG_MSG("Dynamic Profile Namespace: \"%.*s\"", til::safe_cast<int>(generatorNamespace.size()), generatorNamespace.data())
 
     // If the generator produced some profiles we're going to give them default attributes.
     // By setting the Origin/Source/etc. here, we deduplicate some code and ensure they aren't missing accidentally.
@@ -1303,7 +1303,7 @@ void CascadiaSettings::_resolveNewTabMenuProfiles() const
     // continuous lookups in the _activeProfiles vector, we create a map <int, Profile>
     // to store these indices in-flight.
     auto remainingProfilesMap = std::map<int, Model::Profile>{};
-    auto activeProfileCount = gsl::narrow_cast<int>(_activeProfiles.Size());
+    auto activeProfileCount = til::safe_cast_nothrow<int>(_activeProfiles.Size());
     for (auto profileIndex = 0; profileIndex < activeProfileCount; profileIndex++)
     {
         remainingProfilesMap.emplace(profileIndex, _activeProfiles.GetAt(profileIndex));
@@ -1428,7 +1428,7 @@ void CascadiaSettings::_resolveNewTabMenuProfilesSet(const IVector<Model::NewTab
 
             matchEntry->Profiles(single_threaded_map<int, Model::Profile>());
 
-            auto activeProfileCount = gsl::narrow_cast<int>(_activeProfiles.Size());
+            auto activeProfileCount = til::safe_cast_nothrow<int>(_activeProfiles.Size());
             for (auto profileIndex = 0; profileIndex < activeProfileCount; profileIndex++)
             {
                 const auto profile = _activeProfiles.GetAt(profileIndex);

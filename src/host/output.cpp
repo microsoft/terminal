@@ -26,7 +26,7 @@ using namespace Microsoft::Console::Interactivity;
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     FontInfo fiFont(gci.GetFaceName(),
-                    gsl::narrow_cast<unsigned char>(gci.GetFontFamily()),
+                    til::safe_cast_nothrow<unsigned char>(gci.GetFontFamily()),
                     gci.GetFontWeight(),
                     gci.GetFontSize(),
                     gci.GetCodePage());

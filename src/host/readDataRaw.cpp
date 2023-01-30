@@ -199,9 +199,9 @@ bool RAW_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
         std::unique_ptr<IInputEvent> partialEvent;
 
         *pNumBytes = TranslateUnicodeToOem(lpBuffer,
-                                           gsl::narrow<ULONG>(*pNumBytes / sizeof(wchar_t)),
+                                           til::safe_cast<ULONG>(*pNumBytes / sizeof(wchar_t)),
                                            tempBuffer.get(),
-                                           gsl::narrow<ULONG>(NumBytes),
+                                           til::safe_cast<ULONG>(NumBytes),
                                            partialEvent);
         if (partialEvent.get())
         {

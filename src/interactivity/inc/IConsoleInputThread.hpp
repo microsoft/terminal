@@ -34,7 +34,7 @@ namespace Microsoft::Console::Interactivity
         // .ctor
         IConsoleInputThread() noexcept :
             _hThread(nullptr),
-            _dwThreadId(gsl::narrow_cast<DWORD>(-1)) {}
+            _dwThreadId(til::safe_cast_nothrow<DWORD>(-1)) {}
 
         // Protected Variables
         HANDLE _hThread;

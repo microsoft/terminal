@@ -444,9 +444,9 @@ std::wstring TerminalInput::_GenerateDefaultSequence(const til::point position,
         const auto encodedY = _encodeDefaultCoordinate(vtCoords.y);
 
         std::wstring format{ L"\x1b[Mbxy" };
-        til::at(format, 3) = gsl::narrow_cast<wchar_t>(L' ' + _windowsButtonToXEncoding(button, isHover, modifierKeyState, delta));
-        til::at(format, 4) = gsl::narrow_cast<wchar_t>(encodedX);
-        til::at(format, 5) = gsl::narrow_cast<wchar_t>(encodedY);
+        til::at(format, 3) = til::safe_cast_nothrow<wchar_t>(L' ' + _windowsButtonToXEncoding(button, isHover, modifierKeyState, delta));
+        til::at(format, 4) = til::safe_cast_nothrow<wchar_t>(encodedX);
+        til::at(format, 5) = til::safe_cast_nothrow<wchar_t>(encodedY);
         return format;
     }
 
@@ -491,9 +491,9 @@ std::wstring TerminalInput::_GenerateUtf8Sequence(const til::point position,
         const auto encodedY = _encodeDefaultCoordinate(vtCoords.y);
         std::wstring format{ L"\x1b[Mbxy" };
         // The short cast is safe because we know s_WindowsButtonToXEncoding  never returns more than xff
-        til::at(format, 3) = gsl::narrow_cast<wchar_t>(L' ' + _windowsButtonToXEncoding(button, isHover, modifierKeyState, delta));
-        til::at(format, 4) = gsl::narrow_cast<wchar_t>(encodedX);
-        til::at(format, 5) = gsl::narrow_cast<wchar_t>(encodedY);
+        til::at(format, 3) = til::safe_cast_nothrow<wchar_t>(L' ' + _windowsButtonToXEncoding(button, isHover, modifierKeyState, delta));
+        til::at(format, 4) = til::safe_cast_nothrow<wchar_t>(encodedX);
+        til::at(format, 5) = til::safe_cast_nothrow<wchar_t>(encodedY);
         return format;
     }
 

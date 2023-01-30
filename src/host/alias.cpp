@@ -1225,10 +1225,10 @@ void Alias::s_MatchAndCopyAliasLegacy(_In_reads_bytes_(cbSource) PCWCH pwchSourc
                 std::copy_n(targetText.data(), targetText.size(), pwchTarget);
 
                 // Return bytes copied.
-                cbTargetWritten = gsl::narrow<ULONG>(targetText.size() * sizeof(wchar_t));
+                cbTargetWritten = til::safe_cast<ULONG>(targetText.size() * sizeof(wchar_t));
 
                 // Return lines info.
-                lines = gsl::narrow<DWORD>(lineCount);
+                lines = til::safe_cast<DWORD>(lineCount);
             }
         }
     }

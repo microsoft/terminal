@@ -186,7 +186,7 @@ CreateTextLayout(
 
     if (SUCCEEDED(hr)) {
         hr = pCtx->pDWriteFactory->CreateTextLayout(String,
-                                                    gsl::narrow_cast<UINT32>(StringLength),
+                                                    til::safe_cast_nothrow<UINT32>(StringLength),
                                                     pCtx->pDWriteTextFormat,
                                                     static_cast<float>(pCtx->DisplayMode.Width),
                                                     pCtx->LineHeight != 0 ? pCtx->LineHeight : static_cast<float>(pCtx->DisplayMode.Height),

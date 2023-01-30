@@ -53,8 +53,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else
         {
-            const std::wstring xPosString = isnan(InitialPosX()) ? RS_(L"Globals_LaunchModeDefault/Content").c_str() : std::to_wstring(gsl::narrow_cast<int>(InitialPosX()));
-            const std::wstring yPosString = isnan(InitialPosY()) ? RS_(L"Globals_LaunchModeDefault/Content").c_str() : std::to_wstring(gsl::narrow_cast<int>(InitialPosY()));
+            const std::wstring xPosString = isnan(InitialPosX()) ? RS_(L"Globals_LaunchModeDefault/Content").c_str() : std::to_wstring(til::safe_cast_nothrow<int>(InitialPosX()));
+            const std::wstring yPosString = isnan(InitialPosY()) ? RS_(L"Globals_LaunchModeDefault/Content").c_str() : std::to_wstring(til::safe_cast_nothrow<int>(InitialPosY()));
             result = fmt::format(L"{}, ({},{})", launchModeString, xPosString, yPosString);
         }
 
@@ -69,7 +69,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // If there's no value here, return NAN - XAML will ignore it and
         // put the placeholder text in the box instead
         const auto xCoord = x.try_as<int32_t>();
-        return xCoord.has_value() ? gsl::narrow_cast<double>(xCoord.value()) : NAN;
+        return xCoord.has_value() ? static_cast<double>(xCoord.value()) : NAN;
     }
 
     double LaunchViewModel::InitialPosY()
@@ -78,7 +78,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // If there's no value here, return NAN - XAML will ignore it and
         // put the placeholder text in the box instead
         const auto yCoord = y.try_as<int32_t>();
-        return yCoord.has_value() ? gsl::narrow_cast<double>(yCoord.value()) : NAN;
+        return yCoord.has_value() ? static_cast<double>(yCoord.value()) : NAN;
     }
 
     void LaunchViewModel::InitialPosX(double xCoord)
@@ -87,7 +87,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // If the value was cleared, xCoord will be NAN, so check for that
         if (!isnan(xCoord))
         {
-            xCoordRef = gsl::narrow_cast<int32_t>(xCoord);
+            xCoordRef = til::safe_cast_nothrow<int32_t>(xCoord);
         }
         const LaunchPosition newPos{ xCoordRef, _Settings.GlobalSettings().InitialPosition().Y };
         _Settings.GlobalSettings().InitialPosition(newPos);
@@ -100,7 +100,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // If the value was cleared, yCoord will be NAN, so check for that
         if (!isnan(yCoord))
         {
-            yCoordRef = gsl::narrow_cast<int32_t>(yCoord);
+            yCoordRef = til::safe_cast_nothrow<int32_t>(yCoord);
         }
         const LaunchPosition newPos{ _Settings.GlobalSettings().InitialPosition().X, yCoordRef };
         _Settings.GlobalSettings().InitialPosition(newPos);

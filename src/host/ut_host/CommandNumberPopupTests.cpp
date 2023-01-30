@@ -213,7 +213,7 @@ class CommandNumberPopupTests
 
             // the buffer should contain the correct nth history item
 
-            const auto expected = m_pHistory->GetNth(gsl::narrow<short>(historyIndex));
+            const auto expected = m_pHistory->GetNth(til::safe_cast<short>(historyIndex));
             const std::wstring resultString(buffer, buffer + expected.size());
             VERIFY_ARE_EQUAL(expected, resultString);
         }

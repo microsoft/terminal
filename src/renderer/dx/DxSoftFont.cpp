@@ -57,7 +57,7 @@ void DxSoftFont::SetFont(const std::span<const uint16_t> bitPattern,
     const auto bitmapWidth = BITMAP_GRID_WIDTH * (_sourceSize.width + PADDING * 2);
     const auto bitmapHeight = BITMAP_GRID_HEIGHT * (_sourceSize.height + PADDING * 2);
     _bitmapBits = std::vector<byte>(bitmapWidth * bitmapHeight);
-    _bitmapSize = { gsl::narrow_cast<UINT32>(bitmapWidth), gsl::narrow_cast<UINT32>(bitmapHeight) };
+    _bitmapSize = { til::safe_cast_nothrow<UINT32>(bitmapWidth), til::safe_cast_nothrow<UINT32>(bitmapHeight) };
 
     const auto bitmapScanline = [=](const auto lineNumber) noexcept {
         return _bitmapBits.begin() + lineNumber * bitmapWidth;
@@ -199,7 +199,7 @@ HRESULT DxSoftFont::_createResources(gsl::not_null<ID2D1DeviceContext*> d2dConte
         D2D1_BITMAP_PROPERTIES bitmapProperties{};
         bitmapProperties.pixelFormat.format = DXGI_FORMAT_R8_UNORM;
         bitmapProperties.pixelFormat.alphaMode = D2D1_ALPHA_MODE_IGNORE;
-        const auto bitmapPitch = gsl::narrow_cast<UINT32>(_bitmapSize.width);
+        const auto bitmapPitch = til::safe_cast_nothrow<UINT32>(_bitmapSize.width);
         RETURN_IF_FAILED(d2dContext->CreateBitmap(_bitmapSize, _bitmapBits.data(), bitmapPitch, bitmapProperties, _bitmap.GetAddressOf()));
     }
 
@@ -234,8 +234,8 @@ D2D1_VECTOR_2F DxSoftFont::_scaleForTargetSize() const noexcept
     // we can use that hint to adjust the dimensions of our source and target
     // widths when calculating the horizontal scale.
     const auto targetCenteringHint = std::lround((float)_centeringHint * _targetSize.width / _sourceSize.width);
-    const auto xScale = gsl::narrow_cast<float>(_targetSize.width - targetCenteringHint) / (_sourceSize.width - _centeringHint);
-    const auto yScale = gsl::narrow_cast<float>(_targetSize.height) / _sourceSize.height;
+    const auto xScale = static_cast<float>(_targetSize.width - targetCenteringHint) / (_sourceSize.width - _centeringHint);
+    const auto yScale = static_cast<float>(_targetSize.height) / _sourceSize.height;
     return D2D1::Vector2F(xScale, yScale);
 }
 
@@ -244,7 +244,7 @@ T DxSoftFont::_xOffsetForGlyph(const size_t glyphNumber) const noexcept
 {
     const auto xOffsetInGrid = glyphNumber / BITMAP_GRID_HEIGHT;
     const auto paddedGlyphWidth = _sourceSize.width + PADDING * 2;
-    return gsl::narrow_cast<T>(xOffsetInGrid * paddedGlyphWidth + PADDING);
+    return til::safe_cast_nothrow<T>(xOffsetInGrid * paddedGlyphWidth + PADDING);
 }
 
 template<typename T>
@@ -252,5 +252,5 @@ T DxSoftFont::_yOffsetForGlyph(const size_t glyphNumber) const noexcept
 {
     const auto yOffsetInGrid = glyphNumber % BITMAP_GRID_HEIGHT;
     const auto paddedGlyphHeight = _sourceSize.height + PADDING * 2;
-    return gsl::narrow_cast<T>(yOffsetInGrid * paddedGlyphHeight + PADDING);
+    return til::safe_cast_nothrow<T>(yOffsetInGrid * paddedGlyphHeight + PADDING);
 }

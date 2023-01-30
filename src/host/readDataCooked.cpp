@@ -1179,9 +1179,9 @@ void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline
 
         std::unique_ptr<IInputEvent> partialEvent;
         numBytes = TranslateUnicodeToOem(_userBuffer,
-                                         gsl::narrow<ULONG>(numBytes / sizeof(wchar_t)),
+                                         til::safe_cast<ULONG>(numBytes / sizeof(wchar_t)),
                                          tempBuffer.get(),
-                                         gsl::narrow<ULONG>(NumBytes),
+                                         til::safe_cast<ULONG>(NumBytes),
                                          partialEvent);
 
         if (partialEvent.get())

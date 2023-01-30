@@ -934,8 +934,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        auto cx = gsl::narrow_cast<til::CoordType>(_panelWidth * _compositionScale);
-        auto cy = gsl::narrow_cast<til::CoordType>(_panelHeight * _compositionScale);
+        auto cx = til::safe_cast_nothrow<til::CoordType>(_panelWidth * _compositionScale);
+        auto cy = til::safe_cast_nothrow<til::CoordType>(_panelHeight * _compositionScale);
 
         // Don't actually resize so small that a single character wouldn't fit
         // in either dimension. The buffer really doesn't like being size 0.

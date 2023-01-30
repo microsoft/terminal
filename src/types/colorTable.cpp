@@ -498,7 +498,7 @@ try
             return std::nullopt;
         }
 
-        ss << gsl::narrow_cast<char>(std::towlower(c));
+        ss << til::safe_cast_nothrow<char>(std::towlower(c));
     }
 
     auto name = ss.str();

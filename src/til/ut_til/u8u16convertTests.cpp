@@ -35,11 +35,11 @@ void Utf8Utf16ConvertTests::TestU8ToU16()
     };
 
     const std::wstring u16StringComp{
-        gsl::narrow_cast<wchar_t>(0x007eU), // TILDE
-        gsl::narrow_cast<wchar_t>(0x00f6U), // LATIN SMALL LETTER O WITH DIAERESIS
-        gsl::narrow_cast<wchar_t>(0x20acU), // EURO SIGN
-        gsl::narrow_cast<wchar_t>(0xd853U), // CJK UNIFIED IDEOGRAPH-24F5C (surrogate pair)
-        gsl::narrow_cast<wchar_t>(0xdf5cU)
+        L'\x007e', // TILDE
+        L'\x00f6', // LATIN SMALL LETTER O WITH DIAERESIS
+        L'\x20ac', // EURO SIGN
+        L'\xd853', // CJK UNIFIED IDEOGRAPH-24F5C (surrogate pair)
+        L'\xdf5c',
     };
 
     std::wstring u16Out{};
@@ -51,11 +51,11 @@ void Utf8Utf16ConvertTests::TestU8ToU16()
 void Utf8Utf16ConvertTests::TestU16ToU8()
 {
     const std::wstring u16String{
-        gsl::narrow_cast<wchar_t>(0x007eU), // TILDE
-        gsl::narrow_cast<wchar_t>(0x00f6U), // LATIN SMALL LETTER O WITH DIAERESIS
-        gsl::narrow_cast<wchar_t>(0x20acU), // EURO SIGN
-        gsl::narrow_cast<wchar_t>(0xd853U), // CJK UNIFIED IDEOGRAPH-24F5C (surrogate pair)
-        gsl::narrow_cast<wchar_t>(0xdf5cU)
+        L'\x007e', // TILDE
+        L'\x00f6', // LATIN SMALL LETTER O WITH DIAERESIS
+        L'\x20ac', // EURO SIGN
+        L'\xd853', // CJK UNIFIED IDEOGRAPH-24F5C (surrogate pair)
+        L'\xdf5c',
     };
 
     const std::string u8StringComp{
@@ -94,8 +94,8 @@ void Utf8Utf16ConvertTests::TestU8ToU16Partials()
     };
 
     const std::wstring u16StringComp1{
-        gsl::narrow_cast<wchar_t>(0xD853), // CJK UNIFIED IDEOGRAPH-24F5C (surrogate pair)
-        gsl::narrow_cast<wchar_t>(0xDF5C)
+        L'\xD853', // CJK UNIFIED IDEOGRAPH-24F5C (surrogate pair)
+        L'\xDF5C',
     };
 
     // GH#4673
@@ -109,7 +109,7 @@ void Utf8Utf16ConvertTests::TestU8ToU16Partials()
     };
 
     const std::wstring u16StringComp2{
-        gsl::narrow_cast<wchar_t>(0x263A) // WHITE SMILING FACE
+        L'\x263A', // WHITE SMILING FACE
     };
 
     til::u8state state{};
@@ -138,13 +138,13 @@ void Utf8Utf16ConvertTests::TestU8ToU16Partials()
 void Utf8Utf16ConvertTests::TestU16ToU8Partials()
 {
     const std::wstring u16String1{
-        gsl::narrow_cast<wchar_t>(0xD853), // CJK UNIFIED IDEOGRAPH-24F5C (surrogate pair)
-        gsl::narrow_cast<wchar_t>(0xDF5C),
-        gsl::narrow_cast<wchar_t>(0xD853) // CJK UNIFIED IDEOGRAPH-24F5C (high surrogate only)
+        L'\xD853', // CJK UNIFIED IDEOGRAPH-24F5C (surrogate pair)
+        L'\xDF5C',
+        L'\xD853', // CJK UNIFIED IDEOGRAPH-24F5C (high surrogate only)
     };
 
     const std::wstring u16String2{
-        gsl::narrow_cast<wchar_t>(0xDF5C) // CJK UNIFIED IDEOGRAPH-24F5C (low surrogate only)
+        L'\xDF5C', // CJK UNIFIED IDEOGRAPH-24F5C (low surrogate only)
     };
 
     const std::string u8StringComp{
@@ -175,8 +175,8 @@ void Utf8Utf16ConvertTests::TestU8ToU16OneByOne()
     const std::string u8String1_4{ '\xB7' };
 
     const std::wstring u16StringComp1{
-        gsl::narrow_cast<wchar_t>(0xD83D), // U+1F4F7 CAMERA (surrogate pair)
-        gsl::narrow_cast<wchar_t>(0xDCF7)
+        L'\xD83D', // U+1F4F7 CAMERA (surrogate pair)
+        L'\xDCF7',
     };
 
     til::u8state state{};
