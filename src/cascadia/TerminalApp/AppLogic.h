@@ -166,7 +166,7 @@ namespace winrt::TerminalApp::implementation
         uint64_t _numOpenWindows{ 0 };
 
         std::shared_mutex _dialogLock;
-        winrt::Windows::UI::Xaml::Controls::ContentDialog _dialog{ nullptr };
+        winrt::Windows::UI::Xaml::Controls::ContentDialog _dialog;
 
         ::TerminalApp::AppCommandlineArgs _appArgs;
         ::TerminalApp::AppCommandlineArgs _settingsAppArgs;
@@ -197,10 +197,6 @@ namespace winrt::TerminalApp::implementation
         void _RegisterSettingsChange();
         fire_and_forget _DispatchReloadSettings();
         void _OpenSettingsUI();
-
-        std::optional<uint32_t> _LoadPersistedLayoutIdx(Microsoft::Terminal::Settings::Model::CascadiaSettings& settings) const;
-        Microsoft::Terminal::Settings::Model::WindowLayout _LoadPersistedLayout(Microsoft::Terminal::Settings::Model::CascadiaSettings& settings) const;
-        bool _ShouldUsePersistedLayout(Microsoft::Terminal::Settings::Model::CascadiaSettings& settings) const;
 
         bool _hasCommandLineArguments{ false };
         bool _hasSettingsStartupActions{ false };
