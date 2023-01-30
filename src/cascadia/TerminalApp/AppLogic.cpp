@@ -187,7 +187,6 @@ namespace winrt::TerminalApp::implementation
         // make sure that there's a terminal page for callers of
         // SetTitleBarContent
         _isElevated = ::Microsoft::Console::Utils::IsElevated();
-        _root = winrt::make_self<TerminalPage>();
 
         _reloadSettings = std::make_shared<ThrottledFuncTrailing<>>(winrt::Windows::System::DispatcherQueue::GetForCurrentThread(), std::chrono::milliseconds(100), [weakSelf = get_weak()]() {
             if (auto self{ weakSelf.get() })
@@ -205,6 +204,26 @@ namespace winrt::TerminalApp::implementation
     // - Implements the IInitializeWithWindow interface from shobjidl_core.
     HRESULT AppLogic::Initialize(HWND hwnd)
     {
+        _root = winrt::make_self<TerminalPage>();
+        _dialog = winrt::Windows::UI::Xaml::Controls::ContentDialog{};
+
+        /*if (const auto idx = _appArgs.GetPersistedLayoutIdx())
+        {
+            _root->SetPersistedLayoutIdx(idx.value());
+        }*/
+        _root->SetStartupActions(_appArgs.GetStartupActions());
+
+        // Check if we were started as a COM server for inbound connections of console sessions
+        // coming out of the operating system default application feature. If so,
+        // tell TerminalPage to start the listener as we have to make sure it has the chance
+        // to register a handler to hear about the requests first and is all ready to receive
+        // them before the COM server registers itself. Otherwise, the request might come
+        // in and be routed to an event with no handlers or a non-ready Page.
+        if (_appArgs.IsHandoffListener())
+        {
+            _root->SetInboundListener(true);
+        }
+
         return _root->Initialize(hwnd);
     }
 
@@ -622,7 +641,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::Foundation::Size proposedSize{};
 
         const auto scale = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
-        if (const auto layout = _root->LoadPersistedLayout(_settings))
+        if (const auto layout = _LoadPersistedLayout(_settings))
         {
             if (layout.InitialSize())
             {
@@ -647,40 +666,68 @@ namespace winrt::TerminalApp::implementation
                                                               commandlineSize.height);
         }
 
-        // GH#2061 - If the global setting "Always show tab bar" is
-        // set or if "Show tabs in title bar" is set, then we'll need to add
-        // the height of the tab bar here.
-        if (_settings.GlobalSettings().ShowTabsInTitlebar())
-        {
-            // If we're showing the tabs in the titlebar, we need to use a
-            // TitlebarControl here to calculate how much space to reserve.
-            //
-            // We'll create a fake TitlebarControl, and we'll propose an
-            // available size to it with Measure(). After Measure() is called,
-            // the TitlebarControl's DesiredSize will contain the _unscaled_
-            // size that the titlebar would like to use. We'll use that as part
-            // of the height calculation here.
-            auto titlebar = TitlebarControl{ static_cast<uint64_t>(0) };
-            titlebar.Measure({ SHRT_MAX, SHRT_MAX });
-            proposedSize.Height += (titlebar.DesiredSize().Height) * scale;
-        }
-        else if (_settings.GlobalSettings().AlwaysShowTabs())
-        {
-            // Otherwise, let's use a TabRowControl to calculate how much extra
-            // space we'll need.
-            //
-            // Similarly to above, we'll measure it with an arbitrarily large
-            // available space, to make sure we get all the space it wants.
-            auto tabControl = TabRowControl();
-            tabControl.Measure({ SHRT_MAX, SHRT_MAX });
+        // TODO!
 
-            // For whatever reason, there's about 10px of unaccounted-for space
-            // in the application. I couldn't tell you where these 10px are
-            // coming from, but they need to be included in this math.
-            proposedSize.Height += (tabControl.DesiredSize().Height + 10) * scale;
-        }
+        // // GH#2061 - If the global setting "Always show tab bar" is
+        // // set or if "Show tabs in title bar" is set, then we'll need to add
+        // // the height of the tab bar here.
+        // if (_settings.GlobalSettings().ShowTabsInTitlebar())
+        // {
+        //     // If we're showing the tabs in the titlebar, we need to use a
+        //     // TitlebarControl here to calculate how much space to reserve.
+        //     //
+        //     // We'll create a fake TitlebarControl, and we'll propose an
+        //     // available size to it with Measure(). After Measure() is called,
+        //     // the TitlebarControl's DesiredSize will contain the _unscaled_
+        //     // size that the titlebar would like to use. We'll use that as part
+        //     // of the height calculation here.
+        //     auto titlebar = TitlebarControl{ static_cast<uint64_t>(0) };
+        //     titlebar.Measure({ SHRT_MAX, SHRT_MAX });
+        //     proposedSize.Height += (titlebar.DesiredSize().Height) * scale;
+        // }
+        // else if (_settings.GlobalSettings().AlwaysShowTabs())
+        // {
+        //     // Otherwise, let's use a TabRowControl to calculate how much extra
+        //     // space we'll need.
+        //     //
+        //     // Similarly to above, we'll measure it with an arbitrarily large
+        //     // available space, to make sure we get all the space it wants.
+        //     auto tabControl = TabRowControl();
+        //     tabControl.Measure({ SHRT_MAX, SHRT_MAX });
+
+        //     // For whatever reason, there's about 10px of unaccounted-for space
+        //     // in the application. I couldn't tell you where these 10px are
+        //     // coming from, but they need to be included in this math.
+        //     proposedSize.Height += (tabControl.DesiredSize().Height + 10) * scale;
+        // }
 
         return proposedSize;
+    }
+
+    // Method Description;
+    // - Checks if the current window is configured to load a particular layout
+    // Arguments:
+    // - settings: The settings to use as this may be called before the page is
+    //   fully initialized.
+    // Return Value:
+    // - non-null if there is a particular saved layout to use
+    std::optional<uint32_t> AppLogic::_LoadPersistedLayoutIdx(CascadiaSettings& settings) const
+    {
+        return _ShouldUsePersistedLayout(settings) ? _appArgs.GetPersistedLayoutIdx() : std::nullopt;
+    }
+
+    WindowLayout AppLogic::_LoadPersistedLayout(CascadiaSettings& settings) const
+    {
+        if (const auto idx = _LoadPersistedLayoutIdx(settings))
+        {
+            const auto i = idx.value();
+            const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
+            if (layouts && layouts.Size() > i)
+            {
+                return layouts.GetAt(i);
+            }
+        }
+        return nullptr;
     }
 
     // Method Description:
@@ -704,7 +751,7 @@ namespace winrt::TerminalApp::implementation
         // commandline, then use that to override the value from the settings.
         const auto valueFromSettings = _settings.GlobalSettings().LaunchMode();
         const auto valueFromCommandlineArgs = _appArgs.GetLaunchMode();
-        if (const auto layout = _root->LoadPersistedLayout(_settings))
+        if (const auto layout = this->_LoadPersistedLayout(_settings))
         {
             if (layout.LaunchMode())
             {
@@ -736,7 +783,7 @@ namespace winrt::TerminalApp::implementation
 
         auto initialPosition{ _settings.GlobalSettings().InitialPosition() };
 
-        if (const auto layout = _root->LoadPersistedLayout(_settings))
+        if (const auto layout = _LoadPersistedLayout(_settings))
         {
             if (layout.InitialPosition())
             {
@@ -798,7 +845,11 @@ namespace winrt::TerminalApp::implementation
     // - See Pane::CalcSnappedDimension
     float AppLogic::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
     {
-        return _root->CalcSnappedDimension(widthOrHeight, dimension);
+        if (_root)
+        {
+            return _root->CalcSnappedDimension(widthOrHeight, dimension);
+        }
+        return dimension;
     }
 
     // Method Description:
@@ -1067,6 +1118,9 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
+        if (!_root)
+            return;
+
         if (_settingsLoadedResult == S_FALSE)
         {
             _ShowLoadWarningsDialog();
@@ -1209,7 +1263,7 @@ namespace winrt::TerminalApp::implementation
         {
             // If persisted layout is enabled and we are the last window closing
             // we should save our state.
-            if (_root->ShouldUsePersistedLayout(_settings) && _numOpenWindows == 1)
+            if (_ShouldUsePersistedLayout(_settings) && _numOpenWindows == 1)
             {
                 if (const auto layout = _root->GetWindowLayout())
                 {
@@ -1242,7 +1296,7 @@ namespace winrt::TerminalApp::implementation
     }
     void AppLogic::WindowActivated(const bool activated)
     {
-        _root->WindowActivated(activated);
+        if (_root) _root->WindowActivated(activated);
     }
 
     bool AppLogic::HasCommandlineArguments() const noexcept
@@ -1278,22 +1332,22 @@ namespace winrt::TerminalApp::implementation
             // then it contains only the executable name and no other arguments.
             _hasCommandLineArguments = args.size() > 1;
             _appArgs.ValidateStartupCommands();
-            if (const auto idx = _appArgs.GetPersistedLayoutIdx())
-            {
-                _root->SetPersistedLayoutIdx(idx.value());
-            }
-            _root->SetStartupActions(_appArgs.GetStartupActions());
+            //if (const auto idx = _appArgs.GetPersistedLayoutIdx())
+            //{
+            //    _root->SetPersistedLayoutIdx(idx.value());
+            //}
+            //_root->SetStartupActions(_appArgs.GetStartupActions());
 
-            // Check if we were started as a COM server for inbound connections of console sessions
-            // coming out of the operating system default application feature. If so,
-            // tell TerminalPage to start the listener as we have to make sure it has the chance
-            // to register a handler to hear about the requests first and is all ready to receive
-            // them before the COM server registers itself. Otherwise, the request might come
-            // in and be routed to an event with no handlers or a non-ready Page.
-            if (_appArgs.IsHandoffListener())
-            {
-                _root->SetInboundListener(true);
-            }
+            //// Check if we were started as a COM server for inbound connections of console sessions
+            //// coming out of the operating system default application feature. If so,
+            //// tell TerminalPage to start the listener as we have to make sure it has the chance
+            //// to register a handler to hear about the requests first and is all ready to receive
+            //// them before the COM server registers itself. Otherwise, the request might come
+            //// in and be routed to an event with no handlers or a non-ready Page.
+            //if (_appArgs.IsHandoffListener())
+            //{
+            //    _root->SetInboundListener(true);
+            //}
         }
 
         return result;
@@ -1540,9 +1594,20 @@ namespace winrt::TerminalApp::implementation
 
     bool AppLogic::ShouldUsePersistedLayout()
     {
-        return _root != nullptr ? _root->ShouldUsePersistedLayout(_settings) : false;
+        return _ShouldUsePersistedLayout(_settings);
     }
 
+    // Method Description;
+    // - Checks if the current terminal window should load or save its layout information.
+    // Arguments:
+    // - settings: The settings to use as this may be called before the page is
+    //   fully initialized.
+    // Return Value:
+    // - true if the ApplicationState should be used.
+    bool AppLogic::_ShouldUsePersistedLayout(CascadiaSettings& settings) const
+    {
+        return settings.GlobalSettings().FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout;
+    }
     bool AppLogic::ShouldImmediatelyHandoffToElevated()
     {
         if (!_loadedInitialSettings)
@@ -1621,11 +1686,11 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void AppLogic::SetPersistedLayoutIdx(const uint32_t idx)
+    void AppLogic::SetPersistedLayoutIdx(const uint32_t)
     {
         if (_root)
         {
-            _root->SetPersistedLayoutIdx(idx);
+            // Todo! _root->SetPersistedLayoutIdx(idx);
         }
     }
 

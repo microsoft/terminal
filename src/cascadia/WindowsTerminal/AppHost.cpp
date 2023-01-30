@@ -29,13 +29,19 @@ using namespace std::chrono_literals;
 static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
 
 AppHost::AppHost() noexcept :
-    _app{},
+    // _app{},
     _windowManager{},
     _logic{ nullptr }, // don't make one, we're going to take a ref on app's
     _window{ nullptr },
     _getWindowLayoutThrottler{} // this will get set if we become the monarch
 {
-    _logic = _app.Logic(); // get a ref to app's logic
+    _preInit();
+}
+
+void AppHost::_preInit()
+{
+    // _logic = _app.Logic(); // get a ref to app's logic
+    _logic = winrt::TerminalApp::AppLogic(); // Make a new logic
 
     // Inform the WindowManager that it can use us to find the target window for
     // a set of commandline args. This needs to be done before
@@ -65,7 +71,7 @@ AppHost::AppHost() noexcept :
     }
 
     // Update our own internal state tracking if we're in quake mode or not.
-    _IsQuakeWindowChanged(nullptr, nullptr);
+    // _IsQuakeWindowChanged(nullptr, nullptr);
 
     _window->SetMinimizeToNotificationAreaBehavior(_logic.GetMinimizeToNotificationArea());
 
@@ -146,8 +152,9 @@ AppHost::~AppHost()
     _showHideWindowThrottler.reset();
 
     _window = nullptr;
-    _app.Close();
-    _app = nullptr;
+    // TODO!
+    // _app.Close();
+    // _app = nullptr;
 }
 
 bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
@@ -350,9 +357,17 @@ void AppHost::Initialize()
 {
     _window->Initialize();
 
+    // _preInit();
+
     if (auto withWindow{ _logic.try_as<IInitializeWithWindow>() })
     {
         withWindow->Initialize(_window->GetHandle());
+    }
+
+    _IsQuakeWindowChanged(nullptr, nullptr);
+    if (_windowManager.IsMonarch())
+    {
+        _setupGlobalHotkeys();
     }
 
     if (_useNonClientArea)
@@ -463,8 +478,9 @@ void AppHost::Initialize()
     // time when this object would actually need to get cleaned up is _during
     // exit_. So we can safely leak this Application object, and have it just
     // get cleaned up normally when our process exits.
-    auto a{ _app };
-    ::winrt::detach_abi(a);
+    // auto a{ _app };
+    // ::winrt::detach_abi(a);
+    // TODO! Do we still need that? ^^
 }
 
 // Method Description:
@@ -649,7 +665,7 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, til::rect proposedRect, Launc
     til::point origin{ (proposedRect.left + nonClientFrame.left),
                        (proposedRect.top) };
 
-    if (_logic.IsQuakeWindow())
+    if (false /*TODO! _logic.IsQuakeWindow() */)
     {
         // If we just use rcWork by itself, we'll fail to account for the invisible
         // space reserved for the resize handles. So retrieve that size here.
@@ -1063,6 +1079,8 @@ void AppHost::_listenForInboundConnections()
 
 winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
 {
+    if (!_logic.GetRoot())
+        co_return;
     // The hotkey MUST be registered on the main thread. It will fail otherwise!
     co_await wil::resume_foreground(_logic.GetRoot().Dispatcher());
 
