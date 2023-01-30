@@ -9,7 +9,7 @@
 class AppHost
 {
 public:
-    AppHost() noexcept;
+    AppHost();
     virtual ~AppHost();
 
     void AppTitleChanged(const winrt::Windows::Foundation::IInspectable& sender, winrt::hstring newTitle);
