@@ -22,7 +22,7 @@ public:
 
 private:
     std::unique_ptr<IslandWindow> _window;
-    winrt::TerminalApp::App _app;
+    // winrt::TerminalApp::App _app;
     winrt::TerminalApp::AppLogic _logic;
     winrt::Microsoft::Terminal::Remoting::WindowManager _windowManager{ nullptr };
 
@@ -36,6 +36,8 @@ private:
     std::shared_ptr<ThrottledFuncTrailing<bool>> _showHideWindowThrottler;
     winrt::Windows::Foundation::IAsyncAction _SaveWindowLayouts();
     winrt::fire_and_forget _SaveWindowLayoutsRepeat();
+
+    void _preInit();
 
     void _HandleCommandlineArgs();
     winrt::Microsoft::Terminal::Settings::Model::LaunchPosition _GetWindowLaunchPosition();
