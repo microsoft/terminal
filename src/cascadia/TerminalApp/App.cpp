@@ -77,22 +77,24 @@ namespace winrt::TerminalApp::implementation
     /// <param name="e">Details about the launch request and process.</param>
     void App::OnLaunched(const LaunchActivatedEventArgs& /*e*/)
     {
+        // TODO! UWP mode is straight up not supported anymore, yea?
+        // 
         // if this is a UWP... it means its our problem to hook up the content to the window here.
-        if (_isUwp)
-        {
-            auto content = Window::Current().Content();
-            if (content == nullptr)
-            {
-                auto logic = Logic();
-                logic.RunAsUwp(); // Must set UWP status first, settings might change based on it.
-                logic.ReloadSettings();
-                logic.Create();
+        //if (_isUwp)
+        //{
+        //    auto content = Window::Current().Content();
+        //    if (content == nullptr)
+        //    {
+        //        auto logic = Logic();
+        //        logic.RunAsUwp(); // Must set UWP status first, settings might change based on it.
+        //        logic.ReloadSettings();
+        //        logic.Create();
 
-                auto page = logic.GetRoot().as<TerminalPage>();
+        //        auto page = logic.GetRoot().as<TerminalPage>();
 
-                Window::Current().Content(page);
-                Window::Current().Activate();
-            }
-        }
+        //        Window::Current().Content(page);
+        //        Window::Current().Activate();
+        //    }
+        //}
     }
 }
