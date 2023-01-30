@@ -435,9 +435,9 @@ static constexpr til::presorted_static_map xorgAppColorTable{
     std::pair{ "yellowgreen"sv, til::color{ 154, 205, 50 } }
 };
 
-gsl::span<const til::color> Utils::CampbellColorTable()
+std::span<const til::color> Utils::CampbellColorTable()
 {
-    return gsl::make_span(standard256ColorTable).first(16);
+    return std::span{ standard256ColorTable }.first(16);
 }
 
 // Function Description:
@@ -446,7 +446,7 @@ gsl::span<const til::color> Utils::CampbellColorTable()
 // - table: a color table to be filled
 // Return Value:
 // - <none>
-void Utils::InitializeColorTable(const gsl::span<COLORREF> table)
+void Utils::InitializeColorTable(const std::span<COLORREF> table)
 {
     const auto tableSize = std::min(table.size(), standard256ColorTable.size());
     std::copy_n(standard256ColorTable.begin(), tableSize, table.begin());

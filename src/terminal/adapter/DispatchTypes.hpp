@@ -190,7 +190,7 @@ namespace Microsoft::Console::VirtualTerminal
         }
 
     private:
-        gsl::span<const VTParameter> _values;
+        std::span<const VTParameter> _values;
     };
 
     // FlaggedEnumValue is a convenience class that produces enum values (of a specified size)
