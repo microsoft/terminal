@@ -68,7 +68,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     void WindowManager::SignalClose()
     {
-        if (_monarch)
+        if (_monarch && _peasant)
         {
             try
             {
