@@ -147,14 +147,35 @@ namespace winrt::TerminalApp::implementation
         // make sure that there's a terminal page for callers of
         // SetTitleBarContent
         _isElevated = ::Microsoft::Console::Utils::IsElevated();
-        _root = winrt::make_self<TerminalPage>();
     }
 
     // Method Description:
     // - Implements the IInitializeWithWindow interface from shobjidl_core.
     HRESULT TerminalWindow::Initialize(HWND hwnd)
     {
+        _root = winrt::make_self<TerminalPage>();
         _dialog = ContentDialog{};
+
+        // Pass commandline args into the TerminalPage.
+        // * we first got these in SetStartupCommandline, but at that time, we
+        //   don't have a page yet.
+        if (const auto idx = _appArgs.GetPersistedLayoutIdx())
+        {
+            _root->SetPersistedLayoutIdx(idx.value());
+        }
+        _root->SetStartupActions(_appArgs.GetStartupActions());
+
+        // Check if we were started as a COM server for inbound connections of console sessions
+        // coming out of the operating system default application feature. If so,
+        // tell TerminalPage to start the listener as we have to make sure it has the chance
+        // to register a handler to hear about the requests first and is all ready to receive
+        // them before the COM server registers itself. Otherwise, the request might come
+        // in and be routed to an event with no handlers or a non-ready Page.
+        if (_appArgs.IsHandoffListener())
+        {
+            _root->SetInboundListener(true);
+        }
+
         return _root->Initialize(hwnd);
     }
     // Method Description:
@@ -961,22 +982,9 @@ namespace winrt::TerminalApp::implementation
             // then it contains only the executable name and no other arguments.
             _hasCommandLineArguments = args.size() > 1;
             _appArgs.ValidateStartupCommands();
-            if (const auto idx = _appArgs.GetPersistedLayoutIdx())
-            {
-                _root->SetPersistedLayoutIdx(idx.value());
-            }
-            _root->SetStartupActions(_appArgs.GetStartupActions());
 
-            // Check if we were started as a COM server for inbound connections of console sessions
-            // coming out of the operating system default application feature. If so,
-            // tell TerminalPage to start the listener as we have to make sure it has the chance
-            // to register a handler to hear about the requests first and is all ready to receive
-            // them before the COM server registers itself. Otherwise, the request might come
-            // in and be routed to an event with no handlers or a non-ready Page.
-            if (_appArgs.IsHandoffListener())
-            {
-                _root->SetInboundListener(true);
-            }
+            // DON'T pass the args into the page yet. It doesn't exist yet.
+            // Instead, we'll handle that in Initialize, when we first instantiate the page.
         }
 
         return result;
