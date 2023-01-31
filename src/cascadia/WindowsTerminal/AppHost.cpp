@@ -31,11 +31,12 @@ static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
 AppHost::AppHost() noexcept :
     _app{},
     _windowManager{},
-    _logic{ nullptr }, // don't make one, we're going to take a ref on app's
+    _appLogic{ nullptr }, // don't make one, we're going to take a ref on app's
+    _windowLogic{ nullptr },
     _window{ nullptr },
     _getWindowLayoutThrottler{} // this will get set if we become the monarch
 {
-    _logic = _app.Logic(); // get a ref to app's logic
+    _appLogic = _app.Logic(); // get a ref to app's logic
 
     // Inform the WindowManager that it can use us to find the target window for
     // a set of commandline args. This needs to be done before
@@ -54,10 +55,11 @@ AppHost::AppHost() noexcept :
         return;
     }
 
-    _useNonClientArea = _logic.GetShowTabsInTitlebar();
+    // _HandleCommandlineArgs will create a _windowLogic
+    _useNonClientArea = _windowLogic.GetShowTabsInTitlebar();
     if (_useNonClientArea)
     {
-        _window = std::make_unique<NonClientIslandWindow>(_logic.GetRequestedTheme());
+        _window = std::make_unique<NonClientIslandWindow>(_windowLogic.GetRequestedTheme());
     }
     else
     {
@@ -67,7 +69,7 @@ AppHost::AppHost() noexcept :
     // Update our own internal state tracking if we're in quake mode or not.
     _IsQuakeWindowChanged(nullptr, nullptr);
 
-    _window->SetMinimizeToNotificationAreaBehavior(_logic.GetMinimizeToNotificationArea());
+    _window->SetMinimizeToNotificationAreaBehavior(_windowLogic.GetMinimizeToNotificationArea());
 
     // Tell the window to callback to us when it's about to handle a WM_CREATE
     auto pfn = std::bind(&AppHost::_HandleCreateWindow,
@@ -77,8 +79,8 @@ AppHost::AppHost() noexcept :
                          std::placeholders::_3);
     _window->SetCreateCallback(pfn);
 
-    _window->SetSnapDimensionCallback(std::bind(&winrt::TerminalApp::AppLogic::CalcSnappedDimension,
-                                                _logic,
+    _window->SetSnapDimensionCallback(std::bind(&winrt::TerminalApp::TerminalWindow::CalcSnappedDimension,
+                                                _windowLogic,
                                                 std::placeholders::_1,
                                                 std::placeholders::_2));
 
@@ -100,10 +102,10 @@ AppHost::AppHost() noexcept :
     _window->WindowActivated({ this, &AppHost::_WindowActivated });
     _window->WindowMoved({ this, &AppHost::_WindowMoved });
     _window->HotkeyPressed({ this, &AppHost::_GlobalHotkeyPressed });
-    _window->ShouldExitFullscreen({ &_logic, &winrt::TerminalApp::AppLogic::RequestExitFullscreen });
+    _window->ShouldExitFullscreen({ &_windowLogic, &winrt::TerminalApp::TerminalWindow::RequestExitFullscreen });
 
-    _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
-    _window->SetAutoHideWindow(_logic.AutoHideWindow());
+    _window->SetAlwaysOnTop(_windowLogic.GetInitialAlwaysOnTop());
+    _window->SetAutoHideWindow(_windowLogic.AutoHideWindow());
 
     _window->MakeWindow();
 
@@ -152,9 +154,9 @@ AppHost::~AppHost()
 
 bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
 {
-    if (_logic)
+    if (_windowLogic)
     {
-        return _logic.OnDirectKeyEvent(vkey, scanCode, down);
+        return _windowLogic.OnDirectKeyEvent(vkey, scanCode, down);
     }
     return false;
 }
@@ -169,9 +171,9 @@ bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, cons
 void AppHost::SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                  const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
-    if (_logic)
+    if (_windowLogic)
     {
-        const auto state = _logic.TaskbarState();
+        const auto state = _windowLogic.TaskbarState();
         _window->SetTaskbarProgress(gsl::narrow_cast<size_t>(state.State()),
                                     gsl::narrow_cast<size_t>(state.Progress()));
     }
@@ -231,12 +233,16 @@ void AppHost::_HandleCommandlineArgs()
         return;
     }
 
+    // We did want to make a window, so let's instantiate it here.
+    // We don't have XAML yet, but we do have other stuff.
+    _windowLogic = _appLogic.CreateNewWindow();
+
     if (auto peasant{ _windowManager.CurrentWindow() })
     {
         if (auto args{ peasant.InitialArgs() })
         {
-            const auto result = _logic.SetStartupCommandline(args.Commandline());
-            const auto message = _logic.ParseCommandlineMessage();
+            const auto result = _windowLogic.SetStartupCommandline(args.Commandline());
+            const auto message = _windowLogic.ParseCommandlineMessage();
             if (!message.empty())
             {
                 const auto displayHelp = result == 0;
@@ -249,7 +255,7 @@ void AppHost::_HandleCommandlineArgs()
                             GetStringResource(messageTitle).data(),
                             MB_OK | messageIcon);
 
-                if (_logic.ShouldExitEarly())
+                if (_windowLogic.ShouldExitEarly())
                 {
                     ExitProcess(result);
                 }
@@ -263,10 +269,10 @@ void AppHost::_HandleCommandlineArgs()
         // the window at all here. In that case, we're going through this
         // special escape hatch to dispatch all the calls to elevate-shim, and
         // then we're going to exit immediately.
-        if (_logic.ShouldImmediatelyHandoffToElevated())
+        if (_appLogic.ShouldImmediatelyHandoffToElevated())
         {
             _shouldCreateWindow = false;
-            _logic.HandoffToElevated();
+            _appLogic.HandoffToElevated();
             return;
         }
 
@@ -288,7 +294,7 @@ void AppHost::_HandleCommandlineArgs()
         {
             const auto numPeasants = _windowManager.GetNumberOfPeasants();
             const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
-            if (_logic.ShouldUsePersistedLayout() &&
+            if (_windowLogic.ShouldUsePersistedLayout() &&
                 layouts &&
                 layouts.Size() > 0)
             {
@@ -299,9 +305,9 @@ void AppHost::_HandleCommandlineArgs()
                 // Otherwise create this window normally with its commandline, and create
                 // a new window using the first saved layout information.
                 // The 2nd+ layout will always get a new window.
-                if (numPeasants == 1 && !_logic.HasCommandlineArguments() && !_logic.HasSettingsStartupActions())
+                if (numPeasants == 1 && !_windowLogic.HasCommandlineArguments() && !_appLogic.HasSettingsStartupActions())
                 {
-                    _logic.SetPersistedLayoutIdx(startIdx);
+                    _windowLogic.SetPersistedLayoutIdx(startIdx);
                     startIdx += 1;
                 }
 
@@ -328,10 +334,10 @@ void AppHost::_HandleCommandlineArgs()
                                                            ));
                 }
             }
-            _logic.SetNumberOfOpenWindows(numPeasants);
+            _windowLogic.SetNumberOfOpenWindows(numPeasants);
         }
-        _logic.WindowName(peasant.WindowName());
-        _logic.WindowId(peasant.GetID());
+        _windowLogic.WindowName(peasant.WindowName());
+        _windowLogic.WindowId(peasant.GetID());
     }
 }
 
@@ -350,7 +356,7 @@ void AppHost::Initialize()
 {
     _window->Initialize();
 
-    if (auto withWindow{ _logic.try_as<IInitializeWithWindow>() })
+    if (auto withWindow{ _windowLogic.try_as<IInitializeWithWindow>() })
     {
         withWindow->Initialize(_window->GetHandle());
     }
@@ -360,7 +366,7 @@ void AppHost::Initialize()
         // Register our callback for when the app's non-client content changes.
         // This has to be done _before_ App::Create, as the app might set the
         // content in Create.
-        _logic.SetTitleBarContent({ this, &AppHost::_UpdateTitleBarContent });
+        _windowLogic.SetTitleBarContent({ this, &AppHost::_UpdateTitleBarContent });
     }
 
     // MORE EVENT HANDLERS HERE!
@@ -383,27 +389,27 @@ void AppHost::Initialize()
     });
     // If the user requests a close in another way handle the same as if the 'X'
     // was clicked.
-    _revokers.CloseRequested = _logic.CloseRequested(winrt::auto_revoke, { this, &AppHost::_CloseRequested });
+    _revokers.CloseRequested = _windowLogic.CloseRequested(winrt::auto_revoke, { this, &AppHost::_CloseRequested });
 
     // Add an event handler to plumb clicks in the titlebar area down to the
     // application layer.
-    _window->DragRegionClicked([this]() { _logic.TitlebarClicked(); });
+    _window->DragRegionClicked([this]() { _windowLogic.TitlebarClicked(); });
 
-    _window->WindowVisibilityChanged([this](bool showOrHide) { _logic.WindowVisibilityChanged(showOrHide); });
-    _window->UpdateSettingsRequested([this]() { _logic.ReloadSettings(); });
+    _window->WindowVisibilityChanged([this](bool showOrHide) { _windowLogic.WindowVisibilityChanged(showOrHide); });
+    _window->UpdateSettingsRequested([this]() { _appLogic.ReloadSettings(); });
 
-    _revokers.RequestedThemeChanged = _logic.RequestedThemeChanged(winrt::auto_revoke, { this, &AppHost::_UpdateTheme });
-    _revokers.FullscreenChanged = _logic.FullscreenChanged(winrt::auto_revoke, { this, &AppHost::_FullscreenChanged });
-    _revokers.FocusModeChanged = _logic.FocusModeChanged(winrt::auto_revoke, { this, &AppHost::_FocusModeChanged });
-    _revokers.AlwaysOnTopChanged = _logic.AlwaysOnTopChanged(winrt::auto_revoke, { this, &AppHost::_AlwaysOnTopChanged });
-    _revokers.RaiseVisualBell = _logic.RaiseVisualBell(winrt::auto_revoke, { this, &AppHost::_RaiseVisualBell });
-    _revokers.SystemMenuChangeRequested = _logic.SystemMenuChangeRequested(winrt::auto_revoke, { this, &AppHost::_SystemMenuChangeRequested });
-    _revokers.ChangeMaximizeRequested = _logic.ChangeMaximizeRequested(winrt::auto_revoke, { this, &AppHost::_ChangeMaximizeRequested });
+    _revokers.RequestedThemeChanged = _windowLogic.RequestedThemeChanged(winrt::auto_revoke, { this, &AppHost::_UpdateTheme });
+    _revokers.FullscreenChanged = _windowLogic.FullscreenChanged(winrt::auto_revoke, { this, &AppHost::_FullscreenChanged });
+    _revokers.FocusModeChanged = _windowLogic.FocusModeChanged(winrt::auto_revoke, { this, &AppHost::_FocusModeChanged });
+    _revokers.AlwaysOnTopChanged = _windowLogic.AlwaysOnTopChanged(winrt::auto_revoke, { this, &AppHost::_AlwaysOnTopChanged });
+    _revokers.RaiseVisualBell = _windowLogic.RaiseVisualBell(winrt::auto_revoke, { this, &AppHost::_RaiseVisualBell });
+    _revokers.SystemMenuChangeRequested = _windowLogic.SystemMenuChangeRequested(winrt::auto_revoke, { this, &AppHost::_SystemMenuChangeRequested });
+    _revokers.ChangeMaximizeRequested = _windowLogic.ChangeMaximizeRequested(winrt::auto_revoke, { this, &AppHost::_ChangeMaximizeRequested });
 
     _window->MaximizeChanged([this](bool newMaximize) {
-        if (_logic)
+        if (_appLogic)
         {
-            _logic.Maximized(newMaximize);
+            _windowLogic.Maximized(newMaximize);
         }
     });
 
@@ -416,21 +422,22 @@ void AppHost::Initialize()
     // Load bearing: make sure the PropertyChanged handler is added before we
     // call Create, so that when the app sets up the titlebar brush, we're
     // already prepared to listen for the change notification
-    _revokers.PropertyChanged = _logic.PropertyChanged(winrt::auto_revoke, { this, &AppHost::_PropertyChangedHandler });
+    _revokers.PropertyChanged = _windowLogic.PropertyChanged(winrt::auto_revoke, { this, &AppHost::_PropertyChangedHandler });
 
-    _logic.Create();
+    _appLogic.Create();
+    _windowLogic.Create();
 
-    _revokers.TitleChanged = _logic.TitleChanged(winrt::auto_revoke, { this, &AppHost::AppTitleChanged });
-    _revokers.LastTabClosed = _logic.LastTabClosed(winrt::auto_revoke, { this, &AppHost::LastTabClosed });
-    _revokers.SetTaskbarProgress = _logic.SetTaskbarProgress(winrt::auto_revoke, { this, &AppHost::SetTaskbarProgress });
-    _revokers.IdentifyWindowsRequested = _logic.IdentifyWindowsRequested(winrt::auto_revoke, { this, &AppHost::_IdentifyWindowsRequested });
-    _revokers.RenameWindowRequested = _logic.RenameWindowRequested(winrt::auto_revoke, { this, &AppHost::_RenameWindowRequested });
-    _revokers.SettingsChanged = _logic.SettingsChanged(winrt::auto_revoke, { this, &AppHost::_HandleSettingsChanged });
-    _revokers.IsQuakeWindowChanged = _logic.IsQuakeWindowChanged(winrt::auto_revoke, { this, &AppHost::_IsQuakeWindowChanged });
-    _revokers.SummonWindowRequested = _logic.SummonWindowRequested(winrt::auto_revoke, { this, &AppHost::_SummonWindowRequested });
-    _revokers.OpenSystemMenu = _logic.OpenSystemMenu(winrt::auto_revoke, { this, &AppHost::_OpenSystemMenu });
-    _revokers.QuitRequested = _logic.QuitRequested(winrt::auto_revoke, { this, &AppHost::_RequestQuitAll });
-    _revokers.ShowWindowChanged = _logic.ShowWindowChanged(winrt::auto_revoke, { this, &AppHost::_ShowWindowChanged });
+    _revokers.TitleChanged = _windowLogic.TitleChanged(winrt::auto_revoke, { this, &AppHost::AppTitleChanged });
+    _revokers.LastTabClosed = _windowLogic.LastTabClosed(winrt::auto_revoke, { this, &AppHost::LastTabClosed });
+    _revokers.SetTaskbarProgress = _windowLogic.SetTaskbarProgress(winrt::auto_revoke, { this, &AppHost::SetTaskbarProgress });
+    _revokers.IdentifyWindowsRequested = _windowLogic.IdentifyWindowsRequested(winrt::auto_revoke, { this, &AppHost::_IdentifyWindowsRequested });
+    _revokers.RenameWindowRequested = _windowLogic.RenameWindowRequested(winrt::auto_revoke, { this, &AppHost::_RenameWindowRequested });
+    _revokers.SettingsChanged = _appLogic.SettingsChanged(winrt::auto_revoke, { this, &AppHost::_HandleSettingsChanged });
+    _revokers.IsQuakeWindowChanged = _windowLogic.IsQuakeWindowChanged(winrt::auto_revoke, { this, &AppHost::_IsQuakeWindowChanged });
+    _revokers.SummonWindowRequested = _windowLogic.SummonWindowRequested(winrt::auto_revoke, { this, &AppHost::_SummonWindowRequested });
+    _revokers.OpenSystemMenu = _windowLogic.OpenSystemMenu(winrt::auto_revoke, { this, &AppHost::_OpenSystemMenu });
+    _revokers.QuitRequested = _windowLogic.QuitRequested(winrt::auto_revoke, { this, &AppHost::_RequestQuitAll });
+    _revokers.ShowWindowChanged = _windowLogic.ShowWindowChanged(winrt::auto_revoke, { this, &AppHost::_ShowWindowChanged });
 
     // BODGY
     // On certain builds of Windows, when Terminal is set as the default
@@ -439,13 +446,13 @@ void AppHost::Initialize()
     // applications. This call into TerminalThemeHelpers will tell our
     // compositor to automatically complete animations that are scheduled
     // while the screen is off.
-    TerminalTrySetAutoCompleteAnimationsWhenOccluded(static_cast<::IUnknown*>(winrt::get_abi(_logic.GetRoot())), true);
+    TerminalTrySetAutoCompleteAnimationsWhenOccluded(static_cast<::IUnknown*>(winrt::get_abi(_windowLogic.GetRoot())), true);
 
-    _window->UpdateTitle(_logic.Title());
+    _window->UpdateTitle(_windowLogic.Title());
 
     // Set up the content of the application. If the app has a custom titlebar,
     // set that content as well.
-    _window->SetContent(_logic.GetRoot());
+    _window->SetContent(_windowLogic.GetRoot());
     _window->OnAppInitialized();
 
     // BODGY
@@ -478,7 +485,7 @@ void AppHost::Initialize()
 // - <none>
 void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/, winrt::hstring newTitle)
 {
-    if (_logic.GetShowTitleInTitlebar())
+    if (_windowLogic.GetShowTitleInTitlebar())
     {
         _window->UpdateTitle(newTitle);
     }
@@ -564,11 +571,11 @@ LaunchPosition AppHost::_GetWindowLaunchPosition()
 // - None
 void AppHost::_HandleCreateWindow(const HWND hwnd, til::rect proposedRect, LaunchMode& launchMode)
 {
-    launchMode = _logic.GetLaunchMode();
+    launchMode = _windowLogic.GetLaunchMode();
 
     // Acquire the actual initial position
-    auto initialPos = _logic.GetInitialPosition(proposedRect.left, proposedRect.top);
-    const auto centerOnLaunch = _logic.CenterOnLaunch();
+    auto initialPos = _windowLogic.GetInitialPosition(proposedRect.left, proposedRect.top);
+    const auto centerOnLaunch = _windowLogic.CenterOnLaunch();
     proposedRect.left = gsl::narrow<til::CoordType>(initialPos.X);
     proposedRect.top = gsl::narrow<til::CoordType>(initialPos.Y);
 
@@ -615,7 +622,7 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, til::rect proposedRect, Launc
         proposedRect.top = monitorInfo.rcWork.top;
     }
 
-    auto initialSize = _logic.GetLaunchDimensions(dpix);
+    auto initialSize = _windowLogic.GetLaunchDimensions(dpix);
 
     const auto islandWidth = Utils::ClampToShortMax(
         static_cast<long>(ceil(initialSize.Width)), 1);
@@ -649,7 +656,7 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, til::rect proposedRect, Launc
     til::point origin{ (proposedRect.left + nonClientFrame.left),
                        (proposedRect.top) };
 
-    if (_logic.IsQuakeWindow())
+    if (_windowLogic.IsQuakeWindow())
     {
         // If we just use rcWork by itself, we'll fail to account for the invisible
         // space reserved for the resize handles. So retrieve that size here.
@@ -706,7 +713,7 @@ void AppHost::_UpdateTitleBarContent(const winrt::Windows::Foundation::IInspecta
     {
         auto nonClientWindow{ static_cast<NonClientIslandWindow*>(_window.get()) };
         nonClientWindow->SetTitlebarContent(arg);
-        nonClientWindow->SetTitlebarBackground(_logic.TitlebarBrush());
+        nonClientWindow->SetTitlebarBackground(_windowLogic.TitlebarBrush());
     }
 
     _updateTheme();
@@ -729,13 +736,13 @@ void AppHost::_UpdateTheme(const winrt::Windows::Foundation::IInspectable&,
 void AppHost::_FocusModeChanged(const winrt::Windows::Foundation::IInspectable&,
                                 const winrt::Windows::Foundation::IInspectable&)
 {
-    _window->FocusModeChanged(_logic.FocusMode());
+    _window->FocusModeChanged(_windowLogic.FocusMode());
 }
 
 void AppHost::_FullscreenChanged(const winrt::Windows::Foundation::IInspectable&,
                                  const winrt::Windows::Foundation::IInspectable&)
 {
-    _window->FullscreenChanged(_logic.Fullscreen());
+    _window->FullscreenChanged(_windowLogic.Fullscreen());
 }
 
 void AppHost::_ChangeMaximizeRequested(const winrt::Windows::Foundation::IInspectable&,
@@ -773,7 +780,7 @@ void AppHost::_AlwaysOnTopChanged(const winrt::Windows::Foundation::IInspectable
         return;
     }
 
-    _window->SetAlwaysOnTop(_logic.AlwaysOnTop());
+    _window->SetAlwaysOnTop(_windowLogic.AlwaysOnTop());
 }
 
 // Method Description
@@ -801,10 +808,10 @@ void AppHost::_RaiseVisualBell(const winrt::Windows::Foundation::IInspectable&,
 // - <none>
 void AppHost::_WindowMouseWheeled(const til::point coord, const int32_t delta)
 {
-    if (_logic)
+    if (_appLogic)
     {
         // Find all the elements that are underneath the mouse
-        auto elems = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::FindElementsInHostCoordinates(coord.to_winrt_point(), _logic.GetRoot());
+        auto elems = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::FindElementsInHostCoordinates(coord.to_winrt_point(), _windowLogic.GetRoot());
         for (const auto& e : elems)
         {
             // If that element has implemented IMouseWheelListener, call OnMouseWheel on that element.
@@ -862,7 +869,7 @@ void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable send
     // Summon the window whenever we dispatch a commandline to it. This will
     // make it obvious when a new tab/pane is created in a window.
     _HandleSummon(sender, summonArgs);
-    _logic.ExecuteCommandline(args.Commandline(), args.CurrentDirectory());
+    _windowLogic.ExecuteCommandline(args.Commandline(), args.CurrentDirectory());
 }
 
 // Method Description:
@@ -881,11 +888,11 @@ winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> AppHost::_GetWindowL
 
     winrt::hstring layoutJson = L"";
     // Use the main thread since we are accessing controls.
-    co_await wil::resume_foreground(_logic.GetRoot().Dispatcher());
+    co_await wil::resume_foreground(_windowLogic.GetRoot().Dispatcher());
     try
     {
         const auto pos = _GetWindowLaunchPosition();
-        layoutJson = _logic.GetWindowLayoutJson(pos);
+        layoutJson = _windowLogic.GetWindowLayoutJson(pos);
     }
     CATCH_LOG()
 
@@ -908,14 +915,14 @@ winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> AppHost::_GetWindowL
 void AppHost::_FindTargetWindow(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                 const Remoting::FindTargetWindowArgs& args)
 {
-    const auto targetWindow = _logic.FindTargetWindow(args.Args().Commandline());
+    const auto targetWindow = _appLogic.FindTargetWindow(args.Args().Commandline());
     args.ResultTargetWindow(targetWindow.WindowId());
     args.ResultTargetWindowName(targetWindow.WindowName());
 }
 
 winrt::fire_and_forget AppHost::_WindowActivated(bool activated)
 {
-    _logic.WindowActivated(activated);
+    _windowLogic.WindowActivated(activated);
 
     if (!activated)
     {
@@ -955,27 +962,27 @@ void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*s
 
     if (_windowManager.DoesQuakeWindowExist() ||
         _window->IsQuakeWindow() ||
-        (_logic.GetAlwaysShowNotificationIcon() || _logic.GetMinimizeToNotificationArea()))
+        (_windowLogic.GetAlwaysShowNotificationIcon() || _windowLogic.GetMinimizeToNotificationArea()))
     {
         _CreateNotificationIcon();
     }
 
     // Set the number of open windows (so we know if we are the last window)
     // and subscribe for updates if there are any changes to that number.
-    _logic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants());
+    _windowLogic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants());
 
     _WindowCreatedToken = _windowManager.WindowCreated([this](auto&&, auto&&) {
         if (_getWindowLayoutThrottler) {
             _getWindowLayoutThrottler.value()();
         }
-        _logic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants()); });
+        _windowLogic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants()); });
 
     _WindowClosedToken = _windowManager.WindowClosed([this](auto&&, auto&&) {
         if (_getWindowLayoutThrottler)
         {
             _getWindowLayoutThrottler.value()();
         }
-        _logic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants());
+        _windowLogic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants());
     });
 
     // These events are coming from peasants that become or un-become quake windows.
@@ -1000,7 +1007,7 @@ winrt::Windows::Foundation::IAsyncAction AppHost::_SaveWindowLayouts()
     // Make sure we run on a background thread to not block anything.
     co_await winrt::resume_background();
 
-    if (_logic.ShouldUsePersistedLayout())
+    if (_windowLogic.ShouldUsePersistedLayout())
     {
         try
         {
@@ -1015,7 +1022,7 @@ winrt::Windows::Foundation::IAsyncAction AppHost::_SaveWindowLayouts()
                               TraceLoggingDescription("Logged when writing window state"),
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                               TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-            _logic.SaveWindowLayoutJsons(layoutJsons);
+            _windowLogic.SaveWindowLayoutJsons(layoutJsons);
         }
         catch (...)
         {
@@ -1058,13 +1065,13 @@ winrt::fire_and_forget AppHost::_SaveWindowLayoutsRepeat()
 
 void AppHost::_listenForInboundConnections()
 {
-    _logic.SetInboundListener();
+    _appLogic.SetInboundListener();
 }
 
 winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
 {
     // The hotkey MUST be registered on the main thread. It will fail otherwise!
-    co_await wil::resume_foreground(_logic.GetRoot().Dispatcher());
+    co_await wil::resume_foreground(_windowLogic.GetRoot().Dispatcher());
 
     if (!_window)
     {
@@ -1089,7 +1096,7 @@ winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
     _hotkeys.clear();
 
     // Re-register all current hotkeys.
-    for (const auto& [keyChord, cmd] : _logic.GlobalHotkeys())
+    for (const auto& [keyChord, cmd] : _appLogic.GlobalHotkeys())
     {
         if (auto summonArgs = cmd.ActionAndArgs().Args().try_as<Settings::Model::GlobalSummonArgs>())
         {
@@ -1311,7 +1318,7 @@ winrt::fire_and_forget AppHost::_IdentifyWindowsRequested(const winrt::Windows::
 void AppHost::_DisplayWindowId(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
-    _logic.IdentifyWindow();
+    _windowLogic.IdentifyWindow();
 }
 
 winrt::fire_and_forget AppHost::_RenameWindowRequested(const winrt::Windows::Foundation::IInspectable /*sender*/,
@@ -1335,11 +1342,11 @@ winrt::fire_and_forget AppHost::_RenameWindowRequested(const winrt::Windows::Fou
 
         if (requestArgs.Succeeded())
         {
-            _logic.WindowName(args.ProposedName());
+            _windowLogic.WindowName(args.ProposedName());
         }
         else
         {
-            _logic.RenameFailed();
+            _windowLogic.RenameFailed();
         }
     }
 }
@@ -1373,11 +1380,11 @@ static bool _isActuallyDarkTheme(const auto requestedTheme)
 
 void AppHost::_updateTheme()
 {
-    auto theme = _logic.Theme();
+    auto theme = _appLogic.Theme();
 
     _window->OnApplicationThemeChanged(theme.RequestedTheme());
 
-    const auto b = _logic.TitlebarBrush();
+    const auto b = _windowLogic.TitlebarBrush();
     const auto color = ThemeColor::ColorFromBrush(b);
     const auto colorOpacity = b ? color.A / 255.0 : 0.0;
     const auto brushOpacity = _opacityFromBrush(b);
@@ -1409,11 +1416,11 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
     {
         if (!_windowManager.DoesQuakeWindowExist())
         {
-            if (!_notificationIcon && (_logic.GetMinimizeToNotificationArea() || _logic.GetAlwaysShowNotificationIcon()))
+            if (!_notificationIcon && (_windowLogic.GetMinimizeToNotificationArea() || _windowLogic.GetAlwaysShowNotificationIcon()))
             {
                 _CreateNotificationIcon();
             }
-            else if (_notificationIcon && !_logic.GetMinimizeToNotificationArea() && !_logic.GetAlwaysShowNotificationIcon())
+            else if (_notificationIcon && !_windowLogic.GetMinimizeToNotificationArea() && !_windowLogic.GetAlwaysShowNotificationIcon())
             {
                 _windowManager.SummonAllWindows();
                 _DestroyNotificationIcon();
@@ -1421,8 +1428,8 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
         }
     }
 
-    _window->SetMinimizeToNotificationAreaBehavior(_logic.GetMinimizeToNotificationArea());
-    _window->SetAutoHideWindow(_logic.AutoHideWindow());
+    _window->SetMinimizeToNotificationAreaBehavior(_windowLogic.GetMinimizeToNotificationArea());
+    _window->SetAutoHideWindow(_windowLogic.AutoHideWindow());
     _updateTheme();
 }
 
@@ -1434,25 +1441,25 @@ void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectab
     // to show regardless of the notification icon settings.
     // This also means we'll need to destroy the notification icon if it was created
     // specifically for the quake window. If not, it should not be destroyed.
-    if (!_window->IsQuakeWindow() && _logic.IsQuakeWindow())
+    if (!_window->IsQuakeWindow() && _windowLogic.IsQuakeWindow())
     {
         _ShowNotificationIconRequested(nullptr, nullptr);
     }
-    else if (_window->IsQuakeWindow() && !_logic.IsQuakeWindow())
+    else if (_window->IsQuakeWindow() && !_windowLogic.IsQuakeWindow())
     {
         _HideNotificationIconRequested(nullptr, nullptr);
     }
 
-    _window->IsQuakeWindow(_logic.IsQuakeWindow());
+    _window->IsQuakeWindow(_windowLogic.IsQuakeWindow());
 }
 
 winrt::fire_and_forget AppHost::_QuitRequested(const winrt::Windows::Foundation::IInspectable&,
                                                const winrt::Windows::Foundation::IInspectable&)
 {
     // Need to be on the main thread to close out all of the tabs.
-    co_await wil::resume_foreground(_logic.GetRoot().Dispatcher());
+    co_await wil::resume_foreground(_windowLogic.GetRoot().Dispatcher());
 
-    _logic.Quit();
+    _windowLogic.Quit();
 }
 
 void AppHost::_RequestQuitAll(const winrt::Windows::Foundation::IInspectable&,
@@ -1585,8 +1592,8 @@ void AppHost::_HideNotificationIconRequested(const winrt::Windows::Foundation::I
     {
         // Destroy it only if our settings allow it
         if (_notificationIcon &&
-            !_logic.GetAlwaysShowNotificationIcon() &&
-            !_logic.GetMinimizeToNotificationArea())
+            !_windowLogic.GetAlwaysShowNotificationIcon() &&
+            !_windowLogic.GetMinimizeToNotificationArea())
         {
             _DestroyNotificationIcon();
         }
@@ -1607,14 +1614,14 @@ void AppHost::_HideNotificationIconRequested(const winrt::Windows::Foundation::I
 // - <none>
 void AppHost::_WindowMoved()
 {
-    if (_logic)
+    if (_windowLogic)
     {
         // Ensure any open ContentDialog is dismissed.
         // Closing the popup in the UI tree as done below is not sufficient because
         // it does not terminate the dialog's async operation.
-        _logic.DismissDialog();
+        _windowLogic.DismissDialog();
 
-        const auto root{ _logic.GetRoot() };
+        const auto root{ _windowLogic.GetRoot() };
         if (root && root.XamlRoot())
         {
             try
@@ -1643,7 +1650,7 @@ void AppHost::_CloseRequested(const winrt::Windows::Foundation::IInspectable& /*
                               const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
     const auto pos = _GetWindowLaunchPosition();
-    _logic.CloseWindow(pos);
+    _windowLogic.CloseWindow(pos);
 }
 
 void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
@@ -1654,7 +1661,7 @@ void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspect
         if (_useNonClientArea)
         {
             auto nonClientWindow{ static_cast<NonClientIslandWindow*>(_window.get()) };
-            nonClientWindow->SetTitlebarBackground(_logic.TitlebarBrush());
+            nonClientWindow->SetTitlebarBackground(_windowLogic.TitlebarBrush());
             _updateTheme();
         }
     }
