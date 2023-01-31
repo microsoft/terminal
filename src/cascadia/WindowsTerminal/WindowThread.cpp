@@ -4,8 +4,8 @@
 #include "pch.h"
 #include "WindowThread.h"
 
-WindowThread::WindowThread() :
-    _host{}
+WindowThread::WindowThread(const winrt::TerminalApp::AppLogic& logic) :
+    _host{ logic }
 {
 }
 

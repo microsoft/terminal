@@ -9,7 +9,7 @@
 class AppHost
 {
 public:
-    AppHost() noexcept;
+    AppHost(const winrt::TerminalApp::AppLogic& logic) noexcept;
     virtual ~AppHost();
 
     void AppTitleChanged(const winrt::Windows::Foundation::IInspectable& sender, winrt::hstring newTitle);

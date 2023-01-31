@@ -18,8 +18,8 @@ bool WindowEmperor::ShouldExit()
 
 void WindowEmperor::WaitForWindows()
 {
-    std::thread one{ []() {
-        WindowThread foo{};
+    std::thread one{ [this]() {
+        WindowThread foo{ _app.Logic() };
         return foo.WindowProc();
     } };
     one.join();

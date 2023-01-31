@@ -7,7 +7,7 @@
 class WindowThread
 {
 public:
-    WindowThread();
+    WindowThread(const winrt::TerminalApp::AppLogic& logic);
     int WindowProc();
 
 private:

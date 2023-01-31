@@ -28,15 +28,15 @@ using namespace std::chrono_literals;
 // "If the high-order bit is 1, the key is down; otherwise, it is up."
 static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
 
-AppHost::AppHost() noexcept :
-    _app{},
+AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic) noexcept :
+    // _app{},
     _windowManager{},
-    _appLogic{ nullptr }, // don't make one, we're going to take a ref on app's
+    _appLogic{ logic }, // don't make one, we're going to take a ref on app's
     _windowLogic{ nullptr },
     _window{ nullptr },
     _getWindowLayoutThrottler{} // this will get set if we become the monarch
 {
-    _appLogic = _app.Logic(); // get a ref to app's logic
+    // _appLogic = _app.Logic(); // get a ref to app's logic
 
     // Inform the WindowManager that it can use us to find the target window for
     // a set of commandline args. This needs to be done before
@@ -148,8 +148,10 @@ AppHost::~AppHost()
     _showHideWindowThrottler.reset();
 
     _window = nullptr;
-    _app.Close();
-    _app = nullptr;
+    /// TODO!
+    //
+    // _app.Close();
+    // _app = nullptr;
 }
 
 bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
@@ -354,10 +356,12 @@ void AppHost::_HandleCommandlineArgs()
 // - <none>
 void AppHost::Initialize()
 {
+    // You aren't allowed to do ANY XAML before this line!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     _window->Initialize();
 
     if (auto withWindow{ _windowLogic.try_as<IInitializeWithWindow>() })
     {
+        // You aren't allowed to do anything with the TerminalPage before this line!!!!!!!
         withWindow->Initialize(_window->GetHandle());
     }
 
@@ -455,23 +459,25 @@ void AppHost::Initialize()
     _window->SetContent(_windowLogic.GetRoot());
     _window->OnAppInitialized();
 
-    // BODGY
+    // TODO! is this still an issue?
     //
-    // We've got a weird crash that happens terribly inconsistently, but pretty
-    // readily on migrie's laptop, only in Debug mode. Apparently, there's some
-    // weird ref-counting magic that goes on during teardown, and our
-    // Application doesn't get closed quite right, which can cause us to crash
-    // into the debugger. This of course, only happens on exit, and happens
-    // somewhere in the XamlHost.dll code.
-    //
-    // Crazily, if we _manually leak the Application_ here, then the crash
-    // doesn't happen. This doesn't matter, because we really want the
-    // Application to live for _the entire lifetime of the process_, so the only
-    // time when this object would actually need to get cleaned up is _during
-    // exit_. So we can safely leak this Application object, and have it just
-    // get cleaned up normally when our process exits.
-    auto a{ _app };
-    ::winrt::detach_abi(a);
+    // // BODGY
+    // //
+    // // We've got a weird crash that happens terribly inconsistently, but pretty
+    // // readily on migrie's laptop, only in Debug mode. Apparently, there's some
+    // // weird ref-counting magic that goes on during teardown, and our
+    // // Application doesn't get closed quite right, which can cause us to crash
+    // // into the debugger. This of course, only happens on exit, and happens
+    // // somewhere in the XamlHost.dll code.
+    // //
+    // // Crazily, if we _manually leak the Application_ here, then the crash
+    // // doesn't happen. This doesn't matter, because we really want the
+    // // Application to live for _the entire lifetime of the process_, so the only
+    // // time when this object would actually need to get cleaned up is _during
+    // // exit_. So we can safely leak this Application object, and have it just
+    // // get cleaned up normally when our process exits.
+    // auto a{ _app };
+    // ::winrt::detach_abi(a);
 }
 
 // Method Description:
