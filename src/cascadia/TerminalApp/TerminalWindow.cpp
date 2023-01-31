@@ -1137,4 +1137,14 @@ namespace winrt::TerminalApp::implementation
     {
         return _settings.GlobalSettings().AutoHideWindow();
     }
+    // TODO! Arg should be a SettingsLoadEventArgs{ result, warnings, error, settings}
+    void TerminalWindow::UpdateSettingsHandler(const winrt::IInspectable& /*sender*/,
+                                               const winrt::IInspectable& arg)
+    {
+        if (const auto& settings{ arg.try_as<CascadiaSettings>() })
+        {
+            this->UpdateSettings(S_OK, settings);
+            _root->SetSettings(_settings, true);
+        }
+    }
 };

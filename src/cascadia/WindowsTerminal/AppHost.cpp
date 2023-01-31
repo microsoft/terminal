@@ -32,7 +32,7 @@ AppHost::AppHost() noexcept :
     _app{},
     _windowManager{},
     _appLogic{ nullptr }, // don't make one, we're going to take a ref on app's
-    _windowLogic{ nullptr }, 
+    _windowLogic{ nullptr },
     _window{ nullptr },
     _getWindowLayoutThrottler{} // this will get set if we become the monarch
 {
@@ -234,7 +234,7 @@ void AppHost::_HandleCommandlineArgs()
     }
 
     // We did want to make a window, so let's instantiate it here.
-    // We don't have XAML yet, but we do have other stuff. 
+    // We don't have XAML yet, but we do have other stuff.
     _windowLogic = _appLogic.CreateNewWindow();
 
     if (auto peasant{ _windowManager.CurrentWindow() })
@@ -269,10 +269,10 @@ void AppHost::_HandleCommandlineArgs()
         // the window at all here. In that case, we're going through this
         // special escape hatch to dispatch all the calls to elevate-shim, and
         // then we're going to exit immediately.
-        if (_windowLogic.ShouldImmediatelyHandoffToElevated())
+        if (_appLogic.ShouldImmediatelyHandoffToElevated())
         {
             _shouldCreateWindow = false;
-            _windowLogic.HandoffToElevated();
+            _appLogic.HandoffToElevated();
             return;
         }
 
@@ -425,6 +425,7 @@ void AppHost::Initialize()
     _revokers.PropertyChanged = _windowLogic.PropertyChanged(winrt::auto_revoke, { this, &AppHost::_PropertyChangedHandler });
 
     _appLogic.Create();
+    _windowLogic.Create();
 
     _revokers.TitleChanged = _windowLogic.TitleChanged(winrt::auto_revoke, { this, &AppHost::AppTitleChanged });
     _revokers.LastTabClosed = _windowLogic.LastTabClosed(winrt::auto_revoke, { this, &AppHost::LastTabClosed });
@@ -974,14 +975,14 @@ void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*s
         if (_getWindowLayoutThrottler) {
             _getWindowLayoutThrottler.value()();
         }
-        _appLogic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants()); });
+        _windowLogic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants()); });
 
     _WindowClosedToken = _windowManager.WindowClosed([this](auto&&, auto&&) {
         if (_getWindowLayoutThrottler)
         {
             _getWindowLayoutThrottler.value()();
         }
-        _appLogic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants());
+        _windowLogic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants());
     });
 
     // These events are coming from peasants that become or un-become quake windows.

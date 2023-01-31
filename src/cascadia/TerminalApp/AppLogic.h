@@ -52,6 +52,8 @@ namespace winrt::TerminalApp::implementation
         bool IsElevated() const noexcept;
         void ReloadSettings();
 
+        bool HasSettingsStartupActions() const noexcept;
+
         [[nodiscard]] Microsoft::Terminal::Settings::Model::CascadiaSettings GetSettings() const noexcept;
 
         TerminalApp::FindTargetWindowResult FindTargetWindow(array_view<const winrt::hstring> actions);

@@ -301,6 +301,11 @@ namespace winrt::TerminalApp::implementation
         return hr;
     }
 
+    bool AppLogic::HasSettingsStartupActions() const noexcept
+    {
+        return _hasSettingsStartupActions;
+    }
+
     // Call this function after loading your _settings.
     // It handles any CPU intensive settings updates (like updating the Jumplist)
     // which should thus only occur if the settings file actually changed.
@@ -474,6 +479,10 @@ namespace winrt::TerminalApp::implementation
             }
             else
             {
+                // TODO! Arg should be a SettingsLoadEventArgs{ result, warnings, error, settings}
+                //
+                // _SettingsChangedHandlers(*this, make_self<SettingsLoadEventArgs>( _settingsLoadedResult, warnings, _settingsLoadExceptionText, settings}))
+
                 // const winrt::hstring titleKey = USES_RESOURCE(L"ReloadJsonParseErrorTitle");
                 // const winrt::hstring textKey = USES_RESOURCE(L"ReloadJsonParseErrorText");
                 // _ShowLoadErrorsDialog(titleKey, textKey, _settingsLoadedResult);
@@ -500,7 +509,7 @@ namespace winrt::TerminalApp::implementation
         _ApplyStartupTaskStateChange();
         _ProcessLazySettingsChanges();
 
-        _SettingsChangedHandlers(*this, nullptr);
+        _SettingsChangedHandlers(*this, _settings);
     }
 
     // Method Description:
@@ -675,6 +684,12 @@ namespace winrt::TerminalApp::implementation
 
     TerminalApp::TerminalWindow AppLogic::CreateNewWindow()
     {
-        return *winrt::make_self<implementation::TerminalWindow>(_settings);
+        if (_settings == nullptr)
+        {
+            ReloadSettings();
+        }
+        auto window = winrt::make_self<implementation::TerminalWindow>(_settings);
+        this->SettingsChanged({ window->get_weak(), &implementation::TerminalWindow::UpdateSettingsHandler });
+        return *window;
     }
 }

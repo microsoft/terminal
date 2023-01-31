@@ -107,6 +107,7 @@ namespace winrt::TerminalApp::implementation
         void DismissDialog();
 
         Microsoft::Terminal::Settings::Model::Theme Theme();
+        void UpdateSettingsHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& arg);
 
         // -------------------------------- WinRT Events ---------------------------------
         // PropertyChanged is surprisingly not a typed event, so we'll define that one manually.

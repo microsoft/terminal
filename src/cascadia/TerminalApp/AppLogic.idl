@@ -27,6 +27,8 @@ namespace TerminalApp
         void RunAsUwp();
         Boolean IsElevated();
 
+        Boolean HasSettingsStartupActions();
+
         void ReloadSettings();
 
         void SetInboundListener();
@@ -36,6 +38,9 @@ namespace TerminalApp
         FindTargetWindowResult FindTargetWindow(String[] args);
 
         TerminalWindow CreateNewWindow();
+
+        Boolean ShouldImmediatelyHandoffToElevated();
+        void HandoffToElevated();
 
         Windows.Foundation.Collections.IMapView<Microsoft.Terminal.Control.KeyChord, Microsoft.Terminal.Settings.Model.Command> GlobalHotkeys();
 
