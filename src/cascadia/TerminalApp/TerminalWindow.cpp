@@ -154,7 +154,6 @@ namespace winrt::TerminalApp::implementation
     // - Implements the IInitializeWithWindow interface from shobjidl_core.
     HRESULT TerminalWindow::Initialize(HWND hwnd)
     {
-        _root = winrt::make_self<TerminalPage>();
         _dialog = ContentDialog{};
         return _root->Initialize(hwnd);
     }
@@ -214,13 +213,13 @@ namespace winrt::TerminalApp::implementation
 
         // TODO! handle startupActions
         //
-        //// Pay attention, that even if some command line arguments were parsed (like launch mode),
-        //// we will not use the startup actions from settings.
-        //// While this simplifies the logic, we might want to reconsider this behavior in the future.
-        //if (!_hasCommandLineArguments && _hasSettingsStartupActions)
-        //{
-        //    _root->SetStartupActions(_settingsAppArgs.GetStartupActions());
-        //}
+        // Pay attention, that even if some command line arguments were parsed (like launch mode),
+        // we will not use the startup actions from settings.
+        // While this simplifies the logic, we might want to reconsider this behavior in the future.
+        if (!_hasCommandLineArguments && _gotSettingsStartupActions)
+        {
+            _root->SetStartupActions(_settingsStartupArgs);
+        }
 
         _root->SetSettings(_settings, false);
         _root->Loaded({ this, &TerminalWindow::_OnLoaded });
@@ -927,6 +926,14 @@ namespace winrt::TerminalApp::implementation
     // {
     //     return _hasSettingsStartupActions;
     // }
+    void TerminalWindow::SetSettingsStartupArgs(const std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions)
+    {
+        for (const auto& action : actions)
+        {
+            _settingsStartupArgs.push_back(action);
+        }
+        _gotSettingsStartupActions = true;
+    }
 
     bool TerminalWindow::HasCommandlineArguments() const noexcept
     {

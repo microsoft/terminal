@@ -690,6 +690,10 @@ namespace winrt::TerminalApp::implementation
         }
         auto window = winrt::make_self<implementation::TerminalWindow>(_settings);
         this->SettingsChanged({ window->get_weak(), &implementation::TerminalWindow::UpdateSettingsHandler });
+        if (_hasSettingsStartupActions)
+        {
+            window->SetSettingsStartupArgs(_settingsAppArgs.GetStartupActions());
+        }
         return *window;
     }
 }
