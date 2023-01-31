@@ -155,7 +155,7 @@ namespace Microsoft::Console::VirtualTerminal
         constexpr VTParameter at(const size_t index) const noexcept
         {
             // If the index is out of range, we return a parameter with no value.
-            return index < _values.size() ? _values[index] : VTParameter{};
+            return index < _values.size() ? til::at(_values, index) : VTParameter{};
         }
 
         constexpr bool empty() const noexcept

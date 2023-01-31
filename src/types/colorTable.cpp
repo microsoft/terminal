@@ -435,7 +435,7 @@ static constexpr til::presorted_static_map xorgAppColorTable{
     std::pair{ "yellowgreen"sv, til::color{ 154, 205, 50 } }
 };
 
-std::span<const til::color> Utils::CampbellColorTable()
+std::span<const til::color> Utils::CampbellColorTable() noexcept
 {
     return std::span{ standard256ColorTable }.first(16);
 }
