@@ -29,7 +29,7 @@ namespace TerminalApp
 
     // See IDialogPresenter and TerminalPage's DialogPresenter for more
     // information.
-    [default_interface] runtimeclass TerminalWindow : IDirectKeyListener, IDialogPresenter, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    [default_interface] runtimeclass TerminalWindow : IDirectKeyListener, IDialogPresenter, IWindowProperties, Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         TerminalWindow(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
 
@@ -66,13 +66,13 @@ namespace TerminalApp
         Boolean AutoHideWindow { get; };
 
         void IdentifyWindow();
-        String WindowName;
-        UInt64 WindowId;
+        // String WindowName;
+        // UInt64 WindowId;
         void SetPersistedLayoutIdx(UInt32 idx);
         void SetNumberOfOpenWindows(UInt64 num);
         void RenameFailed();
         void RequestExitFullscreen();
-        Boolean IsQuakeWindow();
+        // Boolean IsQuakeWindow();
 
         Windows.Foundation.Size GetLaunchDimensions(UInt32 dpi);
         Boolean CenterOnLaunch { get; };

@@ -50,6 +50,22 @@ namespace winrt::TerminalApp::implementation
             _ProposedName{ name } {};
     };
 
+    // struct WindowProperties : WindowPropertiesT<WindowProperties>
+    // {
+    //     // Normally, WindowName and WindowId would be
+    //     // WINRT_OBSERVABLE_PROPERTY's, but we want them to raise
+    //     // WindowNameForDisplay and WindowIdForDisplay instead
+    //     winrt::hstring WindowName() const noexcept;
+    //     winrt::fire_and_forget WindowName(const winrt::hstring& value);
+    //     uint64_t WindowId() const noexcept;
+    //     void WindowId(const uint64_t& value);
+    //     winrt::hstring WindowIdForDisplay() const noexcept;
+    //     winrt::hstring WindowNameForDisplay() const noexcept;
+    //     bool IsQuakeWindow() const noexcept;
+
+    // public:
+    // };
+
     struct TerminalPage : TerminalPageT<TerminalPage>
     {
     public:
@@ -120,23 +136,29 @@ namespace winrt::TerminalApp::implementation
         // Normally, WindowName and WindowId would be
         // WINRT_OBSERVABLE_PROPERTY's, but we want them to raise
         // WindowNameForDisplay and WindowIdForDisplay instead
-        winrt::hstring WindowName() const noexcept;
-        winrt::fire_and_forget WindowName(const winrt::hstring& value);
-        uint64_t WindowId() const noexcept;
-        void WindowId(const uint64_t& value);
+        // winrt::hstring WindowName() const noexcept;
+        // winrt::fire_and_forget WindowName(const winrt::hstring& value);
+        // uint64_t WindowId() const noexcept;
+        // void WindowId(const uint64_t& value);
 
         void SetNumberOfOpenWindows(const uint64_t value);
         void SetPersistedLayoutIdx(const uint32_t value);
 
-        winrt::hstring WindowIdForDisplay() const noexcept;
-        winrt::hstring WindowNameForDisplay() const noexcept;
-        bool IsQuakeWindow() const noexcept;
+        // winrt::hstring WindowIdForDisplay() const noexcept;
+        // winrt::hstring WindowNameForDisplay() const noexcept;
+        // bool IsQuakeWindow() const noexcept;
         bool IsElevated() const noexcept;
 
         void OpenSettingsUI();
         void WindowActivated(const bool activated);
 
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
+
+        TerminalApp::IWindowProperties WindowProperties();
+        void WindowProperties(const TerminalApp::IWindowProperties& props);
+        winrt::fire_and_forget WindowNameChanged();
+
+        // WINRT_PROPERTY(TerminalApp::IWindowProperties, WindowProperties, nullptr);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
@@ -192,8 +214,8 @@ namespace winrt::TerminalApp::implementation
         bool _isFullscreen{ false };
         bool _isMaximized{ false };
         bool _isAlwaysOnTop{ false };
-        winrt::hstring _WindowName{};
-        uint64_t _WindowId{ 0 };
+        // winrt::hstring _WindowName{};
+        // uint64_t _WindowId{ 0 };
         std::optional<uint32_t> _loadFromPersistedLayoutIdx{};
         uint64_t _numOpenWindows{ 0 };
 
@@ -229,6 +251,8 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::TextBox::LayoutUpdated_revoker _renamerLayoutUpdatedRevoker;
         int _renamerLayoutCount{ 0 };
         bool _renamerPressedEnter{ false };
+
+        TerminalApp::IWindowProperties _WindowProperties{ nullptr };
 
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowDialogHelper(const std::wstring_view& name);
 

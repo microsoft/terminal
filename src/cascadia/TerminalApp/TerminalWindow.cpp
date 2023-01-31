@@ -26,6 +26,7 @@ using namespace ::TerminalApp;
 namespace winrt
 {
     namespace MUX = Microsoft::UI::Xaml;
+    namespace WUX = Windows::UI::Xaml;
     using IInspectable = Windows::Foundation::IInspectable;
 }
 
@@ -154,6 +155,7 @@ namespace winrt::TerminalApp::implementation
     HRESULT TerminalWindow::Initialize(HWND hwnd)
     {
         _root = winrt::make_self<TerminalPage>();
+        _root->WindowProperties(*this);
         _dialog = ContentDialog{};
 
         // Pass commandline args into the TerminalPage.
@@ -612,38 +614,40 @@ namespace winrt::TerminalApp::implementation
                                                               commandlineSize.height);
         }
 
-        // GH#2061 - If the global setting "Always show tab bar" is
-        // set or if "Show tabs in title bar" is set, then we'll need to add
-        // the height of the tab bar here.
-        if (_settings.GlobalSettings().ShowTabsInTitlebar())
-        {
-            // If we're showing the tabs in the titlebar, we need to use a
-            // TitlebarControl here to calculate how much space to reserve.
-            //
-            // We'll create a fake TitlebarControl, and we'll propose an
-            // available size to it with Measure(). After Measure() is called,
-            // the TitlebarControl's DesiredSize will contain the _unscaled_
-            // size that the titlebar would like to use. We'll use that as part
-            // of the height calculation here.
-            auto titlebar = TitlebarControl{ static_cast<uint64_t>(0) };
-            titlebar.Measure({ SHRT_MAX, SHRT_MAX });
-            proposedSize.Height += (titlebar.DesiredSize().Height) * scale;
-        }
-        else if (_settings.GlobalSettings().AlwaysShowTabs())
-        {
-            // Otherwise, let's use a TabRowControl to calculate how much extra
-            // space we'll need.
-            //
-            // Similarly to above, we'll measure it with an arbitrarily large
-            // available space, to make sure we get all the space it wants.
-            auto tabControl = TabRowControl();
-            tabControl.Measure({ SHRT_MAX, SHRT_MAX });
+        // TODO!
+        //
+        // // GH#2061 - If the global setting "Always show tab bar" is
+        // // set or if "Show tabs in title bar" is set, then we'll need to add
+        // // the height of the tab bar here.
+        // if (_settings.GlobalSettings().ShowTabsInTitlebar())
+        // {
+        //     // If we're showing the tabs in the titlebar, we need to use a
+        //     // TitlebarControl here to calculate how much space to reserve.
+        //     //
+        //     // We'll create a fake TitlebarControl, and we'll propose an
+        //     // available size to it with Measure(). After Measure() is called,
+        //     // the TitlebarControl's DesiredSize will contain the _unscaled_
+        //     // size that the titlebar would like to use. We'll use that as part
+        //     // of the height calculation here.
+        //     auto titlebar = TitlebarControl{ static_cast<uint64_t>(0) };
+        //     titlebar.Measure({ SHRT_MAX, SHRT_MAX });
+        //     proposedSize.Height += (titlebar.DesiredSize().Height) * scale;
+        // }
+        // else if (_settings.GlobalSettings().AlwaysShowTabs())
+        // {
+        //     // Otherwise, let's use a TabRowControl to calculate how much extra
+        //     // space we'll need.
+        //     //
+        //     // Similarly to above, we'll measure it with an arbitrarily large
+        //     // available space, to make sure we get all the space it wants.
+        //     auto tabControl = TabRowControl();
+        //     tabControl.Measure({ SHRT_MAX, SHRT_MAX });
 
-            // For whatever reason, there's about 10px of unaccounted-for space
-            // in the application. I couldn't tell you where these 10px are
-            // coming from, but they need to be included in this math.
-            proposedSize.Height += (tabControl.DesiredSize().Height + 10) * scale;
-        }
+        //     // For whatever reason, there's about 10px of unaccounted-for space
+        //     // in the application. I couldn't tell you where these 10px are
+        //     // coming from, but they need to be included in this math.
+        //     proposedSize.Height += (tabControl.DesiredSize().Height + 10) * scale;
+        // }
 
         return proposedSize;
     }
@@ -900,7 +904,10 @@ namespace winrt::TerminalApp::implementation
     }
     void TerminalWindow::WindowActivated(const bool activated)
     {
-        _root->WindowActivated(activated);
+        if (_root)
+        {
+            _root->WindowActivated(activated);
+        }
     }
 
     // Method Description:
@@ -1088,28 +1095,28 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::hstring TerminalWindow::WindowName()
-    {
-        return _root ? _root->WindowName() : L"";
-    }
-    void TerminalWindow::WindowName(const winrt::hstring& name)
-    {
-        if (_root)
-        {
-            _root->WindowName(name);
-        }
-    }
-    uint64_t TerminalWindow::WindowId()
-    {
-        return _root ? _root->WindowId() : 0;
-    }
-    void TerminalWindow::WindowId(const uint64_t& id)
-    {
-        if (_root)
-        {
-            _root->WindowId(id);
-        }
-    }
+    // winrt::hstring TerminalWindow::WindowName()
+    // {
+    //     return _root ? _root->WindowName() : L"";
+    // }
+    // void TerminalWindow::WindowName(const winrt::hstring& name)
+    // {
+    //     if (_root)
+    //     {
+    //         _root->WindowName(name);
+    //     }
+    // }
+    // uint64_t TerminalWindow::WindowId()
+    // {
+    //     return _root ? _root->WindowId() : 0;
+    // }
+    // void TerminalWindow::WindowId(const uint64_t& id)
+    // {
+    //     if (_root)
+    //     {
+    //         _root->WindowId(id);
+    //     }
+    // }
 
     void TerminalWindow::SetPersistedLayoutIdx(const uint32_t idx)
     {
@@ -1136,10 +1143,10 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    bool TerminalWindow::IsQuakeWindow() const noexcept
-    {
-        return _root->IsQuakeWindow();
-    }
+    // bool TerminalWindow::IsQuakeWindow() const noexcept
+    // {
+    //     return _root->IsQuakeWindow();
+    // }
 
     void TerminalWindow::RequestExitFullscreen()
     {
@@ -1160,4 +1167,76 @@ namespace winrt::TerminalApp::implementation
             _root->SetSettings(_settings, true);
         }
     }
+
+    ////////////////////////////////////////////////////////////////////////////
+
+    // WindowName is a otherwise generic WINRT_OBSERVABLE_PROPERTY, but it needs
+    // to raise a PropertyChanged for WindowNameForDisplay, instead of
+    // WindowName.
+    winrt::hstring TerminalWindow::WindowName() const noexcept
+    {
+        return _WindowName;
+    }
+
+    void TerminalWindow::WindowName(const winrt::hstring& value)
+    {
+        // const auto oldIsQuakeMode = IsQuakeWindow();
+        const auto changed = _WindowName != value;
+        if (changed)
+        {
+            _WindowName = value;
+            if (_root)
+                _root->WindowNameChanged(); // TODO! is bodge
+        }
+    }
+
+    // WindowId is a otherwise generic WINRT_OBSERVABLE_PROPERTY, but it needs
+    // to raise a PropertyChanged for WindowIdForDisplay, instead of
+    // WindowId.
+    uint64_t TerminalWindow::WindowId() const noexcept
+    {
+        return _WindowId;
+    }
+    void TerminalWindow::WindowId(const uint64_t& value)
+    {
+        if (_WindowId != value)
+        {
+            _WindowId = value;
+            if (_root)
+                _root->WindowNameChanged(); // TODO! is bodge
+            // _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowIdForDisplay" });
+        }
+    }
+
+    // Method Description:
+    // - Returns a label like "Window: 1234" for the ID of this window
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - a string for displaying the name of the window.
+    winrt::hstring TerminalWindow::WindowIdForDisplay() const noexcept
+    {
+        return winrt::hstring{ fmt::format(L"{}: {}",
+                                           std::wstring_view(RS_(L"WindowIdLabel")),
+                                           _WindowId) };
+    }
+
+    // Method Description:
+    // - Returns a label like "<unnamed window>" when the window has no name, or the name of the window.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - a string for displaying the name of the window.
+    winrt::hstring TerminalWindow::WindowNameForDisplay() const noexcept
+    {
+        return _WindowName.empty() ?
+                   winrt::hstring{ fmt::format(L"<{}>", RS_(L"UnnamedWindowName")) } :
+                   _WindowName;
+    }
+
+    bool TerminalWindow::IsQuakeWindow() const noexcept
+    {
+        return WindowName() == QuakeWindowName;
+    }
+    ////////////////////////////////////////////////////////////////////////////
 };

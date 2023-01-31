@@ -121,18 +121,19 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic) noexcept :
         _BecomeMonarch(nullptr, nullptr);
     }
 
-    // Create a throttled function for updating the window state, to match the
-    // one requested by the pty. A 200ms delay was chosen because it's the
-    // typical animation timeout in Windows. This does result in a delay between
-    // the PTY requesting a change to the window state and the Terminal
-    // realizing it, but should mitigate issues where the Terminal and PTY get
-    // de-sync'd.
-    _showHideWindowThrottler = std::make_shared<ThrottledFuncTrailing<bool>>(
-        winrt::Windows::System::DispatcherQueue::GetForCurrentThread(),
-        std::chrono::milliseconds(200),
-        [this](const bool show) {
-            _window->ShowWindowChanged(show);
-        });
+    // TODO!
+    // // Create a throttled function for updating the window state, to match the
+    // // one requested by the pty. A 200ms delay was chosen because it's the
+    // // typical animation timeout in Windows. This does result in a delay between
+    // // the PTY requesting a change to the window state and the Terminal
+    // // realizing it, but should mitigate issues where the Terminal and PTY get
+    // // de-sync'd.
+    // _showHideWindowThrottler = std::make_shared<ThrottledFuncTrailing<bool>>(
+    //     winrt::Windows::System::DispatcherQueue::GetForCurrentThread(),
+    //     std::chrono::milliseconds(200),
+    //     [this](const bool show) {
+    //         _window->ShowWindowChanged(show);
+    //     });
 }
 
 AppHost::~AppHost()
@@ -1076,6 +1077,10 @@ void AppHost::_listenForInboundConnections()
 
 winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
 {
+    if (_windowLogic.GetRoot() == nullptr)
+    {
+        co_return;
+    }
     // The hotkey MUST be registered on the main thread. It will fail otherwise!
     co_await wil::resume_foreground(_windowLogic.GetRoot().Dispatcher());
 

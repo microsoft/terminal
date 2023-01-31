@@ -69,13 +69,13 @@ namespace winrt::TerminalApp::implementation
         void SaveWindowLayoutJsons(const Windows::Foundation::Collections::IVector<hstring>& layouts);
         void IdentifyWindow();
         void RenameFailed();
-        winrt::hstring WindowName();
-        void WindowName(const winrt::hstring& name);
-        uint64_t WindowId();
-        void WindowId(const uint64_t& id);
+        // winrt::hstring WindowName();
+        // void WindowName(const winrt::hstring& name);
+        // uint64_t WindowId();
+        // void WindowId(const uint64_t& id);
         void SetPersistedLayoutIdx(const uint32_t idx);
         void SetNumberOfOpenWindows(const uint64_t num);
-        bool IsQuakeWindow() const noexcept;
+        // bool IsQuakeWindow() const noexcept;
         void RequestExitFullscreen();
 
         Windows::Foundation::Size GetLaunchDimensions(uint32_t dpi);
@@ -110,6 +110,16 @@ namespace winrt::TerminalApp::implementation
         Microsoft::Terminal::Settings::Model::Theme Theme();
         void UpdateSettingsHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& arg);
 
+        // Normally, WindowName and WindowId would be
+        // WINRT_OBSERVABLE_PROPERTY's, but we want them to raise
+        // WindowNameForDisplay and WindowIdForDisplay instead
+        winrt::hstring WindowName() const noexcept;
+        void WindowName(const winrt::hstring& value);
+        uint64_t WindowId() const noexcept;
+        void WindowId(const uint64_t& value);
+        winrt::hstring WindowIdForDisplay() const noexcept;
+        winrt::hstring WindowNameForDisplay() const noexcept;
+        bool IsQuakeWindow() const noexcept;
         // -------------------------------- WinRT Events ---------------------------------
         // PropertyChanged is surprisingly not a typed event, so we'll define that one manually.
         // Usually we'd just do
@@ -119,6 +129,8 @@ namespace winrt::TerminalApp::implementation
         // our own event_. It's a FORWARDED_CALLBACK, essentially.
         winrt::event_token PropertyChanged(Windows::UI::Xaml::Data::PropertyChangedEventHandler const& handler) { return _root->PropertyChanged(handler); }
         void PropertyChanged(winrt::event_token const& token) { _root->PropertyChanged(token); }
+
+        // WINRT_PROPERTY(TerminalApp::WindowProperties, WindowProperties, nullptr);
 
         TYPED_EVENT(RequestedThemeChanged, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Settings::Model::Theme);
 
@@ -138,6 +150,9 @@ namespace winrt::TerminalApp::implementation
         ::TerminalApp::AppCommandlineArgs _appArgs;
         bool _gotSettingsStartupActions{ false };
         std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> _settingsStartupArgs{};
+
+        winrt::hstring _WindowName{};
+        uint64_t _WindowId{ 0 };
 
         uint64_t _numOpenWindows{ 0 };
 

@@ -403,9 +403,12 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
 // - nonClientSizeScaled: the exclusive non-client size (already scaled)
 // Return Value:
 // - The total dimension
-long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize, const long nonClientSize)
+long IslandWindow::_calculateTotalSize(const bool /*isWidth*/, const long clientSize, const long nonClientSize)
 {
-    return gsl::narrow_cast<int>(_pfnSnapDimensionCallback(isWidth, gsl::narrow_cast<float>(clientSize)) + nonClientSize);
+    return clientSize + nonClientSize;
+    // TODO!
+    //
+    // return gsl::narrow_cast<int>(_pfnSnapDimensionCallback(isWidth, gsl::narrow_cast<float>(clientSize)) + nonClientSize);
 }
 
 [[nodiscard]] LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
