@@ -350,6 +350,6 @@ void PtySignalInputThread::_DoSetWindowParent(const SetParentData& data)
 // - <none>
 void PtySignalInputThread::_Shutdown()
 {
-    // Trigger process shutdown.
-    CloseConsoleProcessState();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.GetVtIo()->SendCloseEvent();
 }

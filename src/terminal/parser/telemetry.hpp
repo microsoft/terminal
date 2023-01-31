@@ -48,7 +48,9 @@ namespace Microsoft::Console::VirtualTerminal
             SGR,
             DECSC,
             DECRC,
+            SM,
             DECSET,
+            RM,
             DECRST,
             DECKPAM,
             DECKPNM,
@@ -118,6 +120,7 @@ namespace Microsoft::Console::VirtualTerminal
             DECERA,
             DECSERA,
             DECSACE,
+            DECINVM,
             DECAC,
             DECPS,
             // Only use this last enum as a count of the number of codes.

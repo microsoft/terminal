@@ -9,6 +9,7 @@
 #include "NotificationIcon.h"
 #include <dwmapi.h>
 #include <TerminalThemeHelpers.h>
+#include <CoreWindow.h>
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
@@ -499,6 +500,24 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
                 return 0;
             }
         }
+
+        // BODGY This is a fix for the upstream:
+        //
+        // https://github.com/microsoft/microsoft-ui-xaml/issues/3577
+        //
+        // ContentDialogs don't resize themselves when the XAML island resizes.
+        // However, if we manually resize our CoreWindow, that'll actually
+        // trigger a resize of the ContentDialog.
+        if (const auto& coreWindow{ winrt::Windows::UI::Core::CoreWindow::GetForCurrentThread() })
+        {
+            if (const auto& interop{ coreWindow.as<ICoreWindowInterop>() })
+            {
+                HWND coreWindowInterop;
+                interop->get_WindowHandle(&coreWindowInterop);
+                PostMessage(coreWindowInterop, message, wparam, lparam);
+            }
+        }
+
         break;
     }
     case WM_MOVING:
@@ -655,6 +674,24 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         if (search != _systemMenuItems.end())
         {
             search->second.callback();
+        }
+        break;
+    }
+    case WM_SETTINGCHANGE:
+    {
+        // Currently, we only support checking when the OS theme changes. In
+        // that case, wParam is 0. Re-evaluate when we decide to reload env vars
+        // (GH#1125)
+        if (wparam == 0 && lparam != 0)
+        {
+            const std::wstring param{ (wchar_t*)lparam };
+            // ImmersiveColorSet seems to be the notification that the OS theme
+            // changed. If that happens, let the app know, so it can hot-reload
+            // themes, color schemes that might depend on the OS theme
+            if (param == L"ImmersiveColorSet")
+            {
+                _UpdateSettingsRequestedHandlers();
+            }
         }
         break;
     }
@@ -1881,4 +1918,43 @@ void IslandWindow::RemoveFromSystemMenu(const winrt::hstring& itemLabel)
         return;
     }
     _systemMenuItems.erase(it->first);
+}
+
+void IslandWindow::UseMica(const bool newValue, const double /*titlebarOpacity*/)
+{
+    // This block of code enables Mica for our window. By all accounts, this
+    // version of the code will only work on Windows 11, SV2. There's a slightly
+    // different API surface for enabling Mica on Windows 11 22000.0.
+    //
+    // This API was only publicly supported as of Windows 11 SV2, 22621. Before
+    // that version, this API will just return an error and do nothing silently.
+
+    const int attribute = newValue ? DWMSBT_MAINWINDOW : DWMSBT_NONE;
+    std::ignore = DwmSetWindowAttribute(GetHandle(), DWMWA_SYSTEMBACKDROP_TYPE, &attribute, sizeof(attribute));
+}
+
+// Method Description:
+// - This method is called when the window receives the WM_NCCREATE message.
+// Return Value:
+// - The value returned from the window proc.
+[[nodiscard]] LRESULT IslandWindow::OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept
+{
+    const auto ret = BaseWindow::OnNcCreate(wParam, lParam);
+    if (!ret)
+    {
+        return FALSE;
+    }
+
+    // This is a hack to make the window borders dark instead of light.
+    // It must be done before WM_NCPAINT so that the borders are rendered with
+    // the correct theme.
+    // For more information, see GH#6620.
+    //
+    // Theoretically, we don't need this anymore, since _updateTheme will update
+    // the darkness of our window. However, we're keeping this call to prevent
+    // the window from appearing as a white rectangle for a frame before we load
+    // the rest of the settings.
+    LOG_IF_FAILED(TerminalTrySetDarkTheme(_window.get(), true));
+
+    return TRUE;
 }

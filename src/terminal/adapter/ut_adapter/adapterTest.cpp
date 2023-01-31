@@ -60,10 +60,6 @@ using namespace Microsoft::Console::VirtualTerminal;
 class TestGetSet final : public ITerminalApi
 {
 public:
-    void PrintString(const std::wstring_view /*string*/) override
-    {
-    }
-
     void ReturnResponse(const std::wstring_view response) override
     {
         Log::Comment(L"ReturnResponse MOCK called...");
@@ -147,7 +143,7 @@ public:
         return _getLineFeedModeResult;
     }
 
-    void LineFeed(const bool withReturn) override
+    void LineFeed(const bool withReturn, const bool /*wrapForced*/) override
     {
         Log::Comment(L"LineFeed MOCK called...");
 
@@ -1389,7 +1385,7 @@ public:
 
         Log::Comment(L"Test 1: Verify failure when using bad status.");
         _testGetSet->PrepData();
-        VERIFY_IS_FALSE(_pDispatch->DeviceStatusReport((DispatchTypes::StatusType)-1));
+        VERIFY_IS_FALSE(_pDispatch->DeviceStatusReport((DispatchTypes::StatusType)-1, {}));
     }
 
     TEST_METHOD(DeviceStatus_OperatingStatusTests)
@@ -1398,7 +1394,7 @@ public:
 
         Log::Comment(L"Test 1: Verify good operating condition.");
         _testGetSet->PrepData();
-        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::OS_OperatingStatus));
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::OS_OperatingStatus, {}));
 
         _testGetSet->ValidateInputEvent(L"\x1b[0n");
     }
@@ -1421,7 +1417,7 @@ public:
             coordCursorExpected.x++;
             coordCursorExpected.y++;
 
-            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::CPR_CursorPositionReport));
+            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::CPR_CursorPositionReport, {}));
 
             wchar_t pwszBuffer[50];
 
@@ -1445,7 +1441,7 @@ public:
             // Then note that VT is 1,1 based for the top left, so add 1. (The rest of the console uses 0,0 for array index bases.)
             coordCursorExpectedFirst += til::point{ 1, 1 };
 
-            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::CPR_CursorPositionReport));
+            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::CPR_CursorPositionReport, {}));
 
             auto cursorPos = _testGetSet->_textBuffer->GetCursor().GetPosition();
             cursorPos.x++;
@@ -1455,7 +1451,7 @@ public:
             auto coordCursorExpectedSecond{ coordCursorExpectedFirst };
             coordCursorExpectedSecond += til::point{ 1, 1 };
 
-            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::CPR_CursorPositionReport));
+            VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::CPR_CursorPositionReport, {}));
 
             wchar_t pwszBuffer[50];
 
@@ -1484,11 +1480,78 @@ public:
         // Until we support paging (GH#13892) the reported page number should always be 1.
         const auto pageExpected = 1;
 
-        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::ExCPR_ExtendedCursorPositionReport));
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::ExCPR_ExtendedCursorPositionReport, {}));
 
         wchar_t pwszBuffer[50];
         swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[?%d;%d;%dR", coordCursorExpected.y, coordCursorExpected.x, pageExpected);
         _testGetSet->ValidateInputEvent(pwszBuffer);
+    }
+
+    TEST_METHOD(DeviceStatus_MacroSpaceReportTest)
+    {
+        Log::Comment(L"Starting test...");
+
+        // Space is measured in blocks of 16 bytes.
+        const auto availableSpace = MacroBuffer::MAX_SPACE / 16;
+
+        Log::Comment(L"Test 1: Verify maximum space available");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::MSR_MacroSpaceReport, {}));
+
+        wchar_t pwszBuffer[50];
+        swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[%zu*{", availableSpace);
+        _testGetSet->ValidateInputEvent(pwszBuffer);
+
+        Log::Comment(L"Test 2: Verify space decrease");
+        _testGetSet->PrepData();
+        // Define four 8-byte macros, i.e. 32 byes (2 macro blocks).
+        _stateMachine->ProcessString(L"\033P1;0;0!z12345678\033\\");
+        _stateMachine->ProcessString(L"\033P2;0;0!z12345678\033\\");
+        _stateMachine->ProcessString(L"\033P3;0;0!z12345678\033\\");
+        _stateMachine->ProcessString(L"\033P4;0;0!z12345678\033\\");
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::MSR_MacroSpaceReport, {}));
+
+        swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[%zu*{", availableSpace - 2);
+        _testGetSet->ValidateInputEvent(pwszBuffer);
+
+        Log::Comment(L"Test 3: Verify space reset");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch->HardReset());
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::MSR_MacroSpaceReport, {}));
+
+        swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[%zu*{", availableSpace);
+        _testGetSet->ValidateInputEvent(pwszBuffer);
+    }
+
+    TEST_METHOD(DeviceStatus_MemoryChecksumReportTest)
+    {
+        Log::Comment(L"Starting test...");
+
+        Log::Comment(L"Test 1: Verify initial checksum is 0");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::MEM_MemoryChecksum, 12));
+
+        _testGetSet->ValidateInputEvent(L"\033P12!~0000\033\\");
+
+        Log::Comment(L"Test 2: Verify checksum after macros defined");
+        _testGetSet->PrepData();
+        // Define a couple of text macros
+        _stateMachine->ProcessString(L"\033P1;0;0!zABCD\033\\");
+        _stateMachine->ProcessString(L"\033P2;0;0!zabcd\033\\");
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::MEM_MemoryChecksum, 34));
+
+        // Checksum is a 16-bit negated sum of the macro buffer characters.
+        const auto checksum = gsl::narrow_cast<uint16_t>(-('A' + 'B' + 'C' + 'D' + 'a' + 'b' + 'c' + 'd'));
+        wchar_t pwszBuffer[50];
+        swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\033P34!~%04X\033\\", checksum);
+        _testGetSet->ValidateInputEvent(pwszBuffer);
+
+        Log::Comment(L"Test 3: Verify checksum resets to 0");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch->HardReset());
+        VERIFY_IS_TRUE(_pDispatch->DeviceStatusReport(DispatchTypes::StatusType::MEM_MemoryChecksum, 56));
+
+        _testGetSet->ValidateInputEvent(L"\033P56!~0000\033\\");
     }
 
     TEST_METHOD(DeviceAttributesTests)
@@ -2360,6 +2423,154 @@ public:
         _testGetSet->_expectedOutputCP = CP_UTF8;
         VERIFY_IS_TRUE(_pDispatch->DesignateCodingSystem(DispatchTypes::CodingSystem::UTF8));
         VERIFY_IS_FALSE(_stateMachine->GetParserMode(StateMachine::Mode::AcceptC1));
+    }
+
+    TEST_METHOD(MacroDefinitions)
+    {
+        const auto getMacroText = [&](const auto id) {
+            return _pDispatch->_macroBuffer->_macros.at(id);
+        };
+
+        Log::Comment(L"Text encoding");
+        _stateMachine->ProcessString(L"\033P1;0;0!zText Encoding\033\\");
+        VERIFY_ARE_EQUAL(L"Text Encoding", getMacroText(1));
+
+        Log::Comment(L"Hex encoding (uppercase)");
+        _stateMachine->ProcessString(L"\033P2;0;1!z486578204A4B4C4D4E4F\033\\");
+        VERIFY_ARE_EQUAL(L"Hex JKLMNO", getMacroText(2));
+
+        Log::Comment(L"Hex encoding (lowercase)");
+        _stateMachine->ProcessString(L"\033P3;0;1!z486578206a6b6c6d6e6f\033\\");
+        VERIFY_ARE_EQUAL(L"Hex jklmno", getMacroText(3));
+
+        Log::Comment(L"Default encoding is text");
+        _stateMachine->ProcessString(L"\033P4;0;!zDefault Encoding\033\\");
+        VERIFY_ARE_EQUAL(L"Default Encoding", getMacroText(4));
+
+        Log::Comment(L"Default ID is 0");
+        _stateMachine->ProcessString(L"\033P;0;0!zDefault ID\033\\");
+        VERIFY_ARE_EQUAL(L"Default ID", getMacroText(0));
+
+        Log::Comment(L"Replacing a single macro");
+        _stateMachine->ProcessString(L"\033P1;0;0!zRetained\033\\");
+        _stateMachine->ProcessString(L"\033P2;0;0!zReplaced\033\\");
+        _stateMachine->ProcessString(L"\033P2;0;0!zNew\033\\");
+        VERIFY_ARE_EQUAL(L"Retained", getMacroText(1));
+        VERIFY_ARE_EQUAL(L"New", getMacroText(2));
+
+        Log::Comment(L"Replacing all macros");
+        _stateMachine->ProcessString(L"\033P1;0;0!zErased\033\\");
+        _stateMachine->ProcessString(L"\033P2;0;0!zReplaced\033\\");
+        _stateMachine->ProcessString(L"\033P2;1;0!zNew\033\\");
+        VERIFY_ARE_EQUAL(L"", getMacroText(1));
+        VERIFY_ARE_EQUAL(L"New", getMacroText(2));
+
+        Log::Comment(L"Default replacement is a single macro");
+        _stateMachine->ProcessString(L"\033P1;0;0!zRetained\033\\");
+        _stateMachine->ProcessString(L"\033P2;0;0!zReplaced\033\\");
+        _stateMachine->ProcessString(L"\033P2;;0!zNew\033\\");
+        VERIFY_ARE_EQUAL(L"Retained", getMacroText(1));
+        VERIFY_ARE_EQUAL(L"New", getMacroText(2));
+
+        Log::Comment(L"Repeating three times");
+        _stateMachine->ProcessString(L"\033P5;0;1!z526570656174!3;206563686F;207468726565\033\\");
+        VERIFY_ARE_EQUAL(L"Repeat echo echo echo three", getMacroText(5));
+
+        Log::Comment(L"Zero repeats once");
+        _stateMachine->ProcessString(L"\033P6;0;1!z526570656174!0;206563686F;207A65726F\033\\");
+        VERIFY_ARE_EQUAL(L"Repeat echo zero", getMacroText(6));
+
+        Log::Comment(L"Default repeats once");
+        _stateMachine->ProcessString(L"\033P7;0;1!z526570656174!;206563686F;2064656661756C74\033\\");
+        VERIFY_ARE_EQUAL(L"Repeat echo default", getMacroText(7));
+
+        Log::Comment(L"Unterminated repeat sequence");
+        _stateMachine->ProcessString(L"\033P8;0;1!z556E7465726D696E61746564!3;206563686F\033\\");
+        VERIFY_ARE_EQUAL(L"Unterminated echo echo echo", getMacroText(8));
+
+        Log::Comment(L"Unexpected semicolon cancels definition");
+        _stateMachine->ProcessString(L"\033P9;0;0!zReplaced\033\\");
+        _stateMachine->ProcessString(L"\033P9;0;1!z526570656174!3;206563;686F;207468726565\033\\");
+        VERIFY_ARE_EQUAL(L"", getMacroText(9));
+
+        Log::Comment(L"Control characters in a text encoding");
+        _stateMachine->ProcessString(L"\033P10;0;0!zA\aB\bC\tD\nE\vF\fG\rH\033\\");
+        VERIFY_ARE_EQUAL(L"ABCDEFGH", getMacroText(10));
+
+        Log::Comment(L"Control characters in a hex encoding");
+        _stateMachine->ProcessString(L"\033P11;0;1!z41\a42\b43\t44\n45\v46\f47\r48\033\\");
+        VERIFY_ARE_EQUAL(L"ABCDEFGH", getMacroText(11));
+
+        Log::Comment(L"Control characters in a repeat");
+        _stateMachine->ProcessString(L"\033P12;0;1!z!\a3\b;\t4\n1\v4\f2\r4\a3\b;\033\\");
+        VERIFY_ARE_EQUAL(L"ABCABCABC", getMacroText(12));
+
+        Log::Comment(L"Encoded control characters");
+        _stateMachine->ProcessString(L"\033P13;0;1!z410742084309440A450B460C470D481B49\033\\");
+        VERIFY_ARE_EQUAL(L"A\aB\bC\tD\nE\vF\fG\rH\033I", getMacroText(13));
+
+        _pDispatch->_macroBuffer = nullptr;
+    }
+
+    TEST_METHOD(MacroInvokes)
+    {
+        _pDispatch->_macroBuffer = std::make_shared<MacroBuffer>();
+
+        const auto setMacroText = [&](const auto id, const auto value) {
+            _pDispatch->_macroBuffer->_macros.at(id) = value;
+        };
+
+        setMacroText(0, L"Macro 0");
+        setMacroText(1, L"Macro 1");
+        setMacroText(2, L"Macro 2");
+        setMacroText(63, L"Macro 63");
+
+        const auto getBufferOutput = [&]() {
+            const auto& textBuffer = _testGetSet->GetTextBuffer();
+            const auto cursorPos = textBuffer.GetCursor().GetPosition();
+            return textBuffer.GetRowByOffset(cursorPos.y).GetText().substr(0, cursorPos.x);
+        };
+
+        Log::Comment(L"Simple macro invoke");
+        _testGetSet->PrepData();
+        _stateMachine->ProcessString(L"\033[2*z");
+        VERIFY_ARE_EQUAL(L"Macro 2", getBufferOutput());
+
+        Log::Comment(L"Default macro invoke");
+        _testGetSet->PrepData();
+        _stateMachine->ProcessString(L"\033[*z");
+        VERIFY_ARE_EQUAL(L"Macro 0", getBufferOutput());
+
+        Log::Comment(L"Maximum ID number");
+        _testGetSet->PrepData();
+        _stateMachine->ProcessString(L"\033[63*z");
+        VERIFY_ARE_EQUAL(L"Macro 63", getBufferOutput());
+
+        Log::Comment(L"Out of range ID number");
+        _testGetSet->PrepData();
+        _stateMachine->ProcessString(L"\033[64*z");
+        VERIFY_ARE_EQUAL(L"", getBufferOutput());
+
+        Log::Comment(L"Only one ID parameter allowed");
+        _testGetSet->PrepData();
+        _stateMachine->ProcessString(L"\033[2;0;1*z");
+        VERIFY_ARE_EQUAL(L"Macro 2", getBufferOutput());
+
+        Log::Comment(L"DECDMAC ignored when inside a macro");
+        setMacroText(10, L"[\033P1;0;0!zReplace Macro 1\033\\]");
+        _testGetSet->PrepData();
+        _stateMachine->ProcessString(L"\033[10*z");
+        _stateMachine->ProcessString(L"\033[1*z");
+        VERIFY_ARE_EQUAL(L"[]Macro 1", getBufferOutput());
+
+        Log::Comment(L"Maximum recursive depth is 16");
+        setMacroText(0, L"<\033[1*z>");
+        setMacroText(1, L"[\033[0*z]");
+        _testGetSet->PrepData();
+        _stateMachine->ProcessString(L"\033[0*z");
+        VERIFY_ARE_EQUAL(L"<[<[<[<[<[<[<[<[]>]>]>]>]>]>]>]>", getBufferOutput());
+
+        _pDispatch->_macroBuffer = nullptr;
     }
 
 private:

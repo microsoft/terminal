@@ -65,8 +65,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void UseDesktopBGImage(const bool useDesktop);
         bool BackgroundImageSettingsVisible();
 
-        Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> Schemes();
-        void Schemes(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& val);
+        void ClearColorScheme();
+        Editor::ColorSchemeViewModel CurrentColorScheme();
+        void CurrentColorScheme(const Editor::ColorSchemeViewModel& val);
 
         WINRT_PROPERTY(bool, IsDefault, false);
         WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
@@ -83,18 +84,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_appearance, RetroTerminalEffect);
         OBSERVABLE_PROJECTED_SETTING(_appearance, CursorShape);
         OBSERVABLE_PROJECTED_SETTING(_appearance, CursorHeight);
-        OBSERVABLE_PROJECTED_SETTING(_appearance, ColorSchemeName);
+        OBSERVABLE_PROJECTED_SETTING(_appearance, DarkColorSchemeName);
+        OBSERVABLE_PROJECTED_SETTING(_appearance, LightColorSchemeName);
         OBSERVABLE_PROJECTED_SETTING(_appearance, BackgroundImagePath);
         OBSERVABLE_PROJECTED_SETTING(_appearance, BackgroundImageOpacity);
         OBSERVABLE_PROJECTED_SETTING(_appearance, BackgroundImageStretchMode);
         OBSERVABLE_PROJECTED_SETTING(_appearance, BackgroundImageAlignment);
         OBSERVABLE_PROJECTED_SETTING(_appearance, IntenseTextStyle);
         OBSERVABLE_PROJECTED_SETTING(_appearance, AdjustIndistinguishableColors);
+        WINRT_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel>, SchemesList, _propertyChangedHandlers, nullptr);
 
     private:
         Model::AppearanceConfig _appearance;
         winrt::hstring _lastBgImagePath;
-        Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> _Schemes;
         float _cachedLineHeight = 0;
     };
 
@@ -108,9 +110,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // CursorShape visibility logic
         bool IsVintageCursor() const;
-
-        Model::ColorScheme CurrentColorScheme();
-        void CurrentColorScheme(const Model::ColorScheme& val);
 
         bool UsingMonospaceFont() const noexcept;
         bool ShowAllFonts() const noexcept;
@@ -128,7 +127,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         GETSET_BINDABLE_ENUM_SETTING(CursorShape, Microsoft::Terminal::Core::CursorStyle, Appearance().CursorShape);
         GETSET_BINDABLE_ENUM_SETTING(AdjustIndistinguishableColors, Microsoft::Terminal::Core::AdjustTextMode, Appearance().AdjustIndistinguishableColors);
-        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Model::ColorScheme>, ColorSchemeList, nullptr);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         DEPENDENCY_PROPERTY(Editor::AppearanceViewModel, Appearance);

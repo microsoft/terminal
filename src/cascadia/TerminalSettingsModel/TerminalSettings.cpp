@@ -57,7 +57,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         const auto globals = appSettings.GlobalSettings();
         settings->_ApplyProfileSettings(profile);
         settings->_ApplyGlobalSettings(globals);
-        settings->_ApplyAppearanceSettings(profile.DefaultAppearance(), globals.ColorSchemes());
+        settings->_ApplyAppearanceSettings(profile.DefaultAppearance(), globals.ColorSchemes(), globals.CurrentTheme());
 
         return settings;
     }
@@ -91,7 +91,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             const auto globals = appSettings.GlobalSettings();
             auto childImpl = settings->CreateChild();
-            childImpl->_ApplyAppearanceSettings(unfocusedAppearance, globals.ColorSchemes());
+            childImpl->_ApplyAppearanceSettings(unfocusedAppearance, globals.ColorSchemes(), globals.CurrentTheme());
             child = *childImpl;
         }
 
@@ -183,17 +183,40 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return settingsPair;
     }
 
-    void TerminalSettings::_ApplyAppearanceSettings(const IAppearanceConfig& appearance, const Windows::Foundation::Collections::IMapView<winrt::hstring, ColorScheme>& schemes)
+    void TerminalSettings::_ApplyAppearanceSettings(const IAppearanceConfig& appearance,
+                                                    const Windows::Foundation::Collections::IMapView<winrt::hstring, ColorScheme>& schemes,
+                                                    const winrt::Microsoft::Terminal::Settings::Model::Theme currentTheme)
     {
         _CursorShape = appearance.CursorShape();
         _CursorHeight = appearance.CursorHeight();
-        if (!appearance.ColorSchemeName().empty())
+
+        auto requestedTheme = currentTheme.RequestedTheme();
+        if (requestedTheme == winrt::Windows::UI::Xaml::ElementTheme::Default)
         {
-            if (const auto scheme = schemes.TryLookup(appearance.ColorSchemeName()))
+            requestedTheme = Model::Theme::IsSystemInDarkTheme() ?
+                                 winrt::Windows::UI::Xaml::ElementTheme::Dark :
+                                 winrt::Windows::UI::Xaml::ElementTheme::Light;
+        }
+
+        switch (requestedTheme)
+        {
+        case winrt::Windows::UI::Xaml::ElementTheme::Light:
+            if (const auto scheme = schemes.TryLookup(appearance.LightColorSchemeName()))
             {
                 ApplyColorScheme(scheme);
             }
+            break;
+        case winrt::Windows::UI::Xaml::ElementTheme::Dark:
+            if (const auto scheme = schemes.TryLookup(appearance.DarkColorSchemeName()))
+            {
+                ApplyColorScheme(scheme);
+            }
+            break;
+        case winrt::Windows::UI::Xaml::ElementTheme::Default:
+            // This shouldn't happen!
+            break;
         }
+
         if (appearance.Foreground())
         {
             _DefaultForeground = til::color{ appearance.Foreground().Value() };

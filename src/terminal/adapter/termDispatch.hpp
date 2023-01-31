@@ -82,11 +82,11 @@ public:
     bool PushGraphicsRendition(const VTParameters /*options*/) override { return false; } // XTPUSHSGR
     bool PopGraphicsRendition() override { return false; } // XTPOPSGR
 
-    bool SetMode(const DispatchTypes::ModeParams /*param*/) override { return false; } // DECSET
-    bool ResetMode(const DispatchTypes::ModeParams /*param*/) override { return false; } // DECRST
+    bool SetMode(const DispatchTypes::ModeParams /*param*/) override { return false; } // SM, DECSET
+    bool ResetMode(const DispatchTypes::ModeParams /*param*/) override { return false; } // RM, DECRST
     bool RequestMode(const DispatchTypes::ModeParams /*param*/) override { return false; } // DECRQM
 
-    bool DeviceStatusReport(const DispatchTypes::StatusType /*statusType*/) override { return false; } // DSR, DSR-OS, DSR-CPR
+    bool DeviceStatusReport(const DispatchTypes::StatusType /*statusType*/, const VTParameter /*id*/) override { return false; } // DSR
     bool DeviceAttributes() override { return false; } // DA1
     bool SecondaryDeviceAttributes() override { return false; } // DA2
     bool TertiaryDeviceAttributes() override { return false; } // DA3
@@ -132,6 +132,11 @@ public:
                                const DispatchTypes::DrcsFontUsage /*fontUsage*/,
                                const VTParameter /*cellHeight*/,
                                const DispatchTypes::DrcsCharsetSize /*charsetSize*/) override { return nullptr; } // DECDLD
+
+    StringHandler DefineMacro(const VTInt /*macroId*/,
+                              const DispatchTypes::MacroDeleteControl /*deleteControl*/,
+                              const DispatchTypes::MacroEncoding /*encoding*/) override { return nullptr; } // DECDMAC
+    bool InvokeMacro(const VTInt /*macroId*/) override { return false; } // DECINVM
 
     StringHandler RestoreTerminalState(const DispatchTypes::ReportFormat /*format*/) override { return nullptr; }; // DECRSTS
 

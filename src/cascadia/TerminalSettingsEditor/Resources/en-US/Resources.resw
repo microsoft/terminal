@@ -135,6 +135,14 @@
     <value>Duplicate</value>
     <comment>Button label that duplicates the selected profile and navigates to the duplicate's page.</comment>
   </data>
+  <data name="ColorScheme_SetAsDefault.Header" xml:space="preserve">
+    <value>Set color scheme as default</value>
+    <comment>This is the header for a control that allows the user to set the currently selected color scheme as their default.</comment>
+  </data>
+  <data name="ColorScheme_SetAsDefault.HelpText" xml:space="preserve">
+    <value>Apply this color scheme to all your profiles. This sets this color scheme in your 'Defaults' profile, it can still be overridden in each individual profile.</value>
+    <comment>A description explaining how this control changes the user's default color scheme.</comment>
+  </data>
   <data name="ColorScheme_Rename.Header" xml:space="preserve">
     <value>Rename color scheme</value>
     <comment>This is the header for a control that allows the user to rename the currently selected color scheme.</comment>
@@ -348,8 +356,8 @@
     <comment>The string to be displayed when there is no current value in the y-coordinate number box.</comment>
   </data>
   <data name="Globals_DefaultLaunchPositionCheckbox.Content" xml:space="preserve">
-    <value>Use system default</value>
-    <comment>A checkbox for the "launch position" setting. Toggling this control sets the launch position to the system default.</comment>
+    <value>Let Windows decide</value>
+    <comment>A checkbox for the "launch position" setting. Toggling this control sets the launch position to whatever the Windows operating system decides.</comment>
   </data>
   <data name="Globals_DefaultLaunchPositionCheckbox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>If enabled, use the system default launch position.</value>
@@ -1055,7 +1063,7 @@
     <comment>The header for the section where the unfocused appearance settings can be changed.</comment>
   </data>
   <data name="Profile_AddAppearanceButton.Text" xml:space="preserve">
-    <value>Add</value>
+    <value>Create Appearance</value>
     <comment>Button label that adds an unfocused appearance for this profile.</comment>
   </data>
   <data name="Profile_DeleteAppearanceButton.Text" xml:space="preserve">
@@ -1443,7 +1451,7 @@
   </data>
   <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Create Appearance</value>
-    <comment>Name for a control which creates an the unfocused appearance settings for this profile.</comment>
+    <comment>Name for a control which creates an the unfocused appearance settings for this profile. Text must match that of "Profile_AddAppearanceButton.Text".</comment>
   </data>
   <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Create an unfocused appearance for this profile. This will be the appearance of the profile when it is inactive.</value>
@@ -1574,7 +1582,7 @@
     <comment>Text label for a button that, when invoked, sets the selected color scheme as the default scheme to use.</comment>
   </data>
   <data name="Globals_ConfirmCloseAllTabs.Header" xml:space="preserve">
-    <value>Confirm before closing all tabs</value>
+    <value>Warn when closing more than one tab</value>
     <comment>Header for a control to toggle whether to show a confirm dialog box when closing the application with multiple tabs open.</comment>
   </data>
 </root>
