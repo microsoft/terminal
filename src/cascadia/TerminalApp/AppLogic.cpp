@@ -187,7 +187,7 @@ namespace winrt::TerminalApp::implementation
             _settings.GlobalSettings().ShowTabsInTitlebar(false);
         }
 
-        // TODO! These used to be in `_root->Initialized`:
+        // TODO! These used to be in `_root->Initialized`. Where do they belong now?
         {
             // Both LoadSettings and ReloadSettings are supposed to call this function,
             // but LoadSettings skips it, so that the UI starts up faster.
@@ -262,7 +262,6 @@ namespace winrt::TerminalApp::implementation
                 _warnings.push_back(newSettings.Warnings().GetAt(i));
             }
 
-            // TODO! These _settingsAppArgs need to get plumbed into TerminalWindow somehow
             _hasSettingsStartupActions = false;
             const auto startupActions = newSettings.GlobalSettings().StartupActions();
             if (!startupActions.empty())

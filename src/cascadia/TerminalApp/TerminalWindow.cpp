@@ -211,8 +211,6 @@ namespace winrt::TerminalApp::implementation
             _settings.GlobalSettings().ShowTabsInTitlebar(false);
         }
 
-        // TODO! handle startupActions
-        //
         // Pay attention, that even if some command line arguments were parsed (like launch mode),
         // we will not use the startup actions from settings.
         // While this simplifies the logic, we might want to reconsider this behavior in the future.
