@@ -102,7 +102,7 @@ void CommandNumberPopup::_handleEscape(COOKED_READ_DATA& cookedReadData) noexcep
 void CommandNumberPopup::_handleReturn(COOKED_READ_DATA& cookedReadData) noexcept
 {
     const auto commandNumber = til::safe_cast<short>(std::min(static_cast<size_t>(_parse()),
-                                                           cookedReadData.History().GetNumberOfCommands() - 1));
+                                                              cookedReadData.History().GetNumberOfCommands() - 1));
 
     CommandLine::Instance().EndAllPopups();
     SetCurrentCommandLine(cookedReadData, commandNumber);

@@ -2225,8 +2225,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         const auto padding = GetPadding();
         auto nonTerminalArea = static_cast<float>(widthOrHeight ?
-                                                           padding.Left + padding.Right :
-                                                           padding.Top + padding.Bottom);
+                                                      padding.Left + padding.Right :
+                                                      padding.Top + padding.Bottom);
 
         if (widthOrHeight && _core.Settings().ScrollState() != ScrollbarState::Hidden)
         {

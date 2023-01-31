@@ -71,7 +71,7 @@ namespace til
             const auto t = unsafe_cast<T>(u);
             if (details::narrow_failed(t, u))
             {
-                *pt = {};//NAN;
+                *pt = {}; //NAN;
                 return INTSAFE_E_ARITHMETIC_OVERFLOW;
             }
             *pt = t;
