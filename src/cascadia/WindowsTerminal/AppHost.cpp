@@ -182,27 +182,27 @@ void AppHost::SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable&
     }
 }
 
-void _buildArgsFromCommandline(std::vector<winrt::hstring>& args)
-{
-    if (auto commandline{ GetCommandLineW() })
-    {
-        auto argc = 0;
+// void _buildArgsFromCommandline(std::vector<winrt::hstring>& args)
+// {
+//     if (auto commandline{ GetCommandLineW() })
+//     {
+//         auto argc = 0;
 
-        // Get the argv, and turn them into a hstring array to pass to the app.
-        wil::unique_any<LPWSTR*, decltype(&::LocalFree), ::LocalFree> argv{ CommandLineToArgvW(commandline, &argc) };
-        if (argv)
-        {
-            for (auto& elem : wil::make_range(argv.get(), argc))
-            {
-                args.emplace_back(elem);
-            }
-        }
-    }
-    if (args.empty())
-    {
-        args.emplace_back(L"wt.exe");
-    }
-}
+//         // Get the argv, and turn them into a hstring array to pass to the app.
+//         wil::unique_any<LPWSTR*, decltype(&::LocalFree), ::LocalFree> argv{ CommandLineToArgvW(commandline, &argc) };
+//         if (argv)
+//         {
+//             for (auto& elem : wil::make_range(argv.get(), argc))
+//             {
+//                 args.emplace_back(elem);
+//             }
+//         }
+//     }
+//     if (args.empty())
+//     {
+//         args.emplace_back(L"wt.exe");
+//     }
+// }
 
 // Method Description:
 // - Retrieve any commandline args passed on the commandline, and pass them to
@@ -224,7 +224,7 @@ void _buildArgsFromCommandline(std::vector<winrt::hstring>& args)
 void AppHost::_HandleCommandlineArgs()
 {
     std::vector<winrt::hstring> args;
-    _buildArgsFromCommandline(args);
+    // _buildArgsFromCommandline(args);
     auto cwd{ wil::GetCurrentDirectoryW<std::wstring>() };
 
     Remoting::CommandlineArgs eventArgs{ { args }, { cwd } };

@@ -10,6 +10,7 @@
 #include "ProposeCommandlineResult.h"
 
 #include "Monarch.g.cpp"
+#include "WindowRequestedArgs.g.cpp"
 #include "../../types/inc/utils.hpp"
 
 using namespace winrt;

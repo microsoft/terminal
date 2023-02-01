@@ -4,7 +4,8 @@
 #include "pch.h"
 #include "WindowThread.h"
 
-WindowThread::WindowThread(const winrt::TerminalApp::AppLogic& logic) :
+WindowThread::WindowThread(const winrt::TerminalApp::AppLogic& logic,
+                           winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs /*args*/) :
     _host{ logic }
 {
 }

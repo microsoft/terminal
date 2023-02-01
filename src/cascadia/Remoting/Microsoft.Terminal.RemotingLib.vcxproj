@@ -51,6 +51,9 @@
     <ClInclude Include="WindowManager.h">
       <DependentUpon>WindowManager.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="WindowManager2.h">
+      <DependentUpon>WindowManager2.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="CommandlineArgs.h">
       <DependentUpon>Peasant.idl</DependentUpon>
     </ClInclude>
@@ -93,6 +96,9 @@
     <ClCompile Include="WindowManager.cpp">
       <DependentUpon>WindowManager.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="WindowManager2.cpp">
+      <DependentUpon>WindowManager2.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="CommandlineArgs.cpp">
       <DependentUpon>Peasant.idl</DependentUpon>
     </ClCompile>
@@ -104,6 +110,7 @@
     <Midl Include="Monarch.idl" />
     <Midl Include="Peasant.idl" />
     <Midl Include="WindowManager.idl" />
+    <Midl Include="WindowManager2.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>

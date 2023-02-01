@@ -18,6 +18,16 @@ namespace Microsoft.Terminal.Remoting
         Boolean ShouldCreateWindow { get; }; // If you name this `CreateWindow`, the compiler will explode
     }
 
+    [default_interface] runtimeclass WindowRequestedArgs {
+        WindowRequestedArgs(ProposeCommandlineResult result, CommandlineArgs command);
+
+        Windows.Foundation.IReference<UInt64> Id { get; };
+        String WindowName { get; };
+
+        String[] Commandline { get; };
+        String CurrentDirectory { get; };
+    }
+
     [default_interface] runtimeclass SummonWindowSelectionArgs {
         SummonWindowSelectionArgs();
         SummonWindowSelectionArgs(String windowName);

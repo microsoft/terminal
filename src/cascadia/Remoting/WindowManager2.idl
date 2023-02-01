@@ -1,0 +1,17 @@
+import "Peasant.idl";
+import "Monarch.idl";
+
+
+namespace Microsoft.Terminal.Remoting
+{
+    [default_interface] runtimeclass WindowManager2
+    {
+        WindowManager2();
+
+        ProposeCommandlineResult ProposeCommandline2(CommandlineArgs args);
+
+        event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
+
+
+    };
+}

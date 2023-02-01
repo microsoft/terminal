@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "BaseWindow.h"
-#include <winrt/TerminalApp.h>
 
 void SetWindowLongWHelper(const HWND hWnd, const int nIndex, const LONG dwNewLong) noexcept;
 
