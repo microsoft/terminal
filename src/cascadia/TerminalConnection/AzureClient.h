@@ -12,14 +12,24 @@ namespace Microsoft::Terminal::Azure
         std::wstring _code;
 
     public:
-        static bool IsErrorPayload(const web::json::value& errorObject)
+        static bool IsErrorPayload(const winrt::Windows::Data::Json::JsonObject& errorObject)
         {
-            return errorObject.has_string_field(L"error");
+            if (!errorObject.HasKey(L"error"))
+            {
+                return false;
+            }
+
+            if (errorObject.GetNamedValue(L"error").ValueType() != winrt::Windows::Data::Json::JsonValueType::String)
+            {
+                return false;
+            }
+
+            return true;
         }
 
-        AzureException(const web::json::value& errorObject) :
-            runtime_error(til::u16u8(errorObject.at(L"error_description").as_string())), // surface the human-readable description as .what()
-            _code(errorObject.at(L"error").as_string())
+        AzureException(const winrt::Windows::Data::Json::JsonObject& errorObject) :
+            runtime_error(til::u16u8(errorObject.GetNamedString(L"error_description"))), // surface the human-readable description as .what()
+            _code(errorObject.GetNamedString(L"error"))
         {
         }
 

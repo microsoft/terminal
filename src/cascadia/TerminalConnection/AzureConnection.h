@@ -71,13 +71,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         void _WriteStringWithNewline(const std::wstring_view str);
         void _WriteCaughtExceptionRecord();
-        web::json::value _SendRequestReturningJson(web::http::client::http_client& theClient, web::http::http_request theRequest);
-        web::json::value _SendAuthenticatedRequestReturningJson(web::http::client::http_client& theClient, web::http::http_request theRequest);
-        web::json::value _GetDeviceCode();
-        web::json::value _WaitForUser(utility::string_t deviceCode, int pollInterval, int expiresIn);
+        winrt::Windows::Data::Json::JsonObject _SendRequestReturningJson(std::wstring_view uri, const winrt::Windows::Web::Http::IHttpContent& content = nullptr, winrt::Windows::Web::Http::HttpMethod method = nullptr);
+        void _setAccessToken(std::wstring_view accessToken);
+        winrt::Windows::Data::Json::JsonObject _GetDeviceCode();
+        winrt::Windows::Data::Json::JsonObject _WaitForUser(utility::string_t deviceCode, int pollInterval, int expiresIn);
         void _PopulateTenantList();
         void _RefreshTokens();
-        web::json::value _GetCloudShellUserSettings();
+        winrt::Windows::Data::Json::JsonObject _GetCloudShellUserSettings();
         utility::string_t _GetCloudShell();
         utility::string_t _GetTerminal(utility::string_t shellType);
         void _StoreCredential();
@@ -95,9 +95,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         std::optional<std::wstring> _ReadUserInput(InputMode mode);
 
+        winrt::Windows::Web::Http::HttpClient _httpClient{ nullptr };
+        winrt::Windows::Networking::Sockets::StreamWebSocket _cloudShellSocket2{ nullptr };
         web::websockets::client::websocket_client _cloudShellSocket;
 
-        static std::optional<utility::string_t> _ParsePreferredShellType(const web::json::value& settingsResponse);
+        static std::optional<utility::string_t> _ParsePreferredShellType(const winrt::Windows::Data::Json::JsonObject& settingsResponse);
     };
 }
 
