@@ -25,6 +25,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 {
     struct TermControl : TermControlT<TermControl>
     {
+        TermControl(Control::ControlInteractivity content);
+
         TermControl(IControlSettings settings,
                     Control::IControlAppearance unfocusedAppearance,
                     TerminalConnection::ITerminalConnection connection);

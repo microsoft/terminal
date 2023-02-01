@@ -27,6 +27,8 @@ namespace TerminalApp
         void RunAsUwp();
         Boolean IsElevated();
 
+        ContentManager ContentManager { get; };
+
         Boolean HasSettingsStartupActions();
 
         void ReloadSettings();

@@ -50,6 +50,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     TermControl::TermControl(IControlSettings settings,
                              Control::IControlAppearance unfocusedAppearance,
                              TerminalConnection::ITerminalConnection connection) :
+        TermControl{ winrt::make<implementation::ControlInteractivity>(settings, unfocusedAppearance, connection) }
+    {
+    }
+
+    TermControl::TermControl(Control::ControlInteractivity content) :
+        _interactivity{ content },
         _isInternalScrollBarUpdate{ false },
         _autoScrollVelocity{ 0 },
         _autoScrollingPointerPoint{ std::nullopt },
@@ -61,7 +67,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         InitializeComponent();
 
-        _interactivity = winrt::make<implementation::ControlInteractivity>(settings, unfocusedAppearance, connection);
         _core = _interactivity.Core();
 
         // These events might all be triggered by the connection, but that

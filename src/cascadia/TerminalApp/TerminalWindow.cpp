@@ -135,7 +135,8 @@ static Documents::Run _BuildErrorRun(const winrt::hstring& text, const ResourceD
 
 namespace winrt::TerminalApp::implementation
 {
-    TerminalWindow::TerminalWindow(const CascadiaSettings& settings) :
+    TerminalWindow::TerminalWindow(const CascadiaSettings& settings, const TerminalApp::ContentManager& manager) :
+        _manager{ manager },
         _settings{ settings }
     {
         // For your own sanity, it's better to do setup outside the ctor.
@@ -154,7 +155,7 @@ namespace winrt::TerminalApp::implementation
     // - Implements the IInitializeWithWindow interface from shobjidl_core.
     HRESULT TerminalWindow::Initialize(HWND hwnd)
     {
-        _root = winrt::make_self<TerminalPage>();
+        _root = winrt::make_self<TerminalPage>(_manager);
         _root->WindowProperties(*this);
         _dialog = ContentDialog{};
 

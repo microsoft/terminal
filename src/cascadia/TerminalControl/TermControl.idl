@@ -3,6 +3,7 @@
 
 import "IMouseWheelListener.idl";
 import "IControlSettings.idl";
+import "ControlInteractivity.idl";
 import "IDirectKeyListener.idl";
 import "EventArgs.idl";
 import "ICoreState.idl";
@@ -17,6 +18,8 @@ namespace Microsoft.Terminal.Control
                                                    ICoreState,
                                                    Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
+        TermControl(ControlInteractivity content);
+
         TermControl(IControlSettings settings,
                     IControlAppearance unfocusedAppearance,
                     Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);

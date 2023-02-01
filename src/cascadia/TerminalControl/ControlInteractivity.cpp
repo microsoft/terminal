@@ -44,7 +44,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _lastMouseClickPos{},
         _selectionNeedsToBeCopied{ false }
     {
+        _guid = ::Microsoft::Console::Utils::CreateGuid();
+
         _core = winrt::make_self<ControlCore>(settings, unfocusedAppearance, connection);
+    }
+
+    winrt::guid ControlInteractivity::Id()
+    {
+        return _guid;
     }
 
     // Method Description:

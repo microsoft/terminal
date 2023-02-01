@@ -687,12 +687,17 @@ namespace winrt::TerminalApp::implementation
         {
             ReloadSettings();
         }
-        auto window = winrt::make_self<implementation::TerminalWindow>(_settings);
+        auto window = winrt::make_self<implementation::TerminalWindow>(_settings, _contentManager);
         this->SettingsChanged({ window->get_weak(), &implementation::TerminalWindow::UpdateSettingsHandler });
         if (_hasSettingsStartupActions)
         {
             window->SetSettingsStartupArgs(_settingsAppArgs.GetStartupActions());
         }
         return *window;
+    }
+
+    winrt::TerminalApp::ContentManager AppLogic::ContentManager()
+    {
+        return _contentManager;
     }
 }
