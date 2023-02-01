@@ -92,6 +92,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             winrt::Windows::UI::Xaml::Controls::Primitives::FlyoutShowOptions myOption{};
             // myOption.ShowMode = isTransient ? FlyoutShowMode.Transient : FlyoutShowMode.Standard;
             myOption.ShowMode(winrt::Windows::UI::Xaml::Controls::Primitives::FlyoutShowMode::Standard);
+            myOption.Placement(winrt::Windows::UI::Xaml::Controls::Primitives::FlyoutPlacementMode::Auto);
+
+            // Position the menu where the pointer is. This was the best way I found how.
+            til::point absolutePointerPos{ til::math::rounding, CoreWindow::GetForCurrentThread().PointerPosition() };
+            til::point absoluteWindowOrigin{ til::math::rounding,
+                                             CoreWindow::GetForCurrentThread().Bounds().X,
+                                             CoreWindow::GetForCurrentThread().Bounds().Y };
+            auto pos = (absolutePointerPos - absoluteWindowOrigin).to_winrt_point();
+            myOption.Position(pos);
+
             ContextMenu().ShowAt(*this, myOption);
         });
 
