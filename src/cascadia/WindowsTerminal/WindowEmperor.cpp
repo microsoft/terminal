@@ -101,8 +101,18 @@ void WindowEmperor::WaitForWindows()
 
     // Sleep(30000); //30s
 
-    MSG message;
+    // TODO! This creates a loop that never actually exits right now. It seems
+    // to get a message wehn another window is activated, but never a WM_CLOSE
+    // (that makes sense). It keeps running even when the threads all exit,
+    // which is INTERESTING for sure.
+    //
+    // what we should do:
+    // - Add an event to onarch to indicate that we should exit, because all the
+    //   peasants have exited.
+    // - We very well may need an HWND_MESSAGE that's connected to the main
+    //   thread, for processing global hotkeys. Consider that in the future too.
 
+    MSG message;
     while (GetMessage(&message, nullptr, 0, 0))
     {
         TranslateMessage(&message);

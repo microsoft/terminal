@@ -153,8 +153,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 // TODO! So, we wanted a new peasant. Cool!
                 //
                 // We need to fill in args.ResultTargetWindow,
-                // args.ResultTargetWindowName so that we can create the new window
-                // with those values.
+                // args.ResultTargetWindowName so that we can create the new
+                // window with those values. Otherwise, the very first window
+                // won't obey the given name / ID.
                 shouldCreateWindow = true;
                 auto result = winrt::make_self<ProposeCommandlineResult>(shouldCreateWindow);
                 result->Id();
