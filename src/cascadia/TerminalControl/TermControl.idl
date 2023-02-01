@@ -44,7 +44,9 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> ReadOnlyChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusFollowMouseRequested;
-        event Windows.Foundation.TypedEventHandler<Object, ContextMenuRequestedEventArgs> ContextMenuRequested;
+        // event Windows.Foundation.TypedEventHandler<Object, ContextMenuRequestedEventArgs> ContextMenuRequested;
+
+        Windows.UI.Xaml.Controls.CommandBarFlyout ContextMenu { get; };
 
         event Windows.Foundation.TypedEventHandler<TermControl, Windows.UI.Xaml.RoutedEventArgs> Initialized;
         // This is an event handler forwarder for the underlying connection.

@@ -1654,7 +1654,19 @@ namespace winrt::TerminalApp::implementation
 
         term.ShowWindowChanged({ get_weak(), &TerminalPage::_ShowWindowChangedHandler });
 
-        term.ContextMenuRequested({ get_weak(), &TerminalPage::_ContextMenuRequestedHandler });
+        // term.ContextMenuRequested({ get_weak(), &TerminalPage::_ContextMenuRequestedHandler });
+
+        term.ContextMenu().Opening([term](const auto&, const auto&) {
+            AppBarButton searchCommandBar{};
+            searchCommandBar.Icon(SymbolIcon{ Symbol::Find });
+            searchCommandBar.Label(L"Searchy search");
+            term.ContextMenu().PrimaryCommands().Append(searchCommandBar);
+
+            AppBarButton thingCommandBar{};
+            thingCommandBar.Icon(SymbolIcon{ Symbol::Share });
+            thingCommandBar.Label(L"Thingy do");
+            term.ContextMenu().SecondaryCommands().Append(thingCommandBar);
+        });
     }
 
     // Method Description:

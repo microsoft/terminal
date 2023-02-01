@@ -88,6 +88,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _interactivity.OpenHyperlink({ this, &TermControl::_HyperlinkHandler });
         _interactivity.ScrollPositionChanged({ this, &TermControl::_ScrollPositionChanged });
 
+        _interactivity.ContextMenuRequested([this](auto&&, auto&&) {
+            winrt::Windows::UI::Xaml::Controls::Primitives::FlyoutShowOptions myOption{};
+            // myOption.ShowMode = isTransient ? FlyoutShowMode.Transient : FlyoutShowMode.Standard;
+            myOption.ShowMode(winrt::Windows::UI::Xaml::Controls::Primitives::FlyoutShowMode::Standard);
+            ContextMenu().ShowAt(*this, myOption);
+        });
+
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
         _layoutUpdatedRevoker = SwapChainPanel().LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
@@ -135,6 +142,32 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
 
         _ApplyUISettings();
+
+        _originalPrimaryElements = winrt::single_threaded_observable_vector<Controls::ICommandBarElement>();
+        _originalSecondaryElements = winrt::single_threaded_observable_vector<Controls::ICommandBarElement>();
+        for (const auto& e : ContextMenu().PrimaryCommands())
+        {
+            _originalPrimaryElements.Append(e);
+        }
+        for (const auto& e : ContextMenu().SecondaryCommands())
+        {
+            _originalSecondaryElements.Append(e);
+        }
+        ContextMenu().Closed([weakThis = get_weak()](auto&&, auto&&) {
+            if (auto control{ weakThis.get() }; !control->_IsClosing())
+            {
+                control->ContextMenu().PrimaryCommands().Clear();
+                control->ContextMenu().SecondaryCommands().Clear();
+                for (const auto& e : control->_originalPrimaryElements)
+                {
+                    control->ContextMenu().PrimaryCommands().Append(e);
+                }
+                for (const auto& e : control->_originalSecondaryElements)
+                {
+                    control->ContextMenu().SecondaryCommands().Append(e);
+                }
+            }
+        });
     }
 
     void TermControl::_throttledUpdateScrollbar(const ScrollBarUpdate& update)

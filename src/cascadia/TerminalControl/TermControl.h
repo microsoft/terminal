@@ -148,7 +148,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         PROJECTED_FORWARDED_TYPED_EVENT(SetTaskbarProgress,     IInspectable, IInspectable, _core, TaskbarProgressChanged);
         PROJECTED_FORWARDED_TYPED_EVENT(ConnectionStateChanged, IInspectable, IInspectable, _core, ConnectionStateChanged);
         PROJECTED_FORWARDED_TYPED_EVENT(ShowWindowChanged,      IInspectable, Control::ShowWindowArgs, _core, ShowWindowChanged);
-        PROJECTED_FORWARDED_TYPED_EVENT(ContextMenuRequested,   IInspectable, Control::ContextMenuRequestedEventArgs, _interactivity, ContextMenuRequested);
+        // PROJECTED_FORWARDED_TYPED_EVENT(ContextMenuRequested,   IInspectable, Control::ContextMenuRequestedEventArgs, _interactivity, ContextMenuRequested);
         PROJECTED_FORWARDED_TYPED_EVENT(CloseTerminalRequested, IInspectable, IInspectable, _core, CloseTerminalRequested);
 
         PROJECTED_FORWARDED_TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs, _interactivity, PasteFromClipboard);
@@ -222,6 +222,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _rightClickPressed{ false };
 
         bool _isBackgroundLight{ false };
+
+        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalPrimaryElements{ nullptr };
+        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalSecondaryElements{ nullptr };
 
         inline bool _IsClosing() const noexcept
         {

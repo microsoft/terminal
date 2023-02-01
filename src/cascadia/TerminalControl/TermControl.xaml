@@ -31,6 +31,22 @@
              mc:Ignorable="d">
     <UserControl.Resources>
 
+        <CommandBarFlyout x:Name="ContextMenu">
+            <AppBarButton Icon="Copy"
+                          Label="Copy"
+                          ToolTipService.ToolTip="Copy" />
+            <AppBarButton Icon="Paste"
+                          Label="Paste"
+                          ToolTipService.ToolTip="Paste" />
+            <CommandBarFlyout.SecondaryCommands>
+                <AppBarButton x:Name="ResizeButton1"
+                              Label="Resize" />
+                <AppBarButton x:Name="MoveButton1"
+                              Label="Move" />
+            </CommandBarFlyout.SecondaryCommands>
+
+        </CommandBarFlyout>
+
         <!--
             BODGY: ControlsV2 changed the size of the scrollbars from 16dips to
             12dips. This is harder for folks to hit with the mouse, and isn't
@@ -1181,6 +1197,7 @@
         <Grid.Lights>
             <local:VisualBellLight x:Name="BellLight" />
         </Grid.Lights>
+
         <Image x:Name="BackgroundImage"
                AutomationProperties.AccessibilityView="Raw" />
         <Grid>
@@ -1200,7 +1217,6 @@
                 <SwapChainPanel x:Name="SwapChainPanel"
                                 CompositionScaleChanged="_SwapChainScaleChanged"
                                 SizeChanged="_SwapChainSizeChanged">
-
                     <Canvas x:Name="OverlayCanvas"
                             Visibility="Visible">
                         <Border x:Name="HyperlinkTooltipBorder"
