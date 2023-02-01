@@ -76,6 +76,8 @@ namespace Microsoft.Terminal.Remoting
         event Windows.Foundation.TypedEventHandler<Object, Object> WindowCreated;
         event Windows.Foundation.TypedEventHandler<Object, Object> WindowClosed;
         event Windows.Foundation.TypedEventHandler<Object, QuitAllRequestedArgs> QuitAllRequested;
+
+        event Windows.Foundation.TypedEventHandler<Object, WindowRequestedArgs> RequestNewWindow;
     };
 
     runtimeclass Monarch : [default] IMonarch

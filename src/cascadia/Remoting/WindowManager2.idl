@@ -38,5 +38,7 @@ namespace Microsoft.Terminal.Remoting
         event Windows.Foundation.TypedEventHandler<Object, Object> HideNotificationIconRequested;
 
 
+        event Windows.Foundation.TypedEventHandler<Object, WindowRequestedArgs> RequestNewWindow;
+
     };
 }

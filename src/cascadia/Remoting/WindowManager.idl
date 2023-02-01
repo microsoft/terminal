@@ -31,5 +31,6 @@ namespace Microsoft.Terminal.Remoting
         event Windows.Foundation.TypedEventHandler<Object, GetWindowLayoutArgs> GetWindowLayoutRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> ShowNotificationIconRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> HideNotificationIconRequested;
+
     };
 }

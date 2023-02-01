@@ -725,6 +725,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                     result->WindowName(targetWindowName);
                     result->ShouldCreateWindow(true);
 
+                    _RequestNewWindowHandlers(*this, *winrt::make_self<WindowRequestedArgs>(*result, args));
+
                     // If this fails, it'll be logged in the following
                     // TraceLoggingWrite statement, with succeeded=false
                 }
@@ -760,6 +762,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 auto result{ winrt::make_self<Remoting::implementation::ProposeCommandlineResult>(true) };
                 result->Id(windowID);
                 result->WindowName(targetWindowName);
+
+                _RequestNewWindowHandlers(*this, *winrt::make_self<WindowRequestedArgs>(*result, args));
+
                 return *result;
             }
         }
@@ -774,6 +779,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // In this case, no usable ID was provided. Return { true, nullopt }
         auto result = winrt::make_self<Remoting::implementation::ProposeCommandlineResult>(true);
         result->WindowName(targetWindowName);
+
+        _RequestNewWindowHandlers(*this, *winrt::make_self<WindowRequestedArgs>(*result, args));
+
         return *result;
     }
 

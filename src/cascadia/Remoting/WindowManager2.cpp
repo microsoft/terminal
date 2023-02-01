@@ -46,7 +46,28 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // * If we're running unpackaged: the .winmd must be a sibling of the .exe
         // * If we're running packaged: the .winmd must be in the package root
         _monarch = try_create_instance<Remoting::IMonarch>(Monarch_clsid,
-                                                       CLSCTX_LOCAL_SERVER);
+                                                           CLSCTX_LOCAL_SERVER);
+    }
+
+    // Check if we became the king, and if we are, wire up callbacks.
+    void WindowManager2::_createCallbacks()
+    {
+        assert(_monarch);
+        // Here, we're the king!
+        //
+        // This is where you should do any additional setup that might need to be
+        // done when we become the king. This will be called both for the first
+        // window, and when the current monarch dies.
+
+        _monarch.WindowCreated({ get_weak(), &WindowManager2::_WindowCreatedHandlers });
+        _monarch.WindowClosed({ get_weak(), &WindowManager2::_WindowClosedHandlers });
+        _monarch.FindTargetWindowRequested({ this, &WindowManager2::_raiseFindTargetWindowRequested });
+        _monarch.ShowNotificationIconRequested([this](auto&&, auto&&) { _ShowNotificationIconRequestedHandlers(*this, nullptr); });
+        _monarch.HideNotificationIconRequested([this](auto&&, auto&&) { _HideNotificationIconRequestedHandlers(*this, nullptr); });
+        _monarch.QuitAllRequested({ get_weak(), &WindowManager2::_QuitAllRequestedHandlers });
+
+        _monarch.RequestNewWindow({ get_weak(), &WindowManager2::_raiseRequestNewWindow });
+        // _BecameMonarchHandlers(*this, nullptr);
     }
 
     void WindowManager2::_registerAsMonarch()
@@ -56,6 +77,17 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                                    CLSCTX_LOCAL_SERVER,
                                                    REGCLS_MULTIPLEUSE,
                                                    &_registrationHostClass));
+    }
+
+    void WindowManager2::_raiseFindTargetWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
+                                                         const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args)
+    {
+        _FindTargetWindowRequestedHandlers(sender, args);
+    }
+    void WindowManager2::_raiseRequestNewWindow(const winrt::Windows::Foundation::IInspectable& sender,
+                                                const winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs& args)
+    {
+        _RequestNewWindowHandlers(sender, args);
     }
 
     Remoting::ProposeCommandlineResult WindowManager2::ProposeCommandline2(const Remoting::CommandlineArgs& args)
@@ -105,6 +137,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 // getting any windows.
                 _registerAsMonarch();
                 _createMonarch();
+                _createCallbacks();
                 if (!_monarch)
                 {
                     // TODO! something catastrophically bad happened here.

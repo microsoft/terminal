@@ -36,6 +36,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs);
         TYPED_EVENT(GetWindowLayoutRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::GetWindowLayoutArgs);
 
+        TYPED_EVENT(RequestNewWindow, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs);
+
     private:
         DWORD _registrationHostClass{ 0 };
         winrt::Microsoft::Terminal::Remoting::IMonarch _monarch{ nullptr };
@@ -46,6 +48,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void _proposeToMonarch(const Remoting::CommandlineArgs& args,
                                std::optional<uint64_t>& givenID,
                                winrt::hstring& givenName);
+
+        void _createCallbacks();
+        void _raiseFindTargetWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
+                                             const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args);
+        void _raiseRequestNewWindow(const winrt::Windows::Foundation::IInspectable& sender,
+                                    const winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs& args);
     };
 }
 

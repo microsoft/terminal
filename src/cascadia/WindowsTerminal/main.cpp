@@ -122,5 +122,8 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     if (emperor.HandleCommandlineArgs())
     {
         emperor.WaitForWindows();
+
+
+
     }
 }

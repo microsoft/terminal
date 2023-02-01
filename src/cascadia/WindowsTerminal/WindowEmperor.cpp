@@ -67,6 +67,10 @@ bool WindowEmperor::HandleCommandlineArgs()
     if (result.ShouldCreateWindow())
     {
         CreateNewWindowThread(Remoting::WindowRequestedArgs{ result, eventArgs });
+
+        _manager.RequestNewWindow([this](auto&&, const Remoting::WindowRequestedArgs& args) {
+            CreateNewWindowThread(args);
+        });
     }
 
     return result.ShouldCreateWindow();
@@ -95,7 +99,15 @@ void WindowEmperor::WaitForWindows()
     // one.join();
     // two.join();
 
-    Sleep(30000); //30s
+    // Sleep(30000); //30s
+
+    MSG message;
+
+    while (GetMessage(&message, nullptr, 0, 0))
+    {
+        TranslateMessage(&message);
+        DispatchMessage(&message);
+    }
 }
 
 void WindowEmperor::CreateNewWindowThread(Remoting::WindowRequestedArgs args)
