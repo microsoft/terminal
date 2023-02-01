@@ -95,13 +95,15 @@ void WindowEmperor::WaitForWindows()
     // one.join();
     // two.join();
 
-    Sleep(10000);
+    Sleep(30000); //30s
 }
 
 void WindowEmperor::CreateNewWindowThread(Remoting::WindowRequestedArgs args)
 {
-    _threads.emplace_back( [this, args]() {
-        WindowThread foo{ _app.Logic(), args };
+    Remoting::Peasant peasant{ _manager.CreateAPeasant(args) };
+
+    _threads.emplace_back([this, args, peasant]() {
+        WindowThread foo{ _app.Logic(), args, _manager, peasant };
         return foo.WindowProc();
-    } );
+    });
 }

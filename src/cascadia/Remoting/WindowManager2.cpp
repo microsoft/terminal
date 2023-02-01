@@ -25,6 +25,15 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     WindowManager2::WindowManager2()
     {
     }
+    WindowManager2::~WindowManager2()
+    {
+        // IMPORTANT! Tear down the registration as soon as we exit. If we're not a
+        // real peasant window (the monarch passed our commandline to someone else),
+        // then the monarch dies, we don't want our registration becoming the active
+        // monarch!
+        CoRevokeClassObject(_registrationHostClass);
+        _registrationHostClass = 0;
+    }
 
     void WindowManager2::_createMonarch()
     {
@@ -36,7 +45,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         //
         // * If we're running unpackaged: the .winmd must be a sibling of the .exe
         // * If we're running packaged: the .winmd must be in the package root
-        _monarch = create_instance<Remoting::IMonarch>(Monarch_clsid,
+        _monarch = try_create_instance<Remoting::IMonarch>(Monarch_clsid,
                                                        CLSCTX_LOCAL_SERVER);
     }
 
@@ -291,5 +300,146 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         //                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
         //                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
         // }
+    }
+
+    Remoting::Peasant WindowManager2::CreateAPeasant(Remoting::WindowRequestedArgs args)
+    {
+        auto p = winrt::make_self<Remoting::implementation::Peasant>();
+        if (args.Id())
+        {
+            p->AssignID(args.Id().Value());
+        }
+
+        // If the name wasn't specified, this will be an empty string.
+        p->WindowName(args.WindowName());
+
+        p->ExecuteCommandline(*winrt::make_self<CommandlineArgs>(args.Commandline(), args.CurrentDirectory()));
+
+        _monarch.AddPeasant(*p);
+
+        // TODO!
+        // _peasant.GetWindowLayoutRequested({ get_weak(), &WindowManager::_GetWindowLayoutRequestedHandlers });
+
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "WindowManager_CreateOurPeasant",
+                          TraceLoggingUInt64(p->GetID(), "peasantID", "The ID of our new peasant"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+        // If the peasant asks us to quit we should not try to act in future elections.
+        p->QuitRequested([weakThis{ get_weak() }](auto&&, auto&&) {
+            // if (auto wm = weakThis.get())
+            // {
+            //     wm->_monarchWaitInterrupt.SetEvent();
+            // }
+        });
+
+        return *p;
+    }
+
+    void WindowManager2::SignalClose(Remoting::Peasant peasant)
+    {
+        if (_monarch)
+        {
+            try
+            {
+                _monarch.SignalClose(peasant.GetID());
+            }
+            CATCH_LOG()
+        }
+    }
+
+    void WindowManager2::SummonWindow(const Remoting::SummonWindowSelectionArgs& args)
+    {
+        // We should only ever get called when we are the monarch, because only
+        // the monarch ever registers for the global hotkey. So the monarch is
+        // the only window that will be calling this.
+        _monarch.SummonWindow(args);
+    }
+
+    void WindowManager2::SummonAllWindows()
+    {
+        _monarch.SummonAllWindows();
+    }
+
+    Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> WindowManager2::GetPeasantInfos()
+    {
+        // We should only get called when we're the monarch since the monarch
+        // is the only one that knows about all peasants.
+        return _monarch.GetPeasantInfos();
+    }
+
+    uint64_t WindowManager2::GetNumberOfPeasants()
+    {
+        if (_monarch)
+        {
+            try
+            {
+                return _monarch.GetNumberOfPeasants();
+            }
+            CATCH_LOG()
+        }
+        return 0;
+    }
+
+    // Method Description:
+    // - Ask the monarch to show a notification icon.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    winrt::fire_and_forget WindowManager2::RequestShowNotificationIcon(Remoting::Peasant peasant)
+    {
+        co_await winrt::resume_background();
+        peasant.RequestShowNotificationIcon();
+    }
+
+    // Method Description:
+    // - Ask the monarch to hide its notification icon.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    winrt::fire_and_forget WindowManager2::RequestHideNotificationIcon(Remoting::Peasant peasant)
+    {
+        auto strongThis{ get_strong() };
+        co_await winrt::resume_background();
+        peasant.RequestHideNotificationIcon();
+    }
+
+    // Method Description:
+    // - Ask the monarch to quit all windows.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    winrt::fire_and_forget WindowManager2::RequestQuitAll(Remoting::Peasant peasant)
+    {
+        auto strongThis{ get_strong() };
+        co_await winrt::resume_background();
+        peasant.RequestQuitAll();
+    }
+
+    bool WindowManager2::DoesQuakeWindowExist()
+    {
+        return _monarch.DoesQuakeWindowExist();
+    }
+
+    void WindowManager2::UpdateActiveTabTitle(winrt::hstring title, Remoting::Peasant peasant)
+    {
+        winrt::get_self<implementation::Peasant>(peasant)->ActiveTabTitle(title);
+    }
+
+    Windows::Foundation::Collections::IVector<winrt::hstring> WindowManager2::GetAllWindowLayouts()
+    {
+        if (_monarch)
+        {
+            try
+            {
+                return _monarch.GetAllWindowLayouts();
+            }
+            CATCH_LOG()
+        }
+        return nullptr;
     }
 }

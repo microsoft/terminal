@@ -9,7 +9,11 @@
 class AppHost
 {
 public:
-    AppHost(const winrt::TerminalApp::AppLogic& logic) noexcept;
+    // AppHost(const winrt::TerminalApp::AppLogic& logic) noexcept;
+    AppHost(const winrt::TerminalApp::AppLogic& logic,
+            winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args,
+            const winrt::Microsoft::Terminal::Remoting::WindowManager2& manager,
+            const winrt::Microsoft::Terminal::Remoting::Peasant& peasant) noexcept;
     virtual ~AppHost();
 
     void AppTitleChanged(const winrt::Windows::Foundation::IInspectable& sender, winrt::hstring newTitle);
@@ -27,7 +31,8 @@ private:
     winrt::TerminalApp::AppLogic _appLogic;
     winrt::TerminalApp::TerminalWindow _windowLogic;
 
-    winrt::Microsoft::Terminal::Remoting::WindowManager _windowManager{ nullptr };
+    winrt::Microsoft::Terminal::Remoting::WindowManager2 _windowManager2{ nullptr };
+    winrt::Microsoft::Terminal::Remoting::Peasant _peasant{ nullptr };
 
     std::vector<winrt::Microsoft::Terminal::Settings::Model::GlobalSummonArgs> _hotkeys;
     winrt::com_ptr<IVirtualDesktopManager> _desktopManager{ nullptr };
@@ -35,10 +40,10 @@ private:
     bool _shouldCreateWindow{ false };
     bool _useNonClientArea{ false };
 
-    std::optional<til::throttled_func_trailing<>> _getWindowLayoutThrottler;
+    // std::optional<til::throttled_func_trailing<>> _getWindowLayoutThrottler;
     std::shared_ptr<ThrottledFuncTrailing<bool>> _showHideWindowThrottler;
-    winrt::Windows::Foundation::IAsyncAction _SaveWindowLayouts();
-    winrt::fire_and_forget _SaveWindowLayoutsRepeat();
+    // winrt::Windows::Foundation::IAsyncAction _SaveWindowLayouts();
+    // winrt::fire_and_forget _SaveWindowLayoutsRepeat();
 
     void _preInit();
 
@@ -69,11 +74,11 @@ private:
 
     winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> _GetWindowLayoutAsync();
 
-    void _FindTargetWindow(const winrt::Windows::Foundation::IInspectable& sender,
-                           const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args);
+    // void _FindTargetWindow(const winrt::Windows::Foundation::IInspectable& sender,
+    //                        const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args);
 
-    void _BecomeMonarch(const winrt::Windows::Foundation::IInspectable& sender,
-                        const winrt::Windows::Foundation::IInspectable& args);
+    // void _BecomeMonarch(const winrt::Windows::Foundation::IInspectable& sender,
+    //                     const winrt::Windows::Foundation::IInspectable& args);
     void _GlobalHotkeyPressed(const long hotkeyIndex);
     void _HandleSummon(const winrt::Windows::Foundation::IInspectable& sender,
                        const winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior& args);
