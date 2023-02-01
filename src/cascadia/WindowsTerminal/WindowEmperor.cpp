@@ -22,5 +22,14 @@ void WindowEmperor::WaitForWindows()
         WindowThread foo{ _app.Logic() };
         return foo.WindowProc();
     } };
+
+    Sleep(2000);
+
+    std::thread two{ [this]() {
+        WindowThread foo{ _app.Logic() };
+        return foo.WindowProc();
+    } };
+
     one.join();
+    two.join();
 }
