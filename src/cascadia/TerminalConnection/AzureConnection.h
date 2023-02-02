@@ -5,9 +5,6 @@
 
 #include "AzureConnection.g.h"
 
-#include <cpprest/http_client.h>
-#include <cpprest/http_listener.h>
-#include <cpprest/ws_client.h>
 #include <mutex>
 #include <condition_variable>
 
@@ -56,15 +53,15 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void _RunStoreState();
         void _RunConnectState();
 
-        const utility::string_t _loginUri{ U("https://login.microsoftonline.com/") };
-        const utility::string_t _resourceUri{ U("https://management.azure.com/") };
-        const utility::string_t _wantedResource{ U("https://management.core.windows.net/") };
+        const std::wstring_view _loginUri{ L"https://login.microsoftonline.com/" };
+        const std::wstring_view _resourceUri{ L"https://management.azure.com/" };
+        const std::wstring_view _wantedResource{ L"https://management.core.windows.net/" };
         const int _expireLimit{ 2700 };
-        utility::string_t _accessToken;
-        utility::string_t _refreshToken;
+        winrt::hstring _accessToken;
+        winrt::hstring _refreshToken;
         int _expiry{ 0 };
-        utility::string_t _cloudShellUri;
-        utility::string_t _terminalID;
+        winrt::hstring _cloudShellUri;
+        winrt::hstring _terminalID;
 
         std::vector<::Microsoft::Terminal::Azure::Tenant> _tenantList;
         std::optional<::Microsoft::Terminal::Azure::Tenant> _currentTenant;
@@ -74,12 +71,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         winrt::Windows::Data::Json::JsonObject _SendRequestReturningJson(std::wstring_view uri, const winrt::Windows::Web::Http::IHttpContent& content = nullptr, winrt::Windows::Web::Http::HttpMethod method = nullptr);
         void _setAccessToken(std::wstring_view accessToken);
         winrt::Windows::Data::Json::JsonObject _GetDeviceCode();
-        winrt::Windows::Data::Json::JsonObject _WaitForUser(utility::string_t deviceCode, int pollInterval, int expiresIn);
+        winrt::Windows::Data::Json::JsonObject _WaitForUser(const winrt::hstring& deviceCode, int pollInterval, int expiresIn);
         void _PopulateTenantList();
         void _RefreshTokens();
         winrt::Windows::Data::Json::JsonObject _GetCloudShellUserSettings();
-        utility::string_t _GetCloudShell();
-        utility::string_t _GetTerminal(utility::string_t shellType);
+        winrt::hstring _GetCloudShell();
+        winrt::hstring _GetTerminal(const winrt::hstring& shellType);
         void _StoreCredential();
         void _RemoveCredentials();
 
@@ -104,7 +101,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         std::wstring _u16Str{};
         std::array<char, 4096> _buffer{};
 
-        static std::optional<utility::string_t> _ParsePreferredShellType(const winrt::Windows::Data::Json::JsonObject& settingsResponse);
+        static winrt::hstring _ParsePreferredShellType(const winrt::Windows::Data::Json::JsonObject& settingsResponse);
     };
 }
 

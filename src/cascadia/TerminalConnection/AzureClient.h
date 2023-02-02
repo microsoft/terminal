@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include "cpprest/json.h"
-
 namespace Microsoft::Terminal::Azure
 {
     class AzureException : public std::runtime_error

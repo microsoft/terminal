@@ -22,8 +22,8 @@ using namespace ::Microsoft::Terminal::Azure;
 using namespace winrt::Windows::Security::Credentials;
 
 static constexpr int CurrentCredentialVersion = 1;
-static constexpr auto PasswordVaultResourceName = L"Terminal";
-static constexpr auto HttpUserAgent = L"Terminal/0.0";
+static constexpr std::wstring_view PasswordVaultResourceName = L"Terminal";
+static constexpr std::wstring_view HttpUserAgent = L"Terminal/0.0";
 
 static constexpr int USER_INPUT_COLOR = 93; // yellow - the color of something the user can type
 static constexpr int USER_INFO_COLOR = 97; // white - the color of clarifying information
@@ -602,7 +602,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         const auto expiresIn = std::stoi(winrt::to_string(deviceCodeResponse.GetNamedString(L"expires_in")));
 
         // Wait for user authentication and obtain the access/refresh tokens
-        auto authenticatedResponse = _WaitForUser(std::wstring{ devCode }, pollInterval, expiresIn);
+        auto authenticatedResponse = _WaitForUser(devCode, pollInterval, expiresIn);
         _setAccessToken(authenticatedResponse.GetNamedString(L"access_token"));
         _refreshToken = authenticatedResponse.GetNamedString(L"refresh_token");
 
@@ -713,18 +713,18 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - Helper function to parse the preferred shell type from user settings returned by cloud console API.
     // We need this function because the field might be missing in the settings
     // created with old versions of cloud console API.
-    std::optional<utility::string_t> AzureConnection::_ParsePreferredShellType(const WDJ::JsonObject& settingsResponse)
+    winrt::hstring AzureConnection::_ParsePreferredShellType(const WDJ::JsonObject& settingsResponse)
     {
         if (settingsResponse.HasKey(L"properties"))
         {
             const auto userSettings = settingsResponse.GetNamedObject(L"properties");
             if (userSettings.HasKey(L"preferredShellType"))
             {
-                return std::wstring{ userSettings.GetNamedString(L"preferredShellType") };
+                return userSettings.GetNamedString(L"preferredShellType");
             }
         }
 
-        return std::nullopt;
+        return winrt::hstring{};
     }
 
     // Method description:
@@ -746,9 +746,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _WriteStringWithNewline(RS_(L"AzureSuccess"));
 
         // Request for a terminal for said cloud shell
-        const auto shellType = _ParsePreferredShellType(settingsResponse);
+        auto shellType = _ParsePreferredShellType(settingsResponse);
+        if (shellType.empty())
+        {
+            shellType = L"pwsh";
+        }
+
         _WriteStringWithNewline(RS_(L"AzureRequestingTerminal"));
-        const auto socketUri = _GetTerminal(shellType.value_or(L"pwsh"));
+        const auto socketUri = _GetTerminal(shellType);
         _TerminalOutputHandlers(L"\r\n");
 
         //// Step 8: connecting to said terminal
@@ -847,7 +852,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // Return value:
     // - if authentication is done successfully, then return the response from the server
     // - else, throw an exception
-    WDJ::JsonObject AzureConnection::_WaitForUser(const utility::string_t deviceCode, int pollInterval, int expiresIn)
+    WDJ::JsonObject AzureConnection::_WaitForUser(const winrt::hstring& deviceCode, int pollInterval, int expiresIn)
     {
         auto uri{ fmt::format(L"{}common/oauth2/token", _loginUri) };
         WWH::HttpFormUrlEncodedContent content{
@@ -855,7 +860,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 { winrt::hstring{ L"grant_type" }, winrt::hstring{ L"device_code" } },
                 { winrt::hstring{ L"client_id" }, winrt::hstring{ AzureClientID } },
                 { winrt::hstring{ L"resource" }, winrt::hstring{ _wantedResource } },
-                { winrt::hstring{ L"code" }, winrt::hstring{ deviceCode } },
+                { winrt::hstring{ L"code" }, deviceCode },
             }
         };
 
@@ -947,7 +952,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - helper function to request for a cloud shell
     // Return value:
     // - the uri for the cloud shell
-    utility::string_t AzureConnection::_GetCloudShell()
+    winrt::hstring AzureConnection::_GetCloudShell()
     {
         auto uri{ fmt::format(L"{}providers/Microsoft.Portal/consoles/default?api-version=2020-04-01-preview", _resourceUri) };
 
@@ -960,14 +965,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         const auto cloudShell = _SendRequestReturningJson(uri, content, WWH::HttpMethod::Put());
 
         // Return the uri
-        return std::wstring{ cloudShell.GetNamedObject(L"properties").GetNamedString(L"uri") } + L"/";
+        return winrt::hstring{ std::wstring{ cloudShell.GetNamedObject(L"properties").GetNamedString(L"uri") } + L"/" };
     }
 
     // Method description:
     // - helper function to request for a terminal
     // Return value:
     // - the uri for the terminal
-    utility::string_t AzureConnection::_GetTerminal(utility::string_t shellType)
+    winrt::hstring AzureConnection::_GetTerminal(const winrt::hstring& shellType)
     {
         auto uri{ fmt::format(L"{}terminals?cols={}&rows={}&version=2019-01-01&shell={}", _cloudShellUri, _initialCols, _initialRows, shellType) };
 
@@ -982,7 +987,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _terminalID = terminalResponse.GetNamedString(L"id");
 
         // Return the uri
-        return std::wstring{ terminalResponse.GetNamedString(L"socketUri") };
+        return terminalResponse.GetNamedString(L"socketUri");
     }
 
     // Method description:
