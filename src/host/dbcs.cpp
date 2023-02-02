@@ -194,7 +194,7 @@ _Ret_range_(0, cbAnsi)
 
     memcpy(TmpUni, pwchUnicode, cchUnicode * sizeof(WCHAR));
 
-    BYTE AsciiDbcs[2];
+    CHAR AsciiDbcs[2];
     AsciiDbcs[1] = 0;
 
     ULONG i, j;
