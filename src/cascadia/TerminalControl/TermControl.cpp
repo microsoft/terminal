@@ -3237,22 +3237,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                           Control::ContextMenuRequestedEventArgs args)
     {
         Controls::Primitives::FlyoutShowOptions myOption{};
-        // myOption.ShowMode = isTransient ? FlyoutShowMode.Transient : FlyoutShowMode.Standard;
         myOption.ShowMode(Controls::Primitives::FlyoutShowMode::Standard);
         myOption.Placement(Controls::Primitives::FlyoutPlacementMode::TopEdgeAlignedLeft);
 
         // Position the menu where the pointer is. This was the best way I found how.
-        til::point absolutePointerPos{ til::math::rounding, CoreWindow::GetForCurrentThread().PointerPosition() };
-        til::point absoluteWindowOrigin{ til::math::rounding,
-                                         CoreWindow::GetForCurrentThread().Bounds().X,
-                                         CoreWindow::GetForCurrentThread().Bounds().Y };
+        const til::point absolutePointerPos{ til::math::rounding, CoreWindow::GetForCurrentThread().PointerPosition() };
+        const til::point absoluteWindowOrigin{ til::math::rounding,
+                                               CoreWindow::GetForCurrentThread().Bounds().X,
+                                               CoreWindow::GetForCurrentThread().Bounds().Y };
         // Get the offset (margin + tabs, etc..) of the control within the window
         const til::point controlOrigin{ til::math::flooring,
                                         this->TransformToVisual(nullptr).TransformPoint(Windows::Foundation::Point(0, 0)) };
 
-        // TODO! This is off by the origin of the TermControl within the window.
-        // SPlit a pane and click on the right or bottom one, you'll see what I mean.
-        auto pos = (absolutePointerPos - absoluteWindowOrigin - controlOrigin).to_winrt_point();
+        const auto pos = (absolutePointerPos - absoluteWindowOrigin - controlOrigin).to_winrt_point();
         myOption.Position(pos);
 
         if (args.SelectedText().empty())
@@ -3264,6 +3261,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             SelectionContextMenu().ShowAt(*this, myOption);
         }
     }
+
     void TermControl::_PasteCommandHandler(const IInspectable& /*sender*/,
                                            const IInspectable& /*args*/)
     {

@@ -60,9 +60,6 @@
     <Page Include="CommandPalette.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="ControlContextMenu.xaml">
-      <SubType>Designer</SubType>
-    </Page>
   </ItemGroup>
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
@@ -142,9 +139,6 @@
       <DependentUpon>AppLogic.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Toast.h" />
-    <ClInclude Include="ControlContextMenu.h">
-      <DependentUpon>ControlContextMenu.xaml</DependentUpon>
-    </ClInclude>
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
@@ -239,9 +233,6 @@
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="Toast.cpp" />
-    <ClCompile Include="ControlContextMenu.cpp">
-      <DependentUpon>ControlContextMenu.xaml</DependentUpon>
-    </ClCompile>
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
@@ -303,10 +294,6 @@
     </Midl>
     <Midl Include="FilteredCommand.idl" />
     <Midl Include="EmptyStringVisibilityConverter.idl" />
-    <Midl Include="ControlContextMenu.idl">
-      <DependentUpon>ControlContextMenu.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Midl>
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
