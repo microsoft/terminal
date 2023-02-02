@@ -88,22 +88,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _interactivity.OpenHyperlink({ this, &TermControl::_HyperlinkHandler });
         _interactivity.ScrollPositionChanged({ this, &TermControl::_ScrollPositionChanged });
 
-        _interactivity.ContextMenuRequested([this](auto&&, auto&&) {
-            winrt::Windows::UI::Xaml::Controls::Primitives::FlyoutShowOptions myOption{};
-            // myOption.ShowMode = isTransient ? FlyoutShowMode.Transient : FlyoutShowMode.Standard;
-            myOption.ShowMode(winrt::Windows::UI::Xaml::Controls::Primitives::FlyoutShowMode::Standard);
-            myOption.Placement(winrt::Windows::UI::Xaml::Controls::Primitives::FlyoutPlacementMode::Auto);
-
-            // Position the menu where the pointer is. This was the best way I found how.
-            til::point absolutePointerPos{ til::math::rounding, CoreWindow::GetForCurrentThread().PointerPosition() };
-            til::point absoluteWindowOrigin{ til::math::rounding,
-                                             CoreWindow::GetForCurrentThread().Bounds().X,
-                                             CoreWindow::GetForCurrentThread().Bounds().Y };
-            auto pos = (absolutePointerPos - absoluteWindowOrigin).to_winrt_point();
-            myOption.Position(pos);
-
-            ContextMenu().ShowAt(*this, myOption);
-        });
+        _interactivity.ContextMenuRequested({ this, &TermControl::_contextMenuHandler });
 
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
@@ -155,6 +140,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _originalPrimaryElements = winrt::single_threaded_observable_vector<Controls::ICommandBarElement>();
         _originalSecondaryElements = winrt::single_threaded_observable_vector<Controls::ICommandBarElement>();
+        _originalSelectedPrimaryElements = winrt::single_threaded_observable_vector<Controls::ICommandBarElement>();
+        _originalSelectedSecondaryElements = winrt::single_threaded_observable_vector<Controls::ICommandBarElement>();
         for (const auto& e : ContextMenu().PrimaryCommands())
         {
             _originalPrimaryElements.Append(e);
@@ -162,6 +149,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         for (const auto& e : ContextMenu().SecondaryCommands())
         {
             _originalSecondaryElements.Append(e);
+        }
+        for (const auto& e : SelectionContextMenu().PrimaryCommands())
+        {
+            _originalSelectedPrimaryElements.Append(e);
+        }
+        for (const auto& e : SelectionContextMenu().SecondaryCommands())
+        {
+            _originalSelectedSecondaryElements.Append(e);
         }
         ContextMenu().Closed([weakThis = get_weak()](auto&&, auto&&) {
             if (auto control{ weakThis.get() }; !control->_IsClosing())
@@ -175,6 +170,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 for (const auto& e : control->_originalSecondaryElements)
                 {
                     control->ContextMenu().SecondaryCommands().Append(e);
+                }
+            }
+        });
+        SelectionContextMenu().Closed([weakThis = get_weak()](auto&&, auto&&) {
+            if (auto control{ weakThis.get() }; !control->_IsClosing())
+            {
+                control->SelectionContextMenu().PrimaryCommands().Clear();
+                control->SelectionContextMenu().SecondaryCommands().Clear();
+                for (const auto& e : control->_originalSelectedPrimaryElements)
+                {
+                    control->SelectionContextMenu().PrimaryCommands().Append(e);
+                }
+                for (const auto& e : control->_originalSelectedSecondaryElements)
+                {
+                    control->SelectionContextMenu().SecondaryCommands().Append(e);
                 }
             }
         });
@@ -3222,4 +3232,52 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _core.ColorSelection(fg, bg, matchMode);
     }
+
+    void TermControl::_contextMenuHandler(IInspectable /*sender*/,
+                                          Control::ContextMenuRequestedEventArgs args)
+    {
+        Controls::Primitives::FlyoutShowOptions myOption{};
+        // myOption.ShowMode = isTransient ? FlyoutShowMode.Transient : FlyoutShowMode.Standard;
+        myOption.ShowMode(Controls::Primitives::FlyoutShowMode::Standard);
+        myOption.Placement(Controls::Primitives::FlyoutPlacementMode::TopEdgeAlignedLeft);
+
+        // Position the menu where the pointer is. This was the best way I found how.
+        til::point absolutePointerPos{ til::math::rounding, CoreWindow::GetForCurrentThread().PointerPosition() };
+        til::point absoluteWindowOrigin{ til::math::rounding,
+                                         CoreWindow::GetForCurrentThread().Bounds().X,
+                                         CoreWindow::GetForCurrentThread().Bounds().Y };
+        // Get the offset (margin + tabs, etc..) of the control within the window
+        const til::point controlOrigin{ til::math::flooring,
+                                        this->TransformToVisual(nullptr).TransformPoint(Windows::Foundation::Point(0, 0)) };
+
+        // TODO! This is off by the origin of the TermControl within the window.
+        // SPlit a pane and click on the right or bottom one, you'll see what I mean.
+        auto pos = (absolutePointerPos - absoluteWindowOrigin - controlOrigin).to_winrt_point();
+        myOption.Position(pos);
+
+        if (args.SelectedText().empty())
+        {
+            ContextMenu().ShowAt(*this, myOption);
+        }
+        else
+        {
+            SelectionContextMenu().ShowAt(*this, myOption);
+        }
+    }
+    void TermControl::_PasteCommandHandler(const IInspectable& sender, const IInspectable& args)
+    {
+        sender;
+        args; // TODO!
+    }
+    void TermControl::_CopyCommandHandler(const IInspectable& sender, const IInspectable& args)
+    {
+        sender;
+        args; // TODO!
+    }
+    void TermControl::_SearchCommandHandler(const IInspectable& sender, const IInspectable& args)
+    {
+        sender;
+        args; // TODO!
+    }
+
 }

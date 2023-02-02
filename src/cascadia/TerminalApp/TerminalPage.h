@@ -463,6 +463,8 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget _ShowWindowChangedHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
 
         void _ContextMenuOpened(const IInspectable& sender, const IInspectable& args);
+        void _SelectionMenuOpened(const IInspectable& sender, const IInspectable& args);
+        void _populateContextMenu(const IInspectable& sender, const bool withSelection);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp

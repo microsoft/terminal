@@ -1654,19 +1654,8 @@ namespace winrt::TerminalApp::implementation
 
         term.ShowWindowChanged({ get_weak(), &TerminalPage::_ShowWindowChangedHandler });
 
-        // term.ContextMenuRequested({ get_weak(), &TerminalPage::_ContextMenuRequestedHandler });
         term.ContextMenu().Opening({ this, &TerminalPage::_ContextMenuOpened });
-        // term.ContextMenu().Opening([term](const auto& s, const auto&) {
-        //     AppBarButton searchCommandBar{};
-        //     searchCommandBar.Icon(SymbolIcon{ Symbol::Find });
-        //     searchCommandBar.Label(L"Searchy search");
-        //     term.ContextMenu().PrimaryCommands().Append(searchCommandBar);
-
-        //     AppBarButton thingCommandBar{};
-        //     thingCommandBar.Icon(SymbolIcon{ Symbol::Share });
-        //     thingCommandBar.Label(L"Thingy do");
-        //     term.ContextMenu().SecondaryCommands().Append(thingCommandBar);
-        // });
+        term.SelectionContextMenu().Opening({ this, &TerminalPage::_SelectionMenuOpened });
     }
 
     // Method Description:
@@ -4466,16 +4455,26 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_ContextMenuOpened(const IInspectable& sender,
                                           const IInspectable& /*args*/)
     {
+        _populateContextMenu(sender, false);
+    }
+    void TerminalPage::_SelectionMenuOpened(const IInspectable& sender,
+                                            const IInspectable& /*args*/)
+    {
+        _populateContextMenu(sender, true);
+    }
+
+    void TerminalPage::_populateContextMenu(const IInspectable& sender,
+                                            const bool /*withSelection*/)
+    {
+        // withSelection can be used to add actions that only appear if there's
+        // selected text, like "search the web"
+
         auto menu = sender.try_as<WUX::Controls::CommandBarFlyout>();
-        // auto text = args.SelectedText();
-
-        // auto fwe = sender.try_as<WUX::FrameworkElement>();
-
-        // auto flyout = TerminalApp::ControlContextMenu();
 
         // Helper lambda for dispatching an ActionAndArgs onto the
         // ShortcutActionDispatch. Used below to wire up each menu entry to the
         // respective action.
+
         auto weak = get_weak();
         auto makeCallback = [weak](const Microsoft::Terminal::Settings::Model::ActionAndArgs& actionAndArgs) {
             return [weak, actionAndArgs](auto&&, auto&&) {
@@ -4493,52 +4492,22 @@ namespace winrt::TerminalApp::implementation
             thingCommandBar.Click(makeCallback(action));
             menu.SecondaryCommands().Append(thingCommandBar);
         };
-        // // Wire up each item to the action that should be performed. By actually
-        // // connecting these to actions, we ensure the implementation is
-        // // consistent. This also leaves room for customizing this menu with
-        // // actions in the future.
 
-        // flyout.PasteItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::PasteText, nullptr }));
+        // Wire up each item to the action that should be performed. By actually
+        // connecting these to actions, we ensure the implementation is
+        // consistent. This also leaves room for customizing this menu with
+        // actions in the future.
 
-        // // If we don't have selected text, then hide the find item, and disable the copy one.
-        // if (text.empty())
-        // {
-        //     flyout.CopyItem().IsEnabled(false);
-        //     flyout.FindItem().Visibility(Visibility::Collapsed);
-        // }
-        // else
-        // {
-        //     flyout.CopyItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::CopyText, CopyTextArgs{} }));
-        //     flyout.FindItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::Find, nullptr }));
-        // }
-
-        // flyout.SplitPaneItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate } }));
         makeItem(RS_(L"SplitPaneContextMenuEntry/Text"), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate } });
-        // flyout.DuplicateTabItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::DuplicateTab, nullptr }));
         makeItem(RS_(L"DuplicateTabContextMenuEntry/Text"), ActionAndArgs{ ShortcutAction::DuplicateTab, nullptr });
+
         // Only wire up "Close Pane" if there's multiple panes.
         if (_GetFocusedTabImpl()->GetLeafPaneCount() > 1)
         {
             makeItem(RS_(L"ClosePaneContextMenuEntry/Text"), ActionAndArgs{ ShortcutAction::ClosePane, nullptr });
-
-            // flyout.ClosePaneItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::ClosePane, nullptr }));
         }
-        // else
-        // {
-        //     flyout.ClosePaneItem().Visibility(Visibility::Collapsed);
-        // }
 
-        // flyout.CloseTabItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::CloseTab, CloseTabArgs{ _GetFocusedTabIndex().value() } }));
         makeItem(RS_(L"CloseTabContextMenuEntry/Text"), ActionAndArgs{ ShortcutAction::CloseTab, CloseTabArgs{ _GetFocusedTabIndex().value() } });
-
-        // WUX::Controls::Primitives::FlyoutBase::SetAttachedFlyout(*this, flyout);
-
-        // // Position the menu where the pointer is. This was the best way I found how.
-        // til::point absolutePointerPos{ til::math::rounding, CoreWindow::GetForCurrentThread().PointerPosition() };
-        // til::point absoluteWindowOrigin{ til::math::rounding,
-        //                                  CoreWindow::GetForCurrentThread().Bounds().X,
-        //                                  CoreWindow::GetForCurrentThread().Bounds().Y };
-        // flyout.ShowAt(fwe, (absolutePointerPos - absoluteWindowOrigin).to_winrt_point());
     }
 
 }

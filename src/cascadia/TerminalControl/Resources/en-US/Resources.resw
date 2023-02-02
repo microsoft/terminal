@@ -208,4 +208,36 @@ Please either install the missing font or choose another one.</value>
     <value>No results found</value>
     <comment>Announced to a screen reader when the user searches for some text and there are no matches for that text in the terminal.</comment>
   </data>
+  <data name="PasteCommandButton.Label" xml:space="preserve">
+    <value>Paste</value>
+    <comment>The label of a button for pasting the contents of the clipboard.</comment>
+  </data>
+  <data name="PasteCommandButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Paste</value>
+    <comment>The tooltip for a paste button</comment>
+  </data>
+  <data name="CopyCommandButton.Label" xml:space="preserve">
+    <value>Copy</value>
+    <comment>The label of a button for copying the selected text to the clipboard.</comment>
+  </data>
+  <data name="CopyCommandButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Copy</value>
+    <comment>The tooltip for a copy button</comment>
+  </data>
+  <data name="PasteWithSelectionCommandButton.Label" xml:space="preserve">
+    <value>Paste</value>
+    <comment>The label of a button for pasting the contents of the clipboard.</comment>
+  </data>
+  <data name="PasteWithSelectionCommandButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Paste</value>
+    <comment>The tooltip for a paste button</comment>
+  </data>
+  <data name="SearchBommandButton.Label" xml:space="preserve">
+    <value>Find...</value>
+    <comment>The label of a button for searching for the selected text</comment>
+  </data>
+  <data name="SearchBommandButton.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Find</value>
+    <comment>The tooltip for a button for searching for the selected text</comment>
+  </data>
 </root>

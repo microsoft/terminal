@@ -32,19 +32,27 @@
     <UserControl.Resources>
 
         <CommandBarFlyout x:Name="ContextMenu">
-            <AppBarButton Icon="Copy"
-                          Label="Copy"
-                          ToolTipService.ToolTip="Copy" />
-            <AppBarButton Icon="Paste"
-                          Label="Paste"
-                          ToolTipService.ToolTip="Paste" />
-            <CommandBarFlyout.SecondaryCommands>
-                <AppBarButton x:Name="ResizeButton1"
-                              Label="Resize" />
-                <AppBarButton x:Name="MoveButton1"
-                              Label="Move" />
-            </CommandBarFlyout.SecondaryCommands>
+            <AppBarButton x:Name="PasteCommandButton"
+                          x:Uid="PasteCommandButton"
+                          Click="_PasteCommandHandler"
+                          Icon="Paste" />
+        </CommandBarFlyout>
 
+        <CommandBarFlyout x:Name="SelectionContextMenu">
+            <AppBarButton x:Name="CopyCommandButton"
+                          x:Uid="CopyCommandButton"
+                          Click="_CopyCommandHandler"
+                          Icon="Copy" />
+            <AppBarButton x:Name="PasteWithSelectionCommandButton"
+                          x:Uid="PasteWithSelectionCommandButton"
+                          Click="_PasteCommandHandler"
+                          Icon="Paste" />
+            <CommandBarFlyout.SecondaryCommands>
+                <AppBarButton x:Name="SearchBommandButton"
+                              x:Uid="SearchBommandButton"
+                              Click="_SearchCommandHandler"
+                              Icon="Find" />
+            </CommandBarFlyout.SecondaryCommands>
         </CommandBarFlyout>
 
         <!--

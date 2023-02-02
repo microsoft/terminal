@@ -225,6 +225,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalPrimaryElements{ nullptr };
         winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalSecondaryElements{ nullptr };
+        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalSelectedPrimaryElements{ nullptr };
+        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalSelectedSecondaryElements{ nullptr };
 
         inline bool _IsClosing() const noexcept
         {
@@ -322,6 +324,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         til::point _toPosInDips(const Core::Point terminalCellPos);
         void _throttledUpdateScrollbar(const ScrollBarUpdate& update);
+
+        void _contextMenuHandler(IInspectable sender, Control::ContextMenuRequestedEventArgs args);
+
+        void _PasteCommandHandler(const IInspectable& sender, const IInspectable& args);
+        void _CopyCommandHandler(const IInspectable& sender, const IInspectable& args);
+        void _SearchCommandHandler(const IInspectable& sender, const IInspectable& args);
     };
 }
 
