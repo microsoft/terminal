@@ -41,7 +41,7 @@ class IInputEvent
 {
 public:
     static std::unique_ptr<IInputEvent> Create(const INPUT_RECORD& record);
-    static std::deque<std::unique_ptr<IInputEvent>> Create(gsl::span<const INPUT_RECORD> records);
+    static std::deque<std::unique_ptr<IInputEvent>> Create(std::span<const INPUT_RECORD> records);
     static std::deque<std::unique_ptr<IInputEvent>> Create(const std::deque<INPUT_RECORD>& records);
 
     static std::vector<INPUT_RECORD> ToInputRecords(const std::deque<std::unique_ptr<IInputEvent>>& events);

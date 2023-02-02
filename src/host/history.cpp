@@ -164,7 +164,7 @@ std::wstring_view CommandHistory::GetNth(const SHORT index) const
 }
 
 [[nodiscard]] HRESULT CommandHistory::RetrieveNth(const SHORT index,
-                                                  gsl::span<wchar_t> buffer,
+                                                  std::span<wchar_t> buffer,
                                                   size_t& commandSize)
 {
     LastDisplayed = index;
@@ -191,7 +191,7 @@ std::wstring_view CommandHistory::GetNth(const SHORT index) const
 }
 
 [[nodiscard]] HRESULT CommandHistory::Retrieve(const SearchDirection searchDirection,
-                                               const gsl::span<wchar_t> buffer,
+                                               const std::span<wchar_t> buffer,
                                                size_t& commandSize)
 {
     FAIL_FAST_IF(!(WI_IsFlagSet(Flags, CLE_ALLOCATED)));
@@ -776,7 +776,7 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryLengthWImpl(const std::wstring_view
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT GetConsoleCommandHistoryWImplHelper(const std::wstring_view exeName,
-                                            gsl::span<wchar_t> historyBuffer,
+                                            std::span<wchar_t> historyBuffer,
                                             size_t& writtenOrNeeded)
 {
     // Ensure output variables are initialized
@@ -847,7 +847,7 @@ HRESULT GetConsoleCommandHistoryWImplHelper(const std::wstring_view exeName,
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleCommandHistoryAImpl(const std::string_view exeName,
-                                                   gsl::span<char> commandHistory,
+                                                   std::span<char> commandHistory,
                                                    size_t& written) noexcept
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -882,7 +882,7 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryAImpl(const std::string_view exeNam
 
         // Call the Unicode version of this method
         size_t bufferWritten;
-        RETURN_IF_FAILED(GetConsoleCommandHistoryWImplHelper(exeNameW, gsl::span<wchar_t>(buffer.get(), bufferNeeded), bufferWritten));
+        RETURN_IF_FAILED(GetConsoleCommandHistoryWImplHelper(exeNameW, std::span<wchar_t>(buffer.get(), bufferNeeded), bufferWritten));
 
         // Convert result to A
         const auto converted = ConvertToA(codepage, { buffer.get(), bufferWritten });
@@ -911,7 +911,7 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryAImpl(const std::string_view exeNam
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleCommandHistoryWImpl(const std::wstring_view exeName,
-                                                   gsl::span<wchar_t> commandHistory,
+                                                   std::span<wchar_t> commandHistory,
                                                    size_t& written) noexcept
 {
     LockConsole();

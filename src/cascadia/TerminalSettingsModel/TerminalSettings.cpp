@@ -395,11 +395,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return colorTable;
     }
 
-    gsl::span<winrt::Microsoft::Terminal::Core::Color> TerminalSettings::_getColorTableImpl()
+    std::span<winrt::Microsoft::Terminal::Core::Color> TerminalSettings::_getColorTableImpl()
     {
         if (_ColorTable.has_value())
         {
-            return gsl::make_span(*_ColorTable);
+            return std::span{ *_ColorTable };
         }
         for (auto&& parent : _parents)
         {

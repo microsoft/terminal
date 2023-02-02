@@ -217,7 +217,7 @@ bool FontBuffer::FinalizeSixelData()
     return true;
 }
 
-gsl::span<const uint16_t> FontBuffer::GetBitPattern() const noexcept
+std::span<const uint16_t> FontBuffer::GetBitPattern() const noexcept
 {
     return { _buffer.data(), gsl::narrow_cast<size_t>(MAX_CHARS * _fullHeight) };
 }
