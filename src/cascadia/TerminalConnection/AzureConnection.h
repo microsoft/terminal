@@ -96,8 +96,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         std::optional<std::wstring> _ReadUserInput(InputMode mode);
 
         winrt::Windows::Web::Http::HttpClient _httpClient{ nullptr };
-        winrt::Windows::Networking::Sockets::StreamWebSocket _cloudShellSocket2{ nullptr };
-        web::websockets::client::websocket_client _cloudShellSocket;
+        wil::unique_winhttp_hinternet _socketSessionHandle{};
+        wil::unique_winhttp_hinternet _socketConnectionHandle{};
+        wil::unique_winhttp_hinternet _webSocket{};
+
+        til::u8state _u8State{};
+        std::wstring _u16Str{};
+        std::array<char, 4096> _buffer{};
 
         static std::optional<utility::string_t> _ParsePreferredShellType(const winrt::Windows::Data::Json::JsonObject& settingsResponse);
     };

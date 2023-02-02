@@ -15,10 +15,10 @@
 #include "winrt/Windows.System.UserProfile.h"
 #include "../../types/inc/Utils.hpp"
 
+#include "winrt/Windows.Web.Http.Filters.h"
+
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Terminal::Azure;
-
-using namespace web::websockets::client;
 using namespace winrt::Windows::Security::Credentials;
 
 static constexpr int CurrentCredentialVersion = 1;
@@ -32,7 +32,6 @@ using namespace winrt::Windows::Foundation;
 namespace WDJ = ::winrt::Windows::Data::Json;
 namespace WSS = ::winrt::Windows::Storage::Streams;
 namespace WWH = ::winrt::Windows::Web::Http;
-namespace WNS = ::winrt::Windows::Networking::Sockets;
 
 static constexpr winrt::guid AzureConnectionType = { 0xd9fcfdfa, 0xa479, 0x412c, { 0x83, 0xb7, 0xc5, 0x64, 0xe, 0x61, 0xcd, 0x62 } };
 
@@ -188,12 +187,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         if (_state == AzureState::TermConnected)
         {
-            // If we're connected, we don't need to do any fun input shenanigans.
-            websocket_outgoing_message msg;
-            const auto str = winrt::to_string(data);
-            msg.set_utf8_message(str);
-
-            _cloudShellSocket.send(msg).get();
+            auto buff{ winrt::to_string(data) };
+            WinHttpWebSocketSend(_webSocket.get(), WINHTTP_WEB_SOCKET_UTF8_MESSAGE_BUFFER_TYPE, buff.data(), gsl::narrow_cast<DWORD>(buff.size()));
             return;
         }
 
@@ -270,7 +265,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             if (_state == AzureState::TermConnected)
             {
                 // Close the websocket connection
-                _cloudShellSocket.close();
+                (void)WinHttpWebSocketClose(_webSocket.get(), WINHTTP_WEB_SOCKET_SUCCESS_CLOSE_STATUS, nullptr, 0); // throw away the error
+                _webSocket.reset();
+                _socketConnectionHandle.reset();
+                _socketSessionHandle.reset();
             }
 
             if (_hOutputThread)
@@ -391,35 +389,42 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 case AzureState::TermConnected:
                 {
                     _transitionToState(ConnectionState::Connected);
+
                     while (true)
                     {
-                        // Read from websocket
-                        pplx::task<websocket_incoming_message> msgT;
-                        try
+                        WINHTTP_WEB_SOCKET_BUFFER_TYPE bufferType{};
+                        DWORD read{};
+                        THROW_IF_WIN32_ERROR(WinHttpWebSocketReceive(_webSocket.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), &read, &bufferType));
+
+                        switch (bufferType)
                         {
-                            msgT = _cloudShellSocket.receive();
-                            msgT.wait();
+                        case WINHTTP_WEB_SOCKET_UTF8_FRAGMENT_BUFFER_TYPE:
+                        case WINHTTP_WEB_SOCKET_UTF8_MESSAGE_BUFFER_TYPE:
+                        {
+                            const auto result{ til::u8u16(std::string_view{ _buffer.data(), read }, _u16Str, _u8State) };
+                            if (FAILED(result))
+                            {
+                                // EXIT POINT
+                                _transitionToState(ConnectionState::Failed);
+                                return gsl::narrow_cast<DWORD>(result);
+                            }
+
+                            if (_u16Str.empty())
+                            {
+                                continue;
+                            }
+
+                            // Pass the output to our registered event handlers
+                            _TerminalOutputHandlers(_u16Str);
+                            break;
                         }
-                        catch (...)
-                        {
-                            // Websocket has been closed; consider it a graceful exit?
-                            // This should result in our termination.
+                        case WINHTTP_WEB_SOCKET_CLOSE_BUFFER_TYPE:
+                            // EXIT POINT
                             if (_transitionToState(ConnectionState::Closed))
                             {
-                                // End the output thread.
                                 return S_FALSE;
                             }
                         }
-
-                        auto msg = msgT.get();
-                        auto msgStringTask = msg.extract_string();
-                        auto msgString = msgStringTask.get();
-
-                        // Convert to hstring
-                        const auto hstr = winrt::to_hstring(msgString);
-
-                        // Pass the output to our registered event handlers
-                        _TerminalOutputHandlers(hstr);
                     }
                     return S_OK;
                 }
@@ -746,9 +751,32 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         const auto socketUri = _GetTerminal(shellType.value_or(L"pwsh"));
         _TerminalOutputHandlers(L"\r\n");
 
-        // Step 8: connecting to said terminal
-        const auto connReqTask = _cloudShellSocket.connect(socketUri);
-        connReqTask.wait();
+        //// Step 8: connecting to said terminal
+        {
+            wil::unique_winhttp_hinternet sessionHandle, connectionHandle, requestHandle, socketHandle;
+            Uri parsedUri{ socketUri };
+            sessionHandle.reset(WinHttpOpen(HttpUserAgent.data(), WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY, nullptr, nullptr, 0));
+            THROW_LAST_ERROR_IF(!sessionHandle);
+
+            connectionHandle.reset(WinHttpConnect(sessionHandle.get(), parsedUri.Host().c_str(), INTERNET_DEFAULT_HTTPS_PORT, 0));
+            THROW_LAST_ERROR_IF(!connectionHandle);
+
+            requestHandle.reset(WinHttpOpenRequest(connectionHandle.get(), L"GET", parsedUri.Path().c_str(), nullptr, nullptr, nullptr, WINHTTP_FLAG_SECURE));
+            THROW_LAST_ERROR_IF(!requestHandle);
+
+            THROW_IF_WIN32_BOOL_FALSE(WinHttpSetOption(requestHandle.get(), WINHTTP_OPTION_UPGRADE_TO_WEB_SOCKET, nullptr, 0));
+            THROW_IF_WIN32_BOOL_FALSE(WinHttpSendRequest(requestHandle.get(), WINHTTP_NO_ADDITIONAL_HEADERS, 0, nullptr, 0, 0, 0));
+            THROW_IF_WIN32_BOOL_FALSE(WinHttpReceiveResponse(requestHandle.get(), nullptr));
+
+            socketHandle.reset(WinHttpWebSocketCompleteUpgrade(requestHandle.get(), 0));
+            THROW_LAST_ERROR_IF(!socketHandle);
+
+            requestHandle.reset(); // We no longer need the request once we've upgraded it.
+            // We have to keep the socket session and connection handles.
+            _socketSessionHandle = std::move(sessionHandle);
+            _socketConnectionHandle = std::move(connectionHandle);
+            _webSocket = std::move(socketHandle);
+        }
 
         _state = AzureState::TermConnected;
 
