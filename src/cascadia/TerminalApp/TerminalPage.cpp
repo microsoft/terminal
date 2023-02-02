@@ -1655,18 +1655,18 @@ namespace winrt::TerminalApp::implementation
         term.ShowWindowChanged({ get_weak(), &TerminalPage::_ShowWindowChangedHandler });
 
         // term.ContextMenuRequested({ get_weak(), &TerminalPage::_ContextMenuRequestedHandler });
+        term.ContextMenu().Opening({ this, &TerminalPage::_ContextMenuOpened });
+        // term.ContextMenu().Opening([term](const auto& s, const auto&) {
+        //     AppBarButton searchCommandBar{};
+        //     searchCommandBar.Icon(SymbolIcon{ Symbol::Find });
+        //     searchCommandBar.Label(L"Searchy search");
+        //     term.ContextMenu().PrimaryCommands().Append(searchCommandBar);
 
-        term.ContextMenu().Opening([term](const auto&, const auto&) {
-            AppBarButton searchCommandBar{};
-            searchCommandBar.Icon(SymbolIcon{ Symbol::Find });
-            searchCommandBar.Label(L"Searchy search");
-            term.ContextMenu().PrimaryCommands().Append(searchCommandBar);
-
-            AppBarButton thingCommandBar{};
-            thingCommandBar.Icon(SymbolIcon{ Symbol::Share });
-            thingCommandBar.Label(L"Thingy do");
-            term.ContextMenu().SecondaryCommands().Append(thingCommandBar);
-        });
+        //     AppBarButton thingCommandBar{};
+        //     thingCommandBar.Icon(SymbolIcon{ Symbol::Share });
+        //     thingCommandBar.Label(L"Thingy do");
+        //     term.ContextMenu().SecondaryCommands().Append(thingCommandBar);
+        // });
     }
 
     // Method Description:
@@ -4460,14 +4460,18 @@ namespace winrt::TerminalApp::implementation
         _updateThemeColors();
     }
 
-    void TerminalPage::_ContextMenuRequestedHandler(const IInspectable sender,
-                                                    const winrt::Microsoft::Terminal::Control::ContextMenuRequestedEventArgs& args)
+    // void TerminalPage::_ContextMenuRequestedHandler(const IInspectable sender,
+    //                                                 const winrt::Microsoft::Terminal::Control::ContextMenuRequestedEventArgs& args)
+    // {
+    void TerminalPage::_ContextMenuOpened(const IInspectable& sender,
+                                          const IInspectable& /*args*/)
     {
-        auto text = args.SelectedText();
+        auto menu = sender.try_as<WUX::Controls::CommandBarFlyout>();
+        // auto text = args.SelectedText();
 
-        auto fwe = sender.try_as<WUX::FrameworkElement>();
+        // auto fwe = sender.try_as<WUX::FrameworkElement>();
 
-        auto flyout = TerminalApp::ControlContextMenu();
+        // auto flyout = TerminalApp::ControlContextMenu();
 
         // Helper lambda for dispatching an ActionAndArgs onto the
         // ShortcutActionDispatch. Used below to wire up each menu entry to the
@@ -4482,48 +4486,59 @@ namespace winrt::TerminalApp::implementation
             };
         };
 
-        // Wire up each item to the action that should be performed. By actually
-        // connecting these to actions, we ensure the implementation is
-        // consistent. This also leaves room for customizing this menu with
-        // actions in the future.
+        auto makeItem = [menu, makeCallback](const winrt::hstring& label, const auto& action) {
+            AppBarButton thingCommandBar{};
+            // thingCommandBar.Icon(SymbolIcon{ Symbol::Share });
+            thingCommandBar.Label(label);
+            thingCommandBar.Click(makeCallback(action));
+            menu.SecondaryCommands().Append(thingCommandBar);
+        };
+        // // Wire up each item to the action that should be performed. By actually
+        // // connecting these to actions, we ensure the implementation is
+        // // consistent. This also leaves room for customizing this menu with
+        // // actions in the future.
 
-        flyout.PasteItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::PasteText, nullptr }));
+        // flyout.PasteItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::PasteText, nullptr }));
 
-        // If we don't have selected text, then hide the find item, and disable the copy one.
-        if (text.empty())
-        {
-            flyout.CopyItem().IsEnabled(false);
-            flyout.FindItem().Visibility(Visibility::Collapsed);
-        }
-        else
-        {
-            flyout.CopyItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::CopyText, CopyTextArgs{} }));
-            flyout.FindItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::Find, nullptr }));
-        }
+        // // If we don't have selected text, then hide the find item, and disable the copy one.
+        // if (text.empty())
+        // {
+        //     flyout.CopyItem().IsEnabled(false);
+        //     flyout.FindItem().Visibility(Visibility::Collapsed);
+        // }
+        // else
+        // {
+        //     flyout.CopyItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::CopyText, CopyTextArgs{} }));
+        //     flyout.FindItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::Find, nullptr }));
+        // }
 
-        flyout.SplitPaneItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate } }));
-        flyout.DuplicateTabItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::DuplicateTab, nullptr }));
-
+        // flyout.SplitPaneItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate } }));
+        makeItem(RS_(L"SplitPaneContextMenuEntry/Text"), ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate } });
+        // flyout.DuplicateTabItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::DuplicateTab, nullptr }));
+        makeItem(RS_(L"DuplicateTabContextMenuEntry/Text"), ActionAndArgs{ ShortcutAction::DuplicateTab, nullptr });
         // Only wire up "Close Pane" if there's multiple panes.
         if (_GetFocusedTabImpl()->GetLeafPaneCount() > 1)
         {
-            flyout.ClosePaneItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::ClosePane, nullptr }));
+            makeItem(RS_(L"ClosePaneContextMenuEntry/Text"), ActionAndArgs{ ShortcutAction::ClosePane, nullptr });
+
+            // flyout.ClosePaneItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::ClosePane, nullptr }));
         }
-        else
-        {
-            flyout.ClosePaneItem().Visibility(Visibility::Collapsed);
-        }
+        // else
+        // {
+        //     flyout.ClosePaneItem().Visibility(Visibility::Collapsed);
+        // }
 
-        flyout.CloseTabItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::CloseTab, CloseTabArgs{ _GetFocusedTabIndex().value() } }));
+        // flyout.CloseTabItem().Click(makeCallback(ActionAndArgs{ ShortcutAction::CloseTab, CloseTabArgs{ _GetFocusedTabIndex().value() } }));
+        makeItem(RS_(L"CloseTabContextMenuEntry/Text"), ActionAndArgs{ ShortcutAction::CloseTab, CloseTabArgs{ _GetFocusedTabIndex().value() } });
 
-        WUX::Controls::Primitives::FlyoutBase::SetAttachedFlyout(*this, flyout);
+        // WUX::Controls::Primitives::FlyoutBase::SetAttachedFlyout(*this, flyout);
 
-        // Position the menu where the pointer is. This was the best way I found how.
-        til::point absolutePointerPos{ til::math::rounding, CoreWindow::GetForCurrentThread().PointerPosition() };
-        til::point absoluteWindowOrigin{ til::math::rounding,
-                                         CoreWindow::GetForCurrentThread().Bounds().X,
-                                         CoreWindow::GetForCurrentThread().Bounds().Y };
-        flyout.ShowAt(fwe, (absolutePointerPos - absoluteWindowOrigin).to_winrt_point());
+        // // Position the menu where the pointer is. This was the best way I found how.
+        // til::point absolutePointerPos{ til::math::rounding, CoreWindow::GetForCurrentThread().PointerPosition() };
+        // til::point absoluteWindowOrigin{ til::math::rounding,
+        //                                  CoreWindow::GetForCurrentThread().Bounds().X,
+        //                                  CoreWindow::GetForCurrentThread().Bounds().Y };
+        // flyout.ShowAt(fwe, (absolutePointerPos - absoluteWindowOrigin).to_winrt_point());
     }
 
 }
