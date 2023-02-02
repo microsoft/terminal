@@ -3,6 +3,9 @@
 
 #include "pch.h"
 #include "resource.h"
+#include <WerApi.h>
+
+typedef wil::unique_any<HREPORT, decltype(&WerReportCloseHandle), WerReportCloseHandle> unique_wer_report;
 
 struct ErrorDialogContext
 {
@@ -67,8 +70,12 @@ static LRESULT CALLBACK ErrDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARA
 void DisplayErrorDialogBlockingAndReport(const HRESULT hr, const std::wstring_view message)
 {
     auto ctx = new ErrorDialogContext{ hr, std::wstring{ message } };
-
     DialogBoxParamW(nullptr, MAKEINTRESOURCEW(IDD_ERRDIALOG), nullptr, ErrDlgProc, reinterpret_cast<LPARAM>(ctx));
+
+    unique_wer_report errorReport;
+    WerReportCreate(L"AppCrash", WerReportApplicationCrash, nullptr, errorReport.put());
+    WerReportAddDump(errorReport.get(), GetCurrentProcess(), nullptr, WerDumpTypeMiniDump, nullptr, nullptr, 0);
+    WerReportSubmit(errorReport.get(), WerConsentNotAsked, 0, nullptr);
 
     TerminateProcess(GetCurrentProcess(), 1);
 }
