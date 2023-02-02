@@ -3264,20 +3264,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             SelectionContextMenu().ShowAt(*this, myOption);
         }
     }
-    void TermControl::_PasteCommandHandler(const IInspectable& sender, const IInspectable& args)
+    void TermControl::_PasteCommandHandler(const IInspectable& /*sender*/,
+                                           const IInspectable& /*args*/)
     {
-        sender;
-        args; // TODO!
+        _interactivity.RequestPasteTextFromClipboard();
+        ContextMenu().Hide();
+        SelectionContextMenu().Hide();
     }
-    void TermControl::_CopyCommandHandler(const IInspectable& sender, const IInspectable& args)
+    void TermControl::_CopyCommandHandler(const IInspectable& /*sender*/,
+                                          const IInspectable& /*args*/)
     {
-        sender;
-        args; // TODO!
+        // formats = nullptr -> copy all formats
+        _interactivity.CopySelectionToClipboard(false, nullptr);
+        ContextMenu().Hide();
+        SelectionContextMenu().Hide();
     }
-    void TermControl::_SearchCommandHandler(const IInspectable& sender, const IInspectable& args)
+    void TermControl::_SearchCommandHandler(const IInspectable& /*sender*/,
+                                            const IInspectable& /*args*/)
     {
-        sender;
-        args; // TODO!
+        ContextMenu().Hide();
+        SelectionContextMenu().Hide();
+        SearchMatch(false);
     }
 
 }
