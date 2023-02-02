@@ -1048,11 +1048,19 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                      winrt::hstring content,
                                      uint32_t tabIndex)
     {
-        auto windowId = _lookupPeasantIdForName(window);
+        uint64_t windowId = _lookupPeasantIdForName(window);
         if (windowId == 0)
         {
-            /* TODO! try the name as an integer ID */
-            return;
+            // Try the name as an integer ID
+            uint32_t temp;
+            if (!Utils::StringToUint(window.c_str(), temp))
+            {
+                return;
+            }
+            else
+            {
+                windowId = temp;
+            }
         }
 
         if (auto targetPeasant{ _getPeasant(windowId) })
