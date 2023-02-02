@@ -2036,11 +2036,11 @@ namespace winrt::TerminalApp::implementation
         // TODO! if the first action is a split pane and tabIndex > tabs.size,
         // then remove it and insert an equivalent newTab
 
+        co_await wil::resume_foreground(Dispatcher());
         for (const auto& action : args)
         {
             _actionDispatch->DoAction(action);
         }
-        co_await wil::resume_foreground(Dispatcher());
     }
 
     // Method Description:
@@ -2905,7 +2905,20 @@ namespace winrt::TerminalApp::implementation
         // TermControl will copy the settings out of the settings passed to it.
 
         auto content = _manager.CreateCore(settings.DefaultSettings(), settings.UnfocusedSettings(), connection);
+        return _InitControl(content);
+    }
 
+    TermControl TerminalPage::_InitControlFromContent(const winrt::guid& contentGuid)
+    {
+        if (const auto& content{ _manager.LookupCore(contentGuid) })
+        {
+            return _InitControl(content);
+        }
+        return nullptr;
+    }
+
+    TermControl TerminalPage::_InitControl(const ControlInteractivity& content)
+    {
         TermControl term{ content };
 
         // GH#12515: ConPTY assumes it's hidden at the start. If we're not, let it know now.
@@ -2964,6 +2977,15 @@ namespace winrt::TerminalApp::implementation
         {
             profile = _settings.GetProfileForArgs(newTerminalArgs);
             controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
+        }
+        // TODO! This should really be even above the block above, I'm just kludging it RN so I get a profile
+        // We'll probably want to not store just Interactivity's, but a {Profile, Interactivity, etc...} blob in ContentManager
+        if (newTerminalArgs.ContentGuid() != winrt::guid{})
+        {
+            const auto control = _InitControlFromContent(newTerminalArgs.ContentGuid());
+            _RegisterTerminalEvents(control);
+            auto resultPane = std::make_shared<Pane>(profile, control);
+            return resultPane;
         }
 
         // Try to handle auto-elevation
