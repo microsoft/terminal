@@ -5,6 +5,7 @@
 #include "TerminalWindow.h"
 #include "../inc/WindowingBehavior.h"
 #include "TerminalWindow.g.cpp"
+#include "SettingsLoadEventArgs.g.cpp"
 
 #include <LibraryResources.h>
 #include <WtExeUtils.h>
@@ -409,7 +410,8 @@ namespace winrt::TerminalApp::implementation
     // - contentKey: The key to use to lookup the content text from our resources.
     void TerminalWindow::_ShowLoadErrorsDialog(const winrt::hstring& titleKey,
                                                const winrt::hstring& contentKey,
-                                               HRESULT settingsLoadedResult)
+                                               HRESULT settingsLoadedResult,
+                                               const winrt::hstring& exceptionText)
     {
         auto title = GetLibraryResourceString(titleKey);
         auto buttonText = RS_(L"Ok");
@@ -428,13 +430,12 @@ namespace winrt::TerminalApp::implementation
 
         if (FAILED(settingsLoadedResult))
         {
-            // TODO! _settingsLoadExceptionText needs to get into the TerminalWindow somehow
-
-            // if (!_settingsLoadExceptionText.empty())
-            // {
-            //     warningsTextBlock.Inlines().Append(_BuildErrorRun(_settingsLoadExceptionText, ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Resources()));
-            //     warningsTextBlock.Inlines().Append(Documents::LineBreak{});
-            // }
+            if (!exceptionText.empty())
+            {
+                warningsTextBlock.Inlines().Append(_BuildErrorRun(exceptionText,
+                                                                  winrt::WUX::Application::Current().as<::winrt::TerminalApp::App>().Resources()));
+                warningsTextBlock.Inlines().Append(Documents::LineBreak{});
+            }
         }
 
         // Add a note that we're using the default settings in this case.
@@ -459,7 +460,7 @@ namespace winrt::TerminalApp::implementation
     //   validating the settings.
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens. See ShowDialog for details
-    void TerminalWindow::_ShowLoadWarningsDialog()
+    void TerminalWindow::_ShowLoadWarningsDialog(const Windows::Foundation::Collections::IVector<SettingsLoadWarnings>& warnings)
     {
         auto title = RS_(L"SettingsValidateErrorTitle");
         auto buttonText = RS_(L"Ok");
@@ -470,18 +471,16 @@ namespace winrt::TerminalApp::implementation
         // Make sure the lines of text wrap
         warningsTextBlock.TextWrapping(TextWrapping::Wrap);
 
-        // TODO! warnings need to get into here somehow
-        //
-        // for (const auto& warning : _warnings)
-        // {
-        //     // Try looking up the warning message key for each warning.
-        //     const auto warningText = _GetWarningText(warning);
-        //     if (!warningText.empty())
-        //     {
-        //         warningsTextBlock.Inlines().Append(_BuildErrorRun(warningText, ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Resources()));
-        //         warningsTextBlock.Inlines().Append(Documents::LineBreak{});
-        //     }
-        // }
+        for (const auto& warning : warnings)
+        {
+            // Try looking up the warning message key for each warning.
+            const auto warningText = _GetWarningText(warning);
+            if (!warningText.empty())
+            {
+                warningsTextBlock.Inlines().Append(_BuildErrorRun(warningText, winrt::WUX::Application::Current().as<::winrt::TerminalApp::App>().Resources()));
+                warningsTextBlock.Inlines().Append(Documents::LineBreak{});
+            }
+        }
 
         Controls::ContentDialog dialog;
         dialog.Title(winrt::box_value(title));
@@ -738,20 +737,25 @@ namespace winrt::TerminalApp::implementation
         _RequestedThemeChangedHandlers(*this, Theme());
     }
 
-    void TerminalWindow::UpdateSettings(const HRESULT settingsLoadedResult, const CascadiaSettings& settings)
+    winrt::fire_and_forget TerminalWindow::UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args)
     {
-        if (FAILED(settingsLoadedResult))
+        co_await wil::resume_foreground(_root->Dispatcher());
+
+        if (FAILED(args.Result()))
         {
             const winrt::hstring titleKey = USES_RESOURCE(L"ReloadJsonParseErrorTitle");
             const winrt::hstring textKey = USES_RESOURCE(L"ReloadJsonParseErrorText");
-            _ShowLoadErrorsDialog(titleKey, textKey, settingsLoadedResult);
-            return;
+            _ShowLoadErrorsDialog(titleKey,
+                                  textKey,
+                                  gsl::narrow_cast<HRESULT>(args.Result()),
+                                  args.ExceptionText());
+            co_return;
         }
-        else if (settingsLoadedResult == S_FALSE)
+        else if (args.Result() == S_FALSE)
         {
-            _ShowLoadWarningsDialog();
+            _ShowLoadWarningsDialog(args.Warnings());
         }
-        _settings = settings;
+        _settings = args.NewSettings();
         // Update the settings in TerminalPage
         _root->SetSettings(_settings, true);
         _RefreshThemeRoutine();
@@ -1159,13 +1163,10 @@ namespace winrt::TerminalApp::implementation
     }
     // TODO! Arg should be a SettingsLoadEventArgs{ result, warnings, error, settings}
     void TerminalWindow::UpdateSettingsHandler(const winrt::IInspectable& /*sender*/,
-                                               const winrt::IInspectable& arg)
+                                               const winrt::TerminalApp::SettingsLoadEventArgs& args)
     {
-        if (const auto& settings{ arg.try_as<CascadiaSettings>() })
-        {
-            this->UpdateSettings(S_OK, settings);
-            _root->SetSettings(_settings, true);
-        }
+        UpdateSettings(args);
+        // _root->SetSettings(_settings, true);
     }
 
     ////////////////////////////////////////////////////////////////////////////
