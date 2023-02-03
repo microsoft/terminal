@@ -130,7 +130,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 {
                     return pInstance->_OutputThread();
                 }
-                return gsl::narrow_cast<DWORD>(E_INVALIDARG);
+                return gsl::narrow<DWORD>(E_INVALIDARG);
             },
             this,
             0,
@@ -188,7 +188,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         if (_state == AzureState::TermConnected)
         {
             auto buff{ winrt::to_string(data) };
-            WinHttpWebSocketSend(_webSocket.get(), WINHTTP_WEB_SOCKET_UTF8_MESSAGE_BUFFER_TYPE, buff.data(), gsl::narrow_cast<DWORD>(buff.size()));
+            WinHttpWebSocketSend(_webSocket.get(), WINHTTP_WEB_SOCKET_UTF8_MESSAGE_BUFFER_TYPE, buff.data(), gsl::narrow<DWORD>(buff.size()));
             return;
         }
 
@@ -394,7 +394,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                     {
                         WINHTTP_WEB_SOCKET_BUFFER_TYPE bufferType{};
                         DWORD read{};
-                        THROW_IF_WIN32_ERROR(WinHttpWebSocketReceive(_webSocket.get(), _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), &read, &bufferType));
+                        THROW_IF_WIN32_ERROR(WinHttpWebSocketReceive(_webSocket.get(), _buffer.data(), gsl::narrow<DWORD>(_buffer.size()), &read, &bufferType));
 
                         switch (bufferType)
                         {
@@ -406,7 +406,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                             {
                                 // EXIT POINT
                                 _transitionToState(ConnectionState::Failed);
-                                return gsl::narrow_cast<DWORD>(result);
+                                return gsl::narrow<DWORD>(result);
                             }
 
                             if (_u16Str.empty())
@@ -724,7 +724,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             }
         }
 
-        return winrt::hstring{};
+        return L"pwsh";
     }
 
     // Method description:
@@ -747,11 +747,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         // Request for a terminal for said cloud shell
         auto shellType = _ParsePreferredShellType(settingsResponse);
-        if (shellType.empty())
-        {
-            shellType = L"pwsh";
-        }
-
         _WriteStringWithNewline(RS_(L"AzureRequestingTerminal"));
         const auto socketUri = _GetTerminal(shellType);
         _TerminalOutputHandlers(L"\r\n");

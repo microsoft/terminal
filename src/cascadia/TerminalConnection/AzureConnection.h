@@ -53,9 +53,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void _RunStoreState();
         void _RunConnectState();
 
-        const std::wstring_view _loginUri{ L"https://login.microsoftonline.com/" };
-        const std::wstring_view _resourceUri{ L"https://management.azure.com/" };
-        const std::wstring_view _wantedResource{ L"https://management.core.windows.net/" };
+        static constexpr std::wstring_view _loginUri{ L"https://login.microsoftonline.com/" };
+        static constexpr std::wstring_view _resourceUri{ L"https://management.azure.com/" };
+        static constexpr std::wstring_view _wantedResource{ L"https://management.core.windows.net/" };
         const int _expireLimit{ 2700 };
         winrt::hstring _accessToken;
         winrt::hstring _refreshToken;
@@ -93,13 +93,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         std::optional<std::wstring> _ReadUserInput(InputMode mode);
 
         winrt::Windows::Web::Http::HttpClient _httpClient{ nullptr };
-        wil::unique_winhttp_hinternet _socketSessionHandle{};
-        wil::unique_winhttp_hinternet _socketConnectionHandle{};
-        wil::unique_winhttp_hinternet _webSocket{};
+        wil::unique_winhttp_hinternet _socketSessionHandle;
+        wil::unique_winhttp_hinternet _socketConnectionHandle;
+        wil::unique_winhttp_hinternet _webSocket;
 
-        til::u8state _u8State{};
-        std::wstring _u16Str{};
-        std::array<char, 4096> _buffer{};
+        til::u8state _u8State;
+        std::wstring _u16Str;
+        std::array<char, 4096> _buffer;
 
         static winrt::hstring _ParsePreferredShellType(const winrt::Windows::Data::Json::JsonObject& settingsResponse);
     };
