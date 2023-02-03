@@ -116,7 +116,7 @@ bool RAW_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     // console lock.
 
     std::span buffer{ reinterpret_cast<char*>(_BufPtr), _BufferSize };
-    *pReplyStatus = _ReadCharacterInput(*_pInputBuffer, buffer, *pNumBytes, *_pInputReadHandleData, fIsUnicode);
+    *pReplyStatus = ReadCharacterInput(*_pInputBuffer, buffer, *pNumBytes, *_pInputReadHandleData, fIsUnicode);
     return *pReplyStatus != CONSOLE_STATUS_WAIT;
 }
 

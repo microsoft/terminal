@@ -407,11 +407,11 @@ NT_CATCH_RETURN()
 // populated.
 // - STATUS_SUCCESS on success
 // - Other NTSTATUS codes as necessary
-[[nodiscard]] NTSTATUS _ReadCharacterInput(InputBuffer& inputBuffer,
-                                           std::span<char> buffer,
-                                           size_t& bytesRead,
-                                           INPUT_READ_HANDLE_DATA& readHandleState,
-                                           const bool unicode)
+[[nodiscard]] NTSTATUS ReadCharacterInput(InputBuffer& inputBuffer,
+                                          std::span<char> buffer,
+                                          size_t& bytesRead,
+                                          INPUT_READ_HANDLE_DATA& readHandleState,
+                                          const bool unicode)
 try
 {
     UNREFERENCED_PARAMETER(readHandleState);
@@ -527,11 +527,11 @@ NT_CATCH_RETURN()
         }
         else
         {
-            const auto status = _ReadCharacterInput(inputBuffer,
-                                                    buffer,
-                                                    bytesRead,
-                                                    readHandleState,
-                                                    unicode);
+            const auto status = ReadCharacterInput(inputBuffer,
+                                                   buffer,
+                                                   bytesRead,
+                                                   readHandleState,
+                                                   unicode);
             if (status == CONSOLE_STATUS_WAIT)
             {
                 waiter = std::make_unique<RAW_READ_DATA>(&inputBuffer, &readHandleState, gsl::narrow<ULONG>(buffer.size()), reinterpret_cast<wchar_t*>(buffer.data()));
