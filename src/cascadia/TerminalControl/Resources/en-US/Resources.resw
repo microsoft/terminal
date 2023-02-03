@@ -232,11 +232,11 @@ Please either install the missing font or choose another one.</value>
     <value>Paste</value>
     <comment>The tooltip for a paste button</comment>
   </data>
-  <data name="SearchBommandButton.Label" xml:space="preserve">
+  <data name="SearchCommandButton.Label" xml:space="preserve">
     <value>Find...</value>
     <comment>The label of a button for searching for the selected text</comment>
   </data>
-  <data name="SearchBommandButton.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="SearchCommandButton.ToolTipService.ToolTip" xml:space="preserve">
     <value>Find</value>
     <comment>The tooltip for a button for searching for the selected text</comment>
   </data>

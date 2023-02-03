@@ -48,8 +48,8 @@
                           Click="_PasteCommandHandler"
                           Icon="Paste" />
             <CommandBarFlyout.SecondaryCommands>
-                <AppBarButton x:Name="SearchBommandButton"
-                              x:Uid="SearchBommandButton"
+                <AppBarButton x:Name="SearchCommandButton"
+                              x:Uid="SearchCommandButton"
                               Click="_SearchCommandHandler"
                               Icon="Find" />
             </CommandBarFlyout.SecondaryCommands>

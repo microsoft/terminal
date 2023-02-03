@@ -225,8 +225,5 @@
                          Text="{x:Bind WindowName, Mode=OneWay}" />
             </mux:TeachingTip.Content>
         </mux:TeachingTip>
-
-
-        <FlyoutBase.AttachedFlyout />
     </Grid>
 </Page>
