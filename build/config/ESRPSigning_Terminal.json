@@ -19,7 +19,6 @@
                 "TerminalApp.dll",
                 "TerminalApp.winmd",
                 "TerminalThemeHelpers.dll",
-                "WindowsTerminalShellExt.dll",
 
                 // The rest
                 "TerminalAzBridge.exe",

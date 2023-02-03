@@ -113,7 +113,7 @@
                     <com:Class Id="051F34EE-C1FD-4B19-AF75-9BA54648434C"/>
                 </com:ExeServer>
                 <com:SurrogateServer DisplayName="WindowsTerminalShellExt">
-                    <com:Class Id="52065414-e077-47ec-a3ac-1cc5455e1b54" Path="WindowsTerminalShellExt.dll" ThreadingModel="STA"/>
+                    <com:Class Id="52065414-e077-47ec-a3ac-1cc5455e1b54" Path="Microsoft.Terminal.ShellExtension.dll" ThreadingModel="STA"/>
                 </com:SurrogateServer>
             </com:ComServer>
         </com:Extension>

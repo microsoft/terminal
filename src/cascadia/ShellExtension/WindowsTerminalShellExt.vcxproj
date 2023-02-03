@@ -2,7 +2,7 @@
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
     <ProjectGuid>{f2ed628a-db22-446f-a081-4cc845b51a2b}</ProjectGuid>
-    <ProjectName>WindowsTerminalShellExt</ProjectName>
+    <ProjectName>Microsoft.Terminal.ShellExtension</ProjectName>
     <RootNamespace>Microsoft.Terminal.ShellExtension</RootNamespace>
     <!-- cppwinrt.build.pre.props depends on these settings: -->
     <!-- build a dll, not exe (Application) -->
