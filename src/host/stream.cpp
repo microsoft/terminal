@@ -283,7 +283,7 @@ til::CoordType RetrieveNumberOfSpaces(_In_ til::CoordType sOriginalCursorPositio
 // - STATUS_NO_MEMORY in low memory situation
 // - other relevant NTSTATUS codes
 [[nodiscard]] static NTSTATUS _ReadPendingInput(InputBuffer& inputBuffer,
-                                                gsl::span<char> buffer,
+                                                std::span<char> buffer,
                                                 size_t& bytesRead,
                                                 INPUT_READ_HANDLE_DATA& readHandleState,
                                                 const bool unicode)
@@ -303,7 +303,7 @@ try
         }
     }
 
-    gsl::span<char> writer{ buffer };
+    std::span<char> writer{ buffer };
 
     if (unicode)
     {
@@ -354,7 +354,7 @@ NT_CATCH_RETURN()
 // - other relevant HRESULT codes
 [[nodiscard]] static HRESULT _ReadLineInput(InputBuffer& inputBuffer,
                                             const HANDLE processData,
-                                            gsl::span<char> buffer,
+                                            std::span<char> buffer,
                                             size_t& bytesRead,
                                             DWORD& controlKeyState,
                                             const std::string_view initialData,
@@ -419,7 +419,7 @@ NT_CATCH_RETURN()
 // - STATUS_SUCCESS on success
 // - Other NTSTATUS codes as necessary
 [[nodiscard]] NTSTATUS _ReadCharacterInput(InputBuffer& inputBuffer,
-                                           gsl::span<char> buffer,
+                                           std::span<char> buffer,
                                            size_t& bytesRead,
                                            INPUT_READ_HANDLE_DATA& readHandleState,
                                            const bool unicode)
@@ -429,7 +429,7 @@ try
 
     bytesRead = 0;
 
-    gsl::span writer{ buffer };
+    std::span writer{ buffer };
     const auto charSize = unicode ? sizeof(wchar_t) : sizeof(char);
 
     if (!unicode)
@@ -519,7 +519,7 @@ NT_CATCH_RETURN()
 // - Other NSTATUS codes as necessary
 [[nodiscard]] NTSTATUS DoReadConsole(InputBuffer& inputBuffer,
                                      const HANDLE processData,
-                                     gsl::span<char> buffer,
+                                     std::span<char> buffer,
                                      size_t& bytesRead,
                                      ULONG& controlKeyState,
                                      const std::string_view initialData,
@@ -583,7 +583,7 @@ NT_CATCH_RETURN()
 }
 
 [[nodiscard]] HRESULT ApiRoutines::ReadConsoleAImpl(IConsoleInputObject& context,
-                                                    gsl::span<char> buffer,
+                                                    std::span<char> buffer,
                                                     size_t& written,
                                                     std::unique_ptr<IWaitRoutine>& waiter,
                                                     const std::string_view initialData,
@@ -611,7 +611,7 @@ NT_CATCH_RETURN()
 }
 
 [[nodiscard]] HRESULT ApiRoutines::ReadConsoleWImpl(IConsoleInputObject& context,
-                                                    gsl::span<char> buffer,
+                                                    std::span<char> buffer,
                                                     size_t& written,
                                                     std::unique_ptr<IWaitRoutine>& waiter,
                                                     const std::string_view initialData,

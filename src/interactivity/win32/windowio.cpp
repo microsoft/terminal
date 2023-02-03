@@ -209,7 +209,7 @@ void HandleKeyEvent(const HWND hWnd,
         }
         else
         {
-            keyEvent.SetCharData(0);
+            keyEvent.SetCharData(L'\0');
         }
     }
     else
@@ -220,7 +220,7 @@ void HandleKeyEvent(const HWND hWnd,
             return;
         }
         keyEvent.SetActiveModifierKeys(ControlKeyState);
-        keyEvent.SetCharData(0);
+        keyEvent.SetCharData(L'\0');
     }
 
     const INPUT_KEY_INFO inputKeyInfo(VirtualKeyCode, ControlKeyState);

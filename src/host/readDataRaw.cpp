@@ -115,7 +115,7 @@ bool RAW_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     // thread or a write routine. Both of these callers grab the current
     // console lock.
 
-    gsl::span buffer{ reinterpret_cast<char*>(_BufPtr), _BufferSize };
+    std::span buffer{ reinterpret_cast<char*>(_BufPtr), _BufferSize };
     *pReplyStatus = _ReadCharacterInput(*_pInputBuffer, buffer, *pNumBytes, *_pInputReadHandleData, fIsUnicode);
     return *pReplyStatus != CONSOLE_STATUS_WAIT;
 }

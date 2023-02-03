@@ -42,11 +42,11 @@ public:
 
     InputBuffer();
 
-    void ConsumeW(std::wstring_view& source, gsl::span<char>& target);
+    void ConsumeW(std::wstring_view& source, std::span<char>& target);
 
-    void ConsumeA(std::wstring_view& source, gsl::span<char>& target);
-    void ConsumeCachedA(gsl::span<char>& target);
-    void PeekCachedA(gsl::span<char>& target);
+    void ConsumeA(std::wstring_view& source, std::span<char>& target);
+    void ConsumeCachedA(std::span<char>& target);
+    void PeekCachedA(std::span<char>& target);
     void CacheA(std::string_view source);
 
     // storage API for partial dbcs bytes being written to the buffer

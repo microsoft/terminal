@@ -22,7 +22,7 @@ namespace til
         };
 #ifdef GSL_SPAN_H
         template<typename U, std::size_t E>
-        struct is_contiguous_view<gsl::span<U, E>> : std::true_type
+        struct is_contiguous_view<std::span<U, E>> : std::true_type
         {
         };
 #endif

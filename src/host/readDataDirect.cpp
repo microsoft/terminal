@@ -119,7 +119,7 @@ try
     if (!fIsUnicode && amountToRead > 0)
     {
         std::string buffer(amountToRead, '\0');
-        gsl::span writer{ buffer };
+        std::span writer{ buffer };
         _pInputBuffer->ConsumeCachedA(writer);
 
         const auto read = buffer.size() - writer.size();

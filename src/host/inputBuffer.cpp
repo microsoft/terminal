@@ -41,7 +41,7 @@ InputBuffer::InputBuffer() :
 // the start of the `source` and `target` slices will be offset by as many bytes as have been copied
 // over, so that if you call this function again it'll continue copying from wherever it left off.
 // This function is intended for use with our W APIs.
-void InputBuffer::ConsumeW(std::wstring_view& source, gsl::span<char>& target)
+void InputBuffer::ConsumeW(std::wstring_view& source, std::span<char>& target)
 {
     if (!_aBuffer.empty())
     {
@@ -62,7 +62,7 @@ void InputBuffer::ConsumeW(std::wstring_view& source, gsl::span<char>& target)
 // This function is intended for use with our A APIs and performs the necessary `WideCharToMultiByte`
 // conversion. Since not all converted `char`s might fit into `target` it'll cache the remainder.
 // The next time this function is called those cached `char`s will then be the first to be copied over.
-void InputBuffer::ConsumeA(std::wstring_view& source, gsl::span<char>& target)
+void InputBuffer::ConsumeA(std::wstring_view& source, std::span<char>& target)
 {
     // `_aBufferReader` might still contain target data from a previous invocation.
     ConsumeCachedA(target);
@@ -124,7 +124,7 @@ void InputBuffer::ConsumeA(std::wstring_view& source, gsl::span<char>& target)
 }
 
 // Same as `ConsumeA`, but without any `source` characters.
-void InputBuffer::ConsumeCachedA(gsl::span<char>& target)
+void InputBuffer::ConsumeCachedA(std::span<char>& target)
 {
     if (_aBufferReader.empty())
     {
@@ -142,7 +142,7 @@ void InputBuffer::ConsumeCachedA(gsl::span<char>& target)
 
 // Same as `ConsumeCachedA`, but as the name indicates it doesn't "consume" the amount of data that has been copied
 // into `target`. Still, the `target` slice will have been offset the same way `ConsumeW` and `ConsumeA` do it.
-void InputBuffer::PeekCachedA(gsl::span<char>& target)
+void InputBuffer::PeekCachedA(std::span<char>& target)
 {
     auto reader = _aBufferReader;
     til::bytes_transfer(target, reader);

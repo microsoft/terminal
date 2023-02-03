@@ -166,8 +166,8 @@ void ConhostInternalGetSet::SetScrollingRegion(const til::inclusive_rect& scroll
 // - true if a line feed also produces a carriage return. false otherwise.
 bool ConhostInternalGetSet::GetLineFeedMode() const
 {
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.IsReturnOnNewlineAutomatic();
+    auto& screenInfo = _io.GetActiveOutputBuffer();
+    return WI_IsFlagClear(screenInfo.OutputMode, DISABLE_NEWLINE_AUTO_RETURN);
 }
 
 // Routine Description:
