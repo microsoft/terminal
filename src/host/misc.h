@@ -76,8 +76,6 @@ void InputEventsToString(std::deque<std::unique_ptr<IInputEvent>>& events, std::
     }
 }
 
-void SplitToOem(std::deque<std::unique_ptr<IInputEvent>>& events);
-
 int ConvertInputToUnicode(const UINT uiCodePage,
                           _In_reads_(cchSource) const CHAR* const pchSource,
                           const UINT cchSource,

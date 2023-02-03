@@ -48,6 +48,5 @@ public:
 
 private:
     const size_t _eventReadCount;
-    std::deque<std::unique_ptr<IInputEvent>> _partialEvents;
     std::deque<std::unique_ptr<IInputEvent>> _outEvents;
 };

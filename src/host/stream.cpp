@@ -6,9 +6,6 @@
 #include "_stream.h"
 #include "stream.h"
 
-#include <til/bytes.h>
-
-#include "dbcs.h"
 #include "handle.h"
 #include "misc.h"
 #include "readDataRaw.hpp"
@@ -303,16 +300,8 @@ try
         }
     }
 
-    std::span<char> writer{ buffer };
-
-    if (unicode)
-    {
-        inputBuffer.ConsumeW(pending, writer);
-    }
-    else
-    {
-        inputBuffer.ConsumeA(pending, writer);
-    }
+    std::span writer{ buffer };
+    inputBuffer.Consume(unicode, pending, writer);
 
     if (pending.empty())
     {
@@ -375,7 +364,7 @@ NT_CATCH_RETURN()
                                                                  &readHandleState, // pInputReadHandleData
                                                                  screenInfo, // pScreenInfo
                                                                  buffer.size_bytes(), // UserBufferSize
-                                                                 reinterpret_cast<wchar_t*>(buffer.data()), // UserBuffer
+                                                                 buffer.data(), // UserBuffer
                                                                  ctrlWakeupMask, // CtrlWakeupMask
                                                                  exeName, // exe name
                                                                  initialData,
@@ -429,63 +418,34 @@ try
 
     bytesRead = 0;
 
-    std::span writer{ buffer };
     const auto charSize = unicode ? sizeof(wchar_t) : sizeof(char);
+    std::span writer{ buffer };
 
-    if (!unicode)
-    {
-        inputBuffer.ConsumeCachedA(writer);
-    }
-
-    // This guards against us failing to put even a single character into `writer` below,
-    // but it also guards against `RAW_READ_DATA` not supporting empty buffers.
     if (writer.size() < charSize)
     {
-        bytesRead = buffer.size() - writer.size();
-        // If we failed to even put a single character into the buffer
-        // we need to tell the client that the buffer was too small.
-        return bytesRead ? STATUS_SUCCESS : STATUS_BUFFER_TOO_SMALL;
+        return STATUS_BUFFER_TOO_SMALL;
     }
 
-    // We only need to wait for input if `ReadBufferToOem` hasn't filled in any cached text.
-    if (bytesRead == 0)
-    {
-        wchar_t wch;
-        const auto status = GetChar(&inputBuffer, &wch, true, nullptr, nullptr, nullptr);
-        if (!NT_SUCCESS(status))
-        {
-            return status;
-        }
+    inputBuffer.ConsumeCached(unicode, writer);
 
-        if (unicode)
-        {
-            til::bytes_put(writer, wch);
-        }
-        else
-        {
-            std::wstring_view wchView{ &wch, 1 };
-            inputBuffer.ConsumeA(wchView, writer);
-        }
-    }
+    // We don't need to wait for input if `ConsumeCached` read something already, which is
+    // indicated by the writer having been advanced (= it's shorter than the original buffer).
+    auto wait = writer.size() == buffer.size();
+    auto status = STATUS_SUCCESS;
 
     while (writer.size() >= charSize)
     {
         wchar_t wch;
-        const auto status = GetChar(&inputBuffer, &wch, false, nullptr, nullptr, nullptr);
+        status = GetChar(&inputBuffer, &wch, wait, nullptr, nullptr, nullptr);
         if (!NT_SUCCESS(status))
         {
             break;
         }
 
-        if (unicode)
-        {
-            til::bytes_put(writer, wch);
-        }
-        else
-        {
-            std::wstring_view wchView{ &wch, 1 };
-            inputBuffer.ConsumeA(wchView, writer);
-        }
+        std::wstring_view wchView{ &wch, 1 };
+        inputBuffer.Consume(unicode, wchView, writer);
+
+        wait = false;
     }
 
     bytesRead = buffer.size() - writer.size();

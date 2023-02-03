@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 #include "inputBuffer.hpp"
-#include "dbcs.h"
+
 #include "stream.h"
 #include "../types/inc/GlyphWidth.hpp"
 
@@ -37,129 +37,199 @@ InputBuffer::InputBuffer() :
     fInComposition = false;
 }
 
-// Transfer as many `wchar_t`s from source over to the `wchar_t` buffer `target`. After it returns,
+// Transfer as many `wchar_t`s from source over to the `char`/`wchar_t` buffer `target`. After it returns,
 // the start of the `source` and `target` slices will be offset by as many bytes as have been copied
 // over, so that if you call this function again it'll continue copying from wherever it left off.
-// This function is intended for use with our W APIs.
-void InputBuffer::ConsumeW(std::wstring_view& source, std::span<char>& target)
+//
+// It performs the necessary `WideCharToMultiByte` conversion if `isUnicode` is `false`.
+// Since not all converted `char`s might fit into `target` it'll cache the remainder. The next
+// time this function is called those cached `char`s will then be the first to be copied over.
+void InputBuffer::Consume(bool isUnicode, std::wstring_view& source, std::span<char>& target)
 {
-    if (!_aBuffer.empty())
-    {
-        _resetBufferA();
-    }
+    // `_cachedTextReaderA` might still contain target data from a previous invocation.
+    // `ConsumeCached` calls `_switchReadingMode` for us.
+    ConsumeCached(isUnicode, target);
 
     if (source.empty() || target.empty())
     {
         return;
     }
 
-    til::bytes_transfer(target, source);
-}
-
-// Transfer as many `wchar_t`s from source over to the `char` buffer `target`. After it returns,
-// the start of the `source` and `target` slices will be offset by as many bytes as have been copied
-// over, so that if you call this function again it'll continue copying from wherever it left off.
-// This function is intended for use with our A APIs and performs the necessary `WideCharToMultiByte`
-// conversion. Since not all converted `char`s might fit into `target` it'll cache the remainder.
-// The next time this function is called those cached `char`s will then be the first to be copied over.
-void InputBuffer::ConsumeA(std::wstring_view& source, std::span<char>& target)
-{
-    // `_aBufferReader` might still contain target data from a previous invocation.
-    ConsumeCachedA(target);
-
-    if (source.empty() || target.empty())
+    if (isUnicode)
     {
-        return;
+        // The above block should either leave `target` or `_cachedTextReaderW` empty (or both).
+        // If we're here, `_cachedTextReaderW` should be empty.
+        assert(_cachedTextReaderW.empty());
+
+        til::bytes_transfer(target, source);
     }
-
-    // The above block should either leave `target` or `_aBufferReader` empty (or both).
-    // If we're here, `_aBufferReader` should be empty.
-    assert(_aBufferReader.empty());
-
-    const auto cp = ServiceLocator::LocateGlobals().getConsoleInformation().CP;
-
-    // Fast path: Batch convert all data in case the user provided buffer is large enough.
+    else
     {
-        const auto wideLength = gsl::narrow<ULONG>(source.size());
-        const auto narrowLength = gsl::narrow<ULONG>(target.size());
+        // The above block should either leave `target` or `_cachedTextReaderA` empty (or both).
+        // If we're here, `_cachedTextReaderA` should be empty.
+        assert(_cachedTextReaderA.empty());
 
-        const auto length = WideCharToMultiByte(cp, 0, source.data(), wideLength, target.data(), narrowLength, nullptr, nullptr);
-        if (length > 0)
+        const auto cp = ServiceLocator::LocateGlobals().getConsoleInformation().CP;
+
+        // Fast path: Batch convert all data in case the user provided buffer is large enough.
         {
-            source = {};
-            til::bytes_advance(target, gsl::narrow_cast<size_t>(length));
-            return;
+            const auto wideLength = gsl::narrow<ULONG>(source.size());
+            const auto narrowLength = gsl::narrow<ULONG>(target.size());
+
+            const auto length = WideCharToMultiByte(cp, 0, source.data(), wideLength, target.data(), narrowLength, nullptr, nullptr);
+            if (length > 0)
+            {
+                source = {};
+                til::bytes_advance(target, gsl::narrow_cast<size_t>(length));
+                return;
+            }
+
+            const auto error = GetLastError();
+            THROW_HR_IF(HRESULT_FROM_WIN32(error), error != ERROR_INSUFFICIENT_BUFFER);
         }
 
-        const auto error = GetLastError();
-        THROW_HR_IF(HRESULT_FROM_WIN32(error), error != ERROR_INSUFFICIENT_BUFFER);
-    }
-
-    // Slow path: Character-wise conversion otherwise. We do this in order to only
-    // consume as many characters from `source` as necessary to fill `target`.
-    {
-        size_t read = 0;
-
-        for (const auto& wch : source)
+        // Slow path: Character-wise conversion otherwise. We do this in order to only
+        // consume as many characters from `source` as necessary to fill `target`.
         {
-            char buffer[8];
-            const auto length = WideCharToMultiByte(cp, 0, &wch, 1, &buffer[0], sizeof(buffer), nullptr, nullptr);
-            THROW_LAST_ERROR_IF(length <= 0);
+            size_t read = 0;
 
-            std::string_view slice{ &buffer[0], gsl::narrow_cast<size_t>(length) };
-            til::bytes_transfer(target, slice);
-
-            ++read;
-
-            if (!slice.empty())
+            for (const auto& wch : source)
             {
-                _aBuffer = slice;
-                _aBufferReader = _aBuffer;
-                break;
+                char buffer[8];
+                const auto length = WideCharToMultiByte(cp, 0, &wch, 1, &buffer[0], sizeof(buffer), nullptr, nullptr);
+                THROW_LAST_ERROR_IF(length <= 0);
+
+                std::string_view slice{ &buffer[0], gsl::narrow_cast<size_t>(length) };
+                til::bytes_transfer(target, slice);
+
+                ++read;
+
+                if (!slice.empty())
+                {
+                    _cachedTextA = slice;
+                    _cachedTextReaderA = _cachedTextA;
+                    break;
+                }
+            }
+
+            source = source.substr(read);
+        }
+    }
+}
+
+// Same as `Consume`, but without any `source` characters.
+void InputBuffer::ConsumeCached(bool isUnicode, std::span<char>& target)
+{
+    _switchReadingMode(isUnicode ? ReadingMode::StringW : ReadingMode::StringA);
+
+    if (isUnicode)
+    {
+        if (!_cachedTextReaderW.empty())
+        {
+            til::bytes_transfer(target, _cachedTextReaderW);
+
+            if (_cachedTextReaderW.empty())
+            {
+                // This is just so that we release memory eagerly.
+                _cachedTextW = std::wstring{};
             }
         }
-
-        source = source.substr(read);
     }
-}
-
-// Same as `ConsumeA`, but without any `source` characters.
-void InputBuffer::ConsumeCachedA(std::span<char>& target)
-{
-    if (_aBufferReader.empty())
+    else
     {
-        return;
+        if (!_cachedTextReaderA.empty())
+        {
+            til::bytes_transfer(target, _cachedTextReaderA);
+
+            if (_cachedTextReaderA.empty())
+            {
+                // This is just so that we release memory eagerly.
+                _cachedTextA = std::string{};
+            }
+        }
     }
+}
 
-    til::bytes_transfer(target, _aBufferReader);
+void InputBuffer::Cache(std::wstring_view source)
+{
+    const auto off = _cachedTextW.empty() ? 0 : _cachedTextReaderW.data() - _cachedTextW.data();
+    _cachedTextW.append(source);
+    _cachedTextReaderW = std::wstring_view{ _cachedTextW }.substr(off);
+}
 
-    if (_aBufferReader.empty())
+// Moves up to `count`, previously cached events into `target`.
+size_t InputBuffer::ConsumeCached(bool isUnicode, size_t count, InputEventQueue& target)
+{
+    _switchReadingMode(isUnicode ? ReadingMode::InputEventsW : ReadingMode::InputEventsA);
+
+    size_t i = 0;
+
+    while (i < count && !_cachedInputEvents.empty())
     {
-        // This is just so that we release memory eagerly.
-        _aBuffer = std::string{};
+        target.push_back(std::move(_cachedInputEvents.front()));
+        _cachedInputEvents.pop_front();
+        i++;
+    }
+
+    return i;
+}
+
+// Copies up to `count`, previously cached events into `target`.
+size_t InputBuffer::PeekCached(bool isUnicode, size_t count, InputEventQueue& target)
+{
+    _switchReadingMode(isUnicode ? ReadingMode::InputEventsW : ReadingMode::InputEventsA);
+
+    size_t i = 0;
+
+    for (const auto& e : _cachedInputEvents)
+    {
+        if (i >= count)
+        {
+            break;
+        }
+
+        target.push_back(IInputEvent::Create(e->ToInputRecord()));
+        i++;
+    }
+
+    return i;
+}
+
+// Trims `source` to have a size below or equal to `expectedSourceSize` by
+// storing any extra events in `_cachedInputEvents` for later retrieval.
+void InputBuffer::Cache(bool isUnicode, InputEventQueue& source, size_t expectedSourceSize)
+{
+    _switchReadingMode(isUnicode ? ReadingMode::InputEventsW : ReadingMode::InputEventsA);
+
+    if (source.size() > expectedSourceSize)
+    {
+        _cachedInputEvents.insert(
+            _cachedInputEvents.end(),
+            std::make_move_iterator(source.begin() + expectedSourceSize),
+            std::make_move_iterator(source.end()));
+        source.resize(expectedSourceSize);
     }
 }
 
-// Same as `ConsumeCachedA`, but as the name indicates it doesn't "consume" the amount of data that has been copied
-// into `target`. Still, the `target` slice will have been offset the same way `ConsumeW` and `ConsumeA` do it.
-void InputBuffer::PeekCachedA(std::span<char>& target)
+void InputBuffer::_switchReadingMode(ReadingMode mode)
 {
-    auto reader = _aBufferReader;
-    til::bytes_transfer(target, reader);
+    if (_readingMode != mode)
+    {
+        _switchReadingModeSlowPath(mode);
+    }
 }
 
-// This function allows you to manually add some data into the internal buffer used by `ConsumeA`, etc.
-void InputBuffer::CacheA(std::string_view source)
+void InputBuffer::_switchReadingModeSlowPath(ReadingMode mode)
 {
-    const auto off = _aBufferReader.size() - _aBuffer.size();
-    _aBuffer.append(source);
-    _aBufferReader = std::string_view{ _aBuffer }.substr(off);
-}
+    _cachedTextA = std::string{};
+    _cachedTextReaderA = {};
 
-void InputBuffer::_resetBufferA()
-{
-    _aBuffer = std::string{};
-    _aBufferReader = {};
+    _cachedTextW = std::wstring{};
+    _cachedTextReaderW = {};
+
+    _cachedInputEvents = std::deque<std::unique_ptr<IInputEvent>>{};
+
+    _readingMode = mode;
 }
 
 // Routine Description:
@@ -332,47 +402,110 @@ void InputBuffer::PassThroughWin32MouseRequest(bool enable)
                                          const bool WaitForData,
                                          const bool Unicode,
                                          const bool Stream)
+try
 {
-    try
+    assert(OutEvents.empty());
+
+    const auto cp = ServiceLocator::LocateGlobals().getConsoleInformation().CP;
+
+    if (Peek)
     {
-        if (_storage.empty())
+        PeekCached(Unicode, AmountToRead, OutEvents);
+    }
+    else
+    {
+        ConsumeCached(Unicode, AmountToRead, OutEvents);
+    }
+
+    auto it = _storage.begin();
+    const auto end = _storage.end();
+
+    while (it != end && OutEvents.size() < AmountToRead)
+    {
+        std::unique_ptr<IInputEvent> event;
+
         {
-            if (!WaitForData)
+            decltype(_storage)::difference_type advance = 1;
+            auto& e = *it;
+
+            // for stream reads we need to split any key events that have been coalesced
+            if (Stream && e->EventType() == InputEventType::KeyEvent)
             {
-                return STATUS_SUCCESS;
+                const auto keyEvent = static_cast<KeyEvent* const>(e.get());
+                const auto repeatCount = keyEvent->GetRepeatCount();
+
+                if (repeatCount > 1)
+                {
+                    auto tempEvent = std::make_unique<KeyEvent>(*keyEvent);
+                    tempEvent->SetRepeatCount(1);
+                    event = std::move(tempEvent);
+
+                    // By setting the advance to 0, the next time we loop around we'll
+                    // process the same event again, up until the repeat count is 1.
+                    keyEvent->SetRepeatCount(repeatCount - 1);
+                    advance = 0;
+                }
             }
-            return CONSOLE_STATUS_WAIT;
+
+            if (!event)
+            {
+                if (Peek)
+                {
+                    event = IInputEvent::Create(event->ToInputRecord());
+                }
+                else
+                {
+                    event = std::move(e);
+                }
+            }
+
+            it += advance;
         }
 
-        // read from buffer
-        std::deque<std::unique_ptr<IInputEvent>> events;
-        size_t eventsRead;
-        bool resetWaitEvent;
-        _ReadBuffer(events,
-                    AmountToRead,
-                    eventsRead,
-                    Peek,
-                    resetWaitEvent,
-                    Unicode,
-                    Stream);
-
-        // copy events to outEvents
-        while (!events.empty())
+        if (!Unicode && event->EventType() == InputEventType::KeyEvent)
         {
-            OutEvents.push_back(std::move(events.front()));
-            events.pop_front();
-        }
+            const auto keyEvent = static_cast<KeyEvent* const>(event.get());
+            const auto wch = keyEvent->GetCharData();
 
-        if (resetWaitEvent)
-        {
-            ServiceLocator::LocateGlobals().hInputEvent.ResetEvent();
+            char buffer[8];
+            const auto length = WideCharToMultiByte(cp, 0, &wch, 1, &buffer[0], sizeof(buffer), nullptr, nullptr);
+            THROW_LAST_ERROR_IF(length <= 0);
+
+            const std::string_view str{ &buffer[0], gsl::narrow_cast<size_t>(length) };
+
+            for (const auto& ch : str)
+            {
+                auto tempEvent = std::make_unique<KeyEvent>(*keyEvent);
+                tempEvent->SetCharData(ch);
+                OutEvents.push_back(std::move(tempEvent));
+            }
         }
-        return STATUS_SUCCESS;
+        else
+        {
+            OutEvents.push_back(std::move(event));
+        }
     }
-    catch (...)
+
+    if (!Peek)
     {
-        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+        _storage.erase(_storage.begin(), it);
     }
+
+    Cache(Unicode, OutEvents, AmountToRead);
+
+    if (OutEvents.empty())
+    {
+        return WaitForData ? CONSOLE_STATUS_WAIT : STATUS_SUCCESS;
+    }
+    if (_storage.empty())
+    {
+        ServiceLocator::LocateGlobals().hInputEvent.ResetEvent();
+    }
+    return STATUS_SUCCESS;
+}
+catch (...)
+{
+    return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
 }
 
 // Routine Description:
@@ -418,130 +551,6 @@ void InputBuffer::PassThroughWin32MouseRequest(bool enable)
     }
 
     return Status;
-}
-
-// Routine Description:
-// - This routine reads from a buffer. It does the buffer manipulation.
-// Arguments:
-// - outEvents - where read events are placed
-// - readCount - amount of events to read
-// - eventsRead - where to store number of events read
-// - peek - if true , don't remove data from buffer, just copy it.
-// - resetWaitEvent - on exit, true if buffer became empty.
-// - unicode - true if read should be done in unicode mode
-// - streamRead - true if read should unpack KeyEvents that have a >1 repeat count. readCount must be 1 if streamRead is true.
-// Return Value:
-// - <none>
-// Note:
-// - The console lock must be held when calling this routine.
-void InputBuffer::_ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                              const size_t readCount,
-                              _Out_ size_t& eventsRead,
-                              const bool peek,
-                              _Out_ bool& resetWaitEvent,
-                              const bool unicode,
-                              const bool streamRead)
-{
-    // when stream reading, the previous behavior was to only allow reading of a single
-    // event at a time.
-    FAIL_FAST_IF(streamRead && readCount != 1);
-
-    resetWaitEvent = false;
-
-    std::deque<std::unique_ptr<IInputEvent>> readEvents;
-    // we need another var to keep track of how many we've read
-    // because dbcs records count for two when we aren't doing a
-    // unicode read but the eventsRead count should return the number
-    // of events actually put into outRecords.
-    size_t virtualReadCount = 0;
-
-    while (!_storage.empty() && virtualReadCount < readCount)
-    {
-        auto performNormalRead = true;
-        // for stream reads we need to split any key events that have been coalesced
-        if (streamRead)
-        {
-            if (_storage.front()->EventType() == InputEventType::KeyEvent)
-            {
-                const auto pKeyEvent = static_cast<KeyEvent* const>(_storage.front().get());
-                if (pKeyEvent->GetRepeatCount() > 1)
-                {
-                    // split the key event
-                    auto streamKeyEvent = std::make_unique<KeyEvent>(*pKeyEvent);
-                    streamKeyEvent->SetRepeatCount(1);
-                    readEvents.push_back(std::move(streamKeyEvent));
-                    pKeyEvent->SetRepeatCount(pKeyEvent->GetRepeatCount() - 1);
-                    performNormalRead = false;
-                }
-            }
-        }
-
-        if (performNormalRead)
-        {
-            readEvents.push_back(std::move(_storage.front()));
-            _storage.pop_front();
-        }
-
-        ++virtualReadCount;
-        if (!unicode)
-        {
-            if (readEvents.back()->EventType() == InputEventType::KeyEvent)
-            {
-                const auto pKeyEvent = static_cast<const KeyEvent* const>(readEvents.back().get());
-                if (IsGlyphFullWidth(pKeyEvent->GetCharData()))
-                {
-                    ++virtualReadCount;
-                }
-            }
-        }
-    }
-
-    // the amount of events that were actually read
-    eventsRead = readEvents.size();
-
-    // copy the events back if we were supposed to peek
-    if (peek)
-    {
-        if (streamRead)
-        {
-            // we need to check and see if the event was split from a coalesced key event
-            // or if it was unrelated to the current front event in storage
-            if (!readEvents.empty() &&
-                !_storage.empty() &&
-                readEvents.back()->EventType() == InputEventType::KeyEvent &&
-                _storage.front()->EventType() == InputEventType::KeyEvent &&
-                _CanCoalesce(static_cast<const KeyEvent&>(*readEvents.back()),
-                             static_cast<const KeyEvent&>(*_storage.front())))
-            {
-                auto& keyEvent = static_cast<KeyEvent&>(*_storage.front());
-                keyEvent.SetRepeatCount(keyEvent.GetRepeatCount() + 1);
-            }
-            else
-            {
-                _storage.push_front(IInputEvent::Create(readEvents.back()->ToInputRecord()));
-            }
-        }
-        else
-        {
-            for (auto it = readEvents.crbegin(); it != readEvents.crend(); ++it)
-            {
-                _storage.push_front(IInputEvent::Create((*it)->ToInputRecord()));
-            }
-        }
-    }
-
-    // move events read to proper deque
-    while (!readEvents.empty())
-    {
-        outEvents.push_back(std::move(readEvents.front()));
-        readEvents.pop_front();
-    }
-
-    // signal if we emptied the buffer
-    if (_storage.empty())
-    {
-        resetWaitEvent = true;
-    }
 }
 
 // Routine Description:

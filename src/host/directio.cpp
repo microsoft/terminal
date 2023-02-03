@@ -169,37 +169,12 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        auto amountToRead = eventReadCount;
-
-        std::deque<std::unique_ptr<IInputEvent>> partialEvents;
-        if (!IsUnicode)
-        {
-            std::string buffer(eventReadCount, '\0');
-            std::span writer{ buffer };
-
-            if (IsPeek)
-            {
-                inputBuffer.PeekCachedA(writer);
-            }
-            else
-            {
-                inputBuffer.ConsumeCachedA(writer);
-            }
-
-            const auto read = buffer.size() - writer.size();
-            std::string_view str{ buffer.data(), read };
-            StringToInputEvents(str, partialEvents);
-
-            amountToRead -= read;
-        }
-
-        std::deque<std::unique_ptr<IInputEvent>> readEvents;
-        auto Status = inputBuffer.Read(readEvents,
-                                       amountToRead,
-                                       IsPeek,
-                                       true,
-                                       IsUnicode,
-                                       false);
+        const auto Status = inputBuffer.Read(outEvents,
+                                             eventReadCount,
+                                             IsPeek,
+                                             true,
+                                             IsUnicode,
+                                             false);
 
         if (CONSOLE_STATUS_WAIT == Status)
         {
@@ -208,40 +183,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
             waiter = std::make_unique<DirectReadData>(&inputBuffer,
                                                       &readHandleState,
                                                       eventReadCount,
-                                                      std::move(partialEvents));
-        }
-        else if (NT_SUCCESS(Status))
-        {
-            // split key events to oem chars if necessary
-            if (!IsUnicode)
-            {
-                SplitToOem(readEvents);
-            }
-
-            // combine partial and readEvents
-            while (!partialEvents.empty())
-            {
-                readEvents.push_front(std::move(partialEvents.back()));
-                partialEvents.pop_back();
-            }
-
-            // move events over
-            for (size_t i = 0; i < eventReadCount; ++i)
-            {
-                if (readEvents.empty())
-                {
-                    break;
-                }
-                outEvents.push_back(std::move(readEvents.front()));
-                readEvents.pop_front();
-            }
-
-            if (!readEvents.empty())
-            {
-                std::string buffer;
-                InputEventsToString(readEvents, buffer);
-                inputBuffer.CacheA(buffer);
-            }
+                                                      std::move(outEvents));
         }
         return Status;
     }

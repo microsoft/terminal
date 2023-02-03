@@ -42,12 +42,14 @@ public:
 
     InputBuffer();
 
-    void ConsumeW(std::wstring_view& source, std::span<char>& target);
-
-    void ConsumeA(std::wstring_view& source, std::span<char>& target);
-    void ConsumeCachedA(std::span<char>& target);
-    void PeekCachedA(std::span<char>& target);
-    void CacheA(std::string_view source);
+    // String oriented APIs
+    void Consume(bool isUnicode, std::wstring_view& source, std::span<char>& target);
+    void ConsumeCached(bool isUnicode, std::span<char>& target);
+    void Cache(std::wstring_view source);
+    // INPUT_RECORD oriented APIs
+    size_t ConsumeCached(bool isUnicode, size_t count, InputEventQueue& target);
+    size_t PeekCached(bool isUnicode, size_t count, InputEventQueue& target);
+    void Cache(bool isUnicode, InputEventQueue& source, size_t expectedSourceSize);
 
     // storage API for partial dbcs bytes being written to the buffer
     bool IsWritePartialByteSequenceAvailable();
@@ -85,8 +87,20 @@ public:
     void PassThroughWin32MouseRequest(bool enable);
 
 private:
-    std::string _aBuffer;
-    std::string_view _aBufferReader;
+    enum class ReadingMode : uint8_t
+    {
+        StringA,
+        StringW,
+        InputEventsA,
+        InputEventsW,
+    };
+
+    std::string _cachedTextA;
+    std::string_view _cachedTextReaderA;
+    std::wstring _cachedTextW;
+    std::wstring_view _cachedTextReaderW;
+    std::deque<std::unique_ptr<IInputEvent>> _cachedInputEvents;
+    ReadingMode _readingMode = ReadingMode::StringA;
 
     std::deque<std::unique_ptr<IInputEvent>> _storage;
     std::unique_ptr<IInputEvent> _writePartialByteSequence;
@@ -99,15 +113,8 @@ private:
     // Otherwise, we should be calling them.
     bool _vtInputShouldSuppress{ false };
 
-    void _resetBufferA();
-
-    void _ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                     const size_t readCount,
-                     _Out_ size_t& eventsRead,
-                     const bool peek,
-                     _Out_ bool& resetWaitEvent,
-                     const bool unicode,
-                     const bool streamRead);
+    void _switchReadingMode(ReadingMode mode);
+    void _switchReadingModeSlowPath(ReadingMode mode);
 
     void _WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inRecords,
                       _Out_ size_t& eventsWritten,

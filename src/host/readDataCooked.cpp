@@ -47,7 +47,7 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
                                    _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                    SCREEN_INFORMATION& screenInfo,
                                    _In_ size_t UserBufferSize,
-                                   _In_ PWCHAR UserBuffer,
+                                   _In_ char* UserBuffer,
                                    _In_ ULONG CtrlWakeupMask,
                                    _In_ const std::wstring_view exeName,
                                    _In_ const std::string_view initialData,
@@ -62,7 +62,7 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     _exeName{ exeName },
     _pdwNumBytes{ nullptr },
 
-    _commandHistory{ CommandHistory::s_Find((HANDLE)pClientProcess) },
+    _commandHistory{ CommandHistory::s_Find(pClientProcess) },
     _controlKeyState{ 0 },
     _ctrlWakeupMask{ CtrlWakeupMask },
     _visibleCharCount{ 0 },
@@ -881,10 +881,10 @@ size_t COOKED_READ_DATA::SavePromptToUserBuffer(const size_t cch)
         try
         {
             const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-            const auto wstr = ConvertToW(gci.CP, { reinterpret_cast<char*>(_userBuffer), cch });
-            const auto copyAmount = std::min(wstr.size(), _userBufferSize / sizeof(wchar_t));
-            std::copy_n(wstr.begin(), copyAmount, _userBuffer);
-            return copyAmount * sizeof(wchar_t);
+            const auto wstr = ConvertToW(gci.CP, { _userBuffer, cch });
+            const auto copyAmount = std::min(wstr.size() * sizeof(wchar_t), _userBufferSize);
+            std::copy_n(reinterpret_cast<const char*>(wstr.data()), copyAmount, _userBuffer);
+            return copyAmount;
         }
         CATCH_LOG();
     }
@@ -1003,7 +1003,7 @@ void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline
 // - Status code that indicates success, out of memory, etc.
 [[nodiscard]] NTSTATUS COOKED_READ_DATA::_handlePostCharInputLoop(const bool isUnicode, size_t& numBytes, ULONG& controlKeyState) noexcept
 {
-    std::span writer{ reinterpret_cast<char*>(_userBuffer), _userBufferSize };
+    std::span writer{ _userBuffer, _userBufferSize };
     std::wstring_view input{ _backupLimit, _bytesRead / sizeof(wchar_t) };
     DWORD LineCount = 1;
 
@@ -1028,14 +1028,7 @@ void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline
         }
     }
 
-    if (isUnicode)
-    {
-        GetInputBuffer()->ConsumeW(input, writer);
-    }
-    else
-    {
-        GetInputBuffer()->ConsumeA(input, writer);
-    }
+    GetInputBuffer()->Consume(isUnicode, input, writer);
 
     if (!input.empty())
     {
@@ -1057,8 +1050,8 @@ void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline
 void COOKED_READ_DATA::MigrateUserBuffersOnTransitionToBackgroundWait(const void* oldBuffer, void* newBuffer)
 {
     // See the comment in WaitBlock.cpp for more information.
-    if (_userBuffer == static_cast<const wchar_t*>(oldBuffer))
+    if (_userBuffer == oldBuffer)
     {
-        _userBuffer = static_cast<wchar_t*>(newBuffer);
+        _userBuffer = static_cast<char*>(newBuffer);
     }
 }

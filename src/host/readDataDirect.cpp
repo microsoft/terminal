@@ -25,8 +25,7 @@ DirectReadData::DirectReadData(_In_ InputBuffer* const pInputBuffer,
                                const size_t eventReadCount,
                                _In_ std::deque<std::unique_ptr<IInputEvent>> partialEvents) :
     ReadData(pInputBuffer, pInputReadHandleData),
-    _eventReadCount{ eventReadCount },
-    _partialEvents{ std::move(partialEvents) }
+    _eventReadCount{ eventReadCount }
 {
 }
 
@@ -101,35 +100,14 @@ try
     // thread or a write routine.  both of these callers grab the
     // current console lock.
 
-    // calculate how many events we need to read
-    size_t amountAlreadyRead;
-    if (FAILED(SizeTAdd(_partialEvents.size(), _outEvents.size(), &amountAlreadyRead)))
-    {
-        *pReplyStatus = STATUS_INTEGER_OVERFLOW;
-        return true;
-    }
     size_t amountToRead;
-    if (FAILED(SizeTSub(_eventReadCount, amountAlreadyRead, &amountToRead)))
+    if (FAILED(SizeTSub(_eventReadCount, _outEvents.size(), &amountToRead)))
     {
         *pReplyStatus = STATUS_INTEGER_OVERFLOW;
         return true;
     }
 
-    // check if partial bytes are already stored that we should read
-    if (!fIsUnicode && amountToRead > 0)
-    {
-        std::string buffer(amountToRead, '\0');
-        std::span writer{ buffer };
-        _pInputBuffer->ConsumeCachedA(writer);
-
-        const auto read = buffer.size() - writer.size();
-        std::string_view str{ buffer.data(), read };
-        StringToInputEvents(str, _partialEvents);
-
-        amountToRead -= read;
-    }
-
-    *pReplyStatus = _pInputBuffer->Read(readEvents,
+    *pReplyStatus = _pInputBuffer->Read(_outEvents,
                                         amountToRead,
                                         false,
                                         false,
@@ -139,37 +117,6 @@ try
     if (*pReplyStatus == CONSOLE_STATUS_WAIT)
     {
         return false;
-    }
-
-    // split key events to oem chars if necessary
-    if (!fIsUnicode && *pReplyStatus == STATUS_SUCCESS)
-    {
-        SplitToOem(readEvents);
-    }
-
-    // combine partial and whole events
-    while (!_partialEvents.empty())
-    {
-        readEvents.push_front(std::move(_partialEvents.back()));
-        _partialEvents.pop_back();
-    }
-
-    // move read events to out storage
-    for (size_t i = 0; i < _eventReadCount; ++i)
-    {
-        if (readEvents.empty())
-        {
-            break;
-        }
-        _outEvents.push_back(std::move(readEvents.front()));
-        readEvents.pop_front();
-    }
-
-    if (!readEvents.empty())
-    {
-        std::string buffer;
-        InputEventsToString(readEvents, buffer);
-        _pInputBuffer->CacheA(buffer);
     }
 
     // move events to pOutputData
