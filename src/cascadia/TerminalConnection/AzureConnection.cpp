@@ -21,9 +21,9 @@ using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Terminal::Azure;
 using namespace winrt::Windows::Security::Credentials;
 
-static constexpr int CurrentCredentialVersion = 1;
+static constexpr int CurrentCredentialVersion = 2;
 static constexpr std::wstring_view PasswordVaultResourceName = L"Terminal";
-static constexpr std::wstring_view HttpUserAgent = L"Terminal/0.0";
+static constexpr std::wstring_view HttpUserAgent = L"Mozilla/5.0 (Windows NT 10.0) Terminal/1.0";
 
 static constexpr int USER_INPUT_COLOR = 93; // yellow - the color of something the user can type
 static constexpr int USER_INFO_COLOR = 97; // white - the color of clarifying information
@@ -248,7 +248,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             };
 
             // Send the request (don't care about the response)
-            (void)_SendRequestReturningJson(uri, content);
+            std::ignore = _SendRequestReturningJson(uri, content);
         }
     }
     CATCH_LOG();
@@ -265,7 +265,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             if (_state == AzureState::TermConnected)
             {
                 // Close the websocket connection
-                (void)WinHttpWebSocketClose(_webSocket.get(), WINHTTP_WEB_SOCKET_SUCCESS_CLOSE_STATUS, nullptr, 0); // throw away the error
+                std::ignore = WinHttpWebSocketClose(_webSocket.get(), WINHTTP_WEB_SOCKET_SUCCESS_CLOSE_STATUS, nullptr, 0); // throw away the error
                 _webSocket.reset();
                 _socketConnectionHandle.reset();
                 _socketSessionHandle.reset();
@@ -320,7 +320,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         return tenant;
     }
 
-    static void _packTenant(WDJ::JsonObject& jsonTenant, const Tenant& tenant)
+    static void _packTenant(const WDJ::JsonObject& jsonTenant, const Tenant& tenant)
     {
         jsonTenant.SetNamedValue(L"tenantId", WDJ::JsonValue::CreateStringValue(tenant.ID));
         if (tenant.DisplayName.has_value())
@@ -770,6 +770,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             THROW_LAST_ERROR_IF(!requestHandle);
 
             THROW_IF_WIN32_BOOL_FALSE(WinHttpSetOption(requestHandle.get(), WINHTTP_OPTION_UPGRADE_TO_WEB_SOCKET, nullptr, 0));
+#pragma warning(suppress : 26477) // WINHTTP_NO_ADDITIONAL_HEADERS expands to NULL rather than nullptr (who'd've thought?)
             THROW_IF_WIN32_BOOL_FALSE(WinHttpSendRequest(requestHandle.get(), WINHTTP_NO_ADDITIONAL_HEADERS, 0, nullptr, 0, 0, 0));
             THROW_IF_WIN32_BOOL_FALSE(WinHttpReceiveResponse(requestHandle.get(), nullptr));
 
