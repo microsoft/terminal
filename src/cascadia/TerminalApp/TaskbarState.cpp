@@ -5,7 +5,7 @@
 #include "TaskbarState.h"
 #include "TaskbarState.g.cpp"
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     // Default to unset, 0%.
     TaskbarState::TaskbarState() :
@@ -37,7 +37,7 @@ namespace winrt::TerminalApp::implementation
         return 6;
     }
 
-    int TaskbarState::ComparePriority(const winrt::TerminalApp::TaskbarState& lhs, const winrt::TerminalApp::TaskbarState& rhs)
+    int TaskbarState::ComparePriority(const winrt::Microsoft::Terminal::App::TaskbarState& lhs, const winrt::Microsoft::Terminal::App::TaskbarState& rhs)
     {
         return lhs.Priority() < rhs.Priority();
     }

@@ -9,7 +9,7 @@
 #include "FilteredCommand.g.cpp"
 
 using namespace winrt;
-using namespace winrt::TerminalApp;
+using namespace winrt::Microsoft::Terminal::App;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::System;
@@ -17,11 +17,11 @@ using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     // This class is a wrapper of PaletteItem, that is used as an item of a filterable list in CommandPalette.
     // It manages a highlighted text that is computed by matching search filter characters to item name
-    FilteredCommand::FilteredCommand(const winrt::TerminalApp::PaletteItem& item) :
+    FilteredCommand::FilteredCommand(const winrt::Microsoft::Terminal::App::PaletteItem& item) :
         _Item(item),
         _Filter(L""),
         _Weight(0)
@@ -70,9 +70,9 @@ namespace winrt::TerminalApp::implementation
     //
     // Return Value:
     // - The HighlightedText object initialized with the segments computed according to the algorithm above.
-    winrt::TerminalApp::HighlightedText FilteredCommand::_computeHighlightedName()
+    winrt::Microsoft::Terminal::App::HighlightedText FilteredCommand::_computeHighlightedName()
     {
-        const auto segments = winrt::single_threaded_observable_vector<winrt::TerminalApp::HighlightedTextSegment>();
+        const auto segments = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::App::HighlightedTextSegment>();
         auto commandName = _Item.Name();
         auto isProcessingMatchedSegment = false;
         uint32_t nextOffsetToReport = 0;
@@ -225,7 +225,7 @@ namespace winrt::TerminalApp::implementation
     // - other: another instance of FilteredCommand interface
     // Return Value:
     // - Returns true if the first is "bigger" (aka should appear first)
-    int FilteredCommand::Compare(const winrt::TerminalApp::FilteredCommand& first, const winrt::TerminalApp::FilteredCommand& second)
+    int FilteredCommand::Compare(const winrt::Microsoft::Terminal::App::FilteredCommand& first, const winrt::Microsoft::Terminal::App::FilteredCommand& second)
     {
         auto firstWeight{ first.Weight() };
         auto secondWeight{ second.Weight() };

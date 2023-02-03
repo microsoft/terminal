@@ -10,7 +10,7 @@
 #include <consoletaeftemplates.hpp>
 
 using namespace Microsoft::Console;
-using namespace winrt::TerminalApp;
+using namespace winrt::Microsoft::Terminal::App;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;

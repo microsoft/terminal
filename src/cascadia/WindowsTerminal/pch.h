@@ -70,7 +70,7 @@ Abstract:
 #include <winrt/Windows.ApplicationModel.Resources.Core.h>
 #include <winrt/Windows.UI.Composition.h>
 
-#include <winrt/TerminalApp.h>
+#include <winrt/Microsoft.Terminal.App.h>
 #include <winrt/Microsoft.Terminal.Settings.Model.h>
 #include <winrt/Microsoft.Terminal.Remoting.h>
 #include <winrt/Microsoft.Terminal.Control.h>

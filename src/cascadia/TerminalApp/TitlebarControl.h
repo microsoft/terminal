@@ -5,7 +5,7 @@
 
 #include "TitlebarControl.g.h"
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     struct TitlebarControl : TitlebarControlT<TitlebarControl>
     {
@@ -36,7 +36,7 @@ namespace winrt::TerminalApp::implementation
     };
 }
 
-namespace winrt::TerminalApp::factory_implementation
+namespace winrt::Microsoft::Terminal::App::factory_implementation
 {
     BASIC_FACTORY(TitlebarControl);
 }

@@ -7,10 +7,10 @@
 #include "AppKeyBindings.g.cpp"
 
 using namespace winrt::Microsoft::Terminal;
-using namespace winrt::TerminalApp;
+using namespace winrt::Microsoft::Terminal::App;
 using namespace winrt::Microsoft::Terminal::Control;
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     bool AppKeyBindings::TryKeyChord(const KeyChord& kc)
     {
@@ -26,7 +26,7 @@ namespace winrt::TerminalApp::implementation
         return _actionMap.IsKeyChordExplicitlyUnbound(kc);
     }
 
-    void AppKeyBindings::SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch)
+    void AppKeyBindings::SetDispatch(const winrt::Microsoft::Terminal::App::ShortcutActionDispatch& dispatch)
     {
         _dispatch = dispatch;
     }

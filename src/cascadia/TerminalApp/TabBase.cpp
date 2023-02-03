@@ -21,7 +21,7 @@ namespace winrt
     namespace WUX = Windows::UI::Xaml;
 }
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     WUX::FocusState TabBase::FocusState() const noexcept
     {
@@ -165,7 +165,7 @@ namespace winrt::TerminalApp::implementation
         _UpdateSwitchToTabKeyChord();
     }
 
-    void TabBase::SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch)
+    void TabBase::SetDispatch(const winrt::Microsoft::Terminal::App::ShortcutActionDispatch& dispatch)
     {
         _dispatch = dispatch;
     }
@@ -360,7 +360,7 @@ namespace winrt::TerminalApp::implementation
         // calculate the luminance of the current color and select a font
         // color based on that
         // see https://www.w3.org/TR/WCAG20/#relativeluminancedef
-        if (TerminalApp::ColorHelper::IsBrightColor(color))
+        if (Microsoft::Terminal::App::ColorHelper::IsBrightColor(color))
         {
             auto subtleFillColorSecondary = winrt::Windows::UI::Colors::Black();
             subtleFillColorSecondary.A = 0x09;
@@ -381,7 +381,7 @@ namespace winrt::TerminalApp::implementation
 
         // The tab font should be based on the evaluated appearance of the tab color layered on tab row.
         const auto layeredTabColor = til::color{ color }.layer_over(_tabRowColor);
-        if (TerminalApp::ColorHelper::IsBrightColor(layeredTabColor))
+        if (Microsoft::Terminal::App::ColorHelper::IsBrightColor(layeredTabColor))
         {
             fontBrush.Color(winrt::Windows::UI::Colors::Black());
             auto secondaryFontColor = winrt::Windows::UI::Colors::Black();
@@ -444,7 +444,7 @@ namespace winrt::TerminalApp::implementation
         // We don't want that to result in white text on a white tab row for
         // inactive tabs.
         const auto deselectedActualColor = deselectedTabColor.layer_over(_tabRowColor);
-        if (TerminalApp::ColorHelper::IsBrightColor(deselectedActualColor))
+        if (Microsoft::Terminal::App::ColorHelper::IsBrightColor(deselectedActualColor))
         {
             deselectedFontBrush.Color(winrt::Windows::UI::Colors::Black());
         }

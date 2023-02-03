@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 import "TerminalTabStatus.idl";
 
-namespace TerminalApp
+namespace Microsoft.Terminal.App
 {
     delegate void TitleChangeRequestedArgs(String title);
 

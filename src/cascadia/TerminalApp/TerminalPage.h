@@ -26,7 +26,7 @@ namespace Microsoft::Terminal::Core
     class ControlKeyStates;
 }
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     enum StartupState : int
     {
@@ -101,10 +101,10 @@ namespace winrt::TerminalApp::implementation
         void SetInboundListener(bool isEmbedding);
         static std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> ConvertExecuteCommandlineToActions(const Microsoft::Terminal::Settings::Model::ExecuteCommandlineArgs& args);
 
-        winrt::TerminalApp::IDialogPresenter DialogPresenter() const;
-        void DialogPresenter(winrt::TerminalApp::IDialogPresenter dialogPresenter);
+        winrt::Microsoft::Terminal::App::IDialogPresenter DialogPresenter() const;
+        void DialogPresenter(winrt::Microsoft::Terminal::App::IDialogPresenter dialogPresenter);
 
-        winrt::TerminalApp::TaskbarState TaskbarState() const;
+        winrt::Microsoft::Terminal::App::TaskbarState TaskbarState() const;
 
         void ShowKeyboardServiceWarning() const;
         void ShowSetAsDefaultInfoBar() const;
@@ -142,7 +142,7 @@ namespace winrt::TerminalApp::implementation
 
         // -------------------------------- WinRT Events ---------------------------------
         TYPED_EVENT(TitleChanged, IInspectable, winrt::hstring);
-        TYPED_EVENT(LastTabClosed, IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);
+        TYPED_EVENT(LastTabClosed, IInspectable, winrt::Microsoft::Terminal::App::LastTabClosedEventArgs);
         TYPED_EVENT(SetTitleBarContent, IInspectable, winrt::Windows::UI::Xaml::UIElement);
         TYPED_EVENT(FocusModeChanged, IInspectable, IInspectable);
         TYPED_EVENT(FullscreenChanged, IInspectable, IInspectable);
@@ -152,7 +152,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(SetTaskbarProgress, IInspectable, IInspectable);
         TYPED_EVENT(Initialized, IInspectable, winrt::Windows::UI::Xaml::RoutedEventArgs);
         TYPED_EVENT(IdentifyWindowsRequested, IInspectable, IInspectable);
-        TYPED_EVENT(RenameWindowRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs);
+        TYPED_EVENT(RenameWindowRequested, Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::App::RenameWindowRequestedArgs);
         TYPED_EVENT(IsQuakeWindowChanged, IInspectable, IInspectable);
         TYPED_EVENT(SummonWindowRequested, IInspectable, IInspectable);
         TYPED_EVENT(CloseRequested, IInspectable, IInspectable);
@@ -173,20 +173,20 @@ namespace winrt::TerminalApp::implementation
         // updated in App::_ApplyTheme. The roots currently is _tabRow
         // (which is a root when the tabs are in the titlebar.)
         Microsoft::UI::Xaml::Controls::TabView _tabView{ nullptr };
-        TerminalApp::TabRowControl _tabRow{ nullptr };
+	Microsoft::Terminal::App::TabRowControl _tabRow{ nullptr };
         Windows::UI::Xaml::Controls::Grid _tabContent{ nullptr };
         Microsoft::UI::Xaml::Controls::SplitButton _newTabButton{ nullptr };
-        winrt::TerminalApp::ColorPickupFlyout _tabColorPicker{ nullptr };
+        winrt::Microsoft::Terminal::App::ColorPickupFlyout _tabColorPicker{ nullptr };
 
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
 
-        Windows::Foundation::Collections::IObservableVector<TerminalApp::TabBase> _tabs;
-        Windows::Foundation::Collections::IObservableVector<TerminalApp::TabBase> _mruTabs;
-        static winrt::com_ptr<TerminalTab> _GetTerminalTabImpl(const TerminalApp::TabBase& tab);
+        Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::App::TabBase> _tabs;
+        Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::App::TabBase> _mruTabs;
+        static winrt::com_ptr<TerminalTab> _GetTerminalTabImpl(const Microsoft::Terminal::App::TabBase& tab);
 
         void _UpdateTabIndices();
 
-        TerminalApp::SettingsTab _settingsTab{ nullptr };
+	Microsoft::Terminal::App::SettingsTab _settingsTab{ nullptr };
 
         bool _isInFocusMode{ false };
         bool _isFullscreen{ false };
@@ -211,7 +211,7 @@ namespace winrt::TerminalApp::implementation
         uint32_t _systemRowsToScroll{ DefaultRowsToScroll };
 
         // use a weak reference to prevent circular dependency with AppLogic
-        winrt::weak_ref<winrt::TerminalApp::IDialogPresenter> _dialogPresenter;
+        winrt::weak_ref<winrt::Microsoft::Terminal::App::IDialogPresenter> _dialogPresenter;
 
         winrt::com_ptr<AppKeyBindings> _bindings{ winrt::make_self<implementation::AppKeyBindings>() };
         winrt::com_ptr<ShortcutActionDispatch> _actionDispatch{ winrt::make_self<implementation::ShortcutActionDispatch>() };
@@ -283,10 +283,10 @@ namespace winrt::TerminalApp::implementation
         void _SplitTab(TerminalTab& tab);
         winrt::fire_and_forget _ExportTab(const TerminalTab& tab, winrt::hstring filepath);
 
-        winrt::Windows::Foundation::IAsyncAction _HandleCloseTabRequested(winrt::TerminalApp::TabBase tab);
+        winrt::Windows::Foundation::IAsyncAction _HandleCloseTabRequested(winrt::Microsoft::Terminal::App::TabBase tab);
         void _CloseTabAtIndex(uint32_t index);
-        void _RemoveTab(const winrt::TerminalApp::TabBase& tab);
-        winrt::fire_and_forget _RemoveTabs(const std::vector<winrt::TerminalApp::TabBase> tabs);
+        void _RemoveTab(const winrt::Microsoft::Terminal::App::TabBase& tab);
+        winrt::fire_and_forget _RemoveTabs(const std::vector<winrt::Microsoft::Terminal::App::TabBase> tabs);
 
         void _InitializeTab(winrt::com_ptr<TerminalTab> newTabImpl, uint32_t insertPosition = -1);
         void _RegisterTerminalEvents(Microsoft::Terminal::Control::TermControl term);
@@ -325,12 +325,12 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Microsoft::Terminal::Control::TermControl _GetActiveControl();
         std::optional<uint32_t> _GetFocusedTabIndex() const noexcept;
-        TerminalApp::TabBase _GetFocusedTab() const noexcept;
+	Microsoft::Terminal::App::TabBase _GetFocusedTab() const noexcept;
         winrt::com_ptr<TerminalTab> _GetFocusedTabImpl() const noexcept;
-        TerminalApp::TabBase _GetTabByTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem) const noexcept;
+	Microsoft::Terminal::App::TabBase _GetTabByTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem) const noexcept;
 
         void _HandleClosePaneRequested(std::shared_ptr<Pane> pane);
-        winrt::fire_and_forget _SetFocusedTab(const winrt::TerminalApp::TabBase tab);
+        winrt::fire_and_forget _SetFocusedTab(const winrt::Microsoft::Terminal::App::TabBase tab);
         winrt::fire_and_forget _CloseFocusedPane();
         void _ClosePanes(weak_ref<TerminalTab> weakTab, std::vector<uint32_t> paneIds);
         winrt::Windows::Foundation::IAsyncOperation<bool> _PaneConfirmCloseReadOnly(std::shared_ptr<Pane> pane);
@@ -381,12 +381,12 @@ namespace winrt::TerminalApp::implementation
         void _OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs);
         void _OnTabCloseRequested(const IInspectable& sender, const Microsoft::UI::Xaml::Controls::TabViewTabCloseRequestedEventArgs& eventArgs);
         void _OnFirstLayout(const IInspectable& sender, const IInspectable& eventArgs);
-        void _UpdatedSelectedTab(const winrt::TerminalApp::TabBase& tab);
+        void _UpdatedSelectedTab(const winrt::Microsoft::Terminal::App::TabBase& tab);
         void _UpdateBackground(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile);
 
         void _OnDispatchCommandRequested(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::Command& command);
         void _OnCommandLineExecutionRequested(const IInspectable& sender, const winrt::hstring& commandLine);
-        void _OnSwitchToTabRequested(const IInspectable& sender, const winrt::TerminalApp::TabBase& tab);
+        void _OnSwitchToTabRequested(const IInspectable& sender, const winrt::Microsoft::Terminal::App::TabBase& tab);
 
         void _Find(const TerminalTab& tab);
 
@@ -394,7 +394,7 @@ namespace winrt::TerminalApp::implementation
                                                                       const winrt::Microsoft::Terminal::Connection::ITerminalConnection& connection);
 
         std::shared_ptr<Pane> _MakePane(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs = nullptr,
-                                        const winrt::TerminalApp::TabBase& sourceTab = nullptr,
+                                        const winrt::Microsoft::Terminal::App::TabBase& sourceTab = nullptr,
                                         winrt::Microsoft::Terminal::Connection::ITerminalConnection existingConnection = nullptr);
 
         void _RefreshUIForSettingsReload();
@@ -413,7 +413,7 @@ namespace winrt::TerminalApp::implementation
         static int _ComputeScrollDelta(ScrollDirection scrollDirection, const uint32_t rowsToScroll);
         static uint32_t _ReadSystemRowsToScroll();
 
-        void _UpdateMRUTab(const winrt::TerminalApp::TabBase& tab);
+        void _UpdateMRUTab(const winrt::Microsoft::Terminal::App::TabBase& tab);
 
         void _TryMoveTab(const uint32_t currentTabIndex, const int32_t suggestedNewTabIndex);
 
@@ -474,7 +474,7 @@ namespace winrt::TerminalApp::implementation
     };
 }
 
-namespace winrt::TerminalApp::factory_implementation
+namespace winrt::Microsoft::Terminal::App::factory_implementation
 {
     BASIC_FACTORY(TerminalPage);
 }

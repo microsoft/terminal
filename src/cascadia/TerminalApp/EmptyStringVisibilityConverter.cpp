@@ -5,7 +5,7 @@
 using namespace winrt::Windows;
 using namespace winrt::Windows::UI::Xaml;
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     // Method Description:
     // - Attempt to convert something into another type. For the

@@ -12,7 +12,7 @@ namespace TerminalAppLocalTests
     class SettingsTests;
 }
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     struct AppKeyBindings : AppKeyBindingsT<AppKeyBindings>
     {
@@ -21,19 +21,19 @@ namespace winrt::TerminalApp::implementation
         bool TryKeyChord(const winrt::Microsoft::Terminal::Control::KeyChord& kc);
         bool IsKeyChordExplicitlyUnbound(const winrt::Microsoft::Terminal::Control::KeyChord& kc);
 
-        void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
+        void SetDispatch(const winrt::Microsoft::Terminal::App::ShortcutActionDispatch& dispatch);
         void SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap);
 
     private:
         winrt::Microsoft::Terminal::Settings::Model::IActionMapView _actionMap{ nullptr };
 
-        winrt::TerminalApp::ShortcutActionDispatch _dispatch{ nullptr };
+        winrt::Microsoft::Terminal::App::ShortcutActionDispatch _dispatch{ nullptr };
 
         friend class TerminalAppLocalTests::SettingsTests;
     };
 }
 
-namespace winrt::TerminalApp::factory_implementation
+namespace winrt::Microsoft::Terminal::App::factory_implementation
 {
     BASIC_FACTORY(AppKeyBindings);
 }

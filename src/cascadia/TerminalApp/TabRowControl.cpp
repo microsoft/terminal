@@ -19,7 +19,7 @@ namespace winrt
     namespace WUX = Windows::UI::Xaml;
 }
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     TabRowControl::TabRowControl()
     {

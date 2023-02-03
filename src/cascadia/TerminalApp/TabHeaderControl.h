@@ -7,7 +7,7 @@
 
 #include "TabHeaderControl.g.h"
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     struct TabHeaderControl : TabHeaderControlT<TabHeaderControl>
     {
@@ -19,12 +19,12 @@ namespace winrt::TerminalApp::implementation
 
         bool InRename();
 
-        WINRT_CALLBACK(TitleChangeRequested, TerminalApp::TitleChangeRequestedArgs);
+        WINRT_CALLBACK(TitleChangeRequested, Microsoft::Terminal::App::TitleChangeRequestedArgs);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Title, _PropertyChangedHandlers);
         WINRT_OBSERVABLE_PROPERTY(double, RenamerMaxWidth, _PropertyChangedHandlers);
-        WINRT_OBSERVABLE_PROPERTY(winrt::TerminalApp::TerminalTabStatus, TabStatus, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(winrt::Microsoft::Terminal::App::TerminalTabStatus, TabStatus, _PropertyChangedHandlers);
 
         TYPED_EVENT(RenameEnded, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
 
@@ -36,7 +36,7 @@ namespace winrt::TerminalApp::implementation
     };
 }
 
-namespace winrt::TerminalApp::factory_implementation
+namespace winrt::Microsoft::Terminal::App::factory_implementation
 {
     BASIC_FACTORY(TabHeaderControl);
 }

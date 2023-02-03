@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-namespace TerminalApp
+namespace Microsoft.Terminal.App
 {
     [default_interface] runtimeclass TaskbarState
     {

@@ -6,7 +6,7 @@
 #include "HighlightedTextSegment.g.h"
 #include "HighlightedText.g.h"
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     struct HighlightedTextSegment : HighlightedTextSegmentT<HighlightedTextSegment>
     {
@@ -21,14 +21,14 @@ namespace winrt::TerminalApp::implementation
     struct HighlightedText : HighlightedTextT<HighlightedText>
     {
         HighlightedText() = default;
-        HighlightedText(const Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::HighlightedTextSegment>& segments);
+        HighlightedText(const Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::App::HighlightedTextSegment>& segments);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        WINRT_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::HighlightedTextSegment>, Segments, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::App::HighlightedTextSegment>, Segments, _PropertyChangedHandlers);
     };
 }
 
-namespace winrt::TerminalApp::factory_implementation
+namespace winrt::Microsoft::Terminal::App::factory_implementation
 {
     BASIC_FACTORY(HighlightedTextSegment);
     BASIC_FACTORY(HighlightedText);

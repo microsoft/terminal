@@ -6,7 +6,7 @@
 #include "winrt/Windows.UI.Xaml.Interop.h"
 #include <LibraryResources.h>
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     // Method Description:
     // - Default constructor, localizes the buttons and hooks

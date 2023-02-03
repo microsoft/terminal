@@ -12,25 +12,25 @@ namespace TerminalAppLocalTests
     class FilteredCommandTests;
 };
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     struct FilteredCommand : FilteredCommandT<FilteredCommand>
     {
         FilteredCommand() = default;
-        FilteredCommand(const winrt::TerminalApp::PaletteItem& item);
+        FilteredCommand(const winrt::Microsoft::Terminal::App::PaletteItem& item);
 
         void UpdateFilter(const winrt::hstring& filter);
 
-        static int Compare(const winrt::TerminalApp::FilteredCommand& first, const winrt::TerminalApp::FilteredCommand& second);
+        static int Compare(const winrt::Microsoft::Terminal::App::FilteredCommand& first, const winrt::Microsoft::Terminal::App::FilteredCommand& second);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        WINRT_OBSERVABLE_PROPERTY(winrt::TerminalApp::PaletteItem, Item, _PropertyChangedHandlers, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(winrt::Microsoft::Terminal::App::PaletteItem, Item, _PropertyChangedHandlers, nullptr);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Filter, _PropertyChangedHandlers);
-        WINRT_OBSERVABLE_PROPERTY(winrt::TerminalApp::HighlightedText, HighlightedName, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(winrt::Microsoft::Terminal::App::HighlightedText, HighlightedName, _PropertyChangedHandlers);
         WINRT_OBSERVABLE_PROPERTY(int, Weight, _PropertyChangedHandlers);
 
     private:
-        winrt::TerminalApp::HighlightedText _computeHighlightedName();
+        winrt::Microsoft::Terminal::App::HighlightedText _computeHighlightedName();
         int _computeWeight();
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _itemChangedRevoker;
 
@@ -38,7 +38,7 @@ namespace winrt::TerminalApp::implementation
     };
 }
 
-namespace winrt::TerminalApp::factory_implementation
+namespace winrt::Microsoft::Terminal::App::factory_implementation
 {
     BASIC_FACTORY(FilteredCommand);
 }

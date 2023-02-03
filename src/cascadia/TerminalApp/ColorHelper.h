@@ -3,7 +3,7 @@
 
 #include <winrt/windows.ui.core.h>
 
-namespace winrt::TerminalApp
+namespace winrt::Microsoft::Terminal::App
 {
     class HSL
     {

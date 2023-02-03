@@ -5,7 +5,7 @@ import "TerminalPage.idl";
 import "ShortcutActionDispatch.idl";
 import "IDirectKeyListener.idl";
 
-namespace TerminalApp
+namespace Microsoft.Terminal.App
 {
     struct InitialPosition
     {
@@ -137,7 +137,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> CloseRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> OpenSystemMenu;
         event Windows.Foundation.TypedEventHandler<Object, Object> QuitRequested;
-        event Windows.Foundation.TypedEventHandler<Object, TerminalApp.SystemMenuChangeArgs> SystemMenuChangeRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.App.SystemMenuChangeArgs> SystemMenuChangeRequested;
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Control.ShowWindowArgs> ShowWindowChanged;
     }
 }

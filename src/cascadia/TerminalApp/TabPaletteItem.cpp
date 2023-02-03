@@ -9,7 +9,7 @@
 #include "TabPaletteItem.g.cpp"
 
 using namespace winrt;
-using namespace winrt::TerminalApp;
+using namespace winrt::Microsoft::Terminal::App;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::System;
@@ -17,9 +17,9 @@ using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
-    TabPaletteItem::TabPaletteItem(const winrt::TerminalApp::TabBase& tab) :
+    TabPaletteItem::TabPaletteItem(const winrt::Microsoft::Terminal::App::TabBase& tab) :
         _tab(tab)
     {
         Name(tab.Title());
@@ -27,7 +27,7 @@ namespace winrt::TerminalApp::implementation
 
         _tabChangedRevoker = tab.PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() }](auto& sender, auto& e) {
             auto item{ weakThis.get() };
-            auto senderTab{ sender.try_as<winrt::TerminalApp::TabBase>() };
+            auto senderTab{ sender.try_as<winrt::Microsoft::Terminal::App::TabBase>() };
 
             if (item && senderTab)
             {
@@ -43,7 +43,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        if (const auto terminalTab{ tab.try_as<winrt::TerminalApp::TerminalTab>() })
+        if (const auto terminalTab{ tab.try_as<winrt::Microsoft::Terminal::App::TerminalTab>() })
         {
             const auto status = terminalTab.TabStatus();
             TabStatus(status);

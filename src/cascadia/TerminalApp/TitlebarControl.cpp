@@ -12,7 +12,7 @@
 
 #include "TitlebarControl.g.cpp"
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     TitlebarControl::TitlebarControl(uint64_t handle) :
         _window{ reinterpret_cast<HWND>(handle) }

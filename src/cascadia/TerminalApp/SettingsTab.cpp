@@ -21,7 +21,7 @@ namespace winrt
     namespace WUX = Windows::UI::Xaml;
 }
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     SettingsTab::SettingsTab(MainPage settingsUI,
                              winrt::Windows::UI::Xaml::ElementTheme requestedTheme)

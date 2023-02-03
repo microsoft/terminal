@@ -4,7 +4,7 @@
 #include "pch.h"
 #include "LanguageProfileNotifier.h"
 
-using namespace winrt::TerminalApp::implementation;
+using namespace winrt::Microsoft::Terminal::App::implementation;
 
 LanguageProfileNotifier::LanguageProfileNotifier(std::function<void()>&& callback) :
     _callback{ std::move(callback) },

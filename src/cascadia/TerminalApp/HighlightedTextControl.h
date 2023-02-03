@@ -7,7 +7,7 @@
 
 #include "HighlightedTextControl.g.h"
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     struct HighlightedTextControl : HighlightedTextControlT<HighlightedTextControl>
     {
@@ -15,8 +15,8 @@ namespace winrt::TerminalApp::implementation
 
         static Windows::UI::Xaml::DependencyProperty TextProperty();
 
-        winrt::TerminalApp::HighlightedText Text();
-        void Text(const winrt::TerminalApp::HighlightedText& value);
+        winrt::Microsoft::Terminal::App::HighlightedText Text();
+        void Text(const winrt::Microsoft::Terminal::App::HighlightedText& value);
 
         Windows::UI::Xaml::Controls::TextBlock TextView();
 
@@ -26,7 +26,7 @@ namespace winrt::TerminalApp::implementation
     };
 }
 
-namespace winrt::TerminalApp::factory_implementation
+namespace winrt::Microsoft::Terminal::App::factory_implementation
 {
     BASIC_FACTORY(HighlightedTextControl);
 }

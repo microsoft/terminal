@@ -10,7 +10,7 @@ namespace TerminalAppLocalTests
     class TabTests;
 };
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     struct TabBase : TabBaseT<TabBase>
     {
@@ -19,7 +19,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::FocusState FocusState() const noexcept;
 
         virtual void Shutdown();
-        void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
+        void SetDispatch(const winrt::Microsoft::Terminal::App::ShortcutActionDispatch& dispatch);
 
         void UpdateTabViewIndex(const uint32_t idx, const uint32_t numTabs);
         void SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap);
@@ -52,7 +52,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::FocusState _focusState{ winrt::Windows::UI::Xaml::FocusState::Unfocused };
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeOtherTabsMenuItem{};
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeTabsAfterMenuItem{};
-        winrt::TerminalApp::ShortcutActionDispatch _dispatch;
+        winrt::Microsoft::Terminal::App::ShortcutActionDispatch _dispatch;
         Microsoft::Terminal::Settings::Model::IActionMapView _actionMap{ nullptr };
         winrt::hstring _keyChord{};
 

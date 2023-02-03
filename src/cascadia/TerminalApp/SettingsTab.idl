@@ -3,7 +3,7 @@
 
 import "TabBase.idl";
 
-namespace TerminalApp
+namespace Microsoft.Terminal.App
 {
     [default_interface] runtimeclass SettingsTab : TabBase
     {

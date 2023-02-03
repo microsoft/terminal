@@ -13,7 +13,7 @@ public:
     virtual ~AppHost();
 
     void AppTitleChanged(const winrt::Windows::Foundation::IInspectable& sender, winrt::hstring newTitle);
-    void LastTabClosed(const winrt::Windows::Foundation::IInspectable& sender, const winrt::TerminalApp::LastTabClosedEventArgs& args);
+    void LastTabClosed(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Microsoft::Terminal::App::LastTabClosedEventArgs& args);
     void Initialize();
     bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
     void SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
@@ -22,8 +22,8 @@ public:
 
 private:
     std::unique_ptr<IslandWindow> _window;
-    winrt::TerminalApp::App _app;
-    winrt::TerminalApp::AppLogic _logic;
+    winrt::Microsoft::Terminal::App::App _app;
+    winrt::Microsoft::Terminal::App::AppLogic _logic;
     winrt::Microsoft::Terminal::Remoting::WindowManager _windowManager{ nullptr };
 
     std::vector<winrt::Microsoft::Terminal::Settings::Model::GlobalSummonArgs> _hotkeys;
@@ -78,7 +78,7 @@ private:
     void _DisplayWindowId(const winrt::Windows::Foundation::IInspectable& sender,
                           const winrt::Windows::Foundation::IInspectable& args);
     winrt::fire_and_forget _RenameWindowRequested(const winrt::Windows::Foundation::IInspectable sender,
-                                                  const winrt::TerminalApp::RenameWindowRequestedArgs args);
+                                                  const winrt::Microsoft::Terminal::App::RenameWindowRequestedArgs args);
 
     GUID _CurrentDesktopGuid();
 
@@ -100,7 +100,7 @@ private:
                          const winrt::Windows::Foundation::IInspectable& args);
 
     void _SystemMenuChangeRequested(const winrt::Windows::Foundation::IInspectable& sender,
-                                    const winrt::TerminalApp::SystemMenuChangeArgs& args);
+                                    const winrt::Microsoft::Terminal::App::SystemMenuChangeArgs& args);
 
     winrt::fire_and_forget _QuitRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                           const winrt::Windows::Foundation::IInspectable& args);
@@ -151,28 +151,28 @@ private:
         winrt::Microsoft::Terminal::Remoting::Peasant::SummonRequested_revoker peasantSummonRequested;
         winrt::Microsoft::Terminal::Remoting::Peasant::DisplayWindowIdRequested_revoker peasantDisplayWindowIdRequested;
         winrt::Microsoft::Terminal::Remoting::Peasant::QuitRequested_revoker peasantQuitRequested;
-        winrt::TerminalApp::AppLogic::CloseRequested_revoker CloseRequested;
-        winrt::TerminalApp::AppLogic::RequestedThemeChanged_revoker RequestedThemeChanged;
-        winrt::TerminalApp::AppLogic::FullscreenChanged_revoker FullscreenChanged;
-        winrt::TerminalApp::AppLogic::FocusModeChanged_revoker FocusModeChanged;
-        winrt::TerminalApp::AppLogic::AlwaysOnTopChanged_revoker AlwaysOnTopChanged;
-        winrt::TerminalApp::AppLogic::RaiseVisualBell_revoker RaiseVisualBell;
-        winrt::TerminalApp::AppLogic::SystemMenuChangeRequested_revoker SystemMenuChangeRequested;
-        winrt::TerminalApp::AppLogic::ChangeMaximizeRequested_revoker ChangeMaximizeRequested;
-        winrt::TerminalApp::AppLogic::TitleChanged_revoker TitleChanged;
-        winrt::TerminalApp::AppLogic::LastTabClosed_revoker LastTabClosed;
-        winrt::TerminalApp::AppLogic::SetTaskbarProgress_revoker SetTaskbarProgress;
-        winrt::TerminalApp::AppLogic::IdentifyWindowsRequested_revoker IdentifyWindowsRequested;
-        winrt::TerminalApp::AppLogic::RenameWindowRequested_revoker RenameWindowRequested;
-        winrt::TerminalApp::AppLogic::SettingsChanged_revoker SettingsChanged;
-        winrt::TerminalApp::AppLogic::IsQuakeWindowChanged_revoker IsQuakeWindowChanged;
-        winrt::TerminalApp::AppLogic::SummonWindowRequested_revoker SummonWindowRequested;
-        winrt::TerminalApp::AppLogic::OpenSystemMenu_revoker OpenSystemMenu;
-        winrt::TerminalApp::AppLogic::QuitRequested_revoker QuitRequested;
-        winrt::TerminalApp::AppLogic::ShowWindowChanged_revoker ShowWindowChanged;
+        winrt::Microsoft::Terminal::App::AppLogic::CloseRequested_revoker CloseRequested;
+        winrt::Microsoft::Terminal::App::AppLogic::RequestedThemeChanged_revoker RequestedThemeChanged;
+        winrt::Microsoft::Terminal::App::AppLogic::FullscreenChanged_revoker FullscreenChanged;
+        winrt::Microsoft::Terminal::App::AppLogic::FocusModeChanged_revoker FocusModeChanged;
+        winrt::Microsoft::Terminal::App::AppLogic::AlwaysOnTopChanged_revoker AlwaysOnTopChanged;
+        winrt::Microsoft::Terminal::App::AppLogic::RaiseVisualBell_revoker RaiseVisualBell;
+        winrt::Microsoft::Terminal::App::AppLogic::SystemMenuChangeRequested_revoker SystemMenuChangeRequested;
+        winrt::Microsoft::Terminal::App::AppLogic::ChangeMaximizeRequested_revoker ChangeMaximizeRequested;
+        winrt::Microsoft::Terminal::App::AppLogic::TitleChanged_revoker TitleChanged;
+        winrt::Microsoft::Terminal::App::AppLogic::LastTabClosed_revoker LastTabClosed;
+        winrt::Microsoft::Terminal::App::AppLogic::SetTaskbarProgress_revoker SetTaskbarProgress;
+        winrt::Microsoft::Terminal::App::AppLogic::IdentifyWindowsRequested_revoker IdentifyWindowsRequested;
+        winrt::Microsoft::Terminal::App::AppLogic::RenameWindowRequested_revoker RenameWindowRequested;
+        winrt::Microsoft::Terminal::App::AppLogic::SettingsChanged_revoker SettingsChanged;
+        winrt::Microsoft::Terminal::App::AppLogic::IsQuakeWindowChanged_revoker IsQuakeWindowChanged;
+        winrt::Microsoft::Terminal::App::AppLogic::SummonWindowRequested_revoker SummonWindowRequested;
+        winrt::Microsoft::Terminal::App::AppLogic::OpenSystemMenu_revoker OpenSystemMenu;
+        winrt::Microsoft::Terminal::App::AppLogic::QuitRequested_revoker QuitRequested;
+        winrt::Microsoft::Terminal::App::AppLogic::ShowWindowChanged_revoker ShowWindowChanged;
         winrt::Microsoft::Terminal::Remoting::WindowManager::ShowNotificationIconRequested_revoker ShowNotificationIconRequested;
         winrt::Microsoft::Terminal::Remoting::WindowManager::HideNotificationIconRequested_revoker HideNotificationIconRequested;
         winrt::Microsoft::Terminal::Remoting::WindowManager::QuitAllRequested_revoker QuitAllRequested;
-        winrt::TerminalApp::AppLogic::PropertyChanged_revoker PropertyChanged;
+        winrt::Microsoft::Terminal::App::AppLogic::PropertyChanged_revoker PropertyChanged;
     } _revokers{};
 };

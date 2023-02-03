@@ -3,7 +3,7 @@
 import "TaskbarState.idl";
 import "IDirectKeyListener.idl";
 
-namespace TerminalApp
+namespace Microsoft.Terminal.App
 {
     delegate void LastTabClosedEventArgs();
 

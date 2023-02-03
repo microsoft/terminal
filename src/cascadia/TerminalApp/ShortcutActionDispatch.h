@@ -13,9 +13,9 @@ namespace TerminalAppLocalTests
     class KeyBindingsTests;
 }
 
-#define DECLARE_ACTION(action) TYPED_EVENT(action, TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
+#define DECLARE_ACTION(action) TYPED_EVENT(action, Microsoft::Terminal::App::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     struct ShortcutActionDispatch : ShortcutActionDispatchT<ShortcutActionDispatch>
     {
@@ -33,7 +33,7 @@ namespace winrt::TerminalApp::implementation
     };
 }
 
-namespace winrt::TerminalApp::factory_implementation
+namespace winrt::Microsoft::Terminal::App::factory_implementation
 {
     BASIC_FACTORY(ShortcutActionDispatch);
 }

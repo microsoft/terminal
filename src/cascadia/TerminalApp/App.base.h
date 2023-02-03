@@ -1,6 +1,6 @@
 #pragma once
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     template<typename D, typename... I>
     struct App_baseWithProvider : public App_base<D, ::winrt::Windows::UI::Xaml::Markup::IXamlMetadataProvider>
@@ -24,7 +24,7 @@ namespace winrt::TerminalApp::implementation
 
     private:
         bool _contentLoaded{ false };
-        winrt::TerminalApp::XamlMetaDataProvider _appProvider;
+        winrt::Microsoft::Terminal::App::XamlMetaDataProvider _appProvider;
     };
 
     template<typename D, typename... I>

@@ -13,7 +13,7 @@ namespace TerminalAppLocalTests
     class TabTests;
 };
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     enum class CommandPaletteMode
     {
@@ -27,10 +27,10 @@ namespace winrt::TerminalApp::implementation
     {
         CommandPalette();
 
-        Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::FilteredCommand> FilteredActions();
+        Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::App::FilteredCommand> FilteredActions();
 
         void SetCommands(const Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command>& actions);
-        void SetTabs(const Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::TabBase>& tabs, const Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::TabBase>& mruTabs);
+        void SetTabs(const Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::App::TabBase>& tabs, const Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::App::TabBase>& mruTabs);
         void SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap);
 
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
@@ -54,20 +54,20 @@ namespace winrt::TerminalApp::implementation
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, ParentCommandName, _PropertyChangedHandlers);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, ParsedCommandLineText, _PropertyChangedHandlers);
 
-        TYPED_EVENT(SwitchToTabRequested, winrt::TerminalApp::CommandPalette, winrt::TerminalApp::TabBase);
-        TYPED_EVENT(CommandLineExecutionRequested, winrt::TerminalApp::CommandPalette, winrt::hstring);
-        TYPED_EVENT(DispatchCommandRequested, winrt::TerminalApp::CommandPalette, Microsoft::Terminal::Settings::Model::Command);
+        TYPED_EVENT(SwitchToTabRequested, winrt::Microsoft::Terminal::App::CommandPalette, winrt::Microsoft::Terminal::App::TabBase);
+        TYPED_EVENT(CommandLineExecutionRequested, winrt::Microsoft::Terminal::App::CommandPalette, winrt::hstring);
+        TYPED_EVENT(DispatchCommandRequested, winrt::Microsoft::Terminal::App::CommandPalette, Microsoft::Terminal::Settings::Model::Command);
         TYPED_EVENT(PreviewAction, Windows::Foundation::IInspectable, Microsoft::Terminal::Settings::Model::Command);
 
     private:
         friend struct CommandPaletteT<CommandPalette>; // for Xaml to bind events
 
-        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _allCommands{ nullptr };
-        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _currentNestedCommands{ nullptr };
-        Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::FilteredCommand> _filteredActions{ nullptr };
-        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _nestedActionStack{ nullptr };
+        Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::App::FilteredCommand> _allCommands{ nullptr };
+        Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::App::FilteredCommand> _currentNestedCommands{ nullptr };
+        Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::App::FilteredCommand> _filteredActions{ nullptr };
+        Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::App::FilteredCommand> _nestedActionStack{ nullptr };
 
-        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _commandsToFilter();
+        Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::App::FilteredCommand> _commandsToFilter();
 
         bool _lastFilterTextWasEmpty{ true };
 
@@ -100,7 +100,7 @@ namespace winrt::TerminalApp::implementation
 
         void _updateCurrentNestedCommands(const winrt::Microsoft::Terminal::Settings::Model::Command& parentCommand);
 
-        std::vector<winrt::TerminalApp::FilteredCommand> _collectFilteredActions();
+        std::vector<winrt::Microsoft::Terminal::App::FilteredCommand> _collectFilteredActions();
 
         void _close();
 
@@ -113,20 +113,20 @@ namespace winrt::TerminalApp::implementation
         Microsoft::Terminal::Settings::Model::IActionMapView _actionMap{ nullptr };
 
         // Tab Switcher
-        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _tabActions{ nullptr };
-        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _mruTabActions{ nullptr };
+        Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::App::FilteredCommand> _tabActions{ nullptr };
+        Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::App::FilteredCommand> _mruTabActions{ nullptr };
         Microsoft::Terminal::Settings::Model::TabSwitcherMode _tabSwitcherMode;
         uint32_t _switcherStartIdx;
 
-        void _bindTabs(const Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::TabBase>& source, const Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand>& target);
+        void _bindTabs(const Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::App::TabBase>& source, const Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::App::FilteredCommand>& target);
         void _anchorKeyUpHandler();
 
         winrt::Windows::UI::Xaml::Controls::ListView::SizeChanged_revoker _sizeChangedRevoker;
 
-        void _dispatchCommand(const winrt::TerminalApp::FilteredCommand& command);
-        void _dispatchCommandline(const winrt::TerminalApp::FilteredCommand& command);
-        void _switchToTab(const winrt::TerminalApp::FilteredCommand& command);
-        static std::optional<winrt::TerminalApp::FilteredCommand> _buildCommandLineCommand(const winrt::hstring& commandLine);
+        void _dispatchCommand(const winrt::Microsoft::Terminal::App::FilteredCommand& command);
+        void _dispatchCommandline(const winrt::Microsoft::Terminal::App::FilteredCommand& command);
+        void _switchToTab(const winrt::Microsoft::Terminal::App::FilteredCommand& command);
+        static std::optional<winrt::Microsoft::Terminal::App::FilteredCommand> _buildCommandLineCommand(const winrt::hstring& commandLine);
 
         void _dismissPalette();
 
@@ -134,13 +134,13 @@ namespace winrt::TerminalApp::implementation
         uint32_t _getNumVisibleItems();
 
         static constexpr uint32_t CommandLineHistoryLength = 20;
-        static Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _loadRecentCommands();
+        static Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::App::FilteredCommand> _loadRecentCommands();
         static void _updateRecentCommands(const winrt::hstring& command);
-        ::TerminalApp::AppCommandlineArgs _appArgs;
+        ::Microsoft::Terminal::App::AppCommandlineArgs _appArgs;
 
         void _choosingItemContainer(const Windows::UI::Xaml::Controls::ListViewBase& sender, const Windows::UI::Xaml::Controls::ChoosingItemContainerEventArgs& args);
         void _containerContentChanging(const Windows::UI::Xaml::Controls::ListViewBase& sender, const Windows::UI::Xaml::Controls::ContainerContentChangingEventArgs& args);
-        winrt::TerminalApp::PaletteItemTemplateSelector _itemTemplateSelector{ nullptr };
+        winrt::Microsoft::Terminal::App::PaletteItemTemplateSelector _itemTemplateSelector{ nullptr };
         std::unordered_map<Windows::UI::Xaml::DataTemplate, std::unordered_set<Windows::UI::Xaml::Controls::Primitives::SelectorItem>> _listViewItemsCache;
         Windows::UI::Xaml::DataTemplate _listItemTemplate;
 
@@ -148,7 +148,7 @@ namespace winrt::TerminalApp::implementation
     };
 }
 
-namespace winrt::TerminalApp::factory_implementation
+namespace winrt::Microsoft::Terminal::App::factory_implementation
 {
     BASIC_FACTORY(CommandPalette);
 }

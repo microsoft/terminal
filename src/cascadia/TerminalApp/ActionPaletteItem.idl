@@ -3,7 +3,7 @@
 
 import "PaletteItem.idl";
 
-namespace TerminalApp
+namespace Microsoft.Terminal.App
 {
     [default_interface] runtimeclass ActionPaletteItem : PaletteItem
     {

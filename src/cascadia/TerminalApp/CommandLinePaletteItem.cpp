@@ -8,7 +8,7 @@
 #include "CommandLinePaletteItem.g.cpp"
 
 using namespace winrt;
-using namespace winrt::TerminalApp;
+using namespace winrt::Microsoft::Terminal::App;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::System;
@@ -16,7 +16,7 @@ using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     CommandLinePaletteItem::CommandLinePaletteItem(const winrt::hstring& commandLine) :
         _CommandLine(commandLine)

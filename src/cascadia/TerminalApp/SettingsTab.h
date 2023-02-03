@@ -19,7 +19,7 @@ Author(s):
 #include "TabBase.h"
 #include "SettingsTab.g.h"
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     struct SettingsTab : SettingsTabT<SettingsTab, TabBase>
     {
@@ -27,10 +27,10 @@ namespace winrt::TerminalApp::implementation
         SettingsTab(winrt::Microsoft::Terminal::Settings::Editor::MainPage settingsUI,
                     winrt::Windows::UI::Xaml::ElementTheme requestedTheme);
 
-        void UpdateSettings(Microsoft::Terminal::Settings::Model::CascadiaSettings settings);
+        void UpdateSettings(winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings settings);
         void Focus(winrt::Windows::UI::Xaml::FocusState focusState) override;
 
-        std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> BuildStartupActions() const override;
+        std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> BuildStartupActions() const override;
 
     private:
         winrt::Windows::UI::Xaml::ElementTheme _requestedTheme;

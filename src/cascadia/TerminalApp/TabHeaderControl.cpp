@@ -9,7 +9,7 @@
 using namespace winrt;
 using namespace winrt::Microsoft::UI::Xaml;
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     TabHeaderControl::TabHeaderControl()
     {

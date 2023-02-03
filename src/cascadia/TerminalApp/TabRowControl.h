@@ -7,7 +7,7 @@
 
 #include "TabRowControl.g.h"
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     struct TabRowControl : TabRowControlT<TabRowControl>
     {
@@ -22,7 +22,7 @@ namespace winrt::TerminalApp::implementation
     };
 }
 
-namespace winrt::TerminalApp::factory_implementation
+namespace winrt::Microsoft::Terminal::App::factory_implementation
 {
     BASIC_FACTORY(TabRowControl);
 }

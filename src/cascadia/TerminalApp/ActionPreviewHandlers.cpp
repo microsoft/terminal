@@ -20,7 +20,7 @@ using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Connection;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace ::TerminalApp;
+using namespace ::Microsoft::Terminal::App;
 using namespace ::Microsoft::Console;
 using namespace std::chrono_literals;
 namespace winrt
@@ -30,7 +30,7 @@ namespace winrt
     using IInspectable = Windows::Foundation::IInspectable;
 }
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     // Method Description:
     // - Stop previewing the currently previewed action. We can use this to

@@ -6,7 +6,7 @@ import "IDirectKeyListener.idl";
 import "HighlightedTextControl.idl";
 import "FilteredCommand.idl";
 
-namespace TerminalApp
+namespace Microsoft.Terminal.App
 {
     [default_interface] runtimeclass CommandPalette : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged, IDirectKeyListener
     {

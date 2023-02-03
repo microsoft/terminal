@@ -8,7 +8,7 @@
 #include <LibraryResources.h>
 
 using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace TerminalApp;
+using namespace Microsoft::Terminal::App;
 
 // Either a ; at the start of a line, or a ; preceded by any non-\ char.
 const std::wregex AppCommandlineArgs::_commandDelimiterRegex{ LR"(^;|[^\\];)" };
@@ -980,7 +980,7 @@ int AppCommandlineArgs::ParseArgs(winrt::array_view<const winrt::hstring>& args)
         }
     }
 
-    auto commands = ::TerminalApp::AppCommandlineArgs::BuildCommands(args);
+    auto commands = ::Microsoft::Terminal::App::AppCommandlineArgs::BuildCommands(args);
 
     for (auto& cmdBlob : commands)
     {

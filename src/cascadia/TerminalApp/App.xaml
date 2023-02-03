@@ -2,12 +2,12 @@
     Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
     the MIT License. See LICENSE in the project root for license information.
 -->
-<Application x:Class="TerminalApp.App"
+<Application x:Class="Microsoft.Terminal.App.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:TA="using:TerminalApp"
+             xmlns:TA="using:Microsoft.Terminal.App"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:local="using:TerminalApp"
+             xmlns:local="using:Microsoft.Terminal.App"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d">
     <!--

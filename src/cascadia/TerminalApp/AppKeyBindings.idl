@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 import "ShortcutActionDispatch.idl";
 
-namespace TerminalApp
+namespace Microsoft.Terminal.App
 {
     [default_interface] runtimeclass AppKeyBindings : Microsoft.Terminal.Control.IKeyBindings
     {

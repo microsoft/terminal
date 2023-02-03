@@ -4,7 +4,7 @@
 
 #define ACTION_EVENT(name) event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> name
 
-namespace TerminalApp
+namespace Microsoft.Terminal.App
 {
     [default_interface] runtimeclass ShortcutActionDispatch {
         ShortcutActionDispatch();

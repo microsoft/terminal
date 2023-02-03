@@ -18,8 +18,8 @@ using namespace winrt::Windows::UI::Xaml::Media;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Connection;
-using namespace winrt::TerminalApp;
-using namespace TerminalApp;
+using namespace winrt::Microsoft::Terminal::App;
+using namespace Microsoft::Terminal::App;
 
 static const int PaneBorderSize = 2;
 static const int CombinedPaneBorderSize = 2 * PaneBorderSize;
@@ -3169,11 +3169,11 @@ bool Pane::ContainsReadOnly() const
 // - states: a vector that will receive all the states of all leaves in the tree
 // Return Value:
 // - <none>
-void Pane::CollectTaskbarStates(std::vector<winrt::TerminalApp::TaskbarState>& states)
+void Pane::CollectTaskbarStates(std::vector<winrt::Microsoft::Terminal::App::TaskbarState>& states)
 {
     if (_IsLeaf())
     {
-        auto tbState{ winrt::make<winrt::TerminalApp::implementation::TaskbarState>(_control.TaskbarState(),
+        auto tbState{ winrt::make<winrt::Microsoft::Terminal::App::implementation::TaskbarState>(_control.TaskbarState(),
                                                                                     _control.TaskbarProgress()) };
         states.push_back(tbState);
     }

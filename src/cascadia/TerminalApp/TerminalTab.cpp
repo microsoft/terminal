@@ -24,7 +24,7 @@ namespace winrt
     namespace WUX = Windows::UI::Xaml;
 }
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     TerminalTab::TerminalTab(std::shared_ptr<Pane> rootPane)
     {
@@ -155,7 +155,7 @@ namespace winrt::TerminalApp::implementation
             {
                 // Make sure to try/catch this, because the LocalTests won't be
                 // able to use this helper.
-                const auto settings{ winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings() };
+                const auto settings{ winrt::Microsoft::Terminal::App::implementation::AppLogic::CurrentAppSettings() };
                 if (settings.GlobalSettings().TabWidthMode() == winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::SizeToContent)
                 {
                     tab->_headerControl.RenamerMaxWidth(HeaderRenameBoxWidthTitleLength);
@@ -656,7 +656,7 @@ namespace winrt::TerminalApp::implementation
     // - colorPicker: The color picker that we should attach to ourselves
     // Return Value:
     // - <none>
-    void TerminalTab::AttachColorPicker(TerminalApp::ColorPickupFlyout& colorPicker)
+    void TerminalTab::AttachColorPicker(Microsoft::Terminal::App::ColorPickupFlyout& colorPicker)
     {
         auto weakThis{ get_weak() };
 
@@ -949,15 +949,15 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - A TaskbarState object representing the combined taskbar state and
     //   progress percentage of all our panes.
-    winrt::TerminalApp::TaskbarState TerminalTab::GetCombinedTaskbarState() const
+    winrt::Microsoft::Terminal::App::TaskbarState TerminalTab::GetCombinedTaskbarState() const
     {
-        std::vector<winrt::TerminalApp::TaskbarState> states;
+        std::vector<winrt::Microsoft::Terminal::App::TaskbarState> states;
         if (_rootPane)
         {
             _rootPane->CollectTaskbarStates(states);
         }
-        return states.empty() ? winrt::make<winrt::TerminalApp::implementation::TaskbarState>() :
-                                *std::min_element(states.begin(), states.end(), TerminalApp::implementation::TaskbarState::ComparePriority);
+        return states.empty() ? winrt::make<winrt::Microsoft::Terminal::App::implementation::TaskbarState>() :
+                                *std::min_element(states.begin(), states.end(), Microsoft::Terminal::App::implementation::TaskbarState::ComparePriority);
     }
 
     // Method Description:

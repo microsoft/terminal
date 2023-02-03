@@ -19,7 +19,7 @@ using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Connection;
-using namespace ::TerminalApp;
+using namespace ::Microsoft::Terminal::App;
 
 namespace winrt
 {
@@ -27,7 +27,7 @@ namespace winrt
     using IInspectable = Windows::Foundation::IInspectable;
 }
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     void TerminalPage::_HandleOpenNewTabDropdown(const IInspectable& /*sender*/,
                                                  const ActionEventArgs& args)
@@ -721,7 +721,7 @@ namespace winrt::TerminalApp::implementation
             }
 
             // Since _RemoveTabs is asynchronous, create a snapshot of the  tabs we want to remove
-            std::vector<winrt::TerminalApp::TabBase> tabsToRemove;
+            std::vector<winrt::Microsoft::Terminal::App::TabBase> tabsToRemove;
             if (index > 0)
             {
                 std::copy(begin(_tabs), begin(_tabs) + index, std::back_inserter(tabsToRemove));
@@ -760,7 +760,7 @@ namespace winrt::TerminalApp::implementation
             }
 
             // Since _RemoveTabs is asynchronous, create a snapshot of the  tabs we want to remove
-            std::vector<winrt::TerminalApp::TabBase> tabsToRemove;
+            std::vector<winrt::Microsoft::Terminal::App::TabBase> tabsToRemove;
             std::copy(begin(_tabs) + index + 1, end(_tabs), std::back_inserter(tabsToRemove));
             _RemoveTabs(tabsToRemove);
 

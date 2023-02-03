@@ -3,7 +3,7 @@
 
 import "TitlebarControl.idl";
 
-namespace TerminalApp
+namespace Microsoft.Terminal.App
 {
     [default_interface] runtimeclass MinMaxCloseControl : Windows.UI.Xaml.Controls.StackPanel
     {

@@ -4,7 +4,7 @@
 #include "pch.h"
 #include "Commandline.h"
 
-using namespace TerminalApp;
+using namespace Microsoft::Terminal::App;
 
 size_t Commandline::Argc() const
 {

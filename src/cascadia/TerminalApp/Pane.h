@@ -28,7 +28,7 @@ namespace TerminalAppLocalTests
     class TabTests;
 };
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     struct TerminalTab;
 }
@@ -195,7 +195,7 @@ public:
         });
     }
 
-    void CollectTaskbarStates(std::vector<winrt::TerminalApp::TaskbarState>& states);
+    void CollectTaskbarStates(std::vector<winrt::Microsoft::Terminal::App::TaskbarState>& states);
 
     WINRT_CALLBACK(ClosedByParent, winrt::delegate<>);
     WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
@@ -393,6 +393,6 @@ private:
         void _AssignChildNode(std::unique_ptr<LayoutSizeNode>& nodeField, const LayoutSizeNode* const newNode);
     };
 
-    friend struct winrt::TerminalApp::implementation::TerminalTab;
+    friend struct winrt::Microsoft::Terminal::App::implementation::TerminalTab;
     friend class ::TerminalAppLocalTests::TabTests;
 };

@@ -5,7 +5,7 @@
 
 #include "TerminalTabStatus.g.h"
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     struct TerminalTabStatus : TerminalTabStatusT<TerminalTabStatus>
     {
@@ -21,7 +21,7 @@ namespace winrt::TerminalApp::implementation
     };
 }
 
-namespace winrt::TerminalApp::factory_implementation
+namespace winrt::Microsoft::Terminal::App::factory_implementation
 {
     BASIC_FACTORY(TerminalTabStatus);
 }

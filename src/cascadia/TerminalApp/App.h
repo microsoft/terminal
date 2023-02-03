@@ -7,7 +7,7 @@
 #include "App.base.h"
 #include <winrt/Windows.UI.Xaml.Hosting.h>
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     struct App : AppT2<App>
     {
@@ -16,7 +16,7 @@ namespace winrt::TerminalApp::implementation
         void OnLaunched(const Windows::ApplicationModel::Activation::LaunchActivatedEventArgs&);
         void Initialize();
 
-        TerminalApp::AppLogic Logic();
+	Microsoft::Terminal::App::AppLogic Logic();
 
         void Close();
 
@@ -33,7 +33,7 @@ namespace winrt::TerminalApp::implementation
     };
 }
 
-namespace winrt::TerminalApp::factory_implementation
+namespace winrt::Microsoft::Terminal::App::factory_implementation
 {
     struct App : AppT<App, implementation::App>
     {

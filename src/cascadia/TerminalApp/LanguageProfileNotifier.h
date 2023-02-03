@@ -3,7 +3,7 @@
 
 #pragma once
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     class LanguageProfileNotifier : public winrt::implements<LanguageProfileNotifier, ITfInputProcessorProfileActivationSink>
     {

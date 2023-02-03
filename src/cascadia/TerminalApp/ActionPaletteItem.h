@@ -6,7 +6,7 @@
 #include "PaletteItem.h"
 #include "ActionPaletteItem.g.h"
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     struct ActionPaletteItem : ActionPaletteItemT<ActionPaletteItem, PaletteItem>
     {
@@ -20,7 +20,7 @@ namespace winrt::TerminalApp::implementation
     };
 }
 
-namespace winrt::TerminalApp::factory_implementation
+namespace winrt::Microsoft::Terminal::App::factory_implementation
 {
     BASIC_FACTORY(ActionPaletteItem);
 }

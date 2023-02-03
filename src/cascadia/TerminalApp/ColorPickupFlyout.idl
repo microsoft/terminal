@@ -1,4 +1,4 @@
-namespace TerminalApp
+namespace Microsoft.Terminal.App
 {
     delegate void ColorSelectedArgs(Windows.UI.Color color);
     delegate void ColorClearedArgs();

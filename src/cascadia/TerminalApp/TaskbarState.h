@@ -10,7 +10,7 @@ namespace TerminalAppLocalTests
     class TabTests;
 };
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     struct TaskbarState : TaskbarStateT<TaskbarState>
     {
@@ -18,7 +18,7 @@ namespace winrt::TerminalApp::implementation
         TaskbarState();
         TaskbarState(const uint64_t dispatchTypesState, const uint64_t progress);
 
-        static int ComparePriority(const winrt::TerminalApp::TaskbarState& lhs, const winrt::TerminalApp::TaskbarState& rhs);
+        static int ComparePriority(const winrt::Microsoft::Terminal::App::TaskbarState& lhs, const winrt::Microsoft::Terminal::App::TaskbarState& rhs);
 
         uint64_t Priority() const;
 
@@ -27,7 +27,7 @@ namespace winrt::TerminalApp::implementation
     };
 }
 
-namespace winrt::TerminalApp::factory_implementation
+namespace winrt::Microsoft::Terminal::App::factory_implementation
 {
     BASIC_FACTORY(TaskbarState);
 }

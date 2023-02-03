@@ -23,7 +23,7 @@ using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace ::TerminalApp;
+using namespace ::Microsoft::Terminal::App;
 
 namespace winrt
 {
@@ -135,7 +135,7 @@ static Documents::Run _BuildErrorRun(const winrt::hstring& text, const ResourceD
     return textRun;
 }
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     // Function Description:
     // - Get the AppLogic for the current active Xaml application, or null if there isn't one.
@@ -145,7 +145,7 @@ namespace winrt::TerminalApp::implementation
     AppLogic* AppLogic::Current() noexcept
     try
     {
-        if (auto currentXamlApp{ winrt::Windows::UI::Xaml::Application::Current().try_as<winrt::TerminalApp::App>() })
+        if (auto currentXamlApp{ winrt::Windows::UI::Xaml::Application::Current().try_as<winrt::Microsoft::Terminal::App::App>() })
         {
             if (auto appLogicPointer{ winrt::get_self<AppLogic>(currentXamlApp.Logic()) })
             {
@@ -169,7 +169,7 @@ namespace winrt::TerminalApp::implementation
     // - HR E_INVALIDARG if the app isn't up and running.
     const CascadiaSettings AppLogic::CurrentAppSettings()
     {
-        auto appLogic{ ::winrt::TerminalApp::implementation::AppLogic::Current() };
+        auto appLogic{ ::winrt::Microsoft::Terminal::App::implementation::AppLogic::Current() };
         THROW_HR_IF_NULL(E_INVALIDARG, appLogic);
         return appLogic->GetSettings();
     }
@@ -463,7 +463,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (!_settingsLoadExceptionText.empty())
             {
-                warningsTextBlock.Inlines().Append(_BuildErrorRun(_settingsLoadExceptionText, ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Resources()));
+                warningsTextBlock.Inlines().Append(_BuildErrorRun(_settingsLoadExceptionText, ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::Microsoft::Terminal::App::App>().Resources()));
                 warningsTextBlock.Inlines().Append(Documents::LineBreak{});
             }
         }
@@ -507,7 +507,7 @@ namespace winrt::TerminalApp::implementation
             const auto warningText = _GetWarningText(warning);
             if (!warningText.empty())
             {
-                warningsTextBlock.Inlines().Append(_BuildErrorRun(warningText, ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Resources()));
+                warningsTextBlock.Inlines().Append(_BuildErrorRun(warningText, ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::Microsoft::Terminal::App::App>().Resources()));
                 warningsTextBlock.Inlines().Append(Documents::LineBreak{});
             }
         }
@@ -726,7 +726,7 @@ namespace winrt::TerminalApp::implementation
     // - defaultInitialY: the system default y coordinate value
     // Return Value:
     // - a point containing the requested initial position in pixels.
-    TerminalApp::InitialPosition AppLogic::GetInitialPosition(int64_t defaultInitialX, int64_t defaultInitialY)
+    Microsoft::Terminal::App::InitialPosition AppLogic::GetInitialPosition(int64_t defaultInitialX, int64_t defaultInitialY)
     {
         if (!_loadedInitialSettings)
         {
@@ -1223,7 +1223,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::TerminalApp::TaskbarState AppLogic::TaskbarState()
+    winrt::Microsoft::Terminal::App::TaskbarState AppLogic::TaskbarState()
     {
         if (_root)
         {
@@ -1330,7 +1330,7 @@ namespace winrt::TerminalApp::implementation
     int32_t AppLogic::ExecuteCommandline(array_view<const winrt::hstring> args,
                                          const winrt::hstring& cwd)
     {
-        ::TerminalApp::AppCommandlineArgs appArgs;
+        ::Microsoft::Terminal::App::AppCommandlineArgs appArgs;
         auto result = appArgs.ParseArgs(args);
         if (result == 0)
         {
@@ -1365,7 +1365,7 @@ namespace winrt::TerminalApp::implementation
     // - WindowingBehaviorUseAnyExisting: We should handle the args "in the current
     //   window ON ANY DESKTOP"
     // - anything else: We should handle the commandline in the window with the given ID.
-    TerminalApp::FindTargetWindowResult AppLogic::FindTargetWindow(array_view<const winrt::hstring> args)
+    Microsoft::Terminal::App::FindTargetWindowResult AppLogic::FindTargetWindow(array_view<const winrt::hstring> args)
     {
         if (!_loadedInitialSettings)
         {
@@ -1377,10 +1377,10 @@ namespace winrt::TerminalApp::implementation
     }
 
     // The main body of this function is a static helper, to facilitate unit-testing
-    TerminalApp::FindTargetWindowResult AppLogic::_doFindTargetWindow(array_view<const winrt::hstring> args,
+    Microsoft::Terminal::App::FindTargetWindowResult AppLogic::_doFindTargetWindow(array_view<const winrt::hstring> args,
                                                                       const Microsoft::Terminal::Settings::Model::WindowingMode& windowingBehavior)
     {
-        ::TerminalApp::AppCommandlineArgs appArgs;
+        ::Microsoft::Terminal::App::AppCommandlineArgs appArgs;
         const auto result = appArgs.ParseArgs(args);
         if (result == 0)
         {

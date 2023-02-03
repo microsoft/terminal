@@ -4,7 +4,7 @@
 import "TabBase.idl";
 import "TerminalTabStatus.idl";
 
-namespace TerminalApp
+namespace Microsoft.Terminal.App
 {
     [default_interface] runtimeclass TerminalTab : TabBase
     {

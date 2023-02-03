@@ -16,7 +16,7 @@ namespace TerminalAppLocalTests
     class TabTests;
 };
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     struct TerminalTab : TerminalTabT<TerminalTab, TabBase>
     {
@@ -37,7 +37,7 @@ namespace winrt::TerminalApp::implementation
         std::shared_ptr<Pane> DetachPane();
         void AttachPane(std::shared_ptr<Pane> pane);
 
-        void AttachColorPicker(winrt::TerminalApp::ColorPickupFlyout& colorPicker);
+        void AttachColorPicker(winrt::Microsoft::Terminal::App::ColorPickupFlyout& colorPicker);
 
         void SplitPane(winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
                        const float splitSize,
@@ -88,11 +88,11 @@ namespace winrt::TerminalApp::implementation
 
         void TogglePaneReadOnly();
         std::shared_ptr<Pane> GetActivePane() const;
-        winrt::TerminalApp::TaskbarState GetCombinedTaskbarState() const;
+        winrt::Microsoft::Terminal::App::TaskbarState GetCombinedTaskbarState() const;
 
         std::shared_ptr<Pane> GetRootPane() const { return _rootPane; }
 
-        winrt::TerminalApp::TerminalTabStatus TabStatus()
+        winrt::Microsoft::Terminal::App::TerminalTabStatus TabStatus()
         {
             return _tabStatus;
         }
@@ -113,10 +113,10 @@ namespace winrt::TerminalApp::implementation
 
         winrt::hstring _lastIconPath{};
         std::optional<winrt::Windows::UI::Color> _runtimeTabColor{};
-        winrt::TerminalApp::TabHeaderControl _headerControl{};
-        winrt::TerminalApp::TerminalTabStatus _tabStatus{};
+        winrt::Microsoft::Terminal::App::TabHeaderControl _headerControl{};
+        winrt::Microsoft::Terminal::App::TerminalTabStatus _tabStatus{};
 
-        winrt::TerminalApp::ColorPickupFlyout _tabColorPickup{ nullptr };
+        winrt::Microsoft::Terminal::App::ColorPickupFlyout _tabColorPickup{ nullptr };
         winrt::event_token _colorSelectedToken;
         winrt::event_token _colorClearedToken;
         winrt::event_token _pickerClosedToken;
@@ -144,7 +144,7 @@ namespace winrt::TerminalApp::implementation
         bool _inRename{ false };
         winrt::Windows::UI::Xaml::Controls::TextBox::LayoutUpdated_revoker _tabRenameBoxLayoutUpdatedRevoker;
 
-        winrt::TerminalApp::ShortcutActionDispatch _dispatch;
+        winrt::Microsoft::Terminal::App::ShortcutActionDispatch _dispatch;
 
         void _Setup();
 

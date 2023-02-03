@@ -97,7 +97,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         // You can emulate the monarch dying by: starting a terminal, sticking a
         // breakpoint in
-        // TerminalApp!winrt::TerminalApp::implementation::AppLogic::_doFindTargetWindow,
+        // Microsoft.Terminal.App!winrt::Microsoft::Terminal::App::implementation::AppLogic::_doFindTargetWindow,
         // starting a defterm, and when that BP gets hit, kill the original
         // monarch, and see what happens here.
 

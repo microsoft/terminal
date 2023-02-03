@@ -4,7 +4,7 @@
 #pragma once
 #include "PaletteItem.g.h"
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     struct PaletteItem : PaletteItemT<PaletteItem>
     {

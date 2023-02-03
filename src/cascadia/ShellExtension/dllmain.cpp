@@ -34,4 +34,4 @@ DllMain(_In_opt_ HINSTANCE hinst, DWORD reason, _In_opt_ void*)
 }
 
 // Usurp the TerminalApp's Context Menu specific resource group.
-UTILS_DEFINE_LIBRARY_RESOURCE_SCOPE(L"TerminalApp/ContextMenu")
+UTILS_DEFINE_LIBRARY_RESOURCE_SCOPE(L"Microsoft.Terminal.App/ContextMenu")

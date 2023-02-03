@@ -9,7 +9,7 @@
 
 using namespace winrt::Windows::UI::Xaml;
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     static void closeToolTipForButton(const Controls::Button& button)
     {

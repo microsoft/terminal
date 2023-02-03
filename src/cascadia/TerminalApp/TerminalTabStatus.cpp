@@ -5,6 +5,6 @@
 #include "TerminalTabStatus.h"
 #include "TerminalTabStatus.g.cpp"
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
 }

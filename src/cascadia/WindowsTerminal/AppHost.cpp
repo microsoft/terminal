@@ -77,7 +77,7 @@ AppHost::AppHost() noexcept :
                          std::placeholders::_3);
     _window->SetCreateCallback(pfn);
 
-    _window->SetSnapDimensionCallback(std::bind(&winrt::TerminalApp::AppLogic::CalcSnappedDimension,
+    _window->SetSnapDimensionCallback(std::bind(&winrt::Microsoft::Terminal::App::AppLogic::CalcSnappedDimension,
                                                 _logic,
                                                 std::placeholders::_1,
                                                 std::placeholders::_2));
@@ -100,7 +100,7 @@ AppHost::AppHost() noexcept :
     _window->WindowActivated({ this, &AppHost::_WindowActivated });
     _window->WindowMoved({ this, &AppHost::_WindowMoved });
     _window->HotkeyPressed({ this, &AppHost::_GlobalHotkeyPressed });
-    _window->ShouldExitFullscreen({ &_logic, &winrt::TerminalApp::AppLogic::RequestExitFullscreen });
+    _window->ShouldExitFullscreen({ &_logic, &winrt::Microsoft::Terminal::App::AppLogic::RequestExitFullscreen });
 
     _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
     _window->SetAutoHideWindow(_logic.AutoHideWindow());
@@ -492,7 +492,7 @@ void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /*
 // - LastTabClosedEventArgs: unused
 // Return Value:
 // - <none>
-void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::TerminalApp::LastTabClosedEventArgs& /*args*/)
+void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Microsoft::Terminal::App::LastTabClosedEventArgs& /*args*/)
 {
     if (_windowManager.IsMonarch() && _notificationIcon)
     {
@@ -1315,7 +1315,7 @@ void AppHost::_DisplayWindowId(const winrt::Windows::Foundation::IInspectable& /
 }
 
 winrt::fire_and_forget AppHost::_RenameWindowRequested(const winrt::Windows::Foundation::IInspectable /*sender*/,
-                                                       const winrt::TerminalApp::RenameWindowRequestedArgs args)
+                                                       const winrt::Microsoft::Terminal::App::RenameWindowRequestedArgs args)
 {
     // Capture calling context.
     winrt::apartment_context ui_thread;
@@ -1506,17 +1506,17 @@ void AppHost::_OpenSystemMenu(const winrt::Windows::Foundation::IInspectable&,
     _window->OpenSystemMenu(std::nullopt, std::nullopt);
 }
 
-void AppHost::_SystemMenuChangeRequested(const winrt::Windows::Foundation::IInspectable&, const winrt::TerminalApp::SystemMenuChangeArgs& args)
+void AppHost::_SystemMenuChangeRequested(const winrt::Windows::Foundation::IInspectable&, const winrt::Microsoft::Terminal::App::SystemMenuChangeArgs& args)
 {
     switch (args.Action())
     {
-    case winrt::TerminalApp::SystemMenuChangeAction::Add:
+	    case winrt::Microsoft::Terminal::App::SystemMenuChangeAction::Add:
     {
         auto handler = args.Handler();
         _window->AddToSystemMenu(args.Name(), [handler]() { handler(); });
         break;
     }
-    case winrt::TerminalApp::SystemMenuChangeAction::Remove:
+	    case winrt::Microsoft::Terminal::App::SystemMenuChangeAction::Remove:
     {
         _window->RemoveFromSystemMenu(args.Name());
         break;

@@ -180,7 +180,7 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message,
         case HTMINBUTTON:
         case HTMAXBUTTON:
         case HTCLOSE:
-            _titlebar.HoverButton(static_cast<winrt::TerminalApp::CaptionButton>(wparam));
+            _titlebar.HoverButton(static_cast<winrt::Microsoft::Terminal::App::CaptionButton>(wparam));
             break;
         default:
             _titlebar.ReleaseButtons();
@@ -241,7 +241,7 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message,
         case HTMINBUTTON:
         case HTMAXBUTTON:
         case HTCLOSE:
-            _titlebar.PressButton(static_cast<winrt::TerminalApp::CaptionButton>(wparam));
+            _titlebar.PressButton(static_cast<winrt::Microsoft::Terminal::App::CaptionButton>(wparam));
             break;
         }
         return 0;
@@ -270,7 +270,7 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message,
         case HTMAXBUTTON:
         case HTCLOSE:
             _titlebar.ReleaseButtons();
-            _titlebar.ClickButton(static_cast<winrt::TerminalApp::CaptionButton>(wparam));
+            _titlebar.ClickButton(static_cast<winrt::Microsoft::Terminal::App::CaptionButton>(wparam));
             break;
         }
         return 0;
@@ -347,7 +347,7 @@ void NonClientIslandWindow::Initialize()
     _rootGrid.RowDefinitions().Append(contentRow);
 
     // Create our titlebar control
-    _titlebar = winrt::TerminalApp::TitlebarControl{ reinterpret_cast<uint64_t>(GetHandle()) };
+    _titlebar = winrt::Microsoft::Terminal::App::TitlebarControl{ reinterpret_cast<uint64_t>(GetHandle()) };
     _dragBar = _titlebar.DragBar();
 
     _dragBar.SizeChanged({ this, &NonClientIslandWindow::_OnDragBarSizeChanged });
@@ -512,9 +512,9 @@ void NonClientIslandWindow::_OnMaximizeChange() noexcept
         const auto windowStyle = GetWindowStyle(_window.get());
         const auto isIconified = WI_IsFlagSet(windowStyle, WS_ICONIC);
 
-        const auto state = _isMaximized ? winrt::TerminalApp::WindowVisualState::WindowVisualStateMaximized :
-                           isIconified  ? winrt::TerminalApp::WindowVisualState::WindowVisualStateIconified :
-                                          winrt::TerminalApp::WindowVisualState::WindowVisualStateNormal;
+        const auto state = _isMaximized ? winrt::Microsoft::Terminal::App::WindowVisualState::WindowVisualStateMaximized :
+                           isIconified  ? winrt::Microsoft::Terminal::App::WindowVisualState::WindowVisualStateIconified :
+                                          winrt::Microsoft::Terminal::App::WindowVisualState::WindowVisualStateNormal;
 
         try
         {

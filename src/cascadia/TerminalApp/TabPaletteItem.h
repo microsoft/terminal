@@ -6,28 +6,28 @@
 #include "PaletteItem.h"
 #include "TabPaletteItem.g.h"
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     struct TabPaletteItem : TabPaletteItemT<TabPaletteItem, PaletteItem>
     {
         TabPaletteItem() = default;
-        TabPaletteItem(const winrt::TerminalApp::TabBase& tab);
+        TabPaletteItem(const winrt::Microsoft::Terminal::App::TabBase& tab);
 
-        winrt::TerminalApp::TabBase Tab() const noexcept
+        winrt::Microsoft::Terminal::App::TabBase Tab() const noexcept
         {
             return _tab.get();
         }
 
-        WINRT_OBSERVABLE_PROPERTY(winrt::TerminalApp::TerminalTabStatus, TabStatus, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(winrt::Microsoft::Terminal::App::TerminalTabStatus, TabStatus, _PropertyChangedHandlers);
 
     private:
-        winrt::weak_ref<winrt::TerminalApp::TabBase> _tab;
+        winrt::weak_ref<winrt::Microsoft::Terminal::App::TabBase> _tab;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _tabChangedRevoker;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _tabStatusChangedRevoker;
     };
 }
 
-namespace winrt::TerminalApp::factory_implementation
+namespace winrt::Microsoft::Terminal::App::factory_implementation
 {
     BASIC_FACTORY(TabPaletteItem);
 }

@@ -8,7 +8,7 @@
 
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::TerminalApp;
+using namespace winrt::Microsoft::Terminal::App;
 
 #define ACTION_CASE(action)                    \
     case ShortcutAction::action:               \
@@ -17,7 +17,7 @@ using namespace winrt::TerminalApp;
         break;                                 \
     }
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     // Method Description:
     // - Dispatch the appropriate event for the given ActionAndArgs. Constructs

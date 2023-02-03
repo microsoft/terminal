@@ -14,7 +14,7 @@ using namespace winrt::Windows::UI::Xaml::Navigation;
 
 namespace xaml = ::winrt::Windows::UI::Xaml;
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     App::App()
     {

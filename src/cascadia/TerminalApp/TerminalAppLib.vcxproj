@@ -3,9 +3,9 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA5CAD1A-9A12-429C-B551-8562EC954746}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>TerminalApp</RootNamespace>
+    <RootNamespace>Microsoft.Terminal.App</RootNamespace>
     <ProjectName>TerminalAppLib</ProjectName>
-    <TargetName>TerminalAppLib</TargetName>
+    <TargetName>Microsoft.Terminal.App.Lib</TargetName>
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <SubSystem>Console</SubSystem>
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
@@ -16,6 +16,16 @@
     -->
     <DisableEmbeddedXbf>false</DisableEmbeddedXbf>
     <XamlComponentResourceLocation>nested</XamlComponentResourceLocation>
+
+    <!-- C++/WinRT sets the depth to 1 if there is a XAML file in the project
+         Unfortunately for us, we need it to be 3. When the namespace merging
+         depth is 1, Microsoft.Terminal.App becomes "Microsoft",
+         and our WinMD file becomes "Microsoft". Because WinRT is very
+         namespace-driven, this winmd is considered to contain the entire
+         Microsoft namespace. This is, obviously, not great. None of our other
+         projects compile properly when they depend on this "Microsoft.winmd."
+    -->
+    <CppWinRTNamespaceMergeDepth>3</CppWinRTNamespaceMergeDepth>
   </PropertyGroup>
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>

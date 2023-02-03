@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-namespace TerminalApp
+namespace Microsoft.Terminal.App
 {
     // C++/winrt makes it difficult to share this idl between two projects,
     // Instead, we just pin the uuid and include it in both TermControl and App

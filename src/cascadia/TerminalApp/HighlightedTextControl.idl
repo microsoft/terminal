@@ -3,7 +3,7 @@
 
 import "HighlightedText.idl";
 
-namespace TerminalApp
+namespace Microsoft.Terminal.App
 {
     [default_interface] runtimeclass HighlightedTextControl : Windows.UI.Xaml.Controls.Control
     {

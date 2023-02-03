@@ -83,7 +83,7 @@ void NotificationIcon::CreateNotificationIcon()
     nid.uCallbackMessage = CM_NOTIFY_FROM_NOTIFICATION_AREA;
 
     // AppName happens to be in the ContextMenu's Resources, see GH#12264
-    ScopedResourceLoader loader{ L"TerminalApp/ContextMenu" };
+    ScopedResourceLoader loader{ L"Microsoft.Terminal.App/ContextMenu" };
     const auto appNameLoc = loader.GetLocalizedString(L"AppName");
 
     nid.hIcon = static_cast<HICON>(GetActiveAppIconHandle(true));

@@ -11,7 +11,7 @@
 #include "CommandPalette.g.cpp"
 
 using namespace winrt;
-using namespace winrt::TerminalApp;
+using namespace winrt::Microsoft::Terminal::App;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Controls;
@@ -20,7 +20,7 @@ using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     CommandPalette::CommandPalette() :
         _switcherStartIdx{ 0 }
@@ -30,12 +30,12 @@ namespace winrt::TerminalApp::implementation
         _itemTemplateSelector = Resources().Lookup(winrt::box_value(L"PaletteItemTemplateSelector")).try_as<PaletteItemTemplateSelector>();
         _listItemTemplate = Resources().Lookup(winrt::box_value(L"ListItemTemplate")).try_as<DataTemplate>();
 
-        _filteredActions = winrt::single_threaded_observable_vector<winrt::TerminalApp::FilteredCommand>();
-        _nestedActionStack = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
-        _currentNestedCommands = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
-        _allCommands = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
-        _tabActions = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
-        _mruTabActions = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
+        _filteredActions = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::App::FilteredCommand>();
+        _nestedActionStack = winrt::single_threaded_vector<winrt::Microsoft::Terminal::App::FilteredCommand>();
+        _currentNestedCommands = winrt::single_threaded_vector<winrt::Microsoft::Terminal::App::FilteredCommand>();
+        _allCommands = winrt::single_threaded_vector<winrt::Microsoft::Terminal::App::FilteredCommand>();
+        _tabActions = winrt::single_threaded_vector<winrt::Microsoft::Terminal::App::FilteredCommand>();
+        _mruTabActions = winrt::single_threaded_vector<winrt::Microsoft::Terminal::App::FilteredCommand>();
 
         _switchToMode(CommandPaletteMode::ActionMode);
 
@@ -226,14 +226,14 @@ namespace winrt::TerminalApp::implementation
                                                  const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
         const auto selectedCommand = _filteredActionsView().SelectedItem();
-        const auto filteredCommand{ selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>() };
+        const auto filteredCommand{ selectedCommand.try_as<winrt::Microsoft::Terminal::App::FilteredCommand>() };
         if (_currentMode == CommandPaletteMode::TabSwitchMode)
         {
             _switchToTab(filteredCommand);
         }
         else if (_currentMode == CommandPaletteMode::ActionMode && filteredCommand != nullptr)
         {
-            if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
+            if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::Microsoft::Terminal::App::ActionPaletteItem>() })
             {
                 _PreviewActionHandlers(*this, actionPaletteItem.Command());
             }
@@ -332,7 +332,7 @@ namespace winrt::TerminalApp::implementation
             }
 
             const auto selectedCommand = _filteredActionsView().SelectedItem();
-            const auto filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>();
+            const auto filteredCommand = selectedCommand.try_as<winrt::Microsoft::Terminal::App::FilteredCommand>();
             _dispatchCommand(filteredCommand);
             e.Handled(true);
         }
@@ -371,7 +371,7 @@ namespace winrt::TerminalApp::implementation
         }
         else if (key == VirtualKey::Right && _currentMode == CommandPaletteMode::CommandlineMode)
         {
-            if (const auto command{ _filteredActionsView().SelectedItem().try_as<winrt::TerminalApp::FilteredCommand>() })
+            if (const auto command{ _filteredActionsView().SelectedItem().try_as<winrt::Microsoft::Terminal::App::FilteredCommand>() })
             {
                 _searchBox().Text(command.Item().Name());
                 _searchBox().Select(_searchBox().Text().size(), 0);
@@ -427,7 +427,7 @@ namespace winrt::TerminalApp::implementation
         if (!ctrlDown && !altDown && !shiftDown)
         {
             const auto selectedCommand = _filteredActionsView().SelectedItem();
-            if (const auto filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>())
+            if (const auto filteredCommand = selectedCommand.try_as<winrt::Microsoft::Terminal::App::FilteredCommand>())
             {
                 _dispatchCommand(filteredCommand);
             }
@@ -524,7 +524,7 @@ namespace winrt::TerminalApp::implementation
                                           const Windows::UI::Xaml::Controls::ItemClickEventArgs& e)
     {
         const auto selectedCommand = e.ClickedItem();
-        if (const auto filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>())
+        if (const auto filteredCommand = selectedCommand.try_as<winrt::Microsoft::Terminal::App::FilteredCommand>())
         {
             _dispatchCommand(filteredCommand);
         }
@@ -542,9 +542,9 @@ namespace winrt::TerminalApp::implementation
                 if (const auto selectedList = e.AddedItems(); selectedList.Size() > 0)
                 {
                     const auto selectedCommand = selectedList.GetAt(0);
-                    if (const auto filteredCmd = selectedCommand.try_as<TerminalApp::FilteredCommand>())
+                    if (const auto filteredCmd = selectedCommand.try_as<Microsoft::Terminal::App::FilteredCommand>())
                     {
-                        if (const auto paletteItem = filteredCmd.Item().try_as<TerminalApp::PaletteItem>())
+                        if (const auto paletteItem = filteredCmd.Item().try_as<Microsoft::Terminal::App::PaletteItem>())
                         {
                             automationPeer.RaiseNotificationEvent(
                                 Automation::Peers::AutomationNotificationKind::ItemAdded,
@@ -579,7 +579,7 @@ namespace winrt::TerminalApp::implementation
         if (_nestedActionStack.Size() > 0)
         {
             const auto newPreviousAction{ _nestedActionStack.GetAt(_nestedActionStack.Size() - 1) };
-            const auto actionPaletteItem{ newPreviousAction.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() };
+            const auto actionPaletteItem{ newPreviousAction.Item().try_as<winrt::Microsoft::Terminal::App::ActionPaletteItem>() };
 
             ParentCommandName(actionPaletteItem.Command().Name());
             _updateCurrentNestedCommands(actionPaletteItem.Command());
@@ -640,7 +640,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - A list of Commands to filter.
-    Collections::IVector<winrt::TerminalApp::FilteredCommand> CommandPalette::_commandsToFilter()
+    Collections::IVector<winrt::Microsoft::Terminal::App::FilteredCommand> CommandPalette::_commandsToFilter()
     {
         switch (_currentMode)
         {
@@ -671,7 +671,7 @@ namespace winrt::TerminalApp::implementation
     // - command: the Command to dispatch. This might be null.
     // Return Value:
     // - <none>
-    void CommandPalette::_dispatchCommand(const winrt::TerminalApp::FilteredCommand& filteredCommand)
+    void CommandPalette::_dispatchCommand(const winrt::Microsoft::Terminal::App::FilteredCommand& filteredCommand)
     {
         if (_currentMode == CommandPaletteMode::CommandlineMode)
         {
@@ -684,7 +684,7 @@ namespace winrt::TerminalApp::implementation
         }
         else if (filteredCommand)
         {
-            if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
+            if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::Microsoft::Terminal::App::ActionPaletteItem>() })
             {
                 if (actionPaletteItem.Command().HasNestedCommands())
                 {
@@ -760,11 +760,11 @@ namespace winrt::TerminalApp::implementation
     // - filteredCommand - Selected filtered command - might be null
     // Return Value:
     // - <none>
-    void CommandPalette::_switchToTab(const winrt::TerminalApp::FilteredCommand& filteredCommand)
+    void CommandPalette::_switchToTab(const winrt::Microsoft::Terminal::App::FilteredCommand& filteredCommand)
     {
         if (filteredCommand)
         {
-            if (const auto tabPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::TabPaletteItem>() })
+            if (const auto tabPaletteItem{ filteredCommand.Item().try_as<winrt::Microsoft::Terminal::App::TabPaletteItem>() })
             {
                 if (const auto tab{ tabPaletteItem.Tab() })
                 {
@@ -780,7 +780,7 @@ namespace winrt::TerminalApp::implementation
     // - filteredCommand - Selected filtered command - might be null
     // Return Value:
     // - <none>
-    void CommandPalette::_dispatchCommandline(const winrt::TerminalApp::FilteredCommand& command)
+    void CommandPalette::_dispatchCommandline(const winrt::Microsoft::Terminal::App::FilteredCommand& command)
     {
         const auto filteredCommand = command ? command : _buildCommandLineCommand(winrt::hstring(_getTrimmedInput()));
         if (filteredCommand.has_value())
@@ -794,7 +794,7 @@ namespace winrt::TerminalApp::implementation
                 TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                 TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
-            if (const auto commandLinePaletteItem{ filteredCommand.value().Item().try_as<winrt::TerminalApp::CommandLinePaletteItem>() })
+            if (const auto commandLinePaletteItem{ filteredCommand.value().Item().try_as<winrt::Microsoft::Terminal::App::CommandLinePaletteItem>() })
             {
                 _CommandLineExecutionRequestedHandlers(*this, commandLinePaletteItem.CommandLine());
                 _close();
@@ -802,7 +802,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    std::optional<TerminalApp::FilteredCommand> CommandPalette::_buildCommandLineCommand(const hstring& commandLine)
+    std::optional<Microsoft::Terminal::App::FilteredCommand> CommandPalette::_buildCommandLineCommand(const hstring& commandLine)
     {
         if (commandLine.empty())
         {
@@ -932,7 +932,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    Collections::IObservableVector<winrt::TerminalApp::FilteredCommand> CommandPalette::FilteredActions()
+    Collections::IObservableVector<winrt::Microsoft::Terminal::App::FilteredCommand> CommandPalette::FilteredActions()
     {
         return _filteredActions;
     }
@@ -947,7 +947,7 @@ namespace winrt::TerminalApp::implementation
         _allCommands.Clear();
         for (const auto& action : actions)
         {
-            auto actionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action) };
+            auto actionPaletteItem{ winrt::make<winrt::Microsoft::Terminal::App::implementation::ActionPaletteItem>(action) };
             auto filteredCommand{ winrt::make<FilteredCommand>(actionPaletteItem) };
             _allCommands.Append(filteredCommand);
         }
@@ -970,13 +970,13 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - <none>
     void CommandPalette::_bindTabs(
-        const Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::TabBase>& source,
-        const Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand>& target)
+        const Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::App::TabBase>& source,
+        const Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::App::FilteredCommand>& target)
     {
         target.Clear();
         for (const auto& tab : source)
         {
-            auto tabPaletteItem{ winrt::make<winrt::TerminalApp::implementation::TabPaletteItem>(tab) };
+            auto tabPaletteItem{ winrt::make<winrt::Microsoft::Terminal::App::implementation::TabPaletteItem>(tab) };
             auto filteredCommand{ winrt::make<FilteredCommand>(tabPaletteItem) };
             target.Append(filteredCommand);
         }
@@ -1071,9 +1071,9 @@ namespace winrt::TerminalApp::implementation
     // - A collection that will receive the filtered actions
     // Return Value:
     // - <none>
-    std::vector<winrt::TerminalApp::FilteredCommand> CommandPalette::_collectFilteredActions()
+    std::vector<winrt::Microsoft::Terminal::App::FilteredCommand> CommandPalette::_collectFilteredActions()
     {
-        std::vector<winrt::TerminalApp::FilteredCommand> actions;
+        std::vector<winrt::Microsoft::Terminal::App::FilteredCommand> actions;
 
         winrt::hstring searchText{ _getTrimmedInput() };
 
@@ -1168,7 +1168,7 @@ namespace winrt::TerminalApp::implementation
         for (const auto& nameAndCommand : parentCommand.NestedCommands())
         {
             const auto action = nameAndCommand.Value();
-            auto nestedActionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action) };
+            auto nestedActionPaletteItem{ winrt::make<winrt::Microsoft::Terminal::App::implementation::ActionPaletteItem>(action) };
             auto nestedFilteredCommand{ winrt::make<FilteredCommand>(nestedActionPaletteItem) };
             _currentNestedCommands.Append(nestedFilteredCommand);
         }
@@ -1297,17 +1297,17 @@ namespace winrt::TerminalApp::implementation
     // - Reads the list of recent commands from the persistent application state
     // Return Value:
     // - The list of FilteredCommand representing the ones stored in the state
-    IVector<TerminalApp::FilteredCommand> CommandPalette::_loadRecentCommands()
+    IVector<Microsoft::Terminal::App::FilteredCommand> CommandPalette::_loadRecentCommands()
     {
         const auto recentCommands = ApplicationState::SharedInstance().RecentCommands();
         // If this is the first time we've opened the commandline mode and
         // there aren't any recent commands, then just return an empty vector.
         if (!recentCommands)
         {
-            return single_threaded_vector<TerminalApp::FilteredCommand>();
+            return single_threaded_vector<Microsoft::Terminal::App::FilteredCommand>();
         }
 
-        std::vector<TerminalApp::FilteredCommand> parsedCommands;
+        std::vector<Microsoft::Terminal::App::FilteredCommand> parsedCommands;
         parsedCommands.reserve(std::min(recentCommands.Size(), CommandLineHistoryLength));
 
         for (const auto& c : recentCommands)

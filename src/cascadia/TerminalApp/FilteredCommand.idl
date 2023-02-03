@@ -4,7 +4,7 @@
 import "PaletteItem.idl";
 import "HighlightedTextControl.idl";
 
-namespace TerminalApp
+namespace Microsoft.Terminal.App
 {
     [default_interface] runtimeclass FilteredCommand : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {

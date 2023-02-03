@@ -6,7 +6,7 @@
 
 using namespace ::winrt::Microsoft::Terminal::Connection;
 using namespace ::winrt::Windows::Foundation;
-namespace winrt::Microsoft::TerminalApp::implementation
+namespace winrt::Microsoft::Microsoft::Terminal::App::implementation
 {
     // DebugInputTapConnection is an implementation detail of DebugTapConnection.
     // It wraps the _actual_ connection so it can hook WriteInput and forward it
@@ -141,7 +141,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
 //   2. One that will print raw VT sequences sent into and received _from_ the original connection.
 std::tuple<ITerminalConnection, ITerminalConnection> OpenDebugTapConnection(ITerminalConnection baseConnection)
 {
-    using namespace winrt::Microsoft::TerminalApp::implementation;
+    using namespace winrt::Microsoft::Microsoft::Terminal::App::implementation;
     auto debugSide{ winrt::make_self<DebugTapConnection>(baseConnection) };
     auto inputSide{ winrt::make_self<DebugInputTapConnection>(debugSide, baseConnection) };
     debugSide->SetInputTap(*inputSide);

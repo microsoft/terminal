@@ -6,7 +6,7 @@
 #include "PaletteItemTemplateSelector.h"
 #include "PaletteItemTemplateSelector.g.cpp"
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     Windows::UI::Xaml::DataTemplate PaletteItemTemplateSelector::SelectTemplateCore(const winrt::Windows::Foundation::IInspectable& item, const winrt::Windows::UI::Xaml::DependencyObject& /*container*/)
     {
@@ -24,13 +24,13 @@ namespace winrt::TerminalApp::implementation
     // - data template to use for rendering
     Windows::UI::Xaml::DataTemplate PaletteItemTemplateSelector::SelectTemplateCore(const winrt::Windows::Foundation::IInspectable& item)
     {
-        if (const auto filteredCommand{ item.try_as<winrt::TerminalApp::FilteredCommand>() })
+        if (const auto filteredCommand{ item.try_as<winrt::Microsoft::Terminal::App::FilteredCommand>() })
         {
-            if (filteredCommand.Item().try_as<winrt::TerminalApp::TabPaletteItem>())
+            if (filteredCommand.Item().try_as<winrt::Microsoft::Terminal::App::TabPaletteItem>())
             {
                 return TabItemTemplate();
             }
-            else if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
+            else if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::Microsoft::Terminal::App::ActionPaletteItem>() })
             {
                 if (actionPaletteItem.Command().HasNestedCommands())
                 {

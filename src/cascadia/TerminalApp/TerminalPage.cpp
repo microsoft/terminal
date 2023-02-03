@@ -34,7 +34,7 @@ using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Xaml;
-using namespace ::TerminalApp;
+using namespace ::Microsoft::Terminal::App;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Terminal::Core;
 using namespace std::chrono_literals;
@@ -49,11 +49,11 @@ namespace winrt
     using VirtualKeyModifiers = Windows::System::VirtualKeyModifiers;
 }
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::App::implementation
 {
     TerminalPage::TerminalPage() :
-        _tabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
-        _mruTabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
+        _tabs{ winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::App::TabBase>() },
+        _mruTabs{ winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::App::TabBase>() },
         _startupActions{ winrt::single_threaded_vector<ActionAndArgs>() },
         _hostingHwnd{}
     {
@@ -159,11 +159,11 @@ namespace winrt::TerminalApp::implementation
             auto result = false;
 
             // GH#2455 - Make sure to try/catch calls to Application::Current,
-            // because that _won't_ be an instance of TerminalApp::App in the
+            // because that _won't_ be an instance of Microsoft::Terminal::App::App in the
             // LocalTests
             try
             {
-                result = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsElevated();
+                result = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::Microsoft::Terminal::App::App>().Logic().IsElevated();
             }
             CATCH_LOG();
             return result;
@@ -507,7 +507,7 @@ namespace winrt::TerminalApp::implementation
     // - command - command to dispatch
     // Return Value:
     // - <none>
-    void TerminalPage::_OnDispatchCommandRequested(const IInspectable& /*sender*/, const Microsoft::Terminal::Settings::Model::Command& command)
+    void TerminalPage::_OnDispatchCommandRequested(const IInspectable& /*sender*/, const winrt::Microsoft::Terminal::Settings::Model::Command& command)
     {
         const auto& actionAndArgs = command.ActionAndArgs();
         _actionDispatch->DoAction(actionAndArgs);
@@ -841,12 +841,12 @@ namespace winrt::TerminalApp::implementation
         // add static items
         {
             // GH#2455 - Make sure to try/catch calls to Application::Current,
-            // because that _won't_ be an instance of TerminalApp::App in the
+            // because that _won't_ be an instance of Microsoft::Terminal::App::App in the
             // LocalTests
             auto isUwp = false;
             try
             {
-                isUwp = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsUwp();
+                isUwp = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::Microsoft::Terminal::App::App>().Logic().IsUwp();
             }
             CATCH_LOG();
 
@@ -1219,7 +1219,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::fire_and_forget TerminalPage::_RemoveOnCloseRoutine(Microsoft::UI::Xaml::Controls::TabViewItem tabViewItem, winrt::com_ptr<TerminalPage> page)
+    winrt::fire_and_forget TerminalPage::_RemoveOnCloseRoutine(winrt::Microsoft::UI::Xaml::Controls::TabViewItem tabViewItem, winrt::com_ptr<TerminalPage> page)
     {
         co_await wil::resume_foreground(page->_tabView.Dispatcher());
 
@@ -1988,7 +1988,7 @@ namespace winrt::TerminalApp::implementation
     //   given pane accordingly in the tree
     // Arguments:
     // - newPane: the pane to add to our tree of panes
-    // - splitDirection: one value from the TerminalApp::SplitDirection enum, indicating how the
+    // - splitDirection: one value from the Microsoft::Terminal::App::SplitDirection enum, indicating how the
     //   new pane should be split from its parent.
     // - splitSize: the size of the split
     void TerminalPage::_SplitPane(const SplitDirection splitDirection,
@@ -2036,7 +2036,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - tab: The tab that is going to be split.
     // - newPane: the pane to add to our tree of panes
-    // - splitDirection: one value from the TerminalApp::SplitDirection enum, indicating how the
+    // - splitDirection: one value from the Microsoft::Terminal::App::SplitDirection enum, indicating how the
     //   new pane should be split from its parent.
     // - splitSize: the size of the split
     void TerminalPage::_SplitPane(TerminalTab& tab,
@@ -2670,7 +2670,7 @@ namespace winrt::TerminalApp::implementation
     //   connection, then we'll return nullptr. Otherwise, we'll return a new
     //   Pane for this connection.
     std::shared_ptr<Pane> TerminalPage::_MakePane(const NewTerminalArgs& newTerminalArgs,
-                                                  const winrt::TerminalApp::TabBase& sourceTab,
+                                                  const winrt::Microsoft::Terminal::App::TabBase& sourceTab,
                                                   Connection::ITerminalConnection existingConnection)
     {
         TerminalSettingsCreateResult controlSettings{ nullptr };
@@ -2880,7 +2880,7 @@ namespace winrt::TerminalApp::implementation
                 // Force the TerminalTab to re-grab its currently active control's title.
                 terminalTab->UpdateTitle();
             }
-            else if (auto settingsTab = tab.try_as<TerminalApp::SettingsTab>())
+            else if (auto settingsTab = tab.try_as<Microsoft::Terminal::App::SettingsTab>())
             {
                 settingsTab.UpdateSettings(_settings);
             }
@@ -3073,12 +3073,12 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::TerminalApp::IDialogPresenter TerminalPage::DialogPresenter() const
+    winrt::Microsoft::Terminal::App::IDialogPresenter TerminalPage::DialogPresenter() const
     {
         return _dialogPresenter.get();
     }
 
-    void TerminalPage::DialogPresenter(winrt::TerminalApp::IDialogPresenter dialogPresenter)
+    void TerminalPage::DialogPresenter(winrt::Microsoft::Terminal::App::IDialogPresenter dialogPresenter)
     {
         _dialogPresenter = dialogPresenter;
     }
@@ -3095,9 +3095,9 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - A TaskbarState object representing the combined taskbar state and
     //   progress percentage of all our tabs.
-    winrt::TerminalApp::TaskbarState TerminalPage::TaskbarState() const
+    winrt::Microsoft::Terminal::App::TaskbarState TerminalPage::TaskbarState() const
     {
-        auto state{ winrt::make<winrt::TerminalApp::implementation::TaskbarState>() };
+        auto state{ winrt::make<winrt::Microsoft::Terminal::App::implementation::TaskbarState>() };
 
         for (const auto& tab : _tabs)
         {
@@ -3372,7 +3372,7 @@ namespace winrt::TerminalApp::implementation
     // - an empty list if we failed to parse, otherwise a list of actions to execute.
     std::vector<ActionAndArgs> TerminalPage::ConvertExecuteCommandlineToActions(const ExecuteCommandlineArgs& args)
     {
-        ::TerminalApp::AppCommandlineArgs appArgs;
+        ::Microsoft::Terminal::App::AppCommandlineArgs appArgs;
         if (appArgs.ParseArgs(args) == 0)
         {
             return appArgs.GetStartupActions();
@@ -3596,9 +3596,9 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - If the tab is a TerminalTab, a com_ptr to the implementation type.
     //   If the tab is not a TerminalTab, nullptr
-    winrt::com_ptr<TerminalTab> TerminalPage::_GetTerminalTabImpl(const TerminalApp::TabBase& tab)
+    winrt::com_ptr<TerminalTab> TerminalPage::_GetTerminalTabImpl(const Microsoft::Terminal::App::TabBase& tab)
     {
-        if (auto terminalTab = tab.try_as<TerminalApp::TerminalTab>())
+        if (auto terminalTab = tab.try_as<Microsoft::Terminal::App::TerminalTab>())
         {
             winrt::com_ptr<TerminalTab> tabImpl;
             tabImpl.copy_from(winrt::get_self<TerminalTab>(terminalTab));
@@ -3661,10 +3661,10 @@ namespace winrt::TerminalApp::implementation
     // - Displays a info popup guiding the user into setting their default terminal.
     void TerminalPage::ShowSetAsDefaultInfoBar() const
     {
-        if (::winrt::Windows::UI::Xaml::Application::Current().try_as<::winrt::TerminalApp::App>() == nullptr)
+        if (::winrt::Windows::UI::Xaml::Application::Current().try_as<::winrt::Microsoft::Terminal::App::App>() == nullptr)
         {
             // Just ignore this in the tests (where the Application::Current()
-            // is not a TerminalApp::App)
+            // is not a Microsoft::Terminal::App::App)
             return;
         }
         if (!CascadiaSettings::IsDefaultTerminalAvailable() || _IsMessageDismissed(InfoBarMessage::SetAsDefault))
@@ -3697,7 +3697,7 @@ namespace winrt::TerminalApp::implementation
         auto isUwp = false;
         try
         {
-            isUwp = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsUwp();
+            isUwp = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::Microsoft::Terminal::App::App>().Logic().IsUwp();
         }
         CATCH_LOG();
 
@@ -4363,7 +4363,7 @@ namespace winrt::TerminalApp::implementation
                 {
                     return control.BackgroundBrush();
                 }
-                else if (auto settingsTab = _GetFocusedTab().try_as<TerminalApp::SettingsTab>())
+                else if (auto settingsTab = _GetFocusedTab().try_as<Microsoft::Terminal::App::SettingsTab>())
                 {
                     return settingsTab.Content().try_as<Settings::Editor::MainPage>().BackgroundBrush();
                 }
