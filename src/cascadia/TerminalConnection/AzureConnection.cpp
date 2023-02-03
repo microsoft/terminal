@@ -770,7 +770,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             THROW_LAST_ERROR_IF(!requestHandle);
 
             THROW_IF_WIN32_BOOL_FALSE(WinHttpSetOption(requestHandle.get(), WINHTTP_OPTION_UPGRADE_TO_WEB_SOCKET, nullptr, 0));
-#pragma warning(suppress : 26477) // WINHTTP_NO_ADDITIONAL_HEADERS expands to NULL rather than nullptr (who'd've thought?)
+#pragma warning(suppress : 26477) // WINHTTP_NO_ADDITIONAL_HEADERS expands to NULL rather than nullptr (who would have thought?)
             THROW_IF_WIN32_BOOL_FALSE(WinHttpSendRequest(requestHandle.get(), WINHTTP_NO_ADDITIONAL_HEADERS, 0, nullptr, 0, 0, 0));
             THROW_IF_WIN32_BOOL_FALSE(WinHttpReceiveResponse(requestHandle.get(), nullptr));
 
