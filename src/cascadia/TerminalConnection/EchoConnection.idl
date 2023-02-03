@@ -3,7 +3,7 @@
 
 import "ITerminalConnection.idl";
 
-namespace Microsoft.Terminal.TerminalConnection
+namespace Microsoft.Terminal.Connection
 {
     [default_interface]
     runtimeclass EchoConnection : ITerminalConnection

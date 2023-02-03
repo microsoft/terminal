@@ -31,7 +31,7 @@ static constexpr auto _errorFormat = L"{0} ({0:#010x})"sv;
 //
 // To figure out where we handle these, search for comments containing "EXIT POINT"
 
-namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
+namespace winrt::Microsoft::Terminal::Connection::implementation
 {
     // Function Description:
     // - creates some basic anonymous pipes and passes them to CreatePseudoConsole

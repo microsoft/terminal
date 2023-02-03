@@ -36,7 +36,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     public:
         ControlInteractivity(IControlSettings settings,
                              Control::IControlAppearance unfocusedAppearance,
-                             TerminalConnection::ITerminalConnection connection);
+                             Connection::ITerminalConnection connection);
 
         void GotFocus();
         void LostFocus();

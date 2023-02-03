@@ -38,7 +38,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     ControlInteractivity::ControlInteractivity(IControlSettings settings,
                                                Control::IControlAppearance unfocusedAppearance,
-                                               TerminalConnection::ITerminalConnection connection) :
+                                               Connection::ITerminalConnection connection) :
         _touchAnchor{ std::nullopt },
         _lastMouseClickTimestamp{},
         _lastMouseClickPos{},

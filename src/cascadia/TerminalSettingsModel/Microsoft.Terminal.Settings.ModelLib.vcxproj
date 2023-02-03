@@ -287,8 +287,8 @@
     <!-- Manually add references to each of our dependent winmds. Mark them as private=false and CopyLocalSatelliteAssemblies=false, so that we don't
     propagate them upwards (which can make referencing this project result in
     duplicate type definitions)-->
-    <Reference Include="Microsoft.Terminal.TerminalConnection">
-      <HintPath>$(OpenConsoleCommonOutDir)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
+    <Reference Include="Microsoft.Terminal.Connection">
+      <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Connection\Microsoft.Terminal.Connection.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>

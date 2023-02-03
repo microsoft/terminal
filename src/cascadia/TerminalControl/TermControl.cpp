@@ -49,7 +49,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 {
     TermControl::TermControl(IControlSettings settings,
                              Control::IControlAppearance unfocusedAppearance,
-                             TerminalConnection::ITerminalConnection connection) :
+                             Connection::ITerminalConnection connection) :
         _isInternalScrollBarUpdate{ false },
         _autoScrollVelocity{ 0 },
         _autoScrollingPointerPoint{ std::nullopt },
@@ -734,7 +734,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return SwapChainPanel().Margin();
     }
 
-    TerminalConnection::ConnectionState TermControl::ConnectionState() const
+    Connection::ConnectionState TermControl::ConnectionState() const
     {
         return _core.ConnectionState();
     }

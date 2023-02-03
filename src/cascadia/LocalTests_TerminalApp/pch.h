@@ -55,7 +55,7 @@ Author(s):
 
 #include <winrt/windows.applicationmodel.core.h>
 
-#include <winrt/Microsoft.Terminal.TerminalConnection.h>
+#include <winrt/Microsoft.Terminal.Connection.h>
 #include <winrt/Microsoft.Terminal.Settings.Model.h>
 
 #include <winrt/Microsoft.UI.Xaml.Controls.h>

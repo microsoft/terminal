@@ -27,7 +27,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         TermControl(IControlSettings settings,
                     Control::IControlAppearance unfocusedAppearance,
-                    TerminalConnection::ITerminalConnection connection);
+                    Connection::ITerminalConnection connection);
 
         winrt::fire_and_forget UpdateControlSettings(Control::IControlSettings settings);
         winrt::fire_and_forget UpdateControlSettings(Control::IControlSettings settings, Control::IControlAppearance unfocusedAppearance);
@@ -59,7 +59,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() noexcept;
         hstring WorkingDirectory() const;
 
-        TerminalConnection::ConnectionState ConnectionState() const;
+        Connection::ConnectionState ConnectionState() const;
 
         int ScrollOffset() const;
         int ViewHeight() const;

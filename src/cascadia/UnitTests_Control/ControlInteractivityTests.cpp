@@ -73,7 +73,7 @@ namespace ControlUnitTests
         std::tuple<winrt::com_ptr<Control::implementation::ControlCore>,
                    winrt::com_ptr<Control::implementation::ControlInteractivity>>
         _createCoreAndInteractivity(Control::IControlSettings settings,
-                                    TerminalConnection::ITerminalConnection conn)
+                                    Connection::ITerminalConnection conn)
         {
             Log::Comment(L"Create ControlInteractivity object");
             auto interactivity = winrt::make_self<Control::implementation::ControlInteractivity>(settings, settings, conn);

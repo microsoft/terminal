@@ -3,7 +3,7 @@
 
 import "ITerminalConnection.idl";
 
-namespace Microsoft.Terminal.TerminalConnection
+namespace Microsoft.Terminal.Connection
 {
     delegate void NewConnectionHandler(ConptyConnection connection);
 

@@ -4,7 +4,7 @@
 #include "pch.h"
 #include "DebugTapConnection.h"
 
-using namespace ::winrt::Microsoft::Terminal::TerminalConnection;
+using namespace ::winrt::Microsoft::Terminal::Connection;
 using namespace ::winrt::Windows::Foundation;
 namespace winrt::Microsoft::TerminalApp::implementation
 {
@@ -129,7 +129,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
     }
 
     // Wire us up so that we can forward input through
-    void DebugTapConnection::SetInputTap(const Microsoft::Terminal::TerminalConnection::ITerminalConnection& inputTap)
+    void DebugTapConnection::SetInputTap(const Microsoft::Terminal::Connection::ITerminalConnection& inputTap)
     {
         _inputSide = inputTap;
     }

@@ -139,7 +139,7 @@ namespace TerminalAppLocalTests
     {
         // Verify we can create a WinRT type we authored
         // Just creating it is enough to know that everything is working.
-        winrt::Microsoft::Terminal::TerminalConnection::EchoConnection conn{};
+        winrt::Microsoft::Terminal::Connection::EchoConnection conn{};
         VERIFY_IS_NOT_NULL(conn);
         // We're doing this test separately from the TryCreateSettingsType test,
         // to ensure both dependent binaries (TerminalSettings and

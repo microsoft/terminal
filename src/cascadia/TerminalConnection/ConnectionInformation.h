@@ -18,14 +18,14 @@ Abstract:
 #pragma once
 #include "ConnectionInformation.g.h"
 
-namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
+namespace winrt::Microsoft::Terminal::Connection::implementation
 {
     struct ConnectionInformation : ConnectionInformationT<ConnectionInformation>
     {
         ConnectionInformation(const hstring& className,
                               const Windows::Foundation::Collections::ValueSet& settings);
 
-        static TerminalConnection::ITerminalConnection CreateConnection(TerminalConnection::ConnectionInformation info);
+        static Connection::ITerminalConnection CreateConnection(Connection::ConnectionInformation info);
 
         winrt::hstring ClassName() const { return _ClassName; }
         void ClassName(const winrt::hstring& value) { _ClassName = value; }
@@ -36,7 +36,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         winrt::hstring _ClassName{};
     };
 }
-namespace winrt::Microsoft::Terminal::TerminalConnection::factory_implementation
+namespace winrt::Microsoft::Terminal::Connection::factory_implementation
 {
     BASIC_FACTORY(ConnectionInformation);
 }

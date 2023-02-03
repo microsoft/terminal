@@ -226,7 +226,7 @@ private:
     SplitState _splitState{ SplitState::None };
     float _desiredSplitPosition;
     winrt::Microsoft::Terminal::Control::TermControl _control{ nullptr };
-    winrt::Microsoft::Terminal::TerminalConnection::ConnectionState _connectionState{ winrt::Microsoft::Terminal::TerminalConnection::ConnectionState::NotConnected };
+    winrt::Microsoft::Terminal::Connection::ConnectionState _connectionState{ winrt::Microsoft::Terminal::Connection::ConnectionState::NotConnected };
     winrt::Microsoft::Terminal::Settings::Model::Profile _profile{ nullptr };
     bool _isDefTermSession{ false };
 #pragma endregion

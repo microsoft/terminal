@@ -5,7 +5,7 @@
 
 #include "EchoConnection.g.h"
 
-namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
+namespace winrt::Microsoft::Terminal::Connection::implementation
 {
     struct EchoConnection : EchoConnectionT<EchoConnection>
     {
@@ -25,7 +25,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     };
 }
 
-namespace winrt::Microsoft::Terminal::TerminalConnection::factory_implementation
+namespace winrt::Microsoft::Terminal::Connection::factory_implementation
 {
     BASIC_FACTORY(EchoConnection);
 }

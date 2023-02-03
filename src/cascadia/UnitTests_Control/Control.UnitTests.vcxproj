@@ -51,8 +51,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="Microsoft.Terminal.TerminalConnection">
-      <HintPath>$(OpenConsoleCommonOutDir)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
+    <Reference Include="Microsoft.Terminal.Connection">
+      <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Connection\Microsoft.Terminal.Connection.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>

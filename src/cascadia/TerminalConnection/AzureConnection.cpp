@@ -56,7 +56,7 @@ static inline std::wstring _formatTenant(int tenantNumber, const Tenant& tenant)
                        tenant.DefaultDomain.value_or(tenant.ID)); // use the domain name if possible, ID if not.
 }
 
-namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
+namespace winrt::Microsoft::Terminal::Connection::implementation
 {
     winrt::guid AzureConnection::ConnectionType() noexcept
     {

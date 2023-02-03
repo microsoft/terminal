@@ -62,7 +62,7 @@ namespace Microsoft.Terminal.Control
     {
         ControlCore(IControlSettings settings,
                     IControlAppearance unfocusedAppearance,
-                    Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
+                    Microsoft.Terminal.Connection.ITerminalConnection connection);
 
         Boolean Initialize(Double actualWidth,
                            Double actualHeight,

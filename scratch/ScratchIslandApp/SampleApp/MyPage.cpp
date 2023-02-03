@@ -28,7 +28,7 @@ namespace winrt::SampleApp::implementation
     {
         auto settings = winrt::make_self<implementation::MySettings>();
 
-        auto connectionSettings{ TerminalConnection::ConptyConnection::CreateSettings(L"cmd.exe /k echo This TermControl is hosted in-proc...",
+        auto connectionSettings{ Connection::ConptyConnection::CreateSettings(L"cmd.exe /k echo This TermControl is hosted in-proc...",
                                                                                       winrt::hstring{},
                                                                                       L"",
                                                                                       nullptr,
@@ -36,11 +36,11 @@ namespace winrt::SampleApp::implementation
                                                                                       80,
                                                                                       winrt::guid()) };
 
-        // "Microsoft.Terminal.TerminalConnection.ConptyConnection"
-        winrt::hstring myClass{ winrt::name_of<TerminalConnection::ConptyConnection>() };
-        TerminalConnection::ConnectionInformation connectInfo{ myClass, connectionSettings };
+        // "Microsoft.Terminal.Connection.ConptyConnection"
+        winrt::hstring myClass{ winrt::name_of<Connection::ConptyConnection>() };
+        Connection::ConnectionInformation connectInfo{ myClass, connectionSettings };
 
-        TerminalConnection::ITerminalConnection conn{ TerminalConnection::ConnectionInformation::CreateConnection(connectInfo) };
+        Connection::ITerminalConnection conn{ Connection::ConnectionInformation::CreateConnection(connectInfo) };
         Control::TermControl control{ *settings, *settings, conn };
 
         InProcContent().Children().Append(control);

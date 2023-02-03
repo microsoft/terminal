@@ -12,11 +12,11 @@
 
 #pragma once
 
-#include <winrt/Microsoft.Terminal.TerminalConnection.h>
+#include <winrt/Microsoft.Terminal.Connection.h>
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    class PreviewConnection : public winrt::implements<PreviewConnection, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection>
+    class PreviewConnection : public winrt::implements<PreviewConnection, winrt::Microsoft::Terminal::Connection::ITerminalConnection>
     {
     public:
         PreviewConnection() noexcept;
@@ -27,9 +27,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void Resize(uint32_t rows, uint32_t columns) noexcept;
         void Close() noexcept;
 
-        winrt::Microsoft::Terminal::TerminalConnection::ConnectionState State() const noexcept { return winrt::Microsoft::Terminal::TerminalConnection::ConnectionState::Connected; }
+        winrt::Microsoft::Terminal::Connection::ConnectionState State() const noexcept { return winrt::Microsoft::Terminal::Connection::ConnectionState::Connected; }
 
-        WINRT_CALLBACK(TerminalOutput, winrt::Microsoft::Terminal::TerminalConnection::TerminalOutputHandler);
-        TYPED_EVENT(StateChanged, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection, IInspectable);
+        WINRT_CALLBACK(TerminalOutput, winrt::Microsoft::Terminal::Connection::TerminalOutputHandler);
+        TYPED_EVENT(StateChanged, winrt::Microsoft::Terminal::Connection::ITerminalConnection, IInspectable);
     };
 }

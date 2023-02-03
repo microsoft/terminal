@@ -18,7 +18,6 @@
                 // Legacy DLLs with old names
                 "TerminalApp.dll",
                 "TerminalApp.winmd",
-                "TerminalConnection.dll",
                 "TerminalThemeHelpers.dll",
                 "WindowsTerminalShellExt.dll",
 

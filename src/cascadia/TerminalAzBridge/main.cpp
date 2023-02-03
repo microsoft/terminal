@@ -2,12 +2,12 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "winrt/Microsoft.Terminal.TerminalConnection.h"
+#include "winrt/Microsoft.Terminal.Connection.h"
 #include "ConsoleInputReader.h"
 
 using namespace winrt;
 using namespace winrt::Windows::Foundation;
-using namespace winrt::Microsoft::Terminal::TerminalConnection;
+using namespace winrt::Microsoft::Terminal::Connection;
 
 static til::size GetConsoleScreenSize(HANDLE outputHandle)
 {

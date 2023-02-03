@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
+namespace winrt::Microsoft::Terminal::Connection::implementation
 {
     template<typename T>
     struct ConnectionStateHolder

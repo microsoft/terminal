@@ -19,7 +19,7 @@ namespace Microsoft.Terminal.Control
     {
         TermControl(IControlSettings settings,
                     IControlAppearance unfocusedAppearance,
-                    Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
+                    Microsoft.Terminal.Connection.ITerminalConnection connection);
 
         static Windows.Foundation.Size GetProposedDimensions(IControlSettings settings,
                                                              UInt32 dpi,

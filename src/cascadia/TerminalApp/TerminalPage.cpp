@@ -24,7 +24,7 @@
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::TerminalConnection;
+using namespace winrt::Microsoft::Terminal::Connection;
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::Foundation::Collections;
@@ -590,7 +590,7 @@ namespace winrt::TerminalApp::implementation
 
             try
             {
-                winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::StartInboundListener();
+                winrt::Microsoft::Terminal::Connection::ConptyConnection::StartInboundListener();
             }
             // If we failed to start the listener, it will throw.
             // We don't want to fail fast here because if a peasant has some trouble with
@@ -1236,28 +1236,28 @@ namespace winrt::TerminalApp::implementation
     // - the terminal settings
     // Return value:
     // - the desired connection
-    TerminalConnection::ITerminalConnection TerminalPage::_CreateConnectionFromSettings(Profile profile,
-                                                                                        TerminalSettings settings)
+    Connection::ITerminalConnection TerminalPage::_CreateConnectionFromSettings(Profile profile,
+                                                                                TerminalSettings settings)
     {
-        TerminalConnection::ITerminalConnection connection{ nullptr };
+        Connection::ITerminalConnection connection{ nullptr };
 
         auto connectionType = profile.ConnectionType();
         winrt::guid sessionGuid{};
 
-        if (connectionType == TerminalConnection::AzureConnection::ConnectionType() &&
-            TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
+        if (connectionType == Connection::AzureConnection::ConnectionType() &&
+            Connection::AzureConnection::IsAzureConnectionAvailable())
         {
             // TODO GH#4661: Replace this with directly using the AzCon when our VT is better
             std::filesystem::path azBridgePath{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
             azBridgePath.replace_filename(L"TerminalAzBridge.exe");
-            connection = TerminalConnection::ConptyConnection();
-            auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(azBridgePath.wstring(),
-                                                                                 L".",
-                                                                                 L"Azure",
-                                                                                 nullptr,
-                                                                                 settings.InitialRows(),
-                                                                                 settings.InitialCols(),
-                                                                                 winrt::guid());
+            connection = Connection::ConptyConnection();
+            auto valueSet = Connection::ConptyConnection::CreateSettings(azBridgePath.wstring(),
+                                                                         L".",
+                                                                         L"Azure",
+                                                                         nullptr,
+                                                                         settings.InitialRows(),
+                                                                         settings.InitialCols(),
+                                                                         winrt::guid());
 
             if constexpr (Feature_VtPassthroughMode::IsEnabled())
             {
@@ -1301,14 +1301,14 @@ namespace winrt::TerminalApp::implementation
                 newWorkingDirectory = winrt::hstring{ cwd.wstring() };
             }
 
-            auto conhostConn = TerminalConnection::ConptyConnection();
-            auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(settings.Commandline(),
-                                                                                 newWorkingDirectory,
-                                                                                 settings.StartingTitle(),
-                                                                                 envMap.GetView(),
-                                                                                 settings.InitialRows(),
-                                                                                 settings.InitialCols(),
-                                                                                 winrt::guid());
+            auto conhostConn = Connection::ConptyConnection();
+            auto valueSet = Connection::ConptyConnection::CreateSettings(settings.Commandline(),
+                                                                         newWorkingDirectory,
+                                                                         settings.StartingTitle(),
+                                                                         envMap.GetView(),
+                                                                         settings.InitialRows(),
+                                                                         settings.InitialCols(),
+                                                                         winrt::guid());
 
             valueSet.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
 
@@ -2671,7 +2671,7 @@ namespace winrt::TerminalApp::implementation
     //   Pane for this connection.
     std::shared_ptr<Pane> TerminalPage::_MakePane(const NewTerminalArgs& newTerminalArgs,
                                                   const winrt::TerminalApp::TabBase& sourceTab,
-                                                  TerminalConnection::ITerminalConnection existingConnection)
+                                                  Connection::ITerminalConnection existingConnection)
     {
         TerminalSettingsCreateResult controlSettings{ nullptr };
         Profile profile{ nullptr };
@@ -2710,7 +2710,7 @@ namespace winrt::TerminalApp::implementation
             connection.Resize(controlSettings.DefaultSettings().InitialRows(), controlSettings.DefaultSettings().InitialCols());
         }
 
-        TerminalConnection::ITerminalConnection debugConnection{ nullptr };
+        Connection::ITerminalConnection debugConnection{ nullptr };
         if (_settings.GlobalSettings().DebugFeaturesEnabled())
         {
             const auto window = CoreWindow::GetForCurrentThread();

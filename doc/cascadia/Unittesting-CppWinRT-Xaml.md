@@ -260,7 +260,7 @@ this:
         echo OutDir=$(OutDir)
         (xcopy /Y &quot;$(SolutionDir)src\cascadia\ut_app\TerminalApp.Unit.Tests.manifest&quot; &quot;$(OutDir)\TerminalApp.Unit.Tests.manifest*&quot; )
 
-        (xcopy /Y &quot;$(OpenConsoleCommonOutDir)\TerminalConnection\TerminalConnection.dll&quot; &quot;$(OutDir)\TerminalConnection.dll*&quot; )
+        (xcopy /Y &quot;$(OpenConsoleCommonOutDir)\TerminalConnection\Microsoft.Terminal.Connection.dll&quot; &quot;$(OutDir)\Microsoft.Terminal.Connection.dll*&quot; )
         (xcopy /Y &quot;$(OpenConsoleCommonOutDir)\TerminalSettings\TerminalSettings.dll&quot; &quot;$(OutDir)\TerminalSettings.dll*&quot; )
         (xcopy /Y &quot;$(OpenConsoleCommonOutDir)\TerminalControl\TerminalControl.dll&quot; &quot;$(OutDir)\TerminalControl.dll*&quot; )
       </Command>
@@ -446,7 +446,7 @@ before. The complete `PostBuildEvent` now looks like this:
 
         (xcopy /Y &quot;$(SolutionDir)src\cascadia\ut_app\TerminalApp.Unit.Tests.AppxManifest.xml&quot; &quot;$(OutDir)\TerminalApp.Unit.Tests.AppxManifest.xml*&quot; )
 
-        (xcopy /Y &quot;$(OpenConsoleCommonOutDir)\TerminalConnection\TerminalConnection.dll&quot; &quot;$(OutDir)\TerminalConnection.dll*&quot; )
+        (xcopy /Y &quot;$(OpenConsoleCommonOutDir)\TerminalConnection\Microsoft.Terminal.Connection.dll&quot; &quot;$(OutDir)\Microsoft.Terminal.Connection.dll*&quot; )
         (xcopy /Y &quot;$(OpenConsoleCommonOutDir)\TerminalSettings\TerminalSettings.dll&quot; &quot;$(OutDir)\TerminalSettings.dll*&quot; )
         (xcopy /Y &quot;$(OpenConsoleCommonOutDir)\TerminalControl\TerminalControl.dll&quot; &quot;$(OutDir)\TerminalControl.dll*&quot; )
       </Command>

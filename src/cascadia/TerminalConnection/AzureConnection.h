@@ -14,7 +14,7 @@
 #include "ConnectionStateHolder.h"
 #include "AzureClient.h"
 
-namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
+namespace winrt::Microsoft::Terminal::Connection::implementation
 {
     struct AzureConnection : AzureConnectionT<AzureConnection>, ConnectionStateHolder<AzureConnection>
     {
@@ -101,7 +101,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     };
 }
 
-namespace winrt::Microsoft::Terminal::TerminalConnection::factory_implementation
+namespace winrt::Microsoft::Terminal::Connection::factory_implementation
 {
     BASIC_FACTORY(AzureConnection);
 }

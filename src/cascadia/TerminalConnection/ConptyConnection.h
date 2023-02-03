@@ -8,7 +8,7 @@
 
 #include "ITerminalHandoff.h"
 
-namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
+namespace winrt::Microsoft::Terminal::Connection::implementation
 {
     struct ConptyConnection : ConptyConnectionT<ConptyConnection>, ConnectionStateHolder<ConptyConnection>
     {
@@ -103,7 +103,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     };
 }
 
-namespace winrt::Microsoft::Terminal::TerminalConnection::factory_implementation
+namespace winrt::Microsoft::Terminal::Connection::factory_implementation
 {
     BASIC_FACTORY(ConptyConnection);
 }

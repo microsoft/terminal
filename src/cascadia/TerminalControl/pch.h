@@ -51,7 +51,7 @@
 #include <winrt/Windows.Storage.Streams.h>
 #include <winrt/Windows.UI.Xaml.Shapes.h>
 
-#include <winrt/Microsoft.Terminal.TerminalConnection.h>
+#include <winrt/Microsoft.Terminal.Connection.h>
 #include <winrt/Microsoft.Terminal.Core.h>
 
 #include <windows.ui.xaml.media.dxinterop.h>

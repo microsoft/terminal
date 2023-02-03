@@ -2,7 +2,7 @@
 #include "ConnectionInformation.h"
 #include "ConnectionInformation.g.cpp"
 
-namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
+namespace winrt::Microsoft::Terminal::Connection::implementation
 {
     ConnectionInformation::ConnectionInformation(const hstring& className,
                                                  const Windows::Foundation::Collections::ValueSet& settings) :
@@ -22,7 +22,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     //   connection, and a bag of setting to use to initialize that object.
     // Return Value:
     // - <none>
-    TerminalConnection::ITerminalConnection ConnectionInformation::CreateConnection(TerminalConnection::ConnectionInformation info)
+    Connection::ITerminalConnection ConnectionInformation::CreateConnection(Connection::ConnectionInformation info)
     try
     {
         Windows::Foundation::IInspectable inspectable{};
@@ -50,7 +50,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
 
         // Now that thing we made, make sure it's actually a ITerminalConnection
-        if (const auto connection{ inspectable.try_as<TerminalConnection::ITerminalConnection>() })
+        if (const auto connection{ inspectable.try_as<Connection::ITerminalConnection>() })
         {
             // Initialize it, and return it.
             connection.Initialize(info.Settings());

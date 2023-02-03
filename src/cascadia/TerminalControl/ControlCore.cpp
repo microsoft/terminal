@@ -77,7 +77,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     ControlCore::ControlCore(Control::IControlSettings settings,
                              Control::IControlAppearance unfocusedAppearance,
-                             TerminalConnection::ITerminalConnection connection) :
+                             Connection::ITerminalConnection connection) :
         _connection{ connection },
         _desiredFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, DEFAULT_FONT_SIZE, CP_UTF8 },
         _actualFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false }
@@ -286,7 +286,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             if (_owningHwnd != 0)
             {
-                if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
+                if (auto conpty{ _connection.try_as<Connection::ConptyConnection>() })
                 {
                     conpty.ReparentWindow(_owningHwnd);
                 }
@@ -384,7 +384,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const wchar_t CtrlD = 0x4;
         const wchar_t Enter = '\r';
 
-        if (_connection.State() >= winrt::Microsoft::Terminal::TerminalConnection::ConnectionState::Closed)
+        if (_connection.State() >= winrt::Microsoft::Terminal::Connection::ConnectionState::Closed)
         {
             if (ch == CtrlD)
             {
@@ -1232,9 +1232,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         };
     }
 
-    TerminalConnection::ConnectionState ControlCore::ConnectionState() const
+    Connection::ConnectionState ControlCore::ConnectionState() const
     {
-        return _connection ? _connection.State() : TerminalConnection::ConnectionState::Closed;
+        return _connection ? _connection.State() : Connection::ConnectionState::Closed;
     }
 
     hstring ControlCore::Title()
@@ -1710,7 +1710,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (clearType == Control::ClearBufferType::Screen || clearType == Control::ClearBufferType::All)
         {
             // Send a signal to conpty to clear the buffer.
-            if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
+            if (auto conpty{ _connection.try_as<Connection::ConptyConnection>() })
             {
                 // ConPTY will emit sequences to sync up our buffer with its new
                 // contents.
@@ -1881,7 +1881,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_initializedTerminal)
         {
             // show is true, hide is false
-            if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
+            if (auto conpty{ _connection.try_as<Connection::ConptyConnection>() })
             {
                 conpty.ShowHide(showOrHide);
             }
@@ -1941,7 +1941,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (owner != _owningHwnd && _connection)
         {
-            if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
+            if (auto conpty{ _connection.try_as<Connection::ConptyConnection>() })
             {
                 conpty.ReparentWindow(owner);
             }

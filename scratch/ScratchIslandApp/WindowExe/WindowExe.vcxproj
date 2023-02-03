@@ -98,9 +98,9 @@
       <Private>true</Private>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
     </Reference>
-    <Reference Include="Microsoft.Terminal.TerminalConnection">
-      <HintPath>$(OpenConsoleCommonOutDir)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
-      <Implementation>$(OpenConsoleCommonOutDir)TerminalConnection\TerminalConnection.dll</Implementation>
+    <Reference Include="Microsoft.Terminal.Connection">
+      <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Connection\Microsoft.Terminal.Connection.winmd</HintPath>
+      <Implementation>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Connection\Microsoft.Terminal.Connection.dll</Implementation>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>true</Private>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
@@ -201,13 +201,13 @@
     <!-- This is the same as the above VC libs hack, but for TerminalConnection.
     TerminalConnection depends on cpprest*.dll, and if we don't include it in
     the packaging output, we'll crash as soon as we try to load
-    TerminalConnection.dll.
+    Microsoft.Terminal.Connection.dll.
 
     The Sample sln needs to do this manually - the real exe has a
     ProjectReference to TerminalConnection.vcxproj and can figure this out on
     its own. -->
     <ItemGroup>
-      <_TerminalConnectionDlls Include="$(OpenConsoleCommonOutDir)\TerminalConnection\*.dll" />
+      <_TerminalConnectionDlls Include="$(OpenConsoleCommonOutDir)\Microsoft.Terminal.Connection\*.dll" />
 
       <PackagingOutputs Include="@(_TerminalConnectionDlls)">
         <ProjectName>$(ProjectName)</ProjectName>

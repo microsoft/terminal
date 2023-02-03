@@ -55,7 +55,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     public:
         ControlCore(Control::IControlSettings settings,
                     Control::IControlAppearance unfocusedAppearance,
-                    TerminalConnection::ITerminalConnection connection);
+                    Connection::ITerminalConnection connection);
         ~ControlCore();
 
         bool Initialize(const double actualWidth,
@@ -127,7 +127,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() noexcept;
         hstring WorkingDirectory() const;
 
-        TerminalConnection::ConnectionState ConnectionState() const;
+        Connection::ConnectionState ConnectionState() const;
 
         int ScrollOffset();
         int ViewHeight() const;
@@ -239,9 +239,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _initializedTerminal{ false };
         bool _closing{ false };
 
-        TerminalConnection::ITerminalConnection _connection{ nullptr };
+        Connection::ITerminalConnection _connection{ nullptr };
         event_token _connectionOutputEventToken;
-        TerminalConnection::ITerminalConnection::StateChanged_revoker _connectionStateChangedRevoker;
+        Connection::ITerminalConnection::StateChanged_revoker _connectionStateChangedRevoker;
 
         winrt::com_ptr<ControlSettings> _settings{ nullptr };
 

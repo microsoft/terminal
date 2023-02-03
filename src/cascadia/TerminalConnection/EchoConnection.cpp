@@ -7,7 +7,7 @@
 
 #include "EchoConnection.g.cpp"
 
-namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
+namespace winrt::Microsoft::Terminal::Connection::implementation
 {
     EchoConnection::EchoConnection() noexcept = default;
 

@@ -64,7 +64,7 @@ namespace ControlUnitTests
         }
 
         winrt::com_ptr<Control::implementation::ControlCore> createCore(Control::IControlSettings settings,
-                                                                        TerminalConnection::ITerminalConnection conn)
+                                                                        Connection::ITerminalConnection conn)
         {
             Log::Comment(L"Create ControlCore object");
 

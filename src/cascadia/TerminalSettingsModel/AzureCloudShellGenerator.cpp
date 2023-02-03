@@ -11,7 +11,7 @@
 
 using namespace ::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::TerminalConnection;
+using namespace winrt::Microsoft::Terminal::Connection;
 
 std::wstring_view AzureCloudShellGenerator::GetNamespace() const noexcept
 {

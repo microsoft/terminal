@@ -15,7 +15,7 @@ namespace Microsoft.Terminal.Control
     {
         ControlInteractivity(IControlSettings settings,
                              IControlAppearance unfocusedAppearance,
-                             Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
+                             Microsoft.Terminal.Connection.ITerminalConnection connection);
 
         ControlCore Core { get; };
         void UpdateSettings();

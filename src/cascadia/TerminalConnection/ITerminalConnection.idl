@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-namespace Microsoft.Terminal.TerminalConnection
+namespace Microsoft.Terminal.Connection
 {
     enum ConnectionState
     {

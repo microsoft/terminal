@@ -2,8 +2,8 @@
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA5CAD1A-C46D-4588-B1C0-40F31AE9100B}</ProjectGuid>
-    <ProjectName>TerminalConnection</ProjectName>
-    <RootNamespace>Microsoft.Terminal.TerminalConnection</RootNamespace>
+    <ProjectName>Microsoft.Terminal.Connection</ProjectName>
+    <RootNamespace>Microsoft.Terminal.Connection</RootNamespace>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <SubSystem>Console</SubSystem>
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>

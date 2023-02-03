@@ -152,7 +152,7 @@
       rules instead.
     -->
     <ItemGroup>
-        <TerminalConnectionDlls Include="$(OpenConsoleCommonOutDir)\TerminalConnection\*.dll"/>
+        <TerminalConnectionDlls Include="$(OpenConsoleCommonOutDir)\Microsoft.Terminal.Connection\*.dll"/>
     </ItemGroup>
 
     <!-- Copy the AppxManifest.xml to another file, because when TAEF is

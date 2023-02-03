@@ -42,7 +42,7 @@ Licensed under the MIT license.
 
 #include <winrt/Microsoft.Terminal.Core.h>
 #include <winrt/Microsoft.Terminal.Control.h>
-#include <winrt/Microsoft.Terminal.TerminalConnection.h>
+#include <winrt/Microsoft.Terminal.Connection.h>
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"

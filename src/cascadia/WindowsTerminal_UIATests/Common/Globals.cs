@@ -35,7 +35,7 @@ namespace WindowsTerminal.UIA.Tests.Common
             "Microsoft.Terminal.Settings.Editor.dll",
             "Microsoft.Terminal.Settings.Model.dll",
             "TerminalApp.dll",
-            "TerminalConnection.dll"
+            "Microsoft.Terminal.Connection.dll"
         };
 
         public static void SweepAllModules(TestContext context)

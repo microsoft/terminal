@@ -64,9 +64,9 @@
     </Extension>
     <Extension Category="windows.activatableClass.inProcessServer">
       <InProcessServer>
-        <Path>TerminalConnection.dll</Path>
-        <ActivatableClass ActivatableClassId="Microsoft.Terminal.TerminalConnection.EchoConnection" ThreadingModel="both" />
-        <ActivatableClass ActivatableClassId="Microsoft.Terminal.TerminalConnection.ConhostConnection" ThreadingModel="both" />
+        <Path>Microsoft.Terminal.Connection.dll</Path>
+        <ActivatableClass ActivatableClassId="Microsoft.Terminal.Connection.EchoConnection" ThreadingModel="both" />
+        <ActivatableClass ActivatableClassId="Microsoft.Terminal.Connection.ConhostConnection" ThreadingModel="both" />
       </InProcessServer>
     </Extension>
     <Extension Category="windows.activatableClass.inProcessServer">

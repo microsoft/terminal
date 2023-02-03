@@ -245,9 +245,9 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _CreateNewTabFlyoutProfile(const Microsoft::Terminal::Settings::Model::Profile profile, int profileIndex);
 
         void _OpenNewTabDropdown();
-        HRESULT _OpenNewTab(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
+        HRESULT _OpenNewTab(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs, winrt::Microsoft::Terminal::Connection::ITerminalConnection existingConnection = nullptr);
         void _CreateNewTabFromPane(std::shared_ptr<Pane> pane, uint32_t insertPosition = -1);
-        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(Microsoft::Terminal::Settings::Model::Profile profile, Microsoft::Terminal::Settings::Model::TerminalSettings settings);
+        winrt::Microsoft::Terminal::Connection::ITerminalConnection _CreateConnectionFromSettings(Microsoft::Terminal::Settings::Model::Profile profile, Microsoft::Terminal::Settings::Model::TerminalSettings settings);
 
         winrt::fire_and_forget _OpenNewWindow(const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
 
@@ -391,11 +391,11 @@ namespace winrt::TerminalApp::implementation
         void _Find(const TerminalTab& tab);
 
         winrt::Microsoft::Terminal::Control::TermControl _InitControl(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
-                                                                      const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
+                                                                      const winrt::Microsoft::Terminal::Connection::ITerminalConnection& connection);
 
         std::shared_ptr<Pane> _MakePane(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs = nullptr,
                                         const winrt::TerminalApp::TabBase& sourceTab = nullptr,
-                                        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
+                                        winrt::Microsoft::Terminal::Connection::ITerminalConnection existingConnection = nullptr);
 
         void _RefreshUIForSettingsReload();
 
@@ -432,7 +432,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs _lastPreviewedAction{ nullptr };
         std::vector<std::function<void()>> _restorePreviewFuncs{};
 
-        HRESULT _OnNewConnection(const winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection& connection);
+        HRESULT _OnNewConnection(const winrt::Microsoft::Terminal::Connection::ConptyConnection& connection);
         void _HandleToggleInboundPty(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
 
         void _WindowRenamerActionClick(const IInspectable& sender, const IInspectable& eventArgs);

@@ -3,38 +3,38 @@
 
 #pragma once
 
-#include <winrt/Microsoft.Terminal.TerminalConnection.h>
+#include <winrt/Microsoft.Terminal.Connection.h>
 #include <til/latch.h>
 
 namespace winrt::Microsoft::TerminalApp::implementation
 {
     class DebugInputTapConnection;
-    class DebugTapConnection : public winrt::implements<DebugTapConnection, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection>
+    class DebugTapConnection : public winrt::implements<DebugTapConnection, winrt::Microsoft::Terminal::Connection::ITerminalConnection>
     {
     public:
-        explicit DebugTapConnection(Microsoft::Terminal::TerminalConnection::ITerminalConnection wrappedConnection);
+        explicit DebugTapConnection(Microsoft::Terminal::Connection::ITerminalConnection wrappedConnection);
         void Initialize(const Windows::Foundation::Collections::ValueSet& /*settings*/){};
         ~DebugTapConnection();
         void Start();
         void WriteInput(const hstring& data);
         void Resize(uint32_t rows, uint32_t columns);
         void Close();
-        winrt::Microsoft::Terminal::TerminalConnection::ConnectionState State() const noexcept;
+        winrt::Microsoft::Terminal::Connection::ConnectionState State() const noexcept;
 
-        void SetInputTap(const Microsoft::Terminal::TerminalConnection::ITerminalConnection& inputTap);
+        void SetInputTap(const Microsoft::Terminal::Connection::ITerminalConnection& inputTap);
 
-        WINRT_CALLBACK(TerminalOutput, winrt::Microsoft::Terminal::TerminalConnection::TerminalOutputHandler);
+        WINRT_CALLBACK(TerminalOutput, winrt::Microsoft::Terminal::Connection::TerminalOutputHandler);
 
-        TYPED_EVENT(StateChanged, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(StateChanged, winrt::Microsoft::Terminal::Connection::ITerminalConnection, winrt::Windows::Foundation::IInspectable);
 
     private:
         void _PrintInput(const hstring& data);
         void _OutputHandler(const hstring str);
 
-        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection::TerminalOutput_revoker _outputRevoker;
-        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection::StateChanged_revoker _stateChangedRevoker;
-        winrt::weak_ref<Microsoft::Terminal::TerminalConnection::ITerminalConnection> _wrappedConnection;
-        winrt::weak_ref<Microsoft::Terminal::TerminalConnection::ITerminalConnection> _inputSide;
+        winrt::Microsoft::Terminal::Connection::ITerminalConnection::TerminalOutput_revoker _outputRevoker;
+        winrt::Microsoft::Terminal::Connection::ITerminalConnection::StateChanged_revoker _stateChangedRevoker;
+        winrt::weak_ref<Microsoft::Terminal::Connection::ITerminalConnection> _wrappedConnection;
+        winrt::weak_ref<Microsoft::Terminal::Connection::ITerminalConnection> _inputSide;
 
         til::latch _start{ 1 };
 
@@ -42,4 +42,4 @@ namespace winrt::Microsoft::TerminalApp::implementation
     };
 }
 
-std::tuple<winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection> OpenDebugTapConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection baseConnection);
+std::tuple<winrt::Microsoft::Terminal::Connection::ITerminalConnection, winrt::Microsoft::Terminal::Connection::ITerminalConnection> OpenDebugTapConnection(winrt::Microsoft::Terminal::Connection::ITerminalConnection baseConnection);
