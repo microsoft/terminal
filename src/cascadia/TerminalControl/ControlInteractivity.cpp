@@ -54,6 +54,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _guid;
     }
 
+    void ControlInteractivity::Reparent()
+    {
+        _core->Reparent();
+    }
+
     // Method Description:
     // - Updates our internal settings. These settings should be
     //   interactivity-specific. Right now, we primarily update _rowsToScroll

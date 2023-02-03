@@ -225,6 +225,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    void ControlCore::Reparent()
+    {
+        _CloseTerminalRequestedHandlers(*this, nullptr);
+    }
+
     bool ControlCore::Initialize(const double actualWidth,
                                  const double actualHeight,
                                  const double compositionScale)
@@ -1701,7 +1706,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // * TermControl::_InitializeTerminal, after the call to Initialize, for
         //   _AttachDxgiSwapChainToXaml.
         // In both cases, we'll have a _renderEngine by then.
-        return _renderEngine? reinterpret_cast<uint64_t>(_renderEngine->GetSwapChainHandle()) : 0u;
+        return _renderEngine ? reinterpret_cast<uint64_t>(_renderEngine->GetSwapChainHandle()) : 0u;
     }
 
     // Method Description:

@@ -71,6 +71,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (const auto h{ reinterpret_cast<HANDLE>(_core.SwapChainHandle()) })
         {
             _AttachDxgiSwapChainToXaml(h);
+            _interactivity.Reparent();
+            // Reparent will fire off a _core.CloseTerminalRequested, which the
+            // old window will listen to and know to remove its old control,
+            // leaving us as the owner.
         }
 
         // These events might all be triggered by the connection, but that
@@ -105,6 +109,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // at which to initialize our renderer (and our terminal).
             // Any earlier than the last layout update and we may not know the terminal's starting size.
 
+            // TODO! This certainly needs to be adapted for reparenting. At
+            // least we don't need to quick return if the core was already
+            // initialized - we still have state to set up, and resize the core
+            // to the new swapchain size, etc.
             if (_InitializeTerminal())
             {
                 // Only let this succeed once.
@@ -142,6 +150,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         static constexpr auto AutoScrollUpdateInterval = std::chrono::microseconds(static_cast<int>(1.0 / 30.0 * 1000000));
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
         _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
+
+        // _interactivity.Attached([weakThis = get_weak()]{
+        //     if (auto control{ weakThis.get() }; !control->_IsClosing())
+        //     {
+        //         CloseTerminalRequested
+        //     }
+        // });
 
         _ApplyUISettings();
     }
