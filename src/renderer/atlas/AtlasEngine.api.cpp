@@ -341,6 +341,11 @@ void AtlasEngine::SetCallback(std::function<void(HANDLE)> pfn) noexcept
     _api.swapChainChangedCallback = std::move(pfn);
 }
 
+HANDLE AtlasEngine::GetSwapChainHandle() noexcept
+{
+    return _api.swapChainHandle.get();
+}
+
 void AtlasEngine::EnableTransparentBackground(const bool isTransparent) noexcept
 {
     if (_api.enableTransparentBackground != isTransparent)

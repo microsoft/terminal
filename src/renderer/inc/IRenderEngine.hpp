@@ -100,6 +100,7 @@ namespace Microsoft::Console::Render
         // DxRenderer - setter
         virtual void SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept {}
         virtual void SetCallback(std::function<void(HANDLE)> pfn) noexcept {}
+        virtual HANDLE GetSwapChainHandle() noexcept { return nullptr; }
         virtual void EnableTransparentBackground(const bool isTransparent) noexcept {}
         virtual void SetForceFullRepaintRendering(bool enable) noexcept {}
         virtual [[nodiscard]] HRESULT SetHwnd(const HWND hwnd) noexcept { return E_NOTIMPL; }

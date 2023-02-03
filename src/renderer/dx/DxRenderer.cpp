@@ -987,6 +987,10 @@ void DxEngine::SetCallback(std::function<void(const HANDLE)> pfn) noexcept
 {
     _pfn = std::move(pfn);
 }
+HANDLE DxEngine::GetSwapChainHandle() noexcept
+{
+    return _swapChainHandle.get();
+}
 
 void DxEngine::SetWarningCallback(std::function<void(const HRESULT)> pfn) noexcept
 {

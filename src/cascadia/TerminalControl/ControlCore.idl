@@ -76,6 +76,8 @@ namespace Microsoft.Terminal.Control
         IControlAppearance UnfocusedAppearance { get; };
         Boolean HasUnfocusedAppearance();
 
+        UInt64 SwapChainHandle { get; };
+
         Windows.Foundation.Size FontSize { get; };
         String FontFaceName { get; };
         UInt16 FontWeight { get; };

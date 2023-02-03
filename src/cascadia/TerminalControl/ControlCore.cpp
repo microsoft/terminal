@@ -1693,6 +1693,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    uint64_t ControlCore::SwapChainHandle() const
+    {
+        // This is called by:
+        // * TermControl::RenderEngineSwapChainChanged, who is only registered
+        //   after Core::Initialize() is called.
+        // * TermControl::_InitializeTerminal, after the call to Initialize, for
+        //   _AttachDxgiSwapChainToXaml.
+        // In both cases, we'll have a _renderEngine by then.
+        return _renderEngine? reinterpret_cast<uint64_t>(_renderEngine->GetSwapChainHandle()) : 0u;
+    }
+
     // Method Description:
     // - Clear the contents of the buffer. The region cleared is given by
     //   clearType:

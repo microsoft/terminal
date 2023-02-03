@@ -68,6 +68,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         InitializeComponent();
 
         _core = _interactivity.Core();
+        if (const auto h{ reinterpret_cast<HANDLE>(_core.SwapChainHandle()) })
+        {
+            _AttachDxgiSwapChainToXaml(h);
+        }
 
         // These events might all be triggered by the connection, but that
         // should be drained and closed before we complete destruction. So these
