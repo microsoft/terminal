@@ -1436,8 +1436,10 @@ void AppHost::_updateTheme()
 }
 
 void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                     const winrt::Windows::Foundation::IInspectable& /*args*/)
+                                     const winrt::TerminalApp::SettingsLoadEventArgs& /*args*/)
 {
+    // We don't need to call in to windowLogic here - it has its own SettingsChanged handler
+
     _setupGlobalHotkeys();
 
     // TODO! tray icon
