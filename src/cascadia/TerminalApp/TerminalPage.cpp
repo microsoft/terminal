@@ -2941,22 +2941,25 @@ namespace winrt::TerminalApp::implementation
         // TermControl will copy the settings out of the settings passed to it.
 
         auto content = _manager.CreateCore(settings.DefaultSettings(), settings.UnfocusedSettings(), connection);
-        return _InitControl(content);
+        return _InitControl(TermControl{ content });
     }
 
     TermControl TerminalPage::_InitControlFromContent(const winrt::guid& contentGuid)
     {
         if (const auto& content{ _manager.LookupCore(contentGuid) })
         {
-            return _InitControl(content);
+            // We have to pass in our current keybindings, because that's an
+            // object that belongs to this TerminalPage, on this thread. If we
+            // don't, then when we move the content to another thread, and it
+            // tries to handle a key, it'll callback on the original page's
+            // stack, inevitably resulting in a wrong_thread
+            return _InitControl(TermControl::AttachContent(content, *_bindings));
         }
         return nullptr;
     }
 
-    TermControl TerminalPage::_InitControl(const ControlInteractivity& content)
+    TermControl TerminalPage::_InitControl(const TermControl& term)
     {
-        TermControl term{ content };
-
         // GH#12515: ConPTY assumes it's hidden at the start. If we're not, let it know now.
         if (_visible)
         {

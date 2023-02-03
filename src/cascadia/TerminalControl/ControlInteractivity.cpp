@@ -54,9 +54,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _guid;
     }
 
-    void ControlInteractivity::Reparent()
+    void ControlInteractivity::Reparent(const Microsoft::Terminal::Control::IKeyBindings& keyBindings)
     {
-        _core->Reparent();
+        _core->Reparent(keyBindings);
     }
 
     // Method Description:

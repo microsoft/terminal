@@ -86,7 +86,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool ManglePathsForWsl();
 
         winrt::guid Id();
-        void Reparent();
+        void Reparent(const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
 
         TYPED_EVENT(OpenHyperlink, IInspectable, Control::OpenHyperlinkEventArgs);
         TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);

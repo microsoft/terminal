@@ -24,7 +24,7 @@ namespace Microsoft.Terminal.Control
         void LostFocus();
 
         Guid Id { get; };
-        void Reparent();
+        void Reparent(Microsoft.Terminal.Control.IKeyBindings keyBindings);
 
         InteractivityAutomationPeer OnCreateAutomationPeer();
 

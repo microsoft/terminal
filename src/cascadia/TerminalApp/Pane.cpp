@@ -1229,7 +1229,11 @@ void Pane::Shutdown()
 
     if (_IsLeaf())
     {
-        _control.Close();
+        // TOODO! if we call Close here, on a control that was moved to another thread, then it's Dispatcher is no longer this thread, and we'll crash.
+        // Acn we get away with _not_ calling Close? Seems like shutdown is only called for RemoveTab(TerminalTab), so theoretically, removing the old control tree from the UI tree will release the core, calling it's dtor, which will call Close itself.
+        // Alternatively, we could try and see if there's only one strong ref to a ControlCore and just noop if there's more than one.
+        // 
+        // _control.Close();
     }
     else
     {

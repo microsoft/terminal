@@ -24,6 +24,8 @@ namespace Microsoft.Terminal.Control
                     IControlAppearance unfocusedAppearance,
                     Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
+        static TermControl AttachContent(ControlInteractivity content, Microsoft.Terminal.Control.IKeyBindings keyBindings);
+
         static Windows.Foundation.Size GetProposedDimensions(IControlSettings settings,
                                                              UInt32 dpi,
                                                              Int32 commandlineCols,

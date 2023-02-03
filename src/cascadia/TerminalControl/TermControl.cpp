@@ -68,14 +68,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         InitializeComponent();
 
         _core = _interactivity.Core();
-        if (const auto h{ reinterpret_cast<HANDLE>(_core.SwapChainHandle()) })
-        {
-            _AttachDxgiSwapChainToXaml(h);
-            _interactivity.Reparent();
-            // Reparent will fire off a _core.CloseTerminalRequested, which the
-            // old window will listen to and know to remove its old control,
-            // leaving us as the owner.
-        }
 
         // These events might all be triggered by the connection, but that
         // should be drained and closed before we complete destruction. So these
@@ -159,6 +151,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // });
 
         _ApplyUISettings();
+    }
+
+    Control::TermControl TermControl::AttachContent(Control::ControlInteractivity content, const Microsoft::Terminal::Control::IKeyBindings& keyBindings)
+    {
+        const auto term{ winrt::make_self<TermControl>(content) };
+        term->_AttachDxgiSwapChainToXaml(reinterpret_cast<HANDLE>(term->_core.SwapChainHandle()));
+        content.Reparent(keyBindings);
+        // if (const auto h{ reinterpret_cast<HANDLE>(_core.SwapChainHandle()) })
+        // {
+        //     // Reparent will fire off a _core.CloseTerminalRequested, which the
+        //     // old window will listen to and know to remove its old control,
+        //     // leaving us as the owner.
+        // }
+        return *term;
     }
 
     winrt::guid TermControl::ContentGuid() const

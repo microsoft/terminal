@@ -154,7 +154,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             THROW_IF_FAILED(localPointerToThread->Initialize(_renderer.get()));
         }
+        _setupDispatcherAndCallbacks();
 
+        UpdateSettings(settings, unfocusedAppearance);
+    }
+
+    void ControlCore::_setupDispatcherAndCallbacks()
+    {
         // Get our dispatcher. If we're hosted in-proc with XAML, this will get
         // us the same dispatcher as TermControl::Dispatcher(). If we're out of
         // proc, this'll return null. We'll need to instead make a new
@@ -211,8 +217,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     core->_ScrollPositionChangedHandlers(*core, update);
                 }
             });
-
-        UpdateSettings(settings, unfocusedAppearance);
     }
 
     ControlCore::~ControlCore()
@@ -225,9 +229,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::Reparent()
+    void ControlCore::Reparent(const Microsoft::Terminal::Control::IKeyBindings& keyBindings)
     {
         _CloseTerminalRequestedHandlers(*this, nullptr);
+        _settings->KeyBindings(keyBindings);
+        _setupDispatcherAndCallbacks();
     }
 
     bool ControlCore::Initialize(const double actualWidth,

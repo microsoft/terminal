@@ -74,7 +74,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ColorScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme);
 
         uint64_t SwapChainHandle() const;
-        void Reparent();
+        void Reparent(const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
 
         void SizeChanged(const double width, const double height);
         void ScaleChanged(const double scale);
@@ -285,6 +285,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::shared_ptr<ThrottledFuncTrailing<>> _tsfTryRedrawCanvas;
         std::unique_ptr<til::throttled_func_trailing<>> _updatePatternLocations;
         std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> _updateScrollBar;
+
+        void _setupDispatcherAndCallbacks();
 
         bool _setFontSizeUnderLock(float fontSize);
         void _updateFont(const bool initialUpdate = false);
