@@ -97,9 +97,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         wil::unique_winhttp_hinternet _socketConnectionHandle;
         wil::unique_winhttp_hinternet _webSocket;
 
-        til::u8state _u8State;
+        til::u8state _u8State{};
         std::wstring _u16Str;
-        std::array<char, 4096> _buffer;
+        std::array<char, 4096> _buffer{};
 
         static winrt::hstring _ParsePreferredShellType(const winrt::Windows::Data::Json::JsonObject& settingsResponse);
     };
