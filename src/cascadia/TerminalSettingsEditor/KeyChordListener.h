@@ -15,7 +15,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void KeyChordTextBox_KeyDown(const WF::IInspectable& sender, const WUX::Input::KeyRoutedEventArgs& e);
 
-        DEPENDENCY_PROPERTY(Control::KeyChord, Keys);
+        DEPENDENCY_PROPERTY(MTControl::KeyChord, Keys);
 
     private:
         static void _InitializeProperties();

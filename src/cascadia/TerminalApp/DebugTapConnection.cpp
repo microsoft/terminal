@@ -129,7 +129,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
     }
 
     // Wire us up so that we can forward input through
-    void DebugTapConnection::SetInputTap(const Microsoft::Terminal::TerminalConnection::ITerminalConnection& inputTap)
+    void DebugTapConnection::SetInputTap(const MTConnection::ITerminalConnection& inputTap)
     {
         _inputSide = inputTap;
     }

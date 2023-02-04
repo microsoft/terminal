@@ -18,7 +18,7 @@ using namespace MTSM;
 
 namespace winrt::TerminalApp::implementation
 {
-    ActionPaletteItem::ActionPaletteItem(const Microsoft::Terminal::Settings::Model::Command& command) :
+    ActionPaletteItem::ActionPaletteItem(const MTSM::Command& command) :
         _Command(command)
     {
         Name(command.Name());
@@ -27,7 +27,7 @@ namespace winrt::TerminalApp::implementation
 
         _commandChangedRevoker = command.PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() }](auto& sender, auto& e) {
             auto item{ weakThis.get() };
-            auto senderCommand{ sender.try_as<Microsoft::Terminal::Settings::Model::Command>() };
+            auto senderCommand{ sender.try_as<MTSM::Command>() };
 
             if (item && senderCommand)
             {

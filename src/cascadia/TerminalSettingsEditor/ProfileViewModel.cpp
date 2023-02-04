@@ -24,7 +24,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     WFC::IObservableVector<Editor::Font> ProfileViewModel::_MonospaceFontList{ nullptr };
     WFC::IObservableVector<Editor::Font> ProfileViewModel::_FontList{ nullptr };
 
-    ProfileViewModel::ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& appSettings) :
+    ProfileViewModel::ProfileViewModel(const MTSM::Profile& profile, const MTSM::CascadiaSettings& appSettings) :
         _profile{ profile },
         _defaultAppearanceViewModel{ winrt::make<implementation::AppearanceViewModel>(profile.DefaultAppearance().try_as<AppearanceConfig>()) },
         _originalProfileGuid{ profile.Guid() },
@@ -89,9 +89,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _defaultAppearanceViewModel.IsDefault(true);
     }
 
-    Model::TerminalSettings ProfileViewModel::TermSettings() const
+    MTSM::TerminalSettings ProfileViewModel::TermSettings() const
     {
-        return Model::TerminalSettings::CreateForPreview(_appSettings, _profile);
+        return MTSM::TerminalSettings::CreateForPreview(_appSettings, _profile);
     }
 
     // Method Description:

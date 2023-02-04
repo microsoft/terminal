@@ -29,7 +29,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 DependencyProperty::RegisterAttached(
                     L"IsTarget",
                     winrt::xaml_typename<bool>(),
-                    winrt::xaml_typename<Control::VisualBellLight>(),
+                    winrt::xaml_typename<MTControl::VisualBellLight>(),
                     PropertyMetadata{ winrt::box_value(false), PropertyChangedCallback{ &VisualBellLight::OnIsTargetChanged } });
         }
     }

@@ -28,9 +28,9 @@ namespace winrt::TerminalApp::implementation
         void _CloseClick(const WF::IInspectable& sender,
                          const WUX::RoutedEventArgs& e);
 
-        TYPED_EVENT(MinimizeClick, TerminalApp::MinMaxCloseControl, WUX::RoutedEventArgs);
-        TYPED_EVENT(MaximizeClick, TerminalApp::MinMaxCloseControl, WUX::RoutedEventArgs);
-        TYPED_EVENT(CloseClick, TerminalApp::MinMaxCloseControl, WUX::RoutedEventArgs);
+        TYPED_EVENT(MinimizeClick, MTApp::MinMaxCloseControl, WUX::RoutedEventArgs);
+        TYPED_EVENT(MaximizeClick, MTApp::MinMaxCloseControl, WUX::RoutedEventArgs);
+        TYPED_EVENT(CloseClick, MTApp::MinMaxCloseControl, WUX::RoutedEventArgs);
 
         std::shared_ptr<ThrottledFuncTrailing<WUXC::Button>> _displayToolTip{ nullptr };
         std::optional<CaptionButton> _lastPressedButton{ std::nullopt };

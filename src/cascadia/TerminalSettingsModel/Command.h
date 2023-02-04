@@ -41,28 +41,28 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static winrt::com_ptr<Command> FromJson(const Json::Value& json,
                                                 std::vector<SettingsLoadWarnings>& warnings);
 
-        static void ExpandCommands(WFC::IMap<winrt::hstring, Model::Command> commands,
-                                   WFC::IVectorView<Model::Profile> profiles,
-                                   WFC::IVectorView<Model::ColorScheme> schemes,
+        static void ExpandCommands(WFC::IMap<winrt::hstring, MTSM::Command> commands,
+                                   WFC::IVectorView<MTSM::Profile> profiles,
+                                   WFC::IVectorView<MTSM::ColorScheme> schemes,
                                    WFC::IVector<SettingsLoadWarnings> warnings);
 
-        static std::vector<SettingsLoadWarnings> LayerJson(WFC::IMap<winrt::hstring, Model::Command>& commands,
+        static std::vector<SettingsLoadWarnings> LayerJson(WFC::IMap<winrt::hstring, MTSM::Command>& commands,
                                                            const Json::Value& json);
         Json::Value ToJson() const;
 
         bool HasNestedCommands() const;
         bool IsNestedCommand() const noexcept;
-        WFC::IMapView<winrt::hstring, Model::Command> NestedCommands() const;
+        WFC::IMapView<winrt::hstring, MTSM::Command> NestedCommands() const;
 
         bool HasName() const noexcept;
         hstring Name() const noexcept;
         void Name(const hstring& name);
 
-        Control::KeyChord Keys() const noexcept;
+        MTControl::KeyChord Keys() const noexcept;
         hstring KeyChordText() const noexcept;
-        std::vector<Control::KeyChord> KeyMappings() const noexcept;
-        void RegisterKey(const Control::KeyChord& keys);
-        void EraseKey(const Control::KeyChord& keys);
+        std::vector<MTControl::KeyChord> KeyMappings() const noexcept;
+        void RegisterKey(const MTControl::KeyChord& keys);
+        void EraseKey(const MTControl::KeyChord& keys);
 
         hstring IconPath() const noexcept;
         void IconPath(const hstring& val);
@@ -71,20 +71,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         WINRT_CALLBACK(PropertyChanged, WUX::Data::PropertyChangedEventHandler);
         WINRT_PROPERTY(ExpandCommandType, IterateOn, ExpandCommandType::None);
-        WINRT_PROPERTY(Model::ActionAndArgs, ActionAndArgs);
+        WINRT_PROPERTY(MTSM::ActionAndArgs, ActionAndArgs);
 
     private:
         Json::Value _originalJson;
-        WFC::IMap<winrt::hstring, Model::Command> _subcommands{ nullptr };
-        std::vector<Control::KeyChord> _keyMappings;
+        WFC::IMap<winrt::hstring, MTSM::Command> _subcommands{ nullptr };
+        std::vector<MTControl::KeyChord> _keyMappings;
         std::optional<std::wstring> _name;
         std::optional<std::wstring> _iconPath;
         bool _nestedCommand{ false };
 
-        static std::vector<Model::Command> _expandCommand(Command* const expandable,
-                                                          WFC::IVectorView<Model::Profile> profiles,
-                                                          WFC::IVectorView<Model::ColorScheme> schemes,
-                                                          WFC::IVector<SettingsLoadWarnings>& warnings);
+        static std::vector<MTSM::Command> _expandCommand(Command* const expandable,
+                                                         WFC::IVectorView<MTSM::Profile> profiles,
+                                                         WFC::IVectorView<MTSM::ColorScheme> schemes,
+                                                         WFC::IVector<SettingsLoadWarnings>& warnings);
         friend class SettingsModelLocalTests::DeserializationTests;
         friend class SettingsModelLocalTests::CommandTests;
     };

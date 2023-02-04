@@ -12,7 +12,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
     class DebugTapConnection : public winrt::implements<DebugTapConnection, MTConnection::ITerminalConnection>
     {
     public:
-        explicit DebugTapConnection(Microsoft::Terminal::TerminalConnection::ITerminalConnection wrappedConnection);
+        explicit DebugTapConnection(MTConnection::ITerminalConnection wrappedConnection);
         void Initialize(const WFC::ValueSet& /*settings*/){};
         ~DebugTapConnection();
         void Start();
@@ -21,7 +21,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
         void Close();
         MTConnection::ConnectionState State() const noexcept;
 
-        void SetInputTap(const Microsoft::Terminal::TerminalConnection::ITerminalConnection& inputTap);
+        void SetInputTap(const MTConnection::ITerminalConnection& inputTap);
 
         WINRT_CALLBACK(TerminalOutput, MTConnection::TerminalOutputHandler);
 
@@ -33,8 +33,8 @@ namespace winrt::Microsoft::TerminalApp::implementation
 
         MTConnection::ITerminalConnection::TerminalOutput_revoker _outputRevoker;
         MTConnection::ITerminalConnection::StateChanged_revoker _stateChangedRevoker;
-        winrt::weak_ref<Microsoft::Terminal::TerminalConnection::ITerminalConnection> _wrappedConnection;
-        winrt::weak_ref<Microsoft::Terminal::TerminalConnection::ITerminalConnection> _inputSide;
+        winrt::weak_ref<MTConnection::ITerminalConnection> _wrappedConnection;
+        winrt::weak_ref<MTConnection::ITerminalConnection> _inputSide;
 
         til::latch _start{ 1 };
 

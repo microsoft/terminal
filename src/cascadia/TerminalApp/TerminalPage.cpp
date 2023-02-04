@@ -44,8 +44,8 @@ using namespace std::chrono_literals;
 namespace winrt::TerminalApp::implementation
 {
     TerminalPage::TerminalPage() :
-        _tabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
-        _mruTabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
+        _tabs{ winrt::single_threaded_observable_vector<MTApp::TabBase>() },
+        _mruTabs{ winrt::single_threaded_observable_vector<MTApp::TabBase>() },
         _startupActions{ winrt::single_threaded_vector<ActionAndArgs>() },
         _hostingHwnd{}
     {
@@ -151,7 +151,7 @@ namespace winrt::TerminalApp::implementation
             auto result = false;
 
             // GH#2455 - Make sure to try/catch calls to Application::Current,
-            // because that _won't_ be an instance of TerminalApp::App in the
+            // because that _won't_ be an instance of MTApp::App in the
             // LocalTests
             try
             {
@@ -499,7 +499,7 @@ namespace winrt::TerminalApp::implementation
     // - command - command to dispatch
     // Return Value:
     // - <none>
-    void TerminalPage::_OnDispatchCommandRequested(const IInspectable& /*sender*/, const Microsoft::Terminal::Settings::Model::Command& command)
+    void TerminalPage::_OnDispatchCommandRequested(const IInspectable& /*sender*/, const MTSM::Command& command)
     {
         const auto& actionAndArgs = command.ActionAndArgs();
         _actionDispatch->DoAction(actionAndArgs);
@@ -833,7 +833,7 @@ namespace winrt::TerminalApp::implementation
         // add static items
         {
             // GH#2455 - Make sure to try/catch calls to Application::Current,
-            // because that _won't_ be an instance of TerminalApp::App in the
+            // because that _won't_ be an instance of MTApp::App in the
             // LocalTests
             auto isUwp = false;
             try
@@ -1228,28 +1228,28 @@ namespace winrt::TerminalApp::implementation
     // - the terminal settings
     // Return value:
     // - the desired connection
-    TerminalConnection::ITerminalConnection TerminalPage::_CreateConnectionFromSettings(Profile profile,
-                                                                                        TerminalSettings settings)
+    MTConnection::ITerminalConnection TerminalPage::_CreateConnectionFromSettings(Profile profile,
+                                                                                  TerminalSettings settings)
     {
-        TerminalConnection::ITerminalConnection connection{ nullptr };
+        MTConnection::ITerminalConnection connection{ nullptr };
 
         auto connectionType = profile.ConnectionType();
         winrt::guid sessionGuid{};
 
-        if (connectionType == TerminalConnection::AzureConnection::ConnectionType() &&
-            TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
+        if (connectionType == MTConnection::AzureConnection::ConnectionType() &&
+            MTConnection::AzureConnection::IsAzureConnectionAvailable())
         {
             // TODO GH#4661: Replace this with directly using the AzCon when our VT is better
             std::filesystem::path azBridgePath{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
             azBridgePath.replace_filename(L"TerminalAzBridge.exe");
-            connection = TerminalConnection::ConptyConnection();
-            auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(azBridgePath.wstring(),
-                                                                                 L".",
-                                                                                 L"Azure",
-                                                                                 nullptr,
-                                                                                 settings.InitialRows(),
-                                                                                 settings.InitialCols(),
-                                                                                 winrt::guid());
+            connection = MTConnection::ConptyConnection();
+            auto valueSet = MTConnection::ConptyConnection::CreateSettings(azBridgePath.wstring(),
+                                                                           L".",
+                                                                           L"Azure",
+                                                                           nullptr,
+                                                                           settings.InitialRows(),
+                                                                           settings.InitialCols(),
+                                                                           winrt::guid());
 
             if constexpr (Feature_VtPassthroughMode::IsEnabled())
             {
@@ -1293,14 +1293,14 @@ namespace winrt::TerminalApp::implementation
                 newWorkingDirectory = winrt::hstring{ cwd.wstring() };
             }
 
-            auto conhostConn = TerminalConnection::ConptyConnection();
-            auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(settings.Commandline(),
-                                                                                 newWorkingDirectory,
-                                                                                 settings.StartingTitle(),
-                                                                                 envMap.GetView(),
-                                                                                 settings.InitialRows(),
-                                                                                 settings.InitialCols(),
-                                                                                 winrt::guid());
+            auto conhostConn = MTConnection::ConptyConnection();
+            auto valueSet = MTConnection::ConptyConnection::CreateSettings(settings.Commandline(),
+                                                                           newWorkingDirectory,
+                                                                           settings.StartingTitle(),
+                                                                           envMap.GetView(),
+                                                                           settings.InitialRows(),
+                                                                           settings.InitialCols(),
+                                                                           winrt::guid());
 
             valueSet.Insert(L"passthroughMode", WF::PropertyValue::CreateBoolean(settings.VtPassthrough()));
 
@@ -2395,7 +2395,7 @@ namespace winrt::TerminalApp::implementation
         CATCH_LOG();
     }
 
-    void TerminalPage::_OpenHyperlinkHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::OpenHyperlinkEventArgs eventArgs)
+    void TerminalPage::_OpenHyperlinkHandler(const IInspectable /*sender*/, const MTControl::OpenHyperlinkEventArgs eventArgs)
     {
         try
         {
@@ -2471,7 +2471,7 @@ namespace winrt::TerminalApp::implementation
     // Important! Don't take this eventArgs by reference, we need to extend the
     // lifetime of it to the other side of the co_await!
     winrt::fire_and_forget TerminalPage::_ControlNoticeRaisedHandler(const IInspectable /*sender*/,
-                                                                     const Microsoft::Terminal::Control::NoticeEventArgs eventArgs)
+                                                                     const MTControl::NoticeEventArgs eventArgs)
     {
         auto weakThis = get_weak();
         co_await wil::resume_foreground(Dispatcher());
@@ -2550,7 +2550,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - sender (not used)
     // - args: the arguments specifying how to set the display status to ShowWindow for our window handle
-    winrt::fire_and_forget TerminalPage::_ShowWindowChangedHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::ShowWindowArgs args)
+    winrt::fire_and_forget TerminalPage::_ShowWindowChangedHandler(const IInspectable /*sender*/, const MTControl::ShowWindowArgs args)
     {
         co_await resume_foreground(Dispatcher());
         _ShowWindowChangedHandlers(*this, args);
@@ -2663,7 +2663,7 @@ namespace winrt::TerminalApp::implementation
     //   Pane for this connection.
     std::shared_ptr<Pane> TerminalPage::_MakePane(const NewTerminalArgs& newTerminalArgs,
                                                   const MTApp::TabBase& sourceTab,
-                                                  TerminalConnection::ITerminalConnection existingConnection)
+                                                  MTConnection::ITerminalConnection existingConnection)
     {
         TerminalSettingsCreateResult controlSettings{ nullptr };
         Profile profile{ nullptr };
@@ -2702,7 +2702,7 @@ namespace winrt::TerminalApp::implementation
             connection.Resize(controlSettings.DefaultSettings().InitialRows(), controlSettings.DefaultSettings().InitialCols());
         }
 
-        TerminalConnection::ITerminalConnection debugConnection{ nullptr };
+        MTConnection::ITerminalConnection debugConnection{ nullptr };
         if (_settings.GlobalSettings().DebugFeaturesEnabled())
         {
             const auto window = CoreWindow::GetForCurrentThread();
@@ -2872,7 +2872,7 @@ namespace winrt::TerminalApp::implementation
                 // Force the TerminalTab to re-grab its currently active control's title.
                 terminalTab->UpdateTitle();
             }
-            else if (auto settingsTab = tab.try_as<TerminalApp::SettingsTab>())
+            else if (auto settingsTab = tab.try_as<MTApp::SettingsTab>())
             {
                 settingsTab.UpdateSettings(_settings);
             }
@@ -3364,7 +3364,7 @@ namespace winrt::TerminalApp::implementation
     // - an empty list if we failed to parse, otherwise a list of actions to execute.
     std::vector<ActionAndArgs> TerminalPage::ConvertExecuteCommandlineToActions(const ExecuteCommandlineArgs& args)
     {
-        ::TerminalApp::AppCommandlineArgs appArgs;
+        ::MTApp::AppCommandlineArgs appArgs;
         if (appArgs.ParseArgs(args) == 0)
         {
             return appArgs.GetStartupActions();
@@ -3588,9 +3588,9 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - If the tab is a TerminalTab, a com_ptr to the implementation type.
     //   If the tab is not a TerminalTab, nullptr
-    winrt::com_ptr<TerminalTab> TerminalPage::_GetTerminalTabImpl(const TerminalApp::TabBase& tab)
+    winrt::com_ptr<TerminalTab> TerminalPage::_GetTerminalTabImpl(const MTApp::TabBase& tab)
     {
-        if (auto terminalTab = tab.try_as<TerminalApp::TerminalTab>())
+        if (auto terminalTab = tab.try_as<MTApp::TerminalTab>())
         {
             winrt::com_ptr<TerminalTab> tabImpl;
             tabImpl.copy_from(winrt::get_self<TerminalTab>(terminalTab));
@@ -3656,7 +3656,7 @@ namespace winrt::TerminalApp::implementation
         if (WUX::Application::Current().try_as<MTApp::App>() == nullptr)
         {
             // Just ignore this in the tests (where the Application::Current()
-            // is not a TerminalApp::App)
+            // is not a MTApp::App)
             return;
         }
         if (!CascadiaSettings::IsDefaultTerminalAvailable() || _IsMessageDismissed(InfoBarMessage::SetAsDefault))
@@ -4355,7 +4355,7 @@ namespace winrt::TerminalApp::implementation
                 {
                     return control.BackgroundBrush();
                 }
-                else if (auto settingsTab = _GetFocusedTab().try_as<TerminalApp::SettingsTab>())
+                else if (auto settingsTab = _GetFocusedTab().try_as<MTApp::SettingsTab>())
                 {
                     return settingsTab.Content().try_as<Settings::Editor::MainPage>().BackgroundBrush();
                 }

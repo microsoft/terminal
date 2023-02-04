@@ -97,9 +97,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct CascadiaSettings : CascadiaSettingsT<CascadiaSettings>
     {
     public:
-        static Model::CascadiaSettings LoadDefaults();
-        static Model::CascadiaSettings LoadAll();
-        static Model::CascadiaSettings LoadUniversal();
+        static MTSM::CascadiaSettings LoadDefaults();
+        static MTSM::CascadiaSettings LoadAll();
+        static MTSM::CascadiaSettings LoadUniversal();
 
         static winrt::hstring SettingsPath();
         static winrt::hstring DefaultSettingsPath();
@@ -114,21 +114,21 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // user settings
         winrt::hstring Hash() const noexcept;
-        Model::CascadiaSettings Copy() const;
-        Model::GlobalAppSettings GlobalSettings() const;
-        WFC::IObservableVector<Model::Profile> AllProfiles() const noexcept;
-        WFC::IObservableVector<Model::Profile> ActiveProfiles() const noexcept;
-        Model::ActionMap ActionMap() const noexcept;
+        MTSM::CascadiaSettings Copy() const;
+        MTSM::GlobalAppSettings GlobalSettings() const;
+        WFC::IObservableVector<MTSM::Profile> AllProfiles() const noexcept;
+        WFC::IObservableVector<MTSM::Profile> ActiveProfiles() const noexcept;
+        MTSM::ActionMap ActionMap() const noexcept;
         void WriteSettingsToDisk();
         Json::Value ToJson() const;
-        Model::Profile ProfileDefaults() const;
-        Model::Profile CreateNewProfile();
-        Model::Profile FindProfile(const winrt::guid& guid) const noexcept;
+        MTSM::Profile ProfileDefaults() const;
+        MTSM::Profile CreateNewProfile();
+        MTSM::Profile FindProfile(const winrt::guid& guid) const noexcept;
         void UpdateColorSchemeReferences(const winrt::hstring& oldName, const winrt::hstring& newName);
-        Model::Profile GetProfileForArgs(const Model::NewTerminalArgs& newTerminalArgs) const;
-        Model::Profile GetProfileByName(const winrt::hstring& name) const;
-        Model::Profile GetProfileByIndex(uint32_t index) const;
-        Model::Profile DuplicateProfile(const Model::Profile& source);
+        MTSM::Profile GetProfileForArgs(const MTSM::NewTerminalArgs& newTerminalArgs) const;
+        MTSM::Profile GetProfileByName(const winrt::hstring& name) const;
+        MTSM::Profile GetProfileByIndex(uint32_t index) const;
+        MTSM::Profile DuplicateProfile(const MTSM::Profile& source);
 
         // load errors
         WFC::IVectorView<Model::SettingsLoadWarnings> Warnings() const;
@@ -139,9 +139,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static std::wstring NormalizeCommandLine(LPCWSTR commandLine);
         static bool IsDefaultTerminalAvailable() noexcept;
         static bool IsDefaultTerminalSet() noexcept;
-        WFC::IObservableVector<Model::DefaultTerminal> DefaultTerminals() noexcept;
-        Model::DefaultTerminal CurrentDefaultTerminal() noexcept;
-        void CurrentDefaultTerminal(const Model::DefaultTerminal& terminal);
+        WFC::IObservableVector<MTSM::DefaultTerminal> DefaultTerminals() noexcept;
+        MTSM::DefaultTerminal CurrentDefaultTerminal() noexcept;
+        void CurrentDefaultTerminal(const MTSM::DefaultTerminal& terminal);
 
     private:
         static const std::filesystem::path& _settingsPath();
@@ -149,19 +149,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static winrt::hstring _calculateHash(std::string_view settings, const FILETIME& lastWriteTime);
 
         winrt::com_ptr<implementation::Profile> _createNewProfile(const std::wstring_view& name) const;
-        Model::Profile _getProfileForCommandLine(const winrt::hstring& commandLine) const;
+        MTSM::Profile _getProfileForCommandLine(const winrt::hstring& commandLine) const;
         void _refreshDefaultTerminals();
 
         void _resolveDefaultProfile() const;
         void _resolveNewTabMenuProfiles() const;
-        void _resolveNewTabMenuProfilesSet(const WFC::IVector<Model::NewTabMenuEntry> entries, WFC::IMap<int, Model::Profile>& remainingProfiles, Model::RemainingProfilesEntry& remainingProfilesEntry) const;
+        void _resolveNewTabMenuProfilesSet(const WFC::IVector<MTSM::NewTabMenuEntry> entries, WFC::IMap<int, MTSM::Profile>& remainingProfiles, MTSM::RemainingProfilesEntry& remainingProfilesEntry) const;
 
         void _validateSettings();
         void _validateAllSchemesExist();
         void _validateMediaResources();
         void _validateKeybindings() const;
         void _validateColorSchemesInCommands() const;
-        bool _hasInvalidColorScheme(const Model::Command& command) const;
+        bool _hasInvalidColorScheme(const MTSM::Command& command) const;
         void _validateThemeExists();
 
         void _researchOnLoad();
@@ -170,8 +170,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::hstring _hash;
         winrt::com_ptr<implementation::GlobalAppSettings> _globals = winrt::make_self<implementation::GlobalAppSettings>();
         winrt::com_ptr<implementation::Profile> _baseLayerProfile = winrt::make_self<implementation::Profile>();
-        WFC::IObservableVector<Model::Profile> _allProfiles = winrt::single_threaded_observable_vector<Model::Profile>();
-        WFC::IObservableVector<Model::Profile> _activeProfiles = winrt::single_threaded_observable_vector<Model::Profile>();
+        WFC::IObservableVector<MTSM::Profile> _allProfiles = winrt::single_threaded_observable_vector<MTSM::Profile>();
+        WFC::IObservableVector<MTSM::Profile> _activeProfiles = winrt::single_threaded_observable_vector<MTSM::Profile>();
 
         // load errors
         WFC::IVector<Model::SettingsLoadWarnings> _warnings = winrt::single_threaded_vector<Model::SettingsLoadWarnings>();
@@ -179,12 +179,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::hstring _deserializationErrorMessage;
 
         // defterm
-        WFC::IObservableVector<Model::DefaultTerminal> _defaultTerminals{ nullptr };
-        Model::DefaultTerminal _currentDefaultTerminal{ nullptr };
+        WFC::IObservableVector<MTSM::DefaultTerminal> _defaultTerminals{ nullptr };
+        MTSM::DefaultTerminal _currentDefaultTerminal{ nullptr };
 
         // GetProfileForArgs cache
         mutable std::once_flag _commandLinesCacheOnce;
-        mutable std::vector<std::pair<std::wstring, Model::Profile>> _commandLinesCache;
+        mutable std::vector<std::pair<std::wstring, MTSM::Profile>> _commandLinesCache;
     };
 }
 

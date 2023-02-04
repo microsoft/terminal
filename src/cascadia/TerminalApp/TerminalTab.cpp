@@ -650,7 +650,7 @@ namespace winrt::TerminalApp::implementation
     // - colorPicker: The color picker that we should attach to ourselves
     // Return Value:
     // - <none>
-    void TerminalTab::AttachColorPicker(TerminalApp::ColorPickupFlyout& colorPicker)
+    void TerminalTab::AttachColorPicker(MTApp::ColorPickupFlyout& colorPicker)
     {
         auto weakThis{ get_weak() };
 

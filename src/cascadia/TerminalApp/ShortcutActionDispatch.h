@@ -13,7 +13,7 @@ namespace TerminalAppLocalTests
     class KeyBindingsTests;
 }
 
-#define DECLARE_ACTION(action) TYPED_EVENT(action, TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
+#define DECLARE_ACTION(action) TYPED_EVENT(action, MTApp::ShortcutActionDispatch, MTSM::ActionEventArgs);
 
 namespace winrt::TerminalApp::implementation
 {
@@ -21,7 +21,7 @@ namespace winrt::TerminalApp::implementation
     {
         ShortcutActionDispatch() = default;
 
-        bool DoAction(const Microsoft::Terminal::Settings::Model::ActionAndArgs& actionAndArgs);
+        bool DoAction(const MTSM::ActionAndArgs& actionAndArgs);
 
 #define ON_ALL_ACTIONS(action) DECLARE_ACTION(action);
         ALL_SHORTCUT_ACTIONS

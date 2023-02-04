@@ -37,10 +37,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void LayerJson(const Json::Value& json);
         bool HasAnyOptionSet() const;
 
-        Model::Profile SourceProfile();
+        MTSM::Profile SourceProfile();
 
 #define FONT_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
-    INHERITABLE_SETTING(Model::FontConfig, type, name, ##__VA_ARGS__)
+    INHERITABLE_SETTING(MTSM::FontConfig, type, name, ##__VA_ARGS__)
         MTSM_FONT_SETTINGS(FONT_SETTINGS_INITIALIZE)
 #undef FONT_SETTINGS_INITIALIZE
 

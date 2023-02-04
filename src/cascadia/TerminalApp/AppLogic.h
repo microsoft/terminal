@@ -51,7 +51,7 @@ namespace winrt::TerminalApp::implementation
     {
     public:
         static AppLogic* Current() noexcept;
-        static const Microsoft::Terminal::Settings::Model::CascadiaSettings CurrentAppSettings();
+        static const MTSM::CascadiaSettings CurrentAppSettings();
 
         AppLogic();
         ~AppLogic() = default;
@@ -64,7 +64,7 @@ namespace winrt::TerminalApp::implementation
         bool IsElevated() const noexcept;
         void ReloadSettings();
 
-        [[nodiscard]] Microsoft::Terminal::Settings::Model::CascadiaSettings GetSettings() const noexcept;
+        [[nodiscard]] MTSM::CascadiaSettings GetSettings() const noexcept;
 
         void Quit();
 
@@ -72,7 +72,7 @@ namespace winrt::TerminalApp::implementation
         bool HasSettingsStartupActions() const noexcept;
         int32_t SetStartupCommandline(array_view<const winrt::hstring> actions);
         int32_t ExecuteCommandline(array_view<const winrt::hstring> actions, const winrt::hstring& cwd);
-        TerminalApp::FindTargetWindowResult FindTargetWindow(array_view<const winrt::hstring> actions);
+        MTApp::FindTargetWindowResult FindTargetWindow(array_view<const winrt::hstring> actions);
         winrt::hstring ParseCommandlineMessage();
         bool ShouldExitEarly();
 
@@ -129,9 +129,9 @@ namespace winrt::TerminalApp::implementation
         WF::IAsyncOperation<WUXC::ContentDialogResult> ShowDialog(WUXC::ContentDialog dialog);
         void DismissDialog();
 
-        WFC::IMapView<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::Command> GlobalHotkeys();
+        WFC::IMapView<MTControl::KeyChord, MTSM::Command> GlobalHotkeys();
 
-        Microsoft::Terminal::Settings::Model::Theme Theme();
+        MTSM::Theme Theme();
 
         // -------------------------------- WinRT Events ---------------------------------
         // PropertyChanged is surprisingly not a typed event, so we'll define that one manually.
@@ -157,7 +157,7 @@ namespace winrt::TerminalApp::implementation
         // ALSO: If you add any UIElements as roots here, make sure they're
         // updated in _ApplyTheme. The root currently is _root.
         winrt::com_ptr<TerminalPage> _root{ nullptr };
-        Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
+        MTSM::CascadiaSettings _settings{ nullptr };
 
         winrt::hstring _settingsLoadExceptionText;
         HRESULT _settingsLoadedResult = S_OK;
@@ -168,8 +168,8 @@ namespace winrt::TerminalApp::implementation
         std::shared_mutex _dialogLock;
         WUXC::ContentDialog _dialog;
 
-        ::TerminalApp::AppCommandlineArgs _appArgs;
-        ::TerminalApp::AppCommandlineArgs _settingsAppArgs;
+        ::MTApp::AppCommandlineArgs _appArgs;
+        ::MTApp::AppCommandlineArgs _settingsAppArgs;
 
         std::shared_ptr<ThrottledFuncTrailing<>> _reloadSettings;
         til::throttled_func_trailing<> _reloadState;
@@ -179,8 +179,8 @@ namespace winrt::TerminalApp::implementation
         winrt::com_ptr<LanguageProfileNotifier> _languageProfileNotifier;
         wil::unique_folder_change_reader_nothrow _reader;
 
-        static TerminalApp::FindTargetWindowResult _doFindTargetWindow(winrt::array_view<const hstring> args,
-                                                                       const Microsoft::Terminal::Settings::Model::WindowingMode& windowingBehavior);
+        static MTApp::FindTargetWindowResult _doFindTargetWindow(winrt::array_view<const hstring> args,
+                                                                 const Microsoft::Terminal::Settings::Model::WindowingMode& windowingBehavior);
 
         void _ShowLoadErrorsDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey, HRESULT settingsLoadedResult);
         void _ShowLoadWarningsDialog();

@@ -48,8 +48,8 @@ DEFINE_ENUM_FLAG_OPERATORS(MTControl::MouseButtonState);
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
     TermControl::TermControl(IControlSettings settings,
-                             Control::IControlAppearance unfocusedAppearance,
-                             TerminalConnection::ITerminalConnection connection) :
+                             MTControl::IControlAppearance unfocusedAppearance,
+                             MTConnection::ITerminalConnection connection) :
         _isInternalScrollBarUpdate{ false },
         _autoScrollVelocity{ 0 },
         _autoScrollingPointerPoint{ std::nullopt },
@@ -343,7 +343,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - INVARIANT: This method must be called from the UI thread.
     // Arguments:
     // - newAppearance: the new appearance to set
-    void TermControl::_UpdateAppearanceFromUIThread(Control::IControlAppearance newAppearance)
+    void TermControl::_UpdateAppearanceFromUIThread(MTControl::IControlAppearance newAppearance)
     {
         if (_IsClosing())
         {
@@ -771,7 +771,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Return Value:
     // - <none>
     winrt::fire_and_forget TermControl::_RendererWarning(IInspectable /*sender*/,
-                                                         Control::RendererWarningArgs args)
+                                                         MTControl::RendererWarningArgs args)
     {
         const auto hr = static_cast<HRESULT>(args.Result());
 
@@ -1502,7 +1502,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Return Value:
     // - <none>
     winrt::fire_and_forget TermControl::_coreTransparencyChanged(IInspectable /*sender*/,
-                                                                 Control::TransparencyChangedEventArgs /*args*/)
+                                                                 MTControl::TransparencyChangedEventArgs /*args*/)
     {
         co_await wil::resume_foreground(Dispatcher());
         try
@@ -1873,7 +1873,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - viewHeight: the height of the viewport in rows.
     // - bufferSize: the length of the buffer, in rows
     void TermControl::_ScrollPositionChanged(const IInspectable& /*sender*/,
-                                             const Control::ScrollPositionChangedArgs& args)
+                                             const MTControl::ScrollPositionChangedArgs& args)
     {
         ScrollBarUpdate update;
         const auto hiddenContent = args.BufferSize() - args.ViewHeight();
@@ -2699,7 +2699,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Arguments:
     // - The uri
     winrt::fire_and_forget TermControl::_HyperlinkHandler(IInspectable /*sender*/,
-                                                          Control::OpenHyperlinkEventArgs args)
+                                                          MTControl::OpenHyperlinkEventArgs args)
     {
         // Save things we need to resume later.
         auto strongThis{ get_strong() };
@@ -2919,7 +2919,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    winrt::fire_and_forget TermControl::_updateSelectionMarkers(IInspectable /*sender*/, Control::UpdateSelectionMarkersEventArgs args)
+    winrt::fire_and_forget TermControl::_updateSelectionMarkers(IInspectable /*sender*/, MTControl::UpdateSelectionMarkersEventArgs args)
     {
         auto weakThis{ get_weak() };
         co_await resume_foreground(Dispatcher());
@@ -3039,7 +3039,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     void TermControl::_coreRaisedNotice(const IInspectable& /*sender*/,
-                                        const Control::NoticeEventArgs& eventArgs)
+                                        const MTControl::NoticeEventArgs& eventArgs)
     {
         // Don't try to inspect the core here. The Core might be raising this
         // while it's holding its write lock. If the handlers calls back to some
@@ -3135,7 +3135,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - args: contains information about the results that were or were not found.
     // Return Value:
     // - <none>
-    void TermControl::_coreFoundMatch(const IInspectable& /*sender*/, const Control::FoundResultsArgs& args)
+    void TermControl::_coreFoundMatch(const IInspectable& /*sender*/, const MTControl::FoundResultsArgs& args)
     {
         if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(*this) })
         {
@@ -3170,7 +3170,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.ScrollMarks();
     }
 
-    void TermControl::ColorSelection(Control::SelectionColor fg, Control::SelectionColor bg, Core::MatchMode matchMode)
+    void TermControl::ColorSelection(MTControl::SelectionColor fg, MTControl::SelectionColor bg, Core::MatchMode matchMode)
     {
         _core.ColorSelection(fg, bg, matchMode);
     }

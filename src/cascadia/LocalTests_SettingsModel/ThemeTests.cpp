@@ -75,7 +75,7 @@ namespace SettingsModelLocalTests
 
         VERIFY_IS_NOT_NULL(theme->TabRow());
         VERIFY_IS_NOT_NULL(theme->TabRow().Background());
-        VERIFY_ARE_EQUAL(Settings::Model::ThemeColorType::Color, theme->TabRow().Background().ColorType());
+        VERIFY_ARE_EQUAL(MTSM::ThemeColorType::Color, theme->TabRow().Background().ColorType());
         VERIFY_ARE_EQUAL(rgba(0xff, 0xff, 0x88, 0x00), theme->TabRow().Background().Color());
         VERIFY_ARE_EQUAL(rgba(0xff, 0x88, 0x44, 0xff), theme->TabRow().UnfocusedBackground().Color());
 
@@ -117,7 +117,7 @@ namespace SettingsModelLocalTests
 
         VERIFY_IS_NOT_NULL(theme->TabRow());
         VERIFY_IS_NOT_NULL(theme->TabRow().Background());
-        VERIFY_ARE_EQUAL(Settings::Model::ThemeColorType::Color, theme->TabRow().Background().ColorType());
+        VERIFY_ARE_EQUAL(MTSM::ThemeColorType::Color, theme->TabRow().Background().ColorType());
         VERIFY_ARE_EQUAL(rgb(0x11, 0x22, 0x33), theme->TabRow().Background().Color());
 
         VERIFY_IS_NULL(theme->Window());
@@ -143,7 +143,7 @@ namespace SettingsModelLocalTests
 
         VERIFY_IS_NOT_NULL(theme->TabRow());
         VERIFY_IS_NOT_NULL(theme->TabRow().Background());
-        VERIFY_ARE_EQUAL(Settings::Model::ThemeColorType::Color, theme->TabRow().Background().ColorType());
+        VERIFY_ARE_EQUAL(MTSM::ThemeColorType::Color, theme->TabRow().Background().ColorType());
         VERIFY_ARE_EQUAL(rgb(0x11, 0x22, 0x33), theme->TabRow().Background().Color());
 
         VERIFY_IS_NULL(theme->Window());

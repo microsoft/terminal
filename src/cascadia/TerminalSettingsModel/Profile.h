@@ -97,8 +97,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         hstring EvaluatedStartingDirectory() const;
 
-        Model::IAppearanceConfig DefaultAppearance();
-        Model::FontConfig FontInfo();
+        MTSM::IAppearanceConfig DefaultAppearance();
+        MTSM::FontConfig FontInfo();
 
         void _FinalizeInheritance() override;
 
@@ -108,24 +108,24 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         WINRT_PROPERTY(guid, Updates);
 
         // Nullable/optional settings
-        INHERITABLE_NULLABLE_SETTING(Model::Profile, Microsoft::Terminal::Core::Color, TabColor, nullptr);
-        INHERITABLE_SETTING(Model::Profile, Model::IAppearanceConfig, UnfocusedAppearance, nullptr);
+        INHERITABLE_NULLABLE_SETTING(MTSM::Profile, Microsoft::Terminal::Core::Color, TabColor, nullptr);
+        INHERITABLE_SETTING(MTSM::Profile, MTSM::IAppearanceConfig, UnfocusedAppearance, nullptr);
 
         // Settings that cannot be put in the macro because of how they are handled in ToJson/LayerJson
-        INHERITABLE_SETTING(Model::Profile, hstring, Name, L"Default");
-        INHERITABLE_SETTING(Model::Profile, hstring, Source);
-        INHERITABLE_SETTING(Model::Profile, bool, Hidden, false);
-        INHERITABLE_SETTING(Model::Profile, guid, Guid, _GenerateGuidForProfile(Name(), Source()));
-        INHERITABLE_SETTING(Model::Profile, hstring, Padding, DEFAULT_PADDING);
+        INHERITABLE_SETTING(MTSM::Profile, hstring, Name, L"Default");
+        INHERITABLE_SETTING(MTSM::Profile, hstring, Source);
+        INHERITABLE_SETTING(MTSM::Profile, bool, Hidden, false);
+        INHERITABLE_SETTING(MTSM::Profile, guid, Guid, _GenerateGuidForProfile(Name(), Source()));
+        INHERITABLE_SETTING(MTSM::Profile, hstring, Padding, DEFAULT_PADDING);
 
 #define PROFILE_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
-    INHERITABLE_SETTING(Model::Profile, type, name, ##__VA_ARGS__)
+    INHERITABLE_SETTING(MTSM::Profile, type, name, ##__VA_ARGS__)
         MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_INITIALIZE)
 #undef PROFILE_SETTINGS_INITIALIZE
 
     private:
-        Model::IAppearanceConfig _DefaultAppearance{ winrt::make<AppearanceConfig>(weak_ref<Model::Profile>(*this)) };
-        Model::FontConfig _FontInfo{ winrt::make<FontConfig>(weak_ref<Model::Profile>(*this)) };
+        MTSM::IAppearanceConfig _DefaultAppearance{ winrt::make<AppearanceConfig>(weak_ref<MTSM::Profile>(*this)) };
+        MTSM::FontConfig _FontInfo{ winrt::make<FontConfig>(weak_ref<MTSM::Profile>(*this)) };
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
         static guid _GenerateGuidForProfile(const std::wstring_view& name, const std::wstring_view& source) noexcept;

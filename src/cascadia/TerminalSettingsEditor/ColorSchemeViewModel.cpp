@@ -10,7 +10,7 @@
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    ColorSchemeViewModel::ColorSchemeViewModel(const Model::ColorScheme scheme, const Editor::ColorSchemesPageViewModel parentPageVM, const Model::CascadiaSettings& settings) :
+    ColorSchemeViewModel::ColorSchemeViewModel(const MTSM::ColorScheme scheme, const Editor::ColorSchemesPageViewModel parentPageVM, const MTSM::CascadiaSettings& settings) :
         _scheme{ scheme },
         _settings{ settings },
         _NonBrightColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() },

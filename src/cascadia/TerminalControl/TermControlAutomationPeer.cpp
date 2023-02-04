@@ -69,7 +69,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 {
     TermControlAutomationPeer::TermControlAutomationPeer(winrt::com_ptr<TermControl> owner,
                                                          const Core::Padding padding,
-                                                         Control::InteractivityAutomationPeer impl) :
+                                                         MTControl::InteractivityAutomationPeer impl) :
         TermControlAutomationPeerT<TermControlAutomationPeer>(*owner.get()), // pass owner to FrameworkElementAutomationPeer
         _termControl{ owner },
         _contentAutomationPeer{ impl }

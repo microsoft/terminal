@@ -41,7 +41,7 @@ static const std::wstring_view globalAppearanceTag{ L"GlobalAppearance_Nav" };
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    static Editor::ProfileViewModel _viewModelForProfile(const Model::Profile& profile, const Model::CascadiaSettings& appSettings)
+    static Editor::ProfileViewModel _viewModelForProfile(const MTSM::Profile& profile, const MTSM::CascadiaSettings& appSettings)
     {
         return winrt::make<implementation::ProfileViewModel>(profile, appSettings);
     }
@@ -96,7 +96,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - settings - the new settings source
     // Return value:
     // - <none>
-    void MainPage::UpdateSettings(const Model::CascadiaSettings& settings)
+    void MainPage::UpdateSettings(const MTSM::CascadiaSettings& settings)
     {
         _settingsSource = settings;
         _settingsClone = settings.Copy();
@@ -551,7 +551,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         menuItems.Append(addProfileItem);
     }
 
-    void MainPage::_CreateAndNavigateToNewProfile(const uint32_t index, const Model::Profile& profile)
+    void MainPage::_CreateAndNavigateToNewProfile(const uint32_t index, const MTSM::Profile& profile)
     {
         const auto newProfile{ profile ? profile : _settingsClone.CreateNewProfile() };
         const auto profileViewModel{ _viewModelForProfile(newProfile, _settingsClone) };

@@ -23,14 +23,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct ModifyKeyBindingEventArgs : ModifyKeyBindingEventArgsT<ModifyKeyBindingEventArgs>
     {
     public:
-        ModifyKeyBindingEventArgs(const Control::KeyChord& oldKeys, const Control::KeyChord& newKeys, const hstring oldActionName, const hstring newActionName) :
+        ModifyKeyBindingEventArgs(const MTControl::KeyChord& oldKeys, const MTControl::KeyChord& newKeys, const hstring oldActionName, const hstring newActionName) :
             _OldKeys{ oldKeys },
             _NewKeys{ newKeys },
             _OldActionName{ std::move(oldActionName) },
             _NewActionName{ std::move(newActionName) } {}
 
-        WINRT_PROPERTY(Control::KeyChord, OldKeys, nullptr);
-        WINRT_PROPERTY(Control::KeyChord, NewKeys, nullptr);
+        WINRT_PROPERTY(MTControl::KeyChord, OldKeys, nullptr);
+        WINRT_PROPERTY(MTControl::KeyChord, NewKeys, nullptr);
         WINRT_PROPERTY(hstring, OldActionName);
         WINRT_PROPERTY(hstring, NewActionName);
     };
@@ -39,7 +39,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
     public:
         KeyBindingViewModel(const WFC::IObservableVector<hstring>& availableActions);
-        KeyBindingViewModel(const Control::KeyChord& keys, const hstring& name, const WFC::IObservableVector<hstring>& availableActions);
+        KeyBindingViewModel(const MTControl::KeyChord& keys, const hstring& name, const WFC::IObservableVector<hstring>& availableActions);
 
         hstring Name() const { return _CurrentAction; }
         hstring KeyChordText() const { return _KeyChordText; }
@@ -60,7 +60,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void ToggleEditMode();
         void DisableEditMode() { IsInEditMode(false); }
         void AttemptAcceptChanges();
-        void AttemptAcceptChanges(const Control::KeyChord newKeys);
+        void AttemptAcceptChanges(const MTControl::KeyChord newKeys);
         void CancelChanges();
         void DeleteKeyBinding() { _DeleteKeyBindingRequestedHandlers(*this, _CurrentKeys); }
 
@@ -79,8 +79,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // ProposedKeys: the keys proposed by the control; may disagree with the settings model.
         // CurrentKeys:  the key chord bound in the settings model.
-        VIEW_MODEL_OBSERVABLE_PROPERTY(Control::KeyChord, ProposedKeys);
-        VIEW_MODEL_OBSERVABLE_PROPERTY(Control::KeyChord, CurrentKeys, nullptr);
+        VIEW_MODEL_OBSERVABLE_PROPERTY(MTControl::KeyChord, ProposedKeys);
+        VIEW_MODEL_OBSERVABLE_PROPERTY(MTControl::KeyChord, CurrentKeys, nullptr);
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsInEditMode, false);
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsNewlyAdded, false);
@@ -91,7 +91,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsEditButtonFocused, false);
         VIEW_MODEL_OBSERVABLE_PROPERTY(WUXMedia::Brush, ContainerBackground, nullptr);
         TYPED_EVENT(ModifyKeyBindingRequested, Editor::KeyBindingViewModel, Editor::ModifyKeyBindingEventArgs);
-        TYPED_EVENT(DeleteKeyBindingRequested, Editor::KeyBindingViewModel, Terminal::Control::KeyChord);
+        TYPED_EVENT(DeleteKeyBindingRequested, Editor::KeyBindingViewModel, MTControl::KeyChord);
         TYPED_EVENT(DeleteNewlyAddedKeyBinding, Editor::KeyBindingViewModel, IInspectable);
 
     private:
@@ -101,10 +101,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct ActionsPageNavigationState : ActionsPageNavigationStateT<ActionsPageNavigationState>
     {
     public:
-        ActionsPageNavigationState(const Model::CascadiaSettings& settings) :
+        ActionsPageNavigationState(const MTSM::CascadiaSettings& settings) :
             _Settings{ settings } {}
 
-        WINRT_PROPERTY(Model::CascadiaSettings, Settings, nullptr)
+        WINRT_PROPERTY(MTSM::CascadiaSettings, Settings, nullptr)
     };
 
     struct Actions : public HasScrollViewer<Actions>, ActionsT<Actions>
@@ -122,16 +122,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         void _ViewModelPropertyChangedHandler(const WF::IInspectable& senderVM, const WUX::Data::PropertyChangedEventArgs& args);
-        void _ViewModelDeleteKeyBindingHandler(const Editor::KeyBindingViewModel& senderVM, const Control::KeyChord& args);
+        void _ViewModelDeleteKeyBindingHandler(const Editor::KeyBindingViewModel& senderVM, const MTControl::KeyChord& args);
         void _ViewModelModifyKeyBindingHandler(const Editor::KeyBindingViewModel& senderVM, const Editor::ModifyKeyBindingEventArgs& args);
         void _ViewModelDeleteNewlyAddedKeyBindingHandler(const Editor::KeyBindingViewModel& senderVM, const IInspectable& args);
 
-        std::optional<uint32_t> _GetContainerIndexByKeyChord(const Control::KeyChord& keys);
+        std::optional<uint32_t> _GetContainerIndexByKeyChord(const MTControl::KeyChord& keys);
         void _RegisterEvents(com_ptr<implementation::KeyBindingViewModel>& kbdVM);
 
         bool _AutomationPeerAttached{ false };
         WFC::IObservableVector<hstring> _AvailableActionAndArgs;
-        WFC::IMap<hstring, Model::ActionAndArgs> _AvailableActionMap;
+        WFC::IMap<hstring, MTSM::ActionAndArgs> _AvailableActionMap;
     };
 }
 

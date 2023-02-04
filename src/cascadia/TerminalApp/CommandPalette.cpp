@@ -542,9 +542,9 @@ namespace winrt::TerminalApp::implementation
                 if (const auto selectedList = e.AddedItems(); selectedList.Size() > 0)
                 {
                     const auto selectedCommand = selectedList.GetAt(0);
-                    if (const auto filteredCmd = selectedCommand.try_as<TerminalApp::FilteredCommand>())
+                    if (const auto filteredCmd = selectedCommand.try_as<MTApp::FilteredCommand>())
                     {
-                        if (const auto paletteItem = filteredCmd.Item().try_as<TerminalApp::PaletteItem>())
+                        if (const auto paletteItem = filteredCmd.Item().try_as<MTApp::PaletteItem>())
                         {
                             automationPeer.RaiseNotificationEvent(
                                 Automation::Peers::AutomationNotificationKind::ItemAdded,
@@ -802,7 +802,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    std::optional<TerminalApp::FilteredCommand> CommandPalette::_buildCommandLineCommand(const hstring& commandLine)
+    std::optional<MTApp::FilteredCommand> CommandPalette::_buildCommandLineCommand(const hstring& commandLine)
     {
         if (commandLine.empty())
         {
@@ -937,7 +937,7 @@ namespace winrt::TerminalApp::implementation
         return _filteredActions;
     }
 
-    void CommandPalette::SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap)
+    void CommandPalette::SetActionMap(const MTSM::IActionMapView& actionMap)
     {
         _actionMap = actionMap;
     }
@@ -1297,17 +1297,17 @@ namespace winrt::TerminalApp::implementation
     // - Reads the list of recent commands from the persistent application state
     // Return Value:
     // - The list of FilteredCommand representing the ones stored in the state
-    IVector<TerminalApp::FilteredCommand> CommandPalette::_loadRecentCommands()
+    IVector<MTApp::FilteredCommand> CommandPalette::_loadRecentCommands()
     {
         const auto recentCommands = ApplicationState::SharedInstance().RecentCommands();
         // If this is the first time we've opened the commandline mode and
         // there aren't any recent commands, then just return an empty vector.
         if (!recentCommands)
         {
-            return single_threaded_vector<TerminalApp::FilteredCommand>();
+            return single_threaded_vector<MTApp::FilteredCommand>();
         }
 
-        std::vector<TerminalApp::FilteredCommand> parsedCommands;
+        std::vector<MTApp::FilteredCommand> parsedCommands;
         parsedCommands.reserve(std::min(recentCommands.Size(), CommandLineHistoryLength));
 
         for (const auto& c : recentCommands)

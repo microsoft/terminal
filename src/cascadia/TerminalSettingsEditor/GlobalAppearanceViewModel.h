@@ -12,12 +12,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct GlobalAppearanceViewModel : GlobalAppearanceViewModelT<GlobalAppearanceViewModel>, ViewModelHelper<GlobalAppearanceViewModel>
     {
     public:
-        GlobalAppearanceViewModel(Model::GlobalAppSettings globalSettings);
+        GlobalAppearanceViewModel(MTSM::GlobalAppSettings globalSettings);
 
         // DON'T YOU DARE ADD A `WINRT_CALLBACK(PropertyChanged` TO A CLASS DERIVED FROM ViewModelHelper. Do this instead:
         using ViewModelHelper<GlobalAppearanceViewModel>::PropertyChanged;
 
-        WINRT_PROPERTY(WFC::IObservableVector<Model::Theme>, ThemeList, nullptr);
+        WINRT_PROPERTY(WFC::IObservableVector<MTSM::Theme>, ThemeList, nullptr);
         GETSET_BINDABLE_ENUM_SETTING(NewTabPosition, Model::NewTabPosition, _GlobalSettings.NewTabPosition);
         GETSET_BINDABLE_ENUM_SETTING(TabWidthMode, MUXC::TabViewWidthMode, _GlobalSettings.TabWidthMode);
 
@@ -34,7 +34,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         WF::IInspectable CurrentTheme();
         void CurrentTheme(const WF::IInspectable& tag);
-        static winrt::hstring ThemeNameConverter(const Model::Theme& theme);
+        static winrt::hstring ThemeNameConverter(const MTSM::Theme& theme);
 
         bool InvertedDisableAnimations();
         void InvertedDisableAnimations(bool value);
@@ -51,7 +51,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, MinimizeToNotificationArea);
 
     private:
-        Model::GlobalAppSettings _GlobalSettings;
+        MTSM::GlobalAppSettings _GlobalSettings;
         WFC::IObservableVector<winrt::hstring> _languageList;
         WF::IInspectable _currentLanguage;
         WF::IInspectable _currentTheme;

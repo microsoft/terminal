@@ -34,30 +34,30 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 // This macro generates all getters and setters for ApplicationState.
 // It provides X with the following arguments:
 //   (source, type, function name, JSON key, ...variadic construction arguments)
-#define MTSM_APPLICATION_STATE_FIELDS(X)                                                                      \
-    X(FileSource::Shared, winrt::hstring, SettingsHash, "settingsHash")                                       \
-    X(FileSource::Shared, std::unordered_set<winrt::guid>, GeneratedProfiles, "generatedProfiles")            \
-    X(FileSource::Local, WFC::IVector<Model::WindowLayout>, PersistedWindowLayouts, "persistedWindowLayouts") \
-    X(FileSource::Shared, WFC::IVector<hstring>, RecentCommands, "recentCommands")                            \
-    X(FileSource::Shared, WFC::IVector<MTSM::InfoBarMessage>, DismissedMessages, "dismissedMessages")         \
+#define MTSM_APPLICATION_STATE_FIELDS(X)                                                                     \
+    X(FileSource::Shared, winrt::hstring, SettingsHash, "settingsHash")                                      \
+    X(FileSource::Shared, std::unordered_set<winrt::guid>, GeneratedProfiles, "generatedProfiles")           \
+    X(FileSource::Local, WFC::IVector<MTSM::WindowLayout>, PersistedWindowLayouts, "persistedWindowLayouts") \
+    X(FileSource::Shared, WFC::IVector<hstring>, RecentCommands, "recentCommands")                           \
+    X(FileSource::Shared, WFC::IVector<MTSM::InfoBarMessage>, DismissedMessages, "dismissedMessages")        \
     X(FileSource::Local, WFC::IVector<hstring>, AllowedCommandlines, "allowedCommandlines")
 
     struct WindowLayout : WindowLayoutT<WindowLayout>
     {
-        static winrt::hstring ToJson(const Model::WindowLayout& layout);
-        static Model::WindowLayout FromJson(const winrt::hstring& json);
+        static winrt::hstring ToJson(const MTSM::WindowLayout& layout);
+        static MTSM::WindowLayout FromJson(const winrt::hstring& json);
 
-        WINRT_PROPERTY(WFC::IVector<Model::ActionAndArgs>, TabLayout, nullptr);
+        WINRT_PROPERTY(WFC::IVector<MTSM::ActionAndArgs>, TabLayout, nullptr);
         WINRT_PROPERTY(WF::IReference<Model::LaunchPosition>, InitialPosition, nullptr);
         WINRT_PROPERTY(WF::IReference<WF::Size>, InitialSize, nullptr);
         WINRT_PROPERTY(WF::IReference<Model::LaunchMode>, LaunchMode, nullptr);
 
-        friend ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<Model::WindowLayout>;
+        friend ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<MTSM::WindowLayout>;
     };
 
     struct ApplicationState : public ApplicationStateT<ApplicationState>
     {
-        static Microsoft::Terminal::Settings::Model::ApplicationState SharedInstance();
+        static MTSM::ApplicationState SharedInstance();
 
         ApplicationState(const std::filesystem::path& stateRoot) noexcept;
         ~ApplicationState();

@@ -42,7 +42,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (const auto selected = Profiles().SelectedItem())
         {
-            _State.RequestDuplicate(selected.try_as<Model::Profile>().Guid());
+            _State.RequestDuplicate(selected.try_as<MTSM::Profile>().Guid());
         }
     }
 

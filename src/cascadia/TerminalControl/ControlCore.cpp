@@ -75,9 +75,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    ControlCore::ControlCore(Control::IControlSettings settings,
-                             Control::IControlAppearance unfocusedAppearance,
-                             TerminalConnection::ITerminalConnection connection) :
+    ControlCore::ControlCore(MTControl::IControlSettings settings,
+                             MTControl::IControlAppearance unfocusedAppearance,
+                             MTConnection::ITerminalConnection connection) :
         _connection{ connection },
         _desiredFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, DEFAULT_FONT_SIZE, CP_UTF8 },
         _actualFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false }
@@ -202,7 +202,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             });
 
-        _updateScrollBar = std::make_shared<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>>(
+        _updateScrollBar = std::make_shared<ThrottledFuncTrailing<MTControl::ScrollPositionChangedArgs>>(
             _dispatcher,
             ScrollBarUpdateInterval,
             [weakThis = get_weak()](const auto& update) {
@@ -286,7 +286,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             if (_owningHwnd != 0)
             {
-                if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
+                if (auto conpty{ _connection.try_as<MTConnection::ConptyConnection>() })
                 {
                     conpty.ReparentWindow(_owningHwnd);
                 }
@@ -1710,7 +1710,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (clearType == Control::ClearBufferType::Screen || clearType == Control::ClearBufferType::All)
         {
             // Send a signal to conpty to clear the buffer.
-            if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
+            if (auto conpty{ _connection.try_as<MTConnection::ConptyConnection>() })
             {
                 // ConPTY will emit sequences to sync up our buffer with its new
                 // contents.
@@ -1881,7 +1881,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_initializedTerminal)
         {
             // show is true, hide is false
-            if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
+            if (auto conpty{ _connection.try_as<MTConnection::ConptyConnection>() })
             {
                 conpty.ShowHide(showOrHide);
             }
@@ -1941,7 +1941,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (owner != _owningHwnd && _connection)
         {
-            if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
+            if (auto conpty{ _connection.try_as<MTConnection::ConptyConnection>() })
             {
                 conpty.ReparentWindow(owner);
             }
@@ -2093,7 +2093,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::ColorSelection(const Control::SelectionColor& fg, const Control::SelectionColor& bg, Core::MatchMode matchMode)
+    void ControlCore::ColorSelection(const MTControl::SelectionColor& fg, const MTControl::SelectionColor& bg, Core::MatchMode matchMode)
     {
         if (HasSelection())
         {

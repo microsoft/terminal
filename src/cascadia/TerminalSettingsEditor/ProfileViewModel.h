@@ -19,8 +19,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static WFC::IObservableVector<Editor::Font> CompleteFontList() noexcept { return _FontList; };
         static WFC::IObservableVector<Editor::Font> MonospaceFontList() noexcept { return _MonospaceFontList; };
 
-        ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& settings);
-        Model::TerminalSettings TermSettings() const;
+        ProfileViewModel(const MTSM::Profile& profile, const MTSM::CascadiaSettings& settings);
+        MTSM::TerminalSettings TermSettings() const;
         void DeleteProfile();
 
         void SetupAppearances(WFC::IObservableVector<Editor::ColorSchemeViewModel> schemesList, Editor::IHostedInWindow windowRoot);
@@ -99,7 +99,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         TYPED_EVENT(DeleteProfile, Editor::ProfileViewModel, Editor::DeleteProfileEventArgs);
 
     private:
-        Model::Profile _profile;
+        MTSM::Profile _profile;
         winrt::guid _originalProfileGuid;
         winrt::hstring _lastBgImagePath;
         winrt::hstring _lastStartingDirectoryPath;
@@ -110,7 +110,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         static Editor::Font _GetFont(com_ptr<IDWriteLocalizedStrings> localizedFamilyNames);
 
-        Model::CascadiaSettings _appSettings;
+        MTSM::CascadiaSettings _appSettings;
         Editor::AppearanceViewModel _unfocusedAppearanceViewModel;
     };
 

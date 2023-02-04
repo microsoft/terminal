@@ -10,7 +10,7 @@
 #include "RenameWindowRequestedArgs.g.h"
 #include "Toast.h"
 
-#define DECLARE_ACTION_HANDLER(action) void _Handle##action(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+#define DECLARE_ACTION_HANDLER(action) void _Handle##action(const IInspectable& sender, const MTSM::ActionEventArgs& args);
 
 static constexpr uint32_t DefaultRowsToScroll{ 3 };
 static constexpr std::wstring_view TabletInputServiceKey{ L"TabletInputService" };
@@ -59,16 +59,16 @@ namespace winrt::TerminalApp::implementation
         // put it in our inheritance graph. https://github.com/microsoft/microsoft-ui-xaml/issues/3331
         STDMETHODIMP Initialize(HWND hwnd);
 
-        void SetSettings(Microsoft::Terminal::Settings::Model::CascadiaSettings settings, bool needRefreshUI);
+        void SetSettings(MTSM::CascadiaSettings settings, bool needRefreshUI);
 
         void Create();
 
-        bool ShouldUsePersistedLayout(Microsoft::Terminal::Settings::Model::CascadiaSettings& settings) const;
-        bool ShouldImmediatelyHandoffToElevated(const Microsoft::Terminal::Settings::Model::CascadiaSettings& settings) const;
-        void HandoffToElevated(const Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
-        std::optional<uint32_t> LoadPersistedLayoutIdx(Microsoft::Terminal::Settings::Model::CascadiaSettings& settings) const;
-        MTSM::WindowLayout LoadPersistedLayout(Microsoft::Terminal::Settings::Model::CascadiaSettings& settings) const;
-        Microsoft::Terminal::Settings::Model::WindowLayout GetWindowLayout();
+        bool ShouldUsePersistedLayout(MTSM::CascadiaSettings& settings) const;
+        bool ShouldImmediatelyHandoffToElevated(const MTSM::CascadiaSettings& settings) const;
+        void HandoffToElevated(const MTSM::CascadiaSettings& settings);
+        std::optional<uint32_t> LoadPersistedLayoutIdx(MTSM::CascadiaSettings& settings) const;
+        MTSM::WindowLayout LoadPersistedLayout(MTSM::CascadiaSettings& settings) const;
+        MTSM::WindowLayout GetWindowLayout();
 
         winrt::fire_and_forget NewTerminalByDrop(WUX::DragEventArgs& e);
 
@@ -96,10 +96,10 @@ namespace winrt::TerminalApp::implementation
         void Maximized(bool newMaximized);
         void RequestSetMaximized(bool newMaximized);
 
-        void SetStartupActions(std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions);
+        void SetStartupActions(std::vector<MTSM::ActionAndArgs>& actions);
 
         void SetInboundListener(bool isEmbedding);
-        static std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> ConvertExecuteCommandlineToActions(const Microsoft::Terminal::Settings::Model::ExecuteCommandlineArgs& args);
+        static std::vector<MTSM::ActionAndArgs> ConvertExecuteCommandlineToActions(const MTSM::ExecuteCommandlineArgs& args);
 
         MTApp::IDialogPresenter DialogPresenter() const;
         void DialogPresenter(MTApp::IDialogPresenter dialogPresenter);
@@ -113,7 +113,7 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget IdentifyWindow();
         winrt::fire_and_forget RenameFailed();
 
-        winrt::fire_and_forget ProcessStartupActions(WFC::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> actions,
+        winrt::fire_and_forget ProcessStartupActions(WFC::IVector<MTSM::ActionAndArgs> actions,
                                                      const bool initial,
                                                      const winrt::hstring cwd = L"");
 
@@ -173,20 +173,20 @@ namespace winrt::TerminalApp::implementation
         // updated in App::_ApplyTheme. The roots currently is _tabRow
         // (which is a root when the tabs are in the titlebar.)
         MUXC::TabView _tabView{ nullptr };
-        TerminalApp::TabRowControl _tabRow{ nullptr };
+        MTApp::TabRowControl _tabRow{ nullptr };
         WUXC::Grid _tabContent{ nullptr };
         MUXC::SplitButton _newTabButton{ nullptr };
         MTApp::ColorPickupFlyout _tabColorPicker{ nullptr };
 
-        Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
+        MTSM::CascadiaSettings _settings{ nullptr };
 
-        WFC::IObservableVector<TerminalApp::TabBase> _tabs;
-        WFC::IObservableVector<TerminalApp::TabBase> _mruTabs;
-        static winrt::com_ptr<TerminalTab> _GetTerminalTabImpl(const TerminalApp::TabBase& tab);
+        WFC::IObservableVector<MTApp::TabBase> _tabs;
+        WFC::IObservableVector<MTApp::TabBase> _mruTabs;
+        static winrt::com_ptr<TerminalTab> _GetTerminalTabImpl(const MTApp::TabBase& tab);
 
         void _UpdateTabIndices();
 
-        TerminalApp::SettingsTab _settingsTab{ nullptr };
+        MTApp::SettingsTab _settingsTab{ nullptr };
 
         bool _isInFocusMode{ false };
         bool _isFullscreen{ false };
@@ -206,7 +206,7 @@ namespace winrt::TerminalApp::implementation
         bool _activated{ false };
         bool _visible{ true };
 
-        std::vector<std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>> _previouslyClosedPanesAndTabs{};
+        std::vector<std::vector<MTSM::ActionAndArgs>> _previouslyClosedPanesAndTabs{};
 
         uint32_t _systemRowsToScroll{ DefaultRowsToScroll };
 
@@ -219,7 +219,7 @@ namespace winrt::TerminalApp::implementation
         WUXC::Grid::LayoutUpdated_revoker _layoutUpdatedRevoker;
         StartupState _startupState{ StartupState::NotInitialized };
 
-        WFC::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> _startupActions;
+        WFC::IVector<MTSM::ActionAndArgs> _startupActions;
         bool _shouldStartInboundListener{ false };
         bool _isEmbeddingInboundListener{ false };
 
@@ -240,18 +240,18 @@ namespace winrt::TerminalApp::implementation
         WF::IAsyncOperation<WUXC::ContentDialogResult> _ShowLargePasteWarningDialog();
 
         void _CreateNewTabFlyout();
-        std::vector<WUXC::MenuFlyoutItemBase> _CreateNewTabFlyoutItems(WFC::IVector<Microsoft::Terminal::Settings::Model::NewTabMenuEntry> entries);
+        std::vector<WUXC::MenuFlyoutItemBase> _CreateNewTabFlyoutItems(WFC::IVector<MTSM::NewTabMenuEntry> entries);
         WUXC::IconElement _CreateNewTabFlyoutIcon(const winrt::hstring& icon);
-        WUXC::MenuFlyoutItem _CreateNewTabFlyoutProfile(const Microsoft::Terminal::Settings::Model::Profile profile, int profileIndex);
+        WUXC::MenuFlyoutItem _CreateNewTabFlyoutProfile(const MTSM::Profile profile, int profileIndex);
 
         void _OpenNewTabDropdown();
-        HRESULT _OpenNewTab(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs, MTConnection::ITerminalConnection existingConnection = nullptr);
+        HRESULT _OpenNewTab(const MTSM::NewTerminalArgs& newTerminalArgs, MTConnection::ITerminalConnection existingConnection = nullptr);
         void _CreateNewTabFromPane(std::shared_ptr<Pane> pane, uint32_t insertPosition = -1);
-        MTConnection::ITerminalConnection _CreateConnectionFromSettings(Microsoft::Terminal::Settings::Model::Profile profile, Microsoft::Terminal::Settings::Model::TerminalSettings settings);
+        MTConnection::ITerminalConnection _CreateConnectionFromSettings(MTSM::Profile profile, MTSM::TerminalSettings settings);
 
-        winrt::fire_and_forget _OpenNewWindow(const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
+        winrt::fire_and_forget _OpenNewWindow(const MTSM::NewTerminalArgs newTerminalArgs);
 
-        void _OpenNewTerminalViaDropdown(const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
+        void _OpenNewTerminalViaDropdown(const MTSM::NewTerminalArgs newTerminalArgs);
 
         bool _displayingCloseDialog{ false };
         void _SettingsButtonOnClick(const IInspectable& sender, const WUX::RoutedEventArgs& eventArgs);
@@ -263,7 +263,7 @@ namespace winrt::TerminalApp::implementation
         void _KeyDownHandler(const WF::IInspectable& sender, const WUX::Input::KeyRoutedEventArgs& e);
         static ::Microsoft::Terminal::Core::ControlKeyStates _GetPressedModifierKeys() noexcept;
         static void _ClearKeyboardState(const WORD vkey, const WORD scanCode) noexcept;
-        void _HookupKeyBindings(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap) noexcept;
+        void _HookupKeyBindings(const MTSM::IActionMapView& actionMap) noexcept;
         void _RegisterActionCallbacks();
 
         void _UpdateTitle(const TerminalTab& tab);
@@ -273,9 +273,9 @@ namespace winrt::TerminalApp::implementation
         void _UpdateCommandsForPalette();
         void _SetBackgroundImage(const MTSM::IAppearanceConfig& newAppearance);
 
-        static WFC::IMap<winrt::hstring, Microsoft::Terminal::Settings::Model::Command> _ExpandCommands(WFC::IMapView<winrt::hstring, Microsoft::Terminal::Settings::Model::Command> commandsToExpand,
-                                                                                                        WFC::IVectorView<Microsoft::Terminal::Settings::Model::Profile> profiles,
-                                                                                                        WFC::IMapView<winrt::hstring, Microsoft::Terminal::Settings::Model::ColorScheme> schemes);
+        static WFC::IMap<winrt::hstring, MTSM::Command> _ExpandCommands(WFC::IMapView<winrt::hstring, MTSM::Command> commandsToExpand,
+                                                                        WFC::IVectorView<MTSM::Profile> profiles,
+                                                                        WFC::IMapView<winrt::hstring, MTSM::ColorScheme> schemes);
 
         void _DuplicateFocusedTab();
         void _DuplicateTab(const TerminalTab& tab);
@@ -289,7 +289,7 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget _RemoveTabs(const std::vector<MTApp::TabBase> tabs);
 
         void _InitializeTab(winrt::com_ptr<TerminalTab> newTabImpl, uint32_t insertPosition = -1);
-        void _RegisterTerminalEvents(Microsoft::Terminal::Control::TermControl term);
+        void _RegisterTerminalEvents(MTControl::TermControl term);
         void _RegisterTabEvents(TerminalTab& hostingTab);
 
         void _DismissTabContextMenus();
@@ -325,16 +325,16 @@ namespace winrt::TerminalApp::implementation
 
         MTControl::TermControl _GetActiveControl();
         std::optional<uint32_t> _GetFocusedTabIndex() const noexcept;
-        TerminalApp::TabBase _GetFocusedTab() const noexcept;
+        MTApp::TabBase _GetFocusedTab() const noexcept;
         winrt::com_ptr<TerminalTab> _GetFocusedTabImpl() const noexcept;
-        TerminalApp::TabBase _GetTabByTabViewItem(const MUXC::TabViewItem& tabViewItem) const noexcept;
+        MTApp::TabBase _GetTabByTabViewItem(const MUXC::TabViewItem& tabViewItem) const noexcept;
 
         void _HandleClosePaneRequested(std::shared_ptr<Pane> pane);
         winrt::fire_and_forget _SetFocusedTab(const MTApp::TabBase tab);
         winrt::fire_and_forget _CloseFocusedPane();
         void _ClosePanes(weak_ref<TerminalTab> weakTab, std::vector<uint32_t> paneIds);
         WF::IAsyncOperation<bool> _PaneConfirmCloseReadOnly(std::shared_ptr<Pane> pane);
-        void _AddPreviouslyClosedPaneOrTab(std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>&& args);
+        void _AddPreviouslyClosedPaneOrTab(std::vector<MTSM::ActionAndArgs>&& args);
 
         winrt::fire_and_forget _RemoveOnCloseRoutine(MUXC::TabViewItem tabViewItem, winrt::com_ptr<TerminalPage> page);
 
@@ -356,9 +356,9 @@ namespace winrt::TerminalApp::implementation
 
         winrt::fire_and_forget _CopyToClipboardHandler(const IInspectable sender, const MTControl::CopyToClipboardEventArgs copiedData);
         winrt::fire_and_forget _PasteFromClipboardHandler(const IInspectable sender,
-                                                          const Microsoft::Terminal::Control::PasteFromClipboardEventArgs eventArgs);
+                                                          const MTControl::PasteFromClipboardEventArgs eventArgs);
 
-        void _OpenHyperlinkHandler(const IInspectable sender, const Microsoft::Terminal::Control::OpenHyperlinkEventArgs eventArgs);
+        void _OpenHyperlinkHandler(const IInspectable sender, const MTControl::OpenHyperlinkEventArgs eventArgs);
         bool _IsUriSupported(const WF::Uri& parsedUri);
 
         void _ShowCouldNotOpenDialog(winrt::hstring reason, winrt::hstring uri);
@@ -368,7 +368,7 @@ namespace winrt::TerminalApp::implementation
 
         void _PasteText();
 
-        winrt::fire_and_forget _ControlNoticeRaisedHandler(const IInspectable sender, const Microsoft::Terminal::Control::NoticeEventArgs eventArgs);
+        winrt::fire_and_forget _ControlNoticeRaisedHandler(const IInspectable sender, const MTControl::NoticeEventArgs eventArgs);
         void _ShowControlNoticeDialog(const winrt::hstring& title, const winrt::hstring& message);
 
         fire_and_forget _LaunchSettings(const Microsoft::Terminal::Settings::Model::SettingsTarget target);
@@ -384,7 +384,7 @@ namespace winrt::TerminalApp::implementation
         void _UpdatedSelectedTab(const MTApp::TabBase& tab);
         void _UpdateBackground(const MTSM::Profile& profile);
 
-        void _OnDispatchCommandRequested(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::Command& command);
+        void _OnDispatchCommandRequested(const IInspectable& sender, const MTSM::Command& command);
         void _OnCommandLineExecutionRequested(const IInspectable& sender, const winrt::hstring& commandLine);
         void _OnSwitchToTabRequested(const IInspectable& sender, const MTApp::TabBase& tab);
 
@@ -393,7 +393,7 @@ namespace winrt::TerminalApp::implementation
         MTControl::TermControl _InitControl(const MTSM::TerminalSettingsCreateResult& settings,
                                             const MTConnection::ITerminalConnection& connection);
 
-        std::shared_ptr<Pane> _MakePane(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs = nullptr,
+        std::shared_ptr<Pane> _MakePane(const MTSM::NewTerminalArgs& newTerminalArgs = nullptr,
                                         const MTApp::TabBase& sourceTab = nullptr,
                                         MTConnection::ITerminalConnection existingConnection = nullptr);
 
@@ -423,17 +423,17 @@ namespace winrt::TerminalApp::implementation
         void _HidePointerCursorHandler(const IInspectable& sender, const IInspectable& eventArgs);
         void _RestorePointerCursorHandler(const IInspectable& sender, const IInspectable& eventArgs);
 
-        void _PreviewAction(const Microsoft::Terminal::Settings::Model::ActionAndArgs& args);
-        void _PreviewActionHandler(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::Command& args);
+        void _PreviewAction(const MTSM::ActionAndArgs& args);
+        void _PreviewActionHandler(const IInspectable& sender, const MTSM::Command& args);
         void _EndPreview();
         void _RunRestorePreviews();
-        void _PreviewColorScheme(const Microsoft::Terminal::Settings::Model::SetColorSchemeArgs& args);
-        void _PreviewAdjustOpacity(const Microsoft::Terminal::Settings::Model::AdjustOpacityArgs& args);
+        void _PreviewColorScheme(const MTSM::SetColorSchemeArgs& args);
+        void _PreviewAdjustOpacity(const MTSM::AdjustOpacityArgs& args);
         MTSM::ActionAndArgs _lastPreviewedAction{ nullptr };
         std::vector<std::function<void()>> _restorePreviewFuncs{};
 
         HRESULT _OnNewConnection(const MTConnection::ConptyConnection& connection);
-        void _HandleToggleInboundPty(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleToggleInboundPty(const IInspectable& sender, const MTSM::ActionEventArgs& args);
 
         void _WindowRenamerActionClick(const IInspectable& sender, const IInspectable& eventArgs);
         void _RequestWindowRename(const winrt::hstring& newName);

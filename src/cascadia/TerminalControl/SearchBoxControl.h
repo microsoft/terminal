@@ -36,7 +36,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void CloseClick(const WF::IInspectable& /*sender*/, const WUX::RoutedEventArgs& e);
 
         WINRT_CALLBACK(Search, SearchHandler);
-        TYPED_EVENT(Closed, Control::SearchBoxControl, WUX::RoutedEventArgs);
+        TYPED_EVENT(Closed, MTControl::SearchBoxControl, WUX::RoutedEventArgs);
 
     private:
         std::unordered_set<WF::IInspectable> _focusableElements;

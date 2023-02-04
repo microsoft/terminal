@@ -40,7 +40,7 @@ void Profile::CreateUnfocusedAppearance()
 {
     if (!_UnfocusedAppearance)
     {
-        auto unfocusedAppearance{ winrt::make_self<implementation::AppearanceConfig>(weak_ref<Model::Profile>(*this)) };
+        auto unfocusedAppearance{ winrt::make_self<implementation::AppearanceConfig>(weak_ref<MTSM::Profile>(*this)) };
 
         // If an unfocused appearance is defined in this profile, any undefined parameters are
         // taken from this profile's default appearance, so add it as a parent
@@ -92,7 +92,7 @@ winrt::com_ptr<Profile>& Profile::CopyInheritanceGraph(std::unordered_map<const 
 winrt::com_ptr<Profile> Profile::CopySettings() const
 {
     const auto profile = winrt::make_self<Profile>();
-    const auto weakProfile = winrt::make_weak<Model::Profile>(*profile);
+    const auto weakProfile = winrt::make_weak<MTSM::Profile>(*profile);
     const auto fontInfo = FontConfig::CopyFontInfo(winrt::get_self<FontConfig>(_FontInfo), weakProfile);
     const auto defaultAppearance = AppearanceConfig::CopyAppearance(winrt::get_self<AppearanceConfig>(_DefaultAppearance), weakProfile);
 
@@ -116,7 +116,7 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
 
     if (_UnfocusedAppearance)
     {
-        Model::AppearanceConfig unfocused{ nullptr };
+        MTSM::AppearanceConfig unfocused{ nullptr };
         if (*_UnfocusedAppearance)
         {
             const auto appearance = AppearanceConfig::CopyAppearance(winrt::get_self<AppearanceConfig>(*_UnfocusedAppearance), weakProfile);
@@ -185,7 +185,7 @@ void Profile::LayerJson(const Json::Value& json)
 
     if (json.isMember(JsonKey(UnfocusedAppearanceKey)))
     {
-        auto unfocusedAppearance{ winrt::make_self<implementation::AppearanceConfig>(weak_ref<Model::Profile>(*this)) };
+        auto unfocusedAppearance{ winrt::make_self<implementation::AppearanceConfig>(weak_ref<MTSM::Profile>(*this)) };
 
         // If an unfocused appearance is defined in this profile, any undefined parameters are
         // taken from this profile's default appearance, so add it as a parent

@@ -164,7 +164,7 @@ namespace winrt::TerminalApp::implementation
         _dispatch = dispatch;
     }
 
-    void TabBase::SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap)
+    void TabBase::SetActionMap(const MTSM::IActionMapView& actionMap)
     {
         _actionMap = actionMap;
         _UpdateSwitchToTabKeyChord();

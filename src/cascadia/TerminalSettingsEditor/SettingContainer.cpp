@@ -228,12 +228,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         auto originTag{ Model::OriginTag::None };
         winrt::hstring source;
 
-        if (const auto& profile{ settingOrigin.try_as<Model::Profile>() })
+        if (const auto& profile{ settingOrigin.try_as<MTSM::Profile>() })
         {
             source = profile.Source();
             originTag = profile.Origin();
         }
-        else if (const auto& appearanceConfig{ settingOrigin.try_as<Model::AppearanceConfig>() })
+        else if (const auto& appearanceConfig{ settingOrigin.try_as<MTSM::AppearanceConfig>() })
         {
             const auto profile = appearanceConfig.SourceProfile();
             source = profile.Source();

@@ -108,7 +108,7 @@ IVector<NewTabMenuEntryModel> FolderEntry::Entries() const
         // empty, or if it should auto-inline.
         case NewTabMenuEntryType::Folder:
         {
-            const auto folderEntry = entry.as<Model::FolderEntry>();
+            const auto folderEntry = entry.as<MTSM::FolderEntry>();
             if (folderEntry.Entries().Size() == 0 && (!folderEntry.AllowEmpty() || folderEntry.Inlining() == FolderEntryInlining::Auto))
             {
                 continue;

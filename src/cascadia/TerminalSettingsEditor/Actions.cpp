@@ -24,7 +24,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     KeyBindingViewModel::KeyBindingViewModel(const WFC::IObservableVector<hstring>& availableActions) :
         KeyBindingViewModel(nullptr, availableActions.First().Current(), availableActions) {}
 
-    KeyBindingViewModel::KeyBindingViewModel(const Control::KeyChord& keys, const hstring& actionName, const IObservableVector<hstring>& availableActions) :
+    KeyBindingViewModel::KeyBindingViewModel(const MTControl::KeyChord& keys, const hstring& actionName, const IObservableVector<hstring>& availableActions) :
         _CurrentKeys{ keys },
         _KeyChordText{ KeyChordSerialization::ToString(keys) },
         _CurrentAction{ actionName },
@@ -85,7 +85,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         AttemptAcceptChanges(_ProposedKeys);
     }
 
-    void KeyBindingViewModel::AttemptAcceptChanges(const Control::KeyChord newKeys)
+    void KeyBindingViewModel::AttemptAcceptChanges(const MTControl::KeyChord newKeys)
     {
         const auto args{ make_self<ModifyKeyBindingEventArgs>(_CurrentKeys, // OldKeys
                                                               newKeys, // NewKeys
@@ -131,7 +131,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _State = e.Parameter().as<Editor::ActionsPageNavigationState>();
 
         // Populate AvailableActionAndArgs
-        _AvailableActionMap = single_threaded_map<hstring, Model::ActionAndArgs>();
+        _AvailableActionMap = single_threaded_map<hstring, MTSM::ActionAndArgs>();
         std::vector<hstring> availableActionAndArgs;
         for (const auto& [name, actionAndArgs] : _State.Settings().ActionMap().AvailableActions())
         {
@@ -225,7 +225,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void Actions::_ViewModelDeleteKeyBindingHandler(const Editor::KeyBindingViewModel& senderVM, const Control::KeyChord& keys)
+    void Actions::_ViewModelDeleteKeyBindingHandler(const Editor::KeyBindingViewModel& senderVM, const MTControl::KeyChord& keys)
     {
         // Update the settings model
         _State.Settings().ActionMap().DeleteKeyBinding(keys);
@@ -363,7 +363,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - keys - the associated key chord of the command we're looking for
     // Return Value:
     // - the index of the view model referencing the command. If the command doesn't exist, nullopt
-    std::optional<uint32_t> Actions::_GetContainerIndexByKeyChord(const Control::KeyChord& keys)
+    std::optional<uint32_t> Actions::_GetContainerIndexByKeyChord(const MTControl::KeyChord& keys)
     {
         for (uint32_t i = 0; i < _KeyBindingList.Size(); ++i)
         {

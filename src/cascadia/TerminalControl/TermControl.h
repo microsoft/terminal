@@ -26,11 +26,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     struct TermControl : TermControlT<TermControl>
     {
         TermControl(IControlSettings settings,
-                    Control::IControlAppearance unfocusedAppearance,
-                    TerminalConnection::ITerminalConnection connection);
+                    MTControl::IControlAppearance unfocusedAppearance,
+                    MTConnection::ITerminalConnection connection);
 
-        winrt::fire_and_forget UpdateControlSettings(Control::IControlSettings settings);
-        winrt::fire_and_forget UpdateControlSettings(Control::IControlSettings settings, Control::IControlAppearance unfocusedAppearance);
+        winrt::fire_and_forget UpdateControlSettings(MTControl::IControlSettings settings);
+        winrt::fire_and_forget UpdateControlSettings(MTControl::IControlSettings settings, MTControl::IControlAppearance unfocusedAppearance);
         IControlSettings Settings() const;
 
         hstring GetProfileName() const;
@@ -49,7 +49,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void WindowVisibilityChanged(const bool showOrHide);
 
-        void ColorSelection(Control::SelectionColor fg, Control::SelectionColor bg, Core::MatchMode matchMode);
+        void ColorSelection(MTControl::SelectionColor fg, MTControl::SelectionColor bg, Core::MatchMode matchMode);
 
 #pragma region ICoreState
         const uint64_t TaskbarState() const noexcept;
@@ -97,7 +97,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _RenderRetryButton_Click(const IInspectable& button, const IInspectable& args);
         winrt::fire_and_forget _RendererWarning(IInspectable sender,
-                                                Control::RendererWarningArgs args);
+                                                MTControl::RendererWarningArgs args);
 
         void CreateSearchBoxControl();
 
@@ -142,23 +142,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // clang-format off
         WINRT_CALLBACK(FontSizeChanged, Control::FontSizeChangedEventArgs);
 
-        PROJECTED_FORWARDED_TYPED_EVENT(CopyToClipboard,        IInspectable, Control::CopyToClipboardEventArgs, _core, CopyToClipboard);
-        PROJECTED_FORWARDED_TYPED_EVENT(TitleChanged,           IInspectable, Control::TitleChangedEventArgs, _core, TitleChanged);
+        PROJECTED_FORWARDED_TYPED_EVENT(CopyToClipboard,        IInspectable, MTControl::CopyToClipboardEventArgs, _core, CopyToClipboard);
+        PROJECTED_FORWARDED_TYPED_EVENT(TitleChanged,           IInspectable, MTControl::TitleChangedEventArgs, _core, TitleChanged);
         PROJECTED_FORWARDED_TYPED_EVENT(TabColorChanged,        IInspectable, IInspectable, _core, TabColorChanged);
         PROJECTED_FORWARDED_TYPED_EVENT(SetTaskbarProgress,     IInspectable, IInspectable, _core, TaskbarProgressChanged);
         PROJECTED_FORWARDED_TYPED_EVENT(ConnectionStateChanged, IInspectable, IInspectable, _core, ConnectionStateChanged);
-        PROJECTED_FORWARDED_TYPED_EVENT(ShowWindowChanged,      IInspectable, Control::ShowWindowArgs, _core, ShowWindowChanged);
+        PROJECTED_FORWARDED_TYPED_EVENT(ShowWindowChanged,      IInspectable, MTControl::ShowWindowArgs, _core, ShowWindowChanged);
         PROJECTED_FORWARDED_TYPED_EVENT(CloseTerminalRequested, IInspectable, IInspectable, _core, CloseTerminalRequested);
 
-        PROJECTED_FORWARDED_TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs, _interactivity, PasteFromClipboard);
+        PROJECTED_FORWARDED_TYPED_EVENT(PasteFromClipboard, IInspectable, MTControl::PasteFromClipboardEventArgs, _interactivity, PasteFromClipboard);
 
-        TYPED_EVENT(OpenHyperlink,             IInspectable, Control::OpenHyperlinkEventArgs);
-        TYPED_EVENT(RaiseNotice,               IInspectable, Control::NoticeEventArgs);
+        TYPED_EVENT(OpenHyperlink,             IInspectable, MTControl::OpenHyperlinkEventArgs);
+        TYPED_EVENT(RaiseNotice,               IInspectable, MTControl::NoticeEventArgs);
         TYPED_EVENT(HidePointerCursor,         IInspectable, IInspectable);
         TYPED_EVENT(RestorePointerCursor,      IInspectable, IInspectable);
         TYPED_EVENT(ReadOnlyChanged,           IInspectable, IInspectable);
         TYPED_EVENT(FocusFollowMouseRequested, IInspectable, IInspectable);
-        TYPED_EVENT(Initialized,               Control::TermControl, WUX::RoutedEventArgs);
+        TYPED_EVENT(Initialized,               MTControl::TermControl, WUX::RoutedEventArgs);
         TYPED_EVENT(WarningBell,               IInspectable, IInspectable);
         // clang-format on
 
@@ -175,9 +175,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // IRenderEngine is accessed when ControlCore calls Renderer::TriggerTeardown.
         // (C++ class members are destroyed in reverse order.)
         // Further, the TermControlAutomationPeer must be destructed after _uiaEngine!
-        Control::TermControlAutomationPeer _automationPeer{ nullptr };
-        Control::ControlInteractivity _interactivity{ nullptr };
-        Control::ControlCore _core{ nullptr };
+        MTControl::TermControlAutomationPeer _automationPeer{ nullptr };
+        MTControl::ControlInteractivity _interactivity{ nullptr };
+        MTControl::ControlCore _core{ nullptr };
 
         winrt::com_ptr<SearchBoxControl> _searchBox;
 
@@ -232,9 +232,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         void _UpdateSettingsFromUIThread();
-        void _UpdateAppearanceFromUIThread(Control::IControlAppearance newAppearance);
+        void _UpdateAppearanceFromUIThread(MTControl::IControlAppearance newAppearance);
         void _ApplyUISettings();
-        winrt::fire_and_forget UpdateAppearance(Control::IControlAppearance newAppearance);
+        winrt::fire_and_forget UpdateAppearance(MTControl::IControlAppearance newAppearance);
         void _SetBackgroundImage(const IControlAppearance& newAppearance);
 
         void _InitializeBackgroundBrush();
@@ -262,7 +262,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::fire_and_forget _DragDropHandler(WF::IInspectable sender, WUX::DragEventArgs e);
         void _DragOverHandler(const WF::IInspectable& sender, const WUX::DragEventArgs& e);
 
-        winrt::fire_and_forget _HyperlinkHandler(WF::IInspectable sender, Control::OpenHyperlinkEventArgs e);
+        winrt::fire_and_forget _HyperlinkHandler(WF::IInspectable sender, MTControl::OpenHyperlinkEventArgs e);
 
         void _CursorTimerTick(const WF::IInspectable& sender, const WF::IInspectable& e);
         void _BlinkTimerTick(const WF::IInspectable& sender, const WF::IInspectable& e);
@@ -275,7 +275,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _TerminalTabColorChanged(const std::optional<til::color> color);
 
-        void _ScrollPositionChanged(const IInspectable& sender, const Control::ScrollPositionChangedArgs& args);
+        void _ScrollPositionChanged(const IInspectable& sender, const MTControl::ScrollPositionChangedArgs& args);
         winrt::fire_and_forget _CursorPositionChanged(const IInspectable& sender, const IInspectable& args);
 
         bool _CapturePointer(const WF::IInspectable& sender, const WUX::Input::PointerRoutedEventArgs& e);
@@ -303,15 +303,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _FontInfoHandler(const IInspectable& sender, const FontInfoEventArgs& eventArgs);
 
         winrt::fire_and_forget _hoveredHyperlinkChanged(IInspectable sender, IInspectable args);
-        winrt::fire_and_forget _updateSelectionMarkers(IInspectable sender, Control::UpdateSelectionMarkersEventArgs args);
+        winrt::fire_and_forget _updateSelectionMarkers(IInspectable sender, MTControl::UpdateSelectionMarkersEventArgs args);
 
         void _coreFontSizeChanged(const int fontWidth,
                                   const int fontHeight,
                                   const bool isInitialChange);
-        winrt::fire_and_forget _coreTransparencyChanged(IInspectable sender, Control::TransparencyChangedEventArgs args);
-        void _coreRaisedNotice(const IInspectable& s, const Control::NoticeEventArgs& args);
+        winrt::fire_and_forget _coreTransparencyChanged(IInspectable sender, MTControl::TransparencyChangedEventArgs args);
+        void _coreRaisedNotice(const IInspectable& s, const MTControl::NoticeEventArgs& args);
         void _coreWarningBell(const IInspectable& sender, const IInspectable& args);
-        void _coreFoundMatch(const IInspectable& sender, const Control::FoundResultsArgs& args);
+        void _coreFoundMatch(const IInspectable& sender, const MTControl::FoundResultsArgs& args);
 
         til::point _toPosInDips(const Core::Point terminalCellPos);
         void _throttledUpdateScrollbar(const ScrollBarUpdate& update);

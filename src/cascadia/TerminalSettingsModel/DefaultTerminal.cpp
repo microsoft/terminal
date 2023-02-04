@@ -60,12 +60,12 @@ winrt::hstring DefaultTerminal::Icon() const
     return _pkg.info.logo.empty() ? winrt::hstring{ L"\uE756" } : winrt::hstring{ _pkg.info.logo };
 }
 
-std::pair<std::vector<Model::DefaultTerminal>, Model::DefaultTerminal> DefaultTerminal::Available()
+std::pair<std::vector<MTSM::DefaultTerminal>, MTSM::DefaultTerminal> DefaultTerminal::Available()
 {
     // The potential of returning nullptr for defaultTerminal feels weird, but XAML can
     // handle that appropriately and will select nothing as current in the dropdown.
-    std::vector<Model::DefaultTerminal> defaultTerminals;
-    Model::DefaultTerminal defaultTerminal{ nullptr };
+    std::vector<MTSM::DefaultTerminal> defaultTerminals;
+    MTSM::DefaultTerminal defaultTerminal{ nullptr };
 
     std::vector<DelegationConfig::DelegationPackage> allPackages;
     DelegationConfig::DelegationPackage currentPackage;
@@ -97,7 +97,7 @@ bool DefaultTerminal::HasCurrent()
     return !currentPackage.pair.IsDefault();
 }
 
-void DefaultTerminal::Current(const Model::DefaultTerminal& term)
+void DefaultTerminal::Current(const MTSM::DefaultTerminal& term)
 {
     THROW_IF_FAILED(DelegationConfig::s_SetDefaultByPackage(winrt::get_self<DefaultTerminal>(term)->_pkg, true));
 

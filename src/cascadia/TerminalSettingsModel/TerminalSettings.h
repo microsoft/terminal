@@ -35,37 +35,37 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         public TerminalSettingsCreateResultT<TerminalSettingsCreateResult>
     {
     public:
-        TerminalSettingsCreateResult(Model::TerminalSettings defaultSettings, Model::TerminalSettings unfocusedSettings) :
+        TerminalSettingsCreateResult(MTSM::TerminalSettings defaultSettings, MTSM::TerminalSettings unfocusedSettings) :
             _defaultSettings(defaultSettings),
             _unfocusedSettings(unfocusedSettings) {}
 
-        TerminalSettingsCreateResult(Model::TerminalSettings defaultSettings) :
+        TerminalSettingsCreateResult(MTSM::TerminalSettings defaultSettings) :
             _defaultSettings(defaultSettings),
             _unfocusedSettings(nullptr) {}
 
-        Model::TerminalSettings DefaultSettings() { return _defaultSettings; };
-        Model::TerminalSettings UnfocusedSettings() { return _unfocusedSettings; };
+        MTSM::TerminalSettings DefaultSettings() { return _defaultSettings; };
+        MTSM::TerminalSettings UnfocusedSettings() { return _unfocusedSettings; };
 
     private:
-        Model::TerminalSettings _defaultSettings;
-        Model::TerminalSettings _unfocusedSettings;
+        MTSM::TerminalSettings _defaultSettings;
+        MTSM::TerminalSettings _unfocusedSettings;
     };
 
     struct TerminalSettings : TerminalSettingsT<TerminalSettings>, IInheritable<TerminalSettings>
     {
         TerminalSettings() = default;
 
-        static Model::TerminalSettings CreateForPreview(const Model::CascadiaSettings& appSettings, const Model::Profile& profile);
+        static MTSM::TerminalSettings CreateForPreview(const MTSM::CascadiaSettings& appSettings, const MTSM::Profile& profile);
 
-        static Model::TerminalSettingsCreateResult CreateWithProfile(const Model::CascadiaSettings& appSettings,
-                                                                     const Model::Profile& profile,
-                                                                     const Control::IKeyBindings& keybindings);
+        static MTSM::TerminalSettingsCreateResult CreateWithProfile(const MTSM::CascadiaSettings& appSettings,
+                                                                    const MTSM::Profile& profile,
+                                                                    const MTControl::IKeyBindings& keybindings);
 
-        static Model::TerminalSettingsCreateResult CreateWithNewTerminalArgs(const Model::CascadiaSettings& appSettings,
-                                                                             const Model::NewTerminalArgs& newTerminalArgs,
-                                                                             const Control::IKeyBindings& keybindings);
+        static MTSM::TerminalSettingsCreateResult CreateWithNewTerminalArgs(const MTSM::CascadiaSettings& appSettings,
+                                                                            const MTSM::NewTerminalArgs& newTerminalArgs,
+                                                                            const MTControl::IKeyBindings& keybindings);
 
-        void ApplyColorScheme(const Model::ColorScheme& scheme);
+        void ApplyColorScheme(const MTSM::ColorScheme& scheme);
 
         // --------------------------- Core Settings ---------------------------
         //  All of these settings are defined in ICoreSettings.
@@ -76,26 +76,26 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void ColorTable(std::array<Microsoft::Terminal::Core::Color, 16> colors);
         std::array<Microsoft::Terminal::Core::Color, 16> ColorTable();
 
-        INHERITABLE_SETTING(Model::TerminalSettings, til::color, DefaultForeground, DEFAULT_FOREGROUND);
-        INHERITABLE_SETTING(Model::TerminalSettings, til::color, DefaultBackground, DEFAULT_BACKGROUND);
-        INHERITABLE_SETTING(Model::TerminalSettings, til::color, SelectionBackground, DEFAULT_FOREGROUND);
-        INHERITABLE_SETTING(Model::TerminalSettings, int32_t, HistorySize, DEFAULT_HISTORY_SIZE);
-        INHERITABLE_SETTING(Model::TerminalSettings, int32_t, InitialRows, 30);
-        INHERITABLE_SETTING(Model::TerminalSettings, int32_t, InitialCols, 80);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, til::color, DefaultForeground, DEFAULT_FOREGROUND);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, til::color, DefaultBackground, DEFAULT_BACKGROUND);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, til::color, SelectionBackground, DEFAULT_FOREGROUND);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, int32_t, HistorySize, DEFAULT_HISTORY_SIZE);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, int32_t, InitialRows, 30);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, int32_t, InitialCols, 80);
 
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, SnapOnInput, true);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, AltGrAliasing, true);
-        INHERITABLE_SETTING(Model::TerminalSettings, til::color, CursorColor, DEFAULT_CURSOR_COLOR);
-        INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Core::CursorStyle, CursorShape, Core::CursorStyle::Vintage);
-        INHERITABLE_SETTING(Model::TerminalSettings, uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
-        INHERITABLE_SETTING(Model::TerminalSettings, hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, CopyOnSelect, false);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, FocusFollowMouse, false);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, TrimBlockSelection, true);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, DetectURLs, true);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, VtPassthrough, false);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, bool, SnapOnInput, true);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, bool, AltGrAliasing, true);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, til::color, CursorColor, DEFAULT_CURSOR_COLOR);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, Microsoft::Terminal::Core::CursorStyle, CursorShape, Core::CursorStyle::Vintage);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, bool, CopyOnSelect, false);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, bool, FocusFollowMouse, false);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, bool, TrimBlockSelection, true);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, bool, DetectURLs, true);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, bool, VtPassthrough, false);
 
-        INHERITABLE_SETTING(Model::TerminalSettings, WF::IReference<Microsoft::Terminal::Core::Color>, TabColor, nullptr);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, WF::IReference<Microsoft::Terminal::Core::Color>, TabColor, nullptr);
 
         // When set, StartingTabColor allows to create a terminal with a "sticky" tab color.
         // This color is prioritized above the TabColor (that is usually initialized based on profile settings).
@@ -105,72 +105,72 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // TODO: to ensure that this property is not populated during settings reload,
         // we should consider moving this property to a separate interface,
         // passed to the terminal only upon creation.
-        INHERITABLE_SETTING(Model::TerminalSettings, WF::IReference<Microsoft::Terminal::Core::Color>, StartingTabColor, nullptr);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, WF::IReference<Microsoft::Terminal::Core::Color>, StartingTabColor, nullptr);
 
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, IntenseIsBold);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, IntenseIsBright);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, bool, IntenseIsBold);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, bool, IntenseIsBright);
 
-        INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Core::AdjustTextMode, AdjustIndistinguishableColors, Core::AdjustTextMode::Never);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, Microsoft::Terminal::Core::AdjustTextMode, AdjustIndistinguishableColors, Core::AdjustTextMode::Never);
 
         // ------------------------ End of Core Settings -----------------------
 
-        INHERITABLE_SETTING(Model::TerminalSettings, hstring, ProfileName);
-        INHERITABLE_SETTING(Model::TerminalSettings, hstring, ProfileSource);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, hstring, ProfileName);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, hstring, ProfileSource);
 
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, UseAcrylic, false);
-        INHERITABLE_SETTING(Model::TerminalSettings, double, Opacity, UseAcrylic() ? 0.5 : 1.0);
-        INHERITABLE_SETTING(Model::TerminalSettings, hstring, Padding, DEFAULT_PADDING);
-        INHERITABLE_SETTING(Model::TerminalSettings, hstring, FontFace, DEFAULT_FONT_FACE);
-        INHERITABLE_SETTING(Model::TerminalSettings, float, FontSize, DEFAULT_FONT_SIZE);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, bool, UseAcrylic, false);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, double, Opacity, UseAcrylic() ? 0.5 : 1.0);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, hstring, Padding, DEFAULT_PADDING);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, hstring, FontFace, DEFAULT_FONT_FACE);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, float, FontSize, DEFAULT_FONT_SIZE);
 
-        INHERITABLE_SETTING(Model::TerminalSettings, WUT::FontWeight, FontWeight);
-        INHERITABLE_SETTING(Model::TerminalSettings, IFontAxesMap, FontAxes);
-        INHERITABLE_SETTING(Model::TerminalSettings, IFontFeatureMap, FontFeatures);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, WUT::FontWeight, FontWeight);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, IFontAxesMap, FontAxes);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, IFontFeatureMap, FontFeatures);
 
-        INHERITABLE_SETTING(Model::TerminalSettings, Model::ColorScheme, AppliedColorScheme);
-        INHERITABLE_SETTING(Model::TerminalSettings, hstring, BackgroundImage);
-        INHERITABLE_SETTING(Model::TerminalSettings, double, BackgroundImageOpacity, 1.0);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, MTSM::ColorScheme, AppliedColorScheme);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, hstring, BackgroundImage);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, double, BackgroundImageOpacity, 1.0);
 
-        INHERITABLE_SETTING(Model::TerminalSettings, WUXMedia::Stretch, BackgroundImageStretchMode, WUXMedia::Stretch::UniformToFill);
-        INHERITABLE_SETTING(Model::TerminalSettings, WUX::HorizontalAlignment, BackgroundImageHorizontalAlignment, WUX::HorizontalAlignment::Center);
-        INHERITABLE_SETTING(Model::TerminalSettings, WUX::VerticalAlignment, BackgroundImageVerticalAlignment, WUX::VerticalAlignment::Center);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, WUXMedia::Stretch, BackgroundImageStretchMode, WUXMedia::Stretch::UniformToFill);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, WUX::HorizontalAlignment, BackgroundImageHorizontalAlignment, WUX::HorizontalAlignment::Center);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, WUX::VerticalAlignment, BackgroundImageVerticalAlignment, WUX::VerticalAlignment::Center);
 
-        INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::IKeyBindings, KeyBindings, nullptr);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, MTControl::IKeyBindings, KeyBindings, nullptr);
 
-        INHERITABLE_SETTING(Model::TerminalSettings, hstring, Commandline);
-        INHERITABLE_SETTING(Model::TerminalSettings, hstring, StartingDirectory);
-        INHERITABLE_SETTING(Model::TerminalSettings, hstring, StartingTitle);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, SuppressApplicationTitle);
-        INHERITABLE_SETTING(Model::TerminalSettings, hstring, EnvironmentVariables);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, hstring, Commandline);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, hstring, StartingDirectory);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, hstring, StartingTitle);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, bool, SuppressApplicationTitle);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, hstring, EnvironmentVariables);
 
-        INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::ScrollbarState, ScrollState, Microsoft::Terminal::Control::ScrollbarState::Visible);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, UseAtlasEngine, false);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, Microsoft::Terminal::Control::ScrollbarState, ScrollState, Microsoft::Terminal::Control::ScrollbarState::Visible);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, bool, UseAtlasEngine, false);
 
-        INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale);
 
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, RetroTerminalEffect, false);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, ForceFullRepaintRendering, false);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, SoftwareRendering, false);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, UseBackgroundImageForWindow, false);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, ForceVTInput, false);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, bool, RetroTerminalEffect, false);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, bool, ForceFullRepaintRendering, false);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, bool, SoftwareRendering, false);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, bool, UseBackgroundImageForWindow, false);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, bool, ForceVTInput, false);
 
-        INHERITABLE_SETTING(Model::TerminalSettings, hstring, PixelShaderPath);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, hstring, PixelShaderPath);
 
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, Elevate, false);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, bool, Elevate, false);
 
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, AutoMarkPrompts, false);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, ShowMarks, false);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, bool, AutoMarkPrompts, false);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, bool, ShowMarks, false);
 
     private:
         std::optional<std::array<Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE>> _ColorTable;
         std::span<Microsoft::Terminal::Core::Color> _getColorTableImpl();
 
-        static winrt::com_ptr<implementation::TerminalSettings> _CreateWithProfileCommon(const Model::CascadiaSettings& appSettings, const Model::Profile& profile);
-        void _ApplyProfileSettings(const Model::Profile& profile);
+        static winrt::com_ptr<implementation::TerminalSettings> _CreateWithProfileCommon(const MTSM::CascadiaSettings& appSettings, const MTSM::Profile& profile);
+        void _ApplyProfileSettings(const MTSM::Profile& profile);
 
-        void _ApplyGlobalSettings(const Model::GlobalAppSettings& globalSettings) noexcept;
-        void _ApplyAppearanceSettings(const Microsoft::Terminal::Settings::Model::IAppearanceConfig& appearance,
-                                      const WFC::IMapView<hstring, Microsoft::Terminal::Settings::Model::ColorScheme>& schemes,
+        void _ApplyGlobalSettings(const MTSM::GlobalAppSettings& globalSettings) noexcept;
+        void _ApplyAppearanceSettings(const MTSM::IAppearanceConfig& appearance,
+                                      const WFC::IMapView<hstring, MTSM::ColorScheme>& schemes,
                                       const MTSM::Theme currentTheme);
 
         friend class SettingsModelLocalTests::TerminalSettingsTests;

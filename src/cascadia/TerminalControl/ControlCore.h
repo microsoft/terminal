@@ -53,9 +53,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     struct ControlCore : ControlCoreT<ControlCore>
     {
     public:
-        ControlCore(Control::IControlSettings settings,
-                    Control::IControlAppearance unfocusedAppearance,
-                    TerminalConnection::ITerminalConnection connection);
+        ControlCore(MTControl::IControlSettings settings,
+                    MTControl::IControlAppearance unfocusedAppearance,
+                    MTConnection::ITerminalConnection connection);
         ~ControlCore();
 
         bool Initialize(const double actualWidth,
@@ -63,11 +63,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                         const double compositionScale);
         void EnablePainting();
 
-        void UpdateSettings(const Control::IControlSettings& settings, const IControlAppearance& newAppearance);
+        void UpdateSettings(const MTControl::IControlSettings& settings, const IControlAppearance& newAppearance);
         void ApplyAppearance(const bool& focused);
-        Control::IControlSettings Settings() { return *_settings; };
-        Control::IControlAppearance FocusedAppearance() const { return *_settings->FocusedAppearance(); };
-        Control::IControlAppearance UnfocusedAppearance() const { return *_settings->UnfocusedAppearance(); };
+        MTControl::IControlSettings Settings() { return *_settings; };
+        MTControl::IControlAppearance FocusedAppearance() const { return *_settings->FocusedAppearance(); };
+        MTControl::IControlAppearance UnfocusedAppearance() const { return *_settings->UnfocusedAppearance(); };
         bool HasUnfocusedAppearance() const;
 
         MTCore::Scheme ColorScheme() const noexcept;
@@ -115,7 +115,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         ::Microsoft::Console::Render::IRenderData* GetRenderData() const;
 
-        void ColorSelection(const Control::SelectionColor& fg, const Control::SelectionColor& bg, Core::MatchMode matchMode);
+        void ColorSelection(const MTControl::SelectionColor& fg, const MTControl::SelectionColor& bg, Core::MatchMode matchMode);
 
         void Close();
 
@@ -212,26 +212,26 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // clang-format off
         WINRT_CALLBACK(FontSizeChanged, Control::FontSizeChangedEventArgs);
 
-        TYPED_EVENT(CopyToClipboard,           IInspectable, Control::CopyToClipboardEventArgs);
-        TYPED_EVENT(TitleChanged,              IInspectable, Control::TitleChangedEventArgs);
+        TYPED_EVENT(CopyToClipboard,           IInspectable, MTControl::CopyToClipboardEventArgs);
+        TYPED_EVENT(TitleChanged,              IInspectable, MTControl::TitleChangedEventArgs);
         TYPED_EVENT(WarningBell,               IInspectable, IInspectable);
         TYPED_EVENT(TabColorChanged,           IInspectable, IInspectable);
         TYPED_EVENT(BackgroundColorChanged,    IInspectable, IInspectable);
-        TYPED_EVENT(ScrollPositionChanged,     IInspectable, Control::ScrollPositionChangedArgs);
+        TYPED_EVENT(ScrollPositionChanged,     IInspectable, MTControl::ScrollPositionChangedArgs);
         TYPED_EVENT(CursorPositionChanged,     IInspectable, IInspectable);
         TYPED_EVENT(TaskbarProgressChanged,    IInspectable, IInspectable);
         TYPED_EVENT(ConnectionStateChanged,    IInspectable, IInspectable);
         TYPED_EVENT(HoveredHyperlinkChanged,   IInspectable, IInspectable);
         TYPED_EVENT(RendererEnteredErrorState, IInspectable, IInspectable);
         TYPED_EVENT(SwapChainChanged,          IInspectable, IInspectable);
-        TYPED_EVENT(RendererWarning,           IInspectable, Control::RendererWarningArgs);
-        TYPED_EVENT(RaiseNotice,               IInspectable, Control::NoticeEventArgs);
-        TYPED_EVENT(TransparencyChanged,       IInspectable, Control::TransparencyChangedEventArgs);
+        TYPED_EVENT(RendererWarning,           IInspectable, MTControl::RendererWarningArgs);
+        TYPED_EVENT(RaiseNotice,               IInspectable, MTControl::NoticeEventArgs);
+        TYPED_EVENT(TransparencyChanged,       IInspectable, MTControl::TransparencyChangedEventArgs);
         TYPED_EVENT(ReceivedOutput,            IInspectable, IInspectable);
-        TYPED_EVENT(FoundMatch,                IInspectable, Control::FoundResultsArgs);
-        TYPED_EVENT(ShowWindowChanged,         IInspectable, Control::ShowWindowArgs);
-        TYPED_EVENT(UpdateSelectionMarkers,    IInspectable, Control::UpdateSelectionMarkersEventArgs);
-        TYPED_EVENT(OpenHyperlink,             IInspectable, Control::OpenHyperlinkEventArgs);
+        TYPED_EVENT(FoundMatch,                IInspectable, MTControl::FoundResultsArgs);
+        TYPED_EVENT(ShowWindowChanged,         IInspectable, MTControl::ShowWindowArgs);
+        TYPED_EVENT(UpdateSelectionMarkers,    IInspectable, MTControl::UpdateSelectionMarkersEventArgs);
+        TYPED_EVENT(OpenHyperlink,             IInspectable, MTControl::OpenHyperlinkEventArgs);
         TYPED_EVENT(CloseTerminalRequested,    IInspectable, IInspectable);
         // clang-format on
 
@@ -239,9 +239,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _initializedTerminal{ false };
         bool _closing{ false };
 
-        TerminalConnection::ITerminalConnection _connection{ nullptr };
+        MTConnection::ITerminalConnection _connection{ nullptr };
         event_token _connectionOutputEventToken;
-        TerminalConnection::ITerminalConnection::StateChanged_revoker _connectionStateChangedRevoker;
+        MTConnection::ITerminalConnection::StateChanged_revoker _connectionStateChangedRevoker;
 
         winrt::com_ptr<ControlSettings> _settings{ nullptr };
 
@@ -281,7 +281,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         WS::DispatcherQueue _dispatcher{ nullptr };
         std::shared_ptr<ThrottledFuncTrailing<>> _tsfTryRedrawCanvas;
         std::unique_ptr<til::throttled_func_trailing<>> _updatePatternLocations;
-        std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> _updateScrollBar;
+        std::shared_ptr<ThrottledFuncTrailing<MTControl::ScrollPositionChangedArgs>> _updateScrollBar;
 
         bool _setFontSizeUnderLock(float fontSize);
         void _updateFont(const bool initialUpdate = false);

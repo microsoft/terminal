@@ -12,7 +12,7 @@ using namespace MTSM;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    InteractionViewModel::InteractionViewModel(Model::GlobalAppSettings globalSettings) :
+    InteractionViewModel::InteractionViewModel(MTSM::GlobalAppSettings globalSettings) :
         _GlobalSettings{ globalSettings }
     {
         INITIALIZE_BINDABLE_ENUM_SETTING(TabSwitcherMode, TabSwitcherMode, TabSwitcherMode, L"Globals_TabSwitcherMode", L"Content");

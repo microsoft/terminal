@@ -22,8 +22,8 @@ namespace winrt::TerminalApp::implementation
         void SetDispatch(const MTApp::ShortcutActionDispatch& dispatch);
 
         void UpdateTabViewIndex(const uint32_t idx, const uint32_t numTabs);
-        void SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap);
-        virtual std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> BuildStartupActions() const = 0;
+        void SetActionMap(const MTSM::IActionMapView& actionMap);
+        virtual std::vector<MTSM::ActionAndArgs> BuildStartupActions() const = 0;
 
         virtual std::optional<winrt::Windows::UI::Color> GetTabColor();
         void ThemeColor(const MTSM::ThemeColor& focused,
@@ -53,7 +53,7 @@ namespace winrt::TerminalApp::implementation
         WUXC::MenuFlyoutItem _closeOtherTabsMenuItem{};
         WUXC::MenuFlyoutItem _closeTabsAfterMenuItem{};
         MTApp::ShortcutActionDispatch _dispatch;
-        Microsoft::Terminal::Settings::Model::IActionMapView _actionMap{ nullptr };
+        MTSM::IActionMapView _actionMap{ nullptr };
         winrt::hstring _keyChord{};
 
         MTSM::ThemeColor _themeColor{ nullptr };

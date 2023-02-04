@@ -92,7 +92,7 @@ namespace winrt::TerminalApp::implementation
     // - args: The SetColorScheme args with the name of the scheme to use.
     // Return Value:
     // - <none>
-    void TerminalPage::_PreviewColorScheme(const Settings::Model::SetColorSchemeArgs& args)
+    void TerminalPage::_PreviewColorScheme(const MTSM::SetColorSchemeArgs& args)
     {
         if (const auto& scheme{ _settings.GlobalSettings().ColorSchemes().TryLookup(args.SchemeName()) })
         {
@@ -118,7 +118,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_PreviewAdjustOpacity(const Settings::Model::AdjustOpacityArgs& args)
+    void TerminalPage::_PreviewAdjustOpacity(const MTSM::AdjustOpacityArgs& args)
     {
         const auto backup = _restorePreviewFuncs.empty();
 
@@ -140,7 +140,7 @@ namespace winrt::TerminalApp::implementation
         });
     }
 
-    void TerminalPage::_PreviewAction(const Settings::Model::ActionAndArgs& args)
+    void TerminalPage::_PreviewAction(const MTSM::ActionAndArgs& args)
     {
         switch (args.Action())
         {
@@ -179,7 +179,7 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - <none>
     void TerminalPage::_PreviewActionHandler(const IInspectable& /*sender*/,
-                                             const Microsoft::Terminal::Settings::Model::Command& args)
+                                             const MTSM::Command& args)
     {
         if (args == nullptr || args.ActionAndArgs() == nullptr)
         {

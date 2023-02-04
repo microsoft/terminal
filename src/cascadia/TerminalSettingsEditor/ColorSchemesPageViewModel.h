@@ -14,8 +14,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct ColorSchemesPageViewModel : ColorSchemesPageViewModelT<ColorSchemesPageViewModel>, ViewModelHelper<ColorSchemesPageViewModel>
     {
     public:
-        ColorSchemesPageViewModel(const Model::CascadiaSettings& settings);
-        void UpdateSettings(const Model::CascadiaSettings& settings);
+        ColorSchemesPageViewModel(const MTSM::CascadiaSettings& settings);
+        void UpdateSettings(const MTSM::CascadiaSettings& settings);
 
         void CurrentScheme(const Editor::ColorSchemeViewModel& newSelectedScheme);
         Editor::ColorSchemeViewModel CurrentScheme();
@@ -39,8 +39,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         Editor::ColorSchemeViewModel _CurrentScheme{ nullptr };
-        Model::CascadiaSettings _settings;
-        WFC::IMap<Editor::ColorSchemeViewModel, Model::ColorScheme> _viewModelToSchemeMap;
+        MTSM::CascadiaSettings _settings;
+        WFC::IMap<Editor::ColorSchemeViewModel, MTSM::ColorScheme> _viewModelToSchemeMap;
 
         void _MakeColorSchemeVMsHelper();
     };

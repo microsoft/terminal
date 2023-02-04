@@ -64,7 +64,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return h;
     }
 
-    bool KeyChord::Equals(const Control::KeyChord& other) const noexcept
+    bool KeyChord::Equals(const MTControl::KeyChord& other) const noexcept
     {
         // Two KeyChords are equal if they have the same modifiers and either identical
         // Vkey or ScanCode, with Vkey being preferred. Vkey is preferred because:

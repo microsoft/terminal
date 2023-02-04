@@ -32,21 +32,21 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Json::Value ToJson() const;
         void LayerJson(const Json::Value& json);
 
-        Model::Profile SourceProfile();
+        MTSM::Profile SourceProfile();
 
         winrt::hstring ExpandedBackgroundImagePath();
 
-        INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, Foreground, nullptr);
-        INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, Background, nullptr);
-        INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, SelectionBackground, nullptr);
-        INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, CursorColor, nullptr);
-        INHERITABLE_SETTING(Model::IAppearanceConfig, double, Opacity, 1.0);
+        INHERITABLE_NULLABLE_SETTING(MTSM::IAppearanceConfig, Microsoft::Terminal::Core::Color, Foreground, nullptr);
+        INHERITABLE_NULLABLE_SETTING(MTSM::IAppearanceConfig, Microsoft::Terminal::Core::Color, Background, nullptr);
+        INHERITABLE_NULLABLE_SETTING(MTSM::IAppearanceConfig, Microsoft::Terminal::Core::Color, SelectionBackground, nullptr);
+        INHERITABLE_NULLABLE_SETTING(MTSM::IAppearanceConfig, Microsoft::Terminal::Core::Color, CursorColor, nullptr);
+        INHERITABLE_SETTING(MTSM::IAppearanceConfig, double, Opacity, 1.0);
 
-        INHERITABLE_SETTING(Model::IAppearanceConfig, hstring, DarkColorSchemeName, L"Campbell");
-        INHERITABLE_SETTING(Model::IAppearanceConfig, hstring, LightColorSchemeName, L"Campbell");
+        INHERITABLE_SETTING(MTSM::IAppearanceConfig, hstring, DarkColorSchemeName, L"Campbell");
+        INHERITABLE_SETTING(MTSM::IAppearanceConfig, hstring, LightColorSchemeName, L"Campbell");
 
 #define APPEARANCE_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
-    INHERITABLE_SETTING(Model::IAppearanceConfig, type, name, ##__VA_ARGS__)
+    INHERITABLE_SETTING(MTSM::IAppearanceConfig, type, name, ##__VA_ARGS__)
         MTSM_APPEARANCE_SETTINGS(APPEARANCE_SETTINGS_INITIALIZE)
 #undef APPEARANCE_SETTINGS_INITIALIZE
 

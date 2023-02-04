@@ -12,7 +12,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct InteractionViewModel : InteractionViewModelT<InteractionViewModel>, ViewModelHelper<InteractionViewModel>
     {
     public:
-        InteractionViewModel(Model::GlobalAppSettings globalSettings);
+        InteractionViewModel(MTSM::GlobalAppSettings globalSettings);
 
         // DON'T YOU DARE ADD A `WINRT_CALLBACK(PropertyChanged` TO A CLASS DERIVED FROM ViewModelHelper. Do this instead:
         using ViewModelHelper<InteractionViewModel>::PropertyChanged;
@@ -30,7 +30,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, ConfirmCloseAllTabs);
 
     private:
-        Model::GlobalAppSettings _GlobalSettings;
+        MTSM::GlobalAppSettings _GlobalSettings;
     };
 };
 

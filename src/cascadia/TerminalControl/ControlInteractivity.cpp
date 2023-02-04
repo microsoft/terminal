@@ -37,8 +37,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     ControlInteractivity::ControlInteractivity(IControlSettings settings,
-                                               Control::IControlAppearance unfocusedAppearance,
-                                               TerminalConnection::ITerminalConnection connection) :
+                                               MTControl::IControlAppearance unfocusedAppearance,
+                                               MTConnection::ITerminalConnection connection) :
         _touchAnchor{ std::nullopt },
         _lastMouseClickTimestamp{},
         _lastMouseClickPos{},
@@ -68,7 +68,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _multiClickTimer = GetDoubleClickTime() * 1000;
     }
 
-    Control::ControlCore ControlInteractivity::Core()
+    MTControl::ControlCore ControlInteractivity::Core()
     {
         return *_core;
     }
@@ -645,7 +645,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - None
     // Return Value:
     // - The automation peer for our control
-    Control::InteractivityAutomationPeer ControlInteractivity::OnCreateAutomationPeer()
+    MTControl::InteractivityAutomationPeer ControlInteractivity::OnCreateAutomationPeer()
     try
     {
         const auto autoPeer = winrt::make_self<implementation::InteractivityAutomationPeer>(this);

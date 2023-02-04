@@ -44,9 +44,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     constexpr std::wstring_view darkThemeName{ L"dark" };
     constexpr std::wstring_view lightThemeName{ L"light" };
 
-    GlobalAppearanceViewModel::GlobalAppearanceViewModel(Model::GlobalAppSettings globalSettings) :
+    GlobalAppearanceViewModel::GlobalAppearanceViewModel(MTSM::GlobalAppSettings globalSettings) :
         _GlobalSettings{ globalSettings },
-        _ThemeList{ single_threaded_observable_vector<Model::Theme>() }
+        _ThemeList{ single_threaded_observable_vector<MTSM::Theme>() }
     {
         INITIALIZE_BINDABLE_ENUM_SETTING(NewTabPosition, NewTabPosition, NewTabPosition, L"Globals_NewTabPosition", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(TabWidthMode, TabViewWidthMode, MUXC::TabViewWidthMode, L"Globals_TabWidthMode", L"Content");
@@ -216,9 +216,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // theme.
     void GlobalAppearanceViewModel::CurrentTheme(const WF::IInspectable& tag)
     {
-        if (const auto& theme{ tag.try_as<Model::Theme>() })
+        if (const auto& theme{ tag.try_as<MTSM::Theme>() })
         {
-            _GlobalSettings.Theme(Model::ThemePair{ theme.Name() });
+            _GlobalSettings.Theme(MTSM::ThemePair{ theme.Name() });
         }
     }
 
@@ -234,7 +234,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - theme: the theme to get the display name for.
     // Return Value:
     // - the potentially localized name to use for this Theme.
-    winrt::hstring GlobalAppearanceViewModel::ThemeNameConverter(const Model::Theme& theme)
+    winrt::hstring GlobalAppearanceViewModel::ThemeNameConverter(const MTSM::Theme& theme)
     {
         if (theme.Name() == darkThemeName)
         {

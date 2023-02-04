@@ -28,7 +28,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // Since a comma does not work very nicely in a macro and we need one
         // for our map definition, we use a macro te define a comma.
 #define COMMA ,
-        WINRT_PROPERTY(WFC::IMap<int COMMA Model::Profile>, Profiles);
+        WINRT_PROPERTY(WFC::IMap<int COMMA MTSM::Profile>, Profiles);
 #undef COMMA
 
         // We have a protected/hidden constructor so consumers cannot instantiate

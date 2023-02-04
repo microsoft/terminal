@@ -22,7 +22,7 @@ namespace winrt::TerminalApp::implementation
         bool IsKeyChordExplicitlyUnbound(const MTControl::KeyChord& kc);
 
         void SetDispatch(const MTApp::ShortcutActionDispatch& dispatch);
-        void SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap);
+        void SetActionMap(const MTSM::IActionMapView& actionMap);
 
     private:
         MTSM::IActionMapView _actionMap{ nullptr };

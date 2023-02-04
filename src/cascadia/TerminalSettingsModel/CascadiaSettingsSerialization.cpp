@@ -811,7 +811,7 @@ void SettingsLoader::_executeGenerator(const IDynamicProfileGenerator& generator
 //   profiles inserted into their list of profiles.
 // Return Value:
 // - a unique_ptr containing a new CascadiaSettings object.
-Model::CascadiaSettings CascadiaSettings::LoadAll()
+MTSM::CascadiaSettings CascadiaSettings::LoadAll()
 try
 {
     FILETIME lastWriteTime{};
@@ -1016,7 +1016,7 @@ void CascadiaSettings::_researchOnLoad()
 // - <none>
 // Return Value:
 // - a unique_ptr to a CascadiaSettings with the connection types and settings for Universal terminal
-Model::CascadiaSettings CascadiaSettings::LoadUniversal()
+MTSM::CascadiaSettings CascadiaSettings::LoadUniversal()
 {
     return *winrt::make_self<CascadiaSettings>(std::string_view{}, DefaultUniversalJson);
 }
@@ -1028,7 +1028,7 @@ Model::CascadiaSettings CascadiaSettings::LoadUniversal()
 // - <none>
 // Return Value:
 // - a unique_ptr to a CascadiaSettings with the settings from defaults.json
-Model::CascadiaSettings CascadiaSettings::LoadDefaults()
+MTSM::CascadiaSettings CascadiaSettings::LoadDefaults()
 {
     return *winrt::make_self<CascadiaSettings>(std::string_view{}, DefaultJson);
 }
@@ -1052,8 +1052,8 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
     _activeProfiles{},
     _warnings{}
 {
-    std::vector<Model::Profile> allProfiles;
-    std::vector<Model::Profile> activeProfiles;
+    std::vector<MTSM::Profile> allProfiles;
+    std::vector<MTSM::Profile> activeProfiles;
     std::vector<Model::SettingsLoadWarnings> warnings;
 
     allProfiles.reserve(loader.userSettings.profiles.size());
@@ -1297,12 +1297,12 @@ void CascadiaSettings::_resolveDefaultProfile() const
 //   multiple of these entries are found.
 void CascadiaSettings::_resolveNewTabMenuProfiles() const
 {
-    Model::RemainingProfilesEntry remainingProfilesEntry = nullptr;
+    MTSM::RemainingProfilesEntry remainingProfilesEntry = nullptr;
 
     // The TerminalPage needs to know which profile has which profile ID. To prevent
     // continuous lookups in the _activeProfiles vector, we create a map <int, Profile>
     // to store these indices in-flight.
-    auto remainingProfilesMap = std::map<int, Model::Profile>{};
+    auto remainingProfilesMap = std::map<int, MTSM::Profile>{};
     auto activeProfileCount = gsl::narrow_cast<int>(_activeProfiles.Size());
     for (auto profileIndex = 0; profileIndex < activeProfileCount; profileIndex++)
     {
@@ -1338,7 +1338,7 @@ void CascadiaSettings::_resolveNewTabMenuProfiles() const
 // Method Description:
 // - Helper function that processes a set of tab menu entries and resolves any profile names
 //   or source fields as necessary - see function above for a more detailed explanation.
-void CascadiaSettings::_resolveNewTabMenuProfilesSet(const IVector<Model::NewTabMenuEntry> entries, IMap<int, Model::Profile>& remainingProfilesMap, Model::RemainingProfilesEntry& remainingProfilesEntry) const
+void CascadiaSettings::_resolveNewTabMenuProfilesSet(const IVector<MTSM::NewTabMenuEntry> entries, IMap<int, MTSM::Profile>& remainingProfilesMap, MTSM::RemainingProfilesEntry& remainingProfilesEntry) const
 {
     if (entries == nullptr || entries.Size() == 0)
     {
@@ -1362,7 +1362,7 @@ void CascadiaSettings::_resolveNewTabMenuProfilesSet(const IVector<Model::NewTab
             // We need to access the unresolved profile name, a field that is not exposed
             // in the projected class. So, we need to first obtain our implementation struct
             // instance, to access this field.
-            const auto profileEntry{ winrt::get_self<implementation::ProfileEntry>(entry.as<Model::ProfileEntry>()) };
+            const auto profileEntry{ winrt::get_self<implementation::ProfileEntry>(entry.as<MTSM::ProfileEntry>()) };
 
             // Find the profile by name
             const auto profile = GetProfileByName(profileEntry->ProfileName());
@@ -1398,7 +1398,7 @@ void CascadiaSettings::_resolveNewTabMenuProfilesSet(const IVector<Model::NewTab
             }
             else
             {
-                remainingProfilesEntry = entry.as<Model::RemainingProfilesEntry>();
+                remainingProfilesEntry = entry.as<MTSM::RemainingProfilesEntry>();
             }
             break;
         }
@@ -1409,7 +1409,7 @@ void CascadiaSettings::_resolveNewTabMenuProfilesSet(const IVector<Model::NewTab
             // We need to access the unfiltered entry list, a field that is not exposed
             // in the projected class. So, we need to first obtain our implementation struct
             // instance, to access this field.
-            const auto folderEntry{ winrt::get_self<implementation::FolderEntry>(entry.as<Model::FolderEntry>()) };
+            const auto folderEntry{ winrt::get_self<implementation::FolderEntry>(entry.as<MTSM::FolderEntry>()) };
 
             auto folderEntries = folderEntry->RawEntries();
             _resolveNewTabMenuProfilesSet(folderEntries, remainingProfilesMap, remainingProfilesEntry);
@@ -1424,9 +1424,9 @@ void CascadiaSettings::_resolveNewTabMenuProfilesSet(const IVector<Model::NewTab
         {
             // We need to access the matching function, which is not exposed in the projected class.
             // So, we need to first obtain our implementation struct instance, to access this field.
-            const auto matchEntry{ winrt::get_self<implementation::MatchProfilesEntry>(entry.as<Model::MatchProfilesEntry>()) };
+            const auto matchEntry{ winrt::get_self<implementation::MatchProfilesEntry>(entry.as<MTSM::MatchProfilesEntry>()) };
 
-            matchEntry->Profiles(single_threaded_map<int, Model::Profile>());
+            matchEntry->Profiles(single_threaded_map<int, MTSM::Profile>());
 
             auto activeProfileCount = gsl::narrow_cast<int>(_activeProfiles.Size());
             for (auto profileIndex = 0; profileIndex < activeProfileCount; profileIndex++)

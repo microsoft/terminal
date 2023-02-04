@@ -21,7 +21,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _initialized = true;
 
-            Control::TermControl termControl{ nullptr };
+            MTControl::TermControl termControl{ nullptr };
 
             for (auto parent = VisualTreeHelper::GetParent(control); parent; parent = VisualTreeHelper::GetParent(parent))
             {

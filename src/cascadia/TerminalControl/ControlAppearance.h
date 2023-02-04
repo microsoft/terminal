@@ -11,7 +11,7 @@ Licensed under the MIT license.
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    struct ControlAppearance : public winrt::implements<ControlAppearance, Microsoft::Terminal::Core::ICoreAppearance, Microsoft::Terminal::Control::IControlAppearance>
+    struct ControlAppearance : public winrt::implements<ControlAppearance, MTCore::ICoreAppearance, MTControl::IControlAppearance>
     {
 #define SETTINGS_GEN(type, name, ...) WINRT_PROPERTY(type, name, __VA_ARGS__);
         CORE_APPEARANCE_SETTINGS(SETTINGS_GEN)
@@ -33,7 +33,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _ColorTable.at(index) = color;
         }
 
-        ControlAppearance(Control::IControlAppearance appearance)
+        ControlAppearance(MTControl::IControlAppearance appearance)
         {
 #define COPY_SETTING(type, name, ...) _##name = appearance.name();
             CORE_APPEARANCE_SETTINGS(COPY_SETTING)

@@ -44,7 +44,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     public:
         TermControlAutomationPeer(winrt::com_ptr<Microsoft::Terminal::Control::implementation::TermControl> owner,
                                   const Core::Padding padding,
-                                  Control::InteractivityAutomationPeer implementation);
+                                  MTControl::InteractivityAutomationPeer implementation);
 
         void UpdateControlBounds();
         void SetControlPadding(const Core::Padding padding);
@@ -80,7 +80,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     private:
         winrt::weak_ref<Microsoft::Terminal::Control::implementation::TermControl> _termControl;
-        Control::InteractivityAutomationPeer _contentAutomationPeer;
+        MTControl::InteractivityAutomationPeer _contentAutomationPeer;
         til::shared_mutex<std::deque<wchar_t>> _keyEvents;
     };
 }

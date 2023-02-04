@@ -22,7 +22,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     //   connection, and a bag of setting to use to initialize that object.
     // Return Value:
     // - <none>
-    TerminalConnection::ITerminalConnection ConnectionInformation::CreateConnection(TerminalConnection::ConnectionInformation info)
+    MTConnection::ITerminalConnection ConnectionInformation::CreateConnection(MTConnection::ConnectionInformation info)
     try
     {
         WF::IInspectable inspectable{};
@@ -50,7 +50,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
 
         // Now that thing we made, make sure it's actually a ITerminalConnection
-        if (const auto connection{ inspectable.try_as<TerminalConnection::ITerminalConnection>() })
+        if (const auto connection{ inspectable.try_as<MTConnection::ITerminalConnection>() })
         {
             // Initialize it, and return it.
             connection.Initialize(info.Settings());

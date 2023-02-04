@@ -27,10 +27,10 @@ namespace winrt::TerminalApp::implementation
         SettingsTab(winrt::Microsoft::Terminal::Settings::Editor::MainPage settingsUI,
                     WUX::ElementTheme requestedTheme);
 
-        void UpdateSettings(Microsoft::Terminal::Settings::Model::CascadiaSettings settings);
+        void UpdateSettings(MTSM::CascadiaSettings settings);
         void Focus(WUX::FocusState focusState) override;
 
-        std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> BuildStartupActions() const override;
+        std::vector<MTSM::ActionAndArgs> BuildStartupActions() const override;
 
     private:
         WUX::ElementTheme _requestedTheme;

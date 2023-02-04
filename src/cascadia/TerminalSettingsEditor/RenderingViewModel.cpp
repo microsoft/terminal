@@ -10,7 +10,7 @@ using namespace MTSM;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    RenderingViewModel::RenderingViewModel(Model::CascadiaSettings settings) noexcept :
+    RenderingViewModel::RenderingViewModel(MTSM::CascadiaSettings settings) noexcept :
         _settings{ std::move(settings) }
     {
     }

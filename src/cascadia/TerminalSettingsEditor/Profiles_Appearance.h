@@ -23,7 +23,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
 
     private:
-        Microsoft::Terminal::Control::TermControl _previewControl;
+        MTControl::TermControl _previewControl;
         WUX::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
         WUX::Data::INotifyPropertyChanged::PropertyChanged_revoker _AppearanceViewModelChangedRevoker;
     };

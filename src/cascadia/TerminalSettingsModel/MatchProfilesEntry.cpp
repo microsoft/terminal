@@ -41,7 +41,7 @@ winrt::com_ptr<NewTabMenuEntry> MatchProfilesEntry::FromJson(const Json::Value& 
     return entry;
 }
 
-bool MatchProfilesEntry::MatchesProfile(const Model::Profile& profile)
+bool MatchProfilesEntry::MatchesProfile(const MTSM::Profile& profile)
 {
     // We use an optional here instead of a simple bool directly, since there is no
     // sensible default value for the desired semantics: the first property we want

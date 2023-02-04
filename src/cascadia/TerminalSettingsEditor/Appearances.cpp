@@ -20,7 +20,7 @@ using namespace MTSM;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    AppearanceViewModel::AppearanceViewModel(const Model::AppearanceConfig& appearance) :
+    AppearanceViewModel::AppearanceViewModel(const MTSM::AppearanceConfig& appearance) :
         _appearance{ appearance }
     {
         // Add a property changed handler to our own property changed event.

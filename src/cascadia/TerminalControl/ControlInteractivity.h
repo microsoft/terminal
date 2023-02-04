@@ -35,16 +35,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
     public:
         ControlInteractivity(IControlSettings settings,
-                             Control::IControlAppearance unfocusedAppearance,
-                             TerminalConnection::ITerminalConnection connection);
+                             MTControl::IControlAppearance unfocusedAppearance,
+                             MTConnection::ITerminalConnection connection);
 
         void GotFocus();
         void LostFocus();
         void UpdateSettings();
         void Initialize();
-        Control::ControlCore Core();
+        MTControl::ControlCore Core();
 
-        Control::InteractivityAutomationPeer OnCreateAutomationPeer();
+        MTControl::InteractivityAutomationPeer OnCreateAutomationPeer();
         ::Microsoft::Console::Render::IRenderData* GetRenderData() const;
 
 #pragma region Input Methods
@@ -85,9 +85,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SetEndSelectionPoint(const Core::Point pixelPosition);
         bool ManglePathsForWsl();
 
-        TYPED_EVENT(OpenHyperlink, IInspectable, Control::OpenHyperlinkEventArgs);
-        TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
-        TYPED_EVENT(ScrollPositionChanged, IInspectable, Control::ScrollPositionChangedArgs);
+        TYPED_EVENT(OpenHyperlink, IInspectable, MTControl::OpenHyperlinkEventArgs);
+        TYPED_EVENT(PasteFromClipboard, IInspectable, MTControl::PasteFromClipboardEventArgs);
+        TYPED_EVENT(ScrollPositionChanged, IInspectable, MTControl::ScrollPositionChangedArgs);
 
     private:
         // NOTE: _uiaEngine must be ordered before _core.

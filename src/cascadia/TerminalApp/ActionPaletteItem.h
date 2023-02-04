@@ -11,9 +11,9 @@ namespace winrt::TerminalApp::implementation
     struct ActionPaletteItem : ActionPaletteItemT<ActionPaletteItem, PaletteItem>
     {
         ActionPaletteItem() = default;
-        ActionPaletteItem(const Microsoft::Terminal::Settings::Model::Command& command);
+        ActionPaletteItem(const MTSM::Command& command);
 
-        WINRT_PROPERTY(Microsoft::Terminal::Settings::Model::Command, Command, nullptr);
+        WINRT_PROPERTY(MTSM::Command, Command, nullptr);
 
     private:
         WUX::Data::INotifyPropertyChanged::PropertyChanged_revoker _commandChangedRevoker;

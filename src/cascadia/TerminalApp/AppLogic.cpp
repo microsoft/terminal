@@ -1330,7 +1330,7 @@ namespace winrt::TerminalApp::implementation
     int32_t AppLogic::ExecuteCommandline(array_view<const winrt::hstring> args,
                                          const winrt::hstring& cwd)
     {
-        ::TerminalApp::AppCommandlineArgs appArgs;
+        ::MTApp::AppCommandlineArgs appArgs;
         auto result = appArgs.ParseArgs(args);
         if (result == 0)
         {
@@ -1365,7 +1365,7 @@ namespace winrt::TerminalApp::implementation
     // - WindowingBehaviorUseAnyExisting: We should handle the args "in the current
     //   window ON ANY DESKTOP"
     // - anything else: We should handle the commandline in the window with the given ID.
-    TerminalApp::FindTargetWindowResult AppLogic::FindTargetWindow(array_view<const winrt::hstring> args)
+    MTApp::FindTargetWindowResult AppLogic::FindTargetWindow(array_view<const winrt::hstring> args)
     {
         if (!_loadedInitialSettings)
         {
@@ -1377,10 +1377,10 @@ namespace winrt::TerminalApp::implementation
     }
 
     // The main body of this function is a static helper, to facilitate unit-testing
-    TerminalApp::FindTargetWindowResult AppLogic::_doFindTargetWindow(array_view<const winrt::hstring> args,
-                                                                      const Microsoft::Terminal::Settings::Model::WindowingMode& windowingBehavior)
+    MTApp::FindTargetWindowResult AppLogic::_doFindTargetWindow(array_view<const winrt::hstring> args,
+                                                                const Microsoft::Terminal::Settings::Model::WindowingMode& windowingBehavior)
     {
-        ::TerminalApp::AppCommandlineArgs appArgs;
+        ::MTApp::AppCommandlineArgs appArgs;
         const auto result = appArgs.ParseArgs(args);
         if (result == 0)
         {
@@ -1533,7 +1533,7 @@ namespace winrt::TerminalApp::implementation
         return _settings.GlobalSettings().AutoHideWindow();
     }
 
-    WFC::IMapView<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::Command> AppLogic::GlobalHotkeys()
+    WFC::IMapView<MTControl::KeyChord, MTSM::Command> AppLogic::GlobalHotkeys()
     {
         return _settings.GlobalSettings().ActionMap().GlobalHotkeys();
     }
@@ -1683,7 +1683,7 @@ namespace winrt::TerminalApp::implementation
         return _settings.GlobalSettings().ShowTitleInTitlebar();
     }
 
-    Microsoft::Terminal::Settings::Model::Theme AppLogic::Theme()
+    MTSM::Theme AppLogic::Theme()
     {
         if (!_loadedInitialSettings)
         {

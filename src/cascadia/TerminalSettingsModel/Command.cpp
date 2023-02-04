@@ -43,7 +43,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         command->_nestedCommand = _nestedCommand;
         if (HasNestedCommands())
         {
-            command->_subcommands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
+            command->_subcommands = winrt::single_threaded_map<winrt::hstring, MTSM::Command>();
             for (auto kv : NestedCommands())
             {
                 const auto subCmd{ winrt::get_self<Command>(kv.Value()) };
@@ -53,7 +53,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return command;
     }
 
-    IMapView<winrt::hstring, Model::Command> Command::NestedCommands() const
+    IMapView<winrt::hstring, MTSM::Command> Command::NestedCommands() const
     {
         return _subcommands ? _subcommands.GetView() : nullptr;
     }
@@ -106,7 +106,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     }
 
-    std::vector<Control::KeyChord> Command::KeyMappings() const noexcept
+    std::vector<MTControl::KeyChord> Command::KeyMappings() const noexcept
     {
         return _keyMappings;
     }
@@ -119,7 +119,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - keys: the new key chord that we are registering this command to
     // Return Value:
     // - <none>
-    void Command::RegisterKey(const Control::KeyChord& keys)
+    void Command::RegisterKey(const MTControl::KeyChord& keys)
     {
         if (!keys)
         {
@@ -139,9 +139,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - keys: the key chord that we are unregistering
     // Return Value:
     // - <none>
-    void Command::EraseKey(const Control::KeyChord& keys)
+    void Command::EraseKey(const MTControl::KeyChord& keys)
     {
-        _keyMappings.erase(std::remove_if(_keyMappings.begin(), _keyMappings.end(), [&keys](const Control::KeyChord& iterKey) {
+        _keyMappings.erase(std::remove_if(_keyMappings.begin(), _keyMappings.end(), [&keys](const MTControl::KeyChord& iterKey) {
                                return keys.Modifiers() == iterKey.Modifiers() && keys.Vkey() == iterKey.Vkey();
                            }),
                            _keyMappings.end());
@@ -156,7 +156,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - <none>
     // Return Value:
     // - the primary key chord associated with this Command
-    Control::KeyChord Command::Keys() const noexcept
+    MTControl::KeyChord Command::Keys() const noexcept
     {
         if (_keyMappings.empty())
         {
@@ -255,7 +255,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         if (const auto nestedCommandsJson{ json[JsonKey(CommandsKey)] })
         {
             // Initialize our list of subcommands.
-            result->_subcommands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
+            result->_subcommands = winrt::single_threaded_map<winrt::hstring, MTSM::Command>();
             result->_nestedCommand = true;
             auto nestedWarnings = Command::LayerJson(result->_subcommands, nestedCommandsJson);
             // It's possible that the nested commands have some warnings
@@ -307,7 +307,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
             else
             {
-                Control::KeyChord keys{ nullptr };
+                MTControl::KeyChord keys{ nullptr };
                 if (JsonUtils::GetValueForKey(json, KeysKey, keys))
                 {
                     result->RegisterKey(keys);
@@ -341,7 +341,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - json: A Json::Value containing an array of serialized commands
     // Return Value:
     // - A vector containing any warnings detected while parsing
-    std::vector<SettingsLoadWarnings> Command::LayerJson(IMap<winrt::hstring, Model::Command>& commands,
+    std::vector<SettingsLoadWarnings> Command::LayerJson(IMap<winrt::hstring, MTSM::Command>& commands,
                                                          const Json::Value& json)
     {
         std::vector<SettingsLoadWarnings> warnings;
@@ -472,13 +472,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //   appended to this vector.
     // Return Value:
     // - <none>
-    void Command::ExpandCommands(IMap<winrt::hstring, Model::Command> commands,
-                                 IVectorView<Model::Profile> profiles,
-                                 IVectorView<Model::ColorScheme> schemes,
+    void Command::ExpandCommands(IMap<winrt::hstring, MTSM::Command> commands,
+                                 IVectorView<MTSM::Profile> profiles,
+                                 IVectorView<MTSM::ColorScheme> schemes,
                                  IVector<SettingsLoadWarnings> warnings)
     {
         std::vector<winrt::hstring> commandsToRemove;
-        std::vector<Model::Command> commandsToAdd;
+        std::vector<MTSM::Command> commandsToAdd;
 
         // First, collect up all the commands that need replacing.
         for (const auto& nameAndCmd : commands)
@@ -528,12 +528,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Return Value:
     // - and empty vector if the command wasn't expandable, otherwise a list of
     //   the newly-created commands.
-    std::vector<Model::Command> Command::_expandCommand(Command* const expandable,
-                                                        IVectorView<Model::Profile> profiles,
-                                                        IVectorView<Model::ColorScheme> schemes,
-                                                        IVector<SettingsLoadWarnings>& warnings)
+    std::vector<MTSM::Command> Command::_expandCommand(Command* const expandable,
+                                                       IVectorView<MTSM::Profile> profiles,
+                                                       IVectorView<MTSM::ColorScheme> schemes,
+                                                       IVector<SettingsLoadWarnings>& warnings)
     {
-        std::vector<Model::Command> newCommands;
+        std::vector<MTSM::Command> newCommands;
 
         if (expandable->HasNestedCommands())
         {

@@ -19,14 +19,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         L"Tango Light"
     };
 
-    ColorSchemesPageViewModel::ColorSchemesPageViewModel(const Model::CascadiaSettings& settings) :
+    ColorSchemesPageViewModel::ColorSchemesPageViewModel(const MTSM::CascadiaSettings& settings) :
         _settings{ settings },
-        _viewModelToSchemeMap{ winrt::single_threaded_map<Editor::ColorSchemeViewModel, Model::ColorScheme>() }
+        _viewModelToSchemeMap{ winrt::single_threaded_map<Editor::ColorSchemeViewModel, MTSM::ColorScheme>() }
     {
         _MakeColorSchemeVMsHelper();
     }
 
-    void ColorSchemesPageViewModel::UpdateSettings(const Model::CascadiaSettings& settings)
+    void ColorSchemesPageViewModel::UpdateSettings(const MTSM::CascadiaSettings& settings)
     {
         _settings = settings;
 
@@ -111,7 +111,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     Editor::ColorSchemeViewModel ColorSchemesPageViewModel::RequestAddNew()
     {
         const hstring schemeName{ fmt::format(L"Color Scheme {}", _settings.GlobalSettings().ColorSchemes().Size() + 1) };
-        Model::ColorScheme scheme{ schemeName };
+        MTSM::ColorScheme scheme{ schemeName };
 
         // Add the new color scheme
         _settings.GlobalSettings().AddColorScheme(scheme);

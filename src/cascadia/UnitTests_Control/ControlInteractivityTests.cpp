@@ -72,8 +72,8 @@ namespace ControlUnitTests
 
         std::tuple<winrt::com_ptr<Control::implementation::ControlCore>,
                    winrt::com_ptr<Control::implementation::ControlInteractivity>>
-        _createCoreAndInteractivity(Control::IControlSettings settings,
-                                    TerminalConnection::ITerminalConnection conn)
+        _createCoreAndInteractivity(MTControl::IControlSettings settings,
+                                    MTConnection::ITerminalConnection conn)
         {
             Log::Comment(L"Create ControlInteractivity object");
             auto interactivity = winrt::make_self<Control::implementation::ControlInteractivity>(settings, settings, conn);
@@ -138,7 +138,7 @@ namespace ControlUnitTests
 
         // A callback to make sure that we're raising TransparencyChanged events
         auto expectedOpacity = 0.5;
-        auto opacityCallback = [&](auto&&, Control::TransparencyChangedEventArgs args) mutable {
+        auto opacityCallback = [&](auto&&, MTControl::TransparencyChangedEventArgs args) mutable {
             VERIFY_ARE_EQUAL(expectedOpacity, args.Opacity());
             VERIFY_ARE_EQUAL(expectedOpacity, core->Opacity());
             // The Settings object's opacity shouldn't be changed
@@ -209,7 +209,7 @@ namespace ControlUnitTests
         auto expectedViewHeight = 20;
         auto expectedBufferHeight = 20;
 
-        auto scrollChangedHandler = [&](auto&&, const Control::ScrollPositionChangedArgs& args) mutable {
+        auto scrollChangedHandler = [&](auto&&, const MTControl::ScrollPositionChangedArgs& args) mutable {
             VERIFY_ARE_EQUAL(expectedTop, args.ViewTop());
             VERIFY_ARE_EQUAL(expectedViewHeight, args.ViewHeight());
             VERIFY_ARE_EQUAL(expectedBufferHeight, args.BufferSize());
@@ -678,7 +678,7 @@ namespace ControlUnitTests
         auto expectedViewHeight = 20;
         auto expectedBufferHeight = 20;
 
-        auto scrollChangedHandler = [&](auto&&, const Control::ScrollPositionChangedArgs& args) mutable {
+        auto scrollChangedHandler = [&](auto&&, const MTControl::ScrollPositionChangedArgs& args) mutable {
             VERIFY_ARE_EQUAL(expectedTop, args.ViewTop());
             VERIFY_ARE_EQUAL(expectedViewHeight, args.ViewHeight());
             VERIFY_ARE_EQUAL(expectedBufferHeight, args.BufferSize());

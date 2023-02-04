@@ -17,7 +17,7 @@ using namespace WUX::Navigation;
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     Profiles_Appearance::Profiles_Appearance() :
-        _previewControl{ Control::TermControl(Model::TerminalSettings{}, nullptr, make<PreviewConnection>()) }
+        _previewControl{ MTControl::TermControl(MTSM::TerminalSettings{}, nullptr, make<PreviewConnection>()) }
     {
         InitializeComponent();
 

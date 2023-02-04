@@ -1091,7 +1091,7 @@ winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
     // Re-register all current hotkeys.
     for (const auto& [keyChord, cmd] : _logic.GlobalHotkeys())
     {
-        if (auto summonArgs = cmd.ActionAndArgs().Args().try_as<Settings::Model::GlobalSummonArgs>())
+        if (auto summonArgs = cmd.ActionAndArgs().Args().try_as<MTSM::GlobalSummonArgs>())
         {
             auto index = gsl::narrow_cast<int>(_hotkeys.size());
             const auto succeeded = _window->RegisterHotKey(index, keyChord);
@@ -1174,7 +1174,7 @@ void AppHost::_GlobalHotkeyPressed(const long hotkeyIndex)
 // - args: Contains information on how we should name the window
 // Return Value:
 // - <none>
-winrt::fire_and_forget AppHost::_createNewTerminalWindow(Settings::Model::GlobalSummonArgs args)
+winrt::fire_and_forget AppHost::_createNewTerminalWindow(MTSM::GlobalSummonArgs args)
 {
     // Hop to the BG thread
     co_await winrt::resume_background();

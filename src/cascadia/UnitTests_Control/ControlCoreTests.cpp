@@ -63,8 +63,8 @@ namespace ControlUnitTests
             return { settings, conn };
         }
 
-        winrt::com_ptr<Control::implementation::ControlCore> createCore(Control::IControlSettings settings,
-                                                                        TerminalConnection::ITerminalConnection conn)
+        winrt::com_ptr<Control::implementation::ControlCore> createCore(MTControl::IControlSettings settings,
+                                                                        MTConnection::ITerminalConnection conn)
         {
             Log::Comment(L"Create ControlCore object");
 
@@ -127,7 +127,7 @@ namespace ControlUnitTests
 
         // A callback to make sure that we're raising TransparencyChanged events
         auto expectedOpacity = 0.5;
-        auto opacityCallback = [&](auto&&, Control::TransparencyChangedEventArgs args) mutable {
+        auto opacityCallback = [&](auto&&, MTControl::TransparencyChangedEventArgs args) mutable {
             VERIFY_ARE_EQUAL(expectedOpacity, args.Opacity());
             VERIFY_ARE_EQUAL(expectedOpacity, core->Opacity());
             // The Settings object's opacity shouldn't be changed

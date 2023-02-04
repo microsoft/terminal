@@ -26,9 +26,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct MainPage : MainPageT<MainPage>
     {
         MainPage() = delete;
-        MainPage(const Model::CascadiaSettings& settings);
+        MainPage(const MTSM::CascadiaSettings& settings);
 
-        void UpdateSettings(const Model::CascadiaSettings& settings);
+        void UpdateSettings(const MTSM::CascadiaSettings& settings);
 
         void OpenJsonKeyDown(const WF::IInspectable& sender, const WUX::Input::KeyRoutedEventArgs& args);
         void OpenJsonTapped(const WF::IInspectable& sender, const WUX::Input::TappedRoutedEventArgs& args);
@@ -50,13 +50,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         WFC::IObservableVector<IInspectable> _breadcrumbs;
-        Model::CascadiaSettings _settingsSource;
-        Model::CascadiaSettings _settingsClone;
+        MTSM::CascadiaSettings _settingsSource;
+        MTSM::CascadiaSettings _settingsClone;
 
         std::optional<HWND> _hostingHwnd;
 
         void _InitializeProfilesList();
-        void _CreateAndNavigateToNewProfile(const uint32_t index, const Model::Profile& profile);
+        void _CreateAndNavigateToNewProfile(const uint32_t index, const MTSM::Profile& profile);
         MUXC::NavigationViewItem _CreateProfileNavViewItem(const Editor::ProfileViewModel& profile);
         void _DeleteProfile(const WF::IInspectable sender, const Editor::DeleteProfileEventArgs& args);
         void _AddProfileHandler(const winrt::guid profileGuid);

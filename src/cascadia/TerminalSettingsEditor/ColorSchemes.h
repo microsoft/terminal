@@ -22,7 +22,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void ListView_PreviewKeyDown(const WF::IInspectable& sender, const WUX::Input::KeyRoutedEventArgs& e);
         void ListView_SelectionChanged(const WF::IInspectable& sender, const WUXC::SelectionChangedEventArgs& e);
 
-        WINRT_PROPERTY(Model::ColorScheme, CurrentColorScheme, nullptr);
+        WINRT_PROPERTY(MTSM::ColorScheme, CurrentColorScheme, nullptr);
         WINRT_OBSERVABLE_PROPERTY(Editor::ColorSchemesPageViewModel, ViewModel, _PropertyChangedHandlers, nullptr);
 
         WINRT_CALLBACK(PropertyChanged, WUX::Data::PropertyChangedEventHandler);

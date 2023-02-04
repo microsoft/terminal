@@ -49,7 +49,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct AppearanceViewModel : AppearanceViewModelT<AppearanceViewModel>, ViewModelHelper<AppearanceViewModel>
     {
     public:
-        AppearanceViewModel(const Model::AppearanceConfig& appearance);
+        AppearanceViewModel(const MTSM::AppearanceConfig& appearance);
 
         void SetFontWeightFromDouble(double fontWeight)
         {
@@ -99,7 +99,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_OBSERVABLE_PROPERTY(WFC::IObservableVector<Editor::ColorSchemeViewModel>, SchemesList, _propertyChangedHandlers, nullptr);
 
     private:
-        Model::AppearanceConfig _appearance;
+        MTSM::AppearanceConfig _appearance;
         winrt::hstring _lastBgImagePath;
     };
 

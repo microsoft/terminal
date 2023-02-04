@@ -25,7 +25,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         ConnectionInformation(const hstring& className,
                               const WFC::ValueSet& settings);
 
-        static TerminalConnection::ITerminalConnection CreateConnection(TerminalConnection::ConnectionInformation info);
+        static MTConnection::ITerminalConnection CreateConnection(MTConnection::ConnectionInformation info);
 
         winrt::hstring ClassName() const { return _ClassName; }
         void ClassName(const winrt::hstring& value) { _ClassName = value; }

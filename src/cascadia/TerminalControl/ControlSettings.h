@@ -15,7 +15,7 @@ using IFontAxesMap = WFC::IMap<winrt::hstring, float>;
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    struct ControlSettings : public winrt::implements<ControlSettings, Microsoft::Terminal::Control::IControlSettings, Microsoft::Terminal::Control::IControlAppearance, Microsoft::Terminal::Core::ICoreSettings, Microsoft::Terminal::Core::ICoreAppearance>
+    struct ControlSettings : public winrt::implements<ControlSettings, MTControl::IControlSettings, MTControl::IControlAppearance, MTCore::ICoreSettings, MTCore::ICoreAppearance>
     {
         // Getters and setters for each *Setting member. We're not using
         // WINRT_PROPERTY for these, because they actually exist inside the
@@ -32,8 +32,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _hasUnfocusedAppearance{ false };
 
     public:
-        ControlSettings(const Control::IControlSettings& settings,
-                        const Control::IControlAppearance& unfocusedAppearance)
+        ControlSettings(const MTControl::IControlSettings& settings,
+                        const MTControl::IControlAppearance& unfocusedAppearance)
         {
             _hasUnfocusedAppearance = unfocusedAppearance != nullptr;
 

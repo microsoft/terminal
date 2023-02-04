@@ -43,8 +43,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void Close();
 
         // -------------------------------- WinRT Events ---------------------------------
-        TYPED_EVENT(CurrentCursorPosition, Control::TSFInputControl, Control::CursorPositionEventArgs);
-        TYPED_EVENT(CurrentFontInfo, Control::TSFInputControl, Control::FontInfoEventArgs);
+        TYPED_EVENT(CurrentCursorPosition, MTControl::TSFInputControl, MTControl::CursorPositionEventArgs);
+        TYPED_EVENT(CurrentFontInfo, MTControl::TSFInputControl, MTControl::FontInfoEventArgs);
         WINRT_CALLBACK(CompositionCompleted, Control::CompositionCompletedEventArgs);
 
     private:

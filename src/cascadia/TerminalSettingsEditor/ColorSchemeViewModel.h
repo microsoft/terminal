@@ -21,7 +21,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct ColorSchemeViewModel : ColorSchemeViewModelT<ColorSchemeViewModel>, ViewModelHelper<ColorSchemeViewModel>
     {
     public:
-        ColorSchemeViewModel(const Model::ColorScheme scheme, const Editor::ColorSchemesPageViewModel parentPageVM, const Model::CascadiaSettings& settings);
+        ColorSchemeViewModel(const MTSM::ColorScheme scheme, const Editor::ColorSchemesPageViewModel parentPageVM, const MTSM::CascadiaSettings& settings);
 
         winrt::hstring Name();
         void Name(winrt::hstring newName);
@@ -53,8 +53,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         winrt::hstring _Name;
-        Model::ColorScheme _scheme;
-        Model::CascadiaSettings _settings;
+        MTSM::ColorScheme _scheme;
+        MTSM::CascadiaSettings _settings;
         weak_ref<Editor::ColorSchemesPageViewModel> _parentPageVM{ nullptr };
 
         void _ColorEntryChangedHandler(const WF::IInspectable& sender, const WUX::Data::PropertyChangedEventArgs& args);

@@ -87,7 +87,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _KeysProperty =
                 DependencyProperty::Register(
                     L"Keys",
-                    xaml_typename<Control::KeyChord>(),
+                    xaml_typename<MTControl::KeyChord>(),
                     xaml_typename<Editor::KeyChordListener>(),
                     PropertyMetadata{ nullptr, PropertyChangedCallback{ &KeyChordListener::_OnKeysChanged } });
         }
@@ -99,7 +99,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             auto controlImpl{ get_self<KeyChordListener>(control) };
             auto tb{ controlImpl->FindName(L"KeyChordTextBox").as<TextBox>() };
-            tb.Text(Model::KeyChordSerialization::ToString(unbox_value<Control::KeyChord>(e.NewValue())));
+            tb.Text(MTSM::KeyChordSerialization::ToString(unbox_value<MTControl::KeyChord>(e.NewValue())));
             if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(tb) })
             {
                 automationPeer.RaiseNotificationEvent(

@@ -12,7 +12,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct LaunchViewModel : LaunchViewModelT<LaunchViewModel>, ViewModelHelper<LaunchViewModel>
     {
     public:
-        LaunchViewModel(Model::CascadiaSettings settings);
+        LaunchViewModel(MTSM::CascadiaSettings settings);
 
         winrt::hstring LaunchParametersCurrentValue();
         double InitialPosX();
@@ -24,11 +24,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         IInspectable CurrentDefaultProfile();
         void CurrentDefaultProfile(const IInspectable& value);
-        WFC::IObservableVector<Model::Profile> DefaultProfiles() const;
+        WFC::IObservableVector<MTSM::Profile> DefaultProfiles() const;
 
         IInspectable CurrentDefaultTerminal();
         void CurrentDefaultTerminal(const IInspectable& value);
-        WFC::IObservableVector<Model::DefaultTerminal> DefaultTerminals() const;
+        WFC::IObservableVector<MTSM::DefaultTerminal> DefaultTerminals() const;
 
         // We cannot use the macro for LaunchMode because we want to insert an event into the setter
         WF::IInspectable CurrentLaunchMode();
@@ -44,7 +44,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_Settings.GlobalSettings(), InitialCols);
 
     private:
-        Model::CascadiaSettings _Settings;
+        MTSM::CascadiaSettings _Settings;
         bool _useDefaultLaunchPosition;
 
         WFC::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _LaunchModeList;

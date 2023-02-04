@@ -33,8 +33,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // be rendered; for example, when a profile entry is invalid, or when a folder is empty.
         // Therefore, we will store the JSON entries list internally, and then expose only the
         // entries to be rendered to WinRT.
-        WFC::IVector<Model::NewTabMenuEntry> Entries() const;
-        WFC::IVector<Model::NewTabMenuEntry> RawEntries() const
+        WFC::IVector<MTSM::NewTabMenuEntry> Entries() const;
+        WFC::IVector<MTSM::NewTabMenuEntry> RawEntries() const
         {
             return _Entries;
         };
@@ -45,7 +45,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         WINRT_PROPERTY(bool, AllowEmpty, false);
 
     private:
-        WFC::IVector<Model::NewTabMenuEntry> _Entries{};
+        WFC::IVector<MTSM::NewTabMenuEntry> _Entries{};
     };
 }
 

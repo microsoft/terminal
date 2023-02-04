@@ -41,11 +41,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _FinalizeInheritance() override;
         com_ptr<GlobalAppSettings> Copy() const;
 
-        WFC::IMapView<hstring, Model::ColorScheme> ColorSchemes() noexcept;
-        void AddColorScheme(const Model::ColorScheme& scheme);
+        WFC::IMapView<hstring, MTSM::ColorScheme> ColorSchemes() noexcept;
+        void AddColorScheme(const MTSM::ColorScheme& scheme);
         void RemoveColorScheme(hstring schemeName);
 
-        Model::ActionMap ActionMap() const noexcept;
+        MTSM::ActionMap ActionMap() const noexcept;
 
         static com_ptr<GlobalAppSettings> FromJson(const Json::Value& json);
         void LayerJson(const Json::Value& json);
@@ -59,14 +59,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void DefaultProfile(const guid& defaultProfile) noexcept;
         guid DefaultProfile() const;
 
-        WFC::IMapView<hstring, Model::Theme> Themes() noexcept;
-        void AddTheme(const Model::Theme& theme);
-        Model::Theme CurrentTheme() noexcept;
+        WFC::IMapView<hstring, MTSM::Theme> Themes() noexcept;
+        void AddTheme(const MTSM::Theme& theme);
+        MTSM::Theme CurrentTheme() noexcept;
 
-        INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, UnparsedDefaultProfile, L"");
+        INHERITABLE_SETTING(MTSM::GlobalAppSettings, hstring, UnparsedDefaultProfile, L"");
 
 #define GLOBAL_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
-    INHERITABLE_SETTING(Model::GlobalAppSettings, type, name, ##__VA_ARGS__)
+    INHERITABLE_SETTING(MTSM::GlobalAppSettings, type, name, ##__VA_ARGS__)
         MTSM_GLOBAL_SETTINGS(GLOBAL_SETTINGS_INITIALIZE)
 #undef GLOBAL_SETTINGS_INITIALIZE
 
@@ -81,7 +81,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::com_ptr<implementation::ActionMap> _actionMap{ winrt::make_self<implementation::ActionMap>() };
 
         std::vector<SettingsLoadWarnings> _keybindingsWarnings;
-        WFC::IMap<winrt::hstring, Model::ColorScheme> _colorSchemes{ winrt::single_threaded_map<winrt::hstring, Model::ColorScheme>() };
-        WFC::IMap<winrt::hstring, Model::Theme> _themes{ winrt::single_threaded_map<winrt::hstring, Model::Theme>() };
+        WFC::IMap<winrt::hstring, MTSM::ColorScheme> _colorSchemes{ winrt::single_threaded_map<winrt::hstring, MTSM::ColorScheme>() };
+        WFC::IMap<winrt::hstring, MTSM::Theme> _themes{ winrt::single_threaded_map<winrt::hstring, MTSM::Theme>() };
     };
 }

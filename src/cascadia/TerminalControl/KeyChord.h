@@ -14,7 +14,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         KeyChord(bool ctrl, bool alt, bool shift, bool win, int32_t vkey, int32_t scanCode) noexcept;
 
         uint64_t Hash() const noexcept;
-        bool Equals(const Control::KeyChord& other) const noexcept;
+        bool Equals(const MTControl::KeyChord& other) const noexcept;
 
         WS::VirtualKeyModifiers Modifiers() const noexcept;
         void Modifiers(const WS::VirtualKeyModifiers value) noexcept;

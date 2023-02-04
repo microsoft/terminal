@@ -34,7 +34,7 @@ Author(s):
     X(Model::NewTabPosition, NewTabPosition, "newTabPosition", Model::NewTabPosition::AfterLastTab)                        \
     X(bool, ShowTitleInTitlebar, "showTerminalTitleInTitlebar", true)                                                      \
     X(bool, ConfirmCloseAllTabs, "confirmCloseAllTabs", true)                                                              \
-    X(Model::ThemePair, Theme, "theme")                                                                                    \
+    X(MTSM::ThemePair, Theme, "theme")                                                                                     \
     X(hstring, Language, "language")                                                                                       \
     X(MUXC::TabViewWidthMode, TabWidthMode, "tabWidthMode", MUXC::TabViewWidthMode::Equal)                                 \
     X(bool, UseAcrylicInTabRow, "useAcrylicInTabRow", false)                                                               \
@@ -62,7 +62,7 @@ Author(s):
     X(bool, ShowAdminShield, "showAdminShield", true)                                                                      \
     X(bool, TrimPaste, "trimPaste", true)                                                                                  \
     X(bool, EnableColorSelection, "experimental.enableColorSelection", false)                                              \
-    X(WFC::IVector<Model::NewTabMenuEntry>, NewTabMenu, "newTabMenu", winrt::single_threaded_vector<Model::NewTabMenuEntry>({ Model::RemainingProfilesEntry{} }))
+    X(WFC::IVector<MTSM::NewTabMenuEntry>, NewTabMenu, "newTabMenu", winrt::single_threaded_vector<MTSM::NewTabMenuEntry>({ MTSM::RemainingProfilesEntry{} }))
 
 #define MTSM_PROFILE_SETTINGS(X)                                                                                                                               \
     X(int32_t, HistorySize, "historySize", DEFAULT_HISTORY_SIZE)                                                                                               \

@@ -247,13 +247,13 @@ private:                                                                        
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     using namespace ::Microsoft::Terminal::Settings::Model;
-    using FromJsonResult = std::tuple<Model::IActionArgs, std::vector<SettingsLoadWarnings>>;
+    using FromJsonResult = std::tuple<MTSM::IActionArgs, std::vector<SettingsLoadWarnings>>;
 
     struct ActionEventArgs : public ActionEventArgsT<ActionEventArgs>
     {
         ActionEventArgs() = default;
 
-        explicit ActionEventArgs(const Model::IActionArgs& args) :
+        explicit ActionEventArgs(const MTSM::IActionArgs& args) :
             _ActionArgs{ args } {};
         WINRT_PROPERTY(IActionArgs, ActionArgs, nullptr);
         WINRT_PROPERTY(bool, Handled, false);
@@ -291,7 +291,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         hstring GenerateName() const;
         hstring ToCommandline() const;
 
-        bool Equals(const Model::NewTerminalArgs& other)
+        bool Equals(const MTSM::NewTerminalArgs& other)
         {
             auto otherAsUs = other.try_as<NewTerminalArgs>();
             if (otherAsUs)
@@ -308,7 +308,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
             return false;
         };
-        static Model::NewTerminalArgs FromJson(const Json::Value& json)
+        static MTSM::NewTerminalArgs FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<NewTerminalArgs>();
@@ -323,7 +323,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::GetValueForKey(json, ElevateKey, args->_Elevate);
             return *args;
         }
-        static Json::Value ToJson(const Model::NewTerminalArgs& val)
+        static Json::Value ToJson(const MTSM::NewTerminalArgs& val)
         {
             if (!val)
             {
@@ -342,7 +342,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::SetValueForKey(json, ElevateKey, args->_Elevate);
             return json;
         }
-        Model::NewTerminalArgs Copy() const
+        MTSM::NewTerminalArgs Copy() const
         {
             auto copy{ winrt::make_self<NewTerminalArgs>() };
             copy->_Commandline = _Commandline;
@@ -415,9 +415,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct NewTabArgs : public NewTabArgsT<NewTabArgs>
     {
         NewTabArgs() = default;
-        NewTabArgs(const Model::NewTerminalArgs& terminalArgs) :
+        NewTabArgs(const MTSM::NewTerminalArgs& terminalArgs) :
             _TerminalArgs{ terminalArgs } {};
-        WINRT_PROPERTY(Model::NewTerminalArgs, TerminalArgs, nullptr);
+        WINRT_PROPERTY(MTSM::NewTerminalArgs, TerminalArgs, nullptr);
 
     public:
         hstring GenerateName() const;
@@ -464,22 +464,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct SplitPaneArgs : public SplitPaneArgsT<SplitPaneArgs>
     {
         SplitPaneArgs() = default;
-        SplitPaneArgs(SplitType splitMode, SplitDirection direction, double size, const Model::NewTerminalArgs& terminalArgs) :
+        SplitPaneArgs(SplitType splitMode, SplitDirection direction, double size, const MTSM::NewTerminalArgs& terminalArgs) :
             _SplitMode{ splitMode },
             _SplitDirection{ direction },
             _SplitSize{ size },
             _TerminalArgs{ terminalArgs } {};
-        SplitPaneArgs(SplitDirection direction, double size, const Model::NewTerminalArgs& terminalArgs) :
+        SplitPaneArgs(SplitDirection direction, double size, const MTSM::NewTerminalArgs& terminalArgs) :
             _SplitDirection{ direction },
             _SplitSize{ size },
             _TerminalArgs{ terminalArgs } {};
-        SplitPaneArgs(SplitDirection direction, const Model::NewTerminalArgs& terminalArgs) :
+        SplitPaneArgs(SplitDirection direction, const MTSM::NewTerminalArgs& terminalArgs) :
             _SplitDirection{ direction },
             _TerminalArgs{ terminalArgs } {};
         SplitPaneArgs(SplitType splitMode) :
             _SplitMode{ splitMode } {};
         ACTION_ARG(Model::SplitDirection, SplitDirection, SplitDirection::Automatic);
-        WINRT_PROPERTY(Model::NewTerminalArgs, TerminalArgs, nullptr);
+        WINRT_PROPERTY(MTSM::NewTerminalArgs, TerminalArgs, nullptr);
         ACTION_ARG(SplitType, SplitMode, SplitType::Manual);
         ACTION_ARG(double, SplitSize, .5);
 
@@ -553,9 +553,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct NewWindowArgs : public NewWindowArgsT<NewWindowArgs>
     {
         NewWindowArgs() = default;
-        NewWindowArgs(const Model::NewTerminalArgs& terminalArgs) :
+        NewWindowArgs(const MTSM::NewTerminalArgs& terminalArgs) :
             _TerminalArgs{ terminalArgs } {};
-        WINRT_PROPERTY(Model::NewTerminalArgs, TerminalArgs, nullptr);
+        WINRT_PROPERTY(MTSM::NewTerminalArgs, TerminalArgs, nullptr);
 
     public:
         hstring GenerateName() const;

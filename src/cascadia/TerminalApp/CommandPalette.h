@@ -29,9 +29,9 @@ namespace winrt::TerminalApp::implementation
 
         WFC::IObservableVector<MTApp::FilteredCommand> FilteredActions();
 
-        void SetCommands(const WFC::IVector<Microsoft::Terminal::Settings::Model::Command>& actions);
+        void SetCommands(const WFC::IVector<MTSM::Command>& actions);
         void SetTabs(const WFC::IObservableVector<MTApp::TabBase>& tabs, const WFC::IObservableVector<MTApp::TabBase>& mruTabs);
-        void SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap);
+        void SetActionMap(const MTSM::IActionMapView& actionMap);
 
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
@@ -42,7 +42,7 @@ namespace winrt::TerminalApp::implementation
         void ScrollToTop();
         void ScrollToBottom();
 
-        void EnableCommandPaletteMode(Microsoft::Terminal::Settings::Model::CommandPaletteLaunchMode const launchMode);
+        void EnableCommandPaletteMode(MTSM::CommandPaletteLaunchMode const launchMode);
         void EnableTabSwitcherMode(const uint32_t startIdx, Microsoft::Terminal::Settings::Model::TabSwitcherMode tabSwitcherMode);
         void EnableTabSearchMode();
 
@@ -56,8 +56,8 @@ namespace winrt::TerminalApp::implementation
 
         TYPED_EVENT(SwitchToTabRequested, MTApp::CommandPalette, MTApp::TabBase);
         TYPED_EVENT(CommandLineExecutionRequested, MTApp::CommandPalette, winrt::hstring);
-        TYPED_EVENT(DispatchCommandRequested, MTApp::CommandPalette, Microsoft::Terminal::Settings::Model::Command);
-        TYPED_EVENT(PreviewAction, WF::IInspectable, Microsoft::Terminal::Settings::Model::Command);
+        TYPED_EVENT(DispatchCommandRequested, MTApp::CommandPalette, MTSM::Command);
+        TYPED_EVENT(PreviewAction, WF::IInspectable, MTSM::Command);
 
     private:
         friend struct CommandPaletteT<CommandPalette>; // for Xaml to bind events
@@ -110,7 +110,7 @@ namespace winrt::TerminalApp::implementation
         std::wstring _getTrimmedInput();
         void _evaluatePrefix();
 
-        Microsoft::Terminal::Settings::Model::IActionMapView _actionMap{ nullptr };
+        MTSM::IActionMapView _actionMap{ nullptr };
 
         // Tab Switcher
         WFC::IVector<MTApp::FilteredCommand> _tabActions{ nullptr };
@@ -136,7 +136,7 @@ namespace winrt::TerminalApp::implementation
         static constexpr uint32_t CommandLineHistoryLength = 20;
         static WFC::IVector<MTApp::FilteredCommand> _loadRecentCommands();
         static void _updateRecentCommands(const winrt::hstring& command);
-        ::TerminalApp::AppCommandlineArgs _appArgs;
+        ::MTApp::AppCommandlineArgs _appArgs;
 
         void _choosingItemContainer(const WUXC::ListViewBase& sender, const WUXC::ChoosingItemContainerEventArgs& args);
         void _containerContentChanging(const WUXC::ListViewBase& sender, const WUXC::ContainerContentChangingEventArgs& args);

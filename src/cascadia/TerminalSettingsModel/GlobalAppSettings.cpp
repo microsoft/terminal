@@ -165,7 +165,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 // - scheme: the color scheme to add
 // Return Value:
 // - <none>
-void GlobalAppSettings::AddColorScheme(const Model::ColorScheme& scheme)
+void GlobalAppSettings::AddColorScheme(const MTSM::ColorScheme& scheme)
 {
     _colorSchemes.Insert(scheme.Name(), scheme);
 }
@@ -212,7 +212,7 @@ Json::Value GlobalAppSettings::ToJson() const
 
 MTSM::Theme GlobalAppSettings::CurrentTheme() noexcept
 {
-    auto requestedTheme = Model::Theme::IsSystemInDarkTheme() ?
+    auto requestedTheme = MTSM::Theme::IsSystemInDarkTheme() ?
                               WUX::ElementTheme::Dark :
                               WUX::ElementTheme::Light;
 
@@ -230,7 +230,7 @@ MTSM::Theme GlobalAppSettings::CurrentTheme() noexcept
     }
 }
 
-void GlobalAppSettings::AddTheme(const Model::Theme& theme)
+void GlobalAppSettings::AddTheme(const MTSM::Theme& theme)
 {
     _themes.Insert(theme.Name(), theme);
 }

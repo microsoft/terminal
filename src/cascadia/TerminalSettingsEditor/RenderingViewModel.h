@@ -10,14 +10,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     struct RenderingViewModel : RenderingViewModelT<RenderingViewModel>, ViewModelHelper<RenderingViewModel>
     {
-        explicit RenderingViewModel(Model::CascadiaSettings settings) noexcept;
+        explicit RenderingViewModel(MTSM::CascadiaSettings settings) noexcept;
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_settings.ProfileDefaults(), UseAtlasEngine);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_settings.GlobalSettings(), ForceFullRepaintRendering);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_settings.GlobalSettings(), SoftwareRendering);
 
     private:
-        Model::CascadiaSettings _settings{ nullptr };
+        MTSM::CascadiaSettings _settings{ nullptr };
     };
 };
 

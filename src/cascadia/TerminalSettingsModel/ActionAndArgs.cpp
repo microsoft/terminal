@@ -270,7 +270,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return make_self<ActionAndArgs>(action, args);
     }
 
-    Json::Value ActionAndArgs::ToJson(const Model::ActionAndArgs& val)
+    Json::Value ActionAndArgs::ToJson(const MTSM::ActionAndArgs& val)
     {
         if (val)
         {

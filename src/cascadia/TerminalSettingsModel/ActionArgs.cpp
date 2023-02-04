@@ -842,7 +842,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     }
 
-    static winrt::hstring _FormatColorString(const Control::SelectionColor& selectionColor)
+    static winrt::hstring _FormatColorString(const MTControl::SelectionColor& selectionColor)
     {
         if (!selectionColor)
         {
@@ -894,7 +894,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return colorStr;
     }
 
-    static bool _isBoringColor(const Control::SelectionColor& selectionColor)
+    static bool _isBoringColor(const MTControl::SelectionColor& selectionColor)
     {
         if (!selectionColor)
         {

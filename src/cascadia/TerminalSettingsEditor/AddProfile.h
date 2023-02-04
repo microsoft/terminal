@@ -26,7 +26,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct AddProfilePageNavigationState : AddProfilePageNavigationStateT<AddProfilePageNavigationState>
     {
     public:
-        AddProfilePageNavigationState(const Model::CascadiaSettings& settings) :
+        AddProfilePageNavigationState(const MTSM::CascadiaSettings& settings) :
             _Settings{ settings } {}
 
         void RequestAddNew()
@@ -39,7 +39,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _AddNewHandlers(profile);
         }
 
-        WINRT_PROPERTY(Model::CascadiaSettings, Settings, nullptr)
+        WINRT_PROPERTY(MTSM::CascadiaSettings, Settings, nullptr)
         WINRT_CALLBACK(AddNew, AddNewArgs);
     };
 

@@ -66,9 +66,9 @@ using namespace ::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    winrt::hstring WindowLayout::ToJson(const Model::WindowLayout& layout)
+    winrt::hstring WindowLayout::ToJson(const MTSM::WindowLayout& layout)
     {
-        JsonUtils::ConversionTrait<Model::WindowLayout> trait;
+        JsonUtils::ConversionTrait<MTSM::WindowLayout> trait;
         auto json = trait.ToJson(layout);
 
         Json::StreamWriterBuilder wbuilder;
@@ -76,7 +76,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return hstring{ til::u8u16(content) };
     }
 
-    Model::WindowLayout WindowLayout::FromJson(const hstring& str)
+    MTSM::WindowLayout WindowLayout::FromJson(const hstring& str)
     {
         auto data = til::u16u8(str);
         std::string errs;
@@ -87,7 +87,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
         }
-        JsonUtils::ConversionTrait<Model::WindowLayout> trait;
+        JsonUtils::ConversionTrait<MTSM::WindowLayout> trait;
         return trait.FromJson(root);
     }
 
@@ -258,7 +258,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     CATCH_LOG()
 
     // Returns the application-global ApplicationState object.
-    Microsoft::Terminal::Settings::Model::ApplicationState ApplicationState::SharedInstance()
+    MTSM::ApplicationState ApplicationState::SharedInstance()
     {
         auto root{ GetBaseSettingsPath() };
         static auto state = winrt::make_self<ApplicationState>(root);

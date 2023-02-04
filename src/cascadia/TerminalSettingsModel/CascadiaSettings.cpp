@@ -48,14 +48,14 @@ winrt::hstring CascadiaSettings::Hash() const noexcept
     return _hash;
 }
 
-Model::CascadiaSettings CascadiaSettings::Copy() const
+MTSM::CascadiaSettings CascadiaSettings::Copy() const
 {
     const auto settings{ winrt::make_self<CascadiaSettings>() };
 
     // user settings
     {
-        std::vector<Model::Profile> allProfiles;
-        std::vector<Model::Profile> activeProfiles;
+        std::vector<MTSM::Profile> allProfiles;
+        std::vector<MTSM::Profile> activeProfiles;
         allProfiles.reserve(_allProfiles.Size());
         activeProfiles.reserve(_activeProfiles.Size());
 
@@ -129,7 +129,7 @@ Model::CascadiaSettings CascadiaSettings::Copy() const
 // Return Value:
 // - a strong reference to the profile matching the given guid, or nullptr
 //      if there is no match.
-Model::Profile CascadiaSettings::FindProfile(const winrt::guid& guid) const noexcept
+MTSM::Profile CascadiaSettings::FindProfile(const winrt::guid& guid) const noexcept
 {
     for (const auto& profile : _allProfiles)
     {
@@ -147,7 +147,7 @@ Model::Profile CascadiaSettings::FindProfile(const winrt::guid& guid) const noex
 // - <none>
 // Return Value:
 // - an iterable collection of all of our Profiles.
-IObservableVector<Model::Profile> CascadiaSettings::AllProfiles() const noexcept
+IObservableVector<MTSM::Profile> CascadiaSettings::AllProfiles() const noexcept
 {
     return _allProfiles;
 }
@@ -158,7 +158,7 @@ IObservableVector<Model::Profile> CascadiaSettings::AllProfiles() const noexcept
 // - <none>
 // Return Value:
 // - an iterable collection of all of our Profiles.
-IObservableVector<Model::Profile> CascadiaSettings::ActiveProfiles() const noexcept
+IObservableVector<MTSM::Profile> CascadiaSettings::ActiveProfiles() const noexcept
 {
     return _activeProfiles;
 }
@@ -169,7 +169,7 @@ IObservableVector<Model::Profile> CascadiaSettings::ActiveProfiles() const noexc
 // - <none>
 // Return Value:
 // - the globally configured keybindings
-Model::ActionMap CascadiaSettings::ActionMap() const noexcept
+MTSM::ActionMap CascadiaSettings::ActionMap() const noexcept
 {
     return _globals->ActionMap();
 }
@@ -180,7 +180,7 @@ Model::ActionMap CascadiaSettings::ActionMap() const noexcept
 // - <none>
 // Return Value:
 // - a reference to our global settings
-Model::GlobalAppSettings CascadiaSettings::GlobalSettings() const
+MTSM::GlobalAppSettings CascadiaSettings::GlobalSettings() const
 {
     return *_globals;
 }
@@ -191,7 +191,7 @@ Model::GlobalAppSettings CascadiaSettings::GlobalSettings() const
 // - <none>
 // Return Value:
 // - a reference to our profile.defaults object
-Model::Profile CascadiaSettings::ProfileDefaults() const
+MTSM::Profile CascadiaSettings::ProfileDefaults() const
 {
     return *_baseLayerProfile;
 }
@@ -202,7 +202,7 @@ Model::Profile CascadiaSettings::ProfileDefaults() const
 // - <none>
 // Return Value:
 // - a reference to the new profile
-Model::Profile CascadiaSettings::CreateNewProfile()
+MTSM::Profile CascadiaSettings::CreateNewProfile()
 {
     if (_allProfiles.Size() == std::numeric_limits<uint32_t>::max())
     {
@@ -251,7 +251,7 @@ static bool isProfilesDefaultsOriginSub(const T& sub)
 // - source: the Profile object we are duplicating (must not be null)
 // Return Value:
 // - a reference to the new profile
-Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
+MTSM::Profile CascadiaSettings::DuplicateProfile(const MTSM::Profile& source)
 {
     THROW_HR_IF_NULL(E_INVALIDARG, source);
 
@@ -338,7 +338,7 @@ Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
         // like DuplicateAppearance since UnfocusedAppearance is treated as a single setting.
         const auto unfocusedAppearance = AppearanceConfig::CopyAppearance(
             winrt::get_self<AppearanceConfig>(source.UnfocusedAppearance()),
-            winrt::weak_ref<Model::Profile>(*duplicated));
+            winrt::weak_ref<MTSM::Profile>(*duplicated));
 
         // Make sure to add the default appearance of the duplicated profile as a parent to the duplicate's UnfocusedAppearance
         winrt::com_ptr<AppearanceConfig> defaultAppearance;
@@ -557,7 +557,7 @@ void CascadiaSettings::_validateMediaResources()
 //   and attempt to look the profile up by name instead.
 // Return Value:
 // - the GUID of the profile corresponding to this combination of index and NewTerminalArgs
-Model::Profile CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs& newTerminalArgs) const
+MTSM::Profile CascadiaSettings::GetProfileForArgs(const MTSM::NewTerminalArgs& newTerminalArgs) const
 {
     if (newTerminalArgs)
     {
@@ -614,7 +614,7 @@ Model::Profile CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs&
 // This function will then match this profile return it.
 //
 // If no matching profile could be found a nullptr will be returned.
-Model::Profile CascadiaSettings::_getProfileForCommandLine(const winrt::hstring& commandLine) const
+MTSM::Profile CascadiaSettings::_getProfileForCommandLine(const winrt::hstring& commandLine) const
 {
     // We're going to cache all the command lines we got, as
     // NormalizeCommandLine is a relatively heavy operation.
@@ -813,7 +813,7 @@ std::wstring CascadiaSettings::NormalizeCommandLine(LPCWSTR commandLine)
 // - name: a guid string _or_ the name of a profile
 // Return Value:
 // - the GUID of the profile corresponding to this name
-Model::Profile CascadiaSettings::GetProfileByName(const winrt::hstring& name) const
+MTSM::Profile CascadiaSettings::GetProfileByName(const winrt::hstring& name) const
 {
     // First, try and parse the "name" as a GUID. If it's a
     // GUID, and the GUID of one of our profiles, then use that as the
@@ -855,7 +855,7 @@ Model::Profile CascadiaSettings::GetProfileByName(const winrt::hstring& name) co
 // - index: The profile index in ActiveProfiles()
 // Return Value:
 // - the Nth profile
-Model::Profile CascadiaSettings::GetProfileByIndex(uint32_t index) const
+MTSM::Profile CascadiaSettings::GetProfileByIndex(uint32_t index) const
 {
     return index < _activeProfiles.Size() ? _activeProfiles.GetAt(index) : nullptr;
 }
@@ -914,7 +914,7 @@ void CascadiaSettings::_validateColorSchemesInCommands() const
     }
 }
 
-bool CascadiaSettings::_hasInvalidColorScheme(const Model::Command& command) const
+bool CascadiaSettings::_hasInvalidColorScheme(const MTSM::Command& command) const
 {
     auto invalid{ false };
     if (command.HasNestedCommands())
@@ -930,7 +930,7 @@ bool CascadiaSettings::_hasInvalidColorScheme(const Model::Command& command) con
     }
     else if (const auto& actionAndArgs = command.ActionAndArgs())
     {
-        if (const auto& realArgs = actionAndArgs.Args().try_as<Model::SetColorSchemeArgs>())
+        if (const auto& realArgs = actionAndArgs.Args().try_as<MTSM::SetColorSchemeArgs>())
         {
             const auto cmdImpl{ winrt::get_self<Command>(command) };
             // no need to validate iterable commands on color schemes
@@ -1101,7 +1101,7 @@ bool CascadiaSettings::IsDefaultTerminalSet() noexcept
 // - <none>
 // Return Value:
 // - an iterable collection of all available terminals that could be the default.
-IObservableVector<Model::DefaultTerminal> CascadiaSettings::DefaultTerminals() noexcept
+IObservableVector<MTSM::DefaultTerminal> CascadiaSettings::DefaultTerminals() noexcept
 {
     _refreshDefaultTerminals();
     return _defaultTerminals;
@@ -1113,7 +1113,7 @@ IObservableVector<Model::DefaultTerminal> CascadiaSettings::DefaultTerminals() n
 // - <none>
 // Return Value:
 // - the selected default terminal application
-Settings::Model::DefaultTerminal CascadiaSettings::CurrentDefaultTerminal() noexcept
+MTSM::DefaultTerminal CascadiaSettings::CurrentDefaultTerminal() noexcept
 {
     _refreshDefaultTerminals();
     return _currentDefaultTerminal;
@@ -1125,7 +1125,7 @@ Settings::Model::DefaultTerminal CascadiaSettings::CurrentDefaultTerminal() noex
 // - terminal - Terminal from `DefaultTerminals` list to set as default
 // Return Value:
 // - <none>
-void CascadiaSettings::CurrentDefaultTerminal(const Model::DefaultTerminal& terminal)
+void CascadiaSettings::CurrentDefaultTerminal(const MTSM::DefaultTerminal& terminal)
 {
     _currentDefaultTerminal = terminal;
 }
@@ -1145,7 +1145,7 @@ void CascadiaSettings::_refreshDefaultTerminals()
 
     // This is an extract of extractValueFromTaskWithoutMainThreadAwait
     // as DefaultTerminal::Available creates the exact same issue.
-    std::pair<std::vector<Model::DefaultTerminal>, Model::DefaultTerminal> result{ {}, nullptr };
+    std::pair<std::vector<MTSM::DefaultTerminal>, MTSM::DefaultTerminal> result{ {}, nullptr };
     til::latch latch{ 1 };
 
     std::ignore = [&]() -> winrt::fire_and_forget {
@@ -1184,7 +1184,7 @@ void CascadiaSettings::_validateThemeExists()
         auto newTheme = winrt::make_self<Theme>();
         newTheme->Name(L"system");
         _globals->AddTheme(*newTheme);
-        _globals->Theme(Model::ThemePair{ L"system" });
+        _globals->Theme(MTSM::ThemePair{ L"system" });
     }
 
     const auto& theme{ _globals->Theme() };

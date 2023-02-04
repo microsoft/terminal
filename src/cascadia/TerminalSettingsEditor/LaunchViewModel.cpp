@@ -14,7 +14,7 @@ using namespace WUX::Data;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    LaunchViewModel::LaunchViewModel(Model::CascadiaSettings settings) :
+    LaunchViewModel::LaunchViewModel(MTSM::CascadiaSettings settings) :
         _Settings{ settings }
     {
         _useDefaultLaunchPosition = isnan(InitialPosX()) && isnan(InitialPosY());
@@ -151,15 +151,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void LaunchViewModel::CurrentDefaultProfile(const IInspectable& value)
     {
-        const auto profile{ winrt::unbox_value<Model::Profile>(value) };
+        const auto profile{ winrt::unbox_value<MTSM::Profile>(value) };
         _Settings.GlobalSettings().DefaultProfile(profile.Guid());
     }
 
-    WFC::IObservableVector<Model::Profile> LaunchViewModel::DefaultProfiles() const
+    WFC::IObservableVector<MTSM::Profile> LaunchViewModel::DefaultProfiles() const
     {
         const auto allProfiles = _Settings.AllProfiles();
 
-        std::vector<Model::Profile> profiles;
+        std::vector<MTSM::Profile> profiles;
         profiles.reserve(allProfiles.Size());
 
         // Remove profiles from the selection which have been explicitly deleted.
@@ -183,11 +183,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void LaunchViewModel::CurrentDefaultTerminal(const IInspectable& value)
     {
-        const auto defaultTerminal{ winrt::unbox_value<Model::DefaultTerminal>(value) };
+        const auto defaultTerminal{ winrt::unbox_value<MTSM::DefaultTerminal>(value) };
         _Settings.CurrentDefaultTerminal(defaultTerminal);
     }
 
-    WFC::IObservableVector<Model::DefaultTerminal> LaunchViewModel::DefaultTerminals() const
+    WFC::IObservableVector<MTSM::DefaultTerminal> LaunchViewModel::DefaultTerminals() const
     {
         return _Settings.DefaultTerminals();
     }

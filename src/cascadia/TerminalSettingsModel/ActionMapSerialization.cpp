@@ -67,7 +67,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // { "name": "Custom Copy", "command": "copy", "keys": "ctrl+c" }
         // {                        "command": "copy", "keys": "ctrl+shift+c" }
         // {                        "command": "copy", "keys": "ctrl+ins" }
-        auto toJson = [&actionList](const Model::Command& cmd) {
+        auto toJson = [&actionList](const MTSM::Command& cmd) {
             const auto cmdImpl{ winrt::get_self<implementation::Command>(cmd) };
             const auto& cmdJsonArray{ cmdImpl->ToJson() };
             for (const auto& cmdJson : cmdJsonArray)

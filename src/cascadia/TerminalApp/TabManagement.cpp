@@ -819,7 +819,7 @@ namespace winrt::TerminalApp::implementation
         else if (auto index{ _GetFocusedTabIndex() })
         {
             const auto tab{ _tabs.GetAt(*index) };
-            if (tab.try_as<TerminalApp::SettingsTab>())
+            if (tab.try_as<MTApp::SettingsTab>())
             {
                 _HandleCloseTabRequested(tab);
             }

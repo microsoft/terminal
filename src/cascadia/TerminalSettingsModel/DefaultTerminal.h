@@ -38,9 +38,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         hstring Version() const;
         hstring Icon() const;
 
-        static std::pair<std::vector<Model::DefaultTerminal>, Model::DefaultTerminal> Available();
+        static std::pair<std::vector<MTSM::DefaultTerminal>, MTSM::DefaultTerminal> Available();
         static bool HasCurrent();
-        static void Current(const Model::DefaultTerminal& term);
+        static void Current(const MTSM::DefaultTerminal& term);
 
     private:
         DelegationConfig::DelegationPackage _pkg;
