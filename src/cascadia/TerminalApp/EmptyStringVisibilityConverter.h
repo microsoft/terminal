@@ -9,14 +9,14 @@ namespace winrt::TerminalApp::implementation
         EmptyStringVisibilityConverter() = default;
 
         WF::IInspectable Convert(const WF::IInspectable& value,
-                                                  const WUX::Interop::TypeName& targetType,
-                                                  const WF::IInspectable& parameter,
-                                                  const hstring& language);
+                                 const WUX::Interop::TypeName& targetType,
+                                 const WF::IInspectable& parameter,
+                                 const hstring& language);
 
         WF::IInspectable ConvertBack(const WF::IInspectable& value,
-                                                      const WUX::Interop::TypeName& targetType,
-                                                      const WF::IInspectable& parameter,
-                                                      const hstring& language);
+                                     const WUX::Interop::TypeName& targetType,
+                                     const WF::IInspectable& parameter,
+                                     const hstring& language);
     };
 }
 

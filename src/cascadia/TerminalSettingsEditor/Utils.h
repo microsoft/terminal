@@ -14,7 +14,7 @@
     {                                                                                                                                                       \
         std::vector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> name##List;                                                                    \
         _##name##Map = winrt::single_threaded_map<enumType, winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>();                                     \
-        auto enumMapping##name = MTSM::EnumMappings::enumMappingsName();                                             \
+        auto enumMapping##name = MTSM::EnumMappings::enumMappingsName();                                                                                    \
         for (auto [key, value] : enumMapping##name)                                                                                                         \
         {                                                                                                                                                   \
             auto enumName = LocalizedNameForEnumName(resourceSectionAndType, key, resourceProperty);                                                        \
@@ -31,7 +31,7 @@
     {                                                                                                                                                       \
         std::vector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> name##List;                                                                    \
         _##name##Map = winrt::single_threaded_map<enumType, winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>();                                     \
-        auto enumMapping##name = MTSM::EnumMappings::enumMappingsName();                                             \
+        auto enumMapping##name = MTSM::EnumMappings::enumMappingsName();                                                                                    \
         for (auto [key, value] : enumMapping##name)                                                                                                         \
         {                                                                                                                                                   \
             auto enumName = LocalizedNameForEnumName(resourceSectionAndType, key, resourceProperty);                                                        \
@@ -51,17 +51,17 @@
 // for the setting we wish to bind to.
 #define GETSET_BINDABLE_ENUM_SETTING(name, enumType, viewModelSettingGetSet)                                                             \
 public:                                                                                                                                  \
-    WFC::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> name##List()     \
+    WFC::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> name##List()                                         \
     {                                                                                                                                    \
         return _##name##List;                                                                                                            \
     }                                                                                                                                    \
                                                                                                                                          \
-    WF::IInspectable Current##name()                                                                             \
+    WF::IInspectable Current##name()                                                                                                     \
     {                                                                                                                                    \
         return winrt::box_value<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>(_##name##Map.Lookup(viewModelSettingGetSet())); \
     }                                                                                                                                    \
                                                                                                                                          \
-    void Current##name(const WF::IInspectable& enumEntry)                                                        \
+    void Current##name(const WF::IInspectable& enumEntry)                                                                                \
     {                                                                                                                                    \
         if (auto ee = enumEntry.try_as<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>())                                       \
         {                                                                                                                                \
@@ -71,28 +71,28 @@ public:                                                                         
     }                                                                                                                                    \
                                                                                                                                          \
 private:                                                                                                                                 \
-    WFC::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _##name##List;   \
+    WFC::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _##name##List;                                       \
     WFC::IMap<enumType, winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _##name##Map;
 
 // This macro defines a dependency property for a WinRT class.
 // Use this in your class' header file after declaring it in the idl.
 // Remember to register your dependency property in the respective cpp file.
-#define DEPENDENCY_PROPERTY(type, name)                                  \
-public:                                                                  \
-    static WUX::DependencyProperty name##Property() \
-    {                                                                    \
-        return _##name##Property;                                        \
-    }                                                                    \
-    type name() const                                                    \
-    {                                                                    \
-        return winrt::unbox_value<type>(GetValue(_##name##Property));    \
-    }                                                                    \
-    void name(const type& value)                                         \
-    {                                                                    \
-        SetValue(_##name##Property, winrt::box_value(value));            \
-    }                                                                    \
-                                                                         \
-private:                                                                 \
+#define DEPENDENCY_PROPERTY(type, name)                               \
+public:                                                               \
+    static WUX::DependencyProperty name##Property()                   \
+    {                                                                 \
+        return _##name##Property;                                     \
+    }                                                                 \
+    type name() const                                                 \
+    {                                                                 \
+        return winrt::unbox_value<type>(GetValue(_##name##Property)); \
+    }                                                                 \
+    void name(const type& value)                                      \
+    {                                                                 \
+        SetValue(_##name##Property, winrt::box_value(value));         \
+    }                                                                 \
+                                                                      \
+private:                                                              \
     static WUX::DependencyProperty _##name##Property;
 
 namespace winrt::Microsoft::Terminal::Settings

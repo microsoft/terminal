@@ -40,12 +40,12 @@ protected:                                               \
 // This will declare the event handler and the methods for adding and removing a
 // handler callback from the event.
 // Use this if you have a Windows.Foundation.TypedEventHandler
-#define DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(name, eventHandler, sender, args)                  \
-public:                                                                                           \
+#define DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(name, eventHandler, sender, args) \
+public:                                                                          \
     winrt::event_token name(const WF::TypedEventHandler<sender, args>& handler); \
-    void name(const winrt::event_token& token) noexcept;                                          \
-                                                                                                  \
-private:                                                                                          \
+    void name(const winrt::event_token& token) noexcept;                         \
+                                                                                 \
+private:                                                                         \
     winrt::event<WF::TypedEventHandler<sender, args>> eventHandler;
 
 // This is a helper macro for defining the body of events.
@@ -53,7 +53,7 @@ private:                                                                        
 //      the callback. This macro will define them both for you, because they
 //      don't really vary from event to event.
 // Use this if you have a Windows.Foundation.TypedEventHandler
-#define DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(className, name, eventHandler, sender, args)                                                        \
+#define DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(className, name, eventHandler, sender, args)                                       \
     winrt::event_token className::name(const WF::TypedEventHandler<sender, args>& handler) { return eventHandler.add(handler); } \
     void className::name(const winrt::event_token& token) noexcept { eventHandler.remove(token); }
 
@@ -63,12 +63,12 @@ private:                                                                        
 // signatures and define them both for you, because they don't really vary from
 // event to event.
 // Use this in a classes header if you have a Windows.Foundation.TypedEventHandler
-#define TYPED_EVENT(name, sender, args)                                                                                                            \
-public:                                                                                                                                            \
+#define TYPED_EVENT(name, sender, args)                                                                                    \
+public:                                                                                                                    \
     winrt::event_token name(const WF::TypedEventHandler<sender, args>& handler) { return _##name##Handlers.add(handler); } \
-    void name(const winrt::event_token& token) { _##name##Handlers.remove(token); }                                                                \
-                                                                                                                                                   \
-private:                                                                                                                                           \
+    void name(const winrt::event_token& token) { _##name##Handlers.remove(token); }                                        \
+                                                                                                                           \
+private:                                                                                                                   \
     winrt::event<WF::TypedEventHandler<sender, args>> _##name##Handlers;
 
 // This is a helper macro for both declaring the signature of a callback (nee event) and
@@ -91,14 +91,14 @@ protected:                                                                      
 // "proxied" to the handling type. Case in point: many of the events on App are
 // just forwarded straight to TerminalPage. This macro will both declare the
 // method signatures and define them both for you.
-#define FORWARDED_TYPED_EVENT(name, sender, args, handler, handlerName)                                                        \
-public:                                                                                                                        \
+#define FORWARDED_TYPED_EVENT(name, sender, args, handler, handlerName)                                       \
+public:                                                                                                       \
     winrt::event_token name(const WF::TypedEventHandler<sender, args>& h) { return handler->handlerName(h); } \
     void name(const winrt::event_token& token) noexcept { handler->handlerName(token); }
 
 // Same thing, but handler is a projected type, not an implementation
-#define PROJECTED_FORWARDED_TYPED_EVENT(name, sender, args, handler, handlerName)                                             \
-public:                                                                                                                       \
+#define PROJECTED_FORWARDED_TYPED_EVENT(name, sender, args, handler, handlerName)                            \
+public:                                                                                                      \
     winrt::event_token name(const WF::TypedEventHandler<sender, args>& h) { return handler.handlerName(h); } \
     void name(const winrt::event_token& token) noexcept { handler.handlerName(token); }
 
@@ -120,23 +120,23 @@ private:                                                       \
 // private _setName() method, that the class can internally use to change the
 // value when it _knows_ it doesn't need to raise the PropertyChanged event
 // (like when the class is being initialized).
-#define WINRT_OBSERVABLE_PROPERTY(type, name, event, ...)                                 \
-public:                                                                                   \
-    type name() const noexcept { return _##name; };                                       \
-    void name(const type& value)                                                          \
-    {                                                                                     \
-        if (_##name != value)                                                             \
-        {                                                                                 \
-            _##name = value;                                                              \
+#define WINRT_OBSERVABLE_PROPERTY(type, name, event, ...)                   \
+public:                                                                     \
+    type name() const noexcept { return _##name; };                         \
+    void name(const type& value)                                            \
+    {                                                                       \
+        if (_##name != value)                                               \
+        {                                                                   \
+            _##name = value;                                                \
             event(*this, WUX::Data::PropertyChangedEventArgs{ L## #name }); \
-        }                                                                                 \
-    };                                                                                    \
-                                                                                          \
-private:                                                                                  \
-    type _##name{ __VA_ARGS__ };                                                          \
-    void _set##name(const type& value)                                                    \
-    {                                                                                     \
-        _##name = value;                                                                  \
+        }                                                                   \
+    };                                                                      \
+                                                                            \
+private:                                                                    \
+    type _##name{ __VA_ARGS__ };                                            \
+    void _set##name(const type& value)                                      \
+    {                                                                       \
+        _##name = value;                                                    \
     };
 
 // Use this macro for quickly defining the factory_implementation part of a
@@ -180,26 +180,26 @@ std::vector<wil::com_ptr<T>> SafeArrayToOwningVector(SAFEARRAY* safeArray)
     return result;
 }
 
-#define DECLARE_CONVERTER(nameSpace, className)                                                                   \
-    namespace nameSpace::implementation                                                                           \
-    {                                                                                                             \
-        struct className : className##T<className>                                                                \
-        {                                                                                                         \
-            className() = default;                                                                                \
-                                                                                                                  \
-            WF::IInspectable Convert(const WF::IInspectable& value,             \
-                                                      const WUX::Interop::TypeName& targetType,     \
-                                                      const WF::IInspectable& parameter,         \
-                                                      const hstring& language);                                   \
-                                                                                                                  \
-            WF::IInspectable ConvertBack(const WF::IInspectable& value,         \
-                                                          const WUX::Interop::TypeName& targetType, \
-                                                          const WF::IInspectable& parameter,     \
-                                                          const hstring& language);                               \
-        };                                                                                                        \
-    }                                                                                                             \
-                                                                                                                  \
-    namespace nameSpace::factory_implementation                                                                   \
-    {                                                                                                             \
-        BASIC_FACTORY(className);                                                                                 \
+#define DECLARE_CONVERTER(nameSpace, className)                                    \
+    namespace nameSpace::implementation                                            \
+    {                                                                              \
+        struct className : className##T<className>                                 \
+        {                                                                          \
+            className() = default;                                                 \
+                                                                                   \
+            WF::IInspectable Convert(const WF::IInspectable& value,                \
+                                     const WUX::Interop::TypeName& targetType,     \
+                                     const WF::IInspectable& parameter,            \
+                                     const hstring& language);                     \
+                                                                                   \
+            WF::IInspectable ConvertBack(const WF::IInspectable& value,            \
+                                         const WUX::Interop::TypeName& targetType, \
+                                         const WF::IInspectable& parameter,        \
+                                         const hstring& language);                 \
+        };                                                                         \
+    }                                                                              \
+                                                                                   \
+    namespace nameSpace::factory_implementation                                    \
+    {                                                                              \
+        BASIC_FACTORY(className);                                                  \
     }\

@@ -18,12 +18,6 @@ using namespace MTSM;
 using namespace MUXC;
 using namespace WS;
 
-namespace winrt
-{
-    namespace MUX = MUX;
-    namespace WUX = WUX;
-}
-
 namespace winrt::TerminalApp::implementation
 {
     TerminalTab::TerminalTab(std::shared_ptr<Pane> rootPane)

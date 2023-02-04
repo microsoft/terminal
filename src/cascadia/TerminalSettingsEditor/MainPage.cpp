@@ -22,12 +22,6 @@
 #include <LibraryResources.h>
 #include <dwmapi.h>
 
-namespace winrt
-{
-    namespace MUX = MUX;
-    namespace WUX = WUX;
-}
-
 using namespace WF;
 using namespace WUX;
 using namespace MTSM;
@@ -686,7 +680,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // currently requested theme.
         if (const auto bgColor = ThemeLookup(Resources(), requestedTheme, winrt::box_value(bgKey)))
         {
-            SettingsNav().Background(winrt::WUX::Media::SolidColorBrush(winrt::unbox_value<Windows::UI::Color>(bgColor)));
+            SettingsNav().Background(WUX::Media::SolidColorBrush(winrt::unbox_value<Windows::UI::Color>(bgColor)));
         }
     }
 

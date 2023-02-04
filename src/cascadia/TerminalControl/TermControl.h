@@ -115,9 +115,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const WUX::Thickness GetPadding();
 
         static WF::Size GetProposedDimensions(const IControlSettings& settings,
-                                                               const uint32_t dpi,
-                                                               int32_t commandlineCols,
-                                                               int32_t commandlineRows);
+                                              const uint32_t dpi,
+                                              int32_t commandlineCols,
+                                              int32_t commandlineRows);
         static WF::Size GetProposedDimensions(const IControlSettings& settings, const uint32_t dpi, const WF::Size& initialSizeInChars);
 
         void BellLightOn();

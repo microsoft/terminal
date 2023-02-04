@@ -42,13 +42,6 @@ using namespace MTSM;
 using namespace ::TerminalApp;
 using namespace ::Microsoft::Console;
 
-namespace winrt
-{
-    namespace MUX = MUX;
-    namespace WUX = WUX;
-    using IInspectable = WF::IInspectable;
-}
-
 namespace winrt::TerminalApp::implementation
 {
     // Method Description:

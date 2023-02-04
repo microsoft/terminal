@@ -111,9 +111,9 @@ public:
     bool ToggleSplitOrientation();
     float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
     std::optional<std::optional<MTSM::SplitDirection>> PreCalculateCanSplit(const std::shared_ptr<Pane> target,
-                                                                                                                   MTSM::SplitDirection splitType,
-                                                                                                                   const float splitSize,
-                                                                                                                   const WF::Size availableSpace) const;
+                                                                            MTSM::SplitDirection splitType,
+                                                                            const float splitSize,
+                                                                            const WF::Size availableSpace) const;
     void Shutdown();
     void Close();
 

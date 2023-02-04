@@ -21,12 +21,6 @@ using namespace Microsoft::Terminal::Settings::Model;
 using namespace MTSM::implementation;
 using namespace winrt::Windows::UI;
 
-namespace winrt
-{
-    namespace MUX = MUX;
-    namespace WUX = WUX;
-}
-
 static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view LightNameKey{ "light" };
 static constexpr std::string_view DarkNameKey{ "dark" };
@@ -109,22 +103,22 @@ static til::color _getAccentColorForTitlebar()
     return til::color{ static_cast<COLORREF>(readDwmSubValue(openDwmRegKey(), RegKeyAccentColor)) }.with_alpha(255);
 }
 
-til::color ThemeColor::ColorFromBrush(const winrt::WUX::Media::Brush& brush)
+til::color ThemeColor::ColorFromBrush(const WUX::Media::Brush& brush)
 {
-    if (auto acrylic = brush.try_as<winrt::WUX::Media::AcrylicBrush>())
+    if (auto acrylic = brush.try_as<WUX::Media::AcrylicBrush>())
     {
         return acrylic.TintColor();
     }
-    else if (auto solidColor = brush.try_as<winrt::WUX::Media::SolidColorBrush>())
+    else if (auto solidColor = brush.try_as<WUX::Media::SolidColorBrush>())
     {
         return solidColor.Color();
     }
     return {};
 }
 
-winrt::WUX::Media::Brush ThemeColor::Evaluate(const winrt::WUX::ResourceDictionary& res,
-                                              const winrt::WUX::Media::Brush& terminalBackground,
-                                              const bool forTitlebar)
+WUX::Media::Brush ThemeColor::Evaluate(const WUX::ResourceDictionary& res,
+                                       const WUX::Media::Brush& terminalBackground,
+                                       const bool forTitlebar)
 {
     static const auto accentColorKey{ winrt::box_value(L"SystemAccentColor") };
 
@@ -140,14 +134,14 @@ winrt::WUX::Media::Brush ThemeColor::Evaluate(const winrt::WUX::ResourceDictiona
                                      _getAccentColorForTitlebar() :
                                      til::color{ winrt::unbox_value<winrt::Windows::UI::Color>(res.Lookup(accentColorKey)) };
 
-        const winrt::WUX::Media::SolidColorBrush accentBrush{ accentColor };
+        const WUX::Media::SolidColorBrush accentBrush{ accentColor };
         // _getAccentColorForTitlebar should have already filled the alpha
         // channel in with 255
         return accentBrush;
     }
     case ThemeColorType::Color:
     {
-        return winrt::WUX::Media::SolidColorBrush{ Color() };
+        return WUX::Media::SolidColorBrush{ Color() };
     }
     case ThemeColorType::TerminalBackground:
     {
@@ -226,7 +220,7 @@ THEME_OBJECT_CONVERTER(winrt::Microsoft::Terminal::Settings::Model, TabTheme, MT
 #undef THEME_SETTINGS_TO_JSON
 #undef THEME_OBJECT_CONVERTER
 
-Theme::Theme(const winrt::WUX::ElementTheme& requestedTheme) noexcept
+Theme::Theme(const WUX::ElementTheme& requestedTheme) noexcept
 {
     auto window{ winrt::make_self<implementation::WindowTheme>() };
     window->RequestedTheme(requestedTheme);
@@ -319,9 +313,9 @@ winrt::hstring Theme::ToString()
 //   for this theme, this'll quickly just return `system`, to use the OS theme.
 // Return Value:
 // - the set applicationTheme for this Theme, otherwise the system theme.
-winrt::WUX::ElementTheme Theme::RequestedTheme() const noexcept
+WUX::ElementTheme Theme::RequestedTheme() const noexcept
 {
-    return _Window ? _Window.RequestedTheme() : winrt::WUX::ElementTheme::Default;
+    return _Window ? _Window.RequestedTheme() : WUX::ElementTheme::Default;
 }
 
 winrt::com_ptr<ThemePair> ThemePair::FromJson(const Json::Value& json)

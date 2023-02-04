@@ -237,7 +237,7 @@ private:                                                                        
     X(bool, Relative, "relative", false, true)
 
 ////////////////////////////////////////////////////////////////////////////////
-#define COLOR_SELECTION_ARGS(X)                                                                      \
+#define COLOR_SELECTION_ARGS(X)                                            \
     X(MTControl::SelectionColor, Foreground, "foreground", false, nullptr) \
     X(MTControl::SelectionColor, Background, "background", false, nullptr) \
     X(MTCore::MatchMode, MatchMode, "matchMode", false, MTCore::MatchMode::None)

@@ -18,12 +18,6 @@ using namespace WF;
 using namespace WFC;
 using namespace MUXC;
 
-namespace winrt
-{
-    namespace MUX = MUX;
-    namespace WUX = WUX;
-}
-
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     ColorSchemes::ColorSchemes()

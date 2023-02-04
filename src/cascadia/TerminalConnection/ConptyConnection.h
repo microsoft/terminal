@@ -47,12 +47,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         static void NewConnection(const winrt::event_token& token);
 
         static WFC::ValueSet CreateSettings(const winrt::hstring& cmdline,
-                                                                         const winrt::hstring& startingDirectory,
-                                                                         const winrt::hstring& startingTitle,
-                                                                         const WFC::IMapView<hstring, hstring>& environment,
-                                                                         uint32_t rows,
-                                                                         uint32_t columns,
-                                                                         const winrt::guid& guid);
+                                            const winrt::hstring& startingDirectory,
+                                            const winrt::hstring& startingTitle,
+                                            const WFC::IMapView<hstring, hstring>& environment,
+                                            uint32_t rows,
+                                            uint32_t columns,
+                                            const winrt::guid& guid);
 
         WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
 

@@ -18,50 +18,50 @@ Author(s):
 // Macro format (defaultArgs are optional):
 // (type, name, jsonKey, defaultArgs)
 
-#define MTSM_GLOBAL_SETTINGS(X)                                                                                                                            \
-    X(int32_t, InitialRows, "initialRows", 30)                                                                                                             \
-    X(int32_t, InitialCols, "initialCols", 80)                                                                                                             \
-    X(hstring, WordDelimiters, "wordDelimiters", DEFAULT_WORD_DELIMITERS)                                                                                  \
-    X(bool, CopyOnSelect, "copyOnSelect", false)                                                                                                           \
-    X(bool, FocusFollowMouse, "focusFollowMouse", false)                                                                                                   \
-    X(bool, ForceFullRepaintRendering, "experimental.rendering.forceFullRepaint", false)                                                                   \
-    X(bool, SoftwareRendering, "experimental.rendering.software", false)                                                                                   \
-    X(bool, UseBackgroundImageForWindow, "experimental.useBackgroundImageForWindow", false)                                                                \
-    X(bool, ForceVTInput, "experimental.input.forceVT", false)                                                                                             \
-    X(bool, TrimBlockSelection, "trimBlockSelection", true)                                                                                                \
-    X(bool, DetectURLs, "experimental.detectURLs", true)                                                                                                   \
-    X(bool, AlwaysShowTabs, "alwaysShowTabs", true)                                                                                                        \
-    X(Model::NewTabPosition, NewTabPosition, "newTabPosition", Model::NewTabPosition::AfterLastTab)                                                        \
-    X(bool, ShowTitleInTitlebar, "showTerminalTitleInTitlebar", true)                                                                                      \
-    X(bool, ConfirmCloseAllTabs, "confirmCloseAllTabs", true)                                                                                              \
-    X(Model::ThemePair, Theme, "theme")                                                                                                                    \
-    X(hstring, Language, "language")                                                                                                                       \
-    X(MUXC::TabViewWidthMode, TabWidthMode, "tabWidthMode", MUXC::TabViewWidthMode::Equal) \
-    X(bool, UseAcrylicInTabRow, "useAcrylicInTabRow", false)                                                                                               \
-    X(bool, ShowTabsInTitlebar, "showTabsInTitlebar", true)                                                                                                \
-    X(bool, InputServiceWarning, "inputServiceWarning", true)                                                                                              \
-    X(MTControl::CopyFormat, CopyFormatting, "copyFormatting", 0)                                                                \
-    X(bool, WarnAboutLargePaste, "largePasteWarning", true)                                                                                                \
-    X(bool, WarnAboutMultiLinePaste, "multiLinePasteWarning", true)                                                                                        \
-    X(Model::LaunchPosition, InitialPosition, "initialPosition", nullptr, nullptr)                                                                         \
-    X(bool, CenterOnLaunch, "centerOnLaunch", false)                                                                                                       \
-    X(Model::FirstWindowPreference, FirstWindowPreference, "firstWindowPreference", FirstWindowPreference::DefaultProfile)                                 \
-    X(Model::LaunchMode, LaunchMode, "launchMode", LaunchMode::DefaultMode)                                                                                \
-    X(bool, SnapToGridOnResize, "snapToGridOnResize", true)                                                                                                \
-    X(bool, DebugFeaturesEnabled, "debugFeatures", debugFeaturesDefault)                                                                                   \
-    X(bool, StartOnUserLogin, "startOnUserLogin", false)                                                                                                   \
-    X(bool, AlwaysOnTop, "alwaysOnTop", false)                                                                                                             \
-    X(bool, AutoHideWindow, "autoHideWindow", false)                                                                                                       \
-    X(Model::TabSwitcherMode, TabSwitcherMode, "tabSwitcherMode", Model::TabSwitcherMode::InOrder)                                                         \
-    X(bool, DisableAnimations, "disableAnimations", false)                                                                                                 \
-    X(hstring, StartupActions, "startupActions", L"")                                                                                                      \
-    X(Model::WindowingMode, WindowingBehavior, "windowingBehavior", Model::WindowingMode::UseNew)                                                          \
-    X(bool, MinimizeToNotificationArea, "minimizeToNotificationArea", false)                                                                               \
-    X(bool, AlwaysShowNotificationIcon, "alwaysShowNotificationIcon", false)                                                                               \
-    X(WFC::IVector<winrt::hstring>, DisabledProfileSources, "disabledProfileSources", nullptr)                         \
-    X(bool, ShowAdminShield, "showAdminShield", true)                                                                                                      \
-    X(bool, TrimPaste, "trimPaste", true)                                                                                                                  \
-    X(bool, EnableColorSelection, "experimental.enableColorSelection", false)                                                                              \
+#define MTSM_GLOBAL_SETTINGS(X)                                                                                            \
+    X(int32_t, InitialRows, "initialRows", 30)                                                                             \
+    X(int32_t, InitialCols, "initialCols", 80)                                                                             \
+    X(hstring, WordDelimiters, "wordDelimiters", DEFAULT_WORD_DELIMITERS)                                                  \
+    X(bool, CopyOnSelect, "copyOnSelect", false)                                                                           \
+    X(bool, FocusFollowMouse, "focusFollowMouse", false)                                                                   \
+    X(bool, ForceFullRepaintRendering, "experimental.rendering.forceFullRepaint", false)                                   \
+    X(bool, SoftwareRendering, "experimental.rendering.software", false)                                                   \
+    X(bool, UseBackgroundImageForWindow, "experimental.useBackgroundImageForWindow", false)                                \
+    X(bool, ForceVTInput, "experimental.input.forceVT", false)                                                             \
+    X(bool, TrimBlockSelection, "trimBlockSelection", true)                                                                \
+    X(bool, DetectURLs, "experimental.detectURLs", true)                                                                   \
+    X(bool, AlwaysShowTabs, "alwaysShowTabs", true)                                                                        \
+    X(Model::NewTabPosition, NewTabPosition, "newTabPosition", Model::NewTabPosition::AfterLastTab)                        \
+    X(bool, ShowTitleInTitlebar, "showTerminalTitleInTitlebar", true)                                                      \
+    X(bool, ConfirmCloseAllTabs, "confirmCloseAllTabs", true)                                                              \
+    X(Model::ThemePair, Theme, "theme")                                                                                    \
+    X(hstring, Language, "language")                                                                                       \
+    X(MUXC::TabViewWidthMode, TabWidthMode, "tabWidthMode", MUXC::TabViewWidthMode::Equal)                                 \
+    X(bool, UseAcrylicInTabRow, "useAcrylicInTabRow", false)                                                               \
+    X(bool, ShowTabsInTitlebar, "showTabsInTitlebar", true)                                                                \
+    X(bool, InputServiceWarning, "inputServiceWarning", true)                                                              \
+    X(MTControl::CopyFormat, CopyFormatting, "copyFormatting", 0)                                                          \
+    X(bool, WarnAboutLargePaste, "largePasteWarning", true)                                                                \
+    X(bool, WarnAboutMultiLinePaste, "multiLinePasteWarning", true)                                                        \
+    X(Model::LaunchPosition, InitialPosition, "initialPosition", nullptr, nullptr)                                         \
+    X(bool, CenterOnLaunch, "centerOnLaunch", false)                                                                       \
+    X(Model::FirstWindowPreference, FirstWindowPreference, "firstWindowPreference", FirstWindowPreference::DefaultProfile) \
+    X(Model::LaunchMode, LaunchMode, "launchMode", LaunchMode::DefaultMode)                                                \
+    X(bool, SnapToGridOnResize, "snapToGridOnResize", true)                                                                \
+    X(bool, DebugFeaturesEnabled, "debugFeatures", debugFeaturesDefault)                                                   \
+    X(bool, StartOnUserLogin, "startOnUserLogin", false)                                                                   \
+    X(bool, AlwaysOnTop, "alwaysOnTop", false)                                                                             \
+    X(bool, AutoHideWindow, "autoHideWindow", false)                                                                       \
+    X(Model::TabSwitcherMode, TabSwitcherMode, "tabSwitcherMode", Model::TabSwitcherMode::InOrder)                         \
+    X(bool, DisableAnimations, "disableAnimations", false)                                                                 \
+    X(hstring, StartupActions, "startupActions", L"")                                                                      \
+    X(Model::WindowingMode, WindowingBehavior, "windowingBehavior", Model::WindowingMode::UseNew)                          \
+    X(bool, MinimizeToNotificationArea, "minimizeToNotificationArea", false)                                               \
+    X(bool, AlwaysShowNotificationIcon, "alwaysShowNotificationIcon", false)                                               \
+    X(WFC::IVector<winrt::hstring>, DisabledProfileSources, "disabledProfileSources", nullptr)                             \
+    X(bool, ShowAdminShield, "showAdminShield", true)                                                                      \
+    X(bool, TrimPaste, "trimPaste", true)                                                                                  \
+    X(bool, EnableColorSelection, "experimental.enableColorSelection", false)                                              \
     X(WFC::IVector<Model::NewTabMenuEntry>, NewTabMenu, "newTabMenu", winrt::single_threaded_vector<Model::NewTabMenuEntry>({ Model::RemainingProfilesEntry{} }))
 
 #define MTSM_PROFILE_SETTINGS(X)                                                                                                                               \
@@ -80,7 +80,7 @@ Author(s):
     X(hstring, TabTitle, "tabTitle")                                                                                                                           \
     X(Model::BellStyle, BellStyle, "bellStyle", BellStyle::Audible)                                                                                            \
     X(bool, UseAtlasEngine, "useAtlasEngine", Feature_AtlasEngine::IsEnabled())                                                                                \
-    X(WFC::IVector<winrt::hstring>, BellSound, "bellSound", nullptr)                                                              \
+    X(WFC::IVector<winrt::hstring>, BellSound, "bellSound", nullptr)                                                                                           \
     X(bool, Elevate, "elevate", false)                                                                                                                         \
     X(bool, VtPassthrough, "experimental.connection.passthroughMode", false)                                                                                   \
     X(bool, AutoMarkPrompts, "experimental.autoMarkPrompts", false)                                                                                            \
@@ -95,43 +95,43 @@ Author(s):
 // * Padding: needs special FromJson parsing
 // * TabColor: is an optional setting, so needs to be set with INHERITABLE_NULLABLE_SETTING
 
-#define MTSM_FONT_SETTINGS(X)                                                          \
-    X(hstring, FontFace, "face", DEFAULT_FONT_FACE)                                    \
-    X(float, FontSize, "size", DEFAULT_FONT_SIZE)                                      \
+#define MTSM_FONT_SETTINGS(X)                                     \
+    X(hstring, FontFace, "face", DEFAULT_FONT_FACE)               \
+    X(float, FontSize, "size", DEFAULT_FONT_SIZE)                 \
     X(WUT::FontWeight, FontWeight, "weight", DEFAULT_FONT_WEIGHT) \
-    X(IFontAxesMap, FontAxes, "axes")                                                  \
+    X(IFontAxesMap, FontAxes, "axes")                             \
     X(IFontFeatureMap, FontFeatures, "features")
 
-#define MTSM_APPEARANCE_SETTINGS(X)                                                                                                                                \
-    X(Core::CursorStyle, CursorShape, "cursorShape", Core::CursorStyle::Bar)                                                                                       \
-    X(uint32_t, CursorHeight, "cursorHeight", DEFAULT_CURSOR_HEIGHT)                                                                                               \
-    X(double, BackgroundImageOpacity, "backgroundImageOpacity", 1.0)                                                                                               \
-    X(WUXMedia::Stretch, BackgroundImageStretchMode, "backgroundImageStretchMode", WUXMedia::Stretch::UniformToFill) \
-    X(bool, RetroTerminalEffect, "experimental.retroTerminalEffect", false)                                                                                        \
-    X(hstring, PixelShaderPath, "experimental.pixelShaderPath")                                                                                                    \
-    X(ConvergedAlignment, BackgroundImageAlignment, "backgroundImageAlignment", ConvergedAlignment::Horizontal_Center | ConvergedAlignment::Vertical_Center)       \
-    X(hstring, BackgroundImagePath, "backgroundImage")                                                                                                             \
-    X(Model::IntenseStyle, IntenseTextStyle, "intenseTextStyle", Model::IntenseStyle::Bright)                                                                      \
+#define MTSM_APPEARANCE_SETTINGS(X)                                                                                                                          \
+    X(Core::CursorStyle, CursorShape, "cursorShape", Core::CursorStyle::Bar)                                                                                 \
+    X(uint32_t, CursorHeight, "cursorHeight", DEFAULT_CURSOR_HEIGHT)                                                                                         \
+    X(double, BackgroundImageOpacity, "backgroundImageOpacity", 1.0)                                                                                         \
+    X(WUXMedia::Stretch, BackgroundImageStretchMode, "backgroundImageStretchMode", WUXMedia::Stretch::UniformToFill)                                         \
+    X(bool, RetroTerminalEffect, "experimental.retroTerminalEffect", false)                                                                                  \
+    X(hstring, PixelShaderPath, "experimental.pixelShaderPath")                                                                                              \
+    X(ConvergedAlignment, BackgroundImageAlignment, "backgroundImageAlignment", ConvergedAlignment::Horizontal_Center | ConvergedAlignment::Vertical_Center) \
+    X(hstring, BackgroundImagePath, "backgroundImage")                                                                                                       \
+    X(Model::IntenseStyle, IntenseTextStyle, "intenseTextStyle", Model::IntenseStyle::Bright)                                                                \
     X(Core::AdjustTextMode, AdjustIndistinguishableColors, "adjustIndistinguishableColors", Core::AdjustTextMode::Never)
 
 // Intentionally omitted Appearance settings:
 // * ForegroundKey, BackgroundKey, SelectionBackgroundKey, CursorColorKey: all optional colors
 // * Opacity: needs special parsing
 
-#define MTSM_THEME_SETTINGS(X)                                                             \
+#define MTSM_THEME_SETTINGS(X)                      \
     X(MTSM::WindowTheme, Window, "window", nullptr) \
     X(MTSM::TabRowTheme, TabRow, "tabRow", nullptr) \
     X(MTSM::TabTheme, Tab, "tab", nullptr)
 
-#define MTSM_THEME_WINDOW_SETTINGS(X)                                                                                              \
+#define MTSM_THEME_WINDOW_SETTINGS(X)                                                    \
     X(WUX::ElementTheme, RequestedTheme, "applicationTheme", WUX::ElementTheme::Default) \
     X(bool, UseMica, "useMica", false)
 
-#define MTSM_THEME_TABROW_SETTINGS(X)                                                             \
+#define MTSM_THEME_TABROW_SETTINGS(X)                      \
     X(MTSM::ThemeColor, Background, "background", nullptr) \
     X(MTSM::ThemeColor, UnfocusedBackground, "unfocusedBackground", nullptr)
 
-#define MTSM_THEME_TAB_SETTINGS(X)                                                                                  \
+#define MTSM_THEME_TAB_SETTINGS(X)                                           \
     X(MTSM::ThemeColor, Background, "background", nullptr)                   \
     X(MTSM::ThemeColor, UnfocusedBackground, "unfocusedBackground", nullptr) \
     X(MTSM::TabCloseButtonVisibility, ShowCloseButton, "showCloseButton", MTSM::TabCloseButtonVisibility::Always)

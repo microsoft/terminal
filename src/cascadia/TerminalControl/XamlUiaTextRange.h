@@ -44,11 +44,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                  WUX::Automation::Text::TextPatternRangeEndpoint targetEndpoint);
         void ExpandToEnclosingUnit(WUX::Automation::Text::TextUnit unit) const;
         WUX::Automation::Provider::ITextRangeProvider FindAttribute(int32_t textAttributeId,
-                                                                                  WF::IInspectable val,
-                                                                                  bool searchBackward);
+                                                                    WF::IInspectable val,
+                                                                    bool searchBackward);
         WUX::Automation::Provider::ITextRangeProvider FindText(winrt::hstring text,
-                                                                             bool searchBackward,
-                                                                             bool ignoreCase);
+                                                               bool searchBackward,
+                                                               bool ignoreCase);
         WF::IInspectable GetAttributeValue(int32_t textAttributeId) const;
         void GetBoundingRectangles(winrt::com_array<double>& returnValue) const;
         WUX::Automation::Provider::IRawElementProviderSimple GetEnclosingElement();

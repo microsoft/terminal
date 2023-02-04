@@ -14,12 +14,6 @@ using namespace MTSM;
 using namespace WFC;
 using namespace ::Microsoft::Terminal::Settings::Model;
 
-namespace winrt
-{
-    namespace MUX = MUX;
-    namespace WUX = WUX;
-}
-
 static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view IconKey{ "icon" };
 static constexpr std::string_view ActionKey{ "command" };

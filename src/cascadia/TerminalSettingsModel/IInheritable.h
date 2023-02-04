@@ -194,7 +194,7 @@ public:                                                                      \
 public:                                                                        \
     /* Returns the resolved value for this setting */                          \
     /* fallback: user set value --> inherited value --> system set value */    \
-    WF::IReference<type> name() const                  \
+    WF::IReference<type> name() const                                          \
     {                                                                          \
         const auto val{ _get##name##Impl() };                                  \
         if (val)                                                               \
@@ -205,11 +205,11 @@ public:                                                                        \
             }                                                                  \
             return nullptr;                                                    \
         }                                                                      \
-        return WF::IReference<type>{ __VA_ARGS__ };    \
+        return WF::IReference<type>{ __VA_ARGS__ };                            \
     }                                                                          \
                                                                                \
     /* Overwrite the user set value */                                         \
-    void name(const WF::IReference<type>& value)       \
+    void name(const WF::IReference<type>& value)                               \
     {                                                                          \
         if (value) /*set value is different*/                                  \
         {                                                                      \

@@ -24,7 +24,7 @@ public:
     // Return Value:
     // - The ActionAndArgs bound to the given key, or nullptr if nothing is bound to it.
     static const MTSM::ActionAndArgs GetActionAndArgs(const MTSM::ActionMap& actionMap,
-                                                                                             const MTControl::KeyChord& kc)
+                                                      const MTControl::KeyChord& kc)
     {
         using VirtualKeyModifiers = WS::VirtualKeyModifiers;
 

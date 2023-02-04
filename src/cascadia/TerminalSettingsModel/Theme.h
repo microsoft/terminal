@@ -60,8 +60,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static til::color ColorFromBrush(const WUXMedia::Brush& brush);
 
         WUXMedia::Brush Evaluate(const WUX::ResourceDictionary& res,
-                                                        const WUXMedia::Brush& terminalBackground,
-                                                        const bool forTitlebar);
+                                 const WUXMedia::Brush& terminalBackground,
+                                 const bool forTitlebar);
         uint8_t UnfocusedTabOpacity() const noexcept;
 
         WINRT_PROPERTY(til::color, Color);

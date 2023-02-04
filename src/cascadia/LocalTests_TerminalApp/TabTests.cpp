@@ -28,13 +28,6 @@ using namespace WUXC;
 using namespace WUC;
 using namespace WUT;
 
-namespace winrt
-{
-    namespace MUX = MUX;
-    namespace WUX = WUX;
-    using IInspectable = WF::IInspectable;
-}
-
 namespace TerminalAppLocalTests
 {
     // TODO:microsoft/terminal#3838:
@@ -1249,7 +1242,7 @@ namespace TerminalAppLocalTests
         });
 
         auto windowNameChanged = false;
-        page->PropertyChanged([&page, &windowNameChanged](auto&&, const winrt::WUX::Data::PropertyChangedEventArgs& args) mutable {
+        page->PropertyChanged([&page, &windowNameChanged](auto&&, const WUX::Data::PropertyChangedEventArgs& args) mutable {
             if (args.PropertyName() == L"WindowNameForDisplay")
             {
                 windowNameChanged = true;
@@ -1280,7 +1273,7 @@ namespace TerminalAppLocalTests
 
         auto windowNameChanged = false;
 
-        page->PropertyChanged([&page, &windowNameChanged](auto&&, const winrt::WUX::Data::PropertyChangedEventArgs& args) mutable {
+        page->PropertyChanged([&page, &windowNameChanged](auto&&, const WUX::Data::PropertyChangedEventArgs& args) mutable {
             if (args.PropertyName() == L"WindowNameForDisplay")
             {
                 windowNameChanged = true;

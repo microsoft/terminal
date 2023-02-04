@@ -310,7 +310,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     WUXMedia::Imaging::SoftwareBitmapSource _getImageIconSourceForBinary(std::wstring_view iconPathWithoutIndex,
-                                                                                                int index)
+                                                                         int index)
     {
         // Try:
         // * c:\Windows\System32\SHELL32.dll, 210

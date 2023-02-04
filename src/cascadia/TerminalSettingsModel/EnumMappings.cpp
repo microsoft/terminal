@@ -13,18 +13,18 @@ using namespace winrt;
 using namespace WFC;
 using namespace ::Microsoft::Terminal::Settings::Model;
 
-#define DEFINE_ENUM_MAP(type, name)                                                          \
-    WFC::IMap<winrt::hstring, type> EnumMappings::name() \
-    {                                                                                        \
-        static IMap<winrt::hstring, type> enumMap = []() {                                   \
-            auto map = single_threaded_map<winrt::hstring, type>();                          \
-            for (auto [enumStr, enumVal] : JsonUtils::ConversionTrait<type>::mappings)       \
-            {                                                                                \
-                map.Insert(winrt::to_hstring(enumStr), enumVal);                             \
-            }                                                                                \
-            return map;                                                                      \
-        }();                                                                                 \
-        return enumMap;                                                                      \
+#define DEFINE_ENUM_MAP(type, name)                                                    \
+    WFC::IMap<winrt::hstring, type> EnumMappings::name()                               \
+    {                                                                                  \
+        static IMap<winrt::hstring, type> enumMap = []() {                             \
+            auto map = single_threaded_map<winrt::hstring, type>();                    \
+            for (auto [enumStr, enumVal] : JsonUtils::ConversionTrait<type>::mappings) \
+            {                                                                          \
+                map.Insert(winrt::to_hstring(enumStr), enumVal);                       \
+            }                                                                          \
+            return map;                                                                \
+        }();                                                                           \
+        return enumMap;                                                                \
     }
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation

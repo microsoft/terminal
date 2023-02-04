@@ -2050,9 +2050,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Return Value:
     // - a size containing the requested dimensions in pixels.
     WF::Size TermControl::GetProposedDimensions(const IControlSettings& settings,
-                                                                        const uint32_t dpi,
-                                                                        int32_t commandlineCols,
-                                                                        int32_t commandlineRows)
+                                                const uint32_t dpi,
+                                                int32_t commandlineCols,
+                                                int32_t commandlineRows)
     {
         // If the settings have negative or zero row or column counts, ignore those counts.
         // (The lower TerminalCore layer also has upper bounds as well, but at this layer

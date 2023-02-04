@@ -52,8 +52,8 @@ namespace winrt::TerminalApp::implementation
 
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
         std::optional<MTSM::SplitDirection> PreCalculateCanSplit(MTSM::SplitDirection splitType,
-                                                                                                        const float splitSize,
-                                                                                                        WF::Size availableSpace) const;
+                                                                 const float splitSize,
+                                                                 WF::Size availableSpace) const;
 
         void ResizePane(const MTSM::ResizeDirection& direction);
         bool NavigateFocus(const MTSM::FocusDirection& direction);

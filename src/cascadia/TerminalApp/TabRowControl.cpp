@@ -13,12 +13,6 @@ using namespace winrt;
 using namespace MUX;
 using namespace WUT;
 
-namespace winrt
-{
-    namespace MUX = MUX;
-    namespace WUX = WUX;
-}
-
 namespace winrt::TerminalApp::implementation
 {
     TabRowControl::TabRowControl()

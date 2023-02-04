@@ -15,12 +15,6 @@ using namespace MTControl;
 using namespace MTSM;
 using namespace WS;
 
-namespace winrt
-{
-    namespace MUX = MUX;
-    namespace WUX = WUX;
-}
-
 namespace winrt::TerminalApp::implementation
 {
     WUX::FocusState TabBase::FocusState() const noexcept
@@ -254,7 +248,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TabBase::_MakeTabViewItem()
     {
-        TabViewItem(::winrt::MUX::Controls::TabViewItem{});
+        TabViewItem(MUX::Controls::TabViewItem{});
 
         // GH#3609 If the tab was tapped, and no one else was around to handle
         // it, then ask our parent to toss focus into the active control.

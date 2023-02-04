@@ -3174,7 +3174,7 @@ void Pane::CollectTaskbarStates(std::vector<MTApp::TaskbarState>& states)
     if (_IsLeaf())
     {
         auto tbState{ winrt::make<MTApp::implementation::TaskbarState>(_control.TaskbarState(),
-                                                                                    _control.TaskbarProgress()) };
+                                                                       _control.TaskbarProgress()) };
         states.push_back(tbState);
     }
     else

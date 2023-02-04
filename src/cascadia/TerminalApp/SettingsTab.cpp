@@ -15,12 +15,6 @@ using namespace MTSM;
 using namespace winrt::Microsoft::Terminal::Settings::Editor;
 using namespace WS;
 
-namespace winrt
-{
-    namespace MUX = MUX;
-    namespace WUX = WUX;
-}
-
 namespace winrt::TerminalApp::implementation
 {
     SettingsTab::SettingsTab(MainPage settingsUI,

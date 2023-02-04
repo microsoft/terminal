@@ -274,8 +274,8 @@ namespace winrt::TerminalApp::implementation
         void _SetBackgroundImage(const MTSM::IAppearanceConfig& newAppearance);
 
         static WFC::IMap<winrt::hstring, Microsoft::Terminal::Settings::Model::Command> _ExpandCommands(WFC::IMapView<winrt::hstring, Microsoft::Terminal::Settings::Model::Command> commandsToExpand,
-                                                                                                                                            WFC::IVectorView<Microsoft::Terminal::Settings::Model::Profile> profiles,
-                                                                                                                                            WFC::IMapView<winrt::hstring, Microsoft::Terminal::Settings::Model::ColorScheme> schemes);
+                                                                                                        WFC::IVectorView<Microsoft::Terminal::Settings::Model::Profile> profiles,
+                                                                                                        WFC::IMapView<winrt::hstring, Microsoft::Terminal::Settings::Model::ColorScheme> schemes);
 
         void _DuplicateFocusedTab();
         void _DuplicateTab(const TerminalTab& tab);
@@ -391,7 +391,7 @@ namespace winrt::TerminalApp::implementation
         void _Find(const TerminalTab& tab);
 
         MTControl::TermControl _InitControl(const MTSM::TerminalSettingsCreateResult& settings,
-                                                                      const MTConnection::ITerminalConnection& connection);
+                                            const MTConnection::ITerminalConnection& connection);
 
         std::shared_ptr<Pane> _MakePane(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs = nullptr,
                                         const MTApp::TabBase& sourceTab = nullptr,

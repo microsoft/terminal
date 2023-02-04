@@ -41,14 +41,6 @@ using namespace std::chrono_literals;
 
 #define HOOKUP_ACTION(action) _actionDispatch->action({ this, &TerminalPage::_Handle##action });
 
-namespace winrt
-{
-    namespace MUX = MUX;
-    namespace WUX = WUX;
-    using IInspectable = WF::IInspectable;
-    using VirtualKeyModifiers = WS::VirtualKeyModifiers;
-}
-
 namespace winrt::TerminalApp::implementation
 {
     TerminalPage::TerminalPage() :
@@ -2171,26 +2163,26 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - a string representation of the key modifiers for the shortcut
     //NOTE: This needs to be localized with https://github.com/microsoft/terminal/issues/794 if XAML framework issue not resolved before then
-    static std::wstring _FormatOverrideShortcutText(VirtualKeyModifiers modifiers)
+    static std::wstring _FormatOverrideShortcutText(WS::VirtualKeyModifiers modifiers)
     {
         std::wstring buffer{ L"" };
 
-        if (WI_IsFlagSet(modifiers, VirtualKeyModifiers::Control))
+        if (WI_IsFlagSet(modifiers, WS::VirtualKeyModifiers::Control))
         {
             buffer += L"Ctrl+";
         }
 
-        if (WI_IsFlagSet(modifiers, VirtualKeyModifiers::Shift))
+        if (WI_IsFlagSet(modifiers, WS::VirtualKeyModifiers::Shift))
         {
             buffer += L"Shift+";
         }
 
-        if (WI_IsFlagSet(modifiers, VirtualKeyModifiers::Menu))
+        if (WI_IsFlagSet(modifiers, WS::VirtualKeyModifiers::Menu))
         {
             buffer += L"Alt+";
         }
 
-        if (WI_IsFlagSet(modifiers, VirtualKeyModifiers::Windows))
+        if (WI_IsFlagSet(modifiers, WS::VirtualKeyModifiers::Windows))
         {
             buffer += L"Win+";
         }

@@ -225,12 +225,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // Function Description:
     // - Helper function for constructing a ValueSet that we can use to get our settings from.
     WFC::ValueSet ConptyConnection::CreateSettings(const winrt::hstring& cmdline,
-                                                                                const winrt::hstring& startingDirectory,
-                                                                                const winrt::hstring& startingTitle,
-                                                                                const WFC::IMapView<hstring, hstring>& environment,
-                                                                                uint32_t rows,
-                                                                                uint32_t columns,
-                                                                                const winrt::guid& guid)
+                                                   const winrt::hstring& startingDirectory,
+                                                   const winrt::hstring& startingTitle,
+                                                   const WFC::IMapView<hstring, hstring>& environment,
+                                                   uint32_t rows,
+                                                   uint32_t columns,
+                                                   const winrt::guid& guid)
     {
         WFC::ValueSet vs{};
 
