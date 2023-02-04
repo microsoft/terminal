@@ -40,3 +40,4 @@ Abstract:
 #include <wil/win32_helpers.h>
 
 #include <cppwinrt_utils.h>
+#include <WinRTNamespaceAliases.h>

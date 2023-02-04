@@ -12,3 +12,5 @@
 #include "winrt/Microsoft.Terminal.Core.h"
 
 #include <til.h>
+
+#include <WinRTNamespaceAliases.h>

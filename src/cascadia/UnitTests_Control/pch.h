@@ -55,3 +55,4 @@ Licensed under the MIT license.
 #include "../../inc/DefaultSettings.h"
 
 #include <cppwinrt_utils.h>
+#include <WinRTNamespaceAliases.h>

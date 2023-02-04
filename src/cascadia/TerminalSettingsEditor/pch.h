@@ -58,3 +58,4 @@
 #include "til.h"
 
 #include <cppwinrt_utils.h>
+#include <WinRTNamespaceAliases.h>

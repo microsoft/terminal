@@ -36,3 +36,4 @@
 #include <shobjidl_core.h>
 
 #include <cppwinrt_utils.h>
+#include <WinRTNamespaceAliases.h>

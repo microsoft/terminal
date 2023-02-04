@@ -33,3 +33,4 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalConnectionProvider);
 #include "til.h"
 
 #include <cppwinrt_utils.h>
+#include <WinRTNamespaceAliases.h>

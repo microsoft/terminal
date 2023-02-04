@@ -59,3 +59,4 @@ typedef NTSTATUS* PNTSTATUS;
 // </Conhost Includes>
 
 #include <cppwinrt_utils.h>
+#include <WinRTNamespaceAliases.h>
