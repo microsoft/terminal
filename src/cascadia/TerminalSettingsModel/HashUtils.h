@@ -22,9 +22,9 @@ Revision History:
 namespace til
 {
     template<typename T>
-    struct hash_trait<winrt::Windows::Foundation::IReference<T>>
+    struct hash_trait<WF::IReference<T>>
     {
-        constexpr void operator()(hasher& h, const winrt::Windows::Foundation::IReference<T>& v) const noexcept
+        constexpr void operator()(hasher& h, const WF::IReference<T>& v) const noexcept
         {
             if (v)
             {

@@ -8,14 +8,14 @@
 #include "HighlightedTextControl.g.cpp"
 
 using namespace winrt;
-using namespace winrt::TerminalApp;
-using namespace winrt::Windows::UI::Core;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::System;
-using namespace winrt::Windows::UI::Text;
-using namespace winrt::Windows::Foundation;
-using namespace winrt::Windows::Foundation::Collections;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace MTApp;
+using namespace WUC;
+using namespace WUX;
+using namespace WS;
+using namespace WUT;
+using namespace WF;
+using namespace WFC;
+using namespace MTSM;
 
 namespace winrt::TerminalApp::implementation
 {
@@ -24,8 +24,8 @@ namespace winrt::TerminalApp::implementation
     // (https://docs.microsoft.com/en-us/windows/uwp/xaml-platform/custom-dependency-properties)
     DependencyProperty HighlightedTextControl::_textProperty = DependencyProperty::Register(
         L"Text",
-        xaml_typename<winrt::TerminalApp::HighlightedText>(),
-        xaml_typename<winrt::TerminalApp::HighlightedTextControl>(),
+        xaml_typename<MTApp::HighlightedText>(),
+        xaml_typename<MTApp::HighlightedTextControl>(),
         PropertyMetadata(nullptr, HighlightedTextControl::_onTextChanged));
 
     HighlightedTextControl::HighlightedTextControl()
@@ -49,12 +49,12 @@ namespace winrt::TerminalApp::implementation
         return _textView();
     }
 
-    winrt::TerminalApp::HighlightedText HighlightedTextControl::Text()
+    MTApp::HighlightedText HighlightedTextControl::Text()
     {
-        return winrt::unbox_value<winrt::TerminalApp::HighlightedText>(GetValue(_textProperty));
+        return winrt::unbox_value<MTApp::HighlightedText>(GetValue(_textProperty));
     }
 
-    void HighlightedTextControl::Text(const winrt::TerminalApp::HighlightedText& value)
+    void HighlightedTextControl::Text(const MTApp::HighlightedText& value)
     {
         SetValue(_textProperty, winrt::box_value(value));
     }
@@ -67,8 +67,8 @@ namespace winrt::TerminalApp::implementation
     // The new value is expected to be an instance of HighlightedText
     void HighlightedTextControl::_onTextChanged(const DependencyObject& o, const DependencyPropertyChangedEventArgs& e)
     {
-        const auto control = o.try_as<winrt::TerminalApp::HighlightedTextControl>();
-        const auto highlightedText = e.NewValue().try_as<winrt::TerminalApp::HighlightedText>();
+        const auto control = o.try_as<MTApp::HighlightedTextControl>();
+        const auto highlightedText = e.NewValue().try_as<MTApp::HighlightedText>();
 
         if (control && highlightedText)
         {

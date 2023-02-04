@@ -32,7 +32,7 @@ namespace winrt::TerminalApp::implementation
         // This is how you register a PropertyChanged event for the Background
         // property of a Grid. The Background property is defined in the base
         // class Panel.
-        const auto bgProperty{ winrt::Windows::UI::Xaml::Controls::Panel::BackgroundProperty() };
+        const auto bgProperty{ WUXC::Panel::BackgroundProperty() };
         RegisterPropertyChangedCallback(bgProperty, [weakThis = get_weak(), bgProperty](auto& /*sender*/, auto& e) {
             if (auto self{ weakThis.get() })
             {
@@ -63,7 +63,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     void TitlebarControl::Root_SizeChanged(const IInspectable& /*sender*/,
-                                           const Windows::UI::Xaml::SizeChangedEventArgs& /*e*/)
+                                           const WUX::SizeChangedEventArgs& /*e*/)
     {
         const auto windowWidth = ActualWidth();
         const auto minMaxCloseWidth = MinMaxCloseControl().ActualWidth();
@@ -94,17 +94,17 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TitlebarControl::Maximize_Click(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::RoutedEventArgs& /*e*/)
+    void TitlebarControl::Maximize_Click(const WF::IInspectable& /*sender*/, const WUX::RoutedEventArgs& /*e*/)
     {
         _OnMaximizeOrRestore(HTMAXBUTTON);
     }
 
-    void TitlebarControl::DragBar_DoubleTapped(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Input::DoubleTappedRoutedEventArgs& /*e*/)
+    void TitlebarControl::DragBar_DoubleTapped(const WF::IInspectable& /*sender*/, const WUX::Input::DoubleTappedRoutedEventArgs& /*e*/)
     {
         _OnMaximizeOrRestore(HTCAPTION);
     }
 
-    void TitlebarControl::Minimize_Click(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::RoutedEventArgs& /*e*/)
+    void TitlebarControl::Minimize_Click(const WF::IInspectable& /*sender*/, const WUX::RoutedEventArgs& /*e*/)
     {
         if (_window)
         {
@@ -112,7 +112,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TitlebarControl::Close_Click(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::RoutedEventArgs& /*e*/)
+    void TitlebarControl::Close_Click(const WF::IInspectable& /*sender*/, const WUX::RoutedEventArgs& /*e*/)
     {
         ::PostMessage(_window, WM_SYSCOMMAND, SC_CLOSE, 0);
     }
@@ -165,15 +165,15 @@ namespace winrt::TerminalApp::implementation
         MinMaxCloseControl().ReleaseButtons();
     }
 
-    void TitlebarControl::_backgroundChanged(winrt::Windows::UI::Xaml::Media::Brush brush)
+    void TitlebarControl::_backgroundChanged(WUXMedia::Brush brush)
     {
         // Loosely cribbed from TerminalPage::_SetNewTabButtonColor
         til::color c;
-        if (auto acrylic = brush.try_as<winrt::Windows::UI::Xaml::Media::AcrylicBrush>())
+        if (auto acrylic = brush.try_as<WUXMedia::AcrylicBrush>())
         {
             c = acrylic.TintColor();
         }
-        else if (auto solidColor = brush.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>())
+        else if (auto solidColor = brush.try_as<WUXMedia::SolidColorBrush>())
         {
             c = solidColor.Color();
         }
@@ -183,8 +183,8 @@ namespace winrt::TerminalApp::implementation
         }
 
         const auto isBrightColor = ColorHelper::IsBrightColor(c);
-        MinMaxCloseControl().RequestedTheme(isBrightColor ? winrt::Windows::UI::Xaml::ElementTheme::Light :
-                                                            winrt::Windows::UI::Xaml::ElementTheme::Dark);
+        MinMaxCloseControl().RequestedTheme(isBrightColor ? WUX::ElementTheme::Light :
+                                                            WUX::ElementTheme::Dark);
     }
 
 }

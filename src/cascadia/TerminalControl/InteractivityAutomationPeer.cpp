@@ -11,7 +11,7 @@
 #include "../types/UiaTracing.h"
 
 using namespace Microsoft::Console::Types;
-using namespace winrt::Windows::UI::Xaml::Automation::Peers;
+using namespace WUX::Automation::Peers;
 using namespace winrt::Windows::Graphics::Display;
 
 namespace UIA
@@ -22,9 +22,9 @@ namespace UIA
 
 namespace XamlAutomation
 {
-    using winrt::Windows::UI::Xaml::Automation::SupportedTextSelection;
-    using winrt::Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple;
-    using winrt::Windows::UI::Xaml::Automation::Provider::ITextRangeProvider;
+    using WUX::Automation::SupportedTextSelection;
+    using WUX::Automation::Provider::IRawElementProviderSimple;
+    using WUX::Automation::Provider::ITextRangeProvider;
 }
 
 namespace winrt::Microsoft::Terminal::Control::implementation
@@ -35,7 +35,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         THROW_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<::Microsoft::Terminal::TermControlUiaProvider>(&_uiaProvider, _interactivity->GetRenderData(), this));
     };
 
-    void InteractivityAutomationPeer::SetControlBounds(const Windows::Foundation::Rect bounds)
+    void InteractivityAutomationPeer::SetControlBounds(const WF::Rect bounds)
     {
         _controlBounds = til::rect{ til::math::rounding, bounds };
     }
@@ -122,7 +122,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _CreateXamlUiaTextRange(returnVal);
     }
 
-    XamlAutomation::ITextRangeProvider InteractivityAutomationPeer::RangeFromPoint(Windows::Foundation::Point screenLocation)
+    XamlAutomation::ITextRangeProvider InteractivityAutomationPeer::RangeFromPoint(WF::Point screenLocation)
     {
         UIA::ITextRangeProvider* returnVal;
         THROW_IF_FAILED(_uiaProvider->RangeFromPoint({ screenLocation.X, screenLocation.Y }, &returnVal));

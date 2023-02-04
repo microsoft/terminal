@@ -19,7 +19,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 {
     struct QuitAllRequestedArgs : public QuitAllRequestedArgsT<QuitAllRequestedArgs>
     {
-        WINRT_PROPERTY(winrt::Windows::Foundation::IAsyncAction, BeforeQuitAllAction, nullptr)
+        WINRT_PROPERTY(WF::IAsyncAction, BeforeQuitAllAction, nullptr)
     };
 }
 

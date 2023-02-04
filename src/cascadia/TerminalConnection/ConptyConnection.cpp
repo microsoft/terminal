@@ -224,36 +224,36 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     // Function Description:
     // - Helper function for constructing a ValueSet that we can use to get our settings from.
-    Windows::Foundation::Collections::ValueSet ConptyConnection::CreateSettings(const winrt::hstring& cmdline,
+    WFC::ValueSet ConptyConnection::CreateSettings(const winrt::hstring& cmdline,
                                                                                 const winrt::hstring& startingDirectory,
                                                                                 const winrt::hstring& startingTitle,
-                                                                                const Windows::Foundation::Collections::IMapView<hstring, hstring>& environment,
+                                                                                const WFC::IMapView<hstring, hstring>& environment,
                                                                                 uint32_t rows,
                                                                                 uint32_t columns,
                                                                                 const winrt::guid& guid)
     {
-        Windows::Foundation::Collections::ValueSet vs{};
+        WFC::ValueSet vs{};
 
-        vs.Insert(L"commandline", Windows::Foundation::PropertyValue::CreateString(cmdline));
-        vs.Insert(L"startingDirectory", Windows::Foundation::PropertyValue::CreateString(startingDirectory));
-        vs.Insert(L"startingTitle", Windows::Foundation::PropertyValue::CreateString(startingTitle));
-        vs.Insert(L"initialRows", Windows::Foundation::PropertyValue::CreateUInt32(rows));
-        vs.Insert(L"initialCols", Windows::Foundation::PropertyValue::CreateUInt32(columns));
-        vs.Insert(L"guid", Windows::Foundation::PropertyValue::CreateGuid(guid));
+        vs.Insert(L"commandline", WF::PropertyValue::CreateString(cmdline));
+        vs.Insert(L"startingDirectory", WF::PropertyValue::CreateString(startingDirectory));
+        vs.Insert(L"startingTitle", WF::PropertyValue::CreateString(startingTitle));
+        vs.Insert(L"initialRows", WF::PropertyValue::CreateUInt32(rows));
+        vs.Insert(L"initialCols", WF::PropertyValue::CreateUInt32(columns));
+        vs.Insert(L"guid", WF::PropertyValue::CreateGuid(guid));
 
         if (environment)
         {
-            Windows::Foundation::Collections::ValueSet env{};
+            WFC::ValueSet env{};
             for (const auto& [k, v] : environment)
             {
-                env.Insert(k, Windows::Foundation::PropertyValue::CreateString(v));
+                env.Insert(k, WF::PropertyValue::CreateString(v));
             }
             vs.Insert(L"environment", env);
         }
         return vs;
     }
 
-    void ConptyConnection::Initialize(const Windows::Foundation::Collections::ValueSet& settings)
+    void ConptyConnection::Initialize(const WFC::ValueSet& settings)
     {
         if (settings)
         {
@@ -261,16 +261,16 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             // auto bad = unbox_value_or<hstring>(settings.TryLookup(L"foo").try_as<IPropertyValue>(), nullptr);
             // It'll just return null
 
-            _commandline = winrt::unbox_value_or<winrt::hstring>(settings.TryLookup(L"commandline").try_as<Windows::Foundation::IPropertyValue>(), _commandline);
-            _startingDirectory = winrt::unbox_value_or<winrt::hstring>(settings.TryLookup(L"startingDirectory").try_as<Windows::Foundation::IPropertyValue>(), _startingDirectory);
-            _startingTitle = winrt::unbox_value_or<winrt::hstring>(settings.TryLookup(L"startingTitle").try_as<Windows::Foundation::IPropertyValue>(), _startingTitle);
-            _rows = winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialRows").try_as<Windows::Foundation::IPropertyValue>(), _rows);
-            _cols = winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialCols").try_as<Windows::Foundation::IPropertyValue>(), _cols);
-            _guid = winrt::unbox_value_or<winrt::guid>(settings.TryLookup(L"guid").try_as<Windows::Foundation::IPropertyValue>(), _guid);
-            _environment = settings.TryLookup(L"environment").try_as<Windows::Foundation::Collections::ValueSet>();
+            _commandline = winrt::unbox_value_or<winrt::hstring>(settings.TryLookup(L"commandline").try_as<WF::IPropertyValue>(), _commandline);
+            _startingDirectory = winrt::unbox_value_or<winrt::hstring>(settings.TryLookup(L"startingDirectory").try_as<WF::IPropertyValue>(), _startingDirectory);
+            _startingTitle = winrt::unbox_value_or<winrt::hstring>(settings.TryLookup(L"startingTitle").try_as<WF::IPropertyValue>(), _startingTitle);
+            _rows = winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialRows").try_as<WF::IPropertyValue>(), _rows);
+            _cols = winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialCols").try_as<WF::IPropertyValue>(), _cols);
+            _guid = winrt::unbox_value_or<winrt::guid>(settings.TryLookup(L"guid").try_as<WF::IPropertyValue>(), _guid);
+            _environment = settings.TryLookup(L"environment").try_as<WFC::ValueSet>();
             if constexpr (Feature_VtPassthroughMode::IsEnabled())
             {
-                _passthroughMode = winrt::unbox_value_or<bool>(settings.TryLookup(L"passthroughMode").try_as<Windows::Foundation::IPropertyValue>(), _passthroughMode);
+                _passthroughMode = winrt::unbox_value_or<bool>(settings.TryLookup(L"passthroughMode").try_as<WF::IPropertyValue>(), _passthroughMode);
             }
         }
 

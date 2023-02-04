@@ -10,13 +10,13 @@
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 
 using namespace winrt;
-using namespace winrt::Microsoft::UI::Xaml;
-using namespace winrt::Windows::UI::Text;
+using namespace MUX;
+using namespace WUT;
 
 namespace winrt
 {
-    namespace MUX = Microsoft::UI::Xaml;
-    namespace WUX = Windows::UI::Xaml;
+    namespace MUX = MUX;
+    namespace WUX = WUX;
 }
 
 namespace winrt::TerminalApp::implementation
@@ -38,7 +38,7 @@ namespace winrt::TerminalApp::implementation
     // - Bound in Drag&Drop of the Xaml editor to the [+] button.
     // Arguments:
     // <unused>
-    void TabRowControl::OnNewTabButtonDrop(const IInspectable&, const winrt::Windows::UI::Xaml::DragEventArgs&)
+    void TabRowControl::OnNewTabButtonDrop(const IInspectable&, const WUX::DragEventArgs&)
     {
     }
 
@@ -48,7 +48,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     //  - <unused>
     //  - e: DragEventArgs which hold the items
-    void TabRowControl::OnNewTabButtonDragOver(const IInspectable&, const winrt::Windows::UI::Xaml::DragEventArgs& e)
+    void TabRowControl::OnNewTabButtonDragOver(const IInspectable&, const WUX::DragEventArgs& e)
     {
         // We can only handle drag/dropping StorageItems (files).
         // If the format on the clipboard is anything else, returning

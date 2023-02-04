@@ -14,19 +14,19 @@ namespace winrt::TerminalApp::implementation
         TabHeaderControl();
         void BeginRename();
 
-        void RenameBoxLostFocusHandler(const winrt::Windows::Foundation::IInspectable& sender,
-                                       const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+        void RenameBoxLostFocusHandler(const WF::IInspectable& sender,
+                                       const WUX::RoutedEventArgs& e);
 
         bool InRename();
 
         WINRT_CALLBACK(TitleChangeRequested, TerminalApp::TitleChangeRequestedArgs);
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        WINRT_CALLBACK(PropertyChanged, WUX::Data::PropertyChangedEventHandler);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Title, _PropertyChangedHandlers);
         WINRT_OBSERVABLE_PROPERTY(double, RenamerMaxWidth, _PropertyChangedHandlers);
-        WINRT_OBSERVABLE_PROPERTY(winrt::TerminalApp::TerminalTabStatus, TabStatus, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(MTApp::TerminalTabStatus, TabStatus, _PropertyChangedHandlers);
 
-        TYPED_EVENT(RenameEnded, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(RenameEnded, WF::IInspectable, WF::IInspectable);
 
     private:
         bool _receivedKeyDown{ false };

@@ -6,8 +6,8 @@
 #include "ConsoleInputReader.h"
 
 using namespace winrt;
-using namespace winrt::Windows::Foundation;
-using namespace winrt::Microsoft::Terminal::TerminalConnection;
+using namespace WF;
+using namespace MTConnection;
 
 static til::size GetConsoleScreenSize(HANDLE outputHandle)
 {
@@ -97,9 +97,9 @@ int wmain(int /*argc*/, wchar_t** /*argv*/)
     const auto size = GetConsoleScreenSize(conOut);
 
     AzureConnection azureConn{};
-    winrt::Windows::Foundation::Collections::ValueSet vs{};
-    vs.Insert(L"initialRows", winrt::Windows::Foundation::PropertyValue::CreateUInt32(gsl::narrow_cast<uint32_t>(size.height)));
-    vs.Insert(L"initialCols", winrt::Windows::Foundation::PropertyValue::CreateUInt32(gsl::narrow_cast<uint32_t>(size.width)));
+    WFC::ValueSet vs{};
+    vs.Insert(L"initialRows", WF::PropertyValue::CreateUInt32(gsl::narrow_cast<uint32_t>(size.height)));
+    vs.Insert(L"initialCols", WF::PropertyValue::CreateUInt32(gsl::narrow_cast<uint32_t>(size.width)));
     azureConn.Initialize(vs);
 
     const auto state = RunConnectionToCompletion(azureConn, conOut, conIn);

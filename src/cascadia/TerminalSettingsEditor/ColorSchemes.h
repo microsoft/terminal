@@ -16,19 +16,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         ColorSchemes();
 
-        void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
+        void OnNavigatedTo(const WUX::Navigation::NavigationEventArgs& e);
 
-        void AddNew_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
-        void ListView_PreviewKeyDown(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
-        void ListView_SelectionChanged(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs& e);
+        void AddNew_Click(const WF::IInspectable& sender, const WUX::RoutedEventArgs& e);
+        void ListView_PreviewKeyDown(const WF::IInspectable& sender, const WUX::Input::KeyRoutedEventArgs& e);
+        void ListView_SelectionChanged(const WF::IInspectable& sender, const WUXC::SelectionChangedEventArgs& e);
 
         WINRT_PROPERTY(Model::ColorScheme, CurrentColorScheme, nullptr);
         WINRT_OBSERVABLE_PROPERTY(Editor::ColorSchemesPageViewModel, ViewModel, _PropertyChangedHandlers, nullptr);
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        WINRT_CALLBACK(PropertyChanged, WUX::Data::PropertyChangedEventHandler);
 
     private:
-        winrt::Windows::UI::Xaml::FrameworkElement::LayoutUpdated_revoker _layoutUpdatedRevoker;
+        WUX::FrameworkElement::LayoutUpdated_revoker _layoutUpdatedRevoker;
     };
 }
 

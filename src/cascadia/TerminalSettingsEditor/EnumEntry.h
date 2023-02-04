@@ -42,7 +42,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct EnumEntry : EnumEntryT<EnumEntry>
     {
     public:
-        EnumEntry(const winrt::hstring enumName, const winrt::Windows::Foundation::IInspectable& enumValue) :
+        EnumEntry(const winrt::hstring enumName, const WF::IInspectable& enumValue) :
             _EnumName{ enumName },
             _EnumValue{ enumValue } {}
 
@@ -51,8 +51,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             return EnumName();
         }
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        WINRT_CALLBACK(PropertyChanged, WUX::Data::PropertyChangedEventHandler);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, EnumName, _PropertyChangedHandlers);
-        WINRT_OBSERVABLE_PROPERTY(winrt::Windows::Foundation::IInspectable, EnumValue, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(WF::IInspectable, EnumValue, _PropertyChangedHandlers);
     };
 }

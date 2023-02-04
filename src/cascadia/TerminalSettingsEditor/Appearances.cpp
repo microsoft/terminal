@@ -9,14 +9,14 @@
 #include <LibraryResources.h>
 #include "..\WinRTUtils\inc\Utils.h"
 
-using namespace winrt::Windows::UI::Text;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::UI::Xaml::Controls;
-using namespace winrt::Windows::UI::Xaml::Data;
-using namespace winrt::Windows::UI::Xaml::Navigation;
-using namespace winrt::Windows::Foundation;
-using namespace winrt::Windows::Foundation::Collections;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace WUT;
+using namespace WUX;
+using namespace WUXC;
+using namespace WUX::Data;
+using namespace WUX::Navigation;
+using namespace WF;
+using namespace WFC;
+using namespace MTSM;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -129,9 +129,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _fontSizeBox().NumberFormatter().as<DecimalFormatter>().NumberRounder(rounder);
         }
 
-        INITIALIZE_BINDABLE_ENUM_SETTING(CursorShape, CursorStyle, winrt::Microsoft::Terminal::Core::CursorStyle, L"Profile_CursorShape", L"Content");
-        INITIALIZE_BINDABLE_ENUM_SETTING(AdjustIndistinguishableColors, AdjustIndistinguishableColors, winrt::Microsoft::Terminal::Core::AdjustTextMode, L"Profile_AdjustIndistinguishableColors", L"Content");
-        INITIALIZE_BINDABLE_ENUM_SETTING_REVERSE_ORDER(BackgroundImageStretchMode, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch, L"Profile_BackgroundImageStretchMode", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING(CursorShape, CursorStyle, MTCore::CursorStyle, L"Profile_CursorShape", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING(AdjustIndistinguishableColors, AdjustIndistinguishableColors, MTCore::AdjustTextMode, L"Profile_AdjustIndistinguishableColors", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING_REVERSE_ORDER(BackgroundImageStretchMode, BackgroundImageStretchMode, WUXMedia::Stretch, L"Profile_BackgroundImageStretchMode", L"Content");
 
         // manually add Custom FontWeight option. Don't add it to the Map
         INITIALIZE_BINDABLE_ENUM_SETTING(FontWeight, FontWeight, uint16_t, L"Profile_FontWeight", L"Content");
@@ -172,7 +172,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto backgroundImgCheckboxTooltip{ ToolTipService::GetToolTip(UseDesktopImageCheckBox()) };
         Automation::AutomationProperties::SetFullDescription(UseDesktopImageCheckBox(), unbox_value<hstring>(backgroundImgCheckboxTooltip));
 
-        INITIALIZE_BINDABLE_ENUM_SETTING(IntenseTextStyle, IntenseTextStyle, winrt::Microsoft::Terminal::Settings::Model::IntenseStyle, L"Appearance_IntenseTextStyle", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING(IntenseTextStyle, IntenseTextStyle, MTSM::IntenseStyle, L"Appearance_IntenseTextStyle", L"Content");
     }
 
     // Method Description:
@@ -393,7 +393,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (ee != _CustomFontWeight)
             {
                 const auto weight{ winrt::unbox_value<uint16_t>(ee.EnumValue()) };
-                const Windows::UI::Text::FontWeight setting{ weight };
+                const WUT::FontWeight setting{ weight };
                 Appearance().FontWeight(setting);
 
                 // Appearance does not have observable properties

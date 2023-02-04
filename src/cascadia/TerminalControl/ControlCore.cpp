@@ -26,7 +26,7 @@ using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Console::VirtualTerminal;
 using namespace ::Microsoft::Terminal::Core;
 using namespace winrt::Windows::Graphics::Display;
-using namespace winrt::Windows::System;
+using namespace WS;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 
 // The minimum delay between updates to the scroll bar's values.
@@ -41,14 +41,14 @@ constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    static winrt::Microsoft::Terminal::Core::OptionalColor OptionalFromColor(const til::color& c)
+    static MTCore::OptionalColor OptionalFromColor(const til::color& c)
     {
         Core::OptionalColor result;
         result.Color = c;
         result.HasValue = true;
         return result;
     }
-    static winrt::Microsoft::Terminal::Core::OptionalColor OptionalFromColor(const std::optional<til::color>& c)
+    static MTCore::OptionalColor OptionalFromColor(const std::optional<til::color>& c)
     {
         Core::OptionalColor result;
         if (c.has_value())
@@ -160,10 +160,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // proc, this'll return null. We'll need to instead make a new
         // DispatcherQueue (on a new thread), so we can use that for throttled
         // functions.
-        _dispatcher = winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
+        _dispatcher = WS::DispatcherQueue::GetForCurrentThread();
         if (!_dispatcher)
         {
-            auto controller{ winrt::Windows::System::DispatcherQueueController::CreateOnDedicatedThread() };
+            auto controller{ WS::DispatcherQueueController::CreateOnDedicatedThread() };
             _dispatcher = controller.DispatcherQueue();
         }
 
@@ -384,7 +384,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const wchar_t CtrlD = 0x4;
         const wchar_t Enter = '\r';
 
-        if (_connection.State() >= winrt::Microsoft::Terminal::TerminalConnection::ConnectionState::Closed)
+        if (_connection.State() >= MTConnection::ConnectionState::Closed)
         {
             if (ch == CtrlD)
             {
@@ -714,9 +714,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return {};
     }
 
-    Windows::Foundation::IReference<Core::Point> ControlCore::HoveredCell() const
+    WF::IReference<Core::Point> ControlCore::HoveredCell() const
     {
-        return _lastHoveredCell.has_value() ? Windows::Foundation::IReference<Core::Point>{ _lastHoveredCell.value().to_core_point() } : nullptr;
+        return _lastHoveredCell.has_value() ? WF::IReference<Core::Point>{ _lastHoveredCell.value().to_core_point() } : nullptr;
     }
 
     // Method Description:
@@ -1073,7 +1073,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - formats: which formats to copy (defined by action's CopyFormatting arg). nullptr
     //             if we should defer which formats are copied to the global setting
     bool ControlCore::CopySelectionToClipboard(bool singleLine,
-                                               const Windows::Foundation::IReference<CopyFormat>& formats)
+                                               const WF::IReference<CopyFormat>& formats)
     {
         // no selection --> nothing to copy
         if (!_terminal->IsSelectionActive())
@@ -1201,7 +1201,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _actualFont;
     }
 
-    winrt::Windows::Foundation::Size ControlCore::FontSize() const noexcept
+    WF::Size ControlCore::FontSize() const noexcept
     {
         const auto fontSize = _actualFont.GetSize();
         return {
@@ -1222,7 +1222,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return static_cast<uint16_t>(_actualFont.GetWeight());
     }
 
-    winrt::Windows::Foundation::Size ControlCore::FontSizeInDips() const
+    WF::Size ControlCore::FontSizeInDips() const
     {
         const auto fontSize = _actualFont.GetSize();
         const auto scale = 1.0f / static_cast<float>(_compositionScale);
@@ -1252,10 +1252,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _terminal->IsXtermBracketedPasteModeEnabled();
     }
 
-    Windows::Foundation::IReference<winrt::Windows::UI::Color> ControlCore::TabColor() noexcept
+    WF::IReference<winrt::Windows::UI::Color> ControlCore::TabColor() noexcept
     {
         auto coreColor = _terminal->GetTabColor();
-        return coreColor.has_value() ? Windows::Foundation::IReference<winrt::Windows::UI::Color>(til::color{ coreColor.value() }) :
+        return coreColor.has_value() ? WF::IReference<winrt::Windows::UI::Color>(til::color{ coreColor.value() }) :
                                        nullptr;
     }
 
@@ -1420,7 +1420,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _settings->CopyOnSelect();
     }
 
-    Windows::Foundation::Collections::IVector<winrt::hstring> ControlCore::SelectedText(bool trimTrailingWhitespace) const
+    WFC::IVector<winrt::hstring> ControlCore::SelectedText(bool trimTrailingWhitespace) const
     {
         // RetrieveSelectedTextFromBuffer will lock while it's reading
         const auto internalResult{ _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace).text };
@@ -1949,7 +1949,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _owningHwnd = owner;
     }
 
-    Windows::Foundation::Collections::IVector<Control::ScrollMark> ControlCore::ScrollMarks() const
+    WFC::IVector<Control::ScrollMark> ControlCore::ScrollMarks() const
     {
         auto internalMarks{ _terminal->GetScrollMarks() };
         auto v = winrt::single_threaded_observable_vector<Control::ScrollMark>();

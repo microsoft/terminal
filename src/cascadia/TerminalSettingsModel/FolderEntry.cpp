@@ -9,8 +9,8 @@
 #include "FolderEntry.g.cpp"
 
 using namespace Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
-using namespace winrt::Windows::Foundation::Collections;
+using namespace MTSM::implementation;
+using namespace WFC;
 
 static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view IconKey{ "icon" };
@@ -57,7 +57,7 @@ winrt::com_ptr<NewTabMenuEntry> FolderEntry::FromJson(const Json::Value& json)
 
 // A FolderEntry should only expose the entries to actually render to WinRT,
 // to keep the logic for collapsing/expanding more centralised.
-using NewTabMenuEntryModel = winrt::Microsoft::Terminal::Settings::Model::NewTabMenuEntry;
+using NewTabMenuEntryModel = MTSM::NewTabMenuEntry;
 IVector<NewTabMenuEntryModel> FolderEntry::Entries() const
 {
     // We filter the full list of entries from JSON to just include the

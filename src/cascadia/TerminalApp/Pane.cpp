@@ -9,16 +9,16 @@
 
 #include <Mmsystem.h>
 
-using namespace winrt::Windows::Foundation;
+using namespace WF;
 using namespace winrt::Windows::Graphics::Display;
 using namespace winrt::Windows::UI;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::UI::Core;
-using namespace winrt::Windows::UI::Xaml::Media;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::Control;
-using namespace winrt::Microsoft::Terminal::TerminalConnection;
-using namespace winrt::TerminalApp;
+using namespace WUX;
+using namespace WUC;
+using namespace WUXMedia;
+using namespace MTSM;
+using namespace MTControl;
+using namespace MTConnection;
+using namespace MTApp;
 using namespace TerminalApp;
 
 static const int PaneBorderSize = 2;
@@ -31,10 +31,10 @@ static const int CombinedPaneBorderSize = 2 * PaneBorderSize;
 // 200ms was chosen because it's quick enough that it doesn't break your
 // flow, but not too quick to see
 static const int AnimationDurationInMilliseconds = 200;
-static const Duration AnimationDuration = DurationHelper::FromTimeSpan(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(AnimationDurationInMilliseconds)));
+static const Duration AnimationDuration = DurationHelper::FromTimeSpan(WF::TimeSpan(std::chrono::milliseconds(AnimationDurationInMilliseconds)));
 
-winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_focusedBorderBrush = { nullptr };
-winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_unfocusedBorderBrush = { nullptr };
+WUXMedia::SolidColorBrush Pane::s_focusedBorderBrush = { nullptr };
+WUXMedia::SolidColorBrush Pane::s_unfocusedBorderBrush = { nullptr };
 
 Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFocused) :
     _control{ control },
@@ -148,7 +148,7 @@ NewTerminalArgs Pane::GetTerminalArgsForPane() const
             c = til::color(controlSettings.TabColor().Value());
         }
 
-        args.TabColor(winrt::Windows::Foundation::IReference<winrt::Windows::UI::Color>(c));
+        args.TabColor(WF::IReference<winrt::Windows::UI::Color>(c));
     }
 
     // TODO:GH#9800 - we used to be able to persist the color scheme that a
@@ -979,8 +979,8 @@ Pane::PaneNeighborSearch Pane::_FindPaneAndNeighbor(const std::shared_ptr<Pane> 
 // - <none>
 // Return Value:
 // - <none>
-void Pane::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                                 const winrt::Windows::Foundation::IInspectable& /*args*/)
+void Pane::_ControlConnectionStateChangedHandler(const WF::IInspectable& /*sender*/,
+                                                 const WF::IInspectable& /*args*/)
 {
     std::unique_lock lock{ _createCloseLock };
     // It's possible that this event handler started being executed, then before
@@ -1031,8 +1031,8 @@ void Pane::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundatio
     }
 }
 
-void Pane::_CloseTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                          const winrt::Windows::Foundation::IInspectable& /*args*/)
+void Pane::_CloseTerminalRequestedHandler(const WF::IInspectable& /*sender*/,
+                                          const WF::IInspectable& /*args*/)
 {
     std::unique_lock lock{ _createCloseLock };
 
@@ -1051,7 +1051,7 @@ void Pane::_CloseTerminalRequestedHandler(const winrt::Windows::Foundation::IIns
     Close();
 }
 
-winrt::fire_and_forget Pane::_playBellSound(winrt::Windows::Foundation::Uri uri)
+winrt::fire_and_forget Pane::_playBellSound(WF::Uri uri)
 {
     auto weakThis{ weak_from_this() };
 
@@ -1113,8 +1113,8 @@ winrt::fire_and_forget Pane::_playBellSound(winrt::Windows::Foundation::Uri uri)
 //   has the 'visual' flag set
 // Arguments:
 // - <unused>
-void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                      const winrt::Windows::Foundation::IInspectable& /*eventArgs*/)
+void Pane::_ControlWarningBellHandler(const WF::IInspectable& /*sender*/,
+                                      const WF::IInspectable& /*eventArgs*/)
 {
     if (!_IsLeaf())
     {
@@ -1125,14 +1125,14 @@ void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspect
         // We don't want to do anything if nothing is set, so check for that first
         if (static_cast<int>(_profile.BellStyle()) != 0)
         {
-            if (WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible))
+            if (WI_IsFlagSet(_profile.BellStyle(), MTSM::BellStyle::Audible))
             {
                 // Audible is set, play the sound
                 auto sounds{ _profile.BellSound() };
                 if (sounds && sounds.Size() > 0)
                 {
                     winrt::hstring soundPath{ wil::ExpandEnvironmentStringsW<std::wstring>(sounds.GetAt(rand() % sounds.Size()).c_str()) };
-                    winrt::Windows::Foundation::Uri uri{ soundPath };
+                    WF::Uri uri{ soundPath };
                     _playBellSound(uri);
                 }
                 else
@@ -1142,13 +1142,13 @@ void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspect
                 }
             }
 
-            if (WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Window))
+            if (WI_IsFlagSet(_profile.BellStyle(), MTSM::BellStyle::Window))
             {
                 _control.BellLightOn();
             }
 
             // raise the event with the bool value corresponding to the taskbar flag
-            _PaneRaiseBellHandlers(nullptr, WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Taskbar));
+            _PaneRaiseBellHandlers(nullptr, WI_IsFlagSet(_profile.BellStyle(), MTSM::BellStyle::Taskbar));
         }
     }
 }
@@ -1161,11 +1161,11 @@ void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspect
 // - <unused>
 // Return Value:
 // - <none>
-void Pane::_ControlGotFocusHandler(const winrt::Windows::Foundation::IInspectable& sender,
+void Pane::_ControlGotFocusHandler(const WF::IInspectable& sender,
                                    const RoutedEventArgs& /* args */)
 {
     auto f = FocusState::Programmatic;
-    if (const auto o = sender.try_as<winrt::Windows::UI::Xaml::Controls::Control>())
+    if (const auto o = sender.try_as<WUXC::Control>())
     {
         f = o.FocusState();
     }
@@ -1176,7 +1176,7 @@ void Pane::_ControlGotFocusHandler(const winrt::Windows::Foundation::IInspectabl
 // - Called when our control loses focus. We'll use this to trigger our LostFocus
 //   callback. The tab that's hosting us should have registered a callback which
 //   can be used to update its own internal focus state
-void Pane::_ControlLostFocusHandler(const winrt::Windows::Foundation::IInspectable& /* sender */,
+void Pane::_ControlLostFocusHandler(const WF::IInspectable& /* sender */,
                                     const RoutedEventArgs& /* args */)
 {
     _LostFocusHandlers(shared_from_this());
@@ -2277,7 +2277,7 @@ void Pane::_SetupEntranceAnimation()
 std::optional<std::optional<SplitDirection>> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> target,
                                                                         SplitDirection splitType,
                                                                         const float splitSize,
-                                                                        const winrt::Windows::Foundation::Size availableSpace) const
+                                                                        const WF::Size availableSpace) const
 {
     if (target.get() == this)
     {
@@ -3101,7 +3101,7 @@ float Pane::_ClampSplitPosition(const bool widthOrHeight, const float requestedV
 // - requestedTheme: this should be the currently active Theme for the app
 // Return Value:
 // - <none>
-void Pane::SetupResources(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme)
+void Pane::SetupResources(const WUX::ElementTheme& requestedTheme)
 {
     const auto res = Application::Current().Resources();
     const auto accentColorKey = winrt::box_value(L"SystemAccentColor");
@@ -3129,7 +3129,7 @@ void Pane::SetupResources(const winrt::Windows::UI::Xaml::ElementTheme& requeste
         // the requestedTheme, not just the value from the resources (which
         // might not respect the settings' requested theme)
         auto obj = ThemeLookup(res, requestedTheme, unfocusedBorderBrushKey);
-        s_unfocusedBorderBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
+        s_unfocusedBorderBrush = obj.try_as<WUXMedia::SolidColorBrush>();
     }
     else
     {
@@ -3169,11 +3169,11 @@ bool Pane::ContainsReadOnly() const
 // - states: a vector that will receive all the states of all leaves in the tree
 // Return Value:
 // - <none>
-void Pane::CollectTaskbarStates(std::vector<winrt::TerminalApp::TaskbarState>& states)
+void Pane::CollectTaskbarStates(std::vector<MTApp::TaskbarState>& states)
 {
     if (_IsLeaf())
     {
-        auto tbState{ winrt::make<winrt::TerminalApp::implementation::TaskbarState>(_control.TaskbarState(),
+        auto tbState{ winrt::make<MTApp::implementation::TaskbarState>(_control.TaskbarState(),
                                                                                     _control.TaskbarProgress()) };
         states.push_back(tbState);
     }

@@ -24,17 +24,17 @@
 
 namespace winrt
 {
-    namespace MUX = Microsoft::UI::Xaml;
-    namespace WUX = Windows::UI::Xaml;
+    namespace MUX = MUX;
+    namespace WUX = WUX;
 }
 
-using namespace winrt::Windows::Foundation;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Windows::UI::Core;
-using namespace winrt::Windows::System;
-using namespace winrt::Windows::UI::Xaml::Controls;
-using namespace winrt::Windows::Foundation::Collections;
+using namespace WF;
+using namespace WUX;
+using namespace MTSM;
+using namespace WUC;
+using namespace WS;
+using namespace WUXC;
+using namespace WFC;
 
 static const std::wstring_view launchTag{ L"Launch_Nav" };
 static const std::wstring_view interactionTag{ L"Interaction_Nav" };
@@ -477,7 +477,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void MainPage::OpenJsonTapped(const IInspectable& /*sender*/, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& /*args*/)
+    void MainPage::OpenJsonTapped(const IInspectable& /*sender*/, const WUX::Input::TappedRoutedEventArgs& /*args*/)
     {
         const auto window = CoreWindow::GetForCurrentThread();
         const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
@@ -489,7 +489,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _OpenJsonHandlers(nullptr, target);
     }
 
-    void MainPage::OpenJsonKeyDown(const IInspectable& /*sender*/, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& args)
+    void MainPage::OpenJsonKeyDown(const IInspectable& /*sender*/, const WUX::Input::KeyRoutedEventArgs& args)
     {
         if (args.Key() == VirtualKey::Enter || args.Key() == VirtualKey::Space)
         {
@@ -508,7 +508,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         UpdateSettings(_settingsSource);
     }
 
-    void MainPage::BreadcrumbBar_ItemClicked(const Microsoft::UI::Xaml::Controls::BreadcrumbBar& /*sender*/, const Microsoft::UI::Xaml::Controls::BreadcrumbBarItemClickedEventArgs& args)
+    void MainPage::BreadcrumbBar_ItemClicked(const MUXC::BreadcrumbBar& /*sender*/, const MUXC::BreadcrumbBarItemClickedEventArgs& args)
     {
         if (gsl::narrow_cast<uint32_t>(args.Index()) < (_breadcrumbs.Size() - 1))
         {
@@ -641,7 +641,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _breadcrumbs;
     }
 
-    winrt::Windows::UI::Xaml::Media::Brush MainPage::BackgroundBrush()
+    WUXMedia::Brush MainPage::BackgroundBrush()
     {
         return SettingsNav().Background();
     }

@@ -10,11 +10,11 @@
 #include <WtExeUtils.h>
 
 using namespace winrt;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::UI::Xaml::Navigation;
-using namespace winrt::Windows::UI::Xaml::Controls;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Windows::Foundation::Collections;
+using namespace WUX;
+using namespace WUX::Navigation;
+using namespace WUXC;
+using namespace MTSM;
+using namespace WFC;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -49,7 +49,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _ThemeList{ single_threaded_observable_vector<Model::Theme>() }
     {
         INITIALIZE_BINDABLE_ENUM_SETTING(NewTabPosition, NewTabPosition, NewTabPosition, L"Globals_NewTabPosition", L"Content");
-        INITIALIZE_BINDABLE_ENUM_SETTING(TabWidthMode, TabViewWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, L"Globals_TabWidthMode", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING(TabWidthMode, TabViewWidthMode, MUXC::TabViewWidthMode, L"Globals_TabWidthMode", L"Content");
         _UpdateThemeList();
     }
 
@@ -77,7 +77,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // Returns the list of languages the user may override the application language with.
     // The returned list are BCP 47 language tags like {"und", "en-US", "de-DE", "es-ES", ...}.
     // "und" is short for "undefined" and is synonymous for "Use system language" in this code.
-    winrt::Windows::Foundation::Collections::IObservableVector<winrt::hstring> GlobalAppearanceViewModel::LanguageList()
+    WFC::IObservableVector<winrt::hstring> GlobalAppearanceViewModel::LanguageList()
     {
         if (_languageList)
         {
@@ -154,7 +154,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _languageList;
     }
 
-    winrt::Windows::Foundation::IInspectable GlobalAppearanceViewModel::CurrentLanguage()
+    WF::IInspectable GlobalAppearanceViewModel::CurrentLanguage()
     {
         if (_currentLanguage)
         {
@@ -178,7 +178,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _currentLanguage;
     }
 
-    void GlobalAppearanceViewModel::CurrentLanguage(const winrt::Windows::Foundation::IInspectable& tag)
+    void GlobalAppearanceViewModel::CurrentLanguage(const WF::IInspectable& tag)
     {
         _currentLanguage = tag;
 
@@ -206,7 +206,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    winrt::Windows::Foundation::IInspectable GlobalAppearanceViewModel::CurrentTheme()
+    WF::IInspectable GlobalAppearanceViewModel::CurrentTheme()
     {
         return _GlobalSettings.CurrentTheme();
     }
@@ -214,7 +214,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // Get the name out of the newly selected item, stash that as the Theme name
     // set for the globals. That controls which theme is actually the current
     // theme.
-    void GlobalAppearanceViewModel::CurrentTheme(const winrt::Windows::Foundation::IInspectable& tag)
+    void GlobalAppearanceViewModel::CurrentTheme(const WF::IInspectable& tag)
     {
         if (const auto& theme{ tag.try_as<Model::Theme>() })
         {
@@ -261,7 +261,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _GlobalSettings.DisableAnimations(!value);
     }
 
-    void GlobalAppearanceViewModel::ShowTitlebarToggled(const winrt::Windows::Foundation::IInspectable& /* sender */, const RoutedEventArgs& /* args */)
+    void GlobalAppearanceViewModel::ShowTitlebarToggled(const WF::IInspectable& /* sender */, const RoutedEventArgs& /* args */)
     {
         // Set AlwaysShowTabs to true if ShowTabsInTitlebar was toggled OFF -> ON
         if (!ShowTabsInTitlebar())

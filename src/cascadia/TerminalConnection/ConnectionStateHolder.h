@@ -8,7 +8,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
     public:
         ConnectionState State() const noexcept { return _connectionState; }
-        TYPED_EVENT(StateChanged, ITerminalConnection, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(StateChanged, ITerminalConnection, WF::IInspectable);
 
     protected:
 #pragma warning(push)

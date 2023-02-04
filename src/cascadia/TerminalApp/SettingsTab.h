@@ -25,19 +25,19 @@ namespace winrt::TerminalApp::implementation
     {
     public:
         SettingsTab(winrt::Microsoft::Terminal::Settings::Editor::MainPage settingsUI,
-                    winrt::Windows::UI::Xaml::ElementTheme requestedTheme);
+                    WUX::ElementTheme requestedTheme);
 
         void UpdateSettings(Microsoft::Terminal::Settings::Model::CascadiaSettings settings);
-        void Focus(winrt::Windows::UI::Xaml::FocusState focusState) override;
+        void Focus(WUX::FocusState focusState) override;
 
         std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> BuildStartupActions() const override;
 
     private:
-        winrt::Windows::UI::Xaml::ElementTheme _requestedTheme;
+        WUX::ElementTheme _requestedTheme;
 
         void _MakeTabViewItem() override;
         winrt::fire_and_forget _CreateIcon();
 
-        virtual winrt::Windows::UI::Xaml::Media::Brush _BackgroundBrush() override;
+        virtual WUXMedia::Brush _BackgroundBrush() override;
     };
 }

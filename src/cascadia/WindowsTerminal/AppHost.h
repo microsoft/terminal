@@ -12,21 +12,21 @@ public:
     AppHost() noexcept;
     virtual ~AppHost();
 
-    void AppTitleChanged(const winrt::Windows::Foundation::IInspectable& sender, winrt::hstring newTitle);
-    void LastTabClosed(const winrt::Windows::Foundation::IInspectable& sender, const winrt::TerminalApp::LastTabClosedEventArgs& args);
+    void AppTitleChanged(const WF::IInspectable& sender, winrt::hstring newTitle);
+    void LastTabClosed(const WF::IInspectable& sender, const MTApp::LastTabClosedEventArgs& args);
     void Initialize();
     bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
-    void SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
+    void SetTaskbarProgress(const WF::IInspectable& sender, const WF::IInspectable& args);
 
     bool HasWindow();
 
 private:
     std::unique_ptr<IslandWindow> _window;
-    winrt::TerminalApp::App _app;
-    winrt::TerminalApp::AppLogic _logic;
+    MTApp::App _app;
+    MTApp::AppLogic _logic;
     winrt::Microsoft::Terminal::Remoting::WindowManager _windowManager{ nullptr };
 
-    std::vector<winrt::Microsoft::Terminal::Settings::Model::GlobalSummonArgs> _hotkeys;
+    std::vector<MTSM::GlobalSummonArgs> _hotkeys;
     winrt::com_ptr<IVirtualDesktopManager> _desktopManager{ nullptr };
 
     bool _shouldCreateWindow{ false };
@@ -34,51 +34,51 @@ private:
 
     std::optional<til::throttled_func_trailing<>> _getWindowLayoutThrottler;
     std::shared_ptr<ThrottledFuncTrailing<bool>> _showHideWindowThrottler;
-    winrt::Windows::Foundation::IAsyncAction _SaveWindowLayouts();
+    WF::IAsyncAction _SaveWindowLayouts();
     winrt::fire_and_forget _SaveWindowLayoutsRepeat();
 
     void _HandleCommandlineArgs();
-    winrt::Microsoft::Terminal::Settings::Model::LaunchPosition _GetWindowLaunchPosition();
+    MTSM::LaunchPosition _GetWindowLaunchPosition();
 
-    void _HandleCreateWindow(const HWND hwnd, til::rect proposedRect, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode);
-    void _UpdateTitleBarContent(const winrt::Windows::Foundation::IInspectable& sender,
-                                const winrt::Windows::UI::Xaml::UIElement& arg);
-    void _UpdateTheme(const winrt::Windows::Foundation::IInspectable&,
-                      const winrt::Microsoft::Terminal::Settings::Model::Theme& arg);
-    void _FocusModeChanged(const winrt::Windows::Foundation::IInspectable& sender,
-                           const winrt::Windows::Foundation::IInspectable& arg);
-    void _FullscreenChanged(const winrt::Windows::Foundation::IInspectable& sender,
-                            const winrt::Windows::Foundation::IInspectable& arg);
-    void _ChangeMaximizeRequested(const winrt::Windows::Foundation::IInspectable& sender,
-                                  const winrt::Windows::Foundation::IInspectable& arg);
-    void _AlwaysOnTopChanged(const winrt::Windows::Foundation::IInspectable& sender,
-                             const winrt::Windows::Foundation::IInspectable& arg);
-    void _RaiseVisualBell(const winrt::Windows::Foundation::IInspectable& sender,
-                          const winrt::Windows::Foundation::IInspectable& arg);
+    void _HandleCreateWindow(const HWND hwnd, til::rect proposedRect, MTSM::LaunchMode& launchMode);
+    void _UpdateTitleBarContent(const WF::IInspectable& sender,
+                                const WUX::UIElement& arg);
+    void _UpdateTheme(const WF::IInspectable&,
+                      const MTSM::Theme& arg);
+    void _FocusModeChanged(const WF::IInspectable& sender,
+                           const WF::IInspectable& arg);
+    void _FullscreenChanged(const WF::IInspectable& sender,
+                            const WF::IInspectable& arg);
+    void _ChangeMaximizeRequested(const WF::IInspectable& sender,
+                                  const WF::IInspectable& arg);
+    void _AlwaysOnTopChanged(const WF::IInspectable& sender,
+                             const WF::IInspectable& arg);
+    void _RaiseVisualBell(const WF::IInspectable& sender,
+                          const WF::IInspectable& arg);
     void _WindowMouseWheeled(const til::point coord, const int32_t delta);
     winrt::fire_and_forget _WindowActivated(bool activated);
     void _WindowMoved();
 
-    void _DispatchCommandline(winrt::Windows::Foundation::IInspectable sender,
+    void _DispatchCommandline(WF::IInspectable sender,
                               winrt::Microsoft::Terminal::Remoting::CommandlineArgs args);
 
-    winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> _GetWindowLayoutAsync();
+    WF::IAsyncOperation<winrt::hstring> _GetWindowLayoutAsync();
 
-    void _FindTargetWindow(const winrt::Windows::Foundation::IInspectable& sender,
+    void _FindTargetWindow(const WF::IInspectable& sender,
                            const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args);
 
-    void _BecomeMonarch(const winrt::Windows::Foundation::IInspectable& sender,
-                        const winrt::Windows::Foundation::IInspectable& args);
+    void _BecomeMonarch(const WF::IInspectable& sender,
+                        const WF::IInspectable& args);
     void _GlobalHotkeyPressed(const long hotkeyIndex);
-    void _HandleSummon(const winrt::Windows::Foundation::IInspectable& sender,
+    void _HandleSummon(const WF::IInspectable& sender,
                        const winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior& args);
 
-    winrt::fire_and_forget _IdentifyWindowsRequested(const winrt::Windows::Foundation::IInspectable sender,
-                                                     const winrt::Windows::Foundation::IInspectable args);
-    void _DisplayWindowId(const winrt::Windows::Foundation::IInspectable& sender,
-                          const winrt::Windows::Foundation::IInspectable& args);
-    winrt::fire_and_forget _RenameWindowRequested(const winrt::Windows::Foundation::IInspectable sender,
-                                                  const winrt::TerminalApp::RenameWindowRequestedArgs args);
+    winrt::fire_and_forget _IdentifyWindowsRequested(const WF::IInspectable sender,
+                                                     const WF::IInspectable args);
+    void _DisplayWindowId(const WF::IInspectable& sender,
+                          const WF::IInspectable& args);
+    winrt::fire_and_forget _RenameWindowRequested(const WF::IInspectable sender,
+                                                  const MTApp::RenameWindowRequestedArgs args);
 
     GUID _CurrentDesktopGuid();
 
@@ -86,49 +86,49 @@ private:
 
     void _listenForInboundConnections();
     winrt::fire_and_forget _setupGlobalHotkeys();
-    winrt::fire_and_forget _createNewTerminalWindow(winrt::Microsoft::Terminal::Settings::Model::GlobalSummonArgs args);
-    void _HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& sender,
-                                const winrt::Windows::Foundation::IInspectable& args);
+    winrt::fire_and_forget _createNewTerminalWindow(MTSM::GlobalSummonArgs args);
+    void _HandleSettingsChanged(const WF::IInspectable& sender,
+                                const WF::IInspectable& args);
 
-    void _IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable& sender,
-                               const winrt::Windows::Foundation::IInspectable& args);
+    void _IsQuakeWindowChanged(const WF::IInspectable& sender,
+                               const WF::IInspectable& args);
 
-    void _SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
-                                const winrt::Windows::Foundation::IInspectable& args);
+    void _SummonWindowRequested(const WF::IInspectable& sender,
+                                const WF::IInspectable& args);
 
-    void _OpenSystemMenu(const winrt::Windows::Foundation::IInspectable& sender,
-                         const winrt::Windows::Foundation::IInspectable& args);
+    void _OpenSystemMenu(const WF::IInspectable& sender,
+                         const WF::IInspectable& args);
 
-    void _SystemMenuChangeRequested(const winrt::Windows::Foundation::IInspectable& sender,
-                                    const winrt::TerminalApp::SystemMenuChangeArgs& args);
+    void _SystemMenuChangeRequested(const WF::IInspectable& sender,
+                                    const MTApp::SystemMenuChangeArgs& args);
 
-    winrt::fire_and_forget _QuitRequested(const winrt::Windows::Foundation::IInspectable& sender,
-                                          const winrt::Windows::Foundation::IInspectable& args);
+    winrt::fire_and_forget _QuitRequested(const WF::IInspectable& sender,
+                                          const WF::IInspectable& args);
 
-    void _RequestQuitAll(const winrt::Windows::Foundation::IInspectable& sender,
-                         const winrt::Windows::Foundation::IInspectable& args);
-    void _CloseRequested(const winrt::Windows::Foundation::IInspectable& sender,
-                         const winrt::Windows::Foundation::IInspectable& args);
+    void _RequestQuitAll(const WF::IInspectable& sender,
+                         const WF::IInspectable& args);
+    void _CloseRequested(const WF::IInspectable& sender,
+                         const WF::IInspectable& args);
 
-    void _QuitAllRequested(const winrt::Windows::Foundation::IInspectable& sender,
+    void _QuitAllRequested(const WF::IInspectable& sender,
                            const winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs& args);
 
-    void _ShowWindowChanged(const winrt::Windows::Foundation::IInspectable& sender,
-                            const winrt::Microsoft::Terminal::Control::ShowWindowArgs& args);
+    void _ShowWindowChanged(const WF::IInspectable& sender,
+                            const MTControl::ShowWindowArgs& args);
 
     void _CreateNotificationIcon();
     void _DestroyNotificationIcon();
-    void _ShowNotificationIconRequested(const winrt::Windows::Foundation::IInspectable& sender,
-                                        const winrt::Windows::Foundation::IInspectable& args);
-    void _HideNotificationIconRequested(const winrt::Windows::Foundation::IInspectable& sender,
-                                        const winrt::Windows::Foundation::IInspectable& args);
+    void _ShowNotificationIconRequested(const WF::IInspectable& sender,
+                                        const WF::IInspectable& args);
+    void _HideNotificationIconRequested(const WF::IInspectable& sender,
+                                        const WF::IInspectable& args);
 
     void _updateTheme();
 
-    void _PropertyChangedHandler(const winrt::Windows::Foundation::IInspectable& sender,
-                                 const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
+    void _PropertyChangedHandler(const WF::IInspectable& sender,
+                                 const WUX::Data::PropertyChangedEventArgs& args);
 
-    void _initialResizeAndRepositionWindow(const HWND hwnd, RECT proposedRect, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode);
+    void _initialResizeAndRepositionWindow(const HWND hwnd, RECT proposedRect, MTSM::LaunchMode& launchMode);
 
     std::unique_ptr<NotificationIcon> _notificationIcon;
     winrt::event_token _ReAddNotificationIconToken;
@@ -151,28 +151,28 @@ private:
         winrt::Microsoft::Terminal::Remoting::Peasant::SummonRequested_revoker peasantSummonRequested;
         winrt::Microsoft::Terminal::Remoting::Peasant::DisplayWindowIdRequested_revoker peasantDisplayWindowIdRequested;
         winrt::Microsoft::Terminal::Remoting::Peasant::QuitRequested_revoker peasantQuitRequested;
-        winrt::TerminalApp::AppLogic::CloseRequested_revoker CloseRequested;
-        winrt::TerminalApp::AppLogic::RequestedThemeChanged_revoker RequestedThemeChanged;
-        winrt::TerminalApp::AppLogic::FullscreenChanged_revoker FullscreenChanged;
-        winrt::TerminalApp::AppLogic::FocusModeChanged_revoker FocusModeChanged;
-        winrt::TerminalApp::AppLogic::AlwaysOnTopChanged_revoker AlwaysOnTopChanged;
-        winrt::TerminalApp::AppLogic::RaiseVisualBell_revoker RaiseVisualBell;
-        winrt::TerminalApp::AppLogic::SystemMenuChangeRequested_revoker SystemMenuChangeRequested;
-        winrt::TerminalApp::AppLogic::ChangeMaximizeRequested_revoker ChangeMaximizeRequested;
-        winrt::TerminalApp::AppLogic::TitleChanged_revoker TitleChanged;
-        winrt::TerminalApp::AppLogic::LastTabClosed_revoker LastTabClosed;
-        winrt::TerminalApp::AppLogic::SetTaskbarProgress_revoker SetTaskbarProgress;
-        winrt::TerminalApp::AppLogic::IdentifyWindowsRequested_revoker IdentifyWindowsRequested;
-        winrt::TerminalApp::AppLogic::RenameWindowRequested_revoker RenameWindowRequested;
-        winrt::TerminalApp::AppLogic::SettingsChanged_revoker SettingsChanged;
-        winrt::TerminalApp::AppLogic::IsQuakeWindowChanged_revoker IsQuakeWindowChanged;
-        winrt::TerminalApp::AppLogic::SummonWindowRequested_revoker SummonWindowRequested;
-        winrt::TerminalApp::AppLogic::OpenSystemMenu_revoker OpenSystemMenu;
-        winrt::TerminalApp::AppLogic::QuitRequested_revoker QuitRequested;
-        winrt::TerminalApp::AppLogic::ShowWindowChanged_revoker ShowWindowChanged;
+        MTApp::AppLogic::CloseRequested_revoker CloseRequested;
+        MTApp::AppLogic::RequestedThemeChanged_revoker RequestedThemeChanged;
+        MTApp::AppLogic::FullscreenChanged_revoker FullscreenChanged;
+        MTApp::AppLogic::FocusModeChanged_revoker FocusModeChanged;
+        MTApp::AppLogic::AlwaysOnTopChanged_revoker AlwaysOnTopChanged;
+        MTApp::AppLogic::RaiseVisualBell_revoker RaiseVisualBell;
+        MTApp::AppLogic::SystemMenuChangeRequested_revoker SystemMenuChangeRequested;
+        MTApp::AppLogic::ChangeMaximizeRequested_revoker ChangeMaximizeRequested;
+        MTApp::AppLogic::TitleChanged_revoker TitleChanged;
+        MTApp::AppLogic::LastTabClosed_revoker LastTabClosed;
+        MTApp::AppLogic::SetTaskbarProgress_revoker SetTaskbarProgress;
+        MTApp::AppLogic::IdentifyWindowsRequested_revoker IdentifyWindowsRequested;
+        MTApp::AppLogic::RenameWindowRequested_revoker RenameWindowRequested;
+        MTApp::AppLogic::SettingsChanged_revoker SettingsChanged;
+        MTApp::AppLogic::IsQuakeWindowChanged_revoker IsQuakeWindowChanged;
+        MTApp::AppLogic::SummonWindowRequested_revoker SummonWindowRequested;
+        MTApp::AppLogic::OpenSystemMenu_revoker OpenSystemMenu;
+        MTApp::AppLogic::QuitRequested_revoker QuitRequested;
+        MTApp::AppLogic::ShowWindowChanged_revoker ShowWindowChanged;
         winrt::Microsoft::Terminal::Remoting::WindowManager::ShowNotificationIconRequested_revoker ShowNotificationIconRequested;
         winrt::Microsoft::Terminal::Remoting::WindowManager::HideNotificationIconRequested_revoker HideNotificationIconRequested;
         winrt::Microsoft::Terminal::Remoting::WindowManager::QuitAllRequested_revoker QuitAllRequested;
-        winrt::TerminalApp::AppLogic::PropertyChanged_revoker PropertyChanged;
+        MTApp::AppLogic::PropertyChanged_revoker PropertyChanged;
     } _revokers{};
 };

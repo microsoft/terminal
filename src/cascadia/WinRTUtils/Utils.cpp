@@ -8,7 +8,7 @@
 
 // Function Description:
 // - Helper that opens a file picker pre-seeded with image file types.
-winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> OpenImagePicker(HWND parentHwnd)
+WF::IAsyncOperation<winrt::hstring> OpenImagePicker(HWND parentHwnd)
 {
     static constexpr COMDLG_FILTERSPEC supportedImageFileTypes[] = {
         { L"All Supported Bitmap Types (*.jpg, *.jpeg, *.png, *.bmp, *.gif, *.tiff, *.ico)", L"*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.tiff;*.ico" },

@@ -9,11 +9,11 @@
     X(til::color, DefaultForeground, DEFAULT_FOREGROUND)                                                                  \
     X(til::color, DefaultBackground, DEFAULT_BACKGROUND)                                                                  \
     X(til::color, CursorColor, DEFAULT_CURSOR_COLOR)                                                                      \
-    X(winrt::Microsoft::Terminal::Core::CursorStyle, CursorShape, winrt::Microsoft::Terminal::Core::CursorStyle::Vintage) \
+    X(MTCore::CursorStyle, CursorShape, MTCore::CursorStyle::Vintage) \
     X(uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT)                                                                      \
     X(bool, IntenseIsBold)                                                                                                \
     X(bool, IntenseIsBright, true)                                                                                        \
-    X(winrt::Microsoft::Terminal::Core::AdjustTextMode, AdjustIndistinguishableColors, winrt::Microsoft::Terminal::Core::AdjustTextMode::Never)
+    X(MTCore::AdjustTextMode, AdjustIndistinguishableColors, MTCore::AdjustTextMode::Never)
 
 // --------------------------- Control Appearance ---------------------------
 //  All of these settings are defined in IControlAppearance.
@@ -22,9 +22,9 @@
     X(double, Opacity, 1.0)                                                                                                                     \
     X(winrt::hstring, BackgroundImage)                                                                                                          \
     X(double, BackgroundImageOpacity, 1.0)                                                                                                      \
-    X(winrt::Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill)            \
-    X(winrt::Windows::UI::Xaml::HorizontalAlignment, BackgroundImageHorizontalAlignment, winrt::Windows::UI::Xaml::HorizontalAlignment::Center) \
-    X(winrt::Windows::UI::Xaml::VerticalAlignment, BackgroundImageVerticalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment::Center)       \
+    X(WUXMedia::Stretch, BackgroundImageStretchMode, WUXMedia::Stretch::UniformToFill)            \
+    X(WUX::HorizontalAlignment, BackgroundImageHorizontalAlignment, WUX::HorizontalAlignment::Center) \
+    X(WUX::VerticalAlignment, BackgroundImageVerticalAlignment, WUX::VerticalAlignment::Center)       \
     X(bool, RetroTerminalEffect, false)                                                                                                         \
     X(winrt::hstring, PixelShaderPath)
 
@@ -39,8 +39,8 @@
     X(winrt::hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS)                                                    \
     X(bool, CopyOnSelect, false)                                                                                  \
     X(bool, FocusFollowMouse, false)                                                                              \
-    X(winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color>, TabColor, nullptr)         \
-    X(winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color>, StartingTabColor, nullptr) \
+    X(WF::IReference<MTCore::Color>, TabColor, nullptr)         \
+    X(WF::IReference<MTCore::Color>, StartingTabColor, nullptr) \
     X(bool, TrimBlockSelection, true)                                                                             \
     X(bool, SuppressApplicationTitle)                                                                             \
     X(bool, ForceVTInput, false)                                                                                  \
@@ -58,15 +58,15 @@
     X(winrt::hstring, Padding, DEFAULT_PADDING)                                                                                                          \
     X(winrt::hstring, FontFace, L"Consolas")                                                                                                             \
     X(float, FontSize, DEFAULT_FONT_SIZE)                                                                                                                \
-    X(winrt::Windows::UI::Text::FontWeight, FontWeight)                                                                                                  \
+    X(WUT::FontWeight, FontWeight)                                                                                                  \
     X(IFontFeatureMap, FontFeatures)                                                                                                                     \
     X(IFontAxesMap, FontAxes)                                                                                                                            \
-    X(winrt::Microsoft::Terminal::Control::IKeyBindings, KeyBindings, nullptr)                                                                           \
+    X(MTControl::IKeyBindings, KeyBindings, nullptr)                                                                           \
     X(winrt::hstring, Commandline)                                                                                                                       \
     X(winrt::hstring, StartingDirectory)                                                                                                                 \
     X(winrt::hstring, EnvironmentVariables)                                                                                                              \
-    X(winrt::Microsoft::Terminal::Control::ScrollbarState, ScrollState, winrt::Microsoft::Terminal::Control::ScrollbarState::Visible)                    \
-    X(winrt::Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, winrt::Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale) \
+    X(MTControl::ScrollbarState, ScrollState, MTControl::ScrollbarState::Visible)                    \
+    X(MTControl::TextAntialiasingMode, AntialiasingMode, MTControl::TextAntialiasingMode::Grayscale) \
     X(bool, ForceFullRepaintRendering, false)                                                                                                            \
     X(bool, SoftwareRendering, false)                                                                                                                    \
     X(bool, UseAtlasEngine, false)                                                                                                                       \

@@ -8,7 +8,7 @@
 
 namespace winrt::TerminalApp::implementation
 {
-    Windows::UI::Xaml::DataTemplate PaletteItemTemplateSelector::SelectTemplateCore(const winrt::Windows::Foundation::IInspectable& item, const winrt::Windows::UI::Xaml::DependencyObject& /*container*/)
+    WUX::DataTemplate PaletteItemTemplateSelector::SelectTemplateCore(const WF::IInspectable& item, const WUX::DependencyObject& /*container*/)
     {
         return SelectTemplateCore(item);
     }
@@ -22,15 +22,15 @@ namespace winrt::TerminalApp::implementation
     // - item - an instance of filtered command to render
     // Return Value:
     // - data template to use for rendering
-    Windows::UI::Xaml::DataTemplate PaletteItemTemplateSelector::SelectTemplateCore(const winrt::Windows::Foundation::IInspectable& item)
+    WUX::DataTemplate PaletteItemTemplateSelector::SelectTemplateCore(const WF::IInspectable& item)
     {
-        if (const auto filteredCommand{ item.try_as<winrt::TerminalApp::FilteredCommand>() })
+        if (const auto filteredCommand{ item.try_as<MTApp::FilteredCommand>() })
         {
-            if (filteredCommand.Item().try_as<winrt::TerminalApp::TabPaletteItem>())
+            if (filteredCommand.Item().try_as<MTApp::TabPaletteItem>())
             {
                 return TabItemTemplate();
             }
-            else if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
+            else if (const auto actionPaletteItem{ filteredCommand.Item().try_as<MTApp::ActionPaletteItem>() })
             {
                 if (actionPaletteItem.Command().HasNestedCommands())
                 {

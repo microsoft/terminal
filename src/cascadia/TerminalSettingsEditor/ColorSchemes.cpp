@@ -10,18 +10,18 @@
 
 using namespace winrt;
 using namespace winrt::Windows::UI;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::UI::Xaml::Navigation;
-using namespace winrt::Windows::UI::Xaml::Controls;
-using namespace winrt::Windows::UI::Xaml::Media;
-using namespace winrt::Windows::Foundation;
-using namespace winrt::Windows::Foundation::Collections;
-using namespace winrt::Microsoft::UI::Xaml::Controls;
+using namespace WUX;
+using namespace WUX::Navigation;
+using namespace WUXC;
+using namespace WUXMedia;
+using namespace WF;
+using namespace WFC;
+using namespace MUXC;
 
 namespace winrt
 {
-    namespace MUX = Microsoft::UI::Xaml;
-    namespace WUX = Windows::UI::Xaml;
+    namespace MUX = MUX;
+    namespace WUX = WUX;
 }
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
@@ -55,9 +55,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void ColorSchemes::ListView_PreviewKeyDown(const IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
+    void ColorSchemes::ListView_PreviewKeyDown(const IInspectable& /*sender*/, const WUX::Input::KeyRoutedEventArgs& e)
     {
-        if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Enter)
+        if (e.OriginalKey() == WS::VirtualKey::Enter)
         {
             // Treat this as if 'edit' was clicked
             _ViewModel.RequestEditSelectedScheme();

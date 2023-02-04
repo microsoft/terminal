@@ -114,7 +114,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void ColorSchemeViewModel::DeleteConfirmation_Click(const IInspectable& /*sender*/, const Windows::UI::Xaml::RoutedEventArgs& /*e*/)
+    void ColorSchemeViewModel::DeleteConfirmation_Click(const IInspectable& /*sender*/, const WUX::RoutedEventArgs& /*e*/)
     {
         if (const auto parentPageVM{ _parentPageVM.get() })
         {
@@ -122,7 +122,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void ColorSchemeViewModel::SetAsDefault_Click(const IInspectable& /*sender*/, const Windows::UI::Xaml::RoutedEventArgs& /*e*/)
+    void ColorSchemeViewModel::SetAsDefault_Click(const IInspectable& /*sender*/, const WUX::RoutedEventArgs& /*e*/)
     {
         if (const auto parentPageVM{ _parentPageVM.get() })
         {

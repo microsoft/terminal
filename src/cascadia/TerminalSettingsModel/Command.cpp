@@ -10,14 +10,14 @@
 #include <LibraryResources.h>
 #include "TerminalSettingsSerializationHelpers.h"
 
-using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Windows::Foundation::Collections;
+using namespace MTSM;
+using namespace WFC;
 using namespace ::Microsoft::Terminal::Settings::Model;
 
 namespace winrt
 {
-    namespace MUX = Microsoft::UI::Xaml;
-    namespace WUX = Windows::UI::Xaml;
+    namespace MUX = MUX;
+    namespace WUX = WUX;
 }
 
 static constexpr std::string_view NameKey{ "name" };

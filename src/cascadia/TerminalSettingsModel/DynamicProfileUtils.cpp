@@ -15,7 +15,7 @@ static constexpr std::wstring_view PACKAGED_PROFILE_ICON_EXTENSION{ L".png" };
 // - name: the name of the new profile.
 // Return Value:
 // - A Profile, ready to be filled in
-winrt::com_ptr<winrt::Microsoft::Terminal::Settings::Model::implementation::Profile> CreateDynamicProfile(const std::wstring_view& name)
+winrt::com_ptr<MTSM::implementation::Profile> CreateDynamicProfile(const std::wstring_view& name)
 {
     const auto profileGuid = Microsoft::Console::Utils::CreateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID, std::as_bytes(std::span{ name }));
 
@@ -23,7 +23,7 @@ winrt::com_ptr<winrt::Microsoft::Terminal::Settings::Model::implementation::Prof
     iconPath.append(Microsoft::Console::Utils::GuidToString(profileGuid));
     iconPath.append(PACKAGED_PROFILE_ICON_EXTENSION);
 
-    auto profile = winrt::make_self<winrt::Microsoft::Terminal::Settings::Model::implementation::Profile>(profileGuid);
+    auto profile = winrt::make_self<MTSM::implementation::Profile>(profileGuid);
     profile->Name(winrt::hstring{ name });
     profile->Icon(winrt::hstring{ iconPath });
     return profile;

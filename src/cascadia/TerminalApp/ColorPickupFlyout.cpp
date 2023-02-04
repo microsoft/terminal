@@ -31,10 +31,10 @@ namespace winrt::TerminalApp::implementation
     // - sender: the rectangle that got clicked
     // Return Value:
     // - <none>
-    void ColorPickupFlyout::ColorButton_Click(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs&)
+    void ColorPickupFlyout::ColorButton_Click(const IInspectable& sender, const WUX::RoutedEventArgs&)
     {
-        auto button{ sender.as<Windows::UI::Xaml::Controls::Button>() };
-        auto rectClr{ button.Background().as<Windows::UI::Xaml::Media::SolidColorBrush>() };
+        auto button{ sender.as<WUXC::Button>() };
+        auto rectClr{ button.Background().as<WUXMedia::SolidColorBrush>() };
         _ColorSelectedHandlers(rectClr.Color());
         Hide();
     }
@@ -46,7 +46,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void ColorPickupFlyout::ClearColorButton_Click(const IInspectable&, const Windows::UI::Xaml::RoutedEventArgs&)
+    void ColorPickupFlyout::ClearColorButton_Click(const IInspectable&, const WUX::RoutedEventArgs&)
     {
         _ColorClearedHandlers();
         Hide();
@@ -60,16 +60,16 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void ColorPickupFlyout::ShowColorPickerButton_Click(const Windows::Foundation::IInspectable&, const Windows::UI::Xaml::RoutedEventArgs&)
+    void ColorPickupFlyout::ShowColorPickerButton_Click(const WF::IInspectable&, const WUX::RoutedEventArgs&)
     {
         auto visibility = customColorPanel().Visibility();
-        if (visibility == winrt::Windows::UI::Xaml::Visibility::Collapsed)
+        if (visibility == WUX::Visibility::Collapsed)
         {
-            customColorPanel().Visibility(winrt::Windows::UI::Xaml::Visibility::Visible);
+            customColorPanel().Visibility(WUX::Visibility::Visible);
         }
         else
         {
-            customColorPanel().Visibility(winrt::Windows::UI::Xaml::Visibility::Collapsed);
+            customColorPanel().Visibility(WUX::Visibility::Collapsed);
         }
     }
 
@@ -80,14 +80,14 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void ColorPickupFlyout::CustomColorButton_Click(const Windows::Foundation::IInspectable&, const Windows::UI::Xaml::RoutedEventArgs&)
+    void ColorPickupFlyout::CustomColorButton_Click(const WF::IInspectable&, const WUX::RoutedEventArgs&)
     {
         auto color = customColorPicker().Color();
         _ColorSelectedHandlers(color);
         Hide();
     }
 
-    void ColorPickupFlyout::ColorPicker_ColorChanged(const Microsoft::UI::Xaml::Controls::ColorPicker&, const Microsoft::UI::Xaml::Controls::ColorChangedEventArgs& args)
+    void ColorPickupFlyout::ColorPicker_ColorChanged(const MUXC::ColorPicker&, const MUXC::ColorChangedEventArgs& args)
     {
         _ColorSelectedHandlers(args.NewColor());
     }

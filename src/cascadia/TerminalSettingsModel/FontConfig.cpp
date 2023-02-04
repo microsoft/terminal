@@ -9,14 +9,14 @@
 #include "JsonUtils.h"
 
 using namespace Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
+using namespace MTSM::implementation;
 
 static constexpr std::string_view FontInfoKey{ "font" };
 static constexpr std::string_view LegacyFontFaceKey{ "fontFace" };
 static constexpr std::string_view LegacyFontSizeKey{ "fontSize" };
 static constexpr std::string_view LegacyFontWeightKey{ "fontWeight" };
 
-winrt::Microsoft::Terminal::Settings::Model::implementation::FontConfig::FontConfig(winrt::weak_ref<Profile> sourceProfile) :
+MTSM::implementation::FontConfig::FontConfig(winrt::weak_ref<Profile> sourceProfile) :
     _sourceProfile(std::move(sourceProfile))
 {
 }
@@ -83,7 +83,7 @@ bool FontConfig::HasAnyOptionSet() const
     return HasFontFace() || HasFontSize() || HasFontWeight();
 }
 
-winrt::Microsoft::Terminal::Settings::Model::Profile FontConfig::SourceProfile()
+MTSM::Profile FontConfig::SourceProfile()
 {
     return _sourceProfile.get();
 }

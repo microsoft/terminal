@@ -11,19 +11,19 @@ namespace winrt::TerminalApp::implementation
     struct TabPaletteItem : TabPaletteItemT<TabPaletteItem, PaletteItem>
     {
         TabPaletteItem() = default;
-        TabPaletteItem(const winrt::TerminalApp::TabBase& tab);
+        TabPaletteItem(const MTApp::TabBase& tab);
 
-        winrt::TerminalApp::TabBase Tab() const noexcept
+        MTApp::TabBase Tab() const noexcept
         {
             return _tab.get();
         }
 
-        WINRT_OBSERVABLE_PROPERTY(winrt::TerminalApp::TerminalTabStatus, TabStatus, _PropertyChangedHandlers);
+        WINRT_OBSERVABLE_PROPERTY(MTApp::TerminalTabStatus, TabStatus, _PropertyChangedHandlers);
 
     private:
-        winrt::weak_ref<winrt::TerminalApp::TabBase> _tab;
-        Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _tabChangedRevoker;
-        Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _tabStatusChangedRevoker;
+        winrt::weak_ref<MTApp::TabBase> _tab;
+        WUX::Data::INotifyPropertyChanged::PropertyChanged_revoker _tabChangedRevoker;
+        WUX::Data::INotifyPropertyChanged::PropertyChanged_revoker _tabStatusChangedRevoker;
     };
 }
 

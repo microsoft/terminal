@@ -15,11 +15,11 @@
 
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::UI::Xaml::Hosting;
-using namespace winrt::Windows::Foundation::Numerics;
+using namespace WUX;
+using namespace WUX::Hosting;
+using namespace WF::Numerics;
 using namespace winrt::Microsoft::Terminal;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace MTSM;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
 using namespace std::chrono_literals;
@@ -77,7 +77,7 @@ AppHost::AppHost() noexcept :
                          std::placeholders::_3);
     _window->SetCreateCallback(pfn);
 
-    _window->SetSnapDimensionCallback(std::bind(&winrt::TerminalApp::AppLogic::CalcSnappedDimension,
+    _window->SetSnapDimensionCallback(std::bind(&MTApp::AppLogic::CalcSnappedDimension,
                                                 _logic,
                                                 std::placeholders::_1,
                                                 std::placeholders::_2));
@@ -100,7 +100,7 @@ AppHost::AppHost() noexcept :
     _window->WindowActivated({ this, &AppHost::_WindowActivated });
     _window->WindowMoved({ this, &AppHost::_WindowMoved });
     _window->HotkeyPressed({ this, &AppHost::_GlobalHotkeyPressed });
-    _window->ShouldExitFullscreen({ &_logic, &winrt::TerminalApp::AppLogic::RequestExitFullscreen });
+    _window->ShouldExitFullscreen({ &_logic, &MTApp::AppLogic::RequestExitFullscreen });
 
     _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
     _window->SetAutoHideWindow(_logic.AutoHideWindow());
@@ -126,7 +126,7 @@ AppHost::AppHost() noexcept :
     // realizing it, but should mitigate issues where the Terminal and PTY get
     // de-sync'd.
     _showHideWindowThrottler = std::make_shared<ThrottledFuncTrailing<bool>>(
-        winrt::Windows::System::DispatcherQueue::GetForCurrentThread(),
+        WS::DispatcherQueue::GetForCurrentThread(),
         std::chrono::milliseconds(200),
         [this](const bool show) {
             _window->ShowWindowChanged(show);
@@ -166,8 +166,8 @@ bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, cons
 // Arguments:
 // - sender: not used
 // - args: not used
-void AppHost::SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                 const winrt::Windows::Foundation::IInspectable& /*args*/)
+void AppHost::SetTaskbarProgress(const WF::IInspectable& /*sender*/,
+                                 const WF::IInspectable& /*args*/)
 {
     if (_logic)
     {
@@ -476,7 +476,7 @@ void AppHost::Initialize()
 // - newTitle: the string to use as the new window title
 // Return Value:
 // - <none>
-void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/, winrt::hstring newTitle)
+void AppHost::AppTitleChanged(const WF::IInspectable& /*sender*/, winrt::hstring newTitle)
 {
     if (_logic.GetShowTitleInTitlebar())
     {
@@ -492,7 +492,7 @@ void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /*
 // - LastTabClosedEventArgs: unused
 // Return Value:
 // - <none>
-void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::TerminalApp::LastTabClosedEventArgs& /*args*/)
+void AppHost::LastTabClosed(const WF::IInspectable& /*sender*/, const MTApp::LastTabClosedEventArgs& /*args*/)
 {
     if (_windowManager.IsMonarch() && _notificationIcon)
     {
@@ -700,7 +700,7 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, til::rect proposedRect, Launc
 // - arg: the UIElement to use as the new Titlebar content.
 // Return Value:
 // - <none>
-void AppHost::_UpdateTitleBarContent(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::UI::Xaml::UIElement& arg)
+void AppHost::_UpdateTitleBarContent(const WF::IInspectable&, const WUX::UIElement& arg)
 {
     if (_useNonClientArea)
     {
@@ -720,26 +720,26 @@ void AppHost::_UpdateTitleBarContent(const winrt::Windows::Foundation::IInspecta
 // - arg: the ElementTheme to use as the new theme for the UI
 // Return Value:
 // - <none>
-void AppHost::_UpdateTheme(const winrt::Windows::Foundation::IInspectable&,
-                           const winrt::Microsoft::Terminal::Settings::Model::Theme& /*arg*/)
+void AppHost::_UpdateTheme(const WF::IInspectable&,
+                           const MTSM::Theme& /*arg*/)
 {
     _updateTheme();
 }
 
-void AppHost::_FocusModeChanged(const winrt::Windows::Foundation::IInspectable&,
-                                const winrt::Windows::Foundation::IInspectable&)
+void AppHost::_FocusModeChanged(const WF::IInspectable&,
+                                const WF::IInspectable&)
 {
     _window->FocusModeChanged(_logic.FocusMode());
 }
 
-void AppHost::_FullscreenChanged(const winrt::Windows::Foundation::IInspectable&,
-                                 const winrt::Windows::Foundation::IInspectable&)
+void AppHost::_FullscreenChanged(const WF::IInspectable&,
+                                 const WF::IInspectable&)
 {
     _window->FullscreenChanged(_logic.Fullscreen());
 }
 
-void AppHost::_ChangeMaximizeRequested(const winrt::Windows::Foundation::IInspectable&,
-                                       const winrt::Windows::Foundation::IInspectable&)
+void AppHost::_ChangeMaximizeRequested(const WF::IInspectable&,
+                                       const WF::IInspectable&)
 {
     if (const auto handle = _window->GetHandle())
     {
@@ -761,8 +761,8 @@ void AppHost::_ChangeMaximizeRequested(const winrt::Windows::Foundation::IInspec
     }
 }
 
-void AppHost::_AlwaysOnTopChanged(const winrt::Windows::Foundation::IInspectable&,
-                                  const winrt::Windows::Foundation::IInspectable&)
+void AppHost::_AlwaysOnTopChanged(const WF::IInspectable&,
+                                  const WF::IInspectable&)
 {
     // MSFT:34662459
     //
@@ -781,8 +781,8 @@ void AppHost::_AlwaysOnTopChanged(const winrt::Windows::Foundation::IInspectable
 //   something needs their attention
 // Arguments
 // - <unused>
-void AppHost::_RaiseVisualBell(const winrt::Windows::Foundation::IInspectable&,
-                               const winrt::Windows::Foundation::IInspectable&)
+void AppHost::_RaiseVisualBell(const WF::IInspectable&,
+                               const WF::IInspectable&)
 {
     _window->FlashTaskbar();
 }
@@ -804,11 +804,11 @@ void AppHost::_WindowMouseWheeled(const til::point coord, const int32_t delta)
     if (_logic)
     {
         // Find all the elements that are underneath the mouse
-        auto elems = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::FindElementsInHostCoordinates(coord.to_winrt_point(), _logic.GetRoot());
+        auto elems = WUXMedia::VisualTreeHelper::FindElementsInHostCoordinates(coord.to_winrt_point(), _logic.GetRoot());
         for (const auto& e : elems)
         {
             // If that element has implemented IMouseWheelListener, call OnMouseWheel on that element.
-            if (auto control{ e.try_as<winrt::Microsoft::Terminal::Control::IMouseWheelListener>() })
+            if (auto control{ e.try_as<MTControl::IMouseWheelListener>() })
             {
                 try
                 {
@@ -851,7 +851,7 @@ bool AppHost::HasWindow()
 // - args: the bundle of a commandline and working directory to use for this invocation.
 // Return Value:
 // - <none>
-void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable sender,
+void AppHost::_DispatchCommandline(WF::IInspectable sender,
                                    Remoting::CommandlineArgs args)
 {
     const Remoting::SummonWindowBehavior summonArgs{};
@@ -875,7 +875,7 @@ void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable send
 // - <none>
 // Return Value:
 // - The window layout as a json string.
-winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> AppHost::_GetWindowLayoutAsync()
+WF::IAsyncOperation<winrt::hstring> AppHost::_GetWindowLayoutAsync()
 {
     winrt::apartment_context peasant_thread;
 
@@ -905,7 +905,7 @@ winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> AppHost::_GetWindowL
 // - args: the bundle of a commandline and working directory to find the correct target window for.
 // Return Value:
 // - <none>
-void AppHost::_FindTargetWindow(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+void AppHost::_FindTargetWindow(const WF::IInspectable& /*sender*/,
                                 const Remoting::FindTargetWindowArgs& args)
 {
     const auto targetWindow = _logic.FindTargetWindow(args.Args().Commandline());
@@ -939,8 +939,8 @@ winrt::fire_and_forget AppHost::_WindowActivated(bool activated)
     }
 }
 
-void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                             const winrt::Windows::Foundation::IInspectable& /*args*/)
+void AppHost::_BecomeMonarch(const WF::IInspectable& /*sender*/,
+                             const WF::IInspectable& /*args*/)
 {
     // MSFT:35726322
     //
@@ -995,7 +995,7 @@ void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*s
     }
 }
 
-winrt::Windows::Foundation::IAsyncAction AppHost::_SaveWindowLayouts()
+WF::IAsyncAction AppHost::_SaveWindowLayouts()
 {
     // Make sure we run on a background thread to not block anything.
     co_await winrt::resume_background();
@@ -1228,7 +1228,7 @@ bool AppHost::_LazyLoadDesktopManager()
     return _desktopManager != nullptr;
 }
 
-void AppHost::_HandleSummon(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+void AppHost::_HandleSummon(const WF::IInspectable& /*sender*/,
                             const Remoting::SummonWindowBehavior& args)
 {
     _window->SummonWindow(args);
@@ -1288,8 +1288,8 @@ GUID AppHost::_CurrentDesktopGuid()
 // - <unused>
 // Return Value:
 // - <none>
-winrt::fire_and_forget AppHost::_IdentifyWindowsRequested(const winrt::Windows::Foundation::IInspectable /*sender*/,
-                                                          const winrt::Windows::Foundation::IInspectable /*args*/)
+winrt::fire_and_forget AppHost::_IdentifyWindowsRequested(const WF::IInspectable /*sender*/,
+                                                          const WF::IInspectable /*args*/)
 {
     // We'll be raising an event that may result in a RPC call to the monarch -
     // make sure we're on the background thread, or this will silently fail
@@ -1308,14 +1308,14 @@ winrt::fire_and_forget AppHost::_IdentifyWindowsRequested(const winrt::Windows::
 // - <unused>
 // Return Value:
 // - <none>
-void AppHost::_DisplayWindowId(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                               const winrt::Windows::Foundation::IInspectable& /*args*/)
+void AppHost::_DisplayWindowId(const WF::IInspectable& /*sender*/,
+                               const WF::IInspectable& /*args*/)
 {
     _logic.IdentifyWindow();
 }
 
-winrt::fire_and_forget AppHost::_RenameWindowRequested(const winrt::Windows::Foundation::IInspectable /*sender*/,
-                                                       const winrt::TerminalApp::RenameWindowRequestedArgs args)
+winrt::fire_and_forget AppHost::_RenameWindowRequested(const WF::IInspectable /*sender*/,
+                                                       const MTApp::RenameWindowRequestedArgs args)
 {
     // Capture calling context.
     winrt::apartment_context ui_thread;
@@ -1344,13 +1344,13 @@ winrt::fire_and_forget AppHost::_RenameWindowRequested(const winrt::Windows::Fou
     }
 }
 
-static double _opacityFromBrush(const winrt::Windows::UI::Xaml::Media::Brush& brush)
+static double _opacityFromBrush(const WUXMedia::Brush& brush)
 {
-    if (auto acrylic = brush.try_as<winrt::Windows::UI::Xaml::Media::AcrylicBrush>())
+    if (auto acrylic = brush.try_as<WUXMedia::AcrylicBrush>())
     {
         return acrylic.TintOpacity();
     }
-    else if (auto solidColor = brush.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>())
+    else if (auto solidColor = brush.try_as<WUXMedia::SolidColorBrush>())
     {
         return solidColor.Opacity();
     }
@@ -1361,11 +1361,11 @@ static bool _isActuallyDarkTheme(const auto requestedTheme)
 {
     switch (requestedTheme)
     {
-    case winrt::Windows::UI::Xaml::ElementTheme::Light:
+    case WUX::ElementTheme::Light:
         return false;
-    case winrt::Windows::UI::Xaml::ElementTheme::Dark:
+    case WUX::ElementTheme::Dark:
         return true;
-    case winrt::Windows::UI::Xaml::ElementTheme::Default:
+    case WUX::ElementTheme::Default:
     default:
         return Theme::IsSystemInDarkTheme();
     }
@@ -1391,8 +1391,8 @@ void AppHost::_updateTheme()
     LOG_IF_FAILED(TerminalTrySetDarkTheme(_window->GetHandle(), _isActuallyDarkTheme(theme.RequestedTheme())));
 }
 
-void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                     const winrt::Windows::Foundation::IInspectable& /*args*/)
+void AppHost::_HandleSettingsChanged(const WF::IInspectable& /*sender*/,
+                                     const WF::IInspectable& /*args*/)
 {
     _setupGlobalHotkeys();
 
@@ -1426,8 +1426,8 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
     _updateTheme();
 }
 
-void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable&,
-                                    const winrt::Windows::Foundation::IInspectable&)
+void AppHost::_IsQuakeWindowChanged(const WF::IInspectable&,
+                                    const WF::IInspectable&)
 {
     // We want the quake window to be accessible through the notification icon.
     // This means if there's a quake window _somewhere_, we want the notification icon
@@ -1446,8 +1446,8 @@ void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectab
     _window->IsQuakeWindow(_logic.IsQuakeWindow());
 }
 
-winrt::fire_and_forget AppHost::_QuitRequested(const winrt::Windows::Foundation::IInspectable&,
-                                               const winrt::Windows::Foundation::IInspectable&)
+winrt::fire_and_forget AppHost::_QuitRequested(const WF::IInspectable&,
+                                               const WF::IInspectable&)
 {
     // Need to be on the main thread to close out all of the tabs.
     co_await wil::resume_foreground(_logic.GetRoot().Dispatcher());
@@ -1455,13 +1455,13 @@ winrt::fire_and_forget AppHost::_QuitRequested(const winrt::Windows::Foundation:
     _logic.Quit();
 }
 
-void AppHost::_RequestQuitAll(const winrt::Windows::Foundation::IInspectable&,
-                              const winrt::Windows::Foundation::IInspectable&)
+void AppHost::_RequestQuitAll(const WF::IInspectable&,
+                              const WF::IInspectable&)
 {
     _windowManager.RequestQuitAll();
 }
 
-void AppHost::_QuitAllRequested(const winrt::Windows::Foundation::IInspectable&,
+void AppHost::_QuitAllRequested(const WF::IInspectable&,
                                 const winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs& args)
 {
     // Make sure that the current timer is destroyed so that it doesn't attempt
@@ -1476,8 +1476,8 @@ void AppHost::_QuitAllRequested(const winrt::Windows::Foundation::IInspectable&,
     args.BeforeQuitAllAction(_SaveWindowLayouts());
 }
 
-void AppHost::_ShowWindowChanged(const winrt::Windows::Foundation::IInspectable&,
-                                 const winrt::Microsoft::Terminal::Control::ShowWindowArgs& args)
+void AppHost::_ShowWindowChanged(const WF::IInspectable&,
+                                 const MTControl::ShowWindowArgs& args)
 {
     // GH#13147: Enqueue a throttled update to our window state. Throttling
     // should prevent scenarios where the Terminal window state and PTY window
@@ -1489,8 +1489,8 @@ void AppHost::_ShowWindowChanged(const winrt::Windows::Foundation::IInspectable&
     }
 }
 
-void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
-                                     const winrt::Windows::Foundation::IInspectable&)
+void AppHost::_SummonWindowRequested(const WF::IInspectable& sender,
+                                     const WF::IInspectable&)
 {
     const Remoting::SummonWindowBehavior summonArgs{};
     summonArgs.MoveToCurrentDesktop(false);
@@ -1500,23 +1500,23 @@ void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspecta
     _HandleSummon(sender, summonArgs);
 }
 
-void AppHost::_OpenSystemMenu(const winrt::Windows::Foundation::IInspectable&,
-                              const winrt::Windows::Foundation::IInspectable&)
+void AppHost::_OpenSystemMenu(const WF::IInspectable&,
+                              const WF::IInspectable&)
 {
     _window->OpenSystemMenu(std::nullopt, std::nullopt);
 }
 
-void AppHost::_SystemMenuChangeRequested(const winrt::Windows::Foundation::IInspectable&, const winrt::TerminalApp::SystemMenuChangeArgs& args)
+void AppHost::_SystemMenuChangeRequested(const WF::IInspectable&, const MTApp::SystemMenuChangeArgs& args)
 {
     switch (args.Action())
     {
-    case winrt::TerminalApp::SystemMenuChangeAction::Add:
+    case MTApp::SystemMenuChangeAction::Add:
     {
         auto handler = args.Handler();
         _window->AddToSystemMenu(args.Name(), [handler]() { handler(); });
         break;
     }
-    case winrt::TerminalApp::SystemMenuChangeAction::Remove:
+    case MTApp::SystemMenuChangeAction::Remove:
     {
         _window->RemoveFromSystemMenu(args.Name());
         break;
@@ -1562,8 +1562,8 @@ void AppHost::_DestroyNotificationIcon()
     _notificationIcon = nullptr;
 }
 
-void AppHost::_ShowNotificationIconRequested(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                             const winrt::Windows::Foundation::IInspectable& /*args*/)
+void AppHost::_ShowNotificationIconRequested(const WF::IInspectable& /*sender*/,
+                                             const WF::IInspectable& /*args*/)
 {
     if (_windowManager.IsMonarch())
     {
@@ -1578,8 +1578,8 @@ void AppHost::_ShowNotificationIconRequested(const winrt::Windows::Foundation::I
     }
 }
 
-void AppHost::_HideNotificationIconRequested(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                             const winrt::Windows::Foundation::IInspectable& /*args*/)
+void AppHost::_HideNotificationIconRequested(const WF::IInspectable& /*sender*/,
+                                             const WF::IInspectable& /*args*/)
 {
     if (_windowManager.IsMonarch())
     {
@@ -1639,15 +1639,15 @@ void AppHost::_WindowMoved()
     }
 }
 
-void AppHost::_CloseRequested(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                              const winrt::Windows::Foundation::IInspectable& /*args*/)
+void AppHost::_CloseRequested(const WF::IInspectable& /*sender*/,
+                              const WF::IInspectable& /*args*/)
 {
     const auto pos = _GetWindowLaunchPosition();
     _logic.CloseWindow(pos);
 }
 
-void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                      const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& e)
+void AppHost::_PropertyChangedHandler(const WF::IInspectable& /*sender*/,
+                                      const WUX::Data::PropertyChangedEventArgs& e)
 {
     if (e.PropertyName() == L"TitlebarBrush")
     {

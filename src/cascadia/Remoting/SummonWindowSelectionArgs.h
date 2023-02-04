@@ -34,7 +34,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         WINRT_PROPERTY(bool, OnCurrentDesktop, false);
         WINRT_PROPERTY(SummonWindowBehavior, SummonBehavior);
 
-        WINRT_PROPERTY(Windows::Foundation::IReference<uint64_t>, WindowID);
+        WINRT_PROPERTY(WF::IReference<uint64_t>, WindowID);
     };
 }
 

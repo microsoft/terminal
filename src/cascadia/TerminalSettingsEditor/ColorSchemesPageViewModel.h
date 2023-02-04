@@ -29,18 +29,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         bool CanDeleteCurrentScheme() const;
 
-        void SchemeListItemClicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Controls::ItemClickEventArgs& e);
+        void SchemeListItemClicked(const WF::IInspectable& sender, const WUXC::ItemClickEventArgs& e);
 
         // DON'T YOU DARE ADD A `WINRT_CALLBACK(PropertyChanged` TO A CLASS DERIVED FROM ViewModelHelper. Do this instead:
         using ViewModelHelper<ColorSchemesPageViewModel>::PropertyChanged;
 
         WINRT_OBSERVABLE_PROPERTY(ColorSchemesSubPage, CurrentPage, _propertyChangedHandlers, ColorSchemesSubPage::Base);
-        WINRT_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel>, AllColorSchemes, _propertyChangedHandlers, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(WFC::IObservableVector<Editor::ColorSchemeViewModel>, AllColorSchemes, _propertyChangedHandlers, nullptr);
 
     private:
         Editor::ColorSchemeViewModel _CurrentScheme{ nullptr };
         Model::CascadiaSettings _settings;
-        Windows::Foundation::Collections::IMap<Editor::ColorSchemeViewModel, Model::ColorScheme> _viewModelToSchemeMap;
+        WFC::IMap<Editor::ColorSchemeViewModel, Model::ColorScheme> _viewModelToSchemeMap;
 
         void _MakeColorSchemeVMsHelper();
     };

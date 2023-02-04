@@ -8,23 +8,23 @@
 #include "Utils.h"
 
 using namespace winrt;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::UI::Core;
-using namespace winrt::Microsoft::Terminal::Control;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace WUX;
+using namespace WUC;
+using namespace MTControl;
+using namespace MTSM;
 using namespace winrt::Microsoft::Terminal::Settings::Editor;
-using namespace winrt::Windows::System;
+using namespace WS;
 
 namespace winrt
 {
-    namespace MUX = Microsoft::UI::Xaml;
-    namespace WUX = Windows::UI::Xaml;
+    namespace MUX = MUX;
+    namespace WUX = WUX;
 }
 
 namespace winrt::TerminalApp::implementation
 {
     SettingsTab::SettingsTab(MainPage settingsUI,
-                             winrt::Windows::UI::Xaml::ElementTheme requestedTheme)
+                             WUX::ElementTheme requestedTheme)
     {
         Content(settingsUI);
         _requestedTheme = requestedTheme;
@@ -112,7 +112,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::Windows::UI::Xaml::Media::Brush SettingsTab::_BackgroundBrush()
+    WUXMedia::Brush SettingsTab::_BackgroundBrush()
     {
         // Look up the color we should use for the settings tab item from our
         // resources. This should only be used for when "terminalBackground" is
@@ -121,6 +121,6 @@ namespace winrt::TerminalApp::implementation
         // You can't just do a Application::Current().Resources().TryLookup
         // lookup, cause the app theme never changes! Do the hacky version
         // instead.
-        return ThemeLookup(Application::Current().Resources(), _requestedTheme, key).try_as<winrt::Windows::UI::Xaml::Media::Brush>();
+        return ThemeLookup(Application::Current().Resources(), _requestedTheme, key).try_as<WUXMedia::Brush>();
     }
 }

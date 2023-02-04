@@ -10,21 +10,21 @@
 #include "Utils.h"
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::UI::Text;
-using namespace winrt::Windows::UI::Core;
-using namespace winrt::Windows::Foundation::Collections;
-using namespace winrt::Windows::System;
+using namespace WUX;
+using namespace WUT;
+using namespace WUC;
+using namespace WFC;
+using namespace WS;
 using namespace winrt::Microsoft::Terminal;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::Control;
-using namespace winrt::Microsoft::Terminal::TerminalConnection;
+using namespace MTSM;
+using namespace MTControl;
+using namespace MTConnection;
 using namespace ::TerminalApp;
 
 namespace winrt
 {
-    namespace MUX = Microsoft::UI::Xaml;
-    using IInspectable = Windows::Foundation::IInspectable;
+    namespace MUX = MUX;
+    using IInspectable = WF::IInspectable;
 }
 
 namespace winrt::TerminalApp::implementation
@@ -618,7 +618,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleSetTabColor(const IInspectable& /*sender*/,
                                           const ActionEventArgs& args)
     {
-        Windows::Foundation::IReference<Windows::UI::Color> tabColor;
+        WF::IReference<Windows::UI::Color> tabColor;
 
         if (const auto& realArgs = args.ActionArgs().try_as<SetTabColorArgs>())
         {
@@ -721,7 +721,7 @@ namespace winrt::TerminalApp::implementation
             }
 
             // Since _RemoveTabs is asynchronous, create a snapshot of the  tabs we want to remove
-            std::vector<winrt::TerminalApp::TabBase> tabsToRemove;
+            std::vector<MTApp::TabBase> tabsToRemove;
             if (index > 0)
             {
                 std::copy(begin(_tabs), begin(_tabs) + index, std::back_inserter(tabsToRemove));
@@ -760,7 +760,7 @@ namespace winrt::TerminalApp::implementation
             }
 
             // Since _RemoveTabs is asynchronous, create a snapshot of the  tabs we want to remove
-            std::vector<winrt::TerminalApp::TabBase> tabsToRemove;
+            std::vector<MTApp::TabBase> tabsToRemove;
             std::copy(begin(_tabs) + index + 1, end(_tabs), std::back_inserter(tabsToRemove));
             _RemoveTabs(tabsToRemove);
 
@@ -954,7 +954,7 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        _UpdateTeachingTipTheme(WindowRenamer().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
+        _UpdateTeachingTipTheme(WindowRenamer().try_as<WUX::FrameworkElement>());
 
         // BODGY: GH#12021
         //

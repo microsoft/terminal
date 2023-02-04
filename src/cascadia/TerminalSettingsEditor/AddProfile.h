@@ -48,14 +48,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         AddProfile();
 
-        void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
+        void OnNavigatedTo(const WUX::Navigation::NavigationEventArgs& e);
 
-        void AddNewClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
-        void DuplicateClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
-        void ProfilesSelectionChanged(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
+        void AddNewClick(const IInspectable& sender, const WUX::RoutedEventArgs& eventArgs);
+        void DuplicateClick(const IInspectable& sender, const WUX::RoutedEventArgs& eventArgs);
+        void ProfilesSelectionChanged(const IInspectable& sender, const WUX::RoutedEventArgs& eventArgs);
 
         WINRT_PROPERTY(Editor::AddProfilePageNavigationState, State, nullptr);
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        WINRT_CALLBACK(PropertyChanged, WUX::Data::PropertyChangedEventHandler);
         WINRT_OBSERVABLE_PROPERTY(bool, IsProfileSelected, _PropertyChangedHandlers, nullptr);
     };
 }

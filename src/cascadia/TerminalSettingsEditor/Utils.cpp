@@ -9,15 +9,15 @@
 #include <LibraryResources.h>
 
 using namespace winrt;
-using namespace winrt::Windows::System;
-using namespace winrt::Windows::Foundation;
-using namespace winrt::Windows::UI::Xaml;
+using namespace WS;
+using namespace WF;
+using namespace WUX;
 
 UTILS_DEFINE_LIBRARY_RESOURCE_SCOPE(L"Microsoft.Terminal.Settings.Editor/Resources");
 
 namespace winrt::Microsoft::Terminal::Settings
 {
-    hstring GetSelectedItemTag(const winrt::Windows::Foundation::IInspectable& comboBoxAsInspectable)
+    hstring GetSelectedItemTag(const WF::IInspectable& comboBoxAsInspectable)
     {
         auto comboBox = comboBoxAsInspectable.as<Controls::ComboBox>();
         auto selectedOption = comboBox.SelectedItem().as<Controls::ComboBoxItem>();

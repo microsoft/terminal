@@ -7,8 +7,8 @@
 #include "ShortcutActionDispatch.g.cpp"
 
 using namespace winrt::Microsoft::Terminal;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::TerminalApp;
+using namespace MTSM;
+using namespace MTApp;
 
 #define ACTION_CASE(action)                    \
     case ShortcutAction::action:               \

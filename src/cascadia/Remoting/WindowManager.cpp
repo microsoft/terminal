@@ -14,7 +14,7 @@
 
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal;
-using namespace winrt::Windows::Foundation;
+using namespace WF;
 using namespace ::Microsoft::Console;
 
 namespace winrt::Microsoft::Terminal::Remoting::implementation
@@ -97,7 +97,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         // You can emulate the monarch dying by: starting a terminal, sticking a
         // breakpoint in
-        // TerminalApp!winrt::TerminalApp::implementation::AppLogic::_doFindTargetWindow,
+        // TerminalApp!MTApp::implementation::AppLogic::_doFindTargetWindow,
         // starting a defterm, and when that BP gets hit, kill the original
         // monarch, and see what happens here.
 
@@ -697,7 +697,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return _peasant;
     }
 
-    void WindowManager::_raiseFindTargetWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
+    void WindowManager::_raiseFindTargetWindowRequested(const WF::IInspectable& sender,
                                                         const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args)
     {
         _FindTargetWindowRequestedHandlers(sender, args);
@@ -721,7 +721,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         _monarch.SummonAllWindows();
     }
 
-    Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> WindowManager::GetPeasantInfos()
+    WFC::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> WindowManager::GetPeasantInfos()
     {
         // We should only get called when we're the monarch since the monarch
         // is the only one that knows about all peasants.
@@ -789,7 +789,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         winrt::get_self<implementation::Peasant>(_peasant)->ActiveTabTitle(title);
     }
 
-    Windows::Foundation::Collections::IVector<winrt::hstring> WindowManager::GetAllWindowLayouts()
+    WFC::IVector<winrt::hstring> WindowManager::GetAllWindowLayouts()
     {
         if (_monarch)
         {

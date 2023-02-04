@@ -7,8 +7,8 @@
 #include "AppKeyBindings.g.cpp"
 
 using namespace winrt::Microsoft::Terminal;
-using namespace winrt::TerminalApp;
-using namespace winrt::Microsoft::Terminal::Control;
+using namespace MTApp;
+using namespace MTControl;
 
 namespace winrt::TerminalApp::implementation
 {
@@ -26,12 +26,12 @@ namespace winrt::TerminalApp::implementation
         return _actionMap.IsKeyChordExplicitlyUnbound(kc);
     }
 
-    void AppKeyBindings::SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch)
+    void AppKeyBindings::SetDispatch(const MTApp::ShortcutActionDispatch& dispatch)
     {
         _dispatch = dispatch;
     }
 
-    void AppKeyBindings::SetActionMap(const winrt::Microsoft::Terminal::Settings::Model::IActionMapView& actionMap)
+    void AppKeyBindings::SetActionMap(const MTSM::IActionMapView& actionMap)
     {
         _actionMap = actionMap;
     }

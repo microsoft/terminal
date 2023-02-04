@@ -96,7 +96,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_appearance, BackgroundImageAlignment);
         OBSERVABLE_PROJECTED_SETTING(_appearance, IntenseTextStyle);
         OBSERVABLE_PROJECTED_SETTING(_appearance, AdjustIndistinguishableColors);
-        WINRT_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel>, SchemesList, _propertyChangedHandlers, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(WFC::IObservableVector<Editor::ColorSchemeViewModel>, SchemesList, _propertyChangedHandlers, nullptr);
 
     private:
         Model::AppearanceConfig _appearance;
@@ -109,7 +109,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Appearances();
 
         // font face
-        Windows::Foundation::IInspectable CurrentFontFace() const;
+        WF::IInspectable CurrentFontFace() const;
 
         // CursorShape visibility logic
         bool IsVintageCursor() const;
@@ -118,37 +118,37 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool ShowAllFonts() const noexcept;
         void ShowAllFonts(const bool& value);
 
-        fire_and_forget BackgroundImage_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
-        void BIAlignment_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
-        void FontFace_SelectionChanged(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& e);
+        fire_and_forget BackgroundImage_Click(const WF::IInspectable& sender, const WUX::RoutedEventArgs& e);
+        void BIAlignment_Click(const WF::IInspectable& sender, const WUX::RoutedEventArgs& e);
+        void FontFace_SelectionChanged(const WF::IInspectable& sender, const WUXC::SelectionChangedEventArgs& e);
 
         // manually bind FontWeight
-        Windows::Foundation::IInspectable CurrentFontWeight() const;
-        void CurrentFontWeight(const Windows::Foundation::IInspectable& enumEntry);
+        WF::IInspectable CurrentFontWeight() const;
+        void CurrentFontWeight(const WF::IInspectable& enumEntry);
         bool IsCustomFontWeight();
-        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::EnumEntry>, FontWeightList);
+        WINRT_PROPERTY(WFC::IObservableVector<Microsoft::Terminal::Settings::Editor::EnumEntry>, FontWeightList);
 
         GETSET_BINDABLE_ENUM_SETTING(CursorShape, Microsoft::Terminal::Core::CursorStyle, Appearance().CursorShape);
         GETSET_BINDABLE_ENUM_SETTING(AdjustIndistinguishableColors, Microsoft::Terminal::Core::AdjustTextMode, Appearance().AdjustIndistinguishableColors);
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        WINRT_CALLBACK(PropertyChanged, WUX::Data::PropertyChangedEventHandler);
         DEPENDENCY_PROPERTY(Editor::AppearanceViewModel, Appearance);
         WINRT_PROPERTY(Editor::ProfileViewModel, SourceProfile, nullptr);
 
-        GETSET_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch, Appearance().BackgroundImageStretchMode);
+        GETSET_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, WUXMedia::Stretch, Appearance().BackgroundImageStretchMode);
 
         GETSET_BINDABLE_ENUM_SETTING(IntenseTextStyle, Microsoft::Terminal::Settings::Model::IntenseStyle, Appearance().IntenseTextStyle);
 
     private:
         bool _ShowAllFonts;
         void _UpdateBIAlignmentControl(const int32_t val);
-        std::array<Windows::UI::Xaml::Controls::Primitives::ToggleButton, 9> _BIAlignmentButtons;
+        std::array<WUXC::Primitives::ToggleButton, 9> _BIAlignmentButtons;
 
-        Windows::Foundation::Collections::IMap<uint16_t, Microsoft::Terminal::Settings::Editor::EnumEntry> _FontWeightMap;
+        WFC::IMap<uint16_t, Microsoft::Terminal::Settings::Editor::EnumEntry> _FontWeightMap;
         Editor::EnumEntry _CustomFontWeight{ nullptr };
 
-        Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
-        static void _ViewModelChanged(const Windows::UI::Xaml::DependencyObject& d, const Windows::UI::Xaml::DependencyPropertyChangedEventArgs& e);
+        WUX::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
+        static void _ViewModelChanged(const WUX::DependencyObject& d, const WUX::DependencyPropertyChangedEventArgs& e);
         void _UpdateWithNewViewModel();
     };
 };

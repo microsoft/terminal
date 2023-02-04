@@ -21,7 +21,7 @@ static constexpr std::string_view LaunchModeKey{ "launchMode" };
 
 namespace Microsoft::Terminal::Settings::Model::JsonUtils
 {
-    using namespace winrt::Microsoft::Terminal::Settings::Model;
+    using namespace MTSM;
 
     template<>
     struct ConversionTrait<WindowLayout>

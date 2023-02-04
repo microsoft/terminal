@@ -18,16 +18,16 @@ namespace winrt::TerminalApp::implementation
     {
         AppKeyBindings() = default;
 
-        bool TryKeyChord(const winrt::Microsoft::Terminal::Control::KeyChord& kc);
-        bool IsKeyChordExplicitlyUnbound(const winrt::Microsoft::Terminal::Control::KeyChord& kc);
+        bool TryKeyChord(const MTControl::KeyChord& kc);
+        bool IsKeyChordExplicitlyUnbound(const MTControl::KeyChord& kc);
 
-        void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
+        void SetDispatch(const MTApp::ShortcutActionDispatch& dispatch);
         void SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap);
 
     private:
-        winrt::Microsoft::Terminal::Settings::Model::IActionMapView _actionMap{ nullptr };
+        MTSM::IActionMapView _actionMap{ nullptr };
 
-        winrt::TerminalApp::ShortcutActionDispatch _dispatch{ nullptr };
+        MTApp::ShortcutActionDispatch _dispatch{ nullptr };
 
         friend class TerminalAppLocalTests::SettingsTests;
     };

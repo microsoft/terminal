@@ -15,14 +15,14 @@ extern "C" IMAGE_DOS_HEADER __ImageBase;
 
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::UI::Xaml::Hosting;
-using namespace winrt::Windows::Foundation::Numerics;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::Control;
+using namespace WUX;
+using namespace WUX::Hosting;
+using namespace WF::Numerics;
+using namespace MTSM;
+using namespace MTControl;
 using namespace winrt::Microsoft::Terminal;
 using namespace ::Microsoft::Console::Types;
-using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
+using VirtualKeyModifiers = WS::VirtualKeyModifiers;
 
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
 #define IDM_SYSTEM_MENU_BEGIN 0x1000
@@ -315,7 +315,7 @@ void IslandWindow::Initialize()
     // stash the child interop handle so we can resize it when the main hwnd is resized
     interop->get_WindowHandle(&_interopWindowHandle);
 
-    _rootGrid = winrt::Windows::UI::Xaml::Controls::Grid();
+    _rootGrid = WUXC::Grid();
     _source.Content(_rootGrid);
 
     // initialize the taskbar object
@@ -508,7 +508,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         // ContentDialogs don't resize themselves when the XAML island resizes.
         // However, if we manually resize our CoreWindow, that'll actually
         // trigger a resize of the ContentDialog.
-        if (const auto& coreWindow{ winrt::Windows::UI::Core::CoreWindow::GetForCurrentThread() })
+        if (const auto& coreWindow{ WUC::CoreWindow::GetForCurrentThread() })
         {
             if (const auto& interop{ coreWindow.as<ICoreWindowInterop>() })
             {
@@ -779,7 +779,7 @@ void IslandWindow::OnRestore()
     // TODO GH#1989 Stop rendering island content when the app is minimized.
 }
 
-void IslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement content)
+void IslandWindow::SetContent(WUX::UIElement content)
 {
     _rootGrid.Children().Clear();
     _rootGrid.Children().Append(content);
@@ -841,7 +841,7 @@ void IslandWindow::OnAppInitialized()
 // - arg: the ElementTheme to use as the new theme for the UI
 // Return Value:
 // - <none>
-void IslandWindow::OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme)
+void IslandWindow::OnApplicationThemeChanged(const WUX::ElementTheme& requestedTheme)
 {
     _rootGrid.RequestedTheme(requestedTheme);
     // Invalidate the window rect, so that we'll repaint any elements we're
@@ -1285,7 +1285,7 @@ void IslandWindow::UnregisterHotKey(const int index) noexcept
 // - hotkey: The key-combination to register.
 // Return Value:
 // - <none>
-bool IslandWindow::RegisterHotKey(const int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept
+bool IslandWindow::RegisterHotKey(const int index, const MTControl::KeyChord& hotkey) noexcept
 {
     const auto vkey = hotkey.Vkey();
     auto hotkeyFlags = MOD_NOREPEAT;

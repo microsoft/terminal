@@ -215,7 +215,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return false;
     }
 
-    void ColorSchemesPageViewModel::SchemeListItemClicked(const IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Controls::ItemClickEventArgs& e)
+    void ColorSchemesPageViewModel::SchemeListItemClicked(const IInspectable& /*sender*/, const WUXC::ItemClickEventArgs& e)
     {
         if (const auto item = e.ClickedItem())
         {

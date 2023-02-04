@@ -21,7 +21,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     struct GetWindowLayoutArgs : public GetWindowLayoutArgsT<GetWindowLayoutArgs>
     {
         WINRT_PROPERTY(winrt::hstring, WindowLayoutJson, L"");
-        WINRT_PROPERTY(winrt::Windows::Foundation::IAsyncOperation<winrt::hstring>, WindowLayoutJsonAsync, nullptr)
+        WINRT_PROPERTY(WF::IAsyncOperation<winrt::hstring>, WindowLayoutJsonAsync, nullptr)
     };
 }
 

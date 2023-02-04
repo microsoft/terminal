@@ -24,16 +24,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         IInspectable CurrentDefaultProfile();
         void CurrentDefaultProfile(const IInspectable& value);
-        winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> DefaultProfiles() const;
+        WFC::IObservableVector<Model::Profile> DefaultProfiles() const;
 
         IInspectable CurrentDefaultTerminal();
         void CurrentDefaultTerminal(const IInspectable& value);
-        winrt::Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> DefaultTerminals() const;
+        WFC::IObservableVector<Model::DefaultTerminal> DefaultTerminals() const;
 
         // We cannot use the macro for LaunchMode because we want to insert an event into the setter
-        winrt::Windows::Foundation::IInspectable CurrentLaunchMode();
-        void CurrentLaunchMode(const winrt::Windows::Foundation::IInspectable& enumEntry);
-        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> LaunchModeList();
+        WF::IInspectable CurrentLaunchMode();
+        void CurrentLaunchMode(const WF::IInspectable& enumEntry);
+        WFC::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> LaunchModeList();
 
         GETSET_BINDABLE_ENUM_SETTING(FirstWindowPreference, Model::FirstWindowPreference, _Settings.GlobalSettings().FirstWindowPreference);
         GETSET_BINDABLE_ENUM_SETTING(WindowingBehavior, Model::WindowingMode, _Settings.GlobalSettings().WindowingBehavior);
@@ -47,8 +47,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Model::CascadiaSettings _Settings;
         bool _useDefaultLaunchPosition;
 
-        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _LaunchModeList;
-        winrt::Windows::Foundation::Collections::IMap<Model::LaunchMode, winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _LaunchModeMap;
+        WFC::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _LaunchModeList;
+        WFC::IMap<Model::LaunchMode, winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _LaunchModeMap;
     };
 };
 

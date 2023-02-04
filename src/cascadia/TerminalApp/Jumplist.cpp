@@ -9,7 +9,7 @@
 
 #include <WtExeUtils.h>
 
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace MTSM;
 
 //  This property key isn't already defined in propkey.h, but is used by UWP Jumplist to determine the icon of the jumplist item.
 //  IShellLink's SetIconLocation isn't going to read "ms-appx://" icon paths, so we'll need to use this to set the icon.
@@ -112,7 +112,7 @@ winrt::fire_and_forget Jumplist::UpdateJumplist(const CascadiaSettings& settings
 // - profiles - The profiles to add to the jumplist
 // Return Value:
 // - S_OK or HRESULT failure code.
-void Jumplist::_updateProfiles(IObjectCollection* jumplistItems, winrt::Windows::Foundation::Collections::IVectorView<Profile> profiles)
+void Jumplist::_updateProfiles(IObjectCollection* jumplistItems, WFC::IVectorView<Profile> profiles)
 {
     // It's easier to clear the list and re-add everything. The settings aren't
     // updated often, and there likely isn't a huge amount of items to add.

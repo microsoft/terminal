@@ -8,7 +8,7 @@
 #include "ProfileCollectionEntry.g.cpp"
 
 using namespace Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
+using namespace MTSM::implementation;
 
 ProfileCollectionEntry::ProfileCollectionEntry(const NewTabMenuEntryType type) noexcept :
     ProfileCollectionEntryT<ProfileCollectionEntry, NewTabMenuEntry>(type)

@@ -7,7 +7,7 @@
 #include "TerminalSettingsModel/ModelSerializationHelpers.h"
 #include <LibraryResources.h>
 
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace MTSM;
 using namespace TerminalApp;
 
 // Either a ; at the start of a line, or a ; preceded by any non-\ char.
@@ -941,12 +941,12 @@ std::optional<uint32_t> AppCommandlineArgs::GetPersistedLayoutIdx() const noexce
                std::nullopt;
 }
 
-std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchMode> AppCommandlineArgs::GetLaunchMode() const noexcept
+std::optional<MTSM::LaunchMode> AppCommandlineArgs::GetLaunchMode() const noexcept
 {
     return _launchMode;
 }
 
-std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchPosition> AppCommandlineArgs::GetPosition() const noexcept
+std::optional<MTSM::LaunchPosition> AppCommandlineArgs::GetPosition() const noexcept
 {
     return _position;
 }
@@ -1027,7 +1027,7 @@ int AppCommandlineArgs::ParseArgs(winrt::array_view<const winrt::hstring>& args)
 // - args: ExecuteCommandlineArgs describing the command line to parse
 // Return Value:
 // - 0 if the commandline was successfully parsed
-int AppCommandlineArgs::ParseArgs(const winrt::Microsoft::Terminal::Settings::Model::ExecuteCommandlineArgs& args)
+int AppCommandlineArgs::ParseArgs(const MTSM::ExecuteCommandlineArgs& args)
 {
     if (!args || args.Commandline().empty())
     {

@@ -12,7 +12,7 @@
 
 using namespace ::Microsoft::Console;
 using namespace Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
+using namespace MTSM::implementation;
 using namespace winrt::Windows::UI;
 
 static constexpr std::string_view NameKey{ "name" };
@@ -144,7 +144,7 @@ Json::Value ColorScheme::ToJson() const
     return json;
 }
 
-winrt::com_array<winrt::Microsoft::Terminal::Core::Color> ColorScheme::Table() const noexcept
+winrt::com_array<MTCore::Color> ColorScheme::Table() const noexcept
 {
     return winrt::com_array<Core::Color>{ _table };
 }
@@ -162,9 +162,9 @@ void ColorScheme::SetColorTableEntry(uint8_t index, const Core::Color& value) no
     _table[index] = value;
 }
 
-winrt::Microsoft::Terminal::Core::Scheme ColorScheme::ToCoreScheme() const noexcept
+MTCore::Scheme ColorScheme::ToCoreScheme() const noexcept
 {
-    winrt::Microsoft::Terminal::Core::Scheme coreScheme{};
+    MTCore::Scheme coreScheme{};
 
     coreScheme.Foreground = Foreground();
     coreScheme.Background = Background();

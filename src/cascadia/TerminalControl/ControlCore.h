@@ -70,8 +70,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Control::IControlAppearance UnfocusedAppearance() const { return *_settings->UnfocusedAppearance(); };
         bool HasUnfocusedAppearance() const;
 
-        winrt::Microsoft::Terminal::Core::Scheme ColorScheme() const noexcept;
-        void ColorScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme);
+        MTCore::Scheme ColorScheme() const noexcept;
+        void ColorScheme(const MTCore::Scheme& scheme);
 
         void SizeChanged(const double width, const double height);
         void ScaleChanged(const double scale);
@@ -79,9 +79,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void AdjustFontSize(float fontSizeDelta);
         void ResetFontSize();
         FontInfo GetFont() const;
-        winrt::Windows::Foundation::Size FontSizeInDips() const;
+        WF::Size FontSizeInDips() const;
 
-        winrt::Windows::Foundation::Size FontSize() const noexcept;
+        WF::Size FontSize() const noexcept;
         winrt::hstring FontFaceName() const noexcept;
         uint16_t FontWeight() const noexcept;
 
@@ -89,7 +89,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void SendInput(const winrt::hstring& wstr);
         void PasteText(const winrt::hstring& hstr);
-        bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
+        bool CopySelectionToClipboard(bool singleLine, const WF::IReference<CopyFormat>& formats);
         void SelectAll();
         void ClearSelection();
         bool ToggleBlockSelection();
@@ -111,7 +111,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ClearHoveredCell();
         winrt::hstring GetHyperlink(const Core::Point position) const;
         winrt::hstring HoveredUriText() const;
-        Windows::Foundation::IReference<Core::Point> HoveredCell() const;
+        WF::IReference<Core::Point> HoveredCell() const;
 
         ::Microsoft::Console::Render::IRenderData* GetRenderData() const;
 
@@ -124,7 +124,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const size_t TaskbarProgress() const noexcept;
 
         hstring Title();
-        Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() noexcept;
+        WF::IReference<winrt::Windows::UI::Color> TabColor() noexcept;
         hstring WorkingDirectory() const;
 
         TerminalConnection::ConnectionState ConnectionState() const;
@@ -135,7 +135,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool BracketedPasteEnabled() const noexcept;
 
-        Windows::Foundation::Collections::IVector<Control::ScrollMark> ScrollMarks() const;
+        WFC::IVector<Control::ScrollMark> ScrollMarks() const;
         void AddMark(const Control::ScrollMark& mark);
         void ClearMark();
         void ClearAllMarks();
@@ -173,7 +173,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool HasSelection() const;
         bool CopyOnSelect() const;
-        Windows::Foundation::Collections::IVector<winrt::hstring> SelectedText(bool trimTrailingWhitespace) const;
+        WFC::IVector<winrt::hstring> SelectedText(bool trimTrailingWhitespace) const;
         Control::SelectionData SelectionInfo() const;
         void SetSelectionAnchor(const til::point position);
         void SetEndSelectionPoint(const til::point position);
@@ -278,7 +278,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         uint64_t _owningHwnd{ 0 };
 
-        winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };
+        WS::DispatcherQueue _dispatcher{ nullptr };
         std::shared_ptr<ThrottledFuncTrailing<>> _tsfTryRedrawCanvas;
         std::unique_ptr<til::throttled_func_trailing<>> _updatePatternLocations;
         std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> _updateScrollBar;
@@ -308,7 +308,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 #pragma endregion
 
         MidiAudio _midiAudio;
-        winrt::Windows::System::DispatcherQueueTimer _midiAudioSkipTimer{ nullptr };
+        WS::DispatcherQueueTimer _midiAudioSkipTimer{ nullptr };
 
 #pragma region RendererCallbacks
         void _rendererWarning(const HRESULT hr);

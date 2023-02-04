@@ -10,12 +10,12 @@
 #include "TestUtils.h"
 
 using namespace Microsoft::Console;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::Control;
+using namespace MTSM;
+using namespace MTControl;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
-using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
+using VirtualKeyModifiers = WS::VirtualKeyModifiers;
 
 namespace SettingsModelLocalTests
 {

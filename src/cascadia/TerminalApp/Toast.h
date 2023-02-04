@@ -29,10 +29,10 @@ myToast->Open();
 class Toast : public std::enable_shared_from_this<Toast>
 {
 public:
-    Toast(const winrt::Microsoft::UI::Xaml::Controls::TeachingTip& tip);
+    Toast(const MUXC::TeachingTip& tip);
     void Open();
 
 private:
-    winrt::Microsoft::UI::Xaml::Controls::TeachingTip _tip;
-    winrt::Windows::UI::Xaml::DispatcherTimer _timer;
+    MUXC::TeachingTip _tip;
+    WUX::DispatcherTimer _timer;
 };

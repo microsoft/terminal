@@ -8,15 +8,15 @@ Licensed under the MIT license.
 #include <conattrs.hpp>
 #include "../../inc/ControlProperties.h"
 
-using IFontFeatureMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, uint32_t>;
-using IFontAxesMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>;
+using IFontFeatureMap = WFC::IMap<winrt::hstring, uint32_t>;
+using IFontAxesMap = WFC::IMap<winrt::hstring, float>;
 
 namespace ControlUnitTests
 {
-    class MockControlSettings : public winrt::implements<MockControlSettings, winrt::Microsoft::Terminal::Core::ICoreSettings, winrt::Microsoft::Terminal::Control::IControlSettings, winrt::Microsoft::Terminal::Core::ICoreAppearance, winrt::Microsoft::Terminal::Control::IControlAppearance>
+    class MockControlSettings : public winrt::implements<MockControlSettings, MTCore::ICoreSettings, MTControl::IControlSettings, MTCore::ICoreAppearance, MTControl::IControlAppearance>
     {
         // Color Table is special because it's an array
-        std::array<winrt::Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE> _ColorTable;
+        std::array<MTCore::Color, COLOR_TABLE_SIZE> _ColorTable;
 
 #define SETTINGS_GEN(type, name, ...) WINRT_PROPERTY(type, name, __VA_ARGS__);
         CORE_SETTINGS(SETTINGS_GEN)
@@ -28,12 +28,12 @@ namespace ControlUnitTests
     public:
         MockControlSettings() = default;
 
-        winrt::Microsoft::Terminal::Core::Color GetColorTableEntry(int32_t index) noexcept
+        MTCore::Color GetColorTableEntry(int32_t index) noexcept
         {
             return _ColorTable.at(index);
         }
         void SetColorTableEntry(int32_t index,
-                                winrt::Microsoft::Terminal::Core::Color color) noexcept
+                                MTCore::Color color) noexcept
         {
             _ColorTable.at(index) = color;
         }

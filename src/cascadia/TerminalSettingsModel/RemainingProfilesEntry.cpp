@@ -9,7 +9,7 @@
 #include "RemainingProfilesEntry.g.cpp"
 
 using namespace Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
+using namespace MTSM::implementation;
 
 RemainingProfilesEntry::RemainingProfilesEntry() noexcept :
     RemainingProfilesEntryT<RemainingProfilesEntry, ProfileCollectionEntry>(NewTabMenuEntryType::RemainingProfiles)

@@ -15,7 +15,7 @@
 #include "consoletaeftemplates.hpp"
 #include "../../inc/TestUtils.h"
 
-using namespace winrt::Microsoft::Terminal::Core;
+using namespace MTCore;
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console::Render;
 using namespace ::Microsoft::Console::Types;

@@ -6,9 +6,9 @@
 #include "InteractionViewModel.g.cpp"
 #include "EnumEntry.h"
 
-using namespace winrt::Windows::UI::Xaml::Navigation;
-using namespace winrt::Windows::Foundation;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace WUX::Navigation;
+using namespace WF;
+using namespace MTSM;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -16,6 +16,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _GlobalSettings{ globalSettings }
     {
         INITIALIZE_BINDABLE_ENUM_SETTING(TabSwitcherMode, TabSwitcherMode, TabSwitcherMode, L"Globals_TabSwitcherMode", L"Content");
-        INITIALIZE_BINDABLE_ENUM_SETTING(CopyFormat, CopyFormat, winrt::Microsoft::Terminal::Control::CopyFormat, L"Globals_CopyFormat", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING(CopyFormat, CopyFormat, MTControl::CopyFormat, L"Globals_CopyFormat", L"Content");
     }
 }

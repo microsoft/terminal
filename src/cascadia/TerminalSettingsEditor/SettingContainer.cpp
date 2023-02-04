@@ -6,7 +6,7 @@
 #include "SettingContainer.g.cpp"
 #include "LibraryResources.h"
 
-using namespace winrt::Windows::UI::Xaml;
+using namespace WUX;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -137,7 +137,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         base.reserve(2);
         if (const auto& child{ GetTemplateChild(L"Expander") })
         {
-            if (const auto& expander{ child.try_as<Microsoft::UI::Xaml::Controls::Expander>() })
+            if (const auto& expander{ child.try_as<MUXC::Expander>() })
             {
                 base.push_back(child);
             }

@@ -14,8 +14,8 @@
 #include "NewTabMenuEntry.g.cpp"
 
 using namespace Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
-using NewTabMenuEntryType = winrt::Microsoft::Terminal::Settings::Model::NewTabMenuEntryType;
+using namespace MTSM::implementation;
+using NewTabMenuEntryType = MTSM::NewTabMenuEntryType;
 
 static constexpr std::string_view TypeKey{ "type" };
 

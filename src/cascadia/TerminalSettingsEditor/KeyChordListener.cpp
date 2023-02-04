@@ -6,13 +6,13 @@
 #include "KeyChordListener.g.cpp"
 #include "LibraryResources.h"
 
-using namespace winrt::Windows::UI::Core;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::UI::Xaml::Controls;
-using namespace winrt::Windows::UI::Xaml::Data;
-using namespace winrt::Windows::Foundation;
-using namespace winrt::Windows::System;
-using namespace winrt::Windows::UI::Xaml::Input;
+using namespace WUC;
+using namespace WUX;
+using namespace WUXC;
+using namespace WUX::Data;
+using namespace WF;
+using namespace WS;
+using namespace WUX::Input;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {

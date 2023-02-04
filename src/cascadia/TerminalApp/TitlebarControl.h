@@ -21,18 +21,18 @@ namespace winrt::TerminalApp::implementation
         void Content(IInspectable content);
 
         void SetWindowVisualState(WindowVisualState visualState);
-        void Root_SizeChanged(const IInspectable& sender, const Windows::UI::Xaml::SizeChangedEventArgs& e);
+        void Root_SizeChanged(const IInspectable& sender, const WUX::SizeChangedEventArgs& e);
 
-        void Minimize_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
-        void Maximize_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
-        void Close_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
-        void DragBar_DoubleTapped(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Input::DoubleTappedRoutedEventArgs& e);
+        void Minimize_Click(const WF::IInspectable& sender, const WUX::RoutedEventArgs& e);
+        void Maximize_Click(const WF::IInspectable& sender, const WUX::RoutedEventArgs& e);
+        void Close_Click(const WF::IInspectable& sender, const WUX::RoutedEventArgs& e);
+        void DragBar_DoubleTapped(const WF::IInspectable& sender, const WUX::Input::DoubleTappedRoutedEventArgs& e);
 
     private:
         void _OnMaximizeOrRestore(byte flag);
         HWND _window{ nullptr }; // non-owning handle; should not be freed in the dtor.
 
-        void _backgroundChanged(winrt::Windows::UI::Xaml::Media::Brush brush);
+        void _backgroundChanged(WUXMedia::Brush brush);
     };
 }
 

@@ -20,7 +20,7 @@ using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Console::VirtualTerminal;
 using namespace ::Microsoft::Terminal::Core;
 using namespace winrt::Windows::Graphics::Display;
-using namespace winrt::Windows::System;
+using namespace WS;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 
 static constexpr unsigned int MAX_CLICK_COUNT = 3;
@@ -146,7 +146,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - formats: which formats to copy (defined by action's CopyFormatting arg). nullptr
     //             if we should defer which formats are copied to the global setting
     bool ControlInteractivity::CopySelectionToClipboard(bool singleLine,
-                                                        const Windows::Foundation::IReference<CopyFormat>& formats)
+                                                        const WF::IReference<CopyFormat>& formats)
     {
         if (_core)
         {

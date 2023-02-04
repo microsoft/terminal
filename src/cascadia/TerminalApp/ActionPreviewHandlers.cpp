@@ -9,25 +9,25 @@
 #include <LibraryResources.h>
 
 using namespace winrt;
-using namespace winrt::Windows::Foundation::Collections;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::UI::Xaml::Controls;
-using namespace winrt::Windows::UI::Core;
-using namespace winrt::Windows::System;
+using namespace WFC;
+using namespace WUX;
+using namespace WUXC;
+using namespace WUC;
+using namespace WS;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
-using namespace winrt::Windows::UI::Text;
+using namespace WUT;
 using namespace winrt::Microsoft::Terminal;
-using namespace winrt::Microsoft::Terminal::Control;
-using namespace winrt::Microsoft::Terminal::TerminalConnection;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace MTControl;
+using namespace MTConnection;
+using namespace MTSM;
 using namespace ::TerminalApp;
 using namespace ::Microsoft::Console;
 using namespace std::chrono_literals;
 namespace winrt
 {
-    namespace MUX = Microsoft::UI::Xaml;
-    namespace WUX = Windows::UI::Xaml;
-    using IInspectable = Windows::Foundation::IInspectable;
+    namespace MUX = MUX;
+    namespace WUX = WUX;
+    using IInspectable = WF::IInspectable;
 }
 
 namespace winrt::TerminalApp::implementation

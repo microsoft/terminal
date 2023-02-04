@@ -12,17 +12,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return to_hstring((int)number) + L"%";
     }
 
-    winrt::Windows::UI::Xaml::Media::SolidColorBrush Converters::ColorToBrush(winrt::Windows::UI::Color color)
+    WUXMedia::SolidColorBrush Converters::ColorToBrush(winrt::Windows::UI::Color color)
     {
-        return Windows::UI::Xaml::Media::SolidColorBrush(color);
+        return WUXMedia::SolidColorBrush(color);
     }
 
-    winrt::Windows::UI::Text::FontWeight Converters::DoubleToFontWeight(double value)
+    WUT::FontWeight Converters::DoubleToFontWeight(double value)
     {
-        return winrt::Windows::UI::Text::FontWeight{ base::ClampedNumeric<uint16_t>(value) };
+        return WUT::FontWeight{ base::ClampedNumeric<uint16_t>(value) };
     }
 
-    double Converters::FontWeightToDouble(winrt::Windows::UI::Text::FontWeight fontWeight)
+    double Converters::FontWeightToDouble(WUT::FontWeight fontWeight)
     {
         return fontWeight.Weight;
     }
@@ -32,9 +32,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return !value;
     }
 
-    winrt::Windows::UI::Xaml::Visibility Converters::InvertedBooleanToVisibility(bool value)
+    WUX::Visibility Converters::InvertedBooleanToVisibility(bool value)
     {
-        return value ? winrt::Windows::UI::Xaml::Visibility::Collapsed : winrt::Windows::UI::Xaml::Visibility::Visible;
+        return value ? WUX::Visibility::Collapsed : WUX::Visibility::Visible;
     }
 
     double Converters::MaxValueFromPaddingString(winrt::hstring paddingString)
@@ -89,9 +89,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         return expected != actual;
     }
-    winrt::Windows::UI::Xaml::Visibility Converters::StringNotEmptyToVisibility(winrt::hstring value)
+    WUX::Visibility Converters::StringNotEmptyToVisibility(winrt::hstring value)
     {
-        return value.empty() ? winrt::Windows::UI::Xaml::Visibility::Collapsed : winrt::Windows::UI::Xaml::Visibility::Visible;
+        return value.empty() ? WUX::Visibility::Collapsed : WUX::Visibility::Visible;
     }
 
     // Method Description:

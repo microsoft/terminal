@@ -35,10 +35,10 @@
 #include "FolderEntry.h"
 #include "MatchProfilesEntry.h"
 
-using namespace winrt::Windows::Foundation::Collections;
+using namespace WFC;
 using namespace winrt::Windows::ApplicationModel::AppExtensions;
 using namespace winrt::Microsoft::Terminal::Settings;
-using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
+using namespace MTSM::implementation;
 
 static constexpr std::wstring_view SettingsFilename{ L"settings.json" };
 static constexpr std::wstring_view DefaultsFilename{ L"defaults.json" };

@@ -10,7 +10,7 @@
 #include <defaults.h>
 
 using namespace Microsoft::Console;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace MTSM;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;

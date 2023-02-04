@@ -71,12 +71,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         return (AzureClientID != L"0");
     }
 
-    void AzureConnection::Initialize(const Windows::Foundation::Collections::ValueSet& settings)
+    void AzureConnection::Initialize(const WFC::ValueSet& settings)
     {
         if (settings)
         {
-            _initialRows = gsl::narrow<til::CoordType>(winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialRows").try_as<Windows::Foundation::IPropertyValue>(), _initialRows));
-            _initialCols = gsl::narrow<til::CoordType>(winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialCols").try_as<Windows::Foundation::IPropertyValue>(), _initialCols));
+            _initialRows = gsl::narrow<til::CoordType>(winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialRows").try_as<WF::IPropertyValue>(), _initialRows));
+            _initialCols = gsl::narrow<til::CoordType>(winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialCols").try_as<WF::IPropertyValue>(), _initialCols));
         }
     }
 
@@ -432,7 +432,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         auto oldVersionEncountered = false;
         auto vault = PasswordVault();
-        winrt::Windows::Foundation::Collections::IVectorView<PasswordCredential> credList;
+        WFC::IVectorView<PasswordCredential> credList;
         // FindAllByResource throws an exception if there are no credentials stored under the given resource so we wrap it in a try-catch block
         try
         {
@@ -990,7 +990,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     void AzureConnection::_RemoveCredentials()
     {
         PasswordVault vault;
-        winrt::Windows::Foundation::Collections::IVectorView<PasswordCredential> credList;
+        WFC::IVectorView<PasswordCredential> credList;
         // FindAllByResource throws an exception if there are no credentials stored under the given resource so we wrap it in a try-catch block
         try
         {

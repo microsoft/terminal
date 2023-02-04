@@ -4,7 +4,7 @@
 #include "CommandlineArgs.g.cpp"
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal;
-using namespace winrt::Windows::Foundation;
+using namespace WF;
 
 namespace winrt::Microsoft::Terminal::Remoting::implementation
 {

@@ -6,7 +6,7 @@
 
 #include "KeyChord.g.cpp"
 
-using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
+using VirtualKeyModifiers = WS::VirtualKeyModifiers;
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {

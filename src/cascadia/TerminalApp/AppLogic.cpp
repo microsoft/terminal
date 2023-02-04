@@ -16,19 +16,19 @@
 
 using namespace winrt::Windows::ApplicationModel;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::UI::Xaml::Controls;
-using namespace winrt::Windows::UI::Core;
-using namespace winrt::Windows::System;
+using namespace WUX;
+using namespace WUXC;
+using namespace WUC;
+using namespace WS;
 using namespace winrt::Microsoft::Terminal;
-using namespace winrt::Microsoft::Terminal::Control;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace MTControl;
+using namespace MTSM;
 using namespace ::TerminalApp;
 
 namespace winrt
 {
-    namespace MUX = Microsoft::UI::Xaml;
-    using IInspectable = Windows::Foundation::IInspectable;
+    namespace MUX = MUX;
+    using IInspectable = WF::IInspectable;
 }
 
 static constexpr std::wstring_view StartupTaskName = L"StartTerminalOnLoginTask";
@@ -128,7 +128,7 @@ static Documents::Run _BuildErrorRun(const winrt::hstring& text, const ResourceD
     if (resources.HasKey(key))
     {
         auto g = resources.Lookup(key);
-        auto brush = g.try_as<winrt::Windows::UI::Xaml::Media::Brush>();
+        auto brush = g.try_as<WUXMedia::Brush>();
         textRun.Foreground(brush);
     }
 
@@ -145,7 +145,7 @@ namespace winrt::TerminalApp::implementation
     AppLogic* AppLogic::Current() noexcept
     try
     {
-        if (auto currentXamlApp{ winrt::Windows::UI::Xaml::Application::Current().try_as<winrt::TerminalApp::App>() })
+        if (auto currentXamlApp{ WUX::Application::Current().try_as<MTApp::App>() })
         {
             if (auto appLogicPointer{ winrt::get_self<AppLogic>(currentXamlApp.Logic()) })
             {
@@ -169,7 +169,7 @@ namespace winrt::TerminalApp::implementation
     // - HR E_INVALIDARG if the app isn't up and running.
     const CascadiaSettings AppLogic::CurrentAppSettings()
     {
-        auto appLogic{ ::winrt::TerminalApp::implementation::AppLogic::Current() };
+        auto appLogic{ MTApp::implementation::AppLogic::Current() };
         THROW_HR_IF_NULL(E_INVALIDARG, appLogic);
         return appLogic->GetSettings();
     }
@@ -189,7 +189,7 @@ namespace winrt::TerminalApp::implementation
         _isElevated = ::Microsoft::Console::Utils::IsElevated();
         _root = winrt::make_self<TerminalPage>();
 
-        _reloadSettings = std::make_shared<ThrottledFuncTrailing<>>(winrt::Windows::System::DispatcherQueue::GetForCurrentThread(), std::chrono::milliseconds(100), [weakSelf = get_weak()]() {
+        _reloadSettings = std::make_shared<ThrottledFuncTrailing<>>(WS::DispatcherQueue::GetForCurrentThread(), std::chrono::milliseconds(100), [weakSelf = get_weak()]() {
             if (auto self{ weakSelf.get() })
             {
                 self->ReloadSettings();
@@ -369,7 +369,7 @@ namespace winrt::TerminalApp::implementation
     // - dialog: the dialog object that is going to show up
     // Return value:
     // - an IAsyncOperation with the dialog result
-    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> AppLogic::ShowDialog(winrt::Windows::UI::Xaml::Controls::ContentDialog dialog)
+    WF::IAsyncOperation<ContentDialogResult> AppLogic::ShowDialog(WUXC::ContentDialog dialog)
     {
         // DON'T release this lock in a wil::scope_exit. The scope_exit will get
         // called when we await, which is not what we want.
@@ -399,14 +399,14 @@ namespace winrt::TerminalApp::implementation
         // theme on each element up to the root. We're relying a bit on Xaml's implementation
         // details here, but it does have the desired effect.
         // It's not enough to set the theme on the dialog alone.
-        auto themingLambda{ [this](const Windows::Foundation::IInspectable& sender, const RoutedEventArgs&) {
+        auto themingLambda{ [this](const WF::IInspectable& sender, const RoutedEventArgs&) {
             auto theme{ _settings.GlobalSettings().CurrentTheme() };
             auto requestedTheme{ theme.RequestedTheme() };
-            auto element{ sender.try_as<winrt::Windows::UI::Xaml::FrameworkElement>() };
+            auto element{ sender.try_as<WUX::FrameworkElement>() };
             while (element)
             {
                 element.RequestedTheme(requestedTheme);
-                element = element.Parent().try_as<winrt::Windows::UI::Xaml::FrameworkElement>();
+                element = element.Parent().try_as<WUX::FrameworkElement>();
             }
         } };
 
@@ -453,7 +453,7 @@ namespace winrt::TerminalApp::implementation
         // Make sure the lines of text wrap
         warningsTextBlock.TextWrapping(TextWrapping::Wrap);
 
-        winrt::Windows::UI::Xaml::Documents::Run errorRun;
+        WUX::Documents::Run errorRun;
         const auto errorLabel = GetLibraryResourceString(contentKey);
         errorRun.Text(errorLabel);
         warningsTextBlock.Inlines().Append(errorRun);
@@ -463,13 +463,13 @@ namespace winrt::TerminalApp::implementation
         {
             if (!_settingsLoadExceptionText.empty())
             {
-                warningsTextBlock.Inlines().Append(_BuildErrorRun(_settingsLoadExceptionText, ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Resources()));
+                warningsTextBlock.Inlines().Append(_BuildErrorRun(_settingsLoadExceptionText, WUX::Application::Current().as<MTApp::App>().Resources()));
                 warningsTextBlock.Inlines().Append(Documents::LineBreak{});
             }
         }
 
         // Add a note that we're using the default settings in this case.
-        winrt::Windows::UI::Xaml::Documents::Run usingDefaultsRun;
+        WUX::Documents::Run usingDefaultsRun;
         const auto usingDefaultsText = RS_(L"UsingDefaultSettingsText");
         usingDefaultsRun.Text(usingDefaultsText);
         warningsTextBlock.Inlines().Append(Documents::LineBreak{});
@@ -507,7 +507,7 @@ namespace winrt::TerminalApp::implementation
             const auto warningText = _GetWarningText(warning);
             if (!warningText.empty())
             {
-                warningsTextBlock.Inlines().Append(_BuildErrorRun(warningText, ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Resources()));
+                warningsTextBlock.Inlines().Append(_BuildErrorRun(warningText, WUX::Application::Current().as<MTApp::App>().Resources()));
                 warningsTextBlock.Inlines().Append(Documents::LineBreak{});
             }
         }
@@ -611,7 +611,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - a point containing the requested dimensions in pixels.
-    winrt::Windows::Foundation::Size AppLogic::GetLaunchDimensions(uint32_t dpi)
+    WF::Size AppLogic::GetLaunchDimensions(uint32_t dpi)
     {
         if (!_loadedInitialSettings)
         {
@@ -619,7 +619,7 @@ namespace winrt::TerminalApp::implementation
             ReloadSettings();
         }
 
-        winrt::Windows::Foundation::Size proposedSize{};
+        WF::Size proposedSize{};
 
         const auto scale = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
         if (const auto layout = _root->LoadPersistedLayout(_settings))
@@ -767,7 +767,7 @@ namespace winrt::TerminalApp::implementation
         return _settings.GlobalSettings().CenterOnLaunch() && !_appArgs.GetPosition().has_value();
     }
 
-    winrt::Windows::UI::Xaml::ElementTheme AppLogic::GetRequestedTheme()
+    WUX::ElementTheme AppLogic::GetRequestedTheme()
     {
         return Theme().RequestedTheme();
     }
@@ -1100,7 +1100,7 @@ namespace winrt::TerminalApp::implementation
 
     UIElement AppLogic::GetRoot() noexcept
     {
-        return _root.as<winrt::Windows::UI::Xaml::Controls::Control>();
+        return _root.as<WUXC::Control>();
     }
 
     // Method Description:
@@ -1163,7 +1163,7 @@ namespace winrt::TerminalApp::implementation
         {
             // Manually bubble the OnDirectKeyEvent event up through the focus tree.
             auto xamlRoot{ _root->XamlRoot() };
-            auto focusedObject{ Windows::UI::Xaml::Input::FocusManager::GetFocusedElement(xamlRoot) };
+            auto focusedObject{ WUX::Input::FocusManager::GetFocusedElement(xamlRoot) };
             do
             {
                 if (auto keyListener{ focusedObject.try_as<IDirectKeyListener>() })
@@ -1175,7 +1175,7 @@ namespace winrt::TerminalApp::implementation
                     // otherwise, keep walking. bubble the event manually.
                 }
 
-                if (auto focusedElement{ focusedObject.try_as<Windows::UI::Xaml::FrameworkElement>() })
+                if (auto focusedElement{ focusedObject.try_as<WUX::FrameworkElement>() })
                 {
                     focusedObject = focusedElement.Parent();
 
@@ -1183,7 +1183,7 @@ namespace winrt::TerminalApp::implementation
                     // Use the VisualTreeHelper's GetParent as a fallback.
                     if (!focusedObject)
                     {
-                        focusedObject = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetParent(focusedElement);
+                        focusedObject = WUXMedia::VisualTreeHelper::GetParent(focusedElement);
                     }
                 }
                 else
@@ -1223,7 +1223,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::TerminalApp::TaskbarState AppLogic::TaskbarState()
+    MTApp::TaskbarState AppLogic::TaskbarState()
     {
         if (_root)
         {
@@ -1232,7 +1232,7 @@ namespace winrt::TerminalApp::implementation
         return {};
     }
 
-    winrt::Windows::UI::Xaml::Media::Brush AppLogic::TitlebarBrush()
+    WUXMedia::Brush AppLogic::TitlebarBrush()
     {
         if (_root)
         {
@@ -1533,7 +1533,7 @@ namespace winrt::TerminalApp::implementation
         return _settings.GlobalSettings().AutoHideWindow();
     }
 
-    Windows::Foundation::Collections::IMapView<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::Command> AppLogic::GlobalHotkeys()
+    WFC::IMapView<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::Command> AppLogic::GlobalHotkeys()
     {
         return _settings.GlobalSettings().ActionMap().GlobalHotkeys();
     }
@@ -1561,7 +1561,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void AppLogic::SaveWindowLayoutJsons(const Windows::Foundation::Collections::IVector<hstring>& layouts)
+    void AppLogic::SaveWindowLayoutJsons(const WFC::IVector<hstring>& layouts)
     {
         std::vector<WindowLayout> converted;
         converted.reserve(layouts.Size());

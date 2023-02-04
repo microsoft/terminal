@@ -41,9 +41,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     public:
         InteractivityAutomationPeer(Microsoft::Terminal::Control::implementation::ControlInteractivity* owner);
 
-        void SetControlBounds(const Windows::Foundation::Rect bounds);
+        void SetControlBounds(const WF::Rect bounds);
         void SetControlPadding(const Core::Padding padding);
-        void ParentProvider(Windows::UI::Xaml::Automation::Peers::AutomationPeer parentProvider);
+        void ParentProvider(WUX::Automation::Peers::AutomationPeer parentProvider);
 
 #pragma region IUiaEventDispatcher
         void SignalSelectionChanged() override;
@@ -53,12 +53,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 #pragma endregion
 
 #pragma region ITextProvider Pattern
-        Windows::UI::Xaml::Automation::Provider::ITextRangeProvider RangeFromPoint(Windows::Foundation::Point screenLocation);
-        Windows::UI::Xaml::Automation::Provider::ITextRangeProvider RangeFromChild(Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple childElement);
-        com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> GetVisibleRanges();
-        com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> GetSelection();
-        Windows::UI::Xaml::Automation::SupportedTextSelection SupportedTextSelection();
-        Windows::UI::Xaml::Automation::Provider::ITextRangeProvider DocumentRange();
+        WUX::Automation::Provider::ITextRangeProvider RangeFromPoint(WF::Point screenLocation);
+        WUX::Automation::Provider::ITextRangeProvider RangeFromChild(WUX::Automation::Provider::IRawElementProviderSimple childElement);
+        com_array<WUX::Automation::Provider::ITextRangeProvider> GetVisibleRanges();
+        com_array<WUX::Automation::Provider::ITextRangeProvider> GetSelection();
+        WUX::Automation::SupportedTextSelection SupportedTextSelection();
+        WUX::Automation::Provider::ITextRangeProvider DocumentRange();
 #pragma endregion
 
 #pragma region IControlAccessibilityInfo Pattern
@@ -77,15 +77,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(NewOutput, IInspectable, hstring);
 
     private:
-        Windows::UI::Xaml::Automation::Provider::ITextRangeProvider _CreateXamlUiaTextRange(::ITextRangeProvider* returnVal) const;
+        WUX::Automation::Provider::ITextRangeProvider _CreateXamlUiaTextRange(::ITextRangeProvider* returnVal) const;
 
         ::Microsoft::WRL::ComPtr<::Microsoft::Terminal::TermControlUiaProvider> _uiaProvider;
-        winrt::Microsoft::Terminal::Control::implementation::ControlInteractivity* _interactivity;
-        weak_ref<Windows::UI::Xaml::Automation::Peers::AutomationPeer> _parentProvider;
+        MTControl::implementation::ControlInteractivity* _interactivity;
+        weak_ref<WUX::Automation::Peers::AutomationPeer> _parentProvider;
 
         til::rect _controlBounds{};
         til::rect _controlPadding{};
 
-        winrt::com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> WrapArrayOfTextRangeProviders(SAFEARRAY* textRanges);
+        winrt::com_array<WUX::Automation::Provider::ITextRangeProvider> WrapArrayOfTextRangeProviders(SAFEARRAY* textRanges);
     };
 }

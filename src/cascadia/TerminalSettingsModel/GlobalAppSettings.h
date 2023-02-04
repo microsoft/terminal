@@ -41,7 +41,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _FinalizeInheritance() override;
         com_ptr<GlobalAppSettings> Copy() const;
 
-        Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> ColorSchemes() noexcept;
+        WFC::IMapView<hstring, Model::ColorScheme> ColorSchemes() noexcept;
         void AddColorScheme(const Model::ColorScheme& scheme);
         void RemoveColorScheme(hstring schemeName);
 
@@ -59,7 +59,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void DefaultProfile(const guid& defaultProfile) noexcept;
         guid DefaultProfile() const;
 
-        Windows::Foundation::Collections::IMapView<hstring, Model::Theme> Themes() noexcept;
+        WFC::IMapView<hstring, Model::Theme> Themes() noexcept;
         void AddTheme(const Model::Theme& theme);
         Model::Theme CurrentTheme() noexcept;
 
@@ -81,7 +81,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::com_ptr<implementation::ActionMap> _actionMap{ winrt::make_self<implementation::ActionMap>() };
 
         std::vector<SettingsLoadWarnings> _keybindingsWarnings;
-        Windows::Foundation::Collections::IMap<winrt::hstring, Model::ColorScheme> _colorSchemes{ winrt::single_threaded_map<winrt::hstring, Model::ColorScheme>() };
-        Windows::Foundation::Collections::IMap<winrt::hstring, Model::Theme> _themes{ winrt::single_threaded_map<winrt::hstring, Model::Theme>() };
+        WFC::IMap<winrt::hstring, Model::ColorScheme> _colorSchemes{ winrt::single_threaded_map<winrt::hstring, Model::ColorScheme>() };
+        WFC::IMap<winrt::hstring, Model::Theme> _themes{ winrt::single_threaded_map<winrt::hstring, Model::Theme>() };
     };
 }

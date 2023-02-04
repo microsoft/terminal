@@ -34,17 +34,17 @@ public:
     static std::vector<Commandline> BuildCommands(winrt::array_view<const winrt::hstring>& args);
 
     void ValidateStartupCommands();
-    std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& GetStartupActions();
+    std::vector<MTSM::ActionAndArgs>& GetStartupActions();
     bool IsHandoffListener() const noexcept;
     const std::string& GetExitMessage();
     bool ShouldExitEarly() const noexcept;
 
     std::optional<uint32_t> GetPersistedLayoutIdx() const noexcept;
-    std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchMode> GetLaunchMode() const noexcept;
-    std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchPosition> GetPosition() const noexcept;
+    std::optional<MTSM::LaunchMode> GetLaunchMode() const noexcept;
+    std::optional<MTSM::LaunchPosition> GetPosition() const noexcept;
     std::optional<til::size> GetSize() const noexcept;
 
-    int ParseArgs(const winrt::Microsoft::Terminal::Settings::Model::ExecuteCommandlineArgs& args);
+    int ParseArgs(const MTSM::ExecuteCommandlineArgs& args);
     void DisableHelpInExitMessage();
     void FullResetState();
 
@@ -100,8 +100,8 @@ private:
     std::string _startingColorScheme;
     bool _suppressApplicationTitle{ false };
 
-    winrt::Microsoft::Terminal::Settings::Model::FocusDirection _moveFocusDirection{ winrt::Microsoft::Terminal::Settings::Model::FocusDirection::None };
-    winrt::Microsoft::Terminal::Settings::Model::FocusDirection _swapPaneDirection{ winrt::Microsoft::Terminal::Settings::Model::FocusDirection::None };
+    MTSM::FocusDirection _moveFocusDirection{ MTSM::FocusDirection::None };
+    MTSM::FocusDirection _swapPaneDirection{ MTSM::FocusDirection::None };
 
     // _commandline will contain the command line with which we'll be spawning a new terminal
     std::vector<std::string> _commandline;
@@ -120,11 +120,11 @@ private:
     // Are you adding more args here? Make sure to reset them in _resetStateToDefault
 
     const Commandline* _currentCommandline{ nullptr };
-    std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchMode> _launchMode{ std::nullopt };
-    std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchPosition> _position{ std::nullopt };
+    std::optional<MTSM::LaunchMode> _launchMode{ std::nullopt };
+    std::optional<MTSM::LaunchPosition> _position{ std::nullopt };
     std::optional<til::size> _size{ std::nullopt };
     bool _isHandoffListener{ false };
-    std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> _startupActions;
+    std::vector<MTSM::ActionAndArgs> _startupActions;
     std::string _exitMessage;
     bool _shouldExitEarly{ false };
 
@@ -132,7 +132,7 @@ private:
     std::string _windowTarget{};
     // Are you adding more args or attributes here? If they are not reset in _resetStateToDefault, make sure to reset them in FullResetState
 
-    winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs _getNewTerminalArgs(NewTerminalSubcommand& subcommand);
+    MTSM::NewTerminalArgs _getNewTerminalArgs(NewTerminalSubcommand& subcommand);
     void _addNewTerminalArgs(NewTerminalSubcommand& subcommand);
     void _buildParser();
     void _buildNewTabParser();

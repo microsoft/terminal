@@ -37,7 +37,7 @@ namespace winrt::TerminalApp::implementation
         return 6;
     }
 
-    int TaskbarState::ComparePriority(const winrt::TerminalApp::TaskbarState& lhs, const winrt::TerminalApp::TaskbarState& rhs)
+    int TaskbarState::ComparePriority(const MTApp::TaskbarState& lhs, const MTApp::TaskbarState& rhs)
     {
         return lhs.Priority() < rhs.Priority();
     }

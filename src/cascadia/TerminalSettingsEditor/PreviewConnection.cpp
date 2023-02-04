@@ -5,8 +5,8 @@
 #include "PreviewConnection.h"
 #include <LibraryResources.h>
 
-using namespace ::winrt::Microsoft::Terminal::TerminalConnection;
-using namespace ::winrt::Windows::Foundation;
+using namespace MTConnection;
+using namespace WF;
 
 static constexpr std::wstring_view PreviewText{ L"Windows Terminal\r\nCopyright (c) Microsoft Corporation\r\n\nC:\\Windows\\Terminal> " };
 
@@ -22,7 +22,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _TerminalOutputHandlers(PreviewText);
     }
 
-    void PreviewConnection::Initialize(const Windows::Foundation::Collections::ValueSet& /*settings*/) noexcept
+    void PreviewConnection::Initialize(const WFC::ValueSet& /*settings*/) noexcept
     {
     }
 

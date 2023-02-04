@@ -7,10 +7,10 @@
 #include "EnumEntry.h"
 #include <LibraryResources.h>
 
-using namespace winrt::Windows::UI::Xaml::Navigation;
-using namespace winrt::Windows::Foundation;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Windows::UI::Xaml::Data;
+using namespace WUX::Navigation;
+using namespace WF;
+using namespace MTSM;
+using namespace WUX::Data;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -83,7 +83,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void LaunchViewModel::InitialPosX(double xCoord)
     {
-        winrt::Windows::Foundation::IReference<int32_t> xCoordRef;
+        WF::IReference<int32_t> xCoordRef;
         // If the value was cleared, xCoord will be NAN, so check for that
         if (!isnan(xCoord))
         {
@@ -96,7 +96,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void LaunchViewModel::InitialPosY(double yCoord)
     {
-        winrt::Windows::Foundation::IReference<int32_t> yCoordRef;
+        WF::IReference<int32_t> yCoordRef;
         // If the value was cleared, yCoord will be NAN, so check for that
         if (!isnan(yCoord))
         {
@@ -123,12 +123,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _useDefaultLaunchPosition;
     }
 
-    winrt::Windows::Foundation::IInspectable LaunchViewModel::CurrentLaunchMode()
+    WF::IInspectable LaunchViewModel::CurrentLaunchMode()
     {
         return winrt::box_value<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>(_LaunchModeMap.Lookup(_Settings.GlobalSettings().LaunchMode()));
     }
 
-    void LaunchViewModel::CurrentLaunchMode(const winrt::Windows::Foundation::IInspectable& enumEntry)
+    void LaunchViewModel::CurrentLaunchMode(const WF::IInspectable& enumEntry)
     {
         if (const auto ee = enumEntry.try_as<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>())
         {
@@ -138,12 +138,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> LaunchViewModel::LaunchModeList()
+    WFC::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> LaunchViewModel::LaunchModeList()
     {
         return _LaunchModeList;
     }
 
-    winrt::Windows::Foundation::IInspectable LaunchViewModel::CurrentDefaultProfile()
+    WF::IInspectable LaunchViewModel::CurrentDefaultProfile()
     {
         const auto defaultProfileGuid{ _Settings.GlobalSettings().DefaultProfile() };
         return winrt::box_value(_Settings.FindProfile(defaultProfileGuid));
@@ -155,7 +155,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _Settings.GlobalSettings().DefaultProfile(profile.Guid());
     }
 
-    winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> LaunchViewModel::DefaultProfiles() const
+    WFC::IObservableVector<Model::Profile> LaunchViewModel::DefaultProfiles() const
     {
         const auto allProfiles = _Settings.AllProfiles();
 
@@ -176,7 +176,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return winrt::single_threaded_observable_vector(std::move(profiles));
     }
 
-    winrt::Windows::Foundation::IInspectable LaunchViewModel::CurrentDefaultTerminal()
+    WF::IInspectable LaunchViewModel::CurrentDefaultTerminal()
     {
         return winrt::box_value(_Settings.CurrentDefaultTerminal());
     }
@@ -187,7 +187,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _Settings.CurrentDefaultTerminal(defaultTerminal);
     }
 
-    winrt::Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> LaunchViewModel::DefaultTerminals() const
+    WFC::IObservableVector<Model::DefaultTerminal> LaunchViewModel::DefaultTerminals() const
     {
         return _Settings.DefaultTerminals();
     }

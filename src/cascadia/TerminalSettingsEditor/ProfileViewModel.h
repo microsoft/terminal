@@ -16,20 +16,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         // font face
         static void UpdateFontList() noexcept;
-        static Windows::Foundation::Collections::IObservableVector<Editor::Font> CompleteFontList() noexcept { return _FontList; };
-        static Windows::Foundation::Collections::IObservableVector<Editor::Font> MonospaceFontList() noexcept { return _MonospaceFontList; };
+        static WFC::IObservableVector<Editor::Font> CompleteFontList() noexcept { return _FontList; };
+        static WFC::IObservableVector<Editor::Font> MonospaceFontList() noexcept { return _MonospaceFontList; };
 
         ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& settings);
         Model::TerminalSettings TermSettings() const;
         void DeleteProfile();
 
-        void SetupAppearances(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList, Editor::IHostedInWindow windowRoot);
+        void SetupAppearances(WFC::IObservableVector<Editor::ColorSchemeViewModel> schemesList, Editor::IHostedInWindow windowRoot);
 
         // bell style bits
         bool IsBellStyleFlagSet(const uint32_t flag);
-        void SetBellStyleAudible(winrt::Windows::Foundation::IReference<bool> on);
-        void SetBellStyleWindow(winrt::Windows::Foundation::IReference<bool> on);
-        void SetBellStyleTaskbar(winrt::Windows::Foundation::IReference<bool> on);
+        void SetBellStyleAudible(WF::IReference<bool> on);
+        void SetBellStyleWindow(WF::IReference<bool> on);
+        void SetBellStyleTaskbar(WF::IReference<bool> on);
 
         void SetAcrylicOpacityPercentageValue(double value)
         {
@@ -105,8 +105,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring _lastStartingDirectoryPath;
         Editor::AppearanceViewModel _defaultAppearanceViewModel;
 
-        static Windows::Foundation::Collections::IObservableVector<Editor::Font> _MonospaceFontList;
-        static Windows::Foundation::Collections::IObservableVector<Editor::Font> _FontList;
+        static WFC::IObservableVector<Editor::Font> _MonospaceFontList;
+        static WFC::IObservableVector<Editor::Font> _FontList;
 
         static Editor::Font _GetFont(com_ptr<IDWriteLocalizedStrings> localizedFamilyNames);
 

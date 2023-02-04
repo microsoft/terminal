@@ -48,7 +48,7 @@
 #include <LibraryResources.h>
 #include <WtExeUtils.h>
 
-using namespace winrt::Microsoft::Terminal::Control;
+using namespace MTControl;
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {

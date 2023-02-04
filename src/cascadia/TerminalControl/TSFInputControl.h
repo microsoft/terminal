@@ -14,7 +14,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     public:
         CursorPositionEventArgs() = default;
 
-        WINRT_PROPERTY(Windows::Foundation::Point, CurrentPosition);
+        WINRT_PROPERTY(WF::Point, CurrentPosition);
     };
 
     struct FontInfoEventArgs :
@@ -23,11 +23,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     public:
         FontInfoEventArgs() = default;
 
-        WINRT_PROPERTY(Windows::Foundation::Size, FontSize);
+        WINRT_PROPERTY(WF::Size, FontSize);
 
         WINRT_PROPERTY(winrt::hstring, FontFace);
 
-        WINRT_PROPERTY(Windows::UI::Text::FontWeight, FontWeight);
+        WINRT_PROPERTY(WUT::FontWeight, FontWeight);
     };
 
     struct TSFInputControl : TSFInputControlT<TSFInputControl>
@@ -48,32 +48,32 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         WINRT_CALLBACK(CompositionCompleted, Control::CompositionCompletedEventArgs);
 
     private:
-        void _layoutRequestedHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, const winrt::Windows::UI::Text::Core::CoreTextLayoutRequestedEventArgs& args);
-        void _compositionStartedHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, const winrt::Windows::UI::Text::Core::CoreTextCompositionStartedEventArgs& args);
-        void _compositionCompletedHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, const winrt::Windows::UI::Text::Core::CoreTextCompositionCompletedEventArgs& args);
-        void _focusRemovedHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, const winrt::Windows::Foundation::IInspectable& object);
-        void _selectionRequestedHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, const winrt::Windows::UI::Text::Core::CoreTextSelectionRequestedEventArgs& args);
-        void _textRequestedHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, const winrt::Windows::UI::Text::Core::CoreTextTextRequestedEventArgs& args);
-        void _selectionUpdatingHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, const winrt::Windows::UI::Text::Core::CoreTextSelectionUpdatingEventArgs& args);
-        void _textUpdatingHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, const winrt::Windows::UI::Text::Core::CoreTextTextUpdatingEventArgs& args);
-        void _formatUpdatingHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, const winrt::Windows::UI::Text::Core::CoreTextFormatUpdatingEventArgs& args);
+        void _layoutRequestedHandler(WUT::Core::CoreTextEditContext sender, const WUT::Core::CoreTextLayoutRequestedEventArgs& args);
+        void _compositionStartedHandler(WUT::Core::CoreTextEditContext sender, const WUT::Core::CoreTextCompositionStartedEventArgs& args);
+        void _compositionCompletedHandler(WUT::Core::CoreTextEditContext sender, const WUT::Core::CoreTextCompositionCompletedEventArgs& args);
+        void _focusRemovedHandler(WUT::Core::CoreTextEditContext sender, const WF::IInspectable& object);
+        void _selectionRequestedHandler(WUT::Core::CoreTextEditContext sender, const WUT::Core::CoreTextSelectionRequestedEventArgs& args);
+        void _textRequestedHandler(WUT::Core::CoreTextEditContext sender, const WUT::Core::CoreTextTextRequestedEventArgs& args);
+        void _selectionUpdatingHandler(WUT::Core::CoreTextEditContext sender, const WUT::Core::CoreTextSelectionUpdatingEventArgs& args);
+        void _textUpdatingHandler(WUT::Core::CoreTextEditContext sender, const WUT::Core::CoreTextTextUpdatingEventArgs& args);
+        void _formatUpdatingHandler(WUT::Core::CoreTextEditContext sender, const WUT::Core::CoreTextFormatUpdatingEventArgs& args);
 
         void _SendAndClearText();
         void _RedrawCanvas();
 
-        winrt::Windows::UI::Text::Core::CoreTextEditContext::TextRequested_revoker _textRequestedRevoker;
-        winrt::Windows::UI::Text::Core::CoreTextEditContext::SelectionRequested_revoker _selectionRequestedRevoker;
-        winrt::Windows::UI::Text::Core::CoreTextEditContext::FocusRemoved_revoker _focusRemovedRevoker;
-        winrt::Windows::UI::Text::Core::CoreTextEditContext::TextUpdating_revoker _textUpdatingRevoker;
-        winrt::Windows::UI::Text::Core::CoreTextEditContext::SelectionUpdating_revoker _selectionUpdatingRevoker;
-        winrt::Windows::UI::Text::Core::CoreTextEditContext::FormatUpdating_revoker _formatUpdatingRevoker;
-        winrt::Windows::UI::Text::Core::CoreTextEditContext::LayoutRequested_revoker _layoutRequestedRevoker;
-        winrt::Windows::UI::Text::Core::CoreTextEditContext::CompositionStarted_revoker _compositionStartedRevoker;
-        winrt::Windows::UI::Text::Core::CoreTextEditContext::CompositionCompleted_revoker _compositionCompletedRevoker;
+        WUT::Core::CoreTextEditContext::TextRequested_revoker _textRequestedRevoker;
+        WUT::Core::CoreTextEditContext::SelectionRequested_revoker _selectionRequestedRevoker;
+        WUT::Core::CoreTextEditContext::FocusRemoved_revoker _focusRemovedRevoker;
+        WUT::Core::CoreTextEditContext::TextUpdating_revoker _textUpdatingRevoker;
+        WUT::Core::CoreTextEditContext::SelectionUpdating_revoker _selectionUpdatingRevoker;
+        WUT::Core::CoreTextEditContext::FormatUpdating_revoker _formatUpdatingRevoker;
+        WUT::Core::CoreTextEditContext::LayoutRequested_revoker _layoutRequestedRevoker;
+        WUT::Core::CoreTextEditContext::CompositionStarted_revoker _compositionStartedRevoker;
+        WUT::Core::CoreTextEditContext::CompositionCompleted_revoker _compositionCompletedRevoker;
 
-        Windows::UI::Text::Core::CoreTextEditContext _editContext{ nullptr };
+        WUT::Core::CoreTextEditContext _editContext{ nullptr };
         std::wstring _inputBuffer;
-        winrt::Windows::UI::Text::Core::CoreTextRange _selection{};
+        WUT::Core::CoreTextRange _selection{};
         size_t _activeTextStart = 0;
         bool _inComposition = false;
         bool _focused = false;
@@ -81,9 +81,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::point _currentTerminalCursorPos{};
         double _currentCanvasWidth = 0.0;
         double _currentTextBlockHeight = 0.0;
-        winrt::Windows::Foundation::Rect _currentControlBounds{};
-        winrt::Windows::Foundation::Rect _currentTextBounds{};
-        winrt::Windows::Foundation::Rect _currentWindowBounds{};
+        WF::Rect _currentControlBounds{};
+        WF::Rect _currentTextBounds{};
+        WF::Rect _currentWindowBounds{};
     };
 }
 namespace winrt::Microsoft::Terminal::Control::factory_implementation

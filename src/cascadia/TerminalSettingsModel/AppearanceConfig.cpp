@@ -7,10 +7,10 @@
 #include "TerminalSettingsSerializationHelpers.h"
 #include "JsonUtils.h"
 
-using namespace winrt::Microsoft::Terminal::Control;
+using namespace MTControl;
 using namespace Microsoft::Terminal::Settings::Model;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
+using namespace WUX;
+using namespace MTSM::implementation;
 
 static constexpr std::string_view ForegroundKey{ "foreground" };
 static constexpr std::string_view BackgroundKey{ "background" };
@@ -115,7 +115,7 @@ void AppearanceConfig::LayerJson(const Json::Value& json)
 #undef APPEARANCE_SETTINGS_LAYER_JSON
 }
 
-winrt::Microsoft::Terminal::Settings::Model::Profile AppearanceConfig::SourceProfile()
+MTSM::Profile AppearanceConfig::SourceProfile()
 {
     return _sourceProfile.get();
 }

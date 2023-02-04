@@ -12,17 +12,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         KeyChordSerialization() = default;
 
-        static winrt::Microsoft::Terminal::Control::KeyChord FromString(const winrt::hstring& str);
-        static winrt::hstring ToString(const winrt::Microsoft::Terminal::Control::KeyChord& chord);
+        static MTControl::KeyChord FromString(const winrt::hstring& str);
+        static winrt::hstring ToString(const MTControl::KeyChord& chord);
     };
 }
 
 template<>
-struct Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt::Microsoft::Terminal::Control::KeyChord>
+struct Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<MTControl::KeyChord>
 {
-    winrt::Microsoft::Terminal::Control::KeyChord FromJson(const Json::Value& json);
+    MTControl::KeyChord FromJson(const Json::Value& json);
     bool CanConvert(const Json::Value& json);
-    Json::Value ToJson(const winrt::Microsoft::Terminal::Control::KeyChord& val);
+    Json::Value ToJson(const MTControl::KeyChord& val);
     std::string TypeDescription() const;
 };
 

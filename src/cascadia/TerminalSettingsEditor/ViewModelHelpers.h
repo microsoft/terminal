@@ -7,7 +7,7 @@ template<typename T>
 struct ViewModelHelper
 {
 public:
-    winrt::event_token PropertyChanged(const ::winrt::Windows::UI::Xaml::Data::PropertyChangedEventHandler& handler)
+    winrt::event_token PropertyChanged(const WUX::Data::PropertyChangedEventHandler& handler)
     {
         return _propertyChangedHandlers.add(handler);
     }
@@ -20,7 +20,7 @@ public:
 protected:
     void _NotifyChangeCore(const std::wstring_view name)
     {
-        _propertyChangedHandlers(*static_cast<T*>(this), ::winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs{ name });
+        _propertyChangedHandlers(*static_cast<T*>(this), WUX::Data::PropertyChangedEventArgs{ name });
     }
 
     // template recursion base case: single dispatch
@@ -34,7 +34,7 @@ protected:
     }
 
 protected:
-    winrt::event<::winrt::Windows::UI::Xaml::Data::PropertyChangedEventHandler> _propertyChangedHandlers;
+    winrt::event<WUX::Data::PropertyChangedEventHandler> _propertyChangedHandlers;
 };
 
 #define _BASE_OBSERVABLE_PROJECTED_SETTING(target, name)  \

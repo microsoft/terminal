@@ -22,7 +22,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 {
     struct ScrollBarVisualStateManager : ScrollBarVisualStateManagerT<ScrollBarVisualStateManager>
     {
-        bool GoToStateCore(winrt::Windows::UI::Xaml::Controls::Control const& control, winrt::Windows::UI::Xaml::FrameworkElement const& templateRoot, hstring const& stateName, winrt::Windows::UI::Xaml::VisualStateGroup const& group, winrt::Windows::UI::Xaml::VisualState const& state, bool useTransitions);
+        bool GoToStateCore(WUXC::Control const& control, WUX::FrameworkElement const& templateRoot, hstring const& stateName, WUX::VisualStateGroup const& group, WUX::VisualState const& state, bool useTransitions);
 
     private:
         winrt::weak_ref<TermControl> _termControl;

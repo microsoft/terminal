@@ -14,7 +14,7 @@
     {                                                                                                                                                       \
         std::vector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> name##List;                                                                    \
         _##name##Map = winrt::single_threaded_map<enumType, winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>();                                     \
-        auto enumMapping##name = winrt::Microsoft::Terminal::Settings::Model::EnumMappings::enumMappingsName();                                             \
+        auto enumMapping##name = MTSM::EnumMappings::enumMappingsName();                                             \
         for (auto [key, value] : enumMapping##name)                                                                                                         \
         {                                                                                                                                                   \
             auto enumName = LocalizedNameForEnumName(resourceSectionAndType, key, resourceProperty);                                                        \
@@ -31,7 +31,7 @@
     {                                                                                                                                                       \
         std::vector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> name##List;                                                                    \
         _##name##Map = winrt::single_threaded_map<enumType, winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>();                                     \
-        auto enumMapping##name = winrt::Microsoft::Terminal::Settings::Model::EnumMappings::enumMappingsName();                                             \
+        auto enumMapping##name = MTSM::EnumMappings::enumMappingsName();                                             \
         for (auto [key, value] : enumMapping##name)                                                                                                         \
         {                                                                                                                                                   \
             auto enumName = LocalizedNameForEnumName(resourceSectionAndType, key, resourceProperty);                                                        \
@@ -51,17 +51,17 @@
 // for the setting we wish to bind to.
 #define GETSET_BINDABLE_ENUM_SETTING(name, enumType, viewModelSettingGetSet)                                                             \
 public:                                                                                                                                  \
-    winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> name##List()     \
+    WFC::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> name##List()     \
     {                                                                                                                                    \
         return _##name##List;                                                                                                            \
     }                                                                                                                                    \
                                                                                                                                          \
-    winrt::Windows::Foundation::IInspectable Current##name()                                                                             \
+    WF::IInspectable Current##name()                                                                             \
     {                                                                                                                                    \
         return winrt::box_value<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>(_##name##Map.Lookup(viewModelSettingGetSet())); \
     }                                                                                                                                    \
                                                                                                                                          \
-    void Current##name(const winrt::Windows::Foundation::IInspectable& enumEntry)                                                        \
+    void Current##name(const WF::IInspectable& enumEntry)                                                        \
     {                                                                                                                                    \
         if (auto ee = enumEntry.try_as<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>())                                       \
         {                                                                                                                                \
@@ -71,15 +71,15 @@ public:                                                                         
     }                                                                                                                                    \
                                                                                                                                          \
 private:                                                                                                                                 \
-    winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _##name##List;   \
-    winrt::Windows::Foundation::Collections::IMap<enumType, winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _##name##Map;
+    WFC::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _##name##List;   \
+    WFC::IMap<enumType, winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _##name##Map;
 
 // This macro defines a dependency property for a WinRT class.
 // Use this in your class' header file after declaring it in the idl.
 // Remember to register your dependency property in the respective cpp file.
 #define DEPENDENCY_PROPERTY(type, name)                                  \
 public:                                                                  \
-    static winrt::Windows::UI::Xaml::DependencyProperty name##Property() \
+    static WUX::DependencyProperty name##Property() \
     {                                                                    \
         return _##name##Property;                                        \
     }                                                                    \
@@ -93,11 +93,11 @@ public:                                                                  \
     }                                                                    \
                                                                          \
 private:                                                                 \
-    static winrt::Windows::UI::Xaml::DependencyProperty _##name##Property;
+    static WUX::DependencyProperty _##name##Property;
 
 namespace winrt::Microsoft::Terminal::Settings
 {
-    winrt::hstring GetSelectedItemTag(const winrt::Windows::Foundation::IInspectable& comboBoxAsInspectable);
+    winrt::hstring GetSelectedItemTag(const WF::IInspectable& comboBoxAsInspectable);
     winrt::hstring LocalizedNameForEnumName(const std::wstring_view sectionAndType, const std::wstring_view enumValue, const std::wstring_view propertyType);
 }
 
@@ -110,9 +110,9 @@ namespace winrt::Microsoft::Terminal::Settings
 // may not have popups in them. Rather than define the same exact body for all
 // their ViewChanging events, the HasScrollViewer struct will just do it for
 // you!
-inline void DismissAllPopups(const winrt::Windows::UI::Xaml::XamlRoot& xamlRoot)
+inline void DismissAllPopups(const WUX::XamlRoot& xamlRoot)
 {
-    const auto popups{ winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetOpenPopupsForXamlRoot(xamlRoot) };
+    const auto popups{ WUXMedia::VisualTreeHelper::GetOpenPopupsForXamlRoot(xamlRoot) };
     for (const auto& p : popups)
     {
         p.IsOpen(false);
@@ -123,8 +123,8 @@ template<typename T>
 struct HasScrollViewer
 {
     // When the ScrollViewer scrolls, dismiss any popups we might have.
-    void ViewChanging(const winrt::Windows::Foundation::IInspectable& sender,
-                      const winrt::Windows::UI::Xaml::Controls::ScrollViewerViewChangingEventArgs& /*e*/)
+    void ViewChanging(const WF::IInspectable& sender,
+                      const WUXC::ScrollViewerViewChangingEventArgs& /*e*/)
     {
         // Inside this struct, we can't get at the XamlRoot() that our subclass
         // implements. I mean, _we_ can, but when XAML does its code
@@ -132,7 +132,7 @@ struct HasScrollViewer
         //
         // Fortunately for us, we don't need to! The sender is a UIElement, so
         // we can just get _their_ XamlRoot().
-        if (const auto& uielem{ sender.try_as<winrt::Windows::UI::Xaml::UIElement>() })
+        if (const auto& uielem{ sender.try_as<WUX::UIElement>() })
         {
             DismissAllPopups(uielem.XamlRoot());
         }

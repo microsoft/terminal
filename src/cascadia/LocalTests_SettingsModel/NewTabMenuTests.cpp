@@ -13,7 +13,7 @@
 
 using namespace Microsoft::Console;
 using namespace winrt::Microsoft::Terminal;
-using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
+using namespace MTSM::implementation;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
@@ -56,7 +56,7 @@ namespace SettingsModelLocalTests
 
             const auto& entries = settings->GlobalSettings().NewTabMenu();
             VERIFY_ARE_EQUAL(1u, entries.Size());
-            VERIFY_ARE_EQUAL(winrt::Microsoft::Terminal::Settings::Model::NewTabMenuEntryType::RemainingProfiles, entries.GetAt(0).Type());
+            VERIFY_ARE_EQUAL(MTSM::NewTabMenuEntryType::RemainingProfiles, entries.GetAt(0).Type());
         }
         catch (const SettingsException& ex)
         {

@@ -13,16 +13,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         EditColorScheme();
 
-        void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
+        void OnNavigatedTo(const WUX::Navigation::NavigationEventArgs& e);
 
-        void ColorPickerChanged(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Microsoft::UI::Xaml::Controls::ColorChangedEventArgs& args);
-        void RenameAccept_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
-        void RenameCancel_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
-        void NameBox_PreviewKeyDown(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
+        void ColorPickerChanged(const WF::IInspectable& sender, const MUXC::ColorChangedEventArgs& args);
+        void RenameAccept_Click(const WF::IInspectable& sender, const WUX::RoutedEventArgs& e);
+        void RenameCancel_Click(const WF::IInspectable& sender, const WUX::RoutedEventArgs& e);
+        void NameBox_PreviewKeyDown(const WF::IInspectable& sender, const WUX::Input::KeyRoutedEventArgs& e);
 
         WINRT_OBSERVABLE_PROPERTY(Editor::ColorSchemeViewModel, ViewModel, _PropertyChangedHandlers, nullptr);
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        WINRT_CALLBACK(PropertyChanged, WUX::Data::PropertyChangedEventHandler);
 
     private:
         void _RenameCurrentScheme(hstring newName);

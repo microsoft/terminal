@@ -22,7 +22,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         static bool IsAzureConnectionAvailable() noexcept;
 
         AzureConnection() = default;
-        void Initialize(const Windows::Foundation::Collections::ValueSet& settings);
+        void Initialize(const WFC::ValueSet& settings);
 
         void Start();
         void WriteInput(const hstring& data);

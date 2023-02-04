@@ -164,16 +164,16 @@ public:
     //// See also:
     ////   https://docs.microsoft.com/en-us/windows/desktop/LearnWin32/dpi-and-device-independent-pixels
     ////   https://docs.microsoft.com/en-us/windows/desktop/hidpi/high-dpi-desktop-application-development-on-windows#per-monitor-and-per-monitor-v2-dpi-awareness
-    winrt::Windows::Foundation::Size GetLogicalSize(const til::size physicalSize) const noexcept
+    WF::Size GetLogicalSize(const til::size physicalSize) const noexcept
     {
         const auto scale = GetCurrentDpiScale();
         // 0.5 is to ensure that we pixel snap correctly at the edges, this is necessary with odd DPIs like 1.25, 1.5, 1, .75
         const auto logicalWidth = (physicalSize.width / scale) + 0.5f;
         const auto logicalHeight = (physicalSize.height / scale) + 0.5f;
-        return winrt::Windows::Foundation::Size(logicalWidth, logicalHeight);
+        return WF::Size(logicalWidth, logicalHeight);
     }
 
-    winrt::Windows::Foundation::Size GetLogicalSize() const noexcept
+    WF::Size GetLogicalSize() const noexcept
     {
         return GetLogicalSize(GetPhysicalSize());
     }

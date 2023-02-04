@@ -6,12 +6,12 @@
 #include "PercentageSignConverter.g.cpp"
 
 using namespace winrt::Windows;
-using namespace winrt::Windows::UI::Xaml;
+using namespace WUX;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     Foundation::IInspectable PercentageSignConverter::Convert(const Foundation::IInspectable& value,
-                                                              const Windows::UI::Xaml::Interop::TypeName& /* targetType */,
+                                                              const WUX::Interop::TypeName& /* targetType */,
                                                               const Foundation::IInspectable& /* parameter */,
                                                               const hstring& /* language */)
     {
@@ -20,7 +20,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     }
 
     Foundation::IInspectable PercentageSignConverter::ConvertBack(const Foundation::IInspectable& /*value*/,
-                                                                  const Windows::UI::Xaml::Interop::TypeName& /* targetType */,
+                                                                  const WUX::Interop::TypeName& /* targetType */,
                                                                   const Foundation::IInspectable& /*parameter*/,
                                                                   const hstring& /* language */)
     {

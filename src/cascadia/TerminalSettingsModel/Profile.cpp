@@ -13,11 +13,11 @@
 #include "Profile.g.cpp"
 
 using namespace Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
-using namespace winrt::Microsoft::Terminal::Control;
+using namespace MTSM::implementation;
+using namespace MTControl;
 using namespace winrt::Windows::UI;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::Foundation;
+using namespace WUX;
+using namespace WF;
 using namespace ::Microsoft::Console;
 
 static constexpr std::string_view UpdatesKey{ "updates" };
@@ -135,7 +135,7 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
 // - json: an object which should be a serialization of a Profile object.
 // Return Value:
 // - a new Profile instance created from the values in `json`
-winrt::com_ptr<winrt::Microsoft::Terminal::Settings::Model::implementation::Profile> Profile::FromJson(const Json::Value& json)
+winrt::com_ptr<MTSM::implementation::Profile> Profile::FromJson(const Json::Value& json)
 {
     auto result = winrt::make_self<Profile>();
     result->LayerJson(json);
@@ -239,12 +239,12 @@ void Profile::_FinalizeInheritance()
     }
 }
 
-winrt::Microsoft::Terminal::Settings::Model::IAppearanceConfig Profile::DefaultAppearance()
+MTSM::IAppearanceConfig Profile::DefaultAppearance()
 {
     return _DefaultAppearance;
 }
 
-winrt::Microsoft::Terminal::Settings::Model::FontConfig Profile::FontInfo()
+MTSM::FontConfig Profile::FontInfo()
 {
     return _FontInfo;
 }

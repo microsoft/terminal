@@ -7,14 +7,14 @@
 #include "HighlightedText.g.cpp"
 
 using namespace winrt;
-using namespace winrt::TerminalApp;
-using namespace winrt::Windows::UI::Core;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::System;
-using namespace winrt::Windows::UI::Text;
-using namespace winrt::Windows::Foundation;
-using namespace winrt::Windows::Foundation::Collections;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace MTApp;
+using namespace WUC;
+using namespace WUX;
+using namespace WS;
+using namespace WUT;
+using namespace WF;
+using namespace WFC;
+using namespace MTSM;
 
 namespace winrt::TerminalApp::implementation
 {
@@ -24,7 +24,7 @@ namespace winrt::TerminalApp::implementation
     {
     }
 
-    HighlightedText::HighlightedText(const Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::HighlightedTextSegment>& segments) :
+    HighlightedText::HighlightedText(const WFC::IObservableVector<MTApp::HighlightedTextSegment>& segments) :
         _Segments(segments)
     {
     }

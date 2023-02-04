@@ -9,17 +9,17 @@
 #include "TabPaletteItem.g.cpp"
 
 using namespace winrt;
-using namespace winrt::TerminalApp;
-using namespace winrt::Windows::UI::Core;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::System;
-using namespace winrt::Windows::Foundation;
-using namespace winrt::Windows::Foundation::Collections;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace MTApp;
+using namespace WUC;
+using namespace WUX;
+using namespace WS;
+using namespace WF;
+using namespace WFC;
+using namespace MTSM;
 
 namespace winrt::TerminalApp::implementation
 {
-    TabPaletteItem::TabPaletteItem(const winrt::TerminalApp::TabBase& tab) :
+    TabPaletteItem::TabPaletteItem(const MTApp::TabBase& tab) :
         _tab(tab)
     {
         Name(tab.Title());
@@ -27,7 +27,7 @@ namespace winrt::TerminalApp::implementation
 
         _tabChangedRevoker = tab.PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() }](auto& sender, auto& e) {
             auto item{ weakThis.get() };
-            auto senderTab{ sender.try_as<winrt::TerminalApp::TabBase>() };
+            auto senderTab{ sender.try_as<MTApp::TabBase>() };
 
             if (item && senderTab)
             {
@@ -43,7 +43,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        if (const auto terminalTab{ tab.try_as<winrt::TerminalApp::TerminalTab>() })
+        if (const auto terminalTab{ tab.try_as<MTApp::TerminalTab>() })
         {
             const auto status = terminalTab.TabStatus();
             TabStatus(status);
@@ -52,7 +52,7 @@ namespace winrt::TerminalApp::implementation
                 // Sometimes nested bindings do not get updated,
                 // thus let's notify property changed on TabStatus when one of its properties changes
                 auto item{ weakThis.get() };
-                item->_PropertyChangedHandlers(*item, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"TabStatus" });
+                item->_PropertyChangedHandlers(*item, WUX::Data::PropertyChangedEventArgs{ L"TabStatus" });
             });
         }
     }

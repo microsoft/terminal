@@ -2,7 +2,7 @@
 #include "ColorHelper.h"
 #include <limits>
 
-using namespace winrt::TerminalApp;
+using namespace MTApp;
 
 // Method Description:
 // Determines whether or not a given color is light

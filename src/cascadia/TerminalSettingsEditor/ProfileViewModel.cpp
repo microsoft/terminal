@@ -10,19 +10,19 @@
 #include "../WinRTUtils/inc/Utils.h"
 #include "../../renderer/base/FontCache.h"
 
-using namespace winrt::Windows::UI::Text;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::UI::Xaml::Controls;
-using namespace winrt::Windows::UI::Xaml::Data;
-using namespace winrt::Windows::UI::Xaml::Navigation;
-using namespace winrt::Windows::Foundation;
-using namespace winrt::Windows::Foundation::Collections;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace WUT;
+using namespace WUX;
+using namespace WUXC;
+using namespace WUX::Data;
+using namespace WUX::Navigation;
+using namespace WF;
+using namespace WFC;
+using namespace MTSM;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_MonospaceFontList{ nullptr };
-    Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_FontList{ nullptr };
+    WFC::IObservableVector<Editor::Font> ProfileViewModel::_MonospaceFontList{ nullptr };
+    WFC::IObservableVector<Editor::Font> ProfileViewModel::_FontList{ nullptr };
 
     ProfileViewModel::ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& appSettings) :
         _profile{ profile },
@@ -31,9 +31,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _appSettings{ appSettings },
         _unfocusedAppearanceViewModel{ nullptr }
     {
-        INITIALIZE_BINDABLE_ENUM_SETTING(AntiAliasingMode, TextAntialiasingMode, winrt::Microsoft::Terminal::Control::TextAntialiasingMode, L"Profile_AntialiasingMode", L"Content");
-        INITIALIZE_BINDABLE_ENUM_SETTING_REVERSE_ORDER(CloseOnExitMode, CloseOnExitMode, winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode, L"Profile_CloseOnExit", L"Content");
-        INITIALIZE_BINDABLE_ENUM_SETTING(ScrollState, ScrollbarState, winrt::Microsoft::Terminal::Control::ScrollbarState, L"Profile_ScrollbarVisibility", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING(AntiAliasingMode, TextAntialiasingMode, MTControl::TextAntialiasingMode, L"Profile_AntialiasingMode", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING_REVERSE_ORDER(CloseOnExitMode, CloseOnExitMode, MTSM::CloseOnExitMode, L"Profile_CloseOnExit", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING(ScrollState, ScrollbarState, MTControl::ScrollbarState, L"Profile_ScrollbarVisibility", L"Content");
 
         // Add a property changed handler to our own property changed event.
         // This propagates changes from the settings model to anybody listening to our
@@ -323,21 +323,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return (WI_EnumValue(BellStyle()) & flag) == flag;
     }
 
-    void ProfileViewModel::SetBellStyleAudible(winrt::Windows::Foundation::IReference<bool> on)
+    void ProfileViewModel::SetBellStyleAudible(WF::IReference<bool> on)
     {
         auto currentStyle = BellStyle();
         WI_UpdateFlag(currentStyle, Model::BellStyle::Audible, winrt::unbox_value<bool>(on));
         BellStyle(currentStyle);
     }
 
-    void ProfileViewModel::SetBellStyleWindow(winrt::Windows::Foundation::IReference<bool> on)
+    void ProfileViewModel::SetBellStyleWindow(WF::IReference<bool> on)
     {
         auto currentStyle = BellStyle();
         WI_UpdateFlag(currentStyle, Model::BellStyle::Window, winrt::unbox_value<bool>(on));
         BellStyle(currentStyle);
     }
 
-    void ProfileViewModel::SetBellStyleTaskbar(winrt::Windows::Foundation::IReference<bool> on)
+    void ProfileViewModel::SetBellStyleTaskbar(WF::IReference<bool> on)
     {
         auto currentStyle = BellStyle();
         WI_UpdateFlag(currentStyle, Model::BellStyle::Taskbar, winrt::unbox_value<bool>(on));
@@ -350,7 +350,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _DeleteProfileHandlers(*this, *deleteProfileArgs);
     }
 
-    void ProfileViewModel::SetupAppearances(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList, Editor::IHostedInWindow windowRoot)
+    void ProfileViewModel::SetupAppearances(WFC::IObservableVector<Editor::ColorSchemeViewModel> schemesList, Editor::IHostedInWindow windowRoot)
     {
         DefaultAppearance().SchemesList(schemesList);
         DefaultAppearance().WindowRoot(windowRoot);

@@ -23,10 +23,10 @@ public:
     // - kc: The key chord to look up the bound ActionAndArgs for.
     // Return Value:
     // - The ActionAndArgs bound to the given key, or nullptr if nothing is bound to it.
-    static const winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs GetActionAndArgs(const winrt::Microsoft::Terminal::Settings::Model::ActionMap& actionMap,
-                                                                                             const winrt::Microsoft::Terminal::Control::KeyChord& kc)
+    static const MTSM::ActionAndArgs GetActionAndArgs(const MTSM::ActionMap& actionMap,
+                                                                                             const MTControl::KeyChord& kc)
     {
-        using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
+        using VirtualKeyModifiers = WS::VirtualKeyModifiers;
 
         std::wstring buffer{ L"" };
         if (WI_IsFlagSet(kc.Modifiers(), VirtualKeyModifiers::Control))

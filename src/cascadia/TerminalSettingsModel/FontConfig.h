@@ -23,8 +23,8 @@ Author(s):
 #include "IInheritable.h"
 #include <DefaultSettings.h>
 
-using IFontAxesMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>;
-using IFontFeatureMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, uint32_t>;
+using IFontAxesMap = WFC::IMap<winrt::hstring, float>;
+using IFontFeatureMap = WFC::IMap<winrt::hstring, uint32_t>;
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {

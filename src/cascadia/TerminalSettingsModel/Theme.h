@@ -53,19 +53,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
     public:
         ThemeColor() noexcept = default;
-        static winrt::Microsoft::Terminal::Settings::Model::ThemeColor FromColor(const winrt::Microsoft::Terminal::Core::Color& coreColor) noexcept;
-        static winrt::Microsoft::Terminal::Settings::Model::ThemeColor FromAccent() noexcept;
-        static winrt::Microsoft::Terminal::Settings::Model::ThemeColor FromTerminalBackground() noexcept;
+        static MTSM::ThemeColor FromColor(const MTCore::Color& coreColor) noexcept;
+        static MTSM::ThemeColor FromAccent() noexcept;
+        static MTSM::ThemeColor FromTerminalBackground() noexcept;
 
-        static til::color ColorFromBrush(const winrt::Windows::UI::Xaml::Media::Brush& brush);
+        static til::color ColorFromBrush(const WUXMedia::Brush& brush);
 
-        winrt::Windows::UI::Xaml::Media::Brush Evaluate(const winrt::Windows::UI::Xaml::ResourceDictionary& res,
-                                                        const winrt::Windows::UI::Xaml::Media::Brush& terminalBackground,
+        WUXMedia::Brush Evaluate(const WUX::ResourceDictionary& res,
+                                                        const WUXMedia::Brush& terminalBackground,
                                                         const bool forTitlebar);
         uint8_t UnfocusedTabOpacity() const noexcept;
 
         WINRT_PROPERTY(til::color, Color);
-        WINRT_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::ThemeColorType, ColorType);
+        WINRT_PROPERTY(MTSM::ThemeColorType, ColorType);
     };
 
 #define THEME_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
@@ -88,7 +88,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
     public:
         Theme() = default;
-        Theme(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) noexcept;
+        Theme(const WUX::ElementTheme& requestedTheme) noexcept;
 
         com_ptr<Theme> Copy() const;
 
@@ -98,7 +98,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void LayerJson(const Json::Value& json);
         Json::Value ToJson() const;
 
-        winrt::Windows::UI::Xaml::ElementTheme RequestedTheme() const noexcept;
+        WUX::ElementTheme RequestedTheme() const noexcept;
 
         static bool IsSystemInDarkTheme();
 
@@ -123,11 +123,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
 namespace Microsoft::Terminal::Settings::Model::JsonUtils
 {
     template<>
-    struct ConversionTrait<winrt::Microsoft::Terminal::Settings::Model::ThemePair>
+    struct ConversionTrait<MTSM::ThemePair>
     {
-        winrt::Microsoft::Terminal::Settings::Model::ThemePair FromJson(const Json::Value& json)
+        MTSM::ThemePair FromJson(const Json::Value& json)
         {
-            return *winrt::Microsoft::Terminal::Settings::Model::implementation::ThemePair::FromJson(json);
+            return *MTSM::implementation::ThemePair::FromJson(json);
         }
 
         bool CanConvert(const Json::Value& json) const
@@ -135,9 +135,9 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
             return json.isObject() || json.isString();
         }
 
-        Json::Value ToJson(const winrt::Microsoft::Terminal::Settings::Model::ThemePair& val)
+        Json::Value ToJson(const MTSM::ThemePair& val)
         {
-            return winrt::get_self<winrt::Microsoft::Terminal::Settings::Model::implementation::ThemePair>(val)->ToJson();
+            return winrt::get_self<MTSM::implementation::ThemePair>(val)->ToJson();
         }
 
         std::string TypeDescription() const

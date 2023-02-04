@@ -9,16 +9,16 @@
 #include "ColorHelper.h"
 
 using namespace winrt;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::UI::Core;
-using namespace winrt::Microsoft::Terminal::Control;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Windows::System;
+using namespace WUX;
+using namespace WUC;
+using namespace MTControl;
+using namespace MTSM;
+using namespace WS;
 
 namespace winrt
 {
-    namespace MUX = Microsoft::UI::Xaml;
-    namespace WUX = Windows::UI::Xaml;
+    namespace MUX = MUX;
+    namespace WUX = WUX;
 }
 
 namespace winrt::TerminalApp::implementation
@@ -67,7 +67,7 @@ namespace winrt::TerminalApp::implementation
     // - flyout - the menu flyout to which the close items must be appended
     // Return Value:
     // - <none>
-    void TabBase::_AppendCloseMenuItems(winrt::Windows::UI::Xaml::Controls::MenuFlyout flyout)
+    void TabBase::_AppendCloseMenuItems(WUXC::MenuFlyout flyout)
     {
         auto weakThis{ get_weak() };
 
@@ -165,7 +165,7 @@ namespace winrt::TerminalApp::implementation
         _UpdateSwitchToTabKeyChord();
     }
 
-    void TabBase::SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch)
+    void TabBase::SetDispatch(const MTApp::ShortcutActionDispatch& dispatch)
     {
         _dispatch = dispatch;
     }
@@ -236,7 +236,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto keyChordRun = WUX::Documents::Run();
             keyChordRun.Text(_keyChord);
-            keyChordRun.FontStyle(winrt::Windows::UI::Text::FontStyle::Italic);
+            keyChordRun.FontStyle(WUT::FontStyle::Italic);
             textBlock.Inlines().Append(WUX::Documents::LineBreak{});
             textBlock.Inlines().Append(keyChordRun);
         }
@@ -271,8 +271,8 @@ namespace winrt::TerminalApp::implementation
         return std::nullopt;
     }
 
-    void TabBase::ThemeColor(const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& focused,
-                             const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& unfocused,
+    void TabBase::ThemeColor(const MTSM::ThemeColor& focused,
+                             const MTSM::ThemeColor& unfocused,
                              const til::color& tabRowColor)
     {
         _themeColor = focused;

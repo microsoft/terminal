@@ -7,10 +7,10 @@
 
 #include <til/static_map.h>
 
-using namespace winrt::Microsoft::Terminal::Control;
-using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
+using namespace MTControl;
+using namespace MTSM::implementation;
 using namespace Microsoft::Terminal::Settings::Model::JsonUtils;
-using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
+using VirtualKeyModifiers = WS::VirtualKeyModifiers;
 
 constexpr std::wstring_view CTRL_KEY{ L"ctrl" };
 constexpr std::wstring_view SHIFT_KEY{ L"shift" };

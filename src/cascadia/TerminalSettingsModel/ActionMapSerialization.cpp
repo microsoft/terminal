@@ -14,8 +14,8 @@
 
 #include "Command.h"
 
-using namespace winrt::Microsoft::Terminal::Control;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace MTControl;
+using namespace MTSM;
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {

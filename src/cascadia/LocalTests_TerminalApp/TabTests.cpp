@@ -13,26 +13,26 @@
 
 using namespace Microsoft::Console;
 using namespace TerminalApp;
-using namespace winrt::TerminalApp;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace MTApp;
+using namespace MTSM;
 
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
-using namespace winrt::Windows::Foundation::Collections;
-using namespace winrt::Windows::System;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::UI::Xaml::Controls;
-using namespace winrt::Windows::UI::Core;
-using namespace winrt::Windows::UI::Text;
+using namespace WFC;
+using namespace WS;
+using namespace WUX;
+using namespace WUXC;
+using namespace WUC;
+using namespace WUT;
 
 namespace winrt
 {
-    namespace MUX = Microsoft::UI::Xaml;
-    namespace WUX = Windows::UI::Xaml;
-    using IInspectable = Windows::Foundation::IInspectable;
+    namespace MUX = MUX;
+    namespace WUX = WUX;
+    using IInspectable = WF::IInspectable;
 }
 
 namespace TerminalAppLocalTests
@@ -107,9 +107,9 @@ namespace TerminalAppLocalTests
         }
 
     private:
-        void _initializeTerminalPage(winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page,
+        void _initializeTerminalPage(winrt::com_ptr<MTApp::implementation::TerminalPage>& page,
                                      CascadiaSettings initialSettings);
-        winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> _commonSetup();
+        winrt::com_ptr<MTApp::implementation::TerminalPage> _commonSetup();
     };
 
     template<typename TFunction>
@@ -139,7 +139,7 @@ namespace TerminalAppLocalTests
     {
         // Verify we can create a WinRT type we authored
         // Just creating it is enough to know that everything is working.
-        winrt::Microsoft::Terminal::TerminalConnection::EchoConnection conn{};
+        MTConnection::EchoConnection conn{};
         VERIFY_IS_NOT_NULL(conn);
         // We're doing this test separately from the TryCreateSettingsType test,
         // to ensure both dependent binaries (TerminalSettings and
@@ -155,13 +155,13 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(v, L"Ensure we have a current view");
             // Verify we can create a some XAML objects
             // Just creating all of them is enough to know that everything is working.
-            winrt::Windows::UI::Xaml::Controls::UserControl controlRoot;
+            WUXC::UserControl controlRoot;
             VERIFY_IS_NOT_NULL(controlRoot, L"Try making a UserControl");
-            winrt::Windows::UI::Xaml::Controls::Grid root;
+            WUXC::Grid root;
             VERIFY_IS_NOT_NULL(root, L"Try making a Grid");
-            winrt::Windows::UI::Xaml::Controls::SwapChainPanel swapChainPanel;
+            WUXC::SwapChainPanel swapChainPanel;
             VERIFY_IS_NOT_NULL(swapChainPanel, L"Try making a SwapChainPanel");
-            winrt::Windows::UI::Xaml::Controls::Primitives::ScrollBar scrollBar;
+            WUXC::Primitives::ScrollBar scrollBar;
             VERIFY_IS_NOT_NULL(scrollBar, L"Try making a ScrollBar");
         });
 
@@ -170,10 +170,10 @@ namespace TerminalAppLocalTests
 
     void TabTests::CreateSimpleTerminalXamlType()
     {
-        winrt::com_ptr<winrt::TerminalApp::implementation::MinMaxCloseControl> mmcc{ nullptr };
+        winrt::com_ptr<MTApp::implementation::MinMaxCloseControl> mmcc{ nullptr };
 
         auto result = RunOnUIThread([&mmcc]() {
-            mmcc = winrt::make_self<winrt::TerminalApp::implementation::MinMaxCloseControl>();
+            mmcc = winrt::make_self<MTApp::implementation::MinMaxCloseControl>();
             VERIFY_IS_NOT_NULL(mmcc);
         });
         VERIFY_SUCCEEDED(result);
@@ -181,10 +181,10 @@ namespace TerminalAppLocalTests
 
     void TabTests::CreateTerminalMuxXamlType()
     {
-        winrt::com_ptr<winrt::TerminalApp::implementation::TabRowControl> tabRowControl{ nullptr };
+        winrt::com_ptr<MTApp::implementation::TabRowControl> tabRowControl{ nullptr };
 
         auto result = RunOnUIThread([&tabRowControl]() {
-            tabRowControl = winrt::make_self<winrt::TerminalApp::implementation::TabRowControl>();
+            tabRowControl = winrt::make_self<MTApp::implementation::TabRowControl>();
             VERIFY_IS_NOT_NULL(tabRowControl);
         });
         VERIFY_SUCCEEDED(result);
@@ -192,10 +192,10 @@ namespace TerminalAppLocalTests
 
     void TabTests::CreateTerminalPage()
     {
-        winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
+        winrt::com_ptr<MTApp::implementation::TerminalPage> page{ nullptr };
 
         auto result = RunOnUIThread([&page]() {
-            page = winrt::make_self<winrt::TerminalApp::implementation::TerminalPage>();
+            page = winrt::make_self<MTApp::implementation::TerminalPage>();
             VERIFY_IS_NOT_NULL(page);
         });
         VERIFY_SUCCEEDED(result);
@@ -226,7 +226,7 @@ namespace TerminalAppLocalTests
     // - initialSettings: a CascadiaSettings to initialize the TerminalPage with.
     // Return Value:
     // - <none>
-    void TabTests::_initializeTerminalPage(winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page,
+    void TabTests::_initializeTerminalPage(winrt::com_ptr<MTApp::implementation::TerminalPage>& page,
                                            CascadiaSettings initialSettings)
     {
         // This is super wacky, but we can't just initialize the
@@ -237,12 +237,12 @@ namespace TerminalAppLocalTests
         // Instead, create the winrt object, then get a com_ptr to the
         // implementation _from_ the winrt object. This seems to work, even if
         // it's weird.
-        winrt::TerminalApp::TerminalPage projectedPage{ nullptr };
+        MTApp::TerminalPage projectedPage{ nullptr };
 
         Log::Comment(NoThrowString().Format(L"Construct the TerminalPage"));
         auto result = RunOnUIThread([&projectedPage, &page, initialSettings]() {
-            projectedPage = winrt::TerminalApp::TerminalPage();
-            page.copy_from(winrt::get_self<winrt::TerminalApp::implementation::TerminalPage>(projectedPage));
+            projectedPage = MTApp::TerminalPage();
+            page.copy_from(winrt::get_self<MTApp::implementation::TerminalPage>(projectedPage));
             page->_settings = initialSettings;
         });
         VERIFY_SUCCEEDED(result);
@@ -276,11 +276,11 @@ namespace TerminalAppLocalTests
             page->_startupActions.Append(newTabAction);
             Log::Comment(L"Added a single newTab action");
 
-            auto app = ::winrt::Windows::UI::Xaml::Application::Current();
+            auto app = WUX::Application::Current();
 
-            winrt::TerminalApp::TerminalPage pp = *page;
-            winrt::Windows::UI::Xaml::Window::Current().Content(pp);
-            winrt::Windows::UI::Xaml::Window::Current().Activate();
+            MTApp::TerminalPage pp = *page;
+            WUX::Window::Current().Content(pp);
+            WUX::Window::Current().Activate();
         });
         VERIFY_SUCCEEDED(result);
 
@@ -334,7 +334,7 @@ namespace TerminalAppLocalTests
         // Instead, create the winrt object, then get a com_ptr to the
         // implementation _from_ the winrt object. This seems to work, even if
         // it's weird.
-        winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
+        winrt::com_ptr<MTApp::implementation::TerminalPage> page{ nullptr };
         _initializeTerminalPage(page, settings0);
 
         auto result = RunOnUIThread([&page]() {
@@ -399,7 +399,7 @@ namespace TerminalAppLocalTests
         // Instead, create the winrt object, then get a com_ptr to the
         // implementation _from_ the winrt object. This seems to work, even if
         // it's weird.
-        winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
+        winrt::com_ptr<MTApp::implementation::TerminalPage> page{ nullptr };
         _initializeTerminalPage(page, settings0);
 
         auto result = RunOnUIThread([&page]() {
@@ -486,7 +486,7 @@ namespace TerminalAppLocalTests
         // Instead, create the winrt object, then get a com_ptr to the
         // implementation _from_ the winrt object. This seems to work, even if
         // it's weird.
-        winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
+        winrt::com_ptr<MTApp::implementation::TerminalPage> page{ nullptr };
         _initializeTerminalPage(page, settings0);
 
         auto result = RunOnUIThread([&page]() {
@@ -551,7 +551,7 @@ namespace TerminalAppLocalTests
     // - <none>
     // Return Value:
     // - The initialized TerminalPage, ready to use.
-    winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> TabTests::_commonSetup()
+    winrt::com_ptr<MTApp::implementation::TerminalPage> TabTests::_commonSetup()
     {
         static constexpr std::wstring_view settingsJson0{ LR"(
         {
@@ -668,7 +668,7 @@ namespace TerminalAppLocalTests
         // Instead, create the winrt object, then get a com_ptr to the
         // implementation _from_ the winrt object. This seems to work, even if
         // it's weird.
-        winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
+        winrt::com_ptr<MTApp::implementation::TerminalPage> page{ nullptr };
         _initializeTerminalPage(page, settings0);
 
         auto result = RunOnUIThread([&page]() {
@@ -1225,9 +1225,9 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"a", page->_mruTabs.GetAt(3).Title());
         });
 
-        const auto palette = winrt::get_self<winrt::TerminalApp::implementation::CommandPalette>(page->CommandPalette());
+        const auto palette = winrt::get_self<MTApp::implementation::CommandPalette>(page->CommandPalette());
 
-        VERIFY_ARE_EQUAL(winrt::TerminalApp::implementation::CommandPaletteMode::TabSwitchMode, palette->_currentMode, L"Verify we are in the tab switcher mode");
+        VERIFY_ARE_EQUAL(MTApp::implementation::CommandPaletteMode::TabSwitchMode, palette->_currentMode, L"Verify we are in the tab switcher mode");
         // At this point, the contents of the command palette's _mruTabs list is
         // still the _old_ ordering (d, c, b, a). The ordering is only updated
         // in TerminalPage::_SelectNextTab, but as we saw before, the palette
@@ -1242,7 +1242,7 @@ namespace TerminalAppLocalTests
         END_TEST_METHOD_PROPERTIES()
 
         auto page = _commonSetup();
-        page->RenameWindowRequested([&page](auto&&, const winrt::TerminalApp::RenameWindowRequestedArgs args) {
+        page->RenameWindowRequested([&page](auto&&, const MTApp::RenameWindowRequestedArgs args) {
             // In the real terminal, this would bounce up to the monarch and
             // come back down. Instead, immediately call back and set the name.
             page->WindowName(args.ProposedName());

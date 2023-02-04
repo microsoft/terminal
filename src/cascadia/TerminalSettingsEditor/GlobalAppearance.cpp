@@ -9,11 +9,11 @@
 #include <WtExeUtils.h>
 
 using namespace winrt;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::UI::Xaml::Navigation;
-using namespace winrt::Windows::UI::Xaml::Controls;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Windows::Foundation::Collections;
+using namespace WUX;
+using namespace WUX::Navigation;
+using namespace WUXC;
+using namespace MTSM;
+using namespace WFC;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {

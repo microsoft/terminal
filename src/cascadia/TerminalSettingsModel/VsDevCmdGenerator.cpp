@@ -5,7 +5,7 @@
 #include "DynamicProfileUtils.h"
 #include "VsDevCmdGenerator.h"
 
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace MTSM;
 
 void VsDevCmdGenerator::GenerateProfiles(const VsSetupConfiguration::VsSetupInstance& instance, bool hidden, std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const
 {

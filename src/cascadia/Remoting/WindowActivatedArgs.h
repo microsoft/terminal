@@ -28,14 +28,14 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     {
         WINRT_PROPERTY(uint64_t, PeasantID, 0);
         WINRT_PROPERTY(winrt::guid, DesktopID);
-        WINRT_PROPERTY(winrt::Windows::Foundation::DateTime, ActivatedTime, {});
+        WINRT_PROPERTY(WF::DateTime, ActivatedTime, {});
         WINRT_PROPERTY(uint64_t, Hwnd, 0);
 
     public:
         WindowActivatedArgs(uint64_t peasantID,
                             uint64_t hwnd,
                             winrt::guid desktopID,
-                            winrt::Windows::Foundation::DateTime timestamp) :
+                            WF::DateTime timestamp) :
             _PeasantID{ peasantID },
             _Hwnd{ hwnd },
             _DesktopID{ desktopID },
@@ -43,7 +43,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         WindowActivatedArgs(uint64_t peasantID,
                             winrt::guid desktopID,
-                            winrt::Windows::Foundation::DateTime timestamp) :
+                            WF::DateTime timestamp) :
             WindowActivatedArgs(peasantID, 0, desktopID, timestamp){};
 
         WindowActivatedArgs(const Remoting::WindowActivatedArgs& other) :

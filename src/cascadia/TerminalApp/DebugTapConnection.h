@@ -9,30 +9,30 @@
 namespace winrt::Microsoft::TerminalApp::implementation
 {
     class DebugInputTapConnection;
-    class DebugTapConnection : public winrt::implements<DebugTapConnection, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection>
+    class DebugTapConnection : public winrt::implements<DebugTapConnection, MTConnection::ITerminalConnection>
     {
     public:
         explicit DebugTapConnection(Microsoft::Terminal::TerminalConnection::ITerminalConnection wrappedConnection);
-        void Initialize(const Windows::Foundation::Collections::ValueSet& /*settings*/){};
+        void Initialize(const WFC::ValueSet& /*settings*/){};
         ~DebugTapConnection();
         void Start();
         void WriteInput(const hstring& data);
         void Resize(uint32_t rows, uint32_t columns);
         void Close();
-        winrt::Microsoft::Terminal::TerminalConnection::ConnectionState State() const noexcept;
+        MTConnection::ConnectionState State() const noexcept;
 
         void SetInputTap(const Microsoft::Terminal::TerminalConnection::ITerminalConnection& inputTap);
 
-        WINRT_CALLBACK(TerminalOutput, winrt::Microsoft::Terminal::TerminalConnection::TerminalOutputHandler);
+        WINRT_CALLBACK(TerminalOutput, MTConnection::TerminalOutputHandler);
 
-        TYPED_EVENT(StateChanged, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(StateChanged, MTConnection::ITerminalConnection, WF::IInspectable);
 
     private:
         void _PrintInput(const hstring& data);
         void _OutputHandler(const hstring str);
 
-        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection::TerminalOutput_revoker _outputRevoker;
-        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection::StateChanged_revoker _stateChangedRevoker;
+        MTConnection::ITerminalConnection::TerminalOutput_revoker _outputRevoker;
+        MTConnection::ITerminalConnection::StateChanged_revoker _stateChangedRevoker;
         winrt::weak_ref<Microsoft::Terminal::TerminalConnection::ITerminalConnection> _wrappedConnection;
         winrt::weak_ref<Microsoft::Terminal::TerminalConnection::ITerminalConnection> _inputSide;
 
@@ -42,4 +42,4 @@ namespace winrt::Microsoft::TerminalApp::implementation
     };
 }
 
-std::tuple<winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection> OpenDebugTapConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection baseConnection);
+std::tuple<MTConnection::ITerminalConnection, MTConnection::ITerminalConnection> OpenDebugTapConnection(MTConnection::ITerminalConnection baseConnection);

@@ -10,8 +10,8 @@ Licensed under the MIT license.
 #include <conattrs.hpp>
 #include "ControlAppearance.h"
 
-using IFontFeatureMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, uint32_t>;
-using IFontAxesMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>;
+using IFontFeatureMap = WFC::IMap<winrt::hstring, uint32_t>;
+using IFontAxesMap = WFC::IMap<winrt::hstring, float>;
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
@@ -73,7 +73,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         CONTROL_APPEARANCE_SETTINGS(APPEARANCE_GEN)
 #undef APPEARANCE_GEN
 
-        winrt::Microsoft::Terminal::Core::Color GetColorTableEntry(int32_t index) noexcept
+        MTCore::Color GetColorTableEntry(int32_t index) noexcept
         {
             return _focusedAppearance->GetColorTableEntry(index);
         }

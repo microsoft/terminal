@@ -21,7 +21,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                          TERMINAL_STARTUP_INFO startupInfo);
 
         ConptyConnection() noexcept = default;
-        void Initialize(const Windows::Foundation::Collections::ValueSet& settings);
+        void Initialize(const WFC::ValueSet& settings);
 
         static winrt::fire_and_forget final_release(std::unique_ptr<ConptyConnection> connection);
 
@@ -46,10 +46,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         static winrt::event_token NewConnection(const NewConnectionHandler& handler);
         static void NewConnection(const winrt::event_token& token);
 
-        static Windows::Foundation::Collections::ValueSet CreateSettings(const winrt::hstring& cmdline,
+        static WFC::ValueSet CreateSettings(const winrt::hstring& cmdline,
                                                                          const winrt::hstring& startingDirectory,
                                                                          const winrt::hstring& startingTitle,
-                                                                         const Windows::Foundation::Collections::IMapView<hstring, hstring>& environment,
+                                                                         const WFC::IMapView<hstring, hstring>& environment,
                                                                          uint32_t rows,
                                                                          uint32_t columns,
                                                                          const winrt::guid& guid);
@@ -72,7 +72,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         hstring _startingDirectory{};
         hstring _startingTitle{};
         bool _initialVisibility{ true };
-        Windows::Foundation::Collections::ValueSet _environment{ nullptr };
+        WFC::ValueSet _environment{ nullptr };
         guid _guid{}; // A unique session identifier for connected client
         hstring _clientName{}; // The name of the process hosted by this ConPTY connection (as of launch).
 

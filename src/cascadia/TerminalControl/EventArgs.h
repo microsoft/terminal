@@ -35,7 +35,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _rtf(),
             _formats(static_cast<CopyFormat>(0)) {}
 
-        CopyToClipboardEventArgs(hstring text, hstring html, hstring rtf, Windows::Foundation::IReference<CopyFormat> formats) :
+        CopyToClipboardEventArgs(hstring text, hstring html, hstring rtf, WF::IReference<CopyFormat> formats) :
             _text(text),
             _html(html),
             _rtf(rtf),
@@ -44,13 +44,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         hstring Text() { return _text; };
         hstring Html() { return _html; };
         hstring Rtf() { return _rtf; };
-        Windows::Foundation::IReference<CopyFormat> Formats() { return _formats; };
+        WF::IReference<CopyFormat> Formats() { return _formats; };
 
     private:
         hstring _text;
         hstring _html;
         hstring _rtf;
-        Windows::Foundation::IReference<CopyFormat> _formats;
+        WF::IReference<CopyFormat> _formats;
     };
 
     struct PasteFromClipboardEventArgs : public PasteFromClipboardEventArgsT<PasteFromClipboardEventArgs>

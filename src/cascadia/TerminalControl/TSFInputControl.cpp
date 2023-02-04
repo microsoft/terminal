@@ -5,12 +5,12 @@
 #include "TSFInputControl.h"
 #include "TSFInputControl.g.cpp"
 
-using namespace winrt::Windows::Foundation;
+using namespace WF;
 using namespace winrt::Windows::Graphics::Display;
-using namespace winrt::Windows::UI::Core;
-using namespace winrt::Windows::UI::Text;
-using namespace winrt::Windows::UI::Text::Core;
-using namespace winrt::Windows::UI::Xaml;
+using namespace WUC;
+using namespace WUT;
+using namespace WUT::Core;
+using namespace WUX;
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
@@ -295,7 +295,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - object: CoreTextCompositionStartedEventArgs. Not used in method.
     // Return Value:
     // - <none>
-    void TSFInputControl::_focusRemovedHandler(CoreTextEditContext sender, const winrt::Windows::Foundation::IInspectable& /*object*/)
+    void TSFInputControl::_focusRemovedHandler(CoreTextEditContext sender, const WF::IInspectable& /*object*/)
     {
     }
 

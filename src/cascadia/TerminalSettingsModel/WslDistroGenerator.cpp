@@ -20,7 +20,7 @@ static constexpr wchar_t RegKeyLxss[] = L"Software\\Microsoft\\Windows\\CurrentV
 static constexpr wchar_t RegKeyDistroName[] = L"DistributionName";
 
 using namespace ::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace MTSM;
 
 static bool isWslDashDashCdAvailableForLinuxPaths() noexcept
 {

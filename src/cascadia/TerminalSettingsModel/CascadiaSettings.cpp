@@ -18,9 +18,9 @@
 
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings;
-using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
-using namespace winrt::Microsoft::Terminal::Control;
-using namespace winrt::Windows::Foundation::Collections;
+using namespace MTSM::implementation;
+using namespace MTControl;
+using namespace WFC;
 using namespace Microsoft::Console;
 
 // Creating a child of a profile requires us to copy certain
@@ -230,7 +230,7 @@ Model::Profile CascadiaSettings::CreateNewProfile()
 template<typename T>
 static bool isProfilesDefaultsOrigin(const T& profile)
 {
-    return profile && profile.Origin() != winrt::Microsoft::Terminal::Settings::Model::OriginTag::ProfilesDefaults;
+    return profile && profile.Origin() != MTSM::OriginTag::ProfilesDefaults;
 }
 
 template<typename T>
@@ -374,7 +374,7 @@ IVectorView<Model::SettingsLoadWarnings> CascadiaSettings::Warnings() const
     return _warnings.GetView();
 }
 
-winrt::Windows::Foundation::IReference<Model::SettingsLoadErrors> CascadiaSettings::GetLoadingError() const
+WF::IReference<Model::SettingsLoadErrors> CascadiaSettings::GetLoadingError() const
 {
     return _loadError;
 }
@@ -484,7 +484,7 @@ void CascadiaSettings::_validateMediaResources()
             // This covers file paths on the machine, app data, URLs, and other resource paths.
             try
             {
-                winrt::Windows::Foundation::Uri imagePath{ path };
+                WF::Uri imagePath{ path };
             }
             catch (...)
             {
@@ -502,7 +502,7 @@ void CascadiaSettings::_validateMediaResources()
                 // This covers file paths on the machine, app data, URLs, and other resource paths.
                 try
                 {
-                    winrt::Windows::Foundation::Uri imagePath{ path };
+                    WF::Uri imagePath{ path };
                 }
                 catch (...)
                 {
@@ -520,7 +520,7 @@ void CascadiaSettings::_validateMediaResources()
             const auto iconPath{ wil::ExpandEnvironmentStringsW<std::wstring>(icon.c_str()) };
             try
             {
-                winrt::Windows::Foundation::Uri imagePath{ iconPath };
+                WF::Uri imagePath{ iconPath };
             }
             catch (...)
             {

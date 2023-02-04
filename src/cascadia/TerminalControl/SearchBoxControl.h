@@ -25,26 +25,26 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         SearchBoxControl();
 
-        void TextBoxKeyDown(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
+        void TextBoxKeyDown(const WF::IInspectable& /*sender*/, const WUX::Input::KeyRoutedEventArgs& e);
 
         void SetFocusOnTextbox();
         void PopulateTextbox(const winrt::hstring& text);
         bool ContainsFocus();
 
-        void GoBackwardClicked(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::RoutedEventArgs& /*e*/);
-        void GoForwardClicked(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::RoutedEventArgs& /*e*/);
-        void CloseClick(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+        void GoBackwardClicked(const WF::IInspectable& /*sender*/, const WUX::RoutedEventArgs& /*e*/);
+        void GoForwardClicked(const WF::IInspectable& /*sender*/, const WUX::RoutedEventArgs& /*e*/);
+        void CloseClick(const WF::IInspectable& /*sender*/, const WUX::RoutedEventArgs& e);
 
         WINRT_CALLBACK(Search, SearchHandler);
-        TYPED_EVENT(Closed, Control::SearchBoxControl, Windows::UI::Xaml::RoutedEventArgs);
+        TYPED_EVENT(Closed, Control::SearchBoxControl, WUX::RoutedEventArgs);
 
     private:
-        std::unordered_set<winrt::Windows::Foundation::IInspectable> _focusableElements;
+        std::unordered_set<WF::IInspectable> _focusableElements;
 
         bool _GoForward();
         bool _CaseSensitive();
-        void _KeyDownHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
-        void _CharacterHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs& e);
+        void _KeyDownHandler(const WF::IInspectable& sender, const WUX::Input::KeyRoutedEventArgs& e);
+        void _CharacterHandler(const WF::IInspectable& /*sender*/, const WUX::Input::CharacterReceivedRoutedEventArgs& e);
     };
 }
 

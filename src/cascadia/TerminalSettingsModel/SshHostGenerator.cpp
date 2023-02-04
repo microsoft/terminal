@@ -29,7 +29,7 @@ static constexpr std::wstring_view SSH_CONFIG_HOST_KEY{ L"Host" };
 static constexpr std::wstring_view SSH_CONFIG_HOSTNAME_KEY{ L"HostName" };
 
 using namespace ::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace MTSM;
 
 /*static*/ const std::wregex SshHostGenerator::_configKeyValueRegex{ LR"(^\s*(\w+)\s+([^\s]+.*[^\s])\s*$)" };
 

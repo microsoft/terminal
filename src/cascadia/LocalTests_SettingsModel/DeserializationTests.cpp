@@ -15,9 +15,9 @@ using namespace Microsoft::Console;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::Control;
-using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
+using namespace MTSM;
+using namespace MTControl;
+using VirtualKeyModifiers = WS::VirtualKeyModifiers;
 
 namespace SettingsModelLocalTests
 {
@@ -107,7 +107,7 @@ namespace SettingsModelLocalTests
             return winrt::make_self<implementation::CascadiaSettings>(userJSON, inboxJSON);
         }
 
-        static void _logCommandNames(winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, Command> commands, const int indentation = 1)
+        static void _logCommandNames(WFC::IMapView<winrt::hstring, Command> commands, const int indentation = 1)
         {
             if (indentation == 1)
             {

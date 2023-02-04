@@ -37,7 +37,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
 
 namespace Microsoft::Terminal::Settings::Model::JsonUtils
 {
-    using namespace winrt::Microsoft::Terminal::Settings::Model;
+    using namespace MTSM;
 
     template<>
     struct ConversionTrait<ActionAndArgs>

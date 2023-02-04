@@ -4,8 +4,8 @@
 #include "pch.h"
 #include "DebugTapConnection.h"
 
-using namespace ::winrt::Microsoft::Terminal::TerminalConnection;
-using namespace ::winrt::Windows::Foundation;
+using namespace MTConnection;
+using namespace WF;
 namespace winrt::Microsoft::TerminalApp::implementation
 {
     // DebugInputTapConnection is an implementation detail of DebugTapConnection.
@@ -19,7 +19,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
             _wrappedConnection{ std::move(wrappedConnection) }
         {
         }
-        void Initialize(const Windows::Foundation::Collections::ValueSet& /*settings*/) {}
+        void Initialize(const WFC::ValueSet& /*settings*/) {}
         ~DebugInputTapConnection() = default;
         winrt::fire_and_forget Start()
         {

@@ -11,17 +11,17 @@
 #include "AppLogic.h"
 
 using namespace winrt;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::UI::Core;
-using namespace winrt::Microsoft::Terminal::Control;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::UI::Xaml::Controls;
-using namespace winrt::Windows::System;
+using namespace WUX;
+using namespace WUC;
+using namespace MTControl;
+using namespace MTSM;
+using namespace MUXC;
+using namespace WS;
 
 namespace winrt
 {
-    namespace MUX = Microsoft::UI::Xaml;
-    namespace WUX = Windows::UI::Xaml;
+    namespace MUX = MUX;
+    namespace WUX = WUX;
 }
 
 namespace winrt::TerminalApp::implementation
@@ -111,7 +111,7 @@ namespace winrt::TerminalApp::implementation
     // - Removes the bell indicator from the tab header
     // Arguments:
     // - sender, e: not used
-    void TerminalTab::_BellIndicatorTimerTick(const Windows::Foundation::IInspectable& /*sender*/, const Windows::Foundation::IInspectable& /*e*/)
+    void TerminalTab::_BellIndicatorTimerTick(const WF::IInspectable& /*sender*/, const WF::IInspectable& /*e*/)
     {
         ShowBellIndicator(false);
         // Just do a sanity check that the timer still exists before we stop it
@@ -155,8 +155,8 @@ namespace winrt::TerminalApp::implementation
             {
                 // Make sure to try/catch this, because the LocalTests won't be
                 // able to use this helper.
-                const auto settings{ winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings() };
-                if (settings.GlobalSettings().TabWidthMode() == winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::SizeToContent)
+                const auto settings{ MTApp::implementation::AppLogic::CurrentAppSettings() };
+                if (settings.GlobalSettings().TabWidthMode() == MUXC::TabViewWidthMode::SizeToContent)
                 {
                     tab->_headerControl.RenamerMaxWidth(HeaderRenameBoxWidthTitleLength);
                 }
@@ -926,7 +926,7 @@ namespace winrt::TerminalApp::implementation
             {
                 if (tab->_focusState != FocusState::Unfocused)
                 {
-                    if (const auto termControl{ sender.try_as<winrt::Microsoft::Terminal::Control::TermControl>() })
+                    if (const auto termControl{ sender.try_as<MTControl::TermControl>() })
                     {
                         termControl.Focus(FocusState::Pointer);
                     }
@@ -949,14 +949,14 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - A TaskbarState object representing the combined taskbar state and
     //   progress percentage of all our panes.
-    winrt::TerminalApp::TaskbarState TerminalTab::GetCombinedTaskbarState() const
+    MTApp::TaskbarState TerminalTab::GetCombinedTaskbarState() const
     {
-        std::vector<winrt::TerminalApp::TaskbarState> states;
+        std::vector<MTApp::TaskbarState> states;
         if (_rootPane)
         {
             _rootPane->CollectTaskbarStates(states);
         }
-        return states.empty() ? winrt::make<winrt::TerminalApp::implementation::TaskbarState>() :
+        return states.empty() ? winrt::make<MTApp::implementation::TaskbarState>() :
                                 *std::min_element(states.begin(), states.end(), TerminalApp::implementation::TaskbarState::ComparePriority);
     }
 
@@ -1439,7 +1439,7 @@ namespace winrt::TerminalApp::implementation
         _RecalculateAndApplyTabColor();
     }
 
-    winrt::Windows::UI::Xaml::Media::Brush TerminalTab::_BackgroundBrush()
+    WUXMedia::Brush TerminalTab::_BackgroundBrush()
     {
         Media::Brush terminalBrush{ nullptr };
         if (const auto& c{ GetActiveTerminalControl() })
@@ -1484,7 +1484,7 @@ namespace winrt::TerminalApp::implementation
     //   or it will return the split direction with automatic converted to a cardinal direction.
     std::optional<SplitDirection> TerminalTab::PreCalculateCanSplit(SplitDirection splitType,
                                                                     const float splitSize,
-                                                                    winrt::Windows::Foundation::Size availableSpace) const
+                                                                    WF::Size availableSpace) const
     {
         return _rootPane->PreCalculateCanSplit(_activePane, splitType, splitSize, availableSpace).value_or(std::nullopt);
     }

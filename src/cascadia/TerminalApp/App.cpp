@@ -7,10 +7,10 @@
 
 using namespace winrt;
 using namespace winrt::Windows::ApplicationModel::Activation;
-using namespace winrt::Windows::Foundation;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::UI::Xaml::Controls;
-using namespace winrt::Windows::UI::Xaml::Navigation;
+using namespace WF;
+using namespace WUX;
+using namespace WUXC;
+using namespace WUX::Navigation;
 
 namespace xaml = ::winrt::Windows::UI::Xaml;
 
@@ -23,12 +23,12 @@ namespace winrt::TerminalApp::implementation
         // Disable XAML's automatic backplating of text when in High Contrast
         // mode: we want full control of and responsibility for the foreground
         // and background colors that we draw in XAML.
-        HighContrastAdjustment(::winrt::Windows::UI::Xaml::ApplicationHighContrastAdjustment::None);
+        HighContrastAdjustment(WUX::ApplicationHighContrastAdjustment::None);
     }
 
     void App::Initialize()
     {
-        const auto dispatcherQueue = winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
+        const auto dispatcherQueue = WS::DispatcherQueue::GetForCurrentThread();
         if (!dispatcherQueue)
         {
             _windowsXamlManager = xaml::Hosting::WindowsXamlManager::InitializeForCurrentThread();

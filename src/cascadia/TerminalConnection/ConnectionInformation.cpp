@@ -5,7 +5,7 @@
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     ConnectionInformation::ConnectionInformation(const hstring& className,
-                                                 const Windows::Foundation::Collections::ValueSet& settings) :
+                                                 const WFC::ValueSet& settings) :
         _ClassName{ className },
         _Settings{ settings }
     {
@@ -25,7 +25,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     TerminalConnection::ITerminalConnection ConnectionInformation::CreateConnection(TerminalConnection::ConnectionInformation info)
     try
     {
-        Windows::Foundation::IInspectable inspectable{};
+        WF::IInspectable inspectable{};
 
         const auto name = static_cast<HSTRING>(winrt::get_abi(info.ClassName()));
         const auto pointer = winrt::put_abi(inspectable);

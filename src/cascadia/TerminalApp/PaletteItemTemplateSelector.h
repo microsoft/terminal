@@ -11,12 +11,12 @@ namespace winrt::TerminalApp::implementation
     {
         PaletteItemTemplateSelector() = default;
 
-        Windows::UI::Xaml::DataTemplate SelectTemplateCore(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::UI::Xaml::DependencyObject&);
-        Windows::UI::Xaml::DataTemplate SelectTemplateCore(const winrt::Windows::Foundation::IInspectable&);
+        WUX::DataTemplate SelectTemplateCore(const WF::IInspectable&, const WUX::DependencyObject&);
+        WUX::DataTemplate SelectTemplateCore(const WF::IInspectable&);
 
-        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, TabItemTemplate);
-        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, NestedItemTemplate);
-        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, GeneralItemTemplate);
+        WINRT_PROPERTY(WUX::DataTemplate, TabItemTemplate);
+        WINRT_PROPERTY(WUX::DataTemplate, NestedItemTemplate);
+        WINRT_PROPERTY(WUX::DataTemplate, GeneralItemTemplate);
     };
 }
 

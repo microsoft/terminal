@@ -18,7 +18,7 @@ namespace winrt::TerminalApp::implementation
         TaskbarState();
         TaskbarState(const uint64_t dispatchTypesState, const uint64_t progress);
 
-        static int ComparePriority(const winrt::TerminalApp::TaskbarState& lhs, const winrt::TerminalApp::TaskbarState& rhs);
+        static int ComparePriority(const MTApp::TaskbarState& lhs, const MTApp::TaskbarState& rhs);
 
         uint64_t Priority() const;
 

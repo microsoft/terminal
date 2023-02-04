@@ -11,7 +11,7 @@
 
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal;
-using namespace winrt::Windows::Foundation;
+using namespace WF;
 using namespace ::Microsoft::Console;
 
 namespace winrt::Microsoft::Terminal::Remoting::implementation

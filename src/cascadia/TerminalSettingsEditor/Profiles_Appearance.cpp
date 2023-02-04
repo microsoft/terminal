@@ -11,8 +11,8 @@
 #include <LibraryResources.h>
 #include "..\WinRTUtils\inc\Utils.h"
 
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::UI::Xaml::Navigation;
+using namespace WUX;
+using namespace WUX::Navigation;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {

@@ -18,13 +18,13 @@
 
 using namespace ::Microsoft::Console;
 using namespace Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
+using namespace MTSM::implementation;
 using namespace winrt::Windows::UI;
 
 namespace winrt
 {
-    namespace MUX = Microsoft::UI::Xaml;
-    namespace WUX = Windows::UI::Xaml;
+    namespace MUX = MUX;
+    namespace WUX = WUX;
 }
 
 static constexpr std::string_view NameKey{ "name" };
@@ -63,7 +63,7 @@ THEME_OBJECT(TabTheme, MTSM_THEME_TAB_SETTINGS);
 #undef THEME_SETTINGS_TO_JSON
 #undef THEME_OBJECT
 
-winrt::Microsoft::Terminal::Settings::Model::ThemeColor ThemeColor::FromColor(const winrt::Microsoft::Terminal::Core::Color& coreColor) noexcept
+MTSM::ThemeColor ThemeColor::FromColor(const MTCore::Color& coreColor) noexcept
 {
     auto result = winrt::make_self<implementation::ThemeColor>();
     result->_Color = coreColor;
@@ -71,14 +71,14 @@ winrt::Microsoft::Terminal::Settings::Model::ThemeColor ThemeColor::FromColor(co
     return *result;
 }
 
-winrt::Microsoft::Terminal::Settings::Model::ThemeColor ThemeColor::FromAccent() noexcept
+MTSM::ThemeColor ThemeColor::FromAccent() noexcept
 {
     auto result = winrt::make_self<implementation::ThemeColor>();
     result->_ColorType = ThemeColorType::Accent;
     return *result;
 }
 
-winrt::Microsoft::Terminal::Settings::Model::ThemeColor ThemeColor::FromTerminalBackground() noexcept
+MTSM::ThemeColor ThemeColor::FromTerminalBackground() noexcept
 {
     auto result = winrt::make_self<implementation::ThemeColor>();
     result->_ColorType = ThemeColorType::TerminalBackground;

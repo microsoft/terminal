@@ -9,19 +9,19 @@
 #include "LibraryResources.h"
 #include "../TerminalSettingsModel/AllShortcutActions.h"
 
-using namespace winrt::Windows::Foundation;
-using namespace winrt::Windows::Foundation::Collections;
-using namespace winrt::Windows::System;
-using namespace winrt::Windows::UI::Core;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::UI::Xaml::Controls;
-using namespace winrt::Windows::UI::Xaml::Data;
-using namespace winrt::Windows::UI::Xaml::Navigation;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace WF;
+using namespace WFC;
+using namespace WS;
+using namespace WUC;
+using namespace WUX;
+using namespace WUXC;
+using namespace WUX::Data;
+using namespace WUX::Navigation;
+using namespace MTSM;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    KeyBindingViewModel::KeyBindingViewModel(const Windows::Foundation::Collections::IObservableVector<hstring>& availableActions) :
+    KeyBindingViewModel::KeyBindingViewModel(const WFC::IObservableVector<hstring>& availableActions) :
         KeyBindingViewModel(nullptr, availableActions.First().Current(), availableActions) {}
 
     KeyBindingViewModel::KeyBindingViewModel(const Control::KeyChord& keys, const hstring& actionName, const IObservableVector<hstring>& availableActions) :
@@ -167,7 +167,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Manually add the editing background. This needs to be done in Actions not the view model.
         // We also have to do this manually because it hasn't been added to the list yet.
         kbdVM->IsInEditMode(true);
-        const auto& containerBackground{ Resources().Lookup(box_value(L"ActionContainerBackgroundEditing")).as<Windows::UI::Xaml::Media::Brush>() };
+        const auto& containerBackground{ Resources().Lookup(box_value(L"ActionContainerBackgroundEditing")).as<WUXMedia::Brush>() };
         kbdVM->ContainerBackground(containerBackground);
 
         // IMPORTANT: do this _after_ setting IsInEditMode. Otherwise, it'll get deleted immediately
@@ -176,7 +176,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _KeyBindingList.InsertAt(0, *kbdVM);
     }
 
-    void Actions::_ViewModelPropertyChangedHandler(const IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args)
+    void Actions::_ViewModelPropertyChangedHandler(const IInspectable& sender, const WUX::Data::PropertyChangedEventArgs& args)
     {
         const auto senderVM{ sender.as<Editor::KeyBindingViewModel>() };
         const auto propertyName{ args.PropertyName() };
@@ -211,7 +211,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     }
                 }
 
-                const auto& containerBackground{ Resources().Lookup(box_value(L"ActionContainerBackgroundEditing")).as<Windows::UI::Xaml::Media::Brush>() };
+                const auto& containerBackground{ Resources().Lookup(box_value(L"ActionContainerBackgroundEditing")).as<WUXMedia::Brush>() };
                 get_self<KeyBindingViewModel>(senderVM)->ContainerBackground(containerBackground);
             }
             else
@@ -219,7 +219,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // Focus on the list view item
                 KeyBindingsListView().ContainerFromItem(senderVM).as<Controls::Control>().Focus(FocusState::Programmatic);
 
-                const auto& containerBackground{ Resources().Lookup(box_value(L"ActionContainerBackground")).as<Windows::UI::Xaml::Media::Brush>() };
+                const auto& containerBackground{ Resources().Lookup(box_value(L"ActionContainerBackground")).as<WUXMedia::Brush>() };
                 get_self<KeyBindingViewModel>(senderVM)->ContainerBackground(containerBackground);
             }
         }
@@ -301,7 +301,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 const auto conflictingCmdName{ conflictingCmd.Name() };
                 TextBlock conflictingCommandNameTB{};
                 conflictingCommandNameTB.Text(fmt::format(L"\"{}\"", conflictingCmdName.empty() ? RS_(L"Actions_UnnamedCommandName") : conflictingCmdName));
-                conflictingCommandNameTB.FontStyle(Windows::UI::Text::FontStyle::Italic);
+                conflictingCommandNameTB.FontStyle(WUT::FontStyle::Italic);
 
                 TextBlock confirmationQuestionTB{};
                 confirmationQuestionTB.Text(RS_(L"Actions_RenameConflictConfirmationQuestion"));

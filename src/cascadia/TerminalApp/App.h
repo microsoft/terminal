@@ -27,8 +27,8 @@ namespace winrt::TerminalApp::implementation
 
     private:
         bool _isUwp = false;
-        winrt::Windows::UI::Xaml::Hosting::WindowsXamlManager _windowsXamlManager = nullptr;
-        winrt::Windows::Foundation::Collections::IVector<winrt::Windows::UI::Xaml::Markup::IXamlMetadataProvider> _providers = winrt::single_threaded_vector<Windows::UI::Xaml::Markup::IXamlMetadataProvider>();
+        WUX::Hosting::WindowsXamlManager _windowsXamlManager = nullptr;
+        WFC::IVector<WUXMarkup::IXamlMetadataProvider> _providers = winrt::single_threaded_vector<WUXMarkup::IXamlMetadataProvider>();
         bool _bIsClosed = false;
     };
 }

@@ -20,8 +20,8 @@ Author(s):
 #include <DefaultSettings.h>
 #include <conattrs.hpp>
 
-using IFontAxesMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>;
-using IFontFeatureMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, uint32_t>;
+using IFontAxesMap = WFC::IMap<winrt::hstring, float>;
+using IFontFeatureMap = WFC::IMap<winrt::hstring, uint32_t>;
 
 // fwdecl unittest classes
 namespace SettingsModelLocalTests
@@ -95,7 +95,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, bool, DetectURLs, true);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, VtPassthrough, false);
 
-        INHERITABLE_SETTING(Model::TerminalSettings, Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>, TabColor, nullptr);
+        INHERITABLE_SETTING(Model::TerminalSettings, WF::IReference<Microsoft::Terminal::Core::Color>, TabColor, nullptr);
 
         // When set, StartingTabColor allows to create a terminal with a "sticky" tab color.
         // This color is prioritized above the TabColor (that is usually initialized based on profile settings).
@@ -105,7 +105,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // TODO: to ensure that this property is not populated during settings reload,
         // we should consider moving this property to a separate interface,
         // passed to the terminal only upon creation.
-        INHERITABLE_SETTING(Model::TerminalSettings, Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>, StartingTabColor, nullptr);
+        INHERITABLE_SETTING(Model::TerminalSettings, WF::IReference<Microsoft::Terminal::Core::Color>, StartingTabColor, nullptr);
 
         INHERITABLE_SETTING(Model::TerminalSettings, bool, IntenseIsBold);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, IntenseIsBright);
@@ -123,7 +123,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, FontFace, DEFAULT_FONT_FACE);
         INHERITABLE_SETTING(Model::TerminalSettings, float, FontSize, DEFAULT_FONT_SIZE);
 
-        INHERITABLE_SETTING(Model::TerminalSettings, winrt::Windows::UI::Text::FontWeight, FontWeight);
+        INHERITABLE_SETTING(Model::TerminalSettings, WUT::FontWeight, FontWeight);
         INHERITABLE_SETTING(Model::TerminalSettings, IFontAxesMap, FontAxes);
         INHERITABLE_SETTING(Model::TerminalSettings, IFontFeatureMap, FontFeatures);
 
@@ -131,9 +131,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, BackgroundImage);
         INHERITABLE_SETTING(Model::TerminalSettings, double, BackgroundImageOpacity, 1.0);
 
-        INHERITABLE_SETTING(Model::TerminalSettings, winrt::Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill);
-        INHERITABLE_SETTING(Model::TerminalSettings, winrt::Windows::UI::Xaml::HorizontalAlignment, BackgroundImageHorizontalAlignment, winrt::Windows::UI::Xaml::HorizontalAlignment::Center);
-        INHERITABLE_SETTING(Model::TerminalSettings, winrt::Windows::UI::Xaml::VerticalAlignment, BackgroundImageVerticalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment::Center);
+        INHERITABLE_SETTING(Model::TerminalSettings, WUXMedia::Stretch, BackgroundImageStretchMode, WUXMedia::Stretch::UniformToFill);
+        INHERITABLE_SETTING(Model::TerminalSettings, WUX::HorizontalAlignment, BackgroundImageHorizontalAlignment, WUX::HorizontalAlignment::Center);
+        INHERITABLE_SETTING(Model::TerminalSettings, WUX::VerticalAlignment, BackgroundImageVerticalAlignment, WUX::VerticalAlignment::Center);
 
         INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::IKeyBindings, KeyBindings, nullptr);
 
@@ -170,8 +170,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void _ApplyGlobalSettings(const Model::GlobalAppSettings& globalSettings) noexcept;
         void _ApplyAppearanceSettings(const Microsoft::Terminal::Settings::Model::IAppearanceConfig& appearance,
-                                      const Windows::Foundation::Collections::IMapView<hstring, Microsoft::Terminal::Settings::Model::ColorScheme>& schemes,
-                                      const winrt::Microsoft::Terminal::Settings::Model::Theme currentTheme);
+                                      const WFC::IMapView<hstring, Microsoft::Terminal::Settings::Model::ColorScheme>& schemes,
+                                      const MTSM::Theme currentTheme);
 
         friend class SettingsModelLocalTests::TerminalSettingsTests;
     };

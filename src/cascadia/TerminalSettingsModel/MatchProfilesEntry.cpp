@@ -8,7 +8,7 @@
 #include "MatchProfilesEntry.g.cpp"
 
 using namespace Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
+using namespace MTSM::implementation;
 
 static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view CommandlineKey{ "commandline" };

@@ -9,7 +9,7 @@
 #include <ScopedResourceLoader.h>
 #include <LibraryResources.h>
 
-using namespace winrt::Windows::Foundation::Collections;
+using namespace WFC;
 using namespace winrt::Microsoft::Terminal;
 
 NotificationIcon::NotificationIcon(const HWND owningHwnd) :

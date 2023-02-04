@@ -26,25 +26,25 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         EnumMappings() = default;
 
         // Global Settings
-        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Windows::UI::Xaml::ElementTheme> ElementTheme();
-        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, NewTabPosition> NewTabPosition();
-        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode> TabViewWidthMode();
-        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, FirstWindowPreference> FirstWindowPreference();
-        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, LaunchMode> LaunchMode();
-        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, TabSwitcherMode> TabSwitcherMode();
-        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Microsoft::Terminal::Control::CopyFormat> CopyFormat();
-        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, WindowingMode> WindowingMode();
-        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Microsoft::Terminal::Core::MatchMode> MatchMode();
+        static WFC::IMap<winrt::hstring, WUX::ElementTheme> ElementTheme();
+        static WFC::IMap<winrt::hstring, NewTabPosition> NewTabPosition();
+        static WFC::IMap<winrt::hstring, MUXC::TabViewWidthMode> TabViewWidthMode();
+        static WFC::IMap<winrt::hstring, FirstWindowPreference> FirstWindowPreference();
+        static WFC::IMap<winrt::hstring, LaunchMode> LaunchMode();
+        static WFC::IMap<winrt::hstring, TabSwitcherMode> TabSwitcherMode();
+        static WFC::IMap<winrt::hstring, MTControl::CopyFormat> CopyFormat();
+        static WFC::IMap<winrt::hstring, WindowingMode> WindowingMode();
+        static WFC::IMap<winrt::hstring, MTCore::MatchMode> MatchMode();
 
         // Profile Settings
-        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, CloseOnExitMode> CloseOnExitMode();
-        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, Microsoft::Terminal::Control::ScrollbarState> ScrollbarState();
-        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Windows::UI::Xaml::Media::Stretch> BackgroundImageStretchMode();
-        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Microsoft::Terminal::Control::TextAntialiasingMode> TextAntialiasingMode();
-        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Microsoft::Terminal::Core::CursorStyle> CursorStyle();
-        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, uint16_t> FontWeight();
-        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Microsoft::Terminal::Settings::Model::IntenseStyle> IntenseTextStyle();
-        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Microsoft::Terminal::Core::AdjustTextMode> AdjustIndistinguishableColors();
+        static WFC::IMap<winrt::hstring, CloseOnExitMode> CloseOnExitMode();
+        static WFC::IMap<winrt::hstring, Microsoft::Terminal::Control::ScrollbarState> ScrollbarState();
+        static WFC::IMap<winrt::hstring, WUXMedia::Stretch> BackgroundImageStretchMode();
+        static WFC::IMap<winrt::hstring, MTControl::TextAntialiasingMode> TextAntialiasingMode();
+        static WFC::IMap<winrt::hstring, MTCore::CursorStyle> CursorStyle();
+        static WFC::IMap<winrt::hstring, uint16_t> FontWeight();
+        static WFC::IMap<winrt::hstring, MTSM::IntenseStyle> IntenseTextStyle();
+        static WFC::IMap<winrt::hstring, MTCore::AdjustTextMode> AdjustIndistinguishableColors();
     };
 }
 

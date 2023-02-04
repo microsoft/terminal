@@ -57,15 +57,15 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         void SummonAllWindows();
         bool DoesQuakeWindowExist();
-        Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> GetPeasantInfos();
-        Windows::Foundation::Collections::IVector<winrt::hstring> GetAllWindowLayouts();
+        WFC::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> GetPeasantInfos();
+        WFC::IVector<winrt::hstring> GetAllWindowLayouts();
 
-        TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
-        TYPED_EVENT(ShowNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(HideNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(WindowCreated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(WindowClosed, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs);
+        TYPED_EVENT(FindTargetWindowRequested, WF::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
+        TYPED_EVENT(ShowNotificationIconRequested, WF::IInspectable, WF::IInspectable);
+        TYPED_EVENT(HideNotificationIconRequested, WF::IInspectable, WF::IInspectable);
+        TYPED_EVENT(WindowCreated, WF::IInspectable, WF::IInspectable);
+        TYPED_EVENT(WindowClosed, WF::IInspectable, WF::IInspectable);
+        TYPED_EVENT(QuitAllRequested, WF::IInspectable, winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs);
 
     private:
         uint64_t _ourPID;
@@ -89,7 +89,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         uint64_t _getMostRecentPeasantID(bool limitToCurrentDesktop, const bool ignoreQuakeWindow);
         uint64_t _lookupPeasantIdForName(std::wstring_view name);
 
-        void _peasantWindowActivated(const winrt::Windows::Foundation::IInspectable& sender,
+        void _peasantWindowActivated(const WF::IInspectable& sender,
                                      const winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs& args);
         void _doHandleActivatePeasant(const winrt::com_ptr<winrt::Microsoft::Terminal::Remoting::implementation::WindowActivatedArgs>& args);
         void _clearOldMruEntries(const std::unordered_set<uint64_t>& peasantIds);
@@ -97,14 +97,14 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void _forAllPeasantsIgnoringTheDead(std::function<void(const winrt::Microsoft::Terminal::Remoting::IPeasant&, const uint64_t)> callback,
                                             std::function<void(const uint64_t)> errorCallback);
 
-        void _identifyWindows(const winrt::Windows::Foundation::IInspectable& sender,
-                              const winrt::Windows::Foundation::IInspectable& args);
+        void _identifyWindows(const WF::IInspectable& sender,
+                              const WF::IInspectable& args);
 
-        void _renameRequested(const winrt::Windows::Foundation::IInspectable& sender,
+        void _renameRequested(const WF::IInspectable& sender,
                               const winrt::Microsoft::Terminal::Remoting::RenameRequestArgs& args);
 
-        winrt::fire_and_forget _handleQuitAll(const winrt::Windows::Foundation::IInspectable& sender,
-                                              const winrt::Windows::Foundation::IInspectable& args);
+        winrt::fire_and_forget _handleQuitAll(const WF::IInspectable& sender,
+                                              const WF::IInspectable& args);
 
         // Method Description:
         // - Helper for doing something on each and every peasant.

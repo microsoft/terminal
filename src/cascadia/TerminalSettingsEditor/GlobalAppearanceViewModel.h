@@ -17,9 +17,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // DON'T YOU DARE ADD A `WINRT_CALLBACK(PropertyChanged` TO A CLASS DERIVED FROM ViewModelHelper. Do this instead:
         using ViewModelHelper<GlobalAppearanceViewModel>::PropertyChanged;
 
-        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Model::Theme>, ThemeList, nullptr);
+        WINRT_PROPERTY(WFC::IObservableVector<Model::Theme>, ThemeList, nullptr);
         GETSET_BINDABLE_ENUM_SETTING(NewTabPosition, Model::NewTabPosition, _GlobalSettings.NewTabPosition);
-        GETSET_BINDABLE_ENUM_SETTING(TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, _GlobalSettings.TabWidthMode);
+        GETSET_BINDABLE_ENUM_SETTING(TabWidthMode, MUXC::TabViewWidthMode, _GlobalSettings.TabWidthMode);
 
     public:
         // LanguageDisplayConverter maps the given BCP 47 tag to a localized string.
@@ -28,18 +28,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static winrt::hstring LanguageDisplayConverter(const winrt::hstring& tag);
 
         bool LanguageSelectorAvailable();
-        winrt::Windows::Foundation::Collections::IObservableVector<winrt::hstring> LanguageList();
-        winrt::Windows::Foundation::IInspectable CurrentLanguage();
-        void CurrentLanguage(const winrt::Windows::Foundation::IInspectable& tag);
+        WFC::IObservableVector<winrt::hstring> LanguageList();
+        WF::IInspectable CurrentLanguage();
+        void CurrentLanguage(const WF::IInspectable& tag);
 
-        winrt::Windows::Foundation::IInspectable CurrentTheme();
-        void CurrentTheme(const winrt::Windows::Foundation::IInspectable& tag);
+        WF::IInspectable CurrentTheme();
+        void CurrentTheme(const WF::IInspectable& tag);
         static winrt::hstring ThemeNameConverter(const Model::Theme& theme);
 
         bool InvertedDisableAnimations();
         void InvertedDisableAnimations(bool value);
 
-        void ShowTitlebarToggled(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& args);
+        void ShowTitlebarToggled(const WF::IInspectable& sender, const WUX::RoutedEventArgs& args);
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, AlwaysShowTabs);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, ShowTabsInTitlebar);
@@ -52,9 +52,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         Model::GlobalAppSettings _GlobalSettings;
-        winrt::Windows::Foundation::Collections::IObservableVector<winrt::hstring> _languageList;
-        winrt::Windows::Foundation::IInspectable _currentLanguage;
-        winrt::Windows::Foundation::IInspectable _currentTheme;
+        WFC::IObservableVector<winrt::hstring> _languageList;
+        WF::IInspectable _currentLanguage;
+        WF::IInspectable _currentTheme;
 
         void _UpdateThemeList();
     };

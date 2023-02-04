@@ -8,8 +8,8 @@
 
 #include "ActionMap.g.cpp"
 
-using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::Control;
+using namespace MTSM;
+using namespace MTControl;
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -118,7 +118,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     // Method Description:
     // - Retrieves a map of actions that can be bound to a key
-    Windows::Foundation::Collections::IMapView<hstring, Model::ActionAndArgs> ActionMap::AvailableActions()
+    WFC::IMapView<hstring, Model::ActionAndArgs> ActionMap::AvailableActions()
     {
         if (!_AvailableActionsCache)
         {
@@ -172,7 +172,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - Retrieves a map of command names to the commands themselves
     // - These commands should not be modified directly because they may result in
     //    an invalid state for the `ActionMap`
-    Windows::Foundation::Collections::IMapView<hstring, Model::Command> ActionMap::NameMap()
+    WFC::IMapView<hstring, Model::Command> ActionMap::NameMap()
     {
         if (!_NameMapCache)
         {
@@ -283,7 +283,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return cumulativeActions;
     }
 
-    Windows::Foundation::Collections::IMapView<Control::KeyChord, Model::Command> ActionMap::GlobalHotkeys()
+    WFC::IMapView<Control::KeyChord, Model::Command> ActionMap::GlobalHotkeys()
     {
         if (!_GlobalHotkeysCache)
         {
@@ -292,7 +292,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return _GlobalHotkeysCache.GetView();
     }
 
-    Windows::Foundation::Collections::IMapView<Control::KeyChord, Model::Command> ActionMap::KeyBindings()
+    WFC::IMapView<Control::KeyChord, Model::Command> ActionMap::KeyBindings()
     {
         if (!_KeyBindingMapCache)
         {

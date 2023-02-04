@@ -14,7 +14,7 @@
 
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal;
-using namespace winrt::Windows::Foundation;
+using namespace WF;
 using namespace ::Microsoft::Console;
 
 namespace winrt::Microsoft::Terminal::Remoting::implementation
@@ -134,8 +134,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - <none> used
     // Return Value:
     // - <none>
-    winrt::fire_and_forget Monarch::_handleQuitAll(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                                   const winrt::Windows::Foundation::IInspectable& /*args*/)
+    winrt::fire_and_forget Monarch::_handleQuitAll(const WF::IInspectable& /*sender*/,
+                                                   const WF::IInspectable& /*args*/)
     {
         // Let the process hosting the monarch run any needed logic before
         // closing all windows.
@@ -230,7 +230,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - args: a bundle of the peasant ID, timestamp, and desktop ID, for the activated peasant
     // Return Value:
     // - <none>
-    void Monarch::_peasantWindowActivated(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+    void Monarch::_peasantWindowActivated(const WF::IInspectable& /*sender*/,
                                           const Remoting::WindowActivatedArgs& args)
     {
         HandleActivatePeasant(args);
@@ -786,8 +786,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - <unused>
     // Return Value:
     // - <none>
-    void Monarch::_identifyWindows(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                   const winrt::Windows::Foundation::IInspectable& /*args*/)
+    void Monarch::_identifyWindows(const WF::IInspectable& /*sender*/,
+                                   const WF::IInspectable& /*args*/)
     {
         // Notify all the peasants to display their ID.
         const auto callback = [&](const auto& /*id*/, const auto& p) {
@@ -816,7 +816,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     //   indicating if the request was successful.
     // Return Value:
     // - <none>
-    void Monarch::_renameRequested(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+    void Monarch::_renameRequested(const WF::IInspectable& /*sender*/,
                                    const winrt::Microsoft::Terminal::Remoting::RenameRequestArgs& args)
     {
         auto successfullyRenamed = false;
@@ -943,7 +943,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - <none>
     // Return Value:
     // - A map of peasant IDs to their names.
-    Windows::Foundation::Collections::IVectorView<PeasantInfo> Monarch::GetPeasantInfos()
+    WFC::IVectorView<PeasantInfo> Monarch::GetPeasantInfos()
     {
         std::vector<PeasantInfo> names;
         {
@@ -1017,7 +1017,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - <none>
     // Return Value:
     // - The collection of window layouts from each peasant.
-    Windows::Foundation::Collections::IVector<winrt::hstring> Monarch::GetAllWindowLayouts()
+    WFC::IVector<winrt::hstring> Monarch::GetAllWindowLayouts()
     {
         std::vector<winrt::hstring> vec;
         auto callback = [&](const auto& /*id*/, const auto& p) {

@@ -12,7 +12,7 @@
 
 using namespace Microsoft::Console;
 using namespace winrt::Microsoft::Terminal;
-using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
+using namespace MTSM::implementation;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
@@ -80,7 +80,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(rgba(0xff, 0x88, 0x44, 0xff), theme->TabRow().UnfocusedBackground().Color());
 
         VERIFY_IS_NOT_NULL(theme->Window());
-        VERIFY_ARE_EQUAL(winrt::Windows::UI::Xaml::ElementTheme::Light, theme->Window().RequestedTheme());
+        VERIFY_ARE_EQUAL(WUX::ElementTheme::Light, theme->Window().RequestedTheme());
         VERIFY_ARE_EQUAL(true, theme->Window().UseMica());
     }
 
@@ -96,7 +96,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(L"empty", theme->Name());
         VERIFY_IS_NULL(theme->TabRow());
         VERIFY_IS_NULL(theme->Window());
-        VERIFY_ARE_EQUAL(winrt::Windows::UI::Xaml::ElementTheme::Default, theme->RequestedTheme());
+        VERIFY_ARE_EQUAL(WUX::ElementTheme::Default, theme->RequestedTheme());
     }
 
     void ThemeTests::ParseNoWindowTheme()
@@ -121,7 +121,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(rgb(0x11, 0x22, 0x33), theme->TabRow().Background().Color());
 
         VERIFY_IS_NULL(theme->Window());
-        VERIFY_ARE_EQUAL(winrt::Windows::UI::Xaml::ElementTheme::Default, theme->RequestedTheme());
+        VERIFY_ARE_EQUAL(WUX::ElementTheme::Default, theme->RequestedTheme());
     }
 
     void ThemeTests::ParseNullWindowTheme()
@@ -147,7 +147,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(rgb(0x11, 0x22, 0x33), theme->TabRow().Background().Color());
 
         VERIFY_IS_NULL(theme->Window());
-        VERIFY_ARE_EQUAL(winrt::Windows::UI::Xaml::ElementTheme::Default, theme->RequestedTheme());
+        VERIFY_ARE_EQUAL(WUX::ElementTheme::Default, theme->RequestedTheme());
     }
 
     void ThemeTests::ParseThemeWithNullThemeColor()

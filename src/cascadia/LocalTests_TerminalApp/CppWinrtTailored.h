@@ -83,7 +83,7 @@ HRESULT RunOnUIThread(const TFunction& function)
 
     auto invokeResult = E_FAIL;
 
-    auto asyncAction = d.RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal,
+    auto asyncAction = d.RunAsync(WUC::CoreDispatcherPriority::Normal,
                                   [&invokeResult, &function]() {
                                       invokeResult = WEX::SafeInvoke([&]() -> bool { function(); return true; });
                                   });

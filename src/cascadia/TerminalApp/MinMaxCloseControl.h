@@ -21,18 +21,18 @@ namespace winrt::TerminalApp::implementation
         void PressButton(CaptionButton button);
         void ReleaseButtons();
 
-        void _MinimizeClick(const winrt::Windows::Foundation::IInspectable& sender,
-                            const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
-        void _MaximizeClick(const winrt::Windows::Foundation::IInspectable& sender,
-                            const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
-        void _CloseClick(const winrt::Windows::Foundation::IInspectable& sender,
-                         const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+        void _MinimizeClick(const WF::IInspectable& sender,
+                            const WUX::RoutedEventArgs& e);
+        void _MaximizeClick(const WF::IInspectable& sender,
+                            const WUX::RoutedEventArgs& e);
+        void _CloseClick(const WF::IInspectable& sender,
+                         const WUX::RoutedEventArgs& e);
 
-        TYPED_EVENT(MinimizeClick, TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs);
-        TYPED_EVENT(MaximizeClick, TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs);
-        TYPED_EVENT(CloseClick, TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs);
+        TYPED_EVENT(MinimizeClick, TerminalApp::MinMaxCloseControl, WUX::RoutedEventArgs);
+        TYPED_EVENT(MaximizeClick, TerminalApp::MinMaxCloseControl, WUX::RoutedEventArgs);
+        TYPED_EVENT(CloseClick, TerminalApp::MinMaxCloseControl, WUX::RoutedEventArgs);
 
-        std::shared_ptr<ThrottledFuncTrailing<winrt::Windows::UI::Xaml::Controls::Button>> _displayToolTip{ nullptr };
+        std::shared_ptr<ThrottledFuncTrailing<WUXC::Button>> _displayToolTip{ nullptr };
         std::optional<CaptionButton> _lastPressedButton{ std::nullopt };
     };
 }

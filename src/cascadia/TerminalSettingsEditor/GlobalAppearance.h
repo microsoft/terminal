@@ -13,9 +13,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         GlobalAppearance();
 
-        void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
+        void OnNavigatedTo(const WUX::Navigation::NavigationEventArgs& e);
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        WINRT_CALLBACK(PropertyChanged, WUX::Data::PropertyChangedEventHandler);
         WINRT_OBSERVABLE_PROPERTY(Editor::GlobalAppearanceViewModel, ViewModel, _PropertyChangedHandlers, nullptr);
     };
 }

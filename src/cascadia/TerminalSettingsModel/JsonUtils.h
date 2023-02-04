@@ -82,12 +82,12 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     };
 
     template<typename T>
-    struct OptionOracle<::winrt::Windows::Foundation::IReference<T>>
+    struct OptionOracle<WF::IReference<T>>
     {
-        static constexpr ::winrt::Windows::Foundation::IReference<T> EmptyV() { return nullptr; }
-        static constexpr bool HasValue(const ::winrt::Windows::Foundation::IReference<T>& o) { return static_cast<bool>(o); }
+        static constexpr WF::IReference<T> EmptyV() { return nullptr; }
+        static constexpr bool HasValue(const WF::IReference<T>& o) { return static_cast<bool>(o); }
         // We CANNOT return a reference here because IReference does NOT return a reference to its internal memory
-        static constexpr auto Value(const ::winrt::Windows::Foundation::IReference<T>& o) { return o.Value(); }
+        static constexpr auto Value(const WF::IReference<T>& o) { return o.Value(); }
     };
 
     class SerializationError : public std::runtime_error
@@ -476,9 +476,9 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     };
 
     template<typename T>
-    struct ConversionTrait<winrt::Windows::Foundation::Collections::IVector<T>>
+    struct ConversionTrait<WFC::IVector<T>>
     {
-        winrt::Windows::Foundation::Collections::IVector<T> FromJson(const Json::Value& json)
+        WFC::IVector<T> FromJson(const Json::Value& json)
         {
             ConversionTrait<std::vector<T>> trait;
             return winrt::single_threaded_vector<T>(std::move(trait.FromJson(json)));
@@ -490,7 +490,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
             return trait.CanConvert(json);
         }
 
-        Json::Value ToJson(const winrt::Windows::Foundation::Collections::IVector<T>& val)
+        Json::Value ToJson(const WFC::IVector<T>& val)
         {
             Json::Value json{ Json::arrayValue };
 
@@ -512,9 +512,9 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     };
 
     template<typename T>
-    struct ConversionTrait<winrt::Windows::Foundation::Collections::IMap<winrt::hstring, T>>
+    struct ConversionTrait<WFC::IMap<winrt::hstring, T>>
     {
-        winrt::Windows::Foundation::Collections::IMap<winrt::hstring, T> FromJson(const Json::Value& json) const
+        WFC::IMap<winrt::hstring, T> FromJson(const Json::Value& json) const
         {
             std::unordered_map<winrt::hstring, T> val;
             val.reserve(json.size());
@@ -545,7 +545,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
             return true;
         }
 
-        Json::Value ToJson(const winrt::Windows::Foundation::Collections::IMap<winrt::hstring, T>& val)
+        Json::Value ToJson(const WFC::IMap<winrt::hstring, T>& val)
         {
             Json::Value json{ Json::objectValue };
 
@@ -772,11 +772,11 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
 
 #ifdef WINRT_Windows_Foundation_H
     template<>
-    struct ConversionTrait<winrt::Windows::Foundation::Size>
+    struct ConversionTrait<WF::Size>
     {
-        winrt::Windows::Foundation::Size FromJson(const Json::Value& json)
+        WF::Size FromJson(const Json::Value& json)
         {
-            winrt::Windows::Foundation::Size size{};
+            WF::Size size{};
             GetValueForKey(json, std::string_view("width"), size.Width);
             GetValueForKey(json, std::string_view("height"), size.Height);
 
@@ -793,7 +793,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
             return json.isMember("width") && json.isMember("height");
         }
 
-        Json::Value ToJson(const winrt::Windows::Foundation::Size& val)
+        Json::Value ToJson(const WF::Size& val)
         {
             Json::Value json{ Json::objectValue };
 
@@ -838,11 +838,11 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
 
 #ifdef WINRT_Microsoft_Terminal_Core_H
     template<>
-    struct ConversionTrait<winrt::Microsoft::Terminal::Core::Color>
+    struct ConversionTrait<MTCore::Color>
     {
-        winrt::Microsoft::Terminal::Core::Color FromJson(const Json::Value& json) const
+        MTCore::Color FromJson(const Json::Value& json) const
         {
-            return static_cast<winrt::Microsoft::Terminal::Core::Color>(ConversionTrait<til::color>{}.FromJson(json));
+            return static_cast<MTCore::Color>(ConversionTrait<til::color>{}.FromJson(json));
         }
 
         bool CanConvert(const Json::Value& json) const
@@ -850,7 +850,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
             return ConversionTrait<til::color>{}.CanConvert(json);
         }
 
-        Json::Value ToJson(const winrt::Microsoft::Terminal::Core::Color& val)
+        Json::Value ToJson(const MTCore::Color& val)
         {
             return ConversionTrait<til::color>{}.ToJson(val);
         }
@@ -907,7 +907,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
 
 #ifdef WINRT_Windows_Foundation_H
     template<typename T>
-    struct ConversionTrait<::winrt::Windows::Foundation::IReference<T>> : public OptionalConverter<T, ConversionTrait<T>, ::winrt::Windows::Foundation::IReference<T>>
+    struct ConversionTrait<WF::IReference<T>> : public OptionalConverter<T, ConversionTrait<T>, WF::IReference<T>>
     {
     };
 #endif

@@ -10,9 +10,9 @@
 
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::UI::Xaml::Hosting;
-using namespace winrt::Windows::Foundation::Numerics;
+using namespace WUX;
+using namespace WUX::Hosting;
+using namespace WF::Numerics;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
 
@@ -180,7 +180,7 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message,
         case HTMINBUTTON:
         case HTMAXBUTTON:
         case HTCLOSE:
-            _titlebar.HoverButton(static_cast<winrt::TerminalApp::CaptionButton>(wparam));
+            _titlebar.HoverButton(static_cast<MTApp::CaptionButton>(wparam));
             break;
         default:
             _titlebar.ReleaseButtons();
@@ -241,7 +241,7 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message,
         case HTMINBUTTON:
         case HTMAXBUTTON:
         case HTCLOSE:
-            _titlebar.PressButton(static_cast<winrt::TerminalApp::CaptionButton>(wparam));
+            _titlebar.PressButton(static_cast<MTApp::CaptionButton>(wparam));
             break;
         }
         return 0;
@@ -270,7 +270,7 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message,
         case HTMAXBUTTON:
         case HTCLOSE:
             _titlebar.ReleaseButtons();
-            _titlebar.ClickButton(static_cast<winrt::TerminalApp::CaptionButton>(wparam));
+            _titlebar.ClickButton(static_cast<MTApp::CaptionButton>(wparam));
             break;
         }
         return 0;
@@ -318,8 +318,8 @@ void NonClientIslandWindow::_ResizeDragBarWindow() noexcept
 // - <unused>
 // Return Value:
 // - <none>
-void NonClientIslandWindow::_OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable /*sender*/,
-                                                  winrt::Windows::UI::Xaml::SizeChangedEventArgs /*eventArgs*/)
+void NonClientIslandWindow::_OnDragBarSizeChanged(WF::IInspectable /*sender*/,
+                                                  WUX::SizeChangedEventArgs /*eventArgs*/)
 {
     _ResizeDragBarWindow();
 }
@@ -347,7 +347,7 @@ void NonClientIslandWindow::Initialize()
     _rootGrid.RowDefinitions().Append(contentRow);
 
     // Create our titlebar control
-    _titlebar = winrt::TerminalApp::TitlebarControl{ reinterpret_cast<uint64_t>(GetHandle()) };
+    _titlebar = MTApp::TitlebarControl{ reinterpret_cast<uint64_t>(GetHandle()) };
     _dragBar = _titlebar.DragBar();
 
     _dragBar.SizeChanged({ this, &NonClientIslandWindow::_OnDragBarSizeChanged });
@@ -369,7 +369,7 @@ void NonClientIslandWindow::Initialize()
 // - content: the new UI element to use as the client content
 // Return Value:
 // - <none>
-void NonClientIslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement content)
+void NonClientIslandWindow::SetContent(WUX::UIElement content)
 {
     _clientContent = content;
 
@@ -378,7 +378,7 @@ void NonClientIslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement conte
     // SetRow only works on FrameworkElement's, so cast it to a FWE before
     // calling. We know that our content is a Grid, so we don't need to worry
     // about this.
-    const auto fwe = content.try_as<winrt::Windows::UI::Xaml::FrameworkElement>();
+    const auto fwe = content.try_as<WUX::FrameworkElement>();
     if (fwe)
     {
         Controls::Grid::SetRow(fwe, 1);
@@ -391,7 +391,7 @@ void NonClientIslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement conte
 // - content: the new UI element to use as the titlebar content
 // Return Value:
 // - <none>
-void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIElement content)
+void NonClientIslandWindow::SetTitlebarContent(WUX::UIElement content)
 {
     _titlebar.Content(content);
 
@@ -399,7 +399,7 @@ void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIEleme
     // this element's size will change after the dragbar's. When that happens,
     // the drag bar won't send another SizeChanged event, because the dragbar's
     // _size_ didn't change, only its position.
-    const auto fwe = content.try_as<winrt::Windows::UI::Xaml::FrameworkElement>();
+    const auto fwe = content.try_as<WUX::FrameworkElement>();
     if (fwe)
     {
         fwe.SizeChanged({ this, &NonClientIslandWindow::_OnDragBarSizeChanged });
@@ -436,7 +436,7 @@ til::rect NonClientIslandWindow::_GetDragAreaRect() const noexcept
         // buttons. We'll manually handle input to those buttons, to make it
         // seem like they're still getting XAML input. We do this so we can get
         // snap layout support for the maximize button.
-        const auto logicalDragBarRect = winrt::Windows::Foundation::Rect{
+        const auto logicalDragBarRect = WF::Rect{
             0.0f,
             0.0f,
             static_cast<float>(_rootGrid.ActualWidth()),
@@ -512,9 +512,9 @@ void NonClientIslandWindow::_OnMaximizeChange() noexcept
         const auto windowStyle = GetWindowStyle(_window.get());
         const auto isIconified = WI_IsFlagSet(windowStyle, WS_ICONIC);
 
-        const auto state = _isMaximized ? winrt::TerminalApp::WindowVisualState::WindowVisualStateMaximized :
-                           isIconified  ? winrt::TerminalApp::WindowVisualState::WindowVisualStateIconified :
-                                          winrt::TerminalApp::WindowVisualState::WindowVisualStateNormal;
+        const auto state = _isMaximized ? MTApp::WindowVisualState::WindowVisualStateMaximized :
+                           isIconified  ? MTApp::WindowVisualState::WindowVisualStateIconified :
+                                          MTApp::WindowVisualState::WindowVisualStateNormal;
 
         try
         {
@@ -1136,7 +1136,7 @@ bool NonClientIslandWindow::_IsTitlebarVisible() const
     return !(_fullscreen || _borderless);
 }
 
-void NonClientIslandWindow::SetTitlebarBackground(winrt::Windows::UI::Xaml::Media::Brush brush)
+void NonClientIslandWindow::SetTitlebarBackground(WUXMedia::Brush brush)
 {
     _titlebar.Background(brush);
 }

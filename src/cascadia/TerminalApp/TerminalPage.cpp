@@ -22,18 +22,18 @@
 #include "Utils.h"
 
 using namespace winrt;
-using namespace winrt::Microsoft::Terminal::Control;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::TerminalConnection;
+using namespace MTControl;
+using namespace MTSM;
+using namespace MTConnection;
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
-using namespace winrt::Windows::Foundation::Collections;
-using namespace winrt::Windows::System;
-using namespace winrt::Windows::System;
-using namespace winrt::Windows::UI::Core;
-using namespace winrt::Windows::UI::Text;
-using namespace winrt::Windows::UI::Xaml::Controls;
-using namespace winrt::Windows::UI::Xaml;
+using namespace WFC;
+using namespace WS;
+using namespace WS;
+using namespace WUC;
+using namespace WUT;
+using namespace WUXC;
+using namespace WUX;
 using namespace ::TerminalApp;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Terminal::Core;
@@ -43,10 +43,10 @@ using namespace std::chrono_literals;
 
 namespace winrt
 {
-    namespace MUX = Microsoft::UI::Xaml;
-    namespace WUX = Windows::UI::Xaml;
-    using IInspectable = Windows::Foundation::IInspectable;
-    using VirtualKeyModifiers = Windows::System::VirtualKeyModifiers;
+    namespace MUX = MUX;
+    namespace WUX = WUX;
+    using IInspectable = WF::IInspectable;
+    using VirtualKeyModifiers = WS::VirtualKeyModifiers;
 }
 
 namespace winrt::TerminalApp::implementation
@@ -163,7 +163,7 @@ namespace winrt::TerminalApp::implementation
             // LocalTests
             try
             {
-                result = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsElevated();
+                result = WUX::Application::Current().as<MTApp::App>().Logic().IsElevated();
             }
             CATCH_LOG();
             return result;
@@ -259,7 +259,7 @@ namespace winrt::TerminalApp::implementation
                 page->_OpenNewTerminalViaDropdown(NewTerminalArgs());
             }
         });
-        _newTabButton.Drop([weakThis{ get_weak() }](const Windows::Foundation::IInspectable&, winrt::Windows::UI::Xaml::DragEventArgs e) {
+        _newTabButton.Drop([weakThis{ get_weak() }](const WF::IInspectable&, WUX::DragEventArgs e) {
             if (auto page{ weakThis.get() })
             {
                 page->NewTerminalByDrop(e);
@@ -470,9 +470,9 @@ namespace winrt::TerminalApp::implementation
         return nullptr;
     }
 
-    winrt::fire_and_forget TerminalPage::NewTerminalByDrop(winrt::Windows::UI::Xaml::DragEventArgs& e)
+    winrt::fire_and_forget TerminalPage::NewTerminalByDrop(WUX::DragEventArgs& e)
     {
-        Windows::Foundation::Collections::IVectorView<Windows::Storage::IStorageItem> items;
+        WFC::IVectorView<Windows::Storage::IStorageItem> items;
         try
         {
             items = co_await e.DataView().GetStorageItemsAsync();
@@ -590,7 +590,7 @@ namespace winrt::TerminalApp::implementation
 
             try
             {
-                winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::StartInboundListener();
+                MTConnection::ConptyConnection::StartInboundListener();
             }
             // If we failed to start the listener, it will throw.
             // We don't want to fail fast here because if a peasant has some trouble with
@@ -617,7 +617,7 @@ namespace winrt::TerminalApp::implementation
     //   nt -d .` from inside another directory to work as expected.
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TerminalPage::ProcessStartupActions(Windows::Foundation::Collections::IVector<ActionAndArgs> actions,
+    winrt::fire_and_forget TerminalPage::ProcessStartupActions(WFC::IVector<ActionAndArgs> actions,
                                                                const bool initial,
                                                                const winrt::hstring cwd)
     {
@@ -731,7 +731,7 @@ namespace winrt::TerminalApp::implementation
         return CascadiaSettings::ApplicationVersion();
     }
 
-    void TerminalPage::_SendFeedbackOnClick(const IInspectable& /*sender*/, const Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs& /*eventArgs*/)
+    void TerminalPage::_SendFeedbackOnClick(const IInspectable& /*sender*/, const WUXC::ContentDialogButtonClickEventArgs& /*eventArgs*/)
     {
 #if defined(WT_BRANDING_RELEASE)
         ShellExecute(nullptr, nullptr, L"https://go.microsoft.com/fwlink/?linkid=2125419", nullptr, nullptr, SW_SHOW);
@@ -740,7 +740,7 @@ namespace winrt::TerminalApp::implementation
 #endif
     }
 
-    void TerminalPage::_ThirdPartyNoticesOnClick(const IInspectable& /*sender*/, const Windows::UI::Xaml::RoutedEventArgs& /*eventArgs*/)
+    void TerminalPage::_ThirdPartyNoticesOnClick(const IInspectable& /*sender*/, const WUX::RoutedEventArgs& /*eventArgs*/)
     {
         std::filesystem::path currentPath{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
         currentPath.replace_filename(L"NOTICE.html");
@@ -750,7 +750,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Helper to show a content dialog
     // - We only open a content dialog if there isn't one open already
-    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowDialogHelper(const std::wstring_view& name)
+    WF::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowDialogHelper(const std::wstring_view& name)
     {
         if (auto presenter{ _dialogPresenter.get() })
         {
@@ -765,7 +765,7 @@ namespace winrt::TerminalApp::implementation
     //   If cancel is clicked, the dialog will close.
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens. See _ShowDialog for details
-    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowQuitDialog()
+    WF::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowQuitDialog()
     {
         return _ShowDialogHelper(L"QuitDialog");
     }
@@ -777,14 +777,14 @@ namespace winrt::TerminalApp::implementation
     //   all the tabs and shut down and app. If cancel is clicked, the dialog will close
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens. See _ShowDialog for details
-    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowCloseWarningDialog()
+    WF::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowCloseWarningDialog()
     {
         return _ShowDialogHelper(L"CloseAllDialog");
     }
 
     // Method Description:
     // - Displays a dialog for warnings found while closing the terminal tab marked as read-only
-    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowCloseReadOnlyDialog()
+    WF::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowCloseReadOnlyDialog()
     {
         return _ShowDialogHelper(L"CloseReadOnlyDialog");
     }
@@ -797,7 +797,7 @@ namespace winrt::TerminalApp::implementation
     //   of a command.
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens. See _ShowDialog for details
-    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowMultiLinePasteWarningDialog()
+    WF::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowMultiLinePasteWarningDialog()
     {
         return _ShowDialogHelper(L"MultiLinePasteDialog");
     }
@@ -808,7 +808,7 @@ namespace winrt::TerminalApp::implementation
     //   paste it but pressed the paste shortcut by accident.
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens. See _ShowDialog for details
-    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowLargePasteWarningDialog()
+    WF::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowLargePasteWarningDialog()
     {
         return _ShowDialogHelper(L"LargePasteDialog");
     }
@@ -846,7 +846,7 @@ namespace winrt::TerminalApp::implementation
             auto isUwp = false;
             try
             {
-                isUwp = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsUwp();
+                isUwp = WUX::Application::Current().as<MTApp::App>().Logic().IsUwp();
             }
             CATCH_LOG();
 
@@ -1219,7 +1219,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::fire_and_forget TerminalPage::_RemoveOnCloseRoutine(Microsoft::UI::Xaml::Controls::TabViewItem tabViewItem, winrt::com_ptr<TerminalPage> page)
+    winrt::fire_and_forget TerminalPage::_RemoveOnCloseRoutine(MUXC::TabViewItem tabViewItem, winrt::com_ptr<TerminalPage> page)
     {
         co_await wil::resume_foreground(page->_tabView.Dispatcher());
 
@@ -1261,7 +1261,7 @@ namespace winrt::TerminalApp::implementation
 
             if constexpr (Feature_VtPassthroughMode::IsEnabled())
             {
-                valueSet.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
+                valueSet.Insert(L"passthroughMode", WF::PropertyValue::CreateBoolean(settings.VtPassthrough()));
             }
 
             connection.Initialize(valueSet);
@@ -1310,7 +1310,7 @@ namespace winrt::TerminalApp::implementation
                                                                                  settings.InitialCols(),
                                                                                  winrt::guid());
 
-            valueSet.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
+            valueSet.Insert(L"passthroughMode", WF::PropertyValue::CreateBoolean(settings.VtPassthrough()));
 
             conhostConn.Initialize(valueSet);
 
@@ -1403,7 +1403,7 @@ namespace winrt::TerminalApp::implementation
     // - e: the KeyRoutedEventArgs containing info about the keystroke.
     // Return Value:
     // - <none>
-    void TerminalPage::_KeyDownHandler(const Windows::Foundation::IInspectable& /*sender*/, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
+    void TerminalPage::_KeyDownHandler(const WF::IInspectable& /*sender*/, const WUX::Input::KeyRoutedEventArgs& e)
     {
         const auto keyStatus = e.KeyStatus();
         const auto vkey = gsl::narrow_cast<WORD>(e.OriginalKey());
@@ -1863,7 +1863,7 @@ namespace winrt::TerminalApp::implementation
         // Only save the content size because the tab size will be added on load.
         const auto contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
         const auto contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
-        const winrt::Windows::Foundation::Size windowSize{ contentWidth, contentHeight };
+        const WF::Size windowSize{ contentWidth, contentHeight };
 
         layout.InitialSize(windowSize);
 
@@ -1911,7 +1911,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - scrollDirection: ScrollUp will move the viewport up, ScrollDown will move the viewport down
     // - rowsToScroll: a number of lines to move the viewport. If not provided we will use a system default.
-    void TerminalPage::_Scroll(ScrollDirection scrollDirection, const Windows::Foundation::IReference<uint32_t>& rowsToScroll)
+    void TerminalPage::_Scroll(ScrollDirection scrollDirection, const WF::IReference<uint32_t>& rowsToScroll)
     {
         if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
@@ -2054,7 +2054,7 @@ namespace winrt::TerminalApp::implementation
         }
         const auto contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
         const auto contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
-        const winrt::Windows::Foundation::Size availableSpace{ contentWidth, contentHeight };
+        const WF::Size availableSpace{ contentWidth, contentHeight };
 
         const auto realSplitType = tab.PreCalculateCanSplit(splitDirection, splitSize, availableSpace);
         if (!realSplitType)
@@ -2211,10 +2211,10 @@ namespace winrt::TerminalApp::implementation
         if (keyChord.Vkey() != VK_OEM_COMMA)
         {
             // use the XAML shortcut to give us the automatic capabilities
-            auto menuShortcut = Windows::UI::Xaml::Input::KeyboardAccelerator{};
+            auto menuShortcut = WUX::Input::KeyboardAccelerator{};
 
             // TODO: Modify this when https://github.com/microsoft/terminal/issues/877 is resolved
-            menuShortcut.Key(static_cast<Windows::System::VirtualKey>(keyChord.Vkey()));
+            menuShortcut.Key(static_cast<WS::VirtualKey>(keyChord.Vkey()));
 
             // add the modifiers to the shortcut
             menuShortcut.Modifiers(keyChord.Modifiers());
@@ -2407,7 +2407,7 @@ namespace winrt::TerminalApp::implementation
     {
         try
         {
-            auto parsed = winrt::Windows::Foundation::Uri(eventArgs.Uri().c_str());
+            auto parsed = WF::Uri(eventArgs.Uri().c_str());
             if (_IsUriSupported(parsed))
             {
                 ShellExecute(nullptr, L"open", eventArgs.Uri().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
@@ -2451,7 +2451,7 @@ namespace winrt::TerminalApp::implementation
     // - The parsed URI
     // Return value:
     // - True if we support it, false otherwise
-    bool TerminalPage::_IsUriSupported(const winrt::Windows::Foundation::Uri& parsedUri)
+    bool TerminalPage::_IsUriSupported(const WF::Uri& parsedUri)
     {
         if (parsedUri.SchemeName() == L"http" || parsedUri.SchemeName() == L"https")
         {
@@ -2533,7 +2533,7 @@ namespace winrt::TerminalApp::implementation
     // - formats: dictate which formats need to be copied
     // Return Value:
     // - true iff we we able to copy text (if a selection was active)
-    bool TerminalPage::_CopyText(const bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats)
+    bool TerminalPage::_CopyText(const bool singleLine, const WF::IReference<CopyFormat>& formats)
     {
         if (const auto& control{ _GetActiveControl() })
         {
@@ -2670,7 +2670,7 @@ namespace winrt::TerminalApp::implementation
     //   connection, then we'll return nullptr. Otherwise, we'll return a new
     //   Pane for this connection.
     std::shared_ptr<Pane> TerminalPage::_MakePane(const NewTerminalArgs& newTerminalArgs,
-                                                  const winrt::TerminalApp::TabBase& sourceTab,
+                                                  const MTApp::TabBase& sourceTab,
                                                   TerminalConnection::ITerminalConnection existingConnection)
     {
         TerminalSettingsCreateResult controlSettings{ nullptr };
@@ -2758,7 +2758,7 @@ namespace winrt::TerminalApp::implementation
     // - newAppearance
     // Return Value:
     // - <none>
-    void TerminalPage::_SetBackgroundImage(const winrt::Microsoft::Terminal::Settings::Model::IAppearanceConfig& newAppearance)
+    void TerminalPage::_SetBackgroundImage(const MTSM::IAppearanceConfig& newAppearance)
     {
         if (!_settings.GlobalSettings().UseBackgroundImageForWindow())
         {
@@ -2773,10 +2773,10 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        Windows::Foundation::Uri imageUri{ nullptr };
+        WF::Uri imageUri{ nullptr };
         try
         {
-            imageUri = Windows::Foundation::Uri{ path };
+            imageUri = WF::Uri{ path };
         }
         catch (...)
         {
@@ -3073,12 +3073,12 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::TerminalApp::IDialogPresenter TerminalPage::DialogPresenter() const
+    MTApp::IDialogPresenter TerminalPage::DialogPresenter() const
     {
         return _dialogPresenter.get();
     }
 
-    void TerminalPage::DialogPresenter(winrt::TerminalApp::IDialogPresenter dialogPresenter)
+    void TerminalPage::DialogPresenter(MTApp::IDialogPresenter dialogPresenter)
     {
         _dialogPresenter = dialogPresenter;
     }
@@ -3095,9 +3095,9 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - A TaskbarState object representing the combined taskbar state and
     //   progress percentage of all our tabs.
-    winrt::TerminalApp::TaskbarState TerminalPage::TaskbarState() const
+    MTApp::TaskbarState TerminalPage::TaskbarState() const
     {
-        auto state{ winrt::make<winrt::TerminalApp::implementation::TaskbarState>() };
+        auto state{ winrt::make<MTApp::implementation::TaskbarState>() };
 
         for (const auto& tab : _tabs)
         {
@@ -3329,8 +3329,8 @@ namespace winrt::TerminalApp::implementation
 
         const auto defaultBackgroundKey = winrt::box_value(L"TabViewItemHeaderBackground");
         const auto defaultForegroundKey = winrt::box_value(L"SystemControlForegroundBaseHighBrush");
-        winrt::Windows::UI::Xaml::Media::SolidColorBrush backgroundBrush;
-        winrt::Windows::UI::Xaml::Media::SolidColorBrush foregroundBrush;
+        WUXMedia::SolidColorBrush backgroundBrush;
+        WUXMedia::SolidColorBrush foregroundBrush;
 
         // TODO: Related to GH#3917 - I think if the system is set to "Dark"
         // theme, but the app is set to light theme, then this lookup still
@@ -3340,21 +3340,21 @@ namespace winrt::TerminalApp::implementation
         if (res.HasKey(defaultBackgroundKey))
         {
             auto obj = res.Lookup(defaultBackgroundKey);
-            backgroundBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
+            backgroundBrush = obj.try_as<WUXMedia::SolidColorBrush>();
         }
         else
         {
-            backgroundBrush = winrt::Windows::UI::Xaml::Media::SolidColorBrush{ winrt::Windows::UI::Colors::Black() };
+            backgroundBrush = WUXMedia::SolidColorBrush{ winrt::Windows::UI::Colors::Black() };
         }
 
         if (res.HasKey(defaultForegroundKey))
         {
             auto obj = res.Lookup(defaultForegroundKey);
-            foregroundBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
+            foregroundBrush = obj.try_as<WUXMedia::SolidColorBrush>();
         }
         else
         {
-            foregroundBrush = winrt::Windows::UI::Xaml::Media::SolidColorBrush{ winrt::Windows::UI::Colors::White() };
+            foregroundBrush = WUXMedia::SolidColorBrush{ winrt::Windows::UI::Colors::White() };
         }
 
         _newTabButton.Background(backgroundBrush);
@@ -3525,7 +3525,7 @@ namespace winrt::TerminalApp::implementation
             // GH#8767 - let unhandled keys in the SUI try to run commands too.
             sui.KeyDown({ this, &TerminalPage::_KeyDownHandler });
 
-            sui.OpenJson([weakThis{ get_weak() }](auto&& /*s*/, winrt::Microsoft::Terminal::Settings::Model::SettingsTarget e) {
+            sui.OpenJson([weakThis{ get_weak() }](auto&& /*s*/, MTSM::SettingsTarget e) {
                 if (auto page{ weakThis.get() })
                 {
                     page->_LaunchSettings(e);
@@ -3661,7 +3661,7 @@ namespace winrt::TerminalApp::implementation
     // - Displays a info popup guiding the user into setting their default terminal.
     void TerminalPage::ShowSetAsDefaultInfoBar() const
     {
-        if (::winrt::Windows::UI::Xaml::Application::Current().try_as<::winrt::TerminalApp::App>() == nullptr)
+        if (WUX::Application::Current().try_as<MTApp::App>() == nullptr)
         {
             // Just ignore this in the tests (where the Application::Current()
             // is not a TerminalApp::App)
@@ -3697,7 +3697,7 @@ namespace winrt::TerminalApp::implementation
         auto isUwp = false;
         try
         {
-            isUwp = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsUwp();
+            isUwp = WUX::Application::Current().as<MTApp::App>().Logic().IsUwp();
         }
         CATCH_LOG();
 
@@ -3800,14 +3800,14 @@ namespace winrt::TerminalApp::implementation
     // - element: The TeachingTip to set the theme on.
     // Return Value:
     // - <none>
-    void TerminalPage::_UpdateTeachingTipTheme(winrt::Windows::UI::Xaml::FrameworkElement element)
+    void TerminalPage::_UpdateTeachingTipTheme(WUX::FrameworkElement element)
     {
         auto theme{ _settings.GlobalSettings().CurrentTheme() };
         auto requestedTheme{ theme.RequestedTheme() };
         while (element)
         {
             element.RequestedTheme(requestedTheme);
-            element = element.Parent().try_as<winrt::Windows::UI::Xaml::FrameworkElement>();
+            element = element.Parent().try_as<WUX::FrameworkElement>();
         }
     }
 
@@ -3840,7 +3840,7 @@ namespace winrt::TerminalApp::implementation
                     tip.Closed({ page->get_weak(), &TerminalPage::_FocusActiveControl });
                 }
             }
-            _UpdateTeachingTipTheme(WindowIdToast().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
+            _UpdateTeachingTipTheme(WindowIdToast().try_as<WUX::FrameworkElement>());
 
             if (page->_windowIdToast != nullptr)
             {
@@ -3975,7 +3975,7 @@ namespace winrt::TerminalApp::implementation
                     tip.Closed({ page->get_weak(), &TerminalPage::_FocusActiveControl });
                 }
             }
-            _UpdateTeachingTipTheme(RenameFailedToast().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
+            _UpdateTeachingTipTheme(RenameFailedToast().try_as<WUX::FrameworkElement>());
 
             if (page->_windowRenameFailedToast != nullptr)
             {
@@ -4031,10 +4031,10 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - <none>
     void TerminalPage::_WindowRenamerKeyDown(const IInspectable& /*sender*/,
-                                             const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
+                                             const WUX::Input::KeyRoutedEventArgs& e)
     {
         const auto key = e.OriginalKey();
-        if (key == Windows::System::VirtualKey::Enter)
+        if (key == WS::VirtualKey::Enter)
         {
             _renamerPressedEnter = true;
         }
@@ -4048,15 +4048,15 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - <none>
     void TerminalPage::_WindowRenamerKeyUp(const IInspectable& sender,
-                                           const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
+                                           const WUX::Input::KeyRoutedEventArgs& e)
     {
         const auto key = e.OriginalKey();
-        if (key == Windows::System::VirtualKey::Enter && _renamerPressedEnter)
+        if (key == WS::VirtualKey::Enter && _renamerPressedEnter)
         {
             // User is done making changes, close the rename box
             _WindowRenamerActionClick(sender, nullptr);
         }
-        else if (key == Windows::System::VirtualKey::Escape)
+        else if (key == WS::VirtualKey::Escape)
         {
             // User wants to discard the changes they made
             WindowRenamerTextBox().Text(WindowName());
@@ -4184,7 +4184,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     winrt::fire_and_forget TerminalPage::_ConnectionStateChangedHandler(const IInspectable& sender, const IInspectable& /*args*/) const
     {
-        if (const auto coreState{ sender.try_as<winrt::Microsoft::Terminal::Control::ICoreState>() })
+        if (const auto coreState{ sender.try_as<MTControl::ICoreState>() })
         {
             const auto newConnectionState = coreState.ConnectionState();
             if (newConnectionState == ConnectionState::Failed && !_IsMessageDismissed(InfoBarMessage::CloseOnExitInfo))
@@ -4406,7 +4406,7 @@ namespace winrt::TerminalApp::implementation
         _SetNewTabButtonColor(bgColor, bgColor);
     }
 
-    void TerminalPage::_updateTabCloseButton(const winrt::Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem)
+    void TerminalPage::_updateTabCloseButton(const MUXC::TabViewItem& tabViewItem)
     {
         // Update the state of the close button to match the current theme.
         // IMPORTANT: Should be called AFTER the tab view item is added to the TabView.

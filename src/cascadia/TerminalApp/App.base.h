@@ -3,11 +3,11 @@
 namespace winrt::TerminalApp::implementation
 {
     template<typename D, typename... I>
-    struct App_baseWithProvider : public App_base<D, ::winrt::Windows::UI::Xaml::Markup::IXamlMetadataProvider>
+    struct App_baseWithProvider : public App_base<D, WUXMarkup::IXamlMetadataProvider>
     {
-        using IXamlType = ::winrt::Windows::UI::Xaml::Markup::IXamlType;
+        using IXamlType = WUXMarkup::IXamlType;
 
-        IXamlType GetXamlType(const ::winrt::Windows::UI::Xaml::Interop::TypeName& type)
+        IXamlType GetXamlType(const WUX::Interop::TypeName& type)
         {
             return _appProvider.GetXamlType(type);
         }
@@ -17,14 +17,14 @@ namespace winrt::TerminalApp::implementation
             return _appProvider.GetXamlType(fullName);
         }
 
-        ::winrt::com_array<::winrt::Windows::UI::Xaml::Markup::XmlnsDefinition> GetXmlnsDefinitions()
+        ::winrt::com_array<WUXMarkup::XmlnsDefinition> GetXmlnsDefinitions()
         {
             return _appProvider.GetXmlnsDefinitions();
         }
 
     private:
         bool _contentLoaded{ false };
-        winrt::TerminalApp::XamlMetaDataProvider _appProvider;
+        MTApp::XamlMetaDataProvider _appProvider;
     };
 
     template<typename D, typename... I>

@@ -8,7 +8,7 @@
 #include <LibraryResources.h>
 
 using namespace winrt::Microsoft::Terminal::Settings;
-using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
+using namespace MTSM::implementation;
 
 DefaultTerminal::DefaultTerminal(DelegationConfig::DelegationPackage&& pkg) :
     _pkg{ pkg }

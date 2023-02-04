@@ -85,17 +85,17 @@ namespace RemotingUnitTests
         winrt::hstring GetWindowLayout() DIE;
         void RequestQuitAll() DIE;
         void Quit() DIE;
-        TYPED_EVENT(WindowActivated, winrt::Windows::Foundation::IInspectable, Remoting::WindowActivatedArgs);
-        TYPED_EVENT(ExecuteCommandlineRequested, winrt::Windows::Foundation::IInspectable, Remoting::CommandlineArgs);
-        TYPED_EVENT(IdentifyWindowsRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(DisplayWindowIdRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(RenameRequested, winrt::Windows::Foundation::IInspectable, Remoting::RenameRequestArgs);
-        TYPED_EVENT(SummonRequested, winrt::Windows::Foundation::IInspectable, Remoting::SummonWindowBehavior);
-        TYPED_EVENT(ShowNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(HideNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(QuitRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(GetWindowLayoutRequested, winrt::Windows::Foundation::IInspectable, Remoting::GetWindowLayoutArgs);
+        TYPED_EVENT(WindowActivated, WF::IInspectable, Remoting::WindowActivatedArgs);
+        TYPED_EVENT(ExecuteCommandlineRequested, WF::IInspectable, Remoting::CommandlineArgs);
+        TYPED_EVENT(IdentifyWindowsRequested, WF::IInspectable, WF::IInspectable);
+        TYPED_EVENT(DisplayWindowIdRequested, WF::IInspectable, WF::IInspectable);
+        TYPED_EVENT(RenameRequested, WF::IInspectable, Remoting::RenameRequestArgs);
+        TYPED_EVENT(SummonRequested, WF::IInspectable, Remoting::SummonWindowBehavior);
+        TYPED_EVENT(ShowNotificationIconRequested, WF::IInspectable, WF::IInspectable);
+        TYPED_EVENT(HideNotificationIconRequested, WF::IInspectable, WF::IInspectable);
+        TYPED_EVENT(QuitAllRequested, WF::IInspectable, WF::IInspectable);
+        TYPED_EVENT(QuitRequested, WF::IInspectable, WF::IInspectable);
+        TYPED_EVENT(GetWindowLayoutRequested, WF::IInspectable, Remoting::GetWindowLayoutArgs);
     };
 
     // Same idea.
@@ -112,15 +112,15 @@ namespace RemotingUnitTests
 
         void SummonAllWindows() DIE;
         bool DoesQuakeWindowExist() DIE;
-        winrt::Windows::Foundation::Collections::IVectorView<Remoting::PeasantInfo> GetPeasantInfos() DIE;
-        winrt::Windows::Foundation::Collections::IVector<winrt::hstring> GetAllWindowLayouts() DIE;
+        WFC::IVectorView<Remoting::PeasantInfo> GetPeasantInfos() DIE;
+        WFC::IVector<winrt::hstring> GetAllWindowLayouts() DIE;
 
-        TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, Remoting::FindTargetWindowArgs);
-        TYPED_EVENT(ShowNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(HideNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(WindowCreated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(WindowClosed, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, Remoting::QuitAllRequestedArgs);
+        TYPED_EVENT(FindTargetWindowRequested, WF::IInspectable, Remoting::FindTargetWindowArgs);
+        TYPED_EVENT(ShowNotificationIconRequested, WF::IInspectable, WF::IInspectable);
+        TYPED_EVENT(HideNotificationIconRequested, WF::IInspectable, WF::IInspectable);
+        TYPED_EVENT(WindowCreated, WF::IInspectable, WF::IInspectable);
+        TYPED_EVENT(WindowClosed, WF::IInspectable, WF::IInspectable);
+        TYPED_EVENT(QuitAllRequested, WF::IInspectable, Remoting::QuitAllRequestedArgs);
     };
 
     class RemotingTests
@@ -189,10 +189,10 @@ namespace RemotingUnitTests
         static void _killPeasant(const com_ptr<Remoting::implementation::Monarch>& m,
                                  const uint64_t peasantID);
 
-        static void _findTargetWindowHelper(const winrt::Windows::Foundation::IInspectable& sender,
+        static void _findTargetWindowHelper(const WF::IInspectable& sender,
                                             const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args);
 
-        static void _findTargetWindowByNameHelper(const winrt::Windows::Foundation::IInspectable& sender,
+        static void _findTargetWindowByNameHelper(const WF::IInspectable& sender,
                                                   const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args);
 
         // This template that lets us call a private ctor for Monarch/Peasant, unlike make_self.
@@ -234,7 +234,7 @@ namespace RemotingUnitTests
 
     // Helper to get the first argument out of the commandline, and try to
     // convert it to an int.
-    void RemotingTests::_findTargetWindowHelper(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+    void RemotingTests::_findTargetWindowHelper(const WF::IInspectable& /*sender*/,
                                                 const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args)
     {
         const auto arguments = args.Args().Commandline();
@@ -247,7 +247,7 @@ namespace RemotingUnitTests
 
     // Helper to get the first argument out of the commandline, and return it as
     // a name to use.
-    void RemotingTests::_findTargetWindowByNameHelper(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+    void RemotingTests::_findTargetWindowByNameHelper(const WF::IInspectable& /*sender*/,
                                                       const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args)
     {
         const auto arguments = args.Args().Commandline();

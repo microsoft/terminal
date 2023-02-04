@@ -7,7 +7,7 @@
 #include "MinMaxCloseControl.g.cpp"
 #include <LibraryResources.h>
 
-using namespace winrt::Windows::UI::Xaml;
+using namespace WUX;
 
 namespace winrt::TerminalApp::implementation
 {
@@ -27,7 +27,7 @@ namespace winrt::TerminalApp::implementation
         // Get our dispatcher. This will get us the same dispatcher as
         // Dispatcher(), but it's a DispatcherQueue, so we can use it with
         // ThrottledFunc
-        auto dispatcher = winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
+        auto dispatcher = WS::DispatcherQueue::GetForCurrentThread();
 
         InitializeComponent();
 
@@ -66,18 +66,18 @@ namespace winrt::TerminalApp::implementation
 
     // These event handlers simply forward each buttons click events up to the
     // events we've exposed.
-    void MinMaxCloseControl::_MinimizeClick(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+    void MinMaxCloseControl::_MinimizeClick(const WF::IInspectable& /*sender*/,
                                             const RoutedEventArgs& e)
     {
         _MinimizeClickHandlers(*this, e);
     }
 
-    void MinMaxCloseControl::_MaximizeClick(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+    void MinMaxCloseControl::_MaximizeClick(const WF::IInspectable& /*sender*/,
                                             const RoutedEventArgs& e)
     {
         _MaximizeClickHandlers(*this, e);
     }
-    void MinMaxCloseControl::_CloseClick(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+    void MinMaxCloseControl::_CloseClick(const WF::IInspectable& /*sender*/,
                                          const RoutedEventArgs& e)
     {
         _CloseClickHandlers(*this, e);

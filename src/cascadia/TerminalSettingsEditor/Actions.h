@@ -38,8 +38,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct KeyBindingViewModel : KeyBindingViewModelT<KeyBindingViewModel>, ViewModelHelper<KeyBindingViewModel>
     {
     public:
-        KeyBindingViewModel(const Windows::Foundation::Collections::IObservableVector<hstring>& availableActions);
-        KeyBindingViewModel(const Control::KeyChord& keys, const hstring& name, const Windows::Foundation::Collections::IObservableVector<hstring>& availableActions);
+        KeyBindingViewModel(const WFC::IObservableVector<hstring>& availableActions);
+        KeyBindingViewModel(const Control::KeyChord& keys, const hstring& name, const WFC::IObservableVector<hstring>& availableActions);
 
         hstring Name() const { return _CurrentAction; }
         hstring KeyChordText() const { return _KeyChordText; }
@@ -75,7 +75,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         //       of responsibilities.
         VIEW_MODEL_OBSERVABLE_PROPERTY(IInspectable, ProposedAction);
         VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, CurrentAction);
-        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<hstring>, AvailableActions, nullptr);
+        WINRT_PROPERTY(WFC::IObservableVector<hstring>, AvailableActions, nullptr);
 
         // ProposedKeys: the keys proposed by the control; may disagree with the settings model.
         // CurrentKeys:  the key chord bound in the settings model.
@@ -84,12 +84,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsInEditMode, false);
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsNewlyAdded, false);
-        VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::UI::Xaml::Controls::Flyout, AcceptChangesFlyout, nullptr);
+        VIEW_MODEL_OBSERVABLE_PROPERTY(WUXC::Flyout, AcceptChangesFlyout, nullptr);
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsAutomationPeerAttached, false);
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsHovered, false);
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsContainerFocused, false);
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsEditButtonFocused, false);
-        VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::UI::Xaml::Media::Brush, ContainerBackground, nullptr);
+        VIEW_MODEL_OBSERVABLE_PROPERTY(WUXMedia::Brush, ContainerBackground, nullptr);
         TYPED_EVENT(ModifyKeyBindingRequested, Editor::KeyBindingViewModel, Editor::ModifyKeyBindingEventArgs);
         TYPED_EVENT(DeleteKeyBindingRequested, Editor::KeyBindingViewModel, Terminal::Control::KeyChord);
         TYPED_EVENT(DeleteNewlyAddedKeyBinding, Editor::KeyBindingViewModel, IInspectable);
@@ -112,16 +112,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         Actions();
 
-        void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
-        Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
-        void AddNew_Click(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
+        void OnNavigatedTo(const WUX::Navigation::NavigationEventArgs& e);
+        WUX::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
+        void AddNew_Click(const IInspectable& sender, const WUX::RoutedEventArgs& eventArgs);
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        WINRT_CALLBACK(PropertyChanged, WUX::Data::PropertyChangedEventHandler);
         WINRT_PROPERTY(Editor::ActionsPageNavigationState, State, nullptr);
-        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::KeyBindingViewModel>, KeyBindingList);
+        WINRT_PROPERTY(WFC::IObservableVector<Editor::KeyBindingViewModel>, KeyBindingList);
 
     private:
-        void _ViewModelPropertyChangedHandler(const Windows::Foundation::IInspectable& senderVM, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
+        void _ViewModelPropertyChangedHandler(const WF::IInspectable& senderVM, const WUX::Data::PropertyChangedEventArgs& args);
         void _ViewModelDeleteKeyBindingHandler(const Editor::KeyBindingViewModel& senderVM, const Control::KeyChord& args);
         void _ViewModelModifyKeyBindingHandler(const Editor::KeyBindingViewModel& senderVM, const Editor::ModifyKeyBindingEventArgs& args);
         void _ViewModelDeleteNewlyAddedKeyBindingHandler(const Editor::KeyBindingViewModel& senderVM, const IInspectable& args);
@@ -130,8 +130,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _RegisterEvents(com_ptr<implementation::KeyBindingViewModel>& kbdVM);
 
         bool _AutomationPeerAttached{ false };
-        Windows::Foundation::Collections::IObservableVector<hstring> _AvailableActionAndArgs;
-        Windows::Foundation::Collections::IMap<hstring, Model::ActionAndArgs> _AvailableActionMap;
+        WFC::IObservableVector<hstring> _AvailableActionAndArgs;
+        WFC::IMap<hstring, Model::ActionAndArgs> _AvailableActionMap;
     };
 }
 

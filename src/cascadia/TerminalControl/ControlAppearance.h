@@ -20,15 +20,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     private:
         // Color Table is special because it's an array
-        std::array<winrt::Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE> _ColorTable;
+        std::array<MTCore::Color, COLOR_TABLE_SIZE> _ColorTable;
 
     public:
-        winrt::Microsoft::Terminal::Core::Color GetColorTableEntry(int32_t index) noexcept
+        MTCore::Color GetColorTableEntry(int32_t index) noexcept
         {
             return _ColorTable.at(index);
         }
         void SetColorTableEntry(int32_t index,
-                                winrt::Microsoft::Terminal::Core::Color color) noexcept
+                                MTCore::Color color) noexcept
         {
             _ColorTable.at(index) = color;
         }

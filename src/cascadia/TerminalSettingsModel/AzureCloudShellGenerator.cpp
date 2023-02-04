@@ -10,8 +10,8 @@
 #include "DynamicProfileUtils.h"
 
 using namespace ::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::TerminalConnection;
+using namespace MTSM;
+using namespace MTConnection;
 
 std::wstring_view AzureCloudShellGenerator::GetNamespace() const noexcept
 {

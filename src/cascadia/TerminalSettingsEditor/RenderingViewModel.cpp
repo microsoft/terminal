@@ -5,8 +5,8 @@
 #include "RenderingViewModel.h"
 #include "RenderingViewModel.g.cpp"
 
-using namespace winrt::Windows::Foundation;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace WF;
+using namespace MTSM;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {

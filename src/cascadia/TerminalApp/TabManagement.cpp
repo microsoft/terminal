@@ -25,28 +25,28 @@
 #include <shlobj.h>
 
 using namespace winrt;
-using namespace winrt::Windows::Foundation::Collections;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::UI::Xaml::Controls;
-using namespace winrt::Windows::UI::Core;
-using namespace winrt::Windows::System;
+using namespace WFC;
+using namespace WUX;
+using namespace WUXC;
+using namespace WUC;
+using namespace WS;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
-using namespace winrt::Windows::UI::Text;
+using namespace WUT;
 using namespace winrt::Windows::Storage;
 using namespace winrt::Windows::Storage::Pickers;
 using namespace winrt::Windows::Storage::Provider;
 using namespace winrt::Microsoft::Terminal;
-using namespace winrt::Microsoft::Terminal::Control;
-using namespace winrt::Microsoft::Terminal::TerminalConnection;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace MTControl;
+using namespace MTConnection;
+using namespace MTSM;
 using namespace ::TerminalApp;
 using namespace ::Microsoft::Console;
 
 namespace winrt
 {
-    namespace MUX = Microsoft::UI::Xaml;
-    namespace WUX = Windows::UI::Xaml;
-    using IInspectable = Windows::Foundation::IInspectable;
+    namespace MUX = MUX;
+    namespace WUX = WUX;
+    using IInspectable = WF::IInspectable;
 }
 
 namespace winrt::TerminalApp::implementation
@@ -63,7 +63,7 @@ namespace winrt::TerminalApp::implementation
     // - existingConnection: An optional connection that is already established to a PTY
     //   for this tab to host instead of creating one.
     //   If not defined, the tab will create the connection.
-    HRESULT TerminalPage::_OpenNewTab(const NewTerminalArgs& newTerminalArgs, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection)
+    HRESULT TerminalPage::_OpenNewTab(const NewTerminalArgs& newTerminalArgs, MTConnection::ITerminalConnection existingConnection)
     try
     {
         const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
@@ -462,7 +462,7 @@ namespace winrt::TerminalApp::implementation
     // - Removes the tab (both TerminalControl and XAML) after prompting for approval
     // Arguments:
     // - tab: the tab to remove
-    winrt::Windows::Foundation::IAsyncAction TerminalPage::_HandleCloseTabRequested(winrt::TerminalApp::TabBase tab)
+    WF::IAsyncAction TerminalPage::_HandleCloseTabRequested(MTApp::TabBase tab)
     {
         if (tab.ReadOnly())
         {
@@ -486,7 +486,7 @@ namespace winrt::TerminalApp::implementation
     // - Removes the tab (both TerminalControl and XAML)
     // Arguments:
     // - tab: the tab to remove
-    void TerminalPage::_RemoveTab(const winrt::TerminalApp::TabBase& tab)
+    void TerminalPage::_RemoveTab(const MTApp::TabBase& tab)
     {
         uint32_t tabIndex{};
         if (!_tabs.IndexOf(tab, tabIndex))
@@ -585,7 +585,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Sets focus to the tab to the right or left the currently selected tab.
-    void TerminalPage::_SelectNextTab(const bool bMoveRight, const Windows::Foundation::IReference<Microsoft::Terminal::Settings::Model::TabSwitcherMode>& customTabSwitcherMode)
+    void TerminalPage::_SelectNextTab(const bool bMoveRight, const WF::IReference<Microsoft::Terminal::Settings::Model::TabSwitcherMode>& customTabSwitcherMode)
     {
         const auto index{ _GetFocusedTabIndex().value_or(0) };
         const auto tabSwitchMode = customTabSwitcherMode ? customTabSwitcherMode.Value() : _settings.GlobalSettings().TabSwitcherMode();
@@ -653,7 +653,7 @@ namespace winrt::TerminalApp::implementation
     // - tab - tab to select
     // Return Value:
     // - <none>
-    void TerminalPage::_OnSwitchToTabRequested(const IInspectable& /*sender*/, const winrt::TerminalApp::TabBase& tab)
+    void TerminalPage::_OnSwitchToTabRequested(const IInspectable& /*sender*/, const MTApp::TabBase& tab)
     {
         uint32_t index{};
         if (_tabs.IndexOf(tab, index))
@@ -682,7 +682,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - returns the currently focused tab. This might return null,
     //   so make sure to check the result!
-    winrt::TerminalApp::TabBase TerminalPage::_GetFocusedTab() const noexcept
+    MTApp::TabBase TerminalPage::_GetFocusedTab() const noexcept
     {
         if (auto index{ _GetFocusedTabIndex() })
         {
@@ -706,7 +706,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - returns a tab corresponding to a view item. This might return null,
     //   so make sure to check the result!
-    winrt::TerminalApp::TabBase TerminalPage::_GetTabByTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem) const noexcept
+    MTApp::TabBase TerminalPage::_GetTabByTabViewItem(const MUXC::TabViewItem& tabViewItem) const noexcept
     {
         uint32_t tabIndexFromControl{};
         if (_tabView.TabItems().IndexOf(tabViewItem, tabIndexFromControl))
@@ -727,7 +727,7 @@ namespace winrt::TerminalApp::implementation
     // - tab: tab to focus.
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TerminalPage::_SetFocusedTab(const winrt::TerminalApp::TabBase tab)
+    winrt::fire_and_forget TerminalPage::_SetFocusedTab(const MTApp::TabBase tab)
     {
         // GH#1117: This is a workaround because _tabView.SelectedIndex(tabIndex)
         //          sometimes set focus to an incorrect tab after removing some tabs
@@ -752,7 +752,7 @@ namespace winrt::TerminalApp::implementation
     // - pane: the pane that is about to be closed.
     // Return Value:
     // - bool indicating whether the (read-only) pane can be closed.
-    winrt::Windows::Foundation::IAsyncOperation<bool> TerminalPage::_PaneConfirmCloseReadOnly(std::shared_ptr<Pane> pane)
+    WF::IAsyncOperation<bool> TerminalPage::_PaneConfirmCloseReadOnly(std::shared_ptr<Pane> pane)
     {
         if (pane->ContainsReadOnly())
         {
@@ -883,7 +883,7 @@ namespace winrt::TerminalApp::implementation
     // - Closes provided tabs one by one
     // Arguments:
     // - tabs - tabs to remove
-    winrt::fire_and_forget TerminalPage::_RemoveTabs(const std::vector<winrt::TerminalApp::TabBase> tabs)
+    winrt::fire_and_forget TerminalPage::_RemoveTabs(const std::vector<MTApp::TabBase> tabs)
     {
         for (auto& tab : tabs)
         {
@@ -900,16 +900,16 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - sender: the control that originated this event
     // - eventArgs: the event's constituent arguments
-    void TerminalPage::_OnTabItemsChanged(const IInspectable& /*sender*/, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs)
+    void TerminalPage::_OnTabItemsChanged(const IInspectable& /*sender*/, const WFC::IVectorChangedEventArgs& eventArgs)
     {
         if (_rearranging)
         {
-            if (eventArgs.CollectionChange() == Windows::Foundation::Collections::CollectionChange::ItemRemoved)
+            if (eventArgs.CollectionChange() == WFC::CollectionChange::ItemRemoved)
             {
                 _rearrangeFrom = eventArgs.Index();
             }
 
-            if (eventArgs.CollectionChange() == Windows::Foundation::Collections::CollectionChange::ItemInserted)
+            if (eventArgs.CollectionChange() == WFC::CollectionChange::ItemInserted)
             {
                 _rearrangeTo = eventArgs.Index();
             }
@@ -924,7 +924,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - sender: the control that originated this event (TabViewItem)
     // - eventArgs: the event's constituent arguments
-    void TerminalPage::_OnTabClick(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs)
+    void TerminalPage::_OnTabClick(const IInspectable& sender, const WUX::Input::PointerRoutedEventArgs& eventArgs)
     {
         if (eventArgs.GetCurrentPoint(*this).Properties().IsMiddleButtonPressed())
         {
@@ -941,7 +941,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_UpdatedSelectedTab(const winrt::TerminalApp::TabBase& tab)
+    void TerminalPage::_UpdatedSelectedTab(const MTApp::TabBase& tab)
     {
         // Unfocus all the tabs.
         for (auto tab : _tabs)
@@ -990,7 +990,7 @@ namespace winrt::TerminalApp::implementation
         CATCH_LOG();
     }
 
-    void TerminalPage::_UpdateBackground(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile)
+    void TerminalPage::_UpdateBackground(const MTSM::Profile& profile)
     {
         if (profile && _settings.GlobalSettings().UseBackgroundImageForWindow())
         {
@@ -1041,7 +1041,7 @@ namespace winrt::TerminalApp::implementation
     // - tab: tab to bump.
     // Return Value:
     // - <none>
-    void TerminalPage::_UpdateMRUTab(const winrt::TerminalApp::TabBase& tab)
+    void TerminalPage::_UpdateMRUTab(const MTApp::TabBase& tab)
     {
         uint32_t mruIndex;
         if (_mruTabs.IndexOf(tab, mruIndex))
@@ -1141,7 +1141,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_RemoveAllTabs()
     {
         // Since _RemoveTabs is asynchronous, create a snapshot of the  tabs we want to remove
-        std::vector<winrt::TerminalApp::TabBase> tabsToRemove;
+        std::vector<MTApp::TabBase> tabsToRemove;
         std::copy(begin(_tabs), end(_tabs), std::back_inserter(tabsToRemove));
         _RemoveTabs(tabsToRemove);
     }

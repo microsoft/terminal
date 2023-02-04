@@ -136,7 +136,7 @@ namespace
 }
 
 using namespace ::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace MTSM;
 
 // Function Description:
 // - Finds all powershell instances with the traditional layout under a directory.

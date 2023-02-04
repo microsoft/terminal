@@ -116,8 +116,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::hstring Hash() const noexcept;
         Model::CascadiaSettings Copy() const;
         Model::GlobalAppSettings GlobalSettings() const;
-        winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> AllProfiles() const noexcept;
-        winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> ActiveProfiles() const noexcept;
+        WFC::IObservableVector<Model::Profile> AllProfiles() const noexcept;
+        WFC::IObservableVector<Model::Profile> ActiveProfiles() const noexcept;
         Model::ActionMap ActionMap() const noexcept;
         void WriteSettingsToDisk();
         Json::Value ToJson() const;
@@ -131,15 +131,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::Profile DuplicateProfile(const Model::Profile& source);
 
         // load errors
-        winrt::Windows::Foundation::Collections::IVectorView<Model::SettingsLoadWarnings> Warnings() const;
-        winrt::Windows::Foundation::IReference<Model::SettingsLoadErrors> GetLoadingError() const;
+        WFC::IVectorView<Model::SettingsLoadWarnings> Warnings() const;
+        WF::IReference<Model::SettingsLoadErrors> GetLoadingError() const;
         winrt::hstring GetSerializationErrorMessage() const;
 
         // defterm
         static std::wstring NormalizeCommandLine(LPCWSTR commandLine);
         static bool IsDefaultTerminalAvailable() noexcept;
         static bool IsDefaultTerminalSet() noexcept;
-        winrt::Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> DefaultTerminals() noexcept;
+        WFC::IObservableVector<Model::DefaultTerminal> DefaultTerminals() noexcept;
         Model::DefaultTerminal CurrentDefaultTerminal() noexcept;
         void CurrentDefaultTerminal(const Model::DefaultTerminal& terminal);
 
@@ -154,7 +154,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void _resolveDefaultProfile() const;
         void _resolveNewTabMenuProfiles() const;
-        void _resolveNewTabMenuProfilesSet(const winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry> entries, winrt::Windows::Foundation::Collections::IMap<int, Model::Profile>& remainingProfiles, Model::RemainingProfilesEntry& remainingProfilesEntry) const;
+        void _resolveNewTabMenuProfilesSet(const WFC::IVector<Model::NewTabMenuEntry> entries, WFC::IMap<int, Model::Profile>& remainingProfiles, Model::RemainingProfilesEntry& remainingProfilesEntry) const;
 
         void _validateSettings();
         void _validateAllSchemesExist();
@@ -170,16 +170,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::hstring _hash;
         winrt::com_ptr<implementation::GlobalAppSettings> _globals = winrt::make_self<implementation::GlobalAppSettings>();
         winrt::com_ptr<implementation::Profile> _baseLayerProfile = winrt::make_self<implementation::Profile>();
-        winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> _allProfiles = winrt::single_threaded_observable_vector<Model::Profile>();
-        winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> _activeProfiles = winrt::single_threaded_observable_vector<Model::Profile>();
+        WFC::IObservableVector<Model::Profile> _allProfiles = winrt::single_threaded_observable_vector<Model::Profile>();
+        WFC::IObservableVector<Model::Profile> _activeProfiles = winrt::single_threaded_observable_vector<Model::Profile>();
 
         // load errors
-        winrt::Windows::Foundation::Collections::IVector<Model::SettingsLoadWarnings> _warnings = winrt::single_threaded_vector<Model::SettingsLoadWarnings>();
-        winrt::Windows::Foundation::IReference<Model::SettingsLoadErrors> _loadError;
+        WFC::IVector<Model::SettingsLoadWarnings> _warnings = winrt::single_threaded_vector<Model::SettingsLoadWarnings>();
+        WF::IReference<Model::SettingsLoadErrors> _loadError;
         winrt::hstring _deserializationErrorMessage;
 
         // defterm
-        winrt::Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> _defaultTerminals{ nullptr };
+        WFC::IObservableVector<Model::DefaultTerminal> _defaultTerminals{ nullptr };
         Model::DefaultTerminal _currentDefaultTerminal{ nullptr };
 
         // GetProfileForArgs cache

@@ -37,20 +37,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 #define MTSM_APPLICATION_STATE_FIELDS(X)                                                                                                                                  \
     X(FileSource::Shared, winrt::hstring, SettingsHash, "settingsHash")                                                                                                   \
     X(FileSource::Shared, std::unordered_set<winrt::guid>, GeneratedProfiles, "generatedProfiles")                                                                        \
-    X(FileSource::Local, Windows::Foundation::Collections::IVector<Model::WindowLayout>, PersistedWindowLayouts, "persistedWindowLayouts")                                \
-    X(FileSource::Shared, Windows::Foundation::Collections::IVector<hstring>, RecentCommands, "recentCommands")                                                           \
-    X(FileSource::Shared, Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage>, DismissedMessages, "dismissedMessages") \
-    X(FileSource::Local, Windows::Foundation::Collections::IVector<hstring>, AllowedCommandlines, "allowedCommandlines")
+    X(FileSource::Local, WFC::IVector<Model::WindowLayout>, PersistedWindowLayouts, "persistedWindowLayouts")                                \
+    X(FileSource::Shared, WFC::IVector<hstring>, RecentCommands, "recentCommands")                                                           \
+    X(FileSource::Shared, WFC::IVector<MTSM::InfoBarMessage>, DismissedMessages, "dismissedMessages") \
+    X(FileSource::Local, WFC::IVector<hstring>, AllowedCommandlines, "allowedCommandlines")
 
     struct WindowLayout : WindowLayoutT<WindowLayout>
     {
         static winrt::hstring ToJson(const Model::WindowLayout& layout);
         static Model::WindowLayout FromJson(const winrt::hstring& json);
 
-        WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Model::ActionAndArgs>, TabLayout, nullptr);
-        WINRT_PROPERTY(winrt::Windows::Foundation::IReference<Model::LaunchPosition>, InitialPosition, nullptr);
-        WINRT_PROPERTY(winrt::Windows::Foundation::IReference<winrt::Windows::Foundation::Size>, InitialSize, nullptr);
-        WINRT_PROPERTY(winrt::Windows::Foundation::IReference<Model::LaunchMode>, LaunchMode, nullptr);
+        WINRT_PROPERTY(WFC::IVector<Model::ActionAndArgs>, TabLayout, nullptr);
+        WINRT_PROPERTY(WF::IReference<Model::LaunchPosition>, InitialPosition, nullptr);
+        WINRT_PROPERTY(WF::IReference<WF::Size>, InitialSize, nullptr);
+        WINRT_PROPERTY(WF::IReference<Model::LaunchMode>, LaunchMode, nullptr);
 
         friend ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<Model::WindowLayout>;
     };

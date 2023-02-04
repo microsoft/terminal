@@ -5,7 +5,7 @@
 #include "Rendering.h"
 #include "Rendering.g.cpp"
 
-using namespace winrt::Windows::UI::Xaml::Navigation;
+using namespace WUX::Navigation;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {

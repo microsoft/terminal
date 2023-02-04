@@ -29,7 +29,7 @@ public:
     // this is the same for all DPIs
     static constexpr const int topBorderVisibleHeight = 1;
 
-    NonClientIslandWindow(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) noexcept;
+    NonClientIslandWindow(const WUX::ElementTheme& requestedTheme) noexcept;
     virtual ~NonClientIslandWindow() override;
 
     void MakeWindow() noexcept override;
@@ -43,27 +43,27 @@ public:
     void Initialize() override;
 
     void OnAppInitialized() override;
-    void SetContent(winrt::Windows::UI::Xaml::UIElement content) override;
-    void SetTitlebarContent(winrt::Windows::UI::Xaml::UIElement content);
-    void OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme) override;
+    void SetContent(WUX::UIElement content) override;
+    void SetTitlebarContent(WUX::UIElement content);
+    void OnApplicationThemeChanged(const WUX::ElementTheme& requestedTheme) override;
 
-    void SetTitlebarBackground(winrt::Windows::UI::Xaml::Media::Brush brush);
+    void SetTitlebarBackground(WUXMedia::Brush brush);
 
     virtual void UseMica(const bool newValue, const double titlebarOpacity) override;
 
 private:
     std::optional<til::point> _oldIslandPos;
 
-    winrt::TerminalApp::TitlebarControl _titlebar{ nullptr };
-    winrt::Windows::UI::Xaml::UIElement _clientContent{ nullptr };
+    MTApp::TitlebarControl _titlebar{ nullptr };
+    WUX::UIElement _clientContent{ nullptr };
 
     wil::unique_hbrush _backgroundBrush;
     til::color _backgroundBrushColor;
 
-    winrt::Windows::UI::Xaml::Controls::Border _dragBar{ nullptr };
+    WUXC::Border _dragBar{ nullptr };
     wil::unique_hwnd _dragBarWindow;
 
-    winrt::Windows::UI::Xaml::ElementTheme _theme;
+    WUX::ElementTheme _theme;
 
     bool _useMica{ false };
     double _titlebarOpacity{ 1.0 };
@@ -86,7 +86,7 @@ private:
     [[nodiscard]] LRESULT _OnPaint() noexcept;
     [[nodiscard]] LRESULT _OnSetCursor(WPARAM wParam, LPARAM lParam) const noexcept;
     void _OnMaximizeChange() noexcept;
-    void _OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs eventArgs);
+    void _OnDragBarSizeChanged(WF::IInspectable sender, WUX::SizeChangedEventArgs eventArgs);
 
     void _SetIsBorderless(const bool borderlessEnabled) override;
     void _SetIsFullscreen(const bool fullscreenEnabled) override;

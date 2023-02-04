@@ -83,7 +83,7 @@ private:                                                                        
 //
 // #define MY_FOO_ARGS(X)                    \
 //     X(ParamOneType, One, "one", {validation}, {default args}) \
-//     X(Windows::Foundation::IReference<ParamTwoType>, Two, "two", {validation}, nullptr)
+//     X(WF::IReference<ParamTwoType>, Two, "two", {validation}, nullptr)
 //     { etc... }
 //
 // If one of your properties needs some additional validation done to it, then
@@ -93,7 +93,7 @@ private:                                                                        
 ////////////////////////////////////////////////////////////////////////////////
 #define COPY_TEXT_ARGS(X)                           \
     X(bool, SingleLine, "singleLine", false, false) \
-    X(Windows::Foundation::IReference<Control::CopyFormat>, CopyFormatting, "copyFormatting", false, nullptr)
+    X(WF::IReference<Control::CopyFormat>, CopyFormatting, "copyFormatting", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define MOVE_PANE_ARGS(X) \
@@ -149,7 +149,7 @@ private:                                                                        
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SET_TAB_COLOR_ARGS(X) \
-    X(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, "color", false, nullptr)
+    X(WF::IReference<Windows::UI::Color>, TabColor, "color", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define RENAME_TAB_ARGS(X) \
@@ -161,15 +161,15 @@ private:                                                                        
 
 ////////////////////////////////////////////////////////////////////////////////
 #define CLOSE_OTHER_TABS_ARGS(X) \
-    X(Windows::Foundation::IReference<uint32_t>, Index, "index", false, nullptr)
+    X(WF::IReference<uint32_t>, Index, "index", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define CLOSE_TABS_AFTER_ARGS(X) \
-    X(Windows::Foundation::IReference<uint32_t>, Index, "index", false, nullptr)
+    X(WF::IReference<uint32_t>, Index, "index", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define CLOSE_TAB_ARGS(X) \
-    X(Windows::Foundation::IReference<uint32_t>, Index, "index", false, nullptr)
+    X(WF::IReference<uint32_t>, Index, "index", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define MOVE_TAB_ARGS(X) \
@@ -177,11 +177,11 @@ private:                                                                        
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SCROLL_UP_ARGS(X) \
-    X(Windows::Foundation::IReference<uint32_t>, RowsToScroll, "rowsToScroll", false, nullptr)
+    X(WF::IReference<uint32_t>, RowsToScroll, "rowsToScroll", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SCROLL_DOWN_ARGS(X) \
-    X(Windows::Foundation::IReference<uint32_t>, RowsToScroll, "rowsToScroll", false, nullptr)
+    X(WF::IReference<uint32_t>, RowsToScroll, "rowsToScroll", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SCROLL_TO_MARK_ARGS(X) \
@@ -189,7 +189,7 @@ private:                                                                        
 
 ////////////////////////////////////////////////////////////////////////////////
 #define ADD_MARK_ARGS(X) \
-    X(Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>, Color, "color", false, nullptr)
+    X(WF::IReference<Microsoft::Terminal::Core::Color>, Color, "color", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define TOGGLE_COMMAND_PALETTE_ARGS(X) \
@@ -201,11 +201,11 @@ private:                                                                        
 
 ////////////////////////////////////////////////////////////////////////////////
 #define PREV_TAB_ARGS(X) \
-    X(Windows::Foundation::IReference<TabSwitcherMode>, SwitcherMode, "tabSwitcherMode", false, nullptr)
+    X(WF::IReference<TabSwitcherMode>, SwitcherMode, "tabSwitcherMode", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define NEXT_TAB_ARGS(X) \
-    X(Windows::Foundation::IReference<TabSwitcherMode>, SwitcherMode, "tabSwitcherMode", false, nullptr)
+    X(WF::IReference<TabSwitcherMode>, SwitcherMode, "tabSwitcherMode", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define RENAME_WINDOW_ARGS(X) \
@@ -229,7 +229,7 @@ private:                                                                        
 
 ////////////////////////////////////////////////////////////////////////////////
 #define CLEAR_BUFFER_ARGS(X) \
-    X(winrt::Microsoft::Terminal::Control::ClearBufferType, Clear, "clear", false, winrt::Microsoft::Terminal::Control::ClearBufferType::All)
+    X(MTControl::ClearBufferType, Clear, "clear", false, MTControl::ClearBufferType::All)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define ADJUST_OPACITY_ARGS(X)               \
@@ -238,9 +238,9 @@ private:                                                                        
 
 ////////////////////////////////////////////////////////////////////////////////
 #define COLOR_SELECTION_ARGS(X)                                                                      \
-    X(winrt::Microsoft::Terminal::Control::SelectionColor, Foreground, "foreground", false, nullptr) \
-    X(winrt::Microsoft::Terminal::Control::SelectionColor, Background, "background", false, nullptr) \
-    X(winrt::Microsoft::Terminal::Core::MatchMode, MatchMode, "matchMode", false, winrt::Microsoft::Terminal::Core::MatchMode::None)
+    X(MTControl::SelectionColor, Foreground, "foreground", false, nullptr) \
+    X(MTControl::SelectionColor, Background, "background", false, nullptr) \
+    X(MTCore::MatchMode, MatchMode, "matchMode", false, MTCore::MatchMode::None)
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -270,12 +270,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ACTION_ARG(winrt::hstring, Commandline, L"");
         ACTION_ARG(winrt::hstring, StartingDirectory, L"");
         ACTION_ARG(winrt::hstring, TabTitle, L"");
-        ACTION_ARG(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, nullptr);
-        ACTION_ARG(Windows::Foundation::IReference<int32_t>, ProfileIndex, nullptr);
+        ACTION_ARG(WF::IReference<Windows::UI::Color>, TabColor, nullptr);
+        ACTION_ARG(WF::IReference<int32_t>, ProfileIndex, nullptr);
         ACTION_ARG(winrt::hstring, Profile, L"");
-        ACTION_ARG(Windows::Foundation::IReference<bool>, SuppressApplicationTitle, nullptr);
+        ACTION_ARG(WF::IReference<bool>, SuppressApplicationTitle, nullptr);
         ACTION_ARG(winrt::hstring, ColorScheme);
-        ACTION_ARG(Windows::Foundation::IReference<bool>, Elevate, nullptr);
+        ACTION_ARG(WF::IReference<bool>, Elevate, nullptr);
 
         static constexpr std::string_view CommandlineKey{ "commandline" };
         static constexpr std::string_view StartingDirectoryKey{ "startingDirectory" };
@@ -378,10 +378,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 }
 
 template<>
-struct til::hash_trait<winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs>
+struct til::hash_trait<MTSM::NewTerminalArgs>
 {
-    using M = winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs;
-    using I = winrt::Microsoft::Terminal::Settings::Model::implementation::NewTerminalArgs;
+    using M = MTSM::NewTerminalArgs;
+    using I = MTSM::implementation::NewTerminalArgs;
 
     void operator()(hasher& h, const M& value) const noexcept
     {
@@ -392,9 +392,9 @@ struct til::hash_trait<winrt::Microsoft::Terminal::Settings::Model::NewTerminalA
     }
 };
 template<>
-struct til::hash_trait<winrt::Microsoft::Terminal::Control::SelectionColor>
+struct til::hash_trait<MTControl::SelectionColor>
 {
-    using M = winrt::Microsoft::Terminal::Control::SelectionColor;
+    using M = MTControl::SelectionColor;
 
     void operator()(hasher& h, const M& value) const noexcept
     {
@@ -684,7 +684,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct MultipleActionsArgs : public MultipleActionsArgsT<MultipleActionsArgs>
     {
         MultipleActionsArgs() = default;
-        WINRT_PROPERTY(Windows::Foundation::Collections::IVector<ActionAndArgs>, Actions);
+        WINRT_PROPERTY(WFC::IVector<ActionAndArgs>, Actions);
         static constexpr std::string_view ActionsKey{ "actions" };
 
     public:

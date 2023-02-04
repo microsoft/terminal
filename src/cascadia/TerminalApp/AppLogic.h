@@ -86,7 +86,7 @@ namespace winrt::TerminalApp::implementation
         bool ShouldImmediatelyHandoffToElevated();
         void HandoffToElevated();
         hstring GetWindowLayoutJson(Microsoft::Terminal::Settings::Model::LaunchPosition position);
-        void SaveWindowLayoutJsons(const Windows::Foundation::Collections::IVector<hstring>& layouts);
+        void SaveWindowLayoutJsons(const WFC::IVector<hstring>& layouts);
         void IdentifyWindow();
         void RenameFailed();
         winrt::hstring WindowName();
@@ -98,16 +98,16 @@ namespace winrt::TerminalApp::implementation
         bool IsQuakeWindow() const noexcept;
         void RequestExitFullscreen();
 
-        Windows::Foundation::Size GetLaunchDimensions(uint32_t dpi);
+        WF::Size GetLaunchDimensions(uint32_t dpi);
         bool CenterOnLaunch();
         TerminalApp::InitialPosition GetInitialPosition(int64_t defaultInitialX, int64_t defaultInitialY);
-        winrt::Windows::UI::Xaml::ElementTheme GetRequestedTheme();
+        WUX::ElementTheme GetRequestedTheme();
         Microsoft::Terminal::Settings::Model::LaunchMode GetLaunchMode();
         bool GetShowTabsInTitlebar();
         bool GetInitialAlwaysOnTop();
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
 
-        Windows::UI::Xaml::UIElement GetRoot() noexcept;
+        WUX::UIElement GetRoot() noexcept;
 
         void SetInboundListener();
 
@@ -118,34 +118,34 @@ namespace winrt::TerminalApp::implementation
         void CloseWindow(Microsoft::Terminal::Settings::Model::LaunchPosition position);
         void WindowVisibilityChanged(const bool showOrHide);
 
-        winrt::TerminalApp::TaskbarState TaskbarState();
-        winrt::Windows::UI::Xaml::Media::Brush TitlebarBrush();
+        MTApp::TaskbarState TaskbarState();
+        WUXMedia::Brush TitlebarBrush();
         void WindowActivated(const bool activated);
 
         bool GetMinimizeToNotificationArea();
         bool GetAlwaysShowNotificationIcon();
         bool GetShowTitleInTitlebar();
 
-        winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> ShowDialog(winrt::Windows::UI::Xaml::Controls::ContentDialog dialog);
+        WF::IAsyncOperation<WUXC::ContentDialogResult> ShowDialog(WUXC::ContentDialog dialog);
         void DismissDialog();
 
-        Windows::Foundation::Collections::IMapView<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::Command> GlobalHotkeys();
+        WFC::IMapView<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::Command> GlobalHotkeys();
 
         Microsoft::Terminal::Settings::Model::Theme Theme();
 
         // -------------------------------- WinRT Events ---------------------------------
         // PropertyChanged is surprisingly not a typed event, so we'll define that one manually.
         // Usually we'd just do
-        //    WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        //    WINRT_CALLBACK(PropertyChanged, WUX::Data::PropertyChangedEventHandler);
         //
         // But what we're doing here is exposing the Page's PropertyChanged _as
         // our own event_. It's a FORWARDED_CALLBACK, essentially.
-        winrt::event_token PropertyChanged(Windows::UI::Xaml::Data::PropertyChangedEventHandler const& handler) { return _root->PropertyChanged(handler); }
+        winrt::event_token PropertyChanged(WUX::Data::PropertyChangedEventHandler const& handler) { return _root->PropertyChanged(handler); }
         void PropertyChanged(winrt::event_token const& token) { _root->PropertyChanged(token); }
 
-        TYPED_EVENT(RequestedThemeChanged, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Settings::Model::Theme);
-        TYPED_EVENT(SettingsChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(SystemMenuChangeRequested, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SystemMenuChangeArgs);
+        TYPED_EVENT(RequestedThemeChanged, WF::IInspectable, MTSM::Theme);
+        TYPED_EVENT(SettingsChanged, WF::IInspectable, WF::IInspectable);
+        TYPED_EVENT(SystemMenuChangeRequested, WF::IInspectable, MTApp::SystemMenuChangeArgs);
 
     private:
         bool _isUwp{ false };
@@ -166,7 +166,7 @@ namespace winrt::TerminalApp::implementation
         uint64_t _numOpenWindows{ 0 };
 
         std::shared_mutex _dialogLock;
-        winrt::Windows::UI::Xaml::Controls::ContentDialog _dialog;
+        WUXC::ContentDialog _dialog;
 
         ::TerminalApp::AppCommandlineArgs _appArgs;
         ::TerminalApp::AppCommandlineArgs _settingsAppArgs;
@@ -190,7 +190,7 @@ namespace winrt::TerminalApp::implementation
         void _RefreshThemeRoutine();
         fire_and_forget _ApplyStartupTaskStateChange();
 
-        void _OnLoaded(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
+        void _OnLoaded(const IInspectable& sender, const WUX::RoutedEventArgs& eventArgs);
 
         [[nodiscard]] HRESULT _TryLoadSettings() noexcept;
         void _ProcessLazySettingsChanges();
@@ -205,23 +205,23 @@ namespace winrt::TerminalApp::implementation
         // These are events that are handled by the TerminalPage, but are
         // exposed through the AppLogic. This macro is used to forward the event
         // directly to them.
-        FORWARDED_TYPED_EVENT(SetTitleBarContent, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::UIElement, _root, SetTitleBarContent);
-        FORWARDED_TYPED_EVENT(TitleChanged, winrt::Windows::Foundation::IInspectable, winrt::hstring, _root, TitleChanged);
-        FORWARDED_TYPED_EVENT(LastTabClosed, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs, _root, LastTabClosed);
-        FORWARDED_TYPED_EVENT(FocusModeChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, FocusModeChanged);
-        FORWARDED_TYPED_EVENT(FullscreenChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, FullscreenChanged);
-        FORWARDED_TYPED_EVENT(ChangeMaximizeRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, ChangeMaximizeRequested);
-        FORWARDED_TYPED_EVENT(AlwaysOnTopChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, AlwaysOnTopChanged);
-        FORWARDED_TYPED_EVENT(RaiseVisualBell, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, RaiseVisualBell);
-        FORWARDED_TYPED_EVENT(SetTaskbarProgress, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, SetTaskbarProgress);
-        FORWARDED_TYPED_EVENT(IdentifyWindowsRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, IdentifyWindowsRequested);
-        FORWARDED_TYPED_EVENT(RenameWindowRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs, _root, RenameWindowRequested);
-        FORWARDED_TYPED_EVENT(IsQuakeWindowChanged, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, IsQuakeWindowChanged);
-        FORWARDED_TYPED_EVENT(SummonWindowRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, SummonWindowRequested);
-        FORWARDED_TYPED_EVENT(CloseRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, CloseRequested);
-        FORWARDED_TYPED_EVENT(OpenSystemMenu, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, OpenSystemMenu);
-        FORWARDED_TYPED_EVENT(QuitRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, QuitRequested);
-        FORWARDED_TYPED_EVENT(ShowWindowChanged, Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Control::ShowWindowArgs, _root, ShowWindowChanged);
+        FORWARDED_TYPED_EVENT(SetTitleBarContent, WF::IInspectable, WUX::UIElement, _root, SetTitleBarContent);
+        FORWARDED_TYPED_EVENT(TitleChanged, WF::IInspectable, winrt::hstring, _root, TitleChanged);
+        FORWARDED_TYPED_EVENT(LastTabClosed, WF::IInspectable, MTApp::LastTabClosedEventArgs, _root, LastTabClosed);
+        FORWARDED_TYPED_EVENT(FocusModeChanged, WF::IInspectable, WF::IInspectable, _root, FocusModeChanged);
+        FORWARDED_TYPED_EVENT(FullscreenChanged, WF::IInspectable, WF::IInspectable, _root, FullscreenChanged);
+        FORWARDED_TYPED_EVENT(ChangeMaximizeRequested, WF::IInspectable, WF::IInspectable, _root, ChangeMaximizeRequested);
+        FORWARDED_TYPED_EVENT(AlwaysOnTopChanged, WF::IInspectable, WF::IInspectable, _root, AlwaysOnTopChanged);
+        FORWARDED_TYPED_EVENT(RaiseVisualBell, WF::IInspectable, WF::IInspectable, _root, RaiseVisualBell);
+        FORWARDED_TYPED_EVENT(SetTaskbarProgress, WF::IInspectable, WF::IInspectable, _root, SetTaskbarProgress);
+        FORWARDED_TYPED_EVENT(IdentifyWindowsRequested, WF::IInspectable, WF::IInspectable, _root, IdentifyWindowsRequested);
+        FORWARDED_TYPED_EVENT(RenameWindowRequested, WF::IInspectable, MTApp::RenameWindowRequestedArgs, _root, RenameWindowRequested);
+        FORWARDED_TYPED_EVENT(IsQuakeWindowChanged, WF::IInspectable, WF::IInspectable, _root, IsQuakeWindowChanged);
+        FORWARDED_TYPED_EVENT(SummonWindowRequested, WF::IInspectable, WF::IInspectable, _root, SummonWindowRequested);
+        FORWARDED_TYPED_EVENT(CloseRequested, WF::IInspectable, WF::IInspectable, _root, CloseRequested);
+        FORWARDED_TYPED_EVENT(OpenSystemMenu, WF::IInspectable, WF::IInspectable, _root, OpenSystemMenu);
+        FORWARDED_TYPED_EVENT(QuitRequested, WF::IInspectable, WF::IInspectable, _root, QuitRequested);
+        FORWARDED_TYPED_EVENT(ShowWindowChanged, WF::IInspectable, MTControl::ShowWindowArgs, _root, ShowWindowChanged);
 
 #ifdef UNIT_TESTING
         friend class TerminalAppLocalTests::CommandlineTest;

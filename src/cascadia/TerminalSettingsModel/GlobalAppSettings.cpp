@@ -10,10 +10,10 @@
 #include "GlobalAppSettings.g.cpp"
 
 using namespace Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
-using namespace winrt::Windows::UI::Xaml;
+using namespace MTSM::implementation;
+using namespace WUX;
 using namespace ::Microsoft::Console;
-using namespace winrt::Microsoft::UI::Xaml::Controls;
+using namespace MUXC;
 
 static constexpr std::string_view LegacyKeybindingsKey{ "keybindings" };
 static constexpr std::string_view ActionsKey{ "actions" };
@@ -90,7 +90,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     return globals;
 }
 
-winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::Microsoft::Terminal::Settings::Model::ColorScheme> GlobalAppSettings::ColorSchemes() noexcept
+WFC::IMapView<winrt::hstring, MTSM::ColorScheme> GlobalAppSettings::ColorSchemes() noexcept
 {
     return _colorSchemes.GetView();
 }
@@ -110,7 +110,7 @@ winrt::guid GlobalAppSettings::DefaultProfile() const
 
 #pragma endregion
 
-winrt::Microsoft::Terminal::Settings::Model::ActionMap GlobalAppSettings::ActionMap() const noexcept
+MTSM::ActionMap GlobalAppSettings::ActionMap() const noexcept
 {
     return *_actionMap;
 }
@@ -184,7 +184,7 @@ void GlobalAppSettings::RemoveColorScheme(hstring schemeName)
 // - <none>
 // Return Value:
 // - <none>
-const std::vector<winrt::Microsoft::Terminal::Settings::Model::SettingsLoadWarnings>& GlobalAppSettings::KeybindingsWarnings() const
+const std::vector<MTSM::SettingsLoadWarnings>& GlobalAppSettings::KeybindingsWarnings() const
 {
     return _keybindingsWarnings;
 }
@@ -210,21 +210,21 @@ Json::Value GlobalAppSettings::ToJson() const
     return json;
 }
 
-winrt::Microsoft::Terminal::Settings::Model::Theme GlobalAppSettings::CurrentTheme() noexcept
+MTSM::Theme GlobalAppSettings::CurrentTheme() noexcept
 {
     auto requestedTheme = Model::Theme::IsSystemInDarkTheme() ?
-                              winrt::Windows::UI::Xaml::ElementTheme::Dark :
-                              winrt::Windows::UI::Xaml::ElementTheme::Light;
+                              WUX::ElementTheme::Dark :
+                              WUX::ElementTheme::Light;
 
     switch (requestedTheme)
     {
-    case winrt::Windows::UI::Xaml::ElementTheme::Light:
+    case WUX::ElementTheme::Light:
         return _themes.TryLookup(Theme().LightName());
 
-    case winrt::Windows::UI::Xaml::ElementTheme::Dark:
+    case WUX::ElementTheme::Dark:
         return _themes.TryLookup(Theme().DarkName());
 
-    case winrt::Windows::UI::Xaml::ElementTheme::Default:
+    case WUX::ElementTheme::Default:
     default:
         return nullptr;
     }
@@ -235,7 +235,7 @@ void GlobalAppSettings::AddTheme(const Model::Theme& theme)
     _themes.Insert(theme.Name(), theme);
 }
 
-winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::Microsoft::Terminal::Settings::Model::Theme> GlobalAppSettings::Themes() noexcept
+WFC::IMapView<winrt::hstring, MTSM::Theme> GlobalAppSettings::Themes() noexcept
 {
     return _themes.GetView();
 }

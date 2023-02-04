@@ -5,13 +5,13 @@
 
 #include "Toast.h"
 
-using namespace winrt::Windows::Foundation;
-using namespace winrt::Windows::UI::Core;
-using namespace winrt::Windows::UI::Xaml;
+using namespace WF;
+using namespace WUC;
+using namespace WUX;
 
 constexpr const auto ToastDuration = std::chrono::milliseconds(3000);
 
-Toast::Toast(const winrt::Microsoft::UI::Xaml::Controls::TeachingTip& tip) :
+Toast::Toast(const MUXC::TeachingTip& tip) :
     _tip{ tip }
 {
     _timer.Interval(ToastDuration);

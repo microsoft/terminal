@@ -22,11 +22,11 @@ namespace UIA
 
 namespace XamlAutomation
 {
-    using winrt::Windows::UI::Xaml::Automation::SupportedTextSelection;
-    using winrt::Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple;
-    using winrt::Windows::UI::Xaml::Automation::Provider::ITextRangeProvider;
-    using winrt::Windows::UI::Xaml::Automation::Text::TextPatternRangeEndpoint;
-    using winrt::Windows::UI::Xaml::Automation::Text::TextUnit;
+    using WUX::Automation::SupportedTextSelection;
+    using WUX::Automation::Provider::IRawElementProviderSimple;
+    using WUX::Automation::Provider::ITextRangeProvider;
+    using WUX::Automation::Text::TextPatternRangeEndpoint;
+    using WUX::Automation::Text::TextUnit;
 }
 
 namespace winrt::Microsoft::Terminal::Control::implementation
@@ -68,7 +68,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     XamlAutomation::ITextRangeProvider XamlUiaTextRange::FindAttribute(int32_t /*textAttributeId*/,
-                                                                       winrt::Windows::Foundation::IInspectable /*val*/,
+                                                                       WF::IInspectable /*val*/,
                                                                        bool /*searchBackward*/)
     {
         // TODO GitHub #2161: potential accessibility improvement
@@ -89,7 +89,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return *xutr;
     }
 
-    winrt::Windows::Foundation::IInspectable XamlUiaTextRange::GetAttributeValue(int32_t textAttributeId) const
+    WF::IInspectable XamlUiaTextRange::GetAttributeValue(int32_t textAttributeId) const
     {
         // Call the function off of the underlying UiaTextRange.
         VARIANT result;
@@ -131,7 +131,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             if (result.punkVal == mixedAttributeVal.get())
             {
-                return Windows::UI::Xaml::DependencyProperty::UnsetValue();
+                return WUX::DependencyProperty::UnsetValue();
             }
 
             [[fallthrough]];

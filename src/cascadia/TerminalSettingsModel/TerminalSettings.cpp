@@ -8,42 +8,42 @@
 #include "TerminalSettings.g.cpp"
 #include "TerminalSettingsCreateResult.g.cpp"
 
-using namespace winrt::Microsoft::Terminal::Control;
+using namespace MTControl;
 using namespace Microsoft::Console::Utils;
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    static std::tuple<Windows::UI::Xaml::HorizontalAlignment, Windows::UI::Xaml::VerticalAlignment> ConvertConvergedAlignment(ConvergedAlignment alignment)
+    static std::tuple<WUX::HorizontalAlignment, WUX::VerticalAlignment> ConvertConvergedAlignment(ConvergedAlignment alignment)
     {
         // extract horizontal alignment
-        Windows::UI::Xaml::HorizontalAlignment horizAlign;
+        WUX::HorizontalAlignment horizAlign;
         switch (alignment & static_cast<ConvergedAlignment>(0x0F))
         {
         case ConvergedAlignment::Horizontal_Left:
-            horizAlign = Windows::UI::Xaml::HorizontalAlignment::Left;
+            horizAlign = WUX::HorizontalAlignment::Left;
             break;
         case ConvergedAlignment::Horizontal_Right:
-            horizAlign = Windows::UI::Xaml::HorizontalAlignment::Right;
+            horizAlign = WUX::HorizontalAlignment::Right;
             break;
         case ConvergedAlignment::Horizontal_Center:
         default:
-            horizAlign = Windows::UI::Xaml::HorizontalAlignment::Center;
+            horizAlign = WUX::HorizontalAlignment::Center;
             break;
         }
 
         // extract vertical alignment
-        Windows::UI::Xaml::VerticalAlignment vertAlign;
+        WUX::VerticalAlignment vertAlign;
         switch (alignment & static_cast<ConvergedAlignment>(0xF0))
         {
         case ConvergedAlignment::Vertical_Top:
-            vertAlign = Windows::UI::Xaml::VerticalAlignment::Top;
+            vertAlign = WUX::VerticalAlignment::Top;
             break;
         case ConvergedAlignment::Vertical_Bottom:
-            vertAlign = Windows::UI::Xaml::VerticalAlignment::Bottom;
+            vertAlign = WUX::VerticalAlignment::Bottom;
             break;
         case ConvergedAlignment::Vertical_Center:
         default:
-            vertAlign = Windows::UI::Xaml::VerticalAlignment::Center;
+            vertAlign = WUX::VerticalAlignment::Center;
             break;
         }
 
@@ -156,7 +156,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
             if (newTerminalArgs.TabColor())
             {
-                defaultSettings.StartingTabColor(winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color>{ til::color{ newTerminalArgs.TabColor().Value() } });
+                defaultSettings.StartingTabColor(WF::IReference<MTCore::Color>{ til::color{ newTerminalArgs.TabColor().Value() } });
             }
             if (newTerminalArgs.SuppressApplicationTitle())
             {
@@ -184,35 +184,35 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     void TerminalSettings::_ApplyAppearanceSettings(const IAppearanceConfig& appearance,
-                                                    const Windows::Foundation::Collections::IMapView<winrt::hstring, ColorScheme>& schemes,
-                                                    const winrt::Microsoft::Terminal::Settings::Model::Theme currentTheme)
+                                                    const WFC::IMapView<winrt::hstring, ColorScheme>& schemes,
+                                                    const MTSM::Theme currentTheme)
     {
         _CursorShape = appearance.CursorShape();
         _CursorHeight = appearance.CursorHeight();
 
         auto requestedTheme = currentTheme.RequestedTheme();
-        if (requestedTheme == winrt::Windows::UI::Xaml::ElementTheme::Default)
+        if (requestedTheme == WUX::ElementTheme::Default)
         {
             requestedTheme = Model::Theme::IsSystemInDarkTheme() ?
-                                 winrt::Windows::UI::Xaml::ElementTheme::Dark :
-                                 winrt::Windows::UI::Xaml::ElementTheme::Light;
+                                 WUX::ElementTheme::Dark :
+                                 WUX::ElementTheme::Light;
         }
 
         switch (requestedTheme)
         {
-        case winrt::Windows::UI::Xaml::ElementTheme::Light:
+        case WUX::ElementTheme::Light:
             if (const auto scheme = schemes.TryLookup(appearance.LightColorSchemeName()))
             {
                 ApplyColorScheme(scheme);
             }
             break;
-        case winrt::Windows::UI::Xaml::ElementTheme::Dark:
+        case WUX::ElementTheme::Dark:
             if (const auto scheme = schemes.TryLookup(appearance.DarkColorSchemeName()))
             {
                 ApplyColorScheme(scheme);
             }
             break;
-        case winrt::Windows::UI::Xaml::ElementTheme::Default:
+        case WUX::ElementTheme::Default:
             // This shouldn't happen!
             break;
         }
@@ -300,7 +300,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         if (profile.TabColor())
         {
             const til::color colorRef{ profile.TabColor().Value() };
-            _TabColor = static_cast<winrt::Microsoft::Terminal::Core::Color>(colorRef);
+            _TabColor = static_cast<MTCore::Color>(colorRef);
         }
 
         _Elevate = profile.Elevate();
@@ -359,28 +359,28 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _CursorColor = til::color{ scheme.CursorColor() };
 
             const auto table = scheme.Table();
-            std::array<winrt::Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE> colorTable{};
+            std::array<MTCore::Color, COLOR_TABLE_SIZE> colorTable{};
             std::transform(table.cbegin(), table.cend(), colorTable.begin(), [](auto&& color) {
-                return static_cast<winrt::Microsoft::Terminal::Core::Color>(til::color{ color });
+                return static_cast<MTCore::Color>(til::color{ color });
             });
             ColorTable(colorTable);
         }
     }
 
-    winrt::Microsoft::Terminal::Core::Color TerminalSettings::GetColorTableEntry(int32_t index) noexcept
+    MTCore::Color TerminalSettings::GetColorTableEntry(int32_t index) noexcept
     {
         return ColorTable().at(index);
     }
 
-    void TerminalSettings::ColorTable(std::array<winrt::Microsoft::Terminal::Core::Color, 16> colors)
+    void TerminalSettings::ColorTable(std::array<MTCore::Color, 16> colors)
     {
         _ColorTable = colors;
     }
 
-    std::array<winrt::Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE> TerminalSettings::ColorTable()
+    std::array<MTCore::Color, COLOR_TABLE_SIZE> TerminalSettings::ColorTable()
     {
         auto span = _getColorTableImpl();
-        std::array<winrt::Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE> colorTable{};
+        std::array<MTCore::Color, COLOR_TABLE_SIZE> colorTable{};
         if (span.size() > 0)
         {
             std::copy(span.begin(), span.end(), colorTable.begin());
@@ -389,13 +389,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             const auto campbellSpan = CampbellColorTable();
             std::transform(campbellSpan.begin(), campbellSpan.end(), colorTable.begin(), [](auto&& color) {
-                return static_cast<winrt::Microsoft::Terminal::Core::Color>(til::color{ color });
+                return static_cast<MTCore::Color>(til::color{ color });
             });
         }
         return colorTable;
     }
 
-    std::span<winrt::Microsoft::Terminal::Core::Color> TerminalSettings::_getColorTableImpl()
+    std::span<MTCore::Color> TerminalSettings::_getColorTableImpl()
     {
         if (_ColorTable.has_value())
         {

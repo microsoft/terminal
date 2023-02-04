@@ -23,14 +23,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     struct ConnectionInformation : ConnectionInformationT<ConnectionInformation>
     {
         ConnectionInformation(const hstring& className,
-                              const Windows::Foundation::Collections::ValueSet& settings);
+                              const WFC::ValueSet& settings);
 
         static TerminalConnection::ITerminalConnection CreateConnection(TerminalConnection::ConnectionInformation info);
 
         winrt::hstring ClassName() const { return _ClassName; }
         void ClassName(const winrt::hstring& value) { _ClassName = value; }
 
-        WINRT_PROPERTY(Windows::Foundation::Collections::ValueSet, Settings);
+        WINRT_PROPERTY(WFC::ValueSet, Settings);
 
     private:
         winrt::hstring _ClassName{};

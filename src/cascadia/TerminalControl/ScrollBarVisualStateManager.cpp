@@ -5,16 +5,16 @@
 #include "ScrollBarVisualStateManager.h"
 #include "ScrollBarVisualStateManager.g.cpp"
 
-using namespace winrt::Windows::UI::Xaml::Media;
+using namespace WUXMedia;
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
     bool ScrollBarVisualStateManager::GoToStateCore(
-        winrt::Windows::UI::Xaml::Controls::Control const& control,
-        winrt::Windows::UI::Xaml::FrameworkElement const& templateRoot,
+        WUXC::Control const& control,
+        WUX::FrameworkElement const& templateRoot,
         winrt::hstring const& stateName,
-        winrt::Windows::UI::Xaml::VisualStateGroup const& group,
-        winrt::Windows::UI::Xaml::VisualState const& state,
+        WUX::VisualStateGroup const& group,
+        WUX::VisualState const& state,
         bool useTransitions)
     {
         if (!_initialized)

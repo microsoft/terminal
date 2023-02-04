@@ -4,7 +4,7 @@
 #include "pch.h"
 #include "VsSetupConfiguration.h"
 
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace MTSM;
 
 std::vector<VsSetupConfiguration::VsSetupInstance> VsSetupConfiguration::QueryInstances()
 {

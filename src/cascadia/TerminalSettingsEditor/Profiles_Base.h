@@ -14,22 +14,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         Profiles_Base();
 
-        void OnNavigatedTo(const Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
-        void OnNavigatedFrom(const Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
+        void OnNavigatedTo(const WUX::Navigation::NavigationEventArgs& e);
+        void OnNavigatedFrom(const WUX::Navigation::NavigationEventArgs& e);
 
-        fire_and_forget StartingDirectory_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
-        fire_and_forget Icon_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
-        fire_and_forget Commandline_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
-        void Appearance_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
-        void Advanced_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
-        void DeleteConfirmation_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
+        fire_and_forget StartingDirectory_Click(const WF::IInspectable& sender, const WUX::RoutedEventArgs& e);
+        fire_and_forget Icon_Click(const WF::IInspectable& sender, const WUX::RoutedEventArgs& e);
+        fire_and_forget Commandline_Click(const WF::IInspectable& sender, const WUX::RoutedEventArgs& e);
+        void Appearance_Click(const WF::IInspectable& sender, const WUX::RoutedEventArgs& e);
+        void Advanced_Click(const WF::IInspectable& sender, const WUX::RoutedEventArgs& e);
+        void DeleteConfirmation_Click(const WF::IInspectable& sender, const WUX::RoutedEventArgs& e);
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        WINRT_CALLBACK(PropertyChanged, WUX::Data::PropertyChangedEventHandler);
         WINRT_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
 
     private:
-        Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
-        winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
+        WUX::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
+        WUXC::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
     };
 };
 

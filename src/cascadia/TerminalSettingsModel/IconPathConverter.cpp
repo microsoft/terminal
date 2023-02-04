@@ -10,14 +10,14 @@
 
 namespace winrt
 {
-    namespace MUX = Microsoft::UI::Xaml;
+    namespace MUX = MUX;
 }
 
 using namespace winrt::Windows;
-using namespace winrt::Windows::UI::Xaml;
+using namespace WUX;
 
 using namespace winrt::Windows::Graphics::Imaging;
-using namespace winrt::Windows::Storage::Streams;
+using namespace WSS;
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -30,15 +30,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     };
 
     template<>
-    struct BitmapIconSource<winrt::Microsoft::UI::Xaml::Controls::IconSource>
+    struct BitmapIconSource<MUXC::IconSource>
     {
-        using type = winrt::Microsoft::UI::Xaml::Controls::BitmapIconSource;
+        using type = MUXC::BitmapIconSource;
     };
 
     template<>
-    struct BitmapIconSource<winrt::Windows::UI::Xaml::Controls::IconSource>
+    struct BitmapIconSource<WUXC::IconSource>
     {
-        using type = winrt::Windows::UI::Xaml::Controls::BitmapIconSource;
+        using type = WUXC::BitmapIconSource;
     };
 #pragma endregion
 
@@ -49,15 +49,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     };
 
     template<>
-    struct FontIconSource<winrt::Microsoft::UI::Xaml::Controls::IconSource>
+    struct FontIconSource<MUXC::IconSource>
     {
-        using type = winrt::Microsoft::UI::Xaml::Controls::FontIconSource;
+        using type = MUXC::FontIconSource;
     };
 
     template<>
-    struct FontIconSource<winrt::Windows::UI::Xaml::Controls::IconSource>
+    struct FontIconSource<WUXC::IconSource>
     {
-        using type = winrt::Windows::UI::Xaml::Controls::FontIconSource;
+        using type = WUXC::FontIconSource;
     };
 #pragma endregion
 
@@ -80,7 +80,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             try
             {
-                winrt::Windows::Foundation::Uri iconUri{ path };
+                WF::Uri iconUri{ path };
                 BitmapIconSource<TIconSource>::type iconSource;
                 // Make sure to set this to false, so we keep the RGB data of the
                 // image. Otherwise, the icon will be white for all the
@@ -138,12 +138,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                     const auto isMDL2Icon = ch >= L'\uE700' && ch <= L'\uF8FF';
                     if (isMDL2Icon)
                     {
-                        icon.FontFamily(winrt::Windows::UI::Xaml::Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
+                        icon.FontFamily(WUXMedia::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
                     }
                     else
                     {
                         // Note: you _do_ need to manually set the font here.
-                        icon.FontFamily(winrt::Windows::UI::Xaml::Media::FontFamily{ L"Segoe UI" });
+                        icon.FontFamily(WUXMedia::FontFamily{ L"Segoe UI" });
                     }
                     icon.FontSize(12);
                     icon.Glyph(iconPath);
@@ -192,7 +192,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Return Value:
     // - Visible if the object was a string and wasn't the empty string.
     Foundation::IInspectable IconPathConverter::Convert(const Foundation::IInspectable& value,
-                                                        const Windows::UI::Xaml::Interop::TypeName& /* targetType */,
+                                                        const WUX::Interop::TypeName& /* targetType */,
                                                         const Foundation::IInspectable& /* parameter */,
                                                         const hstring& /* language */)
     {
@@ -202,21 +202,21 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     // unused for one-way bindings
     Foundation::IInspectable IconPathConverter::ConvertBack(const Foundation::IInspectable& /* value */,
-                                                            const Windows::UI::Xaml::Interop::TypeName& /* targetType */,
+                                                            const WUX::Interop::TypeName& /* targetType */,
                                                             const Foundation::IInspectable& /* parameter */,
                                                             const hstring& /* language */)
     {
         throw hresult_not_implemented();
     }
 
-    Windows::UI::Xaml::Controls::IconSource _IconSourceWUX(hstring path)
+    WUXC::IconSource _IconSourceWUX(hstring path)
     {
-        return _getIconSource<Windows::UI::Xaml::Controls::IconSource>(path);
+        return _getIconSource<WUXC::IconSource>(path);
     }
 
-    Microsoft::UI::Xaml::Controls::IconSource _IconSourceMUX(hstring path)
+    MUXC::IconSource _IconSourceMUX(hstring path)
     {
-        return _getIconSource<Microsoft::UI::Xaml::Controls::IconSource>(path);
+        return _getIconSource<MUXC::IconSource>(path);
     }
 
     SoftwareBitmap _convertToSoftwareBitmap(HICON hicon,
@@ -309,7 +309,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return 0;
     }
 
-    winrt::Windows::UI::Xaml::Media::Imaging::SoftwareBitmapSource _getImageIconSourceForBinary(std::wstring_view iconPathWithoutIndex,
+    WUXMedia::Imaging::SoftwareBitmapSource _getImageIconSourceForBinary(std::wstring_view iconPathWithoutIndex,
                                                                                                 int index)
     {
         // Try:
@@ -324,7 +324,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return nullptr;
         }
 
-        winrt::Windows::UI::Xaml::Media::Imaging::SoftwareBitmapSource bitmapSource{};
+        WUXMedia::Imaging::SoftwareBitmapSource bitmapSource{};
         bitmapSource.SetBitmapAsync(swBitmap);
         return bitmapSource;
     }
@@ -346,7 +346,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return imageIconSource;
     }
 
-    Windows::UI::Xaml::Controls::IconElement IconPathConverter::IconWUX(const winrt::hstring& iconPath)
+    WUXC::IconElement IconPathConverter::IconWUX(const winrt::hstring& iconPath)
     {
         std::wstring_view iconPathWithoutIndex;
         const auto indexOpt = _getIconIndex(iconPath, iconPathWithoutIndex);
@@ -360,7 +360,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         const auto bitmapSource = _getImageIconSourceForBinary(iconPathWithoutIndex, indexOpt.value());
 
-        winrt::Microsoft::UI::Xaml::Controls::ImageIcon icon{};
+        MUXC::ImageIcon icon{};
         icon.Source(bitmapSource);
         icon.Width(32);
         icon.Height(32);

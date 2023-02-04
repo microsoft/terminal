@@ -36,15 +36,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool IsDefaultScheme();
         void RefreshIsDefault();
 
-        void DeleteConfirmation_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
-        void SetAsDefault_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+        void DeleteConfirmation_Click(const WF::IInspectable& sender, const WUX::RoutedEventArgs& e);
+        void SetAsDefault_Click(const WF::IInspectable& sender, const WUX::RoutedEventArgs& e);
 
         // DON'T YOU DARE ADD A `WINRT_CALLBACK(PropertyChanged` TO A CLASS DERIVED FROM ViewModelHelper. Do this instead:
         using ViewModelHelper<ColorSchemeViewModel>::PropertyChanged;
 
         WINRT_PROPERTY(bool, IsInBoxScheme);
-        WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Editor::ColorTableEntry>, NonBrightColorTable, nullptr);
-        WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Editor::ColorTableEntry>, BrightColorTable, nullptr);
+        WINRT_PROPERTY(WFC::IVector<Editor::ColorTableEntry>, NonBrightColorTable, nullptr);
+        WINRT_PROPERTY(WFC::IVector<Editor::ColorTableEntry>, BrightColorTable, nullptr);
 
         WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, ForegroundColor, _propertyChangedHandlers, nullptr);
         WINRT_OBSERVABLE_PROPERTY(Editor::ColorTableEntry, BackgroundColor, _propertyChangedHandlers, nullptr);
@@ -57,7 +57,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Model::CascadiaSettings _settings;
         weak_ref<Editor::ColorSchemesPageViewModel> _parentPageVM{ nullptr };
 
-        void _ColorEntryChangedHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
+        void _ColorEntryChangedHandler(const WF::IInspectable& sender, const WUX::Data::PropertyChangedEventArgs& args);
     };
 
     struct ColorTableEntry : ColorTableEntryT<ColorTableEntry>
@@ -66,7 +66,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ColorTableEntry(uint8_t index, Windows::UI::Color color);
         ColorTableEntry(std::wstring_view tag, Windows::UI::Color color);
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        WINRT_CALLBACK(PropertyChanged, WUX::Data::PropertyChangedEventHandler);
         WINRT_OBSERVABLE_PROPERTY(Windows::UI::Color, Color, _PropertyChangedHandlers);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Name, _PropertyChangedHandlers);
         WINRT_OBSERVABLE_PROPERTY(IInspectable, Tag, _PropertyChangedHandlers);

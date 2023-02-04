@@ -8,10 +8,10 @@
 
 #include <LibraryResources.h>
 
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::UI::Xaml::Navigation;
-using namespace winrt::Windows::Foundation;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace WUX;
+using namespace WUX::Navigation;
+using namespace WF;
+using namespace MTSM;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {

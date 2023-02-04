@@ -12,7 +12,7 @@
 
 #include <winrt/Microsoft.Terminal.Core.h>
 
-using namespace winrt::Microsoft::Terminal::Core;
+using namespace MTCore;
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
@@ -1608,17 +1608,17 @@ til::color Terminal::GetColorForMark(const Microsoft::Console::VirtualTerminal::
     }
 }
 
-void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode)
+void Terminal::ColorSelection(const TextAttribute& attr, MTCore::MatchMode matchMode)
 {
     for (const auto [start, end] : _GetSelectionSpans())
     {
         try
         {
-            if (matchMode == winrt::Microsoft::Terminal::Core::MatchMode::None)
+            if (matchMode == MTCore::MatchMode::None)
             {
                 ColorSelection(start, end, attr);
             }
-            else if (matchMode == winrt::Microsoft::Terminal::Core::MatchMode::All)
+            else if (matchMode == MTCore::MatchMode::All)
             {
                 const auto textBuffer = _activeBuffer().GetPlainText(start, end);
                 std::wstring_view text{ textBuffer };

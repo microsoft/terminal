@@ -8,9 +8,9 @@
 #include "TestUtils.h"
 
 using namespace Microsoft::Console;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::Control;
-using namespace winrt::Windows::Foundation::Collections;
+using namespace MTSM;
+using namespace MTControl;
+using namespace WFC;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;

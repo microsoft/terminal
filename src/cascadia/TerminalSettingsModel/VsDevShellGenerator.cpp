@@ -6,7 +6,7 @@
 #include "VsDevShellGenerator.h"
 #include "VsSetupConfiguration.h"
 
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace MTSM;
 
 void VsDevShellGenerator::GenerateProfiles(const VsSetupConfiguration::VsSetupInstance& instance, bool hidden, std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const
 {

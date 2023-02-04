@@ -7,11 +7,11 @@ namespace winrt::TerminalApp::implementation
     {
         ColorPickupFlyout();
 
-        void ColorButton_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
-        void ShowColorPickerButton_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
-        void CustomColorButton_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
-        void ClearColorButton_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
-        void ColorPicker_ColorChanged(const Microsoft::UI::Xaml::Controls::ColorPicker&, const Microsoft::UI::Xaml::Controls::ColorChangedEventArgs& args);
+        void ColorButton_Click(const WF::IInspectable& sender, const WUX::RoutedEventArgs& args);
+        void ShowColorPickerButton_Click(const WF::IInspectable& sender, const WUX::RoutedEventArgs& args);
+        void CustomColorButton_Click(const WF::IInspectable& sender, const WUX::RoutedEventArgs& args);
+        void ClearColorButton_Click(const WF::IInspectable& sender, const WUX::RoutedEventArgs& args);
+        void ColorPicker_ColorChanged(const MUXC::ColorPicker&, const MUXC::ColorChangedEventArgs& args);
 
         WINRT_CALLBACK(ColorCleared, TerminalApp::ColorClearedArgs);
         WINRT_CALLBACK(ColorSelected, TerminalApp::ColorSelectedArgs);

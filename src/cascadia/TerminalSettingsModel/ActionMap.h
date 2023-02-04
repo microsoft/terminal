@@ -50,10 +50,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct ActionMap : ActionMapT<ActionMap>, IInheritable<ActionMap>
     {
         // views
-        Windows::Foundation::Collections::IMapView<hstring, Model::ActionAndArgs> AvailableActions();
-        Windows::Foundation::Collections::IMapView<hstring, Model::Command> NameMap();
-        Windows::Foundation::Collections::IMapView<Control::KeyChord, Model::Command> GlobalHotkeys();
-        Windows::Foundation::Collections::IMapView<Control::KeyChord, Model::Command> KeyBindings();
+        WFC::IMapView<hstring, Model::ActionAndArgs> AvailableActions();
+        WFC::IMapView<hstring, Model::Command> NameMap();
+        WFC::IMapView<Control::KeyChord, Model::Command> GlobalHotkeys();
+        WFC::IMapView<Control::KeyChord, Model::Command> KeyBindings();
         com_ptr<ActionMap> Copy() const;
 
         // queries
@@ -90,10 +90,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _TryUpdateName(const Model::Command& cmd, const Model::Command& oldCmd, const Model::Command& consolidatedCmd);
         void _TryUpdateKeyChord(const Model::Command& cmd, const Model::Command& oldCmd, const Model::Command& consolidatedCmd);
 
-        Windows::Foundation::Collections::IMap<hstring, Model::ActionAndArgs> _AvailableActionsCache{ nullptr };
-        Windows::Foundation::Collections::IMap<hstring, Model::Command> _NameMapCache{ nullptr };
-        Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _GlobalHotkeysCache{ nullptr };
-        Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _KeyBindingMapCache{ nullptr };
+        WFC::IMap<hstring, Model::ActionAndArgs> _AvailableActionsCache{ nullptr };
+        WFC::IMap<hstring, Model::Command> _NameMapCache{ nullptr };
+        WFC::IMap<Control::KeyChord, Model::Command> _GlobalHotkeysCache{ nullptr };
+        WFC::IMap<Control::KeyChord, Model::Command> _KeyBindingMapCache{ nullptr };
 
         std::unordered_map<winrt::hstring, Model::Command> _NestedCommands;
         std::vector<Model::Command> _IterableCommands;

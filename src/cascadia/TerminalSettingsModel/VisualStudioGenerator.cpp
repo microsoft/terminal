@@ -7,7 +7,7 @@
 #include "VsDevCmdGenerator.h"
 #include "VsDevShellGenerator.h"
 
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace MTSM;
 
 std::wstring_view VisualStudioGenerator::GetNamespace() const noexcept
 {

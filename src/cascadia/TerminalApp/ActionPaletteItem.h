@@ -16,7 +16,7 @@ namespace winrt::TerminalApp::implementation
         WINRT_PROPERTY(Microsoft::Terminal::Settings::Model::Command, Command, nullptr);
 
     private:
-        Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _commandChangedRevoker;
+        WUX::Data::INotifyPropertyChanged::PropertyChanged_revoker _commandChangedRevoker;
     };
 }
 

@@ -17,7 +17,7 @@ using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
 using namespace Microsoft::Terminal::Core;
-using namespace winrt::Microsoft::Terminal::Core;
+using namespace MTCore;
 
 namespace TerminalCoreUnitTests
 {

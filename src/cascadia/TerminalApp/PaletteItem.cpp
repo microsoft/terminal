@@ -7,11 +7,11 @@
 #include "PaletteItem.g.cpp"
 
 using namespace winrt;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::UI::Core;
-using namespace winrt::Microsoft::Terminal::Control;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Windows::System;
+using namespace WUX;
+using namespace WUC;
+using namespace MTControl;
+using namespace MTSM;
+using namespace WS;
 
 namespace winrt::TerminalApp::implementation
 {

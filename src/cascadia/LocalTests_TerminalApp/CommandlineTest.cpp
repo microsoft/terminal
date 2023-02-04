@@ -15,8 +15,8 @@ using namespace WEX::Common;
 using namespace WEX::TestExecution;
 
 using namespace winrt;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::TerminalApp;
+using namespace MTSM;
+using namespace MTApp;
 using namespace ::TerminalApp;
 
 namespace winrt
@@ -1571,7 +1571,7 @@ namespace TerminalAppLocalTests
     void CommandlineTest::TestSimpleExecuteCommandlineAction()
     {
         ExecuteCommandlineArgs args{ L"new-tab" };
-        auto actions = winrt::TerminalApp::implementation::TerminalPage::ConvertExecuteCommandlineToActions(args);
+        auto actions = MTApp::implementation::TerminalPage::ConvertExecuteCommandlineToActions(args);
         VERIFY_ARE_EQUAL(1u, actions.size());
         auto actionAndArgs = actions.at(0);
         VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
@@ -1590,7 +1590,7 @@ namespace TerminalAppLocalTests
     void CommandlineTest::TestMultipleCommandExecuteCommandlineAction()
     {
         ExecuteCommandlineArgs args{ L"new-tab ; split-pane" };
-        auto actions = winrt::TerminalApp::implementation::TerminalPage::ConvertExecuteCommandlineToActions(args);
+        auto actions = MTApp::implementation::TerminalPage::ConvertExecuteCommandlineToActions(args);
         VERIFY_ARE_EQUAL(2u, actions.size());
         {
             auto actionAndArgs = actions.at(0);
@@ -1626,7 +1626,7 @@ namespace TerminalAppLocalTests
     {
         // -H and -V cannot be combined.
         ExecuteCommandlineArgs args{ L"split-pane -H -V" };
-        auto actions = winrt::TerminalApp::implementation::TerminalPage::ConvertExecuteCommandlineToActions(args);
+        auto actions = MTApp::implementation::TerminalPage::ConvertExecuteCommandlineToActions(args);
         VERIFY_ARE_EQUAL(0u, actions.size());
     }
 

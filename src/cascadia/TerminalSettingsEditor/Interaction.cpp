@@ -5,8 +5,8 @@
 #include "Interaction.h"
 #include "Interaction.g.cpp"
 
-using namespace winrt::Windows::UI::Xaml::Navigation;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace WUX::Navigation;
+using namespace MTSM;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {

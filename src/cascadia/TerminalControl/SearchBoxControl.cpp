@@ -6,8 +6,8 @@
 #include "SearchBoxControl.g.cpp"
 
 using namespace winrt;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::UI::Core;
+using namespace WUX;
+using namespace WUC;
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
@@ -58,11 +58,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - e: event data
     // Return Value:
     // - <none>
-    void SearchBoxControl::TextBoxKeyDown(const winrt::Windows::Foundation::IInspectable& /*sender*/, const Input::KeyRoutedEventArgs& e)
+    void SearchBoxControl::TextBoxKeyDown(const WF::IInspectable& /*sender*/, const Input::KeyRoutedEventArgs& e)
     {
-        if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Enter)
+        if (e.OriginalKey() == WS::VirtualKey::Enter)
         {
-            const auto state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift);
+            const auto state = CoreWindow::GetForCurrentThread().GetKeyState(WS::VirtualKey::Shift);
             if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down))
             {
                 _SearchHandlers(TextBox().Text(), !_GoForward(), _CaseSensitive());
@@ -84,10 +84,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - e: event data
     // Return Value:
     // - <none>
-    void SearchBoxControl::_KeyDownHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+    void SearchBoxControl::_KeyDownHandler(const WF::IInspectable& /*sender*/,
                                            const Input::KeyRoutedEventArgs& e)
     {
-        if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Escape)
+        if (e.OriginalKey() == WS::VirtualKey::Escape)
         {
             _ClosedHandlers(*this, e);
             e.Handled(true);
@@ -151,7 +151,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - e: not used
     // Return Value:
     // - <none>
-    void SearchBoxControl::GoBackwardClicked(const winrt::Windows::Foundation::IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    void SearchBoxControl::GoBackwardClicked(const WF::IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         GoBackwardButton().IsChecked(true);
         if (GoForwardButton().IsChecked())
@@ -172,7 +172,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - e: not used
     // Return Value:
     // - <none>
-    void SearchBoxControl::GoForwardClicked(const winrt::Windows::Foundation::IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    void SearchBoxControl::GoForwardClicked(const WF::IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         GoForwardButton().IsChecked(true);
         if (GoBackwardButton().IsChecked())
@@ -192,7 +192,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - e: event data
     // Return Value:
     // - <none>
-    void SearchBoxControl::CloseClick(const winrt::Windows::Foundation::IInspectable& /*sender*/, const RoutedEventArgs& e)
+    void SearchBoxControl::CloseClick(const WF::IInspectable& /*sender*/, const RoutedEventArgs& e)
     {
         _ClosedHandlers(*this, e);
     }
@@ -205,7 +205,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - e: event data
     // Return Value:
     // - <none>
-    void SearchBoxControl::_CharacterHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/, const Input::CharacterReceivedRoutedEventArgs& e)
+    void SearchBoxControl::_CharacterHandler(const WF::IInspectable& /*sender*/, const Input::CharacterReceivedRoutedEventArgs& e)
     {
         e.Handled(true);
     }

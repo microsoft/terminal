@@ -42,23 +42,23 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         void SummonAllWindows();
         uint64_t GetNumberOfPeasants();
-        Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> GetPeasantInfos();
+        WFC::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> GetPeasantInfos();
 
         winrt::fire_and_forget RequestShowNotificationIcon();
         winrt::fire_and_forget RequestHideNotificationIcon();
         winrt::fire_and_forget RequestQuitAll();
         bool DoesQuakeWindowExist();
         void UpdateActiveTabTitle(winrt::hstring title);
-        Windows::Foundation::Collections::IVector<winrt::hstring> GetAllWindowLayouts();
+        WFC::IVector<winrt::hstring> GetAllWindowLayouts();
 
-        TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
-        TYPED_EVENT(BecameMonarch, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(WindowCreated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(WindowClosed, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(ShowNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(HideNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs);
-        TYPED_EVENT(GetWindowLayoutRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::GetWindowLayoutArgs);
+        TYPED_EVENT(FindTargetWindowRequested, WF::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
+        TYPED_EVENT(BecameMonarch, WF::IInspectable, WF::IInspectable);
+        TYPED_EVENT(WindowCreated, WF::IInspectable, WF::IInspectable);
+        TYPED_EVENT(WindowClosed, WF::IInspectable, WF::IInspectable);
+        TYPED_EVENT(ShowNotificationIconRequested, WF::IInspectable, WF::IInspectable);
+        TYPED_EVENT(HideNotificationIconRequested, WF::IInspectable, WF::IInspectable);
+        TYPED_EVENT(QuitAllRequested, WF::IInspectable, winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs);
+        TYPED_EVENT(GetWindowLayoutRequested, WF::IInspectable, winrt::Microsoft::Terminal::Remoting::GetWindowLayoutArgs);
 
     private:
         bool _shouldCreateWindow{ false };
@@ -82,7 +82,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         bool _performElection();
         void _createPeasantThread();
         void _waitOnMonarchThread();
-        void _raiseFindTargetWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
+        void _raiseFindTargetWindowRequested(const WF::IInspectable& sender,
                                              const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args);
 
         void _proposeToMonarch(const Remoting::CommandlineArgs& args,

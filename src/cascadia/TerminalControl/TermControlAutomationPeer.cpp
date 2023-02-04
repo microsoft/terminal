@@ -12,7 +12,7 @@
 #include "../types/UiaTracing.h"
 
 using namespace Microsoft::Console::Types;
-using namespace winrt::Windows::UI::Xaml::Automation::Peers;
+using namespace WUX::Automation::Peers;
 using namespace winrt::Windows::Graphics::Display;
 
 namespace UIA
@@ -23,9 +23,9 @@ namespace UIA
 
 namespace XamlAutomation
 {
-    using winrt::Windows::UI::Xaml::Automation::SupportedTextSelection;
-    using winrt::Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple;
-    using winrt::Windows::UI::Xaml::Automation::Provider::ITextRangeProvider;
+    using WUX::Automation::SupportedTextSelection;
+    using WUX::Automation::Provider::IRawElementProviderSimple;
+    using WUX::Automation::Provider::ITextRangeProvider;
 }
 
 static constexpr wchar_t UNICODE_NEWLINE{ L'\n' };
@@ -138,7 +138,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return;
         }
-        dispatcher.RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [weakThis{ get_weak() }]() {
+        dispatcher.RunAsync(WUC::CoreDispatcherPriority::Normal, [weakThis{ get_weak() }]() {
             if (auto strongThis{ weakThis.get() })
             {
                 if (auto control{ strongThis->_termControl.get() })
@@ -164,7 +164,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return;
         }
-        dispatcher.RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [weakThis{ get_weak() }]() {
+        dispatcher.RunAsync(WUC::CoreDispatcherPriority::Normal, [weakThis{ get_weak() }]() {
             if (auto strongThis{ weakThis.get() })
             {
                 if (auto control{ strongThis->_termControl.get() })
@@ -190,7 +190,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return;
         }
-        dispatcher.RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [weakThis{ get_weak() }]() {
+        dispatcher.RunAsync(WUC::CoreDispatcherPriority::Normal, [weakThis{ get_weak() }]() {
             if (auto strongThis{ weakThis.get() })
             {
                 if (auto control{ strongThis->_termControl.get() })
@@ -252,7 +252,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // [1] make sure the scope returns a copy of "sanitized" so that it isn't accidentally deleted
         // [2] AutomationNotificationProcessing::All --> ensures it can be interrupted by keyboard events
         // [3] Do not "RunAsync(...).get()". For whatever reason, this causes NVDA to just not receive "SignalTextChanged()"'s events.
-        dispatcher.RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [weakThis{ get_weak() }, sanitizedCopy{ hstring{ sanitized } }]() {
+        dispatcher.RunAsync(WUC::CoreDispatcherPriority::Normal, [weakThis{ get_weak() }, sanitizedCopy{ hstring{ sanitized } }]() {
             if (auto strongThis{ weakThis.get() })
             {
                 if (auto control{ strongThis->_termControl.get() })
@@ -286,7 +286,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return RS_(L"TerminalControl_ControlType");
     }
 
-    Windows::Foundation::IInspectable TermControlAutomationPeer::GetPatternCore(PatternInterface patternInterface) const
+    WF::IInspectable TermControlAutomationPeer::GetPatternCore(PatternInterface patternInterface) const
     {
         switch (patternInterface)
         {
@@ -352,7 +352,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _contentAutomationPeer.RangeFromChild(childElement);
     }
 
-    XamlAutomation::ITextRangeProvider TermControlAutomationPeer::RangeFromPoint(Windows::Foundation::Point screenLocation)
+    XamlAutomation::ITextRangeProvider TermControlAutomationPeer::RangeFromPoint(WF::Point screenLocation)
     {
         return _contentAutomationPeer.RangeFromPoint(screenLocation);
     }

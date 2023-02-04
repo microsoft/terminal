@@ -53,13 +53,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
 #pragma region FrameworkElementAutomationPeer
         hstring GetClassNameCore() const;
-        Windows::UI::Xaml::Automation::Peers::AutomationControlType GetAutomationControlTypeCore() const;
+        WUX::Automation::Peers::AutomationControlType GetAutomationControlTypeCore() const;
         hstring GetLocalizedControlTypeCore() const;
-        Windows::Foundation::IInspectable GetPatternCore(Windows::UI::Xaml::Automation::Peers::PatternInterface patternInterface) const;
-        Windows::UI::Xaml::Automation::Peers::AutomationOrientation GetOrientationCore() const;
+        WF::IInspectable GetPatternCore(WUX::Automation::Peers::PatternInterface patternInterface) const;
+        WUX::Automation::Peers::AutomationOrientation GetOrientationCore() const;
         hstring GetNameCore() const;
         hstring GetHelpTextCore() const;
-        Windows::UI::Xaml::Automation::Peers::AutomationLiveSetting GetLiveSettingCore() const;
+        WUX::Automation::Peers::AutomationLiveSetting GetLiveSettingCore() const;
 #pragma endregion
 
 #pragma region IUiaEventDispatcher
@@ -70,12 +70,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 #pragma endregion
 
 #pragma region ITextProvider Pattern
-        Windows::UI::Xaml::Automation::Provider::ITextRangeProvider RangeFromPoint(Windows::Foundation::Point screenLocation);
-        Windows::UI::Xaml::Automation::Provider::ITextRangeProvider RangeFromChild(Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple childElement);
-        com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> GetVisibleRanges();
-        com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> GetSelection();
-        Windows::UI::Xaml::Automation::SupportedTextSelection SupportedTextSelection();
-        Windows::UI::Xaml::Automation::Provider::ITextRangeProvider DocumentRange();
+        WUX::Automation::Provider::ITextRangeProvider RangeFromPoint(WF::Point screenLocation);
+        WUX::Automation::Provider::ITextRangeProvider RangeFromChild(WUX::Automation::Provider::IRawElementProviderSimple childElement);
+        com_array<WUX::Automation::Provider::ITextRangeProvider> GetVisibleRanges();
+        com_array<WUX::Automation::Provider::ITextRangeProvider> GetSelection();
+        WUX::Automation::SupportedTextSelection SupportedTextSelection();
+        WUX::Automation::Provider::ITextRangeProvider DocumentRange();
 #pragma endregion
 
     private:
