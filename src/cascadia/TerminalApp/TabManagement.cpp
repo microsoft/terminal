@@ -1099,9 +1099,6 @@ namespace winrt::TerminalApp::implementation
             tabs.RemoveAt(from.value());
             tabs.InsertAt(to.value(), tab);
             _UpdateTabIndices();
-
-            _rearranging = false;
-
         }
 
         _rearranging = false;
