@@ -17,7 +17,7 @@ namespace TerminalApp
     class AppCommandlineArgs;
 };
 
-class MTApp::AppCommandlineArgs final
+class TerminalApp::AppCommandlineArgs final
 {
 public:
     static constexpr std::string_view NixHelpFlag{ "-?" };

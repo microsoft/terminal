@@ -136,7 +136,7 @@ namespace winrt::TerminalApp::implementation
         static constexpr uint32_t CommandLineHistoryLength = 20;
         static WFC::IVector<MTApp::FilteredCommand> _loadRecentCommands();
         static void _updateRecentCommands(const winrt::hstring& command);
-        ::MTApp::AppCommandlineArgs _appArgs;
+        ::TerminalApp::AppCommandlineArgs _appArgs;
 
         void _choosingItemContainer(const WUXC::ListViewBase& sender, const WUXC::ChoosingItemContainerEventArgs& args);
         void _containerContentChanging(const WUXC::ListViewBase& sender, const WUXC::ContainerContentChangingEventArgs& args);

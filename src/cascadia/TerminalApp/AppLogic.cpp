@@ -1330,7 +1330,7 @@ namespace winrt::TerminalApp::implementation
     int32_t AppLogic::ExecuteCommandline(array_view<const winrt::hstring> args,
                                          const winrt::hstring& cwd)
     {
-        ::MTApp::AppCommandlineArgs appArgs;
+        ::TerminalApp::AppCommandlineArgs appArgs;
         auto result = appArgs.ParseArgs(args);
         if (result == 0)
         {
@@ -1380,7 +1380,7 @@ namespace winrt::TerminalApp::implementation
     MTApp::FindTargetWindowResult AppLogic::_doFindTargetWindow(array_view<const winrt::hstring> args,
                                                                 const MTSM::WindowingMode& windowingBehavior)
     {
-        ::MTApp::AppCommandlineArgs appArgs;
+        ::TerminalApp::AppCommandlineArgs appArgs;
         const auto result = appArgs.ParseArgs(args);
         if (result == 0)
         {

@@ -980,7 +980,7 @@ int AppCommandlineArgs::ParseArgs(winrt::array_view<const winrt::hstring>& args)
         }
     }
 
-    auto commands = ::MTApp::AppCommandlineArgs::BuildCommands(args);
+    auto commands = ::TerminalApp::AppCommandlineArgs::BuildCommands(args);
 
     for (auto& cmdBlob : commands)
     {

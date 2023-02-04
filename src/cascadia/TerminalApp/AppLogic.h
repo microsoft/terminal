@@ -168,8 +168,8 @@ namespace winrt::TerminalApp::implementation
         std::shared_mutex _dialogLock;
         WUXC::ContentDialog _dialog;
 
-        ::MTApp::AppCommandlineArgs _appArgs;
-        ::MTApp::AppCommandlineArgs _settingsAppArgs;
+        ::TerminalApp::AppCommandlineArgs _appArgs;
+        ::TerminalApp::AppCommandlineArgs _settingsAppArgs;
 
         std::shared_ptr<ThrottledFuncTrailing<>> _reloadSettings;
         til::throttled_func_trailing<> _reloadState;
