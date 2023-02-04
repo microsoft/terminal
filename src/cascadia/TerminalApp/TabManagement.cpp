@@ -1099,9 +1099,19 @@ namespace winrt::TerminalApp::implementation
             tabs.RemoveAt(from.value());
             tabs.InsertAt(to.value(), tab);
             _UpdateTabIndices();
+
+            _rearranging = false;
+
         }
 
         _rearranging = false;
+
+        if (to.has_value())
+        {
+            // Selecting the dropped tab
+            TabRow().TabView().SelectedIndex(to.value());
+        }
+
         from = std::nullopt;
         to = std::nullopt;
     }
