@@ -297,10 +297,10 @@ namespace winrt::TerminalApp::implementation
         bool _HasMultipleTabs() const;
         void _RemoveAllTabs();
 
-        void _SelectNextTab(const bool bMoveRight, const WF::IReference<Microsoft::Terminal::Settings::Model::TabSwitcherMode>& customTabSwitcherMode);
+        void _SelectNextTab(const bool bMoveRight, const WF::IReference<MTSM::TabSwitcherMode>& customTabSwitcherMode);
         bool _SelectTab(uint32_t tabIndex);
-        bool _MoveFocus(const Microsoft::Terminal::Settings::Model::FocusDirection& direction);
-        bool _SwapPane(const Microsoft::Terminal::Settings::Model::FocusDirection& direction);
+        bool _MoveFocus(const MTSM::FocusDirection& direction);
+        bool _SwapPane(const MTSM::FocusDirection& direction);
         bool _MovePane(const uint32_t tabIdx);
 
         template<typename F>
@@ -340,14 +340,14 @@ namespace winrt::TerminalApp::implementation
 
         void _Scroll(ScrollDirection scrollDirection, const WF::IReference<uint32_t>& rowsToScroll);
 
-        void _SplitPane(const Microsoft::Terminal::Settings::Model::SplitDirection splitType,
+        void _SplitPane(const MTSM::SplitDirection splitType,
                         const float splitSize,
                         std::shared_ptr<Pane> newPane);
         void _SplitPane(TerminalTab& tab,
-                        const Microsoft::Terminal::Settings::Model::SplitDirection splitType,
+                        const MTSM::SplitDirection splitType,
                         const float splitSize,
                         std::shared_ptr<Pane> newPane);
-        void _ResizePane(const Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
+        void _ResizePane(const MTSM::ResizeDirection& direction);
         void _ToggleSplitOrientation();
 
         void _ScrollPage(ScrollDirection scrollDirection);
@@ -362,7 +362,7 @@ namespace winrt::TerminalApp::implementation
         bool _IsUriSupported(const WF::Uri& parsedUri);
 
         void _ShowCouldNotOpenDialog(winrt::hstring reason, winrt::hstring uri);
-        bool _CopyText(const bool singleLine, const WF::IReference<Microsoft::Terminal::Control::CopyFormat>& formats);
+        bool _CopyText(const bool singleLine, const WF::IReference<MTControl::CopyFormat>& formats);
 
         winrt::fire_and_forget _SetTaskbarProgressHandler(const IInspectable sender, const IInspectable eventArgs);
 
@@ -371,7 +371,7 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget _ControlNoticeRaisedHandler(const IInspectable sender, const MTControl::NoticeEventArgs eventArgs);
         void _ShowControlNoticeDialog(const winrt::hstring& title, const winrt::hstring& message);
 
-        fire_and_forget _LaunchSettings(const Microsoft::Terminal::Settings::Model::SettingsTarget target);
+        fire_and_forget _LaunchSettings(const MTSM::SettingsTarget target);
 
         void _TabDragStarted(const IInspectable& sender, const IInspectable& eventArgs);
         void _TabDragCompleted(const IInspectable& sender, const IInspectable& eventArgs);

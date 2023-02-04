@@ -225,7 +225,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     hstring SettingContainer::_GenerateOverrideMessage(const IInspectable& settingOrigin)
     {
         // We only get here if the user had an override in place.
-        auto originTag{ Model::OriginTag::None };
+        auto originTag{ MTSM::OriginTag::None };
         winrt::hstring source;
 
         if (const auto& profile{ settingOrigin.try_as<MTSM::Profile>() })
@@ -241,7 +241,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         // We will display arrows for all origins, and informative tooltips for Fragments and Generated
-        if (originTag == Model::OriginTag::Fragment || originTag == Model::OriginTag::Generated)
+        if (originTag == MTSM::OriginTag::Fragment || originTag == MTSM::OriginTag::Generated)
         {
             // from a fragment extension or generated profile
             return hstring{ fmt::format(std::wstring_view{ RS_(L"SettingContainer_OverrideMessageFragmentExtension") }, source) };

@@ -86,7 +86,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(MTSM::TerminalSettings, bool, SnapOnInput, true);
         INHERITABLE_SETTING(MTSM::TerminalSettings, bool, AltGrAliasing, true);
         INHERITABLE_SETTING(MTSM::TerminalSettings, til::color, CursorColor, DEFAULT_CURSOR_COLOR);
-        INHERITABLE_SETTING(MTSM::TerminalSettings, Microsoft::Terminal::Core::CursorStyle, CursorShape, Core::CursorStyle::Vintage);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, MTCore::CursorStyle, CursorShape, MTCore::CursorStyle::Vintage);
         INHERITABLE_SETTING(MTSM::TerminalSettings, uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
         INHERITABLE_SETTING(MTSM::TerminalSettings, hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
         INHERITABLE_SETTING(MTSM::TerminalSettings, bool, CopyOnSelect, false);
@@ -110,7 +110,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(MTSM::TerminalSettings, bool, IntenseIsBold);
         INHERITABLE_SETTING(MTSM::TerminalSettings, bool, IntenseIsBright);
 
-        INHERITABLE_SETTING(MTSM::TerminalSettings, Microsoft::Terminal::Core::AdjustTextMode, AdjustIndistinguishableColors, Core::AdjustTextMode::Never);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, MTCore::AdjustTextMode, AdjustIndistinguishableColors, MTCore::AdjustTextMode::Never);
 
         // ------------------------ End of Core Settings -----------------------
 
@@ -143,10 +143,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(MTSM::TerminalSettings, bool, SuppressApplicationTitle);
         INHERITABLE_SETTING(MTSM::TerminalSettings, hstring, EnvironmentVariables);
 
-        INHERITABLE_SETTING(MTSM::TerminalSettings, Microsoft::Terminal::Control::ScrollbarState, ScrollState, Microsoft::Terminal::Control::ScrollbarState::Visible);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, MTControl::ScrollbarState, ScrollState, MTControl::ScrollbarState::Visible);
         INHERITABLE_SETTING(MTSM::TerminalSettings, bool, UseAtlasEngine, false);
 
-        INHERITABLE_SETTING(MTSM::TerminalSettings, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale);
+        INHERITABLE_SETTING(MTSM::TerminalSettings, MTControl::TextAntialiasingMode, AntialiasingMode, MTControl::TextAntialiasingMode::Grayscale);
 
         INHERITABLE_SETTING(MTSM::TerminalSettings, bool, RetroTerminalEffect, false);
         INHERITABLE_SETTING(MTSM::TerminalSettings, bool, ForceFullRepaintRendering, false);

@@ -128,8 +128,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool IsCustomFontWeight();
         WINRT_PROPERTY(WFC::IObservableVector<Microsoft::Terminal::Settings::Editor::EnumEntry>, FontWeightList);
 
-        GETSET_BINDABLE_ENUM_SETTING(CursorShape, Microsoft::Terminal::Core::CursorStyle, Appearance().CursorShape);
-        GETSET_BINDABLE_ENUM_SETTING(AdjustIndistinguishableColors, Microsoft::Terminal::Core::AdjustTextMode, Appearance().AdjustIndistinguishableColors);
+        GETSET_BINDABLE_ENUM_SETTING(CursorShape, MTCore::CursorStyle, Appearance().CursorShape);
+        GETSET_BINDABLE_ENUM_SETTING(AdjustIndistinguishableColors, MTCore::AdjustTextMode, Appearance().AdjustIndistinguishableColors);
 
         WINRT_CALLBACK(PropertyChanged, WUX::Data::PropertyChangedEventHandler);
         DEPENDENCY_PROPERTY(Editor::AppearanceViewModel, Appearance);
@@ -137,7 +137,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         GETSET_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, WUXMedia::Stretch, Appearance().BackgroundImageStretchMode);
 
-        GETSET_BINDABLE_ENUM_SETTING(IntenseTextStyle, Microsoft::Terminal::Settings::Model::IntenseStyle, Appearance().IntenseTextStyle);
+        GETSET_BINDABLE_ENUM_SETTING(IntenseTextStyle, MTSM::IntenseStyle, Appearance().IntenseTextStyle);
 
     private:
         bool _ShowAllFonts;

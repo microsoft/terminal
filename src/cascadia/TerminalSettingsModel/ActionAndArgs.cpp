@@ -153,7 +153,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 // Call the deserializer on an empty JSON object.
                 // This ensures that we have a valid ActionArgs
-                std::vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> parseWarnings;
+                std::vector<MTSM::SettingsLoadWarnings> parseWarnings;
                 std::tie(_Args, parseWarnings) = pfn({});
             }
 
@@ -246,7 +246,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // does, we'll try to deserialize any "args" that were provided with
         // the binding.
         IActionArgs args{ nullptr };
-        std::vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> parseWarnings;
+        std::vector<MTSM::SettingsLoadWarnings> parseWarnings;
         const auto deserializersIter = argSerializerMap.find(action);
         if (deserializersIter != argSerializerMap.end())
         {

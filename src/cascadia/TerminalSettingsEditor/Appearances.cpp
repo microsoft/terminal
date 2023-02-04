@@ -376,7 +376,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool Appearances::IsVintageCursor() const
     {
-        return Appearance().CursorShape() == Core::CursorStyle::Vintage;
+        return Appearance().CursorShape() == MTCore::CursorStyle::Vintage;
     }
 
     IInspectable Appearances::CurrentFontWeight() const

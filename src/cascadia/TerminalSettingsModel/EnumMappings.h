@@ -38,7 +38,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // Profile Settings
         static WFC::IMap<winrt::hstring, CloseOnExitMode> CloseOnExitMode();
-        static WFC::IMap<winrt::hstring, Microsoft::Terminal::Control::ScrollbarState> ScrollbarState();
+        static WFC::IMap<winrt::hstring, MTControl::ScrollbarState> ScrollbarState();
         static WFC::IMap<winrt::hstring, WUXMedia::Stretch> BackgroundImageStretchMode();
         static WFC::IMap<winrt::hstring, MTControl::TextAntialiasingMode> TextAntialiasingMode();
         static WFC::IMap<winrt::hstring, MTCore::CursorStyle> CursorStyle();

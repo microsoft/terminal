@@ -390,7 +390,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _core.SendInput(wstr);
     }
-    void TermControl::ClearBuffer(Control::ClearBufferType clearType)
+    void TermControl::ClearBuffer(MTControl::ClearBufferType clearType)
     {
         _core.ClearBuffer(clearType);
     }
@@ -734,7 +734,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return SwapChainPanel().Margin();
     }
 
-    TerminalConnection::ConnectionState TermControl::ConnectionState() const
+    MTConnection::ConnectionState TermControl::ConnectionState() const
     {
         return _core.ConnectionState();
     }
@@ -1484,10 +1484,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const auto modifiers = _GetPressedModifierKeys();
 
-        Control::MouseButtonState state{};
-        WI_SetFlagIf(state, Control::MouseButtonState::IsLeftButtonDown, leftButtonDown);
-        WI_SetFlagIf(state, Control::MouseButtonState::IsMiddleButtonDown, midButtonDown);
-        WI_SetFlagIf(state, Control::MouseButtonState::IsRightButtonDown, rightButtonDown);
+        MTControl::MouseButtonState state{};
+        WI_SetFlagIf(state, MTControl::MouseButtonState::IsLeftButtonDown, leftButtonDown);
+        WI_SetFlagIf(state, MTControl::MouseButtonState::IsMiddleButtonDown, midButtonDown);
+        WI_SetFlagIf(state, MTControl::MouseButtonState::IsRightButtonDown, rightButtonDown);
 
         return _interactivity.MouseWheel(modifiers, delta, _toTerminalOrigin(location).to_core_point(), state);
     }
@@ -3048,12 +3048,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _RaiseNoticeHandlers(*this, eventArgs);
     }
 
-    Control::MouseButtonState TermControl::GetPressedMouseButtons(const winrt::Windows::UI::Input::PointerPoint point)
+    MTControl::MouseButtonState TermControl::GetPressedMouseButtons(const winrt::Windows::UI::Input::PointerPoint point)
     {
-        Control::MouseButtonState state{};
-        WI_SetFlagIf(state, Control::MouseButtonState::IsLeftButtonDown, point.Properties().IsLeftButtonPressed());
-        WI_SetFlagIf(state, Control::MouseButtonState::IsMiddleButtonDown, point.Properties().IsMiddleButtonPressed());
-        WI_SetFlagIf(state, Control::MouseButtonState::IsRightButtonDown, point.Properties().IsRightButtonPressed());
+        MTControl::MouseButtonState state{};
+        WI_SetFlagIf(state, MTControl::MouseButtonState::IsLeftButtonDown, point.Properties().IsLeftButtonPressed());
+        WI_SetFlagIf(state, MTControl::MouseButtonState::IsMiddleButtonDown, point.Properties().IsMiddleButtonPressed());
+        WI_SetFlagIf(state, MTControl::MouseButtonState::IsRightButtonDown, point.Properties().IsRightButtonPressed());
         return state;
     }
 
@@ -3163,14 +3163,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
     void TermControl::ClearMark() { _core.ClearMark(); }
     void TermControl::ClearAllMarks() { _core.ClearAllMarks(); }
-    void TermControl::ScrollToMark(const Control::ScrollToMarkDirection& direction) { _core.ScrollToMark(direction); }
+    void TermControl::ScrollToMark(const MTControl::ScrollToMarkDirection& direction) { _core.ScrollToMark(direction); }
 
     WFC::IVector<Control::ScrollMark> TermControl::ScrollMarks() const
     {
         return _core.ScrollMarks();
     }
 
-    void TermControl::ColorSelection(MTControl::SelectionColor fg, MTControl::SelectionColor bg, Core::MatchMode matchMode)
+    void TermControl::ColorSelection(MTControl::SelectionColor fg, MTControl::SelectionColor bg, MTCore::MatchMode matchMode)
     {
         _core.ColorSelection(fg, bg, matchMode);
     }

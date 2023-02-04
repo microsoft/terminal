@@ -31,23 +31,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     // Global Settings
     DEFINE_ENUM_MAP(WUX::ElementTheme, ElementTheme);
-    DEFINE_ENUM_MAP(Model::NewTabPosition, NewTabPosition);
+    DEFINE_ENUM_MAP(MTSM::NewTabPosition, NewTabPosition);
     DEFINE_ENUM_MAP(MUXC::TabViewWidthMode, TabViewWidthMode);
-    DEFINE_ENUM_MAP(Model::FirstWindowPreference, FirstWindowPreference);
-    DEFINE_ENUM_MAP(Model::LaunchMode, LaunchMode);
-    DEFINE_ENUM_MAP(Model::TabSwitcherMode, TabSwitcherMode);
-    DEFINE_ENUM_MAP(Microsoft::Terminal::Control::CopyFormat, CopyFormat);
-    DEFINE_ENUM_MAP(Model::WindowingMode, WindowingMode);
-    DEFINE_ENUM_MAP(Microsoft::Terminal::Core::MatchMode, MatchMode);
+    DEFINE_ENUM_MAP(MTSM::FirstWindowPreference, FirstWindowPreference);
+    DEFINE_ENUM_MAP(MTSM::LaunchMode, LaunchMode);
+    DEFINE_ENUM_MAP(MTSM::TabSwitcherMode, TabSwitcherMode);
+    DEFINE_ENUM_MAP(MTControl::CopyFormat, CopyFormat);
+    DEFINE_ENUM_MAP(MTSM::WindowingMode, WindowingMode);
+    DEFINE_ENUM_MAP(MTCore::MatchMode, MatchMode);
 
     // Profile Settings
-    DEFINE_ENUM_MAP(Model::CloseOnExitMode, CloseOnExitMode);
-    DEFINE_ENUM_MAP(Microsoft::Terminal::Control::ScrollbarState, ScrollbarState);
+    DEFINE_ENUM_MAP(MTSM::CloseOnExitMode, CloseOnExitMode);
+    DEFINE_ENUM_MAP(MTControl::ScrollbarState, ScrollbarState);
     DEFINE_ENUM_MAP(WUXMedia::Stretch, BackgroundImageStretchMode);
-    DEFINE_ENUM_MAP(Microsoft::Terminal::Control::TextAntialiasingMode, TextAntialiasingMode);
-    DEFINE_ENUM_MAP(Microsoft::Terminal::Core::CursorStyle, CursorStyle);
-    DEFINE_ENUM_MAP(Microsoft::Terminal::Settings::Model::IntenseStyle, IntenseTextStyle);
-    DEFINE_ENUM_MAP(Microsoft::Terminal::Core::AdjustTextMode, AdjustIndistinguishableColors);
+    DEFINE_ENUM_MAP(MTControl::TextAntialiasingMode, TextAntialiasingMode);
+    DEFINE_ENUM_MAP(MTCore::CursorStyle, CursorStyle);
+    DEFINE_ENUM_MAP(MTSM::IntenseStyle, IntenseTextStyle);
+    DEFINE_ENUM_MAP(MTCore::AdjustTextMode, AdjustIndistinguishableColors);
 
     // FontWeight is special because the JsonUtils::ConversionTrait for it
     // creates a FontWeight object, but we need to use the uint16_t value.

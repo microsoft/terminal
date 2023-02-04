@@ -102,7 +102,7 @@ namespace winrt::TerminalApp::implementation
         bool CenterOnLaunch();
         TerminalApp::InitialPosition GetInitialPosition(int64_t defaultInitialX, int64_t defaultInitialY);
         WUX::ElementTheme GetRequestedTheme();
-        Microsoft::Terminal::Settings::Model::LaunchMode GetLaunchMode();
+        MTSM::LaunchMode GetLaunchMode();
         bool GetShowTabsInTitlebar();
         bool GetInitialAlwaysOnTop();
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
@@ -180,7 +180,7 @@ namespace winrt::TerminalApp::implementation
         wil::unique_folder_change_reader_nothrow _reader;
 
         static MTApp::FindTargetWindowResult _doFindTargetWindow(winrt::array_view<const hstring> args,
-                                                                 const Microsoft::Terminal::Settings::Model::WindowingMode& windowingBehavior);
+                                                                 const MTSM::WindowingMode& windowingBehavior);
 
         void _ShowLoadErrorsDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey, HRESULT settingsLoadedResult);
         void _ShowLoadWarningsDialog();
@@ -200,7 +200,7 @@ namespace winrt::TerminalApp::implementation
 
         bool _hasCommandLineArguments{ false };
         bool _hasSettingsStartupActions{ false };
-        std::vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> _warnings;
+        std::vector<MTSM::SettingsLoadWarnings> _warnings;
 
         // These are events that are handled by the TerminalPage, but are
         // exposed through the AppLogic. This macro is used to forward the event

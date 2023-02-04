@@ -222,14 +222,14 @@ namespace winrt::TerminalApp::implementation
         // our TabView, to match the tab.showCloseButton property in the theme.
         if (const auto theme = _settings.GlobalSettings().CurrentTheme())
         {
-            const auto visibility = theme.Tab() ? theme.Tab().ShowCloseButton() : Settings::Model::TabCloseButtonVisibility::Always;
+            const auto visibility = theme.Tab() ? theme.Tab().ShowCloseButton() : MTSM::TabCloseButtonVisibility::Always;
 
             switch (visibility)
             {
-            case Settings::Model::TabCloseButtonVisibility::Never:
+            case MTSM::TabCloseButtonVisibility::Never:
                 _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::Auto);
                 break;
-            case Settings::Model::TabCloseButtonVisibility::Hover:
+            case MTSM::TabCloseButtonVisibility::Hover:
                 _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::OnPointerOver);
                 break;
             default:
@@ -2924,16 +2924,16 @@ namespace winrt::TerminalApp::implementation
         // at once
         if (const auto theme = _settings.GlobalSettings().CurrentTheme())
         {
-            const auto visibility = theme.Tab() ? theme.Tab().ShowCloseButton() : Settings::Model::TabCloseButtonVisibility::Always;
+            const auto visibility = theme.Tab() ? theme.Tab().ShowCloseButton() : MTSM::TabCloseButtonVisibility::Always;
 
             for (const auto& tab : _tabs)
             {
                 switch (visibility)
                 {
-                case Settings::Model::TabCloseButtonVisibility::Never:
+                case MTSM::TabCloseButtonVisibility::Never:
                     tab.TabViewItem().IsClosable(false);
                     break;
-                case Settings::Model::TabCloseButtonVisibility::Hover:
+                case MTSM::TabCloseButtonVisibility::Hover:
                     tab.TabViewItem().IsClosable(true);
                     break;
                 default:
@@ -2944,10 +2944,10 @@ namespace winrt::TerminalApp::implementation
 
             switch (visibility)
             {
-            case Settings::Model::TabCloseButtonVisibility::Never:
+            case MTSM::TabCloseButtonVisibility::Never:
                 _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::Auto);
                 break;
-            case Settings::Model::TabCloseButtonVisibility::Hover:
+            case MTSM::TabCloseButtonVisibility::Hover:
                 _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::OnPointerOver);
                 break;
             default:
@@ -4404,7 +4404,7 @@ namespace winrt::TerminalApp::implementation
         // IMPORTANT: Should be called AFTER the tab view item is added to the TabView.
         if (const auto theme = _settings.GlobalSettings().CurrentTheme())
         {
-            const auto visibility = theme.Tab() ? theme.Tab().ShowCloseButton() : Settings::Model::TabCloseButtonVisibility::Always;
+            const auto visibility = theme.Tab() ? theme.Tab().ShowCloseButton() : MTSM::TabCloseButtonVisibility::Always;
 
             // Update both the tab item's IsClosable, but also the TabView's
             // CloseButtonOverlayMode here. Because the TabViewItem was created
@@ -4414,11 +4414,11 @@ namespace winrt::TerminalApp::implementation
             // TabView will re-apply the value.
             switch (visibility)
             {
-            case Settings::Model::TabCloseButtonVisibility::Never:
+            case MTSM::TabCloseButtonVisibility::Never:
                 tabViewItem.IsClosable(false);
                 _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::Auto);
                 break;
-            case Settings::Model::TabCloseButtonVisibility::Hover:
+            case MTSM::TabCloseButtonVisibility::Hover:
                 tabViewItem.IsClosable(true);
                 _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::OnPointerOver);
                 break;

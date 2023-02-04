@@ -1158,9 +1158,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _updateSelectionUI();
     }
 
-    Control::SelectionInteractionMode ControlCore::SelectionMode() const
+    MTControl::SelectionInteractionMode ControlCore::SelectionMode() const
     {
-        return static_cast<Control::SelectionInteractionMode>(_terminal->SelectionMode());
+        return static_cast<MTControl::SelectionInteractionMode>(_terminal->SelectionMode());
     }
 
     bool ControlCore::SwitchSelectionEndpoint()
@@ -1232,9 +1232,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         };
     }
 
-    TerminalConnection::ConnectionState ControlCore::ConnectionState() const
+    MTConnection::ConnectionState ControlCore::ConnectionState() const
     {
-        return _connection ? _connection.State() : TerminalConnection::ConnectionState::Closed;
+        return _connection ? _connection.State() : MTConnection::ConnectionState::Closed;
     }
 
     hstring ControlCore::Title()
@@ -1700,14 +1700,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - clearType: The type of clear to perform.
     // Return Value:
     // - <none>
-    void ControlCore::ClearBuffer(Control::ClearBufferType clearType)
+    void ControlCore::ClearBuffer(MTControl::ClearBufferType clearType)
     {
-        if (clearType == Control::ClearBufferType::Scrollback || clearType == Control::ClearBufferType::All)
+        if (clearType == MTControl::ClearBufferType::Scrollback || clearType == MTControl::ClearBufferType::All)
         {
             _terminal->EraseScrollback();
         }
 
-        if (clearType == Control::ClearBufferType::Screen || clearType == Control::ClearBufferType::All)
+        if (clearType == MTControl::ClearBufferType::Screen || clearType == MTControl::ClearBufferType::All)
         {
             // Send a signal to conpty to clear the buffer.
             if (auto conpty{ _connection.try_as<MTConnection::ConptyConnection>() })
@@ -2000,7 +2000,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::ClearMark() { _terminal->ClearMark(); }
     void ControlCore::ClearAllMarks() { _terminal->ClearAllMarks(); }
 
-    void ControlCore::ScrollToMark(const Control::ScrollToMarkDirection& direction)
+    void ControlCore::ScrollToMark(const MTControl::ScrollToMarkDirection& direction)
     {
         const auto currentOffset = ScrollOffset();
         const auto& marks{ _terminal->GetScrollMarks() };
@@ -2093,7 +2093,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::ColorSelection(const MTControl::SelectionColor& fg, const MTControl::SelectionColor& bg, Core::MatchMode matchMode)
+    void ControlCore::ColorSelection(const MTControl::SelectionColor& fg, const MTControl::SelectionColor& bg, MTCore::MatchMode matchMode)
     {
         if (HasSelection())
         {
@@ -2119,7 +2119,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             _terminal->ColorSelection(attr, matchMode);
             _terminal->ClearSelection();
-            if (matchMode != Core::MatchMode::None)
+            if (matchMode != MTCore::MatchMode::None)
             {
                 // ClearSelection will invalidate the selection area... but if we are
                 // coloring other matches, then we need to make sure those get redrawn,

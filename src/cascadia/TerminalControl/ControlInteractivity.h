@@ -48,14 +48,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ::Microsoft::Console::Render::IRenderData* GetRenderData() const;
 
 #pragma region Input Methods
-        void PointerPressed(Control::MouseButtonState buttonState,
+        void PointerPressed(MTControl::MouseButtonState buttonState,
                             const unsigned int pointerUpdateKind,
                             const uint64_t timestamp,
                             const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                             const Core::Point pixelPosition);
         void TouchPressed(const Core::Point contactPoint);
 
-        void PointerMoved(Control::MouseButtonState buttonState,
+        void PointerMoved(MTControl::MouseButtonState buttonState,
                           const unsigned int pointerUpdateKind,
                           const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                           const bool focused,
@@ -64,7 +64,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void TouchMoved(const Core::Point newTouchPoint,
                         const bool focused);
 
-        void PointerReleased(Control::MouseButtonState buttonState,
+        void PointerReleased(MTControl::MouseButtonState buttonState,
                              const unsigned int pointerUpdateKind,
                              const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                              const Core::Point pixelPosition);
@@ -73,7 +73,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool MouseWheel(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                         const int32_t delta,
                         const Core::Point pixelPosition,
-                        const Control::MouseButtonState state);
+                        const MTControl::MouseButtonState state);
 
         void UpdateScrollbar(const double newValue);
 
@@ -149,7 +149,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                    const unsigned int pointerUpdateKind,
                                    const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                    const SHORT wheelDelta,
-                                   Control::MouseButtonState buttonState);
+                                   MTControl::MouseButtonState buttonState);
 
         friend class ControlUnitTests::ControlCoreTests;
         friend class ControlUnitTests::ControlInteractivityTests;

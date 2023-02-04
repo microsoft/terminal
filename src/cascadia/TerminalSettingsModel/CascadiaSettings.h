@@ -131,8 +131,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         MTSM::Profile DuplicateProfile(const MTSM::Profile& source);
 
         // load errors
-        WFC::IVectorView<Model::SettingsLoadWarnings> Warnings() const;
-        WF::IReference<Model::SettingsLoadErrors> GetLoadingError() const;
+        WFC::IVectorView<MTSM::SettingsLoadWarnings> Warnings() const;
+        WF::IReference<MTSM::SettingsLoadErrors> GetLoadingError() const;
         winrt::hstring GetSerializationErrorMessage() const;
 
         // defterm
@@ -174,8 +174,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         WFC::IObservableVector<MTSM::Profile> _activeProfiles = winrt::single_threaded_observable_vector<MTSM::Profile>();
 
         // load errors
-        WFC::IVector<Model::SettingsLoadWarnings> _warnings = winrt::single_threaded_vector<Model::SettingsLoadWarnings>();
-        WF::IReference<Model::SettingsLoadErrors> _loadError;
+        WFC::IVector<MTSM::SettingsLoadWarnings> _warnings = winrt::single_threaded_vector<MTSM::SettingsLoadWarnings>();
+        WF::IReference<MTSM::SettingsLoadErrors> _loadError;
         winrt::hstring _deserializationErrorMessage;
 
         // defterm

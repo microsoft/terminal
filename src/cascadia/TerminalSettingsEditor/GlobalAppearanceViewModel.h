@@ -18,7 +18,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         using ViewModelHelper<GlobalAppearanceViewModel>::PropertyChanged;
 
         WINRT_PROPERTY(WFC::IObservableVector<MTSM::Theme>, ThemeList, nullptr);
-        GETSET_BINDABLE_ENUM_SETTING(NewTabPosition, Model::NewTabPosition, _GlobalSettings.NewTabPosition);
+        GETSET_BINDABLE_ENUM_SETTING(NewTabPosition, MTSM::NewTabPosition, _GlobalSettings.NewTabPosition);
         GETSET_BINDABLE_ENUM_SETTING(TabWidthMode, MUXC::TabViewWidthMode, _GlobalSettings.TabWidthMode);
 
     public:

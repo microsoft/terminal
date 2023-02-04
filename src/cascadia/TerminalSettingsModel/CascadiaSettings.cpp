@@ -107,7 +107,7 @@ MTSM::CascadiaSettings CascadiaSettings::Copy() const
 
     // load errors
     {
-        std::vector<Model::SettingsLoadWarnings> warnings{ _warnings.Size() };
+        std::vector<MTSM::SettingsLoadWarnings> warnings{ _warnings.Size() };
         _warnings.GetMany(0, warnings);
 
         settings->_warnings = winrt::single_threaded_vector(std::move(warnings));
@@ -369,12 +369,12 @@ MTSM::Profile CascadiaSettings::DuplicateProfile(const MTSM::Profile& source)
 //   knew were bad when we called `_ValidateSettings` last.
 // Return Value:
 // - a reference to our list of warnings.
-IVectorView<Model::SettingsLoadWarnings> CascadiaSettings::Warnings() const
+IVectorView<MTSM::SettingsLoadWarnings> CascadiaSettings::Warnings() const
 {
     return _warnings.GetView();
 }
 
-WF::IReference<Model::SettingsLoadErrors> CascadiaSettings::GetLoadingError() const
+WF::IReference<MTSM::SettingsLoadErrors> CascadiaSettings::GetLoadingError() const
 {
     return _loadError;
 }

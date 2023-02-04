@@ -247,7 +247,7 @@ namespace ControlUnitTests
         VERIFY_ARE_EQUAL(41, core->BufferHeight());
 
         Log::Comment(L"Clear the buffer");
-        core->ClearBuffer(Control::ClearBufferType::Scrollback);
+        core->ClearBuffer(MTControl::ClearBufferType::Scrollback);
 
         Log::Comment(L"Check the buffer after the clear");
         VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
@@ -286,7 +286,7 @@ namespace ControlUnitTests
         VERIFY_ARE_EQUAL(41, core->BufferHeight());
 
         Log::Comment(L"Clear the buffer");
-        core->ClearBuffer(Control::ClearBufferType::Screen);
+        core->ClearBuffer(MTControl::ClearBufferType::Screen);
 
         Log::Comment(L"Check the buffer after the clear");
         VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
@@ -325,7 +325,7 @@ namespace ControlUnitTests
         VERIFY_ARE_EQUAL(41, core->BufferHeight());
 
         Log::Comment(L"Clear the buffer");
-        core->ClearBuffer(Control::ClearBufferType::All);
+        core->ClearBuffer(MTControl::ClearBufferType::All);
 
         Log::Comment(L"Check the buffer after the clear");
         VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());

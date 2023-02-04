@@ -251,7 +251,7 @@ namespace SettingsModelLocalTests
             const auto settings{ winrt::make_self<CascadiaSettings>(settingsString, DefaultJson) };
 
             VERIFY_ARE_EQUAL(1u, settings->Warnings().Size());
-            VERIFY_ARE_EQUAL(Settings::Model::SettingsLoadWarnings::UnknownTheme, settings->Warnings().GetAt(0));
+            VERIFY_ARE_EQUAL(MTSM::SettingsLoadWarnings::UnknownTheme, settings->Warnings().GetAt(0));
 
             const auto& themes{ settings->GlobalSettings().Themes() };
             {

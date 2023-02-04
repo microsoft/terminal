@@ -43,7 +43,7 @@ namespace winrt::TerminalApp::implementation
         void ScrollToBottom();
 
         void EnableCommandPaletteMode(MTSM::CommandPaletteLaunchMode const launchMode);
-        void EnableTabSwitcherMode(const uint32_t startIdx, Microsoft::Terminal::Settings::Model::TabSwitcherMode tabSwitcherMode);
+        void EnableTabSwitcherMode(const uint32_t startIdx, MTSM::TabSwitcherMode tabSwitcherMode);
         void EnableTabSearchMode();
 
         WINRT_CALLBACK(PropertyChanged, WUX::Data::PropertyChangedEventHandler);
@@ -115,7 +115,7 @@ namespace winrt::TerminalApp::implementation
         // Tab Switcher
         WFC::IVector<MTApp::FilteredCommand> _tabActions{ nullptr };
         WFC::IVector<MTApp::FilteredCommand> _mruTabActions{ nullptr };
-        Microsoft::Terminal::Settings::Model::TabSwitcherMode _tabSwitcherMode;
+        MTSM::TabSwitcherMode _tabSwitcherMode;
         uint32_t _switcherStartIdx;
 
         void _bindTabs(const WFC::IObservableVector<MTApp::TabBase>& source, const WFC::IVector<MTApp::FilteredCommand>& target);

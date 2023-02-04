@@ -326,21 +326,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ProfileViewModel::SetBellStyleAudible(WF::IReference<bool> on)
     {
         auto currentStyle = BellStyle();
-        WI_UpdateFlag(currentStyle, Model::BellStyle::Audible, winrt::unbox_value<bool>(on));
+        WI_UpdateFlag(currentStyle, MTSM::BellStyle::Audible, winrt::unbox_value<bool>(on));
         BellStyle(currentStyle);
     }
 
     void ProfileViewModel::SetBellStyleWindow(WF::IReference<bool> on)
     {
         auto currentStyle = BellStyle();
-        WI_UpdateFlag(currentStyle, Model::BellStyle::Window, winrt::unbox_value<bool>(on));
+        WI_UpdateFlag(currentStyle, MTSM::BellStyle::Window, winrt::unbox_value<bool>(on));
         BellStyle(currentStyle);
     }
 
     void ProfileViewModel::SetBellStyleTaskbar(WF::IReference<bool> on)
     {
         auto currentStyle = BellStyle();
-        WI_UpdateFlag(currentStyle, Model::BellStyle::Taskbar, winrt::unbox_value<bool>(on));
+        WI_UpdateFlag(currentStyle, MTSM::BellStyle::Taskbar, winrt::unbox_value<bool>(on));
         BellStyle(currentStyle);
     }
 

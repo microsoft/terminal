@@ -46,7 +46,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         WFC::IObservableVector<IInspectable> Breadcrumbs() noexcept;
 
-        TYPED_EVENT(OpenJson, WF::IInspectable, Model::SettingsTarget);
+        TYPED_EVENT(OpenJson, WF::IInspectable, MTSM::SettingsTarget);
 
     private:
         WFC::IObservableVector<IInspectable> _breadcrumbs;

@@ -50,7 +50,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         WINRT_PROPERTY(WFC::IVector<MTSM::ActionAndArgs>, TabLayout, nullptr);
         WINRT_PROPERTY(WF::IReference<Model::LaunchPosition>, InitialPosition, nullptr);
         WINRT_PROPERTY(WF::IReference<WF::Size>, InitialSize, nullptr);
-        WINRT_PROPERTY(WF::IReference<Model::LaunchMode>, LaunchMode, nullptr);
+        WINRT_PROPERTY(WF::IReference<MTSM::LaunchMode>, LaunchMode, nullptr);
 
         friend ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<MTSM::WindowLayout>;
     };

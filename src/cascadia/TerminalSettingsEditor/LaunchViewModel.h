@@ -35,8 +35,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void CurrentLaunchMode(const WF::IInspectable& enumEntry);
         WFC::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> LaunchModeList();
 
-        GETSET_BINDABLE_ENUM_SETTING(FirstWindowPreference, Model::FirstWindowPreference, _Settings.GlobalSettings().FirstWindowPreference);
-        GETSET_BINDABLE_ENUM_SETTING(WindowingBehavior, Model::WindowingMode, _Settings.GlobalSettings().WindowingBehavior);
+        GETSET_BINDABLE_ENUM_SETTING(FirstWindowPreference, MTSM::FirstWindowPreference, _Settings.GlobalSettings().FirstWindowPreference);
+        GETSET_BINDABLE_ENUM_SETTING(WindowingBehavior, MTSM::WindowingMode, _Settings.GlobalSettings().WindowingBehavior);
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_Settings.GlobalSettings(), CenterOnLaunch);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_Settings.GlobalSettings(), StartOnUserLogin);
@@ -48,7 +48,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool _useDefaultLaunchPosition;
 
         WFC::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _LaunchModeList;
-        WFC::IMap<Model::LaunchMode, winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _LaunchModeMap;
+        WFC::IMap<MTSM::LaunchMode, winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _LaunchModeMap;
     };
 };
 

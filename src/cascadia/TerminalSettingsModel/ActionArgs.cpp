@@ -618,13 +618,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         switch (Direction())
         {
-        case Microsoft::Terminal::Control::ScrollToMarkDirection::Last:
+        case MTControl::ScrollToMarkDirection::Last:
             return winrt::hstring{ RS_(L"ScrollToLastMarkCommandKey") };
-        case Microsoft::Terminal::Control::ScrollToMarkDirection::First:
+        case MTControl::ScrollToMarkDirection::First:
             return winrt::hstring{ RS_(L"ScrollToFirstMarkCommandKey") };
-        case Microsoft::Terminal::Control::ScrollToMarkDirection::Next:
+        case MTControl::ScrollToMarkDirection::Next:
             return winrt::hstring{ RS_(L"ScrollToNextMarkCommandKey") };
-        case Microsoft::Terminal::Control::ScrollToMarkDirection::Previous:
+        case MTControl::ScrollToMarkDirection::Previous:
         default:
             return winrt::hstring{ RS_(L"ScrollToPreviousMarkCommandKey") };
         }
@@ -794,11 +794,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // "Clear Scrollback"
         switch (Clear())
         {
-        case Control::ClearBufferType::All:
+        case MTControl::ClearBufferType::All:
             return RS_(L"ClearAllCommandKey");
-        case Control::ClearBufferType::Screen:
+        case MTControl::ClearBufferType::Screen:
             return RS_(L"ClearViewportCommandKey");
-        case Control::ClearBufferType::Scrollback:
+        case MTControl::ClearBufferType::Scrollback:
             return RS_(L"ClearScrollbackCommandKey");
         }
 
@@ -908,7 +908,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     winrt::hstring ColorSelectionArgs::GenerateName() const
     {
         auto matchModeStr = winrt::hstring{};
-        if (MatchMode() == Core::MatchMode::All)
+        if (MatchMode() == MTCore::MatchMode::All)
         {
             matchModeStr = fmt::format(L", {}", RS_(L"ColorSelection_allMatches")); // ", all matches"
         }

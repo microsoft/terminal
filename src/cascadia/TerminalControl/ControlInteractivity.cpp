@@ -27,7 +27,7 @@ static constexpr unsigned int MAX_CLICK_COUNT = 3;
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    static constexpr TerminalInput::MouseButtonState toInternalMouseState(const Control::MouseButtonState& state)
+    static constexpr TerminalInput::MouseButtonState toInternalMouseState(const MTControl::MouseButtonState& state)
     {
         return TerminalInput::MouseButtonState{
             WI_IsFlagSet(state, MouseButtonState::IsLeftButtonDown),
@@ -190,7 +190,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core->PasteText(winrt::hstring{ wstr });
     }
 
-    void ControlInteractivity::PointerPressed(Control::MouseButtonState buttonState,
+    void ControlInteractivity::PointerPressed(MTControl::MouseButtonState buttonState,
                                               const unsigned int pointerUpdateKind,
                                               const uint64_t timestamp,
                                               const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
@@ -272,7 +272,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _touchAnchor = contactPoint;
     }
 
-    void ControlInteractivity::PointerMoved(Control::MouseButtonState buttonState,
+    void ControlInteractivity::PointerMoved(MTControl::MouseButtonState buttonState,
                                             const unsigned int pointerUpdateKind,
                                             const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                             const bool focused,
@@ -360,7 +360,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlInteractivity::PointerReleased(Control::MouseButtonState buttonState,
+    void ControlInteractivity::PointerReleased(MTControl::MouseButtonState buttonState,
                                                const unsigned int pointerUpdateKind,
                                                const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                                const Core::Point pixelPosition)
@@ -410,7 +410,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     bool ControlInteractivity::MouseWheel(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                           const int32_t delta,
                                           const Core::Point pixelPosition,
-                                          const Control::MouseButtonState buttonState)
+                                          const MTControl::MouseButtonState buttonState)
     {
         const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition });
 
@@ -623,7 +623,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                      const unsigned int pointerUpdateKind,
                                                      const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                                      const SHORT wheelDelta,
-                                                     Control::MouseButtonState buttonState)
+                                                     MTControl::MouseButtonState buttonState)
     {
         const auto adjustment = _core->ScrollOffset() > 0 ? _core->BufferHeight() - _core->ScrollOffset() - _core->ViewHeight() : 0;
         // If the click happened outside the active region, just don't send any mouse event

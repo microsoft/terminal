@@ -75,7 +75,7 @@ struct InitListPlaceholder
 // JSON deserialization. If the parameter is required to pass any validation,
 // add that as the `required` parameter here, as the body of a conditional
 // EX: For the RESIZE_PANE_ARGS
-//    X(Model::ResizeDirection, ResizeDirection, "direction", args->ResizeDirection() == ResizeDirection::None, Model::ResizeDirection::None)
+//    X(MTSM::ResizeDirection, ResizeDirection, "direction", args->ResizeDirection() == ResizeDirection::None, MTSM::ResizeDirection::None)
 // the bit
 //    args->ResizeDirection() == ResizeDirection::None
 // is used as the conditional for the validation here.

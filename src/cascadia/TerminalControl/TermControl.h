@@ -49,7 +49,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void WindowVisibilityChanged(const bool showOrHide);
 
-        void ColorSelection(MTControl::SelectionColor fg, MTControl::SelectionColor bg, Core::MatchMode matchMode);
+        void ColorSelection(MTControl::SelectionColor fg, MTControl::SelectionColor bg, MTCore::MatchMode matchMode);
 
 #pragma region ICoreState
         const uint64_t TaskbarState() const noexcept;
@@ -59,7 +59,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         WF::IReference<winrt::Windows::UI::Color> TabColor() noexcept;
         hstring WorkingDirectory() const;
 
-        TerminalConnection::ConnectionState ConnectionState() const;
+        MTConnection::ConnectionState ConnectionState() const;
 
         int ScrollOffset() const;
         int ViewHeight() const;
@@ -76,7 +76,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void AddMark(const Control::ScrollMark& mark);
         void ClearMark();
         void ClearAllMarks();
-        void ScrollToMark(const Control::ScrollToMarkDirection& direction);
+        void ScrollToMark(const MTControl::ScrollToMarkDirection& direction);
 
 #pragma endregion
 
@@ -87,7 +87,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::point GetFontSize() const;
 
         void SendInput(const winrt::hstring& input);
-        void ClearBuffer(Control::ClearBufferType clearType);
+        void ClearBuffer(MTControl::ClearBufferType clearType);
 
         void ToggleShaderEffects();
 
@@ -125,7 +125,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool ReadOnly() const noexcept;
         void ToggleReadOnly();
 
-        static Control::MouseButtonState GetPressedMouseButtons(const winrt::Windows::UI::Input::PointerPoint point);
+        static MTControl::MouseButtonState GetPressedMouseButtons(const winrt::Windows::UI::Input::PointerPoint point);
         static unsigned int GetPointerUpdateKind(const winrt::Windows::UI::Input::PointerPoint point);
         static WUX::Thickness ParseThicknessFromPadding(const hstring padding);
 

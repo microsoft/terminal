@@ -1134,20 +1134,20 @@ void AppHost::_GlobalHotkeyPressed(const long hotkeyIndex)
     // desktop:any - MoveToCurrentDesktop=false, OnCurrentDesktop=false
     // desktop:toCurrent - MoveToCurrentDesktop=true, OnCurrentDesktop=false
     // desktop:onCurrent - MoveToCurrentDesktop=false, OnCurrentDesktop=true
-    args.OnCurrentDesktop(summonArgs.Desktop() == Settings::Model::DesktopBehavior::OnCurrent);
-    args.SummonBehavior().MoveToCurrentDesktop(summonArgs.Desktop() == Settings::Model::DesktopBehavior::ToCurrent);
+    args.OnCurrentDesktop(summonArgs.Desktop() == MTSM::DesktopBehavior::OnCurrent);
+    args.SummonBehavior().MoveToCurrentDesktop(summonArgs.Desktop() == MTSM::DesktopBehavior::ToCurrent);
     args.SummonBehavior().ToggleVisibility(summonArgs.ToggleVisibility());
     args.SummonBehavior().DropdownDuration(summonArgs.DropdownDuration());
 
     switch (summonArgs.Monitor())
     {
-    case Settings::Model::MonitorBehavior::Any:
+    case MTSM::MonitorBehavior::Any:
         args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::InPlace);
         break;
-    case Settings::Model::MonitorBehavior::ToCurrent:
+    case MTSM::MonitorBehavior::ToCurrent:
         args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::ToCurrent);
         break;
-    case Settings::Model::MonitorBehavior::ToMouse:
+    case MTSM::MonitorBehavior::ToMouse:
         args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::ToMouse);
         break;
     }

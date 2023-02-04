@@ -1378,7 +1378,7 @@ namespace winrt::TerminalApp::implementation
 
     // The main body of this function is a static helper, to facilitate unit-testing
     MTApp::FindTargetWindowResult AppLogic::_doFindTargetWindow(array_view<const winrt::hstring> args,
-                                                                const Microsoft::Terminal::Settings::Model::WindowingMode& windowingBehavior)
+                                                                const MTSM::WindowingMode& windowingBehavior)
     {
         ::MTApp::AppCommandlineArgs appArgs;
         const auto result = appArgs.ParseArgs(args);

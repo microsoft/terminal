@@ -92,9 +92,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(bool, IsBaseLayer, false);
         WINRT_PROPERTY(bool, FocusDeleteButton, false);
         WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
-        GETSET_BINDABLE_ENUM_SETTING(AntiAliasingMode, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode);
-        GETSET_BINDABLE_ENUM_SETTING(CloseOnExitMode, Microsoft::Terminal::Settings::Model::CloseOnExitMode, CloseOnExit);
-        GETSET_BINDABLE_ENUM_SETTING(ScrollState, Microsoft::Terminal::Control::ScrollbarState, ScrollState);
+        GETSET_BINDABLE_ENUM_SETTING(AntiAliasingMode, MTControl::TextAntialiasingMode, AntialiasingMode);
+        GETSET_BINDABLE_ENUM_SETTING(CloseOnExitMode, MTSM::CloseOnExitMode, CloseOnExit);
+        GETSET_BINDABLE_ENUM_SETTING(ScrollState, MTControl::ScrollbarState, ScrollState);
 
         TYPED_EVENT(DeleteProfile, Editor::ProfileViewModel, Editor::DeleteProfileEventArgs);
 

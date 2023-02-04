@@ -94,7 +94,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ClearSelection();
         bool ToggleBlockSelection();
         void ToggleMarkMode();
-        Control::SelectionInteractionMode SelectionMode() const;
+        MTControl::SelectionInteractionMode SelectionMode() const;
         bool SwitchSelectionEndpoint();
         bool ExpandSelectionToWord();
         bool TryMarkModeKeybinding(const WORD vkey,
@@ -115,7 +115,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         ::Microsoft::Console::Render::IRenderData* GetRenderData() const;
 
-        void ColorSelection(const MTControl::SelectionColor& fg, const MTControl::SelectionColor& bg, Core::MatchMode matchMode);
+        void ColorSelection(const MTControl::SelectionColor& fg, const MTControl::SelectionColor& bg, MTCore::MatchMode matchMode);
 
         void Close();
 
@@ -127,7 +127,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         WF::IReference<winrt::Windows::UI::Color> TabColor() noexcept;
         hstring WorkingDirectory() const;
 
-        TerminalConnection::ConnectionState ConnectionState() const;
+        MTConnection::ConnectionState ConnectionState() const;
 
         int ScrollOffset();
         int ViewHeight() const;
@@ -139,7 +139,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void AddMark(const Control::ScrollMark& mark);
         void ClearMark();
         void ClearAllMarks();
-        void ScrollToMark(const Control::ScrollToMarkDirection& direction);
+        void ScrollToMark(const MTControl::ScrollToMarkDirection& direction);
 
 #pragma endregion
 
@@ -158,7 +158,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                             const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state);
         void UserScrollViewport(const int viewTop);
 
-        void ClearBuffer(Control::ClearBufferType clearType);
+        void ClearBuffer(MTControl::ClearBufferType clearType);
 
 #pragma endregion
 

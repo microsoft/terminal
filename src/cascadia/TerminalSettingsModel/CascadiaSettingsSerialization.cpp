@@ -1054,7 +1054,7 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
 {
     std::vector<MTSM::Profile> allProfiles;
     std::vector<MTSM::Profile> activeProfiles;
-    std::vector<Model::SettingsLoadWarnings> warnings;
+    std::vector<MTSM::SettingsLoadWarnings> warnings;
 
     allProfiles.reserve(loader.userSettings.profiles.size());
     activeProfiles.reserve(loader.userSettings.profiles.size());
@@ -1093,7 +1093,7 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
 
     if (loader.duplicateProfile)
     {
-        warnings.emplace_back(Model::SettingsLoadWarnings::DuplicateProfile);
+        warnings.emplace_back(MTSM::SettingsLoadWarnings::DuplicateProfile);
     }
 
     // SettingsLoader and ParsedSettings are supposed to always

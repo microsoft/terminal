@@ -152,7 +152,7 @@ namespace ControlUnitTests
         core->TransparencyChanged(opacityCallback);
 
         const auto modifiers = ControlKeyStates(ControlKeyStates::RightCtrlPressed | ControlKeyStates::ShiftPressed);
-        const Control::MouseButtonState buttonState{};
+        const MTControl::MouseButtonState buttonState{};
 
         Log::Comment(L"Scroll in the positive direction, increasing opacity");
         // Scroll more than enough times to get to 1.0 from .5.
@@ -236,7 +236,7 @@ namespace ControlUnitTests
         VERIFY_ARE_EQUAL(41, core->BufferHeight());
 
         Log::Comment(L"Scroll up a line");
-        const Control::MouseButtonState buttonState{};
+        const MTControl::MouseButtonState buttonState{};
         const auto modifiers = ControlKeyStates();
         expectedBufferHeight = 41;
         expectedTop = 20;
@@ -304,8 +304,8 @@ namespace ControlUnitTests
 
         // For this test, don't use any modifiers
         const auto modifiers = ControlKeyStates();
-        const auto leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
-        const Control::MouseButtonState noMouseDown{};
+        const auto leftMouseDown{ MTControl::MouseButtonState::IsLeftButtonDown };
+        const MTControl::MouseButtonState noMouseDown{};
 
         const til::size fontSize{ 9, 21 };
 
@@ -405,7 +405,7 @@ namespace ControlUnitTests
 
         // For this test, don't use any modifiers
         const auto modifiers = ControlKeyStates();
-        const auto leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
+        const auto leftMouseDown{ MTControl::MouseButtonState::IsLeftButtonDown };
 
         const til::size fontSize{ 9, 21 };
 
@@ -491,7 +491,7 @@ namespace ControlUnitTests
 
         const auto delta = WHEEL_DELTA / 5;
         const Core::Point mousePos{ 0, 0 };
-        Control::MouseButtonState state{};
+        MTControl::MouseButtonState state{};
 
         interactivity->MouseWheel(modifiers, delta, mousePos, state); // 1/5
         VERIFY_ARE_EQUAL(21, core->ScrollOffset());
@@ -555,7 +555,7 @@ namespace ControlUnitTests
 
         // For this test, don't use any modifiers
         const auto modifiers = ControlKeyStates();
-        const auto leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
+        const auto leftMouseDown{ MTControl::MouseButtonState::IsLeftButtonDown };
 
         const til::size fontSize{ 9, 21 };
 
@@ -600,8 +600,8 @@ namespace ControlUnitTests
 
         // For this test, don't use any modifiers
         const auto modifiers = ControlKeyStates();
-        const auto leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
-        const Control::MouseButtonState noMouseDown{};
+        const auto leftMouseDown{ MTControl::MouseButtonState::IsLeftButtonDown };
+        const MTControl::MouseButtonState noMouseDown{};
 
         const til::size fontSize{ 9, 21 };
         Log::Comment(L"Click on the terminal");
@@ -669,8 +669,8 @@ namespace ControlUnitTests
 
         // For this test, don't use any modifiers
         const auto modifiers = ControlKeyStates();
-        const auto leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
-        const Control::MouseButtonState noMouseDown{};
+        const auto leftMouseDown{ MTControl::MouseButtonState::IsLeftButtonDown };
+        const MTControl::MouseButtonState noMouseDown{};
 
         const til::size fontSize{ 9, 21 };
         interactivity->_rowsToScroll = 1;
@@ -768,7 +768,7 @@ namespace ControlUnitTests
 
         // For this test, don't use any modifiers
         const auto modifiers = ControlKeyStates();
-        const auto leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
+        const auto leftMouseDown{ MTControl::MouseButtonState::IsLeftButtonDown };
 
         const til::size fontSize{ 9, 21 };
 
@@ -925,7 +925,7 @@ namespace ControlUnitTests
         expectedOutput.push_back(L"\x1b[M &&");
         // For this test, don't use any modifiers
         const auto modifiers = ControlKeyStates();
-        const auto leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
+        const auto leftMouseDown{ MTControl::MouseButtonState::IsLeftButtonDown };
         const til::size fontSize{ 9, 21 };
         const til::point terminalPosition0{ 5, 5 };
         const auto cursorPosition0{ terminalPosition0 * fontSize };
@@ -974,7 +974,7 @@ namespace ControlUnitTests
         expectedOutput.push_back(L"\x1b[M &&");
         // For this test, don't use any modifiers
         const auto modifiers = ControlKeyStates();
-        const auto leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
+        const auto leftMouseDown{ MTControl::MouseButtonState::IsLeftButtonDown };
         const til::size fontSize{ 9, 21 };
         const til::point terminalPosition0{ 5, 5 };
         const auto cursorPosition0{ terminalPosition0 * fontSize };

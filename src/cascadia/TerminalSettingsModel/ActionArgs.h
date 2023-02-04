@@ -93,7 +93,7 @@ private:                                                                        
 ////////////////////////////////////////////////////////////////////////////////
 #define COPY_TEXT_ARGS(X)                           \
     X(bool, SingleLine, "singleLine", false, false) \
-    X(WF::IReference<Control::CopyFormat>, CopyFormatting, "copyFormatting", false, nullptr)
+    X(WF::IReference<MTControl::CopyFormat>, CopyFormatting, "copyFormatting", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define MOVE_PANE_ARGS(X) \
@@ -105,15 +105,15 @@ private:                                                                        
 
 ////////////////////////////////////////////////////////////////////////////////
 #define RESIZE_PANE_ARGS(X) \
-    X(Model::ResizeDirection, ResizeDirection, "direction", args->ResizeDirection() == ResizeDirection::None, Model::ResizeDirection::None)
+    X(MTSM::ResizeDirection, ResizeDirection, "direction", args->ResizeDirection() == ResizeDirection::None, MTSM::ResizeDirection::None)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define MOVE_FOCUS_ARGS(X) \
-    X(Model::FocusDirection, FocusDirection, "direction", args->FocusDirection() == Model::FocusDirection::None, Model::FocusDirection::None)
+    X(MTSM::FocusDirection, FocusDirection, "direction", args->FocusDirection() == MTSM::FocusDirection::None, MTSM::FocusDirection::None)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SWAP_PANE_ARGS(X) \
-    X(Model::FocusDirection, Direction, "direction", args->Direction() == Model::FocusDirection::None, Model::FocusDirection::None)
+    X(MTSM::FocusDirection, Direction, "direction", args->Direction() == MTSM::FocusDirection::None, MTSM::FocusDirection::None)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define ADJUST_FONT_SIZE_ARGS(X) \
@@ -185,7 +185,7 @@ private:                                                                        
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SCROLL_TO_MARK_ARGS(X) \
-    X(Microsoft::Terminal::Control::ScrollToMarkDirection, Direction, "direction", false, Microsoft::Terminal::Control::ScrollToMarkDirection::Previous)
+    X(MTControl::ScrollToMarkDirection, Direction, "direction", false, MTControl::ScrollToMarkDirection::Previous)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define ADD_MARK_ARGS(X) \
@@ -212,11 +212,11 @@ private:                                                                        
     X(winrt::hstring, Name, "name", false, L"")
 
 ////////////////////////////////////////////////////////////////////////////////
-#define GLOBAL_SUMMON_ARGS(X)                                                               \
-    X(winrt::hstring, Name, "name", false, L"")                                             \
-    X(Model::DesktopBehavior, Desktop, "desktop", false, Model::DesktopBehavior::ToCurrent) \
-    X(Model::MonitorBehavior, Monitor, "monitor", false, Model::MonitorBehavior::ToMouse)   \
-    X(bool, ToggleVisibility, "toggleVisibility", false, true)                              \
+#define GLOBAL_SUMMON_ARGS(X)                                                             \
+    X(winrt::hstring, Name, "name", false, L"")                                           \
+    X(MTSM::DesktopBehavior, Desktop, "desktop", false, MTSM::DesktopBehavior::ToCurrent) \
+    X(MTSM::MonitorBehavior, Monitor, "monitor", false, MTSM::MonitorBehavior::ToMouse)   \
+    X(bool, ToggleVisibility, "toggleVisibility", false, true)                            \
     X(uint32_t, DropdownDuration, "dropdownDuration", false, 0)
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -478,7 +478,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _TerminalArgs{ terminalArgs } {};
         SplitPaneArgs(SplitType splitMode) :
             _SplitMode{ splitMode } {};
-        ACTION_ARG(Model::SplitDirection, SplitDirection, SplitDirection::Automatic);
+        ACTION_ARG(MTSM::SplitDirection, SplitDirection, SplitDirection::Automatic);
         WINRT_PROPERTY(MTSM::NewTerminalArgs, TerminalArgs, nullptr);
         ACTION_ARG(SplitType, SplitMode, SplitType::Manual);
         ACTION_ARG(double, SplitSize, .5);
