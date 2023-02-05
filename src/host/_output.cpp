@@ -66,7 +66,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
 // Return Value:
 // - S_OK, E_INVALIDARG or similar HRESULT error.
 [[nodiscard]] HRESULT ApiRoutines::WriteConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
-                                                                   const gsl::span<const WORD> attrs,
+                                                                   const std::span<const WORD> attrs,
                                                                    const til::point target,
                                                                    size_t& used) noexcept
 {
