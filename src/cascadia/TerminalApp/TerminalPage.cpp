@@ -1309,7 +1309,10 @@ namespace winrt::TerminalApp::implementation
                                                                                       settings.InitialCols(),
                                                                                       winrt::guid());
 
-            connectionSettings.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
+            if constexpr (Feature_VtPassthroughMode::IsEnabled())
+            {
+                connectionSettings.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
+            }
         }
 
         return TerminalConnection::ConnectionInformation{ className, connectionSettings };
@@ -2699,7 +2702,7 @@ namespace winrt::TerminalApp::implementation
 
         // If we need to create a new connection, do that now, from the settings
         // we just built.
-        auto connection = existingConnection ? existingConnection : _CreateConnectionFromInfo(connectionInfo);
+        const auto& connection = existingConnection ? existingConnection : _CreateConnectionFromInfo(connectionInfo);
 
         // Finalize some defterm properties
         if (existingConnection)
@@ -2709,7 +2712,7 @@ namespace winrt::TerminalApp::implementation
             // If we had an existing connection (i.e., defterm), then get the
             // current settings out of it and stash those with the control. It
             // won't be perfect, but it'll be good enough.
-            if (auto conpty{ existingConnection.try_as<ConptyConnection>() })
+            if (const auto& conpty{ existingConnection.try_as<ConptyConnection>() })
             {
                 connectionInfo = TerminalConnection::ConnectionInformation(winrt::name_of<TerminalConnection::ConptyConnection>(),
                                                                            conpty.GetDeftermSettings());
@@ -2718,9 +2721,9 @@ namespace winrt::TerminalApp::implementation
         else
         {
             // trace log an event if we made the connection ourselves.
-            if (auto conpty{ connection.try_as<TerminalConnection::ConptyConnection>() })
+            if (const auto& conpty{ connection.try_as<TerminalConnection::ConptyConnection>() })
             {
-                auto sessionGuid = conpty.Guid();
+                const auto sessionGuid = conpty.Guid();
                 TraceLoggingWrite(
                     g_hTerminalAppProvider,
                     "ConnectionCreated",
