@@ -422,13 +422,13 @@ class InputBufferTests
         // write a mouse event, key event, dbcs key event, mouse event
         InputBuffer inputBuffer;
 
-        std::array<INPUT_RECORD, 4> inRecords;
+        std::array<INPUT_RECORD, 4> inRecords{};
         inRecords[0].EventType = MOUSE_EVENT;
         inRecords[1] = MakeKeyEvent(TRUE, 1, L'A', 0, L'A', 0);
         inRecords[2] = MakeKeyEvent(TRUE, 1, 0x3042, 0, 0x3042, 0); // U+3042 hiragana A
         inRecords[3].EventType = MOUSE_EVENT;
 
-        std::array<INPUT_RECORD, 5> outRecordsExpected;
+        std::array<INPUT_RECORD, 5> outRecordsExpected{};
         outRecordsExpected[0].EventType = MOUSE_EVENT;
         outRecordsExpected[1] = MakeKeyEvent(TRUE, 1, L'A', 0, L'A', 0);
         outRecordsExpected[2] = MakeKeyEvent(TRUE, 1, 0x3042, 0, 0x82, 0);
