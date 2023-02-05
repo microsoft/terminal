@@ -449,7 +449,7 @@ try
     }
 
     bytesRead = buffer.size() - writer.size();
-    return STATUS_SUCCESS;
+    return status;
 }
 NT_CATCH_RETURN()
 

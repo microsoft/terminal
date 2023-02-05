@@ -422,68 +422,63 @@ try
 
     while (it != end && OutEvents.size() < AmountToRead)
     {
-        std::unique_ptr<IInputEvent> event;
+        auto event = IInputEvent::Create((*it)->ToInputRecord());
 
+        if (event->EventType() == InputEventType::KeyEvent)
         {
-            decltype(_storage)::difference_type advance = 1;
-            auto& e = *it;
+            const auto keyEvent = static_cast<KeyEvent*>(event.get());
+            WORD repeat = 1;
 
             // for stream reads we need to split any key events that have been coalesced
-            if (Stream && e->EventType() == InputEventType::KeyEvent)
+            if (Stream)
             {
-                const auto keyEvent = static_cast<KeyEvent* const>(e.get());
-                const auto repeatCount = keyEvent->GetRepeatCount();
-
-                if (repeatCount > 1)
-                {
-                    auto tempEvent = std::make_unique<KeyEvent>(*keyEvent);
-                    tempEvent->SetRepeatCount(1);
-                    event = std::move(tempEvent);
-
-                    // By setting the advance to 0, the next time we loop around we'll
-                    // process the same event again, up until the repeat count is 1.
-                    keyEvent->SetRepeatCount(repeatCount - 1);
-                    advance = 0;
-                }
+                repeat = keyEvent->GetRepeatCount();
+                keyEvent->SetRepeatCount(1);
             }
 
-            if (!event)
+            if (Unicode)
             {
-                if (Peek)
+                do
                 {
-                    event = IInputEvent::Create(event->ToInputRecord());
-                }
-                else
+                    OutEvents.push_back(std::make_unique<KeyEvent>(*keyEvent));
+                    repeat--;
+                } while (repeat > 0 && OutEvents.size() < AmountToRead);
+            }
+            else
+            {
+                const auto wch = keyEvent->GetCharData();
+
+                char buffer[8];
+                const auto length = WideCharToMultiByte(cp, 0, &wch, 1, &buffer[0], sizeof(buffer), nullptr, nullptr);
+                THROW_LAST_ERROR_IF(length <= 0);
+
+                const std::string_view str{ &buffer[0], gsl::narrow_cast<size_t>(length) };
+
+                do
                 {
-                    event = std::move(e);
-                }
+                    for (const auto& ch : str)
+                    {
+                        auto tempEvent = std::make_unique<KeyEvent>(*keyEvent);
+                        tempEvent->SetCharData(ch);
+                        OutEvents.push_back(std::move(tempEvent));
+                    }
+                    repeat--;
+                } while (repeat > 0 && OutEvents.size() < AmountToRead);
             }
 
-            it += advance;
-        }
-
-        if (!Unicode && event->EventType() == InputEventType::KeyEvent)
-        {
-            const auto keyEvent = static_cast<KeyEvent* const>(event.get());
-            const auto wch = keyEvent->GetCharData();
-
-            char buffer[8];
-            const auto length = WideCharToMultiByte(cp, 0, &wch, 1, &buffer[0], sizeof(buffer), nullptr, nullptr);
-            THROW_LAST_ERROR_IF(length <= 0);
-
-            const std::string_view str{ &buffer[0], gsl::narrow_cast<size_t>(length) };
-
-            for (const auto& ch : str)
+            if (repeat && !Peek)
             {
-                auto tempEvent = std::make_unique<KeyEvent>(*keyEvent);
-                tempEvent->SetCharData(ch);
-                OutEvents.push_back(std::move(tempEvent));
+                const auto originalKeyEvent = static_cast<KeyEvent*>((*it).get());
+                originalKeyEvent->SetRepeatCount(repeat);
+                break;
             }
         }
         else
         {
             OutEvents.push_back(std::move(event));
         }
+
+        ++it;
     }
 
     if (!Peek)
