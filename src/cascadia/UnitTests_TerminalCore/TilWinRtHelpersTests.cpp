@@ -54,7 +54,7 @@ void TilWinRtHelpersTests::TestPropertySimple()
     Foo = Foo() - 5; // 37
     VERIFY_ARE_EQUAL(37, Foo());
 
-    Foo = Foo() + Bar(); // 48
+    Foo() += Bar(); // 48
     VERIFY_ARE_EQUAL(48, Foo());
 }
 
