@@ -4452,15 +4452,15 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_ContextMenuOpened(const IInspectable& sender,
                                           const IInspectable& /*args*/)
     {
-        _populateContextMenu(sender, false);
+        _PopulateContextMenu(sender, false);
     }
     void TerminalPage::_SelectionMenuOpened(const IInspectable& sender,
                                             const IInspectable& /*args*/)
     {
-        _populateContextMenu(sender, true);
+        _PopulateContextMenu(sender, true);
     }
 
-    void TerminalPage::_populateContextMenu(const IInspectable& sender,
+    void TerminalPage::_PopulateContextMenu(const IInspectable& sender,
                                             const bool /*withSelection*/)
     {
         // withSelection can be used to add actions that only appear if there's
@@ -4505,16 +4505,16 @@ namespace winrt::TerminalApp::implementation
         // consistent. This also leaves room for customizing this menu with
         // actions in the future.
 
-        makeItem(RS_(L"SplitPaneContextMenuEntryText"), L"\xF246", ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate } });
-        makeItem(RS_(L"DuplicateTabContextMenuEntryText"), L"\xF5ED", ActionAndArgs{ ShortcutAction::DuplicateTab, nullptr });
+        makeItem(RS_(L"SplitPaneText"), L"\xF246", ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate } });
+        makeItem(RS_(L"DuplicateTabText"), L"\xF5ED", ActionAndArgs{ ShortcutAction::DuplicateTab, nullptr });
 
         // Only wire up "Close Pane" if there's multiple panes.
         if (_GetFocusedTabImpl()->GetLeafPaneCount() > 1)
         {
-            makeItem(RS_(L"ClosePaneContextMenuEntryText"), L"\xE89F", ActionAndArgs{ ShortcutAction::ClosePane, nullptr });
+            makeItem(RS_(L"PaneClose"), L"\xE89F", ActionAndArgs{ ShortcutAction::ClosePane, nullptr });
         }
 
-        makeItem(RS_(L"CloseTabContextMenuEntryText"), L"\xE711", ActionAndArgs{ ShortcutAction::CloseTab, CloseTabArgs{ _GetFocusedTabIndex().value() } });
+        makeItem(RS_(L"TabClose"), L"\xE711", ActionAndArgs{ ShortcutAction::CloseTab, CloseTabArgs{ _GetFocusedTabIndex().value() } });
     }
 
 }

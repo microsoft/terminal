@@ -26,9 +26,6 @@ namespace Microsoft.Terminal.Control
     {
         String SelectedText { get; };
         Windows.Foundation.Point Point { get; };
-        // Ideas:
-        // String CurrentDirectory { get; };
-        // Microsoft.Terminal.TerminalConnection.ConnectionState State { get; };
     }
 
     runtimeclass TitleChangedEventArgs

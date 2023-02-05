@@ -205,6 +205,15 @@
   <data name="TabClose" xml:space="preserve">
     <value>Close Tab</value>
   </data>
+  <data name="PaneClose" xml:space="preserve">
+    <value>Close Pane</value>
+  </data>
+  <data name="SplitTabText" xml:space="preserve">
+    <value>Split Tab</value>
+  </data>
+  <data name="SplitPaneText" xml:space="preserve">
+    <value>Split Pane</value>
+  </data>
   <data name="TabColorChoose" xml:space="preserve">
     <value>Color...</value>
   </data>
@@ -708,9 +717,6 @@
   <data name="DropPathTabRun.Text" xml:space="preserve">
     <value>Open a new tab in given starting directory</value>
   </data>
-  <data name="SplitTabText" xml:space="preserve">
-    <value>Split Tab</value>
-  </data>
   <data name="DropPathTabNewWindow.Text" xml:space="preserve">
     <value>Open a new window with given starting directory</value>
   </data>
@@ -751,18 +757,6 @@
   <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
     <value>Suggestions found: {0}</value>
     <comment>{0} will be replaced with a number.</comment>
-  </data>
-  <data name="SplitPaneContextMenuEntryText" xml:space="preserve">
-    <value>Split pane</value>
-  </data>
-  <data name="DuplicateTabContextMenuEntryText" xml:space="preserve">
-    <value>Duplicate tab</value>
-  </data>
-  <data name="ClosePaneContextMenuEntryText" xml:space="preserve">
-    <value>Close pane</value>
-  </data>
-  <data name="CloseTabContextMenuEntryText" xml:space="preserve">
-    <value>Close tab</value>
   </data>
   <data name="DuplicateRemainingProfilesEntry" xml:space="preserve">
     <value>The "newTabMenu" field contains more than one entry of type "remainingProfiles". Only the first one will be considered.</value>

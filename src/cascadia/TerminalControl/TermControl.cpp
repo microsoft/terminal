@@ -1352,10 +1352,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
-            const auto mouseButtons = TermControl::GetPressedMouseButtons(point);
-
             const auto cursorPosition = point.Position();
-            _interactivity.PointerPressed(mouseButtons,
+            _interactivity.PointerPressed(TermControl::GetPressedMouseButtons(point),
                                           TermControl::GetPointerUpdateKind(point),
                                           point.Timestamp(),
                                           ControlKeyStates{ args.KeyModifiers() },
