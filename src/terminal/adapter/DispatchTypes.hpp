@@ -155,7 +155,7 @@ namespace Microsoft::Console::VirtualTerminal
         constexpr VTParameter at(const size_t index) const noexcept
         {
             // If the index is out of range, we return a parameter with no value.
-            return index < _values.size() ? _values[index] : VTParameter{};
+            return index < _values.size() ? til::at(_values, index) : defaultParameter;
         }
 
         constexpr bool empty() const noexcept
@@ -179,18 +179,28 @@ namespace Microsoft::Console::VirtualTerminal
         template<typename T>
         bool for_each(const T&& predicate) const
         {
+            auto values = _values;
+
             // We always return at least 1 value here, since an empty parameter
             // list is the equivalent of a single "default" parameter.
-            auto success = predicate(at(0));
-            for (auto i = 1u; i < _values.size(); i++)
+            if (values.empty())
             {
-                success = predicate(_values[i]) && success;
+                values = defaultParameters;
+            }
+
+            auto success = true;
+            for (const auto& v : values)
+            {
+                success = predicate(v) && success;
             }
             return success;
         }
 
     private:
-        gsl::span<const VTParameter> _values;
+        static constexpr VTParameter defaultParameter;
+        static constexpr std::span defaultParameters{ &defaultParameter, 1 };
+
+        std::span<const VTParameter> _values;
     };
 
     // FlaggedEnumValue is a convenience class that produces enum values (of a specified size)
@@ -395,6 +405,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
 
     enum ModeParams : VTInt
     {
+        IRM_InsertReplaceMode = ANSIStandardMode(4),
         DECCKM_CursorKeysMode = DECPrivateMode(1),
         DECANM_AnsiMode = DECPrivateMode(2),
         DECCOLM_SetNumberOfColumns = DECPrivateMode(3),

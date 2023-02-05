@@ -43,17 +43,17 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT ResetLineTransform() noexcept override;
         [[nodiscard]] HRESULT PrepareLineTransform(LineRendition lineRendition, til::CoordType targetRow, til::CoordType viewportLeft) noexcept override;
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
-        [[nodiscard]] HRESULT PaintBufferLine(gsl::span<const Cluster> clusters, til::point coord, bool fTrimLeft, bool lineWrapped) noexcept override;
+        [[nodiscard]] HRESULT PaintBufferLine(std::span<const Cluster> clusters, til::point coord, bool fTrimLeft, bool lineWrapped) noexcept override;
         [[nodiscard]] HRESULT PaintBufferGridLines(GridLineSet lines, COLORREF color, size_t cchLine, til::point coordTarget) noexcept override;
         [[nodiscard]] HRESULT PaintSelection(const til::rect& rect) noexcept override;
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
         [[nodiscard]] HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes, const RenderSettings& renderSettings, gsl::not_null<IRenderData*> pData, bool usingSoftFont, bool isSettingDefaultBrushes) noexcept override;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo) noexcept override;
-        [[nodiscard]] HRESULT UpdateSoftFont(gsl::span<const uint16_t> bitPattern, til::size cellSize, size_t centeringHint) noexcept override;
+        [[nodiscard]] HRESULT UpdateSoftFont(std::span<const uint16_t> bitPattern, til::size cellSize, size_t centeringHint) noexcept override;
         [[nodiscard]] HRESULT UpdateDpi(int iDpi) noexcept override;
         [[nodiscard]] HRESULT UpdateViewport(const til::inclusive_rect& srNewViewport) noexcept override;
         [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo, int iDpi) noexcept override;
-        [[nodiscard]] HRESULT GetDirtyArea(gsl::span<const til::rect>& area) noexcept override;
+        [[nodiscard]] HRESULT GetDirtyArea(std::span<const til::rect>& area) noexcept override;
         [[nodiscard]] HRESULT GetFontSize(_Out_ til::size* pFontSize) noexcept override;
         [[nodiscard]] HRESULT IsGlyphWideByFont(std::wstring_view glyph, _Out_ bool* pResult) noexcept override;
         [[nodiscard]] HRESULT UpdateTitle(std::wstring_view newTitle) noexcept override;
@@ -516,7 +516,7 @@ namespace Microsoft::Console::Render
                 // This returns the actual byte size of a AtlasKeyData struct for the given charCount.
                 // The `wchar_t chars[2]` is only a buffer for the inlined variant after
                 // all and the actual charCount can be smaller or larger. Due to this we
-                // remove the size of the `chars` array and add it's true length on top.
+                // remove the size of the `chars` array and add its true length on top.
                 return sizeof(AtlasKeyData) - sizeof(AtlasKeyData::chars) + static_cast<size_t>(charCount) * sizeof(AtlasKeyData::chars[0]);
             }
         };
@@ -772,7 +772,7 @@ namespace Microsoft::Console::Render
                 // alternating between an 1:1 and 2:1 aspect ratio, like so:
                 //   (64,64) -> (128,64) -> (128,128) -> (256,128) -> (256,256)
                 // This behavior is strictly dependent on setMaxArea(u16x2)'s
-                // behavior. See it's comment for an explanation.
+                // behavior. See its comment for an explanation.
                 if (_size.x == _size.y)
                 {
                     _size.x *= 2;
@@ -816,7 +816,7 @@ namespace Microsoft::Console::Render
             u16x2 _size;
             u16x2 _limit;
             // Since _pos starts at {0, 0}, it'll result in the first allocate()d tile to be at {_tileSize.x, 0}.
-            // Coincidentially that's exactly what we want as the cursor texture lives at {0, 0}.
+            // Coincidentally that's exactly what we want as the cursor texture lives at {0, 0}.
             u16x2 _pos;
             u16 _originX = 0;
             // Indicates whether we've exhausted our Z pattern across the atlas texture.

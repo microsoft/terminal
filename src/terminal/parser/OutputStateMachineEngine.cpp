@@ -512,12 +512,24 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         });
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSEL);
         break;
+    case CsiActionCodes::SM_SetMode:
+        success = parameters.for_each([&](const auto mode) {
+            return _dispatch->SetMode(DispatchTypes::ANSIStandardMode(mode));
+        });
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::SM);
+        break;
     case CsiActionCodes::DECSET_PrivateModeSet:
         success = parameters.for_each([&](const auto mode) {
             return _dispatch->SetMode(DispatchTypes::DECPrivateMode(mode));
         });
         //TODO: MSFT:6367459 Add specific logging for each of the DECSET/DECRST codes
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSET);
+        break;
+    case CsiActionCodes::RM_ResetMode:
+        success = parameters.for_each([&](const auto mode) {
+            return _dispatch->ResetMode(DispatchTypes::ANSIStandardMode(mode));
+        });
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::RM);
         break;
     case CsiActionCodes::DECRST_PrivateModeReset:
         success = parameters.for_each([&](const auto mode) {
@@ -1004,7 +1016,7 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
 }
 
 #pragma warning(push)
-#pragma warning(disable : 26445) // Suppress lifetime check for a reference to gsl::span or std::string_view
+#pragma warning(disable : 26445) // Suppress lifetime check for a reference to std::span or std::string_view
 
 // Routine Description:
 // - Given a hyperlink string, attempts to parse the URI encoded. An 'id' parameter

@@ -1768,7 +1768,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // switched to an unfocused appearance.
         //
         // IF WE DON'T HAVE AN UNFOCUSED APPEARANCE: then just ask the Terminal
-        // for it's current color table. That way, we can restore those colors
+        // for its current color table. That way, we can restore those colors
         // back.
         if (HasUnfocusedAppearance())
         {

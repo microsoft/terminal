@@ -97,7 +97,7 @@
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
 
-    <!-- Reference Microsoft.Terminal.Settings.ModelLib here, so we can use it's winmd as
+    <!-- Reference Microsoft.Terminal.Settings.ModelLib here, so we can use its winmd as
     our winmd. This didn't work correctly in VS2017, you'd need to
     manually reference the lib -->
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\Microsoft.Terminal.Settings.ModelLib.vcxproj">

@@ -28,6 +28,7 @@
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\PseudoConsoleWindowAccessibilityProvider.cpp" />
     <ClCompile Include="..\RemoteConsoleControl.cpp" />
     <ClCompile Include="..\ServiceLocator.cpp" />
     <ClCompile Include="..\VtApiRedirection.cpp" />
@@ -49,6 +50,7 @@
     <ClInclude Include="..\InteractivityFactory.hpp" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\..\inc\ServiceLocator.hpp" />
+    <ClInclude Include="..\PseudoConsoleWindowAccessibilityProvider.hpp" />
     <ClInclude Include="..\RemoteConsoleControl.hpp" />
   </ItemGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->

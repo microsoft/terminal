@@ -352,7 +352,7 @@ using namespace Microsoft::Console::Interactivity;
                     const auto gle = GetLastError();
                     status = NTSTATUS_FROM_WIN32(gle);
                 }
-
+                _pseudoConsoleWindowHwnd = hwnd;
                 break;
             }
 #ifdef BUILD_ONECORE_INTERACTIVITY
@@ -463,6 +463,18 @@ using namespace Microsoft::Console::Interactivity;
         {
             _WritePseudoWindowCallback((bool)wParam);
         }
+    }
+    case WM_GETOBJECT:
+    {
+        if (static_cast<long>(lParam) == static_cast<long>(UiaRootObjectId))
+        {
+            if (nullptr == _pPseudoConsoleUiaProvider)
+            {
+                LOG_IF_FAILED(WRL::MakeAndInitialize<PseudoConsoleWindowAccessibilityProvider>(&_pPseudoConsoleUiaProvider, _pseudoConsoleWindowHwnd));
+            }
+            return UiaReturnRawElementProvider(hWnd, wParam, lParam, _pPseudoConsoleUiaProvider.Get());
+        }
+        return 0;
     }
     }
     // If we get this far, call the default window proc

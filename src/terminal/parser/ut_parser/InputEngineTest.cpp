@@ -997,7 +997,7 @@ void InputEngineTest::AltIntermediateTest()
     VERIFY_IS_NOT_NULL(stateMachine);
     testState._stateMachine = stateMachine.get();
 
-    // Write a Alt+/, Ctrl+e pair to the input engine, then take it's output and
+    // Write a Alt+/, Ctrl+e pair to the input engine, then take its output and
     // run it through the terminalInput translator. We should get ^[/^E back
     // out.
     std::wstring seq = L"\x1b/";
