@@ -8,7 +8,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     template<typename T>
     struct property
     {
-        property<T>() = default;
+        property<T>(){};
         property<T>(T defaultValue) :
             _value{ defaultValue } {}
         T& operator()()
@@ -39,7 +39,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     template<typename ArgsT>
     struct event
     {
-        event<ArgsT>() = default;
         winrt::event_token operator()(const ArgsT& handler) { return _handlers.add(handler); }
         void operator()(const winrt::event_token& token) { _handlers.remove(token); }
         template<typename... Arg>
@@ -50,24 +49,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         winrt::event<ArgsT> _handlers;
     };
 
-    template<typename ArgsT>
-    struct forwarded_event
-    {
-        forwarded_event<ArgsT>() = delete;
-        forwarded_event<ArgsT>(event<ArgsT>& other) :
-            _origin{ other } {}
-        forwarded_event<ArgsT>(forwarded_event<ArgsT>& other) :
-            _origin{ other._origin } {}
-
-        winrt::event_token operator()(const ArgsT& handler) { return _origin(handler); }
-        void operator()(const winrt::event_token& token) { _origin(token); }
-        template<typename... Arg>
-        void raise(Arg const&... args)
-        {
-            _origin.raise(args...);
-        }
-        event<ArgsT>& _origin;
-    };
 #endif
 
 }
