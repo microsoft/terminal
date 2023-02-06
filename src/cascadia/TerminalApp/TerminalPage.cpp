@@ -2035,6 +2035,18 @@ namespace winrt::TerminalApp::implementation
             if (const auto terminalTab{ _GetFocusedTabImpl() })
             {
                 auto startupActions = terminalTab->BuildStartupActions(true);
+
+                // Collect all the content we're about to detach.
+                if (const auto rootPane = terminalTab->GetRootPane())
+                {
+                    rootPane->WalkTree([&](auto p) {
+                        if (const auto& control{ p->GetTerminalControl() })
+                        {
+                            _manager.Detach(control.ContentGuid());
+                        }
+                    });
+                }
+
                 auto winRtActions{ winrt::single_threaded_vector<ActionAndArgs>(std::move(startupActions)) };
                 // Json::Value json{ Json::objectValue };
                 // SetValueForKey(json, "content", winRtActions);
@@ -2044,6 +2056,8 @@ namespace winrt::TerminalApp::implementation
                 auto request = winrt::make_self<RequestMoveContentArgs>(args.Window(),
                                                                         str,
                                                                         0);
+
+                _RemoveTab(*terminalTab);
                 _RequestMoveContentHandlers(*this, *request);
                 return true;
             }
@@ -2078,6 +2092,8 @@ namespace winrt::TerminalApp::implementation
             _actionDispatch->DoAction(action);
         }
     }
+
+    // TODO!  look at 87c840b381870e45bcc9e625fb88a8bdf5106420. That's what I was starting here
 
     // Method Description:
     // - Split the focused pane either horizontally or vertically, and place the

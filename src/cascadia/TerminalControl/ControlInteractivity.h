@@ -92,6 +92,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
         TYPED_EVENT(ScrollPositionChanged, IInspectable, Control::ScrollPositionChangedArgs);
 
+        TYPED_EVENT(Attached, IInspectable, IInspectable);
+
     private:
         // NOTE: _uiaEngine must be ordered before _core.
         //

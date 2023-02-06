@@ -68,6 +68,7 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, ScrollPositionChangedArgs> ScrollPositionChanged;
         event Windows.Foundation.TypedEventHandler<Object, PasteFromClipboardEventArgs> PasteFromClipboard;
 
+        event Windows.Foundation.TypedEventHandler<Object, Object> Attached;
 
     };
 }

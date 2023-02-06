@@ -17,9 +17,17 @@ namespace winrt::TerminalApp::implementation
                                                                       Microsoft::Terminal::TerminalConnection::ITerminalConnection connection);
         Microsoft::Terminal::Control::ControlInteractivity LookupCore(winrt::guid id);
 
+        void Detach(const winrt::guid& contentGuid);
+
     private:
         Windows::Foundation::Collections::IMap<winrt::guid, Microsoft::Terminal::Control::ControlInteractivity> _content{
             winrt::multi_threaded_map<winrt::guid, Microsoft::Terminal::Control::ControlInteractivity>()
         };
+        Windows::Foundation::Collections::IMap<winrt::guid, Microsoft::Terminal::Control::ControlInteractivity> _recentlyDetachedContent{
+            winrt::multi_threaded_map<winrt::guid, Microsoft::Terminal::Control::ControlInteractivity>()
+        };
+
+        void _finalizeDetach(winrt::Windows::Foundation::IInspectable sender,
+                             winrt::Windows::Foundation::IInspectable e);
     };
 }
