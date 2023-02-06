@@ -2091,10 +2091,12 @@ bool AdaptDispatch::SetAnsiMode(const bool ansiMode)
 // Arguments:
 // - topMargin - the line number for the top margin.
 // - bottomMargin - the line number for the bottom margin.
+// - homeCursor - move the cursor to the home position.
 // Return Value:
 // - <none>
 void AdaptDispatch::_DoSetTopBottomScrollingMargins(const VTInt topMargin,
-                                                    const VTInt bottomMargin)
+                                                    const VTInt bottomMargin,
+                                                    const bool homeCursor)
 {
     // so notes time: (input -> state machine out -> adapter out -> conhost internal)
     // having only a top param is legal         ([3;r   -> 3,0   -> 3,h  -> 3,h,true)
@@ -2137,6 +2139,12 @@ void AdaptDispatch::_DoSetTopBottomScrollingMargins(const VTInt topMargin,
         }
         _scrollMargins.top = actualTop;
         _scrollMargins.bottom = actualBottom;
+        // If requested, we may also need to move the cursor to the home
+        // position, but only if the requested margins were valid.
+        if (homeCursor)
+        {
+            CursorPosition(1, 1);
+        }
     }
 }
 
@@ -2153,10 +2161,7 @@ void AdaptDispatch::_DoSetTopBottomScrollingMargins(const VTInt topMargin,
 bool AdaptDispatch::SetTopBottomScrollingMargins(const VTInt topMargin,
                                                  const VTInt bottomMargin)
 {
-    // When this is called, the cursor should also be moved to home.
-    // Other functions that only need to set/reset the margins should call _DoSetTopBottomScrollingMargins
-    _DoSetTopBottomScrollingMargins(topMargin, bottomMargin);
-    CursorPosition(1, 1);
+    _DoSetTopBottomScrollingMargins(topMargin, bottomMargin, true);
     return true;
 }
 
@@ -2168,10 +2173,12 @@ bool AdaptDispatch::SetTopBottomScrollingMargins(const VTInt topMargin,
 // Arguments:
 // - leftMargin - the column number for the left margin.
 // - rightMargin - the column number for the right margin.
+// - homeCursor - move the cursor to the home position.
 // Return Value:
 // - <none>
 void AdaptDispatch::_DoSetLeftRightScrollingMargins(const VTInt leftMargin,
-                                                    const VTInt rightMargin)
+                                                    const VTInt rightMargin,
+                                                    const bool homeCursor)
 {
     til::CoordType actualLeft = leftMargin;
     til::CoordType actualRight = rightMargin;
@@ -2207,6 +2214,12 @@ void AdaptDispatch::_DoSetLeftRightScrollingMargins(const VTInt leftMargin,
         }
         _scrollMargins.left = actualLeft;
         _scrollMargins.right = actualRight;
+        // If requested, we may also need to move the cursor to the home
+        // position, but only if the requested margins were valid.
+        if (homeCursor)
+        {
+            CursorPosition(1, 1);
+        }
     }
 }
 
@@ -2225,10 +2238,7 @@ bool AdaptDispatch::SetLeftRightScrollingMargins(const VTInt leftMargin,
 {
     if (_modes.test(Mode::AllowDECSLRM))
     {
-        // When this is called, the cursor should also be moved to home.
-        // Other functions that only need to set/reset the margins should call _DoSetLeftRightScrollingMargins
-        _DoSetLeftRightScrollingMargins(leftMargin, rightMargin);
-        CursorPosition(1, 1);
+        _DoSetLeftRightScrollingMargins(leftMargin, rightMargin, true);
     }
     else
     {

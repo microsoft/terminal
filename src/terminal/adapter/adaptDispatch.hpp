@@ -221,9 +221,11 @@ namespace Microsoft::Console::VirtualTerminal
         void _ScrollMovement(const VTInt delta);
 
         void _DoSetTopBottomScrollingMargins(const VTInt topMargin,
-                                             const VTInt bottomMargin);
+                                             const VTInt bottomMargin,
+                                             const bool homeCursor = false);
         void _DoSetLeftRightScrollingMargins(const VTInt leftMargin,
-                                             const VTInt rightMargin);
+                                             const VTInt rightMargin,
+                                             const bool homeCursor = false);
 
         void _DoLineFeed(TextBuffer& textBuffer, const bool withReturn, const bool wrapForced);
 
