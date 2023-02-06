@@ -47,6 +47,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _guid = ::Microsoft::Console::Utils::CreateGuid();
 
         _core = winrt::make_self<ControlCore>(settings, unfocusedAppearance, connection);
+
+        _core->Attached([weakThis = get_weak()](auto&&, auto&&) {
+            if (auto self{ weakThis.get() })
+            {
+                self->_AttachedHandlers(*self, nullptr);
+            }
+        });
     }
 
     winrt::guid ControlInteractivity::Id()

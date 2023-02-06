@@ -231,9 +231,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::Reparent(const Microsoft::Terminal::Control::IKeyBindings& keyBindings)
     {
-        _CloseTerminalRequestedHandlers(*this, nullptr);
         _settings->KeyBindings(keyBindings);
         _setupDispatcherAndCallbacks();
+
+        _AttachedHandlers(*this, nullptr);
     }
 
     bool ControlCore::Initialize(const double actualWidth,
