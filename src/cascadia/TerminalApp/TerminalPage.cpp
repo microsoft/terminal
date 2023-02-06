@@ -4777,6 +4777,27 @@ namespace winrt::TerminalApp::implementation
 
             e.Data().Properties().Insert(L"content", winrt::box_value(str));
             e.Data().RequestedOperation(DataPackageOperation::Move);
+
+            e.Data().OperationCompleted([weakThis = get_weak(), weakTab = terminalTab->get_weak()](auto&&, auto &&) -> winrt::fire_and_forget {
+                auto tab = weakTab.get();
+                auto page = weakThis.get();
+                if (tab && page)
+                {
+                    // TODO! this loop might be able to go outside the
+                    // OperationCompleted. If we put if before the
+                    // OperationCompleted, then we make sure we've got an extra
+                    // reference to the content, if the operation _is_ completed
+                    // before we hook up the Attached handlers. However,idk what
+                    // happens then if the operation never happens.
+                    //
+                    // Collect all the content we're about to detach.
+                    page->_DetachTab(tab);
+
+                    co_await wil::resume_foreground(page->Dispatcher(), CoreDispatcherPriority::Normal);
+
+                    page->_RemoveTab(*tab);
+                }
+            });
         }
     }
     void TerminalPage::_onTabStripDragOver(winrt::Windows::Foundation::IInspectable sender,
