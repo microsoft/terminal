@@ -2027,6 +2027,20 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
+    void TerminalPage::_DetachTab(const winrt::com_ptr<TerminalTab>& terminalTab)
+    {
+        // Collect all the content we're about to detach.
+        if (const auto rootPane = terminalTab->GetRootPane())
+        {
+            rootPane->WalkTree([&](auto p) {
+                if (const auto& control{ p->GetTerminalControl() })
+                {
+                    _manager.Detach(control.ContentGuid());
+                }
+            });
+        }
+    }
+
     bool TerminalPage::_MoveTab(MoveTabArgs args)
     {
         const auto windowId{ args.Window() };
@@ -2035,17 +2049,7 @@ namespace winrt::TerminalApp::implementation
             if (const auto terminalTab{ _GetFocusedTabImpl() })
             {
                 auto startupActions = terminalTab->BuildStartupActions(true);
-
-                // Collect all the content we're about to detach.
-                if (const auto rootPane = terminalTab->GetRootPane())
-                {
-                    rootPane->WalkTree([&](auto p) {
-                        if (const auto& control{ p->GetTerminalControl() })
-                        {
-                            _manager.Detach(control.ContentGuid());
-                        }
-                    });
-                }
+                _DetachTab(terminalTab);
 
                 auto winRtActions{ winrt::single_threaded_vector<ActionAndArgs>(std::move(startupActions)) };
                 // Json::Value json{ Json::objectValue };
