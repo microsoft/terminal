@@ -72,9 +72,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // These events might all be triggered by the connection, but that
         // should be drained and closed before we complete destruction. So these
         // are safe.
-        _core.ScrollPositionChanged({ this, &TermControl::_ScrollPositionChanged });
-        _core.WarningBell({ this, &TermControl::_coreWarningBell });
-        _core.CursorPositionChanged({ this, &TermControl::_CursorPositionChanged });
+        _core.ScrollPositionChanged({ get_weak(), &TermControl::_ScrollPositionChanged });
+        _core.WarningBell({ get_weak(), &TermControl::_coreWarningBell });
+        _core.CursorPositionChanged({ get_weak(), &TermControl::_CursorPositionChanged });
 
         // This event is specifically triggered by the renderer thread, a BG thread. Use a weak ref here.
         _core.RendererEnteredErrorState({ get_weak(), &TermControl::_RendererEnteredErrorState });
@@ -82,16 +82,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // These callbacks can only really be triggered by UI interactions. So
         // they don't need weak refs - they can't be triggered unless we're
         // alive.
-        _core.BackgroundColorChanged({ this, &TermControl::_coreBackgroundColorChanged });
-        _core.FontSizeChanged({ this, &TermControl::_coreFontSizeChanged });
-        _core.TransparencyChanged({ this, &TermControl::_coreTransparencyChanged });
-        _core.RaiseNotice({ this, &TermControl::_coreRaisedNotice });
-        _core.HoveredHyperlinkChanged({ this, &TermControl::_hoveredHyperlinkChanged });
-        _core.FoundMatch({ this, &TermControl::_coreFoundMatch });
-        _core.UpdateSelectionMarkers({ this, &TermControl::_updateSelectionMarkers });
-        _core.OpenHyperlink({ this, &TermControl::_HyperlinkHandler });
-        _interactivity.OpenHyperlink({ this, &TermControl::_HyperlinkHandler });
-        _interactivity.ScrollPositionChanged({ this, &TermControl::_ScrollPositionChanged });
+        _core.BackgroundColorChanged({ get_weak(), &TermControl::_coreBackgroundColorChanged });
+        _core.FontSizeChanged({ get_weak(), &TermControl::_coreFontSizeChanged });
+        _core.TransparencyChanged({ get_weak(), &TermControl::_coreTransparencyChanged });
+        _core.RaiseNotice({ get_weak(), &TermControl::_coreRaisedNotice });
+        _core.HoveredHyperlinkChanged({ get_weak(), &TermControl::_hoveredHyperlinkChanged });
+        _core.FoundMatch({ get_weak(), &TermControl::_coreFoundMatch });
+        _core.UpdateSelectionMarkers({ get_weak(), &TermControl::_updateSelectionMarkers });
+        _core.OpenHyperlink({ get_weak(), &TermControl::_HyperlinkHandler });
+        _interactivity.OpenHyperlink({ get_weak(), &TermControl::_HyperlinkHandler });
+        _interactivity.ScrollPositionChanged({ get_weak(), &TermControl::_ScrollPositionChanged });
 
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
@@ -141,7 +141,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         static constexpr auto AutoScrollUpdateInterval = std::chrono::microseconds(static_cast<int>(1.0 / 30.0 * 1000000));
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
-        _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
+        _autoScrollTimer.Tick({ get_weak(), &TermControl::_UpdateAutoScroll });
 
         // _interactivity.Attached([weakThis = get_weak()]{
         //     if (auto control{ weakThis.get() }; !control->_IsClosing())
