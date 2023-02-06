@@ -495,6 +495,7 @@ namespace winrt::TerminalApp::implementation
         void _onTabDragStarting(winrt::Microsoft::UI::Xaml::Controls::TabView sender, winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragStartingEventArgs e);
         void _onTabStripDragOver(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::DragEventArgs e);
         winrt::fire_and_forget _onTabStripDrop(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::DragEventArgs e);
+        void _DetachTab(const winrt::com_ptr<TerminalTab>& terminalTab);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
