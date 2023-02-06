@@ -173,8 +173,8 @@ private:                                                                        
     X(Windows::Foundation::IReference<uint32_t>, Index, "index", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
-#define MOVE_TAB_ARGS(X)                                                                                             \
-    X(MoveTabDirection, Direction, "direction", args->Direction() == MoveTabDirection::None, MoveTabDirection::None) \
+#define MOVE_TAB_ARGS(X)                                                                                                                           \
+    X(MoveTabDirection, Direction, "direction", (args->Direction() == MoveTabDirection::None) && (args->Window().empty()), MoveTabDirection::None) \
     X(winrt::hstring, Window, "window", false, L"")
 
 // Other ideas:
