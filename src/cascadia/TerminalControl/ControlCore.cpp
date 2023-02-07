@@ -233,7 +233,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _settings->KeyBindings(keyBindings);
         _setupDispatcherAndCallbacks();
-
+        const auto actualNewSize = _actualFont.GetSize();
+        // Bubble this up, so our new control knows how big we want the font.
+        _FontSizeChangedHandlers(actualNewSize.width, actualNewSize.height, true);
         _AttachedHandlers(*this, nullptr);
     }
 

@@ -327,6 +327,36 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         til::point _toPosInDips(const Core::Point terminalCellPos);
         void _throttledUpdateScrollbar(const ScrollBarUpdate& update);
+
+        struct Revokers
+        {
+            Control::ControlCore::ScrollPositionChanged_revoker coreScrollPositionChanged;
+            Control::ControlCore::WarningBell_revoker WarningBell;
+            Control::ControlCore::CursorPositionChanged_revoker CursorPositionChanged;
+            Control::ControlCore::RendererEnteredErrorState_revoker RendererEnteredErrorState;
+            Control::ControlCore::BackgroundColorChanged_revoker BackgroundColorChanged;
+            Control::ControlCore::FontSizeChanged_revoker FontSizeChanged;
+            Control::ControlCore::TransparencyChanged_revoker TransparencyChanged;
+            Control::ControlCore::RaiseNotice_revoker RaiseNotice;
+            Control::ControlCore::HoveredHyperlinkChanged_revoker HoveredHyperlinkChanged;
+            Control::ControlCore::FoundMatch_revoker FoundMatch;
+            Control::ControlCore::UpdateSelectionMarkers_revoker UpdateSelectionMarkers;
+            Control::ControlCore::OpenHyperlink_revoker coreOpenHyperlink;
+            Control::ControlCore::CopyToClipboard_revoker CopyToClipboard;
+            Control::ControlCore::TitleChanged_revoker TitleChanged;
+            Control::ControlCore::TabColorChanged_revoker TabColorChanged;
+            Control::ControlCore::TaskbarProgressChanged_revoker TaskbarProgressChanged;
+            Control::ControlCore::ConnectionStateChanged_revoker ConnectionStateChanged;
+            Control::ControlCore::ShowWindowChanged_revoker ShowWindowChanged;
+            Control::ControlCore::CloseTerminalRequested_revoker CloseTerminalRequested;
+            // These are set up in _InitializeTerminal
+            Control::ControlCore::RendererWarning_revoker RendererWarning;
+            Control::ControlCore::SwapChainChanged_revoker SwapChainChanged;
+
+            Control::ControlInteractivity::OpenHyperlink_revoker interactivityOpenHyperlink;
+            Control::ControlInteractivity::ScrollPositionChanged_revoker interactivityScrollPositionChanged;
+            Control::ControlInteractivity::PasteFromClipboard_revoker PasteFromClipboard;
+        } _revokers{};
     };
 }
 
