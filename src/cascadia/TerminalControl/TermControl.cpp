@@ -93,6 +93,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _interactivity.OpenHyperlink({ this, &TermControl::_HyperlinkHandler });
         _interactivity.ScrollPositionChanged({ this, &TermControl::_ScrollPositionChanged });
 
+        _core.CopyToClipboard({ get_weak(), &TermControl::_bubbleCopyToClipboard });
+        _core.TitleChanged({ get_weak(), &TermControl::_bubbleTitleChanged });
+        _core.TabColorChanged({ get_weak(), &TermControl::_bubbleTabColorChanged });
+        _core.TaskbarProgressChanged({ get_weak(), &TermControl::_bubbleSetTaskbarProgress });
+        _core.ConnectionStateChanged({ get_weak(), &TermControl::_bubbleConnectionStateChanged });
+        _core.ShowWindowChanged({ get_weak(), &TermControl::_bubbleShowWindowChanged });
+        _core.CloseTerminalRequested({ get_weak(), &TermControl::_bubbleCloseTerminalRequested });
+
+        _interactivity.PasteFromClipboard({ get_weak(), &TermControl::_bubblePasteFromClipboard });
+
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
         _layoutUpdatedRevoker = SwapChainPanel().LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
