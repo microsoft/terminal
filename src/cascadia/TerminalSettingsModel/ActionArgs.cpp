@@ -963,11 +963,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         switch (Direction())
         {
-            // TODO!
         case SelectOutputDirection::Next:
-            return winrt::hstring{ L"Select next command output" };
+            return RS_(L"SelectOutputNextCommandKey");
         case SelectOutputDirection::Previous:
-            return winrt::hstring{ L"Select previous command output" };
+            return RS_(L"SelectOutputPreviousCommandKey");
         }
         return L"";
     }
@@ -975,11 +974,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         switch (Direction())
         {
-            // TODO!
         case SelectOutputDirection::Next:
-            return winrt::hstring{ L"Select next command" };
+            return RS_(L"SelectCommandNextCommandKey");
         case SelectOutputDirection::Previous:
-            return winrt::hstring{ L"Select previous command" };
+            return RS_(L"SelectCommandPreviousCommandKey");
         }
         return L"";
     }
