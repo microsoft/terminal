@@ -99,36 +99,6 @@ namespace winrt::TerminalApp::implementation
         return S_OK;
     }
 
-    // Function Description:
-    // - Recursively check our commands to see if there's a keybinding for
-    //   exactly their action. If there is, label that command with the text
-    //   corresponding to that key chord.
-    // - Will recurse into nested commands as well.
-    // Arguments:
-    // - settings: The settings who's keybindings we should use to look up the key chords from
-    // - commands: The list of commands to label.
-    static void _recursiveUpdateCommandKeybindingLabels(CascadiaSettings settings,
-                                                        IMapView<winrt::hstring, Command> commands)
-    {
-        for (const auto& nameAndCmd : commands)
-        {
-            const auto& command = nameAndCmd.Value();
-            if (command.HasNestedCommands())
-            {
-                _recursiveUpdateCommandKeybindingLabels(settings, command.NestedCommands());
-            }
-            else
-            {
-                // If there's a keybinding that's bound to exactly this command,
-                // then get the keychord and display it as a
-                // part of the command in the UI.
-                // We specifically need to do this for nested commands.
-                const auto keyChord{ settings.ActionMap().GetKeyBindingForAction(command.ActionAndArgs().Action(), command.ActionAndArgs().Args()) };
-                command.RegisterKey(keyChord);
-            }
-        }
-    }
-
     winrt::fire_and_forget TerminalPage::SetSettings(CascadiaSettings settings, bool needRefreshUI)
     {
         _settings = settings;
@@ -3316,50 +3286,6 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
-    static bool _compareSchemeNames(const ColorScheme& lhs, const ColorScheme& rhs)
-    {
-        std::wstring leftName{ lhs.Name() };
-        std::wstring rightName{ rhs.Name() };
-        return leftName.compare(rightName) < 0;
-    }
-
-    // Method Description:
-    // - Takes a mapping of names->commands and expands them
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    IMap<winrt::hstring, Command> TerminalPage::_ExpandCommands(IMapView<winrt::hstring, Command> commandsToExpand,
-                                                                IVectorView<Profile> profiles,
-                                                                IMapView<winrt::hstring, ColorScheme> schemes)
-    {
-        auto warnings{ winrt::single_threaded_vector<SettingsLoadWarnings>() };
-
-        std::vector<ColorScheme> sortedSchemes;
-        sortedSchemes.reserve(schemes.Size());
-
-        for (const auto& nameAndScheme : schemes)
-        {
-            sortedSchemes.push_back(nameAndScheme.Value());
-        }
-        std::sort(sortedSchemes.begin(),
-                  sortedSchemes.end(),
-                  _compareSchemeNames);
-
-        auto copyOfCommands = winrt::single_threaded_map<winrt::hstring, Command>();
-        for (const auto& nameAndCommand : commandsToExpand)
-        {
-            copyOfCommands.Insert(nameAndCommand.Key(), nameAndCommand.Value());
-        }
-
-        Command::ExpandCommands(copyOfCommands,
-                                profiles,
-                                { sortedSchemes },
-                                warnings);
-
-        return copyOfCommands;
-    }
     // Method Description:
     // - Repopulates the list of commands in the command palette with the
     //   current commands in the settings. Also updates the keybinding labels to
@@ -3370,15 +3296,10 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_UpdateCommandsForPalette()
     {
-        auto copyOfCommands = _ExpandCommands(_settings.GlobalSettings().ActionMap().NameMap(),
-                                              _settings.ActiveProfiles().GetView(),
-                                              _settings.GlobalSettings().ColorSchemes());
-
-        _recursiveUpdateCommandKeybindingLabels(_settings, copyOfCommands.GetView());
-
         // Update the command palette when settings reload
+        const auto& expanded{ _settings.GlobalSettings().ActionMap().ExpandedCommands() };
         auto commandsCollection = winrt::single_threaded_vector<Command>();
-        for (const auto& nameAndCommand : copyOfCommands)
+        for (const auto& nameAndCommand : expanded)
         {
             commandsCollection.Append(nameAndCommand.Value());
         }
