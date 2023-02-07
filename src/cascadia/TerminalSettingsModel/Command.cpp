@@ -49,7 +49,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         command->_nestedCommand = _nestedCommand;
         if (HasNestedCommands())
         {
-            command->_subcommands = winrt::multi_threaded_map<winrt::hstring, Model::Command>();
+            command->_subcommands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
             for (auto kv : NestedCommands())
             {
                 const auto subCmd{ winrt::get_self<Command>(kv.Value()) };
@@ -261,7 +261,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         if (const auto nestedCommandsJson{ json[JsonKey(CommandsKey)] })
         {
             // Initialize our list of subcommands.
-            result->_subcommands = winrt::multi_threaded_map<winrt::hstring, Model::Command>();
+            result->_subcommands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
             result->_nestedCommand = true;
             auto nestedWarnings = Command::LayerJson(result->_subcommands, nestedCommandsJson);
             // It's possible that the nested commands have some warnings

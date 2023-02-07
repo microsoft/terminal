@@ -255,57 +255,57 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
         }
     }
 
-    // // Search through app extensions.
-    // // Gets the catalog of extensions with the name "com.microsoft.windows.terminal.settings".
-    // //
-    // // GH#12305: Open() can throw an 0x80070490 "Element not found.".
-    // // It's unclear to me under which circumstances this happens as no one on the team
-    // // was able to reproduce the user's issue, even if the application was run unpackaged.
-    // // The error originates from `CallerIdentity::GetCallingProcessAppId` which returns E_NOT_SET.
-    // // A comment can be found, reading:
-    // // > Gets the "strong" AppId from the process token. This works for UWAs and Centennial apps,
-    // // > strongly named processes where the AppId is stored securely in the process token. [...]
-    // // > E_NOT_SET is returned for processes without strong AppIds.
-    // IVectorView<AppExtension> extensions;
-    // try
-    // {
-    //     const auto catalog = AppExtensionCatalog::Open(AppExtensionHostName);
-    //     extensions = extractValueFromTaskWithoutMainThreadAwait(catalog.FindAllAsync());
-    // }
-    // CATCH_LOG();
+    // Search through app extensions.
+    // Gets the catalog of extensions with the name "com.microsoft.windows.terminal.settings".
+    //
+    // GH#12305: Open() can throw an 0x80070490 "Element not found.".
+    // It's unclear to me under which circumstances this happens as no one on the team
+    // was able to reproduce the user's issue, even if the application was run unpackaged.
+    // The error originates from `CallerIdentity::GetCallingProcessAppId` which returns E_NOT_SET.
+    // A comment can be found, reading:
+    // > Gets the "strong" AppId from the process token. This works for UWAs and Centennial apps,
+    // > strongly named processes where the AppId is stored securely in the process token. [...]
+    // > E_NOT_SET is returned for processes without strong AppIds.
+    IVectorView<AppExtension> extensions;
+    try
+    {
+        const auto catalog = AppExtensionCatalog::Open(AppExtensionHostName);
+        extensions = extractValueFromTaskWithoutMainThreadAwait(catalog.FindAllAsync());
+    }
+    CATCH_LOG();
 
-    // if (!extensions)
-    // {
-    //     return;
-    // }
+    if (!extensions)
+    {
+        return;
+    }
 
-    // for (const auto& ext : extensions)
-    // {
-    //     const auto packageName = ext.Package().Id().FamilyName();
-    //     if (_ignoredNamespaces.count(std::wstring_view{ packageName }))
-    //     {
-    //         continue;
-    //     }
+    for (const auto& ext : extensions)
+    {
+        const auto packageName = ext.Package().Id().FamilyName();
+        if (_ignoredNamespaces.count(std::wstring_view{ packageName }))
+        {
+            continue;
+        }
 
-    //     // Likewise, getting the public folder from an extension is an async operation.
-    //     auto foundFolder = extractValueFromTaskWithoutMainThreadAwait(ext.GetPublicFolderAsync());
-    //     if (!foundFolder)
-    //     {
-    //         continue;
-    //     }
+        // Likewise, getting the public folder from an extension is an async operation.
+        auto foundFolder = extractValueFromTaskWithoutMainThreadAwait(ext.GetPublicFolderAsync());
+        if (!foundFolder)
+        {
+            continue;
+        }
 
-    //     // the StorageFolder class has its own methods for obtaining the files within the folder
-    //     // however, all those methods are Async methods
-    //     // you may have noticed that we need to resort to clunky implementations for async operations
-    //     // (they are in extractValueFromTaskWithoutMainThreadAwait)
-    //     // so for now we will just take the folder path and access the files that way
-    //     const auto path = buildPath(foundFolder.Path(), FragmentsSubDirectory);
+        // the StorageFolder class has its own methods for obtaining the files within the folder
+        // however, all those methods are Async methods
+        // you may have noticed that we need to resort to clunky implementations for async operations
+        // (they are in extractValueFromTaskWithoutMainThreadAwait)
+        // so for now we will just take the folder path and access the files that way
+        const auto path = buildPath(foundFolder.Path(), FragmentsSubDirectory);
 
-    //     if (std::filesystem::is_directory(path))
-    //     {
-    //         parseAndLayerFragmentFiles(path, packageName);
-    //     }
-    // }
+        if (std::filesystem::is_directory(path))
+        {
+            parseAndLayerFragmentFiles(path, packageName);
+        }
+    }
 }
 
 // See FindFragmentsAndMergeIntoUserSettings.
@@ -954,9 +954,9 @@ void CascadiaSettings::_researchOnLoad()
         // dark: 2
         // a custom theme: 3
         const auto themeChoice = themeInUse == L"system" ? 0 :
-                                                           themeInUse == L"light" ? 1 :
-                                                                                    themeInUse == L"dark" ? 2 :
-                                                                                                            3;
+                                 themeInUse == L"light"  ? 1 :
+                                 themeInUse == L"dark"   ? 2 :
+                                                           3;
 
         TraceLoggingWrite(
             g_hSettingsModelProvider,
@@ -1103,9 +1103,9 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
 
     _globals = loader.userSettings.globals;
     _baseLayerProfile = loader.userSettings.baseLayerProfile;
-    _allProfiles = winrt::multi_threaded_observable_vector(std::move(allProfiles));
-    _activeProfiles = winrt::multi_threaded_observable_vector(std::move(activeProfiles));
-    _warnings = winrt::multi_threaded_vector(std::move(warnings));
+    _allProfiles = winrt::single_threaded_observable_vector(std::move(allProfiles));
+    _activeProfiles = winrt::single_threaded_observable_vector(std::move(activeProfiles));
+    _warnings = winrt::single_threaded_vector(std::move(warnings));
 
     _resolveDefaultProfile();
     _resolveNewTabMenuProfiles();
@@ -1312,7 +1312,7 @@ void CascadiaSettings::_resolveNewTabMenuProfiles() const
     // We keep track of the "remaining profiles" - those that have not yet been resolved
     // in either a "profile" or "source" entry. They will possibly be assigned to a
     // "remainingProfiles" entry
-    auto remainingProfiles = multi_threaded_map(std::move(remainingProfilesMap));
+    auto remainingProfiles = single_threaded_map(std::move(remainingProfilesMap));
 
     // We call a recursive helper function to process the entries
     auto entries = _globals->NewTabMenu();
@@ -1426,7 +1426,7 @@ void CascadiaSettings::_resolveNewTabMenuProfilesSet(const IVector<Model::NewTab
             // So, we need to first obtain our implementation struct instance, to access this field.
             const auto matchEntry{ winrt::get_self<implementation::MatchProfilesEntry>(entry.as<Model::MatchProfilesEntry>()) };
 
-            matchEntry->Profiles(multi_threaded_map<int, Model::Profile>());
+            matchEntry->Profiles(single_threaded_map<int, Model::Profile>());
 
             auto activeProfileCount = gsl::narrow_cast<int>(_activeProfiles.Size());
             for (auto profileIndex = 0; profileIndex < activeProfileCount; profileIndex++)

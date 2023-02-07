@@ -62,7 +62,7 @@ IVector<NewTabMenuEntryModel> FolderEntry::Entries() const
 {
     // We filter the full list of entries from JSON to just include the
     // non-empty ones.
-    IVector<NewTabMenuEntryModel> result{ winrt::multi_threaded_vector<NewTabMenuEntryModel>() };
+    IVector<NewTabMenuEntryModel> result{ winrt::single_threaded_vector<NewTabMenuEntryModel>() };
     if (_Entries == nullptr)
     {
         return result;

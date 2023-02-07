@@ -81,7 +81,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::com_ptr<implementation::ActionMap> _actionMap{ winrt::make_self<implementation::ActionMap>() };
 
         std::vector<SettingsLoadWarnings> _keybindingsWarnings;
-        Windows::Foundation::Collections::IMap<winrt::hstring, Model::ColorScheme> _colorSchemes{ winrt::multi_threaded_map<winrt::hstring, Model::ColorScheme>() };
-        Windows::Foundation::Collections::IMap<winrt::hstring, Model::Theme> _themes{ winrt::multi_threaded_map<winrt::hstring, Model::Theme>() };
+        Windows::Foundation::Collections::IMap<winrt::hstring, Model::ColorScheme> _colorSchemes{ winrt::single_threaded_map<winrt::hstring, Model::ColorScheme>() };
+        Windows::Foundation::Collections::IMap<winrt::hstring, Model::Theme> _themes{ winrt::single_threaded_map<winrt::hstring, Model::Theme>() };
     };
 }

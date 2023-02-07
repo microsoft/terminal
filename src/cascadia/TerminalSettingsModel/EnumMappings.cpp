@@ -17,7 +17,7 @@ using namespace ::Microsoft::Terminal::Settings::Model;
     winrt::Windows::Foundation::Collections::IMap<winrt::hstring, type> EnumMappings::name() \
     {                                                                                        \
         static IMap<winrt::hstring, type> enumMap = []() {                                   \
-            auto map = multi_threaded_map<winrt::hstring, type>();                           \
+            auto map = single_threaded_map<winrt::hstring, type>();                          \
             for (auto [enumStr, enumVal] : JsonUtils::ConversionTrait<type>::mappings)       \
             {                                                                                \
                 map.Insert(winrt::to_hstring(enumStr), enumVal);                             \
@@ -54,7 +54,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     winrt::Windows::Foundation::Collections::IMap<winrt::hstring, uint16_t> EnumMappings::FontWeight()
     {
         static auto enumMap = []() {
-            auto map = multi_threaded_map<winrt::hstring, uint16_t>();
+            auto map = single_threaded_map<winrt::hstring, uint16_t>();
             for (auto [enumStr, enumVal] : JsonUtils::ConversionTrait<Windows::UI::Text::FontWeight>::mappings)
             {
                 map.Insert(winrt::to_hstring(enumStr), enumVal);
