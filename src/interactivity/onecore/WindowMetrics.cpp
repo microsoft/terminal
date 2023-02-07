@@ -67,11 +67,11 @@ til::rect WindowMetrics::GetMinClientRectInPixels()
 
         auto Status = Server->RequestGetDisplaySize(&DisplaySizeIoctl);
 
-        if (NT_SUCCESS(Status))
+        if (SUCCEEDED_NTSTATUS(Status))
         {
             Status = Server->RequestGetFontSize(&FontSizeIoctl);
 
-            if (NT_SUCCESS(Status))
+            if (SUCCEEDED_NTSTATUS(Status))
             {
                 DisplaySize.top = 0;
                 DisplaySize.left = 0;

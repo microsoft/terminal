@@ -146,7 +146,7 @@ bool RAW_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
                                     nullptr);
         }
 
-        if (!NT_SUCCESS(*pReplyStatus) || fSkipFinally)
+        if (!SUCCEEDED_NTSTATUS(*pReplyStatus) || fSkipFinally)
         {
             if (*pReplyStatus == CONSOLE_STATUS_WAIT)
             {
@@ -167,7 +167,7 @@ bool RAW_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
                                         nullptr,
                                         nullptr,
                                         nullptr);
-                if (!NT_SUCCESS(*pReplyStatus))
+                if (!SUCCEEDED_NTSTATUS(*pReplyStatus))
                 {
                     *pReplyStatus = STATUS_SUCCESS;
                     break;

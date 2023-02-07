@@ -162,7 +162,7 @@ ConIoSrvComm::~ConIoSrvComm()
                                nullptr,
                                ConnectionMessageAttributes,
                                nullptr);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         const auto ViewAttributes = ALPC_GET_DATAVIEW_ATTRIBUTES(ConnectionMessageAttributes);
         const auto HandleAttributes = ALPC_GET_HANDLE_ATTRIBUTES(ConnectionMessageAttributes);
@@ -174,7 +174,7 @@ ConIoSrvComm::~ConIoSrvComm()
             Status = STATUS_UNSUCCESSFUL;
         }
 
-        if (NT_SUCCESS(Status))
+        if (SUCCEEDED_NTSTATUS(Status))
         {
             // Get each handle out. ALPC does not allow to pass indirect handles
             // all at once; they must be retrieved one by one.
@@ -188,7 +188,7 @@ ConIoSrvComm::~ConIoSrvComm()
                                                        &HandleInfo,
                                                        sizeof(HandleInfo),
                                                        nullptr);
-                if (NT_SUCCESS(Status))
+                if (SUCCEEDED_NTSTATUS(Status))
                 {
                     if (Index == 0)
                     {
@@ -464,7 +464,7 @@ VOID ConIoSrvComm::CleanupForHeadless(const NTSTATUS status)
     Message.Type = CIS_MSG_TYPE_GETDISPLAYSIZE;
 
     auto Status = SendRequestReceiveReply(&Message);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         *pCdDisplaySize = Message.GetDisplaySizeParams.DisplaySize;
         Status = Message.GetDisplaySizeParams.ReturnValue;
@@ -479,7 +479,7 @@ VOID ConIoSrvComm::CleanupForHeadless(const NTSTATUS status)
     Message.Type = CIS_MSG_TYPE_GETFONTSIZE;
 
     auto Status = SendRequestReceiveReply(&Message);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         *pCdFontSize = Message.GetFontSizeParams.FontSize;
         Status = Message.GetFontSizeParams.ReturnValue;
@@ -495,7 +495,7 @@ VOID ConIoSrvComm::CleanupForHeadless(const NTSTATUS status)
     Message.SetCursorParams.CursorInformation = *pCdCursorInformation;
 
     auto Status = SendRequestReceiveReply(&Message);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         Status = Message.SetCursorParams.ReturnValue;
     }
@@ -510,7 +510,7 @@ VOID ConIoSrvComm::CleanupForHeadless(const NTSTATUS status)
     Message.UpdateDisplayParams.RowIndex = gsl::narrow<SHORT>(RowIndex);
 
     auto Status = SendRequestReceiveReply(&Message);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         Status = Message.UpdateDisplayParams.ReturnValue;
     }
@@ -523,7 +523,7 @@ VOID ConIoSrvComm::CleanupForHeadless(const NTSTATUS status)
     NTSTATUS Status;
 
     Status = EnsureConnection();
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         CIS_MSG Message = { 0 };
         Message.Type = CIS_MSG_TYPE_MAPVIRTUALKEY;
@@ -531,7 +531,7 @@ VOID ConIoSrvComm::CleanupForHeadless(const NTSTATUS status)
         Message.MapVirtualKeyParams.MapType = uMapType;
 
         Status = SendRequestReceiveReply(&Message);
-        if (NT_SUCCESS(Status))
+        if (SUCCEEDED_NTSTATUS(Status))
         {
             *puReturnValue = Message.MapVirtualKeyParams.ReturnValue;
         }
@@ -545,14 +545,14 @@ VOID ConIoSrvComm::CleanupForHeadless(const NTSTATUS status)
     NTSTATUS Status;
 
     Status = EnsureConnection();
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         CIS_MSG Message = { 0 };
         Message.Type = CIS_MSG_TYPE_VKKEYSCAN;
         Message.VkKeyScanParams.Character = wCharacter;
 
         Status = SendRequestReceiveReply(&Message);
-        if (NT_SUCCESS(Status))
+        if (SUCCEEDED_NTSTATUS(Status))
         {
             *psReturnValue = Message.VkKeyScanParams.ReturnValue;
         }
@@ -566,14 +566,14 @@ VOID ConIoSrvComm::CleanupForHeadless(const NTSTATUS status)
     NTSTATUS Status;
 
     Status = EnsureConnection();
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         CIS_MSG Message = { 0 };
         Message.Type = CIS_MSG_TYPE_GETKEYSTATE;
         Message.GetKeyStateParams.VirtualKey = iVirtualKey;
 
         Status = SendRequestReceiveReply(&Message);
-        if (NT_SUCCESS(Status))
+        if (SUCCEEDED_NTSTATUS(Status))
         {
             *psReturnValue = Message.GetKeyStateParams.ReturnValue;
         }
@@ -603,7 +603,7 @@ UINT ConIoSrvComm::ConIoMapVirtualKeyW(UINT uCode, UINT uMapType)
     UINT ReturnValue;
     Status = RequestMapVirtualKey(uCode, uMapType, &ReturnValue);
 
-    if (!NT_SUCCESS(Status))
+    if (!SUCCEEDED_NTSTATUS(Status))
     {
         ReturnValue = 0;
         SetLastError(ERROR_PROC_NOT_FOUND);
@@ -619,7 +619,7 @@ SHORT ConIoSrvComm::ConIoVkKeyScanW(WCHAR ch)
     SHORT ReturnValue;
     Status = RequestVkKeyScan(ch, &ReturnValue);
 
-    if (!NT_SUCCESS(Status))
+    if (!SUCCEEDED_NTSTATUS(Status))
     {
         ReturnValue = 0;
         SetLastError(ERROR_PROC_NOT_FOUND);
@@ -635,7 +635,7 @@ SHORT ConIoSrvComm::ConIoGetKeyState(int nVirtKey)
     SHORT ReturnValue;
     Status = RequestGetKeyState(nVirtKey, &ReturnValue);
 
-    if (!NT_SUCCESS(Status))
+    if (!SUCCEEDED_NTSTATUS(Status))
     {
         ReturnValue = 0;
         SetLastError(ERROR_PROC_NOT_FOUND);
@@ -656,13 +656,13 @@ SHORT ConIoSrvComm::ConIoGetKeyState(int nVirtKey)
     const auto DisplaySize = Metrics->GetMaxClientRectInPixels();
     auto Status = GetLastError();
 
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         // Same with the font size.
         CD_IO_FONT_SIZE FontSize{};
         Status = RequestGetFontSize(&FontSize);
 
-        if (NT_SUCCESS(Status))
+        if (SUCCEEDED_NTSTATUS(Status))
         {
             try
             {

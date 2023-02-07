@@ -119,7 +119,7 @@ ULONG CONSOLE_INFORMATION::GetCSRecursionCount() const noexcept
     }
 
     auto Status = DoCreateScreenBuffer();
-    if (!NT_SUCCESS(Status))
+    if (!SUCCEEDED_NTSTATUS(Status))
     {
         goto ErrorExit2;
     }
@@ -130,7 +130,7 @@ ULONG CONSOLE_INFORMATION::GetCSRecursionCount() const noexcept
 
     gci.ConsoleIme.RefreshAreaAttributes();
 
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         return STATUS_SUCCESS;
     }

@@ -108,7 +108,7 @@ NTSTATUS RegistrySerialization::s_LoadRegDword(const HKEY hKey, const _RegProper
                                ToWin32RegistryType(pPropMap->propertyType),
                                (PBYTE)& dwValue,
                                nullptr);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         switch (pPropMap->propertyType)
         {
@@ -165,7 +165,7 @@ NTSTATUS RegistrySerialization::s_LoadRegString(const HKEY hKey, const _RegPrope
 
     auto pwchString = new(std::nothrow) WCHAR[cchField];
     auto Status = NT_TESTNULL(pwchString);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         Status = s_QueryValue(hKey,
                               pPropMap->pwszValueName,
@@ -173,7 +173,7 @@ NTSTATUS RegistrySerialization::s_LoadRegString(const HKEY hKey, const _RegPrope
                               ToWin32RegistryType(pPropMap->propertyType),
                               (PBYTE)pwchString,
                               nullptr);
-        if (NT_SUCCESS(Status))
+        if (SUCCEEDED_NTSTATUS(Status))
         {
             // ensure pwchString is null terminated
             pwchString[cchField - 1] = UNICODE_NULL;
@@ -209,7 +209,7 @@ NTSTATUS RegistrySerialization::s_OpenConsoleKey(_Out_ HKEY* phCurrentUserKey, _
     // Open the current user registry key.
     NTSTATUS Status = NTSTATUS_FROM_WIN32(RegOpenCurrentUser(KEY_READ | KEY_WRITE, &currentUserKey));
 
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         // Open the console registry key.
         Status = s_OpenKey(currentUserKey.get(), CONSOLE_REGISTRY_STRING, &consoleKey);
@@ -221,7 +221,7 @@ NTSTATUS RegistrySerialization::s_OpenConsoleKey(_Out_ HKEY* phCurrentUserKey, _
         }
 
         // If we're successful, give the keys back.
-        if (NT_SUCCESS(Status))
+        if (SUCCEEDED_NTSTATUS(Status))
         {
             *phCurrentUserKey = currentUserKey.release();
             *phConsoleKey = consoleKey.release();
@@ -407,7 +407,7 @@ NTSTATUS RegistrySerialization::s_UpdateValue(const HKEY hConsoleKey,
         if (hConsoleKey != hKey)
         {
             Status = s_QueryValue(hConsoleKey, pwszValueName, cbDataLength, dwType, Data, nullptr);
-            if (NT_SUCCESS(Status))
+            if (SUCCEEDED_NTSTATUS(Status))
             {
                 fDeleteKey = (memcmp(pbData, Data, cbDataLength) == 0);
             }
@@ -436,15 +436,15 @@ NTSTATUS RegistrySerialization::s_OpenCurrentUserConsoleTitleKey(_In_ PCWSTR con
     NTSTATUS Status = NTSTATUS_FROM_WIN32(RegOpenKeyW(HKEY_CURRENT_USER,
                                                       nullptr,
                                                       phCurrentUserKey));
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         Status = RegistrySerialization::s_CreateKey(*phCurrentUserKey,
                                                     CONSOLE_REGISTRY_STRING,
                                                     phConsoleKey);
-        if (NT_SUCCESS(Status))
+        if (SUCCEEDED_NTSTATUS(Status))
         {
             Status = RegistrySerialization::s_CreateKey(*phConsoleKey, title, phTitleKey);
-            if (!NT_SUCCESS(Status))
+            if (!SUCCEEDED_NTSTATUS(Status))
             {
                 RegCloseKey(*phConsoleKey);
                 RegCloseKey(*phCurrentUserKey);

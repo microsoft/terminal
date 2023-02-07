@@ -29,8 +29,6 @@ typedef _Return_type_success_(return >= 0) LONG NTSTATUS;
 /*lint -save -e624 */ // Don't complain about different typedefs.
 typedef NTSTATUS* PNTSTATUS;
 /*lint -restore */ // Resume checking for different typedefs.
-#define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
-
 // End From ntdef.h
 
 #define INLINE_NTSTATUS_FROM_WIN32 1 // Must use inline NTSTATUS or it will call the wrapped function twice.
