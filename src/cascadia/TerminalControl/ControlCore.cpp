@@ -2138,12 +2138,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             const auto bufferSize{ _terminal->GetTextBuffer().GetSize() };
             bufferSize.DecrementInBounds(end);
-            // _renderer->TriggerSelection();
 
             auto lock = _terminal->LockForWriting();
             _terminal->SelectNewRegion(start, end);
             _renderer->TriggerSelection();
-            // _renderer->TriggerRedrawAll();
         }
     }
 
