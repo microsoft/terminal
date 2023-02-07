@@ -854,4 +854,79 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         cmd->ActionAndArgs(action);
         AddAction(*cmd);
     }
+
+    void ActionMap::_recursiveUpdateCommandKeybindingLabels()
+    {
+        const auto& commands{ _ExpandedMapCache };
+
+        for (const auto& nameAndCmd : commands)
+        {
+            const auto& command = nameAndCmd.Value();
+            if (command.HasNestedCommands())
+            {
+                _recursiveUpdateCommandKeybindingLabels();
+            }
+            else
+            {
+                // If there's a keybinding that's bound to exactly this command,
+                // then get the keychord and display it as a
+                // part of the command in the UI.
+                // We specifically need to do this for nested commands.
+                const auto keyChord{ GetKeyBindingForAction(command.ActionAndArgs().Action(),
+                                                            command.ActionAndArgs().Args()) };
+                command.RegisterKey(keyChord);
+            }
+        }
+    }
+
+    // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
+    static bool _compareSchemeNames(const ColorScheme& lhs, const ColorScheme& rhs)
+    {
+        std::wstring leftName{ lhs.Name() };
+        std::wstring rightName{ rhs.Name() };
+        return leftName.compare(rightName) < 0;
+    }
+
+    void ActionMap::ExpandCommands(const winrt::Windows::Foundation::Collections::IVectorView<Model::Profile>& profiles,
+                                   const winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, Model::ColorScheme>& schemes)
+    {
+        // TODO in review - It's a little weird to stash the expanded commands
+        // into a separate map. Is it possible to just replace the name map with
+        // the post-expanded commands?
+        //
+        // WHILE also making sure that upon re-saving the commands, we don't
+        // actually serialize the results of the expansion. I don't think it is.
+
+        auto warnings{ winrt::single_threaded_vector<SettingsLoadWarnings>() };
+
+        std::vector<Model::ColorScheme> sortedSchemes;
+        sortedSchemes.reserve(schemes.Size());
+
+        for (const auto& nameAndScheme : schemes)
+        {
+            sortedSchemes.push_back(nameAndScheme.Value());
+        }
+        std::sort(sortedSchemes.begin(),
+                  sortedSchemes.end(),
+                  _compareSchemeNames);
+
+        auto copyOfCommands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
+
+        const auto& commandsToExpand{ NameMap() };
+        for (const auto& nameAndCommand : commandsToExpand)
+        {
+            copyOfCommands.Insert(nameAndCommand.Key(), nameAndCommand.Value());
+        }
+
+        Command::ExpandCommands(copyOfCommands,
+                                profiles,
+                                winrt::param::vector_view<Model::ColorScheme>{ sortedSchemes },
+                                warnings);
+
+        _ExpandedMapCache = copyOfCommands;
+    }
+    Windows::Foundation::Collections::IMapView<hstring, Model::Command> ActionMap::ExpandedCommands()
+    {
+        return _ExpandedMapCache.GetView();
+    }
 }
