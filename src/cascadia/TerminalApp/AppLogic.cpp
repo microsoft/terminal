@@ -6,6 +6,7 @@
 #include "../inc/WindowingBehavior.h"
 #include "AppLogic.g.cpp"
 #include "FindTargetWindowResult.g.cpp"
+#include "SettingsLoadEventArgs.h"
 
 #include <LibraryResources.h>
 #include <WtExeUtils.h>
@@ -256,10 +257,10 @@ namespace winrt::TerminalApp::implementation
                 return E_INVALIDARG;
             }
 
-            _warnings.clear();
+            _warnings.Clear();
             for (uint32_t i = 0; i < newSettings.Warnings().Size(); i++)
             {
-                _warnings.push_back(newSettings.Warnings().GetAt(i));
+                _warnings.Append(newSettings.Warnings().GetAt(i));
             }
 
             _hasSettingsStartupActions = false;
@@ -279,12 +280,15 @@ namespace winrt::TerminalApp::implementation
                 }
                 else
                 {
-                    _warnings.push_back(SettingsLoadWarnings::FailedToParseStartupActions);
+                    _warnings.Append(SettingsLoadWarnings::FailedToParseStartupActions);
                 }
             }
 
             _settings = std::move(newSettings);
-            hr = _warnings.empty() ? S_OK : S_FALSE;
+
+            _settings.ExpandCommands();
+
+            hr = (_warnings.Size()) == 0 ? S_OK : S_FALSE;
         }
         catch (const winrt::hresult_error& e)
         {
@@ -486,6 +490,14 @@ namespace winrt::TerminalApp::implementation
                 // const winrt::hstring textKey = USES_RESOURCE(L"ReloadJsonParseErrorText");
                 // _ShowLoadErrorsDialog(titleKey, textKey, _settingsLoadedResult);
                 // return;
+
+                auto ev = winrt::make_self<SettingsLoadEventArgs>(true,
+                                                                  static_cast<uint64_t>(_settingsLoadedResult),
+                                                                  _settingsLoadExceptionText,
+                                                                  _warnings,
+                                                                  _settings);
+                _SettingsChangedHandlers(*this, *ev);
+                return;
             }
         }
 
@@ -508,7 +520,12 @@ namespace winrt::TerminalApp::implementation
         _ApplyStartupTaskStateChange();
         _ProcessLazySettingsChanges();
 
-        _SettingsChangedHandlers(*this, _settings);
+        auto ev = winrt::make_self<SettingsLoadEventArgs>(!initialLoad,
+                                                          _settingsLoadedResult,
+                                                          _settingsLoadExceptionText,
+                                                          _warnings,
+                                                          _settings);
+        _SettingsChangedHandlers(*this, *ev);
     }
 
     // Method Description:

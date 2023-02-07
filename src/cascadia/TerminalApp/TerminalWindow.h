@@ -7,6 +7,7 @@
 #include "SystemMenuChangeArgs.g.h"
 
 #include "TerminalPage.h"
+#include "SettingsLoadEventArgs.h"
 
 #include <inc/cppwinrt_utils.h>
 #include <ThrottledFunc.h>
@@ -47,7 +48,7 @@ namespace winrt::TerminalApp::implementation
 
         void Quit();
 
-        void UpdateSettings(const HRESULT settingsLoadedResult, const Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
+        winrt::fire_and_forget UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args);
 
         bool HasCommandlineArguments() const noexcept;
         // bool HasSettingsStartupActions() const noexcept;
@@ -108,7 +109,7 @@ namespace winrt::TerminalApp::implementation
         void DismissDialog();
 
         Microsoft::Terminal::Settings::Model::Theme Theme();
-        void UpdateSettingsHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& arg);
+        void UpdateSettingsHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::TerminalApp::SettingsLoadEventArgs& arg);
 
         // Normally, WindowName and WindowId would be
         // WINRT_OBSERVABLE_PROPERTY's, but we want them to raise
@@ -160,8 +161,12 @@ namespace winrt::TerminalApp::implementation
 
         TerminalApp::ContentManager _manager{ nullptr };
 
-        void _ShowLoadErrorsDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey, HRESULT settingsLoadedResult);
-        void _ShowLoadWarningsDialog();
+        void _ShowLoadErrorsDialog(const winrt::hstring& titleKey,
+                                   const winrt::hstring& contentKey,
+                                   HRESULT settingsLoadedResult,
+                                   const winrt::hstring& exceptionText);
+        void _ShowLoadWarningsDialog(const Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings>& warnings);
+
         bool _IsKeyboardServiceEnabled();
 
         void _RefreshThemeRoutine();
@@ -189,6 +194,8 @@ namespace winrt::TerminalApp::implementation
         FORWARDED_TYPED_EVENT(ShowWindowChanged, Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Control::ShowWindowArgs, _root, ShowWindowChanged);
 
         TYPED_EVENT(SystemMenuChangeRequested, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SystemMenuChangeArgs);
+
+        TYPED_EVENT(SettingsChanged, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SettingsLoadEventArgs);
 
 #ifdef UNIT_TESTING
         friend class TerminalAppLocalTests::CommandlineTest;

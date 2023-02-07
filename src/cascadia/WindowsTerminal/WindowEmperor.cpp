@@ -30,6 +30,12 @@ WindowEmperor::WindowEmperor() noexcept :
     });
 }
 
+WindowEmperor::~WindowEmperor()
+{
+    _app.Close();
+    _app = nullptr;
+}
+
 void _buildArgsFromCommandline(std::vector<winrt::hstring>& args)
 {
     if (auto commandline{ GetCommandLineW() })

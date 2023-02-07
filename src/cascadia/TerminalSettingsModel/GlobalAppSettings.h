@@ -63,6 +63,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void AddTheme(const Model::Theme& theme);
         Model::Theme CurrentTheme() noexcept;
 
+        void ExpandCommands(const Windows::Foundation::Collections::IVectorView<Model::Profile>& profiles,
+                            const Windows::Foundation::Collections::IMapView<winrt::hstring, Model::ColorScheme>& schemes);
+
         INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, UnparsedDefaultProfile, L"");
 
 #define GLOBAL_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \

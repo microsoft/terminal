@@ -27,6 +27,17 @@ namespace TerminalApp
         SystemMenuItemHandler Handler { get; };
     };
 
+    [default_interface] runtimeclass SettingsLoadEventArgs
+    {
+        Boolean Reload { get; };
+        UInt64 Result { get; };
+        IVector<Microsoft.Terminal.Settings.Model.SettingsLoadWarnings> Warnings { get; };
+        String ExceptionText { get; };
+
+        Microsoft.Terminal.Settings.Model.CascadiaSettings NewSettings { get; };
+
+    };
+
     // See IDialogPresenter and TerminalPage's DialogPresenter for more
     // information.
     [default_interface] runtimeclass TerminalWindow : IDirectKeyListener, IDialogPresenter, IWindowProperties, Windows.UI.Xaml.Data.INotifyPropertyChanged
@@ -125,5 +136,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, TerminalApp.SystemMenuChangeArgs> SystemMenuChangeRequested;
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Control.ShowWindowArgs> ShowWindowChanged;
 
+        event Windows.Foundation.TypedEventHandler<Object, SettingsLoadEventArgs> SettingsChanged;
     }
 }
