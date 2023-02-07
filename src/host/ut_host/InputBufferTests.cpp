@@ -189,11 +189,11 @@ class InputBufferTests
         // the single event should have a repeat count for each
         // coalesced event
         std::unique_ptr<IInputEvent> outEvent;
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer.Read(outEvent,
-                                                 true,
-                                                 false,
-                                                 false,
-                                                 false));
+        VERIFY_NT_SUCCESS(inputBuffer.Read(outEvent,
+                                           true,
+                                           false,
+                                           false,
+                                           false));
 
         VERIFY_ARE_NOT_EQUAL(nullptr, outEvent.get());
         const auto pKeyEvent = static_cast<const KeyEvent* const>(outEvent.get());
@@ -288,12 +288,12 @@ class InputBufferTests
         // make sure that the non key events were the ones removed
         std::deque<std::unique_ptr<IInputEvent>> outEvents;
         auto amountToRead = RECORD_INSERT_COUNT / 2;
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer.Read(outEvents,
-                                                 amountToRead,
-                                                 false,
-                                                 false,
-                                                 false,
-                                                 false));
+        VERIFY_NT_SUCCESS(inputBuffer.Read(outEvents,
+                                           amountToRead,
+                                           false,
+                                           false,
+                                           false,
+                                           false));
         VERIFY_ARE_EQUAL(amountToRead, outEvents.size());
 
         for (size_t i = 0; i < outEvents.size(); ++i)
@@ -319,12 +319,12 @@ class InputBufferTests
         // read them back out
         std::deque<std::unique_ptr<IInputEvent>> outEvents;
         auto amountToRead = RECORD_INSERT_COUNT;
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer.Read(outEvents,
-                                                 amountToRead,
-                                                 false,
-                                                 false,
-                                                 false,
-                                                 false));
+        VERIFY_NT_SUCCESS(inputBuffer.Read(outEvents,
+                                           amountToRead,
+                                           false,
+                                           false,
+                                           false,
+                                           false));
         VERIFY_ARE_EQUAL(amountToRead, outEvents.size());
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0u);
         for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
@@ -350,12 +350,12 @@ class InputBufferTests
         // peek at events
         std::deque<std::unique_ptr<IInputEvent>> outEvents;
         auto amountToRead = RECORD_INSERT_COUNT;
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer.Read(outEvents,
-                                                 amountToRead,
-                                                 true,
-                                                 false,
-                                                 false,
-                                                 false));
+        VERIFY_NT_SUCCESS(inputBuffer.Read(outEvents,
+                                           amountToRead,
+                                           true,
+                                           false,
+                                           false,
+                                           false));
 
         VERIFY_ARE_EQUAL(amountToRead, outEvents.size());
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT);
@@ -479,12 +479,12 @@ class InputBufferTests
         // grab the first set of events and ensure they match prependRecords
         std::deque<std::unique_ptr<IInputEvent>> outEvents;
         auto amountToRead = RECORD_INSERT_COUNT;
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer.Read(outEvents,
-                                                 amountToRead,
-                                                 false,
-                                                 false,
-                                                 false,
-                                                 false));
+        VERIFY_NT_SUCCESS(inputBuffer.Read(outEvents,
+                                           amountToRead,
+                                           false,
+                                           false,
+                                           false,
+                                           false));
         VERIFY_ARE_EQUAL(amountToRead, outEvents.size());
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT);
         for (unsigned int i = 0; i < RECORD_INSERT_COUNT; ++i)
@@ -494,12 +494,12 @@ class InputBufferTests
 
         outEvents.clear();
         // verify the rest of the records
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer.Read(outEvents,
-                                                 amountToRead,
-                                                 false,
-                                                 false,
-                                                 false,
-                                                 false));
+        VERIFY_NT_SUCCESS(inputBuffer.Read(outEvents,
+                                           amountToRead,
+                                           false,
+                                           false,
+                                           false,
+                                           false));
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0u);
         VERIFY_ARE_EQUAL(amountToRead, outEvents.size());
         for (unsigned int i = 0; i < RECORD_INSERT_COUNT; ++i)
@@ -577,12 +577,12 @@ class InputBufferTests
 
         std::deque<std::unique_ptr<IInputEvent>> outEvents;
         size_t amountToRead = 2;
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer.Read(outEvents,
-                                                 amountToRead,
-                                                 true,
-                                                 false,
-                                                 false,
-                                                 false));
+        VERIFY_NT_SUCCESS(inputBuffer.Read(outEvents,
+                                           amountToRead,
+                                           true,
+                                           false,
+                                           false,
+                                           false));
     }
 
     TEST_METHOD(WritingToEmptyBufferSignalsWaitEvent)
@@ -617,12 +617,12 @@ class InputBufferTests
         std::deque<std::unique_ptr<IInputEvent>> outEvents;
 
         VERIFY_ARE_EQUAL(inputBuffer.Write(IInputEvent::Create(record)), 1u);
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer.Read(outEvents,
-                                                 1,
-                                                 false,
-                                                 false,
-                                                 true,
-                                                 true));
+        VERIFY_NT_SUCCESS(inputBuffer.Read(outEvents,
+                                           1,
+                                           false,
+                                           false,
+                                           true,
+                                           true));
         VERIFY_ARE_EQUAL(outEvents.size(), 1u);
         VERIFY_ARE_EQUAL(inputBuffer._storage.size(), 1u);
         VERIFY_ARE_EQUAL(static_cast<const KeyEvent&>(*inputBuffer._storage.front()).GetRepeatCount(), repeatCount - 1);
@@ -637,12 +637,12 @@ class InputBufferTests
         std::deque<std::unique_ptr<IInputEvent>> outEvents;
 
         VERIFY_ARE_EQUAL(inputBuffer.Write(IInputEvent::Create(record)), 1u);
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer.Read(outEvents,
-                                                 1,
-                                                 true,
-                                                 false,
-                                                 true,
-                                                 true));
+        VERIFY_NT_SUCCESS(inputBuffer.Read(outEvents,
+                                           1,
+                                           true,
+                                           false,
+                                           true,
+                                           true));
         VERIFY_ARE_EQUAL(outEvents.size(), 1u);
         VERIFY_ARE_EQUAL(inputBuffer._storage.size(), 1u);
         VERIFY_ARE_EQUAL(static_cast<const KeyEvent&>(*inputBuffer._storage.front()).GetRepeatCount(), repeatCount);

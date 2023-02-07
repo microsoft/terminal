@@ -1561,7 +1561,7 @@ void TextBufferTests::TestBackspaceStringsAPI()
         L"Using WriteCharsLegacy, write \\b \\b as a single string."));
     {
         const auto str = L"\b \b";
-        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, 0, nullptr));
+        VERIFY_NT_SUCCESS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, 0, nullptr));
 
         VERIFY_ARE_EQUAL(cursor.GetPosition().x, x0);
         VERIFY_ARE_EQUAL(cursor.GetPosition().y, y0);
@@ -1592,19 +1592,19 @@ void TextBufferTests::TestBackspaceStringsAPI()
         L"Using WriteCharsLegacy, write \\b \\b as separate strings."));
     {
         const auto str = L"a";
-        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, 0, nullptr));
+        VERIFY_NT_SUCCESS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, 0, nullptr));
     }
     {
         const auto str = L"\b";
-        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, 0, nullptr));
+        VERIFY_NT_SUCCESS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, 0, nullptr));
     }
     {
         const auto str = L" ";
-        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, 0, nullptr));
+        VERIFY_NT_SUCCESS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, 0, nullptr));
     }
     {
         const auto str = L"\b";
-        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, 0, nullptr));
+        VERIFY_NT_SUCCESS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, 0, nullptr));
     }
 
     VERIFY_ARE_EQUAL(cursor.GetPosition().x, x0);
