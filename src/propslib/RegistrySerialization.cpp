@@ -257,7 +257,7 @@ NTSTATUS RegistrySerialization::s_OpenKey(_In_opt_ HKEY const hKey, _In_ PCWSTR 
 NTSTATUS RegistrySerialization::s_DeleteValue(const HKEY hKey, _In_ PCWSTR const pwszValueName)
 {
     const auto result = RegDeleteKeyValueW(hKey, nullptr, pwszValueName);
-    return result == ERROR_FILE_NOT_FOUND ? S_OK : NTSTATUS_FROM_WIN32(result);
+    return result == ERROR_FILE_NOT_FOUND ? STATUS_SUCCESS : NTSTATUS_FROM_WIN32(result);
 }
 
 // Routine Description:
