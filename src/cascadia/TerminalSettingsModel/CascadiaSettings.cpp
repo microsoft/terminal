@@ -101,8 +101,8 @@ Model::CascadiaSettings CascadiaSettings::Copy() const
         }
 
         settings->_globals = _globals->Copy();
-        settings->_allProfiles = winrt::single_threaded_observable_vector(std::move(allProfiles));
-        settings->_activeProfiles = winrt::single_threaded_observable_vector(std::move(activeProfiles));
+        settings->_allProfiles = winrt::multi_threaded_observable_vector(std::move(allProfiles));
+        settings->_activeProfiles = winrt::multi_threaded_observable_vector(std::move(activeProfiles));
     }
 
     // load errors
@@ -110,7 +110,7 @@ Model::CascadiaSettings CascadiaSettings::Copy() const
         std::vector<Model::SettingsLoadWarnings> warnings{ _warnings.Size() };
         _warnings.GetMany(0, warnings);
 
-        settings->_warnings = winrt::single_threaded_vector(std::move(warnings));
+        settings->_warnings = winrt::multi_threaded_vector(std::move(warnings));
         settings->_loadError = _loadError;
         settings->_deserializationErrorMessage = _deserializationErrorMessage;
     }
@@ -1157,7 +1157,7 @@ void CascadiaSettings::_refreshDefaultTerminals()
     }();
 
     latch.wait();
-    _defaultTerminals = winrt::single_threaded_observable_vector(std::move(result.first));
+    _defaultTerminals = winrt::multi_threaded_observable_vector(std::move(result.first));
     _currentDefaultTerminal = std::move(result.second);
 }
 

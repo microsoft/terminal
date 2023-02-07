@@ -132,7 +132,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             ALL_SHORTCUT_ACTIONS
 #undef ON_ALL_ACTIONS
 
-            _AvailableActionsCache = single_threaded_map(std::move(availableActions));
+            _AvailableActionsCache = multi_threaded_map(std::move(availableActions));
         }
         return _AvailableActionsCache.GetView();
     }
@@ -181,7 +181,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _PopulateNameMapWithSpecialCommands(nameMap);
             _PopulateNameMapWithStandardCommands(nameMap);
 
-            _NameMapCache = single_threaded_map(std::move(nameMap));
+            _NameMapCache = multi_threaded_map(std::move(nameMap));
         }
         return _NameMapCache.GetView();
     }
@@ -319,8 +319,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
         }
 
-        _KeyBindingMapCache = single_threaded_map(std::move(keyBindingsMap));
-        _GlobalHotkeysCache = single_threaded_map(std::move(globalHotkeys));
+        _KeyBindingMapCache = multi_threaded_map(std::move(keyBindingsMap));
+        _GlobalHotkeysCache = multi_threaded_map(std::move(globalHotkeys));
     }
 
     // Method Description:

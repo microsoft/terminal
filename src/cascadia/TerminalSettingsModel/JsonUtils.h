@@ -481,7 +481,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         winrt::Windows::Foundation::Collections::IVector<T> FromJson(const Json::Value& json)
         {
             ConversionTrait<std::vector<T>> trait;
-            return winrt::single_threaded_vector<T>(std::move(trait.FromJson(json)));
+            return winrt::multi_threaded_vector<T>(std::move(trait.FromJson(json)));
         }
 
         bool CanConvert(const Json::Value& json) const
@@ -525,7 +525,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
                 GetValue(*it, val[winrt::to_hstring(it.name())], trait);
             }
 
-            return winrt::single_threaded_map<winrt::hstring, T>(std::move(val));
+            return winrt::multi_threaded_map<winrt::hstring, T>(std::move(val));
         }
 
         bool CanConvert(const Json::Value& json) const

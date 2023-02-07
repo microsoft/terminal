@@ -1164,7 +1164,8 @@ namespace winrt::TerminalApp::implementation
 
     bool TerminalWindow::AutoHideWindow()
     {
-        return _settings.GlobalSettings().AutoHideWindow();
+        const auto& globals{ _settings.GlobalSettings() };
+        return globals.AutoHideWindow();
     }
     // TODO! Arg should be a SettingsLoadEventArgs{ result, warnings, error, settings}
     void TerminalWindow::UpdateSettingsHandler(const winrt::IInspectable& /*sender*/,

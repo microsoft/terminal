@@ -170,11 +170,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::hstring _hash;
         winrt::com_ptr<implementation::GlobalAppSettings> _globals = winrt::make_self<implementation::GlobalAppSettings>();
         winrt::com_ptr<implementation::Profile> _baseLayerProfile = winrt::make_self<implementation::Profile>();
-        winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> _allProfiles = winrt::single_threaded_observable_vector<Model::Profile>();
-        winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> _activeProfiles = winrt::single_threaded_observable_vector<Model::Profile>();
+        winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> _allProfiles = winrt::multi_threaded_observable_vector<Model::Profile>();
+        winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> _activeProfiles = winrt::multi_threaded_observable_vector<Model::Profile>();
 
         // load errors
-        winrt::Windows::Foundation::Collections::IVector<Model::SettingsLoadWarnings> _warnings = winrt::single_threaded_vector<Model::SettingsLoadWarnings>();
+        winrt::Windows::Foundation::Collections::IVector<Model::SettingsLoadWarnings> _warnings = winrt::multi_threaded_vector<Model::SettingsLoadWarnings>();
         winrt::Windows::Foundation::IReference<Model::SettingsLoadErrors> _loadError;
         winrt::hstring _deserializationErrorMessage;
 
