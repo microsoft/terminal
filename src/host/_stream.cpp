@@ -264,7 +264,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
 
     const auto cursorMovedPastViewport = coordCursor.y > screenInfo.GetViewport().BottomInclusive();
     const auto cursorMovedPastVirtualViewport = coordCursor.y > screenInfo.GetVirtualViewport().BottomInclusive();
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         // if at right or bottom edge of window, scroll right or down one char.
         if (cursorMovedPastViewport)
@@ -276,7 +276,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
         }
     }
 
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         if (fKeepCursorVisible)
         {
@@ -872,7 +872,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
             break;
         }
         }
-        if (!NT_SUCCESS(Status))
+        if (!SUCCEEDED_NTSTATUS(Status))
         {
             return Status;
         }
@@ -942,7 +942,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
         size_t TempNumSpaces = 0;
 
         {
-            if (NT_SUCCESS(Status))
+            if (SUCCEEDED_NTSTATUS(Status))
             {
                 FAIL_FAST_IF(!(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT)));
                 FAIL_FAST_IF(!(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING)));

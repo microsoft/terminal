@@ -107,7 +107,7 @@ static bool ConhostV2ForcedInRegistry()
     FILE_FS_DEVICE_INFORMATION DeviceInformation;
     IO_STATUS_BLOCK IoStatusBlock;
     const auto Status = NtQueryVolumeInformationFile(handle, &IoStatusBlock, &DeviceInformation, sizeof(DeviceInformation), FileFsDeviceInformation);
-    if (!NT_SUCCESS(Status))
+    if (!SUCCEEDED_NTSTATUS(Status))
     {
         RETURN_NTSTATUS(Status);
     }

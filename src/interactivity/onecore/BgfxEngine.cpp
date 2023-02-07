@@ -79,7 +79,7 @@ try
 {
     const auto Status = ConIoSrvComm::GetConIoSrvComm()->RequestUpdateDisplay(0);
 
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         for (SIZE_T i = 0; i < _displayHeight; i++)
         {

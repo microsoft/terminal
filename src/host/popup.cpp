@@ -309,7 +309,7 @@ void Popup::SetUserInputFunction(UserInputFunction function) noexcept
                           nullptr,
                           &popupKey,
                           &modifiers);
-    if (!NT_SUCCESS(Status) && Status != CONSOLE_STATUS_WAIT)
+    if (!SUCCEEDED_NTSTATUS(Status) && Status != CONSOLE_STATUS_WAIT)
     {
         cookedReadData.BytesRead() = 0;
     }

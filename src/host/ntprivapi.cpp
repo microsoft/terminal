@@ -19,13 +19,13 @@
     auto Status = s_NtOpenProcess(&ProcessHandle, PROCESS_QUERY_LIMITED_INFORMATION, &oa, &ClientId);
 
     PROCESS_BASIC_INFORMATION BasicInfo = { 0 };
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         Status = s_NtQueryInformationProcess(ProcessHandle, ProcessBasicInformation, &BasicInfo, sizeof(BasicInfo), nullptr);
         LOG_IF_FAILED(s_NtClose(ProcessHandle));
     }
 
-    if (!NT_SUCCESS(Status))
+    if (!SUCCEEDED_NTSTATUS(Status))
     {
         *ProcessId = 0;
         return Status;

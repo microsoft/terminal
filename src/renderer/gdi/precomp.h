@@ -25,8 +25,6 @@ Abstract:
 typedef _Return_type_success_(return >= 0) long NTSTATUS;
 #endif
 
-#define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
-
 //#include <ntstatus.h>
 #define STATUS_SUCCESS ((NTSTATUS)0x00000000L) // ntsubauth
 #define FACILITY_NTWIN32 0x7

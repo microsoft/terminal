@@ -27,7 +27,6 @@ Abstract:
 #include <windows.h>
 
 typedef long NTSTATUS;
-#define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
 #define STATUS_SUCCESS ((DWORD)0x0)
 #define STATUS_UNSUCCESSFUL ((DWORD)0xC0000001L)
 #define STATUS_SHARING_VIOLATION ((NTSTATUS)0xC0000043L)

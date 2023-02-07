@@ -107,7 +107,7 @@ const size_t RegistrySerialization::s_GlobalPropMappingsSize = ARRAYSIZE(s_Globa
                                ToWin32RegistryType(pPropMap->propertyType),
                                (PBYTE)&dwValue,
                                nullptr);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         switch (pPropMap->propertyType)
         {
@@ -163,7 +163,7 @@ const size_t RegistrySerialization::s_GlobalPropMappingsSize = ARRAYSIZE(s_Globa
 
     auto pwchString = new (std::nothrow) WCHAR[cchField];
     auto Status = NT_TESTNULL(pwchString);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         Status = s_QueryValue(hKey,
                               pPropMap->pwszValueName,
@@ -171,7 +171,7 @@ const size_t RegistrySerialization::s_GlobalPropMappingsSize = ARRAYSIZE(s_Globa
                               ToWin32RegistryType(pPropMap->propertyType),
                               (PBYTE)pwchString,
                               nullptr);
-        if (NT_SUCCESS(Status))
+        if (SUCCEEDED_NTSTATUS(Status))
         {
             // ensure pwchString is null terminated
             pwchString[cchField - 1] = UNICODE_NULL;
@@ -206,7 +206,7 @@ const size_t RegistrySerialization::s_GlobalPropMappingsSize = ARRAYSIZE(s_Globa
     // Open the current user registry key.
     NTSTATUS Status = NTSTATUS_FROM_WIN32(RegOpenCurrentUser(KEY_READ | KEY_WRITE, &currentUserKey));
 
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         // Open the console registry key.
         Status = s_OpenKey(currentUserKey.get(), CONSOLE_REGISTRY_STRING, &consoleKey);
@@ -218,7 +218,7 @@ const size_t RegistrySerialization::s_GlobalPropMappingsSize = ARRAYSIZE(s_Globa
         }
 
         // If we're successful, give the keys back.
-        if (NT_SUCCESS(Status))
+        if (SUCCEEDED_NTSTATUS(Status))
         {
             *phCurrentUserKey = currentUserKey.release();
             *phConsoleKey = consoleKey.release();
@@ -397,7 +397,7 @@ const size_t RegistrySerialization::s_GlobalPropMappingsSize = ARRAYSIZE(s_Globa
         if (hConsoleKey != hKey)
         {
             Status = s_QueryValue(hConsoleKey, pwszValueName, cbDataLength, dwType, Data, nullptr);
-            if (NT_SUCCESS(Status))
+            if (SUCCEEDED_NTSTATUS(Status))
             {
                 fDeleteKey = (memcmp(pbData, Data, cbDataLength) == 0);
             }
@@ -425,15 +425,15 @@ const size_t RegistrySerialization::s_GlobalPropMappingsSize = ARRAYSIZE(s_Globa
     NTSTATUS Status = NTSTATUS_FROM_WIN32(RegOpenKeyW(HKEY_CURRENT_USER,
                                                       nullptr,
                                                       phCurrentUserKey));
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         Status = RegistrySerialization::s_CreateKey(*phCurrentUserKey,
                                                     CONSOLE_REGISTRY_STRING,
                                                     phConsoleKey);
-        if (NT_SUCCESS(Status))
+        if (SUCCEEDED_NTSTATUS(Status))
         {
             Status = RegistrySerialization::s_CreateKey(*phConsoleKey, title, phTitleKey);
-            if (!NT_SUCCESS(Status))
+            if (!SUCCEEDED_NTSTATUS(Status))
             {
                 RegCloseKey(*phConsoleKey);
                 RegCloseKey(*phCurrentUserKey);
