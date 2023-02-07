@@ -127,9 +127,11 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::SetSettings(CascadiaSettings settings, bool needRefreshUI)
+    winrt::fire_and_forget TerminalPage::SetSettings(CascadiaSettings settings, bool needRefreshUI)
     {
         _settings = settings;
+
+        co_await wil::resume_foreground(Dispatcher());
 
         // Make sure to _UpdateCommandsForPalette before
         // _RefreshUIForSettingsReload. _UpdateCommandsForPalette will make

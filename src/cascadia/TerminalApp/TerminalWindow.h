@@ -193,6 +193,8 @@ namespace winrt::TerminalApp::implementation
 
         TYPED_EVENT(SystemMenuChangeRequested, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SystemMenuChangeArgs);
 
+        TYPED_EVENT(SettingsChanged, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SettingsLoadEventArgs);
+
 #ifdef UNIT_TESTING
         friend class TerminalAppLocalTests::CommandlineTest;
 #endif

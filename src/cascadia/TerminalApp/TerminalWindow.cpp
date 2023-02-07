@@ -739,7 +739,14 @@ namespace winrt::TerminalApp::implementation
 
     winrt::fire_and_forget TerminalWindow::UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args)
     {
+        _settings = args.NewSettings();
+        // Update the settings in TerminalPage
+        _root->SetSettings(_settings, true);
+
         co_await wil::resume_foreground(_root->Dispatcher());
+
+        // Bubble the notification up to the AppHost, now that we've updated our _settings.
+        _SettingsChangedHandlers(*this, args);
 
         if (FAILED(args.Result()))
         {
@@ -755,9 +762,6 @@ namespace winrt::TerminalApp::implementation
         {
             _ShowLoadWarningsDialog(args.Warnings());
         }
-        _settings = args.NewSettings();
-        // Update the settings in TerminalPage
-        _root->SetSettings(_settings, true);
         _RefreshThemeRoutine();
     }
     void TerminalWindow::_OpenSettingsUI()

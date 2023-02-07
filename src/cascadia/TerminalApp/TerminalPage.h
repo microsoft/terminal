@@ -75,7 +75,7 @@ namespace winrt::TerminalApp::implementation
         // put it in our inheritance graph. https://github.com/microsoft/microsoft-ui-xaml/issues/3331
         STDMETHODIMP Initialize(HWND hwnd);
 
-        void SetSettings(Microsoft::Terminal::Settings::Model::CascadiaSettings settings, bool needRefreshUI);
+        winrt::fire_and_forget SetSettings(Microsoft::Terminal::Settings::Model::CascadiaSettings settings, bool needRefreshUI);
 
         void Create();
 
