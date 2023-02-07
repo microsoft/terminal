@@ -1247,10 +1247,17 @@ namespace winrt::TerminalApp::implementation
         if (connectionType == TerminalConnection::AzureConnection::ConnectionType() &&
             TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
         {
-            // TODO GH#4661: Replace this with directly using the AzCon when our VT is better
             std::filesystem::path azBridgePath{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
             azBridgePath.replace_filename(L"TerminalAzBridge.exe");
-            connection = TerminalConnection::ConptyConnection();
+            if constexpr (Feature_AzureConnectionInProc::IsEnabled())
+            {
+                connection = TerminalConnection::AzureConnection{};
+            }
+            else
+            {
+                connection = TerminalConnection::ConptyConnection{};
+            }
+
             auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(azBridgePath.wstring(),
                                                                                  L".",
                                                                                  L"Azure",
