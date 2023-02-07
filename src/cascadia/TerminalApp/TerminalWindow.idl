@@ -138,7 +138,6 @@ namespace TerminalApp
 
         event Windows.Foundation.TypedEventHandler<Object, SettingsLoadEventArgs> SettingsChanged;
 
-
         event Windows.Foundation.TypedEventHandler<Object, RequestMoveContentArgs> RequestMoveContent;
         void AttachContent(String content, UInt32 tabIndex);
 

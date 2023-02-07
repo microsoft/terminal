@@ -70,6 +70,7 @@ namespace winrt::TerminalApp::implementation
         TerminalApp::TerminalWindow CreateNewWindow();
 
         winrt::TerminalApp::ContentManager ContentManager();
+
         TYPED_EVENT(SettingsChanged, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SettingsLoadEventArgs);
 
     private:
