@@ -252,7 +252,7 @@ const size_t RegistrySerialization::s_GlobalPropMappingsSize = ARRAYSIZE(s_Globa
 [[nodiscard]] NTSTATUS RegistrySerialization::s_DeleteValue(const HKEY hKey, _In_ PCWSTR const pwszValueName)
 {
     const auto result = RegDeleteKeyValueW(hKey, nullptr, pwszValueName);
-    return result == ERROR_FILE_NOT_FOUND ? S_OK : NTSTATUS_FROM_WIN32(result);
+    return result == ERROR_FILE_NOT_FOUND ? STATUS_SUCCESS : NTSTATUS_FROM_WIN32(result);
 }
 
 // Routine Description:
