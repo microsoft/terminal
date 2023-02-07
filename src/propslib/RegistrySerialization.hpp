@@ -26,45 +26,45 @@ class RegistrySerialization
 {
 public:
     // The following registry methods remain public for DBCS and EUDC lookups.
-    [[nodiscard]] static NTSTATUS s_OpenKey(_In_opt_ HKEY const hKey, _In_ PCWSTR const pwszSubKey, _Out_ HKEY* const phResult);
+    [[nodiscard]] static HRESULT s_OpenKey(_In_opt_ HKEY const hKey, _In_ PCWSTR const pwszSubKey, _Out_ HKEY* const phResult);
 
-    [[nodiscard]] static NTSTATUS s_QueryValue(const HKEY hKey,
-                                               _In_ PCWSTR const pwszValueName,
-                                               const DWORD cbValueLength,
-                                               const DWORD regType,
-                                               _Out_writes_bytes_(cbValueLength) BYTE* const pbData,
-                                               _Out_opt_ _Out_range_(0, cbValueLength) DWORD* const pcbDataLength);
+    [[nodiscard]] static HRESULT s_QueryValue(const HKEY hKey,
+                                                       _In_ PCWSTR const pwszValueName,
+                                                       const DWORD cbValueLength,
+                                                       const DWORD regType,
+                                                       _Out_writes_bytes_(cbValueLength) BYTE* const pbData,
+                                                       _Out_opt_ _Out_range_(0, cbValueLength) DWORD* const pcbDataLength);
 
-    [[nodiscard]] static NTSTATUS s_EnumValue(const HKEY hKey,
-                                              const DWORD dwIndex,
-                                              const DWORD cbValueLength,
-                                              _Out_writes_bytes_(cbValueLength) PWSTR const pwszValueName,
-                                              const DWORD cbDataLength,
-                                              _Out_writes_bytes_(cbDataLength) BYTE* const pbData);
+    [[nodiscard]] static HRESULT s_EnumValue(const HKEY hKey,
+                                                      const DWORD dwIndex,
+                                                      const DWORD cbValueLength,
+                                                      _Out_writes_bytes_(cbValueLength) PWSTR const pwszValueName,
+                                                      const DWORD cbDataLength,
+                                                      _Out_writes_bytes_(cbDataLength) BYTE* const pbData);
 
-    [[nodiscard]] static NTSTATUS s_OpenConsoleKey(_Out_ HKEY* phCurrentUserKey, _Out_ HKEY* phConsoleKey);
+    [[nodiscard]] static HRESULT s_OpenConsoleKey(_Out_ HKEY* phCurrentUserKey, _Out_ HKEY* phConsoleKey);
 
-    [[nodiscard]] static NTSTATUS s_CreateKey(const HKEY hKey, _In_ PCWSTR const pwszSubKey, _Out_ HKEY* const phResult);
+    [[nodiscard]] static HRESULT s_CreateKey(const HKEY hKey, _In_ PCWSTR const pwszSubKey, _Out_ HKEY* const phResult);
 
-    [[nodiscard]] static NTSTATUS s_DeleteValue(const HKEY hKey, _In_ PCWSTR const pwszValueName);
+    [[nodiscard]] static HRESULT s_DeleteValue(const HKEY hKey, _In_ PCWSTR const pwszValueName);
 
-    [[nodiscard]] static NTSTATUS s_SetValue(const HKEY hKey,
-                                             _In_ PCWSTR const pwszValueName,
-                                             const DWORD dwType,
-                                             _In_reads_bytes_(cbDataLength) BYTE* const pbData,
-                                             const DWORD cbDataLength);
+    [[nodiscard]] static HRESULT s_SetValue(const HKEY hKey,
+                                                     _In_ PCWSTR const pwszValueName,
+                                                     const DWORD dwType,
+                                                     _In_reads_bytes_(cbDataLength) BYTE* const pbData,
+                                                     const DWORD cbDataLength);
 
-    [[nodiscard]] static NTSTATUS s_UpdateValue(const HKEY hConsoleKey,
-                                                const HKEY hKey,
-                                                _In_ PCWSTR const pwszValueName,
-                                                const DWORD dwType,
-                                                _In_reads_bytes_(dwDataLength) BYTE* pbData,
-                                                const DWORD dwDataLength);
+    [[nodiscard]] static HRESULT s_UpdateValue(const HKEY hConsoleKey,
+                                                        const HKEY hKey,
+                                                        _In_ PCWSTR const pwszValueName,
+                                                        const DWORD dwType,
+                                                        _In_reads_bytes_(dwDataLength) BYTE* pbData,
+                                                        const DWORD dwDataLength);
 
-    [[nodiscard]] static NTSTATUS s_OpenCurrentUserConsoleTitleKey(_In_ PCWSTR const title,
-                                                                   _Out_ HKEY* phCurrentUserKey,
-                                                                   _Out_ HKEY* phConsoleKey,
-                                                                   _Out_ HKEY* phTitleKey);
+    [[nodiscard]] static HRESULT s_OpenCurrentUserConsoleTitleKey(_In_ PCWSTR const title,
+                                                                           _Out_ HKEY* phCurrentUserKey,
+                                                                           _Out_ HKEY* phConsoleKey,
+                                                                           _Out_ HKEY* phTitleKey);
 
     enum _RegPropertyType
     {
@@ -92,6 +92,6 @@ public:
     static const RegPropertyMap s_GlobalPropMappings[];
     static const size_t s_GlobalPropMappingsSize;
 
-    [[nodiscard]] static NTSTATUS s_LoadRegDword(const HKEY hKey, const _RegPropertyMap* const pPropMap, _In_ Settings* const pSettings);
-    [[nodiscard]] static NTSTATUS s_LoadRegString(const HKEY hKey, const _RegPropertyMap* const pPropMap, _In_ Settings* const pSettings);
+    [[nodiscard]] static HRESULT s_LoadRegDword(const HKEY hKey, const _RegPropertyMap* const pPropMap, _In_ Settings* const pSettings);
+    [[nodiscard]] static HRESULT s_LoadRegString(const HKEY hKey, const _RegPropertyMap* const pPropMap, _In_ Settings* const pSettings);
 };
