@@ -44,10 +44,12 @@ namespace winrt::TerminalApp::implementation
         return _content.TryLookup(id);
     }
 
-    void ContentManager::Detach(const winrt::guid& contentGuid)
+    void ContentManager::Detach(const Microsoft::Terminal::Control::TermControl& control)
     {
+        const auto contentGuid{ control.ContentGuid() };
         if (const auto& content{ LookupCore(contentGuid) })
         {
+            control.Detach();
             content.Attached({ get_weak(), &ContentManager::_finalizeDetach });
             _recentlyDetachedContent.Insert(contentGuid, content);
         }

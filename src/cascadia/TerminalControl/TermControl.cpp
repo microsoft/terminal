@@ -72,26 +72,36 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // These events might all be triggered by the connection, but that
         // should be drained and closed before we complete destruction. So these
         // are safe.
-        _core.ScrollPositionChanged({ this, &TermControl::_ScrollPositionChanged });
-        _core.WarningBell({ this, &TermControl::_coreWarningBell });
-        _core.CursorPositionChanged({ this, &TermControl::_CursorPositionChanged });
+        _revokers.coreScrollPositionChanged = _core.ScrollPositionChanged(winrt::auto_revoke, { get_weak(), &TermControl::_ScrollPositionChanged });
+        _revokers.WarningBell = _core.WarningBell(winrt::auto_revoke, { get_weak(), &TermControl::_coreWarningBell });
+        _revokers.CursorPositionChanged = _core.CursorPositionChanged(winrt::auto_revoke, { get_weak(), &TermControl::_CursorPositionChanged });
 
         // This event is specifically triggered by the renderer thread, a BG thread. Use a weak ref here.
-        _core.RendererEnteredErrorState({ get_weak(), &TermControl::_RendererEnteredErrorState });
+        _revokers.RendererEnteredErrorState = _core.RendererEnteredErrorState(winrt::auto_revoke, { get_weak(), &TermControl::_RendererEnteredErrorState });
 
         // These callbacks can only really be triggered by UI interactions. So
         // they don't need weak refs - they can't be triggered unless we're
         // alive.
-        _core.BackgroundColorChanged({ this, &TermControl::_coreBackgroundColorChanged });
-        _core.FontSizeChanged({ this, &TermControl::_coreFontSizeChanged });
-        _core.TransparencyChanged({ this, &TermControl::_coreTransparencyChanged });
-        _core.RaiseNotice({ this, &TermControl::_coreRaisedNotice });
-        _core.HoveredHyperlinkChanged({ this, &TermControl::_hoveredHyperlinkChanged });
-        _core.FoundMatch({ this, &TermControl::_coreFoundMatch });
-        _core.UpdateSelectionMarkers({ this, &TermControl::_updateSelectionMarkers });
-        _core.OpenHyperlink({ this, &TermControl::_HyperlinkHandler });
-        _interactivity.OpenHyperlink({ this, &TermControl::_HyperlinkHandler });
-        _interactivity.ScrollPositionChanged({ this, &TermControl::_ScrollPositionChanged });
+        _revokers.BackgroundColorChanged = _core.BackgroundColorChanged(winrt::auto_revoke, { get_weak(), &TermControl::_coreBackgroundColorChanged });
+        _revokers.FontSizeChanged = _core.FontSizeChanged(winrt::auto_revoke, { get_weak(), &TermControl::_coreFontSizeChanged });
+        _revokers.TransparencyChanged = _core.TransparencyChanged(winrt::auto_revoke, { get_weak(), &TermControl::_coreTransparencyChanged });
+        _revokers.RaiseNotice = _core.RaiseNotice(winrt::auto_revoke, { get_weak(), &TermControl::_coreRaisedNotice });
+        _revokers.HoveredHyperlinkChanged = _core.HoveredHyperlinkChanged(winrt::auto_revoke, { get_weak(), &TermControl::_hoveredHyperlinkChanged });
+        _revokers.FoundMatch = _core.FoundMatch(winrt::auto_revoke, { get_weak(), &TermControl::_coreFoundMatch });
+        _revokers.UpdateSelectionMarkers = _core.UpdateSelectionMarkers(winrt::auto_revoke, { get_weak(), &TermControl::_updateSelectionMarkers });
+        _revokers.coreOpenHyperlink = _core.OpenHyperlink(winrt::auto_revoke, { get_weak(), &TermControl::_HyperlinkHandler });
+        _revokers.interactivityOpenHyperlink = _interactivity.OpenHyperlink(winrt::auto_revoke, { get_weak(), &TermControl::_HyperlinkHandler });
+        _revokers.interactivityScrollPositionChanged = _interactivity.ScrollPositionChanged(winrt::auto_revoke, { get_weak(), &TermControl::_ScrollPositionChanged });
+
+        _revokers.CopyToClipboard = _core.CopyToClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleCopyToClipboard });
+        _revokers.TitleChanged = _core.TitleChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleTitleChanged });
+        _revokers.TabColorChanged = _core.TabColorChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleTabColorChanged });
+        _revokers.TaskbarProgressChanged = _core.TaskbarProgressChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleSetTaskbarProgress });
+        _revokers.ConnectionStateChanged = _core.ConnectionStateChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleConnectionStateChanged });
+        _revokers.ShowWindowChanged = _core.ShowWindowChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleShowWindowChanged });
+        _revokers.CloseTerminalRequested = _core.CloseTerminalRequested(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleCloseTerminalRequested });
+
+        _revokers.PasteFromClipboard = _interactivity.PasteFromClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_bubblePasteFromClipboard });
 
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
@@ -105,7 +115,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // least we don't need to quick return if the core was already
             // initialized - we still have state to set up, and resize the core
             // to the new swapchain size, etc.
-            if (_InitializeTerminal())
+            if (_InitializeTerminal(false))
             {
                 // Only let this succeed once.
                 _layoutUpdatedRevoker.revoke();
@@ -141,14 +151,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         static constexpr auto AutoScrollUpdateInterval = std::chrono::microseconds(static_cast<int>(1.0 / 30.0 * 1000000));
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
-        _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
-
-        // _interactivity.Attached([weakThis = get_weak()]{
-        //     if (auto control{ weakThis.get() }; !control->_IsClosing())
-        //     {
-        //         CloseTerminalRequested
-        //     }
-        // });
+        _autoScrollTimer.Tick({ get_weak(), &TermControl::_UpdateAutoScroll });
 
         _ApplyUISettings();
     }
@@ -158,12 +161,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto term{ winrt::make_self<TermControl>(content) };
         term->_AttachDxgiSwapChainToXaml(reinterpret_cast<HANDLE>(term->_core.SwapChainHandle()));
         content.Reparent(keyBindings);
-        // if (const auto h{ reinterpret_cast<HANDLE>(_core.SwapChainHandle()) })
-        // {
-        //     // Reparent will fire off a _core.CloseTerminalRequested, which the
-        //     // old window will listen to and know to remove its old control,
-        //     // leaving us as the owner.
-        // }
+
+        // Initialize the terminal only once the swapchainpanel is loaded - that
+        //      way, we'll be able to query the real pixel size it got on layout
+        auto r = term->SwapChainPanel().LayoutUpdated(winrt::auto_revoke, [term](auto /*s*/, auto /*e*/) {
+            // Replace the normal initialize routine with one that will allow up
+            // to complete initialization even though the Core was already
+            // initialized.
+            if (term->_InitializeTerminal(true))
+            {
+                // Only let this succeed once.
+                term->_layoutUpdatedRevoker.revoke();
+            }
+        });
+        term->_layoutUpdatedRevoker.swap(r);
+
         return *term;
     }
 
@@ -843,7 +855,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         nativePanel->SetSwapChainHandle(swapChainHandle);
     }
 
-    bool TermControl::_InitializeTerminal()
+    bool TermControl::_InitializeTerminal(const bool reattach)
     {
         if (_initializedTerminal)
         {
@@ -867,18 +879,26 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // after Enable, then it'll be possible to paint the frame once
         // _before_ the warning handler is set up, and then warnings from
         // the first paint will be ignored!
-        _core.RendererWarning({ get_weak(), &TermControl::_RendererWarning });
+        _revokers.RendererWarning = _core.RendererWarning(winrt::auto_revoke, { get_weak(), &TermControl::_RendererWarning });
 
-        const auto coreInitialized = _core.Initialize(panelWidth,
-                                                      panelHeight,
-                                                      panelScaleX);
-        if (!coreInitialized)
+        // If we're re-attaching an existing content, then we want to proceed even though the Terminal was already initialized.
+        if (!reattach)
         {
-            return false;
+            const auto coreInitialized = _core.Initialize(panelWidth,
+                                                          panelHeight,
+                                                          panelScaleX);
+            if (!coreInitialized)
+            {
+                return false;
+            }
+            _interactivity.Initialize();
         }
-        _interactivity.Initialize();
+        else
+        {
+            _core.SizeOrScaleChanged(panelWidth, panelHeight, panelScaleX);
+        }
 
-        _core.SwapChainChanged({ get_weak(), &TermControl::RenderEngineSwapChainChanged });
+        _revokers.SwapChainChanged = _core.SwapChainChanged(winrt::auto_revoke, { get_weak(), &TermControl::RenderEngineSwapChainChanged });
         _core.EnablePainting();
 
         auto bufferHeight = _core.BufferHeight();
@@ -2037,8 +2057,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             TSFInputControl().Close();
             _autoScrollTimer.Stop();
 
-            _core.Close();
+            if (!_detached)
+            {
+                _core.Close();
+            }
         }
+    }
+    void TermControl::Detach()
+    {
+        _revokers = {};
+        _detached = true;
     }
 
     // Method Description:
@@ -2974,9 +3002,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
                     // Ensure the marker is oriented properly
                     // (i.e. if start is at the beginning of the buffer, it should be flipped)
-                    auto transform{ marker.RenderTransform().as<Windows::UI::Xaml::Media::ScaleTransform>() };
-                    transform.ScaleX(std::abs(transform.ScaleX()) * (flipMarker ? -1.0 : 1.0));
-                    marker.RenderTransform(transform);
+                    //
+                    // Note - This RenderTransform might not be a
+                    // ScaleTransform, if we haven't had a _coreFontSizeChanged
+                    // handled yet, because that's the first place we set the
+                    // RenderTransform
+                    if (const auto& transform{ marker.RenderTransform().try_as<Windows::UI::Xaml::Media::ScaleTransform>() })
+                    {
+                        transform.ScaleX(std::abs(transform.ScaleX()) * (flipMarker ? -1.0 : 1.0));
+                        marker.RenderTransform(transform);
+                    }
 
                     // Compute the location of the top left corner of the cell in DIPS
                     auto terminalPos{ targetEnd ? markerData.EndPos : markerData.StartPos };

@@ -33,9 +33,6 @@ static const int CombinedPaneBorderSize = 2 * PaneBorderSize;
 static const int AnimationDurationInMilliseconds = 200;
 static const Duration AnimationDuration = DurationHelper::FromTimeSpan(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(AnimationDurationInMilliseconds)));
 
-winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_focusedBorderBrush = { nullptr };
-winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_unfocusedBorderBrush = { nullptr };
-
 Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFocused) :
     _control{ control },
     _lastActive{ lastFocused },
@@ -83,7 +80,7 @@ Pane::Pane(std::shared_ptr<Pane> first,
 
     // Use the unfocused border color as the pane background, so an actual color
     // appears behind panes as we animate them sliding in.
-    _root.Background(s_unfocusedBorderBrush);
+    _root.Background(_unfocusedBorderBrush);
 
     _root.Children().Append(_borderFirst);
     _root.Children().Append(_borderSecond);
@@ -1417,8 +1414,8 @@ void Pane::UpdateVisuals()
     // Hey remember when we made a static brush reference so we didn't have to look these up each time?
     // well, that's on the wrong thread always now. Great work.
     //
-    // _borderFirst.BorderBrush(_lastActive ? s_focusedBorderBrush : s_unfocusedBorderBrush);
-    // _borderSecond.BorderBrush(_lastActive ? s_focusedBorderBrush : s_unfocusedBorderBrush);
+    _borderFirst.BorderBrush(_lastActive ? _focusedBorderBrush : _unfocusedBorderBrush);
+    _borderSecond.BorderBrush(_lastActive ? _focusedBorderBrush : _unfocusedBorderBrush);
 }
 
 // Method Description:
@@ -1870,7 +1867,7 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
         Controls::Grid dummyGrid;
         // GH#603 - we can safely add a BG here, as the control is gone right
         // away, to fill the space as the rest of the pane expands.
-        dummyGrid.Background(s_unfocusedBorderBrush);
+        dummyGrid.Background(_unfocusedBorderBrush);
         // It should be the size of the closed pane.
         dummyGrid.Width(removedOriginalSize.Width);
         dummyGrid.Height(removedOriginalSize.Height);
@@ -2148,7 +2145,7 @@ void Pane::_SetupEntranceAnimation()
     // * If we give the parent (us) root BG a color, then a transparent pane
     //   will flash opaque during the animation, then back to transparent, which
     //   looks bad.
-    _secondChild->_root.Background(s_unfocusedBorderBrush);
+    _secondChild->_root.Background(_unfocusedBorderBrush);
 
     const auto [firstSize, secondSize] = _CalcChildrenSizes(::base::saturated_cast<float>(totalSize));
 
@@ -3133,14 +3130,14 @@ void Pane::SetupResources(const winrt::Windows::UI::Xaml::ElementTheme& requeste
         // Transparent as the color, so we don't do this process again on
         // the next pane (by leaving s_focusedBorderBrush nullptr)
         auto actualColor = winrt::unbox_value_or<Color>(colorFromResources, Colors::Black());
-        s_focusedBorderBrush = SolidColorBrush(actualColor);
+        _focusedBorderBrush = SolidColorBrush(actualColor);
     }
     else
     {
         // DON'T use Transparent here - if it's "Transparent", then it won't
         // be able to hittest for clicks, and then clicking on the border
         // will eat focus.
-        s_focusedBorderBrush = SolidColorBrush{ Colors::Black() };
+        _focusedBorderBrush = SolidColorBrush{ Colors::Black() };
     }
 
     const auto unfocusedBorderBrushKey = winrt::box_value(L"UnfocusedBorderBrush");
@@ -3150,14 +3147,14 @@ void Pane::SetupResources(const winrt::Windows::UI::Xaml::ElementTheme& requeste
         // the requestedTheme, not just the value from the resources (which
         // might not respect the settings' requested theme)
         auto obj = ThemeLookup(res, requestedTheme, unfocusedBorderBrushKey);
-        s_unfocusedBorderBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
+        _unfocusedBorderBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
     }
     else
     {
         // DON'T use Transparent here - if it's "Transparent", then it won't
         // be able to hittest for clicks, and then clicking on the border
         // will eat focus.
-        s_unfocusedBorderBrush = SolidColorBrush{ Colors::Black() };
+        _unfocusedBorderBrush = SolidColorBrush{ Colors::Black() };
     }
 }
 

@@ -173,9 +173,12 @@ private:                                                                        
     X(Windows::Foundation::IReference<uint32_t>, Index, "index", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
-#define MOVE_TAB_ARGS(X)                                                                                                                           \
-    X(MoveTabDirection, Direction, "direction", (args->Direction() == MoveTabDirection::None) && (args->Window().empty()), MoveTabDirection::None) \
-    X(winrt::hstring, Window, "window", false, L"")
+// Interestingly, the order MATTERS here. Window has to be BEFORE Direction,
+// because otherwise we won't have parsed the Window yet when we validate the
+// Direction.
+#define MOVE_TAB_ARGS(X)                            \
+    X(winrt::hstring, Window, "window", false, L"") \
+    X(MoveTabDirection, Direction, "direction", (args->Direction() == MoveTabDirection::None) && (args->Window().empty()), MoveTabDirection::None)
 
 // Other ideas:
 //  X(uint32_t, TabIndex, "index", false, 0) \ // target? source?

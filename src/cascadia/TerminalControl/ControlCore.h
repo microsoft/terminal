@@ -78,6 +78,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void SizeChanged(const double width, const double height);
         void ScaleChanged(const double scale);
+        void SizeOrScaleChanged(const double width, const double height, const double scale);
 
         void AdjustFontSize(float fontSizeDelta);
         void ResetFontSize();

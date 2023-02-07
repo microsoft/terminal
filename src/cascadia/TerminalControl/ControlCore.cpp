@@ -233,7 +233,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _settings->KeyBindings(keyBindings);
         _setupDispatcherAndCallbacks();
-
+        const auto actualNewSize = _actualFont.GetSize();
+        // Bubble this up, so our new control knows how big we want the font.
+        _FontSizeChangedHandlers(actualNewSize.width, actualNewSize.height, true);
         _AttachedHandlers(*this, nullptr);
     }
 
@@ -979,18 +981,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::SizeChanged(const double width,
                                   const double height)
     {
-        // _refreshSizeUnderLock redraws the entire terminal.
-        // Don't call it if we don't have to.
-        if (_panelWidth == width && _panelHeight == height)
-        {
-            return;
-        }
-
-        _panelWidth = width;
-        _panelHeight = height;
-
-        auto lock = _terminal->LockForWriting();
-        _refreshSizeUnderLock();
+        SizeOrScaleChanged(width, height, _compositionScale);
     }
 
     void ControlCore::ScaleChanged(const double scale)
@@ -999,19 +990,31 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return;
         }
+        SizeOrScaleChanged(_panelWidth, _panelHeight, scale);
+    }
 
+    void ControlCore::SizeOrScaleChanged(const double width,
+                                         const double height,
+                                         const double scale)
+    {
         // _refreshSizeUnderLock redraws the entire terminal.
         // Don't call it if we don't have to.
-        if (_compositionScale == scale)
+        if (_panelWidth == width && _panelHeight == height && _compositionScale == scale)
         {
             return;
         }
+        const auto oldScale = _compositionScale;
 
+        _panelWidth = width;
+        _panelHeight = height;
         _compositionScale = scale;
 
         auto lock = _terminal->LockForWriting();
-        // _updateFont relies on the new _compositionScale set above
-        _updateFont();
+        if (oldScale != scale)
+        {
+            // _updateFont relies on the new _compositionScale set above
+            _updateFont();
+        }
         _refreshSizeUnderLock();
     }
 

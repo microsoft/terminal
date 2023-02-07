@@ -67,9 +67,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         hstring IconPath() const noexcept;
         void IconPath(const hstring& val);
 
-        winrt::Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker propertyChangedRevoker;
-
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_PROPERTY(ExpandCommandType, IterateOn, ExpandCommandType::None);
         WINRT_PROPERTY(Model::ActionAndArgs, ActionAndArgs);
 

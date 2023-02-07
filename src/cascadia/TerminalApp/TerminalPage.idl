@@ -14,7 +14,7 @@ namespace TerminalApp
                                                                    Microsoft.Terminal.Control.IControlAppearance unfocusedAppearance,
                                                                    Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
         Microsoft.Terminal.Control.ControlInteractivity LookupCore(Guid id);
-        void Detach(Guid id);
+        void Detach(Microsoft.Terminal.Control.TermControl control);
     }
 
     delegate void LastTabClosedEventArgs();

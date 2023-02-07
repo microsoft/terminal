@@ -285,6 +285,9 @@ namespace winrt::TerminalApp::implementation
             }
 
             _settings = std::move(newSettings);
+
+            _settings.ExpandCommands();
+
             hr = (_warnings.Size()) == 0 ? S_OK : S_FALSE;
         }
         catch (const winrt::hresult_error& e)
