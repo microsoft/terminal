@@ -105,7 +105,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // least we don't need to quick return if the core was already
             // initialized - we still have state to set up, and resize the core
             // to the new swapchain size, etc.
-            if (_InitializeTerminal())
+            if (_InitializeTerminal(false))
             {
                 // Only let this succeed once.
                 _layoutUpdatedRevoker.revoke();
@@ -158,12 +158,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto term{ winrt::make_self<TermControl>(content) };
         term->_AttachDxgiSwapChainToXaml(reinterpret_cast<HANDLE>(term->_core.SwapChainHandle()));
         content.Reparent(keyBindings);
-        // if (const auto h{ reinterpret_cast<HANDLE>(_core.SwapChainHandle()) })
-        // {
-        //     // Reparent will fire off a _core.CloseTerminalRequested, which the
-        //     // old window will listen to and know to remove its old control,
-        //     // leaving us as the owner.
-        // }
+
+        // Initialize the terminal only once the swapchainpanel is loaded - that
+        //      way, we'll be able to query the real pixel size it got on layout
+        auto r = term->SwapChainPanel().LayoutUpdated(winrt::auto_revoke, [term](auto /*s*/, auto /*e*/) {
+            // Replace the normal initialize routine with one that will allow up
+            // to complete initialization even though the Core was already
+            // initialized.
+            if (term->_InitializeTerminal(true))
+            {
+                // Only let this succeed once.
+                term->_layoutUpdatedRevoker.revoke();
+            }
+        });
+        term->_layoutUpdatedRevoker.swap(r);
+
         return *term;
     }
 
@@ -843,7 +852,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         nativePanel->SetSwapChainHandle(swapChainHandle);
     }
 
-    bool TermControl::_InitializeTerminal()
+    bool TermControl::_InitializeTerminal(const bool reattach)
     {
         if (_initializedTerminal)
         {
@@ -869,14 +878,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // the first paint will be ignored!
         _core.RendererWarning({ get_weak(), &TermControl::_RendererWarning });
 
-        const auto coreInitialized = _core.Initialize(panelWidth,
-                                                      panelHeight,
-                                                      panelScaleX);
-        if (!coreInitialized)
+        // If we're re-attaching an existing content, then we want to proceed even though the Terminal was already initialized.
+        if (!reattach)
         {
-            return false;
+            const auto coreInitialized = _core.Initialize(panelWidth,
+                                                          panelHeight,
+                                                          panelScaleX);
+            if (!coreInitialized)
+            {
+                return false;
+            }
+            _interactivity.Initialize();
         }
-        _interactivity.Initialize();
+        else
+        {
+            _core.SizeOrScaleChanged(panelWidth, panelHeight, panelScaleX);
+        }
 
         _core.SwapChainChanged({ get_weak(), &TermControl::RenderEngineSwapChainChanged });
         _core.EnablePainting();
@@ -2037,8 +2054,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             TSFInputControl().Close();
             _autoScrollTimer.Stop();
 
-            _core.Close();
+            if (!_detached)
+            {
+                _core.Close();
+            }
         }
+    }
+    void TermControl::Detach()
+    {
+        _detached = true;
     }
 
     // Method Description:

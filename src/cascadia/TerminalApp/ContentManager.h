@@ -17,7 +17,7 @@ namespace winrt::TerminalApp::implementation
                                                                       Microsoft::Terminal::TerminalConnection::ITerminalConnection connection);
         Microsoft::Terminal::Control::ControlInteractivity LookupCore(winrt::guid id);
 
-        void Detach(const winrt::guid& contentGuid);
+        void Detach(const Microsoft::Terminal::Control::TermControl& control);
 
     private:
         Windows::Foundation::Collections::IMap<winrt::guid, Microsoft::Terminal::Control::ControlInteractivity> _content{

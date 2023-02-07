@@ -140,6 +140,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void AdjustOpacity(const double opacity, const bool relative);
 
+        void Detach();
+
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
         // -------------------------------- WinRT Events ---------------------------------
@@ -222,6 +224,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _showMarksInScrollbar{ false };
 
         bool _isBackgroundLight{ false };
+        bool _detached{ false };
 
         inline bool _IsClosing() const noexcept
         {
@@ -247,7 +250,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         static bool _isColorLight(til::color bg) noexcept;
         void _changeBackgroundOpacity();
 
-        bool _InitializeTerminal();
+        bool _InitializeTerminal(const bool reattach);
         void _SetFontSize(int fontSize);
         void _TappedHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& e);
         void _KeyDownHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);

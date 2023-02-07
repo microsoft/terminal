@@ -2035,7 +2035,7 @@ namespace winrt::TerminalApp::implementation
             rootPane->WalkTree([&](auto p) {
                 if (const auto& control{ p->GetTerminalControl() })
                 {
-                    _manager.Detach(control.ContentGuid());
+                    _manager.Detach(control);
                 }
             });
         }

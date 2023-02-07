@@ -110,6 +110,7 @@ namespace Microsoft.Terminal.Control
         void AdjustFontSize(Single fontSizeDelta);
         void SizeChanged(Double width, Double height);
         void ScaleChanged(Double scale);
+        void SizeOrScaleChanged(Double width, Double height, Double scale);
 
         void ToggleShaderEffects();
         void ToggleReadOnlyMode();
