@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <ShObjIdl_core.h>
+
 // Function Description:
 // - This function presents a File Open "common dialog" and returns its selected file asynchronously.
 // Parameters:
