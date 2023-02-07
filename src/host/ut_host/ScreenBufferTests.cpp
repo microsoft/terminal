@@ -266,7 +266,7 @@ void ScreenBufferTests::SingleAlternateBufferCreationTest()
     VERIFY_IS_NULL(psiOriginal->_psiMainBuffer);
 
     auto Status = psiOriginal->UseAlternateScreenBuffer();
-    if (VERIFY_IS_TRUE(NT_SUCCESS(Status)))
+    if (VERIFY_NT_SUCCESS(Status))
     {
         Log::Comment(L"First alternate buffer successfully created");
         const auto psiFirstAlternate = &gci.GetActiveOutputBuffer();
@@ -299,7 +299,7 @@ void ScreenBufferTests::MultipleAlternateBufferCreationTest()
 
     const auto psiOriginal = &gci.GetActiveOutputBuffer();
     auto Status = psiOriginal->UseAlternateScreenBuffer();
-    if (VERIFY_IS_TRUE(NT_SUCCESS(Status)))
+    if (VERIFY_NT_SUCCESS(Status))
     {
         Log::Comment(L"First alternate buffer successfully created");
         const auto psiFirstAlternate = &gci.GetActiveOutputBuffer();
@@ -310,7 +310,7 @@ void ScreenBufferTests::MultipleAlternateBufferCreationTest()
         VERIFY_IS_NULL(psiFirstAlternate->_psiAlternateBuffer);
 
         Status = psiFirstAlternate->UseAlternateScreenBuffer();
-        if (VERIFY_IS_TRUE(NT_SUCCESS(Status)))
+        if (VERIFY_NT_SUCCESS(Status))
         {
             Log::Comment(L"Second alternate buffer successfully created");
             auto psiSecondAlternate = &gci.GetActiveOutputBuffer();
@@ -344,7 +344,7 @@ void ScreenBufferTests::MultipleAlternateBuffersFromMainCreationTest()
         L" alternate from the main, before returning to the main buffer.");
     const auto psiOriginal = &gci.GetActiveOutputBuffer();
     auto Status = psiOriginal->UseAlternateScreenBuffer();
-    if (VERIFY_IS_TRUE(NT_SUCCESS(Status)))
+    if (VERIFY_NT_SUCCESS(Status))
     {
         Log::Comment(L"First alternate buffer successfully created");
         const auto psiFirstAlternate = &gci.GetActiveOutputBuffer();
@@ -355,7 +355,7 @@ void ScreenBufferTests::MultipleAlternateBuffersFromMainCreationTest()
         VERIFY_IS_NULL(psiFirstAlternate->_psiAlternateBuffer);
 
         Status = psiOriginal->UseAlternateScreenBuffer();
-        if (VERIFY_IS_TRUE(NT_SUCCESS(Status)))
+        if (VERIFY_NT_SUCCESS(Status))
         {
             Log::Comment(L"Second alternate buffer successfully created");
             const auto psiSecondAlternate = &gci.GetActiveOutputBuffer();
@@ -2362,7 +2362,7 @@ void ScreenBufferTests::TestAltBufferCursorState()
     VERIFY_IS_NULL(original._psiMainBuffer);
 
     auto Status = original.UseAlternateScreenBuffer();
-    if (VERIFY_IS_TRUE(NT_SUCCESS(Status)))
+    if (VERIFY_NT_SUCCESS(Status))
     {
         Log::Comment(L"Alternate buffer successfully created");
         auto& alternate = gci.GetActiveOutputBuffer();
@@ -2407,7 +2407,7 @@ void ScreenBufferTests::TestAltBufferVtDispatching()
     VERIFY_IS_NULL(mainBuffer._psiMainBuffer);
 
     auto Status = mainBuffer.UseAlternateScreenBuffer();
-    if (VERIFY_IS_TRUE(NT_SUCCESS(Status)))
+    if (VERIFY_NT_SUCCESS(Status))
     {
         Log::Comment(L"Alternate buffer successfully created");
         auto& alternate = gci.GetActiveOutputBuffer();
@@ -5343,7 +5343,7 @@ void ScreenBufferTests::RestoreDownAltBufferWithTerminalScrolling()
     VERIFY_IS_NULL(siMain._psiAlternateBuffer);
 
     Log::Comment(L"Create an alternate buffer");
-    if (VERIFY_IS_TRUE(NT_SUCCESS(siMain.UseAlternateScreenBuffer())))
+    if (VERIFY_NT_SUCCESS(siMain.UseAlternateScreenBuffer()))
     {
         VERIFY_IS_NOT_NULL(siMain._psiAlternateBuffer);
         auto& altBuffer = *siMain._psiAlternateBuffer;
@@ -5508,7 +5508,7 @@ void ScreenBufferTests::ClearAlternateBuffer()
     VerifyText(siMain.GetTextBuffer());
 
     Log::Comment(L"Create an alternate buffer");
-    if (VERIFY_IS_TRUE(NT_SUCCESS(siMain.UseAlternateScreenBuffer())))
+    if (VERIFY_NT_SUCCESS(siMain.UseAlternateScreenBuffer()))
     {
         VERIFY_IS_NOT_NULL(siMain._psiAlternateBuffer);
         auto& altBuffer = *siMain._psiAlternateBuffer;
