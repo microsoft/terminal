@@ -746,7 +746,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _WriteStringWithNewline(RS_(L"AzureSuccess"));
 
         // Request for a terminal for said cloud shell
-        auto shellType = _ParsePreferredShellType(settingsResponse);
+        const auto shellType = _ParsePreferredShellType(settingsResponse);
         _WriteStringWithNewline(RS_(L"AzureRequestingTerminal"));
         const auto socketUri = _GetTerminal(shellType);
         _TerminalOutputHandlers(L"\r\n");
@@ -792,8 +792,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // Method description:
     // - helper function to send requests with default headers and extract responses as json values
     // Arguments:
-    // - a http_client
-    // - a http_request for the client to send
+    // - the URI
+    // - optional body content
+    // - an optional HTTP method (defaults to POST if content is present, GET otherwise)
     // Return value:
     // - the response from the server as a json value
     WDJ::JsonObject AzureConnection::_SendRequestReturningJson(std::wstring_view uri, const WWH::IHttpContent& content, WWH::HttpMethod method)
@@ -809,9 +810,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         auto headers{ request.Headers() };
         headers.Accept().TryParseAdd(L"application/json");
 
-        auto response{ _httpClient.SendRequestAsync(request).get() };
-        auto string{ response.Content().ReadAsStringAsync().get() };
-        auto jsonResult{ WDJ::JsonObject::Parse(string) };
+        const auto response{ _httpClient.SendRequestAsync(request).get() };
+        const auto string{ response.Content().ReadAsStringAsync().get() };
+        const auto jsonResult{ WDJ::JsonObject::Parse(string) };
 
         THROW_IF_AZURE_ERROR(jsonResult);
         return jsonResult;
