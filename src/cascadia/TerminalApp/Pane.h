@@ -136,7 +136,7 @@ public:
 
     bool ContainsReadOnly() const;
 
-    static void SetupResources(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
+    void SetupResources(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
 
     // Method Description:
     // - A helper method for ad-hoc recursion on a pane tree. Walks the pane
@@ -217,8 +217,8 @@ private:
     winrt::Windows::UI::Xaml::Controls::Grid _root{};
     winrt::Windows::UI::Xaml::Controls::Border _borderFirst{};
     winrt::Windows::UI::Xaml::Controls::Border _borderSecond{};
-    static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_focusedBorderBrush;
-    static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_unfocusedBorderBrush;
+    winrt::Windows::UI::Xaml::Media::SolidColorBrush _focusedBorderBrush;
+    winrt::Windows::UI::Xaml::Media::SolidColorBrush _unfocusedBorderBrush;
 
 #pragma region Properties that need to be transferred between child / parent panes upon splitting / closing
     std::shared_ptr<Pane> _firstChild{ nullptr };
