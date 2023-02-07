@@ -213,6 +213,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         void _DoSetTopBottomScrollingMargins(const VTInt topMargin,
                                              const VTInt bottomMargin);
+        void _DoLineFeed(TextBuffer& textBuffer, const bool withReturn, const bool wrapForced);
+
         void _OperatingStatus() const;
         void _CursorPositionReport(const bool extendedReport);
         void _MacroSpaceReport() const;

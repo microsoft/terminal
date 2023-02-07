@@ -94,7 +94,7 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
             // different position from where the EOL was marked.
             if (delayedCursorPosition == cursorPosition)
             {
-                _api.LineFeed(true, true);
+                _DoLineFeed(textBuffer, true, true);
                 cursorPosition = cursor.GetPosition();
                 // We need to recalculate the width when moving to a new line.
                 lineWidth = textBuffer.GetLineWidth(cursorPosition.y);
@@ -1985,6 +1985,93 @@ bool AdaptDispatch::CarriageReturn()
 }
 
 // Routine Description:
+// - Helper method for executing a line feed, possibly preceded by carriage return.
+// Arguments:
+// - textBuffer - Target buffer on which the line feed is executed.
+// - withReturn - Set to true if a carriage return should be performed as well.
+// - wrapForced - Set to true is the line feed was the result of the line wrapping.
+// Return Value:
+// - <none>
+void AdaptDispatch::_DoLineFeed(TextBuffer& textBuffer, const bool withReturn, const bool wrapForced)
+{
+    const auto viewport = _api.GetViewport();
+    const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
+    const auto bufferWidth = textBuffer.GetSize().Width();
+    const auto bufferHeight = textBuffer.GetSize().Height();
+
+    auto& cursor = textBuffer.GetCursor();
+    const auto currentPosition = cursor.GetPosition();
+    auto newPosition = currentPosition;
+
+    // If the line was forced to wrap, set the wrap status.
+    // When explicitly moving down a row, clear the wrap status.
+    textBuffer.GetRowByOffset(currentPosition.y).SetWrapForced(wrapForced);
+
+    if (currentPosition.y != bottomMargin)
+    {
+        // If we're not at the bottom margin then there's no scrolling,
+        // so we make sure we don't move past the bottom of the viewport.
+        newPosition.y = std::min(currentPosition.y + 1, viewport.bottom - 1);
+        newPosition = textBuffer.ClampPositionWithinLine(newPosition);
+    }
+    else if (topMargin > viewport.top)
+    {
+        // If the top margin isn't at the top of the viewport, then we're
+        // just scrolling the margin area and the cursor stays where it is.
+        _ScrollRectVertically(textBuffer, { 0, topMargin, bufferWidth, bottomMargin + 1 }, -1);
+    }
+    else if (viewport.bottom < bufferHeight)
+    {
+        // If the top margin is at the top of the viewport, then we'll scroll
+        // the content up by panning the viewport down, and also move the cursor
+        // down a row. But we only do this if the viewport hasn't yet reached
+        // the end of the buffer.
+        _api.SetViewportPosition({ viewport.left, viewport.top + 1 });
+        newPosition.y++;
+
+        // And if the bottom margin didn't cover the full viewport, we copy the
+        // lower part of the viewport down so it remains static. But for a full
+        // pan we reset the newly revealed row with the current attributes.
+        if (bottomMargin < viewport.bottom - 1)
+        {
+            _ScrollRectVertically(textBuffer, { 0, bottomMargin + 1, bufferWidth, viewport.bottom + 1 }, 1);
+        }
+        else
+        {
+            auto eraseAttributes = textBuffer.GetCurrentAttributes();
+            eraseAttributes.SetStandardErase();
+            textBuffer.GetRowByOffset(newPosition.y).Reset(eraseAttributes);
+        }
+    }
+    else
+    {
+        // If the viewport has reached the end of the buffer, we can't pan down,
+        // so we cycle the row coordinates, which effectively scrolls the buffer
+        // content up. In this case we don't need to move the cursor down.
+        textBuffer.IncrementCircularBuffer(true);
+
+        // We trigger a scroll rather than a redraw, since that's more efficient,
+        // but we need to turn the cursor off before doing so, otherwise a ghost
+        // cursor can be left behind in the previous position.
+        cursor.SetIsOn(false);
+        textBuffer.TriggerScroll({ 0, -1 });
+
+        // And again, if the bottom margin didn't cover the full viewport, we
+        // copy the lower part of the viewport down so it remains static.
+        if (bottomMargin < viewport.bottom - 1)
+        {
+            _ScrollRectVertically(textBuffer, { 0, bottomMargin, bufferWidth, bufferHeight }, 1);
+        }
+    }
+
+    // If a carriage return was requested, we also move to the leftmost column.
+    newPosition.x = withReturn ? 0 : newPosition.x;
+
+    cursor.SetPosition(newPosition);
+    _ApplyCursorMovementFlags(cursor);
+}
+
+// Routine Description:
 // - IND/NEL - Performs a line feed, possibly preceded by carriage return.
 //    Moves the cursor down one line, and possibly also to the leftmost column.
 // Arguments:
@@ -1993,16 +2080,17 @@ bool AdaptDispatch::CarriageReturn()
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::LineFeed(const DispatchTypes::LineFeedType lineFeedType)
 {
+    auto& textBuffer = _api.GetTextBuffer();
     switch (lineFeedType)
     {
     case DispatchTypes::LineFeedType::DependsOnMode:
-        _api.LineFeed(_api.GetLineFeedMode(), false);
+        _DoLineFeed(textBuffer, _api.GetLineFeedMode(), false);
         return true;
     case DispatchTypes::LineFeedType::WithoutReturn:
-        _api.LineFeed(false, false);
+        _DoLineFeed(textBuffer, false, false);
         return true;
     case DispatchTypes::LineFeedType::WithReturn:
-        _api.LineFeed(true, false);
+        _DoLineFeed(textBuffer, true, false);
         return true;
     default:
         return false;
