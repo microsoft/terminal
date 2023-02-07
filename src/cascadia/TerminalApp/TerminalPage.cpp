@@ -4580,15 +4580,20 @@ namespace winrt::TerminalApp::implementation
         auto requestedTheme{ theme.RequestedTheme() };
 
         {
-            // Update the brushes that Pane's use...
-            Pane::SetupResources(requestedTheme);
-            // ... then trigger a visual update for all the pane borders to
-            // apply the new ones.
             for (const auto& tab : _tabs)
             {
                 if (auto terminalTab{ _GetTerminalTabImpl(tab) })
                 {
                     terminalTab->GetRootPane()->WalkTree([&](auto&& pane) {
+                        // TODO, but of middling priority. We probably shouldn't
+                        // SetupResources on _every_ pane. We can probably call
+                        // that on the root, and then have that backchannel to
+                        // update the whole tree.
+
+                        // Update the brushes that Pane's use...
+                        pane->SetupResources(requestedTheme);
+                        // ... then trigger a visual update for all the pane borders to
+                        // apply the new ones.
                         pane->UpdateVisuals();
                     });
                 }
