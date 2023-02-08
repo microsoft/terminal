@@ -63,6 +63,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void AddTheme(const Model::Theme& theme);
         Model::Theme CurrentTheme() noexcept;
 
+        bool ShouldUsePersistedLayout() const;
+
         void ExpandCommands(const Windows::Foundation::Collections::IVectorView<Model::Profile>& profiles,
                             const Windows::Foundation::Collections::IMapView<winrt::hstring, Model::ColorScheme>& schemes);
 

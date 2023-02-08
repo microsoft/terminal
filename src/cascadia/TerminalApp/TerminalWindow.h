@@ -64,15 +64,17 @@ namespace winrt::TerminalApp::implementation
         bool AlwaysOnTop() const;
         bool AutoHideWindow();
 
-        // bool ShouldUsePersistedLayout();
-
         hstring GetWindowLayoutJson(Microsoft::Terminal::Settings::Model::LaunchPosition position);
-        // void SaveWindowLayoutJsons(const Windows::Foundation::Collections::IVector<hstring>& layouts);
+
         void IdentifyWindow();
         void RenameFailed();
 
+        std::optional<uint32_t> LoadPersistedLayoutIdx() const;
+        winrt::Microsoft::Terminal::Settings::Model::WindowLayout LoadPersistedLayout() const;
         void SetPersistedLayoutIdx(const uint32_t idx);
         void SetNumberOfOpenWindows(const uint64_t num);
+        bool ShouldUsePersistedLayout() const;
+
         // bool IsQuakeWindow() const noexcept;
         void RequestExitFullscreen();
 
@@ -153,6 +155,7 @@ namespace winrt::TerminalApp::implementation
         uint64_t _WindowId{ 0 };
 
         uint64_t _numOpenWindows{ 0 };
+        std::optional<uint32_t> _loadFromPersistedLayoutIdx{};
 
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
         TerminalApp::SettingsLoadEventArgs _initialLoadResult{ nullptr };

@@ -146,7 +146,7 @@ namespace winrt::TerminalApp::implementation
         //   don't have a page yet.
         if (const auto idx = _appArgs.GetPersistedLayoutIdx())
         {
-            _root->SetPersistedLayoutIdx(idx.value());
+            SetPersistedLayoutIdx(idx.value());
         }
         _root->SetStartupActions(_appArgs.GetStartupActions());
 
@@ -569,7 +569,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::Foundation::Size proposedSize{};
 
         const auto scale = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
-        if (const auto layout = _root->LoadPersistedLayout(_settings))
+        if (const auto layout = LoadPersistedLayout())
         {
             if (layout.InitialSize())
             {
@@ -645,7 +645,7 @@ namespace winrt::TerminalApp::implementation
         // commandline, then use that to override the value from the settings.
         const auto valueFromSettings = _settings.GlobalSettings().LaunchMode();
         const auto valueFromCommandlineArgs = _appArgs.GetLaunchMode();
-        if (const auto layout = _root->LoadPersistedLayout(_settings))
+        if (const auto layout = LoadPersistedLayout())
         {
             if (layout.LaunchMode())
             {
@@ -671,7 +671,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto initialPosition{ _settings.GlobalSettings().InitialPosition() };
 
-        if (const auto layout = _root->LoadPersistedLayout(_settings))
+        if (const auto layout = LoadPersistedLayout())
         {
             if (layout.InitialPosition())
             {
@@ -858,7 +858,7 @@ namespace winrt::TerminalApp::implementation
         {
             // If persisted layout is enabled and we are the last window closing
             // we should save our state.
-            if (_root->ShouldUsePersistedLayout(_settings) && _numOpenWindows == 1)
+            if (_settings.GlobalSettings().ShouldUsePersistedLayout() && _numOpenWindows == 1)
             {
                 if (const auto layout = _root->GetWindowLayout())
                 {
@@ -1040,27 +1040,6 @@ namespace winrt::TerminalApp::implementation
 
     ////////////////////////////////////////////////////////////////////////////
 
-    // bool TerminalWindow::ShouldUsePersistedLayout()
-    // {
-    //     return _root != nullptr ? _root->ShouldUsePersistedLayout(_settings) : false;
-    // }
-
-    /*void TerminalWindow::SaveWindowLayoutJsons(const Windows::Foundation::Collections::IVector<hstring>& layouts)
-    {
-        std::vector<WindowLayout> converted;
-        converted.reserve(layouts.Size());
-
-        for (const auto& json : layouts)
-        {
-            if (json != L"")
-            {
-                converted.emplace_back(WindowLayout::FromJson(json));
-            }
-        }
-
-        ApplicationState::SharedInstance().PersistedWindowLayouts(winrt::single_threaded_vector(std::move(converted)));
-    }*/
-
     hstring TerminalWindow::GetWindowLayoutJson(LaunchPosition position)
     {
         if (_root != nullptr)
@@ -1074,43 +1053,35 @@ namespace winrt::TerminalApp::implementation
         return L"";
     }
 
-    void TerminalWindow::IdentifyWindow()
-    {
-        if (_root)
-        {
-            _root->IdentifyWindow();
-        }
-    }
-
-    // winrt::hstring TerminalWindow::WindowName()
-    // {
-    //     return _root ? _root->WindowName() : L"";
-    // }
-    // void TerminalWindow::WindowName(const winrt::hstring& name)
-    // {
-    //     if (_root)
-    //     {
-    //         _root->WindowName(name);
-    //     }
-    // }
-    // uint64_t TerminalWindow::WindowId()
-    // {
-    //     return _root ? _root->WindowId() : 0;
-    // }
-    // void TerminalWindow::WindowId(const uint64_t& id)
-    // {
-    //     if (_root)
-    //     {
-    //         _root->WindowId(id);
-    //     }
-    // }
-
     void TerminalWindow::SetPersistedLayoutIdx(const uint32_t idx)
     {
-        if (_root)
+        _loadFromPersistedLayoutIdx = idx;
+    }
+
+    // Method Description;
+    // - Checks if the current window is configured to load a particular layout
+    // Arguments:
+    // - settings: The settings to use as this may be called before the page is
+    //   fully initialized.
+    // Return Value:
+    // - non-null if there is a particular saved layout to use
+    std::optional<uint32_t> TerminalWindow::LoadPersistedLayoutIdx() const
+    {
+        return _settings.GlobalSettings().ShouldUsePersistedLayout() ? _loadFromPersistedLayoutIdx : std::nullopt;
+    }
+
+    WindowLayout TerminalWindow::LoadPersistedLayout() const
+    {
+        if (const auto idx = LoadPersistedLayoutIdx())
         {
-            _root->SetPersistedLayoutIdx(idx);
+            const auto i = idx.value();
+            const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
+            if (layouts && layouts.Size() > i)
+            {
+                return layouts.GetAt(i);
+            }
         }
+        return nullptr;
     }
 
     void TerminalWindow::SetNumberOfOpenWindows(const uint64_t num)
@@ -1119,6 +1090,27 @@ namespace winrt::TerminalApp::implementation
         if (_root)
         {
             _root->SetNumberOfOpenWindows(num);
+        }
+    }
+
+    // // Method Description;
+    // // - Checks if the current terminal window should load or save its layout information.
+    // // Arguments:
+    // // - settings: The settings to use as this may be called before the page is
+    // //   fully initialized.
+    // // Return Value:
+    // // - true if the ApplicationState should be used.
+    // bool TerminalWindow::ShouldUsePersistedLayout() const
+    // {
+    //     return _settings.GlobalSettings().ShouldUsePersistedLayout();
+    // }
+    ////////////////////////////////////////////////////////////////////////////
+
+    void TerminalWindow::IdentifyWindow()
+    {
+        if (_root)
+        {
+            _root->IdentifyWindow();
         }
     }
 

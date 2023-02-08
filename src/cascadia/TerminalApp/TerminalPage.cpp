@@ -293,17 +293,17 @@ namespace winrt::TerminalApp::implementation
         ShowSetAsDefaultInfoBar();
     }
 
-    // Method Description;
-    // - Checks if the current terminal window should load or save its layout information.
-    // Arguments:
-    // - settings: The settings to use as this may be called before the page is
-    //   fully initialized.
-    // Return Value:
-    // - true if the ApplicationState should be used.
-    bool TerminalPage::ShouldUsePersistedLayout(CascadiaSettings& settings) const
-    {
-        return settings.GlobalSettings().FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout;
-    }
+    // // Method Description;
+    // // - Checks if the current terminal window should load or save its layout information.
+    // // Arguments:
+    // // - settings: The settings to use as this may be called before the page is
+    // //   fully initialized.
+    // // Return Value:
+    // // - true if the ApplicationState should be used.
+    // bool TerminalPage::ShouldUsePersistedLayout(CascadiaSettings& settings) const
+    // {
+    //     return settings.GlobalSettings().FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout;
+    // }
 
     // Method Description:
     // - This is a bit of trickiness: If we're running unelevated, and the user
@@ -416,32 +416,6 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    // Method Description;
-    // - Checks if the current window is configured to load a particular layout
-    // Arguments:
-    // - settings: The settings to use as this may be called before the page is
-    //   fully initialized.
-    // Return Value:
-    // - non-null if there is a particular saved layout to use
-    std::optional<uint32_t> TerminalPage::LoadPersistedLayoutIdx(CascadiaSettings& settings) const
-    {
-        return ShouldUsePersistedLayout(settings) ? _loadFromPersistedLayoutIdx : std::nullopt;
-    }
-
-    WindowLayout TerminalPage::LoadPersistedLayout(CascadiaSettings& settings) const
-    {
-        if (const auto idx = LoadPersistedLayoutIdx(settings))
-        {
-            const auto i = idx.value();
-            const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
-            if (layouts && layouts.Size() > i)
-            {
-                return layouts.GetAt(i);
-            }
-        }
-        return nullptr;
-    }
-
     winrt::fire_and_forget TerminalPage::NewTerminalByDrop(winrt::Windows::UI::Xaml::DragEventArgs& e)
     {
         Windows::Foundation::Collections::IVectorView<Windows::Storage::IStorageItem> items;
@@ -525,15 +499,17 @@ namespace winrt::TerminalApp::implementation
         {
             _startupState = StartupState::InStartup;
 
-            // If we are provided with an index, the cases where we have
-            // commandline args and startup actions are already handled.
-            if (const auto layout = LoadPersistedLayout(_settings))
-            {
-                if (layout.TabLayout().Size() > 0)
-                {
-                    _startupActions = layout.TabLayout();
-                }
-            }
+            // TODO! This should be moved into TerminalWindow, and loaded into the page _long_ before the first layout. That way this method can just handle _startupActions, whether they're persisted layout or commandline args.
+            //
+            //// If we are provided with an index, the cases where we have
+            //// commandline args and startup actions are already handled.
+            //if (const auto layout = LoadPersistedLayout(_settings))
+            //{
+            //    if (layout.TabLayout().Size() > 0)
+            //    {
+            //        _startupActions = layout.TabLayout();
+            //    }
+            //}
 
             ProcessStartupActions(_startupActions, true);
 
@@ -1866,7 +1842,7 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        if (ShouldUsePersistedLayout(_settings))
+        if (_settings.GlobalSettings().ShouldUsePersistedLayout())
         {
             // Don't delete the ApplicationState when all of the tabs are removed.
             // If there is still a monarch living they will get the event that
@@ -3774,11 +3750,6 @@ namespace winrt::TerminalApp::implementation
                 page->_windowIdToast->Open();
             }
         }
-    }
-
-    void TerminalPage::SetPersistedLayoutIdx(const uint32_t idx)
-    {
-        _loadFromPersistedLayoutIdx = idx;
     }
 
     void TerminalPage::SetNumberOfOpenWindows(const uint64_t num)

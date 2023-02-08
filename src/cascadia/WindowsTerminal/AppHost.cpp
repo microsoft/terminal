@@ -116,13 +116,6 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
     //     // swap what context they are in to the ui thread to get the actual layout.
     //     args.WindowLayoutJsonAsync(_GetWindowLayoutAsync());
     // });
-
-    // TODO! Where are we putting the monarch stuff now?
-    // _revokers.BecameMonarch = _windowManager2.BecameMonarch(winrt::auto_revoke, { this, &AppHost::_BecomeMonarch });
-    // if (_windowManager2.IsMonarch())
-    // {
-    //     _BecomeMonarch(nullptr, nullptr);
-    // }
 }
 
 AppHost::~AppHost()
@@ -515,7 +508,6 @@ void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*se
     // _getWindowLayoutThrottler.reset();
     // _windowManager2.GetWindowLayoutRequested(_GetWindowLayoutRequestedToken);
 
-
     // Remove ourself from the list of peasants so that we aren't included in
     // any future requests. This will also mean we block until any existing
     // event handler finishes.
@@ -870,55 +862,6 @@ void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable send
     _windowLogic.ExecuteCommandline(args.Commandline(), args.CurrentDirectory());
 }
 
-// TODO!
-// // Method Description:
-// // - Asynchronously get the window layout from the current page. This is
-// //   done async because we need to switch between the ui thread and the calling
-// //   thread.
-// // - NB: The peasant calling this must not be running on the UI thread, otherwise
-// //   they will crash since they just call .get on the async operation.
-// // Arguments:
-// // - <none>
-// // Return Value:
-// // - The window layout as a json string.
-// winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> AppHost::_GetWindowLayoutAsync()
-// {
-//     winrt::apartment_context peasant_thread;
-
-//     winrt::hstring layoutJson = L"";
-//     // Use the main thread since we are accessing controls.
-//     co_await wil::resume_foreground(_windowLogic.GetRoot().Dispatcher());
-//     try
-//     {
-//         const auto pos = _GetWindowLaunchPosition();
-//         layoutJson = _windowLogic.GetWindowLayoutJson(pos);
-//     }
-//     CATCH_LOG()
-
-//     // go back to give the result to the peasant.
-//     co_await peasant_thread;
-
-//     co_return layoutJson;
-// }
-
-// // Method Description:
-// // - Event handler for the WindowManager::FindTargetWindowRequested event. The
-// //   manager will ask us how to figure out what the target window is for a set
-// //   of commandline arguments. We'll take those arguments, and ask AppLogic to
-// //   parse them for us. We'll then set ResultTargetWindow in the given args, so
-// //   the sender can use that result.
-// // Arguments:
-// // - args: the bundle of a commandline and working directory to find the correct target window for.
-// // Return Value:
-// // - <none>
-// void AppHost::_FindTargetWindow(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-//                                 const Remoting::FindTargetWindowArgs& args)
-// {
-//     const auto targetWindow = _appLogic.FindTargetWindow(args.Args().Commandline());
-//     args.ResultTargetWindow(targetWindow.WindowId());
-//     args.ResultTargetWindowName(targetWindow.WindowName());
-// }
-
 winrt::fire_and_forget AppHost::_WindowActivated(bool activated)
 {
     _windowLogic.WindowActivated(activated);
@@ -997,67 +940,6 @@ winrt::fire_and_forget AppHost::_WindowActivated(bool activated)
 //         // We want at least some delay to prevent the first save from overwriting
 //         // the data as we try load windows initially.
 //         _getWindowLayoutThrottler.emplace(std::move(std::chrono::seconds(10)), std::move([this]() { _SaveWindowLayoutsRepeat(); }));
-//         _getWindowLayoutThrottler.value()();
-//     }
-// }
-
-// winrt::Windows::Foundation::IAsyncAction AppHost::_SaveWindowLayouts()
-// {
-//     // Make sure we run on a background thread to not block anything.
-//     co_await winrt::resume_background();
-
-//     if (_windowLogic.ShouldUsePersistedLayout())
-//     {
-//         try
-//         {
-//             TraceLoggingWrite(g_hWindowsTerminalProvider,
-//                               "AppHost_SaveWindowLayouts_Collect",
-//                               TraceLoggingDescription("Logged when collecting window state"),
-//                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-//                               TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-//             const auto layoutJsons = _windowManager2.GetAllWindowLayouts();
-//             TraceLoggingWrite(g_hWindowsTerminalProvider,
-//                               "AppHost_SaveWindowLayouts_Save",
-//                               TraceLoggingDescription("Logged when writing window state"),
-//                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-//                               TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-//             _windowLogic.SaveWindowLayoutJsons(layoutJsons);
-//         }
-//         catch (...)
-//         {
-//             LOG_CAUGHT_EXCEPTION();
-//             TraceLoggingWrite(g_hWindowsTerminalProvider,
-//                               "AppHost_SaveWindowLayouts_Failed",
-//                               TraceLoggingDescription("An error occurred when collecting or writing window state"),
-//                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-//                               TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-//         }
-//     }
-
-//     co_return;
-// }
-
-// winrt::fire_and_forget AppHost::_SaveWindowLayoutsRepeat()
-// {
-//     // Make sure we run on a background thread to not block anything.
-//     co_await winrt::resume_background();
-
-//     co_await _SaveWindowLayouts();
-
-//     // Don't need to save too frequently.
-//     co_await 30s;
-
-//     // As long as we are supposed to keep saving, request another save.
-//     // This will be delayed by the throttler so that at most one save happens
-//     // per 10 seconds, if a save is requested by another source simultaneously.
-//     if (_getWindowLayoutThrottler.has_value())
-//     {
-//         TraceLoggingWrite(g_hWindowsTerminalProvider,
-//                           "AppHost_requestGetLayout",
-//                           TraceLoggingDescription("Logged when triggering a throttled write of the window state"),
-//                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-//                           TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-
 //         _getWindowLayoutThrottler.value()();
 //     }
 // }

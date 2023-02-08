@@ -701,7 +701,7 @@ namespace winrt::TerminalApp::implementation
 
     bool AppLogic::ShouldUsePersistedLayout() const
     {
-        return _settings.GlobalSettings().FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout;
+        return _settings.GlobalSettings().ShouldUsePersistedLayout();
     }
     void AppLogic::SaveWindowLayoutJsons(const Windows::Foundation::Collections::IVector<hstring>& layouts)
     {
