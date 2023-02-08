@@ -24,7 +24,7 @@ public:
     void WaitForWindows();
 
     bool HandleCommandlineArgs();
-    void CreateNewWindowThread(winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args);
+    void CreateNewWindowThread(winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args, const bool firstWindow);
 
 private:
     winrt::TerminalApp::App _app;
@@ -43,4 +43,5 @@ private:
 
     winrt::Windows::Foundation::IAsyncAction _SaveWindowLayouts();
     winrt::fire_and_forget _SaveWindowLayoutsRepeat();
+    void _attemptWindowRestore(const winrt::Microsoft::Terminal::Remoting::CommandlineArgs& args);
 };

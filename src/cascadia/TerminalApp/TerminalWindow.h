@@ -154,7 +154,7 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring _WindowName{};
         uint64_t _WindowId{ 0 };
 
-        uint64_t _numOpenWindows{ 0 };
+        uint64_t _numOpenWindows{ 1 };
         std::optional<uint32_t> _loadFromPersistedLayoutIdx{};
 
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
