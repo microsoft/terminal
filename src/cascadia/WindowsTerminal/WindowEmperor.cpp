@@ -240,7 +240,7 @@ void WindowEmperor::_attemptWindowRestore(const Remoting::CommandlineArgs& args)
         // The 2nd+ layout will always get a new window.
 
         // _windowLogic.HasCommandlineArguments === args.size() > 1
-        uint32_t startIdx = args.Commandline().size() > 1 ? 1 : 0;
+        uint32_t startIdx = args.Commandline().size() > 1 ? 0 : 1;
 
         // Create new windows for each of the other saved layouts.
         for (const auto size = layouts.Size(); startIdx < size; startIdx += 1)

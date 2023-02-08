@@ -144,11 +144,26 @@ namespace winrt::TerminalApp::implementation
         // Pass commandline args into the TerminalPage.
         // * we first got these in SetStartupCommandline, but at that time, we
         //   don't have a page yet.
-        if (const auto idx = _appArgs.GetPersistedLayoutIdx())
+        auto foundLayout = false;
+
+        if (const auto& layout = LoadPersistedLayout())
         {
-            SetPersistedLayoutIdx(idx.value());
+            if (layout.TabLayout().Size() > 0)
+            {
+                // _startupActions = layout.TabLayout();
+                std::vector<Settings::Model::ActionAndArgs> actions;
+                for (const auto& a : layout.TabLayout())
+                {
+                    actions.emplace_back(a);
+                }
+                _root->SetStartupActions(actions);
+                foundLayout = true;
+            }
         }
-        _root->SetStartupActions(_appArgs.GetStartupActions());
+        if (!foundLayout)
+        {
+            _root->SetStartupActions(_appArgs.GetStartupActions());
+        }
 
         // Check if we were started as a COM server for inbound connections of console sessions
         // coming out of the operating system default application feature. If so,
@@ -969,6 +984,9 @@ namespace winrt::TerminalApp::implementation
     //   or 0. (see TerminalWindow::_ParseArgs)
     int32_t TerminalWindow::SetStartupCommandline(array_view<const winrt::hstring> args)
     {
+        // This is called in Apphost::ctor(), before  we've created the window
+        // (or called TerminalWindow::Initialize)
+
         const auto result = _appArgs.ParseArgs(args);
         if (result == 0)
         {
@@ -981,6 +999,18 @@ namespace winrt::TerminalApp::implementation
             // Instead, we'll handle that in Initialize, when we first instantiate the page.
         }
 
+        if (const auto idx = _appArgs.GetPersistedLayoutIdx())
+        {
+            SetPersistedLayoutIdx(idx.value());
+        }
+        else
+        {
+            if (_settings.GlobalSettings().ShouldUsePersistedLayout() &&
+                args.size() <= 1)
+            {
+                SetPersistedLayoutIdx(0);
+            }
+        }
         return result;
     }
 

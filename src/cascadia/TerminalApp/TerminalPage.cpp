@@ -499,18 +499,6 @@ namespace winrt::TerminalApp::implementation
         {
             _startupState = StartupState::InStartup;
 
-            // TODO! This should be moved into TerminalWindow, and loaded into the page _long_ before the first layout. That way this method can just handle _startupActions, whether they're persisted layout or commandline args.
-            //
-            //// If we are provided with an index, the cases where we have
-            //// commandline args and startup actions are already handled.
-            //if (const auto layout = LoadPersistedLayout(_settings))
-            //{
-            //    if (layout.TabLayout().Size() > 0)
-            //    {
-            //        _startupActions = layout.TabLayout();
-            //    }
-            //}
-
             ProcessStartupActions(_startupActions, true);
 
             // If we were told that the COM server needs to be started to listen for incoming
