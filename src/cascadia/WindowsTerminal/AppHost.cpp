@@ -85,11 +85,6 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
                          std::placeholders::_3);
     _window->SetCreateCallback(pfn);
 
-    _window->SetSnapDimensionCallback(std::bind(&winrt::TerminalApp::TerminalWindow::CalcSnappedDimension,
-                                                _windowLogic,
-                                                std::placeholders::_1,
-                                                std::placeholders::_2));
-
     // Event handlers:
     // MAKE SURE THEY ARE ALL:
     // * winrt::auto_revoke
@@ -469,6 +464,11 @@ void AppHost::Initialize()
     // compositor to automatically complete animations that are scheduled
     // while the screen is off.
     TerminalTrySetAutoCompleteAnimationsWhenOccluded(static_cast<::IUnknown*>(winrt::get_abi(_windowLogic.GetRoot())), true);
+
+    _window->SetSnapDimensionCallback(std::bind(&winrt::TerminalApp::TerminalWindow::CalcSnappedDimension,
+                                                _windowLogic,
+                                                std::placeholders::_1,
+                                                std::placeholders::_2));
 
     _window->UpdateTitle(_windowLogic.Title());
 
@@ -1508,7 +1508,7 @@ void AppHost::_QuitAllRequested(const winrt::Windows::Foundation::IInspectable&,
                                 const winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs&)
 {
     // TODO! wat do
-    // 
+    //
     //// Make sure that the current timer is destroyed so that it doesn't attempt
     //// to run while we are in the middle of quitting.
     //if (_getWindowLayoutThrottler.has_value())
