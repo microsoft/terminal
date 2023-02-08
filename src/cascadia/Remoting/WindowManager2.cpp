@@ -351,8 +351,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         _monarch.AddPeasant(*p);
 
-        // TODO!
-        // _peasant.GetWindowLayoutRequested({ get_weak(), &WindowManager::_GetWindowLayoutRequestedHandlers });
+        p->GetWindowLayoutRequested({ get_weak(), &WindowManager2::_GetWindowLayoutRequestedHandlers });
 
         TraceLoggingWrite(g_hRemotingProvider,
                           "WindowManager_CreateOurPeasant",

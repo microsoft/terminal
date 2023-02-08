@@ -110,12 +110,12 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
 
     _window->MakeWindow();
 
-    // TODO!
-    // _GetWindowLayoutRequestedToken = _windowManager2.GetWindowLayoutRequested([this](auto&&, const winrt::Microsoft::Terminal::Remoting::GetWindowLayoutArgs& args) {
-    //     // The peasants are running on separate threads, so they'll need to
-    //     // swap what context they are in to the ui thread to get the actual layout.
-    //     args.WindowLayoutJsonAsync(_GetWindowLayoutAsync());
-    // });
+    _GetWindowLayoutRequestedToken = _windowManager2.GetWindowLayoutRequested([this](auto&&,
+                                                                                     const Remoting::GetWindowLayoutArgs& args) {
+        // The peasants are running on separate threads, so they'll need to
+        // swap what context they are in to the ui thread to get the actual layout.
+        args.WindowLayoutJsonAsync(_GetWindowLayoutAsync());
+    });
 }
 
 AppHost::~AppHost()
@@ -159,28 +159,6 @@ void AppHost::SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable&
                                     gsl::narrow_cast<size_t>(state.Progress()));
     }
 }
-
-// void _buildArgsFromCommandline(std::vector<winrt::hstring>& args)
-// {
-//     if (auto commandline{ GetCommandLineW() })
-//     {
-//         auto argc = 0;
-
-//         // Get the argv, and turn them into a hstring array to pass to the app.
-//         wil::unique_any<LPWSTR*, decltype(&::LocalFree), ::LocalFree> argv{ CommandLineToArgvW(commandline, &argc) };
-//         if (argv)
-//         {
-//             for (auto& elem : wil::make_range(argv.get(), argc))
-//             {
-//                 args.emplace_back(elem);
-//             }
-//         }
-//     }
-//     if (args.empty())
-//     {
-//         args.emplace_back(L"wt.exe");
-//     }
-// }
 
 // Method Description:
 // - Retrieve any commandline args passed on the commandline, and pass them to
@@ -503,10 +481,8 @@ void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*se
     //     _HideNotificationIconRequested(nullptr, nullptr);
     // }
 
-    // TODO!
-    // // We don't want to try to save layouts if we are about to close.
-    // _getWindowLayoutThrottler.reset();
-    // _windowManager2.GetWindowLayoutRequested(_GetWindowLayoutRequestedToken);
+    // We don't want to try to save layouts if we are about to close.
+    _windowManager2.GetWindowLayoutRequested(_GetWindowLayoutRequestedToken);
 
     // Remove ourself from the list of peasants so that we aren't included in
     // any future requests. This will also mean we block until any existing
@@ -886,6 +862,36 @@ winrt::fire_and_forget AppHost::_WindowActivated(bool activated)
                                             winrt::clock().now() };
         _peasant.ActivateWindow(args);
     }
+}
+
+// Method Description:
+// - Asynchronously get the window layout from the current page. This is
+//   done async because we need to switch between the ui thread and the calling
+//   thread.
+// - NB: The peasant calling this must not be running on the UI thread, otherwise
+//   they will crash since they just call .get on the async operation.
+// Arguments:
+// - <none>
+// Return Value:
+// - The window layout as a json string.
+winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> AppHost::_GetWindowLayoutAsync()
+{
+    winrt::apartment_context peasant_thread;
+
+    winrt::hstring layoutJson = L"";
+    // Use the main thread since we are accessing controls.
+    co_await wil::resume_foreground(_windowLogic.GetRoot().Dispatcher());
+    try
+    {
+        const auto pos = _GetWindowLaunchPosition();
+        layoutJson = _windowLogic.GetWindowLayoutJson(pos);
+    }
+    CATCH_LOG()
+
+    // go back to give the result to the peasant.
+    co_await peasant_thread;
+
+    co_return layoutJson;
 }
 
 // void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*sender*/,
