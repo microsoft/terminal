@@ -80,7 +80,7 @@ bool WindowEmperor::HandleCommandlineArgs()
             CreateNewWindowThread(args, false);
         });
         _becomeMonarch();
-        _attemptWindowRestore(eventArgs);
+        // _attemptWindowRestore(eventArgs);
     }
 
     return result.ShouldCreateWindow();
@@ -138,21 +138,21 @@ void WindowEmperor::CreateNewWindowThread(Remoting::WindowRequestedArgs args, co
         auto window{ std::make_shared<WindowThread>(_app.Logic(), args, _manager, peasant) };
         _windows.push_back(window);
 
-        if (firstWindow)
-        {
-            const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
-            if (_app.Logic().ShouldUsePersistedLayout() &&
-                layouts &&
-                layouts.Size() > 0)
-            {
-                if (
-                    !window->Logic().HasCommandlineArguments() &&
-                    !_app.Logic().HasSettingsStartupActions())
-                {
-                    window->Logic().SetPersistedLayoutIdx(0);
-                }
-            }
-        }
+        // if (firstWindow)
+        // {
+        //     const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
+        //     if (_app.Logic().ShouldUsePersistedLayout() &&
+        //         layouts &&
+        //         layouts.Size() > 0)
+        //     {
+        //         if (
+        //             !window->Logic().HasCommandlineArguments() &&
+        //             !_app.Logic().HasSettingsStartupActions())
+        //         {
+        //             window->Logic().SetPersistedLayoutIdx(0);
+        //         }
+        //     }
+        // }
 
         return window->WindowProc();
     };

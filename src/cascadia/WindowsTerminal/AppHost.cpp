@@ -198,7 +198,8 @@ void AppHost::_HandleCommandlineArgs(/*const winrt::Microsoft::Terminal::Remotin
 
     if (_peasant)
     {
-        if (auto args{ _peasant.InitialArgs() })
+        const auto& args{ _peasant.InitialArgs() };
+        if (args)
         {
             const auto result = _windowLogic.SetStartupCommandline(args.Commandline());
             const auto message = _windowLogic.ParseCommandlineMessage();
@@ -248,56 +249,54 @@ void AppHost::_HandleCommandlineArgs(/*const winrt::Microsoft::Terminal::Remotin
         _revokers.peasantDisplayWindowIdRequested = _peasant.DisplayWindowIdRequested(winrt::auto_revoke, { this, &AppHost::_DisplayWindowId });
         _revokers.peasantQuitRequested = _peasant.QuitRequested(winrt::auto_revoke, { this, &AppHost::_QuitRequested });
 
-        // TODO!
-        // // We need this property to be set before we get the InitialSize/Position
-        // // and BecameMonarch which normally sets it is only run after the window
-        // // is created.
-        // if (_windowManager2.IsMonarch())
-        // {
-        //     const auto numPeasants = _windowManager2.GetNumberOfPeasants();
-        //     const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
-        //     if (_windowLogic.ShouldUsePersistedLayout() &&
-        //         layouts &&
-        //         layouts.Size() > 0)
-        //     {
-        //         uint32_t startIdx = 0;
-        //         // We want to create a window for every saved layout.
-        //         // If we are the only window, and no commandline arguments were provided
-        //         // then we should just use the current window to load the first layout.
-        //         // Otherwise create this window normally with its commandline, and create
-        //         // a new window using the first saved layout information.
-        //         // The 2nd+ layout will always get a new window.
-        //         if (numPeasants == 1 && !_windowLogic.HasCommandlineArguments() && !_appLogic.HasSettingsStartupActions())
-        //         {
-        //             _windowLogic.SetPersistedLayoutIdx(startIdx);
-        //             startIdx += 1;
-        //         }
+        const auto numPeasants = _windowManager2.GetNumberOfPeasants();
+        if (numPeasants == 1)
+        {
+            const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
+            if (_appLogic.ShouldUsePersistedLayout() &&
+                layouts &&
+                layouts.Size() > 0)
+            {
+                uint32_t startIdx = 0;
+                // We want to create a window for every saved layout.
+                // If we are the only window, and no commandline arguments were provided
+                // then we should just use the current window to load the first layout.
+                // Otherwise create this window normally with its commandline, and create
+                // a new window using the first saved layout information.
+                // The 2nd+ layout will always get a new window.
+                if (!_windowLogic.HasCommandlineArguments() &&
+                    !_appLogic.HasSettingsStartupActions())
+                {
+                    _windowLogic.SetPersistedLayoutIdx(startIdx);
+                    startIdx += 1;
+                }
 
-        //         // Create new windows for each of the other saved layouts.
-        //         for (const auto size = layouts.Size(); startIdx < size; startIdx += 1)
-        //         {
-        //             auto newWindowArgs = fmt::format(L"{0} -w new -s {1}", args[0], startIdx);
+                // Create new windows for each of the other saved layouts.
+                for (const auto size = layouts.Size(); startIdx < size; startIdx += 1)
+                {
+                    auto newWindowArgs = fmt::format(L"{0} -w new -s {1}", args.Commandline()[0], startIdx);
 
-        //             STARTUPINFO si;
-        //             memset(&si, 0, sizeof(si));
-        //             si.cb = sizeof(si);
-        //             wil::unique_process_information pi;
+                    STARTUPINFO si;
+                    memset(&si, 0, sizeof(si));
+                    si.cb = sizeof(si);
+                    wil::unique_process_information pi;
 
-        //             LOG_IF_WIN32_BOOL_FALSE(CreateProcessW(nullptr,
-        //                                                    newWindowArgs.data(),
-        //                                                    nullptr, // lpProcessAttributes
-        //                                                    nullptr, // lpThreadAttributes
-        //                                                    false, // bInheritHandles
-        //                                                    DETACHED_PROCESS | CREATE_UNICODE_ENVIRONMENT, // doCreationFlags
-        //                                                    nullptr, // lpEnvironment
-        //                                                    nullptr, // lpStartingDirectory
-        //                                                    &si, // lpStartupInfo
-        //                                                    &pi // lpProcessInformation
-        //                                                    ));
-        //         }
-        //     }
-        //     _windowLogic.SetNumberOfOpenWindows(numPeasants);
-        // }
+                    LOG_IF_WIN32_BOOL_FALSE(CreateProcessW(nullptr,
+                                                           newWindowArgs.data(),
+                                                           nullptr, // lpProcessAttributes
+                                                           nullptr, // lpThreadAttributes
+                                                           false, // bInheritHandles
+                                                           DETACHED_PROCESS | CREATE_UNICODE_ENVIRONMENT, // doCreationFlags
+                                                           nullptr, // lpEnvironment
+                                                           nullptr, // lpStartingDirectory
+                                                           &si, // lpStartupInfo
+                                                           &pi // lpProcessInformation
+                                                           ));
+                }
+            }
+        }
+        _windowLogic.SetNumberOfOpenWindows(numPeasants);
+
         _windowLogic.WindowName(_peasant.WindowName());
         _windowLogic.WindowId(_peasant.GetID());
     }

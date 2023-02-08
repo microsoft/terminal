@@ -1003,14 +1003,14 @@ namespace winrt::TerminalApp::implementation
         {
             SetPersistedLayoutIdx(idx.value());
         }
-        else
-        {
-            if (_settings.GlobalSettings().ShouldUsePersistedLayout() &&
-                args.size() <= 1)
-            {
-                SetPersistedLayoutIdx(0);
-            }
-        }
+        // else
+        // {
+        //     if (_settings.GlobalSettings().ShouldUsePersistedLayout() &&
+        //         args.size() <= 1)
+        //     {
+        //         SetPersistedLayoutIdx(0);
+        //     }
+        // }
         return result;
     }
 
