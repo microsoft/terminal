@@ -593,8 +593,6 @@ namespace winrt::TerminalApp::implementation
                                                                const bool initial,
                                                                const winrt::hstring cwd)
     {
-        const auto paramFistSize = actions.Size();
-
         auto weakThis{ get_weak() };
 
         // Handle it on a subsequent pass of the UI thread.
@@ -625,11 +623,6 @@ namespace winrt::TerminalApp::implementation
 
         if (auto page{ weakThis.get() })
         {
-            const auto memberSize = page->_startupActions.Size();
-            const auto paramSecondSize = actions.Size();
-            memberSize;
-            paramFistSize;
-            paramSecondSize;
             for (const auto& action : actions)
             {
                 if (auto page{ weakThis.get() })

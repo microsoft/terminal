@@ -524,19 +524,6 @@ namespace winrt::TerminalApp::implementation
         return _settings;
     }
 
-    // Method Description:
-    // - Triggers the setup of the listener for incoming console connections
-    //   from the operating system.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void AppLogic::SetInboundListener()
-    {
-        // TODO!
-        // _root->SetInboundListener(false);
-    }
-
     bool AppLogic::ShouldImmediatelyHandoffToElevated()
     {
         // TODO! Merge that code in here.

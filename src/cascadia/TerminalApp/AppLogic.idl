@@ -31,8 +31,6 @@ namespace TerminalApp
 
         void ReloadSettings();
 
-        void SetInboundListener();
-
         Microsoft.Terminal.Settings.Model.Theme Theme { get; };
 
         FindTargetWindowResult FindTargetWindow(String[] args);

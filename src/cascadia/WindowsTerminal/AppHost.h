@@ -94,7 +94,6 @@ private:
 
     bool _LazyLoadDesktopManager();
 
-    void _listenForInboundConnections();
     winrt::fire_and_forget _setupGlobalHotkeys();
     winrt::fire_and_forget _createNewTerminalWindow(winrt::Microsoft::Terminal::Settings::Model::GlobalSummonArgs args);
     void _HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& sender,

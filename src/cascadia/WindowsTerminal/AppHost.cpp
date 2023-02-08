@@ -1065,12 +1065,6 @@ winrt::fire_and_forget AppHost::_WindowActivated(bool activated)
 //     }
 // }
 
-//  TODO! this looks like something that belongs elsewhere
-void AppHost::_listenForInboundConnections()
-{
-    _appLogic.SetInboundListener();
-}
-
 winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
 {
     if (_windowLogic.GetRoot() == nullptr)

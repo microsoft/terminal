@@ -60,8 +60,6 @@ namespace winrt::TerminalApp::implementation
         bool ShouldImmediatelyHandoffToElevated();
         void HandoffToElevated();
 
-        void SetInboundListener();
-
         Windows::Foundation::Collections::IMapView<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::Command> GlobalHotkeys();
 
         Microsoft::Terminal::Settings::Model::Theme Theme();
