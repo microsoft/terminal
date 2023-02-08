@@ -31,11 +31,10 @@ namespace winrt
     using IInspectable = Windows::Foundation::IInspectable;
 }
 
-// clang-format off
 // !!! IMPORTANT !!!
 // Make sure that these keys are in the same order as the
 // SettingsLoadWarnings/Errors enum is!
-static const std::array settingsLoadWarningsLabels {
+static const std::array settingsLoadWarningsLabels{
     USES_RESOURCE(L"MissingDefaultProfileText"),
     USES_RESOURCE(L"DuplicateProfileText"),
     USES_RESOURCE(L"UnknownColorSchemeText"),
@@ -53,14 +52,9 @@ static const std::array settingsLoadWarningsLabels {
     USES_RESOURCE(L"UnknownTheme"),
     USES_RESOURCE(L"DuplicateRemainingProfilesEntry"),
 };
-static const std::array settingsLoadErrorsLabels {
-    USES_RESOURCE(L"NoProfilesText"),
-    USES_RESOURCE(L"AllProfilesHiddenText")
-};
-// clang-format on
-
 static_assert(settingsLoadWarningsLabels.size() == static_cast<size_t>(SettingsLoadWarnings::WARNINGS_SIZE));
-static_assert(settingsLoadErrorsLabels.size() == static_cast<size_t>(SettingsLoadErrors::ERRORS_SIZE));
+
+// Errors are definted in AppLogic.cpp
 
 // Function Description:
 // - General-purpose helper for looking up a localized string for a
@@ -95,19 +89,6 @@ static winrt::hstring _GetWarningText(SettingsLoadWarnings warning)
 {
     return _GetMessageText(static_cast<uint32_t>(warning), settingsLoadWarningsLabels);
 }
-
-// // Function Description:
-// // - Gets the text from our ResourceDictionary for the given
-// //   SettingsLoadError. If there is no such text, we'll return nullptr.
-// // - The warning should have an entry in settingsLoadErrorsLabels.
-// // Arguments:
-// // - error: the SettingsLoadErrors value to get the localized text for.
-// // Return Value:
-// // - localized text for the given error
-// static winrt::hstring _GetErrorText(SettingsLoadErrors error)
-// {
-//     return _GetMessageText(static_cast<uint32_t>(error), settingsLoadErrorsLabels);
-// }
 
 // Function Description:
 // - Creates a Run of text to display an error message. The text is yellow or

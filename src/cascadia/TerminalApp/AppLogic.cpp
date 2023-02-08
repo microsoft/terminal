@@ -32,13 +32,19 @@ namespace winrt
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// TODO! This section probably should be in TerminalWindow with the warnings
+// Error message handling. This is in this file rather than with the warnings in
+// TerminalWindow, becuase the error text might also just be a serialization
+// error message. So AppLogic needs to know the actual text of the error.
 
-// clang-format off
-static const std::array settingsLoadErrorsLabels {
+// !!! IMPORTANT !!!
+// Make sure that these keys are in the same order as the
+// SettingsLoadWarnings/Errors enum is!
+static const std::array settingsLoadErrorsLabels{
     USES_RESOURCE(L"NoProfilesText"),
     USES_RESOURCE(L"AllProfilesHiddenText")
 };
+static_assert(settingsLoadErrorsLabels.size() == static_cast<size_t>(SettingsLoadErrors::ERRORS_SIZE));
+
 template<typename T>
 winrt::hstring _GetMessageText(uint32_t index, const T& keys)
 {
@@ -60,9 +66,6 @@ static winrt::hstring _GetErrorText(SettingsLoadErrors error)
 {
     return _GetMessageText(static_cast<uint32_t>(error), settingsLoadErrorsLabels);
 }
-
-// clang-format on
-
 ////////////////////////////////////////////////////////////////////////////////
 
 static constexpr std::wstring_view StartupTaskName = L"StartTerminalOnLoginTask";
