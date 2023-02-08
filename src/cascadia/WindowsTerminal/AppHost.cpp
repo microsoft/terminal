@@ -488,7 +488,7 @@ void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /*
     {
         _window->UpdateTitle(newTitle);
     }
-    _windowManager2.UpdateActiveTabTitle(newTitle, _peasant); // TODO! this probably needs a peasant
+    _windowManager2.UpdateActiveTabTitle(newTitle, _peasant);
 }
 
 // Method Description:
