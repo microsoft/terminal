@@ -613,40 +613,38 @@ namespace winrt::TerminalApp::implementation
                                                               commandlineSize.height);
         }
 
-        // TODO!
-        //
-        // // GH#2061 - If the global setting "Always show tab bar" is
-        // // set or if "Show tabs in title bar" is set, then we'll need to add
-        // // the height of the tab bar here.
-        // if (_settings.GlobalSettings().ShowTabsInTitlebar())
-        // {
-        //     // If we're showing the tabs in the titlebar, we need to use a
-        //     // TitlebarControl here to calculate how much space to reserve.
-        //     //
-        //     // We'll create a fake TitlebarControl, and we'll propose an
-        //     // available size to it with Measure(). After Measure() is called,
-        //     // the TitlebarControl's DesiredSize will contain the _unscaled_
-        //     // size that the titlebar would like to use. We'll use that as part
-        //     // of the height calculation here.
-        //     auto titlebar = TitlebarControl{ static_cast<uint64_t>(0) };
-        //     titlebar.Measure({ SHRT_MAX, SHRT_MAX });
-        //     proposedSize.Height += (titlebar.DesiredSize().Height) * scale;
-        // }
-        // else if (_settings.GlobalSettings().AlwaysShowTabs())
-        // {
-        //     // Otherwise, let's use a TabRowControl to calculate how much extra
-        //     // space we'll need.
-        //     //
-        //     // Similarly to above, we'll measure it with an arbitrarily large
-        //     // available space, to make sure we get all the space it wants.
-        //     auto tabControl = TabRowControl();
-        //     tabControl.Measure({ SHRT_MAX, SHRT_MAX });
+        // GH#2061 - If the global setting "Always show tab bar" is
+        // set or if "Show tabs in title bar" is set, then we'll need to add
+        // the height of the tab bar here.
+        if (_settings.GlobalSettings().ShowTabsInTitlebar())
+        {
+            // In the past, we used to actually instantiate a TitlebarControl
+            // and use Measure() to determine the DesiredSize of the control, to
+            // reserve exactly what we'd need.
+            //
+            // We can't do that anymore, because this is now called _before_
+            // we've initilized XAML for this thread. We can't start XAML till
+            // we have an HWND, and we can't finish creating the window till we
+            // know how big it should be.
+            //
+            // Instead, we'll just hardcode how big the titlebar chould be. If
+            // the titlebar / tab row ever change size, these numbers will have
+            // to change accordingly.
 
-        //     // For whatever reason, there's about 10px of unaccounted-for space
-        //     // in the application. I couldn't tell you where these 10px are
-        //     // coming from, but they need to be included in this math.
-        //     proposedSize.Height += (tabControl.DesiredSize().Height + 10) * scale;
-        // }
+            static constexpr auto titlebarHeight = 40;
+            proposedSize.Height += (titlebarHeight)*scale;
+        }
+        else if (_settings.GlobalSettings().AlwaysShowTabs())
+        {
+            // Same comment as above, but with a TabRowControl.
+            //
+            // A note from before: For whatever reason, there's about 10px of
+            // unaccounted-for space in the application. I couldn't tell you
+            // where these 10px are coming from, but they need to be included in
+            // this math.
+            static constexpr auto tabRowHeight = 32;
+            proposedSize.Height += (tabRowHeight + 10) * scale;
+        }
 
         return proposedSize;
     }
