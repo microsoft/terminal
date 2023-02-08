@@ -42,7 +42,7 @@ namespace TerminalApp
     // information.
     [default_interface] runtimeclass TerminalWindow : IDirectKeyListener, IDialogPresenter, IWindowProperties, Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
-        TerminalWindow(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+        TerminalWindow(SettingsLoadEventArgs result);
 
 
         // For your own sanity, it's better to do setup outside the ctor.

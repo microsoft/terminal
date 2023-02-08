@@ -36,7 +36,7 @@ namespace winrt::TerminalApp::implementation
     struct TerminalWindow : TerminalWindowT<TerminalWindow, IInitializeWithWindow>
     {
     public:
-        TerminalWindow(const Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
+        TerminalWindow(const TerminalApp::SettingsLoadEventArgs& settingsLoadedResult);
         ~TerminalWindow() = default;
 
         STDMETHODIMP Initialize(HWND hwnd);
@@ -158,6 +158,7 @@ namespace winrt::TerminalApp::implementation
         uint64_t _numOpenWindows{ 0 };
 
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
+        TerminalApp::SettingsLoadEventArgs _initialLoadResult{ nullptr };
 
         void _ShowLoadErrorsDialog(const winrt::hstring& titleKey,
                                    const winrt::hstring& contentKey,

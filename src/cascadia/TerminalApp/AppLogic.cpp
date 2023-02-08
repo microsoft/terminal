@@ -482,15 +482,6 @@ namespace winrt::TerminalApp::implementation
             }
             else
             {
-                // TODO! Arg should be a SettingsLoadEventArgs{ result, warnings, error, settings}
-                //
-                // _SettingsChangedHandlers(*this, make_self<SettingsLoadEventArgs>( _settingsLoadedResult, warnings, _settingsLoadExceptionText, settings}))
-
-                // const winrt::hstring titleKey = USES_RESOURCE(L"ReloadJsonParseErrorTitle");
-                // const winrt::hstring textKey = USES_RESOURCE(L"ReloadJsonParseErrorText");
-                // _ShowLoadErrorsDialog(titleKey, textKey, _settingsLoadedResult);
-                // return;
-
                 auto ev = winrt::make_self<SettingsLoadEventArgs>(true,
                                                                   static_cast<uint64_t>(_settingsLoadedResult),
                                                                   _settingsLoadExceptionText,
@@ -507,11 +498,6 @@ namespace winrt::TerminalApp::implementation
             _RegisterSettingsChange();
             return;
         }
-
-        // if (_settingsLoadedResult == S_FALSE)
-        // {
-        //     _ShowLoadWarningsDialog();
-        // }
 
         // Here, we successfully reloaded the settings, and created a new
         // TerminalSettings object.
@@ -704,7 +690,15 @@ namespace winrt::TerminalApp::implementation
         {
             ReloadSettings();
         }
-        auto window = winrt::make_self<implementation::TerminalWindow>(_settings);
+
+        auto ev = winrt::make_self<SettingsLoadEventArgs>(false,
+                                                          _settingsLoadedResult,
+                                                          _settingsLoadExceptionText,
+                                                          _warnings,
+                                                          _settings);
+
+        auto window = winrt::make_self<implementation::TerminalWindow>(*ev);
+
         this->SettingsChanged({ window->get_weak(), &implementation::TerminalWindow::UpdateSettingsHandler });
         if (_hasSettingsStartupActions)
         {

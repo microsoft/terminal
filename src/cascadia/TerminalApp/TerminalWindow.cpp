@@ -136,8 +136,9 @@ static Documents::Run _BuildErrorRun(const winrt::hstring& text, const ResourceD
 
 namespace winrt::TerminalApp::implementation
 {
-    TerminalWindow::TerminalWindow(const CascadiaSettings& settings) :
-        _settings{ settings }
+    TerminalWindow::TerminalWindow(const TerminalApp::SettingsLoadEventArgs& settingsLoadedResult) :
+        _settings{ settingsLoadedResult.NewSettings() },
+        _initialLoadResult{ settingsLoadedResult }
     {
         // For your own sanity, it's better to do setup outside the ctor.
         // If you do any setup in the ctor that ends up throwing an exception,
@@ -511,18 +512,17 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        // TODO! Yea, more of "how do we get _settingsLoadedResult / warnings / error" into here?
-        //
-        // if (FAILED(_settingsLoadedResult))
-        // {
-        //     const winrt::hstring titleKey = USES_RESOURCE(L"InitialJsonParseErrorTitle");
-        //     const winrt::hstring textKey = USES_RESOURCE(L"InitialJsonParseErrorText");
-        //     _ShowLoadErrorsDialog(titleKey, textKey, _settingsLoadedResult);
-        // }
-        // else if (_settingsLoadedResult == S_FALSE)
-        // {
-        //     _ShowLoadWarningsDialog();
-        // }
+        const auto& settingsLoadedResult = gsl::narrow_cast<HRESULT>(_initialLoadResult.Result());
+        if (FAILED(settingsLoadedResult))
+        {
+            const winrt::hstring titleKey = USES_RESOURCE(L"InitialJsonParseErrorTitle");
+            const winrt::hstring textKey = USES_RESOURCE(L"InitialJsonParseErrorText");
+            _ShowLoadErrorsDialog(titleKey, textKey, settingsLoadedResult, _initialLoadResult.ExceptionText());
+        }
+        else if (settingsLoadedResult == S_FALSE)
+        {
+            _ShowLoadWarningsDialog(_initialLoadResult.Warnings());
+        }
     }
 
     // Method Description:
