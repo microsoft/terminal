@@ -138,10 +138,6 @@ AppHost::~AppHost()
     _showHideWindowThrottler.reset();
 
     _window = nullptr;
-    /// TODO!
-    //
-    // _app.Close();
-    // _app = nullptr;
 }
 
 bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
