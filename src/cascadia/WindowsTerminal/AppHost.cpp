@@ -177,21 +177,8 @@ void AppHost::SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable&
 // - <none>
 // Return Value:
 // - <none>
-void AppHost::_HandleCommandlineArgs(/*const winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs& args*/)
+void AppHost::_HandleCommandlineArgs()
 {
-    // std::vector<winrt::hstring> args;
-    // // _buildArgsFromCommandline(args);
-    // auto cwd{ wil::GetCurrentDirectoryW<std::wstring>() };
-
-    // Remoting::CommandlineArgs eventArgs{ { args }, { cwd } };
-    // _windowManager2.ProposeCommandline(eventArgs);
-
-    // _shouldCreateWindow = _windowManager2.ShouldCreateWindow();
-    // if (!_shouldCreateWindow)
-    // {
-    //     return;
-    // }
-
     // We did want to make a window, so let's instantiate it here.
     // We don't have XAML yet, but we do have other stuff.
     _windowLogic = _appLogic.CreateNewWindow();
@@ -249,6 +236,11 @@ void AppHost::_HandleCommandlineArgs(/*const winrt::Microsoft::Terminal::Remotin
         _revokers.peasantDisplayWindowIdRequested = _peasant.DisplayWindowIdRequested(winrt::auto_revoke, { this, &AppHost::_DisplayWindowId });
         _revokers.peasantQuitRequested = _peasant.QuitRequested(winrt::auto_revoke, { this, &AppHost::_QuitRequested });
 
+        // This is logic that almost seems like it belongs on the WindowEmperor.
+        // It probably does. However, it needs to muck with our own window so
+        // much, that there was no reasonable way of moving this. Moving it also
+        // seemed to reorder bits of init so much that everything broke. So
+        // we'll leave it here.
         const auto numPeasants = _windowManager2.GetNumberOfPeasants();
         if (numPeasants == 1)
         {

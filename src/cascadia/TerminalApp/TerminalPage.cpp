@@ -293,18 +293,6 @@ namespace winrt::TerminalApp::implementation
         ShowSetAsDefaultInfoBar();
     }
 
-    // // Method Description;
-    // // - Checks if the current terminal window should load or save its layout information.
-    // // Arguments:
-    // // - settings: The settings to use as this may be called before the page is
-    // //   fully initialized.
-    // // Return Value:
-    // // - true if the ApplicationState should be used.
-    // bool TerminalPage::ShouldUsePersistedLayout(CascadiaSettings& settings) const
-    // {
-    //     return settings.GlobalSettings().FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout;
-    // }
-
     // Method Description:
     // - This is a bit of trickiness: If we're running unelevated, and the user
     //   passed in only --elevate actions, the we don't _actually_ want to

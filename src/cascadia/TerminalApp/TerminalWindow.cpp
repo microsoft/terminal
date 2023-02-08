@@ -141,16 +141,13 @@ namespace winrt::TerminalApp::implementation
         _root->WindowProperties(*this);
         _dialog = ContentDialog{};
 
-        // Pass commandline args into the TerminalPage.
-        // * we first got these in SetStartupCommandline, but at that time, we
-        //   don't have a page yet.
+        // Pass commandline args into the TerminalPage. If we were supposed to
+        // load from a persisted layout, do that instead.
         auto foundLayout = false;
-
         if (const auto& layout = LoadPersistedLayout())
         {
             if (layout.TabLayout().Size() > 0)
             {
-                // _startupActions = layout.TabLayout();
                 std::vector<Settings::Model::ActionAndArgs> actions;
                 for (const auto& a : layout.TabLayout())
                 {
@@ -269,7 +266,9 @@ namespace winrt::TerminalApp::implementation
 
         _RefreshThemeRoutine();
 
-        auto args = winrt::make_self<SystemMenuChangeArgs>(RS_(L"SettingsMenuItem"), SystemMenuChangeAction::Add, SystemMenuItemHandler(this, &TerminalWindow::_OpenSettingsUI));
+        auto args = winrt::make_self<SystemMenuChangeArgs>(RS_(L"SettingsMenuItem"),
+                                                           SystemMenuChangeAction::Add,
+                                                           SystemMenuItemHandler(this, &TerminalWindow::_OpenSettingsUI));
         _SystemMenuChangeRequestedHandlers(*this, *args);
 
         TraceLoggingWrite(
@@ -334,7 +333,7 @@ namespace winrt::TerminalApp::implementation
     // - dialog: the dialog object that is going to show up
     // Return value:
     // - an IAsyncOperation with the dialog result
-    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalWindow::ShowDialog(winrt::Windows::UI::Xaml::Controls::ContentDialog dialog)
+    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalWindow::ShowDialog(winrt::WUX::Controls::ContentDialog dialog)
     {
         // DON'T release this lock in a wil::scope_exit. The scope_exit will get
         // called when we await, which is not what we want.
@@ -949,12 +948,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     ////////////////////////////////////////////////////////////////////////////
-
-    // bool TerminalWindow::HasSettingsStartupActions() const noexcept
-    // {
-    //     return _hasSettingsStartupActions;
-    // }
-    void TerminalWindow::SetSettingsStartupArgs(const std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions)
+    void TerminalWindow::SetSettingsStartupArgs(const std::vector<ActionAndArgs>& actions)
     {
         for (const auto& action : actions)
         {
@@ -999,18 +993,11 @@ namespace winrt::TerminalApp::implementation
             // Instead, we'll handle that in Initialize, when we first instantiate the page.
         }
 
+        // If we have a -s param passed to us to load a saved layout, cache that now.
         if (const auto idx = _appArgs.GetPersistedLayoutIdx())
         {
             SetPersistedLayoutIdx(idx.value());
         }
-        // else
-        // {
-        //     if (_settings.GlobalSettings().ShouldUsePersistedLayout() &&
-        //         args.size() <= 1)
-        //     {
-        //         SetPersistedLayoutIdx(0);
-        //     }
-        // }
         return result;
     }
 
@@ -1122,18 +1109,6 @@ namespace winrt::TerminalApp::implementation
             _root->SetNumberOfOpenWindows(num);
         }
     }
-
-    // // Method Description;
-    // // - Checks if the current terminal window should load or save its layout information.
-    // // Arguments:
-    // // - settings: The settings to use as this may be called before the page is
-    // //   fully initialized.
-    // // Return Value:
-    // // - true if the ApplicationState should be used.
-    // bool TerminalWindow::ShouldUsePersistedLayout() const
-    // {
-    //     return _settings.GlobalSettings().ShouldUsePersistedLayout();
-    // }
     ////////////////////////////////////////////////////////////////////////////
 
     void TerminalWindow::IdentifyWindow()
@@ -1167,12 +1142,11 @@ namespace winrt::TerminalApp::implementation
     {
         return _settings.GlobalSettings().AutoHideWindow();
     }
-    // TODO! Arg should be a SettingsLoadEventArgs{ result, warnings, error, settings}
+
     void TerminalWindow::UpdateSettingsHandler(const winrt::IInspectable& /*sender*/,
                                                const winrt::TerminalApp::SettingsLoadEventArgs& args)
     {
         UpdateSettings(args);
-        // _root->SetSettings(_settings, true);
     }
 
     ////////////////////////////////////////////////////////////////////////////

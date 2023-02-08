@@ -79,8 +79,8 @@ bool WindowEmperor::HandleCommandlineArgs()
         _manager.RequestNewWindow([this](auto&&, const Remoting::WindowRequestedArgs& args) {
             CreateNewWindowThread(args, false);
         });
+
         _becomeMonarch();
-        // _attemptWindowRestore(eventArgs);
     }
 
     return result.ShouldCreateWindow();
@@ -137,23 +137,6 @@ void WindowEmperor::CreateNewWindowThread(Remoting::WindowRequestedArgs args, co
     auto func = [this, args, peasant, firstWindow]() {
         auto window{ std::make_shared<WindowThread>(_app.Logic(), args, _manager, peasant) };
         _windows.push_back(window);
-
-        // if (firstWindow)
-        // {
-        //     const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
-        //     if (_app.Logic().ShouldUsePersistedLayout() &&
-        //         layouts &&
-        //         layouts.Size() > 0)
-        //     {
-        //         if (
-        //             !window->Logic().HasCommandlineArguments() &&
-        //             !_app.Logic().HasSettingsStartupActions())
-        //         {
-        //             window->Logic().SetPersistedLayoutIdx(0);
-        //         }
-        //     }
-        // }
-
         return window->WindowProc();
     };
 
@@ -215,57 +198,6 @@ void WindowEmperor::_numberOfWindowsChanged(const winrt::Windows::Foundation::II
     {
         _windowThread->Logic().SetNumberOfOpenWindows(numWindows);
     }
-}
-
-void WindowEmperor::_attemptWindowRestore(const Remoting::CommandlineArgs& args)
-{
-    // At this point, we know there's exactly one peasant.
-    // * WindowLogic / TerminalPage should start with htat value initialized to 1
-    // * emperor should listen for windowManager.NumberOfOpenWindowsChanged and then propogate that to all its WindowThreads
-    // * we should store WindowThread ptrs in the vector, not std::thread's you idiot
-    // * WindowThread should own the thread, don't you think OH but do we want thre WindowThread to live on main? or on the std::thread - probably the second
-
-    // const auto numPeasants = _windowManager2.GetNumberOfPeasants();
-    const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
-
-    if (_app.Logic().ShouldUsePersistedLayout() &&
-        layouts &&
-        layouts.Size() > 0)
-    {
-        // We want to create a window for every saved layout.
-        // If we are the only window, and no commandline arguments were provided
-        // then we should just use the current window to load the first layout.
-        // Otherwise create this window normally with its commandline, and create
-        // a new window using the first saved layout information.
-        // The 2nd+ layout will always get a new window.
-
-        // _windowLogic.HasCommandlineArguments === args.size() > 1
-        uint32_t startIdx = args.Commandline().size() > 1 ? 0 : 1;
-
-        // Create new windows for each of the other saved layouts.
-        for (const auto size = layouts.Size(); startIdx < size; startIdx += 1)
-        {
-            auto newWindowArgs = fmt::format(L"{0} -w new -s {1}", args.Commandline()[0], startIdx);
-
-            STARTUPINFO si;
-            memset(&si, 0, sizeof(si));
-            si.cb = sizeof(si);
-            wil::unique_process_information pi;
-
-            LOG_IF_WIN32_BOOL_FALSE(CreateProcessW(nullptr,
-                                                   newWindowArgs.data(),
-                                                   nullptr, // lpProcessAttributes
-                                                   nullptr, // lpThreadAttributes
-                                                   false, // bInheritHandles
-                                                   DETACHED_PROCESS | CREATE_UNICODE_ENVIRONMENT, // doCreationFlags
-                                                   nullptr, // lpEnvironment
-                                                   nullptr, // lpStartingDirectory
-                                                   &si, // lpStartupInfo
-                                                   &pi // lpProcessInformation
-                                                   ));
-        }
-    }
-    // _windowLogic.SetNumberOfOpenWindows(numPeasants);
 }
 
 winrt::Windows::Foundation::IAsyncAction WindowEmperor::_SaveWindowLayouts()
