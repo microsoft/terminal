@@ -123,20 +123,6 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
     // {
     //     _BecomeMonarch(nullptr, nullptr);
     // }
-
-    // TODO!
-    // // Create a throttled function for updating the window state, to match the
-    // // one requested by the pty. A 200ms delay was chosen because it's the
-    // // typical animation timeout in Windows. This does result in a delay between
-    // // the PTY requesting a change to the window state and the Terminal
-    // // realizing it, but should mitigate issues where the Terminal and PTY get
-    // // de-sync'd.
-    // _showHideWindowThrottler = std::make_shared<ThrottledFuncTrailing<bool>>(
-    //     winrt::Windows::System::DispatcherQueue::GetForCurrentThread(),
-    //     std::chrono::milliseconds(200),
-    //     [this](const bool show) {
-    //         _window->ShowWindowChanged(show);
-    //     });
 }
 
 AppHost::~AppHost()
@@ -469,6 +455,19 @@ void AppHost::Initialize()
                                                 _windowLogic,
                                                 std::placeholders::_1,
                                                 std::placeholders::_2));
+
+    // Create a throttled function for updating the window state, to match the
+    // one requested by the pty. A 200ms delay was chosen because it's the
+    // typical animation timeout in Windows. This does result in a delay between
+    // the PTY requesting a change to the window state and the Terminal
+    // realizing it, but should mitigate issues where the Terminal and PTY get
+    // de-sync'd.
+    _showHideWindowThrottler = std::make_shared<ThrottledFuncTrailing<bool>>(
+        winrt::Windows::System::DispatcherQueue::GetForCurrentThread(),
+        std::chrono::milliseconds(200),
+        [this](const bool show) {
+            _window->ShowWindowChanged(show);
+        });
 
     _window->UpdateTitle(_windowLogic.Title());
 
