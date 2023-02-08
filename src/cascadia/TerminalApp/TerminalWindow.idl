@@ -100,11 +100,11 @@ namespace TerminalApp
         Windows.UI.Xaml.Media.Brush TitlebarBrush { get; };
         void WindowActivated(Boolean activated);
 
-        Boolean ShouldUsePersistedLayout();
+        // Boolean ShouldUsePersistedLayout();
         // Boolean ShouldImmediatelyHandoffToElevated();
         // void HandoffToElevated();
         String GetWindowLayoutJson(Microsoft.Terminal.Settings.Model.LaunchPosition position);
-        void SaveWindowLayoutJsons(Windows.Foundation.Collections.IVector<String> layouts);
+        // void SaveWindowLayoutJsons(Windows.Foundation.Collections.IVector<String> layouts);
 
         Boolean GetMinimizeToNotificationArea();
         Boolean GetAlwaysShowNotificationIcon();

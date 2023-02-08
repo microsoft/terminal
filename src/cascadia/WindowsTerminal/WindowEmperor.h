@@ -40,4 +40,7 @@ private:
 
     void _becomeMonarch();
     void _numberOfWindowsChanged(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&);
+
+    winrt::Windows::Foundation::IAsyncAction _SaveWindowLayouts();
+    winrt::fire_and_forget _SaveWindowLayoutsRepeat();
 };

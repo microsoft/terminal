@@ -1040,12 +1040,12 @@ namespace winrt::TerminalApp::implementation
 
     ////////////////////////////////////////////////////////////////////////////
 
-    bool TerminalWindow::ShouldUsePersistedLayout()
-    {
-        return _root != nullptr ? _root->ShouldUsePersistedLayout(_settings) : false;
-    }
+    // bool TerminalWindow::ShouldUsePersistedLayout()
+    // {
+    //     return _root != nullptr ? _root->ShouldUsePersistedLayout(_settings) : false;
+    // }
 
-    void TerminalWindow::SaveWindowLayoutJsons(const Windows::Foundation::Collections::IVector<hstring>& layouts)
+    /*void TerminalWindow::SaveWindowLayoutJsons(const Windows::Foundation::Collections::IVector<hstring>& layouts)
     {
         std::vector<WindowLayout> converted;
         converted.reserve(layouts.Size());
@@ -1059,7 +1059,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         ApplicationState::SharedInstance().PersistedWindowLayouts(winrt::single_threaded_vector(std::move(converted)));
-    }
+    }*/
 
     hstring TerminalWindow::GetWindowLayoutJson(LaunchPosition position)
     {

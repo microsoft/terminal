@@ -16,6 +16,7 @@ using namespace winrt;
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Windows::Foundation;
 using namespace ::Microsoft::Console;
+using namespace std::chrono_literals;
 
 WindowEmperor::WindowEmperor() noexcept :
     _app{}
@@ -176,14 +177,10 @@ void WindowEmperor::_becomeMonarch()
 
     ////////////////////////////////////////////////////////////////////////////
 
-    //     // The monarch should be monitoring if it should save the window layout.
-    //     if (!_getWindowLayoutThrottler.has_value())
-    //     {
-    //         // We want at least some delay to prevent the first save from overwriting
-    //         // the data as we try load windows initially.
-    //         _getWindowLayoutThrottler.emplace(std::move(std::chrono::seconds(10)), std::move([this]() { _SaveWindowLayoutsRepeat(); }));
-    //         _getWindowLayoutThrottler.value()();
-    //     }
+    // The monarch should be monitoring if it should save the window layout.
+    // We want at least some delay to prevent the first save from overwriting
+    _getWindowLayoutThrottler.emplace(std::move(std::chrono::seconds(10)), std::move([this]() { _SaveWindowLayoutsRepeat(); }));
+    _getWindowLayoutThrottler.value()();
 }
 
 // sender and args are always nullptr
@@ -258,3 +255,67 @@ void WindowEmperor::_numberOfWindowsChanged(const winrt::Windows::Foundation::II
 //     }
 //     _windowLogic.SetNumberOfOpenWindows(numPeasants);
 // }
+
+winrt::Windows::Foundation::IAsyncAction WindowEmperor::_SaveWindowLayouts()
+{
+    // Make sure we run on a background thread to not block anything.
+    co_await winrt::resume_background();
+
+    if (_app.Logic().ShouldUsePersistedLayout())
+    {
+        try
+        {
+            TraceLoggingWrite(g_hWindowsTerminalProvider,
+                              "AppHost_SaveWindowLayouts_Collect",
+                              TraceLoggingDescription("Logged when collecting window state"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+            const auto layoutJsons = _manager.GetAllWindowLayouts();
+
+            TraceLoggingWrite(g_hWindowsTerminalProvider,
+                              "AppHost_SaveWindowLayouts_Save",
+                              TraceLoggingDescription("Logged when writing window state"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+            _app.Logic().SaveWindowLayoutJsons(layoutJsons);
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+            TraceLoggingWrite(g_hWindowsTerminalProvider,
+                              "AppHost_SaveWindowLayouts_Failed",
+                              TraceLoggingDescription("An error occurred when collecting or writing window state"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+        }
+    }
+
+    co_return;
+}
+
+winrt::fire_and_forget WindowEmperor::_SaveWindowLayoutsRepeat()
+{
+    // Make sure we run on a background thread to not block anything.
+    co_await winrt::resume_background();
+
+    co_await _SaveWindowLayouts();
+
+    // Don't need to save too frequently.
+    co_await 30s;
+
+    // As long as we are supposed to keep saving, request another save.
+    // This will be delayed by the throttler so that at most one save happens
+    // per 10 seconds, if a save is requested by another source simultaneously.
+    if (_getWindowLayoutThrottler.has_value())
+    {
+        TraceLoggingWrite(g_hWindowsTerminalProvider,
+                          "AppHost_requestGetLayout",
+                          TraceLoggingDescription("Logged when triggering a throttled write of the window state"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+        _getWindowLayoutThrottler.value()();
+    }
+}

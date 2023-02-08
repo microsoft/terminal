@@ -29,6 +29,9 @@ namespace TerminalApp
 
         Boolean HasSettingsStartupActions();
 
+        Boolean ShouldUsePersistedLayout();
+        void SaveWindowLayoutJsons(Windows.Foundation.Collections.IVector<String> layouts);
+
         void ReloadSettings();
 
         Microsoft.Terminal.Settings.Model.Theme Theme { get; };

@@ -54,6 +54,9 @@ namespace winrt::TerminalApp::implementation
 
         bool HasSettingsStartupActions() const noexcept;
 
+        bool ShouldUsePersistedLayout() const;
+        void SaveWindowLayoutJsons(const Windows::Foundation::Collections::IVector<hstring>& layouts);
+
         [[nodiscard]] Microsoft::Terminal::Settings::Model::CascadiaSettings GetSettings() const noexcept;
 
         TerminalApp::FindTargetWindowResult FindTargetWindow(array_view<const winrt::hstring> actions);
