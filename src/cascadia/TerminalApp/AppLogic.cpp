@@ -191,7 +191,9 @@ namespace winrt::TerminalApp::implementation
             _settings.GlobalSettings().ShowTabsInTitlebar(false);
         }
 
-        // TODO! These used to be in `_root->Initialized`. Where do they belong now?
+        // These used to be in `TerminalPage::Initialized`, so that they started
+        // _after_ the Terminal window was started and displayed. These could
+        // theoretically move there again too.
         {
             // Both LoadSettings and ReloadSettings are supposed to call this function,
             // but LoadSettings skips it, so that the UI starts up faster.

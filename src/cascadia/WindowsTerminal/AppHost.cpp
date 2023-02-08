@@ -514,10 +514,7 @@ void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*se
     // // We don't want to try to save layouts if we are about to close.
     // _getWindowLayoutThrottler.reset();
     // _windowManager2.GetWindowLayoutRequested(_GetWindowLayoutRequestedToken);
-    // We also don't need to update any of our bookkeeping on how many
-    // windows are open.
-    _windowManager2.WindowCreated(_WindowCreatedToken);
-    _windowManager2.WindowClosed(_WindowClosedToken);
+
 
     // Remove ourself from the list of peasants so that we aren't included in
     // any future requests. This will also mean we block until any existing
@@ -1676,4 +1673,9 @@ void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspect
             _updateTheme();
         }
     }
+}
+
+winrt::TerminalApp::TerminalWindow AppHost::Logic()
+{
+    return _windowLogic;
 }

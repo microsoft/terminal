@@ -24,6 +24,8 @@ public:
 
     bool HasWindow();
 
+    winrt::TerminalApp::TerminalWindow Logic();
+
 private:
     std::unique_ptr<IslandWindow> _window;
 
@@ -145,8 +147,8 @@ private:
     winrt::event_token _ShowNotificationIconContextMenuToken;
     winrt::event_token _NotificationIconMenuItemSelectedToken;
     winrt::event_token _GetWindowLayoutRequestedToken;
-    winrt::event_token _WindowCreatedToken;
-    winrt::event_token _WindowClosedToken;
+    // winrt::event_token _WindowCreatedToken;
+    // winrt::event_token _WindowClosedToken;
 
     // Helper struct. By putting these all into one struct, we can revoke them
     // all at once, by assigning _revokers to a fresh Revokers instance. That'll

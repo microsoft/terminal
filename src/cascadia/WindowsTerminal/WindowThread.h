@@ -13,6 +13,8 @@ public:
                  winrt::Microsoft::Terminal::Remoting::Peasant peasant);
     int WindowProc();
 
+    winrt::TerminalApp::TerminalWindow Logic();
+
 private:
     ::AppHost _host;
     winrt::Microsoft::Terminal::Remoting::Peasant _peasant{ nullptr };

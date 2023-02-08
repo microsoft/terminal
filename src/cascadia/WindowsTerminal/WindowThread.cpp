@@ -13,6 +13,11 @@ WindowThread::WindowThread(const winrt::TerminalApp::AppLogic& logic,
 {
 }
 
+winrt::TerminalApp::TerminalWindow WindowThread::Logic()
+{
+    return _host.Logic();
+}
+
 static bool _messageIsF7Keypress(const MSG& message)
 {
     return (message.message == WM_KEYDOWN || message.message == WM_SYSKEYDOWN) && message.wParam == VK_F7;
