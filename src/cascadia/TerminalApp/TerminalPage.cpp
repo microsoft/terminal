@@ -4286,18 +4286,6 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::WindowProperties(const TerminalApp::IWindowProperties& props)
     {
         _WindowProperties = props;
-        // if (const auto& observable{ props.try_as<INotifyPropertyChanged>() })
-        // {
-        //     observable.PropertyChanged([weakThis = get_weak()](auto& /*sender*/, auto& e) {
-        //         if (auto page{ weakThis.get() })
-        //         {
-        //             if (e.PropertyName() == L"WindowName")
-        //             {
-        //                 page->_windowNameChanged();
-        //             }
-        //         }
-        //     });
-        // }
     }
 
     winrt::fire_and_forget TerminalPage::WindowNameChanged()

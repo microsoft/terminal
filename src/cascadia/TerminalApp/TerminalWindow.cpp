@@ -1130,6 +1130,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // TODO!
     // bool TerminalWindow::IsQuakeWindow() const noexcept
     // {
     //     return _root->IsQuakeWindow();
@@ -1164,13 +1165,16 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalWindow::WindowName(const winrt::hstring& value)
     {
+        // TODO!
         // const auto oldIsQuakeMode = IsQuakeWindow();
         const auto changed = _WindowName != value;
         if (changed)
         {
             _WindowName = value;
             if (_root)
-                _root->WindowNameChanged(); // TODO! is bodge
+            {
+                _root->WindowNameChanged();
+            }
         }
     }
 
@@ -1187,8 +1191,9 @@ namespace winrt::TerminalApp::implementation
         {
             _WindowId = value;
             if (_root)
-                _root->WindowNameChanged(); // TODO! is bodge
-            // _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowIdForDisplay" });
+            {
+                _root->WindowNameChanged();
+            }
         }
     }
 

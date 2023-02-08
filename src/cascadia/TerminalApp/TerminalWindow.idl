@@ -77,8 +77,6 @@ namespace TerminalApp
         Boolean AutoHideWindow { get; };
 
         void IdentifyWindow();
-        // String WindowName;
-        // UInt64 WindowId;
         void SetPersistedLayoutIdx(UInt32 idx);
         void SetNumberOfOpenWindows(UInt64 num);
         void RenameFailed();

@@ -70,10 +70,7 @@ namespace winrt::TerminalApp::implementation
         void SaveWindowLayoutJsons(const Windows::Foundation::Collections::IVector<hstring>& layouts);
         void IdentifyWindow();
         void RenameFailed();
-        // winrt::hstring WindowName();
-        // void WindowName(const winrt::hstring& name);
-        // uint64_t WindowId();
-        // void WindowId(const uint64_t& id);
+
         void SetPersistedLayoutIdx(const uint32_t idx);
         void SetNumberOfOpenWindows(const uint64_t num);
         // bool IsQuakeWindow() const noexcept;

@@ -133,19 +133,15 @@ namespace winrt::TerminalApp::implementation
                                                      const bool initial,
                                                      const winrt::hstring cwd = L"");
 
-        // Normally, WindowName and WindowId would be
-        // WINRT_OBSERVABLE_PROPERTY's, but we want them to raise
-        // WindowNameForDisplay and WindowIdForDisplay instead
-        // winrt::hstring WindowName() const noexcept;
-        // winrt::fire_and_forget WindowName(const winrt::hstring& value);
-        // uint64_t WindowId() const noexcept;
-        // void WindowId(const uint64_t& value);
+        // For the sake of XAML binding:
+        winrt::hstring WindowName() const noexcept { return _WindowProperties.WindowName(); };
+        uint64_t WindowId() const noexcept { return _WindowProperties.WindowId(); };
+        winrt::hstring WindowIdForDisplay() const noexcept { return _WindowProperties.WindowIdForDisplay(); };
+        winrt::hstring WindowNameForDisplay() const noexcept { return _WindowProperties.WindowNameForDisplay(); };
 
         void SetNumberOfOpenWindows(const uint64_t value);
         void SetPersistedLayoutIdx(const uint32_t value);
 
-        // winrt::hstring WindowIdForDisplay() const noexcept;
-        // winrt::hstring WindowNameForDisplay() const noexcept;
         // bool IsQuakeWindow() const noexcept;
         bool IsElevated() const noexcept;
 
