@@ -77,6 +77,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool IsConsolePty() const = 0;
 
         virtual void NotifyAccessibilityChange(const til::rect& changedRect) = 0;
+        virtual void NotifyBufferRotation() = 0;
 
         virtual void MarkPrompt(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) = 0;
         virtual void MarkCommandStart() = 0;

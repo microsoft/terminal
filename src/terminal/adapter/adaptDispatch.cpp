@@ -2049,6 +2049,7 @@ void AdaptDispatch::_DoLineFeed(TextBuffer& textBuffer, const bool withReturn, c
         // so we cycle the row coordinates, which effectively scrolls the buffer
         // content up. In this case we don't need to move the cursor down.
         textBuffer.IncrementCircularBuffer(true);
+        _api.NotifyBufferRotation();
 
         // We trigger a scroll rather than a redraw, since that's more efficient,
         // but we need to turn the cursor off before doing so, otherwise a ghost

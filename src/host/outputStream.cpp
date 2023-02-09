@@ -474,6 +474,25 @@ void ConhostInternalGetSet::NotifyAccessibilityChange(const til::rect& changedRe
     }
 }
 
+// Routine Description:
+// - Implements conhost-specific behavior when the buffer is rotated.
+// Arguments:
+// - <none>
+// Return value:
+// - <none>
+void ConhostInternalGetSet::NotifyBufferRotation()
+{
+    auto& screenInfo = _io.GetActiveOutputBuffer();
+    if (screenInfo.IsActiveScreenBuffer())
+    {
+        auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
+        if (pNotifier)
+        {
+            pNotifier->NotifyConsoleUpdateScrollEvent(0, -1);
+        }
+    }
+}
+
 void ConhostInternalGetSet::MarkPrompt(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& /*mark*/)
 {
     // Not implemented for conhost.

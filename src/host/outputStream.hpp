@@ -74,6 +74,7 @@ public:
     bool IsVtInputEnabled() const override;
 
     void NotifyAccessibilityChange(const til::rect& changedRect) override;
+    void NotifyBufferRotation() override;
 
     void MarkPrompt(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) override;
     void MarkCommandStart() override;

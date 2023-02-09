@@ -140,6 +140,7 @@ public:
     bool IsConsolePty() const noexcept override;
     bool IsVtInputEnabled() const noexcept override;
     void NotifyAccessibilityChange(const til::rect& changedRect) noexcept override;
+    void NotifyBufferRotation() override;
 #pragma endregion
 
     void ClearMark();
@@ -421,6 +422,8 @@ private:
     Microsoft::Console::Types::Viewport _GetVisibleViewport() const noexcept;
 
     void _AdjustCursorPosition(const til::point proposedPosition);
+
+    void _PreserveUserScrollOffset(const int viewportDelta) noexcept;
 
     void _NotifyScrollEvent() noexcept;
 

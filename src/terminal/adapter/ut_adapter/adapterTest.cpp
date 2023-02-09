@@ -245,6 +245,11 @@ public:
         Log::Comment(L"NotifyAccessibilityChange MOCK called...");
     }
 
+    void NotifyBufferRotation() override
+    {
+        Log::Comment(L"NotifyBufferRotation MOCK called...");
+    }
+
     void MarkPrompt(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& /*mark*/) override
     {
         Log::Comment(L"MarkPrompt MOCK called...");

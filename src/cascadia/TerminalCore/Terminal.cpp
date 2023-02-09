@@ -1221,6 +1221,19 @@ void Terminal::_AdjustCursorPosition(const til::point proposedPosition)
     }
 }
 
+void Terminal::_PreserveUserScrollOffset(const int viewportDelta) noexcept
+{
+    // When the mutable viewport is moved down, and there's an active selection,
+    // or the visible viewport isn't already at the bottom, then we want to keep
+    // the visible viewport where it is. To do this, we adjust the scroll offset
+    // by the same amount that we've just moved down.
+    if (viewportDelta > 0 && (IsSelectionActive() || _scrollOffset != 0))
+    {
+        const auto maxScrollOffset = _activeBuffer().GetSize().Height() - _mutableViewport.Height();
+        _scrollOffset = std::min(_scrollOffset + viewportDelta, maxScrollOffset);
+    }
+}
+
 void Terminal::UserScrollViewport(const int viewTop)
 {
     if (_inAltBuffer())
