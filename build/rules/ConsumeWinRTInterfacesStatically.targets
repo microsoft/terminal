@@ -1,0 +1,48 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <OpenConsoleGetUtilityProjectWinMDReferencesDependsOn></OpenConsoleGetUtilityProjectWinMDReferencesDependsOn>
+
+    <OpenConsoleGetUtilityProjectWinMDReferencesDependsOn Condition="'$(TerminalCppWinRT)'=='true'">
+      GetCppWinRTProjectWinMDReferences;
+      $(OpenConsoleGetUtilityProjectWinMDReferencesDependsOn)
+    </OpenConsoleGetUtilityProjectWinMDReferencesDependsOn>
+    <OpenConsoleGetUtilityProjectWinMDReferencesDependsOn Condition="'$(TerminalMidlRT)'=='true'">
+      MidlRTProjectWinMDReferences;
+      $(OpenConsoleGetUtilityProjectWinMDReferencesDependsOn)
+    </OpenConsoleGetUtilityProjectWinMDReferencesDependsOn>
+
+    <CppWinRTResolveReferencesDependsOn>$(CppWinRTResolveReferencesDependsOn);OpenConsoleSwitchUpMergeInputs;</CppWinRTResolveReferencesDependsOn>
+    <MidlRTResolveReferencesDependsOn>$(MidlRTResolveReferencesDependsOn);OpenConsoleSwitchUpMergeInputs;</MidlRTResolveReferencesDependsOn>
+  </PropertyGroup>
+
+  <Target Name="OpenConsoleGetUtilityProjectWinMDReferences"
+          DependsOnTargets="ResolveProjectReferences;$(OpenConsoleGetUtilityProjectWinMDReferencesDependsOn)"
+          Returns="@(OpenConsoleUtilityProjectWinMDReferences)">
+    <ItemGroup>
+      <_OpenConsoleUtilityProjectReferences Remove="@(_OpenConsoleUtilityProjectReferences)"/>
+      <_OpenConsoleUtilityProjectReferences Include="@(_ResolvedProjectReferencePaths)"
+          Condition= "'%(_ResolvedProjectReferencePaths.ProjectType)'=='Utility' AND 
+              '%(_ResolvedProjectReferencePaths.WinMDFile)' == 'true'"/>
+    </ItemGroup>
+    <ItemGroup>
+      <OpenConsoleUtilityProjectWinMDReferences Remove="@(OpenConsoleUtilityProjectWinMDReferences)" />
+      <OpenConsoleUtilityProjectWinMDReferences Include="@(_OpenConsoleUtilityProjectReferences)">
+        <WinMDPath>%(FullPath)</WinMDPath>
+      </OpenConsoleUtilityProjectWinMDReferences>
+    </ItemGroup>
+  </Target>
+
+  <!-- Calculates the input files and metadata directories to be passed to MdMerge -->
+  <Target Name="OpenConsoleSwitchUpMergeInputs"
+          DependsOnTargets="OpenConsoleGetUtilityProjectWinMDReferences">
+    <ItemGroup>
+      <!-- Utility projects should be consumed statically, not as dynamic references. -->
+      <CppWinRTDynamicProjectWinMDReferences Remove="@(OpenConsoleUtilityProjectWinMDReferences)" />
+      <CppWinRTStaticProjectWinMDReferences Include="@(OpenConsoleUtilityProjectWinMDReferences)" />
+      <MidlRTDynamicProjectWinMDReferences Remove="@(OpenConsoleUtilityProjectWinMDReferences)" />
+      <MidlRTStaticProjectWinMDReferences Include="@(OpenConsoleUtilityProjectWinMDReferences)" />
+    </ItemGroup>
+  </Target>
+
+</Project>
+

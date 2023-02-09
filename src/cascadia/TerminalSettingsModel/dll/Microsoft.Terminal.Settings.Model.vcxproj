@@ -84,7 +84,8 @@
     <!-- The midl compiler however, _will_ aggregate our winmd dependencies
     somehow. So make sure to only include top-level dependencies here (don't
     include Settings and Connection, since Control will include them for us) -->
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\ITerminalConnection\ITerminalConnection.vcxproj">
+      <Project>{EFC0B7EF-BB0D-44EC-BFC9-772AE4391D17}</Project>
       <Private>false</Private>
     </ProjectReference>
 

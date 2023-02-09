@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{EFC0B7EF-BB0D-44EC-BFC9-772AE4391D17}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectName>Microsoft.Terminal.Connection.Interfaces</ProjectName>
+    <TargetName>Microsoft.Terminal.Connection.Interfaces</TargetName>
+    <ConfigurationType>Utility</ConfigurationType>
+    <RootNamespace>Microsoft.Terminal.TerminalConnection</RootNamespace>
+
+    <TerminalMidlRT>true</TerminalMidlRT>
+
+    <!-- Force our output directory -->
+    <OpenConsoleCppWinRTProject>true</OpenConsoleCppWinRTProject>
+  </PropertyGroup>
+
+  <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
+  <Import Project="$(OpenConsoleDir)src\common.build.pre.props" />
+
+  <ItemGroup>
+    <Midl Include="ITerminalConnection.idl" />
+  </ItemGroup>
+
+  <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
+  <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
+</Project>

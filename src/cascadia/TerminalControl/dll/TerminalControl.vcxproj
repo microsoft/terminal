@@ -64,6 +64,11 @@
       <Private>true</Private>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
     </ProjectReference>
+    <!-- Dependency Interfaces -->
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\ITerminalConnection\ITerminalConnection.vcxproj">
+      <Private>false</Private>
+      <Project>{EFC0B7EF-BB0D-44EC-BFC9-772AE4391D17}</Project>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>
