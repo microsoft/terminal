@@ -3083,6 +3083,50 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
     // modify the state of that mark as we go.
     return false;
 }
+// Method Description:
+// - Performs a XtermJs action
+// - Ascribes to the ITermDispatch interface
+// - Currently, the actions we support are:
+//   * TODO!
+// - Not actually used in conhost
+// Arguments:
+// - string: contains the parameters that define which action we do
+// Return Value:
+// - false in conhost, true for the SetMark action, otherwise false.
+bool AdaptDispatch::DoXtermJsAction(const std::wstring_view string)
+{
+    // This is not implemented in conhost.
+    if (_api.IsConsolePty())
+    {
+        // Flush the frame manually, to make sure marks end up on the right line, like the alt buffer sequence.
+        _renderer.TriggerFlush(false);
+        return false;
+    }
+
+    const auto parts = Utils::SplitString(string, L';');
+
+    if (parts.size() < 1)
+    {
+        return false;
+    }
+
+    const auto action = til::at(parts, 0);
+
+    if (action == L"Completions")
+    {
+        unsigned int replacementChars = 0;
+        bool succeeded = (parts.size() >= 3) &&
+                         (Utils::StringToUint(til::at(parts, 2), replacementChars));
+        if (succeeded)
+        {
+            _api.InvokeMenu(parts.size() < 4 ? L"" : til::at(parts, 3),
+                            static_cast<int32_t>(replacementChars));
+        }
+
+        return true;
+    }
+    return false;
+}
 
 // Method Description:
 // - DECDLD - Downloads one or more characters of a dynamically redefinable

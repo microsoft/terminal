@@ -44,6 +44,7 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> ReadOnlyChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusFollowMouseRequested;
+        event Windows.Foundation.TypedEventHandler<Object, MenuChangedEventArgs> MenuChanged;
 
         event Windows.Foundation.TypedEventHandler<TermControl, Windows.UI.Xaml.RoutedEventArgs> Initialized;
         // This is an event handler forwarder for the underlying connection.
@@ -100,5 +101,8 @@ namespace Microsoft.Terminal.Control
         Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
 
         void ColorSelection(SelectionColor fg, SelectionColor bg, Microsoft.Terminal.Core.MatchMode matchMode);
+
+        Microsoft.Terminal.Core.Point CursorPositionInDips { get; };
+
     }
 }

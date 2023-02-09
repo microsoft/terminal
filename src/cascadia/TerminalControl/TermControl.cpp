@@ -3174,4 +3174,29 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _core.ColorSelection(fg, bg, matchMode);
     }
+
+    Microsoft::Terminal::Core::Point TermControl::CursorPositionInDips()
+    {
+        // const auto cursorPosition{ _core.CursorPosition() };
+
+        const til::point cursorPos{ _core.CursorPosition() };
+
+        const til::size fontSize{ til::math::flooring, CharacterDimensions() };
+
+        // Convert text buffer cursor position to client coordinate position
+        // within the window. This point is in _pixels_
+        const til::point clientCursorPos{ cursorPos * fontSize };
+
+        // Get scale factor for view
+        const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+
+        const til::point clientCursorInDips{ til::math::flooring, clientCursorPos.x / scaleFactor, clientCursorPos.y / scaleFactor };
+
+        // + SwapChainPanel().Margin().Top
+        auto padding{ GetPadding() };
+        til::point relativeToOrigin{ til::math::flooring,
+                                     clientCursorInDips.x + padding.Left,
+                                     clientCursorInDips.y + padding.Top };
+        return relativeToOrigin.to_core_point();
+    }
 }

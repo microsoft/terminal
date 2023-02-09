@@ -460,6 +460,8 @@ namespace winrt::TerminalApp::implementation
         void _updateThemeColors();
         void _updateTabCloseButton(const winrt::Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem);
 
+        winrt::fire_and_forget _ControlMenuChangedHandler(const winrt::Windows::Foundation::IInspectable sender, const winrt::Microsoft::Terminal::Control::MenuChangedEventArgs args);
+
         winrt::fire_and_forget _ShowWindowChangedHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
 
 #pragma region ActionHandlers
