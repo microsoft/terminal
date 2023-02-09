@@ -221,6 +221,7 @@ void AppHost::_HandleCommandlineArgs()
         const auto numPeasants = _windowManager2.GetNumberOfPeasants();
         if (numPeasants == 1)
         {
+            // TODO! this is vaugely off by one. Not sure, but if you restore 2 windows, you seem to get two copies of the second. Yikes.
             const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
             if (_appLogic.ShouldUsePersistedLayout() &&
                 layouts &&
@@ -439,16 +440,6 @@ void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /*
 // - <none>
 void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::TerminalApp::LastTabClosedEventArgs& /*args*/)
 {
-    // TODO!
-    // if (_windowManager2.IsMonarch() && _notificationIcon)
-    // {
-    //     _DestroyNotificationIcon();
-    // }
-    // else if (_window->IsQuakeWindow())
-    // {
-    //     _HideNotificationIconRequested(nullptr, nullptr);
-    // }
-
     // We don't want to try to save layouts if we are about to close.
     _windowManager2.GetWindowLayoutRequested(_GetWindowLayoutRequestedToken);
 
@@ -1102,22 +1093,6 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
 void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable&,
                                     const winrt::Windows::Foundation::IInspectable&)
 {
-    // // We want the quake window to be accessible through the notification icon.
-    // // This means if there's a quake window _somewhere_, we want the notification icon
-    // // to show regardless of the notification icon settings.
-    // // This also means we'll need to destroy the notification icon if it was created
-    // // specifically for the quake window. If not, it should not be destroyed.
-    // if (!_window->IsQuakeWindow() && _windowLogic.IsQuakeWindow())
-    // {
-    //     _ShowNotificationIconRequested(nullptr, nullptr);
-    // }
-    // else if (_window->IsQuakeWindow() && !_windowLogic.IsQuakeWindow())
-    // {
-    //     _HideNotificationIconRequested(nullptr, nullptr);
-    // }
-
-    // TODO! I think we need the emperor to listen to windowLogic's IsQuakeWindowChanged event, to replicate this
-
     _window->IsQuakeWindow(_windowLogic.IsQuakeWindow());
 }
 

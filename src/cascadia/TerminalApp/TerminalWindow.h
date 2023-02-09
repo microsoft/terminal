@@ -51,7 +51,6 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args);
 
         bool HasCommandlineArguments() const noexcept;
-        // bool HasSettingsStartupActions() const noexcept;
         int32_t SetStartupCommandline(array_view<const winrt::hstring> actions);
         int32_t ExecuteCommandline(array_view<const winrt::hstring> actions, const winrt::hstring& cwd);
         void SetSettingsStartupArgs(const std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions);
@@ -78,7 +77,6 @@ namespace winrt::TerminalApp::implementation
         void SetNumberOfOpenWindows(const uint64_t num);
         bool ShouldUsePersistedLayout() const;
 
-        // bool IsQuakeWindow() const noexcept;
         void RequestExitFullscreen();
 
         Windows::Foundation::Size GetLaunchDimensions(uint32_t dpi);
@@ -190,12 +188,13 @@ namespace winrt::TerminalApp::implementation
         FORWARDED_TYPED_EVENT(SetTaskbarProgress, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, SetTaskbarProgress);
         FORWARDED_TYPED_EVENT(IdentifyWindowsRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, IdentifyWindowsRequested);
         FORWARDED_TYPED_EVENT(RenameWindowRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs, _root, RenameWindowRequested);
-        FORWARDED_TYPED_EVENT(IsQuakeWindowChanged, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, IsQuakeWindowChanged);
         FORWARDED_TYPED_EVENT(SummonWindowRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, SummonWindowRequested);
         FORWARDED_TYPED_EVENT(CloseRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, CloseRequested);
         FORWARDED_TYPED_EVENT(OpenSystemMenu, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, OpenSystemMenu);
         FORWARDED_TYPED_EVENT(QuitRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, QuitRequested);
         FORWARDED_TYPED_EVENT(ShowWindowChanged, Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Control::ShowWindowArgs, _root, ShowWindowChanged);
+
+        TYPED_EVENT(IsQuakeWindowChanged, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable);
 
         TYPED_EVENT(SystemMenuChangeRequested, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SystemMenuChangeArgs);
 

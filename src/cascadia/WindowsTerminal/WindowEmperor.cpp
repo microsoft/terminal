@@ -150,6 +150,12 @@ void WindowEmperor::CreateNewWindowThread(Remoting::WindowRequestedArgs args, co
     auto func = [this, args, peasant, firstWindow]() {
         auto window{ std::make_shared<WindowThread>(_app.Logic(), args, _manager, peasant) };
         _windows.push_back(window);
+
+        window->Logic().IsQuakeWindowChanged([this](auto&&, auto &&) -> winrt::fire_and_forget {
+            co_await wil::resume_foreground(this->_dispatcher);
+            this->_checkWindowsForNotificationIcon();
+        });
+
         return window->WindowProc();
     };
 
@@ -176,22 +182,12 @@ void WindowEmperor::_becomeMonarch()
 
     ////////////////////////////////////////////////////////////////////////////
 
-    //     if (_windowManager2.DoesQuakeWindowExist() ||
-    //         _window->IsQuakeWindow() ||
-    //         (_windowLogic.GetAlwaysShowNotificationIcon() || _windowLogic.GetMinimizeToNotificationArea()))
-    //     {
-    //         _CreateNotificationIcon();
-    //     }
-
-    //     // These events are coming from peasants that become or un-become quake windows.
-    //     _revokers.ShowNotificationIconRequested = _windowManager2.ShowNotificationIconRequested(winrt::auto_revoke, { this, &AppHost::_ShowNotificationIconRequested });
-    //     _revokers.HideNotificationIconRequested = _windowManager2.HideNotificationIconRequested(winrt::auto_revoke, { this, &AppHost::_HideNotificationIconRequested });
+    _checkWindowsForNotificationIcon();
 
     ////////////////////////////////////////////////////////////////////////////
 
-    //     // Set the number of open windows (so we know if we are the last window)
-    //     // and subscribe for updates if there are any changes to that number.
-    //     _windowLogic.SetNumberOfOpenWindows(_windowManager2.GetNumberOfPeasants());
+    // Set the number of open windows (so we know if we are the last window)
+    // and subscribe for updates if there are any changes to that number.
 
     _WindowCreatedToken = _manager.WindowCreated({ this, &WindowEmperor::_numberOfWindowsChanged });
     _WindowClosedToken = _manager.WindowClosed({ this, &WindowEmperor::_numberOfWindowsChanged });
@@ -224,6 +220,11 @@ void WindowEmperor::_numberOfWindowsChanged(const winrt::Windows::Foundation::II
     {
         _windowThread->Logic().SetNumberOfOpenWindows(numWindows);
     }
+
+    // If we closed out the quake window, and don't otherwise need the tray
+    // icon, let's get rid of it.
+    _checkWindowsForNotificationIcon();
+
     // TODO! apparently, we crash when whe actually post a quit, handle it, and
     // then leak all our threads. That's not good, but also, this should only
     // happen once our threads all exited. So figure that out.

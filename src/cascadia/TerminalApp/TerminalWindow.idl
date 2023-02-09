@@ -56,7 +56,6 @@ namespace TerminalApp
         Boolean IsElevated();
 
         Boolean HasCommandlineArguments();
-        // Boolean HasSettingsStartupActions();
 
         Int32 SetStartupCommandline(String[] commands);
 
@@ -83,7 +82,6 @@ namespace TerminalApp
         void SetNumberOfOpenWindows(UInt64 num);
         void RenameFailed();
         void RequestExitFullscreen();
-        // Boolean IsQuakeWindow();
 
         Windows.Foundation.Size GetLaunchDimensions(UInt32 dpi);
         Boolean CenterOnLaunch { get; };

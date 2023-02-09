@@ -1116,29 +1116,6 @@ namespace winrt::TerminalApp::implementation
         }
     }
     ////////////////////////////////////////////////////////////////////////////
-
-    void TerminalWindow::IdentifyWindow()
-    {
-        if (_root)
-        {
-            _root->IdentifyWindow();
-        }
-    }
-
-    void TerminalWindow::RenameFailed()
-    {
-        if (_root)
-        {
-            _root->RenameFailed();
-        }
-    }
-
-    // TODO!
-    // bool TerminalWindow::IsQuakeWindow() const noexcept
-    // {
-    //     return _root->IsQuakeWindow();
-    // }
-
     void TerminalWindow::RequestExitFullscreen()
     {
         _root->SetFullscreen(false);
@@ -1157,6 +1134,22 @@ namespace winrt::TerminalApp::implementation
 
     ////////////////////////////////////////////////////////////////////////////
 
+    void TerminalWindow::IdentifyWindow()
+    {
+        if (_root)
+        {
+            _root->IdentifyWindow();
+        }
+    }
+
+    void TerminalWindow::RenameFailed()
+    {
+        if (_root)
+        {
+            _root->RenameFailed();
+        }
+    }
+
     // WindowName is a otherwise generic WINRT_OBSERVABLE_PROPERTY, but it needs
     // to raise a PropertyChanged for WindowNameForDisplay, instead of
     // WindowName.
@@ -1167,8 +1160,8 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalWindow::WindowName(const winrt::hstring& value)
     {
-        // TODO!
-        // const auto oldIsQuakeMode = IsQuakeWindow();
+        const auto oldIsQuakeMode = IsQuakeWindow();
+
         const auto changed = _WindowName != value;
         if (changed)
         {
@@ -1176,6 +1169,16 @@ namespace winrt::TerminalApp::implementation
             if (_root)
             {
                 _root->WindowNameChanged();
+
+                // If we're entering quake mode, or leaving it
+                if (IsQuakeWindow() != oldIsQuakeMode)
+                {
+                    // If we're entering Quake Mode from ~Focus Mode, then this will enter Focus Mode
+                    // If we're entering Quake Mode from Focus Mode, then this will do nothing
+                    // If we're leaving Quake Mode (we're already in Focus Mode), then this will do nothing
+                    _root->SetFocusMode(true);
+                    _IsQuakeWindowChangedHandlers(*this, nullptr);
+                }
             }
         }
     }
@@ -1229,6 +1232,7 @@ namespace winrt::TerminalApp::implementation
     {
         return WindowName() == QuakeWindowName;
     }
+
     ////////////////////////////////////////////////////////////////////////////
 
     bool TerminalWindow::ShouldImmediatelyHandoffToElevated()
@@ -1260,4 +1264,6 @@ namespace winrt::TerminalApp::implementation
             return;
         }
     }
+
+    ////////////////////////////////////////////////////////////////////////////
 };

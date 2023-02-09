@@ -4255,27 +4255,12 @@ namespace winrt::TerminalApp::implementation
             _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
             _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowIdForDisplay" });
 
-            // if (changed)
-            // {
             // DON'T display the confirmation if this is the name we were
             // given on startup!
             if (page->_startupState == StartupState::Initialized)
             {
                 page->IdentifyWindow();
-
-                // TODO! This is wacky. Reconcile with oldIsQuakeMode in TerminalWindow::WindowName
-
-                // // If we're entering quake mode, or leaving it
-                // if (IsQuakeWindow() != oldIsQuakeMode)
-                // {
-                //     // If we're entering Quake Mode from ~Focus Mode, then this will enter Focus Mode
-                //     // If we're entering Quake Mode from Focus Mode, then this will do nothing
-                //     // If we're leaving Quake Mode (we're already in Focus Mode), then this will do nothing
-                //     SetFocusMode(true);
-                //     _IsQuakeWindowChangedHandlers(*this, nullptr);
-                // }
             }
-            // }
         }
     }
 

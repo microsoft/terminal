@@ -69,7 +69,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
         event Windows.Foundation.TypedEventHandler<Object, Object> IdentifyWindowsRequested;
         event Windows.Foundation.TypedEventHandler<Object, RenameWindowRequestedArgs> RenameWindowRequested;
-        event Windows.Foundation.TypedEventHandler<Object, Object> IsQuakeWindowChanged;
+
         event Windows.Foundation.TypedEventHandler<Object, Object> SummonWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> CloseRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> OpenSystemMenu;
