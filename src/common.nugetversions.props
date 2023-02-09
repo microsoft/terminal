@@ -6,6 +6,9 @@
   <!-- CppWinrt -->
   <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.CppWinRT.2.0.210825.3\build\native\Microsoft.Windows.CppWinRT.props" Condition="'$(TerminalCppWinrt)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.CppWinRT.2.0.210825.3\build\native\Microsoft.Windows.CppWinRT.props')" />
 
+  <!-- MidlRT -->
+  <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.MidlRT.2.0.200924.1\build\native\Microsoft.Windows.MidlRT.props" Condition="'$(TerminalMidlRT)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.MidlRT.2.0.200924.1\build\native\Microsoft.Windows.MidlRT.props')" />
+
   <!-- TAEF -->
   <PropertyGroup>
     <TAEFPackagePathRoot>$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.60.210621002</TAEFPackagePathRoot>

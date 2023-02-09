@@ -58,6 +58,9 @@
     <!-- WIL (so widely used that this one does not have a TerminalWIL opt-in property; it is automatic) -->
     <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.220201.1\build\native\Microsoft.Windows.ImplementationLibrary.targets" Condition="Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.220201.1\build\native\Microsoft.Windows.ImplementationLibrary.targets')" />
 
+    <!-- MidlRT -->
+    <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.MidlRT.2.0.200924.1\build\native\Microsoft.Windows.MidlRT.targets" Condition="'$(TerminalMidlRT)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.MidlRT.2.0.200924.1\build\native\Microsoft.Windows.MidlRT.targets')" />
+
   </ImportGroup>
 
   <Target Name="Terminal_EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
@@ -90,6 +93,10 @@
 
     <!-- WIL (so widely used that this one does not have a TerminalWIL opt-in property; it is automatic) -->
     <Error Condition="!Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.220201.1\build\native\Microsoft.Windows.ImplementationLibrary.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.ImplementationLibrary.1.0.220201.1\build\native\Microsoft.Windows.ImplementationLibrary.targets'))" />
+
+    <!-- MidlRT -->
+    <Error Condition="'$(TerminalMidlRT)' == 'true' and !Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.MidlRT.2.0.200924.1\build\native\Microsoft.Windows.MidlRT.props')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.MidlRT.2.0.200924.1\build\native\Microsoft.Windows.MidlRT.props'))" />
+    <Error Condition="'$(TerminalMidlRT)' == 'true' and !Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.MidlRT.2.0.200924.1\build\native\Microsoft.Windows.MidlRT.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.MidlRT.2.0.200924.1\build\native\Microsoft.Windows.MidlRT.targets'))" />
 
   </Target>
 
