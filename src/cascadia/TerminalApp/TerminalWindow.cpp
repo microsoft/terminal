@@ -310,6 +310,12 @@ namespace winrt::TerminalApp::implementation
     {
         return _settings.GlobalSettings().AlwaysShowNotificationIcon();
     }
+    bool TerminalWindow::RequestsTrayIcon()
+    {
+        return _settings.GlobalSettings().AlwaysShowNotificationIcon() ||
+               _settings.GlobalSettings().MinimizeToNotificationArea() ||
+               IsQuakeWindow();
+    }
 
     bool TerminalWindow::GetShowTitleInTitlebar()
     {

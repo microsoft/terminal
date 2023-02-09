@@ -13,6 +13,7 @@
 #include "../../types/inc/utils.hpp"
 
 #include "resource.h"
+#include "NotificationIcon.h"
 
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal;
@@ -24,6 +25,8 @@ using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
 
 #define TERMINAL_MESSAGE_CLASS_NAME L"TERMINAL_MESSAGE_CLASS"
 extern "C" IMAGE_DOS_HEADER __ImageBase;
+
+const UINT WM_TASKBARCREATED = RegisterWindowMessage(L"TaskbarCreated");
 
 WindowEmperor::WindowEmperor() noexcept :
     _app{}
@@ -166,6 +169,8 @@ void WindowEmperor::_becomeMonarch()
         if (SUCCEEDED(args.Result()))
         {
             _setupGlobalHotkeys();
+
+            _checkWindowsForNotificationIcon();
         }
     });
 
@@ -246,6 +251,8 @@ void WindowEmperor::_quitAllRequested(const winrt::Windows::Foundation::IInspect
     args.BeforeQuitAllAction(_SaveWindowLayouts());
 }
 
+#pragma region LayoutPersistence
+
 winrt::Windows::Foundation::IAsyncAction WindowEmperor::_SaveWindowLayouts()
 {
     // Make sure we run on a background thread to not block anything.
@@ -309,6 +316,9 @@ winrt::fire_and_forget WindowEmperor::_SaveWindowLayoutsRepeat()
         _getWindowLayoutThrottler.value()();
     }
 }
+#pragma endregion
+
+#pragma region WindowProc
 
 static WindowEmperor* GetThisFromHandle(HWND const window) noexcept
 {
@@ -369,6 +379,46 @@ LRESULT WindowEmperor::MessageHandler(UINT const message, WPARAM const wParam, L
         _hotkeyPressed(static_cast<long>(wParam));
         return 0;
     }
+    case CM_NOTIFY_FROM_NOTIFICATION_AREA:
+    {
+        switch (LOWORD(lParam))
+        {
+        case NIN_SELECT:
+        case NIN_KEYSELECT:
+        {
+            // _NotifyNotificationIconPressedHandlers();
+            _notificationIcon->NotificationIconPressed();
+            return 0;
+        }
+        case WM_CONTEXTMENU:
+        {
+            const til::point eventPoint{ GET_X_LPARAM(wParam), GET_Y_LPARAM(wParam) };
+            // _NotifyShowNotificationIconContextMenuHandlers(eventPoint);
+            _notificationIcon->ShowContextMenu(eventPoint, _manager.GetPeasantInfos());
+            return 0;
+        }
+        }
+        break;
+    }
+    case WM_MENUCOMMAND:
+    {
+        // _NotifyNotificationIconMenuItemSelectedHandlers((HMENU)lparam, (UINT)wparam);
+        _notificationIcon->MenuItemSelected((HMENU)lParam, (UINT)wParam);
+        return 0;
+    }
+    default:
+    {
+        // We'll want to receive this message when explorer.exe restarts
+        // so that we can re-add our icon to the notification area.
+        // This unfortunately isn't a switch case because we register the
+        // message at runtime.
+        if (message == WM_TASKBARCREATED)
+        {
+            // _NotifyReAddNotificationIconHandlers();
+            _notificationIcon->ReAddNotificationIcon();
+            return 0;
+        }
+    }
     }
     return DefWindowProc(_window.get(), message, wParam, lParam);
 }
@@ -381,6 +431,8 @@ winrt::fire_and_forget WindowEmperor::_close()
     PostQuitMessage(0);
 }
 
+#pragma endregion
+#pragma region GlobalHotkeys
 void WindowEmperor::_hotkeyPressed(const long hotkeyIndex)
 {
     if (hotkeyIndex < 0 || static_cast<size_t>(hotkeyIndex) > _hotkeys.size())
@@ -521,3 +573,85 @@ winrt::fire_and_forget WindowEmperor::_setupGlobalHotkeys()
         }
     }
 }
+
+#pragma endregion
+////////////////////////////////////////////////////////////////////////////////
+#pragma region NotificationIcon
+// Method Description:
+// - Creates a Notification Icon and hooks up its handlers
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void WindowEmperor::_createNotificationIcon()
+{
+    _notificationIcon = std::make_unique<NotificationIcon>(_window.get());
+    _notificationIcon->SummonWindowRequested([this](auto& args) { _manager.SummonWindow(args); });
+}
+
+// Method Description:
+// - Deletes our notification icon if we have one.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void WindowEmperor::_destroyNotificationIcon()
+{
+    _notificationIcon->RemoveIconFromNotificationArea();
+    _notificationIcon = nullptr;
+}
+
+void WindowEmperor::_checkWindowsForNotificationIcon()
+{
+    // We need to check some conditions to show the notification icon.
+    //
+    // * If there's a Quake window somewhere, we'll want to keep the
+    //   notification icon.
+    // * There's two settings - MinimizeToNotificationArea and
+    //   AlwaysShowNotificationIcon. If either one of them are true, we want to
+    //   make sure there's a notification icon.
+    //
+    // If both are false, we want to remove our icon from the notification area.
+    // When we remove our icon from the notification area, we'll also want to
+    // re-summon any hidden windows, but right now we're not keeping track of
+    // who's hidden, so just summon them all. Tracking the work to do a "summon
+    // all minimized" in GH#10448
+
+    bool needsIcon = false;
+    for (const auto& _windowThread : _windows)
+    {
+        needsIcon |= _windowThread->Logic().RequestsTrayIcon();
+    }
+
+    if (needsIcon)
+    {
+        _showNotificationIconRequested();
+    }
+    else
+    {
+        _hideNotificationIconRequested();
+    }
+}
+
+void WindowEmperor::_showNotificationIconRequested()
+{
+    if (!_notificationIcon)
+    {
+        _createNotificationIcon();
+    }
+}
+
+void WindowEmperor::_hideNotificationIconRequested()
+{
+    // Destroy it only if our settings allow it
+    if (_notificationIcon)
+    {
+        // If we no longer want the tray icon, but we did have one, then quick
+        // re-summon all our windows, so they don't get lost when the icon
+        // disappears forever.
+        _manager.SummonAllWindows();
+
+        _destroyNotificationIcon();
+    }
+}
+#pragma endregion

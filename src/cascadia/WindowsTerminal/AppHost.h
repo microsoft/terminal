@@ -115,13 +115,6 @@ private:
     void _ShowWindowChanged(const winrt::Windows::Foundation::IInspectable& sender,
                             const winrt::Microsoft::Terminal::Control::ShowWindowArgs& args);
 
-    void _CreateNotificationIcon();
-    void _DestroyNotificationIcon();
-    void _ShowNotificationIconRequested(const winrt::Windows::Foundation::IInspectable& sender,
-                                        const winrt::Windows::Foundation::IInspectable& args);
-    void _HideNotificationIconRequested(const winrt::Windows::Foundation::IInspectable& sender,
-                                        const winrt::Windows::Foundation::IInspectable& args);
-
     void _updateTheme();
 
     void _PropertyChangedHandler(const winrt::Windows::Foundation::IInspectable& sender,
@@ -129,11 +122,6 @@ private:
 
     void _initialResizeAndRepositionWindow(const HWND hwnd, RECT proposedRect, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode);
 
-    std::unique_ptr<NotificationIcon> _notificationIcon;
-    winrt::event_token _ReAddNotificationIconToken;
-    winrt::event_token _NotificationIconPressedToken;
-    winrt::event_token _ShowNotificationIconContextMenuToken;
-    winrt::event_token _NotificationIconMenuItemSelectedToken;
     winrt::event_token _GetWindowLayoutRequestedToken;
     // winrt::event_token _WindowCreatedToken;
     // winrt::event_token _WindowClosedToken;

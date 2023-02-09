@@ -105,6 +105,8 @@ namespace winrt::TerminalApp::implementation
 
         bool GetMinimizeToNotificationArea();
         bool GetAlwaysShowNotificationIcon();
+        bool RequestsTrayIcon();
+
         bool GetShowTitleInTitlebar();
 
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> ShowDialog(winrt::Windows::UI::Xaml::Controls::ContentDialog dialog);

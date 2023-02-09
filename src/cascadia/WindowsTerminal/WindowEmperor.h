@@ -44,6 +44,8 @@ private:
 
     std::vector<winrt::Microsoft::Terminal::Settings::Model::GlobalSummonArgs> _hotkeys;
 
+    std::unique_ptr<NotificationIcon> _notificationIcon;
+
     void _becomeMonarch();
     void _numberOfWindowsChanged(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&);
     void _quitAllRequested(const winrt::Windows::Foundation::IInspectable&,
@@ -60,6 +62,12 @@ private:
     winrt::fire_and_forget _setupGlobalHotkeys();
 
     winrt::fire_and_forget _close();
+
+    void _createNotificationIcon();
+    void _destroyNotificationIcon();
+    void _checkWindowsForNotificationIcon();
+    void _showNotificationIconRequested();
+    void _hideNotificationIconRequested();
 
     struct Revokers
     {

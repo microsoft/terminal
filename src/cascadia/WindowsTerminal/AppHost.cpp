@@ -1094,33 +1094,6 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
 {
     // We don't need to call in to windowLogic here - it has its own SettingsChanged handler
 
-    // TODO! tray icon
-    //
-    // // If we're monarch, we need to check some conditions to show the notification icon.
-    // // If there's a Quake window somewhere, we'll want to keep the notification icon.
-    // // There's two settings - MinimizeToNotificationArea and AlwaysShowNotificationIcon. If either
-    // // one of them are true, we want to make sure there's a notification icon.
-    // // If both are false, we want to remove our icon from the notification area.
-    // // When we remove our icon from the notification area, we'll also want to re-summon
-    // // any hidden windows, but right now we're not keeping track of who's hidden,
-    // // so just summon them all. Tracking the work to do a "summon all minimized" in
-    // // GH#10448
-    // if (_windowManager2.IsMonarch())
-    // {
-    //     if (!_windowManager2.DoesQuakeWindowExist())
-    //     {
-    //         if (!_notificationIcon && (_windowLogic.GetMinimizeToNotificationArea() || _windowLogic.GetAlwaysShowNotificationIcon()))
-    //         {
-    //             _CreateNotificationIcon();
-    //         }
-    //         else if (_notificationIcon && !_windowLogic.GetMinimizeToNotificationArea() && !_windowLogic.GetAlwaysShowNotificationIcon())
-    //         {
-    //             _windowManager2.SummonAllWindows();
-    //             _DestroyNotificationIcon();
-    //         }
-    //     }
-    // }
-
     _window->SetMinimizeToNotificationAreaBehavior(_windowLogic.GetMinimizeToNotificationArea());
     _window->SetAutoHideWindow(_windowLogic.AutoHideWindow());
     _updateTheme();
@@ -1129,19 +1102,21 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
 void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable&,
                                     const winrt::Windows::Foundation::IInspectable&)
 {
-    // We want the quake window to be accessible through the notification icon.
-    // This means if there's a quake window _somewhere_, we want the notification icon
-    // to show regardless of the notification icon settings.
-    // This also means we'll need to destroy the notification icon if it was created
-    // specifically for the quake window. If not, it should not be destroyed.
-    if (!_window->IsQuakeWindow() && _windowLogic.IsQuakeWindow())
-    {
-        _ShowNotificationIconRequested(nullptr, nullptr);
-    }
-    else if (_window->IsQuakeWindow() && !_windowLogic.IsQuakeWindow())
-    {
-        _HideNotificationIconRequested(nullptr, nullptr);
-    }
+    // // We want the quake window to be accessible through the notification icon.
+    // // This means if there's a quake window _somewhere_, we want the notification icon
+    // // to show regardless of the notification icon settings.
+    // // This also means we'll need to destroy the notification icon if it was created
+    // // specifically for the quake window. If not, it should not be destroyed.
+    // if (!_window->IsQuakeWindow() && _windowLogic.IsQuakeWindow())
+    // {
+    //     _ShowNotificationIconRequested(nullptr, nullptr);
+    // }
+    // else if (_window->IsQuakeWindow() && !_windowLogic.IsQuakeWindow())
+    // {
+    //     _HideNotificationIconRequested(nullptr, nullptr);
+    // }
+
+    // TODO! I think we need the emperor to listen to windowLogic's IsQuakeWindowChanged event, to replicate this
 
     _window->IsQuakeWindow(_windowLogic.IsQuakeWindow());
 }
@@ -1212,80 +1187,6 @@ void AppHost::_SystemMenuChangeRequested(const winrt::Windows::Foundation::IInsp
     {
     }
     }
-}
-
-// Method Description:
-// - Creates a Notification Icon and hooks up its handlers
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void AppHost::_CreateNotificationIcon()
-{
-    _notificationIcon = std::make_unique<NotificationIcon>(_window->GetHandle());
-
-    // Hookup the handlers, save the tokens for revoking if settings change.
-    _ReAddNotificationIconToken = _window->NotifyReAddNotificationIcon([this]() { _notificationIcon->ReAddNotificationIcon(); });
-    _NotificationIconPressedToken = _window->NotifyNotificationIconPressed([this]() { _notificationIcon->NotificationIconPressed(); });
-    _ShowNotificationIconContextMenuToken = _window->NotifyShowNotificationIconContextMenu([this](til::point coord) { _notificationIcon->ShowContextMenu(coord, _windowManager2.GetPeasantInfos()); });
-    _NotificationIconMenuItemSelectedToken = _window->NotifyNotificationIconMenuItemSelected([this](HMENU hm, UINT idx) { _notificationIcon->MenuItemSelected(hm, idx); });
-    _notificationIcon->SummonWindowRequested([this](auto& args) { _windowManager2.SummonWindow(args); });
-}
-
-// Method Description:
-// - Deletes our notification icon if we have one.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void AppHost::_DestroyNotificationIcon()
-{
-    _window->NotifyReAddNotificationIcon(_ReAddNotificationIconToken);
-    _window->NotifyNotificationIconPressed(_NotificationIconPressedToken);
-    _window->NotifyShowNotificationIconContextMenu(_ShowNotificationIconContextMenuToken);
-    _window->NotifyNotificationIconMenuItemSelected(_NotificationIconMenuItemSelectedToken);
-
-    _notificationIcon->RemoveIconFromNotificationArea();
-    _notificationIcon = nullptr;
-}
-
-void AppHost::_ShowNotificationIconRequested(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                             const winrt::Windows::Foundation::IInspectable& /*args*/)
-{
-    // TODO! tray icon
-    //
-    // if (_windowManager2.IsMonarch())
-    // {
-    //     if (!_notificationIcon)
-    //     {
-    //         _CreateNotificationIcon();
-    //     }
-    // }
-    // else
-    // {
-    //     _windowManager2.RequestShowNotificationIcon();
-    // }
-}
-
-void AppHost::_HideNotificationIconRequested(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                             const winrt::Windows::Foundation::IInspectable& /*args*/)
-{
-    // TODO! tray icon
-    //
-    // if (_windowManager2.IsMonarch())
-    // {
-    //     // Destroy it only if our settings allow it
-    //     if (_notificationIcon &&
-    //         !_windowLogic.GetAlwaysShowNotificationIcon() &&
-    //         !_windowLogic.GetMinimizeToNotificationArea())
-    //     {
-    //         _DestroyNotificationIcon();
-    //     }
-    // }
-    // else
-    // {
-    //     _windowManager2.RequestHideNotificationIcon();
-    // }
 }
 
 // Method Description:

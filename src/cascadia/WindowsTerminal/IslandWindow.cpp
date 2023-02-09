@@ -27,7 +27,7 @@ using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
 #define IDM_SYSTEM_MENU_BEGIN 0x1000
 
-const UINT WM_TASKBARCREATED = RegisterWindowMessage(L"TaskbarCreated");
+// const UINT WM_TASKBARCREATED = RegisterWindowMessage(L"TaskbarCreated");
 
 IslandWindow::IslandWindow() noexcept :
     _interopWindowHandle{ nullptr },
@@ -633,30 +633,6 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         }
         break;
     }
-    case CM_NOTIFY_FROM_NOTIFICATION_AREA:
-    {
-        switch (LOWORD(lparam))
-        {
-        case NIN_SELECT:
-        case NIN_KEYSELECT:
-        {
-            _NotifyNotificationIconPressedHandlers();
-            return 0;
-        }
-        case WM_CONTEXTMENU:
-        {
-            const til::point eventPoint{ GET_X_LPARAM(wparam), GET_Y_LPARAM(wparam) };
-            _NotifyShowNotificationIconContextMenuHandlers(eventPoint);
-            return 0;
-        }
-        }
-        break;
-    }
-    case WM_MENUCOMMAND:
-    {
-        _NotifyNotificationIconMenuItemSelectedHandlers((HMENU)lparam, (UINT)wparam);
-        return 0;
-    }
     case WM_SYSCOMMAND:
     {
         // the low 4 bits contain additional information (that we don't care about)
@@ -733,16 +709,6 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         _AutomaticShutdownRequestedHandlers();
         return true;
     }
-    default:
-        // We'll want to receive this message when explorer.exe restarts
-        // so that we can re-add our icon to the notification area.
-        // This unfortunately isn't a switch case because we register the
-        // message at runtime.
-        if (message == WM_TASKBARCREATED)
-        {
-            _NotifyReAddNotificationIconHandlers();
-            return 0;
-        }
     }
 
     // TODO: handle messages here...
