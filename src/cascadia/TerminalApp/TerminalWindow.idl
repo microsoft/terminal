@@ -65,6 +65,9 @@ namespace TerminalApp
         String ParseCommandlineMessage { get; };
         Boolean ShouldExitEarly { get; };
 
+        Boolean ShouldImmediatelyHandoffToElevated();
+        void HandoffToElevated();
+
         void Quit();
 
         Windows.UI.Xaml.UIElement GetRoot();

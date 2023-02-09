@@ -1224,4 +1224,34 @@ namespace winrt::TerminalApp::implementation
         return WindowName() == QuakeWindowName;
     }
     ////////////////////////////////////////////////////////////////////////////
+
+    bool TerminalWindow::ShouldImmediatelyHandoffToElevated()
+    {
+        return _root != nullptr ? _root->ShouldImmediatelyHandoffToElevated(_settings) : false;
+    }
+
+    // Method Description:
+    // - Escape hatch for immediately dispatching requests to elevated windows
+    //   when first launched. At this point in startup, the window doesn't exist
+    //   yet, XAML hasn't been started, but we need to dispatch these actions.
+    //   We can't just go through ProcessStartupActions, because that processes
+    //   the actions async using the XAML dispatcher (which doesn't exist yet)
+    // - DON'T CALL THIS if you haven't already checked
+    //   ShouldImmediatelyHandoffToElevated. If you're thinking about calling
+    //   this outside of the one place it's used, that's probably the wrong
+    //   solution.
+    // Arguments:
+    // - settings: the settings we should use for dispatching these actions. At
+    //   this point in startup, we hadn't otherwise been initialized with these,
+    //   so use them now.
+    // Return Value:
+    // - <none>
+    void TerminalWindow::HandoffToElevated()
+    {
+        if (_root)
+        {
+            _root->HandoffToElevated(_settings);
+            return;
+        }
+    }
 };

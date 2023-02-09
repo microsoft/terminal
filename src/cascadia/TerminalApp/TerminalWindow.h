@@ -58,6 +58,9 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring ParseCommandlineMessage();
         bool ShouldExitEarly();
 
+        bool ShouldImmediatelyHandoffToElevated();
+        void HandoffToElevated();
+
         bool FocusMode() const;
         bool Fullscreen() const;
         void Maximized(bool newMaximized);

@@ -188,21 +188,19 @@ void AppHost::_HandleCommandlineArgs()
             }
         }
 
-        // TODO!
+        // This is a fix for GH#12190 and hopefully GH#12169.
         //
-        // // This is a fix for GH#12190 and hopefully GH#12169.
-        // //
-        // // If the commandline we were provided is going to result in us only
-        // // opening elevated terminal instances, then we need to not even create
-        // // the window at all here. In that case, we're going through this
-        // // special escape hatch to dispatch all the calls to elevate-shim, and
-        // // then we're going to exit immediately.
-        // if (_appLogic.ShouldImmediatelyHandoffToElevated())
-        // {
-        //     _shouldCreateWindow = false;
-        //     _appLogic.HandoffToElevated();
-        //     return;
-        // }
+        // If the commandline we were provided is going to result in us only
+        // opening elevated terminal instances, then we need to not even create
+        // the window at all here. In that case, we're going through this
+        // special escape hatch to dispatch all the calls to elevate-shim, and
+        // then we're going to exit immediately.
+        if (_windowLogic.ShouldImmediatelyHandoffToElevated())
+        {
+            _shouldCreateWindow = false;
+            _windowLogic.HandoffToElevated();
+            return;
+        }
 
         // After handling the initial args, hookup the callback for handling
         // future commandline invocations. When our peasant is told to execute a
@@ -1095,8 +1093,6 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
                                      const winrt::TerminalApp::SettingsLoadEventArgs& /*args*/)
 {
     // We don't need to call in to windowLogic here - it has its own SettingsChanged handler
-    // TODO! this need to be replicated in Emperor
-    // _setupGlobalHotkeys();
 
     // TODO! tray icon
     //

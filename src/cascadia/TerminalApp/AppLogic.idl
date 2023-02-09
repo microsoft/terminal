@@ -40,9 +40,6 @@ namespace TerminalApp
 
         TerminalWindow CreateNewWindow();
 
-        Boolean ShouldImmediatelyHandoffToElevated();
-        void HandoffToElevated();
-
         Windows.Foundation.Collections.IMapView<Microsoft.Terminal.Control.KeyChord, Microsoft.Terminal.Settings.Model.Command> GlobalHotkeys();
 
         event Windows.Foundation.TypedEventHandler<Object, SettingsLoadEventArgs> SettingsChanged;

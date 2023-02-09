@@ -526,25 +526,6 @@ namespace winrt::TerminalApp::implementation
         return _settings;
     }
 
-    bool AppLogic::ShouldImmediatelyHandoffToElevated()
-    {
-        // TODO! Merge that code in here.
-        //   * Probably need to pass in the startupActions that the first window is being started with
-        //   * Or like, a reference to the first TerminalWindow object, or something
-
-        // return _root != nullptr ? _root->ShouldImmediatelyHandoffToElevated(_settings) : false;
-        return false;
-    }
-    void AppLogic::HandoffToElevated()
-    {
-        // TODO! Merge that code in here.
-
-        // if (_root)
-        // {
-        //     _root->HandoffToElevated(_settings);
-        // }
-    }
-
     // Method Description:
     // - Parse the given commandline args in an attempt to find the specified
     //   window. The rest of the args are ignored for now (they'll be handled

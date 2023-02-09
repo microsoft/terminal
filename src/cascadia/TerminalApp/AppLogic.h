@@ -60,8 +60,6 @@ namespace winrt::TerminalApp::implementation
         [[nodiscard]] Microsoft::Terminal::Settings::Model::CascadiaSettings GetSettings() const noexcept;
 
         TerminalApp::FindTargetWindowResult FindTargetWindow(array_view<const winrt::hstring> actions);
-        bool ShouldImmediatelyHandoffToElevated();
-        void HandoffToElevated();
 
         Windows::Foundation::Collections::IMapView<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::Command> GlobalHotkeys();
 
