@@ -352,6 +352,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ProfileViewModel::SetupAppearances(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList, Editor::IHostedInWindow windowRoot)
     {
+        WindowRoot(windowRoot);
         DefaultAppearance().SchemesList(schemesList);
         DefaultAppearance().WindowRoot(windowRoot);
         if (UnfocusedAppearance())
