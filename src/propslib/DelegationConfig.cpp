@@ -235,8 +235,8 @@ CATCH_RETURN()
     wil::unique_hkey currentUserKey;
     wil::unique_hkey consoleKey;
     wil::unique_hkey startupKey;
-    if (FAILED_NTSTATUS_LOG(RegistrySerialization::s_OpenConsoleKey(&currentUserKey, &consoleKey)) ||
-        FAILED_NTSTATUS_LOG(RegistrySerialization::s_OpenKey(consoleKey.get(), L"%%Startup", &startupKey)))
+    if (FAILED(RegistrySerialization::s_OpenConsoleKey(&currentUserKey, &consoleKey)) ||
+        FAILED_LOG(RegistrySerialization::s_OpenKey(consoleKey.get(), L"%%Startup", &startupKey)))
     {
         return DefaultDelegationPair;
     }
@@ -253,13 +253,8 @@ CATCH_RETURN()
         wchar_t buffer[39];
         DWORD bytesUsed = 0;
         const auto result = RegistrySerialization::s_QueryValue(startupKey.get(), keys[i], sizeof(buffer), REG_SZ, reinterpret_cast<BYTE*>(&buffer[0]), &bytesUsed);
-        if (result != S_OK)
+        if (FAILED(result))
         {
-            // Don't log the more common key-not-found error.
-            if (result != NTSTATUS_FROM_WIN32(ERROR_FILE_NOT_FOUND))
-            {
-                LOG_NTSTATUS(result);
-            }
             continue;
         }
 
@@ -331,16 +326,16 @@ try
         wil::unique_hkey currentUserKey;
         wil::unique_hkey consoleKey;
 
-        RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_OpenConsoleKey(&currentUserKey, &consoleKey));
+        RETURN_IF_FAILED_EXPECTED(RegistrySerialization::s_OpenConsoleKey(&currentUserKey, &consoleKey));
 
         // Create method for registry is a "create if not exists, otherwise open" function.
         wil::unique_hkey startupKey;
-        RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_CreateKey(consoleKey.get(), L"%%Startup", &startupKey));
+        RETURN_IF_FAILED(RegistrySerialization::s_CreateKey(consoleKey.get(), L"%%Startup", &startupKey));
 
         wil::unique_cotaskmem_string str;
         RETURN_IF_FAILED(StringFromCLSID(clsid, &str));
 
-        RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_SetValue(startupKey.get(), value, REG_SZ, reinterpret_cast<BYTE*>(str.get()), gsl::narrow<DWORD>(wcslen(str.get()) * sizeof(wchar_t))));
+        RETURN_IF_FAILED(RegistrySerialization::s_SetValue(startupKey.get(), value, REG_SZ, reinterpret_cast<BYTE*>(str.get()), gsl::narrow<DWORD>(wcslen(str.get()) * sizeof(wchar_t))));
 
         return S_OK;
     }

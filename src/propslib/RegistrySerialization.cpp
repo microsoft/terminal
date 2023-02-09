@@ -295,7 +295,7 @@ const size_t RegistrySerialization::s_GlobalPropMappingsSize = ARRAYSIZE(s_Globa
     auto cbData = cbValueLength;
 
     DWORD actualRegType = 0;
-    RETURN_IF_WIN32_ERROR(RegQueryValueExW(hKey,
+    RETURN_IF_WIN32_ERROR_EXPECTED(RegQueryValueExW(hKey,
                                            pwszValueName,
                                            nullptr,
                                            &actualRegType,
