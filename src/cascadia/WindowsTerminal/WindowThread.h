@@ -14,9 +14,6 @@ public:
     int WindowProc();
 
     winrt::TerminalApp::TerminalWindow Logic();
-    winrt::Microsoft::Terminal::Remoting::Peasant Peasant();
-
-    WINRT_CALLBACK(Exited, winrt::delegate<>);
 
 private:
     ::AppHost _host;

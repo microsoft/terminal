@@ -155,27 +155,13 @@ void WindowEmperor::CreateNewWindowThread(Remoting::WindowRequestedArgs args, co
             co_await wil::resume_foreground(this->_dispatcher);
             this->_checkWindowsForNotificationIcon();
         });
-        window->Exited([this, peasant]() {
-            // find the window in _windows who's peasant's Id matches the peasant's Id
-            // and remove it
-            _windows.erase(std::remove_if(_windows.begin(), _windows.end(), [&](const auto& w) {
-                               return w->Peasant().GetID() == peasant.GetID();
-                           }),
-                           _windows.end());
-            if (_windows.size() == 0)
-            {
-                _close();
-            }
-        });
-        auto result = window->WindowProc();
-        return result;
-    };
-    // _threads.emplace_back(func);
-    // LOG_IF_FAILED(SetThreadDescription(_threads.back().native_handle(), L"Window Thread"));
 
-    std::thread myWindowThread{ func };
-    LOG_IF_FAILED(SetThreadDescription(myWindowThread.native_handle(), L"Window Thread"));
-    myWindowThread.detach();
+        return window->WindowProc();
+    };
+
+    _threads.emplace_back(func);
+
+    LOG_IF_FAILED(SetThreadDescription(_threads.back().native_handle(), L"Window Thread"));
 }
 
 void WindowEmperor::_becomeMonarch()

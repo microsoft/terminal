@@ -85,12 +85,5 @@ int WindowThread::WindowProc()
         TranslateMessage(&message);
         DispatchMessage(&message);
     }
-
-    _ExitedHandlers();
     return 0;
-}
-
-winrt::Microsoft::Terminal::Remoting::Peasant WindowThread::Peasant()
-{
-    return _peasant;
 }
