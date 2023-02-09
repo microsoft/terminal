@@ -120,7 +120,7 @@ void WindowEmperor::WaitForWindows()
     // Sleep(30000); //30s
 
     // TODO! This creates a loop that never actually exits right now. It seems
-    // to get a message wehn another window is activated, but never a WM_CLOSE
+    // to get a message when another window is activated, but never a WM_CLOSE
     // (that makes sense). It keeps running even when the threads all exit,
     // which is INTERESTING for sure.
     //
@@ -161,6 +161,13 @@ void WindowEmperor::_becomeMonarch()
 
     ////////////////////////////////////////////////////////////////////////////
     _setupGlobalHotkeys();
+
+    _app.Logic().SettingsChanged([this](auto&&, const TerminalApp::SettingsLoadEventArgs& args) {
+        if (SUCCEEDED(args.Result()))
+        {
+            _setupGlobalHotkeys();
+        }
+    });
 
     ////////////////////////////////////////////////////////////////////////////
 
@@ -302,8 +309,6 @@ static WindowEmperor* GetThisFromHandle(HWND const window) noexcept
         WINRT_ASSERT(!that->_window);
         that->_window = wil::unique_hwnd(window);
         SetWindowLongPtr(that->_window.get(), GWLP_USERDATA, reinterpret_cast<LONG_PTR>(that));
-
-        // return that->OnNcCreate(wparam, lparam);
     }
     else if (WindowEmperor* that = GetThisFromHandle(window))
     {
@@ -417,7 +422,6 @@ bool WindowEmperor::_registerHotKey(const int index, const winrt::Microsoft::Ter
     // TODO GH#8888: We should display a warning of some kind if this fails.
     // This can fail if something else already bound this hotkey.
     const auto result = ::RegisterHotKey(_window.get(), index, hotkeyFlags, vkey);
-    // const auto result = ::RegisterHotKey(nullptr, index, hotkeyFlags, vkey);
     LOG_LAST_ERROR_IF(!result);
     TraceLoggingWrite(g_hWindowsTerminalProvider,
                       "RegisterHotKey",

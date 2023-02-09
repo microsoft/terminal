@@ -418,11 +418,6 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
 {
     switch (message)
     {
-    // case WM_HOTKEY:
-    // {
-    //     _HotkeyPressedHandlers(static_cast<long>(wparam));
-    //     return 0;
-    // }
     case WM_GETMINMAXINFO:
     {
         _OnGetMinMaxInfo(wparam, lparam);
@@ -1263,65 +1258,6 @@ void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
         }
     }
 }
-
-// // Method Description:
-// // - Call UnregisterHotKey once for each previously registered hotkey.
-// // Return Value:
-// // - <none>
-// void IslandWindow::UnregisterHotKey(const int index) noexcept
-// {
-//     TraceLoggingWrite(
-//         g_hWindowsTerminalProvider,
-//         "UnregisterHotKey",
-//         TraceLoggingDescription("Emitted when clearing previously set hotkeys"),
-//         TraceLoggingInt64(index, "index", "the index of the hotkey to remove"),
-//         TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-//         TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-
-//     LOG_IF_WIN32_BOOL_FALSE(::UnregisterHotKey(_window.get(), index));
-// }
-
-// // Method Description:
-// // - Call RegisterHotKey to attempt to register that keybinding as a global hotkey.
-// // - When these keys are pressed, we'll get a WM_HOTKEY message with the payload
-// //   containing the index we registered here.
-// // - Call UnregisterHotKey() before registering your hotkeys.
-// //   See: https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-registerhotkey#remarks
-// // Arguments:
-// // - hotkey: The key-combination to register.
-// // Return Value:
-// // - <none>
-// bool IslandWindow::RegisterHotKey(const int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept
-// {
-//     const auto vkey = hotkey.Vkey();
-//     auto hotkeyFlags = MOD_NOREPEAT;
-//     {
-//         const auto modifiers = hotkey.Modifiers();
-//         WI_SetFlagIf(hotkeyFlags, MOD_WIN, WI_IsFlagSet(modifiers, VirtualKeyModifiers::Windows));
-//         WI_SetFlagIf(hotkeyFlags, MOD_ALT, WI_IsFlagSet(modifiers, VirtualKeyModifiers::Menu));
-//         WI_SetFlagIf(hotkeyFlags, MOD_CONTROL, WI_IsFlagSet(modifiers, VirtualKeyModifiers::Control));
-//         WI_SetFlagIf(hotkeyFlags, MOD_SHIFT, WI_IsFlagSet(modifiers, VirtualKeyModifiers::Shift));
-//     }
-
-//     // TODO GH#8888: We should display a warning of some kind if this fails.
-//     // This can fail if something else already bound this hotkey.
-//     const auto result = ::RegisterHotKey(_window.get(), index, hotkeyFlags, vkey);
-
-//     TraceLoggingWrite(g_hWindowsTerminalProvider,
-//                       "RegisterHotKey",
-//                       TraceLoggingDescription("Emitted when setting hotkeys"),
-//                       TraceLoggingInt64(index, "index", "the index of the hotkey to add"),
-//                       TraceLoggingUInt64(vkey, "vkey", "the key"),
-//                       TraceLoggingUInt64(WI_IsFlagSet(hotkeyFlags, MOD_WIN), "win", "is WIN in the modifiers"),
-//                       TraceLoggingUInt64(WI_IsFlagSet(hotkeyFlags, MOD_ALT), "alt", "is ALT in the modifiers"),
-//                       TraceLoggingUInt64(WI_IsFlagSet(hotkeyFlags, MOD_CONTROL), "control", "is CONTROL in the modifiers"),
-//                       TraceLoggingUInt64(WI_IsFlagSet(hotkeyFlags, MOD_SHIFT), "shift", "is SHIFT in the modifiers"),
-//                       TraceLoggingBool(result, "succeeded", "true if we succeeded"),
-//                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-//                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-
-//     return result;
-// }
 
 // Method Description:
 // - Summon the window, or possibly dismiss it. If toggleVisibility is true,
