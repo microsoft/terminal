@@ -102,7 +102,7 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
     _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
     _window->WindowActivated({ this, &AppHost::_WindowActivated });
     _window->WindowMoved({ this, &AppHost::_WindowMoved });
-    _window->HotkeyPressed({ this, &AppHost::_GlobalHotkeyPressed });
+
     _window->ShouldExitFullscreen({ &_windowLogic, &winrt::TerminalApp::TerminalWindow::RequestExitFullscreen });
 
     _window->SetAlwaysOnTop(_windowLogic.GetInitialAlwaysOnTop());
@@ -941,112 +941,112 @@ winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> AppHost::_GetWindowL
 //     }
 // }
 
-winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
-{
-    if (_windowLogic.GetRoot() == nullptr)
-    {
-        co_return;
-    }
-    // The hotkey MUST be registered on the main thread. It will fail otherwise!
-    co_await wil::resume_foreground(_windowLogic.GetRoot().Dispatcher());
+// winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
+// {
+//     if (_windowLogic.GetRoot() == nullptr)
+//     {
+//         co_return;
+//     }
+//     // The hotkey MUST be registered on the main thread. It will fail otherwise!
+//     co_await wil::resume_foreground(_windowLogic.GetRoot().Dispatcher());
 
-    if (!_window)
-    {
-        // MSFT:36797001 There's a surprising number of hits of this callback
-        // getting triggered during teardown. As a best practice, we really
-        // should make sure _window exists before accessing it on any coroutine.
-        // We might be getting called back after the app already began getting
-        // cleaned up.
-        co_return;
-    }
-    // Unregister all previously registered hotkeys.
-    //
-    // RegisterHotKey(), will not unregister hotkeys automatically.
-    // If a hotkey with a given HWND and ID combination already exists
-    // then a duplicate one will be added, which we don't want.
-    // (Additionally we want to remove hotkeys that were removed from the settings.)
-    for (auto i = 0, count = gsl::narrow_cast<int>(_hotkeys.size()); i < count; ++i)
-    {
-        _window->UnregisterHotKey(i);
-    }
+//     if (!_window)
+//     {
+//         // MSFT:36797001 There's a surprising number of hits of this callback
+//         // getting triggered during teardown. As a best practice, we really
+//         // should make sure _window exists before accessing it on any coroutine.
+//         // We might be getting called back after the app already began getting
+//         // cleaned up.
+//         co_return;
+//     }
+//     // Unregister all previously registered hotkeys.
+//     //
+//     // RegisterHotKey(), will not unregister hotkeys automatically.
+//     // If a hotkey with a given HWND and ID combination already exists
+//     // then a duplicate one will be added, which we don't want.
+//     // (Additionally we want to remove hotkeys that were removed from the settings.)
+//     for (auto i = 0, count = gsl::narrow_cast<int>(_hotkeys.size()); i < count; ++i)
+//     {
+//         _window->UnregisterHotKey(i);
+//     }
 
-    _hotkeys.clear();
+//     _hotkeys.clear();
 
-    // Re-register all current hotkeys.
-    for (const auto& [keyChord, cmd] : _appLogic.GlobalHotkeys())
-    {
-        if (auto summonArgs = cmd.ActionAndArgs().Args().try_as<Settings::Model::GlobalSummonArgs>())
-        {
-            auto index = gsl::narrow_cast<int>(_hotkeys.size());
-            const auto succeeded = _window->RegisterHotKey(index, keyChord);
+//     // Re-register all current hotkeys.
+//     for (const auto& [keyChord, cmd] : _appLogic.GlobalHotkeys())
+//     {
+//         if (auto summonArgs = cmd.ActionAndArgs().Args().try_as<Settings::Model::GlobalSummonArgs>())
+//         {
+//             auto index = gsl::narrow_cast<int>(_hotkeys.size());
+//             const auto succeeded = _window->RegisterHotKey(index, keyChord);
 
-            TraceLoggingWrite(g_hWindowsTerminalProvider,
-                              "AppHost_setupGlobalHotkey",
-                              TraceLoggingDescription("Emitted when setting a single hotkey"),
-                              TraceLoggingInt64(index, "index", "the index of the hotkey to add"),
-                              TraceLoggingWideString(cmd.Name().c_str(), "name", "the name of the command"),
-                              TraceLoggingBoolean(succeeded, "succeeded", "true if we succeeded"),
-                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-            _hotkeys.emplace_back(summonArgs);
-        }
-    }
-}
+//             TraceLoggingWrite(g_hWindowsTerminalProvider,
+//                               "AppHost_setupGlobalHotkey",
+//                               TraceLoggingDescription("Emitted when setting a single hotkey"),
+//                               TraceLoggingInt64(index, "index", "the index of the hotkey to add"),
+//                               TraceLoggingWideString(cmd.Name().c_str(), "name", "the name of the command"),
+//                               TraceLoggingBoolean(succeeded, "succeeded", "true if we succeeded"),
+//                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//                               TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+//             _hotkeys.emplace_back(summonArgs);
+//         }
+//     }
+// }
 
-// Method Description:
-// - Called whenever a registered hotkey is pressed. We'll look up the
-//   GlobalSummonArgs for the specified hotkey, then dispatch a call to the
-//   Monarch with the selection information.
-// - If the monarch finds a match for the window name (or no name was provided),
-//   it'll set FoundMatch=true.
-// - If FoundMatch is false, and a name was provided, then we should create a
-//   new window with the given name.
-// Arguments:
-// - hotkeyIndex: the index of the entry in _hotkeys that was pressed.
-// Return Value:
-// - <none>
-void AppHost::_GlobalHotkeyPressed(const long hotkeyIndex)
-{
-    if (hotkeyIndex < 0 || static_cast<size_t>(hotkeyIndex) > _hotkeys.size())
-    {
-        return;
-    }
+// // Method Description:
+// // - Called whenever a registered hotkey is pressed. We'll look up the
+// //   GlobalSummonArgs for the specified hotkey, then dispatch a call to the
+// //   Monarch with the selection information.
+// // - If the monarch finds a match for the window name (or no name was provided),
+// //   it'll set FoundMatch=true.
+// // - If FoundMatch is false, and a name was provided, then we should create a
+// //   new window with the given name.
+// // Arguments:
+// // - hotkeyIndex: the index of the entry in _hotkeys that was pressed.
+// // Return Value:
+// // - <none>
+// void AppHost::_GlobalHotkeyPressed(const long hotkeyIndex)
+// {
+//     if (hotkeyIndex < 0 || static_cast<size_t>(hotkeyIndex) > _hotkeys.size())
+//     {
+//         return;
+//     }
 
-    const auto& summonArgs = til::at(_hotkeys, hotkeyIndex);
-    Remoting::SummonWindowSelectionArgs args{ summonArgs.Name() };
+//     const auto& summonArgs = til::at(_hotkeys, hotkeyIndex);
+//     Remoting::SummonWindowSelectionArgs args{ summonArgs.Name() };
 
-    // desktop:any - MoveToCurrentDesktop=false, OnCurrentDesktop=false
-    // desktop:toCurrent - MoveToCurrentDesktop=true, OnCurrentDesktop=false
-    // desktop:onCurrent - MoveToCurrentDesktop=false, OnCurrentDesktop=true
-    args.OnCurrentDesktop(summonArgs.Desktop() == Settings::Model::DesktopBehavior::OnCurrent);
-    args.SummonBehavior().MoveToCurrentDesktop(summonArgs.Desktop() == Settings::Model::DesktopBehavior::ToCurrent);
-    args.SummonBehavior().ToggleVisibility(summonArgs.ToggleVisibility());
-    args.SummonBehavior().DropdownDuration(summonArgs.DropdownDuration());
+//     // desktop:any - MoveToCurrentDesktop=false, OnCurrentDesktop=false
+//     // desktop:toCurrent - MoveToCurrentDesktop=true, OnCurrentDesktop=false
+//     // desktop:onCurrent - MoveToCurrentDesktop=false, OnCurrentDesktop=true
+//     args.OnCurrentDesktop(summonArgs.Desktop() == Settings::Model::DesktopBehavior::OnCurrent);
+//     args.SummonBehavior().MoveToCurrentDesktop(summonArgs.Desktop() == Settings::Model::DesktopBehavior::ToCurrent);
+//     args.SummonBehavior().ToggleVisibility(summonArgs.ToggleVisibility());
+//     args.SummonBehavior().DropdownDuration(summonArgs.DropdownDuration());
 
-    switch (summonArgs.Monitor())
-    {
-    case Settings::Model::MonitorBehavior::Any:
-        args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::InPlace);
-        break;
-    case Settings::Model::MonitorBehavior::ToCurrent:
-        args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::ToCurrent);
-        break;
-    case Settings::Model::MonitorBehavior::ToMouse:
-        args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::ToMouse);
-        break;
-    }
+//     switch (summonArgs.Monitor())
+//     {
+//     case Settings::Model::MonitorBehavior::Any:
+//         args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::InPlace);
+//         break;
+//     case Settings::Model::MonitorBehavior::ToCurrent:
+//         args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::ToCurrent);
+//         break;
+//     case Settings::Model::MonitorBehavior::ToMouse:
+//         args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::ToMouse);
+//         break;
+//     }
 
-    _windowManager2.SummonWindow(args);
-    if (args.FoundMatch())
-    {
-        // Excellent, the window was found. We have nothing else to do here.
-    }
-    else
-    {
-        // We should make the window ourselves.
-        _createNewTerminalWindow(summonArgs);
-    }
-}
+//     _windowManager2.SummonWindow(args);
+//     if (args.FoundMatch())
+//     {
+//         // Excellent, the window was found. We have nothing else to do here.
+//     }
+//     else
+//     {
+//         // We should make the window ourselves.
+//         _createNewTerminalWindow(summonArgs);
+//     }
+// }
 
 // Method Description:
 // - Called when the monarch failed to summon a window for a given set of
@@ -1279,8 +1279,8 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
                                      const winrt::TerminalApp::SettingsLoadEventArgs& /*args*/)
 {
     // We don't need to call in to windowLogic here - it has its own SettingsChanged handler
-
-    _setupGlobalHotkeys();
+    // TODO! this need to be replicated in Emperor
+    // _setupGlobalHotkeys();
 
     // TODO! tray icon
     //

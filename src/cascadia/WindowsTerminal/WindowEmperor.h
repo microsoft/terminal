@@ -26,8 +26,12 @@ public:
     bool HandleCommandlineArgs();
     void CreateNewWindowThread(winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args, const bool firstWindow);
 
+    LRESULT MessageHandler(UINT const message, WPARAM const wParam, LPARAM const lParam) noexcept;
+    wil::unique_hwnd _window;
+
 private:
     winrt::TerminalApp::App _app;
+    winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };
     winrt::Microsoft::Terminal::Remoting::WindowManager2 _manager;
 
     std::vector<std::shared_ptr<WindowThread>> _windows;
@@ -38,10 +42,20 @@ private:
     winrt::event_token _WindowCreatedToken;
     winrt::event_token _WindowClosedToken;
 
+    std::vector<winrt::Microsoft::Terminal::Settings::Model::GlobalSummonArgs> _hotkeys;
+
     void _becomeMonarch();
     void _numberOfWindowsChanged(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&);
 
     winrt::Windows::Foundation::IAsyncAction _SaveWindowLayouts();
     winrt::fire_and_forget _SaveWindowLayoutsRepeat();
-    void _attemptWindowRestore(const winrt::Microsoft::Terminal::Remoting::CommandlineArgs& args);
+
+    void _createMessageWindow();
+
+    void _hotkeyPressed(const long hotkeyIndex);
+    bool _registerHotKey(const int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept;
+    void _unregisterHotKey(const int index) noexcept;
+    winrt::fire_and_forget _setupGlobalHotkeys();
+
+    winrt::fire_and_forget _close();
 };

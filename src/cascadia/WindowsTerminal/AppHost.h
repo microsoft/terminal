@@ -36,7 +36,7 @@ private:
     winrt::Microsoft::Terminal::Remoting::WindowManager2 _windowManager2{ nullptr };
     winrt::Microsoft::Terminal::Remoting::Peasant _peasant{ nullptr };
 
-    std::vector<winrt::Microsoft::Terminal::Settings::Model::GlobalSummonArgs> _hotkeys;
+    // std::vector<winrt::Microsoft::Terminal::Settings::Model::GlobalSummonArgs> _hotkeys;
     winrt::com_ptr<IVirtualDesktopManager> _desktopManager{ nullptr };
 
     bool _shouldCreateWindow{ false };
@@ -81,7 +81,7 @@ private:
 
     // void _BecomeMonarch(const winrt::Windows::Foundation::IInspectable& sender,
     //                     const winrt::Windows::Foundation::IInspectable& args);
-    void _GlobalHotkeyPressed(const long hotkeyIndex);
+    // void _GlobalHotkeyPressed(const long hotkeyIndex);
     void _HandleSummon(const winrt::Windows::Foundation::IInspectable& sender,
                        const winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior& args);
 
@@ -96,7 +96,7 @@ private:
 
     bool _LazyLoadDesktopManager();
 
-    winrt::fire_and_forget _setupGlobalHotkeys();
+    // winrt::fire_and_forget _setupGlobalHotkeys();
     winrt::fire_and_forget _createNewTerminalWindow(winrt::Microsoft::Terminal::Settings::Model::GlobalSummonArgs args);
     void _HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& sender,
                                 const winrt::TerminalApp::SettingsLoadEventArgs& args);
