@@ -1146,6 +1146,7 @@ void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectab
     _window->IsQuakeWindow(_windowLogic.IsQuakeWindow());
 }
 
+// Raised from our Peasant. We handle by propogating the call to our terminal window.
 winrt::fire_and_forget AppHost::_QuitRequested(const winrt::Windows::Foundation::IInspectable&,
                                                const winrt::Windows::Foundation::IInspectable&)
 {
@@ -1155,27 +1156,11 @@ winrt::fire_and_forget AppHost::_QuitRequested(const winrt::Windows::Foundation:
     _windowLogic.Quit();
 }
 
+// Raised from TerminalWindow. We handle by bubbling the request to the window manager.
 void AppHost::_RequestQuitAll(const winrt::Windows::Foundation::IInspectable&,
                               const winrt::Windows::Foundation::IInspectable&)
 {
     _windowManager2.RequestQuitAll(_peasant);
-}
-
-void AppHost::_QuitAllRequested(const winrt::Windows::Foundation::IInspectable&,
-                                const winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs&)
-{
-    // TODO! wat do
-    //
-    //// Make sure that the current timer is destroyed so that it doesn't attempt
-    //// to run while we are in the middle of quitting.
-    //if (_getWindowLayoutThrottler.has_value())
-    //{
-    //    _getWindowLayoutThrottler.reset();
-    //}
-
-    //// Tell the monarch to wait for the window layouts to save before
-    //// everyone quits.
-    //args.BeforeQuitAllAction(_SaveWindowLayouts());
 }
 
 void AppHost::_ShowWindowChanged(const winrt::Windows::Foundation::IInspectable&,

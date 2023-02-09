@@ -67,7 +67,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         _monarch.QuitAllRequested({ get_weak(), &WindowManager2::_QuitAllRequestedHandlers });
 
         _monarch.RequestNewWindow({ get_weak(), &WindowManager2::_raiseRequestNewWindow });
-        // _BecameMonarchHandlers(*this, nullptr);
     }
 
     void WindowManager2::_registerAsMonarch()

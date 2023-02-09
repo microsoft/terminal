@@ -193,9 +193,9 @@ void WindowEmperor::_becomeMonarch()
 
     ////////////////////////////////////////////////////////////////////////////
 
-    //     // If the monarch receives a QuitAll event it will signal this event to be
-    //     // ran before each peasant is closed.
-    //     _revokers.QuitAllRequested = _windowManager2.QuitAllRequested(winrt::auto_revoke, { this, &AppHost::_QuitAllRequested });
+    // If the monarch receives a QuitAll event it will signal this event to be
+    // ran before each peasant is closed.
+    _revokers.QuitAllRequested = _manager.QuitAllRequested(winrt::auto_revoke, { this, &WindowEmperor::_quitAllRequested });
 
     ////////////////////////////////////////////////////////////////////////////
 
@@ -226,6 +226,24 @@ void WindowEmperor::_numberOfWindowsChanged(const winrt::Windows::Foundation::II
     {
         // _close();
     }
+}
+
+// Raised from our windowManager (on behalf of the monarch). We respond by
+// giving the monarch an async fuction that the manager should wait on before
+// completing the quit.
+void WindowEmperor::_quitAllRequested(const winrt::Windows::Foundation::IInspectable&,
+                                      const winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs& args)
+{
+    // Make sure that the current timer is destroyed so that it doesn't attempt
+    // to run while we are in the middle of quitting.
+    if (_getWindowLayoutThrottler.has_value())
+    {
+        _getWindowLayoutThrottler.reset();
+    }
+
+    // Tell the monarch to wait for the window layouts to save before
+    // everyone quits.
+    args.BeforeQuitAllAction(_SaveWindowLayouts());
 }
 
 winrt::Windows::Foundation::IAsyncAction WindowEmperor::_SaveWindowLayouts()

@@ -46,6 +46,8 @@ private:
 
     void _becomeMonarch();
     void _numberOfWindowsChanged(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&);
+    void _quitAllRequested(const winrt::Windows::Foundation::IInspectable&,
+                           const winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs&);
 
     winrt::Windows::Foundation::IAsyncAction _SaveWindowLayouts();
     winrt::fire_and_forget _SaveWindowLayoutsRepeat();
@@ -58,4 +60,11 @@ private:
     winrt::fire_and_forget _setupGlobalHotkeys();
 
     winrt::fire_and_forget _close();
+
+    struct Revokers
+    {
+        winrt::Microsoft::Terminal::Remoting::WindowManager::ShowNotificationIconRequested_revoker ShowNotificationIconRequested;
+        winrt::Microsoft::Terminal::Remoting::WindowManager::HideNotificationIconRequested_revoker HideNotificationIconRequested;
+        winrt::Microsoft::Terminal::Remoting::WindowManager2::QuitAllRequested_revoker QuitAllRequested;
+    } _revokers{};
 };
