@@ -74,7 +74,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void CurrentColorScheme(const Editor::ColorSchemeViewModel& val);
 
         WINRT_PROPERTY(bool, IsDefault, false);
-        WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
 
         // These settings are not defined in AppearanceConfig, so we grab them
         // from the source profile itself. The reason we still want them in the
@@ -134,6 +133,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         DEPENDENCY_PROPERTY(Editor::AppearanceViewModel, Appearance);
         WINRT_PROPERTY(Editor::ProfileViewModel, SourceProfile, nullptr);
+        WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
 
         GETSET_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch, Appearance().BackgroundImageStretchMode);
 
