@@ -79,11 +79,6 @@ AppHost::AppHost() noexcept :
                          std::placeholders::_3);
     _window->SetCreateCallback(pfn);
 
-    _window->SetSnapDimensionCallback(std::bind(&winrt::TerminalApp::TerminalWindow::CalcSnappedDimension,
-                                                _windowLogic,
-                                                std::placeholders::_1,
-                                                std::placeholders::_2));
-
     // Event handlers:
     // MAKE SURE THEY ARE ALL:
     // * winrt::auto_revoke
@@ -120,19 +115,6 @@ AppHost::AppHost() noexcept :
     {
         _BecomeMonarch(nullptr, nullptr);
     }
-
-    // Create a throttled function for updating the window state, to match the
-    // one requested by the pty. A 200ms delay was chosen because it's the
-    // typical animation timeout in Windows. This does result in a delay between
-    // the PTY requesting a change to the window state and the Terminal
-    // realizing it, but should mitigate issues where the Terminal and PTY get
-    // de-sync'd.
-    _showHideWindowThrottler = std::make_shared<ThrottledFuncTrailing<bool>>(
-        winrt::Windows::System::DispatcherQueue::GetForCurrentThread(),
-        std::chrono::milliseconds(200),
-        [this](const bool show) {
-            _window->ShowWindowChanged(show);
-        });
 }
 
 AppHost::~AppHost()
@@ -269,10 +251,10 @@ void AppHost::_HandleCommandlineArgs()
         // the window at all here. In that case, we're going through this
         // special escape hatch to dispatch all the calls to elevate-shim, and
         // then we're going to exit immediately.
-        if (_appLogic.ShouldImmediatelyHandoffToElevated())
+        if (_windowLogic.ShouldImmediatelyHandoffToElevated())
         {
             _shouldCreateWindow = false;
-            _appLogic.HandoffToElevated();
+            _windowLogic.HandoffToElevated();
             return;
         }
 
@@ -294,7 +276,7 @@ void AppHost::_HandleCommandlineArgs()
         {
             const auto numPeasants = _windowManager.GetNumberOfPeasants();
             const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
-            if (_windowLogic.ShouldUsePersistedLayout() &&
+            if (_appLogic.ShouldUsePersistedLayout() &&
                 layouts &&
                 layouts.Size() > 0)
             {
@@ -432,7 +414,13 @@ void AppHost::Initialize()
     _revokers.SetTaskbarProgress = _windowLogic.SetTaskbarProgress(winrt::auto_revoke, { this, &AppHost::SetTaskbarProgress });
     _revokers.IdentifyWindowsRequested = _windowLogic.IdentifyWindowsRequested(winrt::auto_revoke, { this, &AppHost::_IdentifyWindowsRequested });
     _revokers.RenameWindowRequested = _windowLogic.RenameWindowRequested(winrt::auto_revoke, { this, &AppHost::_RenameWindowRequested });
-    _revokers.SettingsChanged = _appLogic.SettingsChanged(winrt::auto_revoke, { this, &AppHost::_HandleSettingsChanged });
+
+    // A note: make sure to listen to our _window_'s settings changed, not the
+    // applogic's. We want to make sure the event has gone through the window
+    // logic _before_ we handle it, so we can ask the window about it's newest
+    // properties.
+    _revokers.SettingsChanged = _windowLogic.SettingsChanged(winrt::auto_revoke, { this, &AppHost::_HandleSettingsChanged });
+
     _revokers.IsQuakeWindowChanged = _windowLogic.IsQuakeWindowChanged(winrt::auto_revoke, { this, &AppHost::_IsQuakeWindowChanged });
     _revokers.SummonWindowRequested = _windowLogic.SummonWindowRequested(winrt::auto_revoke, { this, &AppHost::_SummonWindowRequested });
     _revokers.OpenSystemMenu = _windowLogic.OpenSystemMenu(winrt::auto_revoke, { this, &AppHost::_OpenSystemMenu });
@@ -447,6 +435,24 @@ void AppHost::Initialize()
     // compositor to automatically complete animations that are scheduled
     // while the screen is off.
     TerminalTrySetAutoCompleteAnimationsWhenOccluded(static_cast<::IUnknown*>(winrt::get_abi(_windowLogic.GetRoot())), true);
+
+    _window->SetSnapDimensionCallback(std::bind(&winrt::TerminalApp::TerminalWindow::CalcSnappedDimension,
+                                                _windowLogic,
+                                                std::placeholders::_1,
+                                                std::placeholders::_2));
+
+    // Create a throttled function for updating the window state, to match the
+    // one requested by the pty. A 200ms delay was chosen because it's the
+    // typical animation timeout in Windows. This does result in a delay between
+    // the PTY requesting a change to the window state and the Terminal
+    // realizing it, but should mitigate issues where the Terminal and PTY get
+    // de-sync'd.
+    _showHideWindowThrottler = std::make_shared<ThrottledFuncTrailing<bool>>(
+        winrt::Windows::System::DispatcherQueue::GetForCurrentThread(),
+        std::chrono::milliseconds(200),
+        [this](const bool show) {
+            _window->ShowWindowChanged(show);
+        });
 
     _window->UpdateTitle(_windowLogic.Title());
 
@@ -1007,7 +1013,7 @@ winrt::Windows::Foundation::IAsyncAction AppHost::_SaveWindowLayouts()
     // Make sure we run on a background thread to not block anything.
     co_await winrt::resume_background();
 
-    if (_windowLogic.ShouldUsePersistedLayout())
+    if (_appLogic.ShouldUsePersistedLayout())
     {
         try
         {
@@ -1022,7 +1028,7 @@ winrt::Windows::Foundation::IAsyncAction AppHost::_SaveWindowLayouts()
                               TraceLoggingDescription("Logged when writing window state"),
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                               TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-            _windowLogic.SaveWindowLayoutJsons(layoutJsons);
+            _appLogic.SaveWindowLayoutJsons(layoutJsons);
         }
         catch (...)
         {
@@ -1061,11 +1067,6 @@ winrt::fire_and_forget AppHost::_SaveWindowLayoutsRepeat()
 
         _getWindowLayoutThrottler.value()();
     }
-}
-
-void AppHost::_listenForInboundConnections()
-{
-    _appLogic.SetInboundListener();
 }
 
 winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
@@ -1399,7 +1400,7 @@ void AppHost::_updateTheme()
 }
 
 void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                     const winrt::Windows::Foundation::IInspectable& /*args*/)
+                                     const winrt::TerminalApp::SettingsLoadEventArgs& /*args*/)
 {
     _setupGlobalHotkeys();
 

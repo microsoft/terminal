@@ -27,12 +27,22 @@ namespace TerminalApp
         SystemMenuItemHandler Handler { get; };
     };
 
+    [default_interface] runtimeclass SettingsLoadEventArgs
+    {
+        Boolean Reload { get; };
+        UInt64 Result { get; };
+        IVector<Microsoft.Terminal.Settings.Model.SettingsLoadWarnings> Warnings { get; };
+        String ExceptionText { get; };
+
+        Microsoft.Terminal.Settings.Model.CascadiaSettings NewSettings { get; };
+
+    };
+
     // See IDialogPresenter and TerminalPage's DialogPresenter for more
     // information.
-    [default_interface] runtimeclass TerminalWindow : IDirectKeyListener, IDialogPresenter, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    [default_interface] runtimeclass TerminalWindow : IDirectKeyListener, IDialogPresenter, IWindowProperties, Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
-        TerminalWindow(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
-
+        TerminalWindow(SettingsLoadEventArgs result);
 
         // For your own sanity, it's better to do setup outside the ctor.
         // If you do any setup in the ctor that ends up throwing an exception,
@@ -46,13 +56,15 @@ namespace TerminalApp
         Boolean IsElevated();
 
         Boolean HasCommandlineArguments();
-        // Boolean HasSettingsStartupActions();
 
         Int32 SetStartupCommandline(String[] commands);
 
         Int32 ExecuteCommandline(String[] commands, String cwd);
         String ParseCommandlineMessage { get; };
         Boolean ShouldExitEarly { get; };
+
+        Boolean ShouldImmediatelyHandoffToElevated();
+        void HandoffToElevated();
 
         void Quit();
 
@@ -66,13 +78,10 @@ namespace TerminalApp
         Boolean AutoHideWindow { get; };
 
         void IdentifyWindow();
-        String WindowName;
-        UInt64 WindowId;
         void SetPersistedLayoutIdx(UInt32 idx);
         void SetNumberOfOpenWindows(UInt64 num);
         void RenameFailed();
         void RequestExitFullscreen();
-        Boolean IsQuakeWindow();
 
         Windows.Foundation.Size GetLaunchDimensions(UInt32 dpi);
         Boolean CenterOnLaunch { get; };
@@ -91,19 +100,19 @@ namespace TerminalApp
         Windows.UI.Xaml.Media.Brush TitlebarBrush { get; };
         void WindowActivated(Boolean activated);
 
-        Boolean ShouldUsePersistedLayout();
-        // Boolean ShouldImmediatelyHandoffToElevated();
-        // void HandoffToElevated();
         String GetWindowLayoutJson(Microsoft.Terminal.Settings.Model.LaunchPosition position);
-        void SaveWindowLayoutJsons(Windows.Foundation.Collections.IVector<String> layouts);
 
         Boolean GetMinimizeToNotificationArea();
         Boolean GetAlwaysShowNotificationIcon();
         Boolean GetShowTitleInTitlebar();
 
+        // These already have accessort as a part of IWindowProperties, but we
+        // also want to be able to set them.
+        String WindowName { set; };
+        UInt64 WindowId { set; };
+
         // See IDialogPresenter and TerminalPage's DialogPresenter for more
         // information.
-        Windows.Foundation.IAsyncOperation<Windows.UI.Xaml.Controls.ContentDialogResult> ShowDialog(Windows.UI.Xaml.Controls.ContentDialog dialog);
         void DismissDialog();
 
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
@@ -125,6 +134,8 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> QuitRequested;
         event Windows.Foundation.TypedEventHandler<Object, TerminalApp.SystemMenuChangeArgs> SystemMenuChangeRequested;
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Control.ShowWindowArgs> ShowWindowChanged;
+
+        event Windows.Foundation.TypedEventHandler<Object, SettingsLoadEventArgs> SettingsChanged;
 
     }
 }

@@ -6,6 +6,7 @@
 #include "TerminalWindow.g.h"
 #include "SystemMenuChangeArgs.g.h"
 
+#include "SettingsLoadEventArgs.h"
 #include "TerminalPage.h"
 
 #include <inc/cppwinrt_utils.h>
@@ -35,7 +36,7 @@ namespace winrt::TerminalApp::implementation
     struct TerminalWindow : TerminalWindowT<TerminalWindow, IInitializeWithWindow>
     {
     public:
-        TerminalWindow(const Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
+        TerminalWindow(const TerminalApp::SettingsLoadEventArgs& settingsLoadedResult);
         ~TerminalWindow() = default;
 
         STDMETHODIMP Initialize(HWND hwnd);
@@ -47,7 +48,7 @@ namespace winrt::TerminalApp::implementation
 
         void Quit();
 
-        void UpdateSettings(const HRESULT settingsLoadedResult, const Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
+        winrt::fire_and_forget UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args);
 
         bool HasCommandlineArguments() const noexcept;
         // bool HasSettingsStartupActions() const noexcept;
@@ -57,25 +58,26 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring ParseCommandlineMessage();
         bool ShouldExitEarly();
 
+        bool ShouldImmediatelyHandoffToElevated();
+        void HandoffToElevated();
+
         bool FocusMode() const;
         bool Fullscreen() const;
         void Maximized(bool newMaximized);
         bool AlwaysOnTop() const;
         bool AutoHideWindow();
 
-        bool ShouldUsePersistedLayout();
-
         hstring GetWindowLayoutJson(Microsoft::Terminal::Settings::Model::LaunchPosition position);
-        void SaveWindowLayoutJsons(const Windows::Foundation::Collections::IVector<hstring>& layouts);
         void IdentifyWindow();
         void RenameFailed();
-        winrt::hstring WindowName();
-        void WindowName(const winrt::hstring& name);
-        uint64_t WindowId();
-        void WindowId(const uint64_t& id);
+
+        std::optional<uint32_t> LoadPersistedLayoutIdx() const;
+        winrt::Microsoft::Terminal::Settings::Model::WindowLayout LoadPersistedLayout() const;
+
         void SetPersistedLayoutIdx(const uint32_t idx);
         void SetNumberOfOpenWindows(const uint64_t num);
-        bool IsQuakeWindow() const noexcept;
+        bool ShouldUsePersistedLayout() const;
+
         void RequestExitFullscreen();
 
         Windows::Foundation::Size GetLaunchDimensions(uint32_t dpi);
@@ -108,7 +110,18 @@ namespace winrt::TerminalApp::implementation
         void DismissDialog();
 
         Microsoft::Terminal::Settings::Model::Theme Theme();
-        void UpdateSettingsHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& arg);
+        void UpdateSettingsHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::TerminalApp::SettingsLoadEventArgs& arg);
+
+        // Normally, WindowName and WindowId would be
+        // WINRT_OBSERVABLE_PROPERTY's, but we want them to raise
+        // WindowNameForDisplay and WindowIdForDisplay instead
+        winrt::hstring WindowName() const noexcept;
+        void WindowName(const winrt::hstring& value);
+        uint64_t WindowId() const noexcept;
+        void WindowId(const uint64_t& value);
+        winrt::hstring WindowIdForDisplay() const noexcept;
+        winrt::hstring WindowNameForDisplay() const noexcept;
+        bool IsQuakeWindow() const noexcept;
 
         // -------------------------------- WinRT Events ---------------------------------
         // PropertyChanged is surprisingly not a typed event, so we'll define that one manually.
@@ -139,12 +152,21 @@ namespace winrt::TerminalApp::implementation
         bool _gotSettingsStartupActions{ false };
         std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> _settingsStartupArgs{};
 
-        uint64_t _numOpenWindows{ 0 };
+        winrt::hstring _WindowName{};
+        uint64_t _WindowId{ 0 };
+
+        uint64_t _numOpenWindows{ 1 };
+        std::optional<uint32_t> _loadFromPersistedLayoutIdx{};
 
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
+        TerminalApp::SettingsLoadEventArgs _initialLoadResult{ nullptr };
 
-        void _ShowLoadErrorsDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey, HRESULT settingsLoadedResult);
-        void _ShowLoadWarningsDialog();
+        void _ShowLoadErrorsDialog(const winrt::hstring& titleKey,
+                                   const winrt::hstring& contentKey,
+                                   HRESULT settingsLoadedResult,
+                                   const winrt::hstring& exceptionText);
+        void _ShowLoadWarningsDialog(const Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings>& warnings);
+
         bool _IsKeyboardServiceEnabled();
 
         void _RefreshThemeRoutine();
@@ -164,14 +186,17 @@ namespace winrt::TerminalApp::implementation
         FORWARDED_TYPED_EVENT(SetTaskbarProgress, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, SetTaskbarProgress);
         FORWARDED_TYPED_EVENT(IdentifyWindowsRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, IdentifyWindowsRequested);
         FORWARDED_TYPED_EVENT(RenameWindowRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs, _root, RenameWindowRequested);
-        FORWARDED_TYPED_EVENT(IsQuakeWindowChanged, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, IsQuakeWindowChanged);
         FORWARDED_TYPED_EVENT(SummonWindowRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, SummonWindowRequested);
         FORWARDED_TYPED_EVENT(CloseRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, CloseRequested);
         FORWARDED_TYPED_EVENT(OpenSystemMenu, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, OpenSystemMenu);
         FORWARDED_TYPED_EVENT(QuitRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, QuitRequested);
         FORWARDED_TYPED_EVENT(ShowWindowChanged, Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Control::ShowWindowArgs, _root, ShowWindowChanged);
 
+        TYPED_EVENT(IsQuakeWindowChanged, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable);
+
         TYPED_EVENT(SystemMenuChangeRequested, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SystemMenuChangeArgs);
+
+        TYPED_EVENT(SettingsChanged, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SettingsLoadEventArgs);
 
 #ifdef UNIT_TESTING
         friend class TerminalAppLocalTests::CommandlineTest;

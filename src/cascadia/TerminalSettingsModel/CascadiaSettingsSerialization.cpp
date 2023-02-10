@@ -954,9 +954,9 @@ void CascadiaSettings::_researchOnLoad()
         // dark: 2
         // a custom theme: 3
         const auto themeChoice = themeInUse == L"system" ? 0 :
-                                 themeInUse == L"light"  ? 1 :
-                                 themeInUse == L"dark"   ? 2 :
-                                                           3;
+                                                           themeInUse == L"light" ? 1 :
+                                                                                    themeInUse == L"dark" ? 2 :
+                                                                                                            3;
 
         TraceLoggingWrite(
             g_hSettingsModelProvider,

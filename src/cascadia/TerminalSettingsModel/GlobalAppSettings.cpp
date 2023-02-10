@@ -239,3 +239,8 @@ winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::Microso
 {
     return _themes.GetView();
 }
+
+bool GlobalAppSettings::ShouldUsePersistedLayout() const
+{
+    return FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout;
+}

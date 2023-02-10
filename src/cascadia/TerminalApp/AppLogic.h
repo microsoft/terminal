@@ -54,13 +54,12 @@ namespace winrt::TerminalApp::implementation
 
         bool HasSettingsStartupActions() const noexcept;
 
+        bool ShouldUsePersistedLayout() const;
+        void SaveWindowLayoutJsons(const Windows::Foundation::Collections::IVector<hstring>& layouts);
+
         [[nodiscard]] Microsoft::Terminal::Settings::Model::CascadiaSettings GetSettings() const noexcept;
 
         TerminalApp::FindTargetWindowResult FindTargetWindow(array_view<const winrt::hstring> actions);
-        bool ShouldImmediatelyHandoffToElevated();
-        void HandoffToElevated();
-
-        void SetInboundListener();
 
         Windows::Foundation::Collections::IMapView<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::Command> GlobalHotkeys();
 
@@ -68,7 +67,7 @@ namespace winrt::TerminalApp::implementation
 
         TerminalApp::TerminalWindow CreateNewWindow();
 
-        TYPED_EVENT(SettingsChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(SettingsChanged, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SettingsLoadEventArgs);
 
     private:
         bool _isUwp{ false };
@@ -86,7 +85,7 @@ namespace winrt::TerminalApp::implementation
         std::shared_ptr<ThrottledFuncTrailing<>> _reloadSettings;
         til::throttled_func_trailing<> _reloadState;
 
-        std::vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> _warnings;
+        winrt::Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> _warnings{ winrt::multi_threaded_vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings>() };
 
         // These fields invoke _reloadSettings and must be destroyed before _reloadSettings.
         // (C++ destroys members in reverse-declaration-order.)

@@ -29,9 +29,10 @@ namespace TerminalApp
 
         Boolean HasSettingsStartupActions();
 
-        void ReloadSettings();
+        Boolean ShouldUsePersistedLayout();
+        void SaveWindowLayoutJsons(Windows.Foundation.Collections.IVector<String> layouts);
 
-        void SetInboundListener();
+        void ReloadSettings();
 
         Microsoft.Terminal.Settings.Model.Theme Theme { get; };
 
@@ -39,12 +40,9 @@ namespace TerminalApp
 
         TerminalWindow CreateNewWindow();
 
-        Boolean ShouldImmediatelyHandoffToElevated();
-        void HandoffToElevated();
-
         Windows.Foundation.Collections.IMapView<Microsoft.Terminal.Control.KeyChord, Microsoft.Terminal.Settings.Model.Command> GlobalHotkeys();
 
-        event Windows.Foundation.TypedEventHandler<Object, Object> SettingsChanged;
+        event Windows.Foundation.TypedEventHandler<Object, SettingsLoadEventArgs> SettingsChanged;
 
     }
 }

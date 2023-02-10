@@ -19,6 +19,7 @@ public:
     void SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
 
     bool HasWindow();
+    winrt::TerminalApp::TerminalWindow Logic();
 
 private:
     std::unique_ptr<IslandWindow> _window;
@@ -26,6 +27,7 @@ private:
     winrt::TerminalApp::AppLogic _appLogic;
     winrt::TerminalApp::TerminalWindow _windowLogic;
     winrt::Microsoft::Terminal::Remoting::WindowManager _windowManager{ nullptr };
+    winrt::Microsoft::Terminal::Remoting::Peasant _peasant{ nullptr };
 
     std::vector<winrt::Microsoft::Terminal::Settings::Model::GlobalSummonArgs> _hotkeys;
     winrt::com_ptr<IVirtualDesktopManager> _desktopManager{ nullptr };
@@ -89,7 +91,7 @@ private:
     winrt::fire_and_forget _setupGlobalHotkeys();
     winrt::fire_and_forget _createNewTerminalWindow(winrt::Microsoft::Terminal::Settings::Model::GlobalSummonArgs args);
     void _HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& sender,
-                                const winrt::Windows::Foundation::IInspectable& args);
+                                const winrt::TerminalApp::SettingsLoadEventArgs& args);
 
     void _IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable& sender,
                                const winrt::Windows::Foundation::IInspectable& args);
@@ -171,7 +173,7 @@ private:
         winrt::TerminalApp::TerminalWindow::QuitRequested_revoker QuitRequested;
         winrt::TerminalApp::TerminalWindow::ShowWindowChanged_revoker ShowWindowChanged;
         winrt::TerminalApp::TerminalWindow::PropertyChanged_revoker PropertyChanged;
-        winrt::TerminalApp::AppLogic::SettingsChanged_revoker SettingsChanged;
+        winrt::TerminalApp::TerminalWindow::SettingsChanged_revoker SettingsChanged;
         winrt::Microsoft::Terminal::Remoting::WindowManager::ShowNotificationIconRequested_revoker ShowNotificationIconRequested;
         winrt::Microsoft::Terminal::Remoting::WindowManager::HideNotificationIconRequested_revoker HideNotificationIconRequested;
         winrt::Microsoft::Terminal::Remoting::WindowManager::QuitAllRequested_revoker QuitAllRequested;

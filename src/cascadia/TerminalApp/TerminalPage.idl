@@ -17,6 +17,15 @@ namespace TerminalApp
         Windows.Foundation.IAsyncOperation<Windows.UI.Xaml.Controls.ContentDialogResult> ShowDialog(Windows.UI.Xaml.Controls.ContentDialog dialog);
     };
 
+    interface IWindowProperties
+    {
+        String WindowName { get; };
+        UInt64 WindowId { get; };
+        String WindowNameForDisplay { get; };
+        String WindowIdForDisplay { get; };
+        Boolean IsQuakeWindow();
+    };
+
     [default_interface] runtimeclass TerminalPage : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged, IDirectKeyListener
     {
         TerminalPage();
@@ -29,13 +38,9 @@ namespace TerminalApp
         Boolean Fullscreen { get; };
         Boolean AlwaysOnTop { get; };
 
+        IWindowProperties WindowProperties { get; };
         void IdentifyWindow();
-        String WindowName;
-        UInt64 WindowId;
-        String WindowNameForDisplay { get; };
-        String WindowIdForDisplay { get; };
         void RenameFailed();
-        Boolean IsQuakeWindow();
 
         // We cannot use the default XAML APIs because we want to make sure
         // that there's only one application-global dialog visible at a time,
@@ -49,6 +54,11 @@ namespace TerminalApp
         Windows.UI.Xaml.Media.Brush TitlebarBrush { get; };
         void WindowActivated(Boolean activated);
 
+        String WindowName { get; };
+        UInt64 WindowId { get; };
+        String WindowNameForDisplay { get; };
+        String WindowIdForDisplay { get; };
+
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
@@ -59,7 +69,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
         event Windows.Foundation.TypedEventHandler<Object, Object> IdentifyWindowsRequested;
         event Windows.Foundation.TypedEventHandler<Object, RenameWindowRequestedArgs> RenameWindowRequested;
-        event Windows.Foundation.TypedEventHandler<Object, Object> IsQuakeWindowChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> SummonWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> CloseRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> OpenSystemMenu;
