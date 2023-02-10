@@ -6,7 +6,7 @@
 
 WindowThread::WindowThread(const winrt::TerminalApp::AppLogic& logic,
                            winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args,
-                           winrt::Microsoft::Terminal::Remoting::WindowManager2 manager,
+                           winrt::Microsoft::Terminal::Remoting::WindowManager manager,
                            winrt::Microsoft::Terminal::Remoting::Peasant peasant) :
     _peasant{ peasant },
     _appLogic{ logic },

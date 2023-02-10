@@ -36,7 +36,7 @@ public:
 private:
     winrt::TerminalApp::App _app;
     winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };
-    winrt::Microsoft::Terminal::Remoting::WindowManager2 _manager;
+    winrt::Microsoft::Terminal::Remoting::WindowManager _manager;
 
     std::vector<std::shared_ptr<WindowThread>> _windows;
     std::vector<std::thread> _threads;
@@ -77,6 +77,6 @@ private:
     {
         winrt::Microsoft::Terminal::Remoting::WindowManager::ShowNotificationIconRequested_revoker ShowNotificationIconRequested;
         winrt::Microsoft::Terminal::Remoting::WindowManager::HideNotificationIconRequested_revoker HideNotificationIconRequested;
-        winrt::Microsoft::Terminal::Remoting::WindowManager2::QuitAllRequested_revoker QuitAllRequested;
+        winrt::Microsoft::Terminal::Remoting::WindowManager::QuitAllRequested_revoker QuitAllRequested;
     } _revokers{};
 };

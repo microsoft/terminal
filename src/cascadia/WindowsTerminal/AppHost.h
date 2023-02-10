@@ -9,10 +9,9 @@
 class AppHost
 {
 public:
-    // AppHost(const winrt::TerminalApp::AppLogic& logic) noexcept;
     AppHost(const winrt::TerminalApp::AppLogic& logic,
             winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args,
-            const winrt::Microsoft::Terminal::Remoting::WindowManager2& manager,
+            const winrt::Microsoft::Terminal::Remoting::WindowManager& manager,
             const winrt::Microsoft::Terminal::Remoting::Peasant& peasant) noexcept;
     virtual ~AppHost();
 
@@ -34,7 +33,7 @@ private:
     winrt::TerminalApp::AppLogic _appLogic;
     winrt::TerminalApp::TerminalWindow _windowLogic;
 
-    winrt::Microsoft::Terminal::Remoting::WindowManager2 _windowManager2{ nullptr };
+    winrt::Microsoft::Terminal::Remoting::WindowManager _windowManager{ nullptr };
     winrt::Microsoft::Terminal::Remoting::Peasant _peasant{ nullptr };
 
     winrt::com_ptr<IVirtualDesktopManager> _desktopManager{ nullptr };
@@ -124,8 +123,6 @@ private:
     void _initialResizeAndRepositionWindow(const HWND hwnd, RECT proposedRect, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode);
 
     winrt::event_token _GetWindowLayoutRequestedToken;
-    // winrt::event_token _WindowCreatedToken;
-    // winrt::event_token _WindowClosedToken;
 
     // Helper struct. By putting these all into one struct, we can revoke them
     // all at once, by assigning _revokers to a fresh Revokers instance. That'll
@@ -134,7 +131,6 @@ private:
     struct Revokers
     {
         // Event handlers to revoke in ~AppHost, before calling App.Close
-        winrt::Microsoft::Terminal::Remoting::WindowManager::BecameMonarch_revoker BecameMonarch;
         winrt::Microsoft::Terminal::Remoting::Peasant::ExecuteCommandlineRequested_revoker peasantExecuteCommandlineRequested;
         winrt::Microsoft::Terminal::Remoting::Peasant::SummonRequested_revoker peasantSummonRequested;
         winrt::Microsoft::Terminal::Remoting::Peasant::DisplayWindowIdRequested_revoker peasantDisplayWindowIdRequested;

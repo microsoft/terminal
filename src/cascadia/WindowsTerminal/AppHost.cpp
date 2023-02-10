@@ -30,9 +30,9 @@ static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
 
 AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
                  winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args,
-                 const Remoting::WindowManager2& manager,
+                 const Remoting::WindowManager& manager,
                  const Remoting::Peasant& peasant) noexcept :
-    _windowManager2{ manager },
+    _windowManager{ manager },
     _peasant{ peasant },
     _appLogic{ logic }, // don't make one, we're going to take a ref on app's
     _windowLogic{ nullptr },
@@ -89,8 +89,8 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
 
     _window->MakeWindow();
 
-    _GetWindowLayoutRequestedToken = _windowManager2.GetWindowLayoutRequested([this](auto&&,
-                                                                                     const Remoting::GetWindowLayoutArgs& args) {
+    _GetWindowLayoutRequestedToken = _windowManager.GetWindowLayoutRequested([this](auto&&,
+                                                                                    const Remoting::GetWindowLayoutArgs& args) {
         // The peasants are running on separate threads, so they'll need to
         // swap what context they are in to the ui thread to get the actual layout.
         args.WindowLayoutJsonAsync(_GetWindowLayoutAsync());
@@ -184,7 +184,7 @@ void AppHost::_HandleCommandlineArgs()
             const auto message = _windowLogic.ParseCommandlineMessage();
             if (!message.empty())
             {
-                AppHost::s_DisplayMessageBox({ message, result});
+                AppHost::s_DisplayMessageBox({ message, result });
 
                 if (_windowLogic.ShouldExitEarly())
                 {
@@ -223,7 +223,7 @@ void AppHost::_HandleCommandlineArgs()
         // much, that there was no reasonable way of moving this. Moving it also
         // seemed to reorder bits of init so much that everything broke. So
         // we'll leave it here.
-        const auto numPeasants = _windowManager2.GetNumberOfPeasants();
+        const auto numPeasants = _windowManager.GetNumberOfPeasants();
         if (numPeasants == 1)
         {
             // TODO! this is vaugely off by one. Not sure, but if you restore 2
@@ -358,7 +358,7 @@ void AppHost::Initialize()
     _window->AutomaticShutdownRequested([this]() {
         // Raised when the OS is beginning an update of the app. We will quit,
         // to save our state, before the OS manually kills us.
-        _windowManager2.RequestQuitAll(_peasant);
+        _windowManager.RequestQuitAll(_peasant);
     });
 
     // Load bearing: make sure the PropertyChanged handler is added before we
@@ -437,7 +437,7 @@ void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /*
     {
         _window->UpdateTitle(newTitle);
     }
-    _windowManager2.UpdateActiveTabTitle(newTitle, _peasant);
+    _windowManager.UpdateActiveTabTitle(newTitle, _peasant);
 }
 
 // Method Description:
@@ -450,12 +450,12 @@ void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /*
 void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::TerminalApp::LastTabClosedEventArgs& /*args*/)
 {
     // We don't want to try to save layouts if we are about to close.
-    _windowManager2.GetWindowLayoutRequested(_GetWindowLayoutRequestedToken);
+    _windowManager.GetWindowLayoutRequested(_GetWindowLayoutRequestedToken);
 
     // Remove ourself from the list of peasants so that we aren't included in
     // any future requests. This will also mean we block until any existing
     // event handler finishes.
-    _windowManager2.SignalClose(_peasant);
+    _windowManager.SignalClose(_peasant);
 
     _window->Close();
 }
@@ -1079,7 +1079,7 @@ winrt::fire_and_forget AppHost::_QuitRequested(const winrt::Windows::Foundation:
 void AppHost::_RequestQuitAll(const winrt::Windows::Foundation::IInspectable&,
                               const winrt::Windows::Foundation::IInspectable&)
 {
-    _windowManager2.RequestQuitAll(_peasant);
+    _windowManager.RequestQuitAll(_peasant);
 }
 
 void AppHost::_ShowWindowChanged(const winrt::Windows::Foundation::IInspectable&,

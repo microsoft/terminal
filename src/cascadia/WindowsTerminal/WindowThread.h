@@ -9,7 +9,7 @@ class WindowThread
 public:
     WindowThread(const winrt::TerminalApp::AppLogic& logic,
                  winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args,
-                 winrt::Microsoft::Terminal::Remoting::WindowManager2 manager,
+                 winrt::Microsoft::Terminal::Remoting::WindowManager manager,
                  winrt::Microsoft::Terminal::Remoting::Peasant peasant);
     int WindowProc();
 
@@ -25,7 +25,7 @@ private:
 
     winrt::TerminalApp::AppLogic _appLogic{ nullptr };
     winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs _args{ nullptr };
-    winrt::Microsoft::Terminal::Remoting::WindowManager2 _manager{ nullptr };
+    winrt::Microsoft::Terminal::Remoting::WindowManager _manager{ nullptr };
 
     std::thread _thread;
     std::unique_ptr<::AppHost> _host{ nullptr };
