@@ -20,7 +20,6 @@ class WindowEmperor
 public:
     WindowEmperor() noexcept;
     ~WindowEmperor();
-    bool ShouldExit();
     void WaitForWindows();
 
     bool HandleCommandlineArgs();

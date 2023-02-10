@@ -15,6 +15,12 @@
 #include "resource.h"
 #include "NotificationIcon.h"
 
+// This was an enormous dead end.
+// #include <dxgidebug.h>
+// #include <dxgi1_3.h>
+// typedef GUID DXGI_DEBUG_ID;
+// const DXGI_DEBUG_ID DXGI_DEBUG_ALL = { 0xe48ae283, 0xda80, 0x490b, 0x87, 0xe6, 0x43, 0xe9, 0xa9, 0xcf, 0xda, 0x8 };
+
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
@@ -45,6 +51,13 @@ WindowEmperor::WindowEmperor() noexcept :
 
 WindowEmperor::~WindowEmperor()
 {
+    // This was an enormous dead end.
+    // if (wil::com_ptr<IDXGIDebug1> debug; SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(debug.addressof()))))
+    // {
+    //     //debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
+    //     debug->DisableLeakTrackingForThread();
+    // }
+
     _app.Close();
     _app = nullptr;
 }
@@ -97,71 +110,55 @@ bool WindowEmperor::HandleCommandlineArgs()
     return result.ShouldCreateWindow();
 }
 
-bool WindowEmperor::ShouldExit()
-{
-    // TODO!
-    return false;
-}
-
 void WindowEmperor::WaitForWindows()
 {
-    // std::thread one{ [this]() {
-    //     WindowThread foo{ _app.Logic() };
-    //     return foo.WindowProc();
-    // } };
-
-    // Sleep(2000);
-
-    // std::thread two{ [this]() {
-    //     WindowThread foo{ _app.Logic() };
-    //     return foo.WindowProc();
-    // } };
-
-    // one.join();
-    // two.join();
-
-    // Sleep(30000); //30s
-
-    // TODO! This creates a loop that never actually exits right now. It seems
-    // to get a message when another window is activated, but never a WM_CLOSE
-    // (that makes sense). It keeps running even when the threads all exit,
-    // which is INTERESTING for sure.
-    //
-    // what we should do:
-    // - Add an event to Monarch to indicate that we should exit, because all the
-    //   peasants have exited.
-    // - We very well may need an HWND_MESSAGE that's connected to the main
-    //   thread, for processing global hotkeys. Consider that in the future too.
-
     MSG message;
     while (GetMessage(&message, nullptr, 0, 0))
     {
         TranslateMessage(&message);
         DispatchMessage(&message);
     }
-
-    // _threads.clear();
 }
 
-void WindowEmperor::CreateNewWindowThread(Remoting::WindowRequestedArgs args, const bool firstWindow)
+void WindowEmperor::CreateNewWindowThread(Remoting::WindowRequestedArgs args, const bool /*firstWindow*/)
 {
     Remoting::Peasant peasant{ _manager.CreateAPeasant(args) };
 
-    auto func = [this, args, peasant, firstWindow]() {
-        auto window{ std::make_shared<WindowThread>(_app.Logic(), args, _manager, peasant) };
-        _windows.push_back(window);
+    auto window{ std::make_shared<WindowThread>(_app.Logic(), args, _manager, peasant) };
 
-        window->Logic().IsQuakeWindowChanged([this](auto&&, auto &&) -> winrt::fire_and_forget {
+    window->Started([this, sender=window]() -> winrt::fire_and_forget {
+        // Add a callback to the window's logic to let us know when the window's
+        // quake mode state changes. We'll use this to check if we need to add
+        // or remove the notification icon.
+        sender->Logic().IsQuakeWindowChanged([this](auto&&, auto&&) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(this->_dispatcher);
             this->_checkWindowsForNotificationIcon();
         });
 
-        return window->WindowProc();
-    };
+        // These come in on the sender's thread. Move back to our thread.
+        co_await wil::resume_foreground(_dispatcher);
 
-    _threads.emplace_back(func);
+        _windows.push_back(std::move(sender));
+    });
 
-    LOG_IF_FAILED(SetThreadDescription(_threads.back().native_handle(), L"Window Thread"));
+    window->Exited([this](uint64_t senderID) -> winrt::fire_and_forget {
+        // These come in on the sender's thread. Move back to our thread.
+        co_await wil::resume_foreground(_dispatcher);
+
+        // find the window in _windows who's peasant's Id matches the peasant's Id
+        // and remove it
+        _windows.erase(std::remove_if(_windows.begin(), _windows.end(), [&](const auto& w) {
+                           return w->Peasant().GetID() == senderID;
+                       }),
+                       _windows.end());
+
+        if (_windows.size() == 0)
+        {
+            _close();
+        }
+    });
+
+    window->Start();
 }
 
 void WindowEmperor::_becomeMonarch()

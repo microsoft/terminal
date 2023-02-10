@@ -9,13 +9,35 @@ WindowThread::WindowThread(const winrt::TerminalApp::AppLogic& logic,
                            winrt::Microsoft::Terminal::Remoting::WindowManager2 manager,
                            winrt::Microsoft::Terminal::Remoting::Peasant peasant) :
     _peasant{ peasant },
-    _host{ logic, args, manager, peasant }
+    _appLogic{ logic },
+    _args{ args },
+    _manager{ manager }
 {
+    // DO NOT
+}
+
+void WindowThread::Start()
+{
+    _thread = std::thread([this]() {
+        // Start the Apphost HERE, on the actual thread we want XAML to run on
+        _host = std::make_unique<::AppHost>(_appLogic,
+                                            _args,
+                                            _manager,
+                                            _peasant);
+
+        // Enter the main window loop.
+        const auto exitCode = WindowProc();
+        _host = nullptr;
+
+        _ExitedHandlers(_peasant.GetID());
+        return exitCode;
+    });
+    LOG_IF_FAILED(SetThreadDescription(_thread.native_handle(), L"Window Thread"));
 }
 
 winrt::TerminalApp::TerminalWindow WindowThread::Logic()
 {
-    return _host.Logic();
+    return _host->Logic();
 }
 
 static bool _messageIsF7Keypress(const MSG& message)
@@ -37,7 +59,11 @@ int WindowThread::WindowProc()
 
     // Initialize the xaml content. This must be called AFTER the
     // WindowsXamlManager is initialized.
-    _host.Initialize();
+    _host->Initialize();
+
+    // Inform the emperor that we're ready to go. We need to do this after
+    // Initialize, so that the windowLogic is ready to be used
+    _StartedHandlers();
 
     MSG message;
 
@@ -53,7 +79,7 @@ int WindowThread::WindowProc()
         // been handled we can discard the message before we even translate it.
         if (_messageIsF7Keypress(message))
         {
-            if (_host.OnDirectKeyEvent(VK_F7, LOBYTE(HIWORD(message.lParam)), true))
+            if (_host->OnDirectKeyEvent(VK_F7, LOBYTE(HIWORD(message.lParam)), true))
             {
                 // The application consumed the F7. Don't let Xaml get it.
                 continue;
@@ -66,7 +92,7 @@ int WindowThread::WindowProc()
         if (_messageIsAltKeyup(message))
         {
             // Let's pass <Alt> to the application
-            if (_host.OnDirectKeyEvent(VK_MENU, LOBYTE(HIWORD(message.lParam)), false))
+            if (_host->OnDirectKeyEvent(VK_MENU, LOBYTE(HIWORD(message.lParam)), false))
             {
                 // The application consumed the Alt. Don't let Xaml get it.
                 continue;
@@ -78,7 +104,7 @@ int WindowThread::WindowProc()
         // above, we steal the event and hand it off to the host.
         if (_messageIsAltSpaceKeypress(message))
         {
-            _host.OnDirectKeyEvent(VK_SPACE, LOBYTE(HIWORD(message.lParam)), true);
+            _host->OnDirectKeyEvent(VK_SPACE, LOBYTE(HIWORD(message.lParam)), true);
             continue;
         }
 
@@ -86,4 +112,8 @@ int WindowThread::WindowProc()
         DispatchMessage(&message);
     }
     return 0;
+}
+winrt::Microsoft::Terminal::Remoting::Peasant WindowThread::Peasant()
+{
+    return _peasant;
 }

@@ -115,15 +115,8 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     winrt::init_apartment(winrt::apartment_type::single_threaded);
 
     ::WindowEmperor emperor{};
-    if (emperor.ShouldExit())
-    {
-        ExitProcess(0);
-    }
     if (emperor.HandleCommandlineArgs())
     {
         emperor.WaitForWindows();
-
-
-
     }
 }
