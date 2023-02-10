@@ -703,7 +703,7 @@ bool InputStateMachineEngine::_WriteSingleKey(const wchar_t wch, const short vke
     // At most 8 records - 2 for each of shift,ctrl,alt up and down, and 2 for the actual key up and down.
     std::vector<INPUT_RECORD> input;
     _GenerateWrappedSequence(wch, vkey, modifierState, input);
-    auto inputEvents = IInputEvent::Create(gsl::make_span(input));
+    auto inputEvents = IInputEvent::Create(std::span{ input });
 
     return _pDispatch->WriteInput(inputEvents);
 }
@@ -744,7 +744,7 @@ bool InputStateMachineEngine::_WriteMouseEvent(const til::point uiPos, const DWO
 
     // pack and write input record
     // 1 record - the modifiers don't get their own events
-    auto inputEvents = IInputEvent::Create(gsl::make_span(&rgInput, 1));
+    auto inputEvents = IInputEvent::Create(std::span{ &rgInput, 1 });
     return _pDispatch->WriteInput(inputEvents);
 }
 
@@ -1095,7 +1095,7 @@ void InputStateMachineEngine::SetFlushToInputQueueCallback(std::function<bool()>
 // - function - Receives the function type
 // Return Value:
 // - True iff we successfully pulled the function type from the parameters
-bool InputStateMachineEngine::_GetWindowManipulationType(const gsl::span<const size_t> parameters,
+bool InputStateMachineEngine::_GetWindowManipulationType(const std::span<const size_t> parameters,
                                                          unsigned int& function) const noexcept
 {
     auto success = false;

@@ -1102,6 +1102,13 @@ namespace winrt::TerminalApp::implementation
         }
 
         _rearranging = false;
+
+        if (to.has_value())
+        {
+            // Selecting the dropped tab
+            TabRow().TabView().SelectedIndex(to.value());
+        }
+
         from = std::nullopt;
         to = std::nullopt;
     }

@@ -50,11 +50,11 @@ public:
                               const bool suppressDuplicates);
 
     [[nodiscard]] HRESULT Retrieve(const SearchDirection searchDirection,
-                                   const gsl::span<wchar_t> buffer,
+                                   const std::span<wchar_t> buffer,
                                    size_t& commandSize);
 
     [[nodiscard]] HRESULT RetrieveNth(const SHORT index,
-                                      const gsl::span<wchar_t> buffer,
+                                      const std::span<wchar_t> buffer,
                                       size_t& commandSize);
 
     size_t GetNumberOfCommands() const;

@@ -128,12 +128,12 @@ COOKED_READ_DATA::~COOKED_READ_DATA()
     CommandLine::Instance().EndAllPopups();
 }
 
-gsl::span<wchar_t> COOKED_READ_DATA::SpanWholeBuffer()
+std::span<wchar_t> COOKED_READ_DATA::SpanWholeBuffer()
 {
-    return gsl::make_span(_backupLimit, (_bufferSize / sizeof(wchar_t)));
+    return std::span{ _backupLimit, (_bufferSize / sizeof(wchar_t)) };
 }
 
-gsl::span<wchar_t> COOKED_READ_DATA::SpanAtPointer()
+std::span<wchar_t> COOKED_READ_DATA::SpanAtPointer()
 {
     auto wholeSpan = SpanWholeBuffer();
     return wholeSpan.subspan(_bufPtr - _backupLimit);

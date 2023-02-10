@@ -473,7 +473,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // Replace the range [start_index, end_index) with replacements.
         // If end_index is larger than size() it's set to size().
         // start_index must be smaller or equal to end_index.
-        void replace(size_type start_index, size_type end_index, const gsl::span<const rle_type> replacements)
+        void replace(size_type start_index, size_type end_index, const std::span<const rle_type> replacements)
         {
             _check_indices(start_index, end_index);
             _replace_unchecked(start_index, end_index, replacements);
@@ -692,7 +692,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         // Replace the range [start_index, end_index) with replacements.
-        void _replace_unchecked(size_type start_index, size_type end_index, const gsl::span<const rle_type> replacements)
+        void _replace_unchecked(size_type start_index, size_type end_index, const std::span<const rle_type> replacements)
         {
             //
             //
