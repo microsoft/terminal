@@ -153,7 +153,8 @@ Window::~Window()
 
             if (s_atomWindowClass == 0)
             {
-                status = NTSTATUS_FROM_WIN32(GetLastError());
+                const auto gle = GetLastError();
+                status = NTSTATUS_FROM_WIN32(gle);
             }
         }
     }
@@ -335,24 +336,26 @@ void Window::_UpdateSystemMetrics() const
 #if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
             if (pDxEngine)
             {
-                status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pDxEngine->SetHwnd(hWnd))));
-
-                if (SUCCEEDED_NTSTATUS(status))
+                HRESULT hr = S_OK;
+                if (SUCCEEDED(hr = pDxEngine->SetHwnd(hWnd)))
                 {
-                    status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pDxEngine->Enable())));
+                    hr = pDxEngine->Enable();
                 }
+                status = NTSTATUS_FROM_HRESULT(hr);
             }
             else
 #endif
 #if TIL_FEATURE_CONHOSTATLASENGINE_ENABLED
                 if (pAtlasEngine)
             {
-                status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pAtlasEngine->SetHwnd(hWnd))));
+                const auto hr = pAtlasEngine->SetHwnd(hWnd);
+                status = NTSTATUS_FROM_HRESULT(hr);
             }
             else
 #endif
             {
-                status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pGdiEngine->SetHwnd(hWnd))));
+                const auto hr = pGdiEngine->SetHwnd(hWnd);
+                status = NTSTATUS_FROM_HRESULT(hr);
             }
 
             if (SUCCEEDED_NTSTATUS(status))

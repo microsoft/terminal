@@ -66,7 +66,7 @@ static bool ConhostV2ForcedInRegistry()
 
     // open HKCU\Console
     wil::unique_hkey hConsoleSubKey;
-    LONG lStatus = NTSTATUS_FROM_WIN32(RegOpenKeyExW(HKEY_CURRENT_USER, L"Console", 0, KEY_READ, &hConsoleSubKey));
+    LONG lStatus = RegOpenKeyExW(HKEY_CURRENT_USER, L"Console", 0, KEY_READ, &hConsoleSubKey);
     if (ERROR_SUCCESS == lStatus)
     {
         // now get the value of the ForceV2 reg value, if it exists
