@@ -22,6 +22,7 @@ public:
     void SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
 
     bool HasWindow();
+    winrt::TerminalApp::TerminalWindow Logic();
 
     static void s_DisplayMessageBox(const winrt::TerminalApp::ParseCommandlineResult& message);
 

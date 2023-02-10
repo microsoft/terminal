@@ -58,7 +58,7 @@ class DbcsTests
             wchDouble++;
         }
 
-        const gsl::span<CHAR_INFO> buffer(rgci, ARRAYSIZE(rgci));
+        const std::span<CHAR_INFO> buffer(rgci, ARRAYSIZE(rgci));
 
         // feed it into UnicodeRasterFontCellMungeOnRead to confirm that it is working properly.
         // do it in-place to confirm that it can operate properly in the common case.

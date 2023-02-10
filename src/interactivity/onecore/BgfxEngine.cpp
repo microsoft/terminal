@@ -126,7 +126,7 @@ CATCH_RETURN()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT BgfxEngine::PaintBufferLine(const gsl::span<const Cluster> clusters,
+[[nodiscard]] HRESULT BgfxEngine::PaintBufferLine(const std::span<const Cluster> clusters,
                                                   const til::point coord,
                                                   const bool /*trimLeft*/,
                                                   const bool /*lineWrapped*/) noexcept
@@ -215,7 +215,7 @@ CATCH_RETURN()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT BgfxEngine::GetDirtyArea(gsl::span<const til::rect>& area) noexcept
+[[nodiscard]] HRESULT BgfxEngine::GetDirtyArea(std::span<const til::rect>& area) noexcept
 {
     _dirtyArea.bottom = gsl::narrow_cast<til::CoordType>(std::max(static_cast<SIZE_T>(0), _displayHeight));
     _dirtyArea.right = gsl::narrow_cast<til::CoordType>(std::max(static_cast<SIZE_T>(0), _displayWidth));

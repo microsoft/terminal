@@ -307,7 +307,7 @@ namespace winrt::TerminalApp::implementation
         // GH#12267: Don't forget about defterm handoff here. If we're being
         // created for embedding, then _yea_, we don't need to handoff to an
         // elevated window.
-        if (!_startupActions || IsElevated() || _shouldStartInboundListener)
+        if (!_startupActions || IsElevated() || _shouldStartInboundListener || _startupActions.Size() == 0)
         {
             // there aren't startup actions, or we're elevated. In that case, go for it.
             return false;
@@ -1171,10 +1171,17 @@ namespace winrt::TerminalApp::implementation
         if (connectionType == TerminalConnection::AzureConnection::ConnectionType() &&
             TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
         {
-            // TODO GH#4661: Replace this with directly using the AzCon when our VT is better
             std::filesystem::path azBridgePath{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
             azBridgePath.replace_filename(L"TerminalAzBridge.exe");
-            connection = TerminalConnection::ConptyConnection();
+            if constexpr (Feature_AzureConnectionInProc::IsEnabled())
+            {
+                connection = TerminalConnection::AzureConnection{};
+            }
+            else
+            {
+                connection = TerminalConnection::ConptyConnection{};
+            }
+
             auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(azBridgePath.wstring(),
                                                                                  L".",
                                                                                  L"Azure",
@@ -4263,5 +4270,4 @@ namespace winrt::TerminalApp::implementation
             }
         }
     }
-
 }

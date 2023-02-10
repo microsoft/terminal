@@ -145,4 +145,14 @@
         <stage>AlwaysDisabled</stage>
     </feature>
 
+    <feature>
+        <name>Feature_AzureConnectionInProc</name>
+        <description>Host the AzureConnection inside Terminal rather than via TerminalAzBridge</description>
+        <id>4661</id>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
 </featureStaging>

@@ -67,7 +67,7 @@ namespace Microsoft::Console::Render
                                const FontInfoDesired& FontInfoDesired,
                                _Out_ FontInfo& FontInfo);
 
-        void UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+        void UpdateSoftFont(const std::span<const uint16_t> bitPattern,
                             const til::size cellSize,
                             const size_t centeringHint);
 

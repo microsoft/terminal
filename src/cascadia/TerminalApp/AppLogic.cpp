@@ -684,6 +684,7 @@ namespace winrt::TerminalApp::implementation
     {
         return _settings.GlobalSettings().ShouldUsePersistedLayout();
     }
+
     void AppLogic::SaveWindowLayoutJsons(const Windows::Foundation::Collections::IVector<hstring>& layouts)
     {
         std::vector<WindowLayout> converted;
@@ -704,6 +705,6 @@ namespace winrt::TerminalApp::implementation
     {
         ::TerminalApp::AppCommandlineArgs _appArgs;
         const auto r = _appArgs.ParseArgs(args);
-        return TerminalApp::ParseCommandlineResult{ winrt::to_hstring(_appArgs.GetExitMessage()), r};
+        return TerminalApp::ParseCommandlineResult{ winrt::to_hstring(_appArgs.GetExitMessage()), r };
     }
 }

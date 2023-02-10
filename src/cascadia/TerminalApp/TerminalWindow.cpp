@@ -624,7 +624,7 @@ namespace winrt::TerminalApp::implementation
             // reserve exactly what we'd need.
             //
             // We can't do that anymore, because this is now called _before_
-            // we've initilized XAML for this thread. We can't start XAML till
+            // we've initialized XAML for this thread. We can't start XAML till
             // we have an HWND, and we can't finish creating the window till we
             // know how big it should be.
             //
@@ -763,6 +763,7 @@ namespace winrt::TerminalApp::implementation
         }
         _RefreshThemeRoutine();
     }
+
     void TerminalWindow::_OpenSettingsUI()
     {
         _root->OpenSettingsUI();
@@ -984,9 +985,8 @@ namespace winrt::TerminalApp::implementation
     //   or 0. (see TerminalWindow::_ParseArgs)
     int32_t TerminalWindow::SetStartupCommandline(array_view<const winrt::hstring> args)
     {
-        // This is called in Apphost::ctor(), before  we've created the window
+        // This is called in AppHost::ctor(), before we've created the window
         // (or called TerminalWindow::Initialize)
-
         const auto result = _appArgs.ParseArgs(args);
         if (result == 0)
         {
@@ -1150,22 +1150,18 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    // WindowName is a otherwise generic WINRT_OBSERVABLE_PROPERTY, but it needs
-    // to raise a PropertyChanged for WindowNameForDisplay, instead of
-    // WindowName.
     winrt::hstring TerminalWindow::WindowName() const noexcept
     {
         return _WindowName;
     }
-
-    void TerminalWindow::WindowName(const winrt::hstring& value)
+    void TerminalWindow::WindowName(const winrt::hstring& name)
     {
         const auto oldIsQuakeMode = IsQuakeWindow();
 
-        const auto changed = _WindowName != value;
+        const auto changed = _WindowName != name;
         if (changed)
         {
-            _WindowName = value;
+            _WindowName = name;
             if (_root)
             {
                 _root->WindowNameChanged();
@@ -1182,19 +1178,15 @@ namespace winrt::TerminalApp::implementation
             }
         }
     }
-
-    // WindowId is a otherwise generic WINRT_OBSERVABLE_PROPERTY, but it needs
-    // to raise a PropertyChanged for WindowIdForDisplay, instead of
-    // WindowId.
     uint64_t TerminalWindow::WindowId() const noexcept
     {
         return _WindowId;
     }
-    void TerminalWindow::WindowId(const uint64_t& value)
+    void TerminalWindow::WindowId(const uint64_t& id)
     {
-        if (_WindowId != value)
+        if (_WindowId != id)
         {
-            _WindowId = value;
+            _WindowId = id;
             if (_root)
             {
                 _root->WindowNameChanged();
@@ -1227,12 +1219,10 @@ namespace winrt::TerminalApp::implementation
                    winrt::hstring{ fmt::format(L"<{}>", RS_(L"UnnamedWindowName")) } :
                    _WindowName;
     }
-
     bool TerminalWindow::IsQuakeWindow() const noexcept
     {
-        return WindowName() == QuakeWindowName;
+        return _WindowName == QuakeWindowName;
     }
-
     ////////////////////////////////////////////////////////////////////////////
 
     bool TerminalWindow::ShouldImmediatelyHandoffToElevated()
@@ -1265,5 +1255,4 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////
 };

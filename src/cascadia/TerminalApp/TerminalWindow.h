@@ -6,6 +6,7 @@
 #include "TerminalWindow.g.h"
 #include "SystemMenuChangeArgs.g.h"
 
+#include "SettingsLoadEventArgs.h"
 #include "TerminalPage.h"
 #include "SettingsLoadEventArgs.h"
 
@@ -73,6 +74,7 @@ namespace winrt::TerminalApp::implementation
 
         std::optional<uint32_t> LoadPersistedLayoutIdx() const;
         winrt::Microsoft::Terminal::Settings::Model::WindowLayout LoadPersistedLayout() const;
+
         void SetPersistedLayoutIdx(const uint32_t idx);
         void SetNumberOfOpenWindows(const uint64_t num);
         bool ShouldUsePersistedLayout() const;
