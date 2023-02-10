@@ -165,7 +165,13 @@
     <ProjectReference Include="..\..\renderer\uia\lib\uia.vcxproj" />
     <ProjectReference Include="..\..\terminal\parser\lib\parser.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\terminal\input\lib\terminalinput.vcxproj" />
+
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\ITerminalCore\ITerminalCore.vcxproj">
+      <Private>false</Private>
+      <Project>{40503EDC-E3E4-46AB-BC26-D293B956CAE8}</Project>
+    </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalCore\lib\TerminalCore-lib.vcxproj" />
+
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -187,6 +193,9 @@
   </ItemDefinitionGroup>
   <!-- ========================= Globals ======================== -->
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+
+  <Import Project="$(SolutionDir)build\rules\ConsumeWinRTInterfacesStatically.targets" />
+  <!-- TODO DH troubleshoot why ITerminalCore isn't rolling up into our winmd so our dependers don't need to know about it; namespace decollision? -->
 
   <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />

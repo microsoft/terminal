@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{40503EDC-E3E4-46AB-BC26-D293B956CAE8}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectName>Microsoft.Terminal.Core.Interfaces</ProjectName>
+    <TargetName>Microsoft.Terminal.Core.Interfaces</TargetName>
+    <ConfigurationType>Utility</ConfigurationType>
+    <RootNamespace>Microsoft.Terminal.Core</RootNamespace>
+
+    <TerminalMidlRT>true</TerminalMidlRT>
+
+    <!-- Force our output directory -->
+    <OpenConsoleCppWinRTProject>true</OpenConsoleCppWinRTProject>
+  </PropertyGroup>
+
+  <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
+  <Import Project="$(OpenConsoleDir)src\common.build.pre.props" />
+
+  <ItemGroup>
+    <Midl Include="ICoreSettings.idl" />
+    <Midl Include="ICoreAppearance.idl" />
+  </ItemGroup>
+
+  <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
+  <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
+</Project>

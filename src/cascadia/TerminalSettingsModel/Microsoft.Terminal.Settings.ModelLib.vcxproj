@@ -282,6 +282,11 @@
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
 
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\ITerminalCore\ITerminalCore.vcxproj">
+      <Private>false</Private>
+      <Project>{40503EDC-E3E4-46AB-BC26-D293B956CAE8}</Project>
+    </ProjectReference>
+
   </ItemGroup>
   <ItemGroup>
     <!-- Manually add references to each of our dependent winmds. Mark them as private=false and CopyLocalSatelliteAssemblies=false, so that we don't
@@ -295,12 +300,6 @@
     </Reference>
     <Reference Include="Microsoft.Terminal.Control">
       <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Control\Microsoft.Terminal.Control.winmd</HintPath>
-      <IsWinMDFile>true</IsWinMDFile>
-      <Private>false</Private>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-    </Reference>
-    <Reference Include="Microsoft.Terminal.Core">
-      <HintPath>$(OpenConsoleCommonOutDir)TerminalCore\Microsoft.Terminal.Core.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>

@@ -90,6 +90,11 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\Remoting\dll\Microsoft.Terminal.Remoting.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsEditor\Microsoft.Terminal.Settings.Editor.vcxproj" />
 
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\ITerminalCore\ITerminalCore.vcxproj">
+      <Private>false</Private>
+      <Project>{40503EDC-E3E4-46AB-BC26-D293B956CAE8}</Project>
+    </ProjectReference>
+
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\WinRTUtils\WinRTUtils.vcxproj">
       <Project>{CA5CAD1A-039A-4929-BA2A-8BEB2E4106FE}</Project>
@@ -97,19 +102,6 @@
     </ProjectReference>
   </ItemGroup>
 
-  <!-- Manually add a reference to Core here. We need this so MDMERGE will know
-  where the Core types are defined. However, we need to do it exactly like this,
-  because the Core project is a lib not a dll, so it can't be ProjectReference'd
-  like everything else. It does get built into TerminalControl.dll, so we don't
-  need to worry about that. -->
-  <ItemGroup>
-    <Reference Include="Microsoft.Terminal.Core">
-      <HintPath>$(OpenConsoleCommonOutDir)TerminalCore\Microsoft.Terminal.Core.winmd</HintPath>
-      <IsWinMDFile>true</IsWinMDFile>
-      <Private>false</Private>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-    </Reference>
-  </ItemGroup>
   <!--
     This ItemGroup and the Globals PropertyGroup below it are required in order
     to enable F5 debugging for the unpackaged application

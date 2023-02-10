@@ -68,6 +68,10 @@
     include Settings and Connection, since Control will include them for us) -->
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\dll\TerminalControl.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\ITerminalCore\ITerminalCore.vcxproj">
+      <Private>false</Private>
+      <Project>{40503EDC-E3E4-46AB-BC26-D293B956CAE8}</Project>
+    </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsEditor\Microsoft.Terminal.Settings.Editor.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\dll\Microsoft.Terminal.Settings.Model.vcxproj" />
     <!-- Reference TerminalAppLib here, so we can use its TerminalApp.winmd as
@@ -79,18 +83,6 @@
     </ProjectReference>
   </ItemGroup>
 
-
-  <ItemGroup>
-    <!-- Manually include the Terminal.Core winmd, so we know where those types
-    are defined. We don't want to include it as a project reference, because
-    that would make us link that lib into our own binary. -->
-    <Reference Include="Microsoft.Terminal.Core">
-      <HintPath>$(OpenConsoleCommonOutDir)TerminalCore\Microsoft.Terminal.Core.winmd</HintPath>
-      <IsWinMDFile>true</IsWinMDFile>
-      <Private>false</Private>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-    </Reference>
-  </ItemGroup>
 
   <ItemDefinitionGroup>
     <ClCompile>

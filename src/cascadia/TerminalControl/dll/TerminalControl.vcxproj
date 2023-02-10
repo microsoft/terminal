@@ -65,24 +65,20 @@
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
     </ProjectReference>
     <!-- Dependency Interfaces -->
+    <!--
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\ITerminalCore\ITerminalCore.vcxproj">
+      <Private>false</Private>
+      <Project>{40503EDC-E3E4-46AB-BC26-D293B956CAE8}</Project>
+    </ProjectReference>
+    -->
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\ITerminalConnection\ITerminalConnection.vcxproj">
       <Private>false</Private>
       <Project>{EFC0B7EF-BB0D-44EC-BFC9-772AE4391D17}</Project>
     </ProjectReference>
   </ItemGroup>
 
+  <!--
   <ItemGroup>
-    <!-- Manually add a reference to TerminalControl here. We need this so
-    MDMERGE will know where the TermControl types are defined. However, we need
-    to do it exactly like this so the packaging project won't roll up
-    TermControl's .xbf's from both the TermControl project and this one. -->
-    <Reference Include="Microsoft.Terminal.Core">
-      <HintPath>$(OpenConsoleCommonOutDir)TerminalCore\Microsoft.Terminal.Core.winmd</HintPath>
-      <IsWinMDFile>true</IsWinMDFile>
-      <Private>false</Private>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-    </Reference>
-
     <Reference Include="Microsoft.Terminal.TerminalConnection">
       <HintPath>$(OpenConsoleCommonOutDir)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
@@ -90,6 +86,7 @@
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
   </ItemGroup>
+  -->
 
   <ItemDefinitionGroup>
     <Link>
