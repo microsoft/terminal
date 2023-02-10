@@ -35,7 +35,6 @@ namespace Microsoft.Terminal.Settings.Editor
         void ClearColorScheme();
         ColorSchemeViewModel CurrentColorScheme;
         Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> SchemesList;
-        IHostedInWindow WindowRoot; // necessary to send the right HWND into the file picker dialogs.
 
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, FontFace);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Single, FontSize);
@@ -59,6 +58,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Appearances();
         AppearanceViewModel Appearance;
         ProfileViewModel SourceProfile;
+        IHostedInWindow WindowRoot;
         static Windows.UI.Xaml.DependencyProperty AppearanceProperty { get; };
 
         Boolean UsingMonospaceFont { get; };
