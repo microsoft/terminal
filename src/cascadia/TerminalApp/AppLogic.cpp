@@ -565,7 +565,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (!appArgs.GetExitMessage().empty())
             {
-                return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseNew);
+                return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseNone);
             }
 
             const std::string parsedTarget{ appArgs.GetTargetWindow() };
@@ -644,7 +644,7 @@ namespace winrt::TerminalApp::implementation
         // create a new window. Then, in that new window, we'll try to  set the
         // StartupActions, which will again fail, returning the correct error
         // message.
-        return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseNew);
+        return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseNone);
     }
 
     Windows::Foundation::Collections::IMapView<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::Command> AppLogic::GlobalHotkeys()
@@ -698,5 +698,12 @@ namespace winrt::TerminalApp::implementation
         }
 
         ApplicationState::SharedInstance().PersistedWindowLayouts(winrt::single_threaded_vector(std::move(converted)));
+    }
+
+    TerminalApp::ParseCommandlineResult AppLogic::GetParseCommandlineMessage(array_view<const winrt::hstring> args)
+    {
+        ::TerminalApp::AppCommandlineArgs _appArgs;
+        const auto r = _appArgs.ParseArgs(args);
+        return TerminalApp::ParseCommandlineResult{ winrt::to_hstring(_appArgs.GetExitMessage()), r};
     }
 }

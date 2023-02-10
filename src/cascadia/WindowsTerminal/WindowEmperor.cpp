@@ -60,6 +60,8 @@ WindowEmperor::~WindowEmperor()
     // hosts, xaml sources, everything, seem to get closed and dtor'd before
     // this point. Theoretically, we shouldn't event have leak reporting enabled
     // for this thread. It's a real thinker.
+    //
+    // I need someone to help take a look at this with me.
 
     _app.Close();
     _app = nullptr;
@@ -97,8 +99,6 @@ bool WindowEmperor::HandleCommandlineArgs()
 
     const auto result = _manager.ProposeCommandline2(eventArgs);
 
-    // TODO! createWindow is false in cases like wt --help. Figure that out.
-
     if (result.ShouldCreateWindow())
     {
         CreateNewWindowThread(Remoting::WindowRequestedArgs{ result, eventArgs }, true);
@@ -108,6 +108,15 @@ bool WindowEmperor::HandleCommandlineArgs()
         });
 
         _becomeMonarch();
+    }
+    else
+    {
+        const auto res = _app.Logic().GetParseCommandlineMessage(eventArgs.Commandline());
+        if (!res.Message.empty())
+        {
+            AppHost::s_DisplayMessageBox(res);
+            ExitThread(res.ExitCode);
+        }
     }
 
     return result.ShouldCreateWindow();

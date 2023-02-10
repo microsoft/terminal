@@ -24,6 +24,8 @@ public:
 
     bool HasWindow();
 
+    static void s_DisplayMessageBox(const winrt::TerminalApp::ParseCommandlineResult& message);
+
     winrt::TerminalApp::TerminalWindow Logic();
 
 private:

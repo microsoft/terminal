@@ -139,6 +139,19 @@ void AppHost::SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable&
     }
 }
 
+void AppHost::s_DisplayMessageBox(const winrt::TerminalApp::ParseCommandlineResult& result)
+{
+    const auto displayHelp = result.ExitCode == 0;
+    const auto messageTitle = displayHelp ? IDS_HELP_DIALOG_TITLE : IDS_ERROR_DIALOG_TITLE;
+    const auto messageIcon = displayHelp ? MB_ICONWARNING : MB_ICONERROR;
+    // TODO:GH#4134: polish this dialog more, to make the text more
+    // like msiexec /?
+    MessageBoxW(nullptr,
+                result.Message.data(),
+                GetStringResource(messageTitle).data(),
+                MB_OK | messageIcon);
+}
+
 // Method Description:
 // - Retrieve any commandline args passed on the commandline, and pass them to
 //   the WindowManager, to ask if we should become a window process.
@@ -171,19 +184,11 @@ void AppHost::_HandleCommandlineArgs()
             const auto message = _windowLogic.ParseCommandlineMessage();
             if (!message.empty())
             {
-                const auto displayHelp = result == 0;
-                const auto messageTitle = displayHelp ? IDS_HELP_DIALOG_TITLE : IDS_ERROR_DIALOG_TITLE;
-                const auto messageIcon = displayHelp ? MB_ICONWARNING : MB_ICONERROR;
-                // TODO:GH#4134: polish this dialog more, to make the text more
-                // like msiexec /?
-                MessageBoxW(nullptr,
-                            message.data(),
-                            GetStringResource(messageTitle).data(),
-                            MB_OK | messageIcon);
+                AppHost::s_DisplayMessageBox({ message, result});
 
                 if (_windowLogic.ShouldExitEarly())
                 {
-                    ExitProcess(result);
+                    ExitThread(result);
                 }
             }
         }
