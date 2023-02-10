@@ -26,8 +26,6 @@ public:
 
     static void s_DisplayMessageBox(const winrt::TerminalApp::ParseCommandlineResult& message);
 
-    winrt::TerminalApp::TerminalWindow Logic();
-
 private:
     std::unique_ptr<IslandWindow> _window;
 

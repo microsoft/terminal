@@ -64,8 +64,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::Theme CurrentTheme() noexcept;
         bool ShouldUsePersistedLayout() const;
 
-        bool ShouldUsePersistedLayout() const;
-
         void ExpandCommands(const Windows::Foundation::Collections::IVectorView<Model::Profile>& profiles,
                             const Windows::Foundation::Collections::IMapView<winrt::hstring, Model::ColorScheme>& schemes);
 

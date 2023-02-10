@@ -19,13 +19,8 @@ namespace TerminalApp
 
     interface IWindowProperties
     {
-<<<<<<< HEAD
-        String WindowName;
-        UInt64 WindowId;
-=======
         String WindowName { get; };
         UInt64 WindowId { get; };
->>>>>>> dev/migrie/oop/3/foreword
         String WindowNameForDisplay { get; };
         String WindowIdForDisplay { get; };
         Boolean IsQuakeWindow();
@@ -46,8 +41,6 @@ namespace TerminalApp
         IWindowProperties WindowProperties { get; };
         void IdentifyWindow();
         void RenameFailed();
-
-        IWindowProperties WindowProperties { get; };
 
         // We cannot use the default XAML APIs because we want to make sure
         // that there's only one application-global dialog visible at a time,
