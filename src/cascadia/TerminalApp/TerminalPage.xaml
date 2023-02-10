@@ -195,6 +195,25 @@
                               PreviewKeyDown="_KeyDownHandler"
                               Visibility="Collapsed" />
 
+        <Popup x:Name="SuggestionsPopup"
+               HorizontalOffset="200"
+               IsOpen="False"
+               ShouldConstrainToRootBounds="False"
+               VerticalOffset="200">
+            <!--
+                TODO! POpup is hacky and does weird stuff with focus
+                
+                Like, clicking on the suggest menu to focus the window doesn't focus the actual window, it focuses the popup (?)
+                
+                Also, it causes the cmdpal to be above the TeachingTip. That... doesn't make sense, I know. But it happens.
+            -->
+            <local:SuggestionsControl x:Name="SuggestionsUI"
+                                      VerticalAlignment="Stretch"
+                                      PreviewKeyDown="_KeyDownHandler"
+                                      Visibility="Collapsed" />
+
+        </Popup>
+
         <!--
             A TeachingTip with IsLightDismissEnabled="True" will immediately
             dismiss itself if the window is unfocused (In Xaml Islands). This is

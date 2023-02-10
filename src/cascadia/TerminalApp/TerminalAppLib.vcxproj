@@ -60,6 +60,9 @@
     <Page Include="CommandPalette.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="SuggestionsControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
@@ -139,6 +142,9 @@
       <DependentUpon>AppLogic.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Toast.h" />
+    <ClInclude Include="SuggestionsControl.h">
+      <DependentUpon>SuggestionsControl.xaml</DependentUpon>
+    </ClInclude>
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
@@ -233,6 +239,9 @@
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="Toast.cpp" />
+    <ClCompile Include="SuggestionsControl.cpp">
+      <DependentUpon>SuggestionsControl.xaml</DependentUpon>
+    </ClCompile>
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
@@ -290,6 +299,10 @@
     </Midl>
     <Midl Include="CommandPalette.idl">
       <DependentUpon>CommandPalette.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="SuggestionsControl.idl">
+      <DependentUpon>SuggestionsControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="FilteredCommand.idl" />
