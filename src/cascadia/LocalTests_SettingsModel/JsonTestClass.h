@@ -20,7 +20,7 @@ class JsonTestClass
 public:
     static Json::Value VerifyParseSucceeded(const std::string_view& content)
     {
-        static const std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+        static const std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };
 
         Json::Value root;
         std::string errs;
