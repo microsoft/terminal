@@ -4483,9 +4483,13 @@ namespace winrt::TerminalApp::implementation
 
         _OpenSuggestions(commandsCollection);
     }
-    
+
     winrt::fire_and_forget TerminalPage::_OpenSuggestions(Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::Command> commandsCollection)
     {
+        if (commandsCollection == nullptr)
+        {
+            co_return;
+        }
         if (commandsCollection.Size() == 0)
         {
             SuggestionsPopup().IsOpen(false);

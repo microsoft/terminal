@@ -143,75 +143,9 @@
                 </Grid>
             </DataTemplate>
 
-            <DataTemplate x:Key="TabItemTemplate"
-                          x:DataType="local:FilteredCommand">
-                <Grid HorizontalAlignment="Stretch"
-                      AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}"
-                      ColumnSpacing="8">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="16" />
-                        <!--  icon / progress  -->
-                        <ColumnDefinition Width="Auto" />
-                        <!--  command label  -->
-                        <ColumnDefinition Width="*" />
-                        <!--  gutter for indicators  -->
-                        <ColumnDefinition Width="Auto" />
-                        <!--  Indicators  -->
-                        <ColumnDefinition Width="16" />
-                        <!--  gutter for scrollbar  -->
-                    </Grid.ColumnDefinitions>
-
-                    <mux:ProgressRing Grid.Column="0"
-                                      Width="15"
-                                      Height="15"
-                                      MinWidth="0"
-                                      MinHeight="0"
-                                      IsActive="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsProgressRingActive, Mode=OneWay}"
-                                      IsIndeterminate="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsProgressRingIndeterminate, Mode=OneWay}"
-                                      Visibility="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsProgressRingActive, Mode=OneWay}"
-                                      Value="{x:Bind Item.(local:TabPaletteItem.TabStatus).ProgressValue, Mode=OneWay}" />
-
-                    <ContentPresenter Grid.Column="0"
-                                      Width="16"
-                                      Height="16"
-                                      Content="{x:Bind Item.ResolvedIcon, Mode=OneWay}" />
-
-                    <local:HighlightedTextControl Grid.Column="1"
-                                                  HorizontalAlignment="Left"
-                                                  Text="{x:Bind HighlightedName, Mode=OneWay}" />
-
-                    <StackPanel Grid.Column="2"
-                                HorizontalAlignment="Right"
-                                VerticalAlignment="Center"
-                                Orientation="Horizontal">
-
-                        <FontIcon Margin="0,0,8,0"
-                                  FontFamily="{ThemeResource SymbolThemeFontFamily}"
-                                  FontSize="12"
-                                  Glyph="&#xEA8F;"
-                                  Visibility="{x:Bind Item.(local:TabPaletteItem.TabStatus).BellIndicator, Mode=OneWay}" />
-
-                        <FontIcon Margin="0,0,8,0"
-                                  FontFamily="{ThemeResource SymbolThemeFontFamily}"
-                                  FontSize="12"
-                                  Glyph="&#xE8A3;"
-                                  Visibility="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsPaneZoomed, Mode=OneWay}" />
-
-                        <FontIcon x:Name="HeaderLockIcon"
-                                  Margin="0,0,8,0"
-                                  FontFamily="{ThemeResource SymbolThemeFontFamily}"
-                                  FontSize="12"
-                                  Glyph="&#xE72E;"
-                                  Visibility="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsReadOnlyActive, Mode=OneWay}" />
-
-                    </StackPanel>
-                </Grid>
-            </DataTemplate>
-
             <local:PaletteItemTemplateSelector x:Key="PaletteItemTemplateSelector"
                                                GeneralItemTemplate="{StaticResource GeneralItemTemplate}"
-                                               NestedItemTemplate="{StaticResource NestedItemTemplate}"
-                                               TabItemTemplate="{StaticResource TabItemTemplate}" />
+                                               NestedItemTemplate="{StaticResource NestedItemTemplate}" />
 
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Dark">
@@ -330,16 +264,6 @@
                      PlaceholderText="{x:Bind SearchBoxPlaceholderText, Mode=OneWay}"
                      Text=""
                      TextChanged="_filterTextChanged" />
-
-            <TextBlock x:Name="_prefixCharacter"
-                       Grid.Row="0"
-                       Margin="8,0,8,8"
-                       Padding="8,0,0,0"
-                       HorizontalAlignment="Left"
-                       VerticalAlignment="Center"
-                       FontSize="14"
-                       Text="{x:Bind PrefixCharacter, Mode=OneWay}"
-                       Visibility="{x:Bind PrefixCharacter, Mode=OneWay, Converter={StaticResource ParentCommandVisibilityConverter}}" />
 
             <StackPanel Grid.Row="1"
                         Margin="8,0,8,8"

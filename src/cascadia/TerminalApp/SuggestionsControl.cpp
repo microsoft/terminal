@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "ActionPaletteItem.h"
-#include "TabPaletteItem.h"
 #include "CommandLinePaletteItem.h"
 #include "SuggestionsControl.h"
 #include <LibraryResources.h>
@@ -22,8 +21,7 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::TerminalApp::implementation
 {
-    SuggestionsControl::SuggestionsControl() :
-        _switcherStartIdx{ 0 }
+    SuggestionsControl::SuggestionsControl()
     {
         InitializeComponent();
 
@@ -34,8 +32,6 @@ namespace winrt::TerminalApp::implementation
         _nestedActionStack = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
         _currentNestedCommands = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
         _allCommands = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
-        _tabActions = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
-        _mruTabActions = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
 
         _switchToMode();
 
@@ -79,8 +75,6 @@ namespace winrt::TerminalApp::implementation
         });
 
         _filteredActionsView().SelectionChanged({ this, &SuggestionsControl::_selectedCommandChanged });
-
-        _appArgs.DisableHelpInExitMessage();
     }
 
     // Method Description:
@@ -208,10 +202,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Called when the command selection changes. We'll use this in the tab
-    //   switcher to "preview" tabs as the user navigates the list of tabs. To
-    //   do that, we'll dispatch the switch to tab command for this tab, but not
-    //   dismiss the switcher.
+    // - Called when the command selection changes. We'll use this to preview the selected action.
     // Arguments:
     // - <unused>
     // Return Value:
@@ -346,30 +337,6 @@ namespace winrt::TerminalApp::implementation
     void SuggestionsControl::_keyUpHandler(const IInspectable& /*sender*/,
                                            const Windows::UI::Xaml::Input::KeyRoutedEventArgs& /*e*/)
     {
-    }
-
-    // Method Description:
-    // - Handles anchor key ups during TabSwitchMode.
-    //   We assume that at least one modifier key should be held down in order to "anchor"
-    //   the ATS UI in place. So this function is called to check if any modifiers are
-    //   still held down, and if not, dispatch the selected tab action and close the ATS.
-    // Return value:
-    // - <none>
-    void SuggestionsControl::_anchorKeyUpHandler()
-    {
-        const auto coreWindow = CoreWindow::GetForCurrentThread();
-        const auto ctrlDown = WI_IsFlagSet(coreWindow.GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
-        const auto altDown = WI_IsFlagSet(coreWindow.GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
-        const auto shiftDown = WI_IsFlagSet(coreWindow.GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
-
-        if (!ctrlDown && !altDown && !shiftDown)
-        {
-            const auto selectedCommand = _filteredActionsView().SelectedItem();
-            if (const auto filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>())
-            {
-                _dispatchCommand(filteredCommand);
-            }
-        }
     }
 
     // Method Description:
@@ -668,54 +635,6 @@ namespace winrt::TerminalApp::implementation
         return input.substr(firstNonSpace);
     }
 
-    // Method Description:
-    // - Dispatch switch to tab action.
-    // Arguments:
-    // - filteredCommand - Selected filtered command - might be null
-    // Return Value:
-    // - <none>
-    void SuggestionsControl::_switchToTab(const winrt::TerminalApp::FilteredCommand& filteredCommand)
-    {
-        if (filteredCommand)
-        {
-            if (const auto tabPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::TabPaletteItem>() })
-            {
-                if (const auto tab{ tabPaletteItem.Tab() })
-                {
-                    _SwitchToTabRequestedHandlers(*this, tab);
-                }
-            }
-        }
-    }
-
-    // Method Description:
-    // - Dispatch the current search text as a ExecuteCommandline action.
-    // Arguments:
-    // - filteredCommand - Selected filtered command - might be null
-    // Return Value:
-    // - <none>
-    void SuggestionsControl::_dispatchCommandline(const winrt::TerminalApp::FilteredCommand& command)
-    {
-        const auto filteredCommand = command ? command : _buildCommandLineCommand(winrt::hstring(_getTrimmedInput()));
-        if (filteredCommand.has_value())
-        {
-            _updateRecentCommands(filteredCommand.value().Item().Name());
-
-            TraceLoggingWrite(
-                g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
-                "SuggestionsControlDispatchedCommandline",
-                TraceLoggingDescription("Event emitted when the user runs a commandline in the Command Palette"),
-                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-
-            if (const auto commandLinePaletteItem{ filteredCommand.value().Item().try_as<winrt::TerminalApp::CommandLinePaletteItem>() })
-            {
-                _CommandLineExecutionRequestedHandlers(*this, commandLinePaletteItem.CommandLine());
-                _close();
-            }
-        }
-    }
-
     std::optional<TerminalApp::FilteredCommand> SuggestionsControl::_buildCommandLineCommand(const hstring& commandLine)
     {
         if (commandLine.empty())
@@ -782,10 +701,6 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void SuggestionsControl::_evaluatePrefix()
-    {
-    }
-
     Collections::IObservableVector<winrt::TerminalApp::FilteredCommand> SuggestionsControl::FilteredActions()
     {
         return _filteredActions;
@@ -819,36 +734,6 @@ namespace winrt::TerminalApp::implementation
                 _filteredActions.Append(action);
             }
         }
-    }
-
-    // Method Description:
-    // - Replaces a list of filtered commands in the target collection with new
-    //   commands based on the tabs in the source collection.
-    // Although the source observable we still don't register on it,
-    // so the palette user will need to reset the binding manually every time
-    // the source collection changes
-    // Arguments:
-    // - source: the tabs to use for creation filtered commands
-    // - target: the collection to store newly created filtered commands
-    // Return Value:
-    // - <none>
-    void SuggestionsControl::_bindTabs(
-        const Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::TabBase>& source,
-        const Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand>& target)
-    {
-        target.Clear();
-        for (const auto& tab : source)
-        {
-            auto tabPaletteItem{ winrt::make<winrt::TerminalApp::implementation::TabPaletteItem>(tab) };
-            auto filteredCommand{ winrt::make<FilteredCommand>(tabPaletteItem) };
-            target.Append(filteredCommand);
-        }
-    }
-
-    void SuggestionsControl::SetTabs(const Collections::IObservableVector<TabBase>& tabs, const Collections::IObservableVector<TabBase>& mruTabs)
-    {
-        _bindTabs(tabs, _tabActions);
-        _bindTabs(mruTabs, _mruTabActions);
     }
 
     void SuggestionsControl::_switchToMode()
@@ -1026,21 +911,6 @@ namespace winrt::TerminalApp::implementation
         _currentNestedCommands.Clear();
     }
 
-    void SuggestionsControl::EnableTabSwitcherMode(const uint32_t startIdx, TabSwitcherMode tabSwitcherMode)
-    {
-        // The _switcherStartIdx field allows us to select the current tab
-        // We need to take it into account only in the in-order mode,
-        // as an MRU mode the current tab is on top by definition.
-        _switcherStartIdx = tabSwitcherMode == TabSwitcherMode::InOrder ? startIdx : 0;
-        _tabSwitcherMode = tabSwitcherMode;
-        // _switchToMode(SuggestionsControlMode::TabSwitchMode);
-    }
-
-    void SuggestionsControl::EnableTabSearchMode()
-    {
-        // _switchToMode(SuggestionsControlMode::TabSearchMode);
-    }
-
     // Method Description:
     // - This event is triggered when filteredActionView is looking for item container (ListViewItem)
     // to use to present the filtered actions.
@@ -1094,7 +964,6 @@ namespace winrt::TerminalApp::implementation
         }
         args.IsContainerPrepared(true);
     }
-
     // Method Description:
     // - This event is triggered when the data item associate with filteredActionView list item is changing.
     //   We check if the item is being recycled. In this case we return it to the cache
@@ -1116,83 +985,6 @@ namespace winrt::TerminalApp::implementation
         {
             itemContainer.DataContext(args.Item());
         }
-    }
-
-    // Method Description:
-    // - Reads the list of recent commands from the persistent application state
-    // Return Value:
-    // - The list of FilteredCommand representing the ones stored in the state
-    IVector<TerminalApp::FilteredCommand> SuggestionsControl::_loadRecentCommands()
-    {
-        const auto recentCommands = ApplicationState::SharedInstance().RecentCommands();
-        // If this is the first time we've opened the commandline mode and
-        // there aren't any recent commands, then just return an empty vector.
-        if (!recentCommands)
-        {
-            return single_threaded_vector<TerminalApp::FilteredCommand>();
-        }
-
-        std::vector<TerminalApp::FilteredCommand> parsedCommands;
-        parsedCommands.reserve(std::min(recentCommands.Size(), CommandLineHistoryLength));
-
-        for (const auto& c : recentCommands)
-        {
-            if (parsedCommands.size() >= CommandLineHistoryLength)
-            {
-                // Don't load more than CommandLineHistoryLength commands
-                break;
-            }
-
-            if (const auto parsedCommand = _buildCommandLineCommand(c))
-            {
-                parsedCommands.push_back(*parsedCommand);
-            }
-        }
-        return single_threaded_vector(std::move(parsedCommands));
-    }
-
-    // Method Description:
-    // - Update recent commands by putting the provided command as most recent.
-    // Upon race condition might override an update made by another window.
-    // Return Value:
-    // - <none>
-    void SuggestionsControl::_updateRecentCommands(const hstring& command)
-    {
-        const auto recentCommands = ApplicationState::SharedInstance().RecentCommands();
-        // If this is the first time we've opened the commandline mode and
-        // there aren't any recent commands, then just store the new command.
-        if (!recentCommands)
-        {
-            // ApplicationState::SharedInstance().RecentCommands(single_threaded_vector(std::move(std::vector{ command })));
-            return;
-        }
-
-        const auto numNewRecentCommands = std::min(recentCommands.Size() + 1, CommandLineHistoryLength);
-
-        std::vector<hstring> newRecentCommands;
-        newRecentCommands.reserve(numNewRecentCommands);
-
-        std::unordered_set<hstring> uniqueCommands;
-        uniqueCommands.reserve(numNewRecentCommands);
-
-        newRecentCommands.push_back(command);
-        uniqueCommands.insert(command);
-
-        for (const auto& c : recentCommands)
-        {
-            if (newRecentCommands.size() >= CommandLineHistoryLength)
-            {
-                // Don't store more than CommandLineHistoryLength commands
-                break;
-            }
-
-            if (uniqueCommands.emplace(c).second)
-            {
-                newRecentCommands.push_back(c);
-            }
-        }
-
-        ApplicationState::SharedInstance().RecentCommands(single_threaded_vector(std::move(newRecentCommands)));
     }
 
     void SuggestionsControl::PositionManually(Windows::Foundation::Point origin, Windows::Foundation::Size size)

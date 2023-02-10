@@ -638,6 +638,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     winrt::Windows::Foundation::Collections::IVector<Model::Command> Command::ParsePowerShellMenuComplete(winrt::hstring json, int32_t replaceLength)
     {
+        if (json.empty())
+        {
+         return nullptr;}
         auto data = winrt::to_string(json);
 
         std::string errs;
