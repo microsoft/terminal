@@ -221,7 +221,11 @@ void AppHost::_HandleCommandlineArgs()
         const auto numPeasants = _windowManager2.GetNumberOfPeasants();
         if (numPeasants == 1)
         {
-            // TODO! this is vaugely off by one. Not sure, but if you restore 2 windows, you seem to get two copies of the second. Yikes.
+            // TODO! this is vaugely off by one. Not sure, but if you restore 2
+            // windows, you seem to get two copies of the second. Yikes. And
+            // this wasn't just because I was setting the debug commandline to
+            // `nt ; nt`. Calling wtd with two persisted windows just creates
+            // two of the second persisted window, ew.
             const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
             if (_appLogic.ShouldUsePersistedLayout() &&
                 layouts &&
@@ -851,46 +855,6 @@ winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> AppHost::_GetWindowL
     co_await peasant_thread;
 
     co_return layoutJson;
-}
-
-// Method Description:
-// - Called when the monarch failed to summon a window for a given set of
-//   SummonWindowSelectionArgs. In this case, we should create the specified
-//   window ourselves.
-// - This is to support the scenario like `globalSummon(Name="_quake")` being
-//   used to summon the window if it already exists, or create it if it doesn't.
-// Arguments:
-// - args: Contains information on how we should name the window
-// Return Value:
-// - <none>
-winrt::fire_and_forget AppHost::_createNewTerminalWindow(Settings::Model::GlobalSummonArgs args)
-{
-    // Hop to the BG thread
-    co_await winrt::resume_background();
-
-    // This will get us the correct exe for dev/preview/release. If you
-    // don't stick this in a local, it'll get mangled by ShellExecute. I
-    // have no idea why.
-    const auto exePath{ GetWtExePath() };
-
-    // If we weren't given a name, then just use new to force the window to be
-    // unnamed.
-    winrt::hstring cmdline{
-        fmt::format(L"-w {}",
-                    args.Name().empty() ? L"new" :
-                                          args.Name())
-    };
-
-    SHELLEXECUTEINFOW seInfo{ 0 };
-    seInfo.cbSize = sizeof(seInfo);
-    seInfo.fMask = SEE_MASK_NOASYNC;
-    seInfo.lpVerb = L"open";
-    seInfo.lpFile = exePath.c_str();
-    seInfo.lpParameters = cmdline.c_str();
-    seInfo.nShow = SW_SHOWNORMAL;
-    LOG_IF_WIN32_BOOL_FALSE(ShellExecuteExW(&seInfo));
-
-    co_return;
 }
 
 // Method Description:

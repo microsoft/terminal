@@ -94,7 +94,34 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         bool shouldCreateWindow = false;
 
         _createMonarch();
-        if (_monarch == nullptr)
+        if (_monarch)
+        {
+            // We connectecd to a monarch instance, not us though.
+
+            shouldCreateWindow = false;
+            std::optional<uint64_t> givenID;
+            winrt::hstring givenName{};
+
+            // Send the commandline over to the monarch process
+            if (_proposeToMonarch(args, givenID, givenName))
+            {
+                // If that succeeded, then we don't need to make a new window.
+                // Our job is done. Either the monarch is going to run the
+                // commandline in an existing window, or a new one, but either way,
+                // this process doesn't need to make a new window.
+
+                return *winrt::make_self<ProposeCommandlineResult>(shouldCreateWindow);
+            }
+            // Otherwise, we'll try to handle this ourselves.
+        }
+
+        // Theoretically, this condition is always true here:
+        //
+        // if (_monarch == nullptr)
+        //
+        // If we do still have a _monarch at this point, then we must have
+        // successfully proposed to it in _proposeToMonarch, so we can't get
+        // here with a monarch.
         {
             // No pre-existing instance.
 
@@ -107,11 +134,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
             // This is handled by some handler in-proc
             _FindTargetWindowRequestedHandlers(*this, *findWindowArgs);
-            // {
-            //     const auto targetWindow = _appLogic.FindTargetWindow(findWindowArgs->Args().Commandline());
-            //     findWindowArgs->ResultTargetWindow(targetWindow.WindowId());
-            //     findWindowArgs->ResultTargetWindowName(targetWindow.WindowName());
-            // }
 
             // After the event was handled, ResultTargetWindow() will be filled with
             // the parsed result.
@@ -125,7 +147,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 shouldCreateWindow = false;
 
                 return *winrt::make_self<ProposeCommandlineResult>(shouldCreateWindow);
-                // return;
             }
             else
             {
@@ -136,52 +157,39 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 // getting any windows.
                 _registerAsMonarch();
                 _createMonarch();
-                _createCallbacks();
                 if (!_monarch)
                 {
-                    // TODO! something catastrophically bad happened here.
+                    // Something catastrophically bad happened here. But we
+                    // don't want to just exit immediately. No, instead, we'll
+                    // just instantiate a local Monarch instance. We're firmly
+                    // in the realm of undefined behavior, but better to have
+                    // some window than not.
+                    _monarch = winrt::make<Monarch>();
+                    TraceLoggingWrite(g_hRemotingProvider,
+                                      "WindowManager_FaileToCoCreate",
+                                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
                 }
+                _createCallbacks();
 
-                // I don't _really_ think we need to propose this again. WE
-                // basically did that work above. We've already gotten the
-                // result -
-                //  * we don't care about the name or ID, we want a new window.
-
-                //Remoting::ProposeCommandlineResult result = _monarch.ProposeCommandline(args);
-
-                // TODO! So, we wanted a new peasant. Cool!
+                // So, we wanted a new peasant. Cool!
                 //
                 // We need to fill in args.ResultTargetWindow,
                 // args.ResultTargetWindowName so that we can create the new
                 // window with those values. Otherwise, the very first window
                 // won't obey the given name / ID.
-                shouldCreateWindow = true;
-                auto result = winrt::make_self<ProposeCommandlineResult>(shouldCreateWindow);
-                result->Id();
-                result->WindowName();
-                return *result;
+                //
+                // So let's just ask the monarch (ourselves) to get those values.
+                return _monarch.ProposeCommandline(args);
             }
-        }
-        else
-        {
-            // We connectecd to a monarch instance, not us though.
-
-            shouldCreateWindow = false;
-            std::optional<uint64_t> givenID;
-            winrt::hstring givenName{};
-
-            // Send the commandline over to the monarch process
-            _proposeToMonarch(args, givenID, givenName);
-
-            // Our job is done. Either the monarch is going to run the
-            // commandline in an existing window, or a new one, but either way,
-            // this process doesn't need to make a new window.
-
-            return *winrt::make_self<ProposeCommandlineResult>(shouldCreateWindow);
         }
     }
 
-    void WindowManager2::_proposeToMonarch(const Remoting::CommandlineArgs& args,
+    // Method Description:
+    // - Helper attempting to call to the monarch multiple times. If the monarch
+    //   fails to respond, or we encounter any sort of error, we'll try again
+    //   until we find one, or decisively determine there isn't one.
+    bool WindowManager2::_proposeToMonarch(const Remoting::CommandlineArgs& args,
                                            std::optional<uint64_t>& /*givenID*/,
                                            winrt::hstring& /*givenName*/)
     {
@@ -217,10 +225,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 // dies between now and the inspection of
                 // `result.ShouldCreateWindow` below, we don't want to explode
                 // (since _proposeToMonarch is not try/caught).
-                auto outOfProcResult = _monarch.ProposeCommandline(args);
-                result = winrt::make<implementation::ProposeCommandlineResult>(outOfProcResult);
 
-                proposedCommandline = true;
+                _monarch.ProposeCommandline(args);
+                return true;
             }
             catch (...)
             {
@@ -246,93 +253,45 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
                 if (attempts >= 10)
                 {
-                    // TODO!
-                    break;
+                    // We've tried 10 times to find the monarch, failing each
+                    // time. Since we have no idea why, we're guessing that in
+                    // this case, there's just a Monarch registered that's
+                    // misbehaving. In this case, just fall back to
+                    // "IsolatedMonarchMode" - we can't trust the currently
+                    // registered one.
+                    TraceLoggingWrite(g_hRemotingProvider,
+                                      "WindowManager_TooManyAttempts_NullMonarchIsolateMode",
+                                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+                    // Set the monarch to null, so that we'll create a new one
+                    // (or just generally check if we need to even make a window
+                    // for this commandline.)
+                    _monarch = nullptr;
+                    return false;
                 }
-                // if (attempts >= 10)
-                // {
-                //     // We've tried 10 times to find the monarch, failing each
-                //     // time. Since we have no idea why, we're guessing that in
-                //     // this case, there's just a Monarch registered that's
-                //     // misbehaving. In this case, just fall back to
-                //     // "IsolatedMonarchMode" - we can't trust the currently
-                //     // registered one.
-                //     TraceLoggingWrite(g_hRemotingProvider,
-                //                       "WindowManager_TooManyAttempts_NullMonarchIsolateMode",
-                //                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                //                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-
-                //     _monarch = winrt::make<winrt::Microsoft::Terminal::Remoting::implementation::Monarch>();
-                //     _createCallbacks();
-                // }
-                // else
-                // {
-                //     // We failed to ask the monarch. It must have died. Try and
-                //     // find the real monarch. Don't perform an election, that
-                //     // assumes we have a peasant, which we don't yet.
-                //     _createMonarchAndCallbacks();
-                //     // _createMonarchAndCallbacks will initialize _isKing
-                // }
-                // if (_isKing)
-                // {
-                //     // We became the king. We don't need to ProposeCommandline to ourself, we're just
-                //     // going to do it.
-                //     //
-                //     // Return early, because there's nothing else for us to do here.
-                //     TraceLoggingWrite(g_hRemotingProvider,
-                //                       "WindowManager_proposeToMonarch_becameKing",
-                //                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                //                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-
-                //     // In WindowManager::ProposeCommandline, had we been the
-                //     // king originally, we would have started by setting
-                //     // this to true. We became the monarch here, so set it
-                //     // here as well.
-                //     _shouldCreateWindow = true;
-                //     return;
-                // }
-
-                // // Here, we created the new monarch, it wasn't us, so we're
-                // // gonna go through the while loop again and ask the new
-                // // king.
-                // TraceLoggingWrite(g_hRemotingProvider,
-                //                   "WindowManager_proposeToMonarch_tryAgain",
-                //                   TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                //                   TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                else
+                {
+                    // We failed to ask the monarch. It must have died. Try and
+                    // find another monarch.
+                    _createMonarch();
+                    if (!_monarch)
+                    {
+                        // We failed to create a monarch. That means there
+                        // aren't any other windows, and we can become the monarch.
+                        return false;
+                    }
+                    // Go back around the loop.
+                    TraceLoggingWrite(g_hRemotingProvider,
+                                      "WindowManager_proposeToMonarch_tryAgain",
+                                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                }
             }
         }
 
-        // // Here, the monarch (not us) has replied to the message. Get the
-        // // valuables out of the response:
-        // _shouldCreateWindow = result.ShouldCreateWindow();
-        // if (result.Id())
-        // {
-        //     givenID = result.Id().Value();
-        // }
-        // givenName = result.WindowName();
-
-        // // TraceLogging doesn't have a good solution for logging an
-        // // optional. So we have to repeat the calls here:
-        // if (givenID)
-        // {
-        //     TraceLoggingWrite(g_hRemotingProvider,
-        //                       "WindowManager_ProposeCommandline",
-        //                       TraceLoggingBoolean(_shouldCreateWindow, "CreateWindow", "true iff we should create a new window"),
-        //                       TraceLoggingUInt64(givenID.value(), "Id", "The ID we should assign our peasant"),
-        //                       TraceLoggingWideString(givenName.c_str(), "Name", "The name we should assign this window"),
-        //                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-        //                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-        // }
-        // else
-        // {
-        //     TraceLoggingWrite(g_hRemotingProvider,
-        //                       "WindowManager_ProposeCommandline",
-        //                       TraceLoggingBoolean(_shouldCreateWindow, "CreateWindow", "true iff we should create a new window"),
-        //                       TraceLoggingPointer(nullptr, "Id", "No ID provided"),
-        //                       TraceLoggingWideString(givenName.c_str(), "Name", "The name we should assign this window"),
-        //                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-        //                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-        // }
+        // I don't think we can ever get here, but the compiler doesn't know
+        return false;
     }
 
     Remoting::Peasant WindowManager2::CreateAPeasant(Remoting::WindowRequestedArgs args)
@@ -357,14 +316,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           TraceLoggingUInt64(p->GetID(), "peasantID", "The ID of our new peasant"),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                           TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-
-        // If the peasant asks us to quit we should not try to act in future elections.
-        p->QuitRequested([weakThis{ get_weak() }](auto&&, auto&&) {
-            // if (auto wm = weakThis.get())
-            // {
-            //     wm->_monarchWaitInterrupt.SetEvent();
-            // }
-        });
 
         return *p;
     }

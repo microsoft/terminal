@@ -85,7 +85,6 @@ private:
 
     bool _LazyLoadDesktopManager();
 
-    winrt::fire_and_forget _createNewTerminalWindow(winrt::Microsoft::Terminal::Settings::Model::GlobalSummonArgs args);
     void _HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& sender,
                                 const winrt::TerminalApp::SettingsLoadEventArgs& args);
 

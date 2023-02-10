@@ -4,13 +4,11 @@
 #include "pch.h"
 #include "WindowEmperor.h"
 
-// #include "MonarchFactory.h"
-// #include "CommandlineArgs.h"
 #include "../inc/WindowingBehavior.h"
-// #include "FindTargetWindowArgs.h"
-// #include "ProposeCommandlineResult.h"
 
 #include "../../types/inc/utils.hpp"
+
+#include "../WinRTUtils/inc/WtExeUtils.h"
 
 #include "resource.h"
 #include "NotificationIcon.h"
@@ -57,6 +55,11 @@ WindowEmperor::~WindowEmperor()
     //     //debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
     //     debug->DisableLeakTrackingForThread();
     // }
+    //
+    // TODO! We're still somehow leaking on exit, even though the islands,
+    // hosts, xaml sources, everything, seem to get closed and dtor'd before
+    // this point. Theoretically, we shouldn't event have leak reporting enabled
+    // for this thread. It's a real thinker.
 
     _app.Close();
     _app = nullptr;
@@ -126,11 +129,11 @@ void WindowEmperor::CreateNewWindowThread(Remoting::WindowRequestedArgs args, co
 
     auto window{ std::make_shared<WindowThread>(_app.Logic(), args, _manager, peasant) };
 
-    window->Started([this, sender=window]() -> winrt::fire_and_forget {
+    window->Started([this, sender = window]() -> winrt::fire_and_forget {
         // Add a callback to the window's logic to let us know when the window's
         // quake mode state changes. We'll use this to check if we need to add
         // or remove the notification icon.
-        sender->Logic().IsQuakeWindowChanged([this](auto&&, auto&&) -> winrt::fire_and_forget {
+        sender->Logic().IsQuakeWindowChanged([this](auto&&, auto &&) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(this->_dispatcher);
             this->_checkWindowsForNotificationIcon();
         });
@@ -161,27 +164,35 @@ void WindowEmperor::CreateNewWindowThread(Remoting::WindowRequestedArgs args, co
     window->Start();
 }
 
+// Method Description:
+// - Set up all sorts of handlers now that we've determined that we're a process
+//   that will end up hosting the windows. These include:
+//   - Setting up a message window to handle hotkeys and notification icon
+//     invokes.
+//   - Setting up the global hotkeys.
+//   - Setting up the notification icon.
+//   - Setting up callbacks for when the settings change.
+//   - Setting up callbacks for when the number of windows changes.
+//   - Setting up the throttled func for layout persistence. Arguments:
+// - <none>
 void WindowEmperor::_becomeMonarch()
 {
     _createMessageWindow();
 
-    ////////////////////////////////////////////////////////////////////////////
     _setupGlobalHotkeys();
 
+    // When the settings change, we'll want to update our global hotkeys and our
+    // notification icon based on the new settings.
     _app.Logic().SettingsChanged([this](auto&&, const TerminalApp::SettingsLoadEventArgs& args) {
         if (SUCCEEDED(args.Result()))
         {
             _setupGlobalHotkeys();
-
             _checkWindowsForNotificationIcon();
         }
     });
 
-    ////////////////////////////////////////////////////////////////////////////
-
+    // On startup, immediately check if we need to show the notification icon.
     _checkWindowsForNotificationIcon();
-
-    ////////////////////////////////////////////////////////////////////////////
 
     // Set the number of open windows (so we know if we are the last window)
     // and subscribe for updates if there are any changes to that number.
@@ -189,13 +200,9 @@ void WindowEmperor::_becomeMonarch()
     _WindowCreatedToken = _manager.WindowCreated({ this, &WindowEmperor::_numberOfWindowsChanged });
     _WindowClosedToken = _manager.WindowClosed({ this, &WindowEmperor::_numberOfWindowsChanged });
 
-    ////////////////////////////////////////////////////////////////////////////
-
     // If the monarch receives a QuitAll event it will signal this event to be
     // ran before each peasant is closed.
     _revokers.QuitAllRequested = _manager.QuitAllRequested(winrt::auto_revoke, { this, &WindowEmperor::_quitAllRequested });
-
-    ////////////////////////////////////////////////////////////////////////////
 
     // The monarch should be monitoring if it should save the window layout.
     // We want at least some delay to prevent the first save from overwriting
@@ -221,14 +228,6 @@ void WindowEmperor::_numberOfWindowsChanged(const winrt::Windows::Foundation::II
     // If we closed out the quake window, and don't otherwise need the tray
     // icon, let's get rid of it.
     _checkWindowsForNotificationIcon();
-
-    // TODO! apparently, we crash when whe actually post a quit, handle it, and
-    // then leak all our threads. That's not good, but also, this should only
-    // happen once our threads all exited. So figure that out.
-    if (numWindows == 0)
-    {
-        // _close();
-    }
 }
 
 // Raised from our windowManager (on behalf of the monarch). We respond by
@@ -431,6 +430,47 @@ winrt::fire_and_forget WindowEmperor::_close()
 
 #pragma endregion
 #pragma region GlobalHotkeys
+
+// Method Description:
+// - Called when the monarch failed to summon a window for a given set of
+//   SummonWindowSelectionArgs. In this case, we should create the specified
+//   window ourselves.
+// - This is to support the scenario like `globalSummon(Name="_quake")` being
+//   used to summon the window if it already exists, or create it if it doesn't.
+// Arguments:
+// - args: Contains information on how we should name the window
+// Return Value:
+// - <none>
+static winrt::fire_and_forget _createNewTerminalWindow(Settings::Model::GlobalSummonArgs args)
+{
+    // Hop to the BG thread
+    co_await winrt::resume_background();
+
+    // This will get us the correct exe for dev/preview/release. If you
+    // don't stick this in a local, it'll get mangled by ShellExecute. I
+    // have no idea why.
+    const auto exePath{ GetWtExePath() };
+
+    // If we weren't given a name, then just use new to force the window to be
+    // unnamed.
+    winrt::hstring cmdline{
+        fmt::format(L"-w {}",
+                    args.Name().empty() ? L"new" :
+                                          args.Name())
+    };
+
+    SHELLEXECUTEINFOW seInfo{ 0 };
+    seInfo.cbSize = sizeof(seInfo);
+    seInfo.fMask = SEE_MASK_NOASYNC;
+    seInfo.lpVerb = L"open";
+    seInfo.lpFile = exePath.c_str();
+    seInfo.lpParameters = cmdline.c_str();
+    seInfo.nShow = SW_SHOWNORMAL;
+    LOG_IF_WIN32_BOOL_FALSE(ShellExecuteExW(&seInfo));
+
+    co_return;
+}
+
 void WindowEmperor::_hotkeyPressed(const long hotkeyIndex)
 {
     if (hotkeyIndex < 0 || static_cast<size_t>(hotkeyIndex) > _hotkeys.size())
@@ -470,8 +510,7 @@ void WindowEmperor::_hotkeyPressed(const long hotkeyIndex)
     else
     {
         // We should make the window ourselves.
-        // TODO!
-        // _createNewTerminalWindow(summonArgs);
+        _createNewTerminalWindow(summonArgs);
     }
 }
 

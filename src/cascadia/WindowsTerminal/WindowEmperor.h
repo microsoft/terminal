@@ -1,12 +1,17 @@
 /*++
-Copyright (c) Microsoft Corporation
-Licensed under the MIT license.
+Copyright (c) Microsoft Corporation Licensed under the MIT license.
 
 Class Name:
 - WindowEmperor.h
 
 Abstract:
-- TODO!
+- The WindowEmperor is our new class for managing the single Terminal process
+  with all our windows. It will be responsible for handling the commandline
+  arguments. It will initially try to find another terminal process to
+  communicate with. If it does, it'll hand off to the existing process.
+- If it determines that it should create a window, it will set up a new thread
+  for that window, and a message loop on the main thread for handling global
+  state, such as hotkeys and the notification icon.
 
 --*/
 
