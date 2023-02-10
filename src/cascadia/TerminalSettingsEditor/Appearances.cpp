@@ -338,7 +338,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         auto lifetime = get_strong();
 
-        const auto parentHwnd{ reinterpret_cast<HWND>(Appearance().WindowRoot().GetHostingWindow()) };
+        const auto parentHwnd{ reinterpret_cast<HWND>(WindowRoot().GetHostingWindow()) };
         auto file = co_await OpenImagePicker(parentHwnd);
         if (!file.empty())
         {

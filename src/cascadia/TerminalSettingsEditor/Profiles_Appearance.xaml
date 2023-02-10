@@ -56,6 +56,7 @@
                 </Border>
 
                 <local:Appearances Appearance="{x:Bind Profile.DefaultAppearance, Mode=OneWay}"
+                                   WindowRoot="{x:Bind WindowRoot, Mode=OneTime}"
                                    SourceProfile="{x:Bind Profile, Mode=OneWay}" />
 
                 <!--  Grouping: Transparency  -->
@@ -174,6 +175,7 @@
                     </StackPanel>
                     <local:Appearances Appearance="{x:Bind Profile.UnfocusedAppearance, Mode=OneWay}"
                                        SourceProfile="{x:Bind Profile, Mode=OneWay}"
+                                       WindowRoot="{x:Bind WindowRoot, Mode=OneTime}"
                                        Visibility="{x:Bind Profile.ShowUnfocusedAppearance, Mode=OneWay}" />
                 </StackPanel>
             </StackPanel>
