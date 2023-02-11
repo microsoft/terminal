@@ -43,9 +43,6 @@
     <!-- TAEF -->
     <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.60.210621002\build\Microsoft.Taef.targets" Condition="'$(TerminalTAEF)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.60.210621002\build\Microsoft.Taef.targets')" />
     
-    <!-- CppRestSDK -->
-    <Import Project="$(MSBuildThisFileDirectory)..\packages\vcpkg-cpprestsdk.2.10.14\build\native\vcpkg-cpprestsdk.targets" Condition="'$(TerminalCppRestSDK)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\vcpkg-cpprestsdk.2.10.14\build\native\vcpkg-cpprestsdk.targets')" />
-
     <!-- VCRTForwarders -->
     <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.VCRTForwarders.140.1.0.4\build\native\Microsoft.VCRTForwarders.140.targets" Condition="'$(TerminalVCRTForwarders)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.VCRTForwarders.140.1.0.4\build\native\Microsoft.VCRTForwarders.140.targets')" />
 
@@ -78,9 +75,6 @@
 
     <!-- TAEF -->
     <Error Condition="'$(TerminalTAEF)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.60.210621002\build\Microsoft.Taef.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.60.210621002\build\Microsoft.Taef.targets'))" />
-
-    <!-- CppRestSDK -->
-    <Error Condition="'$(TerminalCppRestSDK)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\vcpkg-cpprestsdk.2.10.14\build\native\vcpkg-cpprestsdk.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\vcpkg-cpprestsdk.2.10.14\build\native\vcpkg-cpprestsdk.targets'))" />
 
     <!-- VCRTForwarders -->
     <Error Condition="'$(TerminalVCRTForwarders)' == 'true' AND !Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.VCRTForwarders.140.1.0.4\build\native\Microsoft.VCRTForwarders.140.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(MSBuildThisFileDirectory)..\packages\Microsoft.VCRTForwarders.140.1.0.4\build\native\Microsoft.VCRTForwarders.140.targets'))" />

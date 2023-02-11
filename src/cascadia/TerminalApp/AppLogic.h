@@ -55,13 +55,12 @@ namespace winrt::TerminalApp::implementation
 
         bool HasSettingsStartupActions() const noexcept;
 
+        bool ShouldUsePersistedLayout() const;
+        void SaveWindowLayoutJsons(const Windows::Foundation::Collections::IVector<hstring>& layouts);
+
         [[nodiscard]] Microsoft::Terminal::Settings::Model::CascadiaSettings GetSettings() const noexcept;
 
         TerminalApp::FindTargetWindowResult FindTargetWindow(array_view<const winrt::hstring> actions);
-        bool ShouldImmediatelyHandoffToElevated();
-        void HandoffToElevated();
-
-        void SetInboundListener();
 
         Windows::Foundation::Collections::IMapView<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::Command> GlobalHotkeys();
 
@@ -70,6 +69,8 @@ namespace winrt::TerminalApp::implementation
         TerminalApp::TerminalWindow CreateNewWindow();
 
         winrt::TerminalApp::ContentManager ContentManager();
+
+        TerminalApp::ParseCommandlineResult GetParseCommandlineMessage(array_view<const winrt::hstring> args);
 
         TYPED_EVENT(SettingsChanged, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SettingsLoadEventArgs);
 

@@ -76,7 +76,7 @@ namespace
 #pragma pack(pop)
 }
 
-FontResource::FontResource(const gsl::span<const uint16_t> bitPattern,
+FontResource::FontResource(const std::span<const uint16_t> bitPattern,
                            const til::size sourceSize,
                            const til::size targetSize,
                            const size_t centeringHint) :
@@ -149,7 +149,7 @@ void FontResource::_regenerateFont()
     // Raster fonts aren't generally scalable, so we need to resize the bit
     // patterns for the character glyphs to the requested target size, and
     // copy the results into the resource structure.
-    auto fontResourceSpan = gsl::span<byte>(fontResourceBuffer);
+    auto fontResourceSpan = std::span<byte>(fontResourceBuffer);
     _resizeBitPattern(fontResourceSpan.subspan(fontResource.dfBitsOffset));
 
     DWORD fontCount = 0;
@@ -169,7 +169,7 @@ void FontResource::_regenerateFont()
     LOG_HR_IF_NULL(E_FAIL, _fontHandle.get());
 }
 
-void FontResource::_resizeBitPattern(gsl::span<byte> targetBuffer)
+void FontResource::_resizeBitPattern(std::span<byte> targetBuffer)
 {
     auto sourceWidth = _sourceSize.width;
     auto targetWidth = _targetSize.width;

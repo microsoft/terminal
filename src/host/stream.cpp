@@ -281,7 +281,7 @@ til::CoordType RetrieveNumberOfSpaces(_In_ til::CoordType sOriginalCursorPositio
 // - STATUS_NO_MEMORY in low memory situation
 // - other relevant NTSTATUS codes
 [[nodiscard]] static NTSTATUS _ReadPendingInput(InputBuffer& inputBuffer,
-                                                gsl::span<char> buffer,
+                                                std::span<char> buffer,
                                                 size_t& bytesRead,
                                                 INPUT_READ_HANDLE_DATA& readHandleState,
                                                 const bool unicode)
@@ -457,7 +457,7 @@ til::CoordType RetrieveNumberOfSpaces(_In_ til::CoordType sOriginalCursorPositio
 // - other relevant HRESULT codes
 [[nodiscard]] static HRESULT _ReadLineInput(InputBuffer& inputBuffer,
                                             const HANDLE processData,
-                                            gsl::span<char> buffer,
+                                            std::span<char> buffer,
                                             size_t& bytesRead,
                                             DWORD& controlKeyState,
                                             const std::string_view initialData,
@@ -522,7 +522,7 @@ til::CoordType RetrieveNumberOfSpaces(_In_ til::CoordType sOriginalCursorPositio
 // - STATUS_SUCCESS on success
 // - Other NTSTATUS codes as necessary
 [[nodiscard]] static NTSTATUS _ReadCharacterInput(InputBuffer& inputBuffer,
-                                                  gsl::span<char> buffer,
+                                                  std::span<char> buffer,
                                                   size_t& bytesRead,
                                                   INPUT_READ_HANDLE_DATA& readHandleState,
                                                   const bool unicode,
@@ -682,7 +682,7 @@ til::CoordType RetrieveNumberOfSpaces(_In_ til::CoordType sOriginalCursorPositio
 // - Other NSTATUS codes as necessary
 [[nodiscard]] NTSTATUS DoReadConsole(InputBuffer& inputBuffer,
                                      const HANDLE processData,
-                                     gsl::span<char> buffer,
+                                     std::span<char> buffer,
                                      size_t& bytesRead,
                                      ULONG& controlKeyState,
                                      const std::string_view initialData,
@@ -742,7 +742,7 @@ til::CoordType RetrieveNumberOfSpaces(_In_ til::CoordType sOriginalCursorPositio
 }
 
 [[nodiscard]] HRESULT ApiRoutines::ReadConsoleAImpl(IConsoleInputObject& context,
-                                                    gsl::span<char> buffer,
+                                                    std::span<char> buffer,
                                                     size_t& written,
                                                     std::unique_ptr<IWaitRoutine>& waiter,
                                                     const std::string_view initialData,
@@ -770,7 +770,7 @@ til::CoordType RetrieveNumberOfSpaces(_In_ til::CoordType sOriginalCursorPositio
 }
 
 [[nodiscard]] HRESULT ApiRoutines::ReadConsoleWImpl(IConsoleInputObject& context,
-                                                    gsl::span<char> buffer,
+                                                    std::span<char> buffer,
                                                     size_t& written,
                                                     std::unique_ptr<IWaitRoutine>& waiter,
                                                     const std::string_view initialData,

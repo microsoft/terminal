@@ -768,6 +768,14 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 return *result;
             }
         }
+        else if (targetWindow == WindowingBehaviorUseNone)
+        {
+            // In this case, the targetWindow was UseNone, which means that we
+            // want to make a message box, but otherwise not make a Terminal
+            // window.
+            auto result = winrt::make_self<Remoting::implementation::ProposeCommandlineResult>(false);
+            return *result;
+        }
 
         // If we get here, we couldn't find an existing window. Make a new one.
         TraceLoggingWrite(g_hRemotingProvider,

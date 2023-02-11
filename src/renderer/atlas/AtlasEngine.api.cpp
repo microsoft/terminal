@@ -159,7 +159,7 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
     return UpdateFont(fontInfoDesired, fontInfo, {}, {});
 }
 
-[[nodiscard]] HRESULT AtlasEngine::UpdateSoftFont(const gsl::span<const uint16_t> bitPattern, const til::size cellSize, const size_t centeringHint) noexcept
+[[nodiscard]] HRESULT AtlasEngine::UpdateSoftFont(const std::span<const uint16_t> bitPattern, const til::size cellSize, const size_t centeringHint) noexcept
 {
     return S_OK;
 }
@@ -254,9 +254,9 @@ try
 }
 CATCH_RETURN()
 
-[[nodiscard]] HRESULT AtlasEngine::GetDirtyArea(gsl::span<const til::rect>& area) noexcept
+[[nodiscard]] HRESULT AtlasEngine::GetDirtyArea(std::span<const til::rect>& area) noexcept
 {
-    area = gsl::span{ &_api.dirtyRect, 1 };
+    area = std::span{ &_api.dirtyRect, 1 };
     return S_OK;
 }
 

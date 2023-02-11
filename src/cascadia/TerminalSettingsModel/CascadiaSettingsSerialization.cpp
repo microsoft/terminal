@@ -531,10 +531,10 @@ const Json::Value& SettingsLoader::_getJSONValue(const Json::Value& json, const 
 // Thus no matter how many profiles are added later on, the following condition holds true:
 // The userSettings.profiles in the range [0, _userProfileCount) contain all profiles specified by the user.
 // In turn all profiles in the range [_userProfileCount, ∞) contain newly generated/added profiles.
-// gsl::make_span(userSettings.profiles).subspan(_userProfileCount) gets us the latter range.
-gsl::span<const winrt::com_ptr<Profile>> SettingsLoader::_getNonUserOriginProfiles() const
+// std::span{ userSettings.profiles }.subspan(_userProfileCount) gets us the latter range.
+std::span<const winrt::com_ptr<Profile>> SettingsLoader::_getNonUserOriginProfiles() const
 {
-    return gsl::make_span(userSettings.profiles).subspan(_userProfileCount);
+    return std::span{ userSettings.profiles }.subspan(_userProfileCount);
 }
 
 // Parses the given JSON string ("content") and fills a ParsedSettings instance with it.
@@ -791,7 +791,7 @@ void SettingsLoader::_executeGenerator(const IDynamicProfileGenerator& generator
     {
         const winrt::hstring source{ generatorNamespace };
 
-        for (const auto& profile : gsl::span(inboxSettings.profiles).subspan(previousSize))
+        for (const auto& profile : std::span(inboxSettings.profiles).subspan(previousSize))
         {
             profile->Origin(OriginTag::Generated);
             profile->Source(source);
@@ -954,9 +954,9 @@ void CascadiaSettings::_researchOnLoad()
         // dark: 2
         // a custom theme: 3
         const auto themeChoice = themeInUse == L"system" ? 0 :
-                                 themeInUse == L"light"  ? 1 :
-                                 themeInUse == L"dark"   ? 2 :
-                                                           3;
+                                                           themeInUse == L"light" ? 1 :
+                                                                                    themeInUse == L"dark" ? 2 :
+                                                                                                            3;
 
         TraceLoggingWrite(
             g_hSettingsModelProvider,
