@@ -31,7 +31,7 @@ public:
 
     static std::string toString(const Json::Value& json)
     {
-        static const std::unique_ptr<Json::StreamWriter> writer{ Json::StreamWriterBuilder::StreamWriterBuilder().newStreamWriter() };
+        static const std::unique_ptr<Json::StreamWriter> writer{ Json::StreamWriterBuilder{}.newStreamWriter() };
 
         std::stringstream s;
         writer->write(json, &s);
