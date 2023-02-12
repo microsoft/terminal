@@ -44,8 +44,17 @@ namespace winrt::TerminalApp::implementation
                 Bindings->Update();
 
                 _filteredActionsView().SelectedIndex(0);
-                _filteredActionsView().Focus(FocusState::Programmatic);
-                // _searchBox().Focus(FocusState::Programmatic);
+
+                if (_mode == SuggestionsMode::Palette)
+                {
+                    _searchBox().Visibility(Visibility::Visible);
+                    _searchBox().Focus(FocusState::Programmatic);
+                }
+                else if (_mode == SuggestionsMode::Menu)
+                {
+                    _searchBox().Visibility(Visibility::Collapsed);
+                    _filteredActionsView().Focus(FocusState::Programmatic);
+                }
 
                 TraceLoggingWrite(
                     g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
@@ -68,16 +77,38 @@ namespace winrt::TerminalApp::implementation
         // when the ListView has been measured out and is ready, and we'll immediately
         // revoke the handler because we only needed to handle it once on initialization.
         _sizeChangedRevoker = _filteredActionsView().SizeChanged(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
-            /*if (_currentMode == SuggestionsControlMode::TabSwitchMode)
+            if (_mode == SuggestionsMode::Palette)
             {
-                _filteredActionsView().Focus(FocusState::Keyboard);
-            }*/
-            // TODO! only in menu mode
-            _filteredActionsView().Focus(FocusState::Programmatic);
+            }
+            else if (_mode == SuggestionsMode::Menu)
+            {
+                _filteredActionsView().Focus(FocusState::Programmatic);
+            }
+
             _sizeChangedRevoker.revoke();
         });
 
         _filteredActionsView().SelectionChanged({ this, &SuggestionsControl::_selectedCommandChanged });
+    }
+
+    TerminalApp::SuggestionsMode SuggestionsControl::Mode() const
+    {
+        return _mode;
+    }
+    void SuggestionsControl::Mode(TerminalApp::SuggestionsMode mode)
+    {
+        _mode = mode;
+
+        if (_mode == SuggestionsMode::Palette)
+        {
+            _searchBox().Visibility(Visibility::Visible);
+            _searchBox().Focus(FocusState::Programmatic);
+        }
+        else if (_mode == SuggestionsMode::Menu)
+        {
+            _searchBox().Visibility(Visibility::Collapsed);
+            _filteredActionsView().Focus(FocusState::Programmatic);
+        }
     }
 
     // Method Description:
@@ -273,7 +304,9 @@ namespace winrt::TerminalApp::implementation
             ScrollPageDown();
             e.Handled(true);
         }
-        else if (key == VirtualKey::Enter)
+        else if (key == VirtualKey::Enter ||
+                 key == VirtualKey::Tab ||
+                 key == VirtualKey::Right)
         {
             if (const auto& button = e.OriginalSource().try_as<Button>())
             {
@@ -313,18 +346,14 @@ namespace winrt::TerminalApp::implementation
             _searchBox().PasteFromClipboard();
             e.Handled(true);
         }
-        // TODO! we may actually want this
-        //else if (key == VirtualKey::Right /*&& _currentMode == SuggestionsControlMode::CommandlineMode*/)
-        //{
-        //    if (const auto command{ _filteredActionsView().SelectedItem().try_as<winrt::TerminalApp::FilteredCommand>() })
-        //    {
-        //        _searchBox().Text(command.Item().Name());
-        //        _searchBox().Select(_searchBox().Text().size(), 0);
-        //        _searchBox().Focus(FocusState::Programmatic);
-        //        _filteredActionsView().SelectedIndex(-1);
-        //        e.Handled(true);
-        //    }
-        //}
+
+        // If the user types a character while the menu (not in palette mode)
+        // is open, then dismiss ourselves. That way, when you type a character,
+        // we'll instead send it to the TermControl.
+        if (_mode == SuggestionsMode::Menu && !e.Handled())
+        {
+            _dismissPalette();
+        }
     }
 
     // Method Description:
@@ -340,16 +369,6 @@ namespace winrt::TerminalApp::implementation
     void SuggestionsControl::_keyUpHandler(const IInspectable& /*sender*/,
                                            const Windows::UI::Xaml::Input::KeyRoutedEventArgs& /*e*/)
     {
-        // TODO! Something we may want to consider: If the user types a
-        // character while the menu is open, not in palette mode, what should we
-        // do? Currently, we eat it. I suspect this is because the menu is not a
-        // child of the control or app, rather, it's a Popup, which has an
-        // entirely separate root, so the key events don't bubble to the
-        // TermControl.
-        //
-        // It seems to me like typing a character (when in menu mode )should
-        // instead send it to the TermControl and dismiss ourselves. Interesting
-        // thought.
     }
 
     // Method Description:

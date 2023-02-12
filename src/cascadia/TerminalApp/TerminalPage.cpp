@@ -4478,13 +4478,17 @@ namespace winrt::TerminalApp::implementation
         // auto entries = control.MenuEntries();
 
         // parse json
-        auto commandsCollection = Command::ParsePowerShellMenuComplete(args.MenuJson(),
-                                                                       args.ReplacementLength());
+        try
+        {
+            auto commandsCollection = Command::ParsePowerShellMenuComplete(args.MenuJson(),
+                                                                           args.ReplacementLength());
 
-        _OpenSuggestions(commandsCollection);
+            _OpenSuggestions(commandsCollection, SuggestionsMode::Menu);
+        }
+        CATCH_LOG();
     }
 
-    winrt::fire_and_forget TerminalPage::_OpenSuggestions(Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::Command> commandsCollection)
+    winrt::fire_and_forget TerminalPage::_OpenSuggestions(Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::Command> commandsCollection, winrt::TerminalApp::SuggestionsMode mode)
     {
         if (commandsCollection == nullptr)
         {
@@ -4506,7 +4510,7 @@ namespace winrt::TerminalApp::implementation
 
         // CommandPalette has an internal margin of 8, so set to -4,-4 to position closer to the actual line
         SuggestionsUI().PositionManually(Windows::Foundation::Point{ -4, -4 }, Windows::Foundation::Size{ 300, 300 });
-
+        SuggestionsUI().Mode(mode);
         // CommandPalette().EnableCommandPaletteMode(CommandPaletteLaunchMode::Action);
 
         const til::point cursorPos{ control.CursorPositionInDips() };

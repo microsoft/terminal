@@ -8,6 +8,14 @@ import "FilteredCommand.idl";
 
 namespace TerminalApp
 {
+
+    enum SuggestionsMode
+    {
+        Palette = 0,
+        Menu,
+        // Inline,
+    };
+
     [default_interface] runtimeclass SuggestionsControl : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged, IDirectKeyListener
     {
         SuggestionsControl();
@@ -18,16 +26,17 @@ namespace TerminalApp
         String ParentCommandName { get; };
         String ParsedCommandLineText { get; };
 
+        Windows.UI.Xaml.FrameworkElement SelectedItem { get; };
+
         Windows.Foundation.Collections.IObservableVector<FilteredCommand> FilteredActions { get; };
 
+        SuggestionsMode Mode { get; set; };
+
         void SetCommands(Windows.Foundation.Collections.IVector<Microsoft.Terminal.Settings.Model.Command> actions);
-
         void SetActionMap(Microsoft.Terminal.Settings.Model.IActionMapView actionMap);
-
         void SelectNextItem(Boolean moveDown);
 
         void PositionManually(Windows.Foundation.Point origin, Windows.Foundation.Size size);
-        Windows.UI.Xaml.FrameworkElement SelectedItem { get; };
 
         event Windows.Foundation.TypedEventHandler<SuggestionsControl, Microsoft.Terminal.Settings.Model.Command> DispatchCommandRequested;
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.Command> PreviewAction;

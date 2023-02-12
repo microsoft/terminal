@@ -640,7 +640,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         if (json.empty())
         {
-         return nullptr;}
+            return nullptr;
+        }
         auto data = winrt::to_string(json);
 
         std::string errs;
@@ -654,8 +655,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto result = winrt::single_threaded_vector<Model::Command>();
 
         auto backspaces = std::wstring(::base::saturated_cast<size_t>(replaceLength), L'\x7f');
-        for (const auto& element : root)
-        {
+
+        const auto parseElement = [&](const auto& element) {
             winrt::hstring completionText;
             winrt::hstring listText;
             JsonUtils::GetValueForKey(element, "CompletionText", completionText);
@@ -671,6 +672,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // command.Name(listText);
 
             result.Append(*c);
+        };
+
+        if (root.isArray())
+        {
+            // If we got a whole array of suggestions, parse each one.
+            for (const auto& element : root)
+            {
+                parseElement(element);
+            }
+        }
+        else if (root.isObject())
+        {
+            // If we instead only got a single element back, just parse the root element.
+            parseElement(root);
         }
         return result;
     }

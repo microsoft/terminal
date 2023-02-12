@@ -36,6 +36,9 @@ namespace winrt::TerminalApp::implementation
         Windows::UI::Xaml::FrameworkElement SelectedItem();
         void PositionManually(Windows::Foundation::Point origin, Windows::Foundation::Size size);
 
+        TerminalApp::SuggestionsMode Mode() const;
+        void Mode(TerminalApp::SuggestionsMode mode);
+
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, NoMatchesText, _PropertyChangedHandlers);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, SearchBoxPlaceholderText, _PropertyChangedHandlers);
@@ -57,6 +60,8 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _nestedActionStack{ nullptr };
 
         Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _commandsToFilter();
+
+        TerminalApp::SuggestionsMode _mode{ TerminalApp::SuggestionsMode::Palette };
 
         bool _lastFilterTextWasEmpty{ true };
 
