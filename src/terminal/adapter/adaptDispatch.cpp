@@ -696,23 +696,11 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
     //      by moving the current contents of the viewport into the scrollback.
     if (eraseType == DispatchTypes::EraseType::Scrollback)
     {
-        _EraseScrollback();
-        // GH#2715 - If this succeeded, but we're in a conpty, return `false` to
-        // make the state machine propagate this ED sequence to the connected
-        // terminal application. While we're in conpty mode, we don't really
-        // have a scrollback, but the attached terminal might.
-        return !_api.IsConsolePty();
+        return _EraseScrollback();
     }
     else if (eraseType == DispatchTypes::EraseType::All)
     {
-        // GH#5683 - If this succeeded, but we're in a conpty, return `false` to
-        // make the state machine propagate this ED sequence to the connected
-        // terminal application. While we're in conpty mode, when the client
-        // requests a Erase All operation, we need to manually tell the
-        // connected terminal to do the same thing, so that the terminal will
-        // move it's own buffer contents into the scrollback.
-        _EraseAll();
-        return !_api.IsConsolePty();
+        return _EraseAll();
     }
 
     const auto viewport = _api.GetViewport();
@@ -2609,8 +2597,8 @@ bool AdaptDispatch::ScreenAlignmentPattern()
 // Arguments:
 // - <none>
 // Return value:
-// - <none>
-void AdaptDispatch::_EraseScrollback()
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::_EraseScrollback()
 {
     const auto viewport = _api.GetViewport();
     const auto top = viewport.top;
@@ -2631,6 +2619,12 @@ void AdaptDispatch::_EraseScrollback()
     // Move the cursor to the same relative location.
     cursor.SetYPosition(row - top);
     cursor.SetHasMoved(true);
+
+    // GH#2715 - If this succeeded, but we're in a conpty, return `false` to
+    // make the state machine propagate this ED sequence to the connected
+    // terminal application. While we're in conpty mode, we don't really
+    // have a scrollback, but the attached terminal might.
+    return !_api.IsConsolePty();
 }
 
 //Routine Description:
@@ -2644,13 +2638,14 @@ void AdaptDispatch::_EraseScrollback()
 // Arguments:
 // - <none>
 // Return value:
-// - <none>
-void AdaptDispatch::_EraseAll()
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::_EraseAll()
 {
     const auto viewport = _api.GetViewport();
     const auto viewportHeight = viewport.bottom - viewport.top;
     auto& textBuffer = _api.GetTextBuffer();
     const auto bufferSize = textBuffer.GetSize();
+    const auto inPtyMode = _api.IsConsolePty();
 
     // Stash away the current position of the cursor within the viewport.
     // We'll need to restore the cursor to that same relative position, after
@@ -2665,10 +2660,21 @@ void AdaptDispatch::_EraseAll()
     auto newViewportTop = lastChar == til::point{} ? 0 : lastChar.y + 1;
     const auto newViewportBottom = newViewportTop + viewportHeight;
     const auto delta = newViewportBottom - (bufferSize.Height());
-    for (auto i = 0; i < delta; i++)
+    if (delta > 0)
     {
-        textBuffer.IncrementCircularBuffer();
-        newViewportTop--;
+        for (auto i = 0; i < delta; i++)
+        {
+            textBuffer.IncrementCircularBuffer();
+        }
+        _api.NotifyBufferRotation(delta);
+        newViewportTop -= delta;
+        // We don't want to trigger a scroll in pty mode, because we're going to
+        // pass through the ED sequence anyway, and this will just result in the
+        // buffer being scrolled up by two pages instead of one.
+        if (!inPtyMode)
+        {
+            textBuffer.TriggerScroll({ 0, -delta });
+        }
     }
     // Move the viewport
     _api.SetViewportPosition({ viewport.left, newViewportTop });
@@ -2683,6 +2689,14 @@ void AdaptDispatch::_EraseAll()
 
     // Also reset the line rendition for the erased rows.
     textBuffer.ResetLineRenditionRange(newViewportTop, newViewportBottom);
+
+    // GH#5683 - If this succeeded, but we're in a conpty, return `false` to
+    // make the state machine propagate this ED sequence to the connected
+    // terminal application. While we're in conpty mode, when the client
+    // requests a Erase All operation, we need to manually tell the
+    // connected terminal to do the same thing, so that the terminal will
+    // move it's own buffer contents into the scrollback.
+    return !inPtyMode;
 }
 
 //Routine Description:
