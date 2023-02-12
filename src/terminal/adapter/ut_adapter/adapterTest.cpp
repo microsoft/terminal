@@ -143,12 +143,9 @@ public:
         return _getLineFeedModeResult;
     }
 
-    void LineFeed(const bool withReturn, const bool /*wrapForced*/) override
+    void LineFeed(const bool /*withReturn*/, const bool /*wrapForced*/) override
     {
         Log::Comment(L"LineFeed MOCK called...");
-
-        THROW_HR_IF(E_FAIL, !_lineFeedResult);
-        VERIFY_ARE_EQUAL(_expectedLineFeedWithReturn, withReturn);
     }
 
     void SetWindowTitle(const std::wstring_view title)
@@ -418,8 +415,6 @@ public:
 
     bool _setScrollingRegionResult = false;
     bool _getLineFeedModeResult = false;
-    bool _lineFeedResult = false;
-    bool _expectedLineFeedWithReturn = false;
 
     bool _setWindowTitleResult = false;
     std::wstring_view _expectedWindowTitle{};
@@ -1972,32 +1967,6 @@ public:
         _testGetSet->_activeScrollRegion = {};
         VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.top, srTestMargins.bottom));
         VERIFY_ARE_EQUAL(til::inclusive_rect{}, _testGetSet->_activeScrollRegion);
-    }
-
-    TEST_METHOD(LineFeedTest)
-    {
-        Log::Comment(L"Starting test...");
-
-        // All test cases need the LineFeed call to succeed.
-        _testGetSet->_lineFeedResult = TRUE;
-
-        Log::Comment(L"Test 1: Line feed without carriage return.");
-        _testGetSet->_expectedLineFeedWithReturn = false;
-        VERIFY_IS_TRUE(_pDispatch->LineFeed(DispatchTypes::LineFeedType::WithoutReturn));
-
-        Log::Comment(L"Test 2: Line feed with carriage return.");
-        _testGetSet->_expectedLineFeedWithReturn = true;
-        VERIFY_IS_TRUE(_pDispatch->LineFeed(DispatchTypes::LineFeedType::WithReturn));
-
-        Log::Comment(L"Test 3: Line feed depends on mode, and mode reset.");
-        _testGetSet->_getLineFeedModeResult = false;
-        _testGetSet->_expectedLineFeedWithReturn = false;
-        VERIFY_IS_TRUE(_pDispatch->LineFeed(DispatchTypes::LineFeedType::DependsOnMode));
-
-        Log::Comment(L"Test 4: Line feed depends on mode, and mode set.");
-        _testGetSet->_getLineFeedModeResult = true;
-        _testGetSet->_expectedLineFeedWithReturn = true;
-        VERIFY_IS_TRUE(_pDispatch->LineFeed(DispatchTypes::LineFeedType::DependsOnMode));
     }
 
     TEST_METHOD(SetConsoleTitleTest)

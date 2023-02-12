@@ -1646,6 +1646,7 @@ void ScreenBufferTests::VtNewlineOutsideMargins()
 
     Log::Comment(L"Reset viewport and apply DECSTBM margins");
     VERIFY_SUCCEEDED(si.SetViewportOrigin(true, { 0, viewportTop }, true));
+    si.UpdateBottom();
     stateMachine.ProcessString(L"\x1b[1;5r");
     // Make sure we clear the margins on exit so they can't break other tests.
     auto clearMargins = wil::scope_exit([&] { stateMachine.ProcessString(L"\x1b[r"); });
