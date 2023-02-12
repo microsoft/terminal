@@ -44,7 +44,8 @@ namespace winrt::TerminalApp::implementation
                 Bindings->Update();
 
                 _filteredActionsView().SelectedIndex(0);
-                _searchBox().Focus(FocusState::Programmatic);
+                _filteredActionsView().Focus(FocusState::Programmatic);
+                // _searchBox().Focus(FocusState::Programmatic);
 
                 TraceLoggingWrite(
                     g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
@@ -71,6 +72,8 @@ namespace winrt::TerminalApp::implementation
             {
                 _filteredActionsView().Focus(FocusState::Keyboard);
             }*/
+            // TODO! only in menu mode
+            _filteredActionsView().Focus(FocusState::Programmatic);
             _sizeChangedRevoker.revoke();
         });
 
@@ -337,6 +340,16 @@ namespace winrt::TerminalApp::implementation
     void SuggestionsControl::_keyUpHandler(const IInspectable& /*sender*/,
                                            const Windows::UI::Xaml::Input::KeyRoutedEventArgs& /*e*/)
     {
+        // TODO! Something we may want to consider: If the user types a
+        // character while the menu is open, not in palette mode, what should we
+        // do? Currently, we eat it. I suspect this is because the menu is not a
+        // child of the control or app, rather, it's a Popup, which has an
+        // entirely separate root, so the key events don't bubble to the
+        // TermControl.
+        //
+        // It seems to me like typing a character (when in menu mode )should
+        // instead send it to the TermControl and dismiss ourselves. Interesting
+        // thought.
     }
 
     // Method Description:
@@ -899,8 +912,8 @@ namespace winrt::TerminalApp::implementation
 
         _PreviewActionHandlers(*this, nullptr);
 
-        // Reset visibility in case anchor mode tab switcher just finished.
-        _searchBox().Visibility(Visibility::Visible);
+        // // Reset visibility in case anchor mode tab switcher just finished.
+        // _searchBox().Visibility(Visibility::Visible);
 
         // Clear the text box each time we close the dialog. This is consistent with VsCode.
         _searchBox().Text(L"");

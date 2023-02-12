@@ -31,9 +31,13 @@
 
             <DataTemplate x:Key="ListItemTemplate"
                           x:DataType="local:FilteredCommand">
-                <ListViewItem HorizontalContentAlignment="Stretch"
+                <ListViewItem Height="32"
+                              MinHeight="0"
+                              Padding="16,0,12,0"
+                              HorizontalContentAlignment="Stretch"
                               AutomationProperties.AcceleratorKey="{x:Bind Item.KeyChordText, Mode=OneWay}"
-                              AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}" />
+                              AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}"
+                              FontSize="12" />
             </DataTemplate>
 
             <DataTemplate x:Key="GeneralItemTemplate"
@@ -53,7 +57,7 @@
 
                     <ContentPresenter Grid.Column="0"
                                       Width="16"
-                                      Height="16"
+                                      Height="12"
                                       Content="{x:Bind Item.ResolvedIcon, Mode=OneWay}" />
 
                     <local:HighlightedTextControl Grid.Column="1"
@@ -70,7 +74,7 @@
                         it already did that because it was the list item's
                         "AcceleratorKey". It's redundant.
                     -->
-                    <Border Grid.Column="2"
+                    <!--<Border Grid.Column="2"
                             Padding="2,0,2,0"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
@@ -82,7 +86,7 @@
                                    FontSize="12"
                                    Style="{ThemeResource KeyChordTextBlockStyle}"
                                    Text="{x:Bind Item.KeyChordText, Mode=OneWay}" />
-                    </Border>
+                    </Border>-->
                 </Grid>
             </DataTemplate>
 
@@ -263,7 +267,8 @@
                      IsSpellCheckEnabled="False"
                      PlaceholderText="{x:Bind SearchBoxPlaceholderText, Mode=OneWay}"
                      Text=""
-                     TextChanged="_filterTextChanged" />
+                     TextChanged="_filterTextChanged"
+                     Visibility="Collapsed" />
 
             <StackPanel Grid.Row="1"
                         Margin="8,0,8,8"
