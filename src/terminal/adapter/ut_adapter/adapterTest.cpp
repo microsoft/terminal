@@ -245,7 +245,7 @@ public:
         Log::Comment(L"NotifyAccessibilityChange MOCK called...");
     }
 
-    void NotifyBufferRotation() override
+    void NotifyBufferRotation(const int /*delta*/) override
     {
         Log::Comment(L"NotifyBufferRotation MOCK called...");
     }

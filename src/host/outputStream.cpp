@@ -477,10 +477,10 @@ void ConhostInternalGetSet::NotifyAccessibilityChange(const til::rect& changedRe
 // Routine Description:
 // - Implements conhost-specific behavior when the buffer is rotated.
 // Arguments:
-// - <none>
+// - delta - the number of cycles that the buffer has rotated.
 // Return value:
 // - <none>
-void ConhostInternalGetSet::NotifyBufferRotation()
+void ConhostInternalGetSet::NotifyBufferRotation(const int delta)
 {
     auto& screenInfo = _io.GetActiveOutputBuffer();
     if (screenInfo.IsActiveScreenBuffer())
@@ -488,7 +488,7 @@ void ConhostInternalGetSet::NotifyBufferRotation()
         auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
         if (pNotifier)
         {
-            pNotifier->NotifyConsoleUpdateScrollEvent(0, -1);
+            pNotifier->NotifyConsoleUpdateScrollEvent(0, -delta);
         }
     }
 }

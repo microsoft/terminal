@@ -140,7 +140,7 @@ public:
     bool IsConsolePty() const noexcept override;
     bool IsVtInputEnabled() const noexcept override;
     void NotifyAccessibilityChange(const til::rect& changedRect) noexcept override;
-    void NotifyBufferRotation() override;
+    void NotifyBufferRotation(const int delta) override;
 #pragma endregion
 
     void ClearMark();

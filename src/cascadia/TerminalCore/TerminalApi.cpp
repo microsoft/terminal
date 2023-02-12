@@ -470,40 +470,25 @@ void Terminal::NotifyAccessibilityChange(const til::rect& /*changedRect*/) noexc
     // This is only needed in conhost. Terminal handles accessibility in another way.
 }
 
-void Terminal::NotifyBufferRotation()
+void Terminal::NotifyBufferRotation(const int delta)
 {
     // Update our selection, so it doesn't move as the buffer is cycled
     if (_selection)
     {
-        // Stash this, so we can make sure to update the pivot to match later
-        const auto pivotWasStart = _selection->start == _selection->pivot;
-        // If the start of the selection is above 0, we can reduce both the start and end by 1
-        if (_selection->start.y > 0)
+        // If the end of the selection will be out of range after the move, we just
+        // clear the selection. Otherwise we move both the start and end points up
+        // by the given delta and clamp to the first row.
+        if (_selection->end.y < delta)
         {
-            _selection->start.y -= 1;
-            _selection->end.y -= 1;
+            _selection.reset();
         }
         else
         {
-            // The start of the selection is at 0, if the end is greater than 0, then only reduce the end
-            if (_selection->end.y > 0)
-            {
-                _selection->start.x = 0;
-                _selection->end.y -= 1;
-            }
-            else
-            {
-                // Both the start and end of the selection are at 0, clear the selection
-                _selection.reset();
-            }
-        }
-
-        // If we still have a selection, make sure to sync the pivot
-        // with whichever value is the right one.
-        //
-        // Failure to do this might lead to GH #14462
-        if (_selection.has_value())
-        {
+            // Stash this, so we can make sure to update the pivot to match later.
+            const auto pivotWasStart = _selection->start == _selection->pivot;
+            _selection->start.y = std::max(_selection->start.y - delta, 0);
+            _selection->end.y = std::max(_selection->end.y - delta, 0);
+            // Make sure to sync the pivot with whichever value is the right one.
             _selection->pivot = pivotWasStart ? _selection->start : _selection->end;
         }
     }
@@ -517,16 +502,16 @@ void Terminal::NotifyBufferRotation()
         for (auto& mark : _scrollMarks)
         {
             // Move the mark up
-            mark.start.y -= 1;
+            mark.start.y -= delta;
 
             // If the mark had sub-regions, then move those pointers too
             if (mark.commandEnd.has_value())
             {
-                (*mark.commandEnd).y -= 1;
+                (*mark.commandEnd).y -= delta;
             }
             if (mark.outputEnd.has_value())
             {
-                (*mark.outputEnd).y -= 1;
+                (*mark.outputEnd).y -= delta;
             }
         }
 
@@ -537,7 +522,7 @@ void Terminal::NotifyBufferRotation()
     }
 
     const auto oldScrollOffset = _scrollOffset;
-    _PreserveUserScrollOffset(1);
+    _PreserveUserScrollOffset(delta);
     if (_scrollOffset != oldScrollOffset || hasScrollMarks)
     {
         _NotifyScrollEvent();
