@@ -27,14 +27,14 @@ namespace winrt
 namespace winrt::TerminalApp::implementation
 {
     // TODO! These all probably need to be weak_refs, don't they, so that the
-    // contentmanager doesn't just keep every control around indefinitely.
+    // ContentManager doesn't just keep every control around indefinitely.
 
     ControlInteractivity ContentManager::CreateCore(Microsoft::Terminal::Control::IControlSettings settings,
                                                     IControlAppearance unfocusedAppearance,
                                                     TerminalConnection::ITerminalConnection connection)
     {
         auto content = ControlInteractivity{ settings, unfocusedAppearance, connection };
-        // winrt::guid g{ ::Microsoft::Console::Utils::CreateGuid() };
+        content.Closed({ this, &ContentManager::_closedHandler });
         _content.Insert(content.Id(), content);
         return content;
     }
@@ -60,8 +60,18 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& content{ sender.try_as<winrt::Microsoft::Terminal::Control::ControlInteractivity>() })
         {
-            _recentlyDetachedContent.Remove(content.Id());
+            _recentlyDetachedContent.TryRemove(content.Id());
         }
     }
 
+    void ContentManager::_closedHandler(winrt::Windows::Foundation::IInspectable sender,
+                                        winrt::Windows::Foundation::IInspectable e)
+    {
+        if (const auto& content{ sender.try_as<winrt::Microsoft::Terminal::Control::ControlInteractivity>() })
+        {
+            const auto& contentGuid{ content.Id() };
+            _content.TryRemove(contentGuid);
+            _recentlyDetachedContent.TryRemove(contentGuid);
+        }
+    }
 }

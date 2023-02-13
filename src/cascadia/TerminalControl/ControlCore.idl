@@ -129,7 +129,6 @@ namespace Microsoft.Terminal.Control
         String HoveredUriText { get; };
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Point> HoveredCell { get; };
 
-        void Close();
         void BlinkCursor();
         Boolean IsInReadOnlyMode { get; };
         Boolean CursorOn;

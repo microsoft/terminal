@@ -29,5 +29,8 @@ namespace winrt::TerminalApp::implementation
 
         void _finalizeDetach(winrt::Windows::Foundation::IInspectable sender,
                              winrt::Windows::Foundation::IInspectable e);
+
+        void _closedHandler(winrt::Windows::Foundation::IInspectable sender,
+                            winrt::Windows::Foundation::IInspectable e);
     };
 }

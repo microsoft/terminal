@@ -25,6 +25,7 @@ namespace Microsoft.Terminal.Control
 
         Guid Id { get; };
         void Reparent(Microsoft.Terminal.Control.IKeyBindings keyBindings);
+        void Close();
 
         InteractivityAutomationPeer OnCreateAutomationPeer();
 
@@ -67,6 +68,8 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, OpenHyperlinkEventArgs> OpenHyperlink;
         event Windows.Foundation.TypedEventHandler<Object, ScrollPositionChangedArgs> ScrollPositionChanged;
         event Windows.Foundation.TypedEventHandler<Object, PasteFromClipboardEventArgs> PasteFromClipboard;
+
+        event Windows.Foundation.TypedEventHandler<Object, Object> Closed;
 
         event Windows.Foundation.TypedEventHandler<Object, Object> Attached;
 

@@ -2059,7 +2059,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             if (!_detached)
             {
-                _core.Close();
+                _interactivity.Close();
             }
         }
     }
