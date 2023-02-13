@@ -442,7 +442,7 @@ namespace winrt::TerminalApp::implementation
     {
         // Give initial ids (0 for the child created with this tab,
         // 1 for the child after the first split.
-        auto state = _rootPane->BuildStartupActions(0, 1);
+        auto state = _rootPane->BuildStartupActions(0, 1, asContent);
 
         {
             ActionAndArgs newTabAction{};

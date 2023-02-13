@@ -180,7 +180,7 @@ NewTerminalArgs Pane::GetTerminalArgsForPane(const bool asContent) const
 Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t nextId, const bool asContent)
 {
     // if we are a leaf then all there is to do is defer to the parent.
-    if (!asContent && _IsLeaf())
+    if (_IsLeaf())
     {
         if (_lastActive)
         {
