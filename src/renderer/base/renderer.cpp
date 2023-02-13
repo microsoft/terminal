@@ -544,7 +544,7 @@ void Renderer::TriggerFontChange(const int iDpi, const FontInfoDesired& FontInfo
 // - centeringHint - The horizontal extent that glyphs are offset from center.
 // Return Value:
 // - <none>
-void Renderer::UpdateSoftFont(const gsl::span<const uint16_t> bitPattern, const til::size cellSize, const size_t centeringHint)
+void Renderer::UpdateSoftFont(const std::span<const uint16_t> bitPattern, const til::size cellSize, const size_t centeringHint)
 {
     // We reserve PUA code points U+EF20 to U+EF7F for soft fonts, but the range
     // that we test for in _IsSoftFontChar will depend on the size of the active
@@ -687,7 +687,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 
     // This is effectively the number of cells on the visible screen that need to be redrawn.
     // The origin is always 0, 0 because it represents the screen itself, not the underlying buffer.
-    gsl::span<const til::rect> dirtyAreas;
+    std::span<const til::rect> dirtyAreas;
     LOG_IF_FAILED(pEngine->GetDirtyArea(dirtyAreas));
 
     // This is to make sure any transforms are reset when this paint is finished.
@@ -1127,7 +1127,7 @@ void Renderer::_PaintOverlay(IRenderEngine& engine,
         srCaView.left += overlay.origin.x;
         srCaView.right += overlay.origin.x;
 
-        gsl::span<const til::rect> dirtyAreas;
+        std::span<const til::rect> dirtyAreas;
         LOG_IF_FAILED(engine.GetDirtyArea(dirtyAreas));
 
         for (const auto& rect : dirtyAreas)
@@ -1181,7 +1181,7 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 {
     try
     {
-        gsl::span<const til::rect> dirtyAreas;
+        std::span<const til::rect> dirtyAreas;
         LOG_IF_FAILED(pEngine->GetDirtyArea(dirtyAreas));
 
         // Get selection rectangles

@@ -1016,7 +1016,7 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
 }
 
 #pragma warning(push)
-#pragma warning(disable : 26445) // Suppress lifetime check for a reference to gsl::span or std::string_view
+#pragma warning(disable : 26445) // Suppress lifetime check for a reference to std::span or std::string_view
 
 // Routine Description:
 // - Given a hyperlink string, attempts to parse the URI encoded. An 'id' parameter

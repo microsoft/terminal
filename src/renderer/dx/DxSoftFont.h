@@ -7,7 +7,6 @@
 
 #include <vector>
 #include <d2d1_1.h>
-#include <gsl/span>
 #include <wrl.h>
 #include <wrl/client.h>
 
@@ -19,7 +18,7 @@ namespace Microsoft::Console::Render
     {
     public:
         DxSoftFont() noexcept;
-        void SetFont(const gsl::span<const uint16_t> bitPattern,
+        void SetFont(const std::span<const uint16_t> bitPattern,
                      const til::size sourceSize,
                      const til::size targetSize,
                      const size_t centeringHint);
@@ -27,7 +26,7 @@ namespace Microsoft::Console::Render
         HRESULT SetAntialiasing(const bool antialiased);
         HRESULT SetColor(const D2D1_COLOR_F& color);
         HRESULT Draw(const DrawingContext& drawingContext,
-                     const gsl::span<const Cluster> clusters,
+                     const std::span<const Cluster> clusters,
                      const float originX,
                      const float originY);
         void Reset();

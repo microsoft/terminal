@@ -150,7 +150,7 @@ void VtApiRoutines::_SynchronizeCursor(std::unique_ptr<IWaitRoutine>& waiter) no
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::ReadConsoleAImpl(IConsoleInputObject& context,
-                                                      gsl::span<char> buffer,
+                                                      std::span<char> buffer,
                                                       size_t& written,
                                                       std::unique_ptr<IWaitRoutine>& waiter,
                                                       const std::string_view initialData,
@@ -174,7 +174,7 @@ void VtApiRoutines::_SynchronizeCursor(std::unique_ptr<IWaitRoutine>& waiter) no
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::ReadConsoleWImpl(IConsoleInputObject& context,
-                                                      gsl::span<char> buffer,
+                                                      std::span<char> buffer,
                                                       size_t& written,
                                                       std::unique_ptr<IWaitRoutine>& waiter,
                                                       const std::string_view initialData,
@@ -433,7 +433,7 @@ void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& co
 
 [[nodiscard]] HRESULT VtApiRoutines::ReadConsoleOutputAttributeImpl(const SCREEN_INFORMATION& context,
                                                                     const til::point origin,
-                                                                    gsl::span<WORD> buffer,
+                                                                    std::span<WORD> buffer,
                                                                     size_t& written) noexcept
 {
     std::fill_n(buffer.data(), buffer.size(), s_readBackUnicode.Attributes); // should be same as the ascii one.
@@ -443,7 +443,7 @@ void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& co
 
 [[nodiscard]] HRESULT VtApiRoutines::ReadConsoleOutputCharacterAImpl(const SCREEN_INFORMATION& context,
                                                                      const til::point origin,
-                                                                     gsl::span<char> buffer,
+                                                                     std::span<char> buffer,
                                                                      size_t& written) noexcept
 {
     std::fill_n(buffer.data(), buffer.size(), s_readBackAscii.Char.AsciiChar);
@@ -453,7 +453,7 @@ void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& co
 
 [[nodiscard]] HRESULT VtApiRoutines::ReadConsoleOutputCharacterWImpl(const SCREEN_INFORMATION& context,
                                                                      const til::point origin,
-                                                                     gsl::span<wchar_t> buffer,
+                                                                     std::span<wchar_t> buffer,
                                                                      size_t& written) noexcept
 {
     std::fill_n(buffer.data(), buffer.size(), s_readBackUnicode.Char.UnicodeChar);
@@ -462,7 +462,7 @@ void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& co
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::WriteConsoleInputAImpl(InputBuffer& context,
-                                                            const gsl::span<const INPUT_RECORD> buffer,
+                                                            const std::span<const INPUT_RECORD> buffer,
                                                             size_t& written,
                                                             const bool append) noexcept
 {
@@ -470,7 +470,7 @@ void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& co
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::WriteConsoleInputWImpl(InputBuffer& context,
-                                                            const gsl::span<const INPUT_RECORD> buffer,
+                                                            const std::span<const INPUT_RECORD> buffer,
                                                             size_t& written,
                                                             const bool append) noexcept
 {
@@ -478,11 +478,11 @@ void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& co
 }
 
 extern HRESULT _ConvertCellsToWInplace(const UINT codepage,
-                                       gsl::span<CHAR_INFO> buffer,
+                                       std::span<CHAR_INFO> buffer,
                                        const Viewport& rectangle) noexcept;
 
 [[nodiscard]] HRESULT VtApiRoutines::WriteConsoleOutputAImpl(SCREEN_INFORMATION& context,
-                                                             gsl::span<CHAR_INFO> buffer,
+                                                             std::span<CHAR_INFO> buffer,
                                                              const Microsoft::Console::Types::Viewport& requestRectangle,
                                                              Microsoft::Console::Types::Viewport& writtenRectangle) noexcept
 {
@@ -494,7 +494,7 @@ extern HRESULT _ConvertCellsToWInplace(const UINT codepage,
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::WriteConsoleOutputWImpl(SCREEN_INFORMATION& context,
-                                                             gsl::span<CHAR_INFO> buffer,
+                                                             std::span<CHAR_INFO> buffer,
                                                              const Microsoft::Console::Types::Viewport& requestRectangle,
                                                              Microsoft::Console::Types::Viewport& writtenRectangle) noexcept
 {
@@ -528,7 +528,7 @@ extern HRESULT _ConvertCellsToWInplace(const UINT codepage,
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::WriteConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
-                                                                     const gsl::span<const WORD> attrs,
+                                                                     const std::span<const WORD> attrs,
                                                                      const til::point target,
                                                                      size_t& used) noexcept
 {
@@ -577,7 +577,7 @@ extern HRESULT _ConvertCellsToWInplace(const UINT codepage,
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::ReadConsoleOutputAImpl(const SCREEN_INFORMATION& context,
-                                                            gsl::span<CHAR_INFO> buffer,
+                                                            std::span<CHAR_INFO> buffer,
                                                             const Microsoft::Console::Types::Viewport& sourceRectangle,
                                                             Microsoft::Console::Types::Viewport& readRectangle) noexcept
 {
@@ -587,7 +587,7 @@ extern HRESULT _ConvertCellsToWInplace(const UINT codepage,
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::ReadConsoleOutputWImpl(const SCREEN_INFORMATION& context,
-                                                            gsl::span<CHAR_INFO> buffer,
+                                                            std::span<CHAR_INFO> buffer,
                                                             const Microsoft::Console::Types::Viewport& sourceRectangle,
                                                             Microsoft::Console::Types::Viewport& readRectangle) noexcept
 {
@@ -596,7 +596,7 @@ extern HRESULT _ConvertCellsToWInplace(const UINT codepage,
     return S_OK;
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::GetConsoleTitleAImpl(gsl::span<char> title,
+[[nodiscard]] HRESULT VtApiRoutines::GetConsoleTitleAImpl(std::span<char> title,
                                                           size_t& written,
                                                           size_t& needed) noexcept
 {
@@ -611,7 +611,7 @@ extern HRESULT _ConvertCellsToWInplace(const UINT codepage,
     return S_OK;
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::GetConsoleTitleWImpl(gsl::span<wchar_t> title,
+[[nodiscard]] HRESULT VtApiRoutines::GetConsoleTitleWImpl(std::span<wchar_t> title,
                                                           size_t& written,
                                                           size_t& needed) noexcept
 {
@@ -626,7 +626,7 @@ extern HRESULT _ConvertCellsToWInplace(const UINT codepage,
     return S_OK;
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::GetConsoleOriginalTitleAImpl(gsl::span<char> title,
+[[nodiscard]] HRESULT VtApiRoutines::GetConsoleOriginalTitleAImpl(std::span<char> title,
                                                                   size_t& written,
                                                                   size_t& needed) noexcept
 {
@@ -641,7 +641,7 @@ extern HRESULT _ConvertCellsToWInplace(const UINT codepage,
     return S_OK;
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::GetConsoleOriginalTitleWImpl(gsl::span<wchar_t> title,
+[[nodiscard]] HRESULT VtApiRoutines::GetConsoleOriginalTitleWImpl(std::span<wchar_t> title,
                                                                   size_t& written,
                                                                   size_t& needed) noexcept
 {
@@ -719,7 +719,7 @@ void VtApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::GetConsoleAliasAImpl(const std::string_view source,
-                                                          gsl::span<char> target,
+                                                          std::span<char> target,
                                                           size_t& written,
                                                           const std::string_view exeName) noexcept
 {
@@ -727,7 +727,7 @@ void VtApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::GetConsoleAliasWImpl(const std::wstring_view source,
-                                                          gsl::span<wchar_t> target,
+                                                          std::span<wchar_t> target,
                                                           size_t& written,
                                                           const std::wstring_view exeName) noexcept
 {
@@ -757,26 +757,26 @@ void VtApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::GetConsoleAliasesAImpl(const std::string_view exeName,
-                                                            gsl::span<char> alias,
+                                                            std::span<char> alias,
                                                             size_t& written) noexcept
 {
     return m_pUsualRoutines->GetConsoleAliasesAImpl(exeName, alias, written);
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::GetConsoleAliasesWImpl(const std::wstring_view exeName,
-                                                            gsl::span<wchar_t> alias,
+                                                            std::span<wchar_t> alias,
                                                             size_t& written) noexcept
 {
     return m_pUsualRoutines->GetConsoleAliasesWImpl(exeName, alias, written);
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::GetConsoleAliasExesAImpl(gsl::span<char> aliasExes,
+[[nodiscard]] HRESULT VtApiRoutines::GetConsoleAliasExesAImpl(std::span<char> aliasExes,
                                                               size_t& written) noexcept
 {
     return m_pUsualRoutines->GetConsoleAliasExesAImpl(aliasExes, written);
 }
 
-[[nodiscard]] HRESULT VtApiRoutines::GetConsoleAliasExesWImpl(gsl::span<wchar_t> aliasExes,
+[[nodiscard]] HRESULT VtApiRoutines::GetConsoleAliasExesWImpl(std::span<wchar_t> aliasExes,
                                                               size_t& written) noexcept
 {
     return m_pUsualRoutines->GetConsoleAliasExesWImpl(aliasExes, written);
@@ -817,14 +817,14 @@ void VtApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::GetConsoleCommandHistoryAImpl(const std::string_view exeName,
-                                                                   gsl::span<char> commandHistory,
+                                                                   std::span<char> commandHistory,
                                                                    size_t& written) noexcept
 {
     return m_pUsualRoutines->GetConsoleCommandHistoryAImpl(exeName, commandHistory, written);
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::GetConsoleCommandHistoryWImpl(const std::wstring_view exeName,
-                                                                   gsl::span<wchar_t> commandHistory,
+                                                                   std::span<wchar_t> commandHistory,
                                                                    size_t& written) noexcept
 {
     return m_pUsualRoutines->GetConsoleCommandHistoryWImpl(exeName, commandHistory, written);

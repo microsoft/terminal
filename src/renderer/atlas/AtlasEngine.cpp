@@ -342,7 +342,7 @@ CATCH_RETURN()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT AtlasEngine::PaintBufferLine(gsl::span<const Cluster> clusters, til::point coord, const bool fTrimLeft, const bool lineWrapped) noexcept
+[[nodiscard]] HRESULT AtlasEngine::PaintBufferLine(std::span<const Cluster> clusters, til::point coord, const bool fTrimLeft, const bool lineWrapped) noexcept
 try
 {
     const auto y = gsl::narrow_cast<u16>(clamp<int>(coord.y, 0, _api.cellCount.y));
