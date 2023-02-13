@@ -4114,7 +4114,7 @@ namespace winrt::TerminalApp::implementation
                     terminalTab->GetRootPane()->WalkTree([&](auto&& pane) {
                         // TODO, but of middling priority. We probably shouldn't
                         // SetupResources on _every_ pane. We can probably call
-                        // that on the root, and then have that backchannel to
+                        // that on the root, and then have that back channel to
                         // update the whole tree.
 
                         // Update the brushes that Pane's use...

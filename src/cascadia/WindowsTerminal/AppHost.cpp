@@ -226,7 +226,7 @@ void AppHost::_HandleCommandlineArgs()
         const auto numPeasants = _windowManager.GetNumberOfPeasants();
         if (numPeasants == 1)
         {
-            // TODO! this is vaugely off by one. Not sure, but if you restore 2
+            // TODO! this is vaguely off by one. Not sure, but if you restore 2
             // windows, you seem to get two copies of the second. Yikes. And
             // this wasn't just because I was setting the debug commandline to
             // `nt ; nt`. Calling wtd with two persisted windows just creates
@@ -1065,7 +1065,7 @@ void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectab
     _window->IsQuakeWindow(_windowLogic.IsQuakeWindow());
 }
 
-// Raised from our Peasant. We handle by propogating the call to our terminal window.
+// Raised from our Peasant. We handle by propagating the call to our terminal window.
 winrt::fire_and_forget AppHost::_QuitRequested(const winrt::Windows::Foundation::IInspectable&,
                                                const winrt::Windows::Foundation::IInspectable&)
 {

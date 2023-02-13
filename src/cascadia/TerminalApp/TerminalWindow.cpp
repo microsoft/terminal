@@ -627,7 +627,7 @@ namespace winrt::TerminalApp::implementation
             // we have an HWND, and we can't finish creating the window till we
             // know how big it should be.
             //
-            // Instead, we'll just hardcode how big the titlebar chould be. If
+            // Instead, we'll just hardcode how big the titlebar should be. If
             // the titlebar / tab row ever change size, these numbers will have
             // to change accordingly.
 
