@@ -1667,7 +1667,7 @@ CATCH_RETURN()
 // - fTrimLeft - Whether or not to trim off the left half of a double wide character
 // Return Value:
 // - S_OK or relevant DirectX error
-[[nodiscard]] HRESULT DxEngine::PaintBufferLine(const gsl::span<const Cluster> clusters,
+[[nodiscard]] HRESULT DxEngine::PaintBufferLine(const std::span<const Cluster> clusters,
                                                 const til::point coord,
                                                 const bool /*trimLeft*/,
                                                 const bool /*lineWrapped*/) noexcept
@@ -2116,7 +2116,7 @@ CATCH_RETURN();
 // - area - Rectangle describing dirty area in characters.
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT DxEngine::GetDirtyArea(gsl::span<const til::rect>& area) noexcept
+[[nodiscard]] HRESULT DxEngine::GetDirtyArea(std::span<const til::rect>& area) noexcept
 try
 {
     area = _invalidMap.runs();
@@ -2290,7 +2290,7 @@ void DxEngine::UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept
 // - centeringHint - The horizontal extent that glyphs are offset from center.
 // Return Value:
 // - S_OK if successful. E_FAIL if there was an error.
-HRESULT DxEngine::UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+HRESULT DxEngine::UpdateSoftFont(const std::span<const uint16_t> bitPattern,
                                  const til::size cellSize,
                                  const size_t centeringHint) noexcept
 try

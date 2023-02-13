@@ -295,18 +295,6 @@ namespace winrt::TerminalApp::implementation
         ShowSetAsDefaultInfoBar();
     }
 
-    // Method Description;
-    // - Checks if the current terminal window should load or save its layout information.
-    // Arguments:
-    // - settings: The settings to use as this may be called before the page is
-    //   fully initialized.
-    // Return Value:
-    // - true if the ApplicationState should be used.
-    bool TerminalPage::ShouldUsePersistedLayout(CascadiaSettings& settings) const
-    {
-        return settings.GlobalSettings().FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout;
-    }
-
     // Method Description:
     // - This is a bit of trickiness: If we're running unelevated, and the user
     //   passed in only --elevate actions, the we don't _actually_ want to
@@ -321,7 +309,7 @@ namespace winrt::TerminalApp::implementation
         // GH#12267: Don't forget about defterm handoff here. If we're being
         // created for embedding, then _yea_, we don't need to handoff to an
         // elevated window.
-        if (!_startupActions || IsElevated() || _shouldStartInboundListener)
+        if (!_startupActions || IsElevated() || _shouldStartInboundListener || _startupActions.Size() == 0)
         {
             // there aren't startup actions, or we're elevated. In that case, go for it.
             return false;
@@ -418,32 +406,6 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    // Method Description;
-    // - Checks if the current window is configured to load a particular layout
-    // Arguments:
-    // - settings: The settings to use as this may be called before the page is
-    //   fully initialized.
-    // Return Value:
-    // - non-null if there is a particular saved layout to use
-    std::optional<uint32_t> TerminalPage::LoadPersistedLayoutIdx(CascadiaSettings& settings) const
-    {
-        return ShouldUsePersistedLayout(settings) ? _loadFromPersistedLayoutIdx : std::nullopt;
-    }
-
-    WindowLayout TerminalPage::LoadPersistedLayout(CascadiaSettings& settings) const
-    {
-        if (const auto idx = LoadPersistedLayoutIdx(settings))
-        {
-            const auto i = idx.value();
-            const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
-            if (layouts && layouts.Size() > i)
-            {
-                return layouts.GetAt(i);
-            }
-        }
-        return nullptr;
-    }
-
     winrt::fire_and_forget TerminalPage::NewTerminalByDrop(winrt::Windows::UI::Xaml::DragEventArgs& e)
     {
         Windows::Foundation::Collections::IVectorView<Windows::Storage::IStorageItem> items;
@@ -527,16 +489,6 @@ namespace winrt::TerminalApp::implementation
         {
             _startupState = StartupState::InStartup;
 
-            // If we are provided with an index, the cases where we have
-            // commandline args and startup actions are already handled.
-            if (const auto layout = LoadPersistedLayout(_settings))
-            {
-                if (layout.TabLayout().Size() > 0)
-                {
-                    _startupActions = layout.TabLayout();
-                }
-            }
-
             ProcessStartupActions(_startupActions, true);
 
             // If we were told that the COM server needs to be started to listen for incoming
@@ -595,8 +547,6 @@ namespace winrt::TerminalApp::implementation
                                                                const bool initial,
                                                                const winrt::hstring cwd)
     {
-        const auto paramFistSize = actions.Size();
-
         auto weakThis{ get_weak() };
 
         // Handle it on a subsequent pass of the UI thread.
@@ -627,11 +577,6 @@ namespace winrt::TerminalApp::implementation
 
         if (auto page{ weakThis.get() })
         {
-            const auto memberSize = page->_startupActions.Size();
-            const auto paramSecondSize = actions.Size();
-            memberSize;
-            paramFistSize;
-            paramSecondSize;
             for (const auto& action : actions)
             {
                 if (auto page{ weakThis.get() })
@@ -1228,10 +1173,17 @@ namespace winrt::TerminalApp::implementation
         if (connectionType == TerminalConnection::AzureConnection::ConnectionType() &&
             TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
         {
-            // TODO GH#4661: Replace this with directly using the AzCon when our VT is better
             std::filesystem::path azBridgePath{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
             azBridgePath.replace_filename(L"TerminalAzBridge.exe");
-            connection = TerminalConnection::ConptyConnection();
+            if constexpr (Feature_AzureConnectionInProc::IsEnabled())
+            {
+                connection = TerminalConnection::AzureConnection{};
+            }
+            else
+            {
+                connection = TerminalConnection::ConptyConnection{};
+            }
+
             auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(azBridgePath.wstring(),
                                                                                  L".",
                                                                                  L"Azure",
@@ -1875,7 +1827,7 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        if (ShouldUsePersistedLayout(_settings))
+        if (_settings.GlobalSettings().ShouldUsePersistedLayout())
         {
             // Don't delete the ApplicationState when all of the tabs are removed.
             // If there is still a monarch living they will get the event that
@@ -4125,13 +4077,11 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::SetPersistedLayoutIdx(const uint32_t idx)
-    {
-        _loadFromPersistedLayoutIdx = idx;
-    }
-
     void TerminalPage::SetNumberOfOpenWindows(const uint64_t num)
     {
+        // This is used in TerminalPage::_RemoveTab, when we close a tab. If we
+        // close the last tab, and there's only one window open, then we will
+        // call to persist _no_ state.
         _numOpenWindows = num;
     }
 
@@ -4640,18 +4590,6 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::WindowProperties(const TerminalApp::IWindowProperties& props)
     {
         _WindowProperties = props;
-        // if (const auto& observable{ props.try_as<INotifyPropertyChanged>() })
-        // {
-        //     observable.PropertyChanged([weakThis = get_weak()](auto& /*sender*/, auto& e) {
-        //         if (auto page{ weakThis.get() })
-        //         {
-        //             if (e.PropertyName() == L"WindowName")
-        //             {
-        //                 page->_windowNameChanged();
-        //             }
-        //         }
-        //     });
-        // }
     }
 
     winrt::fire_and_forget TerminalPage::WindowNameChanged()
@@ -4666,28 +4604,12 @@ namespace winrt::TerminalApp::implementation
             _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
             _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowIdForDisplay" });
 
-            // if (changed)
-            // {
             // DON'T display the confirmation if this is the name we were
             // given on startup!
             if (page->_startupState == StartupState::Initialized)
             {
                 page->IdentifyWindow();
-
-                // TODO! This is wacky. Reconcile with oldIsQuakeMode in TerminalWindow::WindowName
-
-                // // If we're entering quake mode, or leaving it
-                // if (IsQuakeWindow() != oldIsQuakeMode)
-                // {
-                //     // If we're entering Quake Mode from ~Focus Mode, then this will enter Focus Mode
-                //     // If we're entering Quake Mode from Focus Mode, then this will do nothing
-                //     // If we're leaving Quake Mode (we're already in Focus Mode), then this will do nothing
-                //     SetFocusMode(true);
-                //     _IsQuakeWindowChangedHandlers(*this, nullptr);
-                // }
             }
-            // }
         }
     }
-
 }
