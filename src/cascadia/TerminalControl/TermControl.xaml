@@ -55,8 +55,6 @@
         -->
 
         <x:Double x:Key="ScrollBarSize">16</x:Double>
-        <CornerRadius x:Key="ScrollBarCornerRadius">0</CornerRadius>
-        <CornerRadius x:Key="ScrollBarThumbCornerRadius">3</CornerRadius>
 
         <Style x:Key="ForkedScrollbarTemplate"
                TargetType="ScrollBar">
@@ -66,8 +64,7 @@
             <Setter Property="Foreground" Value="{ThemeResource ScrollBarForeground}" />
             <Setter Property="BorderBrush" Value="{ThemeResource ScrollBarBorderBrush}" />
             <Setter Property="IsTabStop" Value="False" />
-            <contract7Present:Setter Property="CornerRadius"
-                                     Value="{ThemeResource ScrollBarCornerRadius}" />
+            <Setter Property="CornerRadius" Value="{ThemeResource ScrollBarCornerRadius}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ScrollBar">
@@ -411,6 +408,12 @@
                                     </Rectangle>
                                 </ControlTemplate>
                             </Grid.Resources>
+
+                            <!--  Windows Terminal: This is another addition/customization made by us.  -->
+                            <VisualStateManager.CustomVisualStateManager>
+                                <local:ScrollBarVisualStateManager />
+                            </VisualStateManager.CustomVisualStateManager>
+
                             <Grid x:Name="HorizontalRoot"
                                   contract7Present:CornerRadius="{TemplateBinding CornerRadius}"
                                   Background="{TemplateBinding Background}"
@@ -423,13 +426,13 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
+                                <!--
+                                    Windows Terminal: Here we've removed the corner radius
+                                    to make our scrollbars be flush with the window frame.
+                                -->
                                 <Rectangle x:Name="HorizontalTrackRect"
                                            Grid.ColumnSpan="5"
                                            Margin="0"
-                                           contract7NotPresent:RadiusX="{Binding Source={ThemeResource ScrollBarCornerRadius}, Converter={StaticResource TopLeftCornerRadiusDoubleValueConverter2x}}"
-                                           contract7NotPresent:RadiusY="{Binding Source={ThemeResource ScrollBarCornerRadius}, Converter={StaticResource BottomRightCornerRadiusDoubleValueConverter2x}}"
-                                           contract7Present:RadiusX="{Binding CornerRadius, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource TopLeftCornerRadiusDoubleValueConverter2x}}"
-                                           contract7Present:RadiusY="{Binding CornerRadius, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource BottomRightCornerRadiusDoubleValueConverter2x}}"
                                            Fill="{ThemeResource ScrollBarTrackFill}"
                                            Opacity="0"
                                            Stroke="{ThemeResource ScrollBarTrackStroke}"
@@ -518,13 +521,13 @@
                                     <RowDefinition Height="*" />
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
+                                <!--
+                                    Windows Terminal: Here we've removed the corner radius
+                                    to make our scrollbars be flush with the window frame.
+                                -->
                                 <Rectangle x:Name="VerticalTrackRect"
                                            Grid.RowSpan="5"
                                            Margin="0"
-                                           contract7NotPresent:RadiusX="{Binding Source={ThemeResource ScrollBarCornerRadius}, Converter={StaticResource TopLeftCornerRadiusDoubleValueConverter2x}}"
-                                           contract7NotPresent:RadiusY="{Binding Source={ThemeResource ScrollBarCornerRadius}, Converter={StaticResource BottomRightCornerRadiusDoubleValueConverter2x}}"
-                                           contract7Present:RadiusX="{Binding CornerRadius, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource TopLeftCornerRadiusDoubleValueConverter2x}}"
-                                           contract7Present:RadiusY="{Binding CornerRadius, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource BottomRightCornerRadiusDoubleValueConverter2x}}"
                                            Fill="{ThemeResource ScrollBarTrackFill}"
                                            Opacity="0"
                                            Stroke="{ThemeResource ScrollBarTrackStroke}"
