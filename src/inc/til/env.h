@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "wil\token_helpers.h"
+#include <wil/token_helpers.h>
 #include <winternl.h>
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
