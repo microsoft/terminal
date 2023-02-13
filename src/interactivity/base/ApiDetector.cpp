@@ -96,7 +96,7 @@ using namespace Microsoft::Console::Interactivity;
     //       versioning API's behave sanely.
 
     status = TryLoadWellKnownLibrary(lpLibrary, LOAD_LIBRARY_SEARCH_SYSTEM32_NO_FORWARDER, phModule);
-    if (!SUCCEEDED_NTSTATUS(status) && GetLastError() == ERROR_INVALID_PARAMETER)
+    if (FAILED_NTSTATUS(status) && GetLastError() == ERROR_INVALID_PARAMETER)
     {
         status = TryLoadWellKnownLibrary(lpLibrary, LOAD_LIBRARY_SEARCH_SYSTEM32, phModule);
     }

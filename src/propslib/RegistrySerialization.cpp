@@ -439,7 +439,7 @@ const size_t RegistrySerialization::s_GlobalPropMappingsSize = ARRAYSIZE(s_Globa
         if (SUCCEEDED_NTSTATUS(Status))
         {
             Status = RegistrySerialization::s_CreateKey(*phConsoleKey, title, phTitleKey);
-            if (!SUCCEEDED_NTSTATUS(Status))
+            if (FAILED_NTSTATUS(Status))
             {
                 RegCloseKey(*phConsoleKey);
                 RegCloseKey(*phCurrentUserKey);

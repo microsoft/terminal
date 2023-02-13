@@ -268,7 +268,7 @@ void ShortcutSerialization::s_GetLinkTitle(_In_ PCWSTR pwszShortcutFilename,
             }
         }
 
-        if (!SUCCEEDED_NTSTATUS(Status))
+        if (FAILED_NTSTATUS(Status))
         {
             // default to an extension-free version of the filename passed in
             Status = StringCchCopyW(pwszShortcutTitle, cchShortcutTitle, pwszShortcutFilename);

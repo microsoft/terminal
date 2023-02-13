@@ -65,7 +65,7 @@ WORD ConvertStringToDec(
                 break;
             }
 
-            if (!SUCCEEDED_NTSTATUS(Status))
+            if (FAILED_NTSTATUS(Status))
             {
                 break;
             }

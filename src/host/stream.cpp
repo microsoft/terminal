@@ -67,7 +67,7 @@ using Microsoft::Console::Interactivity::ServiceLocator;
                                     true, // unicode
                                     true); // stream
 
-        if (!SUCCEEDED_NTSTATUS(Status))
+        if (FAILED_NTSTATUS(Status))
         {
             return Status;
         }
@@ -579,7 +579,7 @@ til::CoordType RetrieveNumberOfSpaces(_In_ til::CoordType sOriginalCursorPositio
                                                      reinterpret_cast<wchar_t*>(buffer.data()));
         }
 
-        if (!SUCCEEDED_NTSTATUS(Status))
+        if (FAILED_NTSTATUS(Status))
         {
             bytesRead = 0;
             return Status;
@@ -600,7 +600,7 @@ til::CoordType RetrieveNumberOfSpaces(_In_ til::CoordType sOriginalCursorPositio
                              nullptr,
                              nullptr,
                              nullptr);
-            if (!SUCCEEDED_NTSTATUS(Status))
+            if (FAILED_NTSTATUS(Status))
             {
                 break;
             }

@@ -872,7 +872,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
             break;
         }
         }
-        if (!SUCCEEDED_NTSTATUS(Status))
+        if (FAILED_NTSTATUS(Status))
         {
             return Status;
         }

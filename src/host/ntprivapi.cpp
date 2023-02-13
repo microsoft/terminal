@@ -39,7 +39,7 @@ namespace
         LOG_IF_FAILED(s_NtClose(ProcessHandle));
     }
 
-    if (!SUCCEEDED_NTSTATUS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         *ProcessId = 0;
         return Status;

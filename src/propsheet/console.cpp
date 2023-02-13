@@ -104,7 +104,7 @@ void SaveConsoleSettingsIfNeeded(const HWND hwnd)
         if (gpStateInfo->LinkTitle != nullptr)
         {
             SetGlobalRegistryValues();
-            if (!SUCCEEDED_NTSTATUS(ShortcutSerialization::s_SetLinkValues(gpStateInfo,
+            if (FAILED_NTSTATUS(ShortcutSerialization::s_SetLinkValues(gpStateInfo,
                                                                            g_fEastAsianSystem,
                                                                            g_fForceV2,
                                                                            gpStateInfo->fIsV2Console)))

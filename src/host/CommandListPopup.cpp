@@ -294,7 +294,7 @@ void CommandListPopup::_cycleSelectionToMatchingCommands(COOKED_READ_DATA& cooke
         DWORD modifiers = 0;
 
         Status = _getUserInput(cookedReadData, popupKeys, modifiers, wch);
-        if (!SUCCEEDED_NTSTATUS(Status))
+        if (FAILED_NTSTATUS(Status))
         {
             return Status;
         }

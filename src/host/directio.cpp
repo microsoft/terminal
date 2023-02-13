@@ -1125,7 +1125,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                                                      Cursor::CURSOR_SMALL_SIZE,
                                                      &ScreenInfo);
 
-    if (!SUCCEEDED_NTSTATUS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         goto Exit;
     }
@@ -1135,7 +1135,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                                                                 Information->ShareMode,
                                                                 handle));
 
-    if (!SUCCEEDED_NTSTATUS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         goto Exit;
     }
@@ -1143,7 +1143,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
     SCREEN_INFORMATION::s_InsertScreenBuffer(ScreenInfo);
 
 Exit:
-    if (!SUCCEEDED_NTSTATUS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         delete ScreenInfo;
     }

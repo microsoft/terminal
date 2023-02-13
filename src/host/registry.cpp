@@ -37,7 +37,7 @@ void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
     if (hConsoleKey == nullptr)
     {
         Status = RegistrySerialization::s_OpenConsoleKey(&hCurrentUserKey, &hConsoleKey);
-        if (!SUCCEEDED_NTSTATUS(Status))
+        if (FAILED_NTSTATUS(Status))
         {
             return;
         }
@@ -81,7 +81,7 @@ void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
                                                  REG_DWORD,
                                                  reinterpret_cast<BYTE*>(&dwValue),
                                                  nullptr);
-    if (!SUCCEEDED_NTSTATUS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         // the key isn't a REG_DWORD, try to read it as a REG_SZ
         const size_t bufferSize = 64;
@@ -151,7 +151,7 @@ void Registry::_LoadMappedProperties(_In_reads_(cPropertyMappings) const Registr
         }
 
         // Don't log "file not found" messages. It's fine to not find a registry key. Log other types.
-        if (!SUCCEEDED_NTSTATUS(Status) && NTSTATUS_FROM_WIN32(ERROR_FILE_NOT_FOUND) != Status)
+        if (FAILED_NTSTATUS(Status) && NTSTATUS_FROM_WIN32(ERROR_FILE_NOT_FOUND) != Status)
         {
             LOG_NTSTATUS(Status);
         }
@@ -201,7 +201,7 @@ void Registry::LoadFromRegistry(_In_ PCWSTR const pwszConsoleTitle)
     HKEY hCurrentUserKey;
     HKEY hConsoleKey;
     auto Status = RegistrySerialization::s_OpenConsoleKey(&hCurrentUserKey, &hConsoleKey);
-    if (!SUCCEEDED_NTSTATUS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         return;
     }
@@ -220,7 +220,7 @@ void Registry::LoadFromRegistry(_In_ PCWSTR const pwszConsoleTitle)
     delete[] TranslatedConsoleTitle;
     TranslatedConsoleTitle = nullptr;
 
-    if (!SUCCEEDED_NTSTATUS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         TranslatedConsoleTitle = TranslateConsoleTitle(pwszConsoleTitle, TRUE, FALSE);
 
@@ -236,7 +236,7 @@ void Registry::LoadFromRegistry(_In_ PCWSTR const pwszConsoleTitle)
         TranslatedConsoleTitle = nullptr;
     }
 
-    if (!SUCCEEDED_NTSTATUS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         RegCloseKey(hConsoleKey);
         RegCloseKey(hCurrentUserKey);

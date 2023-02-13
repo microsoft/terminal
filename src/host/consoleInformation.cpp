@@ -119,7 +119,7 @@ ULONG CONSOLE_INFORMATION::GetCSRecursionCount() const noexcept
     }
 
     auto Status = DoCreateScreenBuffer();
-    if (!SUCCEEDED_NTSTATUS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         goto ErrorExit2;
     }

@@ -725,7 +725,7 @@ int FontListCreate(
     /*
      * This only enumerates face names and font sizes if necessary.
      */
-    if (!SUCCEEDED_NTSTATUS(EnumerateFonts(bLB ? EF_OEMFONT : EF_TTFONT)))
+    if (FAILED_NTSTATUS(EnumerateFonts(bLB ? EF_OEMFONT : EF_TTFONT)))
     {
         return LB_ERR;
     }

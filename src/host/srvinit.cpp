@@ -255,7 +255,7 @@ static bool s_IsOnDesktop()
     // Allocate console will read the global ServiceLocator::LocateGlobals().getConsoleInformation
     // for the settings we just set.
     auto Status = CONSOLE_INFORMATION::AllocateConsole({ Title, TitleLength / sizeof(wchar_t) });
-    if (!SUCCEEDED_NTSTATUS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         return Status;
     }
@@ -810,7 +810,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     CONSOLE_SERVER_MSG Data = { 0 };
     // Try to receive the data sent by the client.
     auto Status = NTSTATUS_FROM_HRESULT(Message->ReadMessageInput(0, &Data, sizeof(Data)));
-    if (!SUCCEEDED_NTSTATUS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         return Status;
     }
@@ -904,7 +904,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     // CreateInstance method), and the TextBuffer needs to be constructed with
     // a reference to the renderer, so the renderer must be created first.
     auto Status = SetUpConsole(&p->ConsoleInfo, p->TitleLength, p->Title, p->CurDir, p->AppName);
-    if (!SUCCEEDED_NTSTATUS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         return Status;
     }
@@ -940,7 +940,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
 
             CloseHandle(Thread); // This doesn't stop the thread from running.
 
-            if (!SUCCEEDED_NTSTATUS(g.ntstatusConsoleInputInitStatus))
+            if (FAILED_NTSTATUS(g.ntstatusConsoleInputInitStatus))
             {
                 Status = g.ntstatusConsoleInputInitStatus;
             }

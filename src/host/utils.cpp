@@ -73,7 +73,7 @@ std::wstring _LoadString(const UINT id)
     {
         ItemLength = s_LoadStringEx(ServiceLocator::LocateGlobals().hInstance, id, ItemString, ARRAYSIZE(ItemString), LangId);
     }
-    if (!SUCCEEDED_NTSTATUS(Status) || ItemLength == 0)
+    if (FAILED_NTSTATUS(Status) || ItemLength == 0)
     {
         ItemLength = LoadStringW(ServiceLocator::LocateGlobals().hInstance, id, ItemString, ARRAYSIZE(ItemString));
     }

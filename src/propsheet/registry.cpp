@@ -176,7 +176,7 @@ DWORD GetRegistryValues(
     //
     Status = RegistrySerialization::s_OpenConsoleKey(&hCurrentUserKey, &hConsoleKey);
 
-    if (!SUCCEEDED_NTSTATUS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         return 0;
     }
@@ -214,7 +214,7 @@ DWORD GetRegistryValues(
         Status = RegistrySerialization::s_OpenKey(hConsoleKey,
                                                   pStateInfo->OriginalTitle,
                                                   &hTitleKey);
-        if (!SUCCEEDED_NTSTATUS(Status))
+        if (FAILED_NTSTATUS(Status))
         {
             RegCloseKey(hConsoleKey);
             RegCloseKey(hCurrentUserKey);
@@ -693,7 +693,7 @@ VOID SetRegistryValues(
     //
     Status = RegistrySerialization::s_OpenConsoleKey(&hCurrentUserKey, &hConsoleKey);
 
-    if (!SUCCEEDED_NTSTATUS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         return;
     }
@@ -719,7 +719,7 @@ VOID SetRegistryValues(
         Status = RegistrySerialization::s_CreateKey(hConsoleKey,
                                                     pStateInfo->OriginalTitle,
                                                     &hTitleKey);
-        if (!SUCCEEDED_NTSTATUS(Status))
+        if (FAILED_NTSTATUS(Status))
         {
             RegCloseKey(hConsoleKey);
             RegCloseKey(hCurrentUserKey);

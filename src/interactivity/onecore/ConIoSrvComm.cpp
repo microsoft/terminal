@@ -604,7 +604,7 @@ UINT ConIoSrvComm::ConIoMapVirtualKeyW(UINT uCode, UINT uMapType)
     UINT ReturnValue;
     Status = RequestMapVirtualKey(uCode, uMapType, &ReturnValue);
 
-    if (!SUCCEEDED_NTSTATUS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         ReturnValue = 0;
         SetLastError(ERROR_PROC_NOT_FOUND);
@@ -620,7 +620,7 @@ SHORT ConIoSrvComm::ConIoVkKeyScanW(WCHAR ch)
     SHORT ReturnValue;
     Status = RequestVkKeyScan(ch, &ReturnValue);
 
-    if (!SUCCEEDED_NTSTATUS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         ReturnValue = 0;
         SetLastError(ERROR_PROC_NOT_FOUND);
@@ -636,7 +636,7 @@ SHORT ConIoSrvComm::ConIoGetKeyState(int nVirtKey)
     SHORT ReturnValue;
     Status = RequestGetKeyState(nVirtKey, &ReturnValue);
 
-    if (!SUCCEEDED_NTSTATUS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         ReturnValue = 0;
         SetLastError(ERROR_PROC_NOT_FOUND);
