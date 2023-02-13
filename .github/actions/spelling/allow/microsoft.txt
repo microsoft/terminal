@@ -9,9 +9,11 @@ appxbundle
 appxerror
 appxmanifest
 ATL
+autoexec
 backplating
 bitmaps
 BOMs
+COMPUTERNAME
 CPLs
 cpptools
 cppvsdbg
@@ -26,8 +28,10 @@ dotnetfeed
 DTDs
 DWINRT
 enablewttlogging
+HOMESHARE
 Intelli
 IVisual
+LibPath
 libucrt
 libucrtd
 LKG
@@ -59,6 +63,7 @@ SACLs
 segoe
 sdkddkver
 Shobjidl
+sid
 Skype
 SRW
 sxs
@@ -71,6 +76,7 @@ tdbuildteamid
 ucrt
 ucrtd
 unvirtualized
+USERDNSDOMAIN
 VCRT
 vcruntime
 Virtualization

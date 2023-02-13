@@ -37,20 +37,20 @@ class EnvTests
         til::env actual;
         actual.regenerate();
 
-        VERIFY_ARE_EQUAL(expected.size(), actual.size());
-        for (const auto& [expectedKey, expectedValue] : expected)
+        VERIFY_ARE_EQUAL(expected.as_map().size(), actual.as_map().size());
+        for (const auto& [expectedKey, expectedValue] : expected.as_map())
         {
-            VERIFY_IS_TRUE(actual.find(expectedKey) != actual.end());
-            VERIFY_ARE_EQUAL(expectedValue, actual[expectedKey]);
+            VERIFY_IS_TRUE(actual.as_map().find(expectedKey) != actual.as_map().end());
+            VERIFY_ARE_EQUAL(expectedValue, actual.as_map()[expectedKey]);
         }
     }
 
     TEST_METHOD(ToString)
     {
         til::env environment;
-        environment.insert_or_assign(L"A", L"Apple");
-        environment.insert_or_assign(L"B", L"Banana");
-        environment.insert_or_assign(L"C", L"Cassowary");
+        environment.as_map().insert_or_assign(L"A", L"Apple");
+        environment.as_map().insert_or_assign(L"B", L"Banana");
+        environment.as_map().insert_or_assign(L"C", L"Cassowary");
 
         wchar_t expectedArray[] = L"A=Apple\0B=Banana\0C=Cassowary\0";
 

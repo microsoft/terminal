@@ -80,7 +80,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             };
         };
 
-        namespace wiltmp
+        namespace wil_env
         {
             /** Looks up the computer name and fails if it is not found. */
             template<typename string_type, size_t initialBufferLength = MAX_COMPUTERNAME_LENGTH + 1>
@@ -117,7 +117,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             template<typename string_type, size_t initialBufferLength = MAX_COMPUTERNAME_LENGTH + 1>
             HRESULT TryGetComputerNameW(string_type& result) WI_NOEXCEPT
             {
-                const auto hr = wiltmp::GetComputerNameW<string_type, initialBufferLength>(result);
+                const auto hr = wil_env::GetComputerNameW<string_type, initialBufferLength>(result);
                 RETURN_HR_IF(hr, FAILED(hr) && (hr != HRESULT_FROM_WIN32(ERROR_ENVVAR_NOT_FOUND)));
                 return S_OK;
             }
@@ -128,7 +128,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             string_type GetComputerNameW()
             {
                 string_type result;
-                THROW_IF_FAILED((wiltmp::GetComputerNameW<string_type, initialBufferLength>(result)));
+                THROW_IF_FAILED((wil_env::GetComputerNameW<string_type, initialBufferLength>(result)));
                 return result;
             }
 
@@ -137,7 +137,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             string_type TryGetComputerNameW()
             {
                 string_type result;
-                THROW_IF_FAILED((wiltmp::TryGetComputerNameW<string_type, initialBufferLength>(result)));
+                THROW_IF_FAILED((wil_env::TryGetComputerNameW<string_type, initialBufferLength>(result)));
                 return result;
             }
 #endif
@@ -162,7 +162,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             template<typename string_type, size_t initialBufferLength = 256>
             HRESULT TryRegQueryValueExW(HKEY key, PCWSTR valueName, string_type& result) WI_NOEXCEPT
             {
-                const auto hr = wiltmp::TryRegQueryValueExW<string_type, initialBufferLength>(key, valueName, result);
+                const auto hr = wil_env::TryRegQueryValueExW<string_type, initialBufferLength>(key, valueName, result);
                 RETURN_HR_IF(hr, FAILED(hr) && (hr != HRESULT_FROM_WIN32(ERROR_ENVVAR_NOT_FOUND)));
                 return S_OK;
             }
@@ -173,7 +173,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             string_type RegQueryValueExW(HKEY key, PCWSTR valueName)
             {
                 string_type result;
-                THROW_IF_FAILED((wiltmp::RegQueryValueExW<string_type, initialBufferLength>(key, valueName, result)));
+                THROW_IF_FAILED((wil_env::RegQueryValueExW<string_type, initialBufferLength>(key, valueName, result)));
                 return result;
             }
 
@@ -182,7 +182,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             string_type TryRegQueryValueExW(HKEY key, PCWSTR valueName)
             {
                 string_type result;
-                THROW_IF_FAILED((wiltmp::TryRegQueryValueExW<string_type, initialBufferLength>(key, valueName, result)));
+                THROW_IF_FAILED((wil_env::TryRegQueryValueExW<string_type, initialBufferLength>(key, valueName, result)));
                 return result;
             }
 #endif
@@ -222,12 +222,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         };
     };
 
-    class env : public std::map<std::wstring, std::wstring, til::details::wstring_case_insensitive_compare>
+    class env
     {
     private:
 #ifdef UNIT_TESTING
         friend class EnvTests;
 #endif
+
+        std::map<std::wstring, std::wstring, til::details::wstring_case_insensitive_compare> _envMap{};
 
         // these wstring_views better be null terminated.
         void get(std::wstring variable)
@@ -240,7 +242,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         void get_computer_name()
         {
-            if (auto value = til::details::wiltmp::TryGetComputerNameW())
+            if (auto value = til::details::wil_env::TryGetComputerNameW())
             {
                 save_to_map(std::wstring{ til::details::vars::computer_name }, value.get());
             }
@@ -278,7 +280,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             {
                 for (auto& [keyName, varName] : til::details::vars::program_files_map)
                 {
-                    auto value = til::details::wiltmp::RegQueryValueExW<std::wstring, 256>(key.get(), keyName.c_str());
+                    auto value = til::details::wil_env::RegQueryValueExW<std::wstring, 256>(key.get(), keyName.c_str());
                     set_user_environment_var(std::wstring{ varName }, value);
                 }
             }
@@ -384,18 +386,16 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         void concat_var(std::wstring var, std::wstring value)
         {
-            // I wanted contains() but this isn't C++20... yet.
-            if (find(var) != end())
+            if (const auto existing = _envMap.find(var); existing != _envMap.end())
             {
-                std::wstring existing = at(var);
                 // If it doesn't already trail with a ;, add one.
                 // Otherwise, just take advantage of the one it has.
-                if (existing.back() != L';')
+                if (existing->second.back() != L';')
                 {
-                    existing.append(L";");
+                    existing->second.append(L";");
                 }
-                existing.append(value);
-                save_to_map(var, existing);
+                existing->second.append(value);
+                save_to_map(var, existing->second);
             }
             else
             {
@@ -407,7 +407,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             if (!var.empty() && !value.empty())
             {
-                insert_or_assign(var, value);
+                _envMap.insert_or_assign(var, value);
             }
         }
 
@@ -418,7 +418,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             if (!_wcsicmp(input.data(), temp.data()) ||
                 !_wcsicmp(input.data(), tmp.data()))
             {
-                return til::details::wiltmp::GetShortPathNameW<std::wstring, 256>(input.data());
+                return til::details::wil_env::GetShortPathNameW<std::wstring, 256>(input.data());
             }
             else
             {
@@ -450,7 +450,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 std::wstring value{ entry.substr(pos + 1) }; // portion after '='
 
                 // Don't replace entries that already exist.
-                try_emplace(std::move(name), std::move(value));
+                _envMap.try_emplace(std::move(name), std::move(value));
                 lastCh += cchEntry;
             }
         }
@@ -493,7 +493,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         std::wstring to_string()
         {
             std::wstring result;
-            for (const auto& [name, value] : *this)
+            for (const auto& [name, value] : _envMap)
             {
                 result += name;
                 result += L"=";
@@ -502,6 +502,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
             result.append(L"\0", 1);
             return result;
+        }
+
+        std::map<std::wstring, std::wstring, til::details::wstring_case_insensitive_compare>& as_map()
+        {
+            return _envMap;
         }
 
         // TODO: should we be a bunch of goofs and make a "watcher" here that sets up its own
