@@ -33,7 +33,7 @@ namespace winrt
 
 ////////////////////////////////////////////////////////////////////////////////
 // Error message handling. This is in this file rather than with the warnings in
-// TerminalWindow, becuase the error text might also just be a serialization
+// TerminalWindow, because the error text might also just be a serialization
 // error message. So AppLogic needs to know the actual text of the error.
 
 // !!! IMPORTANT !!!

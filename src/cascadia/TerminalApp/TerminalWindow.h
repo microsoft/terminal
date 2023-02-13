@@ -138,8 +138,6 @@ namespace winrt::TerminalApp::implementation
         winrt::event_token PropertyChanged(Windows::UI::Xaml::Data::PropertyChangedEventHandler const& handler) { return _root->PropertyChanged(handler); }
         void PropertyChanged(winrt::event_token const& token) { _root->PropertyChanged(token); }
 
-        // WINRT_PROPERTY(TerminalApp::WindowProperties, WindowProperties, nullptr);
-
         TYPED_EVENT(RequestedThemeChanged, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Settings::Model::Theme);
 
     private:

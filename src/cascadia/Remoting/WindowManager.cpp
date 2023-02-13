@@ -96,7 +96,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         _createMonarch();
         if (_monarch)
         {
-            // We connectecd to a monarch instance, not us though.
+            // We connected to a monarch instance, not us though.
 
             shouldCreateWindow = false;
             std::optional<uint64_t> givenID;
@@ -123,7 +123,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // successfully proposed to it in _proposeToMonarch, so we can't get
         // here with a monarch.
         {
-            // No pre-existing instance.
+            // No preexisting instance.
 
             // Raise an event, to ask how to handle this commandline. We can't ask
             // the app ourselves - we exist isolated from that knowledge (and
@@ -166,7 +166,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                     // some window than not.
                     _monarch = winrt::make<Monarch>();
                     TraceLoggingWrite(g_hRemotingProvider,
-                                      "WindowManager_FaileToCoCreate",
+                                      "WindowManager_FailedToCoCreate",
                                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
                 }
@@ -294,7 +294,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return false;
     }
 
-    Remoting::Peasant WindowManager::CreateAPeasant(Remoting::WindowRequestedArgs args)
+    Remoting::Peasant WindowManager::CreatePeasant(Remoting::WindowRequestedArgs args)
     {
         auto p = winrt::make_self<Remoting::implementation::Peasant>();
         if (args.Id())
