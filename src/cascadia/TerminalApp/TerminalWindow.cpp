@@ -53,8 +53,7 @@ static const std::array settingsLoadWarningsLabels{
     USES_RESOURCE(L"DuplicateRemainingProfilesEntry"),
 };
 static_assert(settingsLoadWarningsLabels.size() == static_cast<size_t>(SettingsLoadWarnings::WARNINGS_SIZE));
-
-// Errors are definted in AppLogic.cpp
+// Errors are defined in AppLogic.cpp
 
 // Function Description:
 // - General-purpose helper for looking up a localized string for a
