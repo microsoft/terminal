@@ -44,6 +44,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void Initialize();
         Control::ControlCore Core();
 
+        void Close();
+
         Control::InteractivityAutomationPeer OnCreateAutomationPeer();
         ::Microsoft::Console::Render::IRenderData* GetRenderData() const;
 
@@ -90,6 +92,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(OpenHyperlink, IInspectable, Control::OpenHyperlinkEventArgs);
         TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
         TYPED_EVENT(ScrollPositionChanged, IInspectable, Control::ScrollPositionChangedArgs);
+
+        TYPED_EVENT(Closed, IInspectable, IInspectable);
 
     private:
         // NOTE: _uiaEngine must be ordered before _core.

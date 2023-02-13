@@ -80,6 +80,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return *_core;
     }
 
+    void ControlInteractivity::Close()
+    {
+        _ClosedHandlers(*this, nullptr);
+        if (_core)
+        {
+            _core->Close();
+        }
+    }
+
     // Method Description:
     // - Returns the number of clicks that occurred (double and triple click support).
     // Every call to this function registers a click.

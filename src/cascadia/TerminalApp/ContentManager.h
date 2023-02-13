@@ -21,5 +21,8 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IMap<winrt::guid, Microsoft::Terminal::Control::ControlInteractivity> _content{
             winrt::multi_threaded_map<winrt::guid, Microsoft::Terminal::Control::ControlInteractivity>()
         };
+
+        void _closedHandler(winrt::Windows::Foundation::IInspectable sender,
+                            winrt::Windows::Foundation::IInspectable e);
     };
 }

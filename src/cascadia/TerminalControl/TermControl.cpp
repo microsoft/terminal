@@ -2007,7 +2007,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             TSFInputControl().Close();
             _autoScrollTimer.Stop();
 
-            _core.Close();
+            _interactivity.Close();
         }
     }
 

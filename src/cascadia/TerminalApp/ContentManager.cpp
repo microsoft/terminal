@@ -31,7 +31,7 @@ namespace winrt::TerminalApp::implementation
                                                     TerminalConnection::ITerminalConnection connection)
     {
         auto content = ControlInteractivity{ settings, unfocusedAppearance, connection };
-        // winrt::guid g{ ::Microsoft::Console::Utils::CreateGuid() };
+        content.Closed({ this, &ContentManager::_closedHandler });
         _content.Insert(content.Id(), content);
         return content;
     }
@@ -39,5 +39,15 @@ namespace winrt::TerminalApp::implementation
     ControlInteractivity ContentManager::LookupCore(winrt::guid id)
     {
         return _content.TryLookup(id);
+    }
+
+    void ContentManager::_closedHandler(winrt::Windows::Foundation::IInspectable sender,
+                                        winrt::Windows::Foundation::IInspectable e)
+    {
+        if (const auto& content{ sender.try_as<winrt::Microsoft::Terminal::Control::ControlInteractivity>() })
+        {
+            const auto& contentGuid{ content.Id() };
+            _content.TryRemove(contentGuid);
+        }
     }
 }
