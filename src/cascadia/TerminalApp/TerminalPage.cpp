@@ -605,11 +605,6 @@ namespace winrt::TerminalApp::implementation
 
         if (auto page{ weakThis.get() })
         {
-            const auto memberSize = page->_startupActions.Size();
-            const auto paramSecondSize = actions.Size();
-            memberSize;
-            paramFistSize;
-            paramSecondSize;
             for (const auto& action : actions)
             {
                 if (auto page{ weakThis.get() })
@@ -3011,15 +3006,11 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::SetStartupActions(std::vector<ActionAndArgs>& actions)
     {
-        const auto initSize = actions.size();
-        initSize;
         // The fastest way to copy all the actions out of the std::vector and
         // put them into a winrt::IVector is by making a copy, then moving the
         // copy into the winrt vector ctor.
         auto listCopy = actions;
         _startupActions = winrt::single_threaded_vector<ActionAndArgs>(std::move(listCopy));
-        const auto afterSize = _startupActions.Size();
-        assert(initSize == afterSize); // you donkey
     }
 
     // Routine Description:
