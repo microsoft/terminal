@@ -105,9 +105,9 @@ void SaveConsoleSettingsIfNeeded(const HWND hwnd)
         {
             SetGlobalRegistryValues();
             if (FAILED_NTSTATUS(ShortcutSerialization::s_SetLinkValues(gpStateInfo,
-                                                                           g_fEastAsianSystem,
-                                                                           g_fForceV2,
-                                                                           gpStateInfo->fIsV2Console)))
+                                                                       g_fEastAsianSystem,
+                                                                       g_fForceV2,
+                                                                       gpStateInfo->fIsV2Console)))
             {
                 WCHAR szMessage[MAX_PATH + 100];
                 WCHAR awchBuffer[MAX_PATH] = { 0 };
