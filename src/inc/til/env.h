@@ -427,11 +427,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         static constexpr std::wstring_view path{ L"Path" };
-        static constexpr std::wstring_view libpath{ L"LibPath" };
-        static constexpr std::wstring_view os2libpath{ L"Os2LibPath" };
+        static constexpr std::wstring_view libPath{ L"LibPath" };
+        static constexpr std::wstring_view os2LibPath{ L"Os2LibPath" };
         bool is_path_var(std::wstring_view input)
         {
-            return !_wcsicmp(input.data(), path.data()) || !_wcsicmp(input.data(), libpath.data()) || !_wcsicmp(input.data(), os2libpath.data());
+            return !_wcsicmp(input.data(), path.data()) || !_wcsicmp(input.data(), libPath.data()) || !_wcsicmp(input.data(), os2LibPath.data());
         }
 
         void parse(wchar_t* block)
