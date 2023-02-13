@@ -9,7 +9,7 @@ namespace Microsoft.Terminal.Remoting
         WindowManager();
 
         ProposeCommandlineResult ProposeCommandline2(CommandlineArgs args);
-        Peasant CreateAPeasant(WindowRequestedArgs args);
+        Peasant CreatePeasant(WindowRequestedArgs args);
 
         void SignalClose(Peasant p);
         void RequestShowNotificationIcon(Peasant p);
@@ -37,7 +37,6 @@ namespace Microsoft.Terminal.Remoting
         event Windows.Foundation.TypedEventHandler<Object, GetWindowLayoutArgs> GetWindowLayoutRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> ShowNotificationIconRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> HideNotificationIconRequested;
-
 
         event Windows.Foundation.TypedEventHandler<Object, WindowRequestedArgs> RequestNewWindow;
 

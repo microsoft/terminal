@@ -14,7 +14,7 @@
 #include "NotificationIcon.h"
 
 // This was an enormous dead end.
-// #include <dxgidebug.h>
+// #include <dxgiDebug.h>
 // #include <dxgi1_3.h>
 // typedef GUID DXGI_DEBUG_ID;
 // const DXGI_DEBUG_ID DXGI_DEBUG_ALL = { 0xe48ae283, 0xda80, 0x490b, 0x87, 0xe6, 0x43, 0xe9, 0xa9, 0xcf, 0xda, 0x8 };
@@ -134,7 +134,7 @@ void WindowEmperor::WaitForWindows()
 
 void WindowEmperor::CreateNewWindowThread(Remoting::WindowRequestedArgs args, const bool /*firstWindow*/)
 {
-    Remoting::Peasant peasant{ _manager.CreateAPeasant(args) };
+    Remoting::Peasant peasant{ _manager.CreatePeasant(args) };
 
     auto window{ std::make_shared<WindowThread>(_app.Logic(), args, _manager, peasant) };
 
@@ -142,7 +142,7 @@ void WindowEmperor::CreateNewWindowThread(Remoting::WindowRequestedArgs args, co
         // Add a callback to the window's logic to let us know when the window's
         // quake mode state changes. We'll use this to check if we need to add
         // or remove the notification icon.
-        sender->Logic().IsQuakeWindowChanged([this](auto&&, auto &&) -> winrt::fire_and_forget {
+        sender->Logic().IsQuakeWindowChanged([this](auto&&, auto&&) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(this->_dispatcher);
             this->_checkWindowsForNotificationIcon();
         });
@@ -240,7 +240,7 @@ void WindowEmperor::_numberOfWindowsChanged(const winrt::Windows::Foundation::II
 }
 
 // Raised from our windowManager (on behalf of the monarch). We respond by
-// giving the monarch an async fuction that the manager should wait on before
+// giving the monarch an async function that the manager should wait on before
 // completing the quit.
 void WindowEmperor::_quitAllRequested(const winrt::Windows::Foundation::IInspectable&,
                                       const winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs& args)
@@ -392,14 +392,12 @@ LRESULT WindowEmperor::MessageHandler(UINT const message, WPARAM const wParam, L
         case NIN_SELECT:
         case NIN_KEYSELECT:
         {
-            // _NotifyNotificationIconPressedHandlers();
             _notificationIcon->NotificationIconPressed();
             return 0;
         }
         case WM_CONTEXTMENU:
         {
             const til::point eventPoint{ GET_X_LPARAM(wParam), GET_Y_LPARAM(wParam) };
-            // _NotifyShowNotificationIconContextMenuHandlers(eventPoint);
             _notificationIcon->ShowContextMenu(eventPoint, _manager.GetPeasantInfos());
             return 0;
         }
@@ -408,7 +406,6 @@ LRESULT WindowEmperor::MessageHandler(UINT const message, WPARAM const wParam, L
     }
     case WM_MENUCOMMAND:
     {
-        // _NotifyNotificationIconMenuItemSelectedHandlers((HMENU)lparam, (UINT)wparam);
         _notificationIcon->MenuItemSelected((HMENU)lParam, (UINT)wParam);
         return 0;
     }
@@ -420,7 +417,6 @@ LRESULT WindowEmperor::MessageHandler(UINT const message, WPARAM const wParam, L
         // message at runtime.
         if (message == WM_TASKBARCREATED)
         {
-            // _NotifyReAddNotificationIconHandlers();
             _notificationIcon->ReAddNotificationIcon();
             return 0;
         }

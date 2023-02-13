@@ -13,13 +13,13 @@ WindowThread::WindowThread(const winrt::TerminalApp::AppLogic& logic,
     _args{ args },
     _manager{ manager }
 {
-    // DO NOT
+    // DO NOT start the AppHost here in the ctor, as that will start XAML on the wrong thread!
 }
 
 void WindowThread::Start()
 {
     _thread = std::thread([this]() {
-        // Start the Apphost HERE, on the actual thread we want XAML to run on
+        // Start the AppHost HERE, on the actual thread we want XAML to run on
         _host = std::make_unique<::AppHost>(_appLogic,
                                             _args,
                                             _manager,

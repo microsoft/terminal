@@ -27,8 +27,6 @@ using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
 #define IDM_SYSTEM_MENU_BEGIN 0x1000
 
-// const UINT WM_TASKBARCREATED = RegisterWindowMessage(L"TaskbarCreated");
-
 IslandWindow::IslandWindow() noexcept :
     _interopWindowHandle{ nullptr },
     _rootGrid{ nullptr },
