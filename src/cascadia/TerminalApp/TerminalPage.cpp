@@ -573,8 +573,6 @@ namespace winrt::TerminalApp::implementation
                                                                const bool initial,
                                                                const winrt::hstring cwd)
     {
-        const auto paramFistSize = actions.Size();
-
         auto weakThis{ get_weak() };
 
         // Handle it on a subsequent pass of the UI thread.
