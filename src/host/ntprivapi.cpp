@@ -22,6 +22,7 @@ namespace
 {
     // TODO: Get Parent current not really available without winternl + NtQueryInformationProcess. http://osgvsowi/8394495
     OBJECT_ATTRIBUTES oa;
+#pragma warning(suppress : 26477) // This macro contains a bare NULL
     InitializeObjectAttributes(&oa, nullptr, 0, nullptr, nullptr);
 
     CLIENT_ID ClientId;

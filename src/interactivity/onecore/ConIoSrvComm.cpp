@@ -105,6 +105,7 @@ ConIoSrvComm::~ConIoSrvComm()
     ALPC_MESSAGE_HANDLE_INFORMATION HandleInfo;
 
     // Initialize the attributes of the port object.
+#pragma warning(suppress : 26477) // This macro contains a bare NULL
     InitializeObjectAttributes(&ObjectAttributes,
                                nullptr,
                                0,
