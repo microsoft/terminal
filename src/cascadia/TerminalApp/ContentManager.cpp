@@ -35,7 +35,8 @@ namespace winrt::TerminalApp::implementation
     {
         auto content = ControlInteractivity{ settings, unfocusedAppearance, connection };
         content.Closed({ this, &ContentManager::_closedHandler });
-        _content.Insert(content.Id(), content);
+        const auto& contentGuid{ content.Id() };
+        _content.Insert(contentGuid, content);
         return content;
     }
 
