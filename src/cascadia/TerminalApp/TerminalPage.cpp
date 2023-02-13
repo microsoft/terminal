@@ -299,18 +299,6 @@ namespace winrt::TerminalApp::implementation
         ShowSetAsDefaultInfoBar();
     }
 
-    // Method Description;
-    // - Checks if the current terminal window should load or save its layout information.
-    // Arguments:
-    // - settings: The settings to use as this may be called before the page is
-    //   fully initialized.
-    // Return Value:
-    // - true if the ApplicationState should be used.
-    bool TerminalPage::ShouldUsePersistedLayout(CascadiaSettings& settings) const
-    {
-        return settings.GlobalSettings().FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout;
-    }
-
     // Method Description:
     // - This is a bit of trickiness: If we're running unelevated, and the user
     //   passed in only --elevate actions, the we don't _actually_ want to
@@ -325,7 +313,7 @@ namespace winrt::TerminalApp::implementation
         // GH#12267: Don't forget about defterm handoff here. If we're being
         // created for embedding, then _yea_, we don't need to handoff to an
         // elevated window.
-        if (!_startupActions || IsElevated() || _shouldStartInboundListener)
+        if (!_startupActions || IsElevated() || _shouldStartInboundListener || _startupActions.Size() == 0)
         {
             // there aren't startup actions, or we're elevated. In that case, go for it.
             return false;
@@ -422,32 +410,6 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    // Method Description;
-    // - Checks if the current window is configured to load a particular layout
-    // Arguments:
-    // - settings: The settings to use as this may be called before the page is
-    //   fully initialized.
-    // Return Value:
-    // - non-null if there is a particular saved layout to use
-    std::optional<uint32_t> TerminalPage::LoadPersistedLayoutIdx(CascadiaSettings& settings) const
-    {
-        return ShouldUsePersistedLayout(settings) ? _loadFromPersistedLayoutIdx : std::nullopt;
-    }
-
-    WindowLayout TerminalPage::LoadPersistedLayout(CascadiaSettings& settings) const
-    {
-        if (const auto idx = LoadPersistedLayoutIdx(settings))
-        {
-            const auto i = idx.value();
-            const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
-            if (layouts && layouts.Size() > i)
-            {
-                return layouts.GetAt(i);
-            }
-        }
-        return nullptr;
-    }
-
     winrt::fire_and_forget TerminalPage::NewTerminalByDrop(winrt::Windows::UI::Xaml::DragEventArgs& e)
     {
         Windows::Foundation::Collections::IVectorView<Windows::Storage::IStorageItem> items;
@@ -531,16 +493,6 @@ namespace winrt::TerminalApp::implementation
         {
             _startupState = StartupState::InStartup;
 
-            // If we are provided with an index, the cases where we have
-            // commandline args and startup actions are already handled.
-            if (const auto layout = LoadPersistedLayout(_settings))
-            {
-                if (layout.TabLayout().Size() > 0)
-                {
-                    _startupActions = layout.TabLayout();
-                }
-            }
-
             ProcessStartupActions(_startupActions, true);
 
             // If we were told that the COM server needs to be started to listen for incoming
@@ -599,8 +551,6 @@ namespace winrt::TerminalApp::implementation
                                                                const bool initial,
                                                                const winrt::hstring cwd)
     {
-        const auto paramFistSize = actions.Size();
-
         auto weakThis{ get_weak() };
 
         // Handle it on a subsequent pass of the UI thread.
@@ -631,11 +581,6 @@ namespace winrt::TerminalApp::implementation
 
         if (auto page{ weakThis.get() })
         {
-            const auto memberSize = page->_startupActions.Size();
-            const auto paramSecondSize = actions.Size();
-            memberSize;
-            paramFistSize;
-            paramSecondSize;
             for (const auto& action : actions)
             {
                 if (auto page{ weakThis.get() })
@@ -1232,10 +1177,17 @@ namespace winrt::TerminalApp::implementation
         if (connectionType == TerminalConnection::AzureConnection::ConnectionType() &&
             TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
         {
-            // TODO GH#4661: Replace this with directly using the AzCon when our VT is better
             std::filesystem::path azBridgePath{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
             azBridgePath.replace_filename(L"TerminalAzBridge.exe");
-            connection = TerminalConnection::ConptyConnection();
+            if constexpr (Feature_AzureConnectionInProc::IsEnabled())
+            {
+                connection = TerminalConnection::AzureConnection{};
+            }
+            else
+            {
+                connection = TerminalConnection::ConptyConnection{};
+            }
+
             auto valueSet = TerminalConnection::ConptyConnection::CreateSettings(azBridgePath.wstring(),
                                                                                  L".",
                                                                                  L"Azure",
@@ -1879,7 +1831,7 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        if (ShouldUsePersistedLayout(_settings))
+        if (_settings.GlobalSettings().ShouldUsePersistedLayout())
         {
             // Don't delete the ApplicationState when all of the tabs are removed.
             // If there is still a monarch living they will get the event that
@@ -2169,88 +2121,6 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    // <<<<<<< HEAD
-    // =======
-    //     winrt::fire_and_forget TerminalPage::_asyncSplitPaneActiveTab(const SplitDirection splitDirection,
-    //                                                                   const float splitSize,
-    //                                                                   PreparedContent preppedContent)
-    //     {
-    //         // _GetFocusedTabImpl requires us to be on the UI thread
-    //         co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
-    //         auto focusedTab{ _GetFocusedTabImpl() };
-
-    //         // Clever hack for a crash in startup, with multiple sub-commands. Say
-    //         // you have the following commandline:
-    //         //
-    //         //   wtd nt -p "elevated cmd" ; sp -p "elevated cmd" ; sp -p "Command Prompt"
-    //         //
-    //         // Where "elevated cmd" is an elevated profile.
-    //         //
-    //         // In that scenario, we won't dump off the commandline immediately to an
-    //         // elevated window, because it's got the final unelevated split in it.
-    //         // However, when we get to that command, there won't be a tab yet. So
-    //         // we'd crash right about here.
-    //         //
-    //         // Instead, let's just promote this first split to be a tab instead.
-    //         // Crash avoided, and we don't need to worry about inserting a new-tab
-    //         // command in at the start.
-    //         if (!focusedTab)
-    //         {
-    //             if (_tabs.Size() == 0)
-    //             {
-    //                 _createNewTabFromContent(preppedContent);
-    //             }
-    //             else
-    //             {
-    //                 // The focused tab isn't a terminal tab
-    //                 co_return;
-    //             }
-    //         }
-    //         else
-    //         {
-    //             _asyncSplitPaneOnTab(focusedTab, splitDirection, splitSize, preppedContent);
-    //         }
-    //     }
-    //     winrt::fire_and_forget TerminalPage::_asyncSplitPaneOnTab(winrt::com_ptr<TerminalTab> tab,
-    //                                                               const SplitDirection splitDirection,
-    //                                                               const float splitSize,
-    //                                                               PreparedContent preppedContent)
-    //     {
-    //         // calculate split type
-    //         const auto contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
-    //         const auto contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
-    //         const winrt::Windows::Foundation::Size availableSpace{ contentWidth, contentHeight };
-
-    //         const auto realSplitType = tab->PreCalculateCanSplit(splitDirection, splitSize, availableSpace);
-    //         if (!realSplitType)
-    //         {
-    //             co_return;
-    //         }
-
-    //         // unzoom
-    //         _UnZoomIfNeeded();
-
-    //         co_await winrt::resume_background();
-
-    //         auto content = co_await preppedContent.initContentProc;
-
-    //         co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
-
-    //         auto pane = _makePaneFromContent(content, preppedContent.controlSettings, preppedContent.profile);
-
-    //         tab->SplitPane(*realSplitType, splitSize, pane);
-
-    //         // Manually focus the new pane, if we've already initialized
-    //         if (_startupState == StartupState::Initialized)
-    //         {
-    //             if (const auto control = _GetActiveControl())
-    //             {
-    //                 control.Focus(FocusState::Programmatic);
-    //             }
-    //         }
-    //     }
-
-    // >>>>>>> 1f2bb760e (Pane officially opened via the serialized actions, via across the process boundary)
     // Method Description:
     // - Switches the split orientation of the currently focused pane.
     // Arguments:
@@ -2807,129 +2677,6 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    // <<<<<<< HEAD
-    // =======
-    //     static wil::unique_process_information _createHostClassProcess(const winrt::guid& g)
-    //     {
-    //         auto guidStr{ ::Microsoft::Console::Utils::GuidToString(g) };
-
-    //         // Create an event that the content process will use to signal it is
-    //         // ready to go. We won't need the event after this function, so the
-    //         // unique_event will clean up our handle when we leave this scope. The
-    //         // ContentProcess is responsible for cleaning up its own handle.
-    //         wil::unique_event ev{ CreateEvent(nullptr, true, false, nullptr /*L"contentProcessStarted"*/) };
-    //         // Make sure to mark this handle as inheritable! Even with
-    //         // bInheritHandles=true, this is only inherited when it's explicitly
-    //         // allowed to be.
-    //         SetHandleInformation(ev.get(), HANDLE_FLAG_INHERIT, 1);
-
-    //         // god bless, fmt::format will format a HANDLE like `0xa80`
-    //         std::wstring commandline{
-    //             fmt::format(L"WindowsTerminal.exe --content {} --signal {}", guidStr, ev.get())
-    //         };
-
-    //         STARTUPINFO siOne{ 0 };
-    //         siOne.cb = sizeof(STARTUPINFOW);
-    //         wil::unique_process_information piOne;
-    //         auto succeeded = CreateProcessW(
-    //             nullptr,
-    //             commandline.data(),
-    //             nullptr, // lpProcessAttributes
-    //             nullptr, // lpThreadAttributes
-    //             true, // bInheritHandles
-    //             CREATE_UNICODE_ENVIRONMENT, // dwCreationFlags
-    //             nullptr, // lpEnvironment
-    //             nullptr, // startingDirectory
-    //             &siOne, // lpStartupInfo
-    //             &piOne // lpProcessInformation
-    //         );
-    //         THROW_IF_WIN32_BOOL_FALSE(succeeded);
-
-    //         // Wait for the child process to signal that they're ready.
-    //         WaitForSingleObject(ev.get(), INFINITE);
-
-    //         return std::move(piOne);
-    //     }
-
-    //     PreparedContent TerminalPage::_prepareContentProc(const NewTerminalArgs& newTerminalArgs,
-    //                                                       const bool duplicate)
-    //     {
-    //         PreparedContent preppedContent;
-    //         _evaluateSettings(newTerminalArgs, duplicate, preppedContent.controlSettings, preppedContent.profile);
-    //         preppedContent.initContentProc = (newTerminalArgs && newTerminalArgs.ContentGuid() != winrt::guid{}) ?
-    //                                              _AttachToContentProcess(newTerminalArgs.ContentGuid()) :
-    //                                              _CreateNewContentProcess(preppedContent.profile, preppedContent.controlSettings);
-    //         return preppedContent;
-    //     }
-
-    //     Windows::Foundation::IAsyncOperation<ContentProcess> TerminalPage::_CreateNewContentProcess(Profile profile,
-    //                                                                                                 TerminalSettingsCreateResult settings)
-    //     {
-    //         co_await winrt::resume_background();
-    //         winrt::guid contentGuid{ ::Microsoft::Console::Utils::CreateGuid() };
-    //         // Spawn a wt.exe, with the guid on the commandline
-    //         auto piContentProcess{ _createHostClassProcess(contentGuid) };
-
-    //         // DebugBreak();
-
-    //         // THIS MUST TAKE PLACE AFTER _createHostClassProcess.
-    //         // * If we're creating a new OOP control, _createHostClassProcess will
-    //         //   spawn the process that will actually host the ContentProcess
-    //         //   object.
-    //         // * If we're attaching, then that process already exists.
-    //         ContentProcess content{ nullptr };
-    //         try
-    //         {
-    //             content = create_instance<ContentProcess>(contentGuid, CLSCTX_LOCAL_SERVER);
-    //         }
-    //         catch (winrt::hresult_error hr)
-    //         {
-    //             co_return nullptr;
-    //         }
-
-    //         if (content == nullptr)
-    //         {
-    //             co_return nullptr;
-    //         }
-
-    //         TerminalConnection::ConnectionInformation connectInfo{ _CreateConnectionInfoFromSettings(profile, settings.DefaultSettings()) };
-
-    //         // Init the content proc with the focused/unfocused pair
-    //         if (!content.Initialize(settings.DefaultSettings(), settings.UnfocusedSettings(), connectInfo))
-    //         {
-    //             co_return nullptr;
-    //         }
-
-    //         co_return content;
-    //     }
-
-    //     Windows::Foundation::IAsyncOperation<ContentProcess> TerminalPage::_AttachToContentProcess(const winrt::guid contentGuid)
-    //     {
-    //         ContentProcess content{ nullptr };
-    //         try
-    //         {
-    //             content = create_instance<ContentProcess>(contentGuid, CLSCTX_LOCAL_SERVER);
-    //         }
-    //         catch (winrt::hresult_error hr)
-    //         {
-    //         }
-    //         co_return content;
-    //     }
-
-    //     // INVARIANT: Must be called on UI thread!
-    //     std::shared_ptr<Pane> TerminalPage::_makePaneFromContent(ContentProcess content,
-    //                                                              TerminalSettingsCreateResult controlSettings,
-    //                                                              Profile profile)
-    //     {
-    //         // Create the XAML control that will be attached to the content process.
-    //         // We're not passing in a connection, because the contentGuid will be used instead
-    //         const auto control = _InitControl(controlSettings, content.Guid());
-    //         _RegisterTerminalEvents(control);
-
-    //         return std::make_shared<Pane>(profile, control);
-    //     }
-
-    // >>>>>>> 1f2bb760e (Pane officially opened via the serialized actions, via across the process boundary)
     TermControl TerminalPage::_InitControl(const TerminalSettingsCreateResult& settings, const ITerminalConnection& connection)
     {
         // Do any initialization that needs to apply to _every_ TermControl we
@@ -4129,13 +3876,11 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::SetPersistedLayoutIdx(const uint32_t idx)
-    {
-        _loadFromPersistedLayoutIdx = idx;
-    }
-
     void TerminalPage::SetNumberOfOpenWindows(const uint64_t num)
     {
+        // This is used in TerminalPage::_RemoveTab, when we close a tab. If we
+        // close the last tab, and there's only one window open, then we will
+        // call to persist _no_ state.
         _numOpenWindows = num;
     }
 
@@ -4644,18 +4389,6 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::WindowProperties(const TerminalApp::IWindowProperties& props)
     {
         _WindowProperties = props;
-        // if (const auto& observable{ props.try_as<INotifyPropertyChanged>() })
-        // {
-        //     observable.PropertyChanged([weakThis = get_weak()](auto& /*sender*/, auto& e) {
-        //         if (auto page{ weakThis.get() })
-        //         {
-        //             if (e.PropertyName() == L"WindowName")
-        //             {
-        //                 page->_windowNameChanged();
-        //             }
-        //         }
-        //     });
-        // }
     }
 
     winrt::fire_and_forget TerminalPage::WindowNameChanged()
@@ -4670,27 +4403,12 @@ namespace winrt::TerminalApp::implementation
             _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
             _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowIdForDisplay" });
 
-            // if (changed)
-            // {
             // DON'T display the confirmation if this is the name we were
             // given on startup!
             if (page->_startupState == StartupState::Initialized)
             {
                 page->IdentifyWindow();
-
-                // TODO! This is wacky. Reconcile with oldIsQuakeMode in TerminalWindow::WindowName
-
-                // // If we're entering quake mode, or leaving it
-                // if (IsQuakeWindow() != oldIsQuakeMode)
-                // {
-                //     // If we're entering Quake Mode from ~Focus Mode, then this will enter Focus Mode
-                //     // If we're entering Quake Mode from Focus Mode, then this will do nothing
-                //     // If we're leaving Quake Mode (we're already in Focus Mode), then this will do nothing
-                //     SetFocusMode(true);
-                //     _IsQuakeWindowChangedHandlers(*this, nullptr);
-                // }
             }
-            // }
         }
     }
 

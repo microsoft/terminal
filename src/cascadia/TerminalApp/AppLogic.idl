@@ -10,6 +10,13 @@ namespace TerminalApp
         String WindowName { get; };
     };
 
+    struct ParseCommandlineResult
+    {
+        String Message;
+        Int32 ExitCode;
+    };
+
+
     // See IDialogPresenter and TerminalPage's DialogPresenter for more
     // information.
     [default_interface] runtimeclass AppLogic
@@ -31,9 +38,10 @@ namespace TerminalApp
 
         Boolean HasSettingsStartupActions();
 
-        void ReloadSettings();
+        Boolean ShouldUsePersistedLayout();
+        void SaveWindowLayoutJsons(Windows.Foundation.Collections.IVector<String> layouts);
 
-        void SetInboundListener();
+        void ReloadSettings();
 
         Microsoft.Terminal.Settings.Model.Theme Theme { get; };
 
@@ -41,10 +49,9 @@ namespace TerminalApp
 
         TerminalWindow CreateNewWindow();
 
-        Boolean ShouldImmediatelyHandoffToElevated();
-        void HandoffToElevated();
+        ParseCommandlineResult GetParseCommandlineMessage(String[] args);
 
-        Windows.Foundation.Collections.IMapView<Microsoft.Terminal.Control.KeyChord, Microsoft.Terminal.Settings.Model.Command> GlobalHotkeys();
+        IMapView<Microsoft.Terminal.Control.KeyChord, Microsoft.Terminal.Settings.Model.Command> GlobalHotkeys();
 
         event Windows.Foundation.TypedEventHandler<Object, SettingsLoadEventArgs> SettingsChanged;
 

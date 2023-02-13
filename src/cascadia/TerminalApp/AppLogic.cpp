@@ -32,13 +32,19 @@ namespace winrt
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// TODO! This section probably should be in TerminalWindow with the warnings
+// Error message handling. This is in this file rather than with the warnings in
+// TerminalWindow, becuase the error text might also just be a serialization
+// error message. So AppLogic needs to know the actual text of the error.
 
-// clang-format off
-static const std::array settingsLoadErrorsLabels {
+// !!! IMPORTANT !!!
+// Make sure that these keys are in the same order as the
+// SettingsLoadWarnings/Errors enum is!
+static const std::array settingsLoadErrorsLabels{
     USES_RESOURCE(L"NoProfilesText"),
     USES_RESOURCE(L"AllProfilesHiddenText")
 };
+static_assert(settingsLoadErrorsLabels.size() == static_cast<size_t>(SettingsLoadErrors::ERRORS_SIZE));
+
 template<typename T>
 winrt::hstring _GetMessageText(uint32_t index, const T& keys)
 {
@@ -60,9 +66,6 @@ static winrt::hstring _GetErrorText(SettingsLoadErrors error)
 {
     return _GetMessageText(static_cast<uint32_t>(error), settingsLoadErrorsLabels);
 }
-
-// clang-format on
-
 ////////////////////////////////////////////////////////////////////////////////
 
 static constexpr std::wstring_view StartupTaskName = L"StartTerminalOnLoginTask";
@@ -188,7 +191,9 @@ namespace winrt::TerminalApp::implementation
             _settings.GlobalSettings().ShowTabsInTitlebar(false);
         }
 
-        // TODO! These used to be in `_root->Initialized`. Where do they belong now?
+        // These used to be in `TerminalPage::Initialized`, so that they started
+        // _after_ the Terminal window was started and displayed. These could
+        // theoretically move there again too.
         {
             // Both LoadSettings and ReloadSettings are supposed to call this function,
             // but LoadSettings skips it, so that the UI starts up faster.
@@ -482,15 +487,6 @@ namespace winrt::TerminalApp::implementation
             }
             else
             {
-                // TODO! Arg should be a SettingsLoadEventArgs{ result, warnings, error, settings}
-                //
-                // _SettingsChangedHandlers(*this, make_self<SettingsLoadEventArgs>( _settingsLoadedResult, warnings, _settingsLoadExceptionText, settings}))
-
-                // const winrt::hstring titleKey = USES_RESOURCE(L"ReloadJsonParseErrorTitle");
-                // const winrt::hstring textKey = USES_RESOURCE(L"ReloadJsonParseErrorText");
-                // _ShowLoadErrorsDialog(titleKey, textKey, _settingsLoadedResult);
-                // return;
-
                 auto ev = winrt::make_self<SettingsLoadEventArgs>(true,
                                                                   static_cast<uint64_t>(_settingsLoadedResult),
                                                                   _settingsLoadExceptionText,
@@ -507,11 +503,6 @@ namespace winrt::TerminalApp::implementation
             _RegisterSettingsChange();
             return;
         }
-
-        // if (_settingsLoadedResult == S_FALSE)
-        // {
-        //     _ShowLoadWarningsDialog();
-        // }
 
         // Here, we successfully reloaded the settings, and created a new
         // TerminalSettings object.
@@ -533,38 +524,6 @@ namespace winrt::TerminalApp::implementation
     [[nodiscard]] CascadiaSettings AppLogic::GetSettings() const noexcept
     {
         return _settings;
-    }
-
-    // Method Description:
-    // - Triggers the setup of the listener for incoming console connections
-    //   from the operating system.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void AppLogic::SetInboundListener()
-    {
-        // TODO!
-        // _root->SetInboundListener(false);
-    }
-
-    bool AppLogic::ShouldImmediatelyHandoffToElevated()
-    {
-        // TODO! Merge that code in here.
-        //   * Probably need to pass in the startupActions that the first window is being started with
-        //   * Or like, a reference to the first TerminalWindow object, or something
-
-        // return _root != nullptr ? _root->ShouldImmediatelyHandoffToElevated(_settings) : false;
-        return false;
-    }
-    void AppLogic::HandoffToElevated()
-    {
-        // TODO! Merge that code in here.
-
-        // if (_root)
-        // {
-        //     _root->HandoffToElevated(_settings);
-        // }
     }
 
     // Method Description:
@@ -606,7 +565,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (!appArgs.GetExitMessage().empty())
             {
-                return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseNew);
+                return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseNone);
             }
 
             const std::string parsedTarget{ appArgs.GetTargetWindow() };
@@ -685,7 +644,7 @@ namespace winrt::TerminalApp::implementation
         // create a new window. Then, in that new window, we'll try to  set the
         // StartupActions, which will again fail, returning the correct error
         // message.
-        return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseNew);
+        return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseNone);
     }
 
     Windows::Foundation::Collections::IMapView<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::Command> AppLogic::GlobalHotkeys()
@@ -704,7 +663,15 @@ namespace winrt::TerminalApp::implementation
         {
             ReloadSettings();
         }
-        auto window = winrt::make_self<implementation::TerminalWindow>(_settings, _contentManager);
+
+        auto ev = winrt::make_self<SettingsLoadEventArgs>(false,
+                                                          _settingsLoadedResult,
+                                                          _settingsLoadExceptionText,
+                                                          _warnings,
+                                                          _settings);
+
+        auto window = winrt::make_self<implementation::TerminalWindow>(*ev, _contentManager);
+
         this->SettingsChanged({ window->get_weak(), &implementation::TerminalWindow::UpdateSettingsHandler });
         if (_hasSettingsStartupActions)
         {
@@ -716,5 +683,33 @@ namespace winrt::TerminalApp::implementation
     winrt::TerminalApp::ContentManager AppLogic::ContentManager()
     {
         return _contentManager;
+    }
+
+    bool AppLogic::ShouldUsePersistedLayout() const
+    {
+        return _settings.GlobalSettings().ShouldUsePersistedLayout();
+    }
+
+    void AppLogic::SaveWindowLayoutJsons(const Windows::Foundation::Collections::IVector<hstring>& layouts)
+    {
+        std::vector<WindowLayout> converted;
+        converted.reserve(layouts.Size());
+
+        for (const auto& json : layouts)
+        {
+            if (json != L"")
+            {
+                converted.emplace_back(WindowLayout::FromJson(json));
+            }
+        }
+
+        ApplicationState::SharedInstance().PersistedWindowLayouts(winrt::single_threaded_vector(std::move(converted)));
+    }
+
+    TerminalApp::ParseCommandlineResult AppLogic::GetParseCommandlineMessage(array_view<const winrt::hstring> args)
+    {
+        ::TerminalApp::AppCommandlineArgs _appArgs;
+        const auto r = _appArgs.ParseArgs(args);
+        return TerminalApp::ParseCommandlineResult{ winrt::to_hstring(_appArgs.GetExitMessage()), r };
     }
 }

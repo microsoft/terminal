@@ -57,8 +57,8 @@ public:
                 _Out_ DWORD* const pControlKeyState,
                 _Out_ void* const pOutputData) override;
 
-    gsl::span<wchar_t> SpanAtPointer();
-    gsl::span<wchar_t> SpanWholeBuffer();
+    std::span<wchar_t> SpanAtPointer();
+    std::span<wchar_t> SpanWholeBuffer();
 
     size_t Write(const std::wstring_view wstr);
 

@@ -573,7 +573,7 @@ void DxFontRenderData::_SetAxes(const std::unordered_map<std::wstring_view, floa
         }
 
         // Make the span, which has all the axes except the weight
-        _axesVectorWithoutWeight = gsl::make_span(_axesVector);
+        _axesVectorWithoutWeight = std::span{ _axesVector };
 
         // Add the weight axis to the vector if needed
         if (weightAxis)

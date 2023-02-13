@@ -80,7 +80,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static void _rethrowSerializationExceptionWithLocationInfo(const JsonUtils::DeserializationError& e, const std::string_view& settingsString);
         static Json::Value _parseJSON(const std::string_view& content);
         static const Json::Value& _getJSONValue(const Json::Value& json, const std::string_view& key) noexcept;
-        gsl::span<const winrt::com_ptr<implementation::Profile>> _getNonUserOriginProfiles() const;
+        std::span<const winrt::com_ptr<implementation::Profile>> _getNonUserOriginProfiles() const;
         void _parse(const OriginTag origin, const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings);
         void _parseFragment(const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings);
         static JsonSettings _parseJson(const std::string_view& content);
