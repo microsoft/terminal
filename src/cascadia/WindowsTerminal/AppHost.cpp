@@ -416,7 +416,7 @@ void AppHost::Initialize()
     _revokers.RenameWindowRequested = _windowLogic.RenameWindowRequested(winrt::auto_revoke, { this, &AppHost::_RenameWindowRequested });
 
     // A note: make sure to listen to our _window_'s settings changed, not the
-    // applogic's. We want to make sure the event has gone through the window
+    // AppLogic's. We want to make sure the event has gone through the window
     // logic _before_ we handle it, so we can ask the window about it's newest
     // properties.
     _revokers.SettingsChanged = _windowLogic.SettingsChanged(winrt::auto_revoke, { this, &AppHost::_HandleSettingsChanged });

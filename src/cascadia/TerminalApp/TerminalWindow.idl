@@ -106,7 +106,7 @@ namespace TerminalApp
         Boolean GetAlwaysShowNotificationIcon();
         Boolean GetShowTitleInTitlebar();
 
-        // These already have accessort as a part of IWindowProperties, but we
+        // These already have accessors as a part of IWindowProperties, but we
         // also want to be able to set them.
         String WindowName { set; };
         UInt64 WindowId { set; };
