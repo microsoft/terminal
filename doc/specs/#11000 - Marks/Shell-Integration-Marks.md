@@ -24,7 +24,7 @@ quickly scroll between different marks, to allow easy navigation between
 important information in the buffer.
 
 Marks in the Windows Terminal are a combination of functionality from a variety
-of different terminal emulators. "Marks" attmepts to unify these different, but
+of different terminal emulators. "Marks" attempts to unify these different, but
 related pieces of functionality.
 
 ## Background
@@ -40,12 +40,12 @@ marking a region of text in the buffer with a special meaning.
   between these prompts.
 * FinalTerm (and xterm.js) also support marking up more than just the prompt.
   They go so far as to differentiate the start/end of the prompt, the start of
-  the cmmandline input, and the start/end of the command output.
+  the commandline input, and the start/end of the command output.
   `FTCS_COMMAND_FINISHED` is even designed to include metadata indicating
   whether a command succeeded or failed.
 * Additionally, Terminal.app allows users to "bookmark" lines via the UI. That
   allows users to quickly come back to something they feel is important.
-* Consider also editors like Visual Stutio. VS also uses little marks on the
+* Consider also editors like Visual Studio. VS also uses little marks on the
   scrollbar to indicate where other matches are for whatever the given search
   term is.
 
@@ -53,13 +53,13 @@ marking a region of text in the buffer with a special meaning.
 
 The Terminal provides a way for command line shells to semantically mark parts
 of the command-line output. By marking up parts of the output, the Terminal can
-richer experiences. The Terminal will know where each command starts and stops,
+provide richer experiences. The Terminal will know where each command starts and stops,
 what the actual command was and what the output of that command is. This allows
 the terminal to expose quick actions for:
 
 * Quickly navigating the history by scrolling between commands
 * Re-running a previous command in the history
-* Copying all the output of a single command-line
+* Copying all the output of a single command
 * A visual indicator to separate out one command-line from the next, for quicker
   mental parsing of the output of the command-line.
 * Collapsing the output of a command, as to reduce noise
@@ -146,7 +146,7 @@ There's ultimately three types of region here we need to mark:
 * the output (starting from C)
 
 That intuitively feels a bit like a text attribute almost. Additionally, the
-prompt should be connected to it's subsequent command and output, s.t. we can
+prompt should be connected to its subsequent command and output, s.t. we can
 * Select command output
 * re-run command
 
@@ -183,8 +183,8 @@ hooks that other shells do, that might allow for us to emit the
 **FTCS_COMMAND_EXECUTED** sequence. However, cmd.exe also doesn't allow
 multiline prompts, so we can be relatively certain that when the user presses
 <kbd>enter</kbd>, that's the end of the prompt. We may want to add a setting to
-auto-mark enter as the _end of the prompt_. We've already got that setting,
-sorta, with `autoMarkPrompts`. That would at least allow cmd.exe to emit a
+auto-mark <kbd>enter</kbd> as the _end of the prompt_. We've already got that setting,
+with `autoMarkPrompts`. That would at least allow cmd.exe to emit a
 {command finished}{prompt start}{prompt...}{command start} in the prompt, and
 have us add the command executed. That's not perfect (we wouldn't be able to get
 error information), but it does work well enough. 
@@ -197,7 +197,7 @@ TODO! Mike add a sample PROMPT that uses these marks approproately.
 
 VsCode implements a set of gutter icons to the left of the buffer lines, to
 provide a UI element for exposing some quick actions to perform, powered by
-shell integartion.
+shell integration.
 
 Gutter icons don't need to implement app-level actions at all. They _should_ be
 part of the control. At least, part of the UWP `TermControl`. These are some
@@ -208,7 +208,7 @@ start/end already is.
 * Copy output
 * re-run command
 
-If we do decide to allow comments in marks (ala "bookmarks"), then we could use
+To allow comments in marks (ala "bookmarks"), we can use
 the gutter flyout to display the comment, and have the tooltip display that
 comment.
 
@@ -227,7 +227,7 @@ settings - these would be promoted to no longer be experimental.
 
 Many of the sub-points on these settings are definitely "Future Consideration"
 level settings. For example, the `scrollToMark` `"highlight"` property. That one
-is certianly not something we need to ship with.  
+is certainly not something we need to ship with.  
 
 ### Actions
 
@@ -235,7 +235,7 @@ In addition to driving marks via the output, we will also want to support adding
 marks manually. These can be thought of like "bookmarks" - a user indicated
 region that means something to the user.
 
-* [ ] `addMark`: add a mark to the buffer. If there's a selection, use place the
+* [ ] `addMark`: add a mark to the buffer. If there's a selection, place the
   mark covering at the selection. Otherwise, place the mark on the cursor row.
   - [x] `color`: a color for the scrollbar mark. (in [#12948])
   - [ ] `category`: one of `{"prompt", "error", "warning", "success", "info"}`
@@ -274,14 +274,14 @@ region that means something to the user.
 
 _Inspired by a long weekend of manually copying .csv output from the Terminal to a spreadsheet, only to discover that we rejected [#4588] some years ago._
 
-* [ ] `selectCommand(deirection=[prev, next])`: Starting at the selection start,
+* [ ] `selectCommand(direction=[prev, next])`: Starting at the selection start,
   (or the cursor if there's no selection), select the command that starts
   before/after this point (exclusive).  Probably shouldn't wrap around the
   buffer.
   * Since this will create a selection including the start of the command,
     performing this again will select the _next_ command (in whatever
     direction).
-* [ ] `selectOutput(deirection=[prev, next])`: same as above, but with command outputs.
+* [ ] `selectOutput(direction=[prev, next])`: same as above, but with command outputs.
 
 A convenient workflow might be a `multipleActions([selectOutput(prev),
 copy()])`, to quickly select the previous commands output.
@@ -293,7 +293,7 @@ copy()])`, to quickly select the previous commands output.
 * [ ] `showMarksOnScrollbar`: `bool` or `flags({categories}...)` 
   * As an example: `"showMarksOnScrollbar": ["error", "success"]`).
   * Controls if marks should be displayed on the scrollbar. 
-  * If `true`/`"all"`, the all marks are displayed. 
+  * If `true`/`"all"`, then all marks are displayed. 
   * If `false`/`"none"`, then no marks are displayed. 
   * If a set of categories are provided, only display marks from those categories.
   * [x] the bool version is (in [#12948])
@@ -327,14 +327,14 @@ When it comes to displaying marks on the scrollbar, or in the margins, the relat
   * [ ] Same with `ED3`
   * [ ] Same with `cls` / `Clear-Host`
   * [ ] Clear Buffer action too.
-* [ ] Circling doesn't update scrollbar
+* [X] Circling doesn't update scrollbar
   * I think this was fixed in [#14341], or in [#14045]
 * [ ] Resizing / reflowing marks
 * [ ] marks should be stored in the `TextBuffer`
 
 ## Future Considerations
 * adding a timestamp for when a line was marked?
-* adding a comment to the mark. How do we display that comment? a teachingtip on
+* adding a comment to the mark. How do we display that comment? a TeachingTip on
   the scrollbar maybe (actually that's a cool idea)
 * adding a shape to the mark? Terminal.app marks prompt lines with brackets in
   the margins
@@ -348,7 +348,7 @@ When it comes to displaying marks on the scrollbar, or in the margins, the relat
 
 There was originally some discussion as to whether this is a design that should
 be unified with generic patter matchers. Something like the URL detection, which
-ideantifies part of the buffer and then "marks" it. Prototypes for both of these
+identifies part of the buffer and then "marks" it. Prototypes for both of these
 features are going in very different dirrections, however. Likely best to leave
 them separate.
 
