@@ -186,8 +186,7 @@ namespace winrt::TerminalApp::implementation
         bool _isFullscreen{ false };
         bool _isMaximized{ false };
         bool _isAlwaysOnTop{ false };
-        winrt::hstring _WindowName{};
-        uint64_t _WindowId{ 0 };
+
         std::optional<uint32_t> _loadFromPersistedLayoutIdx{};
         uint64_t _numOpenWindows{ 0 };
 
