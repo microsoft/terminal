@@ -1873,8 +1873,8 @@ namespace winrt::TerminalApp::implementation
     //   is the last remaining pane on a tab, that tab will be closed upon moving.
     // - No move will occur if the tabIdx is the same as the current tab, or if
     //   the specified tab is not a host of terminals (such as the settings tab).
-    // Arguments:
-    // - TODO!
+    // - If the Window is specified, the pane will instead be detached and moved
+    //   to the window with the given name/id.
     // Return Value:
     // - true if the pane was successfully moved to the new tab.
     bool TerminalPage::_MovePane(MovePaneArgs args)
@@ -1892,33 +1892,16 @@ namespace winrt::TerminalApp::implementation
         if (!windowId.empty())
         {
             if (const auto terminalTab{ _GetFocusedTabImpl() })
-
             {
                 if (const auto pane{ terminalTab->GetActivePane() })
-
                 {
                     auto startupActions = pane->BuildStartupActions(0, 1, true);
-                    auto winRtActions{ winrt::single_threaded_vector<ActionAndArgs>(std::move(startupActions.args)) };
-                    // Json::Value json{ Json::objectValue };
-                    // SetValueForKey(json, "content", winRtActions);
-                    // Json::StreamWriterBuilder wbuilder;
-                    // auto str = Json::writeString(wbuilder, json);
-                    auto str = ActionAndArgs::Serialize(winRtActions);
-                    auto request = winrt::make_self<RequestMoveContentArgs>(args.Window(),
-                                                                            str,
-                                                                            args.TabIndex());
-                    _RequestMoveContentHandlers(*this, *request);
+                    _DetachPaneFromWindow(pane);
+                    _MoveContent(startupActions.args, args.Window(), args.TabIndex());
+                    focusedTab->DetachPane();
                     return true;
                 }
             }
-
-            //if (const auto& control{ _GetActiveControl() })
-            //{
-            //    const auto currentContentGuid{ control.ContentGuid() };
-            //    auto request = winrt::make_self<RequestMoveCoArgs>(currentContentGuid, args);
-            //    _RequestMovePaneHandlers(*this, *request);
-            //    return true;
-            //}
         }
 
         // If we are trying to move from the current tab to the current tab do nothing.
@@ -1951,18 +1934,35 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
-    void TerminalPage::_DetachTab(const winrt::com_ptr<TerminalTab>& terminalTab)
+    void TerminalPage::_DetachPaneFromWindow(std::shared_ptr<Pane> pane)
+    {
+        pane->WalkTree([&](auto p) {
+            if (const auto& control{ p->GetTerminalControl() })
+            {
+                _manager.Detach(control);
+            }
+        });
+    }
+
+    void TerminalPage::_DetachTabFromWindow(const winrt::com_ptr<TerminalTab>& terminalTab)
     {
         // Collect all the content we're about to detach.
         if (const auto rootPane = terminalTab->GetRootPane())
         {
-            rootPane->WalkTree([&](auto p) {
-                if (const auto& control{ p->GetTerminalControl() })
-                {
-                    _manager.Detach(control);
-                }
-            });
+            _DetachPaneFromWindow(rootPane);
         }
+    }
+
+    void TerminalPage::_MoveContent(std::vector<Settings::Model::ActionAndArgs>& actions,
+                                    const winrt::hstring& windowName,
+                                    const uint32_t tabIndex)
+    {
+        const auto winRtActions{ winrt::single_threaded_vector<ActionAndArgs>(std::move(actions)) };
+        const auto str{ ActionAndArgs::Serialize(winRtActions) };
+        const auto request = winrt::make_self<RequestMoveContentArgs>(windowName,
+                                                                      str,
+                                                                      tabIndex);
+        _RequestMoveContentHandlers(*this, *request);
     }
 
     bool TerminalPage::_MoveTab(MoveTabArgs args)
@@ -1973,20 +1973,9 @@ namespace winrt::TerminalApp::implementation
             if (const auto terminalTab{ _GetFocusedTabImpl() })
             {
                 auto startupActions = terminalTab->BuildStartupActions(true);
-                _DetachTab(terminalTab);
-
-                auto winRtActions{ winrt::single_threaded_vector<ActionAndArgs>(std::move(startupActions)) };
-                // Json::Value json{ Json::objectValue };
-                // SetValueForKey(json, "content", winRtActions);
-                // Json::StreamWriterBuilder wbuilder;
-                // auto str = Json::writeString(wbuilder, json);
-                auto str = ActionAndArgs::Serialize(winRtActions);
-                auto request = winrt::make_self<RequestMoveContentArgs>(args.Window(),
-                                                                        str,
-                                                                        0);
-
+                _DetachTabFromWindow(terminalTab);
+                _MoveContent(startupActions, args.Window(), 0);
                 _RemoveTab(*terminalTab);
-                _RequestMoveContentHandlers(*this, *request);
                 return true;
             }
         }
@@ -2007,21 +1996,18 @@ namespace winrt::TerminalApp::implementation
 
     winrt::fire_and_forget TerminalPage::AttachContent(winrt::hstring content, uint32_t tabIndex)
     {
-        content;
         tabIndex;
 
         auto args = ActionAndArgs::Deserialize(content);
         // TODO! if the first action is a split pane and tabIndex > tabs.size,
         // then remove it and insert an equivalent newTab
 
-        co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::High); // may need to go to the top of _createNewTabFromContent
+        co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
         for (const auto& action : args)
         {
             _actionDispatch->DoAction(action);
         }
     }
-
-    // TODO!  look at 87c840b381870e45bcc9e625fb88a8bdf5106420. That's what I was starting here
 
     // Method Description:
     // - Split the focused pane either horizontally or vertically, and place the

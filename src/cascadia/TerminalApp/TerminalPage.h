@@ -478,8 +478,9 @@ namespace winrt::TerminalApp::implementation
 
         winrt::fire_and_forget _ShowWindowChangedHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
 
-        void _DetachTab(const winrt::com_ptr<TerminalTab>& terminalTab);
-
+        void _DetachPaneFromWindow(std::shared_ptr<Pane> pane);
+        void _DetachTabFromWindow(const winrt::com_ptr<TerminalTab>& terminalTab);
+        void _MoveContent(std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions, const winrt::hstring& windowName, const uint32_t tabIndex);
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
 #define ON_ALL_ACTIONS(action) DECLARE_ACTION_HANDLER(action);
