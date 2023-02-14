@@ -47,7 +47,6 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _pAccessibilityNotifier{ pNotifier },
     _api{ *this },
     _stateMachine{ nullptr },
-    _scrollMargins{ Viewport::Empty() },
     _viewport(Viewport::Empty()),
     _psiAlternateBuffer{ nullptr },
     _psiMainBuffer{ nullptr },
@@ -1797,37 +1796,6 @@ void SCREEN_INFORMATION::MakeCursorVisible(const til::point CursorPosition)
     {
         LOG_IF_FAILED(SetViewportOrigin(false, WindowOrigin, false));
     }
-}
-
-// Method Description:
-// - Sets the scroll margins for this buffer.
-// Arguments:
-// - margins: The new values of the scroll margins, *relative to the viewport*
-void SCREEN_INFORMATION::SetScrollMargins(const Viewport margins)
-{
-    _scrollMargins = margins;
-}
-
-// Method Description:
-// - Returns the scrolling margins boundaries for this screen buffer, relative
-//      to the origin of the text buffer. Most callers will want the absolute
-//      positions of the margins, though they are set and stored relative to
-//      origin of the viewport.
-// Arguments:
-// - <none>
-Viewport SCREEN_INFORMATION::GetAbsoluteScrollMargins() const
-{
-    return _viewport.ConvertFromOrigin(_scrollMargins);
-}
-
-// Method Description:
-// - Returns the scrolling margins boundaries for this screen buffer, relative
-//      to the current viewport.
-// Arguments:
-// - <none>
-Viewport SCREEN_INFORMATION::GetRelativeScrollMargins() const
-{
-    return _scrollMargins;
 }
 
 // Routine Description:

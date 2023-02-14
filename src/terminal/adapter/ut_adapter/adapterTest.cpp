@@ -121,17 +121,6 @@ public:
         _textBuffer->SetCurrentAttributes(attrs);
     }
 
-    void SetScrollingRegion(const til::inclusive_rect& scrollMargins) override
-    {
-        Log::Comment(L"SetScrollingRegion MOCK called...");
-
-        if (_setScrollingRegionResult)
-        {
-            VERIFY_ARE_EQUAL(_expectedScrollRegion, scrollMargins);
-            _activeScrollRegion = scrollMargins;
-        }
-    }
-
     void WarningBell() override
     {
         Log::Comment(L"WarningBell MOCK called...");

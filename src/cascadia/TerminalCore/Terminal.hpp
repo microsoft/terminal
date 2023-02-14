@@ -113,7 +113,6 @@ public:
     void SetTextAttributes(const TextAttribute& attrs) noexcept override;
     void SetAutoWrapMode(const bool wrapAtEOL) noexcept override;
     bool GetAutoWrapMode() const noexcept override;
-    void SetScrollingRegion(const til::inclusive_rect& scrollMargins) noexcept override;
     void WarningBell() override;
     bool GetLineFeedMode() const noexcept override;
     void SetWindowTitle(const std::wstring_view title) override;

@@ -195,7 +195,7 @@ namespace Microsoft::Console::VirtualTerminal
         };
 
         void _WriteToBuffer(const std::wstring_view string);
-        std::pair<int, int> _GetVerticalMargins(const til::rect& viewport, const bool absolute);
+        std::pair<int, int> _GetVerticalMargins(const til::rect& viewport, const bool absolute) noexcept;
         bool _CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins);
         void _ApplyCursorMovementFlags(Cursor& cursor) noexcept;
         void _FillRect(TextBuffer& textBuffer, const til::rect& fillRect, const wchar_t fillChar, const TextAttribute fillAttrs);

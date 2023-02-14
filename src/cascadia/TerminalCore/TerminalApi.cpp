@@ -72,11 +72,6 @@ bool Terminal::GetAutoWrapMode() const noexcept
     return true;
 }
 
-void Terminal::SetScrollingRegion(const til::inclusive_rect& /*scrollMargins*/) noexcept
-{
-    // TODO: This will be needed to fully support DECSTBM.
-}
-
 void Terminal::WarningBell()
 {
     _pfnWarningBell();

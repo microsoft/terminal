@@ -252,14 +252,13 @@ bool AdaptDispatch::CursorPrevLine(const VTInt distance)
 // - absolute - Should coordinates be absolute or relative to the viewport.
 // Return Value:
 // - A std::pair containing the top and bottom coordinates (inclusive).
-std::pair<int, int> AdaptDispatch::_GetVerticalMargins(const til::rect& viewport, const bool absolute)
+std::pair<int, int> AdaptDispatch::_GetVerticalMargins(const til::rect& viewport, const bool absolute) noexcept
 {
     // If the top is out of range, reset the margins completely.
     const auto bottommostRow = viewport.bottom - viewport.top - 1;
     if (_scrollMargins.top >= bottommostRow)
     {
         _scrollMargins.top = _scrollMargins.bottom = 0;
-        _api.SetScrollingRegion(_scrollMargins);
     }
     // If margins aren't set, use the full extent of the viewport.
     const auto marginsSet = _scrollMargins.top < _scrollMargins.bottom;
@@ -1923,7 +1922,6 @@ void AdaptDispatch::_DoSetTopBottomScrollingMargins(const VTInt topMargin,
         }
         _scrollMargins.top = actualTop;
         _scrollMargins.bottom = actualBottom;
-        _api.SetScrollingRegion(_scrollMargins);
     }
 }
 

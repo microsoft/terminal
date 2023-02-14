@@ -41,8 +41,6 @@ public:
     void SetAutoWrapMode(const bool wrapAtEOL) override;
     bool GetAutoWrapMode() const override;
 
-    void SetScrollingRegion(const til::inclusive_rect& scrollMargins) override;
-
     void WarningBell() override;
 
     bool GetLineFeedMode() const override;

@@ -193,10 +193,6 @@ public:
 
     void MakeCursorVisible(const til::point CursorPosition);
 
-    Microsoft::Console::Types::Viewport GetRelativeScrollMargins() const;
-    Microsoft::Console::Types::Viewport GetAbsoluteScrollMargins() const;
-    void SetScrollMargins(const Microsoft::Console::Types::Viewport margins);
-
     [[nodiscard]] NTSTATUS UseAlternateScreenBuffer();
     void UseMainScreenBuffer();
 
@@ -269,8 +265,6 @@ private:
     ConhostInternalGetSet _api;
 
     std::shared_ptr<Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
-
-    Microsoft::Console::Types::Viewport _scrollMargins; //The margins of the VT specified scroll region. Left and Right are currently unused, but could be in the future.
 
     // Specifies which coordinates of the screen buffer are visible in the
     //      window client (the "viewport" into the buffer)

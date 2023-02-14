@@ -51,7 +51,6 @@ namespace Microsoft::Console::VirtualTerminal
         virtual void SetAutoWrapMode(const bool wrapAtEOL) = 0;
         virtual bool GetAutoWrapMode() const = 0;
 
-        virtual void SetScrollingRegion(const til::inclusive_rect& scrollMargins) = 0;
         virtual void WarningBell() = 0;
         virtual bool GetLineFeedMode() const = 0;
         virtual void SetWindowTitle(const std::wstring_view title) = 0;

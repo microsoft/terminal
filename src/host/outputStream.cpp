@@ -138,26 +138,6 @@ bool ConhostInternalGetSet::GetAutoWrapMode() const
     return WI_IsFlagSet(outputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
 }
 
-// Routine Description:
-// - Sets the top and bottom scrolling margins for the current page. This creates
-//     a subsection of the screen that scrolls when input reaches the end of the
-//     region, leaving the rest of the screen untouched.
-// Arguments:
-// - scrollMargins - A rect who's Top and Bottom members will be used to set
-//     the new values of the top and bottom margins. If (0,0), then the margins
-//     will be disabled. NOTE: This is a rect in the case that we'll need the
-//     left and right margins in the future.
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::SetScrollingRegion(const til::inclusive_rect& scrollMargins)
-{
-    auto& screenInfo = _io.GetActiveOutputBuffer();
-    auto srScrollMargins = screenInfo.GetRelativeScrollMargins().ToInclusive();
-    srScrollMargins.top = scrollMargins.top;
-    srScrollMargins.bottom = scrollMargins.bottom;
-    screenInfo.SetScrollMargins(Viewport::FromInclusive(srScrollMargins));
-}
-
 // Method Description:
 // - Retrieves the current Line Feed/New Line (LNM) mode.
 // Arguments:
