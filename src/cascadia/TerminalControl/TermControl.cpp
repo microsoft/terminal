@@ -93,6 +93,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _revokers.interactivityOpenHyperlink = _interactivity.OpenHyperlink(winrt::auto_revoke, { get_weak(), &TermControl::_HyperlinkHandler });
         _revokers.interactivityScrollPositionChanged = _interactivity.ScrollPositionChanged(winrt::auto_revoke, { get_weak(), &TermControl::_ScrollPositionChanged });
 
+        // "Bubbled" events - ones we want to handle, by raising our own event.
         _revokers.CopyToClipboard = _core.CopyToClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleCopyToClipboard });
         _revokers.TitleChanged = _core.TitleChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleTitleChanged });
         _revokers.TabColorChanged = _core.TabColorChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleTabColorChanged });
@@ -2052,6 +2053,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
 
             _RestorePointerCursorHandlers(*this, nullptr);
+
+            _revokers = {};
 
             // Disconnect the TSF input control so it doesn't receive EditContext events.
             TSFInputControl().Close();
