@@ -103,7 +103,7 @@
           Conhost code converts DWORDs to HANDLEs for instance.
         C4467: usage of ATL attributes is deprecated
           Conhost code still uses ATL.
-        C26445: Do not assign gsl::span or std::string_view to a reference. They are cheap to construct and are not owners of the underlying data. (gsl.view).
+        C26445: Do not assign std::span or std::string_view to a reference. They are cheap to construct and are not owners of the underlying data. (gsl.view).
           Even for MSVC v19.32 this is actually far from true. Copying (as opposed to referencing) larger
           than register-sized structures is fairly expensive. Example: https://godbolt.org/z/oPco88PaP
         C26813: Use 'bitwise and' to check if a flag is set.

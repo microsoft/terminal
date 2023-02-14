@@ -1839,7 +1839,7 @@ class StateMachineExternalTest final
         pDispatch->ClearState();
     }
 
-    void VerifyDispatchTypes(const gsl::span<const DispatchTypes::GraphicsOptions> expectedOptions,
+    void VerifyDispatchTypes(const std::span<const DispatchTypes::GraphicsOptions> expectedOptions,
                              const StatefulDispatch& dispatch)
     {
         VERIFY_ARE_EQUAL(expectedOptions.size(), dispatch._options.size());

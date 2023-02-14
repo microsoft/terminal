@@ -43,7 +43,7 @@ namespace Microsoft::Console::Render
                                                            const gsl::not_null<IRenderData*> pData,
                                                            const bool usingSoftFont,
                                                            const bool isSettingDefaultBrushes) noexcept override;
-        [[nodiscard]] HRESULT PaintBufferLine(const gsl::span<const Cluster> clusters,
+        [[nodiscard]] HRESULT PaintBufferLine(const std::span<const Cluster> clusters,
                                               const til::point coord,
                                               const bool trimLeft,
                                               const bool lineWrapped) noexcept override;
