@@ -26,6 +26,8 @@ namespace Microsoft.Terminal.Control
         Guid Id { get; };
         void Reparent(Microsoft.Terminal.Control.IKeyBindings keyBindings);
 
+        void Close();
+
         InteractivityAutomationPeer OnCreateAutomationPeer();
 
         Boolean CopySelectionToClipboard(Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
@@ -69,6 +71,8 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, PasteFromClipboardEventArgs> PasteFromClipboard;
 
         event Windows.Foundation.TypedEventHandler<Object, Object> Attached;
+
+        event Windows.Foundation.TypedEventHandler<Object, Object> Closed;
 
     };
 }
