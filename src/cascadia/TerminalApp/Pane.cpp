@@ -108,7 +108,9 @@ Pane::Pane(std::shared_ptr<Pane> first,
 // - Extract the terminal settings from the current (leaf) pane's control
 //   to be used to create an equivalent control
 // Arguments:
-// - <none>
+// - asContent: when true, we're trying to serialize this pane for moving across
+//   windows. In that case, we'll need to fill in the content guid for our new
+//   terminal args.
 // Return Value:
 // - Arguments appropriate for a SplitPane or NewTab action
 NewTerminalArgs Pane::GetTerminalArgsForPane(const bool asContent) const
@@ -156,6 +158,7 @@ NewTerminalArgs Pane::GetTerminalArgsForPane(const bool asContent) const
     // object. That would work for schemes set by the Terminal, but not ones set
     // by VT, but that seems good enough.
 
+    // Only fill in the ContentGuid if absolutely needed.
     if (asContent)
     {
         args.ContentGuid(_control.ContentGuid());
@@ -172,7 +175,6 @@ NewTerminalArgs Pane::GetTerminalArgsForPane(const bool asContent) const
 // Arguments:
 // - currentId: the id to use for the current/first pane
 // - nextId: the id to use for a new pane if we split
-// - asContent: TODO!
 // Return Value:
 // - The state from building the startup actions, includes a vector of commands,
 //   the original root pane, the id of the focused pane, and the number of panes
@@ -1226,11 +1228,6 @@ void Pane::Shutdown()
 
     if (_IsLeaf())
     {
-        // TOODO! if we call Close here, on a control that was moved to another thread, then it's Dispatcher is no longer this thread, and we'll crash.
-        // Acn we get away with _not_ calling Close? Seems like shutdown is only called for RemoveTab(TerminalTab), so theoretically, removing the old control tree from the UI tree will release the core, calling it's dtor, which will call Close itself.
-        // Alternatively, we could try and see if there's only one strong ref to a ControlCore and just noop if there's more than one.
-        //
-        // I'm bringing this back for a second.
         _control.Close();
     }
     else

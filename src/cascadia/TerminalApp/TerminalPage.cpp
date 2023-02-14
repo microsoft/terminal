@@ -2741,129 +2741,6 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    // <<<<<<< HEAD
-    // =======
-    //     static wil::unique_process_information _createHostClassProcess(const winrt::guid& g)
-    //     {
-    //         auto guidStr{ ::Microsoft::Console::Utils::GuidToString(g) };
-
-    //         // Create an event that the content process will use to signal it is
-    //         // ready to go. We won't need the event after this function, so the
-    //         // unique_event will clean up our handle when we leave this scope. The
-    //         // ContentProcess is responsible for cleaning up its own handle.
-    //         wil::unique_event ev{ CreateEvent(nullptr, true, false, nullptr /*L"contentProcessStarted"*/) };
-    //         // Make sure to mark this handle as inheritable! Even with
-    //         // bInheritHandles=true, this is only inherited when it's explicitly
-    //         // allowed to be.
-    //         SetHandleInformation(ev.get(), HANDLE_FLAG_INHERIT, 1);
-
-    //         // god bless, fmt::format will format a HANDLE like `0xa80`
-    //         std::wstring commandline{
-    //             fmt::format(L"WindowsTerminal.exe --content {} --signal {}", guidStr, ev.get())
-    //         };
-
-    //         STARTUPINFO siOne{ 0 };
-    //         siOne.cb = sizeof(STARTUPINFOW);
-    //         wil::unique_process_information piOne;
-    //         auto succeeded = CreateProcessW(
-    //             nullptr,
-    //             commandline.data(),
-    //             nullptr, // lpProcessAttributes
-    //             nullptr, // lpThreadAttributes
-    //             true, // bInheritHandles
-    //             CREATE_UNICODE_ENVIRONMENT, // dwCreationFlags
-    //             nullptr, // lpEnvironment
-    //             nullptr, // startingDirectory
-    //             &siOne, // lpStartupInfo
-    //             &piOne // lpProcessInformation
-    //         );
-    //         THROW_IF_WIN32_BOOL_FALSE(succeeded);
-
-    //         // Wait for the child process to signal that they're ready.
-    //         WaitForSingleObject(ev.get(), INFINITE);
-
-    //         return std::move(piOne);
-    //     }
-
-    //     PreparedContent TerminalPage::_prepareContentProc(const NewTerminalArgs& newTerminalArgs,
-    //                                                       const bool duplicate)
-    //     {
-    //         PreparedContent preppedContent;
-    //         _evaluateSettings(newTerminalArgs, duplicate, preppedContent.controlSettings, preppedContent.profile);
-    //         preppedContent.initContentProc = (newTerminalArgs && newTerminalArgs.ContentGuid() != winrt::guid{}) ?
-    //                                              _AttachToContentProcess(newTerminalArgs.ContentGuid()) :
-    //                                              _CreateNewContentProcess(preppedContent.profile, preppedContent.controlSettings);
-    //         return preppedContent;
-    //     }
-
-    //     Windows::Foundation::IAsyncOperation<ContentProcess> TerminalPage::_CreateNewContentProcess(Profile profile,
-    //                                                                                                 TerminalSettingsCreateResult settings)
-    //     {
-    //         co_await winrt::resume_background();
-    //         winrt::guid contentGuid{ ::Microsoft::Console::Utils::CreateGuid() };
-    //         // Spawn a wt.exe, with the guid on the commandline
-    //         auto piContentProcess{ _createHostClassProcess(contentGuid) };
-
-    //         // DebugBreak();
-
-    //         // THIS MUST TAKE PLACE AFTER _createHostClassProcess.
-    //         // * If we're creating a new OOP control, _createHostClassProcess will
-    //         //   spawn the process that will actually host the ContentProcess
-    //         //   object.
-    //         // * If we're attaching, then that process already exists.
-    //         ContentProcess content{ nullptr };
-    //         try
-    //         {
-    //             content = create_instance<ContentProcess>(contentGuid, CLSCTX_LOCAL_SERVER);
-    //         }
-    //         catch (winrt::hresult_error hr)
-    //         {
-    //             co_return nullptr;
-    //         }
-
-    //         if (content == nullptr)
-    //         {
-    //             co_return nullptr;
-    //         }
-
-    //         TerminalConnection::ConnectionInformation connectInfo{ _CreateConnectionInfoFromSettings(profile, settings.DefaultSettings()) };
-
-    //         // Init the content proc with the focused/unfocused pair
-    //         if (!content.Initialize(settings.DefaultSettings(), settings.UnfocusedSettings(), connectInfo))
-    //         {
-    //             co_return nullptr;
-    //         }
-
-    //         co_return content;
-    //     }
-
-    //     Windows::Foundation::IAsyncOperation<ContentProcess> TerminalPage::_AttachToContentProcess(const winrt::guid contentGuid)
-    //     {
-    //         ContentProcess content{ nullptr };
-    //         try
-    //         {
-    //             content = create_instance<ContentProcess>(contentGuid, CLSCTX_LOCAL_SERVER);
-    //         }
-    //         catch (winrt::hresult_error hr)
-    //         {
-    //         }
-    //         co_return content;
-    //     }
-
-    //     // INVARIANT: Must be called on UI thread!
-    //     std::shared_ptr<Pane> TerminalPage::_makePaneFromContent(ContentProcess content,
-    //                                                              TerminalSettingsCreateResult controlSettings,
-    //                                                              Profile profile)
-    //     {
-    //         // Create the XAML control that will be attached to the content process.
-    //         // We're not passing in a connection, because the contentGuid will be used instead
-    //         const auto control = _InitControl(controlSettings, content.Guid());
-    //         _RegisterTerminalEvents(control);
-
-    //         return std::make_shared<Pane>(profile, control);
-    //     }
-
-    // >>>>>>> 1f2bb760e (Pane officially opened via the serialized actions, via across the process boundary)
     TermControl TerminalPage::_InitControl(const TerminalSettingsCreateResult& settings, const ITerminalConnection& connection)
     {
         // Do any initialization that needs to apply to _every_ TermControl we
@@ -2896,6 +2773,8 @@ namespace winrt::TerminalApp::implementation
             term.WindowVisibilityChanged(_visible);
         }
 
+        // Even in the case of re-attaching content from another window, this
+        // will correctly update the control's owning HWND
         if (_hostingHwnd.has_value())
         {
             term.OwningHwnd(reinterpret_cast<uint64_t>(*_hostingHwnd));

@@ -118,6 +118,11 @@ private:
 
     void _initialResizeAndRepositionWindow(const HWND hwnd, RECT proposedRect, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode);
 
+    void _handleMoveContent(const winrt::Windows::Foundation::IInspectable& sender,
+                            winrt::TerminalApp::RequestMoveContentArgs args);
+    void _handleAttach(const winrt::Windows::Foundation::IInspectable& sender,
+                       winrt::Microsoft::Terminal::Remoting::AttachRequest args);
+
     winrt::event_token _GetWindowLayoutRequestedToken;
 
     // Helper struct. By putting these all into one struct, we can revoke them
@@ -131,6 +136,8 @@ private:
         winrt::Microsoft::Terminal::Remoting::Peasant::SummonRequested_revoker peasantSummonRequested;
         winrt::Microsoft::Terminal::Remoting::Peasant::DisplayWindowIdRequested_revoker peasantDisplayWindowIdRequested;
         winrt::Microsoft::Terminal::Remoting::Peasant::QuitRequested_revoker peasantQuitRequested;
+        winrt::Microsoft::Terminal::Remoting::Peasant::AttachRequested_revoker AttachRequested;
+
         winrt::TerminalApp::TerminalWindow::CloseRequested_revoker CloseRequested;
         winrt::TerminalApp::TerminalWindow::RequestedThemeChanged_revoker RequestedThemeChanged;
         winrt::TerminalApp::TerminalWindow::FullscreenChanged_revoker FullscreenChanged;
@@ -149,8 +156,10 @@ private:
         winrt::TerminalApp::TerminalWindow::OpenSystemMenu_revoker OpenSystemMenu;
         winrt::TerminalApp::TerminalWindow::QuitRequested_revoker QuitRequested;
         winrt::TerminalApp::TerminalWindow::ShowWindowChanged_revoker ShowWindowChanged;
+        winrt::TerminalApp::TerminalWindow::RequestMoveContent_revoker RequestMoveContent;
         winrt::TerminalApp::TerminalWindow::PropertyChanged_revoker PropertyChanged;
         winrt::TerminalApp::TerminalWindow::SettingsChanged_revoker SettingsChanged;
+
         winrt::Microsoft::Terminal::Remoting::WindowManager::ShowNotificationIconRequested_revoker ShowNotificationIconRequested;
         winrt::Microsoft::Terminal::Remoting::WindowManager::HideNotificationIconRequested_revoker HideNotificationIconRequested;
         winrt::Microsoft::Terminal::Remoting::WindowManager::QuitAllRequested_revoker QuitAllRequested;

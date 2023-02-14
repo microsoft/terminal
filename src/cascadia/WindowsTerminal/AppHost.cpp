@@ -279,10 +279,7 @@ void AppHost::_HandleCommandlineArgs()
         _windowLogic.WindowName(_peasant.WindowName());
         _windowLogic.WindowId(_peasant.GetID());
 
-        // TODO! add revoker
-        _peasant.AttachRequested([this](auto&&, Remoting::AttachRequest args) {
-            _windowLogic.AttachContent(args.Content(), args.TabIndex());
-        });
+        _revokers.AttachRequested = _peasant.AttachRequested(winrt::auto_revoke, { this, &AppHost::_handleAttach });
     }
 }
 
@@ -391,12 +388,7 @@ void AppHost::Initialize()
     _revokers.OpenSystemMenu = _windowLogic.OpenSystemMenu(winrt::auto_revoke, { this, &AppHost::_OpenSystemMenu });
     _revokers.QuitRequested = _windowLogic.QuitRequested(winrt::auto_revoke, { this, &AppHost::_RequestQuitAll });
     _revokers.ShowWindowChanged = _windowLogic.ShowWindowChanged(winrt::auto_revoke, { this, &AppHost::_ShowWindowChanged });
-
-    // TODO! revoker
-    // TODO! move to member method
-    _windowLogic.RequestMoveContent([this](auto&&, winrt::TerminalApp::RequestMoveContentArgs args) {
-        _windowManager.RequestMoveContent(args.Window(), args.Content(), args.TabIndex());
-    });
+    _revokers.RequestMoveContent = _windowLogic.RequestMoveContent(winrt::auto_revoke, { this, &AppHost::_handleMoveContent });
 
     // BODGY
     // On certain builds of Windows, when Terminal is set as the default
@@ -1210,4 +1202,16 @@ void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspect
 winrt::TerminalApp::TerminalWindow AppHost::Logic()
 {
     return _windowLogic;
+}
+
+void AppHost::_handleMoveContent(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                 winrt::TerminalApp::RequestMoveContentArgs args)
+{
+    _windowManager.RequestMoveContent(args.Window(), args.Content(), args.TabIndex());
+}
+
+void AppHost::_handleAttach(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                            winrt::Microsoft::Terminal::Remoting::AttachRequest args)
+{
+    _windowLogic.AttachContent(args.Content(), args.TabIndex());
 }

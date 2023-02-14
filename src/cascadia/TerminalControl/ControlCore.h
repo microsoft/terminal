@@ -63,6 +63,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                         const double compositionScale);
         void EnablePainting();
 
+        void Detach();
+
         void UpdateSettings(const Control::IControlSettings& settings, const IControlAppearance& newAppearance);
         void ApplyAppearance(const bool& focused);
         Control::IControlSettings Settings() { return *_settings; };
