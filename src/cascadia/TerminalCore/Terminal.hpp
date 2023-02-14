@@ -116,7 +116,6 @@ public:
     void SetScrollingRegion(const til::inclusive_rect& scrollMargins) noexcept override;
     void WarningBell() override;
     bool GetLineFeedMode() const noexcept override;
-    void LineFeed(const bool withReturn, const bool wrapForced) override;
     void SetWindowTitle(const std::wstring_view title) override;
     CursorType GetUserDefaultCursorStyle() const noexcept override;
     bool ResizeWindow(const til::CoordType width, const til::CoordType height) noexcept override;
@@ -420,8 +419,6 @@ private:
 
     Microsoft::Console::Types::Viewport _GetMutableViewport() const noexcept;
     Microsoft::Console::Types::Viewport _GetVisibleViewport() const noexcept;
-
-    void _AdjustCursorPosition(const til::point proposedPosition);
 
     void _PreserveUserScrollOffset(const int viewportDelta) noexcept;
 

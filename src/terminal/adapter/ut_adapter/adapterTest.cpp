@@ -143,11 +143,6 @@ public:
         return _getLineFeedModeResult;
     }
 
-    void LineFeed(const bool /*withReturn*/, const bool /*wrapForced*/) override
-    {
-        Log::Comment(L"LineFeed MOCK called...");
-    }
-
     void SetWindowTitle(const std::wstring_view title)
     {
         Log::Comment(L"SetWindowTitle MOCK called...");

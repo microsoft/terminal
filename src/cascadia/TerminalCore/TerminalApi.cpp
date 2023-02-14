@@ -88,22 +88,6 @@ bool Terminal::GetLineFeedMode() const noexcept
     return false;
 }
 
-void Terminal::LineFeed(const bool withReturn, const bool wrapForced)
-{
-    auto cursorPos = _activeBuffer().GetCursor().GetPosition();
-
-    // If the line was forced to wrap, set the wrap status.
-    // When explicitly moving down a row, clear the wrap status.
-    _activeBuffer().GetRowByOffset(cursorPos.y).SetWrapForced(wrapForced);
-
-    cursorPos.y++;
-    if (withReturn)
-    {
-        cursorPos.x = 0;
-    }
-    _AdjustCursorPosition(cursorPos);
-}
-
 void Terminal::SetWindowTitle(const std::wstring_view title)
 {
     if (!_suppressApplicationTitle)
