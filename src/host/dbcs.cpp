@@ -55,7 +55,7 @@ bool CheckBisectStringA(_In_reads_bytes_(cbBuf) PCHAR pchBuf, _In_ DWORD cbBuf, 
 // - buffer - The buffer to walk and fix
 // Return Value:
 // - The length of the final modified buffer.
-DWORD UnicodeRasterFontCellMungeOnRead(const gsl::span<CHAR_INFO> buffer)
+DWORD UnicodeRasterFontCellMungeOnRead(const std::span<CHAR_INFO> buffer)
 {
     // Walk through the source CHAR_INFO and copy each to the destination.
     // EXCEPT for trailing bytes (this will de-duplicate the leading/trailing byte double copies of the CHAR_INFOs as stored in the buffer).
@@ -194,7 +194,7 @@ _Ret_range_(0, cbAnsi)
 
     memcpy(TmpUni, pwchUnicode, cchUnicode * sizeof(WCHAR));
 
-    BYTE AsciiDbcs[2];
+    CHAR AsciiDbcs[2];
     AsciiDbcs[1] = 0;
 
     ULONG i, j;

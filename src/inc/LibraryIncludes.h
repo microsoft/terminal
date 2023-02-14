@@ -39,6 +39,7 @@
 #include <regex>
 #include <set>
 #include <shared_mutex>
+#include <span>
 #include <sstream>
 #include <stdexcept>
 #include <string_view>
@@ -66,7 +67,6 @@
 // and uses the C-namespaced "max" which conflicts with Windows definitions.
 #define GSL_MULTI_SPAN_H
 #include <gsl/gsl>
-#include <gsl/span_ext>
 
 // CppCoreCheck
 #include <CppCoreCheck/Warnings.h>

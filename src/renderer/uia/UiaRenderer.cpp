@@ -126,7 +126,7 @@ CATCH_RETURN();
             const auto newRect = rectangles.at(i);
 
             // if any value is different, selection has changed
-            if (prevRect.Top != newRect.Top || prevRect.Right != newRect.Right || prevRect.Left != newRect.Left || prevRect.Bottom != newRect.Bottom)
+            if (prevRect.top != newRect.top || prevRect.right != newRect.right || prevRect.left != newRect.left || prevRect.bottom != newRect.bottom)
             {
                 _selectionChanged = true;
                 _prevSelection = rectangles;
@@ -175,6 +175,7 @@ try
     {
         _newOutput.append(newText);
         _newOutput.push_back(L'\n');
+        _textBufferChanged = true;
     }
     return S_OK;
 }
@@ -333,7 +334,7 @@ void UiaEngine::WaitUntilCanRender() noexcept
 // - fTrimLeft - Whether or not to trim off the left half of a double wide character
 // Return Value:
 // - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::PaintBufferLine(const gsl::span<const Cluster> /*clusters*/,
+[[nodiscard]] HRESULT UiaEngine::PaintBufferLine(const std::span<const Cluster> /*clusters*/,
                                                  const til::point /*coord*/,
                                                  const bool /*trimLeft*/,
                                                  const bool /*lineWrapped*/) noexcept
@@ -462,7 +463,7 @@ void UiaEngine::WaitUntilCanRender() noexcept
 // - area - Rectangle describing dirty area in characters.
 // Return Value:
 // - S_OK.
-[[nodiscard]] HRESULT UiaEngine::GetDirtyArea(gsl::span<const til::rect>& area) noexcept
+[[nodiscard]] HRESULT UiaEngine::GetDirtyArea(std::span<const til::rect>& area) noexcept
 {
     // Magic static is only valid because any instance of this object has the same behavior.
     // Use member variable instead if this ever changes.

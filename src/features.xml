@@ -138,4 +138,21 @@
         </alwaysEnabledBrandingTokens>
     </feature>
 
+    <feature>
+        <name>Feature_DynamicSSHProfiles</name>
+        <description>Enables the dynamic profile generator for OpenSSH config files</description>
+        <id>9031</id>
+        <stage>AlwaysDisabled</stage>
+    </feature>
+
+    <feature>
+        <name>Feature_AzureConnectionInProc</name>
+        <description>Host the AzureConnection inside Terminal rather than via TerminalAzBridge</description>
+        <id>4661</id>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
 </featureStaging>

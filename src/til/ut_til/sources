@@ -33,6 +33,7 @@ SOURCES = \
     StaticMapTests.cpp \
     string.cpp \
     u8u16convertTests.cpp \
+    UnicodeTests.cpp \
     DefaultResource.rc \
 
 # These tests are disabled because of a missing symbol.

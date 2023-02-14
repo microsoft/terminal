@@ -32,13 +32,12 @@ namespace Microsoft::Console::VirtualTerminal
         [[nodiscard]] HRESULT StartIfNeeded();
 
         [[nodiscard]] static HRESULT ParseIoMode(const std::wstring& VtMode, _Out_ VtIoMode& ioMode);
-
         [[nodiscard]] HRESULT SuppressResizeRepaint();
         [[nodiscard]] HRESULT SetCursorPosition(const til::point coordCursor);
-
         [[nodiscard]] HRESULT SwitchScreenBuffer(const bool useAltBuffer);
+        void SendCloseEvent();
 
-        [[noreturn]] void CloseInput();
+        void CloseInput();
         void CloseOutput();
 
         void BeginResize();
@@ -71,14 +70,13 @@ namespace Microsoft::Console::VirtualTerminal
         bool _resizeQuirk{ false };
         bool _win32InputMode{ false };
         bool _passthroughMode{ false };
+        bool _closeEventSent{ false };
 
         std::unique_ptr<Microsoft::Console::Render::VtEngine> _pVtRenderEngine;
         std::unique_ptr<Microsoft::Console::VtInputThread> _pVtInputThread;
         std::unique_ptr<Microsoft::Console::PtySignalInputThread> _pPtySignalInputThread;
 
         [[nodiscard]] HRESULT _Initialize(const HANDLE InHandle, const HANDLE OutHandle, const std::wstring& VtMode, _In_opt_ const HANDLE SignalHandle);
-
-        [[noreturn]] void _shutdownNow();
 
 #ifdef UNIT_TESTING
         friend class VtIoTests;

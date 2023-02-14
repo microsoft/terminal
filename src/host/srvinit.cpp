@@ -151,7 +151,7 @@ static bool s_IsOnDesktop()
     // 4. Hardcoded default settings
     // To establish this hierarchy, we will need to load the settings and apply them in reverse order.
 
-    // 4. Initializing Settings will establish hardcoded defaults.
+    // 4. Initializing Settings will establish hard-coded defaults.
     // Set to reference of global console information since that's the only place we need to hold the settings.
     auto& settings = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& launchArgs = ServiceLocator::LocateGlobals().launchArgs;
@@ -198,7 +198,7 @@ static bool s_IsOnDesktop()
         // We want everyone to be using VT by default anyways, so this is a
         // strong nudge in that direction. If an application _doesn't_ want VT
         // processing, it's free to disable this setting, even in conpty mode.
-        settings.SetVirtTermLevel(1);
+        settings.SetDefaultVirtTermLevel(1);
 
         // GH#9458 - In the case of a DefTerm handoff, the OriginalTitle might
         // be stashed in the lnk. We want to crack that lnk open, so we can get

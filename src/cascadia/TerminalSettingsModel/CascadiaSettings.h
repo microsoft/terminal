@@ -80,7 +80,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static void _rethrowSerializationExceptionWithLocationInfo(const JsonUtils::DeserializationError& e, const std::string_view& settingsString);
         static Json::Value _parseJSON(const std::string_view& content);
         static const Json::Value& _getJSONValue(const Json::Value& json, const std::string_view& key) noexcept;
-        gsl::span<const winrt::com_ptr<implementation::Profile>> _getNonUserOriginProfiles() const;
+        std::span<const winrt::com_ptr<implementation::Profile>> _getNonUserOriginProfiles() const;
         void _parse(const OriginTag origin, const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings);
         void _parseFragment(const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings);
         static JsonSettings _parseJson(const std::string_view& content);
@@ -124,7 +124,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::Profile ProfileDefaults() const;
         Model::Profile CreateNewProfile();
         Model::Profile FindProfile(const winrt::guid& guid) const noexcept;
-        Model::ColorScheme GetColorSchemeForProfile(const Model::Profile& profile) const;
         void UpdateColorSchemeReferences(const winrt::hstring& oldName, const winrt::hstring& newName);
         Model::Profile GetProfileForArgs(const Model::NewTerminalArgs& newTerminalArgs) const;
         Model::Profile GetProfileByName(const winrt::hstring& name) const;
@@ -154,6 +153,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _refreshDefaultTerminals();
 
         void _resolveDefaultProfile() const;
+        void _resolveNewTabMenuProfiles() const;
+        void _resolveNewTabMenuProfilesSet(const winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry> entries, winrt::Windows::Foundation::Collections::IMap<int, Model::Profile>& remainingProfiles, Model::RemainingProfilesEntry& remainingProfilesEntry) const;
 
         void _validateSettings();
         void _validateAllSchemesExist();
@@ -162,6 +163,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _validateColorSchemesInCommands() const;
         bool _hasInvalidColorScheme(const Model::Command& command) const;
         void _validateThemeExists();
+
+        void _researchOnLoad();
 
         // user settings
         winrt::hstring _hash;

@@ -2,17 +2,16 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-#include <windows.h>
 #include "terminalInput.hpp"
 
-#include "strsafe.h"
+#include <til/unicode.h>
+#include <strsafe.h>
 
 #define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
 #include <wil/Common.h>
 
 #include "../../interactivity/inc/VtApiRedirection.hpp"
 #include "../../inc/unicode.hpp"
-#include "../../types/inc/Utf16Parser.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -267,12 +266,19 @@ bool TerminalInput::GetInputMode(const Mode mode) const noexcept
     return _inputMode.test(mode);
 }
 
+void TerminalInput::ResetInputModes() noexcept
+{
+    _inputMode = { Mode::Ansi, Mode::AutoRepeat };
+    _mouseInputState.lastPos = { -1, -1 };
+    _mouseInputState.lastButton = 0;
+}
+
 void TerminalInput::ForceDisableWin32InputMode(const bool win32InputMode) noexcept
 {
     _forceDisableWin32InputMode = win32InputMode;
 }
 
-static const gsl::span<const TermKeyMap> _getKeyMapping(const KeyEvent& keyEvent,
+static const std::span<const TermKeyMap> _getKeyMapping(const KeyEvent& keyEvent,
                                                         const bool ansiMode,
                                                         const bool cursorApplicationMode,
                                                         const bool keypadApplicationMode) noexcept
@@ -323,7 +329,7 @@ static const gsl::span<const TermKeyMap> _getKeyMapping(const KeyEvent& keyEvent
 // Return Value:
 // - Has value if there was a match to a key translation.
 static std::optional<const TermKeyMap> _searchKeyMapping(const KeyEvent& keyEvent,
-                                                         gsl::span<const TermKeyMap> keyMapping) noexcept
+                                                         std::span<const TermKeyMap> keyMapping) noexcept
 {
     for (auto& map : keyMapping)
     {
@@ -486,7 +492,7 @@ static bool _searchWithModifier(const KeyEvent& keyEvent, InputSender sender)
 // Return Value:
 // - True if there was a match to a key translation, and we successfully sent it to the input
 static bool _translateDefaultMapping(const KeyEvent& keyEvent,
-                                     const gsl::span<const TermKeyMap> keyMapping,
+                                     const std::span<const TermKeyMap> keyMapping,
                                      InputSender sender)
 {
     const auto match = _searchKeyMapping(keyEvent, keyMapping);
@@ -739,7 +745,7 @@ bool TerminalInput::HandleFocus(const bool focused) noexcept
 // - ch: The UTF-16 character to send.
 void TerminalInput::_SendChar(const wchar_t ch)
 {
-    if (Utf16Parser::IsLeadingSurrogate(ch))
+    if (til::is_leading_surrogate(ch))
     {
         if (_leadingSurrogate.has_value())
         {

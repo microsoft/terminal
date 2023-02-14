@@ -163,14 +163,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     private:
         std::optional<std::array<Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE>> _ColorTable;
-        gsl::span<Microsoft::Terminal::Core::Color> _getColorTableImpl();
+        std::span<Microsoft::Terminal::Core::Color> _getColorTableImpl();
 
         static winrt::com_ptr<implementation::TerminalSettings> _CreateWithProfileCommon(const Model::CascadiaSettings& appSettings, const Model::Profile& profile);
         void _ApplyProfileSettings(const Model::Profile& profile);
 
         void _ApplyGlobalSettings(const Model::GlobalAppSettings& globalSettings) noexcept;
         void _ApplyAppearanceSettings(const Microsoft::Terminal::Settings::Model::IAppearanceConfig& appearance,
-                                      const Windows::Foundation::Collections::IMapView<hstring, Microsoft::Terminal::Settings::Model::ColorScheme>& schemes);
+                                      const Windows::Foundation::Collections::IMapView<hstring, Microsoft::Terminal::Settings::Model::ColorScheme>& schemes,
+                                      const winrt::Microsoft::Terminal::Settings::Model::Theme currentTheme);
 
         friend class SettingsModelLocalTests::TerminalSettingsTests;
     };

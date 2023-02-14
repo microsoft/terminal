@@ -510,7 +510,10 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleFind(const IInspectable& /*sender*/,
                                    const ActionEventArgs& args)
     {
-        _Find();
+        if (const auto activeTab{ _GetFocusedTabImpl() })
+        {
+            _Find(*activeTab);
+        }
         args.Handled(true);
     }
 

@@ -41,7 +41,7 @@ struct InitListPlaceholder
 // some element of the class definition that will use the x-macro.
 //
 // You'll author a new arg by:
-//   1: define a new x-macro above with all it's properties
+//   1: define a new x-macro above with all its properties
 //   2. Define the class with:
 //
 //   ACTION_ARGS_STRUCT(MyFooArgs, MY_FOO_ARGS);

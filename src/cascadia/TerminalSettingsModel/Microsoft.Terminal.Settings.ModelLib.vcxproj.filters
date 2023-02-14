@@ -18,6 +18,9 @@
     <ClCompile Include="WslDistroGenerator.cpp">
       <Filter>profileGeneration</Filter>
     </ClCompile>
+    <ClCompile Include="SshHostGenerator.cpp">
+      <Filter>profileGeneration</Filter>
+    </ClCompile>
     <ClCompile Include="CascadiaSettings.cpp" />
     <ClCompile Include="CascadiaSettingsSerialization.cpp" />
     <ClCompile Include="GlobalAppSettings.cpp" />
@@ -61,6 +64,9 @@
     <ClInclude Include="WslDistroGenerator.h">
       <Filter>profileGeneration</Filter>
     </ClInclude>
+    <ClInclude Include="SshHostGenerator.h">
+      <Filter>profileGeneration</Filter>
+    </ClInclude>
     <ClInclude Include="CascadiaSettings.h" />
     <ClInclude Include="GlobalAppSettings.h" />
     <ClInclude Include="TerminalSettingsSerializationHelpers.h" />
@@ -94,6 +100,7 @@
       <Filter>profileGeneration</Filter>
     </ClInclude>
     <ClInclude Include="ActionArgsMagic.h" />
+    <ClInclude Include="NewTabMenuEntry.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ActionArgs.idl" />
@@ -113,6 +120,7 @@
     <Midl Include="FontConfig.idl" />
     <Midl Include="DefaultTerminal.idl" />
     <Midl Include="ApplicationState.idl" />
+    <Midl Include="NewTabMenuEntry.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -141,6 +141,8 @@ public:
     void BroadcastChar(const winrt::Microsoft::Terminal::Control::TermControl& sourceControl, const wchar_t vkey, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers);
     void BroadcastString(const winrt::Microsoft::Terminal::Control::TermControl& sourceControl, const winrt::hstring& text);
 
+    static void SetupResources(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
+
     // Method Description:
     // - A helper method for ad-hoc recursion on a pane tree. Walks the pane
     //   tree, calling a function on each pane in a depth-first pattern.
@@ -244,6 +246,7 @@ private:
     winrt::event_token _secondClosedToken{ 0 };
     winrt::event_token _warningBellToken{ 0 };
     winrt::event_token _readOnlyChangedToken{ 0 };
+    winrt::event_token _closeTerminalRequestedToken{ 0 };
 
     winrt::Windows::UI::Xaml::UIElement::GotFocus_revoker _gotFocusRevoker;
     winrt::Windows::UI::Xaml::UIElement::LostFocus_revoker _lostFocusRevoker;
@@ -299,7 +302,10 @@ private:
                                  const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
     void _ControlLostFocusHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                   const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+
     void _ControlReadOnlyChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& e);
+
+    void _CloseTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
 
     std::pair<float, float> _CalcChildrenSizes(const float fullSize) const;
     SnapChildrenSizeResult _CalcSnappedChildrenSizes(const bool widthOrHeight, const float fullSize) const;
@@ -346,8 +352,6 @@ private:
         }
         return false;
     }
-
-    static void _SetupResources();
 
     struct PanePoint
     {
