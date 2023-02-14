@@ -109,11 +109,11 @@ public:                                                                         
 // ControlCore. So when Core raises an event, it immediately calls the handler
 // on the Page.
 //
-// Instead, the BUBBELD eventk introduces an indirection layer. In the above
+// Instead, the BUBBLED event introduces an indirection layer. In the above
 // example, the Core would raise the event, but now the Control would handle it,
 // and raise an event with each of its own handlers.
 //
-// This allows us to detach the core from the control safely, witout needing to
+// This allows us to detach the core from the control safely, without needing to
 // re-wire all the event handlers from page->control again.
 //
 // Implement like:
