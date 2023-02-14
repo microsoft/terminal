@@ -102,6 +102,27 @@ public:                                                                         
     winrt::event_token name(const Windows::Foundation::TypedEventHandler<sender, args>& h) { return handler.handlerName(h); } \
     void name(const winrt::event_token& token) noexcept { handler.handlerName(token); }
 
+// This is a bit like *FORWARDED_TYPED_EVENT. When you use a forwarded event,
+// the handler gets added to the object that's raising the event. For example,
+// the TerminalPage might be the handler for the TermControl's
+// BackgroundColorChanged event, which is actually implemented by the
+// ControlCore. So when Core raises an event, it immediately calls the handler
+// on the Page.
+//
+// Instead, the BUBBELD eventk introduces an indirection layer. In the above
+// example, the Core would raise the event, but now the Control would handle it,
+// and raise an event with each of its own handlers.
+//
+// This allows us to detach the core from the control safely, witout needing to
+// re-wire all the event handlers from page->control again.
+//
+// Implement like:
+//
+//    _core.TitleChanged({ get_weak(), &TermControl::_bubbleTitleChanged });
+#define BUBBLED_FORWARDED_TYPED_EVENT(name, sender, args) \
+    TYPED_EVENT(name, sender, args)                       \
+    void _bubble##name(const sender& s, const args& a) { _##name##Handlers(s, a); }
+
 // Use this macro to quick implement both the getter and setter for a property.
 // This should only be used for simple types where there's no logic in the
 // getter/setter beyond just accessing/updating the value.
