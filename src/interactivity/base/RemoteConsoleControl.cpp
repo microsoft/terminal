@@ -35,7 +35,8 @@ template<typename T>
     DWORD bytesWritten = 0;
     if (!WriteFile(pipe, &packet, sizeof(packet), &bytesWritten, nullptr))
     {
-        NT_RETURN_NTSTATUS(static_cast<NTSTATUS>(NTSTATUS_FROM_WIN32(::GetLastError())));
+        const auto gle = ::GetLastError();
+        NT_RETURN_NTSTATUS(static_cast<NTSTATUS>(NTSTATUS_FROM_WIN32(gle)));
     }
 
     if (bytesWritten != sizeof(packet))
