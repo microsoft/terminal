@@ -198,6 +198,11 @@ OutputCellIterator::operator bool() const noexcept
     CATCH_FAIL_FAST();
 }
 
+size_t OutputCellIterator::Position() const noexcept
+{
+    return _pos;
+}
+
 // Routine Description:
 // - Advances the iterator one position over the underlying data source.
 // Return Value:

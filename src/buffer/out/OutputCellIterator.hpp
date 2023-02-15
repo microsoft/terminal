@@ -48,6 +48,7 @@ public:
 
     operator bool() const noexcept;
 
+    size_t Position() const noexcept;
     til::CoordType GetCellDistance(OutputCellIterator other) const noexcept;
     til::CoordType GetInputDistance(OutputCellIterator other) const noexcept;
     friend til::CoordType operator-(OutputCellIterator one, OutputCellIterator two) = delete;
