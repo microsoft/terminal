@@ -54,8 +54,6 @@ namespace winrt::TerminalApp::implementation
     {
     public:
         TerminalPage();
-        void BigRedButton();
-        ~TerminalPage();
 
         // This implements shobjidl's IInitializeWithWindow, but due to a XAML Compiler bug we cannot
         // put it in our inheritance graph. https://github.com/microsoft/microsoft-ui-xaml/issues/3331
@@ -118,10 +116,10 @@ namespace winrt::TerminalApp::implementation
                                                      const winrt::hstring cwd = L"");
 
         // For the sake of XAML binding:
-        winrt::hstring WindowName() const noexcept { return L""; /*return _WindowProperties.WindowName();*/ };
-        uint64_t WindowId() const noexcept { return 1u; /*return _WindowProperties.WindowId();*/ };
-        winrt::hstring WindowIdForDisplay() const noexcept { return L""; /*return _WindowProperties.WindowIdForDisplay();*/ };
-        winrt::hstring WindowNameForDisplay() const noexcept { return L""; /*return _WindowProperties.WindowNameForDisplay();*/ };
+        winrt::hstring WindowName() const noexcept { return _WindowProperties.WindowName(); };
+        uint64_t WindowId() const noexcept { return _WindowProperties.WindowId(); };
+        winrt::hstring WindowIdForDisplay() const noexcept { return _WindowProperties.WindowIdForDisplay(); };
+        winrt::hstring WindowNameForDisplay() const noexcept { return _WindowProperties.WindowNameForDisplay(); };
 
         void SetNumberOfOpenWindows(const uint64_t value);
 

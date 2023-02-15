@@ -38,7 +38,7 @@ namespace winrt::TerminalApp::implementation
     {
     public:
         TerminalWindow(const TerminalApp::SettingsLoadEventArgs& settingsLoadedResult);
-        ~TerminalWindow();
+        ~TerminalWindow() = default;
 
         STDMETHODIMP Initialize(HWND hwnd);
 

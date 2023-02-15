@@ -29,14 +29,6 @@ void WindowThread::Start()
         const auto exitCode = WindowProc();
         _host = nullptr;
 
-        {
-            MSG msg = {};
-            while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
-            {
-                ::DispatchMessageW(&msg);
-            }
-        }
-
         _ExitedHandlers(_peasant.GetID());
         return exitCode;
     });

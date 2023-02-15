@@ -226,7 +226,7 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        tabViewItem.PointerReleased({ get_weak(), &TerminalPage::_OnTabClick });
+        tabViewItem.PointerReleased({ this, &TerminalPage::_OnTabClick });
 
         // When the tab requests close, try to close it (prompt for approval, if required)
         newTabImpl->CloseRequested([weakTab, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
