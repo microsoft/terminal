@@ -39,7 +39,7 @@ using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Terminal::Core;
 using namespace std::chrono_literals;
 
-#define HOOKUP_ACTION(action) _actionDispatch->action({ this, &TerminalPage::_Handle##action });
+#define HOOKUP_ACTION(action) _actionDispatch->action({ get_weak(), &TerminalPage::_Handle##action });
 
 namespace winrt
 {
@@ -60,6 +60,25 @@ namespace winrt::TerminalApp::implementation
         InitializeComponent();
     }
 
+    TerminalPage::~TerminalPage()
+    {
+        // Dummy line to get a breakpoint somewnere. We can remove this.
+        _WindowProperties = nullptr;
+    }
+
+    void TerminalPage::BigRedButton()
+    {
+        _windowIdToast = nullptr;
+        _windowRenameFailedToast = nullptr;
+
+        _actionDispatch = nullptr;
+        _tabView = nullptr;
+        _tabRow = nullptr;
+        _tabContent = nullptr;
+        _newTabButton = nullptr;
+        _tabColorPicker = nullptr;
+        _settings = nullptr;
+    }
     // Method Description:
     // - implements the IInitializeWithWindow interface from shobjidl_core.
     // - We're going to use this HWND as the owner for the ConPTY windows, via
@@ -222,7 +241,7 @@ namespace winrt::TerminalApp::implementation
         _RegisterActionCallbacks();
 
         // Hook up inbound connection event handler
-        ConptyConnection::NewConnection({ this, &TerminalPage::_OnNewConnection });
+        ConptyConnection::NewConnection({ get_weak(), &TerminalPage::_OnNewConnection });
 
         //Event Bindings (Early)
         _newTabButton.Click([weakThis{ get_weak() }](auto&&, auto&&) {
@@ -237,9 +256,9 @@ namespace winrt::TerminalApp::implementation
                 page->NewTerminalByDrop(e);
             }
         });
-        _tabView.SelectionChanged({ this, &TerminalPage::_OnTabSelectionChanged });
-        _tabView.TabCloseRequested({ this, &TerminalPage::_OnTabCloseRequested });
-        _tabView.TabItemsChanged({ this, &TerminalPage::_OnTabItemsChanged });
+        _tabView.SelectionChanged({ get_weak(), &TerminalPage::_OnTabSelectionChanged });
+        _tabView.TabCloseRequested({ get_weak(), &TerminalPage::_OnTabCloseRequested });
+        _tabView.TabItemsChanged({ get_weak(), &TerminalPage::_OnTabItemsChanged });
 
         _CreateNewTabFlyout();
 
@@ -248,16 +267,16 @@ namespace winrt::TerminalApp::implementation
         // When the visibility of the command palette changes to "collapsed",
         // the palette has been closed. Toss focus back to the currently active
         // control.
-        CommandPalette().RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
-            if (CommandPalette().Visibility() == Visibility::Collapsed)
-            {
-                _FocusActiveControl(nullptr, nullptr);
-            }
-        });
-        CommandPalette().DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
-        CommandPalette().CommandLineExecutionRequested({ this, &TerminalPage::_OnCommandLineExecutionRequested });
-        CommandPalette().SwitchToTabRequested({ this, &TerminalPage::_OnSwitchToTabRequested });
-        CommandPalette().PreviewAction({ this, &TerminalPage::_PreviewActionHandler });
+        // CommandPalette().RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
+        //     if (CommandPalette().Visibility() == Visibility::Collapsed)
+        //     {
+        //         _FocusActiveControl(nullptr, nullptr);
+        //     }
+        // });
+        CommandPalette().DispatchCommandRequested({ get_weak(), &TerminalPage::_OnDispatchCommandRequested });
+        CommandPalette().CommandLineExecutionRequested({ get_weak(), &TerminalPage::_OnCommandLineExecutionRequested });
+        CommandPalette().SwitchToTabRequested({ get_weak(), &TerminalPage::_OnSwitchToTabRequested });
+        CommandPalette().PreviewAction({ get_weak(), &TerminalPage::_PreviewActionHandler });
 
         // Settings AllowDependentAnimations will affect whether animations are
         // enabled application-wide, so we don't need to check it each time we
@@ -269,7 +288,7 @@ namespace winrt::TerminalApp::implementation
         // window will be, so they can subdivide that space.
         //
         // _OnFirstLayout will remove this handler so it doesn't get called more than once.
-        _layoutUpdatedRevoker = _tabContent.LayoutUpdated(winrt::auto_revoke, { this, &TerminalPage::_OnFirstLayout });
+        _layoutUpdatedRevoker = _tabContent.LayoutUpdated(winrt::auto_revoke, { get_weak(), &TerminalPage::_OnFirstLayout });
 
         _isAlwaysOnTop = _settings.GlobalSettings().AlwaysOnTop();
 
@@ -788,7 +807,7 @@ namespace winrt::TerminalApp::implementation
                 ico.Symbol(WUX::Controls::Symbol::Setting);
                 settingsItem.Icon(ico);
 
-                settingsItem.Click({ this, &TerminalPage::_SettingsButtonOnClick });
+                settingsItem.Click({ get_weak(), &TerminalPage::_SettingsButtonOnClick });
                 newTabFlyout.Items().Append(settingsItem);
 
                 auto actionMap = _settings.ActionMap();
@@ -811,7 +830,7 @@ namespace winrt::TerminalApp::implementation
                 commandPaletteIcon.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
                 commandPaletteFlyout.Icon(commandPaletteIcon);
 
-                commandPaletteFlyout.Click({ this, &TerminalPage::_CommandPaletteButtonOnClick });
+                commandPaletteFlyout.Click({ get_weak(), &TerminalPage::_CommandPaletteButtonOnClick });
                 newTabFlyout.Items().Append(commandPaletteFlyout);
 
                 const auto commandPaletteKeyChord{ actionMap.GetKeyBindingForAction(ShortcutAction::ToggleCommandPalette) };
@@ -833,7 +852,7 @@ namespace winrt::TerminalApp::implementation
             aboutIcon.Symbol(WUX::Controls::Symbol::Help);
             aboutFlyout.Icon(aboutIcon);
 
-            aboutFlyout.Click({ this, &TerminalPage::_AboutButtonOnClick });
+            aboutFlyout.Click({ get_weak(), &TerminalPage::_AboutButtonOnClick });
             newTabFlyout.Items().Append(aboutFlyout);
         }
 
@@ -845,9 +864,9 @@ namespace winrt::TerminalApp::implementation
         // Since the previous focus location might be discarded in the background,
         // e.g., the command palette will be dismissed by the menu,
         // and then closing the fly-out will move the focus to wrong location.
-        newTabFlyout.Opening([this](auto&&, auto&&) {
-            _FocusCurrentTab(true);
-        });
+        // newTabFlyout.Opening([this](auto&&, auto&&) {
+        //     _FocusCurrentTab(true);
+        // });
         _newTabButton.Flyout(newTabFlyout);
     }
 
@@ -1554,16 +1573,16 @@ namespace winrt::TerminalApp::implementation
     // - term: The newly created TermControl to connect the events for
     void TerminalPage::_RegisterTerminalEvents(TermControl term)
     {
-        term.RaiseNotice({ this, &TerminalPage::_ControlNoticeRaisedHandler });
+        term.RaiseNotice({ get_weak(), &TerminalPage::_ControlNoticeRaisedHandler });
 
         // Add an event handler when the terminal's selection wants to be copied.
         // When the text buffer data is retrieved, we'll copy the data into the Clipboard
-        term.CopyToClipboard({ this, &TerminalPage::_CopyToClipboardHandler });
+        term.CopyToClipboard({ get_weak(), &TerminalPage::_CopyToClipboardHandler });
 
         // Add an event handler when the terminal wants to paste data from the Clipboard.
-        term.PasteFromClipboard({ this, &TerminalPage::_PasteFromClipboardHandler });
+        term.PasteFromClipboard({ get_weak(), &TerminalPage::_PasteFromClipboardHandler });
 
-        term.OpenHyperlink({ this, &TerminalPage::_OpenHyperlinkHandler });
+        term.OpenHyperlink({ get_weak(), &TerminalPage::_OpenHyperlinkHandler });
 
         term.HidePointerCursor({ get_weak(), &TerminalPage::_HidePointerCursorHandler });
         term.RestorePointerCursor({ get_weak(), &TerminalPage::_RestorePointerCursorHandler });
@@ -3405,7 +3424,7 @@ namespace winrt::TerminalApp::implementation
             }
 
             // GH#8767 - let unhandled keys in the SUI try to run commands too.
-            sui.KeyDown({ this, &TerminalPage::_KeyDownHandler });
+            sui.KeyDown({ get_weak(), &TerminalPage::_KeyDownHandler });
 
             sui.OpenJson([weakThis{ get_weak() }](auto&& /*s*/, winrt::Microsoft::Terminal::Settings::Model::SettingsTarget e) {
                 if (auto page{ weakThis.get() })
@@ -3436,7 +3455,7 @@ namespace winrt::TerminalApp::implementation
             // Update the state of the close button to match the current theme
             _updateTabCloseButton(tabViewItem);
 
-            tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
+            tabViewItem.PointerPressed({ get_weak(), &TerminalPage::_OnTabClick });
 
             // When the tab requests close, try to close it (prompt for approval, if required)
             newTabImpl->CloseRequested([weakTab, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
@@ -3850,7 +3869,7 @@ namespace winrt::TerminalApp::implementation
         else if (key == Windows::System::VirtualKey::Escape)
         {
             // User wants to discard the changes they made
-            WindowRenamerTextBox().Text(WindowProperties().WindowName());
+            // WindowRenamerTextBox().Text(WindowProperties().WindowName());
             WindowRenamer().IsOpen(false);
             _renamerPressedEnter = false;
         }

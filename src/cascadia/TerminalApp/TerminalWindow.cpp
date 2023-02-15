@@ -132,12 +132,18 @@ namespace winrt::TerminalApp::implementation
         _isElevated = ::Microsoft::Console::Utils::IsElevated();
     }
 
+    TerminalWindow::~TerminalWindow()
+    {
+        _root->BigRedButton();
+        _root = nullptr;
+    }
+
     // Method Description:
     // - Implements the IInitializeWithWindow interface from shobjidl_core.
     HRESULT TerminalWindow::Initialize(HWND hwnd)
     {
         _root = winrt::make_self<TerminalPage>();
-        _root->WindowProperties(*this);
+        // _root->WindowProperties(*this);
         _dialog = ContentDialog{};
 
         // Pass commandline args into the TerminalPage. If we were supposed to
@@ -237,30 +243,30 @@ namespace winrt::TerminalApp::implementation
         }
 
         _root->SetSettings(_settings, false);
-        _root->Loaded({ this, &TerminalWindow::_OnLoaded });
-        _root->Initialized([this](auto&&, auto&&) {
-            // GH#288 - When we finish initialization, if the user wanted us
-            // launched _fullscreen_, toggle fullscreen mode. This will make sure
-            // that the window size is _first_ set up as something sensible, so
-            // leaving fullscreen returns to a reasonable size.
-            const auto launchMode = this->GetLaunchMode();
-            if (IsQuakeWindow() || WI_IsFlagSet(launchMode, LaunchMode::FocusMode))
-            {
-                _root->SetFocusMode(true);
-            }
+        _root->Loaded({ get_weak(), &TerminalWindow::_OnLoaded });
+        // _root->Initialized([this](auto&&, auto&&) {
+        //     // GH#288 - When we finish initialization, if the user wanted us
+        //     // launched _fullscreen_, toggle fullscreen mode. This will make sure
+        //     // that the window size is _first_ set up as something sensible, so
+        //     // leaving fullscreen returns to a reasonable size.
+        //     const auto launchMode = this->GetLaunchMode();
+        //     if (IsQuakeWindow() || WI_IsFlagSet(launchMode, LaunchMode::FocusMode))
+        //     {
+        //         _root->SetFocusMode(true);
+        //     }
 
-            // The IslandWindow handles (creating) the maximized state
-            // we just want to record it here on the page as well.
-            if (WI_IsFlagSet(launchMode, LaunchMode::MaximizedMode))
-            {
-                _root->Maximized(true);
-            }
+        //     // The IslandWindow handles (creating) the maximized state
+        //     // we just want to record it here on the page as well.
+        //     if (WI_IsFlagSet(launchMode, LaunchMode::MaximizedMode))
+        //     {
+        //         _root->Maximized(true);
+        //     }
 
-            if (WI_IsFlagSet(launchMode, LaunchMode::FullscreenMode) && !IsQuakeWindow())
-            {
-                _root->SetFullscreen(true);
-            }
-        });
+        //     if (WI_IsFlagSet(launchMode, LaunchMode::FullscreenMode) && !IsQuakeWindow())
+        //     {
+        //         _root->SetFullscreen(true);
+        //     }
+        // });
         _root->Create();
 
         _RefreshThemeRoutine();

@@ -62,9 +62,12 @@ WindowEmperor::~WindowEmperor()
     // for this thread. It's a real thinker.
     //
     // I need someone to help take a look at this with me.
-
+    _dispatcher = nullptr;
+    _getWindowLayoutThrottler.reset();
+    _manager = nullptr;
     _app.Close();
     _app = nullptr;
+    // Sleep(20000);
 }
 
 void _buildArgsFromCommandline(std::vector<winrt::hstring>& args)
@@ -142,7 +145,7 @@ void WindowEmperor::CreateNewWindowThread(Remoting::WindowRequestedArgs args, co
         // Add a callback to the window's logic to let us know when the window's
         // quake mode state changes. We'll use this to check if we need to add
         // or remove the notification icon.
-        sender->Logic().IsQuakeWindowChanged([this](auto&&, auto&&) -> winrt::fire_and_forget {
+        sender->Logic().IsQuakeWindowChanged([this](auto&&, auto &&) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(this->_dispatcher);
             this->_checkWindowsForNotificationIcon();
         });
