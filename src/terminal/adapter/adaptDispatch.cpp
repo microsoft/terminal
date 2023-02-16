@@ -3114,13 +3114,29 @@ bool AdaptDispatch::DoXtermJsAction(const std::wstring_view string)
 
     if (action == L"Completions")
     {
-        unsigned int replacementChars = 0;
-        bool succeeded = (parts.size() >= 3) &&
-                         (Utils::StringToUint(til::at(parts, 2), replacementChars));
+        // The structure of the message is as follows:
+        // `e]633;
+        // 0:     Completions;
+        // 1:     $($completions.ReplacementIndex);
+        // 2:     $($completions.ReplacementLength);
+        // 3:     $($cursorIndex);
+        // 4:     $completions.CompletionMatches | ConvertTo-Json
+        unsigned int replacementIndex = 0;
+        unsigned int replacementLength = 0;
+        unsigned int cursorIndex = 0;
+
+        bool succeeded = (parts.size() >= 2) &&
+                         (Utils::StringToUint(til::at(parts, 1), replacementIndex));
+        succeeded &= (parts.size() >= 3) &&
+                     (Utils::StringToUint(til::at(parts, 2), replacementLength));
+        succeeded &= (parts.size() >= 4) &&
+                     (Utils::StringToUint(til::at(parts, 3), cursorIndex));
+
+        // VsCode is using cursorIndex and replacementIndex, but we aren't currently.
         if (succeeded)
         {
-            _api.InvokeMenu(parts.size() < 4 ? L"" : til::at(parts, 3),
-                            static_cast<int32_t>(replacementChars));
+            _api.InvokeMenu(parts.size() < 5 ? L"" : til::at(parts, 4),
+                            static_cast<int32_t>(replacementLength));
         }
 
         return true;
