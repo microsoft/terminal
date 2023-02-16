@@ -226,11 +226,6 @@ void AppHost::_HandleCommandlineArgs()
         const auto numPeasants = _windowManager.GetNumberOfPeasants();
         if (numPeasants == 1)
         {
-            // TODO! this is vaguely off by one. Not sure, but if you restore 2
-            // windows, you seem to get two copies of the second. Yikes. And
-            // this wasn't just because I was setting the debug commandline to
-            // `nt ; nt`. Calling wtd with two persisted windows just creates
-            // two of the second persisted window, ew.
             const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
             if (_appLogic.ShouldUsePersistedLayout() &&
                 layouts &&
