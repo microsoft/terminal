@@ -89,8 +89,8 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
 
     _window->MakeWindow();
 
-    _GetWindowLayoutRequestedToken = _windowManager.GetWindowLayoutRequested([this](auto&&,
-                                                                                    const Remoting::GetWindowLayoutArgs& args) {
+    _GetWindowLayoutRequestedToken = _peasant.GetWindowLayoutRequested([this](auto&&,
+                                                                              const Remoting::GetWindowLayoutArgs& args) {
         // The peasants are running on separate threads, so they'll need to
         // swap what context they are in to the ui thread to get the actual layout.
         args.WindowLayoutJsonAsync(_GetWindowLayoutAsync());
@@ -450,7 +450,7 @@ void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /*
 void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::TerminalApp::LastTabClosedEventArgs& /*args*/)
 {
     // We don't want to try to save layouts if we are about to close.
-    _windowManager.GetWindowLayoutRequested(_GetWindowLayoutRequestedToken);
+    _peasant.GetWindowLayoutRequested(_GetWindowLayoutRequestedToken);
 
     // Remove ourself from the list of peasants so that we aren't included in
     // any future requests. This will also mean we block until any existing
