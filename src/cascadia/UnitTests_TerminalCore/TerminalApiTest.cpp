@@ -55,11 +55,11 @@ void TerminalApiTest::SetColorTableEntry()
     auto settings = winrt::make<MockTermSettings>(100, 100, 100);
     term.UpdateSettings(settings);
 
-    VERIFY_NO_THROW(term.SetColorTableEntry(0, 100));
-    VERIFY_NO_THROW(term.SetColorTableEntry(128, 100));
-    VERIFY_NO_THROW(term.SetColorTableEntry(255, 100));
+    VERIFY_NO_THROW(term._renderSettings.SetColorTableEntry(0, 100));
+    VERIFY_NO_THROW(term._renderSettings.SetColorTableEntry(128, 100));
+    VERIFY_NO_THROW(term._renderSettings.SetColorTableEntry(255, 100));
 
-    VERIFY_THROWS(term.SetColorTableEntry(512, 100), std::exception);
+    VERIFY_THROWS(term._renderSettings.SetColorTableEntry(512, 100), std::exception);
 }
 
 // Terminal::_WriteBuffer used to enter infinite loops under certain conditions.
@@ -97,7 +97,7 @@ void TerminalApiTest::PrintStringOfSurrogatePairs()
         [](LPVOID data) -> DWORD {
             const auto& baton = *reinterpret_cast<Baton*>(data);
             Log::Comment(L"Writing data.");
-            baton.pTerm->PrintString(baton.text);
+            baton.pTerm->_stateMachine->ProcessString(baton.text);
             Log::Comment(L"Setting event.");
             SetEvent(baton.done);
             return 0;
@@ -152,7 +152,7 @@ void TerminalApiTest::CursorVisibility()
     VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsOn());
     VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsBlinkingAllowed());
 
-    term.SetCursorVisibility(false);
+    term.GetTextBuffer().GetCursor().SetIsVisible(false);
     VERIFY_IS_FALSE(term._mainBuffer->GetCursor().IsVisible());
     VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsOn());
     VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsBlinkingAllowed());
@@ -235,26 +235,26 @@ void TerminalApiTest::CheckDoubleWidthCursor()
         singleWidthText.append(L"A");
     }
     stateMachine.ProcessString(singleWidthText);
-    VERIFY_IS_TRUE(cursor.GetPosition().X == 98);
+    VERIFY_IS_TRUE(cursor.GetPosition().x == 98);
 
     // Stuff two double width characters.
     std::wstring doubleWidthText{ L"我愛" };
     stateMachine.ProcessString(doubleWidthText);
 
     // The last 'A'
-    term.SetCursorPosition({ 97, 0 });
+    cursor.SetPosition({ 97, 0 });
     VERIFY_IS_FALSE(term.IsCursorDoubleWidth());
 
     // This and the next CursorPos are taken up by '我‘
-    term.SetCursorPosition({ 98, 0 });
+    cursor.SetPosition({ 98, 0 });
     VERIFY_IS_TRUE(term.IsCursorDoubleWidth());
-    term.SetCursorPosition({ 99, 0 });
+    cursor.SetPosition({ 99, 0 });
     VERIFY_IS_TRUE(term.IsCursorDoubleWidth());
 
     // This and the next CursorPos are taken up by ’愛‘
-    term.SetCursorPosition({ 0, 1 });
+    cursor.SetPosition({ 0, 1 });
     VERIFY_IS_TRUE(term.IsCursorDoubleWidth());
-    term.SetCursorPosition({ 1, 1 });
+    cursor.SetPosition({ 1, 1 });
     VERIFY_IS_TRUE(term.IsCursorDoubleWidth());
 }
 
@@ -435,6 +435,27 @@ void TerminalCoreUnitTests::TerminalApiTest::SetWorkingDirectory()
     stateMachine.ProcessString(L"\x1b]9;9\"C:\\\"\x1b\\");
     VERIFY_IS_TRUE(term.GetWorkingDirectory().empty());
 
+    stateMachine.ProcessString(L"\x1b"
+                               LR"(]9;9;"C:\invalid path "with" quotes")"
+                               L"\x1b\\");
+    VERIFY_IS_TRUE(term.GetWorkingDirectory().empty());
+
+    // These OSC 9;9 sequences will result in invalid CWD. It should end up empty, like above.
+    stateMachine.ProcessString(L"\x1b]9;9;\"\x1b\\");
+    VERIFY_IS_TRUE(term.GetWorkingDirectory().empty());
+
+    stateMachine.ProcessString(L"\x1b]9;9;\"\"\x1b\\");
+    VERIFY_IS_TRUE(term.GetWorkingDirectory().empty());
+
+    stateMachine.ProcessString(L"\x1b]9;9;\"\"\"\x1b\\");
+    VERIFY_IS_TRUE(term.GetWorkingDirectory().empty());
+
+    stateMachine.ProcessString(L"\x1b]9;9;\"\"\"\"\x1b\\");
+    VERIFY_IS_TRUE(term.GetWorkingDirectory().empty());
+
+    stateMachine.ProcessString(L"\x1b]9;9;No quotes \"until\" later\x1b\\");
+    VERIFY_IS_TRUE(term.GetWorkingDirectory().empty());
+
     // Valid sequences should change CWD
     stateMachine.ProcessString(L"\x1b]9;9;\"C:\\\"\x1b\\");
     VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"C:\\");
@@ -454,17 +475,4 @@ void TerminalCoreUnitTests::TerminalApiTest::SetWorkingDirectory()
 
     stateMachine.ProcessString(L"\x1b]9;9;D:\\中文\x1b\\");
     VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"D:\\中文");
-
-    // These OSC 9;9 sequences will result in invalid CWD. We shouldn't crash on these.
-    stateMachine.ProcessString(L"\x1b]9;9;\"\x1b\\");
-    VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"\"");
-
-    stateMachine.ProcessString(L"\x1b]9;9;\"\"\x1b\\");
-    VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"\"\"");
-
-    stateMachine.ProcessString(L"\x1b]9;9;\"\"\"\x1b\\");
-    VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"\"");
-
-    stateMachine.ProcessString(L"\x1b]9;9;\"\"\"\"\x1b\\");
-    VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"\"\"");
 }

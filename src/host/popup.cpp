@@ -28,7 +28,7 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 // Arguments:
 // - screenInfo - Reference to screen on which the popup should be drawn/overlaid.
 // - proposedSize - Suggested size of the popup. May be adjusted based on screen size.
-Popup::Popup(SCREEN_INFORMATION& screenInfo, const COORD proposedSize) :
+Popup::Popup(SCREEN_INFORMATION& screenInfo, const til::size proposedSize) :
     _screenInfo(screenInfo),
     _userInputFunction(&Popup::_getUserInputInternal)
 {
@@ -37,18 +37,18 @@ Popup::Popup(SCREEN_INFORMATION& screenInfo, const COORD proposedSize) :
     const auto size = _CalculateSize(screenInfo, proposedSize);
     const auto origin = _CalculateOrigin(screenInfo, size);
 
-    _region.Left = origin.X;
-    _region.Top = origin.Y;
-    _region.Right = gsl::narrow<SHORT>(origin.X + size.X - 1i16);
-    _region.Bottom = gsl::narrow<SHORT>(origin.Y + size.Y - 1i16);
+    _region.left = origin.x;
+    _region.top = origin.y;
+    _region.right = origin.x + size.width - 1;
+    _region.bottom = origin.y + size.height - 1;
 
     _oldScreenSize = screenInfo.GetBufferSize().Dimensions();
 
-    SMALL_RECT TargetRect;
-    TargetRect.Left = 0;
-    TargetRect.Top = _region.Top;
-    TargetRect.Right = _oldScreenSize.X - 1;
-    TargetRect.Bottom = _region.Bottom;
+    til::inclusive_rect TargetRect;
+    TargetRect.left = 0;
+    TargetRect.top = _region.top;
+    TargetRect.right = _oldScreenSize.width - 1;
+    TargetRect.bottom = _region.bottom;
 
     // copy the data into the backup buffer
     _oldContents = std::move(screenInfo.ReadRect(Viewport::FromInclusive(TargetRect)));
@@ -68,7 +68,7 @@ Popup::Popup(SCREEN_INFORMATION& screenInfo, const COORD proposedSize) :
 Popup::~Popup()
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto countWas = gci.PopupCount.fetch_sub(1i16);
+    const auto countWas = gci.PopupCount.fetch_sub(1);
     if (1 == countWas)
     {
         // Notify we're done showing popups.
@@ -87,52 +87,52 @@ void Popup::Draw()
 void Popup::_DrawBorder()
 {
     // fill attributes of top line
-    COORD WriteCoord;
-    WriteCoord.X = _region.Left;
-    WriteCoord.Y = _region.Top;
+    til::point WriteCoord;
+    WriteCoord.x = _region.left;
+    WriteCoord.y = _region.top;
     _screenInfo.Write(OutputCellIterator(_attributes, Width() + 2), WriteCoord);
 
     // draw upper left corner
     _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_DOWN_AND_RIGHT, 1), WriteCoord);
 
     // draw upper bar
-    WriteCoord.X += 1;
+    WriteCoord.x += 1;
     _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_HORIZONTAL, Width()), WriteCoord);
 
     // draw upper right corner
-    WriteCoord.X = _region.Right;
+    WriteCoord.x = _region.right;
     _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_DOWN_AND_LEFT, 1), WriteCoord);
 
-    for (SHORT i = 0; i < Height(); i++)
+    for (til::CoordType i = 0; i < Height(); i++)
     {
-        WriteCoord.Y += 1;
-        WriteCoord.X = _region.Left;
+        WriteCoord.y += 1;
+        WriteCoord.x = _region.left;
 
         // fill attributes
         _screenInfo.Write(OutputCellIterator(_attributes, Width() + 2), WriteCoord);
 
         _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_VERTICAL, 1), WriteCoord);
 
-        WriteCoord.X = _region.Right;
+        WriteCoord.x = _region.right;
         _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_VERTICAL, 1), WriteCoord);
     }
 
     // Draw bottom line.
     // Fill attributes of top line.
-    WriteCoord.X = _region.Left;
-    WriteCoord.Y = _region.Bottom;
+    WriteCoord.x = _region.left;
+    WriteCoord.y = _region.bottom;
     _screenInfo.Write(OutputCellIterator(_attributes, Width() + 2), WriteCoord);
 
     // Draw bottom left corner.
-    WriteCoord.X = _region.Left;
+    WriteCoord.x = _region.left;
     _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_UP_AND_RIGHT, 1), WriteCoord);
 
     // Draw lower bar.
-    WriteCoord.X += 1;
+    WriteCoord.x += 1;
     _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_HORIZONTAL, Width()), WriteCoord);
 
     // draw lower right corner
-    WriteCoord.X = _region.Right;
+    WriteCoord.x = _region.right;
     _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_UP_AND_LEFT, 1), WriteCoord);
 }
 
@@ -145,25 +145,25 @@ void Popup::_DrawPrompt(const UINT id)
     auto text = _LoadString(id);
 
     // Draw empty popup.
-    COORD WriteCoord;
-    WriteCoord.X = _region.Left + 1i16;
-    WriteCoord.Y = _region.Top + 1i16;
-    size_t lStringLength = Width();
-    for (SHORT i = 0; i < Height(); i++)
+    til::point WriteCoord;
+    WriteCoord.x = _region.left + 1;
+    WriteCoord.y = _region.top + 1;
+    auto lStringLength = Width();
+    for (til::CoordType i = 0; i < Height(); i++)
     {
         const OutputCellIterator it(UNICODE_SPACE, _attributes, lStringLength);
         const auto done = _screenInfo.Write(it, WriteCoord);
         lStringLength = done.GetCellDistance(it);
 
-        WriteCoord.Y += 1;
+        WriteCoord.y += 1;
     }
 
-    WriteCoord.X = _region.Left + 1i16;
-    WriteCoord.Y = _region.Top + 1i16;
+    WriteCoord.x = _region.left + 1;
+    WriteCoord.y = _region.top + 1;
 
     // write prompt to screen
-    lStringLength = text.size();
-    if (lStringLength > (ULONG)Width())
+    lStringLength = gsl::narrow<til::CoordType>(text.size());
+    if (lStringLength > Width())
     {
         text = text.substr(0, Width());
     }
@@ -182,11 +182,11 @@ void Popup::End()
 {
     // restore previous contents to screen
 
-    SMALL_RECT SourceRect;
-    SourceRect.Left = 0i16;
-    SourceRect.Top = _region.Top;
-    SourceRect.Right = _oldScreenSize.X - 1i16;
-    SourceRect.Bottom = _region.Bottom;
+    til::inclusive_rect SourceRect;
+    SourceRect.left = 0;
+    SourceRect.top = _region.top;
+    SourceRect.right = _oldScreenSize.width - 1;
+    SourceRect.bottom = _region.bottom;
 
     const auto sourceViewport = Viewport::FromInclusive(SourceRect);
 
@@ -200,20 +200,20 @@ void Popup::End()
 // - proposedSize - The suggested size of the popup that may need to be adjusted to fit
 // Return Value:
 // - Coordinate size that the popup should consume in the screen buffer
-COORD Popup::_CalculateSize(const SCREEN_INFORMATION& screenInfo, const COORD proposedSize)
+til::size Popup::_CalculateSize(const SCREEN_INFORMATION& screenInfo, const til::size proposedSize)
 {
     // determine popup dimensions
     auto size = proposedSize;
-    size.X += 2; // add borders
-    size.Y += 2; // add borders
+    size.width += 2; // add borders
+    size.height += 2; // add borders
 
     const auto viewportSize = screenInfo.GetViewport().Dimensions();
 
-    size.X = std::min(size.X, viewportSize.X);
-    size.Y = std::min(size.Y, viewportSize.Y);
+    size.width = std::min(size.width, viewportSize.width);
+    size.height = std::min(size.height, viewportSize.height);
 
     // make sure there's enough room for the popup borders
-    THROW_HR_IF(E_NOT_SUFFICIENT_BUFFER, size.X < 2 || size.Y < 2);
+    THROW_HR_IF(E_NOT_SUFFICIENT_BUFFER, size.width < 2 || size.height < 2);
 
     return size;
 }
@@ -225,14 +225,14 @@ COORD Popup::_CalculateSize(const SCREEN_INFORMATION& screenInfo, const COORD pr
 // - size - The size that the popup will consume
 // Return Value:
 // - Coordinate position of the origin point of the popup
-COORD Popup::_CalculateOrigin(const SCREEN_INFORMATION& screenInfo, const COORD size)
+til::point Popup::_CalculateOrigin(const SCREEN_INFORMATION& screenInfo, const til::size size)
 {
     const auto viewport = screenInfo.GetViewport();
 
     // determine origin.  center popup on window
-    COORD origin;
-    origin.X = gsl::narrow<SHORT>((viewport.Width() - size.X) / 2 + viewport.Left());
-    origin.Y = gsl::narrow<SHORT>((viewport.Height() - size.Y) / 2 + viewport.Top());
+    til::point origin;
+    origin.x = (viewport.Width() - size.width) / 2 + viewport.Left();
+    origin.y = (viewport.Height() - size.height) / 2 + viewport.Top();
     return origin;
 }
 
@@ -240,18 +240,18 @@ COORD Popup::_CalculateOrigin(const SCREEN_INFORMATION& screenInfo, const COORD 
 // - Helper to return the width of the popup in columns
 // Return Value:
 // - Width of popup inside attached screen buffer.
-SHORT Popup::Width() const noexcept
+til::CoordType Popup::Width() const noexcept
 {
-    return _region.Right - _region.Left - 1i16;
+    return _region.right - _region.left - 1;
 }
 
 // Routine Description:
 // - Helper to return the height of the popup in columns
 // Return Value:
 // - Height of popup inside attached screen buffer.
-SHORT Popup::Height() const noexcept
+til::CoordType Popup::Height() const noexcept
 {
-    return _region.Bottom - _region.Top - 1i16;
+    return _region.bottom - _region.top - 1;
 }
 
 // Routine Description:
@@ -259,11 +259,11 @@ SHORT Popup::Height() const noexcept
 //   we should overlay the cursor for user input.
 // Return Value:
 // - Coordinate location on the popup where the cursor should be placed.
-COORD Popup::GetCursorPosition() const noexcept
+til::point Popup::GetCursorPosition() const noexcept
 {
-    COORD CursorPosition;
-    CursorPosition.X = _region.Right - static_cast<SHORT>(MINIMUM_COMMAND_PROMPT_SIZE);
-    CursorPosition.Y = _region.Top + 1i16;
+    til::point CursorPosition;
+    CursorPosition.x = _region.right - MINIMUM_COMMAND_PROMPT_SIZE;
+    CursorPosition.y = _region.top + 1;
     return CursorPosition;
 }
 

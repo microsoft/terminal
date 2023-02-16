@@ -127,7 +127,7 @@ struct HasScrollViewer
                       const winrt::Windows::UI::Xaml::Controls::ScrollViewerViewChangingEventArgs& /*e*/)
     {
         // Inside this struct, we can't get at the XamlRoot() that our subclass
-        // implements. I mean, _we_ can, but when XAML does it's code
+        // implements. I mean, _we_ can, but when XAML does its code
         // generation, _XAML_ won't be able to figure it out.
         //
         // Fortunately for us, we don't need to! The sender is a UIElement, so

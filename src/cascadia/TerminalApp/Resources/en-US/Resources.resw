@@ -232,15 +232,19 @@
     <value>Warnings were found while parsing your keybindings:</value>
   </data>
   <data name="TooManyKeysForChord" xml:space="preserve">
-    <value>&#x2022; Found a keybinding with too many strings for the "keys" array. There should only be one string value in the "keys" array.</value>
-    <comment>{Locked="\"keys\"","&#x2022;"} This glyph is a bullet, used in a bulleted list.</comment>
+    <value>• Found a keybinding with too many strings for the "keys" array. There should only be one string value in the "keys" array.</value>
+    <comment>{Locked="\"keys\"","•"} This glyph is a bullet, used in a bulleted list.</comment>
   </data>
   <data name="FailedToParseSubCommands" xml:space="preserve">
-    <value>&#x2022; Failed to parse all subcommands of nested command.</value>
+    <value>• Failed to parse all subcommands of nested command.</value>
   </data>
   <data name="MissingRequiredParameter" xml:space="preserve">
-    <value>&#x2022; Found a keybinding that was missing a required parameter value. This keybinding will be ignored.</value>
-    <comment>{Locked="&#x2022;"} This glyph is a bullet, used in a bulleted list.</comment>
+    <value>• Found a keybinding that was missing a required parameter value. This keybinding will be ignored.</value>
+    <comment>{Locked="•"} This glyph is a bullet, used in a bulleted list.</comment>
+  </data>
+  <data name="UnknownTheme" xml:space="preserve">
+    <value>• The specified "theme" was not found in the list of themes. Temporarily falling back to the default value.</value>
+    <comment>{Locked="•"} This glyph is a bullet, used in a bulleted list.</comment>
   </data>
   <data name="LegacyGlobalsProperty" xml:space="preserve">
     <value>The "globals" property is deprecated - your settings might need updating. </value>
@@ -390,6 +394,12 @@
   <data name="CmdWindowTargetArgDesc" xml:space="preserve">
     <value>Specify a terminal window to run the given commandline in. "0" always refers to the current window. </value>
   </data>
+  <data name="CmdPositionDesc" xml:space="preserve">
+    <value>Specify the position for the terminal, in "x,y" format.</value>
+  </data>
+  <data name="CmdSizeDesc" xml:space="preserve">
+    <value>Specify the number of columns and rows for the terminal, in "c,r" format.</value>
+  </data>
   <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
     <value>Press the button to open a new terminal tab with your default profile. Open the flyout to select which profile you want to open.</value>
   </data>
@@ -432,6 +442,9 @@
   <data name="AboutDialog.Title" xml:space="preserve">
     <value>About</value>
   </data>
+  <data name="AboutDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Send Feedback</value>
+  </data>
   <data name="AboutDialog.CloseButtonText" xml:space="preserve">
     <value>OK</value>
   </data>
@@ -442,6 +455,10 @@
   <data name="AboutDialog_GettingStartedLink.Content" xml:space="preserve">
     <value>Getting Started</value>
     <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
+  </data>
+  <data name="AboutDialog_SourceCodeLink.Content" xml:space="preserve">
+    <value>Source Code</value>
+    <comment>A hyperlink name for the Terminal's documentation</comment>
   </data>
   <data name="AboutDialog_DocumentationLink.Content" xml:space="preserve">
     <value>Documentation</value>
@@ -709,6 +726,9 @@
   <data name="ExportSuccess" xml:space="preserve">
     <value>Successfully exported terminal content</value>
   </data>
+  <data name="FindText" xml:space="preserve">
+    <value>Find</value>
+  </data>
   <data name="PlainText" xml:space="preserve">
     <value>Plain Text</value>
   </data>
@@ -731,5 +751,48 @@
   <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
     <value>Suggestions found: {0}</value>
     <comment>{0} will be replaced with a number.</comment>
+  </data>
+  <data name="DuplicateRemainingProfilesEntry" xml:space="preserve">
+    <value>The "newTabMenu" field contains more than one entry of type "remainingProfiles". Only the first one will be considered.</value>
+    <comment>{Locked="newTabMenu"} {Locked="remainingProfiles"}</comment>
+  </data>
+  <data name="AboutToolTip" xml:space="preserve">
+    <value>Open a dialog containing product information</value>
+  </data>
+  <data name="ChooseColorToolTip" xml:space="preserve">
+    <value>Open the color picker to choose the color of this tab</value>
+  </data>
+  <data name="CommandPaletteToolTip" xml:space="preserve">
+    <value>Open the command palette</value>
+  </data>
+  <data name="DuplicateTabToolTip" xml:space="preserve">
+    <value>Open a new tab using the active profile in the current directory</value>
+  </data>
+  <data name="ExportTabToolTip" xml:space="preserve">
+    <value>Export the contents of the text buffer into a text file</value>
+  </data>
+  <data name="FindToolTip" xml:space="preserve">
+    <value>Open the search dialog</value>
+  </data>
+  <data name="RenameTabToolTip" xml:space="preserve">
+    <value>Rename this tab</value>
+  </data>
+  <data name="SettingsToolTip" xml:space="preserve">
+    <value>Open the settings page</value>
+  </data>
+  <data name="SplitTabToolTip" xml:space="preserve">
+    <value>Open a new pane using the active profile in the current directory</value>
+  </data>
+  <data name="TabCloseAfterToolTip" xml:space="preserve">
+    <value>Close all tabs to the right of this tab</value>
+  </data>
+  <data name="TabCloseOtherToolTip" xml:space="preserve">
+    <value>Close all tabs except this tab</value>
+  </data>
+  <data name="TabCloseToolTip" xml:space="preserve">
+    <value>Close this tab</value>
+  </data>
+  <data name="NewTabMenuFolderEmpty" xml:space="preserve">
+    <value>Empty...</value>
   </data>
 </root>

@@ -54,10 +54,10 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 // - Notifies us that the console has changed the character region specified.
 // - NOTE: This typically triggers on cursor or text buffer changes
 // Arguments:
-// - psrRegion - Character region (SMALL_RECT) that has been changed
+// - psrRegion - Character region (til::rect) that has been changed
 // Return Value:
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT UiaEngine::Invalidate(const SMALL_RECT* const /*psrRegion*/) noexcept
+[[nodiscard]] HRESULT UiaEngine::Invalidate(const til::rect* const /*psrRegion*/) noexcept
 {
     _textBufferChanged = true;
     return S_OK;
@@ -70,7 +70,7 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
 // - psrRegion - the region covered by the cursor
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT UiaEngine::InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept
+[[nodiscard]] HRESULT UiaEngine::InvalidateCursor(const til::rect* const psrRegion) noexcept
 try
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, psrRegion);
@@ -92,7 +92,7 @@ CATCH_RETURN();
 // - prcDirtyClient - pixel rectangle
 // Return Value:
 // - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::InvalidateSystem(const RECT* const /*prcDirtyClient*/) noexcept
+[[nodiscard]] HRESULT UiaEngine::InvalidateSystem(const til::rect* const /*prcDirtyClient*/) noexcept
 {
     return S_FALSE;
 }
@@ -104,7 +104,7 @@ CATCH_RETURN();
 // - rectangles - One or more rectangles describing character positions on the grid
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT UiaEngine::InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept
+[[nodiscard]] HRESULT UiaEngine::InvalidateSelection(const std::vector<til::rect>& rectangles) noexcept
 {
     // early exit: different number of rows
     if (_prevSelection.size() != rectangles.size())
@@ -126,7 +126,7 @@ CATCH_RETURN();
             const auto newRect = rectangles.at(i);
 
             // if any value is different, selection has changed
-            if (prevRect.Top != newRect.Top || prevRect.Right != newRect.Right || prevRect.Left != newRect.Left || prevRect.Bottom != newRect.Bottom)
+            if (prevRect.top != newRect.top || prevRect.right != newRect.right || prevRect.left != newRect.left || prevRect.bottom != newRect.bottom)
             {
                 _selectionChanged = true;
                 _prevSelection = rectangles;
@@ -149,7 +149,7 @@ CATCH_RETURN();
 //               - -Y is up, Y is down, -X is left, X is right.
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT UiaEngine::InvalidateScroll(const COORD* const /*pcoordDelta*/) noexcept
+[[nodiscard]] HRESULT UiaEngine::InvalidateScroll(const til::point* const /*pcoordDelta*/) noexcept
 {
     return S_FALSE;
 }
@@ -175,6 +175,7 @@ try
     {
         _newOutput.append(newText);
         _newOutput.push_back(L'\n');
+        _textBufferChanged = true;
     }
     return S_OK;
 }
@@ -333,8 +334,8 @@ void UiaEngine::WaitUntilCanRender() noexcept
 // - fTrimLeft - Whether or not to trim off the left half of a double wide character
 // Return Value:
 // - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::PaintBufferLine(const gsl::span<const Cluster> /*clusters*/,
-                                                 const COORD /*coord*/,
+[[nodiscard]] HRESULT UiaEngine::PaintBufferLine(const std::span<const Cluster> /*clusters*/,
+                                                 const til::point /*coord*/,
                                                  const bool /*trimLeft*/,
                                                  const bool /*lineWrapped*/) noexcept
 {
@@ -354,7 +355,7 @@ void UiaEngine::WaitUntilCanRender() noexcept
 [[nodiscard]] HRESULT UiaEngine::PaintBufferGridLines(GridLineSet const /*lines*/,
                                                       COLORREF const /*color*/,
                                                       size_t const /*cchLine*/,
-                                                      const COORD /*coordTarget*/) noexcept
+                                                      const til::point /*coordTarget*/) noexcept
 {
     return S_FALSE;
 }
@@ -368,7 +369,7 @@ void UiaEngine::WaitUntilCanRender() noexcept
 //  - rect - Rectangle to invert or highlight to make the selection area
 // Return Value:
 // - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::PaintSelection(const SMALL_RECT /*rect*/) noexcept
+[[nodiscard]] HRESULT UiaEngine::PaintSelection(const til::rect& /*rect*/) noexcept
 {
     return S_FALSE;
 }
@@ -435,7 +436,7 @@ void UiaEngine::WaitUntilCanRender() noexcept
 // - srNewViewport - The bounds of the new viewport.
 // Return Value:
 // - HRESULT S_OK
-[[nodiscard]] HRESULT UiaEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/) noexcept
+[[nodiscard]] HRESULT UiaEngine::UpdateViewport(const til::inclusive_rect& /*srNewViewport*/) noexcept
 {
     return S_FALSE;
 }
@@ -462,7 +463,7 @@ void UiaEngine::WaitUntilCanRender() noexcept
 // - area - Rectangle describing dirty area in characters.
 // Return Value:
 // - S_OK.
-[[nodiscard]] HRESULT UiaEngine::GetDirtyArea(gsl::span<const til::rect>& area) noexcept
+[[nodiscard]] HRESULT UiaEngine::GetDirtyArea(std::span<const til::rect>& area) noexcept
 {
     // Magic static is only valid because any instance of this object has the same behavior.
     // Use member variable instead if this ever changes.
@@ -477,7 +478,7 @@ void UiaEngine::WaitUntilCanRender() noexcept
 // - pFontSize - Filled with the font size.
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT UiaEngine::GetFontSize(_Out_ COORD* const /*pFontSize*/) noexcept
+[[nodiscard]] HRESULT UiaEngine::GetFontSize(_Out_ til::size* const /*pFontSize*/) noexcept
 {
     return S_FALSE;
 }

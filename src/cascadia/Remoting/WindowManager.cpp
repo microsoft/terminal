@@ -103,12 +103,13 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         auto proposedCommandline = false;
         Remoting::ProposeCommandlineResult result{ nullptr };
+        auto attempts = 0;
         while (!proposedCommandline)
         {
             try
             {
                 // MSFT:38542548 _We believe_ that this is the source of the
-                // crash here. After we get the result, stash it's values into a
+                // crash here. After we get the result, stash its values into a
                 // local copy, so that we can check them later. If the Monarch
                 // dies between now and the inspection of
                 // `result.ShouldCreateWindow` below, we don't want to explode
@@ -118,78 +119,78 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
                 proposedCommandline = true;
             }
-            catch (const winrt::hresult_error& e)
+            catch (...)
             {
-                // We did not successfully ask the king what to do. They
-                // hopefully just died here. That's okay, let's just go ask the
-                // next in the line of succession. At the very worst, we'll find
-                // _us_, (likely last in the line).
+                // We did not successfully ask the king what to do. This could
+                // be for many reasons. Most commonly, the monarch died as we
+                // were talking to it. That could be a RPC_SERVER_UNAVAILABLE_HR
+                // or RPC_CALL_FAILED_HR (GH#12666). We also saw a
+                // RPC_S_CALL_FAILED_DNE in GH#11790. Ultimately, if this is
+                // gonna fail, we want to just try again, regardless of the
+                // cause. That's why we're no longer checking what the exception
+                // was, we're just always gonna try again regardless.
                 //
-                // If the king returned some _other_ error here, than lets
-                // bubble that up because that's a real issue.
-                //
-                // I'm checking both these here. I had previously got a
-                // RPC_S_CALL_FAILED about here once.
-                if (e.code() == RPC_SERVER_UNAVAILABLE_HR || e.code() == RPC_CALL_FAILED_HR)
+                //  They hopefully just died here. That's okay, let's just go
+                // ask the next in the line of succession. At the very worst,
+                // we'll find _us_, (likely last in the line).
+                TraceLoggingWrite(g_hRemotingProvider,
+                                  "WindowManager_proposeToMonarch_unexpectedExceptionFromKing",
+                                  TraceLoggingInt32(attempts, "attempts", "How many times we've tried"),
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                LOG_CAUGHT_EXCEPTION();
+                attempts++;
+
+                if (attempts >= 10)
                 {
+                    // We've tried 10 times to find the monarch, failing each
+                    // time. Since we have no idea why, we're guessing that in
+                    // this case, there's just a Monarch registered that's
+                    // misbehaving. In this case, just fall back to
+                    // "IsolatedMonarchMode" - we can't trust the currently
+                    // registered one.
                     TraceLoggingWrite(g_hRemotingProvider,
-                                      "WindowManager_proposeToMonarch_kingDied",
+                                      "WindowManager_TooManyAttempts_NullMonarchIsolateMode",
                                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
+                    _monarch = winrt::make<winrt::Microsoft::Terminal::Remoting::implementation::Monarch>();
+                    _createCallbacks();
+                }
+                else
+                {
                     // We failed to ask the monarch. It must have died. Try and
                     // find the real monarch. Don't perform an election, that
                     // assumes we have a peasant, which we don't yet.
                     _createMonarchAndCallbacks();
                     // _createMonarchAndCallbacks will initialize _isKing
-                    if (_isKing)
-                    {
-                        // We became the king. We don't need to ProposeCommandline to ourself, we're just
-                        // going to do it.
-                        //
-                        // Return early, because there's nothing else for us to do here.
-                        TraceLoggingWrite(g_hRemotingProvider,
-                                          "WindowManager_proposeToMonarch_becameKing",
-                                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-
-                        // In WindowManager::ProposeCommandline, had we been the
-                        // king originally, we would have started by setting
-                        // this to true. We became the monarch here, so set it
-                        // here as well.
-                        _shouldCreateWindow = true;
-                        return;
-                    }
-
-                    // Here, we created the new monarch, it wasn't us, so we're
-                    // gonna go through the while loop again and ask the new
-                    // king.
-                    TraceLoggingWrite(g_hRemotingProvider,
-                                      "WindowManager_proposeToMonarch_tryAgain",
-                                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
                 }
-                else
+                if (_isKing)
                 {
+                    // We became the king. We don't need to ProposeCommandline to ourself, we're just
+                    // going to do it.
+                    //
+                    // Return early, because there's nothing else for us to do here.
                     TraceLoggingWrite(g_hRemotingProvider,
-                                      "WindowManager_proposeToMonarch_unexpectedResultFromKing",
+                                      "WindowManager_proposeToMonarch_becameKing",
                                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-                    LOG_CAUGHT_EXCEPTION();
-                    throw;
+
+                    // In WindowManager::ProposeCommandline, had we been the
+                    // king originally, we would have started by setting
+                    // this to true. We became the monarch here, so set it
+                    // here as well.
+                    _shouldCreateWindow = true;
+                    return;
                 }
-            }
-            catch (...)
-            {
-                // If the monarch (maybe us) failed for _any other reason_ than
-                // them dying. This IS quite unexpected. Let this bubble out.
+
+                // Here, we created the new monarch, it wasn't us, so we're
+                // gonna go through the while loop again and ask the new
+                // king.
                 TraceLoggingWrite(g_hRemotingProvider,
-                                  "WindowManager_proposeToMonarch_unexpectedExceptionFromKing",
+                                  "WindowManager_proposeToMonarch_tryAgain",
                                   TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                                   TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-
-                LOG_CAUGHT_EXCEPTION();
-                throw;
             }
         }
 
@@ -309,7 +310,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             }
 
             // This right here will just tell us to stash the args away for the
-            // future. The AppHost hasnt yet set up the callbacks, and the rest
+            // future. The AppHost hasn't yet set up the callbacks, and the rest
             // of the app hasn't started at all. We'll note them and come back
             // later.
             _peasant.ExecuteCommandline(args);
@@ -345,15 +346,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                                        CLSCTX_LOCAL_SERVER);
     }
 
-    // NOTE: This can throw! Callers include:
-    // - the constructor, who performs this in a loop until it successfully
-    //   find a a monarch
-    // - the performElection method, which is called in the waitOnMonarch
-    //   thread. All the calls in that thread are wrapped in try/catch's
-    //   already.
-    // - _createOurPeasant, who might do this in a loop to establish us with the
-    //   monarch.
-    void WindowManager::_createMonarchAndCallbacks()
+    // Tries to instantiate a monarch, tries again, and eventually either throws
+    // (so that the caller will try again) or falls back to the isolated
+    // monarch.
+    void WindowManager::_redundantCreateMonarch()
     {
         _createMonarch();
 
@@ -399,9 +395,26 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 winrt::hresult_error(E_UNEXPECTED, L"Did not expect the Monarch to ever be null");
             }
         }
+    }
 
+    // NOTE: This can throw! Callers include:
+    // - the constructor, who performs this in a loop until it successfully
+    //   find a a monarch
+    // - the performElection method, which is called in the waitOnMonarch
+    //   thread. All the calls in that thread are wrapped in try/catch's
+    //   already.
+    // - _createOurPeasant, who might do this in a loop to establish us with the
+    //   monarch.
+    void WindowManager::_createMonarchAndCallbacks()
+    {
+        _redundantCreateMonarch();
         // We're pretty confident that we have a Monarch here.
+        _createCallbacks();
+    }
 
+    // Check if we became the king, and if we are, wire up callbacks.
+    void WindowManager::_createCallbacks()
+    {
         // Save the result of checking if we're the king. We want to avoid
         // unnecessary calls back and forth if we can.
         _isKing = _areWeTheKing();
@@ -475,7 +488,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             {
                 try
                 {
-                    // Wrap this in it's own try/catch, because this can throw.
+                    // Wrap this in its own try/catch, because this can throw.
                     _createMonarchAndCallbacks();
                 }
                 catch (...)
@@ -559,7 +572,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             // monarch.
             try
             {
-                // This might fail to even ask the monarch for it's PID.
+                // This might fail to even ask the monarch for its PID.
                 wil::unique_handle hMonarch{ OpenProcess(PROCESS_ALL_ACCESS,
                                                          FALSE,
                                                          static_cast<DWORD>(_monarch.GetPID())) };
@@ -634,7 +647,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             catch (...)
             {
                 // Theoretically, if window[1] dies when we're trying to get
-                // it's PID we'll get here. If we just try to do the election
+                // its PID we'll get here. If we just try to do the election
                 // once here, it's possible we might elect window[2], but have
                 // it die before we add ourselves as a peasant. That
                 // _performElection call will throw, and we wouldn't catch it

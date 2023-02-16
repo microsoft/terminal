@@ -44,7 +44,7 @@ public:
 
 #pragma endregion
 
-    virtual ~IApiRoutines(){};
+    virtual ~IApiRoutines() = default;
 
 #pragma region L1
     virtual void GetConsoleInputCodePageImpl(ULONG& codepage) noexcept = 0;
@@ -91,7 +91,7 @@ public:
                                                         std::unique_ptr<IWaitRoutine>& waiter) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT ReadConsoleAImpl(IConsoleInputObject& context,
-                                                   gsl::span<char> buffer,
+                                                   std::span<char> buffer,
                                                    size_t& written,
                                                    std::unique_ptr<IWaitRoutine>& waiter,
                                                    const std::string_view initialData,
@@ -102,7 +102,7 @@ public:
                                                    DWORD& controlKeyState) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT ReadConsoleWImpl(IConsoleInputObject& context,
-                                                   gsl::span<char> buffer,
+                                                   std::span<char> buffer,
                                                    size_t& written,
                                                    std::unique_ptr<IWaitRoutine>& waiter,
                                                    const std::string_view initialData,
@@ -135,19 +135,19 @@ public:
     [[nodiscard]] virtual HRESULT FillConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
                                                                  const WORD attribute,
                                                                  const size_t lengthToWrite,
-                                                                 const COORD startingCoordinate,
+                                                                 const til::point startingCoordinate,
                                                                  size_t& cellsModified) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT FillConsoleOutputCharacterAImpl(IConsoleOutputObject& OutContext,
                                                                   const char character,
                                                                   const size_t lengthToWrite,
-                                                                  const COORD startingCoordinate,
+                                                                  const til::point startingCoordinate,
                                                                   size_t& cellsModified) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT FillConsoleOutputCharacterWImpl(IConsoleOutputObject& OutContext,
                                                                   const wchar_t character,
                                                                   const size_t lengthToWrite,
-                                                                  const COORD startingCoordinate,
+                                                                  const til::point startingCoordinate,
                                                                   size_t& cellsModified,
                                                                   const bool enablePowershellShim = false) noexcept = 0;
 
@@ -175,25 +175,25 @@ public:
                                                                    const CONSOLE_SCREEN_BUFFER_INFOEX& data) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT SetConsoleScreenBufferSizeImpl(IConsoleOutputObject& context,
-                                                                 const COORD size) noexcept = 0;
+                                                                 const til::size size) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT SetConsoleCursorPositionImpl(IConsoleOutputObject& context,
-                                                               const COORD position) noexcept = 0;
+                                                               const til::point position) noexcept = 0;
 
     virtual void GetLargestConsoleWindowSizeImpl(const IConsoleOutputObject& context,
-                                                 COORD& size) noexcept = 0;
+                                                 til::size& size) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT ScrollConsoleScreenBufferAImpl(IConsoleOutputObject& context,
-                                                                 const SMALL_RECT& source,
-                                                                 const COORD target,
-                                                                 std::optional<SMALL_RECT> clip,
+                                                                 const til::inclusive_rect& source,
+                                                                 const til::point target,
+                                                                 std::optional<til::inclusive_rect> clip,
                                                                  const char fillCharacter,
                                                                  const WORD fillAttribute) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT ScrollConsoleScreenBufferWImpl(IConsoleOutputObject& context,
-                                                                 const SMALL_RECT& source,
-                                                                 const COORD target,
-                                                                 std::optional<SMALL_RECT> clip,
+                                                                 const til::inclusive_rect& source,
+                                                                 const til::point target,
+                                                                 std::optional<til::inclusive_rect> clip,
                                                                  const wchar_t fillCharacter,
                                                                  const WORD fillAttribute,
                                                                  const bool enableCmdShim = false) noexcept = 0;
@@ -203,81 +203,81 @@ public:
 
     [[nodiscard]] virtual HRESULT SetConsoleWindowInfoImpl(IConsoleOutputObject& context,
                                                            const bool isAbsolute,
-                                                           const SMALL_RECT& windowRect) noexcept = 0;
+                                                           const til::inclusive_rect& windowRect) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT ReadConsoleOutputAttributeImpl(const IConsoleOutputObject& context,
-                                                                 const COORD origin,
-                                                                 gsl::span<WORD> buffer,
+                                                                 const til::point origin,
+                                                                 std::span<WORD> buffer,
                                                                  size_t& written) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT ReadConsoleOutputCharacterAImpl(const IConsoleOutputObject& context,
-                                                                  const COORD origin,
-                                                                  gsl::span<char> buffer,
+                                                                  const til::point origin,
+                                                                  std::span<char> buffer,
                                                                   size_t& written) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT ReadConsoleOutputCharacterWImpl(const IConsoleOutputObject& context,
-                                                                  const COORD origin,
-                                                                  gsl::span<wchar_t> buffer,
+                                                                  const til::point origin,
+                                                                  std::span<wchar_t> buffer,
                                                                   size_t& written) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT WriteConsoleInputAImpl(IConsoleInputObject& context,
-                                                         const gsl::span<const INPUT_RECORD> buffer,
+                                                         const std::span<const INPUT_RECORD> buffer,
                                                          size_t& written,
                                                          const bool append) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT WriteConsoleInputWImpl(IConsoleInputObject& context,
-                                                         const gsl::span<const INPUT_RECORD> buffer,
+                                                         const std::span<const INPUT_RECORD> buffer,
                                                          size_t& written,
                                                          const bool append) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT WriteConsoleOutputAImpl(IConsoleOutputObject& context,
-                                                          gsl::span<CHAR_INFO> buffer,
+                                                          std::span<CHAR_INFO> buffer,
                                                           const Microsoft::Console::Types::Viewport& requestRectangle,
                                                           Microsoft::Console::Types::Viewport& writtenRectangle) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT WriteConsoleOutputWImpl(IConsoleOutputObject& context,
-                                                          gsl::span<CHAR_INFO> buffer,
+                                                          std::span<CHAR_INFO> buffer,
                                                           const Microsoft::Console::Types::Viewport& requestRectangle,
                                                           Microsoft::Console::Types::Viewport& writtenRectangle) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT WriteConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
-                                                                  const gsl::span<const WORD> attrs,
-                                                                  const COORD target,
+                                                                  const std::span<const WORD> attrs,
+                                                                  const til::point target,
                                                                   size_t& used) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT WriteConsoleOutputCharacterAImpl(IConsoleOutputObject& OutContext,
                                                                    const std::string_view text,
-                                                                   const COORD target,
+                                                                   const til::point target,
                                                                    size_t& used) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT WriteConsoleOutputCharacterWImpl(IConsoleOutputObject& OutContext,
                                                                    const std::wstring_view text,
-                                                                   const COORD target,
+                                                                   const til::point target,
                                                                    size_t& used) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT ReadConsoleOutputAImpl(const IConsoleOutputObject& context,
-                                                         gsl::span<CHAR_INFO> buffer,
+                                                         std::span<CHAR_INFO> buffer,
                                                          const Microsoft::Console::Types::Viewport& sourceRectangle,
                                                          Microsoft::Console::Types::Viewport& readRectangle) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT ReadConsoleOutputWImpl(const IConsoleOutputObject& context,
-                                                         gsl::span<CHAR_INFO> buffer,
+                                                         std::span<CHAR_INFO> buffer,
                                                          const Microsoft::Console::Types::Viewport& sourceRectangle,
                                                          Microsoft::Console::Types::Viewport& readRectangle) noexcept = 0;
 
-    [[nodiscard]] virtual HRESULT GetConsoleTitleAImpl(gsl::span<char> title,
+    [[nodiscard]] virtual HRESULT GetConsoleTitleAImpl(std::span<char> title,
                                                        size_t& written,
                                                        size_t& needed) noexcept = 0;
 
-    [[nodiscard]] virtual HRESULT GetConsoleTitleWImpl(gsl::span<wchar_t> title,
+    [[nodiscard]] virtual HRESULT GetConsoleTitleWImpl(std::span<wchar_t> title,
                                                        size_t& written,
                                                        size_t& needed) noexcept = 0;
 
-    [[nodiscard]] virtual HRESULT GetConsoleOriginalTitleAImpl(gsl::span<char> title,
+    [[nodiscard]] virtual HRESULT GetConsoleOriginalTitleAImpl(std::span<char> title,
                                                                size_t& written,
                                                                size_t& needed) noexcept = 0;
 
-    [[nodiscard]] virtual HRESULT GetConsoleOriginalTitleWImpl(gsl::span<wchar_t> title,
+    [[nodiscard]] virtual HRESULT GetConsoleOriginalTitleWImpl(std::span<wchar_t> title,
                                                                size_t& written,
                                                                size_t& needed) noexcept = 0;
 
@@ -292,7 +292,7 @@ public:
 
     [[nodiscard]] virtual HRESULT GetConsoleFontSizeImpl(const SCREEN_INFORMATION& context,
                                                          const DWORD index,
-                                                         COORD& size) noexcept = 0;
+                                                         til::size& size) noexcept = 0;
 
     // driver will pare down for non-Ex method
     [[nodiscard]] virtual HRESULT GetCurrentConsoleFontExImpl(const SCREEN_INFORMATION& context,
@@ -301,7 +301,7 @@ public:
 
     [[nodiscard]] virtual HRESULT SetConsoleDisplayModeImpl(SCREEN_INFORMATION& context,
                                                             const ULONG flags,
-                                                            COORD& newSize) noexcept = 0;
+                                                            til::size& newSize) noexcept = 0;
 
     virtual void GetConsoleDisplayModeImpl(ULONG& flags) noexcept = 0;
 
@@ -314,12 +314,12 @@ public:
                                                        const std::wstring_view exeName) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT GetConsoleAliasAImpl(const std::string_view source,
-                                                       gsl::span<char> target,
+                                                       std::span<char> target,
                                                        size_t& written,
                                                        const std::string_view exeName) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT GetConsoleAliasWImpl(const std::wstring_view source,
-                                                       gsl::span<wchar_t> target,
+                                                       std::span<wchar_t> target,
                                                        size_t& written,
                                                        const std::wstring_view exeName) noexcept = 0;
 
@@ -334,17 +334,17 @@ public:
     [[nodiscard]] virtual HRESULT GetConsoleAliasExesLengthWImpl(size_t& bufferRequired) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT GetConsoleAliasesAImpl(const std::string_view exeName,
-                                                         gsl::span<char> alias,
+                                                         std::span<char> alias,
                                                          size_t& written) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT GetConsoleAliasesWImpl(const std::wstring_view exeName,
-                                                         gsl::span<wchar_t> alias,
+                                                         std::span<wchar_t> alias,
                                                          size_t& written) noexcept = 0;
 
-    [[nodiscard]] virtual HRESULT GetConsoleAliasExesAImpl(gsl::span<char> aliasExes,
+    [[nodiscard]] virtual HRESULT GetConsoleAliasExesAImpl(std::span<char> aliasExes,
                                                            size_t& written) noexcept = 0;
 
-    [[nodiscard]] virtual HRESULT GetConsoleAliasExesWImpl(gsl::span<wchar_t> aliasExes,
+    [[nodiscard]] virtual HRESULT GetConsoleAliasExesWImpl(std::span<wchar_t> aliasExes,
                                                            size_t& written) noexcept = 0;
 
 #pragma region CMDext Private API
@@ -366,11 +366,11 @@ public:
                                                                       size_t& length) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT GetConsoleCommandHistoryAImpl(const std::string_view exeName,
-                                                                gsl::span<char> commandHistory,
+                                                                std::span<char> commandHistory,
                                                                 size_t& written) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT GetConsoleCommandHistoryWImpl(const std::wstring_view exeName,
-                                                                gsl::span<wchar_t> commandHistory,
+                                                                std::span<wchar_t> commandHistory,
                                                                 size_t& written) noexcept = 0;
 
 #pragma endregion

@@ -187,7 +187,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass AdjustFontSizeArgs : IActionArgs
     {
-        Int32 Delta { get; };
+        Single Delta { get; };
     };
 
     [default_interface] runtimeclass SendInputArgs : IActionArgs
@@ -290,6 +290,17 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.Foundation.IReference<UInt32> RowsToScroll { get; };
     };
 
+
+    [default_interface] runtimeclass ScrollToMarkArgs : IActionArgs
+    {
+        Microsoft.Terminal.Control.ScrollToMarkDirection Direction { get; };
+    };
+
+    [default_interface] runtimeclass AddMarkArgs : IActionArgs
+    {
+        Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> Color { get; };
+    };
+
     [default_interface] runtimeclass ToggleCommandPaletteArgs : IActionArgs
     {
         CommandPaletteLaunchMode LaunchMode { get; };
@@ -365,5 +376,12 @@ namespace Microsoft.Terminal.Settings.Model
         AdjustOpacityArgs();
         Int32 Opacity { get; };
         Boolean Relative { get; };
+    };
+
+    [default_interface] runtimeclass ColorSelectionArgs : IActionArgs
+    {
+        Microsoft.Terminal.Control.SelectionColor Foreground;
+        Microsoft.Terminal.Control.SelectionColor Background;
+        Microsoft.Terminal.Core.MatchMode MatchMode { get; };
     };
 }

@@ -9,6 +9,7 @@
 #include <array>
 #include <filesystem>
 #include <optional>
+#include <span>
 #include <sstream>
 #include <string_view>
 #include <thread>
@@ -16,7 +17,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include <d2d1.h>
+#include <d2d1_1.h>
 #include <d3d11_1.h>
 #include <d3dcompiler.h>
 #include <dwrite_3.h>
@@ -27,7 +28,6 @@
 
 #include <gsl/gsl_util>
 #include <gsl/pointers>
-#include <gsl/span>
 #include <wil/com.h>
 #include <wil/filesystem.h>
 #include <wil/result_macros.h>

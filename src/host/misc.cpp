@@ -102,7 +102,7 @@ BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
                          _In_reads_bytes_(cBytes) const WCHAR* pwchBuffer,
                          _In_ size_t cWords,
                          _In_ size_t cBytes,
-                         _In_ SHORT sOriginalXPosition,
+                         _In_ til::CoordType sOriginalXPosition,
                          _In_ BOOL fPrintableControlChars)
 {
     if (WI_IsFlagSet(ScreenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT))
@@ -151,7 +151,7 @@ BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
                 case UNICODE_TAB:
                 {
                     size_t TabSize = NUMBER_OF_SPACES_IN_TAB(sOriginalXPosition);
-                    sOriginalXPosition = (SHORT)(sOriginalXPosition + TabSize);
+                    sOriginalXPosition = (til::CoordType)(sOriginalXPosition + TabSize);
                     if (cBytes < TabSize)
                         return TRUE;
                     cBytes -= TabSize;
@@ -191,22 +191,23 @@ BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
 // Note: may throw on error
 void SplitToOem(std::deque<std::unique_ptr<IInputEvent>>& events)
 {
-    const auto codepage = ServiceLocator::LocateGlobals().getConsoleInformation().CP;
-
-    // convert events to oem codepage
+    const auto cp = ServiceLocator::LocateGlobals().getConsoleInformation().CP;
     std::deque<std::unique_ptr<IInputEvent>> convertedEvents;
-    while (!events.empty())
+
+    for (auto& currentEvent : events)
     {
-        auto currentEvent = std::move(events.front());
-        events.pop_front();
         if (currentEvent->EventType() == InputEventType::KeyEvent)
         {
             const auto pKeyEvent = static_cast<const KeyEvent* const>(currentEvent.get());
-            // convert from wchar to char
-            std::wstring wstr{ pKeyEvent->GetCharData() };
-            const auto str = ConvertToA(codepage, wstr);
+            const auto wch = pKeyEvent->GetCharData();
 
-            for (auto& ch : str)
+            char buffer[8];
+            const auto length = WideCharToMultiByte(cp, 0, &wch, 1, &buffer[0], sizeof(buffer), nullptr, nullptr);
+            THROW_LAST_ERROR_IF(length <= 0);
+
+            const std::string_view str{ &buffer[0], gsl::narrow_cast<size_t>(length) };
+
+            for (const auto& ch : str)
             {
                 auto tempEvent = std::make_unique<KeyEvent>(*pKeyEvent);
                 tempEvent->SetCharData(ch);
@@ -218,12 +219,8 @@ void SplitToOem(std::deque<std::unique_ptr<IInputEvent>>& events)
             convertedEvents.push_back(std::move(currentEvent));
         }
     }
-    // move all events back
-    while (!convertedEvents.empty())
-    {
-        events.push_back(std::move(convertedEvents.front()));
-        convertedEvents.pop_front();
-    }
+
+    events = std::move(convertedEvents);
 }
 
 // Routine Description:

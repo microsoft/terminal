@@ -78,7 +78,13 @@ VOID SetConsoleWindowOwner(const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pP
     else
     {
         // Find a process to own the console window. If there are none then let's use conhost's.
-        pProcessData = gci.ProcessHandleList.GetFirstProcess();
+        pProcessData = gci.ProcessHandleList.GetRootProcess();
+        if (!pProcessData)
+        {
+            // No root process ID? Pick the oldest existing process.
+            pProcessData = gci.ProcessHandleList.GetOldestProcess();
+        }
+
         if (pProcessData != nullptr)
         {
             dwProcessId = pProcessData->dwProcessId;
@@ -92,16 +98,8 @@ VOID SetConsoleWindowOwner(const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pP
         }
     }
 
-    CONSOLEWINDOWOWNER ConsoleOwner;
-    ConsoleOwner.hwnd = hwnd;
-    ConsoleOwner.ProcessId = dwProcessId;
-    ConsoleOwner.ThreadId = dwThreadId;
-
     // Comment out this line to enable UIA tree to be visible until UIAutomationCore.dll can support our scenario.
-    LOG_IF_FAILED(ServiceLocator::LocateConsoleControl<Microsoft::Console::Interactivity::Win32::ConsoleControl>()
-                      ->Control(ConsoleControl::ControlType::ConsoleSetWindowOwner,
-                                &ConsoleOwner,
-                                sizeof(ConsoleOwner)));
+    LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->SetWindowOwner(hwnd, dwProcessId, dwThreadId));
 }
 
 // ----------------------------
@@ -116,7 +114,7 @@ VOID SetConsoleWindowOwner(const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pP
 // - pInputRecord - Input record event from the general input event handler
 // Return Value:
 // - True if the modes were appropriate for converting to a terminal sequence AND there was a matching terminal sequence for this key. False otherwise.
-bool HandleTerminalMouseEvent(const COORD cMousePosition,
+bool HandleTerminalMouseEvent(const til::point cMousePosition,
                               const unsigned int uiButton,
                               const short sModifierKeystate,
                               const short sWheelDelta)
@@ -129,9 +127,9 @@ bool HandleTerminalMouseEvent(const COORD cMousePosition,
     if (IsInVirtualTerminalInputMode())
     {
         const TerminalInput::MouseButtonState state{
-            WI_IsFlagSet(GetKeyState(VK_LBUTTON), KeyPressed),
-            WI_IsFlagSet(GetKeyState(VK_MBUTTON), KeyPressed),
-            WI_IsFlagSet(GetKeyState(VK_RBUTTON), KeyPressed)
+            WI_IsFlagSet(OneCoreSafeGetKeyState(VK_LBUTTON), KeyPressed),
+            WI_IsFlagSet(OneCoreSafeGetKeyState(VK_MBUTTON), KeyPressed),
+            WI_IsFlagSet(OneCoreSafeGetKeyState(VK_RBUTTON), KeyPressed)
         };
 
         // GH#6401: VT applications should be able to receive mouse events from outside the
@@ -141,7 +139,7 @@ bool HandleTerminalMouseEvent(const COORD cMousePosition,
         auto clampedPosition{ cMousePosition };
         const auto clampViewport{ gci.GetActiveOutputBuffer().GetViewport().ToOrigin() };
         clampViewport.Clamp(clampedPosition);
-        fWasHandled = gci.GetActiveInputBuffer()->GetTerminalInput().HandleMouse(til::wrap_coord(clampedPosition), uiButton, sModifierKeystate, sWheelDelta, state);
+        fWasHandled = gci.GetActiveInputBuffer()->GetTerminalInput().HandleMouse(clampedPosition, uiButton, sModifierKeystate, sWheelDelta, state);
     }
 
     return fWasHandled;
@@ -211,7 +209,7 @@ void HandleKeyEvent(const HWND hWnd,
         }
         else
         {
-            keyEvent.SetCharData(0);
+            keyEvent.SetCharData(L'\0');
         }
     }
     else
@@ -222,7 +220,7 @@ void HandleKeyEvent(const HWND hWnd,
             return;
         }
         keyEvent.SetActiveModifierKeys(ControlKeyState);
-        keyEvent.SetCharData(0);
+        keyEvent.SetCharData(L'\0');
     }
 
     const INPUT_KEY_INFO inputKeyInfo(VirtualKeyCode, ControlKeyState);
@@ -394,7 +392,7 @@ void HandleKeyEvent(const HWND hWnd,
         if (handlingResult == Selection::KeySelectionEventResult::CopyToClipboard)
         {
             // If the ALT key is held, also select HTML as well as plain text.
-            const auto fAlsoSelectHtml = WI_IsFlagSet(GetKeyState(VK_MENU), KEY_PRESSED);
+            const auto fAlsoSelectHtml = WI_IsFlagSet(OneCoreSafeGetKeyState(VK_MENU), KEY_PRESSED);
             Clipboard::Instance().Copy(fAlsoSelectHtml);
             return;
         }
@@ -476,7 +474,7 @@ BOOL HandleSysKeyEvent(const HWND hWnd, const UINT Message, const WPARAM wParam,
 
     if (Message == WM_SYSCHAR || Message == WM_SYSDEADCHAR)
     {
-        VirtualKeyCode = (WORD)MapVirtualKeyW(LOBYTE(HIWORD(lParam)), MAPVK_VSC_TO_VK_EX);
+        VirtualKeyCode = (WORD)OneCoreSafeMapVirtualKeyW(LOBYTE(HIWORD(lParam)), MAPVK_VSC_TO_VK_EX);
     }
     else
     {
@@ -487,16 +485,16 @@ BOOL HandleSysKeyEvent(const HWND hWnd, const UINT Message, const WPARAM wParam,
     Telemetry::Instance().SetUserInteractive();
 
     // check for ctrl-esc
-    const auto bCtrlDown = GetKeyState(VK_CONTROL) & KEY_PRESSED;
+    const auto bCtrlDown = OneCoreSafeGetKeyState(VK_CONTROL) & KEY_PRESSED;
 
     if (VirtualKeyCode == VK_ESCAPE &&
-        bCtrlDown && !(GetKeyState(VK_MENU) & KEY_PRESSED) && !(GetKeyState(VK_SHIFT) & KEY_PRESSED))
+        bCtrlDown && !(OneCoreSafeGetKeyState(VK_MENU) & KEY_PRESSED) && !(OneCoreSafeGetKeyState(VK_SHIFT) & KEY_PRESSED))
     {
         return TRUE; // call DefWindowProc
     }
 
     // check for alt-f4
-    if (VirtualKeyCode == VK_F4 && (GetKeyState(VK_MENU) & KEY_PRESSED) && IsInProcessedInputMode() && gci.IsAltF4CloseAllowed())
+    if (VirtualKeyCode == VK_F4 && (OneCoreSafeGetKeyState(VK_MENU) & KEY_PRESSED) && IsInProcessedInputMode() && gci.IsAltF4CloseAllowed())
     {
         return TRUE; // let DefWindowProc generate WM_CLOSE
     }
@@ -527,7 +525,7 @@ BOOL HandleSysKeyEvent(const HWND hWnd, const UINT Message, const WPARAM wParam,
     }
 
     // make sure alt-space gets translated so that the system menu is displayed.
-    if (!(GetKeyState(VK_CONTROL) & KEY_PRESSED))
+    if (!(OneCoreSafeGetKeyState(VK_CONTROL) & KEY_PRESSED))
     {
         if (VirtualKeyCode == VK_SPACE)
         {
@@ -612,16 +610,16 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
     //  results on systems with multiple monitors. Systems with multiple monitors
     //  can have negative x- and y- coordinates, and LOWORD and HIWORD treat the
     //  coordinates as unsigned quantities.
-    short x = GET_X_LPARAM(lParam);
-    short y = GET_Y_LPARAM(lParam);
+    const auto x = GET_X_LPARAM(lParam);
+    const auto y = GET_Y_LPARAM(lParam);
 
-    COORD MousePosition;
+    til::point MousePosition;
     // If it's a *WHEEL event, it's in screen coordinates, not window
     if (Message == WM_MOUSEWHEEL || Message == WM_MOUSEHWHEEL)
     {
         POINT coords = { x, y };
         ScreenToClient(ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), &coords);
-        MousePosition = { (SHORT)coords.x, (SHORT)coords.y };
+        MousePosition = { coords.x, coords.y };
     }
     else
     {
@@ -630,10 +628,10 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
 
     // translate mouse position into characters, if necessary.
     auto ScreenFontSize = ScreenInfo.GetScreenFontSize();
-    MousePosition.X /= ScreenFontSize.X;
-    MousePosition.Y /= ScreenFontSize.Y;
+    MousePosition.x /= ScreenFontSize.width;
+    MousePosition.y /= ScreenFontSize.height;
 
-    const auto fShiftPressed = WI_IsFlagSet(GetKeyState(VK_SHIFT), KEY_PRESSED);
+    const auto fShiftPressed = WI_IsFlagSet(OneCoreSafeGetKeyState(VK_SHIFT), KEY_PRESSED);
 
     // We need to try and have the virtual terminal handle the mouse's position in viewport coordinates,
     //   not in screen buffer coordinates. It expects the top left to always be 0,0
@@ -680,27 +678,27 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
         }
     }
 
-    MousePosition.X += ScreenInfo.GetViewport().Left();
-    MousePosition.Y += ScreenInfo.GetViewport().Top();
+    MousePosition.x += ScreenInfo.GetViewport().Left();
+    MousePosition.y += ScreenInfo.GetViewport().Top();
 
     const auto coordScreenBufferSize = ScreenInfo.GetBufferSize().Dimensions();
 
     // make sure mouse position is clipped to screen buffer
-    if (MousePosition.X < 0)
+    if (MousePosition.x < 0)
     {
-        MousePosition.X = 0;
+        MousePosition.x = 0;
     }
-    else if (MousePosition.X >= coordScreenBufferSize.X)
+    else if (MousePosition.x >= coordScreenBufferSize.width)
     {
-        MousePosition.X = coordScreenBufferSize.X - 1;
+        MousePosition.x = coordScreenBufferSize.width - 1;
     }
-    if (MousePosition.Y < 0)
+    if (MousePosition.y < 0)
     {
-        MousePosition.Y = 0;
+        MousePosition.y = 0;
     }
-    else if (MousePosition.Y >= coordScreenBufferSize.Y)
+    else if (MousePosition.y >= coordScreenBufferSize.height)
     {
-        MousePosition.Y = coordScreenBufferSize.Y - 1;
+        MousePosition.y = coordScreenBufferSize.height - 1;
     }
 
     // Process the transparency mousewheel message before the others so that we can
@@ -731,7 +729,7 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
         if (Message == WM_LBUTTONDOWN)
         {
             // make sure message matches button state
-            if (!(GetKeyState(VK_LBUTTON) & KEY_PRESSED))
+            if (!(OneCoreSafeGetKeyState(VK_LBUTTON) & KEY_PRESSED))
             {
                 return FALSE;
             }
@@ -828,7 +826,7 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
                         Telemetry::Instance().LogQuickEditCopyRawUsed();
                     }
                     // If the ALT key is held, also select HTML as well as plain text.
-                    const auto fAlsoCopyFormatting = WI_IsFlagSet(GetKeyState(VK_MENU), KEY_PRESSED);
+                    const auto fAlsoCopyFormatting = WI_IsFlagSet(OneCoreSafeGetKeyState(VK_MENU), KEY_PRESSED);
                     Clipboard::Instance().Copy(fAlsoCopyFormatting);
                 }
                 else if (gci.Flags & CONSOLE_QUICK_EDIT_MODE)
@@ -988,7 +986,7 @@ LRESULT CALLBACK DialogHookProc(int nCode, WPARAM /*wParam*/, LPARAM lParam)
 NTSTATUS InitWindowsSubsystem(_Out_ HHOOK* phhook)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    auto ProcessData = gci.ProcessHandleList.FindProcessInList(ConsoleProcessList::ROOT_PROCESS_ID);
+    auto ProcessData = gci.ProcessHandleList.GetRootProcess();
     FAIL_FAST_IF(!(ProcessData != nullptr && ProcessData->fRootProcess));
 
     // Create and activate the main window
@@ -1036,9 +1034,22 @@ DWORD WINAPI ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
         // If we are headless (because we're a pseudo console), we
         // will still need a window handle in the win32 environment
         // in case anyone sends messages at that HWND (vim.exe is an example.)
-        // We have to CreateWindow on the same thread that will pump the messages
-        // which is this thread.
-        ServiceLocator::LocatePseudoWindow();
+        //
+        // IMPORTANT! We have to CreateWindow on the same thread that will pump
+        // the messages, which is this thread. If you DON'T, then a DPI change
+        // in the owning hwnd will cause us to get a dpi change as well, which
+        // we'll never deque and handle, effectively HANGING THE OWNER HWND.
+        // ServiceLocator::LocatePseudoWindow();
+        //
+        // Instead of just calling LocatePseudoWindow, make sure to go through
+        // VtIo's CreatePseudoWindow, which will make sure that the window is
+        // successfully created with the owner configured when the window is
+        // first created. See GH#13066 for details.
+        ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo()->CreatePseudoWindow();
+
+        // Register the pseudoconsole window as being owned by the root process.
+        const auto pseudoWindow = ServiceLocator::LocatePseudoWindow();
+        SetConsoleWindowOwner(pseudoWindow, nullptr);
     }
 
     UnlockConsole();

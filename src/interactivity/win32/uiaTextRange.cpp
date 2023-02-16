@@ -13,13 +13,13 @@ using namespace Microsoft::WRL;
 using Microsoft::Console::Interactivity::ServiceLocator;
 
 // degenerate range constructor.
-HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider, _In_ const std::wstring_view wordDelimiters) noexcept
+HRESULT UiaTextRange::RuntimeClassInitialize(_In_ Render::IRenderData* pData, _In_ IRawElementProviderSimple* const pProvider, _In_ const std::wstring_view wordDelimiters) noexcept
 {
     return UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider, wordDelimiters);
 }
 
 // degenerate range at cursor position
-HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
+HRESULT UiaTextRange::RuntimeClassInitialize(_In_ Render::IRenderData* pData,
                                              _In_ IRawElementProviderSimple* const pProvider,
                                              const Cursor& cursor,
                                              const std::wstring_view wordDelimiters) noexcept
@@ -28,10 +28,10 @@ HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
 }
 
 // specific endpoint range
-HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
+HRESULT UiaTextRange::RuntimeClassInitialize(_In_ Render::IRenderData* pData,
                                              _In_ IRawElementProviderSimple* const pProvider,
-                                             const COORD start,
-                                             const COORD end,
+                                             const til::point start,
+                                             const til::point end,
                                              bool blockRange,
                                              const std::wstring_view wordDelimiters) noexcept
 {
@@ -39,7 +39,7 @@ HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
 }
 
 // returns a degenerate text range of the start of the row closest to the y value of point
-HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
+HRESULT UiaTextRange::RuntimeClassInitialize(_In_ Render::IRenderData* pData,
                                              _In_ IRawElementProviderSimple* const pProvider,
                                              const UiaPoint point,
                                              const std::wstring_view wordDelimiters)
@@ -77,14 +77,14 @@ IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider*
     return S_OK;
 }
 
-void UiaTextRange::_TranslatePointToScreen(LPPOINT clientPoint) const
+void UiaTextRange::_TranslatePointToScreen(til::point* clientPoint) const
 {
-    ClientToScreen(_getWindowHandle(), clientPoint);
+    ClientToScreen(_getWindowHandle(), clientPoint->as_win32_point());
 }
 
-void UiaTextRange::_TranslatePointFromScreen(LPPOINT screenPoint) const
+void UiaTextRange::_TranslatePointFromScreen(til::point* screenPoint) const
 {
-    ScreenToClient(_getWindowHandle(), screenPoint);
+    ScreenToClient(_getWindowHandle(), screenPoint->as_win32_point());
 }
 
 HWND UiaTextRange::_getWindowHandle() const

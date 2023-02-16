@@ -13,7 +13,6 @@
 // - ulSize - The height of the cursor within this buffer
 Cursor::Cursor(const ULONG ulSize, TextBuffer& parentBuffer) noexcept :
     _parentBuffer{ parentBuffer },
-    _cPosition{ 0 },
     _fHasMoved(false),
     _fIsVisible(true),
     _fIsOn(true),
@@ -23,7 +22,6 @@ Cursor::Cursor(const ULONG ulSize, TextBuffer& parentBuffer) noexcept :
     _fIsConversionArea(false),
     _fIsPopupShown(false),
     _fDelayedEolWrap(false),
-    _coordDelayedAt{ 0 },
     _fDeferCursorRedraw(false),
     _fHaveDeferredCursorRedraw(false),
     _ulSize(ulSize),
@@ -31,11 +29,9 @@ Cursor::Cursor(const ULONG ulSize, TextBuffer& parentBuffer) noexcept :
 {
 }
 
-Cursor::~Cursor()
-{
-}
+Cursor::~Cursor() = default;
 
-COORD Cursor::GetPosition() const noexcept
+til::point Cursor::GetPosition() const noexcept
 {
     return _cPosition;
 }
@@ -105,6 +101,13 @@ void Cursor::SetIsOn(const bool fIsOn) noexcept
 void Cursor::SetBlinkingAllowed(const bool fBlinkingAllowed) noexcept
 {
     _fBlinkingAllowed = fBlinkingAllowed;
+    // GH#2642 - From what we've gathered from other terminals, when blinking is
+    // disabled, the cursor should remain On always, and have the visibility
+    // controlled by the IsVisible property. So when you do a printf "\e[?12l"
+    // to disable blinking, the cursor stays stuck On. At this point, only the
+    // cursor visibility property controls whether the user can see it or not.
+    // (Yes, the cursor can be On and NOT Visible)
+    _fIsOn = true;
     _RedrawCursorAlways();
 }
 
@@ -192,59 +195,58 @@ void Cursor::_RedrawCursorAlways() noexcept
     CATCH_LOG();
 }
 
-void Cursor::SetPosition(const COORD cPosition) noexcept
+void Cursor::SetPosition(const til::point cPosition) noexcept
 {
     _RedrawCursor();
-    _cPosition.X = cPosition.X;
-    _cPosition.Y = cPosition.Y;
+    _cPosition = cPosition;
     _RedrawCursor();
     ResetDelayEOLWrap();
 }
 
-void Cursor::SetXPosition(const int NewX) noexcept
+void Cursor::SetXPosition(const til::CoordType NewX) noexcept
 {
     _RedrawCursor();
-    _cPosition.X = gsl::narrow<SHORT>(NewX);
+    _cPosition.x = NewX;
     _RedrawCursor();
     ResetDelayEOLWrap();
 }
 
-void Cursor::SetYPosition(const int NewY) noexcept
+void Cursor::SetYPosition(const til::CoordType NewY) noexcept
 {
     _RedrawCursor();
-    _cPosition.Y = gsl::narrow<SHORT>(NewY);
+    _cPosition.y = NewY;
     _RedrawCursor();
     ResetDelayEOLWrap();
 }
 
-void Cursor::IncrementXPosition(const int DeltaX) noexcept
+void Cursor::IncrementXPosition(const til::CoordType DeltaX) noexcept
 {
     _RedrawCursor();
-    _cPosition.X += gsl::narrow<SHORT>(DeltaX);
+    _cPosition.x += DeltaX;
     _RedrawCursor();
     ResetDelayEOLWrap();
 }
 
-void Cursor::IncrementYPosition(const int DeltaY) noexcept
+void Cursor::IncrementYPosition(const til::CoordType DeltaY) noexcept
 {
     _RedrawCursor();
-    _cPosition.Y += gsl::narrow<SHORT>(DeltaY);
+    _cPosition.y += DeltaY;
     _RedrawCursor();
     ResetDelayEOLWrap();
 }
 
-void Cursor::DecrementXPosition(const int DeltaX) noexcept
+void Cursor::DecrementXPosition(const til::CoordType DeltaX) noexcept
 {
     _RedrawCursor();
-    _cPosition.X -= gsl::narrow<SHORT>(DeltaX);
+    _cPosition.x -= DeltaX;
     _RedrawCursor();
     ResetDelayEOLWrap();
 }
 
-void Cursor::DecrementYPosition(const int DeltaY) noexcept
+void Cursor::DecrementYPosition(const til::CoordType DeltaY) noexcept
 {
     _RedrawCursor();
-    _cPosition.Y -= gsl::narrow<SHORT>(DeltaY);
+    _cPosition.y -= DeltaY;
     _RedrawCursor();
     ResetDelayEOLWrap();
 }
@@ -284,7 +286,7 @@ void Cursor::CopyProperties(const Cursor& OtherCursor) noexcept
     _cursorType = OtherCursor._cursorType;
 }
 
-void Cursor::DelayEOLWrap(const COORD coordDelayedAt) noexcept
+void Cursor::DelayEOLWrap(const til::point coordDelayedAt) noexcept
 {
     _coordDelayedAt = coordDelayedAt;
     _fDelayedEolWrap = true;
@@ -292,11 +294,11 @@ void Cursor::DelayEOLWrap(const COORD coordDelayedAt) noexcept
 
 void Cursor::ResetDelayEOLWrap() noexcept
 {
-    _coordDelayedAt = { 0 };
+    _coordDelayedAt = {};
     _fDelayedEolWrap = false;
 }
 
-COORD Cursor::GetDelayedAtPosition() const noexcept
+til::point Cursor::GetDelayedAtPosition() const noexcept
 {
     return _coordDelayedAt;
 }

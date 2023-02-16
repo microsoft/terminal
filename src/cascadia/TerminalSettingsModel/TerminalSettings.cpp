@@ -50,6 +50,25 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return { horizAlign, vertAlign };
     }
 
+    winrt::com_ptr<implementation::TerminalSettings> TerminalSettings::_CreateWithProfileCommon(const Model::CascadiaSettings& appSettings, const Model::Profile& profile)
+    {
+        auto settings{ winrt::make_self<TerminalSettings>() };
+
+        const auto globals = appSettings.GlobalSettings();
+        settings->_ApplyProfileSettings(profile);
+        settings->_ApplyGlobalSettings(globals);
+        settings->_ApplyAppearanceSettings(profile.DefaultAppearance(), globals.ColorSchemes(), globals.CurrentTheme());
+
+        return settings;
+    }
+
+    Model::TerminalSettings TerminalSettings::CreateForPreview(const Model::CascadiaSettings& appSettings, const Model::Profile& profile)
+    {
+        const auto settings = _CreateWithProfileCommon(appSettings, profile);
+        settings->UseBackgroundImageForWindow(false);
+        return *settings;
+    }
+
     // Method Description:
     // - Create a TerminalSettingsCreateResult for the provided profile guid. We'll
     //   use the guid to look up the profile that should be used to
@@ -64,19 +83,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //   one for when the terminal is focused and the other for when the terminal is unfocused
     Model::TerminalSettingsCreateResult TerminalSettings::CreateWithProfile(const Model::CascadiaSettings& appSettings, const Model::Profile& profile, const IKeyBindings& keybindings)
     {
-        auto settings{ winrt::make_self<TerminalSettings>() };
+        const auto settings = _CreateWithProfileCommon(appSettings, profile);
         settings->_KeyBindings = keybindings;
-
-        const auto globals = appSettings.GlobalSettings();
-        settings->_ApplyProfileSettings(profile);
-        settings->_ApplyGlobalSettings(globals);
-        settings->_ApplyAppearanceSettings(profile.DefaultAppearance(), globals.ColorSchemes());
 
         Model::TerminalSettings child{ nullptr };
         if (const auto& unfocusedAppearance{ profile.UnfocusedAppearance() })
         {
+            const auto globals = appSettings.GlobalSettings();
             auto childImpl = settings->CreateChild();
-            childImpl->_ApplyAppearanceSettings(unfocusedAppearance, globals.ColorSchemes());
+            childImpl->_ApplyAppearanceSettings(unfocusedAppearance, globals.ColorSchemes(), globals.CurrentTheme());
             child = *childImpl;
         }
 
@@ -168,17 +183,40 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return settingsPair;
     }
 
-    void TerminalSettings::_ApplyAppearanceSettings(const IAppearanceConfig& appearance, const Windows::Foundation::Collections::IMapView<winrt::hstring, ColorScheme>& schemes)
+    void TerminalSettings::_ApplyAppearanceSettings(const IAppearanceConfig& appearance,
+                                                    const Windows::Foundation::Collections::IMapView<winrt::hstring, ColorScheme>& schemes,
+                                                    const winrt::Microsoft::Terminal::Settings::Model::Theme currentTheme)
     {
         _CursorShape = appearance.CursorShape();
         _CursorHeight = appearance.CursorHeight();
-        if (!appearance.ColorSchemeName().empty())
+
+        auto requestedTheme = currentTheme.RequestedTheme();
+        if (requestedTheme == winrt::Windows::UI::Xaml::ElementTheme::Default)
         {
-            if (const auto scheme = schemes.TryLookup(appearance.ColorSchemeName()))
+            requestedTheme = Model::Theme::IsSystemInDarkTheme() ?
+                                 winrt::Windows::UI::Xaml::ElementTheme::Dark :
+                                 winrt::Windows::UI::Xaml::ElementTheme::Light;
+        }
+
+        switch (requestedTheme)
+        {
+        case winrt::Windows::UI::Xaml::ElementTheme::Light:
+            if (const auto scheme = schemes.TryLookup(appearance.LightColorSchemeName()))
             {
                 ApplyColorScheme(scheme);
             }
+            break;
+        case winrt::Windows::UI::Xaml::ElementTheme::Dark:
+            if (const auto scheme = schemes.TryLookup(appearance.DarkColorSchemeName()))
+            {
+                ApplyColorScheme(scheme);
+            }
+            break;
+        case winrt::Windows::UI::Xaml::ElementTheme::Default:
+            // This shouldn't happen!
+            break;
         }
+
         if (appearance.Foreground())
         {
             _DefaultForeground = til::color{ appearance.Foreground().Value() };
@@ -266,6 +304,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         _Elevate = profile.Elevate();
+        _AutoMarkPrompts = Feature_ScrollbarMarks::IsEnabled() && profile.AutoMarkPrompts();
+        _ShowMarks = Feature_ScrollbarMarks::IsEnabled() && profile.ShowMarks();
     }
 
     // Method Description:
@@ -355,11 +395,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return colorTable;
     }
 
-    gsl::span<winrt::Microsoft::Terminal::Core::Color> TerminalSettings::_getColorTableImpl()
+    std::span<winrt::Microsoft::Terminal::Core::Color> TerminalSettings::_getColorTableImpl()
     {
         if (_ColorTable.has_value())
         {
-            return gsl::make_span(*_ColorTable);
+            return std::span{ *_ColorTable };
         }
         for (auto&& parent : _parents)
         {

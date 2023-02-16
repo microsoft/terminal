@@ -155,7 +155,7 @@ namespace Microsoft::Console::VirtualTerminal
         constexpr VTParameter at(const size_t index) const noexcept
         {
             // If the index is out of range, we return a parameter with no value.
-            return index < _values.size() ? _values[index] : VTParameter{};
+            return index < _values.size() ? til::at(_values, index) : defaultParameter;
         }
 
         constexpr bool empty() const noexcept
@@ -179,18 +179,28 @@ namespace Microsoft::Console::VirtualTerminal
         template<typename T>
         bool for_each(const T&& predicate) const
         {
+            auto values = _values;
+
             // We always return at least 1 value here, since an empty parameter
             // list is the equivalent of a single "default" parameter.
-            auto success = predicate(at(0));
-            for (auto i = 1u; i < _values.size(); i++)
+            if (values.empty())
             {
-                success = predicate(_values[i]) && success;
+                values = defaultParameters;
+            }
+
+            auto success = true;
+            for (const auto& v : values)
+            {
+                success = predicate(v) && success;
             }
             return success;
         }
 
     private:
-        gsl::span<const VTParameter> _values;
+        static constexpr VTParameter defaultParameter;
+        static constexpr std::span defaultParameters{ &defaultParameter, 1 };
+
+        std::span<const VTParameter> _values;
     };
 
     // FlaggedEnumValue is a convenience class that produces enum values (of a specified size)
@@ -209,7 +219,7 @@ namespace Microsoft::Console::VirtualTerminal
     class FlaggedEnumValue
     {
     public:
-        static constexpr VTInt mask{ WI_StaticAssertSingleBitSet(Flag) };
+        static constexpr VTInt mask{ Flag };
 
         constexpr FlaggedEnumValue(const VTInt value) :
             _value{ value }
@@ -239,12 +249,31 @@ namespace Microsoft::Console::VirtualTerminal
 
 namespace Microsoft::Console::VirtualTerminal::DispatchTypes
 {
+    enum class ColorItem : VTInt
+    {
+        NormalText = 1,
+        WindowFrame = 2,
+    };
+
+    enum class ColorModel : VTInt
+    {
+        HLS = 1,
+        RGB = 2,
+    };
+
     enum class EraseType : VTInt
     {
         ToEnd = 0,
         FromBeginning = 1,
         All = 2,
         Scrollback = 3
+    };
+
+    enum class ChangeExtent : VTInt
+    {
+        Default = 0,
+        Stream = 1,
+        Rectangle = 2
     };
 
     enum class TaskbarState : VTInt
@@ -318,6 +347,13 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         BrightBackgroundWhite = 107,
     };
 
+    enum LogicalAttributeOptions : VTInt
+    {
+        Default = 0,
+        Protected = 1,
+        Unprotected = 2
+    };
+
     // Many of these correspond directly to SGR parameters (the GraphicsOptions enum), but
     // these are distinct (notably 10 and 11, which as SGR parameters would select fonts,
     // are used here to indicate that the foreground/background colors should be saved).
@@ -352,10 +388,16 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         Max = SaveBackgroundColor
     };
 
-    enum class AnsiStatusType : VTInt
+    using ANSIStandardStatus = FlaggedEnumValue<0x00000000>;
+    using DECPrivateStatus = FlaggedEnumValue<0x01000000>;
+
+    enum class StatusType : VTInt
     {
-        OS_OperatingStatus = 5,
-        CPR_CursorPositionReport = 6,
+        OS_OperatingStatus = ANSIStandardStatus(5),
+        CPR_CursorPositionReport = ANSIStandardStatus(6),
+        ExCPR_ExtendedCursorPositionReport = DECPrivateStatus(6),
+        MSR_MacroSpaceReport = DECPrivateStatus(62),
+        MEM_MemoryChecksum = DECPrivateStatus(63),
     };
 
     using ANSIStandardMode = FlaggedEnumValue<0x00000000>;
@@ -363,15 +405,19 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
 
     enum ModeParams : VTInt
     {
+        IRM_InsertReplaceMode = ANSIStandardMode(4),
         DECCKM_CursorKeysMode = DECPrivateMode(1),
         DECANM_AnsiMode = DECPrivateMode(2),
         DECCOLM_SetNumberOfColumns = DECPrivateMode(3),
         DECSCNM_ScreenMode = DECPrivateMode(5),
         DECOM_OriginMode = DECPrivateMode(6),
         DECAWM_AutoWrapMode = DECPrivateMode(7),
+        DECARM_AutoRepeatMode = DECPrivateMode(8),
         ATT610_StartCursorBlink = DECPrivateMode(12),
         DECTCEM_TextCursorEnableMode = DECPrivateMode(25),
         XTERM_EnableDECCOLMSupport = DECPrivateMode(40),
+        DECNKM_NumericKeypadMode = DECPrivateMode(66),
+        DECBKM_BackarrowKeyMode = DECPrivateMode(67),
         VT200_MOUSE_MODE = DECPrivateMode(1000),
         BUTTON_EVENT_MOUSE_MODE = DECPrivateMode(1002),
         ANY_EVENT_MOUSE_MODE = DECPrivateMode(1003),
@@ -475,7 +521,46 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         Size96 = 1
     };
 
+    enum class MacroDeleteControl : VTInt
+    {
+        DeleteId = 0,
+        DeleteAll = 1
+    };
+
+    enum class MacroEncoding : VTInt
+    {
+        Text = 0,
+        HexPair = 1
+    };
+
+    enum class ReportFormat : VTInt
+    {
+        TerminalStateReport = 1,
+        ColorTableReport = 2
+    };
+
     constexpr VTInt s_sDECCOLMSetColumns = 132;
     constexpr VTInt s_sDECCOLMResetColumns = 80;
 
+    enum class MarkCategory : size_t
+    {
+        Prompt = 0,
+        Error = 1,
+        Warning = 2,
+        Success = 3,
+        Info = 4
+    };
+
+    struct ScrollMark
+    {
+        std::optional<til::color> color;
+        til::point start;
+        til::point end; // exclusive
+        std::optional<til::point> commandEnd;
+        std::optional<til::point> outputEnd;
+
+        MarkCategory category{ MarkCategory::Info };
+        // Other things we may want to think about in the future are listed in
+        // GH#11000
+    };
 }

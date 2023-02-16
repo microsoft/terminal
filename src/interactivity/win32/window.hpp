@@ -37,7 +37,7 @@ namespace Microsoft::Console::Interactivity::Win32
 
         ~Window();
 
-        RECT GetWindowRect() const noexcept;
+        til::rect GetWindowRect() const noexcept;
         HWND GetWindowHandle() const;
         SCREEN_INFORMATION& GetScreenInfo();
         const SCREEN_INFORMATION& GetScreenInfo() const;
@@ -53,7 +53,7 @@ namespace Microsoft::Console::Interactivity::Win32
         void SetIsFullscreen(const bool fFullscreenEnabled);
         void ToggleFullscreen();
 
-        void ChangeViewport(const SMALL_RECT NewWindow);
+        void ChangeViewport(const til::inclusive_rect& NewWindow);
 
         void VerticalScroll(const WORD wScrollCommand,
                             const WORD wAbsoluteChange);
@@ -67,8 +67,8 @@ namespace Microsoft::Console::Interactivity::Win32
                             int maxSize,
                             int viewportPosition);
 
-        void UpdateWindowSize(const COORD coordSizeInChars);
-        void UpdateWindowPosition(_In_ POINT const ptNewPos) const;
+        void UpdateWindowSize(const til::size coordSizeInChars);
+        void UpdateWindowPosition(_In_ const til::point ptNewPos) const;
         void UpdateWindowText();
 
         void CaptureMouse();
@@ -86,11 +86,10 @@ namespace Microsoft::Console::Interactivity::Win32
         [[nodiscard]] HRESULT SignalUia(_In_ EVENTID id);
 
         void SetOwner();
-        BOOL GetCursorPosition(_Out_ LPPOINT lpPoint);
-        BOOL GetClientRectangle(_Out_ LPRECT lpRect);
-        int MapPoints(_Inout_updates_(cPoints) LPPOINT lpPoints,
-                      _In_ UINT cPoints);
-        BOOL ConvertScreenToClient(_Inout_ LPPOINT lpPoint);
+        BOOL GetCursorPosition(_Out_ til::point* lpPoint);
+        BOOL GetClientRectangle(_Out_ til::rect* lpRect);
+        BOOL MapRect(_Inout_ til::rect* lpRect);
+        BOOL ConvertScreenToClient(_Inout_ til::point* lpPoint);
 
         [[nodiscard]] HRESULT UiaSetTextAreaFocus();
 
@@ -117,12 +116,12 @@ namespace Microsoft::Console::Interactivity::Win32
 #if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
         Render::DxEngine* pDxEngine = nullptr;
 #endif
-#if TIL_FEATURE_ATLASENGINE_ENABLED
+#if TIL_FEATURE_CONHOSTATLASENGINE_ENABLED
         Render::AtlasEngine* pAtlasEngine = nullptr;
 #endif
 
         [[nodiscard]] NTSTATUS _InternalSetWindowSize();
-        void _UpdateWindowSize(const SIZE sizeNew);
+        void _UpdateWindowSize(const til::size sizeNew);
 
         void _UpdateSystemMetrics() const;
 
@@ -158,11 +157,11 @@ namespace Microsoft::Console::Interactivity::Win32
         // The size/position of the window on the most recent update.
         // This is remembered so we can figure out which
         // size the client was resized from.
-        RECT _rcClientLast;
+        til::rect _rcClientLast;
 
         // Full screen
-        void _RestoreFullscreenPosition(const RECT rcWork);
-        void _SetFullscreenPosition(const RECT rcMonitor, const RECT rcWork);
+        void _RestoreFullscreenPosition(const RECT& rcWork);
+        void _SetFullscreenPosition(const RECT& rcMonitor, const RECT& rcWork);
         bool _fIsInFullscreen;
         bool _fWasMaximizedBeforeFullscreen;
         RECT _rcWindowBeforeFullscreen;
@@ -170,20 +169,20 @@ namespace Microsoft::Console::Interactivity::Win32
         UINT _dpiBeforeFullscreen;
 
         // math helpers
-        void _CalculateWindowRect(const COORD coordWindowInChars,
-                                  _Inout_ RECT* const prectWindow) const;
-        static void s_CalculateWindowRect(const COORD coordWindowInChars,
+        void _CalculateWindowRect(const til::size coordWindowInChars,
+                                  _Inout_ til::rect* const prectWindow) const;
+        static void s_CalculateWindowRect(const til::size coordWindowInChars,
                                           const int iDpi,
-                                          const COORD coordFontSize,
-                                          const COORD coordBufferSize,
+                                          const til::size coordFontSize,
+                                          const til::size coordBufferSize,
                                           _In_opt_ HWND const hWnd,
-                                          _Inout_ RECT* const prectWindow);
+                                          _Inout_ til::rect* const prectWindow);
 
         static void s_ReinitializeFontsForDPIChange();
 
         bool _fInDPIChange = false;
 
         static void s_ConvertWindowPosToWindowRect(const LPWINDOWPOS lpWindowPos,
-                                                   _Out_ RECT* const prc);
+                                                   _Out_ til::rect* const prc);
     };
 }

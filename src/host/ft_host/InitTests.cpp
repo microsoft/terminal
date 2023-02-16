@@ -68,6 +68,8 @@ END_MODULE()
 
 MODULE_SETUP(ModuleSetup)
 {
+    SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+
     // The sources files inside windows use a C define to say it's inside windows and we should be
     // testing against the inbox conhost. This is awesome for inbox TAEF RI gate tests so it uses
     // the one generated from the same build.
@@ -236,7 +238,6 @@ MODULE_SETUP(ModuleSetup)
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(FreeConsole());
 
     // Wait a moment for the driver to be ready after freeing to attach.
-    Sleep(1000);
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(AttachConsole(dwFindPid));
 
     auto tries = 0;

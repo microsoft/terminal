@@ -15,15 +15,13 @@
 using namespace Microsoft::Console::Types;
 using Microsoft::Console::Interactivity::ServiceLocator;
 
-ConversionAreaBufferInfo::ConversionAreaBufferInfo(const COORD coordBufferSize) :
-    coordCaBuffer(coordBufferSize),
-    rcViewCaWindow({ 0 }),
-    coordConView({ 0 })
+ConversionAreaBufferInfo::ConversionAreaBufferInfo(const til::size coordBufferSize) :
+    coordCaBuffer(coordBufferSize)
 {
 }
 
-ConversionAreaInfo::ConversionAreaInfo(const COORD bufferSize,
-                                       const COORD windowSize,
+ConversionAreaInfo::ConversionAreaInfo(const til::size bufferSize,
+                                       const til::size windowSize,
                                        const TextAttribute& fill,
                                        const TextAttribute& popupFill,
                                        const FontInfo fontInfo) :
@@ -110,9 +108,9 @@ void ConversionAreaInfo::SetAttributes(const TextAttribute& attr)
 // - text - Text to insert into the conversion area buffer
 // - column - Column to start at (X position)
 void ConversionAreaInfo::WriteText(const std::vector<OutputCell>& text,
-                                   const SHORT column)
+                                   const til::CoordType column)
 {
-    gsl::span<const OutputCell> view(text.data(), text.size());
+    std::span<const OutputCell> view(text.data(), text.size());
     _screenBuffer->Write(view, { column, 0 });
 }
 
@@ -131,7 +129,7 @@ void ConversionAreaInfo::ClearArea() noexcept
     Paint();
 }
 
-[[nodiscard]] HRESULT ConversionAreaInfo::Resize(const COORD newSize) noexcept
+[[nodiscard]] HRESULT ConversionAreaInfo::Resize(const til::size newSize) noexcept
 {
     // attempt to resize underlying buffers
     RETURN_IF_NTSTATUS_FAILED(_screenBuffer->ResizeScreenBuffer(newSize, FALSE));
@@ -140,21 +138,21 @@ void ConversionAreaInfo::ClearArea() noexcept
     _caInfo.coordCaBuffer = newSize;
 
     // restrict viewport to buffer size.
-    const COORD restriction = { newSize.X - 1i16, newSize.Y - 1i16 };
-    _caInfo.rcViewCaWindow.Left = std::min(_caInfo.rcViewCaWindow.Left, restriction.X);
-    _caInfo.rcViewCaWindow.Right = std::min(_caInfo.rcViewCaWindow.Right, restriction.X);
-    _caInfo.rcViewCaWindow.Top = std::min(_caInfo.rcViewCaWindow.Top, restriction.Y);
-    _caInfo.rcViewCaWindow.Bottom = std::min(_caInfo.rcViewCaWindow.Bottom, restriction.Y);
+    const til::point restriction = { newSize.width - 1, newSize.height - 1 };
+    _caInfo.rcViewCaWindow.left = std::min(_caInfo.rcViewCaWindow.left, restriction.x);
+    _caInfo.rcViewCaWindow.right = std::min(_caInfo.rcViewCaWindow.right, restriction.x);
+    _caInfo.rcViewCaWindow.top = std::min(_caInfo.rcViewCaWindow.top, restriction.y);
+    _caInfo.rcViewCaWindow.bottom = std::min(_caInfo.rcViewCaWindow.bottom, restriction.y);
 
     return S_OK;
 }
 
-void ConversionAreaInfo::SetWindowInfo(const SMALL_RECT view) noexcept
+void ConversionAreaInfo::SetWindowInfo(const til::inclusive_rect& view) noexcept
 {
-    if (view.Left != _caInfo.rcViewCaWindow.Left ||
-        view.Top != _caInfo.rcViewCaWindow.Top ||
-        view.Right != _caInfo.rcViewCaWindow.Right ||
-        view.Bottom != _caInfo.rcViewCaWindow.Bottom)
+    if (view.left != _caInfo.rcViewCaWindow.left ||
+        view.top != _caInfo.rcViewCaWindow.top ||
+        view.right != _caInfo.rcViewCaWindow.right ||
+        view.bottom != _caInfo.rcViewCaWindow.bottom)
     {
         if (!IsHidden())
         {
@@ -172,7 +170,7 @@ void ConversionAreaInfo::SetWindowInfo(const SMALL_RECT view) noexcept
     }
 }
 
-void ConversionAreaInfo::SetViewPos(const COORD pos) noexcept
+void ConversionAreaInfo::SetViewPos(const til::point pos) noexcept
 {
     if (IsHidden())
     {
@@ -183,19 +181,19 @@ void ConversionAreaInfo::SetViewPos(const COORD pos) noexcept
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
         auto OldRegion = _caInfo.rcViewCaWindow;
-        OldRegion.Left += _caInfo.coordConView.X;
-        OldRegion.Right += _caInfo.coordConView.X;
-        OldRegion.Top += _caInfo.coordConView.Y;
-        OldRegion.Bottom += _caInfo.coordConView.Y;
+        OldRegion.left += _caInfo.coordConView.x;
+        OldRegion.right += _caInfo.coordConView.x;
+        OldRegion.top += _caInfo.coordConView.y;
+        OldRegion.bottom += _caInfo.coordConView.y;
         WriteToScreen(gci.GetActiveOutputBuffer(), Viewport::FromInclusive(OldRegion));
 
         _caInfo.coordConView = pos;
 
         auto NewRegion = _caInfo.rcViewCaWindow;
-        NewRegion.Left += _caInfo.coordConView.X;
-        NewRegion.Right += _caInfo.coordConView.X;
-        NewRegion.Top += _caInfo.coordConView.Y;
-        NewRegion.Bottom += _caInfo.coordConView.Y;
+        NewRegion.left += _caInfo.coordConView.x;
+        NewRegion.right += _caInfo.coordConView.x;
+        NewRegion.top += _caInfo.coordConView.y;
+        NewRegion.bottom += _caInfo.coordConView.y;
         WriteToScreen(gci.GetActiveOutputBuffer(), Viewport::FromInclusive(NewRegion));
     }
 }
@@ -206,11 +204,11 @@ void ConversionAreaInfo::Paint() const noexcept
     auto& ScreenInfo = gci.GetActiveOutputBuffer();
     const auto viewport = ScreenInfo.GetViewport();
 
-    SMALL_RECT WriteRegion;
-    WriteRegion.Left = viewport.Left() + _caInfo.coordConView.X + _caInfo.rcViewCaWindow.Left;
-    WriteRegion.Right = WriteRegion.Left + (_caInfo.rcViewCaWindow.Right - _caInfo.rcViewCaWindow.Left);
-    WriteRegion.Top = viewport.Top() + _caInfo.coordConView.Y + _caInfo.rcViewCaWindow.Top;
-    WriteRegion.Bottom = WriteRegion.Top + (_caInfo.rcViewCaWindow.Bottom - _caInfo.rcViewCaWindow.Top);
+    til::inclusive_rect WriteRegion;
+    WriteRegion.left = viewport.Left() + _caInfo.coordConView.x + _caInfo.rcViewCaWindow.left;
+    WriteRegion.right = WriteRegion.left + (_caInfo.rcViewCaWindow.right - _caInfo.rcViewCaWindow.left);
+    WriteRegion.top = viewport.Top() + _caInfo.coordConView.y + _caInfo.rcViewCaWindow.top;
+    WriteRegion.bottom = WriteRegion.top + (_caInfo.rcViewCaWindow.bottom - _caInfo.rcViewCaWindow.top);
 
     if (!IsHidden())
     {

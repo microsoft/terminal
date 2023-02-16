@@ -37,12 +37,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return value ? winrt::Windows::UI::Xaml::Visibility::Collapsed : winrt::Windows::UI::Xaml::Visibility::Visible;
     }
 
-    winrt::Windows::UI::Color Converters::LightenColor(winrt::Windows::UI::Color color)
-    {
-        color.A = 128; // halfway transparent
-        return color;
-    }
-
     double Converters::MaxValueFromPaddingString(winrt::hstring paddingString)
     {
         const auto singleCharDelim = L',';

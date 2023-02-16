@@ -326,7 +326,7 @@
     if (a->Unicode)
     {
         const std::string_view initialData(pbInitialData.get(), cbInitialData);
-        const gsl::span<char> outputBuffer(reinterpret_cast<char*>(pvBuffer), cbBufferSize);
+        const std::span<char> outputBuffer(reinterpret_cast<char*>(pvBuffer), cbBufferSize);
         hr = m->_pApiRoutines->ReadConsoleWImpl(*pInputBuffer,
                                                 outputBuffer,
                                                 cbWritten, // We must set the reply length in bytes.
@@ -341,7 +341,7 @@
     else
     {
         const std::string_view initialData(pbInitialData.get(), cbInitialData);
-        const gsl::span<char> outputBuffer(reinterpret_cast<char*>(pvBuffer), cbBufferSize);
+        const std::span<char> outputBuffer(reinterpret_cast<char*>(pvBuffer), cbBufferSize);
         hr = m->_pApiRoutines->ReadConsoleAImpl(*pInputBuffer,
                                                 outputBuffer,
                                                 cbWritten, // We must set the reply length in bytes.
@@ -499,7 +499,7 @@
         hr = m->_pApiRoutines->FillConsoleOutputAttributeImpl(*pScreenInfo,
                                                               a->Element,
                                                               fill,
-                                                              a->WriteCoord,
+                                                              til::wrap_coord(a->WriteCoord),
                                                               amountWritten);
         break;
     }
@@ -511,7 +511,7 @@
         hr = m->_pApiRoutines->FillConsoleOutputCharacterWImpl(*pScreenInfo,
                                                                a->Element,
                                                                fill,
-                                                               a->WriteCoord,
+                                                               til::wrap_coord(a->WriteCoord),
                                                                amountWritten,
                                                                m->GetProcessHandle()->GetShimPolicy().IsPowershellExe());
         break;
@@ -521,7 +521,7 @@
         hr = m->_pApiRoutines->FillConsoleOutputCharacterAImpl(*pScreenInfo,
                                                                static_cast<char>(a->Element),
                                                                fill,
-                                                               a->WriteCoord,
+                                                               til::wrap_coord(a->WriteCoord),
                                                                amountWritten);
         break;
     }
@@ -692,7 +692,7 @@
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
 
-    return m->_pApiRoutines->SetConsoleScreenBufferSizeImpl(*pObj, a->Size);
+    return m->_pApiRoutines->SetConsoleScreenBufferSizeImpl(*pObj, til::wrap_coord_size(a->Size));
 }
 
 [[nodiscard]] HRESULT ApiDispatchers::ServerSetConsoleCursorPosition(_Inout_ CONSOLE_API_MSG* const m,
@@ -707,7 +707,7 @@
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
 
-    return m->_pApiRoutines->SetConsoleCursorPositionImpl(*pObj, a->CursorPosition);
+    return m->_pApiRoutines->SetConsoleCursorPositionImpl(*pObj, til::wrap_coord(a->CursorPosition));
 }
 
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetLargestConsoleWindowSize(_Inout_ CONSOLE_API_MSG* const m,
@@ -722,8 +722,9 @@
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
 
-    m->_pApiRoutines->GetLargestConsoleWindowSizeImpl(*pObj, a->Size);
-    return S_OK;
+    auto size = til::wrap_coord_size(a->Size);
+    m->_pApiRoutines->GetLargestConsoleWindowSizeImpl(*pObj, size);
+    return til::unwrap_coord_size_hr(size, a->Size);
 }
 
 [[nodiscard]] HRESULT ApiDispatchers::ServerScrollConsoleScreenBuffer(_Inout_ CONSOLE_API_MSG* const m,
@@ -743,9 +744,9 @@
         // GH#3126 if the client application is cmd.exe, then we might need to
         // enable a compatibility shim.
         return m->_pApiRoutines->ScrollConsoleScreenBufferWImpl(*pObj,
-                                                                a->ScrollRectangle,
-                                                                a->DestinationOrigin,
-                                                                a->Clip ? std::optional<SMALL_RECT>(a->ClipRectangle) : std::nullopt,
+                                                                til::wrap_small_rect(a->ScrollRectangle),
+                                                                til::wrap_coord(a->DestinationOrigin),
+                                                                a->Clip ? std::optional{ til::wrap_small_rect(a->ClipRectangle) } : std::nullopt,
                                                                 a->Fill.Char.UnicodeChar,
                                                                 a->Fill.Attributes,
                                                                 m->GetProcessHandle()->GetShimPolicy().IsCmdExe());
@@ -753,9 +754,9 @@
     else
     {
         return m->_pApiRoutines->ScrollConsoleScreenBufferAImpl(*pObj,
-                                                                a->ScrollRectangle,
-                                                                a->DestinationOrigin,
-                                                                a->Clip ? std::optional<SMALL_RECT>(a->ClipRectangle) : std::nullopt,
+                                                                til::wrap_small_rect(a->ScrollRectangle),
+                                                                til::wrap_coord(a->DestinationOrigin),
+                                                                a->Clip ? std::optional{ til::wrap_small_rect(a->ClipRectangle) } : std::nullopt,
                                                                 a->Fill.Char.AsciiChar,
                                                                 a->Fill.Attributes);
     }
@@ -791,7 +792,7 @@
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
 
-    return m->_pApiRoutines->SetConsoleWindowInfoImpl(*pObj, a->Absolute, a->Window);
+    return m->_pApiRoutines->SetConsoleWindowInfoImpl(*pObj, a->Absolute, til::wrap_small_rect(a->Window));
 }
 
 [[nodiscard]] HRESULT ApiDispatchers::ServerReadConsoleOutputString(_Inout_ CONSOLE_API_MSG* const m,
@@ -832,21 +833,21 @@
     {
     case CONSOLE_ATTRIBUTE:
     {
-        const gsl::span<WORD> buffer(reinterpret_cast<WORD*>(pvBuffer), cbBuffer / sizeof(WORD));
-        RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputAttributeImpl(*pScreenInfo, a->ReadCoord, buffer, written));
+        const std::span<WORD> buffer(reinterpret_cast<WORD*>(pvBuffer), cbBuffer / sizeof(WORD));
+        RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputAttributeImpl(*pScreenInfo, til::wrap_coord(a->ReadCoord), buffer, written));
         break;
     }
     case CONSOLE_REAL_UNICODE:
     case CONSOLE_FALSE_UNICODE:
     {
-        const gsl::span<wchar_t> buffer(reinterpret_cast<wchar_t*>(pvBuffer), cbBuffer / sizeof(wchar_t));
-        RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputCharacterWImpl(*pScreenInfo, a->ReadCoord, buffer, written));
+        const std::span<wchar_t> buffer(reinterpret_cast<wchar_t*>(pvBuffer), cbBuffer / sizeof(wchar_t));
+        RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputCharacterWImpl(*pScreenInfo, til::wrap_coord(a->ReadCoord), buffer, written));
         break;
     }
     case CONSOLE_ASCII:
     {
-        const gsl::span<char> buffer(reinterpret_cast<char*>(pvBuffer), cbBuffer);
-        RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputCharacterAImpl(*pScreenInfo, a->ReadCoord, buffer, written));
+        const std::span<char> buffer(reinterpret_cast<char*>(pvBuffer), cbBuffer);
+        RETURN_IF_FAILED(m->_pApiRoutines->ReadConsoleOutputCharacterAImpl(*pScreenInfo, til::wrap_coord(a->ReadCoord), buffer, written));
         break;
     }
     default:
@@ -883,7 +884,7 @@
     RETURN_IF_FAILED(pObjectHandle->GetInputBuffer(GENERIC_WRITE, &pInputBuffer));
 
     size_t written;
-    gsl::span<const INPUT_RECORD> buffer(reinterpret_cast<INPUT_RECORD*>(pvBuffer), cbSize / sizeof(INPUT_RECORD));
+    std::span<const INPUT_RECORD> buffer(reinterpret_cast<INPUT_RECORD*>(pvBuffer), cbSize / sizeof(INPUT_RECORD));
     if (!a->Unicode)
     {
         RETURN_IF_FAILED(m->_pApiRoutines->WriteConsoleInputAImpl(*pInputBuffer, buffer, written, !!a->Append));
@@ -906,9 +907,9 @@
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::WriteConsoleOutput, a->Unicode);
 
     // Backup originalRegion and set the written area to a 0 size rectangle in case of failures.
-    const auto originalRegion = Microsoft::Console::Types::Viewport::FromInclusive(a->CharRegion);
+    const auto originalRegion = Microsoft::Console::Types::Viewport::FromInclusive(til::wrap_small_rect(a->CharRegion));
     auto writtenRegion = Microsoft::Console::Types::Viewport::FromDimensions(originalRegion.Origin(), { 0, 0 });
-    a->CharRegion = writtenRegion.ToInclusive();
+    RETURN_IF_FAILED(til::unwrap_small_rect_hr(writtenRegion.ToInclusive(), a->CharRegion));
 
     // Get input parameter buffer
     PVOID pvBuffer;
@@ -923,12 +924,12 @@
 
     // Validate parameters
     size_t regionArea;
-    RETURN_IF_FAILED(SizeTMult(originalRegion.Dimensions().X, originalRegion.Dimensions().Y, &regionArea));
+    RETURN_IF_FAILED(SizeTMult(originalRegion.Dimensions().width, originalRegion.Dimensions().height, &regionArea));
     size_t regionBytes;
     RETURN_IF_FAILED(SizeTMult(regionArea, sizeof(CHAR_INFO), &regionBytes));
     RETURN_HR_IF(E_INVALIDARG, cbSize < regionBytes); // If given fewer bytes on input than we need to do this write, it's invalid.
 
-    const gsl::span<CHAR_INFO> buffer(reinterpret_cast<CHAR_INFO*>(pvBuffer), cbSize / sizeof(CHAR_INFO));
+    const std::span<CHAR_INFO> buffer(reinterpret_cast<CHAR_INFO*>(pvBuffer), cbSize / sizeof(CHAR_INFO));
     if (!a->Unicode)
     {
         RETURN_IF_FAILED(m->_pApiRoutines->WriteConsoleOutputAImpl(*pScreenInfo, buffer, originalRegion, writtenRegion));
@@ -939,9 +940,7 @@
     }
 
     // Update the written region if we were successful
-    a->CharRegion = writtenRegion.ToInclusive();
-
-    return S_OK;
+    return til::unwrap_small_rect_hr(writtenRegion.ToInclusive(), a->CharRegion);
 }
 
 [[nodiscard]] HRESULT ApiDispatchers::ServerWriteConsoleOutputString(_Inout_ CONSOLE_API_MSG* const m,
@@ -991,7 +990,7 @@
 
         hr = m->_pApiRoutines->WriteConsoleOutputCharacterAImpl(*pScreenInfo,
                                                                 text,
-                                                                a->WriteCoord,
+                                                                til::wrap_coord(a->WriteCoord),
                                                                 used);
 
         break;
@@ -1003,18 +1002,18 @@
 
         hr = m->_pApiRoutines->WriteConsoleOutputCharacterWImpl(*pScreenInfo,
                                                                 text,
-                                                                a->WriteCoord,
+                                                                til::wrap_coord(a->WriteCoord),
                                                                 used);
 
         break;
     }
     case CONSOLE_ATTRIBUTE:
     {
-        const gsl::span<const WORD> text(reinterpret_cast<WORD*>(pvBuffer), cbBufferSize / sizeof(WORD));
+        const std::span<const WORD> text(reinterpret_cast<WORD*>(pvBuffer), cbBufferSize / sizeof(WORD));
 
         hr = m->_pApiRoutines->WriteConsoleOutputAttributeImpl(*pScreenInfo,
                                                                text,
-                                                               a->WriteCoord,
+                                                               til::wrap_coord(a->WriteCoord),
                                                                used);
 
         break;
@@ -1039,9 +1038,9 @@
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsoleOutput, a->Unicode);
 
     // Backup data region passed and set it to a zero size region in case we exit early for failures.
-    const auto originalRegion = Microsoft::Console::Types::Viewport::FromInclusive(a->CharRegion);
+    const auto originalRegion = Microsoft::Console::Types::Viewport::FromInclusive(til::wrap_small_rect(a->CharRegion));
     const auto zeroRegion = Microsoft::Console::Types::Viewport::FromDimensions(originalRegion.Origin(), { 0, 0 });
-    a->CharRegion = zeroRegion.ToInclusive();
+    RETURN_IF_FAILED(til::unwrap_small_rect_hr(zeroRegion.ToInclusive(), a->CharRegion));
 
     PVOID pvBuffer;
     ULONG cbBuffer;
@@ -1055,12 +1054,12 @@
 
     // Validate parameters
     size_t regionArea;
-    RETURN_IF_FAILED(SizeTMult(originalRegion.Dimensions().X, originalRegion.Dimensions().Y, &regionArea));
+    RETURN_IF_FAILED(SizeTMult(originalRegion.Dimensions().width, originalRegion.Dimensions().height, &regionArea));
     size_t regionBytes;
     RETURN_IF_FAILED(SizeTMult(regionArea, sizeof(CHAR_INFO), &regionBytes));
     RETURN_HR_IF(E_INVALIDARG, regionArea > 0 && ((regionArea > ULONG_MAX / sizeof(CHAR_INFO)) || (cbBuffer < regionBytes)));
 
-    gsl::span<CHAR_INFO> buffer(reinterpret_cast<CHAR_INFO*>(pvBuffer), cbBuffer / sizeof(CHAR_INFO));
+    std::span<CHAR_INFO> buffer(reinterpret_cast<CHAR_INFO*>(pvBuffer), cbBuffer / sizeof(CHAR_INFO));
     auto finalRegion = Microsoft::Console::Types::Viewport::Empty(); // the actual region read out of the buffer
     if (!a->Unicode)
     {
@@ -1077,7 +1076,7 @@
                                                                   finalRegion));
     }
 
-    a->CharRegion = finalRegion.ToInclusive();
+    RETURN_IF_FAILED(til::unwrap_small_rect_hr(finalRegion.ToInclusive(), a->CharRegion));
 
     // We have to reply back with the entire buffer length. The client side in kernelbase will trim out
     // the correct region of the buffer for return to the original caller.
@@ -1099,7 +1098,7 @@
     auto hr = S_OK;
     if (a->Unicode)
     {
-        gsl::span<wchar_t> buffer(reinterpret_cast<wchar_t*>(pvBuffer), cbBuffer / sizeof(wchar_t));
+        std::span<wchar_t> buffer(reinterpret_cast<wchar_t*>(pvBuffer), cbBuffer / sizeof(wchar_t));
         size_t written;
         size_t needed;
         if (a->Original)
@@ -1121,7 +1120,7 @@
     }
     else
     {
-        gsl::span<char> buffer(reinterpret_cast<char*>(pvBuffer), cbBuffer);
+        std::span<char> buffer(reinterpret_cast<char*>(pvBuffer), cbBuffer);
         size_t written;
         size_t needed;
         if (a->Original)
@@ -1188,7 +1187,9 @@
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_READ, &pObj));
 
-    return m->_pApiRoutines->GetConsoleFontSizeImpl(*pObj, a->FontIndex, a->FontSize);
+    auto size = til::wrap_coord_size(a->FontSize);
+    RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleFontSizeImpl(*pObj, a->FontIndex, size));
+    return til::unwrap_coord_size_hr(size, a->FontSize);
 }
 
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleCurrentFont(_Inout_ CONSOLE_API_MSG* const m,
@@ -1229,7 +1230,9 @@
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
 
-    return m->_pApiRoutines->SetConsoleDisplayModeImpl(*pObj, a->dwFlags, a->ScreenBufferDimensions);
+    auto size = til::wrap_coord_size(a->ScreenBufferDimensions);
+    RETURN_IF_FAILED(m->_pApiRoutines->SetConsoleDisplayModeImpl(*pObj, a->dwFlags, size));
+    return til::unwrap_coord_size_hr(size, a->ScreenBufferDimensions);
 }
 
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleDisplayMode(_Inout_ CONSOLE_API_MSG* const m,
@@ -1327,7 +1330,7 @@
     {
         const std::wstring_view inputSource(reinterpret_cast<wchar_t*>(pvInputSource), cbInputSource / sizeof(wchar_t));
         const std::wstring_view inputExeName(reinterpret_cast<wchar_t*>(pvInputExe), cbInputExe / sizeof(wchar_t));
-        gsl::span<wchar_t> outputBuffer(reinterpret_cast<wchar_t*>(pvOutputBuffer), cbOutputBufferSize / sizeof(wchar_t));
+        std::span<wchar_t> outputBuffer(reinterpret_cast<wchar_t*>(pvOutputBuffer), cbOutputBufferSize / sizeof(wchar_t));
         size_t cchWritten;
 
         hr = m->_pApiRoutines->GetConsoleAliasWImpl(inputSource, outputBuffer, cchWritten, inputExeName);
@@ -1339,7 +1342,7 @@
     {
         const std::string_view inputSource(reinterpret_cast<char*>(pvInputSource), cbInputSource);
         const std::string_view inputExeName(reinterpret_cast<char*>(pvInputExe), cbInputExe);
-        gsl::span<char> outputBuffer(reinterpret_cast<char*>(pvOutputBuffer), cbOutputBufferSize);
+        std::span<char> outputBuffer(reinterpret_cast<char*>(pvOutputBuffer), cbOutputBufferSize);
         size_t cchWritten;
 
         hr = m->_pApiRoutines->GetConsoleAliasAImpl(inputSource, outputBuffer, cchWritten, inputExeName);
@@ -1440,7 +1443,7 @@
     if (a->Unicode)
     {
         const std::wstring_view inputExeName(reinterpret_cast<wchar_t*>(pvExeName), cbExeNameLength / sizeof(wchar_t));
-        gsl::span<wchar_t> outputBuffer(reinterpret_cast<wchar_t*>(pvOutputBuffer), cbAliasesBufferLength / sizeof(wchar_t));
+        std::span<wchar_t> outputBuffer(reinterpret_cast<wchar_t*>(pvOutputBuffer), cbAliasesBufferLength / sizeof(wchar_t));
         size_t cchWritten;
 
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasesWImpl(inputExeName, outputBuffer, cchWritten));
@@ -1451,7 +1454,7 @@
     else
     {
         const std::string_view inputExeName(reinterpret_cast<char*>(pvExeName), cbExeNameLength);
-        gsl::span<char> outputBuffer(reinterpret_cast<char*>(pvOutputBuffer), cbAliasesBufferLength);
+        std::span<char> outputBuffer(reinterpret_cast<char*>(pvOutputBuffer), cbAliasesBufferLength);
         size_t cchWritten;
 
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasesAImpl(inputExeName, outputBuffer, cchWritten));
@@ -1479,7 +1482,7 @@
     size_t cbWritten;
     if (a->Unicode)
     {
-        gsl::span<wchar_t> outputBuffer(reinterpret_cast<wchar_t*>(pvBuffer), cbAliasExesBufferLength / sizeof(wchar_t));
+        std::span<wchar_t> outputBuffer(reinterpret_cast<wchar_t*>(pvBuffer), cbAliasExesBufferLength / sizeof(wchar_t));
         size_t cchWritten;
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasExesWImpl(outputBuffer, cchWritten));
 
@@ -1487,7 +1490,7 @@
     }
     else
     {
-        gsl::span<char> outputBuffer(reinterpret_cast<char*>(pvBuffer), cbAliasExesBufferLength);
+        std::span<char> outputBuffer(reinterpret_cast<char*>(pvBuffer), cbAliasExesBufferLength);
         size_t cchWritten;
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasExesAImpl(outputBuffer, cchWritten));
 
@@ -1601,7 +1604,7 @@
     if (a->Unicode)
     {
         const std::wstring_view inputExeName(reinterpret_cast<wchar_t*>(pvExeName), cbExeNameLength / sizeof(wchar_t));
-        gsl::span<wchar_t> outputBuffer(reinterpret_cast<wchar_t*>(pvOutputBuffer), cbOutputBuffer / sizeof(wchar_t));
+        std::span<wchar_t> outputBuffer(reinterpret_cast<wchar_t*>(pvOutputBuffer), cbOutputBuffer / sizeof(wchar_t));
         size_t cchWritten;
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleCommandHistoryWImpl(inputExeName, outputBuffer, cchWritten));
 
@@ -1611,7 +1614,7 @@
     else
     {
         const std::string_view inputExeName(reinterpret_cast<char*>(pvExeName), cbExeNameLength);
-        gsl::span<char> outputBuffer(reinterpret_cast<char*>(pvOutputBuffer), cbOutputBuffer);
+        std::span<char> outputBuffer(reinterpret_cast<char*>(pvOutputBuffer), cbOutputBuffer);
         size_t cchWritten;
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleCommandHistoryAImpl(inputExeName, outputBuffer, cchWritten));
 

@@ -12,11 +12,6 @@
 using namespace Microsoft::Console::Types;
 using Microsoft::Console::Interactivity::ServiceLocator;
 
-bool IsValidSmallRect(_In_ PSMALL_RECT const Rect)
-{
-    return (Rect->Right >= Rect->Left && Rect->Bottom >= Rect->Top);
-}
-
 void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
                              const Viewport& convRegion)
 {
@@ -38,38 +33,31 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
             const auto areaInfo = ConvAreaInfo.GetAreaBufferInfo();
 
             // Do clipping region
-            SMALL_RECT Region;
-            Region.Left = currentViewport.Left + areaInfo.rcViewCaWindow.Left + areaInfo.coordConView.X;
-            Region.Right = Region.Left + (areaInfo.rcViewCaWindow.Right - areaInfo.rcViewCaWindow.Left);
-            Region.Top = currentViewport.Top + areaInfo.rcViewCaWindow.Top + areaInfo.coordConView.Y;
-            Region.Bottom = Region.Top + (areaInfo.rcViewCaWindow.Bottom - areaInfo.rcViewCaWindow.Top);
+            til::inclusive_rect Region;
+            Region.left = currentViewport.left + areaInfo.rcViewCaWindow.left + areaInfo.coordConView.x;
+            Region.right = Region.left + (areaInfo.rcViewCaWindow.right - areaInfo.rcViewCaWindow.left);
+            Region.top = currentViewport.top + areaInfo.rcViewCaWindow.top + areaInfo.coordConView.y;
+            Region.bottom = Region.top + (areaInfo.rcViewCaWindow.bottom - areaInfo.rcViewCaWindow.top);
 
-            SMALL_RECT ClippedRegion;
-            ClippedRegion.Left = std::max(Region.Left, currentViewport.Left);
-            ClippedRegion.Top = std::max(Region.Top, currentViewport.Top);
-            ClippedRegion.Right = std::min(Region.Right, currentViewport.Right);
-            ClippedRegion.Bottom = std::min(Region.Bottom, currentViewport.Bottom);
+            Region.left = std::max(Region.left, currentViewport.left);
+            Region.top = std::max(Region.top, currentViewport.top);
+            Region.right = std::min(Region.right, currentViewport.right);
+            Region.bottom = std::min(Region.bottom, currentViewport.bottom);
 
-            if (IsValidSmallRect(&ClippedRegion))
+            if (Region)
             {
-                Region = ClippedRegion;
-                ClippedRegion.Left = std::max(Region.Left, convRegion.Left());
-                ClippedRegion.Top = std::max(Region.Top, convRegion.Top());
-                ClippedRegion.Right = std::min(Region.Right, convRegion.RightInclusive());
-                ClippedRegion.Bottom = std::min(Region.Bottom, convRegion.BottomInclusive());
-                if (IsValidSmallRect(&ClippedRegion))
+                Region.left = std::max(Region.left, convRegion.Left());
+                Region.top = std::max(Region.top, convRegion.Top());
+                Region.right = std::min(Region.right, convRegion.RightInclusive());
+                Region.bottom = std::min(Region.bottom, convRegion.BottomInclusive());
+                if (Region)
                 {
                     // if we have a renderer, we need to update.
                     // we've already confirmed (above with an early return) that we're on conversion areas that are a part of the active (visible/rendered) screen
                     // so send invalidates to those regions such that we're queried for data on the next frame and repainted.
                     if (ServiceLocator::LocateGlobals().pRender != nullptr)
                     {
-                        // convert inclusive rectangle to exclusive rectangle
-                        auto srExclusive = ClippedRegion;
-                        srExclusive.Right++;
-                        srExclusive.Bottom++;
-
-                        ServiceLocator::LocateGlobals().pRender->TriggerRedraw(Viewport::FromExclusive(srExclusive));
+                        ServiceLocator::LocateGlobals().pRender->TriggerRedraw(Viewport::FromInclusive(Region));
                     }
                 }
             }
@@ -90,7 +78,7 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
     return S_OK;
 }
 
-[[nodiscard]] HRESULT ConsoleImeResizeCompStrScreenBuffer(const COORD coordNewScreenSize)
+[[nodiscard]] HRESULT ConsoleImeResizeCompStrScreenBuffer(const til::size coordNewScreenSize)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto pIme = &gci.ConsoleIme;
@@ -128,8 +116,8 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
 }
 
 [[nodiscard]] HRESULT ImeComposeData(std::wstring_view text,
-                                     gsl::span<const BYTE> attributes,
-                                     gsl::span<const WORD> colorArray)
+                                     std::span<const BYTE> attributes,
+                                     std::span<const WORD> colorArray)
 {
     try
     {

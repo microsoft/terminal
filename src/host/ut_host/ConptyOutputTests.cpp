@@ -29,8 +29,8 @@ class ConptyOutputTests
     // !!! DANGER: Many tests in this class expect the Terminal and Host buffers
     // to be 80x32. If you change these, you'll probably inadvertently break a
     // bunch of tests !!!
-    static const SHORT TerminalViewWidth = 80;
-    static const SHORT TerminalViewHeight = 32;
+    static const til::CoordType TerminalViewWidth = 80;
+    static const til::CoordType TerminalViewHeight = 32;
 
     // This test class is to write some things into the PTY and then check that
     // the rendering that is coming out of the VT-sequence generator is exactly
@@ -79,7 +79,7 @@ class ConptyOutputTests
         // Make sure a test hasn't left us in the alt buffer on accident
         VERIFY_IS_FALSE(currentBuffer._IsAltBuffer());
         VERIFY_SUCCEEDED(currentBuffer.SetViewportOrigin(true, { 0, 0 }, true));
-        VERIFY_ARE_EQUAL(COORD({ 0, 0 }), currentBuffer.GetTextBuffer().GetCursor().GetPosition());
+        VERIFY_ARE_EQUAL(til::point{}, currentBuffer.GetTextBuffer().GetCursor().GetPosition());
 
         // Set up an xterm-256 renderer for conpty
         auto hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
@@ -121,6 +121,7 @@ class ConptyOutputTests
     TEST_METHOD(WriteAFewSimpleLines);
     TEST_METHOD(InvalidateUntilOneBeforeEnd);
     TEST_METHOD(SetConsoleTitleWithControlChars);
+    TEST_METHOD(IncludeBackgroundColorChangesInFirstFrame);
 
 private:
     bool _writeCallback(const char* const pch, const size_t cch);
@@ -371,6 +372,7 @@ void ConptyOutputTests::SetConsoleTitleWithControlChars()
 {
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"Data:control", L"{0x00, 0x0A, 0x1B, 0x80, 0x9B, 0x9C}")
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
     END_TEST_METHOD_PROPERTIES()
 
     int control;
@@ -394,6 +396,32 @@ void ConptyOutputTests::SetConsoleTitleWithControlChars()
     // The title change is propagated as an OSC 0 sequence.
     // Control characters are stripped, so it's always "Hello World".
     expectedOutput.push_back("\x1b]0;Hello World!\a");
+
+    // This is also part of the standard init sequence.
+    expectedOutput.push_back("\x1b[?25h");
+
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+}
+
+void ConptyOutputTests::IncludeBackgroundColorChangesInFirstFrame()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& sm = si.GetStateMachine();
+
+    sm.ProcessString(L"\x1b[41mRun 1     \x1b[42mRun 2     \x1b[43mRun 3     \x1b[m");
+
+    expectedOutput.push_back("\x1b[2J"); // standard init sequence for the first frame
+    expectedOutput.push_back("\x1b[m"); // standard init sequence for the first frame
+    expectedOutput.push_back("\x1b[41m");
+    expectedOutput.push_back("\x1b[H"); // standard init sequence for the first frame
+    expectedOutput.push_back("Run 1     ");
+    expectedOutput.push_back("\x1b[42m");
+    expectedOutput.push_back("Run 2     ");
+    expectedOutput.push_back("\x1b[43m");
+    expectedOutput.push_back("Run 3     ");
 
     // This is also part of the standard init sequence.
     expectedOutput.push_back("\x1b[?25h");

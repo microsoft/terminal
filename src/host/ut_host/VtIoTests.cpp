@@ -6,11 +6,11 @@
 #include "../../inc/consoletaeftemplates.hpp"
 #include "../../types/inc/Viewport.hpp"
 
+#include "../VtIo.hpp"
+#include "../../interactivity/inc/ServiceLocator.hpp"
+#include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/vt/Xterm256Engine.hpp"
 #include "../../renderer/vt/XtermEngine.hpp"
-#include "../../renderer/base/Renderer.hpp"
-#include "../Settings.hpp"
-#include "../VtIo.hpp"
 
 #if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
 #include "../../renderer/dx/DxRenderer.hpp"
@@ -19,7 +19,7 @@
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
-using namespace std;
+using namespace Microsoft::Console::Interactivity;
 
 class Microsoft::Console::VirtualTerminal::VtIoTests
 {
@@ -80,10 +80,10 @@ void VtIoTests::ModeParsingTest()
 
 Viewport SetUpViewport()
 {
-    SMALL_RECT view = {};
-    view.Top = view.Left = 0;
-    view.Bottom = 31;
-    view.Right = 79;
+    til::inclusive_rect view;
+    view.top = view.left = 0;
+    view.bottom = 31;
+    view.right = 79;
 
     return Viewport::FromInclusive(view);
 }
@@ -254,7 +254,7 @@ void VtIoTests::DtorTestStackAllocMany()
     }
 }
 
-class MockRenderData : public IRenderData, IUiaData
+class MockRenderData : public IRenderData
 {
 public:
     Microsoft::Console::Types::Viewport GetViewport() noexcept override
@@ -262,17 +262,17 @@ public:
         return Microsoft::Console::Types::Viewport{};
     }
 
-    COORD GetTextBufferEndPosition() const noexcept override
+    til::point GetTextBufferEndPosition() const noexcept override
     {
-        return COORD{};
+        return {};
     }
 
-    const TextBuffer& GetTextBuffer() noexcept override
+    const TextBuffer& GetTextBuffer() const noexcept override
     {
         FAIL_FAST_HR(E_NOTIMPL);
     }
 
-    const FontInfo& GetFontInfo() noexcept override
+    const FontInfo& GetFontInfo() const noexcept override
     {
         FAIL_FAST_HR(E_NOTIMPL);
     }
@@ -295,9 +295,9 @@ public:
         return std::make_pair(COLORREF{}, COLORREF{});
     }
 
-    COORD GetCursorPosition() const noexcept override
+    til::point GetCursorPosition() const noexcept override
     {
-        return COORD{};
+        return {};
     }
 
     bool IsCursorVisible() const noexcept override
@@ -325,7 +325,7 @@ public:
         return 12ul;
     }
 
-    bool IsCursorDoubleWidth() const override
+    bool IsCursorDoubleWidth() const noexcept override
     {
         return false;
     }
@@ -359,21 +359,21 @@ public:
     {
     }
 
-    void SelectNewRegion(const COORD /*coordStart*/, const COORD /*coordEnd*/) override
+    void SelectNewRegion(const til::point /*coordStart*/, const til::point /*coordEnd*/) override
     {
     }
 
-    const COORD GetSelectionAnchor() const noexcept
+    const til::point GetSelectionAnchor() const noexcept
     {
-        return COORD{};
+        return {};
     }
 
-    const COORD GetSelectionEnd() const noexcept
+    const til::point GetSelectionEnd() const noexcept
     {
-        return COORD{};
+        return {};
     }
 
-    void ColorSelection(const COORD /*coordSelectionStart*/, const COORD /*coordSelectionEnd*/, const TextAttribute /*attr*/)
+    void ColorSelection(const til::point /*coordSelectionStart*/, const til::point /*coordSelectionEnd*/, const TextAttribute /*attr*/)
     {
     }
 
@@ -382,17 +382,17 @@ public:
         return true;
     }
 
-    const std::wstring GetHyperlinkUri(uint16_t /*id*/) const noexcept
+    const std::wstring GetHyperlinkUri(uint16_t /*id*/) const
     {
         return {};
     }
 
-    const std::wstring GetHyperlinkCustomId(uint16_t /*id*/) const noexcept
+    const std::wstring GetHyperlinkCustomId(uint16_t /*id*/) const
     {
         return {};
     }
 
-    const std::vector<size_t> GetPatternId(const COORD /*location*/) const noexcept
+    const std::vector<size_t> GetPatternId(const til::point /*location*/) const
     {
         return {};
     }
@@ -472,6 +472,13 @@ void VtIoTests::BasicAnonymousPipeOpeningWithSignalChannelTest()
     VERIFY_WIN32_BOOL_SUCCEEDED(CreatePipe(&signalPipeReadSide, &signalPipeWriteSide, nullptr, 0), L"Create anonymous signal pipe.");
 
     Log::Comment(L"\tinitializing vtio");
+
+    // CreateIoHandlers() assert()s on IsConsoleLocked() to guard against a race condition.
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole();
+    const auto cleanup = wil::scope_exit([&]() {
+        gci.UnlockConsole();
+    });
 
     VtIo vtio;
     VERIFY_IS_FALSE(vtio.IsUsingVt());

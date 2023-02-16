@@ -15,6 +15,8 @@
 
 #include <cctype>
 
+#include "../../interactivity/inc/VtApiRedirection.hpp"
+
 #include "../../inc/consoletaeftemplates.hpp"
 
 using namespace WEX::Common;
@@ -65,7 +67,7 @@ class ClipboardTests
 
     const UINT cRectsSelected = 4;
 
-    std::vector<std::wstring> SetupRetrieveFromBuffers(bool fLineSelection, std::vector<SMALL_RECT>& selection)
+    std::vector<std::wstring> SetupRetrieveFromBuffers(bool fLineSelection, std::vector<til::inclusive_rect>& selection)
     {
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
@@ -75,10 +77,10 @@ class ClipboardTests
         const auto& screenInfo = gci.GetActiveOutputBuffer();
 
         selection.clear();
-        selection.emplace_back(SMALL_RECT{ 0, 0, 8, 0 });
-        selection.emplace_back(SMALL_RECT{ 0, 1, 14, 1 });
-        selection.emplace_back(SMALL_RECT{ 0, 2, 14, 2 });
-        selection.emplace_back(SMALL_RECT{ 0, 3, 8, 3 });
+        selection.emplace_back(til::inclusive_rect{ 0, 0, 8, 0 });
+        selection.emplace_back(til::inclusive_rect{ 0, 1, 14, 1 });
+        selection.emplace_back(til::inclusive_rect{ 0, 2, 14, 2 });
+        selection.emplace_back(til::inclusive_rect{ 0, 3, 8, 3 });
 
         const auto& buffer = screenInfo.GetTextBuffer();
         return buffer.GetText(true, fLineSelection, selection).text;
@@ -91,13 +93,13 @@ class ClipboardTests
         // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
         // Please see CommonState.hpp for information on the buffer state per row, the row contents, etc.
 
-        std::vector<SMALL_RECT> selection;
+        std::vector<til::inclusive_rect> selection;
         const auto text = SetupRetrieveFromBuffers(false, selection);
 
         // verify trailing bytes were trimmed
         // there are 2 double-byte characters in our sample string (see CommonState.hpp for sample)
         // the width is right - left
-        VERIFY_ARE_EQUAL((short)wcslen(text[0].data()), selection[0].Right - selection[0].Left + 1);
+        VERIFY_ARE_EQUAL((til::CoordType)wcslen(text[0].data()), selection[0].right - selection[0].left + 1);
 
         // since we're not in line selection, the line should be \r\n terminated
         auto tempPtr = text[0].data();
@@ -107,7 +109,7 @@ class ClipboardTests
 
         // since we're not in line selection, spaces should be trimmed from the end
         tempPtr = text[0].data();
-        tempPtr += selection[0].Right - selection[0].Left - 2;
+        tempPtr += selection[0].right - selection[0].left - 2;
         tempPtr++;
         VERIFY_IS_NULL(wcsrchr(tempPtr, L' '));
 
@@ -124,7 +126,7 @@ class ClipboardTests
         // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
         // Please see CommonState.hpp for information on the buffer state per row, the row contents, etc.
 
-        std::vector<SMALL_RECT> selection;
+        std::vector<til::inclusive_rect> selection;
         const auto text = SetupRetrieveFromBuffers(true, selection);
 
         // row 2, no wrap
@@ -167,9 +169,9 @@ class ClipboardTests
                 keyEvent.reset(static_cast<KeyEvent* const>(events.front().release()));
                 events.pop_front();
 
-                const auto keyState = VkKeyScanW(wch);
+                const auto keyState = OneCoreSafeVkKeyScanW(wch);
                 VERIFY_ARE_NOT_EQUAL(-1, keyState);
-                const auto virtualScanCode = static_cast<WORD>(MapVirtualKeyW(LOBYTE(keyState), MAPVK_VK_TO_VSC));
+                const auto virtualScanCode = static_cast<WORD>(OneCoreSafeMapVirtualKeyW(LOBYTE(keyState), MAPVK_VK_TO_VSC));
 
                 VERIFY_ARE_EQUAL(wch, keyEvent->GetCharData());
                 VERIFY_ARE_EQUAL(isKeyDown, keyEvent->IsKeyDown());
@@ -206,9 +208,9 @@ class ClipboardTests
                 events.pop_front();
 
                 const short keyScanError = -1;
-                const auto keyState = VkKeyScanW(wch);
+                const auto keyState = OneCoreSafeVkKeyScanW(wch);
                 VERIFY_ARE_NOT_EQUAL(keyScanError, keyState);
-                const auto virtualScanCode = static_cast<WORD>(MapVirtualKeyW(LOBYTE(keyState), MAPVK_VK_TO_VSC));
+                const auto virtualScanCode = static_cast<WORD>(OneCoreSafeMapVirtualKeyW(LOBYTE(keyState), MAPVK_VK_TO_VSC));
 
                 if (std::isupper(wch))
                 {
@@ -222,9 +224,9 @@ class ClipboardTests
                     keyEvent2.reset(static_cast<KeyEvent* const>(events.front().release()));
                     events.pop_front();
 
-                    const auto keyState2 = VkKeyScanW(wch);
+                    const auto keyState2 = OneCoreSafeVkKeyScanW(wch);
                     VERIFY_ARE_NOT_EQUAL(keyScanError, keyState2);
-                    const auto virtualScanCode2 = static_cast<WORD>(MapVirtualKeyW(LOBYTE(keyState2), MAPVK_VK_TO_VSC));
+                    const auto virtualScanCode2 = static_cast<WORD>(OneCoreSafeMapVirtualKeyW(LOBYTE(keyState2), MAPVK_VK_TO_VSC));
 
                     if (isKeyDown)
                     {
@@ -258,9 +260,9 @@ class ClipboardTests
     {
         const std::wstring wstr = L"\x20ac"; // € char U+20AC
 
-        const auto keyState = VkKeyScanW(wstr[0]);
+        const auto keyState = OneCoreSafeVkKeyScanW(wstr[0]);
         const WORD virtualKeyCode = LOBYTE(keyState);
-        const auto virtualScanCode = static_cast<WORD>(MapVirtualKeyW(virtualKeyCode, MAPVK_VK_TO_VSC));
+        const auto virtualScanCode = static_cast<WORD>(OneCoreSafeMapVirtualKeyW(virtualKeyCode, MAPVK_VK_TO_VSC));
 
         if (keyState == -1 || HIBYTE(keyState) == 0 /* no modifiers required */)
         {

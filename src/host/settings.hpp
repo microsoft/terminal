@@ -50,17 +50,11 @@ public:
     RenderSettings& GetRenderSettings() noexcept { return _renderSettings; };
     const RenderSettings& GetRenderSettings() const noexcept { return _renderSettings; };
 
-    DWORD GetVirtTermLevel() const;
-    void SetVirtTermLevel(const DWORD dwVirtTermLevel);
+    DWORD GetDefaultVirtTermLevel() const;
+    void SetDefaultVirtTermLevel(const DWORD dwVirtTermLevel);
 
     bool IsAltF4CloseAllowed() const;
     void SetAltF4CloseAllowed(const bool fAllowAltF4Close);
-
-    bool IsReturnOnNewlineAutomatic() const;
-    void SetAutomaticReturnOnNewline(const bool fAutoReturnOnNewline);
-
-    bool IsGridRenderingAllowedWorldwide() const;
-    void SetGridRenderingAllowedWorldwide(const bool fGridRenderingAllowed);
 
     bool GetFilterOnPaste() const;
     void SetFilterOnPaste(const bool fFilterOnPaste);
@@ -113,24 +107,24 @@ public:
     WORD GetReserved() const;
     void SetReserved(const WORD wReserved);
 
-    COORD GetScreenBufferSize() const;
-    void SetScreenBufferSize(const COORD dwScreenBufferSize);
+    til::size GetScreenBufferSize() const;
+    void SetScreenBufferSize(const til::size dwScreenBufferSize);
 
-    COORD GetWindowSize() const;
-    void SetWindowSize(const COORD dwWindowSize);
+    til::size GetWindowSize() const;
+    void SetWindowSize(const til::size dwWindowSize);
 
     bool IsWindowSizePixelsValid() const;
-    COORD GetWindowSizePixels() const;
-    void SetWindowSizePixels(const COORD dwWindowSizePixels);
+    til::size GetWindowSizePixels() const;
+    void SetWindowSizePixels(const til::size dwWindowSizePixels);
 
-    COORD GetWindowOrigin() const;
-    void SetWindowOrigin(const COORD dwWindowOrigin);
+    til::size GetWindowOrigin() const;
+    void SetWindowOrigin(const til::size dwWindowOrigin);
 
     DWORD GetFont() const;
     void SetFont(const DWORD dwFont);
 
-    COORD GetFontSize() const;
-    void SetFontSize(const COORD dwFontSize);
+    til::size GetFontSize() const;
+    void SetFontSize(const til::size dwFontSize);
 
     UINT GetFontFamily() const;
     void SetFontFamily(const UINT uFontFamily);
@@ -225,8 +219,6 @@ private:
     std::wstring _LaunchFaceName;
     bool _fAllowAltF4Close;
     DWORD _dwVirtTermLevel;
-    bool _fAutoReturnOnNewline;
-    bool _fRenderGridWorldwide;
     UseDx _fUseDx;
     bool _fCopyColor;
 

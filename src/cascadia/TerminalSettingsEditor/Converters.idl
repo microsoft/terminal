@@ -14,7 +14,6 @@ namespace Microsoft.Terminal.Settings.Editor
         static Double FontWeightToDouble(Windows.UI.Text.FontWeight fontWeight);
         static Boolean InvertBoolean(Boolean value);
         static Windows.UI.Xaml.Visibility InvertedBooleanToVisibility(Boolean value);
-        static Windows.UI.Color LightenColor(Windows.UI.Color color);
         static Double MaxValueFromPaddingString(String paddingString);
         static Int32 PercentageToPercentageValue(Double value);
         static Double PercentageValueToPercentage(Double value);

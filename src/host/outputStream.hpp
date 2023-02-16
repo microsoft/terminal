@@ -14,7 +14,7 @@ Author:
 
 #pragma once
 
-#include "../terminal/adapter/conGetSet.hpp"
+#include "../terminal/adapter/ITerminalApi.hpp"
 #include "../types/inc/IInputEvent.hpp"
 #include "../inc/conattrs.hpp"
 #include "IIoProvider.hpp"
@@ -24,12 +24,12 @@ Author:
 // the kernelbase/32 exposed public APIs and routed by the console driver (condrv) to this console host.
 // But since we're trying to call them from *inside* the console host itself, we need to get in the way and route them straight to the
 // v-table inside this process instance.
-class ConhostInternalGetSet final : public Microsoft::Console::VirtualTerminal::ConGetSet
+class ConhostInternalGetSet final : public Microsoft::Console::VirtualTerminal::ITerminalApi
 {
 public:
     ConhostInternalGetSet(_In_ Microsoft::Console::IIoProvider& io);
 
-    void PrintString(const std::wstring_view string) override;
+    void ReturnResponse(const std::wstring_view response) override;
 
     Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine() override;
     TextBuffer& GetTextBuffer() override;
@@ -38,16 +38,15 @@ public:
 
     void SetTextAttributes(const TextAttribute& attrs) override;
 
-    void WriteInput(std::deque<std::unique_ptr<IInputEvent>>& events, size_t& eventsWritten) override;
-
     void SetAutoWrapMode(const bool wrapAtEOL) override;
+    bool GetAutoWrapMode() const override;
 
     void SetScrollingRegion(const til::inclusive_rect& scrollMargins) override;
 
     void WarningBell() override;
 
     bool GetLineFeedMode() const override;
-    void LineFeed(const bool withReturn) override;
+    void LineFeed(const bool withReturn, const bool wrapForced) override;
 
     void SetWindowTitle(const std::wstring_view title) override;
 
@@ -59,18 +58,29 @@ public:
 
     void ShowWindow(bool showOrHide) override;
 
-    bool ResizeWindow(const size_t width, const size_t height) override;
+    bool ResizeWindow(const til::CoordType width, const til::CoordType height) override;
 
     void SetConsoleOutputCP(const unsigned int codepage) override;
     unsigned int GetConsoleOutputCP() const override;
+
+    void SetBracketedPasteMode(const bool enabled) override;
+    std::optional<bool> GetBracketedPasteMode() const override;
+    void CopyToClipboard(const std::wstring_view content) override;
+    void SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) override;
+    void SetWorkingDirectory(const std::wstring_view uri) override;
+    void PlayMidiNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration) override;
 
     bool IsConsolePty() const override;
     bool IsVtInputEnabled() const override;
 
     void NotifyAccessibilityChange(const til::rect& changedRect) override;
 
-    void ReparentWindow(const uint64_t handle);
+    void MarkPrompt(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark) override;
+    void MarkCommandStart() override;
+    void MarkOutputStart() override;
+    void MarkCommandFinish(std::optional<unsigned int> error) override;
 
 private:
     Microsoft::Console::IIoProvider& _io;
+    bool _bracketedPasteMode{ false };
 };

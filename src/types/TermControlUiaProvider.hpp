@@ -29,8 +29,12 @@ namespace Microsoft::Terminal
     {
     public:
         TermControlUiaProvider() = default;
-        HRESULT RuntimeClassInitialize(_In_ ::Microsoft::Console::Types::IUiaData* const uiaData,
+        HRESULT RuntimeClassInitialize(_In_ Console::Render::IRenderData* const renderData,
                                        _In_ ::Microsoft::Console::Types::IControlAccessibilityInfo* controlInfo) noexcept;
+
+        // IRawElementProviderSimple methods
+        IFACEMETHODIMP GetPropertyValue(_In_ PROPERTYID idProp,
+                                        _Out_ VARIANT* pVariant) noexcept override;
 
         // IRawElementProviderFragment methods
         IFACEMETHODIMP Navigate(_In_ NavigateDirection direction,
@@ -39,10 +43,10 @@ namespace Microsoft::Terminal
         IFACEMETHODIMP get_BoundingRectangle(_Out_ UiaRect* pRect) noexcept override;
         IFACEMETHODIMP get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider) noexcept override;
 
-        const COORD GetFontSize() const noexcept;
-        const RECT GetPadding() const noexcept;
-        const double GetScaleFactor() const noexcept;
-        void ChangeViewport(const SMALL_RECT NewWindow) override;
+        til::size GetFontSize() const noexcept;
+        til::rect GetPadding() const noexcept;
+        double GetScaleFactor() const noexcept;
+        void ChangeViewport(const til::inclusive_rect& NewWindow) override;
 
     protected:
         HRESULT GetSelectionRange(_In_ IRawElementProviderSimple* pProvider, const std::wstring_view wordDelimiters, _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr) override;
@@ -58,8 +62,8 @@ namespace Microsoft::Terminal
 
         // specific endpoint range
         HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                const COORD start,
-                                const COORD end,
+                                const til::point start,
+                                const til::point end,
                                 const std::wstring_view wordDelimiters,
                                 _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** ppUtr) override;
 

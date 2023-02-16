@@ -119,7 +119,7 @@ namespace til::spsc
             }
             else
             {
-                return static_cast<T*>(::operator new(size, std::align_val_t(alignment)));
+                return static_cast<T*>(::operator new(size, static_cast<std::align_val_t>(alignment)));
             }
         }
 
@@ -133,7 +133,7 @@ namespace til::spsc
             }
             else
             {
-                ::operator delete(ptr, std::align_val_t(alignment));
+                ::operator delete(ptr, static_cast<std::align_val_t>(alignment));
             }
         }
 
@@ -211,7 +211,7 @@ namespace til::spsc
         struct arc
         {
             explicit arc(size_type capacity) noexcept :
-                _data(alloc_raw_memory<T>(size_t(capacity) * sizeof(T))),
+                _data(alloc_raw_memory<T>(static_cast<size_t>(capacity) * sizeof(T))),
                 _capacity(capacity)
             {
             }
@@ -305,7 +305,7 @@ namespace til::spsc
             }
 
             // NOTE: waitMask MUST be either 0 (consumer) or revolution_flag (producer).
-            acquisition acquire(atomic_size_type& mine, atomic_size_type& theirs, size_type waitMask, size_type slots, bool blocking) noexcept
+            acquisition acquire(const atomic_size_type& mine, const atomic_size_type& theirs, size_type waitMask, size_type slots, bool blocking) const noexcept
             {
                 size_type myPos = mine.load(std::memory_order_relaxed);
                 size_type theirPos;

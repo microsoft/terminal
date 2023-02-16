@@ -132,9 +132,7 @@ Menu* Menu::Instance()
     return Menu::s_Instance;
 }
 
-Menu::~Menu()
-{
-}
+Menu::~Menu() = default;
 
 // Routine Description:
 // - this initializes the system menu when a WM_INITMENU message is read.
@@ -300,8 +298,8 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& ScreenInfo = gci.GetActiveOutputBuffer();
-    pStateInfo->ScreenBufferSize = ScreenInfo.GetBufferSize().Dimensions();
-    pStateInfo->WindowSize = ScreenInfo.GetViewport().Dimensions();
+    LOG_IF_FAILED(til::unwrap_coord_size_hr(ScreenInfo.GetBufferSize().Dimensions(), pStateInfo->ScreenBufferSize));
+    LOG_IF_FAILED(til::unwrap_coord_size_hr(ScreenInfo.GetViewport().Dimensions(), pStateInfo->WindowSize));
 
     const auto rcWindow = ServiceLocator::LocateConsoleWindow<Window>()->GetWindowRect();
     pStateInfo->WindowPosX = rcWindow.left;
@@ -309,7 +307,7 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
 
     const auto& currentFont = ScreenInfo.GetCurrentFont();
     pStateInfo->FontFamily = currentFont.GetFamily();
-    pStateInfo->FontSize = currentFont.GetUnscaledSize();
+    LOG_IF_FAILED(til::unwrap_coord_size_hr(currentFont.GetUnscaledSize(), pStateInfo->FontSize));
     pStateInfo->FontWeight = currentFont.GetWeight();
     LOG_IF_FAILED(StringCchCopyW(pStateInfo->FaceName, ARRAYSIZE(pStateInfo->FaceName), currentFont.GetFaceName().data()));
 
@@ -447,7 +445,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     // end V2 console properties
 
     // Apply font information (must come before all character calculations for window/buffer size).
-    FontInfo fiNewFont(pStateInfo->FaceName, gsl::narrow_cast<unsigned char>(pStateInfo->FontFamily), pStateInfo->FontWeight, pStateInfo->FontSize, pStateInfo->CodePage);
+    FontInfo fiNewFont(pStateInfo->FaceName, gsl::narrow_cast<unsigned char>(pStateInfo->FontFamily), pStateInfo->FontWeight, til::wrap_coord_size(pStateInfo->FontSize), pStateInfo->CodePage);
 
     ScreenInfo.UpdateFont(&fiNewFont);
 
@@ -473,41 +471,41 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
 
     {
         // Requested window in characters
-        auto coordWindow = pStateInfo->WindowSize;
+        auto coordWindow = til::wrap_coord_size(pStateInfo->WindowSize);
 
         // Requested buffer in characters.
-        auto coordBuffer = pStateInfo->ScreenBufferSize;
+        auto coordBuffer = til::wrap_coord_size(pStateInfo->ScreenBufferSize);
 
         // First limit the window so it cannot be bigger than the monitor.
         // Maximum number of characters we could fit on the given monitor.
         const auto coordLargest = ScreenInfo.GetLargestWindowSizeInCharacters();
 
-        coordWindow.X = std::min(coordLargest.X, coordWindow.X);
-        coordWindow.Y = std::min(coordLargest.Y, coordWindow.Y);
+        coordWindow.width = std::min(coordLargest.width, coordWindow.width);
+        coordWindow.height = std::min(coordLargest.height, coordWindow.height);
 
         if (gci.GetWrapText())
         {
             // Then if wrap text is on, the buffer width gets fixed to the window width value.
-            coordBuffer.X = coordWindow.X;
+            coordBuffer.width = coordWindow.width;
 
             // However, we're not done. The "max window size" is if we had no scroll bar.
             // We need to adjust slightly more if there's space reserved for a vertical scroll bar
             // which happens when the buffer Y is taller than the window Y.
-            if (coordBuffer.Y > coordWindow.Y)
+            if (coordBuffer.height > coordWindow.height)
             {
                 // Since we need a scroll bar in the Y direction, clamp the buffer width to make sure that
                 // it is leaving appropriate space for a scroll bar.
                 const auto coordScrollBars = ScreenInfo.GetScrollBarSizesInCharacters();
-                const auto sMaxBufferWidthWithScroll = gsl::narrow_cast<short>(coordLargest.X - coordScrollBars.X);
+                const auto sMaxBufferWidthWithScroll = coordLargest.width - coordScrollBars.width;
 
-                coordBuffer.X = std::min(coordBuffer.X, sMaxBufferWidthWithScroll);
+                coordBuffer.width = std::min(coordBuffer.width, sMaxBufferWidthWithScroll);
             }
         }
 
         // Now adjust the buffer size first to whatever we want it to be if it's different than before.
         const auto coordScreenBufferSize = ScreenInfo.GetBufferSize().Dimensions();
-        if (coordBuffer.X != coordScreenBufferSize.X ||
-            coordBuffer.Y != coordScreenBufferSize.Y)
+        if (coordBuffer.width != coordScreenBufferSize.width ||
+            coordBuffer.height != coordScreenBufferSize.height)
         {
             const auto pCommandLine = &CommandLine::Instance();
 
@@ -521,8 +519,8 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
         // Finally, restrict window size to the maximum possible size for the given buffer now that it's processed.
         const auto coordMaxForBuffer = ScreenInfo.GetMaxWindowSizeInCharacters();
 
-        coordWindow.X = std::min(coordWindow.X, coordMaxForBuffer.X);
-        coordWindow.Y = std::min(coordWindow.Y, coordMaxForBuffer.Y);
+        coordWindow.width = std::min(coordWindow.width, coordMaxForBuffer.width);
+        coordWindow.height = std::min(coordWindow.height, coordMaxForBuffer.height);
 
         // Then finish by updating the window. This will update the window size,
         //      as well as the screen buffer's viewport.
@@ -546,7 +544,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     {
         gci.Flags &= ~CONSOLE_AUTO_POSITION;
 
-        POINT pt;
+        til::point pt;
         pt.x = pStateInfo->WindowPosX;
         pt.y = pStateInfo->WindowPosY;
 

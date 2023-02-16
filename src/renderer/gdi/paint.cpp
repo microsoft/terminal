@@ -57,7 +57,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     _fPaintStarted = true;
 
     _psInvalidData.fErase = TRUE;
-    _psInvalidData.rcPaint = _rcInvalid;
+    _psInvalidData.rcPaint = _rcInvalid.to_win32_rect();
 
 #if DBG
     _debugContext = GetDC(_debugWindow);
@@ -79,7 +79,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
 [[nodiscard]] HRESULT GdiEngine::ScrollFrame() noexcept
 {
     // If we don't have any scrolling to do, return early.
-    RETURN_HR_IF(S_OK, 0 == _szInvalidScroll.cx && 0 == _szInvalidScroll.cy);
+    RETURN_HR_IF(S_OK, 0 == _szInvalidScroll.width && 0 == _szInvalidScroll.height);
 
     // If we have an inverted cursor, we have to see if we have to clean it before we scroll to prevent
     // left behind cursor copies in the scrolled region.
@@ -95,7 +95,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
             LOG_HR_IF(E_FAIL, !SetWorldTransform(_psInvalidData.hdc, &cursorInvertTransform));
         }
 
-        for (auto r : cursorInvertRects)
+        for (const auto& r : cursorInvertRects)
         {
             // Clean both the in-memory and actual window context.
             LOG_HR_IF(E_FAIL, !(InvertRect(_hdcMemoryContext, &r)));
@@ -115,33 +115,33 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     // We have to limit the region that can be scrolled to not include the gutters.
     // Gutters are defined as sub-character width pixels at the bottom or right of the screen.
     const auto coordFontSize = _GetFontSize();
-    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.width == 0 || coordFontSize.height == 0);
 
-    SIZE szGutter;
-    szGutter.cx = _szMemorySurface.cx % coordFontSize.X;
-    szGutter.cy = _szMemorySurface.cy % coordFontSize.Y;
+    til::size szGutter;
+    szGutter.width = _szMemorySurface.width % coordFontSize.width;
+    szGutter.height = _szMemorySurface.height % coordFontSize.height;
 
-    RECT rcScrollLimit = { 0 };
-    RETURN_IF_FAILED(LongSub(_szMemorySurface.cx, szGutter.cx, &rcScrollLimit.right));
-    RETURN_IF_FAILED(LongSub(_szMemorySurface.cy, szGutter.cy, &rcScrollLimit.bottom));
+    RECT rcScrollLimit{};
+    RETURN_IF_FAILED(LongSub(_szMemorySurface.width, szGutter.width, &rcScrollLimit.right));
+    RETURN_IF_FAILED(LongSub(_szMemorySurface.height, szGutter.height, &rcScrollLimit.bottom));
 
     // Scroll real window and memory buffer in-sync.
     LOG_LAST_ERROR_IF(!ScrollWindowEx(_hwndTargetWindow,
-                                      _szInvalidScroll.cx,
-                                      _szInvalidScroll.cy,
+                                      _szInvalidScroll.width,
+                                      _szInvalidScroll.height,
                                       &rcScrollLimit,
                                       &rcScrollLimit,
                                       nullptr,
                                       nullptr,
                                       0));
 
-    RECT rcUpdate = { 0 };
-    LOG_HR_IF(E_FAIL, !(ScrollDC(_hdcMemoryContext, _szInvalidScroll.cx, _szInvalidScroll.cy, &rcScrollLimit, &rcScrollLimit, nullptr, &rcUpdate)));
+    til::rect rcUpdate;
+    LOG_HR_IF(E_FAIL, !(ScrollDC(_hdcMemoryContext, _szInvalidScroll.width, _szInvalidScroll.height, &rcScrollLimit, &rcScrollLimit, nullptr, rcUpdate.as_win32_rect())));
 
     LOG_IF_FAILED(_InvalidCombine(&rcUpdate));
 
     // update invalid rect for the remainder of paint functions
-    _psInvalidData.rcPaint = _rcInvalid;
+    _psInvalidData.rcPaint = _rcInvalid.to_win32_rect();
 
     return S_OK;
 }
@@ -161,7 +161,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
 
     // Only do work if the existing memory surface is a different size from the client area.
     // Return quickly if they're the same.
-    RETURN_HR_IF(S_OK, _szMemorySurface.cx == szClient.cx && _szMemorySurface.cy == szClient.cy);
+    RETURN_HR_IF(S_OK, _szMemorySurface.width == szClient.width && _szMemorySurface.height == szClient.height);
 
     wil::unique_hdc hdcRealWindow(GetDC(_hwndTargetWindow));
     RETURN_HR_IF_NULL(E_FAIL, hdcRealWindow.get());
@@ -174,7 +174,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         RETURN_HR_IF_NULL(E_FAIL, hdcTemp.get());
 
         // Make the new bitmap we'll use going forward with the new size.
-        wil::unique_hbitmap hbitmapNew(CreateCompatibleBitmap(hdcRealWindow.get(), szClient.cx, szClient.cy));
+        wil::unique_hbitmap hbitmapNew(CreateCompatibleBitmap(hdcRealWindow.get(), szClient.width, szClient.height));
         RETURN_HR_IF_NULL(E_FAIL, hbitmapNew.get());
 
         // Select it into the DC, but hold onto the junky one pixel bitmap (made by default) to give back when we need to Delete.
@@ -183,7 +183,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         hbitmapNew.release(); // if SelectBitmap worked, GDI took ownership. Detach from smart object.
 
         // Blt from the DC/bitmap we're already holding onto into the new one.
-        RETURN_HR_IF(E_FAIL, !(BitBlt(hdcTemp.get(), 0, 0, _szMemorySurface.cx, _szMemorySurface.cy, _hdcMemoryContext, 0, 0, SRCCOPY)));
+        RETURN_HR_IF(E_FAIL, !(BitBlt(hdcTemp.get(), 0, 0, _szMemorySurface.width, _szMemorySurface.height, _hdcMemoryContext, 0, 0, SRCCOPY)));
 
         // Put the junky bitmap back into the temp DC and get our new one out.
         hbitmapNew.reset(SelectBitmap(hdcTemp.get(), hbitmapOnePixelJunk.get()));
@@ -199,7 +199,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     }
     else
     {
-        _hbitmapMemorySurface = CreateCompatibleBitmap(hdcRealWindow.get(), szClient.cx, szClient.cy);
+        _hbitmapMemorySurface = CreateCompatibleBitmap(hdcRealWindow.get(), szClient.width, szClient.height);
         RETURN_HR_IF_NULL(E_FAIL, _hbitmapMemorySurface);
 
         wil::unique_hbitmap hOldBitmap(SelectBitmap(_hdcMemoryContext, _hbitmapMemorySurface)); // DC has a default junk bitmap, take it and delete it.
@@ -228,12 +228,12 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     const auto pt = _GetInvalidRectPoint();
     const auto sz = _GetInvalidRectSize();
 
-    LOG_HR_IF(E_FAIL, !(BitBlt(_psInvalidData.hdc, pt.x, pt.y, sz.cx, sz.cy, _hdcMemoryContext, pt.x, pt.y, SRCCOPY)));
+    LOG_HR_IF(E_FAIL, !(BitBlt(_psInvalidData.hdc, pt.x, pt.y, sz.width, sz.height, _hdcMemoryContext, pt.x, pt.y, SRCCOPY)));
     WHEN_DBG(_DebugBltAll());
 
-    _rcInvalid = { 0 };
+    _rcInvalid = {};
     _fInvalidRectUsed = false;
-    _szInvalidScroll = { 0 };
+    _szInvalidScroll = {};
 
     LOG_HR_IF(E_FAIL, !(GdiFlush()));
     LOG_HR_IF(E_FAIL, !(ReleaseDC(_hwndTargetWindow, _psInvalidData.hdc)));
@@ -322,8 +322,8 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
 // See: Win7: 390673, 447839 and then superseded by http://osgvsowi/638274 when FE/non-FE rendering condensed.
 //#define CONSOLE_EXTTEXTOUT_FLAGS ETO_OPAQUE | ETO_CLIPPED
 //#define MAX_POLY_LINES 80
-[[nodiscard]] HRESULT GdiEngine::PaintBufferLine(const gsl::span<const Cluster> clusters,
-                                                 const COORD coord,
+[[nodiscard]] HRESULT GdiEngine::PaintBufferLine(const std::span<const Cluster> clusters,
+                                                 const til::point coord,
                                                  const bool trimLeft,
                                                  const bool /*lineWrapped*/) noexcept
 {
@@ -334,8 +334,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         // Exit early if there are no lines to draw.
         RETURN_HR_IF(S_OK, 0 == cchLine);
 
-        POINT ptDraw = { 0 };
-        RETURN_IF_FAILED(_ScaleByFont(&coord, &ptDraw));
+        const auto ptDraw = coord * _GetFontSize();
 
         const auto pPolyTextLine = &_pPolyText[_cPolyText];
 
@@ -362,7 +361,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
             const auto text = cluster.GetText();
             polyString += text;
             polyString.back() &= softFontCharMask;
-            polyWidth.push_back(gsl::narrow<int>(cluster.GetColumns()) * coordFontSize.X);
+            polyWidth.push_back(gsl::narrow<int>(cluster.GetColumns()) * coordFontSize.width);
             cchCharWidths += polyWidth.back();
             polyWidth.append(text.size() - 1, 0);
         }
@@ -408,7 +407,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
 
         // If the line rendition is double height, we need to adjust the top or bottom
         // of the clipping rect to clip half the height of the rendered characters.
-        const auto halfHeight = coordFontSize.Y >> 1;
+        const auto halfHeight = coordFontSize.height >> 1;
         const auto topOffset = _currentLineRendition == LineRendition::DoubleHeightBottom ? halfHeight : 0;
         const auto bottomOffset = _currentLineRendition == LineRendition::DoubleHeightTop ? halfHeight : 0;
 
@@ -419,13 +418,13 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         pPolyTextLine->uiFlags = ETO_OPAQUE | ETO_CLIPPED;
         pPolyTextLine->rcl.left = pPolyTextLine->x;
         pPolyTextLine->rcl.top = pPolyTextLine->y + topOffset;
-        pPolyTextLine->rcl.right = pPolyTextLine->rcl.left + (SHORT)cchCharWidths;
-        pPolyTextLine->rcl.bottom = pPolyTextLine->y + coordFontSize.Y - bottomOffset;
+        pPolyTextLine->rcl.right = pPolyTextLine->rcl.left + (til::CoordType)cchCharWidths;
+        pPolyTextLine->rcl.bottom = pPolyTextLine->y + coordFontSize.height - bottomOffset;
         pPolyTextLine->pdx = polyWidth.data();
 
         if (trimLeft)
         {
-            pPolyTextLine->rcl.left += coordFontSize.X;
+            pPolyTextLine->rcl.left += coordFontSize.width;
         }
 
         _cPolyText++;
@@ -515,13 +514,12 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
 // - coordTarget - The starting X/Y position of the first character to draw on.
 // Return Value:
 // - S_OK or suitable GDI HRESULT error or E_FAIL for GDI errors in functions that don't reliably return a specific error code.
-[[nodiscard]] HRESULT GdiEngine::PaintBufferGridLines(const GridLineSet lines, const COLORREF color, const size_t cchLine, const COORD coordTarget) noexcept
+[[nodiscard]] HRESULT GdiEngine::PaintBufferGridLines(const GridLineSet lines, const COLORREF color, const size_t cchLine, const til::point coordTarget) noexcept
 {
     LOG_IF_FAILED(_FlushBufferLines());
 
     // Convert the target from characters to pixels.
-    POINT ptTarget;
-    RETURN_IF_FAILED(_ScaleByFont(&coordTarget, &ptTarget));
+    const auto ptTarget = coordTarget * _GetFontSize();
     // Set the brush color as requested and save the previous brush to restore at the end.
     wil::unique_hbrush hbr(CreateSolidBrush(color));
     RETURN_HR_IF_NULL(E_FAIL, hbr.get());
@@ -534,8 +532,8 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     auto restoreBrushOnExit = wil::scope_exit([&] { hbr.reset(SelectBrush(_hdcMemoryContext, hbrPrev.get())); });
 
     // Get the font size so we know the size of the rectangle lines we'll be inscribing.
-    const auto fontWidth = _GetFontSize().X;
-    const auto fontHeight = _GetFontSize().Y;
+    const auto fontWidth = _GetFontSize().width;
+    const auto fontHeight = _GetFontSize().height;
     const auto widthOfAllCells = fontWidth * gsl::narrow_cast<unsigned>(cchLine);
 
     const auto DrawLine = [=](const auto x, const auto y, const auto w, const auto h) {
@@ -613,19 +611,19 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     LOG_IF_FAILED(_FlushBufferLines());
 
     const auto coordFontSize = _GetFontSize();
-    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.width == 0 || coordFontSize.height == 0);
 
     // First set up a block cursor the size of the font.
     RECT rcBoundaries;
-    RETURN_IF_FAILED(LongMult(options.coordCursor.X, coordFontSize.X, &rcBoundaries.left));
-    RETURN_IF_FAILED(LongMult(options.coordCursor.Y, coordFontSize.Y, &rcBoundaries.top));
-    RETURN_IF_FAILED(LongAdd(rcBoundaries.left, coordFontSize.X, &rcBoundaries.right));
-    RETURN_IF_FAILED(LongAdd(rcBoundaries.top, coordFontSize.Y, &rcBoundaries.bottom));
+    rcBoundaries.left = options.coordCursor.x * coordFontSize.width;
+    rcBoundaries.top = options.coordCursor.y * coordFontSize.height;
+    rcBoundaries.right = rcBoundaries.left + coordFontSize.width;
+    rcBoundaries.bottom = rcBoundaries.top + coordFontSize.height;
 
     // If we're double-width cursor, make it an extra font wider.
     if (options.fIsDoubleWidth)
     {
-        RETURN_IF_FAILED(LongAdd(rcBoundaries.right, coordFontSize.X, &rcBoundaries.right));
+        rcBoundaries.right = rcBoundaries.right + coordFontSize.width;
     }
 
     // Make a set of RECTs to paint.
@@ -643,10 +641,10 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         ulHeight = std::max(ulHeight, s_ulMinCursorHeightPercent); // No smaller than 25%
         ulHeight = std::min(ulHeight, s_ulMaxCursorHeightPercent); // No larger than 100%
 
-        ulHeight = MulDiv(coordFontSize.Y, ulHeight, 100); // divide by 100 because percent.
+        ulHeight = MulDiv(coordFontSize.height, ulHeight, 100); // divide by 100 because percent.
 
         // Reduce the height of the top to be relative to the bottom by the height we want.
-        RETURN_IF_FAILED(LongSub(rcInvert.bottom, ulHeight, &rcInvert.top));
+        rcInvert.top = rcInvert.bottom - ulHeight;
 
         cursorInvertRects.push_back(rcInvert);
     }
@@ -654,7 +652,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
 
     case CursorType::VerticalBar:
         LONG proposedWidth;
-        RETURN_IF_FAILED(LongAdd(rcInvert.left, options.cursorPixelWidth, &proposedWidth));
+        proposedWidth = rcInvert.left + options.cursorPixelWidth;
         // It can't be wider than one cell or we'll have problems in invalidation, so restrict here.
         // It's either the left + the proposed width from the ease of access setting, or
         // it's the right edge of the block cursor as a maximum.
@@ -663,7 +661,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         break;
 
     case CursorType::Underscore:
-        RETURN_IF_FAILED(LongAdd(rcInvert.bottom, -1, &rcInvert.top));
+        rcInvert.top = rcInvert.bottom + -1;
         cursorInvertRects.push_back(rcInvert);
         break;
 
@@ -671,9 +669,9 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     {
         RECT top, bottom;
         top = bottom = rcBoundaries;
-        RETURN_IF_FAILED(LongAdd(bottom.bottom, -1, &bottom.top));
-        RETURN_IF_FAILED(LongAdd(top.bottom, -3, &top.top));
-        RETURN_IF_FAILED(LongAdd(top.top, 1, &top.bottom));
+        bottom.top = bottom.bottom + -1;
+        top.top = top.bottom + -3;
+        top.bottom = top.top + 1;
 
         cursorInvertRects.push_back(top);
         cursorInvertRects.push_back(bottom);
@@ -684,15 +682,15 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     {
         RECT top, left, right, bottom;
         top = left = right = bottom = rcBoundaries;
-        RETURN_IF_FAILED(LongAdd(top.top, 1, &top.bottom));
-        RETURN_IF_FAILED(LongAdd(bottom.bottom, -1, &bottom.top));
-        RETURN_IF_FAILED(LongAdd(left.left, 1, &left.right));
-        RETURN_IF_FAILED(LongAdd(right.right, -1, &right.left));
+        top.bottom = top.top + 1;
+        bottom.top = bottom.bottom + -1;
+        left.right = left.left + 1;
+        right.left = right.right + -1;
 
-        RETURN_IF_FAILED(LongAdd(top.left, 1, &top.left));
-        RETURN_IF_FAILED(LongAdd(bottom.left, 1, &bottom.left));
-        RETURN_IF_FAILED(LongAdd(top.right, -1, &top.right));
-        RETURN_IF_FAILED(LongAdd(bottom.right, -1, &bottom.right));
+        top.left = top.left + 1;
+        bottom.left = bottom.left + 1;
+        top.right = top.right + -1;
+        bottom.right = bottom.right + -1;
 
         cursorInvertRects.push_back(top);
         cursorInvertRects.push_back(left);
@@ -735,7 +733,11 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
 
         for (auto r : cursorInvertRects)
         {
-            RETURN_HR_IF(E_FAIL, !(InvertRect(_hdcMemoryContext, &r)));
+            // Make sure the cursor is always readable (see gh-3647)
+            const auto PrevObject = SelectObject(_hdcMemoryContext, GetStockObject(LTGRAY_BRUSH));
+            const auto Result = PatBlt(_hdcMemoryContext, r.left, r.top, r.right - r.left, r.bottom - r.top, PATINVERT);
+            SelectObject(_hdcMemoryContext, PrevObject);
+            RETURN_HR_IF(E_FAIL, !Result);
         }
     }
 
@@ -750,12 +752,11 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
 //  - rect - Rectangle to invert or highlight to make the selection area
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
-[[nodiscard]] HRESULT GdiEngine::PaintSelection(const SMALL_RECT rect) noexcept
+[[nodiscard]] HRESULT GdiEngine::PaintSelection(const til::rect& rect) noexcept
 {
     LOG_IF_FAILED(_FlushBufferLines());
 
-    RECT pixelRect = { 0 };
-    RETURN_IF_FAILED(_ScaleByFont(&rect, &pixelRect));
+    const auto pixelRect = rect.scale_up(_GetFontSize()).to_win32_rect();
 
     RETURN_HR_IF(E_FAIL, !InvertRect(_hdcMemoryContext, &pixelRect));
 
@@ -850,7 +851,7 @@ void GdiEngine::_DebugBltAll() const
 {
     if (_fDebug)
     {
-        BitBlt(_debugContext, 0, 0, _szMemorySurface.cx, _szMemorySurface.cy, _hdcMemoryContext, 0, 0, SRCCOPY);
+        BitBlt(_debugContext, 0, 0, _szMemorySurface.width, _szMemorySurface.height, _hdcMemoryContext, 0, 0, SRCCOPY);
         Sleep(100);
     }
 }

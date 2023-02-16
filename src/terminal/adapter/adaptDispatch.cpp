@@ -4,8 +4,8 @@
 #include "precomp.h"
 
 #include "adaptDispatch.hpp"
-#include "conGetSet.hpp"
 #include "../../renderer/base/renderer.hpp"
+#include "../../types/inc/GlyphWidth.hpp"
 #include "../../types/inc/Viewport.hpp"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/unicode.hpp"
@@ -15,30 +15,14 @@ using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::VirtualTerminal;
 
-// Routine Description:
-// - No Operation helper. It's just here to make sure they're always all the same.
-// Arguments:
-// - <none>
-// Return Value:
-// - Always false to signify we didn't handle it.
-bool NoOp() noexcept
-{
-    return false;
-}
-
-// Note: AdaptDispatch will take ownership of pConApi and pDefaults
-AdaptDispatch::AdaptDispatch(std::unique_ptr<ConGetSet> pConApi, Renderer& renderer, RenderSettings& renderSettings, TerminalInput& terminalInput) :
-    _pConApi{ std::move(pConApi) },
+AdaptDispatch::AdaptDispatch(ITerminalApi& api, Renderer& renderer, RenderSettings& renderSettings, TerminalInput& terminalInput) :
+    _api{ api },
     _renderer{ renderer },
     _renderSettings{ renderSettings },
     _terminalInput{ terminalInput },
     _usingAltBuffer(false),
-    _isOriginModeRelative(false), // by default, the DECOM origin mode is absolute.
-    _isDECCOLMAllowed(false), // by default, DECCOLM is not allowed.
     _termOutput()
 {
-    THROW_HR_IF_NULL(E_INVALIDARG, _pConApi.get());
-    _scrollMargins = { 0 }; // initially, there are no scroll margins.
 }
 
 // Routine Description:
@@ -56,7 +40,7 @@ void AdaptDispatch::Print(const wchar_t wchPrintable)
     // a character is only output if the DEL is translated to something else.
     if (wchTranslated != AsciiChars::DEL)
     {
-        _pConApi->PrintString({ &wchTranslated, 1 });
+        _WriteToBuffer({ &wchTranslated, 1 });
     }
 }
 
@@ -77,12 +61,110 @@ void AdaptDispatch::PrintString(const std::wstring_view string)
         {
             buffer.push_back(_termOutput.TranslateKey(wch));
         }
-        _pConApi->PrintString(buffer);
+        _WriteToBuffer(buffer);
     }
     else
     {
-        _pConApi->PrintString(string);
+        _WriteToBuffer(string);
     }
+}
+
+void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
+{
+    auto& textBuffer = _api.GetTextBuffer();
+    auto& cursor = textBuffer.GetCursor();
+    auto cursorPosition = cursor.GetPosition();
+    const auto wrapAtEOL = _api.GetAutoWrapMode();
+    const auto attributes = textBuffer.GetCurrentAttributes();
+
+    // Turn off the cursor until we're done, so it isn't refreshed unnecessarily.
+    cursor.SetIsOn(false);
+
+    // The width at which we wrap is determined by the line rendition attribute.
+    auto lineWidth = textBuffer.GetLineWidth(cursorPosition.y);
+
+    auto stringPosition = string.cbegin();
+    while (stringPosition < string.cend())
+    {
+        if (cursor.IsDelayedEOLWrap() && wrapAtEOL)
+        {
+            const auto delayedCursorPosition = cursor.GetDelayedAtPosition();
+            cursor.ResetDelayEOLWrap();
+            // Only act on a delayed EOL if we didn't move the cursor to a
+            // different position from where the EOL was marked.
+            if (delayedCursorPosition == cursorPosition)
+            {
+                _api.LineFeed(true, true);
+                cursorPosition = cursor.GetPosition();
+                // We need to recalculate the width when moving to a new line.
+                lineWidth = textBuffer.GetLineWidth(cursorPosition.y);
+            }
+        }
+
+        const OutputCellIterator it(std::wstring_view{ stringPosition, string.cend() }, attributes);
+        if (_modes.test(Mode::InsertReplace))
+        {
+            // If insert-replace mode is enabled, we first measure how many cells
+            // the string will occupy, and scroll the target area right by that
+            // amount to make space for the incoming text.
+            auto measureIt = it;
+            while (measureIt && measureIt.GetCellDistance(it) < lineWidth)
+            {
+                measureIt++;
+            }
+            const auto row = cursorPosition.y;
+            const auto cellCount = measureIt.GetCellDistance(it);
+            _ScrollRectHorizontally(textBuffer, { cursorPosition.x, row, lineWidth, row + 1 }, cellCount);
+        }
+        const auto itEnd = textBuffer.WriteLine(it, cursorPosition, wrapAtEOL, lineWidth - 1);
+
+        if (itEnd.GetInputDistance(it) == 0)
+        {
+            // If we haven't written anything out because there wasn't enough space,
+            // we move the cursor to the end of the line so that it's forced to wrap.
+            cursorPosition.x = lineWidth;
+            // But if wrapping is disabled, we also need to move to the next string
+            // position, otherwise we'll be stuck in this loop forever.
+            if (!wrapAtEOL)
+            {
+                stringPosition++;
+            }
+        }
+        else
+        {
+            const auto cellCount = itEnd.GetCellDistance(it);
+            const auto changedRect = til::rect{ cursorPosition, til::size{ cellCount, 1 } };
+            _api.NotifyAccessibilityChange(changedRect);
+
+            stringPosition += itEnd.GetInputDistance(it);
+            cursorPosition.x += cellCount;
+        }
+
+        if (cursorPosition.x >= lineWidth)
+        {
+            // If we're past the end of the line, we need to clamp the cursor
+            // back into range, and if wrapping is enabled, set the delayed wrap
+            // flag. The wrapping only occurs once another character is output.
+            cursorPosition.x = lineWidth - 1;
+            cursor.SetPosition(cursorPosition);
+            if (wrapAtEOL)
+            {
+                cursor.DelayEOLWrap(cursorPosition);
+            }
+        }
+        else
+        {
+            cursor.SetPosition(cursorPosition);
+        }
+    }
+
+    _ApplyCursorMovementFlags(cursor);
+
+    // Notify UIA of new text.
+    // It's important to do this here instead of in TextBuffer, because here you
+    // have access to the entire line of text, whereas TextBuffer writes it one
+    // character at a time via the OutputCellIterator.
+    textBuffer.TriggerNewTextNotification(string);
 }
 
 // Routine Description:
@@ -174,15 +256,15 @@ std::pair<int, int> AdaptDispatch::_GetVerticalMargins(const til::rect& viewport
 {
     // If the top is out of range, reset the margins completely.
     const auto bottommostRow = viewport.bottom - viewport.top - 1;
-    if (_scrollMargins.Top >= bottommostRow)
+    if (_scrollMargins.top >= bottommostRow)
     {
-        _scrollMargins.Top = _scrollMargins.Bottom = 0;
-        _pConApi->SetScrollingRegion(_scrollMargins);
+        _scrollMargins.top = _scrollMargins.bottom = 0;
+        _api.SetScrollingRegion(_scrollMargins);
     }
     // If margins aren't set, use the full extent of the viewport.
-    const auto marginsSet = _scrollMargins.Top < _scrollMargins.Bottom;
-    auto topMargin = marginsSet ? _scrollMargins.Top : 0;
-    auto bottomMargin = marginsSet ? _scrollMargins.Bottom : bottommostRow;
+    const auto marginsSet = _scrollMargins.top < _scrollMargins.bottom;
+    auto topMargin = marginsSet ? _scrollMargins.top : 0;
+    auto bottomMargin = marginsSet ? _scrollMargins.bottom : bottommostRow;
     // If the bottom is out of range, clamp it to the bottommost row.
     bottomMargin = std::min(bottomMargin, bottommostRow);
     if (absolute)
@@ -204,22 +286,22 @@ std::pair<int, int> AdaptDispatch::_GetVerticalMargins(const til::rect& viewport
 bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins)
 {
     // First retrieve some information about the buffer
-    const auto viewport = _pConApi->GetViewport();
-    auto& textBuffer = _pConApi->GetTextBuffer();
+    const auto viewport = _api.GetViewport();
+    auto& textBuffer = _api.GetTextBuffer();
     auto& cursor = textBuffer.GetCursor();
     const auto cursorPosition = cursor.GetPosition();
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
 
     // For relative movement, the given offsets will be relative to
     // the current cursor position.
-    int row = cursorPosition.Y;
-    int col = cursorPosition.X;
+    auto row = cursorPosition.y;
+    auto col = cursorPosition.x;
 
     // But if the row is absolute, it will be relative to the top of the
     // viewport, or the top margin, depending on the origin mode.
     if (rowOffset.IsAbsolute)
     {
-        row = _isOriginModeRelative ? topMargin : viewport.top;
+        row = _modes.test(Mode::Origin) ? topMargin : viewport.top;
     }
 
     // And if the column is absolute, it'll be relative to column 0.
@@ -232,13 +314,13 @@ bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
     // Adjust the base position by the given offsets and clamp the results.
     // The row is constrained within the viewport's vertical boundaries,
     // while the column is constrained by the buffer width.
-    row = std::clamp<int>(row + rowOffset.Value, viewport.top, viewport.bottom - 1);
-    col = std::clamp<int>(col + colOffset.Value, 0, textBuffer.GetSize().Width() - 1);
+    row = std::clamp(row + rowOffset.Value, viewport.top, viewport.bottom - 1);
+    col = std::clamp(col + colOffset.Value, 0, textBuffer.GetSize().Width() - 1);
 
     // If the operation needs to be clamped inside the margins, or the origin
     // mode is relative (which always requires margin clamping), then the row
     // may need to be adjusted further.
-    if (clampInMargins || _isOriginModeRelative)
+    if (clampInMargins || _modes.test(Mode::Origin))
     {
         // See microsoft/terminal#2929 - If the cursor is _below_ the top
         // margin, it should stay below the top margin. If it's _above_ the
@@ -248,19 +330,18 @@ bool AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
         // to the bottom margin. See
         // ScreenBufferTests::CursorUpDownOutsideMargins for a test of that
         // behavior.
-        if (cursorPosition.Y >= topMargin)
+        if (cursorPosition.y >= topMargin)
         {
             row = std::max(row, topMargin);
         }
-        if (cursorPosition.Y <= bottomMargin)
+        if (cursorPosition.y <= bottomMargin)
         {
             row = std::min(row, bottomMargin);
         }
     }
 
     // Finally, attempt to set the adjusted cursor position back into the console.
-    const COORD newPos = { gsl::narrow_cast<SHORT>(col), gsl::narrow_cast<SHORT>(row) };
-    cursor.SetPosition(textBuffer.ClampPositionWithinLine(newPos));
+    cursor.SetPosition(textBuffer.ClampPositionWithinLine({ col, row }));
     _ApplyCursorMovementFlags(cursor);
 
     return true;
@@ -352,24 +433,24 @@ bool AdaptDispatch::CursorPosition(const VTInt line, const VTInt column)
 bool AdaptDispatch::CursorSaveState()
 {
     // First retrieve some information about the buffer
-    const auto viewport = _pConApi->GetViewport();
-    const auto& textBuffer = _pConApi->GetTextBuffer();
+    const auto viewport = _api.GetViewport();
+    const auto& textBuffer = _api.GetTextBuffer();
     const auto attributes = textBuffer.GetCurrentAttributes();
 
     // The cursor is given to us by the API as relative to the whole buffer.
     // But in VT speak, the cursor row should be relative to the current viewport top.
     auto cursorPosition = textBuffer.GetCursor().GetPosition();
-    cursorPosition.Y -= gsl::narrow_cast<short>(viewport.top);
+    cursorPosition.y -= viewport.top;
 
     // VT is also 1 based, not 0 based, so correct by 1.
     auto& savedCursorState = _savedCursorState.at(_usingAltBuffer);
-    savedCursorState.Column = cursorPosition.X + 1;
-    savedCursorState.Row = cursorPosition.Y + 1;
-    savedCursorState.IsOriginModeRelative = _isOriginModeRelative;
+    savedCursorState.Column = cursorPosition.x + 1;
+    savedCursorState.Row = cursorPosition.y + 1;
+    savedCursorState.IsOriginModeRelative = _modes.test(Mode::Origin);
     savedCursorState.Attributes = attributes;
     savedCursorState.TermOutput = _termOutput;
-    savedCursorState.C1ControlsAccepted = _GetParserMode(StateMachine::Mode::AcceptC1);
-    savedCursorState.CodePage = _pConApi->GetConsoleOutputCP();
+    savedCursorState.C1ControlsAccepted = _api.GetStateMachine().GetParserMode(StateMachine::Mode::AcceptC1);
+    savedCursorState.CodePage = _api.GetConsoleOutputCP();
 
     return true;
 }
@@ -393,21 +474,21 @@ bool AdaptDispatch::CursorRestoreState()
     // position is clamped within the margins.
     if (savedCursorState.IsOriginModeRelative)
     {
-        const auto viewport = _pConApi->GetViewport();
+        const auto viewport = _api.GetViewport();
         const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, false);
         // VT origin is at 1,1 so we need to add 1 to these margins.
         row = std::clamp(row, topMargin + 1, bottomMargin + 1);
     }
 
     // The saved coordinates are always absolute, so we need reset the origin mode temporarily.
-    _isOriginModeRelative = false;
+    _modes.reset(Mode::Origin);
     CursorPosition(row, col);
 
     // Once the cursor position is restored, we can then restore the actual origin mode.
-    _isOriginModeRelative = savedCursorState.IsOriginModeRelative;
+    _modes.set(Mode::Origin, savedCursorState.IsOriginModeRelative);
 
     // Restore text attributes.
-    _pConApi->SetTextAttributes(savedCursorState.Attributes);
+    _api.SetTextAttributes(savedCursorState.Attributes);
 
     // Restore designated character set.
     _termOutput = savedCursorState.TermOutput;
@@ -418,21 +499,9 @@ bool AdaptDispatch::CursorRestoreState()
     // Restore the code page if it was previously saved.
     if (savedCursorState.CodePage != 0)
     {
-        _pConApi->SetConsoleOutputCP(savedCursorState.CodePage);
+        _api.SetConsoleOutputCP(savedCursorState.CodePage);
     }
 
-    return true;
-}
-
-// Routine Description:
-// - DECTCEM - Sets the show/hide visibility status of the cursor.
-// Arguments:
-// - fIsVisible - Turns the cursor rendering on (TRUE) or off (FALSE).
-// Return Value:
-// - True.
-bool AdaptDispatch::CursorVisibility(const bool fIsVisible)
-{
-    _pConApi->GetTextBuffer().GetCursor().SetIsVisible(fIsVisible);
     return true;
 }
 
@@ -452,11 +521,11 @@ void AdaptDispatch::_ScrollRectVertically(TextBuffer& textBuffer, const til::rec
         // For now we're assuming the scrollRect is always the full width of the
         // buffer, but this will likely need to be extended to support scrolling
         // of arbitrary widths at some point in the future.
-        const auto top = gsl::narrow_cast<short>(delta > 0 ? scrollRect.top : (scrollRect.top + absoluteDelta));
-        const auto height = gsl::narrow_cast<short>(scrollRect.height() - absoluteDelta);
-        const auto actualDelta = gsl::narrow_cast<short>(delta > 0 ? absoluteDelta : -absoluteDelta);
+        const auto top = delta > 0 ? scrollRect.top : scrollRect.top + absoluteDelta;
+        const auto height = scrollRect.height() - absoluteDelta;
+        const auto actualDelta = delta > 0 ? absoluteDelta : -absoluteDelta;
         textBuffer.ScrollRows(top, height, actualDelta);
-        textBuffer.TriggerRedraw(Viewport::FromInclusive(scrollRect.to_small_rect()));
+        textBuffer.TriggerRedraw(Viewport::FromExclusive(scrollRect));
     }
 
     // Rows revealed by the scroll are filled with standard erase attributes.
@@ -484,22 +553,27 @@ void AdaptDispatch::_ScrollRectHorizontally(TextBuffer& textBuffer, const til::r
     const auto absoluteDelta = std::min(std::abs(delta), scrollRect.width());
     if (absoluteDelta < scrollRect.width())
     {
-        const auto left = gsl::narrow_cast<short>(delta > 0 ? scrollRect.left : (scrollRect.left + absoluteDelta));
-        const auto top = gsl::narrow_cast<short>(scrollRect.top);
-        const auto width = gsl::narrow_cast<short>(scrollRect.width() - absoluteDelta);
-        const auto height = gsl::narrow_cast<short>(scrollRect.height());
-        const auto actualDelta = gsl::narrow_cast<short>(delta > 0 ? absoluteDelta : -absoluteDelta);
+        const auto left = delta > 0 ? scrollRect.left : (scrollRect.left + absoluteDelta);
+        const auto top = scrollRect.top;
+        const auto width = scrollRect.width() - absoluteDelta;
+        const auto height = scrollRect.height();
+        const auto actualDelta = delta > 0 ? absoluteDelta : -absoluteDelta;
 
         const auto source = Viewport::FromDimensions({ left, top }, width, height);
         const auto target = Viewport::Offset(source, { actualDelta, 0 });
         const auto walkDirection = Viewport::DetermineWalkDirection(source, target);
         auto sourcePos = source.GetWalkOrigin(walkDirection);
         auto targetPos = target.GetWalkOrigin(walkDirection);
+        // Note that we read two cells from the source before we start writing
+        // to the target, so a two-cell DBCS character can't accidentally delete
+        // itself when moving one cell horizontally.
+        auto next = OutputCell(*textBuffer.GetCellDataAt(sourcePos));
         do
         {
-            const auto data = OutputCell(*textBuffer.GetCellDataAt(sourcePos));
-            textBuffer.Write(OutputCellIterator({ &data, 1 }), targetPos);
+            const auto current = next;
             source.WalkInBounds(sourcePos, walkDirection);
+            next = OutputCell(*textBuffer.GetCellDataAt(sourcePos));
+            textBuffer.WriteLine(OutputCellIterator({ &current, 1 }), targetPos);
         } while (target.WalkInBounds(targetPos, walkDirection));
     }
 
@@ -521,9 +595,9 @@ void AdaptDispatch::_ScrollRectHorizontally(TextBuffer& textBuffer, const til::r
 // - <none>
 void AdaptDispatch::_InsertDeleteCharacterHelper(const VTInt delta)
 {
-    auto& textBuffer = _pConApi->GetTextBuffer();
-    const auto row = textBuffer.GetCursor().GetPosition().Y;
-    const auto startCol = textBuffer.GetCursor().GetPosition().X;
+    auto& textBuffer = _api.GetTextBuffer();
+    const auto row = textBuffer.GetCursor().GetPosition().y;
+    const auto startCol = textBuffer.GetCursor().GetPosition().x;
     const auto endCol = textBuffer.GetLineWidth(row);
     _ScrollRectHorizontally(textBuffer, { startCol, row, endCol, row + 1 }, delta);
 }
@@ -569,12 +643,12 @@ void AdaptDispatch::_FillRect(TextBuffer& textBuffer, const til::rect& fillRect,
     {
         const auto fillWidth = gsl::narrow_cast<size_t>(fillRect.right - fillRect.left);
         const auto fillData = OutputCellIterator{ fillChar, fillAttrs, fillWidth };
-        const auto col = gsl::narrow_cast<short>(fillRect.left);
-        for (auto row = gsl::narrow_cast<short>(fillRect.top); row < fillRect.bottom; row++)
+        const auto col = fillRect.left;
+        for (auto row = fillRect.top; row < fillRect.bottom; row++)
         {
-            textBuffer.WriteLine(fillData, COORD{ col, row }, false);
+            textBuffer.WriteLine(fillData, { col, row }, false);
         }
-        _pConApi->NotifyAccessibilityChange(fillRect);
+        _api.NotifyAccessibilityChange(fillRect);
     }
 }
 
@@ -589,9 +663,9 @@ void AdaptDispatch::_FillRect(TextBuffer& textBuffer, const til::rect& fillRect,
 // - True.
 bool AdaptDispatch::EraseCharacters(const VTInt numChars)
 {
-    auto& textBuffer = _pConApi->GetTextBuffer();
-    const auto row = textBuffer.GetCursor().GetPosition().Y;
-    const auto startCol = textBuffer.GetCursor().GetPosition().X;
+    auto& textBuffer = _api.GetTextBuffer();
+    const auto row = textBuffer.GetCursor().GetPosition().y;
+    const auto startCol = textBuffer.GetCursor().GetPosition().x;
     const auto endCol = std::min<VTInt>(startCol + numChars, textBuffer.GetLineWidth(row));
 
     auto eraseAttributes = textBuffer.GetCurrentAttributes();
@@ -627,7 +701,7 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
         // make the state machine propagate this ED sequence to the connected
         // terminal application. While we're in conpty mode, we don't really
         // have a scrollback, but the attached terminal might.
-        return !_pConApi->IsConsolePty();
+        return !_api.IsConsolePty();
     }
     else if (eraseType == DispatchTypes::EraseType::All)
     {
@@ -638,14 +712,14 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
         // connected terminal to do the same thing, so that the terminal will
         // move it's own buffer contents into the scrollback.
         _EraseAll();
-        return !_pConApi->IsConsolePty();
+        return !_api.IsConsolePty();
     }
 
-    const auto viewport = _pConApi->GetViewport();
-    auto& textBuffer = _pConApi->GetTextBuffer();
+    const auto viewport = _api.GetViewport();
+    auto& textBuffer = _api.GetTextBuffer();
     const auto bufferWidth = textBuffer.GetSize().Width();
-    const auto row = textBuffer.GetCursor().GetPosition().Y;
-    const auto col = textBuffer.GetCursor().GetPosition().X;
+    const auto row = textBuffer.GetCursor().GetPosition().y;
+    const auto col = textBuffer.GetCursor().GetPosition().x;
 
     auto eraseAttributes = textBuffer.GetCurrentAttributes();
     eraseAttributes.SetStandardErase();
@@ -680,9 +754,9 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
 {
-    auto& textBuffer = _pConApi->GetTextBuffer();
-    const auto row = textBuffer.GetCursor().GetPosition().Y;
-    const auto col = textBuffer.GetCursor().GetPosition().X;
+    auto& textBuffer = _api.GetTextBuffer();
+    const auto row = textBuffer.GetCursor().GetPosition().y;
+    const auto col = textBuffer.GetCursor().GetPosition().x;
 
     auto eraseAttributes = textBuffer.GetCurrentAttributes();
     eraseAttributes.SetStandardErase();
@@ -703,6 +777,472 @@ bool AdaptDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
 }
 
 // Routine Description:
+// - Selectively erases unprotected cells in an area of the buffer.
+// Arguments:
+// - textBuffer - Target buffer to be erased.
+// - eraseRect - Area of the buffer that will be affected.
+// Return Value:
+// - <none>
+void AdaptDispatch::_SelectiveEraseRect(TextBuffer& textBuffer, const til::rect& eraseRect)
+{
+    if (eraseRect)
+    {
+        for (auto row = eraseRect.top; row < eraseRect.bottom; row++)
+        {
+            auto& rowBuffer = textBuffer.GetRowByOffset(row);
+            for (auto col = eraseRect.left; col < eraseRect.right; col++)
+            {
+                // Only unprotected cells are affected.
+                if (!rowBuffer.GetAttrByColumn(col).IsProtected())
+                {
+                    // The text is cleared but the attributes are left as is.
+                    rowBuffer.ClearCell(col);
+                    textBuffer.TriggerRedraw(Viewport::FromCoord({ col, row }));
+                }
+            }
+        }
+        _api.NotifyAccessibilityChange(eraseRect);
+    }
+}
+
+// Routine Description:
+// - DECSED - Selectively erases unprotected cells in a portion of the viewport.
+// Arguments:
+// - eraseType - Determines whether to erase:
+//      From beginning (top-left corner) to the cursor
+//      From cursor to end (bottom-right corner)
+//      The entire viewport area
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SelectiveEraseInDisplay(const DispatchTypes::EraseType eraseType)
+{
+    const auto viewport = _api.GetViewport();
+    auto& textBuffer = _api.GetTextBuffer();
+    const auto bufferWidth = textBuffer.GetSize().Width();
+    const auto row = textBuffer.GetCursor().GetPosition().y;
+    const auto col = textBuffer.GetCursor().GetPosition().x;
+
+    switch (eraseType)
+    {
+    case DispatchTypes::EraseType::FromBeginning:
+        _SelectiveEraseRect(textBuffer, { 0, viewport.top, bufferWidth, row });
+        _SelectiveEraseRect(textBuffer, { 0, row, col + 1, row + 1 });
+        return true;
+    case DispatchTypes::EraseType::ToEnd:
+        _SelectiveEraseRect(textBuffer, { col, row, bufferWidth, row + 1 });
+        _SelectiveEraseRect(textBuffer, { 0, row + 1, bufferWidth, viewport.bottom });
+        return true;
+    case DispatchTypes::EraseType::All:
+        _SelectiveEraseRect(textBuffer, { 0, viewport.top, bufferWidth, viewport.bottom });
+        return true;
+    default:
+        return false;
+    }
+}
+
+// Routine Description:
+// - DECSEL - Selectively erases unprotected cells on line with the cursor.
+// Arguments:
+// - eraseType - Determines whether to erase:
+//      From beginning (left edge) to the cursor
+//      From cursor to end (right edge)
+//      The entire line.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SelectiveEraseInLine(const DispatchTypes::EraseType eraseType)
+{
+    auto& textBuffer = _api.GetTextBuffer();
+    const auto row = textBuffer.GetCursor().GetPosition().y;
+    const auto col = textBuffer.GetCursor().GetPosition().x;
+
+    switch (eraseType)
+    {
+    case DispatchTypes::EraseType::FromBeginning:
+        _SelectiveEraseRect(textBuffer, { 0, row, col + 1, row + 1 });
+        return true;
+    case DispatchTypes::EraseType::ToEnd:
+        _SelectiveEraseRect(textBuffer, { col, row, textBuffer.GetLineWidth(row), row + 1 });
+        return true;
+    case DispatchTypes::EraseType::All:
+        _SelectiveEraseRect(textBuffer, { 0, row, textBuffer.GetLineWidth(row), row + 1 });
+        return true;
+    default:
+        return false;
+    }
+}
+
+// Routine Description:
+// - Changes the attributes of each cell in a rectangular area of the buffer.
+// Arguments:
+// - textBuffer - Target buffer to be changed.
+// - changeRect - A rectangular area of the buffer that will be affected.
+// - changeOps - Changes that will be applied to each of the attributes.
+// Return Value:
+// - <none>
+void AdaptDispatch::_ChangeRectAttributes(TextBuffer& textBuffer, const til::rect& changeRect, const ChangeOps& changeOps)
+{
+    if (changeRect)
+    {
+        for (auto row = changeRect.top; row < changeRect.bottom; row++)
+        {
+            auto& rowBuffer = textBuffer.GetRowByOffset(row);
+            for (auto col = changeRect.left; col < changeRect.right; col++)
+            {
+                auto attr = rowBuffer.GetAttrByColumn(col);
+                auto characterAttributes = attr.GetCharacterAttributes();
+                characterAttributes &= changeOps.andAttrMask;
+                characterAttributes ^= changeOps.xorAttrMask;
+                attr.SetCharacterAttributes(characterAttributes);
+                if (changeOps.foreground)
+                {
+                    attr.SetForeground(*changeOps.foreground);
+                }
+                if (changeOps.background)
+                {
+                    attr.SetBackground(*changeOps.background);
+                }
+                rowBuffer.ReplaceAttributes(col, col + 1, attr);
+            }
+        }
+        textBuffer.TriggerRedraw(Viewport::FromExclusive(changeRect));
+        _api.NotifyAccessibilityChange(changeRect);
+    }
+}
+
+// Routine Description:
+// - Changes the attributes of each cell in an area of the buffer.
+// Arguments:
+// - changeArea - Area of the buffer that will be affected. This may be
+//     interpreted as a rectangle or a stream depending on the state of the
+//     RectangularChangeExtent mode.
+// - changeOps - Changes that will be applied to each of the attributes.
+// Return Value:
+// - <none>
+void AdaptDispatch::_ChangeRectOrStreamAttributes(const til::rect& changeArea, const ChangeOps& changeOps)
+{
+    auto& textBuffer = _api.GetTextBuffer();
+    const auto bufferSize = textBuffer.GetSize().Dimensions();
+    const auto changeRect = _CalculateRectArea(changeArea.top, changeArea.left, changeArea.bottom, changeArea.right, bufferSize);
+    const auto lineCount = changeRect.height();
+
+    // If the change extent is rectangular, we can apply the change with a
+    // single call. The same is true for a stream extent that is only one line.
+    if (_modes.test(Mode::RectangularChangeExtent) || lineCount == 1)
+    {
+        _ChangeRectAttributes(textBuffer, changeRect, changeOps);
+    }
+    // If the stream extent is more than one line we require three passes. The
+    // top line is altered from the left offset up to the end of the line. The
+    // bottom line is altered from the start up to the right offset. All the
+    // lines in-between have their entire length altered. The right coordinate
+    // must be greater than the left, otherwise the operation is ignored.
+    else if (lineCount > 1 && changeRect.right > changeRect.left)
+    {
+        const auto bufferWidth = bufferSize.width;
+        _ChangeRectAttributes(textBuffer, { changeRect.origin(), til::size{ bufferWidth - changeRect.left, 1 } }, changeOps);
+        _ChangeRectAttributes(textBuffer, { { 0, changeRect.top + 1 }, til::size{ bufferWidth, lineCount - 2 } }, changeOps);
+        _ChangeRectAttributes(textBuffer, { { 0, changeRect.bottom - 1 }, til::size{ changeRect.right, 1 } }, changeOps);
+    }
+}
+
+// Routine Description:
+// - Helper method to calculate the applicable buffer coordinates for use with
+//   the various rectangular area operations.
+// Arguments:
+// - top - The first row of the area.
+// - left - The first column of the area.
+// - bottom - The last row of the area (inclusive).
+// - right - The last column of the area (inclusive).
+// - bufferSize - The size of the target buffer.
+// Return value:
+// - An exclusive rect with the absolute buffer coordinates.
+til::rect AdaptDispatch::_CalculateRectArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const til::size bufferSize)
+{
+    const auto viewport = _api.GetViewport();
+
+    // We start by calculating the margin offsets and maximum dimensions.
+    // If the origin mode isn't set, we use the viewport extent.
+    const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, false);
+    const auto yOffset = _modes.test(Mode::Origin) ? topMargin : 0;
+    const auto yMaximum = _modes.test(Mode::Origin) ? bottomMargin + 1 : viewport.height();
+    const auto xMaximum = bufferSize.width;
+
+    auto fillRect = til::inclusive_rect{};
+    fillRect.left = left;
+    fillRect.top = top + yOffset;
+    // Right and bottom default to the maximum dimensions.
+    fillRect.right = (right ? right : xMaximum);
+    fillRect.bottom = (bottom ? bottom + yOffset : yMaximum);
+
+    // We also clamp everything to the maximum dimensions, and subtract 1
+    // to convert from VT coordinates which have an origin of 1;1.
+    fillRect.left = std::min(fillRect.left, xMaximum) - 1;
+    fillRect.right = std::min(fillRect.right, xMaximum) - 1;
+    fillRect.top = std::min(fillRect.top, yMaximum) - 1;
+    fillRect.bottom = std::min(fillRect.bottom, yMaximum) - 1;
+
+    // To get absolute coordinates we offset with the viewport top.
+    fillRect.top += viewport.top;
+    fillRect.bottom += viewport.top;
+
+    return til::rect{ fillRect };
+}
+
+// Routine Description:
+// - DECCARA - Changes the attributes in a rectangular area. The affected range
+//   is dependent on the change extent setting defined by DECSACE.
+// Arguments:
+// - top - The first row of the area.
+// - left - The first column of the area.
+// - bottom - The last row of the area (inclusive).
+// - right - The last column of the area (inclusive).
+// - attrs - The rendition attributes that will be applied to the area.
+// Return Value:
+// - True.
+bool AdaptDispatch::ChangeAttributesRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const VTParameters attrs)
+{
+    auto changeOps = ChangeOps{};
+
+    // We apply the attribute parameters to two TextAttribute instances: one
+    // with no character attributes set, and one with all attributes set. This
+    // provides us with an OR mask and an AND mask which can then be applied to
+    // each cell to set and reset the appropriate attribute bits.
+    auto allAttrsOff = TextAttribute{};
+    auto allAttrsOn = TextAttribute{ 0, 0 };
+    allAttrsOn.SetCharacterAttributes(CharacterAttributes::All);
+    _ApplyGraphicsOptions(attrs, allAttrsOff);
+    _ApplyGraphicsOptions(attrs, allAttrsOn);
+    const auto orAttrMask = allAttrsOff.GetCharacterAttributes();
+    const auto andAttrMask = allAttrsOn.GetCharacterAttributes();
+    // But to minimize the required ops, which we share with the DECRARA control
+    // below, we want to use an XOR rather than OR. For that to work, we have to
+    // combine the AND mask with the inverse of the OR mask in advance.
+    changeOps.andAttrMask = andAttrMask & ~orAttrMask;
+    changeOps.xorAttrMask = orAttrMask;
+
+    // We also make use of the two TextAttributes calculated above to determine
+    // whether colors need to be applied. Since allAttrsOff started off with
+    // default colors, and allAttrsOn started with black, we know something has
+    // been set if the former is no longer default, or the latter is now default.
+    const auto foreground = allAttrsOff.GetForeground();
+    const auto background = allAttrsOff.GetBackground();
+    const auto foregroundChanged = !foreground.IsDefault() || allAttrsOn.GetForeground().IsDefault();
+    const auto backgroundChanged = !background.IsDefault() || allAttrsOn.GetBackground().IsDefault();
+    changeOps.foreground = foregroundChanged ? std::optional{ foreground } : std::nullopt;
+    changeOps.background = backgroundChanged ? std::optional{ background } : std::nullopt;
+
+    _ChangeRectOrStreamAttributes({ left, top, right, bottom }, changeOps);
+
+    return true;
+}
+
+// Routine Description:
+// - DECRARA - Reverses the attributes in a rectangular area. The affected range
+//   is dependent on the change extent setting defined by DECSACE.
+// Arguments:
+// - top - The first row of the area.
+// - left - The first column of the area.
+// - bottom - The last row of the area (inclusive).
+// - right - The last column of the area (inclusive).
+// - attrs - The rendition attributes that will be applied to the area.
+// Return Value:
+// - True.
+bool AdaptDispatch::ReverseAttributesRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const VTParameters attrs)
+{
+    // In order to create a mask of the attributes that we want to reverse, we
+    // need to go through the options one by one, applying each of them to an
+    // empty TextAttribute object from which can extract the effected bits. We
+    // then combine them with XOR, because if we're reversing the same attribute
+    // twice, we'd expect the two instances to cancel each other out.
+    auto reverseMask = CharacterAttributes::Normal;
+    if (!attrs.empty())
+    {
+        for (size_t i = 0; i < attrs.size();)
+        {
+            // A zero or default option is a special case that reverses all the
+            // rendition bits. But note that this shouldn't be triggered by an
+            // empty attribute list, so we explicitly exclude that case in
+            // the empty check above.
+            if (attrs.at(i).value_or(0) == 0)
+            {
+                reverseMask ^= CharacterAttributes::Rendition;
+                i++;
+            }
+            else
+            {
+                auto allAttrsOff = TextAttribute{};
+                i += _ApplyGraphicsOption(attrs, i, allAttrsOff);
+                reverseMask ^= allAttrsOff.GetCharacterAttributes();
+            }
+        }
+    }
+
+    // If the accumulated mask ends up blank, there's nothing for us to do.
+    if (reverseMask != CharacterAttributes::Normal)
+    {
+        _ChangeRectOrStreamAttributes({ left, top, right, bottom }, { .xorAttrMask = reverseMask });
+    }
+
+    return true;
+}
+
+// Routine Description:
+// - DECCRA - Copies a rectangular area from one part of the buffer to another.
+// Arguments:
+// - top - The first row of the source area.
+// - left - The first column of the source area.
+// - bottom - The last row of the source area (inclusive).
+// - right - The last column of the source area (inclusive).
+// - page - The source page number (unused for now).
+// - dstTop - The first row of the destination.
+// - dstLeft - The first column of the destination.
+// - dstPage - The destination page number (unused for now).
+// Return Value:
+// - True.
+bool AdaptDispatch::CopyRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const VTInt /*page*/, const VTInt dstTop, const VTInt dstLeft, const VTInt /*dstPage*/)
+{
+    // GH#13892 We don't yet support the paging extension, so for now we ignore
+    // the page parameters. This is the same as if the maximum page count was 1.
+
+    auto& textBuffer = _api.GetTextBuffer();
+    const auto bufferSize = textBuffer.GetSize().Dimensions();
+    const auto srcRect = _CalculateRectArea(top, left, bottom, right, bufferSize);
+    const auto dstBottom = dstTop + srcRect.height() - 1;
+    const auto dstRight = dstLeft + srcRect.width() - 1;
+    const auto dstRect = _CalculateRectArea(dstTop, dstLeft, dstBottom, dstRight, bufferSize);
+
+    if (dstRect && dstRect.origin() != srcRect.origin())
+    {
+        // If the source is bigger than the available space at the destination
+        // it needs to be clipped, so we only care about the destination size.
+        const auto srcView = Viewport::FromDimensions(srcRect.origin(), dstRect.size());
+        const auto dstView = Viewport::FromDimensions(dstRect.origin(), dstRect.size());
+        const auto walkDirection = Viewport::DetermineWalkDirection(srcView, dstView);
+        auto srcPos = srcView.GetWalkOrigin(walkDirection);
+        auto dstPos = dstView.GetWalkOrigin(walkDirection);
+        // Note that we read two cells from the source before we start writing
+        // to the target, so a two-cell DBCS character can't accidentally delete
+        // itself when moving one cell horizontally.
+        auto next = OutputCell(*textBuffer.GetCellDataAt(srcPos));
+        do
+        {
+            const auto current = next;
+            srcView.WalkInBounds(srcPos, walkDirection);
+            next = OutputCell(*textBuffer.GetCellDataAt(srcPos));
+            // If the source position is offscreen (which can occur on double
+            // width lines), then we shouldn't copy anything to the destination.
+            if (srcPos.x < textBuffer.GetLineWidth(srcPos.y))
+            {
+                textBuffer.WriteLine(OutputCellIterator({ &current, 1 }), dstPos);
+            }
+        } while (dstView.WalkInBounds(dstPos, walkDirection));
+        _api.NotifyAccessibilityChange(dstRect);
+    }
+
+    return true;
+}
+
+// Routine Description:
+// - DECFRA - Fills a rectangular area with the given character and using the
+//     currently active rendition attributes.
+// Arguments:
+// - ch - The ordinal value of the character used to fill the area.
+// - top - The first row of the area.
+// - left - The first column of the area.
+// - bottom - The last row of the area (inclusive).
+// - right - The last column of the area (inclusive).
+// Return Value:
+// - True.
+bool AdaptDispatch::FillRectangularArea(const VTParameter ch, const VTInt top, const VTInt left, const VTInt bottom, const VTInt right)
+{
+    auto& textBuffer = _api.GetTextBuffer();
+    auto fillRect = _CalculateRectArea(top, left, bottom, right, textBuffer.GetSize().Dimensions());
+
+    // The standard only allows for characters in the range of the GL and GR
+    // character set tables, but we also support additional Unicode characters
+    // from the BMP if the code page is UTF-8. Default and 0 are treated as 32.
+    const auto charValue = ch.value_or(0) == 0 ? 32 : ch.value();
+    const auto glChar = (charValue >= 32 && charValue <= 126);
+    const auto grChar = (charValue >= 160 && charValue <= 255);
+    const auto unicodeChar = (charValue >= 256 && charValue <= 65535 && _api.GetConsoleOutputCP() == CP_UTF8);
+    if (glChar || grChar || unicodeChar)
+    {
+        const auto fillChar = _termOutput.TranslateKey(gsl::narrow_cast<wchar_t>(charValue));
+        const auto fillAttributes = textBuffer.GetCurrentAttributes();
+        if (IsGlyphFullWidth(fillChar))
+        {
+            // If the fill char is full width, we need to halve the width of the
+            // fill area, otherwise it'll occupy twice as much space as expected.
+            fillRect.right = fillRect.left + fillRect.width() / 2;
+        }
+        _FillRect(textBuffer, fillRect, fillChar, fillAttributes);
+    }
+
+    return true;
+}
+
+// Routine Description:
+// - DECERA - Erases a rectangular area, replacing all cells with a space
+//     character and the default rendition attributes.
+// Arguments:
+// - top - The first row of the area.
+// - left - The first column of the area.
+// - bottom - The last row of the area (inclusive).
+// - right - The last column of the area (inclusive).
+// Return Value:
+// - True.
+bool AdaptDispatch::EraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right)
+{
+    auto& textBuffer = _api.GetTextBuffer();
+    const auto eraseRect = _CalculateRectArea(top, left, bottom, right, textBuffer.GetSize().Dimensions());
+    auto eraseAttributes = textBuffer.GetCurrentAttributes();
+    eraseAttributes.SetStandardErase();
+    _FillRect(textBuffer, eraseRect, L' ', eraseAttributes);
+    return true;
+}
+
+// Routine Description:
+// - DECSERA - Selectively erases a rectangular area, replacing unprotected
+//     cells with a space character, but retaining the rendition attributes.
+// Arguments:
+// - top - The first row of the area.
+// - left - The first column of the area.
+// - bottom - The last row of the area (inclusive).
+// - right - The last column of the area (inclusive).
+// Return Value:
+// - True.
+bool AdaptDispatch::SelectiveEraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right)
+{
+    auto& textBuffer = _api.GetTextBuffer();
+    const auto eraseRect = _CalculateRectArea(top, left, bottom, right, textBuffer.GetSize().Dimensions());
+    _SelectiveEraseRect(textBuffer, eraseRect);
+    return true;
+}
+
+// Routine Description:
+// - DECSACE - Selects the format of the character range that will be affected
+//   by the DECCARA and DECRARA attribute operations.
+// Arguments:
+// - changeExtent - Whether the character range is a stream or a rectangle.
+// Return value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SelectAttributeChangeExtent(const DispatchTypes::ChangeExtent changeExtent) noexcept
+{
+    switch (changeExtent)
+    {
+    case DispatchTypes::ChangeExtent::Default:
+    case DispatchTypes::ChangeExtent::Stream:
+        _modes.reset(Mode::RectangularChangeExtent);
+        return true;
+    case DispatchTypes::ChangeExtent::Rectangle:
+        _modes.set(Mode::RectangularChangeExtent);
+        return true;
+    default:
+        return false;
+    }
+}
+
+// Routine Description:
 // - DECSWL/DECDWL/DECDHL - Sets the line rendition attribute for the current line.
 // Arguments:
 // - rendition - Determines whether the line will be rendered as single width, double
@@ -711,26 +1251,35 @@ bool AdaptDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
 // - True.
 bool AdaptDispatch::SetLineRendition(const LineRendition rendition)
 {
-    _pConApi->GetTextBuffer().SetCurrentLineRendition(rendition);
+    _api.GetTextBuffer().SetCurrentLineRendition(rendition);
     return true;
 }
 
 // Routine Description:
 // - DSR - Reports status of a console property back to the STDIN based on the type of status requested.
-//       - This particular routine responds to ANSI status patterns only (CSI # n), not the DEC format (CSI ? # n)
 // Arguments:
-// - statusType - ANSI status type indicating what property we should report back
+// - statusType - status type indicating what property we should report back
+// - id - a numeric label used to identify the request in DECCKSR reports
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType)
+bool AdaptDispatch::DeviceStatusReport(const DispatchTypes::StatusType statusType, const VTParameter id)
 {
     switch (statusType)
     {
-    case DispatchTypes::AnsiStatusType::OS_OperatingStatus:
+    case DispatchTypes::StatusType::OS_OperatingStatus:
         _OperatingStatus();
         return true;
-    case DispatchTypes::AnsiStatusType::CPR_CursorPositionReport:
-        _CursorPositionReport();
+    case DispatchTypes::StatusType::CPR_CursorPositionReport:
+        _CursorPositionReport(false);
+        return true;
+    case DispatchTypes::StatusType::ExCPR_ExtendedCursorPositionReport:
+        _CursorPositionReport(true);
+        return true;
+    case DispatchTypes::StatusType::MSR_MacroSpaceReport:
+        _MacroSpaceReport();
+        return true;
+    case DispatchTypes::StatusType::MEM_MemoryChecksum:
+        _MacroChecksumReport(id);
         return true;
     default:
         return false;
@@ -747,14 +1296,14 @@ bool AdaptDispatch::DeviceStatusReport(const DispatchTypes::AnsiStatusType statu
 bool AdaptDispatch::DeviceAttributes()
 {
     // See: http://vt100.net/docs/vt100-ug/chapter3.html#DA
-    _WriteResponse(L"\x1b[?1;0c");
+    _api.ReturnResponse(L"\x1b[?1;0c");
     return true;
 }
 
 // Routine Description:
 // - DA2 - Reports the terminal type, firmware version, and hardware options.
 //   For now we're following the XTerm practice of using 0 to represent a VT100
-//   terminal, the version is hardcoded as 10 (1.0), and the hardware option
+//   terminal, the version is hard-coded as 10 (1.0), and the hardware option
 //   is set to 1 (indicating a PC Keyboard).
 // Arguments:
 // - <none>
@@ -762,20 +1311,20 @@ bool AdaptDispatch::DeviceAttributes()
 // - True.
 bool AdaptDispatch::SecondaryDeviceAttributes()
 {
-    _WriteResponse(L"\x1b[>0;10;1c");
+    _api.ReturnResponse(L"\x1b[>0;10;1c");
     return true;
 }
 
 // Routine Description:
 // - DA3 - Reports the terminal unit identification code. Terminal emulators
-//   typically return a hardcoded value, the most common being all zeros.
+//   typically return a hard-coded value, the most common being all zeros.
 // Arguments:
 // - <none>
 // Return Value:
 // - True.
 bool AdaptDispatch::TertiaryDeviceAttributes()
 {
-    _WriteResponse(L"\x1bP!|00000000\x1b\\");
+    _api.ReturnResponse(L"\x1bP!|00000000\x1b\\");
     return true;
 }
 
@@ -789,14 +1338,14 @@ bool AdaptDispatch::TertiaryDeviceAttributes()
 // - True.
 bool AdaptDispatch::Vt52DeviceAttributes()
 {
-    _WriteResponse(L"\x1b/Z");
+    _api.ReturnResponse(L"\x1b/Z");
     return true;
 }
 
 // Routine Description:
 // - DECREQTPARM - This sequence was originally used on the VT100 terminal to
 //   report the serial communication parameters (baud rate, data bits, parity,
-//   etc.). On modern terminal emulators, the response is simply hardcoded.
+//   etc.). On modern terminal emulators, the response is simply hard-coded.
 // Arguments:
 // - permission - This would originally have determined whether the terminal
 //   was allowed to send unsolicited reports or not.
@@ -806,7 +1355,7 @@ bool AdaptDispatch::RequestTerminalParameters(const DispatchTypes::ReportingPerm
 {
     // We don't care whether unsolicited reports are allowed or not, but the
     // requested permission does determine the value of the first response
-    // parameter. The remaining parameters are just hardcoded to indicate a
+    // parameter. The remaining parameters are just hard-coded to indicate a
     // 38400 baud connection, which matches the XTerm response. The full
     // parameter sequence is as follows:
     // - response type:    2 or 3 (unsolicited or solicited)
@@ -819,10 +1368,10 @@ bool AdaptDispatch::RequestTerminalParameters(const DispatchTypes::ReportingPerm
     switch (permission)
     {
     case DispatchTypes::ReportingPermission::Unsolicited:
-        _WriteResponse(L"\x1b[2;1;1;128;128;1;0x");
+        _api.ReturnResponse(L"\x1b[2;1;1;128;128;1;0x");
         return true;
     case DispatchTypes::ReportingPermission::Solicited:
-        _WriteResponse(L"\x1b[3;1;1;128;128;1;0x");
+        _api.ReturnResponse(L"\x1b[3;1;1;128;128;1;0x");
         return true;
     default:
         return false;
@@ -838,73 +1387,81 @@ bool AdaptDispatch::RequestTerminalParameters(const DispatchTypes::ReportingPerm
 void AdaptDispatch::_OperatingStatus() const
 {
     // We always report a good operating condition.
-    _WriteResponse(L"\x1b[0n");
+    _api.ReturnResponse(L"\x1b[0n");
 }
 
 // Routine Description:
-// - DSR-CPR - Reports the current cursor position within the viewport back to the input channel
+// - CPR and DECXCPR- Reports the current cursor position within the viewport,
+//   as well as the current page number if this is an extended report.
 // Arguments:
-// - <none>
+// - extendedReport - Set to true if the report should include the page number
 // Return Value:
 // - <none>
-void AdaptDispatch::_CursorPositionReport()
+void AdaptDispatch::_CursorPositionReport(const bool extendedReport)
 {
-    const auto viewport = _pConApi->GetViewport();
-    const auto& textBuffer = _pConApi->GetTextBuffer();
+    const auto viewport = _api.GetViewport();
+    const auto& textBuffer = _api.GetTextBuffer();
 
     // First pull the cursor position relative to the entire buffer out of the console.
     til::point cursorPosition{ textBuffer.GetCursor().GetPosition() };
 
     // Now adjust it for its position in respect to the current viewport top.
-    cursorPosition.Y -= viewport.top;
+    cursorPosition.y -= viewport.top;
 
     // NOTE: 1,1 is the top-left corner of the viewport in VT-speak, so add 1.
-    cursorPosition.X++;
-    cursorPosition.Y++;
+    cursorPosition.x++;
+    cursorPosition.y++;
 
     // If the origin mode is relative, line numbers start at top margin of the scrolling region.
-    if (_isOriginModeRelative)
+    if (_modes.test(Mode::Origin))
     {
         const auto topMargin = _GetVerticalMargins(viewport, false).first;
-        cursorPosition.Y -= topMargin;
+        cursorPosition.y -= topMargin;
     }
 
     // Now send it back into the input channel of the console.
-    // First format the response string.
-    const auto response = wil::str_printf<std::wstring>(L"\x1b[%d;%dR", cursorPosition.Y, cursorPosition.X);
-    _WriteResponse(response);
+    if (extendedReport)
+    {
+        // An extended report should also include the page number, but for now
+        // we hard-code it to 1, since we don't yet support paging (GH#13892).
+        const auto pageNumber = 1;
+        const auto response = wil::str_printf<std::wstring>(L"\x1b[?%d;%d;%dR", cursorPosition.y, cursorPosition.x, pageNumber);
+        _api.ReturnResponse(response);
+    }
+    else
+    {
+        // The standard report only returns the cursor position.
+        const auto response = wil::str_printf<std::wstring>(L"\x1b[%d;%dR", cursorPosition.y, cursorPosition.x);
+        _api.ReturnResponse(response);
+    }
 }
 
 // Routine Description:
-// - Helper to send a string reply to the input stream of the console.
-// - Used by various commands where the program attached would like a reply to one of the commands issued.
-// - This will generate two "key presses" (one down, one up) for every character in the string and place them into the head of the console's input stream.
+// - DECMSR - Reports the amount of space available for macro definitions.
 // Arguments:
-// - reply - The reply string to transmit back to the input stream
+// - <none>
 // Return Value:
 // - <none>
-void AdaptDispatch::_WriteResponse(const std::wstring_view reply) const
+void AdaptDispatch::_MacroSpaceReport() const
 {
-    std::deque<std::unique_ptr<IInputEvent>> inEvents;
+    const auto spaceInBytes = _macroBuffer ? _macroBuffer->GetSpaceAvailable() : MacroBuffer::MAX_SPACE;
+    // The available space is measured in blocks of 16 bytes, so we need to divide by 16.
+    const auto response = wil::str_printf<std::wstring>(L"\x1b[%zu*{", spaceInBytes / 16);
+    _api.ReturnResponse(response);
+}
 
-    // generate a paired key down and key up event for every
-    // character to be sent into the console's input buffer
-    for (const auto& wch : reply)
-    {
-        // This wasn't from a real keyboard, so we're leaving key/scan codes blank.
-        KeyEvent keyEvent{ TRUE, 1, 0, 0, wch, 0 };
-
-        inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
-        keyEvent.SetKeyDown(false);
-        inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
-    }
-
-    size_t eventsWritten;
-    // TODO GH#4954 During the input refactor we may want to add a "priority" input list
-    // to make sure that "response" input is spooled directly into the application.
-    // We switched this to an append (vs. a prepend) to fix GH#1637, a bug where two CPR
-    // could collide with each other.
-    _pConApi->WriteInput(inEvents, eventsWritten);
+// Routine Description:
+// - DECCKSR - Reports a checksum of the current macro definitions.
+// Arguments:
+// - id - a numeric label used to identify the DSR request
+// Return Value:
+// - <none>
+void AdaptDispatch::_MacroChecksumReport(const VTParameter id) const
+{
+    const auto requestId = id.value_or(0);
+    const auto checksum = _macroBuffer ? _macroBuffer->CalculateChecksum() : 0;
+    const auto response = wil::str_printf<std::wstring>(L"\033P%d!~%04X\033\\", requestId, checksum);
+    _api.ReturnResponse(response);
 }
 
 // Routine Description:
@@ -915,8 +1472,8 @@ void AdaptDispatch::_WriteResponse(const std::wstring_view reply) const
 // - <none>
 void AdaptDispatch::_ScrollMovement(const VTInt delta)
 {
-    const auto viewport = _pConApi->GetViewport();
-    auto& textBuffer = _pConApi->GetTextBuffer();
+    const auto viewport = _api.GetViewport();
+    auto& textBuffer = _api.GetTextBuffer();
     const auto bufferWidth = textBuffer.GetSize().Width();
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
     _ScrollRectVertically(textBuffer, { 0, topMargin, bufferWidth, bottomMargin + 1 }, delta);
@@ -947,106 +1504,72 @@ bool AdaptDispatch::ScrollDown(const VTInt uiDistance)
 }
 
 // Routine Description:
-// - DECSCPP / DECCOLM Sets the number of columns "per page" AKA sets the console width.
-// DECCOLM also clear the screen (like a CSI 2 J sequence), while DECSCPP just sets the width.
-// (DECCOLM will do this separately of this function)
-// Arguments:
-// - columns - Number of columns
-// Return Value:
-// - True.
-bool AdaptDispatch::SetColumns(const VTInt columns)
-{
-    const auto viewport = _pConApi->GetViewport();
-    const auto viewportHeight = viewport.bottom - viewport.top;
-    _pConApi->ResizeWindow(columns, viewportHeight);
-    return true;
-}
-
-// Routine Description:
 // - DECCOLM not only sets the number of columns, but also clears the screen buffer,
 //    resets the page margins and origin mode, and places the cursor at 1,1
 // Arguments:
-// - columns - Number of columns
+// - enable - the number of columns is set to 132 if true, 80 if false.
 // Return Value:
-// - True.
-bool AdaptDispatch::_DoDECCOLMHelper(const VTInt columns)
+// - <none>
+void AdaptDispatch::_SetColumnMode(const bool enable)
 {
     // Only proceed if DECCOLM is allowed. Return true, as this is technically a successful handling.
-    if (_isDECCOLMAllowed)
+    if (_modes.test(Mode::AllowDECCOLM) && !_api.IsConsolePty())
     {
-        SetColumns(columns);
-        SetOriginMode(false);
+        const auto viewport = _api.GetViewport();
+        const auto viewportHeight = viewport.bottom - viewport.top;
+        const auto viewportWidth = (enable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns);
+        _api.ResizeWindow(viewportWidth, viewportHeight);
+        _modes.set(Mode::Column, enable);
+        _modes.reset(Mode::Origin);
         CursorPosition(1, 1);
         EraseInDisplay(DispatchTypes::EraseType::All);
         _DoSetTopBottomScrollingMargins(0, 0);
     }
-    return true;
-}
-
-// Routine Description :
-// - Retrieves the various StateMachine parser modes.
-// Arguments:
-// - mode - the parser mode to query.
-// Return Value:
-// - true if the mode is enabled. false if disabled.
-bool AdaptDispatch::_GetParserMode(const StateMachine::Mode mode) const
-{
-    return _pConApi->GetStateMachine().GetParserMode(mode);
 }
 
 // Routine Description:
-// - Sets the various StateMachine parser modes.
+// - Set the alternate screen buffer mode. In virtual terminals, there exists
+//     both a "main" screen buffer and an alternate. This mode is used to switch
+//     between the two.
 // Arguments:
-// - mode - the parser mode to change.
-// - enable - set to true to enable the mode, false to disable it.
+// - enable - true selects the alternate buffer, false returns to the main buffer.
 // Return Value:
 // - <none>
-void AdaptDispatch::_SetParserMode(const StateMachine::Mode mode, const bool enable)
+void AdaptDispatch::_SetAlternateScreenBufferMode(const bool enable)
 {
-    _pConApi->GetStateMachine().SetParserMode(mode, enable);
+    if (enable)
+    {
+        CursorSaveState();
+        _api.UseAlternateScreenBuffer();
+        _usingAltBuffer = true;
+    }
+    else
+    {
+        _api.UseMainScreenBuffer();
+        _usingAltBuffer = false;
+        CursorRestoreState();
+    }
 }
 
 // Routine Description:
-// - Sets the various terminal input modes.
-// Arguments:
-// - mode - the input mode to change.
-// - enable - set to true to enable the mode, false to disable it.
+// - Determines whether we need to pass through input mode requests.
+//   If we're a conpty, AND WE'RE IN VT INPUT MODE, always pass input mode requests
+//   The VT Input mode check is to work around ssh.exe v7.7, which uses VT
+//   output, but not Input.
+//   The original comment said, "Once the conpty supports these types of input,
+//   this check can be removed. See GH#4911". Unfortunately, time has shown
+//   us that SSH 7.7 _also_ requests mouse input and that can have a user interface
+//   impact on the actual connected terminal. We can't remove this check,
+//   because SSH <=7.7 is out in the wild on all versions of Windows <=2004.
 // Return Value:
-// - true if successful. false otherwise.
-bool AdaptDispatch::_SetInputMode(const TerminalInput::Mode mode, const bool enable)
+// - True if we should pass through. False otherwise.
+bool AdaptDispatch::_PassThroughInputModes()
 {
-    _terminalInput.SetInputMode(mode, enable);
-
-    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always pass input mode requests
-    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
-    // output, but not Input.
-    // The original comment said, "Once the conpty supports these types of input,
-    // this check can be removed. See GH#4911". Unfortunately, time has shown
-    // us that SSH 7.7 _also_ requests mouse input and that can have a user interface
-    // impact on the actual connected terminal. We can't remove this check,
-    // because SSH <=7.7 is out in the wild on all versions of Windows <=2004.
-
-    // GH#12799 - If the app requested that we disable focus events, DON'T pass
-    // that through. ConPTY would _always_ like to know about focus events.
-
-    return !_pConApi->IsConsolePty() ||
-           !_pConApi->IsVtInputEnabled() ||
-           (!enable && mode == TerminalInput::Mode::FocusEvent);
-
-    // Another way of writing the above statement is:
-    //
-    // const bool inConpty = _pConApi->IsConsolePty();
-    // const bool shouldPassthrough = inConpty && _pConApi->IsVtInputEnabled();
-    // const bool disabledFocusEvents = inConpty && (!enable && mode == TerminalInput::Mode::FocusEvent);
-    // return !shouldPassthrough || disabledFocusEvents;
-    //
-    // It's like a "filter" left to right. Due to the early return via
-    // !IsConsolePty, once you're at the !enable part, IsConsolePty can only be
-    // true anymore.
+    return _api.IsConsolePty() && _api.IsVtInputEnabled();
 }
 
 // Routine Description:
-// - Support routine for routing private mode parameters to be set/reset as flags
+// - Support routine for routing mode parameters to be set/reset as flags
 // Arguments:
 // - param - mode parameter to set/reset
 // - enable - True for set, false for unset.
@@ -1054,75 +1577,94 @@ bool AdaptDispatch::_SetInputMode(const TerminalInput::Mode mode, const bool ena
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, const bool enable)
 {
-    auto success = false;
     switch (param)
     {
+    case DispatchTypes::ModeParams::IRM_InsertReplaceMode:
+        _modes.set(Mode::InsertReplace, enable);
+        return true;
     case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
-        // set - Enable Application Mode, reset - Normal mode
-        success = SetCursorKeysMode(enable);
-        break;
+        _terminalInput.SetInputMode(TerminalInput::Mode::CursorKey, enable);
+        return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::DECANM_AnsiMode:
-        success = SetAnsiMode(enable);
-        break;
+        return SetAnsiMode(enable);
     case DispatchTypes::ModeParams::DECCOLM_SetNumberOfColumns:
-        success = _DoDECCOLMHelper(enable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns);
-        break;
+        _SetColumnMode(enable);
+        return true;
     case DispatchTypes::ModeParams::DECSCNM_ScreenMode:
-        success = SetScreenMode(enable);
-        break;
+        _renderSettings.SetRenderMode(RenderSettings::Mode::ScreenReversed, enable);
+        // No need to force a redraw in pty mode.
+        if (_api.IsConsolePty())
+        {
+            return false;
+        }
+        _renderer.TriggerRedrawAll();
+        return true;
     case DispatchTypes::ModeParams::DECOM_OriginMode:
+        _modes.set(Mode::Origin, enable);
         // The cursor is also moved to the new home position when the origin mode is set or reset.
-        success = SetOriginMode(enable) && CursorPosition(1, 1);
-        break;
+        CursorPosition(1, 1);
+        return true;
     case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
-        success = SetAutoWrapMode(enable);
-        break;
+        _api.SetAutoWrapMode(enable);
+        return true;
+    case DispatchTypes::ModeParams::DECARM_AutoRepeatMode:
+        _terminalInput.SetInputMode(TerminalInput::Mode::AutoRepeat, enable);
+        return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
-        success = EnableCursorBlinking(enable);
-        break;
+        _api.GetTextBuffer().GetCursor().SetBlinkingAllowed(enable);
+        return !_api.IsConsolePty();
     case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
-        success = CursorVisibility(enable);
-        break;
+        _api.GetTextBuffer().GetCursor().SetIsVisible(enable);
+        return true;
     case DispatchTypes::ModeParams::XTERM_EnableDECCOLMSupport:
-        success = EnableDECCOLMSupport(enable);
-        break;
+        _modes.set(Mode::AllowDECCOLM, enable);
+        return true;
+    case DispatchTypes::ModeParams::DECNKM_NumericKeypadMode:
+        _terminalInput.SetInputMode(TerminalInput::Mode::Keypad, enable);
+        return !_PassThroughInputModes();
+    case DispatchTypes::ModeParams::DECBKM_BackarrowKeyMode:
+        _terminalInput.SetInputMode(TerminalInput::Mode::BackarrowKey, enable);
+        return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::VT200_MOUSE_MODE:
-        success = EnableVT200MouseMode(enable);
-        break;
+        _terminalInput.SetInputMode(TerminalInput::Mode::DefaultMouseTracking, enable);
+        return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::BUTTON_EVENT_MOUSE_MODE:
-        success = EnableButtonEventMouseMode(enable);
-        break;
+        _terminalInput.SetInputMode(TerminalInput::Mode::ButtonEventMouseTracking, enable);
+        return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::ANY_EVENT_MOUSE_MODE:
-        success = EnableAnyEventMouseMode(enable);
-        break;
+        _terminalInput.SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, enable);
+        return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::UTF8_EXTENDED_MODE:
-        success = EnableUTF8ExtendedMouseMode(enable);
-        break;
+        _terminalInput.SetInputMode(TerminalInput::Mode::Utf8MouseEncoding, enable);
+        return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::SGR_EXTENDED_MODE:
-        success = EnableSGRExtendedMouseMode(enable);
-        break;
+        _terminalInput.SetInputMode(TerminalInput::Mode::SgrMouseEncoding, enable);
+        return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::FOCUS_EVENT_MODE:
-        success = EnableFocusEventMode(enable);
-        break;
+        _terminalInput.SetInputMode(TerminalInput::Mode::FocusEvent, enable);
+        // GH#12799 - If the app requested that we disable focus events, DON'T pass
+        // that through. ConPTY would _always_ like to know about focus events.
+        return !_PassThroughInputModes() || !enable;
     case DispatchTypes::ModeParams::ALTERNATE_SCROLL:
-        success = EnableAlternateScroll(enable);
-        break;
+        _terminalInput.SetInputMode(TerminalInput::Mode::AlternateScroll, enable);
+        return !_PassThroughInputModes();
     case DispatchTypes::ModeParams::ASB_AlternateScreenBuffer:
-        success = enable ? UseAlternateScreenBuffer() : UseMainScreenBuffer();
-        break;
+        _SetAlternateScreenBufferMode(enable);
+        return true;
+    case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
+        _api.SetBracketedPasteMode(enable);
+        return !_api.IsConsolePty();
     case DispatchTypes::ModeParams::W32IM_Win32InputMode:
-        success = EnableWin32InputMode(enable);
-        break;
+        _terminalInput.SetInputMode(TerminalInput::Mode::Win32, enable);
+        return !_PassThroughInputModes();
     default:
         // If no functions to call, overall dispatch was a failure.
-        success = false;
-        break;
+        return false;
     }
-    return success;
 }
 
 // Routine Description:
-// - DECSET - Enables the given DEC private mode params.
+// - SM/DECSET - Enables the given mode parameter (both ANSI and private).
 // Arguments:
 // - param - mode parameter to set
 // Return Value:
@@ -1133,7 +1675,7 @@ bool AdaptDispatch::SetMode(const DispatchTypes::ModeParams param)
 }
 
 // Routine Description:
-// - DECRST - Disables the given DEC private mode params.
+// - RM/DECRST - Disables the given mode parameter (both ANSI and private).
 // Arguments:
 // - param - mode parameter to reset
 // Return Value:
@@ -1143,6 +1685,111 @@ bool AdaptDispatch::ResetMode(const DispatchTypes::ModeParams param)
     return _ModeParamsHelper(param, false);
 }
 
+// Routine Description:
+// - DECRQM - Requests the current state of a given mode number. The result
+//   is reported back with a DECRPM escape sequence.
+// Arguments:
+// - param - the mode number being queried
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
+{
+    auto enabled = std::optional<bool>{};
+
+    switch (param)
+    {
+    case DispatchTypes::ModeParams::IRM_InsertReplaceMode:
+        enabled = _modes.test(Mode::InsertReplace);
+        break;
+    case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::CursorKey);
+        break;
+    case DispatchTypes::ModeParams::DECANM_AnsiMode:
+        enabled = _api.GetStateMachine().GetParserMode(StateMachine::Mode::Ansi);
+        break;
+    case DispatchTypes::ModeParams::DECCOLM_SetNumberOfColumns:
+        // DECCOLM is not supported in conpty mode
+        if (!_api.IsConsolePty())
+        {
+            enabled = _modes.test(Mode::Column);
+        }
+        break;
+    case DispatchTypes::ModeParams::DECSCNM_ScreenMode:
+        enabled = _renderSettings.GetRenderMode(RenderSettings::Mode::ScreenReversed);
+        break;
+    case DispatchTypes::ModeParams::DECOM_OriginMode:
+        enabled = _modes.test(Mode::Origin);
+        break;
+    case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
+        enabled = _api.GetAutoWrapMode();
+        break;
+    case DispatchTypes::ModeParams::DECARM_AutoRepeatMode:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::AutoRepeat);
+        break;
+    case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
+        enabled = _api.GetTextBuffer().GetCursor().IsBlinkingAllowed();
+        break;
+    case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
+        enabled = _api.GetTextBuffer().GetCursor().IsVisible();
+        break;
+    case DispatchTypes::ModeParams::XTERM_EnableDECCOLMSupport:
+        // DECCOLM is not supported in conpty mode
+        if (!_api.IsConsolePty())
+        {
+            enabled = _modes.test(Mode::AllowDECCOLM);
+        }
+        break;
+    case DispatchTypes::ModeParams::DECNKM_NumericKeypadMode:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::Keypad);
+        break;
+    case DispatchTypes::ModeParams::DECBKM_BackarrowKeyMode:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::BackarrowKey);
+        break;
+    case DispatchTypes::ModeParams::VT200_MOUSE_MODE:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::DefaultMouseTracking);
+        break;
+    case DispatchTypes::ModeParams::BUTTON_EVENT_MOUSE_MODE:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::ButtonEventMouseTracking);
+        break;
+    case DispatchTypes::ModeParams::ANY_EVENT_MOUSE_MODE:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::AnyEventMouseTracking);
+        break;
+    case DispatchTypes::ModeParams::UTF8_EXTENDED_MODE:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::Utf8MouseEncoding);
+        break;
+    case DispatchTypes::ModeParams::SGR_EXTENDED_MODE:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::SgrMouseEncoding);
+        break;
+    case DispatchTypes::ModeParams::FOCUS_EVENT_MODE:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::FocusEvent);
+        break;
+    case DispatchTypes::ModeParams::ALTERNATE_SCROLL:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::AlternateScroll);
+        break;
+    case DispatchTypes::ModeParams::ASB_AlternateScreenBuffer:
+        enabled = _usingAltBuffer;
+        break;
+    case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
+        enabled = _api.GetBracketedPasteMode();
+        break;
+    case DispatchTypes::ModeParams::W32IM_Win32InputMode:
+        enabled = _terminalInput.GetInputMode(TerminalInput::Mode::Win32);
+        break;
+    default:
+        enabled = std::nullopt;
+        break;
+    }
+
+    // 1 indicates the mode is enabled, 2 it's disabled, and 0 it's unsupported
+    const auto state = enabled.has_value() ? (enabled.value() ? 1 : 2) : 0;
+    const auto isPrivate = param >= DispatchTypes::DECPrivateMode(0);
+    const auto prefix = isPrivate ? L"?" : L"";
+    const auto mode = isPrivate ? param - DispatchTypes::DECPrivateMode(0) : param;
+    const auto response = wil::str_printf<std::wstring>(L"\x1b[%s%d;%d$y", prefix, mode, state);
+    _api.ReturnResponse(response);
+    return true;
+}
+
 // - DECKPAM, DECKPNM - Sets the keypad input mode to either Application mode or Numeric mode (true, false respectively)
 // Arguments:
 // - applicationMode - set to true to enable Application Mode Input, false for Numeric Mode Input.
@@ -1150,50 +1797,8 @@ bool AdaptDispatch::ResetMode(const DispatchTypes::ModeParams param)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::SetKeypadMode(const bool fApplicationMode)
 {
-    return _SetInputMode(TerminalInput::Mode::Keypad, fApplicationMode);
-}
-
-// Method Description:
-// - win32-input-mode: Enable sending full input records encoded as a string of
-//   characters to the client application.
-// Arguments:
-// - win32InputMode - set to true to enable win32-input-mode, false to disable.
-// Return Value:
-// - True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableWin32InputMode(const bool win32InputMode)
-{
-    return _SetInputMode(TerminalInput::Mode::Win32, win32InputMode);
-}
-
-// - DECCKM - Sets the cursor keys input mode to either Application mode or Normal mode (true, false respectively)
-// Arguments:
-// - applicationMode - set to true to enable Application Mode Input, false for Normal Mode Input.
-// Return Value:
-// - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetCursorKeysMode(const bool applicationMode)
-{
-    return _SetInputMode(TerminalInput::Mode::CursorKey, applicationMode);
-}
-
-// - att610 - Enables or disables the cursor blinking.
-// Arguments:
-// - enable - set to true to enable blinking, false to disable
-// Return Value:
-// - True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableCursorBlinking(const bool enable)
-{
-    auto& cursor = _pConApi->GetTextBuffer().GetCursor();
-    cursor.SetBlinkingAllowed(enable);
-
-    // GH#2642 - From what we've gathered from other terminals, when blinking is
-    // disabled, the cursor should remain On always, and have the visibility
-    // controlled by the IsVisible property. So when you do a printf "\e[?12l"
-    // to disable blinking, the cursor stays stuck On. At this point, only the
-    // cursor visibility property controls whether the user can see it or not.
-    // (Yes, the cursor can be On and NOT Visible)
-    cursor.SetIsOn(true);
-
-    return !_pConApi->IsConsolePty();
+    _terminalInput.SetInputMode(TerminalInput::Mode::Keypad, fApplicationMode);
+    return !_PassThroughInputModes();
 }
 
 // Routine Description:
@@ -1205,12 +1810,12 @@ bool AdaptDispatch::EnableCursorBlinking(const bool enable)
 // - <none>
 void AdaptDispatch::_InsertDeleteLineHelper(const int32_t delta)
 {
-    const auto viewport = _pConApi->GetViewport();
-    auto& textBuffer = _pConApi->GetTextBuffer();
+    const auto viewport = _api.GetViewport();
+    auto& textBuffer = _api.GetTextBuffer();
     const auto bufferWidth = textBuffer.GetSize().Width();
 
     auto& cursor = textBuffer.GetCursor();
-    const auto row = cursor.GetPosition().Y;
+    const auto row = cursor.GetPosition().y;
 
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
     if (row >= topMargin && row <= bottomMargin)
@@ -1268,58 +1873,11 @@ bool AdaptDispatch::SetAnsiMode(const bool ansiMode)
     // need to be reset to defaults, even if the mode doesn't actually change.
     _termOutput = {};
 
-    _SetParserMode(StateMachine::Mode::Ansi, ansiMode);
-    _SetInputMode(TerminalInput::Mode::Ansi, ansiMode);
+    _api.GetStateMachine().SetParserMode(StateMachine::Mode::Ansi, ansiMode);
+    _terminalInput.SetInputMode(TerminalInput::Mode::Ansi, ansiMode);
 
-    // We don't check the _SetInputMode return value, because we'll never want
-    // to forward a DECANM mode change over conpty.
-    return true;
-}
-
-// Routine Description:
-// - DECSCNM - Sets the screen mode to either normal or reverse.
-//    When in reverse screen mode, the background and foreground colors are switched.
-// Arguments:
-// - reverseMode - set to true to enable reverse screen mode, false for normal mode.
-// Return Value:
-// - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetScreenMode(const bool reverseMode)
-{
-    // If we're a conpty, always return false
-    if (_pConApi->IsConsolePty())
-    {
-        return false;
-    }
-    _renderSettings.SetRenderMode(RenderSettings::Mode::ScreenReversed, reverseMode);
-    _renderer.TriggerRedrawAll();
-    return true;
-}
-
-// Routine Description:
-// - DECOM - Sets the cursor addressing origin mode to relative or absolute.
-//    When relative, line numbers start at top margin of the user-defined scrolling region.
-//    When absolute, line numbers are independent of the scrolling region.
-// Arguments:
-// - relativeMode - set to true to use relative addressing, false for absolute addressing.
-// Return Value:
-// - True.
-bool AdaptDispatch::SetOriginMode(const bool relativeMode) noexcept
-{
-    _isOriginModeRelative = relativeMode;
-    return true;
-}
-
-// Routine Description:
-// - DECAWM - Sets the Auto Wrap Mode.
-//    This controls whether the cursor moves to the beginning of the next row
-//    when it reaches the end of the current row.
-// Arguments:
-// - wrapAtEOL - set to true to wrap, false to overwrite the last character.
-// Return Value:
-// - True.
-bool AdaptDispatch::SetAutoWrapMode(const bool wrapAtEOL)
-{
-    _pConApi->SetAutoWrapMode(wrapAtEOL);
+    // While input mode changes are often forwarded over conpty, we never want
+    // to do that for the DECANM mode.
     return true;
 }
 
@@ -1341,13 +1899,11 @@ void AdaptDispatch::_DoSetTopBottomScrollingMargins(const VTInt topMargin,
     // having only a bottom param is legal      ([;3r   -> 0,3   -> 1,3  -> 1,3,true)
     // having neither uses the defaults         ([;r [r -> 0,0   -> 0,0  -> 0,0,false)
     // an illegal combo (eg, 3;2r) is ignored
-    SHORT actualTop = 0;
-    SHORT actualBottom = 0;
-    THROW_IF_FAILED(SizeTToShort(topMargin, &actualTop));
-    THROW_IF_FAILED(SizeTToShort(bottomMargin, &actualBottom));
+    til::CoordType actualTop = topMargin;
+    til::CoordType actualBottom = bottomMargin;
 
-    const auto viewport = _pConApi->GetViewport();
-    const auto screenHeight = gsl::narrow_cast<short>(viewport.bottom - viewport.top);
+    const auto viewport = _api.GetViewport();
+    const auto screenHeight = viewport.bottom - viewport.top;
     // The default top margin is line 1
     if (actualTop == 0)
     {
@@ -1377,9 +1933,9 @@ void AdaptDispatch::_DoSetTopBottomScrollingMargins(const VTInt topMargin,
             actualTop -= 1;
             actualBottom -= 1;
         }
-        _scrollMargins.Top = actualTop;
-        _scrollMargins.Bottom = actualBottom;
-        _pConApi->SetScrollingRegion(_scrollMargins);
+        _scrollMargins.top = actualTop;
+        _scrollMargins.bottom = actualBottom;
+        _api.SetScrollingRegion(_scrollMargins);
     }
 }
 
@@ -1412,7 +1968,7 @@ bool AdaptDispatch::SetTopBottomScrollingMargins(const VTInt topMargin,
 // - True.
 bool AdaptDispatch::WarningBell()
 {
-    _pConApi->WarningBell();
+    _api.WarningBell();
     return true;
 }
 
@@ -1440,13 +1996,13 @@ bool AdaptDispatch::LineFeed(const DispatchTypes::LineFeedType lineFeedType)
     switch (lineFeedType)
     {
     case DispatchTypes::LineFeedType::DependsOnMode:
-        _pConApi->LineFeed(_pConApi->GetLineFeedMode());
+        _api.LineFeed(_api.GetLineFeedMode(), false);
         return true;
     case DispatchTypes::LineFeedType::WithoutReturn:
-        _pConApi->LineFeed(false);
+        _api.LineFeed(false, false);
         return true;
     case DispatchTypes::LineFeedType::WithReturn:
-        _pConApi->LineFeed(true);
+        _api.LineFeed(true, false);
         return true;
     default:
         return false;
@@ -1462,24 +2018,23 @@ bool AdaptDispatch::LineFeed(const DispatchTypes::LineFeedType lineFeedType)
 // - True.
 bool AdaptDispatch::ReverseLineFeed()
 {
-    const auto viewport = _pConApi->GetViewport();
-    auto& textBuffer = _pConApi->GetTextBuffer();
+    const auto viewport = _api.GetViewport();
+    auto& textBuffer = _api.GetTextBuffer();
     auto& cursor = textBuffer.GetCursor();
     const auto cursorPosition = cursor.GetPosition();
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
 
     // If the cursor is at the top of the margin area, we shift the buffer
     // contents down, to emulate inserting a line at that point.
-    if (cursorPosition.Y == topMargin)
+    if (cursorPosition.y == topMargin)
     {
         const auto bufferWidth = textBuffer.GetSize().Width();
         _ScrollRectVertically(textBuffer, { 0, topMargin, bufferWidth, bottomMargin + 1 }, 1);
     }
-    else if (cursorPosition.Y > viewport.top)
+    else if (cursorPosition.y > viewport.top)
     {
         // Otherwise we move the cursor up, but not past the top of the viewport.
-        const COORD newCursorPosition{ cursorPosition.X, cursorPosition.Y - 1 };
-        cursor.SetPosition(textBuffer.ClampPositionWithinLine(newCursorPosition));
+        cursor.SetPosition(textBuffer.ClampPositionWithinLine({ cursorPosition.x, cursorPosition.y - 1 }));
         _ApplyCursorMovementFlags(cursor);
     }
     return true;
@@ -1493,37 +2048,7 @@ bool AdaptDispatch::ReverseLineFeed()
 // - True.
 bool AdaptDispatch::SetWindowTitle(std::wstring_view title)
 {
-    _pConApi->SetWindowTitle(title);
-    return true;
-}
-
-// - ASBSET - Creates and swaps to the alternate screen buffer. In virtual terminals, there exists both a "main"
-//     screen buffer and an alternate. ASBSET creates a new alternate, and switches to it. If there is an already
-//     existing alternate, it is discarded.
-// Arguments:
-// - None
-// Return Value:
-// - True.
-bool AdaptDispatch::UseAlternateScreenBuffer()
-{
-    CursorSaveState();
-    _pConApi->UseAlternateScreenBuffer();
-    _usingAltBuffer = true;
-    return true;
-}
-
-// Routine Description:
-// - ASBRST - From the alternate buffer, returns to the main screen buffer.
-//     From the main screen buffer, does nothing. The alternate is discarded.
-// Arguments:
-// - None
-// Return Value:
-// - True.
-bool AdaptDispatch::UseMainScreenBuffer()
-{
-    _pConApi->UseMainScreenBuffer();
-    _usingAltBuffer = false;
-    CursorRestoreState();
+    _api.SetWindowTitle(title);
     return true;
 }
 
@@ -1535,9 +2060,9 @@ bool AdaptDispatch::UseMainScreenBuffer()
 // - True.
 bool AdaptDispatch::HorizontalTabSet()
 {
-    const auto& textBuffer = _pConApi->GetTextBuffer();
-    const auto width = textBuffer.GetSize().Dimensions().X;
-    const auto column = textBuffer.GetCursor().GetPosition().X;
+    const auto& textBuffer = _api.GetTextBuffer();
+    const auto width = textBuffer.GetSize().Dimensions().width;
+    const auto column = textBuffer.GetCursor().GetPosition().x;
 
     _InitTabStopsForWidth(width);
     _tabStopColumns.at(column) = true;
@@ -1556,10 +2081,10 @@ bool AdaptDispatch::HorizontalTabSet()
 // - True.
 bool AdaptDispatch::ForwardTab(const VTInt numTabs)
 {
-    auto& textBuffer = _pConApi->GetTextBuffer();
+    auto& textBuffer = _api.GetTextBuffer();
     auto& cursor = textBuffer.GetCursor();
-    const auto width = textBuffer.GetLineWidth(cursor.GetPosition().Y);
-    auto column = cursor.GetPosition().X;
+    const auto width = textBuffer.GetLineWidth(cursor.GetPosition().y);
+    auto column = cursor.GetPosition().x;
     auto tabsPerformed = 0;
 
     _InitTabStopsForWidth(width);
@@ -1586,10 +2111,10 @@ bool AdaptDispatch::ForwardTab(const VTInt numTabs)
 // - True.
 bool AdaptDispatch::BackwardsTab(const VTInt numTabs)
 {
-    auto& textBuffer = _pConApi->GetTextBuffer();
+    auto& textBuffer = _api.GetTextBuffer();
     auto& cursor = textBuffer.GetCursor();
-    const auto width = textBuffer.GetLineWidth(cursor.GetPosition().Y);
-    auto column = cursor.GetPosition().X;
+    const auto width = textBuffer.GetLineWidth(cursor.GetPosition().y);
+    auto column = cursor.GetPosition().x;
     auto tabsPerformed = 0;
 
     _InitTabStopsForWidth(width);
@@ -1638,9 +2163,9 @@ bool AdaptDispatch::TabClear(const DispatchTypes::TabClearType clearType)
 // - <none>
 void AdaptDispatch::_ClearSingleTabStop()
 {
-    const auto& textBuffer = _pConApi->GetTextBuffer();
-    const auto width = textBuffer.GetSize().Dimensions().X;
-    const auto column = textBuffer.GetCursor().GetPosition().X;
+    const auto& textBuffer = _api.GetTextBuffer();
+    const auto width = textBuffer.GetSize().Dimensions().width;
+    const auto column = textBuffer.GetCursor().GetPosition().x;
 
     _InitTabStopsForWidth(width);
     _tabStopColumns.at(column) = false;
@@ -1716,18 +2241,18 @@ bool AdaptDispatch::DesignateCodingSystem(const VTID codingSystem)
     // This will be used to restore the code page in response to a reset.
     if (!_initialCodePage.has_value())
     {
-        _initialCodePage = _pConApi->GetConsoleOutputCP();
+        _initialCodePage = _api.GetConsoleOutputCP();
     }
 
     switch (codingSystem)
     {
     case DispatchTypes::CodingSystem::ISO2022:
-        _pConApi->SetConsoleOutputCP(28591);
+        _api.SetConsoleOutputCP(28591);
         AcceptC1Controls(true);
         _termOutput.EnableGrTranslation(true);
         return true;
     case DispatchTypes::CodingSystem::UTF8:
-        _pConApi->SetConsoleOutputCP(CP_UTF8);
+        _api.SetConsoleOutputCP(CP_UTF8);
         AcceptC1Controls(false);
         _termOutput.EnableGrTranslation(false);
         return true;
@@ -1807,7 +2332,7 @@ bool AdaptDispatch::SingleShift(const VTInt gsetNumber)
 // - True.
 bool AdaptDispatch::AcceptC1Controls(const bool enabled)
 {
-    _SetParserMode(StateMachine::Mode::AcceptC1, enabled);
+    _api.GetStateMachine().SetParserMode(StateMachine::Mode::AcceptC1, enabled);
     return true;
 }
 
@@ -1817,7 +2342,7 @@ bool AdaptDispatch::AcceptC1Controls(const bool enabled)
 //   we actually perform. As the appropriate functionality is added to our ANSI support,
 //   we should update this.
 //  X Text cursor enable          DECTCEM     Cursor enabled.
-//    Insert/replace              IRM         Replace mode.
+//  X Insert/replace              IRM         Replace mode.
 //  X Origin                      DECOM       Absolute (cursor origin at upper-left of screen.)
 //  X Autowrap                    DECAWM      Autowrap enabled (matches XTerm behavior).
 //    National replacement        DECNRCM     Multinational set.
@@ -1829,7 +2354,7 @@ bool AdaptDispatch::AcceptC1Controls(const bool enabled)
 //  X All character sets          G0, G1, G2, Default settings.
 //                                G3, GL, GR
 //  X Select graphic rendition    SGR         Normal rendition.
-//    Select character attribute  DECSCA      Normal (erasable by DECSEL and DECSED).
+//  X Select character attribute  DECSCA      Normal (erasable by DECSEL and DECSED).
 //  X Save cursor state           DECSC       Home position.
 //    Assign user preference      DECAUPSS    Set selected in Set-Up.
 //        supplemental set
@@ -1844,11 +2369,11 @@ bool AdaptDispatch::AcceptC1Controls(const bool enabled)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::SoftReset()
 {
-    CursorVisibility(true); // Cursor enabled.
-    SetOriginMode(false); // Absolute cursor addressing.
-    SetAutoWrapMode(true); // Wrap at end of line.
-    SetCursorKeysMode(false); // Normal characters.
-    SetKeypadMode(false); // Numeric characters.
+    _api.GetTextBuffer().GetCursor().SetIsVisible(true); // Cursor enabled.
+    _modes.reset(Mode::InsertReplace, Mode::Origin); // Replace mode; Absolute cursor addressing.
+    _api.SetAutoWrapMode(true); // Wrap at end of line.
+    _terminalInput.SetInputMode(TerminalInput::Mode::CursorKey, false); // Normal characters.
+    _terminalInput.SetInputMode(TerminalInput::Mode::Keypad, false); // Numeric characters.
 
     // Top margin = 1; bottom margin = page length.
     _DoSetTopBottomScrollingMargins(0, 0);
@@ -1857,12 +2382,13 @@ bool AdaptDispatch::SoftReset()
     if (_initialCodePage.has_value())
     {
         // Restore initial code page if previously changed by a DOCS sequence.
-        _pConApi->SetConsoleOutputCP(_initialCodePage.value());
+        _api.SetConsoleOutputCP(_initialCodePage.value());
     }
     // Disable parsing of C1 control codes.
     AcceptC1Controls(false);
 
     SetGraphicsRendition({}); // Normal rendition.
+    SetCharacterProtectionAttribute({}); // Default (unprotected)
 
     // Reset the saved cursor state.
     // Note that XTerm only resets the main buffer state, but that
@@ -1870,7 +2396,7 @@ bool AdaptDispatch::SoftReset()
     _savedCursorState.at(0) = {}; // Main buffer
     _savedCursorState.at(1) = {}; // Alt buffer
 
-    return !_pConApi->IsConsolePty();
+    return !_api.IsConsolePty();
 }
 
 //Routine Description:
@@ -1900,7 +2426,7 @@ bool AdaptDispatch::HardReset()
     // If in the alt buffer, switch back to main before doing anything else.
     if (_usingAltBuffer)
     {
-        _pConApi->UseMainScreenBuffer();
+        _api.UseMainScreenBuffer();
         _usingAltBuffer = false;
     }
 
@@ -1913,14 +2439,19 @@ bool AdaptDispatch::HardReset()
     EraseInDisplay(DispatchTypes::EraseType::Scrollback);
 
     // Set the DECSCNM screen mode back to normal.
-    SetScreenMode(false);
+    _renderSettings.SetRenderMode(RenderSettings::Mode::ScreenReversed, false);
 
     // Cursor to 1,1 - the Soft Reset guarantees this is absolute
     CursorPosition(1, 1);
 
-    // Reset the mouse mode
-    EnableSGRExtendedMouseMode(false);
-    EnableAnyEventMouseMode(false);
+    // Reset input modes to their initial state
+    _terminalInput.ResetInputModes();
+
+    // Reset bracketed paste mode
+    _api.SetBracketedPasteMode(false);
+
+    // Restore cursor blinking mode.
+    _api.GetTextBuffer().GetCursor().SetBlinkingAllowed(true);
 
     // Delete all current tab stops and reapply
     _ResetTabStops();
@@ -1929,11 +2460,21 @@ bool AdaptDispatch::HardReset()
     _renderer.UpdateSoftFont({}, {}, false);
     _fontBuffer = nullptr;
 
+    // Reset internal modes to their initial state
+    _modes = {};
+
+    // Clear and release the macro buffer.
+    if (_macroBuffer)
+    {
+        _macroBuffer->ClearMacrosIfInUse();
+        _macroBuffer = nullptr;
+    }
+
     // GH#2715 - If all this succeeded, but we're in a conpty, return `false` to
     // make the state machine propagate this RIS sequence to the connected
     // terminal application. We've reset our state, but the connected terminal
     // might need to do more.
-    return !_pConApi->IsConsolePty();
+    return !_api.IsConsolePty();
 }
 
 // Routine Description:
@@ -1946,9 +2487,9 @@ bool AdaptDispatch::HardReset()
 // - True.
 bool AdaptDispatch::ScreenAlignmentPattern()
 {
-    const auto viewport = _pConApi->GetViewport();
-    auto& textBuffer = _pConApi->GetTextBuffer();
-    const auto bufferWidth = textBuffer.GetSize().Dimensions().X;
+    const auto viewport = _api.GetViewport();
+    auto& textBuffer = _api.GetTextBuffer();
+    const auto bufferWidth = textBuffer.GetSize().Dimensions().width;
 
     // Fill the screen with the letter E using the default attributes.
     _FillRect(textBuffer, { 0, viewport.top, bufferWidth, viewport.bottom }, L'E', {});
@@ -1957,9 +2498,9 @@ bool AdaptDispatch::ScreenAlignmentPattern()
     // Reset the meta/extended attributes (but leave the colors unchanged).
     auto attr = textBuffer.GetCurrentAttributes();
     attr.SetStandardErase();
-    _pConApi->SetTextAttributes(attr);
+    _api.SetTextAttributes(attr);
     // Reset the origin mode to absolute.
-    SetOriginMode(false);
+    _modes.reset(Mode::Origin);
     // Clear the scrolling margins.
     _DoSetTopBottomScrollingMargins(0, 0);
     // Set the cursor position to home.
@@ -1982,22 +2523,22 @@ bool AdaptDispatch::ScreenAlignmentPattern()
 // - <none>
 void AdaptDispatch::_EraseScrollback()
 {
-    const auto viewport = _pConApi->GetViewport();
-    const auto top = gsl::narrow_cast<short>(viewport.top);
-    const auto height = gsl::narrow_cast<short>(viewport.bottom - viewport.top);
-    auto& textBuffer = _pConApi->GetTextBuffer();
+    const auto viewport = _api.GetViewport();
+    const auto top = viewport.top;
+    const auto height = viewport.bottom - viewport.top;
+    auto& textBuffer = _api.GetTextBuffer();
     const auto bufferSize = textBuffer.GetSize().Dimensions();
     auto& cursor = textBuffer.GetCursor();
-    const auto row = cursor.GetPosition().Y;
+    const auto row = cursor.GetPosition().y;
 
     // Scroll the viewport content to the top of the buffer.
     textBuffer.ScrollRows(top, height, -top);
     // Clear everything after the viewport.
-    _FillRect(textBuffer, { 0, height, bufferSize.X, bufferSize.Y }, L' ', {});
+    _FillRect(textBuffer, { 0, height, bufferSize.width, bufferSize.height }, L' ', {});
     // Also reset the line rendition for all of the cleared rows.
-    textBuffer.ResetLineRenditionRange(height, bufferSize.Y);
+    textBuffer.ResetLineRenditionRange(height, bufferSize.height);
     // Move the viewport
-    _pConApi->SetViewportPosition({ viewport.left, 0 });
+    _api.SetViewportPosition({ viewport.left, 0 });
     // Move the cursor to the same relative location.
     cursor.SetYPosition(row - top);
     cursor.SetHasMoved(true);
@@ -2017,20 +2558,23 @@ void AdaptDispatch::_EraseScrollback()
 // - <none>
 void AdaptDispatch::_EraseAll()
 {
-    const auto viewport = _pConApi->GetViewport();
-    const auto viewportHeight = gsl::narrow_cast<short>(viewport.bottom - viewport.top);
-    auto& textBuffer = _pConApi->GetTextBuffer();
+    const auto viewport = _api.GetViewport();
+    const auto viewportHeight = viewport.bottom - viewport.top;
+    auto& textBuffer = _api.GetTextBuffer();
     const auto bufferSize = textBuffer.GetSize();
 
     // Stash away the current position of the cursor within the viewport.
     // We'll need to restore the cursor to that same relative position, after
     //      we move the viewport.
     auto& cursor = textBuffer.GetCursor();
-    const auto row = cursor.GetPosition().Y - viewport.top;
+    const auto row = cursor.GetPosition().y - viewport.top;
 
-    // Calculate new viewport position
-    short newViewportTop = textBuffer.GetLastNonSpaceCharacter().Y + 1;
-    const short newViewportBottom = newViewportTop + viewportHeight;
+    // Calculate new viewport position. Typically we want to move one line below
+    // the last non-space row, but if the last non-space character is the very
+    // start of the buffer, then we shouldn't move down at all.
+    const auto lastChar = textBuffer.GetLastNonSpaceCharacter();
+    auto newViewportTop = lastChar == til::point{} ? 0 : lastChar.y + 1;
+    const auto newViewportBottom = newViewportTop + viewportHeight;
     const auto delta = newViewportBottom - (bufferSize.Height());
     for (auto i = 0; i < delta; i++)
     {
@@ -2038,7 +2582,7 @@ void AdaptDispatch::_EraseAll()
         newViewportTop--;
     }
     // Move the viewport
-    _pConApi->SetViewportPosition({ viewport.left, newViewportTop });
+    _api.SetViewportPosition({ viewport.left, newViewportTop });
     // Restore the relative cursor position
     cursor.SetYPosition(row + newViewportTop);
     cursor.SetHasMoved(true);
@@ -2050,113 +2594,6 @@ void AdaptDispatch::_EraseAll()
 
     // Also reset the line rendition for the erased rows.
     textBuffer.ResetLineRenditionRange(newViewportTop, newViewportBottom);
-}
-
-// Routine Description:
-// - Enables or disables support for the DECCOLM escape sequence.
-// Arguments:
-// - enabled - set to true to allow DECCOLM to be used, false to disallow.
-// Return Value:
-// - True.
-bool AdaptDispatch::EnableDECCOLMSupport(const bool enabled) noexcept
-{
-    _isDECCOLMAllowed = enabled;
-    return true;
-}
-
-//Routine Description:
-// Enable VT200 Mouse Mode - Enables/disables the mouse input handler in default tracking mode.
-//Arguments:
-// - enabled - true to enable, false to disable.
-// Return value:
-// True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableVT200MouseMode(const bool enabled)
-{
-    return _SetInputMode(TerminalInput::Mode::DefaultMouseTracking, enabled);
-}
-
-//Routine Description:
-// Enable UTF-8 Extended Encoding - this changes the encoding scheme for sequences
-//      emitted by the mouse input handler. Does not enable/disable mouse mode on its own.
-//Arguments:
-// - enabled - true to enable, false to disable.
-// Return value:
-// True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableUTF8ExtendedMouseMode(const bool enabled)
-{
-    return _SetInputMode(TerminalInput::Mode::Utf8MouseEncoding, enabled);
-}
-
-//Routine Description:
-// Enable SGR Extended Encoding - this changes the encoding scheme for sequences
-//      emitted by the mouse input handler. Does not enable/disable mouse mode on its own.
-//Arguments:
-// - enabled - true to enable, false to disable.
-// Return value:
-// True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableSGRExtendedMouseMode(const bool enabled)
-{
-    return _SetInputMode(TerminalInput::Mode::SgrMouseEncoding, enabled);
-}
-
-//Routine Description:
-// Enable Button Event mode - send mouse move events WITH A BUTTON PRESSED to the input.
-//Arguments:
-// - enabled - true to enable, false to disable.
-// Return value:
-// True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableButtonEventMouseMode(const bool enabled)
-{
-    return _SetInputMode(TerminalInput::Mode::ButtonEventMouseTracking, enabled);
-}
-
-//Routine Description:
-// Enable Any Event mode - send all mouse events to the input.
-//Arguments:
-// - enabled - true to enable, false to disable.
-// Return value:
-// True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableAnyEventMouseMode(const bool enabled)
-{
-    return _SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, enabled);
-}
-
-// Method Description:
-// - Enables/disables focus event mode. A client may enable this if they want to
-//   receive focus events.
-// - ConPTY always enables this mode and never disables it. Internally, we'll
-//   always set this mode, but conpty will never request this to be disabled by
-//   the hosting terminal.
-// Arguments:
-// - enabled - true to enable, false to disable.
-// Return Value:
-// - True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableFocusEventMode(const bool enabled)
-{
-    return _SetInputMode(TerminalInput::Mode::FocusEvent, enabled);
-}
-
-//Routine Description:
-// Enable Alternate Scroll Mode - When in the Alt Buffer, send CUP and CUD on
-//      scroll up/down events instead of the usual sequences
-//Arguments:
-// - enabled - true to enable, false to disable.
-// Return value:
-// True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableAlternateScroll(const bool enabled)
-{
-    return _SetInputMode(TerminalInput::Mode::AlternateScroll, enabled);
-}
-
-//Routine Description:
-// Enable "bracketed paste mode".
-//Arguments:
-// - enabled - true to enable, false to disable.
-// Return value:
-// True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableXtermBracketedPasteMode(const bool /*enabled*/) noexcept
-{
-    return NoOp();
 }
 
 //Routine Description:
@@ -2175,7 +2612,7 @@ bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
     {
     case DispatchTypes::CursorStyle::UserDefault:
         fEnableBlinking = true;
-        actualType = _pConApi->GetUserDefaultCursorStyle();
+        actualType = _api.GetUserDefaultCursorStyle();
         break;
     case DispatchTypes::CursorStyle::BlinkingBlock:
         fEnableBlinking = true;
@@ -2209,14 +2646,13 @@ bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
         return false;
     }
 
-    auto& cursor = _pConApi->GetTextBuffer().GetCursor();
+    auto& cursor = _api.GetTextBuffer().GetCursor();
     cursor.SetType(actualType);
     cursor.SetBlinkingAllowed(fEnableBlinking);
-    cursor.SetIsOn(true);
 
     // If we're a conpty, always return false, so that this cursor state will be
     // sent to the connected terminal
-    return !_pConApi->IsConsolePty();
+    return !_api.IsConsolePty();
 }
 
 // Method Description:
@@ -2237,9 +2673,16 @@ bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
 // - content - The content to copy to clipboard. Must be null terminated.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetClipboard(const std::wstring_view /*content*/) noexcept
+bool AdaptDispatch::SetClipboard(const std::wstring_view content)
 {
-    return false;
+    // Return false to forward the operation to the hosting terminal,
+    // since ConPTY can't handle this itself.
+    if (_api.IsConsolePty())
+    {
+        return false;
+    }
+    _api.CopyToClipboard(content);
+    return true;
 }
 
 // Method Description:
@@ -2252,19 +2695,33 @@ bool AdaptDispatch::SetClipboard(const std::wstring_view /*content*/) noexcept
 bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwColor)
 {
     _renderSettings.SetColorTableEntry(tableIndex, dwColor);
+    if (_renderSettings.GetRenderMode(RenderSettings::Mode::IndexedDistinguishableColors))
+    {
+        // Re-calculate the adjusted colors now that one of the entries has been changed
+        _renderSettings.MakeAdjustedColorArray();
+    }
 
     // If we're a conpty, always return false, so that we send the updated color
     //      value to the terminal. Still handle the sequence so apps that use
     //      the API or VT to query the values of the color table still read the
     //      correct color.
-    if (_pConApi->IsConsolePty())
+    if (_api.IsConsolePty())
     {
         return false;
     }
 
+    // If we're updating the background color, we need to let the renderer
+    // know, since it may want to repaint the window background to match.
+    const auto backgroundIndex = _renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground);
+    const auto backgroundChanged = (tableIndex == backgroundIndex);
+
+    // Similarly for the frame color, the tab may need to be repainted.
+    const auto frameIndex = _renderSettings.GetColorAliasIndex(ColorAlias::FrameBackground);
+    const auto frameChanged = (tableIndex == frameIndex);
+
     // Update the screen colors if we're not a pty
     // No need to force a redraw in pty mode.
-    _renderer.TriggerRedrawAll();
+    _renderer.TriggerRedrawAll(backgroundChanged, frameChanged);
     return true;
 }
 
@@ -2292,6 +2749,47 @@ bool AdaptDispatch::SetDefaultBackground(const DWORD dwColor)
     return SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, dwColor);
 }
 
+// Method Description:
+// DECAC - Assigns the foreground and background color indexes that should be
+//   used for a given aspect of the user interface.
+// Arguments:
+// - item: The aspect of the interface that will have its colors altered.
+// - fgIndex: The color table index to be used for the foreground.
+// - bgIndex: The color table index to be used for the background.
+// Return Value:
+// True if handled successfully. False otherwise.
+bool AdaptDispatch::AssignColor(const DispatchTypes::ColorItem item, const VTInt fgIndex, const VTInt bgIndex)
+{
+    switch (item)
+    {
+    case DispatchTypes::ColorItem::NormalText:
+        _renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, fgIndex);
+        _renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, bgIndex);
+        if (_renderSettings.GetRenderMode(RenderSettings::Mode::IndexedDistinguishableColors))
+        {
+            // Re-calculate the adjusted colors now that these aliases have been changed
+            _renderSettings.MakeAdjustedColorArray();
+        }
+        break;
+    case DispatchTypes::ColorItem::WindowFrame:
+        _renderSettings.SetColorAliasIndex(ColorAlias::FrameForeground, fgIndex);
+        _renderSettings.SetColorAliasIndex(ColorAlias::FrameBackground, bgIndex);
+        break;
+    default:
+        return false;
+    }
+
+    // No need to force a redraw in pty mode.
+    const auto inPtyMode = _api.IsConsolePty();
+    if (!inPtyMode)
+    {
+        const auto backgroundChanged = item == DispatchTypes::ColorItem::NormalText;
+        const auto frameChanged = item == DispatchTypes::ColorItem::WindowFrame;
+        _renderer.TriggerRedrawAll(backgroundChanged, frameChanged);
+    }
+    return !inPtyMode;
+}
+
 //Routine Description:
 // Window Manipulation - Performs a variety of actions relating to the window,
 //      such as moving the window position, resizing the window, querying
@@ -2314,16 +2812,16 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
     switch (function)
     {
     case DispatchTypes::WindowManipulationType::DeIconifyWindow:
-        _pConApi->ShowWindow(true);
+        _api.ShowWindow(true);
         return true;
     case DispatchTypes::WindowManipulationType::IconifyWindow:
-        _pConApi->ShowWindow(false);
+        _api.ShowWindow(false);
         return true;
     case DispatchTypes::WindowManipulationType::RefreshWindow:
-        _pConApi->GetTextBuffer().TriggerRedrawAll();
+        _api.GetTextBuffer().TriggerRedrawAll();
         return true;
     case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
-        _pConApi->ResizeWindow(parameter2.value_or(0), parameter1.value_or(0));
+        _api.ResizeWindow(parameter2.value_or(0), parameter1.value_or(0));
         return true;
     default:
         return false;
@@ -2338,7 +2836,7 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
 // - true
 bool AdaptDispatch::AddHyperlink(const std::wstring_view uri, const std::wstring_view params)
 {
-    auto& textBuffer = _pConApi->GetTextBuffer();
+    auto& textBuffer = _api.GetTextBuffer();
     auto attr = textBuffer.GetCurrentAttributes();
     const auto id = textBuffer.GetHyperlinkId(uri, params);
     attr.SetHyperlinkId(id);
@@ -2353,7 +2851,7 @@ bool AdaptDispatch::AddHyperlink(const std::wstring_view uri, const std::wstring
 // - true
 bool AdaptDispatch::EndHyperlink()
 {
-    auto& textBuffer = _pConApi->GetTextBuffer();
+    auto& textBuffer = _api.GetTextBuffer();
     auto attr = textBuffer.GetCurrentAttributes();
     attr.SetHyperlinkId(0);
     textBuffer.SetCurrentAttributes(attr);
@@ -2361,12 +2859,228 @@ bool AdaptDispatch::EndHyperlink()
 }
 
 // Method Description:
-// - Ascribes to the ITermDispatch interface
-// - Not actually used in conhost
+// - Performs a ConEmu action
+//   Currently, the only actions we support are setting the taskbar state/progress
+//   and setting the working directory.
+// Arguments:
+// - string - contains the parameters that define which action we do
 // Return Value:
-// - false (so that the command gets flushed to terminal)
-bool AdaptDispatch::DoConEmuAction(const std::wstring_view /*string*/) noexcept
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::DoConEmuAction(const std::wstring_view string)
 {
+    // Return false to forward the operation to the hosting terminal,
+    // since ConPTY can't handle this itself.
+    if (_api.IsConsolePty())
+    {
+        return false;
+    }
+
+    constexpr size_t TaskbarMaxState{ 4 };
+    constexpr size_t TaskbarMaxProgress{ 100 };
+
+    unsigned int state = 0;
+    unsigned int progress = 0;
+
+    const auto parts = Utils::SplitString(string, L';');
+    unsigned int subParam = 0;
+
+    if (parts.size() < 1 || !Utils::StringToUint(til::at(parts, 0), subParam))
+    {
+        return false;
+    }
+
+    // 4 is SetProgressBar, which sets the taskbar state/progress.
+    if (subParam == 4)
+    {
+        if (parts.size() >= 2)
+        {
+            // A state parameter is defined, parse it out
+            const auto stateSuccess = Utils::StringToUint(til::at(parts, 1), state);
+            if (!stateSuccess && !til::at(parts, 1).empty())
+            {
+                return false;
+            }
+            if (parts.size() >= 3)
+            {
+                // A progress parameter is also defined, parse it out
+                const auto progressSuccess = Utils::StringToUint(til::at(parts, 2), progress);
+                if (!progressSuccess && !til::at(parts, 2).empty())
+                {
+                    return false;
+                }
+            }
+        }
+
+        if (state > TaskbarMaxState)
+        {
+            // state is out of bounds, return false
+            return false;
+        }
+        if (progress > TaskbarMaxProgress)
+        {
+            // progress is greater than the maximum allowed value, clamp it to the max
+            progress = TaskbarMaxProgress;
+        }
+        _api.SetTaskbarProgress(static_cast<DispatchTypes::TaskbarState>(state), progress);
+        return true;
+    }
+    // 9 is SetWorkingDirectory, which informs the terminal about the current working directory.
+    else if (subParam == 9)
+    {
+        if (parts.size() >= 2)
+        {
+            auto path = til::at(parts, 1);
+            // The path should be surrounded with '"' according to the documentation of ConEmu.
+            // An example: 9;"D:/"
+            // If we fail to find the surrounding quotation marks, we'll give the path a try anyway.
+            // ConEmu also does this.
+            if (path.size() >= 3 && path.at(0) == L'"' && path.at(path.size() - 1) == L'"')
+            {
+                path = path.substr(1, path.size() - 2);
+            }
+
+            if (!til::is_legal_path(path))
+            {
+                return false;
+            }
+
+            _api.SetWorkingDirectory(path);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// Method Description:
+// - Performs a iTerm2 action
+// - Ascribes to the ITermDispatch interface
+// - Currently, the actions we support are:
+//   * `OSC1337;SetMark`: mark a line as a prompt line
+// - Not actually used in conhost
+// Arguments:
+// - string: contains the parameters that define which action we do
+// Return Value:
+// - false in conhost, true for the SetMark action, otherwise false.
+bool AdaptDispatch::DoITerm2Action(const std::wstring_view string)
+{
+    // This is not implemented in conhost.
+    if (_api.IsConsolePty())
+    {
+        // Flush the frame manually, to make sure marks end up on the right line, like the alt buffer sequence.
+        _renderer.TriggerFlush(false);
+        return false;
+    }
+
+    if constexpr (!Feature_ScrollbarMarks::IsEnabled())
+    {
+        return false;
+    }
+
+    const auto parts = Utils::SplitString(string, L';');
+
+    if (parts.size() < 1)
+    {
+        return false;
+    }
+
+    const auto action = til::at(parts, 0);
+
+    if (action == L"SetMark")
+    {
+        DispatchTypes::ScrollMark mark;
+        mark.category = DispatchTypes::MarkCategory::Prompt;
+        _api.MarkPrompt(mark);
+        return true;
+    }
+    return false;
+}
+
+// Method Description:
+// - Performs a FinalTerm action
+// - Currently, the actions we support are:
+//   * `OSC133;A`: mark a line as a prompt line
+// - Not actually used in conhost
+// - The remainder of the FTCS prompt sequences are tracked in GH#11000
+// Arguments:
+// - string: contains the parameters that define which action we do
+// Return Value:
+// - false in conhost, true for the SetMark action, otherwise false.
+bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
+{
+    // This is not implemented in conhost.
+    if (_api.IsConsolePty())
+    {
+        // Flush the frame manually, to make sure marks end up on the right line, like the alt buffer sequence.
+        _renderer.TriggerFlush(false);
+        return false;
+    }
+
+    if constexpr (!Feature_ScrollbarMarks::IsEnabled())
+    {
+        return false;
+    }
+
+    const auto parts = Utils::SplitString(string, L';');
+
+    if (parts.size() < 1)
+    {
+        return false;
+    }
+
+    const auto action = til::at(parts, 0);
+    if (action.size() == 1)
+    {
+        switch (til::at(action, 0))
+        {
+        case L'A': // FTCS_PROMPT
+        {
+            // Simply just mark this line as a prompt line.
+            DispatchTypes::ScrollMark mark;
+            mark.category = DispatchTypes::MarkCategory::Prompt;
+            _api.MarkPrompt(mark);
+            return true;
+        }
+        case L'B': // FTCS_COMMAND_START
+        {
+            _api.MarkCommandStart();
+            return true;
+        }
+        case L'C': // FTCS_COMMAND_EXECUTED
+        {
+            _api.MarkOutputStart();
+            return true;
+        }
+        case L'D': // FTCS_COMMAND_FINISHED
+        {
+            std::optional<unsigned int> error = std::nullopt;
+            if (parts.size() >= 2)
+            {
+                const auto errorString = til::at(parts, 1);
+
+                // If we fail to parse the code, then it was gibberish, or it might
+                // have just started with "-". Either way, let's just treat it as an
+                // error and move on.
+                //
+                // We know that "0" will be successfully parsed, and that's close enough.
+                unsigned int parsedError = 0;
+                error = Utils::StringToUint(errorString, parsedError) ? parsedError :
+                                                                        UINT_MAX;
+            }
+            _api.MarkCommandFinish(error);
+            return true;
+        }
+        default:
+        {
+            return false;
+        }
+        }
+    }
+
+    // When we add the rest of the FTCS sequences (GH#11000), we should add a
+    // simple state machine here to track the most recently emitted mark from
+    // this set of sequences, and which sequence was emitted last, so we can
+    // modify the state of that mark as we go.
     return false;
 }
 
@@ -2394,14 +3108,6 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const VTInt fontNumber,
                                                          const VTParameter cellHeight,
                                                          const DispatchTypes::DrcsCharsetSize charsetSize)
 {
-    // If we're a conpty, we're just going to ignore the operation for now.
-    // There's no point in trying to pass it through without also being able
-    // to pass through the character set designations.
-    if (_pConApi->IsConsolePty())
-    {
-        return nullptr;
-    }
-
     // The font buffer is created on demand.
     if (!_fontBuffer)
     {
@@ -2421,7 +3127,19 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const VTInt fontNumber,
         return nullptr;
     }
 
+    // If we're a conpty, we create a special passthrough handler that will
+    // forward the DECDLD sequence to the conpty terminal with a hard-coded ID.
+    // That ID is also pre-mapped into the G1 table, so the VT engine can just
+    // switch to G1 when it needs to output any DRCS characters. But note that
+    // we still need to process the DECDLD sequence locally, so the character
+    // set translation is correctly handled on the host side.
+    const auto conptyPassthrough = _api.IsConsolePty() ? _CreateDrcsPassthroughHandler(charsetSize) : nullptr;
+
     return [=](const auto ch) {
+        if (conptyPassthrough)
+        {
+            conptyPassthrough(ch);
+        }
         // We pass the data string straight through to the font buffer class
         // until we receive an ESC, indicating the end of the string. At that
         // point we can finalize the buffer, and if valid, update the renderer
@@ -2446,9 +3164,183 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const VTInt fontNumber,
             const auto bitPattern = _fontBuffer->GetBitPattern();
             const auto cellSize = _fontBuffer->GetCellSize();
             const auto centeringHint = _fontBuffer->GetTextCenteringHint();
-            _renderer.UpdateSoftFont(bitPattern, cellSize.to_win32_size(), centeringHint);
+            _renderer.UpdateSoftFont(bitPattern, cellSize, centeringHint);
         }
         return true;
+    };
+}
+
+// Routine Description:
+// - Helper method to create a string handler that can be used to pass through
+//   DECDLD sequences when in conpty mode. This patches the original sequence
+//   with a hard-coded character set ID, and pre-maps that ID into the G1 table.
+// Arguments:
+// - <none>
+// Return value:
+// - a function to receive the data or nullptr if the initial flush fails
+ITermDispatch::StringHandler AdaptDispatch::_CreateDrcsPassthroughHandler(const DispatchTypes::DrcsCharsetSize charsetSize)
+{
+    const auto defaultPassthrough = _CreatePassthroughHandler();
+    if (defaultPassthrough)
+    {
+        auto& engine = _api.GetStateMachine().Engine();
+        return [=, &engine, gotId = false](const auto ch) mutable {
+            // The character set ID is contained in the first characters of the
+            // sequence, so we just ignore that initial content until we receive
+            // a "final" character (i.e. in range 30 to 7E). At that point we
+            // pass through a hard-coded ID of "@".
+            if (!gotId)
+            {
+                if (ch >= 0x30 && ch <= 0x7E)
+                {
+                    gotId = true;
+                    defaultPassthrough('@');
+                }
+            }
+            else if (!defaultPassthrough(ch))
+            {
+                // Once the DECDLD sequence is finished, we also output an SCS
+                // sequence to map the character set into the G1 table.
+                const auto charset96 = charsetSize == DispatchTypes::DrcsCharsetSize::Size96;
+                engine.ActionPassThroughString(charset96 ? L"\033-@" : L"\033)@");
+            }
+            return true;
+        };
+    }
+    return nullptr;
+}
+
+// Method Description:
+// - DECDMAC - Defines a string of characters as a macro that can later be
+//   invoked with a DECINVM sequence.
+// Arguments:
+// - macroId - a number to identify the macro when invoked.
+// - deleteControl - what gets deleted before loading the new macro data.
+// - encoding - whether the data is encoded as plain text or hex digits.
+// Return Value:
+// - a function to receive the macro data or nullptr if parameters are invalid.
+ITermDispatch::StringHandler AdaptDispatch::DefineMacro(const VTInt macroId,
+                                                        const DispatchTypes::MacroDeleteControl deleteControl,
+                                                        const DispatchTypes::MacroEncoding encoding)
+{
+    if (!_macroBuffer)
+    {
+        _macroBuffer = std::make_shared<MacroBuffer>();
+    }
+
+    if (_macroBuffer->InitParser(macroId, deleteControl, encoding))
+    {
+        return [&](const auto ch) {
+            return _macroBuffer->ParseDefinition(ch);
+        };
+    }
+
+    return nullptr;
+}
+
+// Method Description:
+// - DECINVM - Invokes a previously defined macro, executing the macro content
+//   as if it had been received directly from the host.
+// Arguments:
+// - macroId - the id number of the macro to be invoked.
+// Return Value:
+// - True
+bool AdaptDispatch::InvokeMacro(const VTInt macroId)
+{
+    if (_macroBuffer)
+    {
+        // In order to inject our macro sequence into the state machine
+        // we need to register a callback that will be executed only
+        // once it has finished processing the current operation, and
+        // has returned to the ground state. Note that we're capturing
+        // a copy of the _macroBuffer pointer here to make sure it won't
+        // be deleted (e.g. from an invoked RIS) while still in use.
+        const auto macroBuffer = _macroBuffer;
+        auto& stateMachine = _api.GetStateMachine();
+        stateMachine.OnCsiComplete([=, &stateMachine]() {
+            macroBuffer->InvokeMacro(macroId, stateMachine);
+        });
+    }
+    return true;
+}
+
+// Method Description:
+// - DECRSTS - Restores the terminal state from a stream of data previously
+//   saved with a DECRQTSR query.
+// Arguments:
+// - format - the format of the state report being restored.
+// Return Value:
+// - a function to receive the data or nullptr if the format is unsupported.
+ITermDispatch::StringHandler AdaptDispatch::RestoreTerminalState(const DispatchTypes::ReportFormat format)
+{
+    switch (format)
+    {
+    case DispatchTypes::ReportFormat::ColorTableReport:
+        return _RestoreColorTable();
+    default:
+        return nullptr;
+    }
+}
+
+// Method Description:
+// - DECCTR - This is a parser for the Color Table Report received via DECRSTS.
+//   The report contains a list of color definitions separated with a slash
+//   character. Each definition consists of 5 parameters: Pc;Pu;Px;Py;Pz
+//   - Pc is the color number.
+//   - Pu is the color model (1 = HLS, 2 = RGB).
+//   - Px, Py, and Pz are component values in the color model.
+// Arguments:
+// - <none>
+// Return Value:
+// - a function to parse the report data.
+ITermDispatch::StringHandler AdaptDispatch::_RestoreColorTable()
+{
+    // If we're a conpty, we create a passthrough string handler to forward the
+    // color report to the connected terminal.
+    if (_api.IsConsolePty())
+    {
+        return _CreatePassthroughHandler();
+    }
+
+    return [this, parameter = VTInt{}, parameters = std::vector<VTParameter>{}](const auto ch) mutable {
+        if (ch >= L'0' && ch <= L'9')
+        {
+            parameter *= 10;
+            parameter += (ch - L'0');
+            parameter = std::min(parameter, MAX_PARAMETER_VALUE);
+        }
+        else if (ch == L';')
+        {
+            if (parameters.size() < 5)
+            {
+                parameters.push_back(parameter);
+            }
+            parameter = 0;
+        }
+        else if (ch == L'/' || ch == AsciiChars::ESC)
+        {
+            parameters.push_back(parameter);
+            const auto colorParameters = VTParameters{ parameters.data(), parameters.size() };
+            const auto colorNumber = colorParameters.at(0).value_or(0);
+            if (colorNumber < TextColor::TABLE_SIZE)
+            {
+                const auto colorModel = DispatchTypes::ColorModel{ colorParameters.at(1) };
+                const auto x = colorParameters.at(2).value_or(0);
+                const auto y = colorParameters.at(3).value_or(0);
+                const auto z = colorParameters.at(4).value_or(0);
+                if (colorModel == DispatchTypes::ColorModel::HLS)
+                {
+                    SetColorTableEntry(colorNumber, Utils::ColorFromHLS(x, y, z));
+                }
+                else if (colorModel == DispatchTypes::ColorModel::RGB)
+                {
+                    SetColorTableEntry(colorNumber, Utils::ColorFromRGB100(x, y, z));
+                }
+            }
+            parameters.clear();
+            parameter = 0;
+        }
+        return (ch != AsciiChars::ESC);
     };
 }
 
@@ -2475,14 +3367,20 @@ ITermDispatch::StringHandler AdaptDispatch::RequestSetting()
             const auto id = idBuilder->Finalize(ch);
             switch (id)
             {
-            case VTID('m'):
+            case VTID("m"):
                 _ReportSGRSetting();
                 break;
-            case VTID('r'):
+            case VTID("r"):
                 _ReportDECSTBMSetting();
                 break;
+            case VTID("\"q"):
+                _ReportDECSCASetting();
+                break;
+            case VTID("*x"):
+                _ReportDECSACESetting();
+                break;
             default:
-                _WriteResponse(L"\033P0$r\033\\");
+                _api.ReturnResponse(L"\033P0$r\033\\");
                 break;
             }
             return false;
@@ -2513,7 +3411,7 @@ void AdaptDispatch::_ReportSGRSetting() const
     fmt::basic_memory_buffer<wchar_t, 64> response;
     response.append(L"\033P1$r0"sv);
 
-    const auto attr = _pConApi->GetTextBuffer().GetCurrentAttributes();
+    const auto attr = _api.GetTextBuffer().GetCurrentAttributes();
     // For each boolean attribute that is set, we add the appropriate
     // parameter value to the response string.
     const auto addAttribute = [&](const auto& parameter, const auto enabled) {
@@ -2560,7 +3458,7 @@ void AdaptDispatch::_ReportSGRSetting() const
 
     // The 'm' indicates this is an SGR response, and ST ends the sequence.
     response.append(L"m\033\\"sv);
-    _WriteResponse({ response.data(), response.size() });
+    _api.ReturnResponse({ response.data(), response.size() });
 }
 
 // Method Description:
@@ -2577,12 +3475,136 @@ void AdaptDispatch::_ReportDECSTBMSetting()
     fmt::basic_memory_buffer<wchar_t, 64> response;
     response.append(L"\033P1$r"sv);
 
-    const auto viewport = _pConApi->GetViewport();
+    const auto viewport = _api.GetViewport();
     const auto [marginTop, marginBottom] = _GetVerticalMargins(viewport, false);
     // VT origin is at 1,1 so we need to add 1 to these margins.
     fmt::format_to(std::back_inserter(response), FMT_COMPILE(L"{};{}"), marginTop + 1, marginBottom + 1);
 
     // The 'r' indicates this is an DECSTBM response, and ST ends the sequence.
     response.append(L"r\033\\"sv);
-    _WriteResponse({ response.data(), response.size() });
+    _api.ReturnResponse({ response.data(), response.size() });
+}
+
+// Method Description:
+// - Reports the DECSCA protected attribute in response to a DECRQSS query.
+// Arguments:
+// - None
+// Return Value:
+// - None
+void AdaptDispatch::_ReportDECSCASetting() const
+{
+    using namespace std::string_view_literals;
+
+    // A valid response always starts with DCS 1 $ r.
+    fmt::basic_memory_buffer<wchar_t, 64> response;
+    response.append(L"\033P1$r"sv);
+
+    const auto attr = _api.GetTextBuffer().GetCurrentAttributes();
+    response.append(attr.IsProtected() ? L"1"sv : L"0"sv);
+
+    // The '"q' indicates this is an DECSCA response, and ST ends the sequence.
+    response.append(L"\"q\033\\"sv);
+    _api.ReturnResponse({ response.data(), response.size() });
+}
+
+// Method Description:
+// - Reports the DECSACE change extent in response to a DECRQSS query.
+// Arguments:
+// - None
+// Return Value:
+// - None
+void AdaptDispatch::_ReportDECSACESetting() const
+{
+    using namespace std::string_view_literals;
+
+    // A valid response always starts with DCS 1 $ r.
+    fmt::basic_memory_buffer<wchar_t, 64> response;
+    response.append(L"\033P1$r"sv);
+
+    const auto attr = _api.GetTextBuffer().GetCurrentAttributes();
+    response.append(_modes.test(Mode::RectangularChangeExtent) ? L"2"sv : L"1"sv);
+
+    // The '*x' indicates this is an DECSACE response, and ST ends the sequence.
+    response.append(L"*x\033\\"sv);
+    _api.ReturnResponse({ response.data(), response.size() });
+}
+
+// Routine Description:
+// - DECPS - Plays a sequence of musical notes.
+// Arguments:
+// - params - The volume, duration, and note values to play.
+// Return value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::PlaySounds(const VTParameters parameters)
+{
+    // If we're a conpty, we return false so the command will be passed on
+    // to the connected terminal. But we need to flush the current frame
+    // first, otherwise the visual output will lag behind the sound.
+    if (_api.IsConsolePty())
+    {
+        _renderer.TriggerFlush(false);
+        return false;
+    }
+
+    // First parameter is the volume, in the range 0 to 7. We multiply by
+    // 127 / 7 to obtain an equivalent MIDI velocity in the range 0 to 127.
+    const auto velocity = std::min(parameters.at(0).value_or(0), 7) * 127 / 7;
+    // Second parameter is the duration, in the range 0 to 255. Units are
+    // 1/32 of a second, so we multiply by 1000000us/32 to obtain microseconds.
+    using namespace std::chrono_literals;
+    const auto duration = std::min(parameters.at(1).value_or(0), 255) * 1000000us / 32;
+    // The subsequent parameters are notes, in the range 0 to 25.
+    return parameters.subspan(2).for_each([=](const auto param) {
+        // Values 1 to 25 represent the notes C5 to C7, so we add 71 to
+        // obtain the equivalent MIDI note numbers (72 = C5).
+        const auto noteNumber = std::min(param.value_or(0), 25) + 71;
+        // But value 0 is meant to be silent, so if the note number is 71,
+        // we set the velocity to 0 (i.e. no volume).
+        _api.PlayMidiNote(noteNumber, noteNumber == 71 ? 0 : velocity, duration);
+        return true;
+    });
+}
+
+// Routine Description:
+// - Helper method to create a string handler that can be used to pass through
+//   DCS sequences when in conpty mode.
+// Arguments:
+// - <none>
+// Return value:
+// - a function to receive the data or nullptr if the initial flush fails
+ITermDispatch::StringHandler AdaptDispatch::_CreatePassthroughHandler()
+{
+    // Before we pass through any more data, we need to flush the current frame
+    // first, otherwise it can end up arriving out of sync.
+    _renderer.TriggerFlush(false);
+    // Then we need to flush the sequence introducer and parameters that have
+    // already been parsed by the state machine.
+    auto& stateMachine = _api.GetStateMachine();
+    if (stateMachine.FlushToTerminal())
+    {
+        // And finally we create a StringHandler to receive the rest of the
+        // sequence data, and pass it through to the connected terminal.
+        auto& engine = stateMachine.Engine();
+        return [&, buffer = std::wstring{}](const auto ch) mutable {
+            // To make things more efficient, we buffer the string data before
+            // passing it through, only flushing if the buffer gets too large,
+            // or we're dealing with the last character in the current output
+            // fragment, or we've reached the end of the string.
+            const auto endOfString = ch == AsciiChars::ESC;
+            buffer += ch;
+            if (buffer.length() >= 4096 || stateMachine.IsProcessingLastCharacter() || endOfString)
+            {
+                // The end of the string is signaled with an escape, but for it
+                // to be a valid string terminator we need to add a backslash.
+                if (endOfString)
+                {
+                    buffer += L'\\';
+                }
+                engine.ActionPassThroughString(buffer);
+                buffer.clear();
+            }
+            return !endOfString;
+        };
+    }
+    return nullptr;
 }

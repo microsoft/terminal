@@ -13,13 +13,13 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
 using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::Types;
 
-ULONG Scrolling::s_ucWheelScrollLines = 0;
-ULONG Scrolling::s_ucWheelScrollChars = 0;
+til::CoordType Scrolling::s_ucWheelScrollLines = 0;
+til::CoordType Scrolling::s_ucWheelScrollChars = 0;
 
 void Scrolling::s_UpdateSystemMetrics()
 {
-    s_ucWheelScrollLines = ServiceLocator::LocateSystemConfigurationProvider()->GetNumberOfWheelScrollLines();
-    s_ucWheelScrollChars = ServiceLocator::LocateSystemConfigurationProvider()->GetNumberOfWheelScrollCharacters();
+    s_ucWheelScrollLines = ::base::saturated_cast<decltype(s_ucWheelScrollLines)>(ServiceLocator::LocateSystemConfigurationProvider()->GetNumberOfWheelScrollLines());
+    s_ucWheelScrollChars = ::base::saturated_cast<decltype(s_ucWheelScrollChars)>(ServiceLocator::LocateSystemConfigurationProvider()->GetNumberOfWheelScrollCharacters());
 }
 
 bool Scrolling::s_IsInScrollMode()
@@ -66,34 +66,34 @@ void Scrolling::s_ScrollIfNecessary(const SCREEN_INFORMATION& ScreenInfo)
 
     if (pSelection->IsInSelectingState() && pSelection->IsMouseButtonDown())
     {
-        POINT CursorPos;
+        til::point CursorPos;
         if (!pWindow->GetCursorPosition(&CursorPos))
         {
             return;
         }
 
-        RECT ClientRect;
+        til::rect ClientRect;
         if (!pWindow->GetClientRectangle(&ClientRect))
         {
             return;
         }
 
-        pWindow->MapPoints((LPPOINT)&ClientRect, 2);
+        pWindow->MapRect(&ClientRect);
         if (!(s_IsPointInRectangle(&ClientRect, CursorPos)))
         {
             pWindow->ConvertScreenToClient(&CursorPos);
 
-            COORD MousePosition;
-            MousePosition.X = (SHORT)CursorPos.x;
-            MousePosition.Y = (SHORT)CursorPos.y;
+            til::point MousePosition;
+            MousePosition.x = CursorPos.x;
+            MousePosition.y = CursorPos.y;
 
             auto coordFontSize = ScreenInfo.GetScreenFontSize();
 
-            MousePosition.X /= coordFontSize.X;
-            MousePosition.Y /= coordFontSize.Y;
+            MousePosition.x /= coordFontSize.width;
+            MousePosition.y /= coordFontSize.height;
 
-            MousePosition.X += ScreenInfo.GetViewport().Left();
-            MousePosition.Y += ScreenInfo.GetViewport().Top();
+            MousePosition.x += ScreenInfo.GetViewport().Left();
+            MousePosition.y += ScreenInfo.GetViewport().Top();
 
             pSelection->ExtendSelection(MousePosition);
         }
@@ -112,7 +112,7 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel,
     if (isMouseWheel && s_ucWheelScrollLines > 0)
     {
         // Rounding could cause this to be zero if gucWSL is bigger than 240 or so.
-        const auto ulActualDelta = std::max(WHEEL_DELTA / s_ucWheelScrollLines, 1ul);
+        const auto ulActualDelta = std::max(WHEEL_DELTA / s_ucWheelScrollLines, 1);
 
         // If we change direction we need to throw away any remainder we may have in the other direction.
         if ((ScreenInfo.WheelDelta > 0) == (wheelDelta > 0))
@@ -124,17 +124,17 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel,
             ScreenInfo.WheelDelta = wheelDelta;
         }
 
-        if ((ULONG)abs(ScreenInfo.WheelDelta) >= ulActualDelta)
+        if (abs(ScreenInfo.WheelDelta) >= ulActualDelta)
         {
             /*
             * By default, SHIFT + WM_MOUSEWHEEL will scroll 1/2 the
             * screen size. A ScrollScale of 1 indicates 1/2 the screen
             * size. This value can be modified in the registry.
             */
-            SHORT delta = 1;
+            til::CoordType delta = 1;
             if (hasShift)
             {
-                delta = gsl::narrow<SHORT>(std::max((ScreenInfo.GetViewport().Height() * ScreenInfo.ScrollScale) / 2, 1u));
+                delta = std::max((ScreenInfo.GetViewport().Height() * ::base::saturated_cast<til::CoordType>(ScreenInfo.ScrollScale)) / 2, 1);
 
                 // Account for scroll direction changes by adjusting delta if there was a direction change.
                 delta *= (ScreenInfo.WheelDelta < 0 ? -1 : 1);
@@ -142,26 +142,26 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel,
             }
             else
             {
-                delta *= (ScreenInfo.WheelDelta / (short)ulActualDelta);
+                delta *= (ScreenInfo.WheelDelta / ulActualDelta);
                 ScreenInfo.WheelDelta %= ulActualDelta;
             }
 
-            NewOrigin.Y -= delta;
+            NewOrigin.y -= delta;
             const auto coordBufferSize = ScreenInfo.GetBufferSize().Dimensions();
-            if (NewOrigin.Y < 0)
+            if (NewOrigin.y < 0)
             {
-                NewOrigin.Y = 0;
+                NewOrigin.y = 0;
             }
-            else if (NewOrigin.Y + ScreenInfo.GetViewport().Height() > coordBufferSize.Y)
+            else if (NewOrigin.y + ScreenInfo.GetViewport().Height() > coordBufferSize.height)
             {
-                NewOrigin.Y = coordBufferSize.Y - ScreenInfo.GetViewport().Height();
+                NewOrigin.y = coordBufferSize.height - ScreenInfo.GetViewport().Height();
             }
             LOG_IF_FAILED(ScreenInfo.SetViewportOrigin(true, NewOrigin, false));
         }
     }
     else if (isMouseHWheel && s_ucWheelScrollChars > 0)
     {
-        const auto ulActualDelta = std::max(WHEEL_DELTA / s_ucWheelScrollChars, 1ul);
+        const auto ulActualDelta = std::max(WHEEL_DELTA / s_ucWheelScrollChars, 1);
 
         if ((ScreenInfo.HWheelDelta > 0) == (wheelDelta > 0))
         {
@@ -172,27 +172,27 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel,
             ScreenInfo.HWheelDelta = wheelDelta;
         }
 
-        if ((ULONG)abs(ScreenInfo.HWheelDelta) >= ulActualDelta)
+        if (abs(ScreenInfo.HWheelDelta) >= ulActualDelta)
         {
-            SHORT delta = 1;
+            til::CoordType delta = 1;
 
             if (hasShift)
             {
-                delta = std::max(ScreenInfo.GetViewport().RightInclusive(), 1i16);
+                delta = std::max(ScreenInfo.GetViewport().RightInclusive(), 1);
             }
 
-            delta *= (ScreenInfo.HWheelDelta / (short)ulActualDelta);
+            delta *= (ScreenInfo.HWheelDelta / ulActualDelta);
             ScreenInfo.HWheelDelta %= ulActualDelta;
 
-            NewOrigin.X += delta;
+            NewOrigin.x += delta;
             const auto coordBufferSize = ScreenInfo.GetBufferSize().Dimensions();
-            if (NewOrigin.X < 0)
+            if (NewOrigin.x < 0)
             {
-                NewOrigin.X = 0;
+                NewOrigin.x = 0;
             }
-            else if (NewOrigin.X + ScreenInfo.GetViewport().Width() > coordBufferSize.X)
+            else if (NewOrigin.x + ScreenInfo.GetViewport().Width() > coordBufferSize.width)
             {
-                NewOrigin.X = coordBufferSize.X - ScreenInfo.GetViewport().Width();
+                NewOrigin.x = coordBufferSize.width - ScreenInfo.GetViewport().Width();
             }
 
             LOG_IF_FAILED(ScreenInfo.SetViewportOrigin(true, NewOrigin, false));
@@ -208,7 +208,7 @@ bool Scrolling::s_HandleKeyScrollingEvent(const INPUT_KEY_INFO* const pKeyInfo)
 
     const auto VirtualKeyCode = pKeyInfo->GetVirtualKey();
     const auto fIsCtrlPressed = pKeyInfo->IsCtrlPressed();
-    const auto fIsEditLineEmpty = CommandLine::Instance().IsEditLineEmpty();
+    const auto fIsEditLineEmpty = CommandLine::IsEditLineEmpty();
 
     // If escape, enter or ctrl-c, cancel scroll.
     if (VirtualKeyCode == VK_ESCAPE ||
@@ -326,7 +326,7 @@ bool Scrolling::s_HandleKeyScrollingEvent(const INPUT_KEY_INFO* const pKeyInfo)
     return true;
 }
 
-BOOL Scrolling::s_IsPointInRectangle(const RECT* const prc, const POINT pt)
+BOOL Scrolling::s_IsPointInRectangle(const til::rect* prc, const til::point pt)
 {
     return ((pt.x >= prc->left) && (pt.x < prc->right) &&
             (pt.y >= prc->top) && (pt.y < prc->bottom));

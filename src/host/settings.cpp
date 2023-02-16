@@ -51,8 +51,6 @@ Settings::Settings() :
     _fAllowAltF4Close(true),
     _dwVirtTermLevel(0),
     _fUseWindowSizePixels(false),
-    _fAutoReturnOnNewline(true), // the historic Windows behavior defaults this to on.
-    _fRenderGridWorldwide(false), // historically grid lines were only rendered in DBCS codepages, so this is false by default unless otherwise specified.
     // window size pixels initialized below
     _fInterceptCopyPaste(0),
     _fUseDx(UseDx::Disabled),
@@ -79,7 +77,7 @@ Settings::Settings() :
 }
 
 // Routine Description:
-// - Applies hardcoded default settings that are in line with what is defined
+// - Applies hard-coded default settings that are in line with what is defined
 //   in our Windows edition manifest (living in win32k-settings.man).
 // - NOTE: This exists in case we cannot access the registry on desktop platforms.
 //   We will use this to provide better defaults than the constructor values which
@@ -358,11 +356,11 @@ void Settings::Validate()
     FAIL_FAST_IF(!(_dwScreenBufferSize.Y > 0));
 }
 
-DWORD Settings::GetVirtTermLevel() const
+DWORD Settings::GetDefaultVirtTermLevel() const
 {
     return _dwVirtTermLevel;
 }
-void Settings::SetVirtTermLevel(const DWORD dwVirtTermLevel)
+void Settings::SetDefaultVirtTermLevel(const DWORD dwVirtTermLevel)
 {
     _dwVirtTermLevel = dwVirtTermLevel;
 }
@@ -374,33 +372,6 @@ bool Settings::IsAltF4CloseAllowed() const
 void Settings::SetAltF4CloseAllowed(const bool fAllowAltF4Close)
 {
     _fAllowAltF4Close = fAllowAltF4Close;
-}
-
-bool Settings::IsReturnOnNewlineAutomatic() const
-{
-    return _fAutoReturnOnNewline;
-}
-void Settings::SetAutomaticReturnOnNewline(const bool fAutoReturnOnNewline)
-{
-    _fAutoReturnOnNewline = fAutoReturnOnNewline;
-}
-
-bool Settings::IsGridRenderingAllowedWorldwide() const
-{
-    return _fRenderGridWorldwide;
-}
-void Settings::SetGridRenderingAllowedWorldwide(const bool fGridRenderingAllowed)
-{
-    // Only trigger a notification and update the status if something has changed.
-    if (_fRenderGridWorldwide != fGridRenderingAllowed)
-    {
-        _fRenderGridWorldwide = fGridRenderingAllowed;
-
-        if (ServiceLocator::LocateGlobals().pRender != nullptr)
-        {
-            ServiceLocator::LocateGlobals().pRender->TriggerRedrawAll();
-        }
-    }
 }
 
 bool Settings::GetFilterOnPaste() const
@@ -558,44 +529,44 @@ void Settings::SetReserved(const WORD wReserved)
     _wReserved = wReserved;
 }
 
-COORD Settings::GetScreenBufferSize() const
+til::size Settings::GetScreenBufferSize() const
 {
-    return _dwScreenBufferSize;
+    return til::wrap_coord_size(_dwScreenBufferSize);
 }
-void Settings::SetScreenBufferSize(const COORD dwScreenBufferSize)
+void Settings::SetScreenBufferSize(const til::size dwScreenBufferSize)
 {
-    _dwScreenBufferSize = dwScreenBufferSize;
+    LOG_IF_FAILED(til::unwrap_coord_size_hr(dwScreenBufferSize, _dwScreenBufferSize));
 }
 
-COORD Settings::GetWindowSize() const
+til::size Settings::GetWindowSize() const
 {
-    return _dwWindowSize;
+    return til::wrap_coord_size(_dwWindowSize);
 }
-void Settings::SetWindowSize(const COORD dwWindowSize)
+void Settings::SetWindowSize(const til::size dwWindowSize)
 {
-    _dwWindowSize = dwWindowSize;
+    LOG_IF_FAILED(til::unwrap_coord_size_hr(dwWindowSize, _dwWindowSize));
 }
 
 bool Settings::IsWindowSizePixelsValid() const
 {
     return _fUseWindowSizePixels;
 }
-COORD Settings::GetWindowSizePixels() const
+til::size Settings::GetWindowSizePixels() const
 {
-    return _dwWindowSizePixels;
+    return til::wrap_coord_size(_dwWindowSizePixels);
 }
-void Settings::SetWindowSizePixels(const COORD dwWindowSizePixels)
+void Settings::SetWindowSizePixels(const til::size dwWindowSizePixels)
 {
-    _dwWindowSizePixels = dwWindowSizePixels;
+    LOG_IF_FAILED(til::unwrap_coord_size_hr(dwWindowSizePixels, _dwWindowSizePixels));
 }
 
-COORD Settings::GetWindowOrigin() const
+til::size Settings::GetWindowOrigin() const
 {
-    return _dwWindowOrigin;
+    return til::wrap_coord_size(_dwWindowOrigin);
 }
-void Settings::SetWindowOrigin(const COORD dwWindowOrigin)
+void Settings::SetWindowOrigin(const til::size dwWindowOrigin)
 {
-    _dwWindowOrigin = dwWindowOrigin;
+    LOG_IF_FAILED(til::unwrap_coord_size_hr(dwWindowOrigin, _dwWindowOrigin));
 }
 
 DWORD Settings::GetFont() const
@@ -607,13 +578,13 @@ void Settings::SetFont(const DWORD nFont)
     _nFont = nFont;
 }
 
-COORD Settings::GetFontSize() const
+til::size Settings::GetFontSize() const
 {
-    return _dwFontSize;
+    return til::wrap_coord_size(_dwFontSize);
 }
-void Settings::SetFontSize(const COORD dwFontSize)
+void Settings::SetFontSize(const til::size dwFontSize)
 {
-    _dwFontSize = dwFontSize;
+    LOG_IF_FAILED(til::unwrap_coord_size_hr(dwFontSize, _dwFontSize));
 }
 
 UINT Settings::GetFontFamily() const

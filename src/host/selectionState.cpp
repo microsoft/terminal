@@ -192,7 +192,7 @@ void Selection::_RestoreDataToCursor(Cursor& cursor) noexcept
 // - none
 // Return Value:
 // - current selection anchor
-COORD Selection::GetSelectionAnchor() const noexcept
+til::point Selection::GetSelectionAnchor() const noexcept
 {
     return _coordSelectionAnchor;
 }
@@ -203,7 +203,7 @@ COORD Selection::GetSelectionAnchor() const noexcept
 // - none
 // Return Value:
 // - The rectangle to fill with selection data.
-SMALL_RECT Selection::GetSelectionRectangle() const noexcept
+til::inclusive_rect Selection::GetSelectionRectangle() const noexcept
 {
     return _srSelectionRect;
 }
@@ -248,7 +248,7 @@ void Selection::SetLineSelection(const bool fLineSelectionOn)
 // - mousePosition - current mouse position
 // Return Value:
 // - true if the selection can be changed by a mouse drag
-bool Selection::ShouldAllowMouseDragSelection(const COORD mousePosition) const noexcept
+bool Selection::ShouldAllowMouseDragSelection(const til::point mousePosition) const noexcept
 {
     const auto viewport = Viewport::FromInclusive(_srSelectionRect);
     const auto selectionContainsMouse = viewport.IsInBounds(mousePosition);

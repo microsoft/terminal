@@ -14,6 +14,12 @@
       "type": "string",
       "format": "color"
     },
+    "ColorOrIndex": {
+      "default": "#",
+      "pattern": "^(?:#[A-Fa-f0-9]{3}(?:[A-Fa-f0-9]{3})?|i[A-Fa-f0-9]{2})$",
+      "type": "string",
+      "format": "color"
+    },
     "Coordinates": {
       "pattern": "^(-?\\d+)?(,\\s?(-?\\d+)?)?$",
       "type": "string"
@@ -54,11 +60,36 @@
         }
       ]
     },
+    "BellSound": {
+      "default": "",
+      "description": "Sets the file location of the sound played when the application emits a BEL character. If the path is invalid no sound will be played. This property also accepts an array of sounds and the terminal will pick one at random.",
+      "oneOf": [
+        {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
     "AppearanceConfig": {
       "properties": {
         "colorScheme": {
           "description": "The name of a color scheme to use when unfocused.",
-          "type": "string"
+          "oneOf": [
+            {
+              "$ref": "#/$defs/SchemePair"
+            },
+            {
+              "type": "string"
+            }
+          ]
         },
         "foreground": {
           "$ref": "#/$defs/Color",
@@ -179,7 +210,7 @@
         },
         "intenseTextStyle": {
           "default": "bright",
-          "description": "Controls how 'intense' text is rendered. Values are \"bold\", \"bright\", \"all\" and \"none\"",
+          "description": "Controls how 'intense' text is rendered when unfocused. Values are \"bold\", \"bright\", \"all\" and \"none\"",
           "enum": [
             "none",
             "bold",
@@ -189,8 +220,14 @@
           "type": "string"
         },
         "adjustIndistinguishableColors": {
-          "description": "When set to true, we will (when necessary) adjust the foreground color to make it more visible, based on the background color.",
-          "type": "boolean"
+          "default": "never",
+          "description": "Setting to adjust the foreground color to make it more visible, based on the background color. When set to \"indexed\", we will only adjust the colors if they came from the color scheme. Other possible values are \"never\" and \"always\".",
+          "enum": [
+            "never",
+            "indexed",
+            "always"
+          ],
+          "type": "string"
         },
         "experimental.retroTerminalEffect": {
           "description": "When set to true, enable retro terminal effects when unfocused. This is an experimental feature, and its continued existence is not guaranteed.",
@@ -203,6 +240,21 @@
       },
       "type": "object"
     },
+    "SchemePair": {
+      "description": "Contains both a light and dark color scheme for the Terminal to use, depending on the theme of the application.",
+      "properties": {
+        "light": {
+          "default": "Campbell",
+          "description": "Name of the scheme to use when the app is using light theme",
+          "type": "string"
+        },
+        "dark": {
+          "default": "Campbell",
+          "description": "Name of the scheme to use when the app is using dark theme",
+          "type": "string"
+        }
+      }
+    },
     "FontConfig": {
       "properties": {
         "face": {
@@ -214,7 +266,7 @@
           "default": 12,
           "description": "Size of the font in points.",
           "minimum": 1,
-          "type": "integer"
+          "type": "number"
         },
         "weight": {
           "default": "normal",
@@ -282,6 +334,7 @@
       "enum": [
         "adjustFontSize",
         "clearBuffer",
+        "closeOtherPanes",
         "closeOtherTabs",
         "closePane",
         "closeTab",
@@ -290,6 +343,7 @@
         "commandPalette",
         "copy",
         "duplicateTab",
+        "expandSelectionToWord",
         "exportBuffer",
         "find",
         "findMatch",
@@ -300,6 +354,7 @@
         "moveFocus",
         "movePane",
         "swapPane",
+        "markMode",
         "moveTab",
         "multipleActions",
         "newTab",
@@ -331,8 +386,11 @@
         "switchToTab",
         "tabSearch",
         "toggleAlwaysOnTop",
+        "toggleBlockSelection",
         "toggleFocusMode",
+        "selectAll",
         "setFocusMode",
+        "switchSelectionEndpoint",
         "toggleFullscreen",
         "setFullScreen",
         "setMaximized",
@@ -344,6 +402,11 @@
         "quit",
         "adjustOpacity",
         "restoreLastClosed",
+        "addMark",
+        "scrollToMark",
+        "clearMark",
+        "clearAllMarks",
+        "experimental.colorSelection",
         "unbound"
       ],
       "type": "string"
@@ -360,6 +423,15 @@
         "first",
         "parent",
         "child"
+      ],
+      "type": "string"
+    },
+    "ScrollToMarkDirection": {
+      "enum": [
+        "previous",
+        "next",
+        "first",
+        "last"
       ],
       "type": "string"
     },
@@ -488,6 +560,160 @@
         }
       },
       "type": "object"
+    },
+    "NewTabMenuEntryType": {
+      "enum": [
+        "source",
+        "profile",
+        "folder",
+        "separator",
+        "remainingProfiles",
+        "matchProfiles"
+      ]
+    },
+    "NewTabMenuEntry": {
+      "properties": {
+        "type": {
+          "description": "The type of menu entry",
+          "$ref": "#/$defs/NewTabMenuEntryType"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "type": "object"
+    },
+    "FolderEntryInlining": {
+      "enum": [
+        "never",
+        "auto"
+      ]
+    },
+    "FolderEntry": {
+      "description": "A folder entry in the new tab dropdown",
+      "allOf": [
+        {
+          "$ref": "#/$defs/NewTabMenuEntry"
+        },
+        {
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "folder"
+            },
+            "name": {
+              "type": "string",
+              "default": "",
+              "description": "The name of the folder to show in the menu"
+            },
+            "icon": {
+              "$ref": "#/$defs/Icon"
+            },
+            "entries": {
+              "type": "array",
+              "description": "The entries to put inside this folder",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/NewTabMenuEntry"
+              }
+            },
+            "inline": {
+              "description": "When set to auto and the folder only has a single entry, the entry will show directly and no folder will be rendered",
+              "default": "never",
+              "$ref": "#/$defs/FolderEntryInlining"
+            },
+            "allowEmpty": {
+              "description": "Whether to render a folder without entries, or to hide it",
+              "default": "false",
+              "type": "boolean"
+            }
+          }
+        }
+      ]
+    },
+    "SeparatorEntry": {
+      "description": "A separator in the new tab dropdown",
+      "allOf": [
+        {
+          "$ref": "#/$defs/NewTabMenuEntry"
+        },
+        {
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "separator"
+            }
+          }
+        }
+      ]
+    },
+    "ProfileEntry": {
+      "description": "A profile in the new tab dropdown",
+      "allOf": [
+        {
+          "$ref": "#/$defs/NewTabMenuEntry"
+        },
+        {
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "profile"
+            },
+            "profile": {
+              "type": "string",
+              "default": "",
+              "description": "The name or GUID of the profile to show in this entry"
+            }
+          }
+        }
+      ]
+    },
+    "RemainingProfilesEntry": {
+      "description": "The set of profiles that are not yet explicitly included in another entry, such as the profile or source entries. This entry can be used at most one time!",
+      "allOf": [
+        {
+          "$ref": "#/$defs/NewTabMenuEntry"
+        },
+        {
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "remainingProfiles"
+            }
+          }
+        }
+      ]
+    },
+    "MatchProfilesEntry": {
+      "description": "A set of profiles all matching the given name, source, or command line, to show in the new tab dropdown",
+      "allOf": [
+        {
+          "$ref": "#/$defs/NewTabMenuEntry"
+        },
+        {
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "matchProfiles"
+            },
+            "name": {
+              "type": "string",
+              "default": "",
+              "description": "The name of the profiles to match"
+            },
+            "source": {
+              "type": "string",
+              "default": "",
+              "description": "The source of the profiles to match"
+            },
+            "commandline": {
+              "type": "string",
+              "default": "",
+              "description": "The command line of the profiles to match"
+            }
+          }
+        }
+      ]
     },
     "SwitchToAdjacentTabArgs": {
       "oneOf": [
@@ -712,6 +938,30 @@
         "direction"
       ]
     },
+    "ScrollToMarkAction": {
+      "description": "Arguments corresponding to a Scroll to Mark Action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "scrollToMark"
+            },
+            "direction": {
+              "$ref": "#/$defs/ScrollToMarkDirection",
+              "default": "previous",
+              "description": "The direction to scroll to a mark."
+            }
+          }
+        }
+      ],
+      "required": [
+        "direction"
+      ]
+    },
     "SendInputAction": {
       "description": "Arguments corresponding to a Send Input Action",
       "allOf": [
@@ -771,6 +1021,43 @@
         }
       ]
     },
+    "ColorSelectionAction": {
+      "description": "Arguments corresponding to a Color Selection Action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "experimental.colorSelection"
+            },
+            "matchMode": {
+              "type": "string",
+              "default": "none",
+              "description": "Specifies if only the selected text should be colored (0), or all instances of selected text (case-insensitive) (1).",
+              "enum": [
+                "none",
+                "all"
+              ]
+            },
+            "foreground": {
+              "$ref": "#/$defs/ColorOrIndex",
+              "type": "string",
+              "default": "",
+              "description": "The foreground color to use, as an RGB value (\"#rrggbb\"), or color index (\"iNN\"). If left unspecified it falls back to the default text foreground color."
+            },
+            "background": {
+              "$ref": "#/$defs/ColorOrIndex",
+              "type": "string",
+              "default": "",
+              "description": "The background color to use, as an RGB value (\"#rrggbb\"), or color index (\"iNN\"). If left unspecified it falls back to the default text background color."
+            }
+          }
+        }
+      ]
+    },
     "OpenSettingsAction": {
       "description": "Arguments corresponding to a Open Settings Action",
       "allOf": [
@@ -814,6 +1101,27 @@
               "$ref": "#/$defs/Color",
               "default": null,
               "description": "If provided, will set the tab's color to the given value. If omitted, will reset the tab's color."
+            }
+          }
+        }
+      ]
+    },
+    "AddMarkAction": {
+      "description": "Arguments corresponding to an Add Mark Action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "addMark"
+            },
+            "color": {
+              "$ref": "#/$defs/Color",
+              "default": null,
+              "description": "If provided, will set the mark's color to the given value."
             }
           }
         }
@@ -1414,6 +1722,145 @@
         }
       ]
     },
+    "ShowCloseButton": {
+      "enum": [
+        "always",
+        "hover",
+        "never"
+      ],
+      "type": "string"
+    },
+    "ThemeColor": {
+      "description": "A special kind of color for use in themes. Can be an #rrggbb color, #rrggbbaa color, or a special value. 'accent' is evaluated as the user's selected Accent color in the OS, and 'terminalBackground' will be evaluated as the background color of the active terminal pane.",
+      "oneOf": [
+        {
+          "pattern": "^#[A-Fa-f0-9]{3}(?:[A-Fa-f0-9]{3}(?:[A-Fa-f0-9]{2})?)?$",
+          "type": "string",
+          "format": "color",
+          "default": "#000000ff"
+        },
+        {
+          "const": "accent",
+          "type": "string"
+        },
+        {
+          "const": "terminalBackground",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "TabTheme": {
+      "additionalProperties": false,
+      "description": "A set of properties for customizing the appearance of the tabs",
+      "properties": {
+        "background": {
+          "description": "The color of a tab when it is the active tab",
+          "$ref": "#/$defs/ThemeColor"
+        },
+        "unfocusedBackground": {
+          "description": "The color of a tab when it is not the active tab",
+          "$ref": "#/$defs/ThemeColor"
+        },
+        "showCloseButton": {
+          "description": "Controls the visibility of the close button on the tab",
+          "$ref": "#/$defs/ShowCloseButton"
+        }
+      }
+    },
+    "TabRowTheme": {
+      "additionalProperties": false,
+      "description": "A set of properties for customizing the appearance of the tab row",
+      "properties": {
+        "background": {
+          "description": "The color of the tab row when the window is the foreground window.",
+          "$ref": "#/$defs/ThemeColor"
+        },
+        "unfocusedBackground": {
+          "description": "The color of the tab row when the window is inactive",
+          "$ref": "#/$defs/ThemeColor"
+        }
+      }
+    },
+    "WindowTheme": {
+      "additionalProperties": false,
+      "description": "A set of properties for customizing the appearance of the window itself",
+      "properties": {
+        "applicationTheme": {
+          "description": "Which UI theme the Terminal should use for controls",
+          "enum": [ "light", "dark", "system" ],
+          "type": "string"
+        },
+        "useMica": {
+          "description": "True if the Terminal should use a Mica backdrop for the window. This will apply underneath all controls (including the terminal panes and the titlebar)",
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "Theme": {
+      "additionalProperties": false,
+      "description": "A set of properties for customizing the appearance of the window. This controls things like the titlebar, the tabs, the application theme.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the theme. This will be displayed in the settings UI.",
+          "not": { 
+            "enum": [ "light", "dark", "system" ]
+          }
+        },
+        "tab": {
+          "$ref": "#/$defs/TabTheme"
+        },
+        "tabRow": {
+          "$ref": "#/$defs/TabRowTheme"
+        },
+        "window": {
+          "$ref": "#/$defs/WindowTheme"
+        }
+      }
+    },
+    "ThemePair": {
+      "additionalProperties": false,
+      "description": "A pair of Theme names, to allow the Terminal to switch theme based on the OS theme",
+      "properties": {
+        "light": {
+          "type": "string",
+          "description": "The name of the theme to use when the OS is in Light theme",
+          "default": "light"
+        },
+        "dark": {
+          "type": "string",
+          "description": "The name of the theme to use when the OS is in Dark theme",
+          "default": "dark"
+        }
+      }
+    },
+    "NewTabMenu": {
+      "description": "Defines the order and structure of the 'new tab' menu. It can consist of e.g. profiles, folders, and separators.",
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/$defs/FolderEntry"
+          },
+          {
+            "$ref": "#/$defs/SeparatorEntry"
+          },
+          {
+            "$ref": "#/$defs/ProfileEntry"
+          },
+          {
+            "$ref": "#/$defs/MatchProfilesEntry"
+          },
+          {
+            "$ref": "#/$defs/RemainingProfilesEntry"
+          }
+        ]
+      }
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -1524,6 +1971,9 @@
             },
             {
               "$ref": "#/$defs/AdjustOpacityAction"
+            },
+            {
+              "$ref": "#/$defs/ColorSelectionAction"
             },
             {
               "type": "null"
@@ -1647,6 +2097,11 @@
           "description": "When set to true, URLs will be detected by the Terminal. This will cause URLs to underline on hover and be clickable by pressing Ctrl.",
           "type": "boolean"
         },
+        "experimental.enableColorSelection": {
+          "default": false,
+          "description": "When set to true, adds preset \"Color Selection\" actions (keybindings) to allow colorizing selected text via keystroke, similar to the legacy conhost EnableColorSelection feature (such as alt+6 to color the selection red).",
+          "type": "boolean"
+        },
         "disableAnimations": {
           "default": false,
           "description": "When set to `true`, visual animations will be disabled across the application.",
@@ -1687,6 +2142,11 @@
         },
         "experimental.input.forceVT": {
           "description": "Force the terminal to use the legacy input encoding. Certain keys in some applications may stop working when enabling this setting.",
+          "type": "boolean"
+        },
+        "experimental.useBackgroundImageForWindow": {
+          "default": false,
+          "description": "When set to true, the background image for the currently focused profile is expanded to encompass the entire window, beneath other panes.",
           "type": "boolean"
         },
         "initialCols": {
@@ -1779,20 +2239,32 @@
           },
           "type": "array"
         },
+        "newTabMenu": {
+          "$ref": "#/$defs/NewTabMenu"
+        },
         "language": {
           "default": "",
           "description": "Sets an override for the app's preferred language, expressed as a BCP-47 language tag like en-US.",
           "type": "string"
         },
         "theme": {
-          "default": "system",
-          "description": "Sets the theme of the application. The special value \"system\" refers to the active Windows system theme.",
-          "enum": [
-            "light",
-            "dark",
-            "system"
-          ],
-          "type": "string"
+          "default": "dark",
+          "description": "Sets the theme of the application. This value should be the name of one of the themes defined in `themes`. The Terminal also includes the themes `dark`, `light`, and `system`.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/ThemePair"
+            }
+          ]
+        },
+        "themes": {
+          "description": "The list of available themes",
+          "items": {
+            "$ref": "#/$defs/Theme"
+          },
+          "type": "array"
         },
         "showTabsInTitlebar": {
           "default": true,
@@ -1873,6 +2345,20 @@
             "useAnyExisting"
           ],
           "type": "string"
+        },
+        "newTabPosition": {
+          "default": "afterLastTab",
+          "description": "Position of newly created tabs. Possible values are \"afterLastTab\" and \"afterCurrentTab\".",
+          "enum": [
+            "afterLastTab",
+            "afterCurrentTab"
+          ],
+          "type": "string"
+        },
+        "autoHideWindow": {
+          "default": false,
+          "description": "If enabled, Terminal window will be hidden as soon as it loses focus.",
+          "type": "boolean"
         }
       },
       "required": [
@@ -1986,15 +2472,20 @@
           "description": "Controls what happens when the application emits a BEL character. When set to \"all\", the Terminal will play a sound, flash the taskbar icon (if the terminal window is not in focus) and flash the window. An array of specific behaviors can also be used. Supported array values include `audible`, `window` and `taskbar`. When set to \"none\", nothing will happen.",
           "$ref": "#/$defs/BellStyle"
         },
+        "bellSound": {
+          "description": "Sets the sound played when the application emits a BEL. When set to an array, the terminal will pick one of those sounds at random.",
+          "$ref": "#/$defs/BellSound"
+        },
         "closeOnExit": {
-          "default": "graceful",
-          "description": "Sets how the profile reacts to termination or failure to launch. Possible values:\n -\"graceful\" (close when exit is typed or the process exits normally)\n -\"always\" (always close)\n -\"never\" (never close).\ntrue and false are accepted as synonyms for \"graceful\" and \"never\" respectively.",
+          "default": "automatic",
+          "description": "Sets how the profile reacts to termination or failure to launch. Possible values:\n -\"graceful\" (close when exit is typed or the process exits normally)\n -\"always\" (always close)\n -\"automatic\" (behave as \"graceful\" only for processes launched by terminal, behave as \"always\" otherwise)\n -\"never\" (never close).\ntrue and false are accepted as synonyms for \"graceful\" and \"never\" respectively.",
           "oneOf": [
             {
               "enum": [
                 "never",
                 "graceful",
-                "always"
+                "always",
+                "automatic"
               ],
               "type": "string"
             },
@@ -2006,7 +2497,14 @@
         "colorScheme": {
           "default": "Campbell",
           "description": "Name of the terminal color scheme to use. Color schemes are defined under \"schemes\".",
-          "type": "string"
+          "oneOf": [
+            {
+              "$ref": "#/$defs/SchemePair"
+            },
+            {
+              "type": "string"
+            }
+          ]
         },
         "commandline": {
           "description": "Executable used in the profile.",
@@ -2051,6 +2549,11 @@
           "default": false,
           "description": "When true, this profile should always open in an elevated context. If the window isn't running as an Administrator, then a new elevated window will be created."
         },
+        "experimental.autoMarkPrompts": {
+          "default": false,
+          "description": "When set to true, prompts will automatically be marked.",
+          "type": "boolean"
+        },
         "experimental.connection.passthroughMode": {
           "description": "When set to true, directs the PTY for this connection to use pass-through mode instead of the original Conhost PTY simulation engine. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "boolean"
@@ -2059,14 +2562,19 @@
           "description": "When set to true, enable retro terminal effects. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "boolean"
         },
+        "experimental.showMarksOnScrollbar": {
+          "default": false,
+          "description": "When set to true, marks added to the buffer via the addMark action will appear on the scrollbar.",
+          "type": "boolean"
+        },
         "experimental.pixelShaderPath": {
           "description": "Use to set a path to a pixel shader to use with the Terminal. Overrides `experimental.retroTerminalEffect`. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "string"
         },
-        "experimental.useAtlasEngine": {
-          "description": "Enable using the experimental new rendering engine for this profile. This is an experimental feature, and its continued existence is not guaranteed.",
+        "useAtlasEngine": {
+          "description": "Windows Terminal 1.16 and later ship with a new, performant text renderer. Set this to false to revert back to the old text renderer.",
           "type": "boolean",
-          "default": false
+          "default": true
         },
         "fontFace": {
           "default": "Cascadia Mono",
@@ -2078,7 +2586,7 @@
           "default": 12,
           "description": "[deprecated] Define 'size' within the 'font' object instead.",
           "minimum": 1,
-          "type": "integer",
+          "type": "number",
           "deprecated": true
         },
         "fontWeight": {
@@ -2108,6 +2616,17 @@
             }
           ],
           "deprecated": true
+        },
+        "intenseTextStyle": {
+          "default": "bright",
+          "description": "Controls how 'intense' text is rendered. Values are \"bold\", \"bright\", \"all\" and \"none\"",
+          "enum": [
+            "none",
+            "bold",
+            "bright",
+            "all"
+          ],
+          "type": "string"
         },
         "foreground": {
           "$ref": "#/$defs/Color",
@@ -2162,15 +2681,22 @@
           ]
         },
         "adjustIndistinguishableColors": {
-          "description": "When set to true, we will (when necessary) adjust the foreground color to make it more visible, based on the background color.",
-          "type": "boolean"
+          "default": "never",
+          "description": "Setting to adjust the foreground color to make it more visible, based on the background color. When set to \"indexed\", we will only adjust the colors if they came from the color scheme. Other possible values are \"never\" and \"always\".",
+          "enum": [
+            "never",
+            "indexed",
+            "always"
+          ],
+          "type": "string"
         },
         "scrollbarState": {
           "default": "visible",
           "description": "Defines the visibility of the scrollbar.",
           "enum": [
             "visible",
-            "hidden"
+            "hidden",
+            "always"
           ],
           "type": "string"
         },
@@ -2204,7 +2730,10 @@
         },
         "startingDirectory": {
           "description": "The directory the shell starts in when it is loaded.",
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "suppressApplicationTitle": {
           "description": "When set to true, tabTitle overrides the default title of the tab and any title change messages from the application will be suppressed. When set to false, tabTitle behaves as normal.",

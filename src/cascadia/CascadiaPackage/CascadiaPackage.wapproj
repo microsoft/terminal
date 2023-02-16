@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+
+  <PropertyGroup Label="NuGet Dependencies">
+    <TerminalMUX>true</TerminalMUX>
+  </PropertyGroup>
   <Import Project="$(OpenConsoleDir)src\wap-common.build.pre.props" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <PropertyGroup Label="Configuration">
     <!--
     These two properties are very important!
@@ -109,10 +114,6 @@
        Since PRI file generation is _before_ manifest generation (for possibly obvious or
        important reasons), that doesn't work for us.
   -->
-  <PropertyGroup>
-    <!-- Only for MSBuild versions < 16.3.0 -->
-    <_GenerateProjectPriFileDependsOn Condition="$(MSBuildVersion) &lt; '16.3.0'">OpenConsoleLiftDesktopBridgePriFiles;$(_GenerateProjectPriFileDependsOn)</_GenerateProjectPriFileDependsOn>
-  </PropertyGroup>
   <Target Name="OpenConsoleLiftDesktopBridgePriFiles" DependsOnTargets="_ConvertItems">
     <ItemGroup>
       <_PriFile Include="@(_NonWapProjProjectOutput)" Condition="'%(Extension)' == '.pri'" />
@@ -135,6 +136,10 @@
       <!-- 16.3.0 - remove non-resources.pri PRI files since we just forced them back in. -->
       <AppxPackagePayload Remove="@(AppxPackagePayload)" Condition="'%(Extension)' == '.pri' and '%(Filename)' != 'resources'" />
       <AppxUploadPackagePayload Remove="@(AppxUploadPackagePayload)" Condition="'%(Extension)' == '.pri' and '%(Filename)' != 'resources'" />
+
+      <!-- Remove all of the xaml files, because we are using embedded xbf payloads (saves about 500kb on disk!) -->
+      <AppxPackagePayload Remove="@(AppxPackagePayload)" Condition="'%(Extension)' == '.xaml'" />
+      <AppxUploadPackagePayload Remove="@(AppxUploadPackagePayload)" Condition="'%(Extension)' == '.xaml'" />
     </ItemGroup>
   </Target>
 
@@ -160,13 +165,7 @@
   </Target>
 
   <!-- This is required to get the package dependency in the AppXManifest. -->
-  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.$(TerminalMUXVersion)\build\native\Microsoft.UI.Xaml.targets'))" />
-  </Target>
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 </Project>

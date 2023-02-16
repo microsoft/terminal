@@ -12,7 +12,7 @@ using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::Interactivity::Win32;
 using namespace Microsoft::WRL;
 
-HRESULT ScreenInfoUiaProvider::RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
+HRESULT ScreenInfoUiaProvider::RuntimeClassInitialize(_In_ Render::IRenderData* pData,
                                                       _In_ WindowUiaProvider* const pUiaParent)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pUiaParent);
@@ -92,7 +92,7 @@ HWND ScreenInfoUiaProvider::GetWindowHandle() const
     return _pUiaParent->GetWindowHandle();
 }
 
-void ScreenInfoUiaProvider::ChangeViewport(const SMALL_RECT NewWindow)
+void ScreenInfoUiaProvider::ChangeViewport(const til::inclusive_rect& NewWindow)
 {
     _pUiaParent->ChangeViewport(NewWindow);
 }
@@ -139,8 +139,8 @@ HRESULT ScreenInfoUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* c
 }
 
 HRESULT ScreenInfoUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                               const COORD start,
-                                               const COORD end,
+                                               const til::point start,
+                                               const til::point end,
                                                const std::wstring_view wordDelimiters,
                                                _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr)
 {

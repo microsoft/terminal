@@ -153,7 +153,7 @@ using Microsoft::Console::Interactivity::ServiceLocator;
                 }
                 else
                 {
-                    const auto zeroVkeyData = VkKeyScanW(0);
+                    const auto zeroVkeyData = OneCoreSafeVkKeyScanW(0);
                     const auto zeroVKey = LOBYTE(zeroVkeyData);
                     const auto zeroControlKeyState = HIBYTE(zeroVkeyData);
 
@@ -182,18 +182,18 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 
 // Routine Description:
 // - This routine returns the total number of screen spaces the characters up to the specified character take up.
-size_t RetrieveTotalNumberOfSpaces(const SHORT sOriginalCursorPositionX,
-                                   _In_reads_(ulCurrentPosition) const WCHAR* const pwchBuffer,
-                                   _In_ size_t ulCurrentPosition)
+til::CoordType RetrieveTotalNumberOfSpaces(const til::CoordType sOriginalCursorPositionX,
+                                           _In_reads_(ulCurrentPosition) const WCHAR* const pwchBuffer,
+                                           _In_ size_t ulCurrentPosition)
 {
     auto XPosition = sOriginalCursorPositionX;
-    size_t NumSpaces = 0;
+    til::CoordType NumSpaces = 0;
 
     for (size_t i = 0; i < ulCurrentPosition; i++)
     {
         const auto Char = pwchBuffer[i];
 
-        size_t NumSpacesForChar;
+        til::CoordType NumSpacesForChar;
         if (Char == UNICODE_TAB)
         {
             NumSpacesForChar = NUMBER_OF_SPACES_IN_TAB(XPosition);
@@ -210,7 +210,7 @@ size_t RetrieveTotalNumberOfSpaces(const SHORT sOriginalCursorPositionX,
         {
             NumSpacesForChar = 1;
         }
-        XPosition = (SHORT)(XPosition + NumSpacesForChar);
+        XPosition += NumSpacesForChar;
         NumSpaces += NumSpacesForChar;
     }
 
@@ -219,14 +219,14 @@ size_t RetrieveTotalNumberOfSpaces(const SHORT sOriginalCursorPositionX,
 
 // Routine Description:
 // - This routine returns the number of screen spaces the specified character takes up.
-size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
-                              _In_reads_(ulCurrentPosition + 1) const WCHAR* const pwchBuffer,
-                              _In_ size_t ulCurrentPosition)
+til::CoordType RetrieveNumberOfSpaces(_In_ til::CoordType sOriginalCursorPositionX,
+                                      _In_reads_(ulCurrentPosition + 1) const WCHAR* const pwchBuffer,
+                                      _In_ size_t ulCurrentPosition)
 {
     auto Char = pwchBuffer[ulCurrentPosition];
     if (Char == UNICODE_TAB)
     {
-        size_t NumSpaces = 0;
+        til::CoordType NumSpaces = 0;
         auto XPosition = sOriginalCursorPositionX;
 
         for (size_t i = 0; i <= ulCurrentPosition; i++)
@@ -248,7 +248,7 @@ size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
             {
                 NumSpaces = 1;
             }
-            XPosition = (SHORT)(XPosition + NumSpaces);
+            XPosition += NumSpaces;
         }
 
         return NumSpaces;
@@ -281,7 +281,7 @@ size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
 // - STATUS_NO_MEMORY in low memory situation
 // - other relevant NTSTATUS codes
 [[nodiscard]] static NTSTATUS _ReadPendingInput(InputBuffer& inputBuffer,
-                                                gsl::span<char> buffer,
+                                                std::span<char> buffer,
                                                 size_t& bytesRead,
                                                 INPUT_READ_HANDLE_DATA& readHandleState,
                                                 const bool unicode)
@@ -457,7 +457,7 @@ size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
 // - other relevant HRESULT codes
 [[nodiscard]] static HRESULT _ReadLineInput(InputBuffer& inputBuffer,
                                             const HANDLE processData,
-                                            gsl::span<char> buffer,
+                                            std::span<char> buffer,
                                             size_t& bytesRead,
                                             DWORD& controlKeyState,
                                             const std::string_view initialData,
@@ -522,7 +522,7 @@ size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
 // - STATUS_SUCCESS on success
 // - Other NTSTATUS codes as necessary
 [[nodiscard]] static NTSTATUS _ReadCharacterInput(InputBuffer& inputBuffer,
-                                                  gsl::span<char> buffer,
+                                                  std::span<char> buffer,
                                                   size_t& bytesRead,
                                                   INPUT_READ_HANDLE_DATA& readHandleState,
                                                   const bool unicode,
@@ -682,7 +682,7 @@ size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
 // - Other NSTATUS codes as necessary
 [[nodiscard]] NTSTATUS DoReadConsole(InputBuffer& inputBuffer,
                                      const HANDLE processData,
-                                     gsl::span<char> buffer,
+                                     std::span<char> buffer,
                                      size_t& bytesRead,
                                      ULONG& controlKeyState,
                                      const std::string_view initialData,
@@ -742,7 +742,7 @@ size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
 }
 
 [[nodiscard]] HRESULT ApiRoutines::ReadConsoleAImpl(IConsoleInputObject& context,
-                                                    gsl::span<char> buffer,
+                                                    std::span<char> buffer,
                                                     size_t& written,
                                                     std::unique_ptr<IWaitRoutine>& waiter,
                                                     const std::string_view initialData,
@@ -770,7 +770,7 @@ size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
 }
 
 [[nodiscard]] HRESULT ApiRoutines::ReadConsoleWImpl(IConsoleInputObject& context,
-                                                    gsl::span<char> buffer,
+                                                    std::span<char> buffer,
                                                     size_t& written,
                                                     std::unique_ptr<IWaitRoutine>& waiter,
                                                     const std::string_view initialData,

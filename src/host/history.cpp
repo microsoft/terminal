@@ -164,7 +164,7 @@ std::wstring_view CommandHistory::GetNth(const SHORT index) const
 }
 
 [[nodiscard]] HRESULT CommandHistory::RetrieveNth(const SHORT index,
-                                                  gsl::span<wchar_t> buffer,
+                                                  std::span<wchar_t> buffer,
                                                   size_t& commandSize)
 {
     LastDisplayed = index;
@@ -191,7 +191,7 @@ std::wstring_view CommandHistory::GetNth(const SHORT index) const
 }
 
 [[nodiscard]] HRESULT CommandHistory::Retrieve(const SearchDirection searchDirection,
-                                               const gsl::span<wchar_t> buffer,
+                                               const std::span<wchar_t> buffer,
                                                size_t& commandSize)
 {
     FAIL_FAST_IF(!(WI_IsFlagSet(Flags, CLE_ALLOCATED)));
@@ -343,7 +343,7 @@ CommandHistory* CommandHistory::s_Allocate(const std::wstring_view appName, cons
     {
         if (WI_IsFlagClear(it->Flags, CLE_ALLOCATED))
         {
-            // use LRU history buffer with same app name
+            // use MRU history buffer with same app name
             if (it->IsAppNameMatch(appName))
             {
                 BestCandidate = *it;
@@ -367,17 +367,27 @@ CommandHistory* CommandHistory::s_Allocate(const std::wstring_view appName, cons
         History._processHandle = processHandle;
         return &s_historyLists.emplace_front(History);
     }
-    else if (!BestCandidate.has_value() && s_historyLists.size() > 0)
+
+    // If we have no candidate already and we need one,
+    // take the LRU (which is the back/last one) which isn't allocated
+    // and if possible the one with empty commands list.
+    if (!BestCandidate.has_value())
     {
-        // If we have no candidate already and we need one, take the LRU (which is the back/last one) which isn't allocated.
-        for (auto it = s_historyLists.crbegin(); it != s_historyLists.crend(); it++)
+        auto BestCandidateIt = s_historyLists.cend();
+        for (auto it = s_historyLists.cbegin(); it != s_historyLists.cend(); it++)
         {
             if (WI_IsFlagClear(it->Flags, CLE_ALLOCATED))
             {
-                BestCandidate = *it;
-                s_historyLists.erase(std::next(it).base()); // trickery to turn reverse iterator into forward iterator for erase.
-                break;
+                if (it->_commands.empty() || BestCandidateIt == s_historyLists.cend() || !BestCandidateIt->_commands.empty())
+                {
+                    BestCandidateIt = it;
+                }
             }
+        }
+        if (BestCandidateIt != s_historyLists.cend())
+        {
+            BestCandidate = *BestCandidateIt;
+            s_historyLists.erase(BestCandidateIt);
         }
     }
 
@@ -766,7 +776,7 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryLengthWImpl(const std::wstring_view
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT GetConsoleCommandHistoryWImplHelper(const std::wstring_view exeName,
-                                            gsl::span<wchar_t> historyBuffer,
+                                            std::span<wchar_t> historyBuffer,
                                             size_t& writtenOrNeeded)
 {
     // Ensure output variables are initialized
@@ -837,7 +847,7 @@ HRESULT GetConsoleCommandHistoryWImplHelper(const std::wstring_view exeName,
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleCommandHistoryAImpl(const std::string_view exeName,
-                                                   gsl::span<char> commandHistory,
+                                                   std::span<char> commandHistory,
                                                    size_t& written) noexcept
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -872,7 +882,7 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryAImpl(const std::string_view exeNam
 
         // Call the Unicode version of this method
         size_t bufferWritten;
-        RETURN_IF_FAILED(GetConsoleCommandHistoryWImplHelper(exeNameW, gsl::span<wchar_t>(buffer.get(), bufferNeeded), bufferWritten));
+        RETURN_IF_FAILED(GetConsoleCommandHistoryWImplHelper(exeNameW, std::span<wchar_t>(buffer.get(), bufferNeeded), bufferWritten));
 
         // Convert result to A
         const auto converted = ConvertToA(codepage, { buffer.get(), bufferWritten });
@@ -901,7 +911,7 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryAImpl(const std::string_view exeNam
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleCommandHistoryWImpl(const std::wstring_view exeName,
-                                                   gsl::span<wchar_t> commandHistory,
+                                                   std::span<wchar_t> commandHistory,
                                                    size_t& written) noexcept
 {
     LockConsole();

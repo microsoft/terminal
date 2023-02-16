@@ -32,7 +32,9 @@ namespace Microsoft::Console::Render
             cellSize(cellSize),
             targetSize(targetSize),
             cursorInfo(cursorInfo),
-            options(options)
+            options(options),
+            topClipOffset(0),
+            bottomClipOffset(0)
         {
         }
 
@@ -48,6 +50,8 @@ namespace Microsoft::Console::Render
         D2D_SIZE_F targetSize;
         std::optional<CursorOptions> cursorInfo;
         D2D1_DRAW_TEXT_OPTIONS options;
+        FLOAT topClipOffset;
+        FLOAT bottomClipOffset;
     };
 
     // Helper to choose which Direct2D method to use when drawing the cursor rectangle
@@ -107,6 +111,11 @@ namespace Microsoft::Console::Render
                                                                  IUnknown* clientDrawingEffect) noexcept override;
 
         [[nodiscard]] HRESULT STDMETHODCALLTYPE EndClip(void* clientDrawingContext) noexcept;
+
+        [[nodiscard]] static HRESULT DrawCursor(gsl::not_null<ID2D1DeviceContext*> d2dContext,
+                                                D2D1_RECT_F textRunBounds,
+                                                const DrawingContext& drawingContext,
+                                                const bool firstPass);
 
     private:
         [[nodiscard]] HRESULT _FillRectangle(void* clientDrawingContext,

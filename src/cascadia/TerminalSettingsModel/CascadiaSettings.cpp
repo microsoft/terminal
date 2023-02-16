@@ -14,6 +14,7 @@
 
 #include <shellapi.h>
 #include <shlwapi.h>
+#include <til/latch.h>
 
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -40,6 +41,11 @@ winrt::com_ptr<Profile> Model::implementation::CreateChild(const winrt::com_ptr<
     profile->Hidden(parent->Hidden());
     profile->AddLeastImportantParent(parent);
     return profile;
+}
+
+winrt::hstring CascadiaSettings::Hash() const noexcept
+{
+    return _hash;
 }
 
 Model::CascadiaSettings CascadiaSettings::Copy() const
@@ -320,6 +326,8 @@ Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, SelectionBackground);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, CursorColor);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, Opacity);
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, DarkColorSchemeName);
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, LightColorSchemeName);
     }
 
     // UnfocusedAppearance is treated as a single setting,
@@ -408,6 +416,7 @@ void CascadiaSettings::_validateSettings()
     _validateMediaResources();
     _validateKeybindings();
     _validateColorSchemesInCommands();
+    _validateThemeExists();
 }
 
 // Method Description:
@@ -423,22 +432,29 @@ void CascadiaSettings::_validateSettings()
 void CascadiaSettings::_validateAllSchemesExist()
 {
     const auto colorSchemes = _globals->ColorSchemes();
-    auto foundInvalidScheme = false;
+    auto foundInvalidDarkScheme = false;
+    auto foundInvalidLightScheme = false;
 
     for (const auto& profile : _allProfiles)
     {
         for (const auto& appearance : std::array{ profile.DefaultAppearance(), profile.UnfocusedAppearance() })
         {
-            if (appearance && !colorSchemes.HasKey(appearance.ColorSchemeName()))
+            if (appearance && !colorSchemes.HasKey(appearance.DarkColorSchemeName()))
             {
-                // Clear the user set color scheme. We'll just fallback instead.
-                appearance.ClearColorSchemeName();
-                foundInvalidScheme = true;
+                // Clear the user set dark color scheme. We'll just fallback instead.
+                appearance.ClearDarkColorSchemeName();
+                foundInvalidDarkScheme = true;
+            }
+            if (appearance && !colorSchemes.HasKey(appearance.LightColorSchemeName()))
+            {
+                // Clear the user set light color scheme. We'll just fallback instead.
+                appearance.ClearLightColorSchemeName();
+                foundInvalidLightScheme = true;
             }
         }
     }
 
-    if (foundInvalidScheme)
+    if (foundInvalidDarkScheme || foundInvalidLightScheme)
     {
         _warnings.Append(SettingsLoadWarnings::UnknownColorScheme);
     }
@@ -558,6 +574,13 @@ Model::Profile CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs&
             if (auto profile = GetProfileByIndex(gsl::narrow<uint32_t>(index.Value())))
             {
                 return profile;
+            }
+            else
+            {
+                // GH#11114 - Return NOTHING if they asked for a profile index
+                // outside the range of available profiles.
+                // Really, the caller should check this beforehand
+                return nullptr;
             }
         }
 
@@ -924,24 +947,6 @@ bool CascadiaSettings::_hasInvalidColorScheme(const Model::Command& command) con
 }
 
 // Method Description:
-// - Lookup the color scheme for a given profile. If the profile doesn't exist,
-//   or the scheme name listed in the profile doesn't correspond to a scheme,
-//   this will return `nullptr`.
-// Arguments:
-// - profileGuid: the GUID of the profile to find the scheme for.
-// Return Value:
-// - a non-owning pointer to the scheme.
-Model::ColorScheme CascadiaSettings::GetColorSchemeForProfile(const Model::Profile& profile) const
-{
-    if (!profile)
-    {
-        return nullptr;
-    }
-    const auto schemeName = profile.DefaultAppearance().ColorSchemeName();
-    return _globals->ColorSchemes().TryLookup(schemeName);
-}
-
-// Method Description:
 // - updates all references to that color scheme with the new name
 // Arguments:
 // - oldName: the original name for the color scheme
@@ -952,26 +957,41 @@ void CascadiaSettings::UpdateColorSchemeReferences(const winrt::hstring& oldName
 {
     // update profiles.defaults, if necessary
     if (_baseLayerProfile &&
-        _baseLayerProfile->DefaultAppearance().HasColorSchemeName() &&
-        _baseLayerProfile->DefaultAppearance().ColorSchemeName() == oldName)
+        _baseLayerProfile->DefaultAppearance().HasDarkColorSchemeName() &&
+        _baseLayerProfile->DefaultAppearance().DarkColorSchemeName() == oldName)
     {
-        _baseLayerProfile->DefaultAppearance().ColorSchemeName(newName);
+        _baseLayerProfile->DefaultAppearance().DarkColorSchemeName(newName);
+    }
+    // NOT else-if, because both could match
+    if (_baseLayerProfile &&
+        _baseLayerProfile->DefaultAppearance().HasLightColorSchemeName() &&
+        _baseLayerProfile->DefaultAppearance().LightColorSchemeName() == oldName)
+    {
+        _baseLayerProfile->DefaultAppearance().LightColorSchemeName(newName);
     }
 
     // update all profiles referencing this color scheme
     for (const auto& profile : _allProfiles)
     {
         const auto defaultAppearance = profile.DefaultAppearance();
-        if (defaultAppearance.HasColorSchemeName() && defaultAppearance.ColorSchemeName() == oldName)
+        if (defaultAppearance.HasLightColorSchemeName() && defaultAppearance.LightColorSchemeName() == oldName)
         {
-            defaultAppearance.ColorSchemeName(newName);
+            defaultAppearance.LightColorSchemeName(newName);
+        }
+        if (defaultAppearance.HasDarkColorSchemeName() && defaultAppearance.DarkColorSchemeName() == oldName)
+        {
+            defaultAppearance.DarkColorSchemeName(newName);
         }
 
-        if (profile.UnfocusedAppearance())
+        if (auto unfocused{ profile.UnfocusedAppearance() })
         {
-            if (profile.UnfocusedAppearance().HasColorSchemeName() && profile.UnfocusedAppearance().ColorSchemeName() == oldName)
+            if (unfocused.HasLightColorSchemeName() && unfocused.LightColorSchemeName() == oldName)
             {
-                profile.UnfocusedAppearance().ColorSchemeName(newName);
+                unfocused.LightColorSchemeName(newName);
+            }
+            if (unfocused.HasDarkColorSchemeName() && unfocused.DarkColorSchemeName() == oldName)
+            {
+                unfocused.DarkColorSchemeName(newName);
             }
         }
     }
@@ -995,7 +1015,12 @@ winrt::hstring CascadiaSettings::ApplicationVersion()
     {
         const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
         const auto version{ package.Id().Version() };
-        winrt::hstring formatted{ wil::str_printf<std::wstring>(L"%u.%u.%u.%u", version.Major, version.Minor, version.Build, version.Revision) };
+        // As of about 2022, the ones digit of the Build of our version is a
+        // placeholder value to differentiate the Windows 10 build from the
+        // Windows 11 build. Let's trim that out. For additional clarity,
+        // let's omit the Revision, which _must_ be .0, and doesn't provide any
+        // value to report.
+        winrt::hstring formatted{ wil::str_printf<std::wstring>(L"%u.%u.%u", version.Major, version.Minor, version.Build / 10) };
         return formatted;
     }
     CATCH_LOG();
@@ -1113,12 +1138,27 @@ void CascadiaSettings::CurrentDefaultTerminal(const Model::DefaultTerminal& term
 // but in the future it might be worthwhile to change the code to use list indices instead.
 void CascadiaSettings::_refreshDefaultTerminals()
 {
-    if (!_defaultTerminals)
+    if (_defaultTerminals)
     {
-        auto [defaultTerminals, defaultTerminal] = DefaultTerminal::Available();
-        _defaultTerminals = winrt::single_threaded_observable_vector(std::move(defaultTerminals));
-        _currentDefaultTerminal = std::move(defaultTerminal);
+        return;
     }
+
+    // This is an extract of extractValueFromTaskWithoutMainThreadAwait
+    // as DefaultTerminal::Available creates the exact same issue.
+    std::pair<std::vector<Model::DefaultTerminal>, Model::DefaultTerminal> result{ {}, nullptr };
+    til::latch latch{ 1 };
+
+    std::ignore = [&]() -> winrt::fire_and_forget {
+        const auto cleanup = wil::scope_exit([&]() {
+            latch.count_down();
+        });
+        co_await winrt::resume_background();
+        result = DefaultTerminal::Available();
+    }();
+
+    latch.wait();
+    _defaultTerminals = winrt::single_threaded_observable_vector(std::move(result.first));
+    _currentDefaultTerminal = std::move(result.second);
 }
 
 void CascadiaSettings::ExportFile(winrt::hstring path, winrt::hstring content)
@@ -1128,4 +1168,49 @@ void CascadiaSettings::ExportFile(winrt::hstring path, winrt::hstring content)
         WriteUTF8FileAtomic({ path.c_str() }, til::u16u8(content));
     }
     CATCH_LOG();
+}
+
+void CascadiaSettings::_validateThemeExists()
+{
+    const auto& themes{ _globals->Themes() };
+    if (themes.Size() == 0)
+    {
+        // We didn't even load the default themes. This should only be possible
+        // if the defaults.json didn't include any themes, or if no
+        // defaults.json was loaded at all. The second case is especially common
+        // in tests (that don't bother with a defaults.json). No matter. Create
+        // a default theme under `system` and just stick it in there.
+
+        auto newTheme = winrt::make_self<Theme>();
+        newTheme->Name(L"system");
+        _globals->AddTheme(*newTheme);
+        _globals->Theme(Model::ThemePair{ L"system" });
+    }
+
+    const auto& theme{ _globals->Theme() };
+    if (theme.DarkName() == theme.LightName())
+    {
+        // Only one theme. We'll treat it as such.
+        if (!themes.HasKey(theme.DarkName()))
+        {
+            _warnings.Append(SettingsLoadWarnings::UnknownTheme);
+            // safely fall back to system as the theme.
+            _globals->Theme(*winrt::make_self<ThemePair>(L"system"));
+        }
+    }
+    else
+    {
+        // Two different themes. Check each separately, and fall back to a
+        // reasonable default contextually
+        if (!themes.HasKey(theme.LightName()))
+        {
+            _warnings.Append(SettingsLoadWarnings::UnknownTheme);
+            theme.LightName(L"light");
+        }
+        if (!themes.HasKey(theme.DarkName()))
+        {
+            _warnings.Append(SettingsLoadWarnings::UnknownTheme);
+            theme.DarkName(L"dark");
+        }
+    }
 }

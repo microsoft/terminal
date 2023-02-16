@@ -2,9 +2,9 @@
 trigger: none
 pr: none
 
-pool: 
+pool:
   name: WinDevPool-L
-  demands: ImageOverride -equals WinDevVS16-latest
+  demands: ImageOverride -equals WinDevVS17-latest
 
 parameters:
   - name: branding
@@ -63,22 +63,30 @@ parameters:
       - Win11
 
 variables:
-  TerminalInternalPackageVersion: "0.0.7"
+  MakeAppxPath: 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x86\MakeAppx.exe'
+  TerminalInternalPackageVersion: "0.0.8"
   # If we are building a branch called "release-*", change the NuGet suffix
   # to "preview". If we don't do that, XES will set the suffix to "release1"
   # because it truncates the value after the first period.
   # We also want to disable the suffix entirely if we're Release branded while
   # on a release branch.
+  # main is special, however. XES ignores main. Since we never produce actual
+  # shipping builds from main, we want to force it to have a beta label as
+  # well.
+  #
   # In effect:
-  # BRANCH / BRANDING | Release                | Preview
-  # ------------------|------------------------|------------------------
-  # release-*         | 1.12.20220427          | 1.13.20220427-preview
-  # all others        | 1.14.20220427-mybranch | 1.14.20220427-mybranch
+  # BRANCH / BRANDING | Release                    | Preview
+  # ------------------|----------------------------|-----------------------------
+  # release-*         | 1.12.20220427              | 1.13.20220427-preview
+  # main              | 1.14.20220427-experimental | 1.14.20220427-experimental
+  # all others        | 1.14.20220427-mybranch     | 1.14.20220427-mybranch
   ${{ if startsWith(variables['Build.SourceBranchName'], 'release-') }}:
     ${{ if eq(parameters.branding, 'Release') }}:
       NoNuGetPackBetaVersion: true
     ${{ else }}:
       NuGetPackBetaVersion: preview
+  ${{ elseif eq(variables['Build.SourceBranchName'], 'main') }}:
+    NuGetPackBetaVersion: experimental
   # The NuGet packages have to use *somebody's* DLLs. We used to force them to
   # use the Win10 build outputs, but if there isn't a Win10 build we should use
   # the Win11 one.
@@ -127,8 +135,6 @@ jobs:
 
         Write-Host "##vso[task.setvariable variable=RationalizedBuildPlatform]${Arch}"
   - template: .\templates\restore-nuget-steps.yml
-  # Pull the Windows SDK for the developer tools like the debuggers so we can index sources later
-  - template: .\templates\install-winsdk-steps.yml
   - task: UniversalPackages@0
     displayName: Download terminal-internal Universal Package
     inputs:
@@ -188,7 +194,6 @@ jobs:
       condition: true
       inputs:
         solution: '**\OpenConsole.sln'
-        vsVersion: 16.0
         msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /t:Terminal\CascadiaPackage /p:WindowsTerminalReleaseBuild=true /bl:$(Build.SourcesDirectory)\msbuild.binlog
         platform: $(BuildPlatform)
         configuration: $(BuildConfiguration)
@@ -215,7 +220,6 @@ jobs:
       displayName: Build solution **\OpenConsole.sln for PublicTerminalCore
       inputs:
         solution: '**\OpenConsole.sln'
-        vsVersion: 16.0
         msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /p:WindowsTerminalReleaseBuild=true /t:Terminal\wpf\PublicTerminalCore
         platform: $(BuildPlatform)
         configuration: $(BuildConfiguration)
@@ -224,7 +228,6 @@ jobs:
       displayName: Build solution **\OpenConsole.sln for ConPTY
       inputs:
         solution: '**\OpenConsole.sln'
-        vsVersion: 16.0
         msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /p:WindowsTerminalReleaseBuild=true /t:Conhost\Host_EXE;Conhost\winconpty_DLL
         platform: $(BuildPlatform)
         configuration: $(BuildConfiguration)
@@ -234,6 +237,7 @@ jobs:
       filePath: build\scripts\Index-Pdbs.ps1
       arguments: -SearchDir '$(Build.SourcesDirectory)' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
       errorActionPreference: silentlyContinue
+      pwsh: true
   - task: PowerShell@2
     displayName: Run Unit Tests
     condition: and(succeeded(), or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
@@ -267,6 +271,28 @@ jobs:
       displayName: 'Generate SBOM manifest'
       inputs:
        BuildDropPath: '$(System.ArtifactsDirectory)/appx'
+
+    - pwsh: |-
+        $Package = (Get-ChildItem "$(Build.ArtifactStagingDirectory)/appx" -Recurse -Filter "Cascadia*.msix" | Select -First 1)
+        $PackageFilename = $Package.FullName
+        Write-Host "##vso[task.setvariable variable=WindowsTerminalPackagePath]${PackageFilename}"
+        & "$(MakeAppxPath)" unpack /p $PackageFilename /d "$(Build.SourcesDirectory)\UnpackedTerminalPackage"
+      displayName: Unpack the new Terminal package for signing
+
+    - task: EsrpCodeSigning@1
+      displayName: Submit Terminal's binaries for signing
+      inputs:
+        ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
+        FolderPath: '$(Build.SourcesDirectory)\UnpackedTerminalPackage'
+        signType: batchSigning
+        batchSignPolicyFile: '$(Build.SourcesDirectory)\build\config\ESRPSigning_Terminal.json'
+
+    - pwsh: |-
+        $PackageFilename = "$(WindowsTerminalPackagePath)"
+        Remove-Item "$(Build.SourcesDirectory)\UnpackedTerminalPackage\CodeSignSummary*"
+        & "$(MakeAppxPath)" pack /h SHA256 /o /p $PackageFilename /d "$(Build.SourcesDirectory)\UnpackedTerminalPackage"
+      displayName: Re-pack the new Terminal package after signing
+
     - task: PublishBuildArtifacts@1
       displayName: Publish Artifact (appx)
       inputs:
@@ -296,8 +322,6 @@ jobs:
       inputs:
         Contents: >-
           **/PublicTerminalCore.dll
-
-          **/api-ms-win-core-synch-l1-2-0.dll
         TargetFolder: $(Build.ArtifactStagingDirectory)/wpf
         OverWrite: true
         flattenFolders: true
@@ -320,7 +344,7 @@ jobs:
 
 - ${{ if eq(parameters.runCompliance, true) }}:
   - template: ./templates/build-console-compliance-job.yml
-  
+
 - ${{ if eq(parameters.buildTerminal, true) }}:
   - job: BundleAndSign
     strategy:
@@ -329,6 +353,13 @@ jobs:
           ${{ windowsVersion }}:
             TerminalTargetWindowsVersion: ${{ windowsVersion }}
     displayName: Create and sign AppX/MSIX bundles
+    variables:
+      ${{ if eq(parameters.branding, 'Release') }}:
+        BundleStemName: Microsoft.WindowsTerminal
+      ${{ elseif eq(parameters.branding, 'Preview') }}:
+        BundleStemName: Microsoft.WindowsTerminalPreview
+      ${{ else }}:
+        BundleStemName: WindowsTerminalDev
     dependsOn: Build
     steps:
     - checkout: self
@@ -353,14 +384,15 @@ jobs:
         $Components = "$(XES_APPXMANIFESTVERSION)" -Split "\."
         $Components[0] = ([int]$Components[0] + $VersionEpoch)
         $BundleVersion = $Components -Join "."
-        .\build\scripts\Create-AppxBundle.ps1 -InputPath "$(System.ArtifactsDirectory)" -ProjectName CascadiaPackage -BundleVersion $BundleVersion -OutputPath "$(System.ArtifactsDirectory)\Microsoft.WindowsTerminal_$(TerminalTargetWindowsVersion)_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
+        New-Item -Type Directory "$(System.ArtifactsDirectory)\bundle"
+        .\build\scripts\Create-AppxBundle.ps1 -InputPath "$(System.ArtifactsDirectory)" -ProjectName CascadiaPackage -BundleVersion $BundleVersion -OutputPath "$(System.ArtifactsDirectory)\bundle\$(BundleStemName)_$(TerminalTargetWindowsVersion)_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
       displayName: Create WindowsTerminal*.msixbundle
     - task: EsrpCodeSigning@1
       displayName: Submit *.msixbundle to ESRP for code signing
       inputs:
         ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
-        FolderPath: $(System.ArtifactsDirectory)
-        Pattern: Microsoft.WindowsTerminal*.msixbundle
+        FolderPath: $(System.ArtifactsDirectory)\bundle
+        Pattern: $(BundleStemName)*.msixbundle
         UseMinimatch: true
         signConfigType: inlineSignParams
         inlineOperation: >-
@@ -393,7 +425,7 @@ jobs:
     - task: PublishBuildArtifacts@1
       displayName: 'Publish Artifact: appxbundle-signed'
       inputs:
-        PathtoPublish: $(System.ArtifactsDirectory)
+        PathtoPublish: $(System.ArtifactsDirectory)\bundle
         ArtifactName: appxbundle-signed-$(TerminalTargetWindowsVersion)
 
 - ${{ if eq(parameters.buildConPTY, true) }}:
@@ -539,7 +571,6 @@ jobs:
       displayName: Build solution **\OpenConsole.sln for WPF Control
       inputs:
         solution: '**\OpenConsole.sln'
-        vsVersion: 16.0
         msbuildArgs: /p:WindowsTerminalReleaseBuild=$(UseReleaseBranding);Version=$(XES_PACKAGEVERSIONNUMBER) /t:Pack
         platform: Any CPU
         configuration: $(BuildConfiguration)
@@ -605,6 +636,8 @@ jobs:
     - task: PkgESSetupBuild@12
       displayName: Package ES - Setup Build
 
+    - template: .\templates\restore-nuget-steps.yml
+
     # Download the appx-PLATFORM-CONFIG-VERSION artifact for every platform/version combo
     - ${{ each platform in parameters.buildPlatforms }}:
       - ${{ each windowsVersion in parameters.buildWindowsVersions }}:
@@ -627,13 +660,12 @@ jobs:
         }
       displayName: Extract symbols for public consumption
 
-    # Pull the Windows SDK for the developer tools like the debuggers so we can index sources later
-    - template: .\templates\install-winsdk-steps.yml
     - task: PowerShell@2
       displayName: Source Index PDBs (the public ones)
       inputs:
         filePath: build\scripts\Index-Pdbs.ps1
         arguments: -SearchDir '$(Build.SourcesDirectory)/appxsym-temp' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
+        pwsh: true
 
     # Publish the app symbols to the public MSDL symbol server
     # accessible via https://msdl.microsoft.com/download/symbols
@@ -699,6 +731,7 @@ jobs:
         description: VPack for the Windows Terminal Application
         pushPkgName: WindowsTerminal.app
         owner: conhost
+        githubToken: $(GitHubTokenForVpackProvenance)
     - task: PublishPipelineArtifact@1
       displayName: 'Copy VPack Manifest to Drop'
       inputs:

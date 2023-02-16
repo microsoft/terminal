@@ -3,6 +3,8 @@
 
 #include "precomp.h"
 
+#include <ShellScalingApi.h>
+
 using namespace WEX::TestExecution;
 using namespace WEX::Logging;
 using namespace WEX::Common;
@@ -113,9 +115,13 @@ void DimensionsTests::TestGetLargestConsoleWindowSize()
 
     // Do not reserve space for scroll bars.
 
+    const auto dpi = GetDpiForWindow(hWindow);
+    const auto fontX = MulDiv(cfi.dwFontSize.X, dpi, USER_DEFAULT_SCREEN_DPI);
+    const auto fontY = MulDiv(cfi.dwFontSize.Y, dpi, USER_DEFAULT_SCREEN_DPI);
+
     // Now take width and height and divide them by the size of a character to get the max character count.
-    coordExpected.X = (SHORT)((rcPixels.right - rcPixels.left) / cfi.dwFontSize.X);
-    coordExpected.Y = (SHORT)((rcPixels.bottom - rcPixels.top) / cfi.dwFontSize.Y);
+    coordExpected.X = (SHORT)((rcPixels.right - rcPixels.left) / fontX);
+    coordExpected.Y = (SHORT)((rcPixels.bottom - rcPixels.top) / fontY);
 
     // Now finally ask the console what it thinks its largest size should be and compare.
     const auto coordLargest = GetLargestConsoleWindowSize(Common::_hConsole);

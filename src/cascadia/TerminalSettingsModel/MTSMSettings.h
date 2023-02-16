@@ -31,10 +31,11 @@ Author(s):
     X(bool, TrimBlockSelection, "trimBlockSelection", true)                                                                                                \
     X(bool, DetectURLs, "experimental.detectURLs", true)                                                                                                   \
     X(bool, AlwaysShowTabs, "alwaysShowTabs", true)                                                                                                        \
+    X(Model::NewTabPosition, NewTabPosition, "newTabPosition", Model::NewTabPosition::AfterLastTab)                                                        \
     X(bool, ShowTitleInTitlebar, "showTerminalTitleInTitlebar", true)                                                                                      \
     X(bool, ConfirmCloseAllTabs, "confirmCloseAllTabs", true)                                                                                              \
+    X(Model::ThemePair, Theme, "theme")                                                                                                                    \
     X(hstring, Language, "language")                                                                                                                       \
-    X(winrt::Windows::UI::Xaml::ElementTheme, Theme, "theme", winrt::Windows::UI::Xaml::ElementTheme::Default)                                             \
     X(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, "tabWidthMode", winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal) \
     X(bool, UseAcrylicInTabRow, "useAcrylicInTabRow", false)                                                                                               \
     X(bool, ShowTabsInTitlebar, "showTabsInTitlebar", true)                                                                                                \
@@ -50,6 +51,7 @@ Author(s):
     X(bool, DebugFeaturesEnabled, "debugFeatures", debugFeaturesDefault)                                                                                   \
     X(bool, StartOnUserLogin, "startOnUserLogin", false)                                                                                                   \
     X(bool, AlwaysOnTop, "alwaysOnTop", false)                                                                                                             \
+    X(bool, AutoHideWindow, "autoHideWindow", false)                                                                                                       \
     X(Model::TabSwitcherMode, TabSwitcherMode, "tabSwitcherMode", Model::TabSwitcherMode::InOrder)                                                         \
     X(bool, DisableAnimations, "disableAnimations", false)                                                                                                 \
     X(hstring, StartupActions, "startupActions", L"")                                                                                                      \
@@ -58,7 +60,9 @@ Author(s):
     X(bool, AlwaysShowNotificationIcon, "alwaysShowNotificationIcon", false)                                                                               \
     X(winrt::Windows::Foundation::Collections::IVector<winrt::hstring>, DisabledProfileSources, "disabledProfileSources", nullptr)                         \
     X(bool, ShowAdminShield, "showAdminShield", true)                                                                                                      \
-    X(bool, TrimPaste, "trimPaste", true)
+    X(bool, TrimPaste, "trimPaste", true)                                                                                                                  \
+    X(bool, EnableColorSelection, "experimental.enableColorSelection", false)                                                                              \
+    X(winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry>, NewTabMenu, "newTabMenu", winrt::single_threaded_vector<Model::NewTabMenuEntry>({ Model::RemainingProfilesEntry{} }))
 
 #define MTSM_PROFILE_SETTINGS(X)                                                                                                                               \
     X(int32_t, HistorySize, "historySize", DEFAULT_HISTORY_SIZE)                                                                                               \
@@ -72,13 +76,15 @@ Author(s):
     X(bool, SuppressApplicationTitle, "suppressApplicationTitle", false)                                                                                       \
     X(guid, ConnectionType, "connectionType")                                                                                                                  \
     X(hstring, Icon, "icon", L"\uE756")                                                                                                                        \
-    X(CloseOnExitMode, CloseOnExit, "closeOnExit", CloseOnExitMode::Graceful)                                                                                  \
+    X(CloseOnExitMode, CloseOnExit, "closeOnExit", CloseOnExitMode::Automatic)                                                                                 \
     X(hstring, TabTitle, "tabTitle")                                                                                                                           \
     X(Model::BellStyle, BellStyle, "bellStyle", BellStyle::Audible)                                                                                            \
-    X(bool, UseAtlasEngine, "experimental.useAtlasEngine", false)                                                                                              \
+    X(bool, UseAtlasEngine, "useAtlasEngine", Feature_AtlasEngine::IsEnabled())                                                                                \
     X(Windows::Foundation::Collections::IVector<winrt::hstring>, BellSound, "bellSound", nullptr)                                                              \
     X(bool, Elevate, "elevate", false)                                                                                                                         \
-    X(bool, VtPassthrough, "experimental.connection.passthroughMode", false)
+    X(bool, VtPassthrough, "experimental.connection.passthroughMode", false)                                                                                   \
+    X(bool, AutoMarkPrompts, "experimental.autoMarkPrompts", false)                                                                                            \
+    X(bool, ShowMarks, "experimental.showMarksOnScrollbar", false)
 
 // Intentionally omitted Profile settings:
 // * Name
@@ -91,7 +97,7 @@ Author(s):
 
 #define MTSM_FONT_SETTINGS(X)                                                          \
     X(hstring, FontFace, "face", DEFAULT_FONT_FACE)                                    \
-    X(int32_t, FontSize, "size", DEFAULT_FONT_SIZE)                                    \
+    X(float, FontSize, "size", DEFAULT_FONT_SIZE)                                      \
     X(winrt::Windows::UI::Text::FontWeight, FontWeight, "weight", DEFAULT_FONT_WEIGHT) \
     X(IFontAxesMap, FontAxes, "axes")                                                  \
     X(IFontFeatureMap, FontFeatures, "features")
@@ -104,11 +110,28 @@ Author(s):
     X(bool, RetroTerminalEffect, "experimental.retroTerminalEffect", false)                                                                                        \
     X(hstring, PixelShaderPath, "experimental.pixelShaderPath")                                                                                                    \
     X(ConvergedAlignment, BackgroundImageAlignment, "backgroundImageAlignment", ConvergedAlignment::Horizontal_Center | ConvergedAlignment::Vertical_Center)       \
-    X(hstring, ColorSchemeName, "colorScheme", L"Campbell")                                                                                                        \
     X(hstring, BackgroundImagePath, "backgroundImage")                                                                                                             \
     X(Model::IntenseStyle, IntenseTextStyle, "intenseTextStyle", Model::IntenseStyle::Bright)                                                                      \
-    X(bool, AdjustIndistinguishableColors, "adjustIndistinguishableColors", true)
+    X(Core::AdjustTextMode, AdjustIndistinguishableColors, "adjustIndistinguishableColors", Core::AdjustTextMode::Never)
 
 // Intentionally omitted Appearance settings:
 // * ForegroundKey, BackgroundKey, SelectionBackgroundKey, CursorColorKey: all optional colors
 // * Opacity: needs special parsing
+
+#define MTSM_THEME_SETTINGS(X)                                                             \
+    X(winrt::Microsoft::Terminal::Settings::Model::WindowTheme, Window, "window", nullptr) \
+    X(winrt::Microsoft::Terminal::Settings::Model::TabRowTheme, TabRow, "tabRow", nullptr) \
+    X(winrt::Microsoft::Terminal::Settings::Model::TabTheme, Tab, "tab", nullptr)
+
+#define MTSM_THEME_WINDOW_SETTINGS(X)                                                                                              \
+    X(winrt::Windows::UI::Xaml::ElementTheme, RequestedTheme, "applicationTheme", winrt::Windows::UI::Xaml::ElementTheme::Default) \
+    X(bool, UseMica, "useMica", false)
+
+#define MTSM_THEME_TABROW_SETTINGS(X)                                                             \
+    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, Background, "background", nullptr) \
+    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, UnfocusedBackground, "unfocusedBackground", nullptr)
+
+#define MTSM_THEME_TAB_SETTINGS(X)                                                                                  \
+    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, Background, "background", nullptr)                   \
+    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, UnfocusedBackground, "unfocusedBackground", nullptr) \
+    X(winrt::Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility, ShowCloseButton, "showCloseButton", winrt::Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility::Always)

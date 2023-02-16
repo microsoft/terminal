@@ -9,7 +9,10 @@
                   xmlns:local="using:TerminalApp"
                   xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                   xmlns:mux="using:Microsoft.UI.Xaml.Controls"
+                  Background="{ThemeResource TabViewBackground}"
                   mc:Ignorable="d">
+
+    <!--  GH#13143: Make sure that the Background is actually TabViewBackground here, not Transparent. This is load bearing, for showTabsInTitlebar=false.  -->
 
     <mux:TabView x:Name="TabView"
                  VerticalAlignment="Bottom"
@@ -57,7 +60,8 @@
                                  FontSize="12">
                     <ToolTipService.ToolTip>
                         <ToolTip Placement="Mouse">
-                            <TextBlock IsTextSelectionEnabled="False">
+                            <TextBlock IsTextSelectionEnabled="False"
+                                       TextWrapping="Wrap">
                                 <Run x:Uid="NewTabRun" /> <LineBreak />
                                 <Run x:Uid="NewPaneRun"
                                      FontStyle="Italic" /> <LineBreak />
