@@ -13,12 +13,6 @@
 #include "resource.h"
 #include "NotificationIcon.h"
 
-// This was an enormous dead end.
-// #include <dxgiDebug.h>
-// #include <dxgi1_3.h>
-// typedef GUID DXGI_DEBUG_ID;
-// const DXGI_DEBUG_ID DXGI_DEBUG_ALL = { 0xe48ae283, 0xda80, 0x490b, 0x87, 0xe6, 0x43, 0xe9, 0xa9, 0xcf, 0xda, 0x8 };
-
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
@@ -49,20 +43,6 @@ WindowEmperor::WindowEmperor() noexcept :
 
 WindowEmperor::~WindowEmperor()
 {
-    // This was an enormous dead end.
-    // if (wil::com_ptr<IDXGIDebug1> debug; SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(debug.addressof()))))
-    // {
-    //     //debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
-    //     debug->DisableLeakTrackingForThread();
-    // }
-    //
-    // TODO! We're still somehow leaking on exit, even though the islands,
-    // hosts, xaml sources, everything, seem to get closed and dtor'd before
-    // this point. Theoretically, we shouldn't event have leak reporting enabled
-    // for this thread. It's a real thinker.
-    //
-    // I need someone to help take a look at this with me.
-
     _app.Close();
     _app = nullptr;
 }
@@ -142,7 +122,7 @@ void WindowEmperor::CreateNewWindowThread(Remoting::WindowRequestedArgs args, co
         // Add a callback to the window's logic to let us know when the window's
         // quake mode state changes. We'll use this to check if we need to add
         // or remove the notification icon.
-        sender->Logic().IsQuakeWindowChanged([this](auto&&, auto&&) -> winrt::fire_and_forget {
+        sender->Logic().IsQuakeWindowChanged([this](auto&&, auto &&) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(this->_dispatcher);
             this->_checkWindowsForNotificationIcon();
         });

@@ -29,6 +29,21 @@ void WindowThread::Start()
         const auto exitCode = WindowProc();
         _host = nullptr;
 
+        // !! LOAD BEARING !!
+        //
+        // Make sure to finish pumping all the messages for our thread here. We
+        // may think we're all done, but we're not quite. XAML needs more time
+        // to pump the remaining events through, even at the point we're
+        // exiting. So do that now. If you don't, then the last tab to close
+        // will never actually destruct the last tab / TermControl / ControlCore
+        // / renderer.
+        {
+            MSG msg = {};
+            while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
+            {
+                ::DispatchMessageW(&msg);
+            }
+        }
         _ExitedHandlers(_peasant.GetID());
         return exitCode;
     });
