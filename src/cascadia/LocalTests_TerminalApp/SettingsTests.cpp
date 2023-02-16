@@ -164,8 +164,9 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(nameMap, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
-        _logCommandNames(expandedCommands.GetView());
+        settings.ExpandCommands();
+        const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
+        _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, expandedCommands.Size());
@@ -287,8 +288,9 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(nameMap, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
-        _logCommandNames(expandedCommands.GetView());
+        settings.ExpandCommands();
+        const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
+        _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, expandedCommands.Size());
@@ -412,8 +414,9 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(nameMap, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
-        _logCommandNames(expandedCommands.GetView());
+        settings.ExpandCommands();
+        const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
+        _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, expandedCommands.Size());
@@ -527,8 +530,9 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(settings.ActionMap().NameMap(), settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
-        _logCommandNames(expandedCommands.GetView());
+        settings.ExpandCommands();
+        const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
+        _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(1u, expandedCommands.Size());
@@ -621,8 +625,9 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(settings.ActionMap().NameMap(), settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
-        _logCommandNames(expandedCommands.GetView());
+        settings.ExpandCommands();
+        const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
+        _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(1u, expandedCommands.Size());
@@ -744,8 +749,9 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(settings.ActionMap().NameMap(), settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
-        _logCommandNames(expandedCommands.GetView());
+        settings.ExpandCommands();
+        const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
+        _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
 
@@ -880,8 +886,9 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(settings.ActionMap().NameMap(), settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
-        _logCommandNames(expandedCommands.GetView());
+        settings.ExpandCommands();
+        const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
+        _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(1u, expandedCommands.Size());
@@ -982,8 +989,9 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(settings.ActionMap().NameMap(), settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
-        _logCommandNames(expandedCommands.GetView());
+        settings.ExpandCommands();
+        const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
+        _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(1u, expandedCommands.Size());
@@ -1205,8 +1213,9 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${scheme.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(nameMap, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
-        _logCommandNames(expandedCommands.GetView());
+        settings.ExpandCommands();
+        const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
+        _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(3u, expandedCommands.Size());
 
