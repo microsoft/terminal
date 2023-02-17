@@ -6,6 +6,10 @@
 #include <wil/token_helpers.h>
 #include <winternl.h>
 
+#ifdef UNIT_TESTING
+class EnvTests;
+#endif
+
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
     namespace details
@@ -226,12 +230,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     {
     private:
 #ifdef UNIT_TESTING
-        friend class EnvTests;
+        friend class ::EnvTests;
 #endif
 
         std::map<std::wstring, std::wstring, til::details::wstring_case_insensitive_compare> _envMap{};
 
-        // these wstring_views better be null terminated.
+        // We make copies of the environment variable names to ensure they are null terminated.
         void get(std::wstring variable)
         {
             if (auto value = wil::TryGetEnvironmentVariableW(variable.c_str()))
@@ -373,14 +377,58 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         std::wstring expand_environment_strings(std::wstring input)
         {
-            // TODO: this should be replacing from ourselves, not from the OS
-            return wil::ExpandEnvironmentStringsW<std::wstring, 256>(input.data());
+            std::wstring expanded;
+            expanded.reserve(input.size());
+            bool isInEnvVarName = FALSE;
+            std::wstring currentEnvVarName;
+            for (const auto character : input)
+            {
+                if (character == L'%')
+                {
+                    if (isInEnvVarName)
+                    {
+                        if (const auto envVarValue = _envMap.find(currentEnvVarName); envVarValue != _envMap.end())
+                        {
+                            expanded.append(envVarValue->second);
+                        }
+                        else
+                        {
+                            expanded.push_back(L'%');
+                            expanded.append(currentEnvVarName);
+                            expanded.push_back(L'%');
+                        }
+                        isInEnvVarName = FALSE;
+                        currentEnvVarName.clear();
+                    }
+                    else
+                    {
+                        isInEnvVarName = TRUE;
+                    }
+                }
+                else
+                {
+                    if (isInEnvVarName)
+                    {
+                        currentEnvVarName.push_back(character);
+                    }
+                    else
+                    {
+                        expanded.push_back(character);
+                    }
+                }
+            }
+            if (isInEnvVarName)
+            {
+                expanded.push_back('%');
+                expanded.append(currentEnvVarName);
+            }
+            return expanded;
         }
 
         void set_user_environment_var(std::wstring var, std::wstring value)
         {
             value = expand_environment_strings(value);
-            value = check_for_temp(value);
+            value = check_for_temp(var, value);
             save_to_map(var, value);
         }
 
@@ -413,16 +461,16 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         static constexpr std::wstring_view temp{ L"temp" };
         static constexpr std::wstring_view tmp{ L"tmp" };
-        std::wstring check_for_temp(std::wstring_view input)
+        std::wstring check_for_temp(std::wstring_view var, std::wstring_view value)
         {
-            if (!_wcsicmp(input.data(), temp.data()) ||
-                !_wcsicmp(input.data(), tmp.data()))
+            if (!_wcsicmp(var.data(), temp.data()) ||
+                !_wcsicmp(var.data(), tmp.data()))
             {
-                return til::details::wil_env::GetShortPathNameW<std::wstring, 256>(input.data());
+                return til::details::wil_env::GetShortPathNameW<std::wstring, 256>(value.data());
             }
             else
             {
-                return std::wstring{ input };
+                return std::wstring{ value };
             }
         }
 
@@ -508,8 +556,5 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             return _envMap;
         }
-
-        // TODO: should we be a bunch of goofs and make a "watcher" here that sets up its own
-        //       quiet little HWND and message pump watching for the WM_SETTINGCHANGE?
     };
 };

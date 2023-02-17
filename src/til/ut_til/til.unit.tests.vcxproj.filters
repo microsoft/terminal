@@ -52,6 +52,9 @@
     <ClInclude Include="..\..\inc\til\enumset.h">
       <Filter>inc</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\inc\til\env.h">
+      <Filter>inc</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\inc\til\hash.h">
       <Filter>inc</Filter>
     </ClInclude>

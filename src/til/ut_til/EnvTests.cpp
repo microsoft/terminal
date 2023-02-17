@@ -40,6 +40,7 @@ class EnvTests
         VERIFY_ARE_EQUAL(expected.as_map().size(), actual.as_map().size());
         for (const auto& [expectedKey, expectedValue] : expected.as_map())
         {
+            Log::Comment(String().Format(L"Environment Variable: '%s'", expectedKey.data()));
             VERIFY_IS_TRUE(actual.as_map().find(expectedKey) != actual.as_map().end());
             VERIFY_ARE_EQUAL(expectedValue, actual.as_map()[expectedKey]);
         }
@@ -61,6 +62,28 @@ class EnvTests
         for (size_t i = 0; i < expected.size(); ++i)
         {
             VERIFY_ARE_EQUAL(expected[i], actual[i]);
+        }
+    }
+
+    TEST_METHOD(TestExpandEnvironmentStrings)
+    {
+        {
+            til::env environment;
+            environment.as_map().insert_or_assign(L"ENV", L"Bar");
+
+            VERIFY_ARE_EQUAL(L"FooBarBaz", environment.expand_environment_strings(L"Foo%ENV%Baz"));
+        }
+
+        {
+            til::env environment;
+
+            VERIFY_ARE_EQUAL(L"Foo%ENV%Baz", environment.expand_environment_strings(L"Foo%ENV%Baz"));
+        }
+
+        {
+            til::env environment;
+
+            VERIFY_ARE_EQUAL(L"Foo%ENV", environment.expand_environment_strings(L"Foo%ENV"));
         }
     }
 };

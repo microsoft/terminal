@@ -46,6 +46,7 @@
     <ClInclude Include="..\..\inc\til\coalesce.h" />
     <ClInclude Include="..\..\inc\til\color.h" />
     <ClInclude Include="..\..\inc\til\enumset.h" />
+    <ClInclude Include="..\..\inc\til\env.h" />
     <ClInclude Include="..\..\inc\til\hash.h" />
     <ClInclude Include="..\..\inc\til\latch.h" />
     <ClInclude Include="..\..\inc\til\math.h" />
