@@ -245,7 +245,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     winrt::hstring MovePaneArgs::GenerateName() const
     {
-        // TODO!
+        if (!Window().empty())
+        {
+            return winrt::hstring{
+                fmt::format(L"{}, window:{}, tab index:{}", RS_(L"MovePaneCommandKey"), Window(), TabIndex())
+            };
+        }
         return winrt::hstring{
             fmt::format(L"{}, tab index:{}", RS_(L"MovePaneCommandKey"), TabIndex())
         };
@@ -649,6 +654,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     winrt::hstring MoveTabArgs::GenerateName() const
     {
+        if (!Window().empty())
+        {
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"MoveTabToWindowCommandKey")),
+                            Window())
+            };
+        }
+
         winrt::hstring directionString;
         switch (Direction())
         {
@@ -663,10 +676,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             fmt::format(std::wstring_view(RS_(L"MoveTabCommandKey")),
                         directionString)
         };
-
-        // TODO!
-        // return winrt::hstring{
-        //     fmt::format(L"{}, window:{}", RS_(L"MovePaneCommandKey"), Window())
     }
 
     winrt::hstring ToggleCommandPaletteArgs::GenerateName() const

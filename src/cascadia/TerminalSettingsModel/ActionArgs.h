@@ -332,10 +332,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::GetValueForKey(json, SuppressApplicationTitleKey, args->_SuppressApplicationTitle);
             JsonUtils::GetValueForKey(json, ColorSchemeKey, args->_ColorScheme);
             JsonUtils::GetValueForKey(json, ElevateKey, args->_Elevate);
-
-            // TODO! We should probably have the ContentGuid be optional, or at
-            // least serialized smarter, so we definitely don't write it to the
-            // file, ever.
             JsonUtils::GetValueForKey(json, ContentKey, args->_ContentGuid);
             return *args;
         }

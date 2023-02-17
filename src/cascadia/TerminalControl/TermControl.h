@@ -144,15 +144,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
-// Same thing, but handler is a projected type, not an implementation
-#define BUBBLED_FORWARDED_TYPED_EVENT(name, sender, args) \
-    TYPED_EVENT(name, sender, args)                       \
-    void _bubble##name(const sender& s, const args& a) { _##name##Handlers(s, a); }
-
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
         WINRT_CALLBACK(FontSizeChanged, Control::FontSizeChangedEventArgs);
 
+        // UNDER NO CIRCUMSTANCES SHOULD YOU ADD A (PROJECTED_)FORWARDED_TYPED_EVENT HERE
         BUBBLED_FORWARDED_TYPED_EVENT(CopyToClipboard,        IInspectable, Control::CopyToClipboardEventArgs);
         BUBBLED_FORWARDED_TYPED_EVENT(TitleChanged,           IInspectable, Control::TitleChangedEventArgs);
         BUBBLED_FORWARDED_TYPED_EVENT(TabColorChanged,        IInspectable, IInspectable);

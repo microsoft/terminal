@@ -229,6 +229,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    void ControlCore::Detach()
+    {
+        _tsfTryRedrawCanvas.reset();
+        _updatePatternLocations.reset();
+        _updateScrollBar.reset();
+    }
+
     void ControlCore::Reparent(const Microsoft::Terminal::Control::IKeyBindings& keyBindings)
     {
         _settings->KeyBindings(keyBindings);
@@ -588,7 +595,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //      itself - it was initiated by the mouse wheel, or the scrollbar.
         _terminal->UserScrollViewport(viewTop);
 
-        (*_updatePatternLocations)();
+        if (_updatePatternLocations)
+        {
+            (*_updatePatternLocations)();
+        }
     }
 
     void ControlCore::AdjustOpacity(const double adjustment)
@@ -1375,7 +1385,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto update{ winrt::make<ScrollPositionChangedArgs>(viewTop,
                                                             viewHeight,
                                                             bufferSize) };
-        if (!_inUnitTests)
+        if (!_inUnitTests && _updateScrollBar)
         {
             _updateScrollBar->Run(update);
         }
@@ -1385,14 +1395,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // Additionally, start the throttled update of where our links are.
-        (*_updatePatternLocations)();
+
+        if (_updatePatternLocations)
+        {
+            (*_updatePatternLocations)();
+        }
     }
 
     void ControlCore::_terminalCursorPositionChanged()
     {
         // When the buffer's cursor moves, start the throttled func to
         // eventually dispatch a CursorPositionChanged event.
-        _tsfTryRedrawCanvas->Run();
+        if (_tsfTryRedrawCanvas)
+        {
+            _tsfTryRedrawCanvas->Run();
+        }
     }
 
     void ControlCore::_terminalTaskbarProgressChanged()
@@ -1417,15 +1434,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - duration - How long the note should be sustained (in microseconds).
     void ControlCore::_terminalPlayMidiNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration)
     {
-        // TODO! In the OOP2 branches, I left a comment about intentionally conflicting here.
         // The UI thread might try to acquire the console lock from time to time.
         // --> Unlock it, so the UI doesn't hang while we're busy.
         const auto suspension = _terminal->SuspendLock();
-        // TODO! GH#1256 This is intentionally here to conflict with https://github.com/microsoft/terminal/pull/13471#pullrequestreview-1039353718
-        // When we do tearout, we'll need to also recreate the midi thing
-
-        // TODO!  I don't know if taht ^  comment is still relevant, but I'll leave it here in case it is.
-
         // This call will block for the duration, unless shutdown early.
         _midiAudio.PlayNote(reinterpret_cast<HWND>(_owningHwnd), noteNumber, velocity, std::chrono::duration_cast<std::chrono::milliseconds>(duration));
     }
@@ -1699,7 +1710,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->Write(hstr);
 
             // Start the throttled update of where our hyperlinks are.
-            (*_updatePatternLocations)();
+            if (_updatePatternLocations)
+            {
+                (*_updatePatternLocations)();
+            }
         }
         catch (...)
         {
@@ -1972,7 +1986,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (owner != _owningHwnd && _connection)
         {
-            // TODO GH#1256 change the midi HWND too
             if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
             {
                 conpty.ReparentWindow(owner);

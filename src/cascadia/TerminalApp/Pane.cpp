@@ -108,7 +108,9 @@ Pane::Pane(std::shared_ptr<Pane> first,
 // - Extract the terminal settings from the current (leaf) pane's control
 //   to be used to create an equivalent control
 // Arguments:
-// - <none>
+// - asContent: when true, we're trying to serialize this pane for moving across
+//   windows. In that case, we'll need to fill in the content guid for our new
+//   terminal args.
 // Return Value:
 // - Arguments appropriate for a SplitPane or NewTab action
 NewTerminalArgs Pane::GetTerminalArgsForPane(const bool asContent) const
@@ -156,6 +158,7 @@ NewTerminalArgs Pane::GetTerminalArgsForPane(const bool asContent) const
     // object. That would work for schemes set by the Terminal, but not ones set
     // by VT, but that seems good enough.
 
+    // Only fill in the ContentGuid if absolutely needed.
     if (asContent)
     {
         args.ContentGuid(_control.ContentGuid());
@@ -172,22 +175,36 @@ NewTerminalArgs Pane::GetTerminalArgsForPane(const bool asContent) const
 // Arguments:
 // - currentId: the id to use for the current/first pane
 // - nextId: the id to use for a new pane if we split
-// - asContent: TODO!
+// - asContent: We're serializing this set of actions as content actions for
+//   moving to other windows, so we need to make sure to include ContentGuid's
+//   in the final actions.
+// - asMovePane: only used with asContent. When this is true, we're building
+//   these actions as a part of moving the pane to another window, but without
+//   the context of the hosting tab. In that case, we'll want to build a
+//   splitPane action even if we're just a single leaf, because there's no other
+//   parent to try and build an action for us.
 // Return Value:
 // - The state from building the startup actions, includes a vector of commands,
 //   the original root pane, the id of the focused pane, and the number of panes
 //   created.
-Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t nextId, const bool asContent)
+Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId,
+                                                  uint32_t nextId,
+                                                  const bool asContent,
+                                                  const bool asMovePane)
 {
-    // if we are a leaf then all there is to do is defer to the parent.
-    if (_IsLeaf())
+    // Normally, if we're a leaf, return an empt set of actions, because the
+    // parent pane will build the SplitPane action for us. If we're building
+    // actions for a movePane action though, we'll still need to include
+    // ourselves.
+    if (!asMovePane && _IsLeaf())
     {
         if (_lastActive)
         {
-            return { {}, shared_from_this(), currentId, 0 };
+            // empty args, this is the first pane, currentId is
+            return { .args = {}, .firstPane = shared_from_this(), .focusedPaneId = currentId, .panesCreated = 0 };
         }
 
-        return { {}, shared_from_this(), std::nullopt, 0 };
+        return { .args = {}, .firstPane = shared_from_this(), .focusedPaneId = std::nullopt, .panesCreated = 0 };
     }
 
     auto buildSplitPane = [&](auto newPane) {
@@ -206,7 +223,12 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t n
 
     if (asContent && _IsLeaf())
     {
-        return { { buildSplitPane(shared_from_this()) }, shared_from_this(), currentId, 1 };
+        return {
+            .args = { buildSplitPane(shared_from_this()) },
+            .firstPane = shared_from_this(),
+            .focusedPaneId = currentId,
+            .panesCreated = 1
+        };
     }
 
     auto buildMoveFocus = [](auto direction) {
@@ -235,7 +257,12 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t n
             focusedPaneId = nextId;
         }
 
-        return { { actionAndArgs }, _firstChild, focusedPaneId, 1 };
+        return {
+            .args = { actionAndArgs },
+            .firstPane = _firstChild,
+            .focusedPaneId = focusedPaneId,
+            .panesCreated = 1
+        };
     }
 
     // We now need to execute the commands for each side of the tree
@@ -272,7 +299,12 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t n
     // mutually exclusive.
     const auto focusedPaneId = firstState.focusedPaneId.has_value() ? firstState.focusedPaneId : secondState.focusedPaneId;
 
-    return { actions, firstState.firstPane, focusedPaneId, firstState.panesCreated + secondState.panesCreated + 1 };
+    return {
+        .args = { actions },
+        .firstPane = firstState.firstPane,
+        .focusedPaneId = focusedPaneId,
+        .panesCreated = firstState.panesCreated + secondState.panesCreated + 1
+    };
 }
 
 // Method Description:
@@ -1226,11 +1258,6 @@ void Pane::Shutdown()
 
     if (_IsLeaf())
     {
-        // TOODO! if we call Close here, on a control that was moved to another thread, then it's Dispatcher is no longer this thread, and we'll crash.
-        // Acn we get away with _not_ calling Close? Seems like shutdown is only called for RemoveTab(TerminalTab), so theoretically, removing the old control tree from the UI tree will release the core, calling it's dtor, which will call Close itself.
-        // Alternatively, we could try and see if there's only one strong ref to a ControlCore and just noop if there's more than one.
-        //
-        // I'm bringing this back for a second.
         _control.Close();
     }
     else

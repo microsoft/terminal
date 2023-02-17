@@ -1877,8 +1877,8 @@ namespace winrt::TerminalApp::implementation
     //   is the last remaining pane on a tab, that tab will be closed upon moving.
     // - No move will occur if the tabIdx is the same as the current tab, or if
     //   the specified tab is not a host of terminals (such as the settings tab).
-    // Arguments:
-    // - TODO!
+    // - If the Window is specified, the pane will instead be detached and moved
+    //   to the window with the given name/id.
     // Return Value:
     // - true if the pane was successfully moved to the new tab.
     bool TerminalPage::_MovePane(MovePaneArgs args)
@@ -1893,36 +1893,21 @@ namespace winrt::TerminalApp::implementation
             return false;
         }
 
+        // If there was a windowId in the action, try to move it to the
+        // specified window instead of moving it in our tab row.
         if (!windowId.empty())
         {
             if (const auto terminalTab{ _GetFocusedTabImpl() })
-
             {
                 if (const auto pane{ terminalTab->GetActivePane() })
-
                 {
-                    auto startupActions = pane->BuildStartupActions(0, 1, true);
-                    auto winRtActions{ winrt::single_threaded_vector<ActionAndArgs>(std::move(startupActions.args)) };
-                    // Json::Value json{ Json::objectValue };
-                    // SetValueForKey(json, "content", winRtActions);
-                    // Json::StreamWriterBuilder wbuilder;
-                    // auto str = Json::writeString(wbuilder, json);
-                    auto str = ActionAndArgs::Serialize(winRtActions);
-                    auto request = winrt::make_self<RequestMoveContentArgs>(args.Window(),
-                                                                            str,
-                                                                            args.TabIndex());
-                    _RequestMoveContentHandlers(*this, *request);
+                    auto startupActions = pane->BuildStartupActions(0, 1, true, true);
+                    _DetachPaneFromWindow(pane);
+                    _MoveContent(startupActions.args, args.Window(), args.TabIndex());
+                    focusedTab->DetachPane();
                     return true;
                 }
             }
-
-            //if (const auto& control{ _GetActiveControl() })
-            //{
-            //    const auto currentContentGuid{ control.ContentGuid() };
-            //    auto request = winrt::make_self<RequestMoveCoArgs>(currentContentGuid, args);
-            //    _RequestMovePaneHandlers(*this, *request);
-            //    return true;
-            //}
         }
 
         // If we are trying to move from the current tab to the current tab do nothing.
@@ -1955,42 +1940,57 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
-    void TerminalPage::_DetachTab(const winrt::com_ptr<TerminalTab>& terminalTab)
+    // Detach a tree of panes from this terminal. Helper used for moving panes
+    // and tabs to other windows.
+    void TerminalPage::_DetachPaneFromWindow(std::shared_ptr<Pane> pane)
     {
-        // Collect all the content we're about to detach.
+        pane->WalkTree([&](auto p) {
+            if (const auto& control{ p->GetTerminalControl() })
+            {
+                _manager.Detach(control);
+            }
+        });
+    }
+
+    void TerminalPage::_DetachTabFromWindow(const winrt::com_ptr<TerminalTab>& terminalTab)
+    {
+        // Detach the root pane, which will act like the whole tab got detached.
         if (const auto rootPane = terminalTab->GetRootPane())
         {
-            rootPane->WalkTree([&](auto p) {
-                if (const auto& control{ p->GetTerminalControl() })
-                {
-                    _manager.Detach(control);
-                }
-            });
+            _DetachPaneFromWindow(rootPane);
         }
+    }
+
+    // Method Description:
+    // - Serialize these actions to json, and raise them as a RequestMoveContent
+    //   event. Our Window will raise that to the window manager / monarch, who
+    //   will dispatch this blob of json back to the window that should handle
+    //   this.
+    void TerminalPage::_MoveContent(std::vector<Settings::Model::ActionAndArgs>& actions,
+                                    const winrt::hstring& windowName,
+                                    const uint32_t tabIndex)
+    {
+        const auto winRtActions{ winrt::single_threaded_vector<ActionAndArgs>(std::move(actions)) };
+        const auto str{ ActionAndArgs::Serialize(winRtActions) };
+        const auto request = winrt::make_self<RequestMoveContentArgs>(windowName,
+                                                                      str,
+                                                                      tabIndex);
+        _RequestMoveContentHandlers(*this, *request);
     }
 
     bool TerminalPage::_MoveTab(MoveTabArgs args)
     {
+        // If there was a windowId in the action, try to move it to the
+        // specified window instead of moving it in our tab row.
         const auto windowId{ args.Window() };
         if (!windowId.empty())
         {
             if (const auto terminalTab{ _GetFocusedTabImpl() })
             {
                 auto startupActions = terminalTab->BuildStartupActions(true);
-                _DetachTab(terminalTab);
-
-                auto winRtActions{ winrt::single_threaded_vector<ActionAndArgs>(std::move(startupActions)) };
-                // Json::Value json{ Json::objectValue };
-                // SetValueForKey(json, "content", winRtActions);
-                // Json::StreamWriterBuilder wbuilder;
-                // auto str = Json::writeString(wbuilder, json);
-                auto str = ActionAndArgs::Serialize(winRtActions);
-                auto request = winrt::make_self<RequestMoveContentArgs>(args.Window(),
-                                                                        str,
-                                                                        0);
-
+                _DetachTabFromWindow(terminalTab);
+                _MoveContent(startupActions, args.Window(), 0);
                 _RemoveTab(*terminalTab);
-                _RequestMoveContentHandlers(*this, *request);
                 return true;
             }
         }
@@ -2009,23 +2009,64 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
-    winrt::fire_and_forget TerminalPage::AttachContent(winrt::hstring content, uint32_t tabIndex)
+    // Method Description:
+    // - Called when it is determined that an existing tab or pane should be
+    //   attached to our window. content represents a blob of JSON describing
+    //   some startup actions for rebuilding the specified panes. They will
+    //   include `__content` properties with the GUID of the existing
+    //   ControlInteractivity's we should use, rather than starting new ones.
+    // - _MakePane is already enlightened to use the ContentGuid property to
+    //   reattach instead of create new content, so this method simply needs to
+    //   parse the JSON and pump it into our action handler. Almost the same as
+    //   doing something like `wt -w 0 nt`.
+    winrt::fire_and_forget TerminalPage::AttachContent(winrt::hstring content,
+                                                       uint32_t tabIndex)
     {
-        content;
-        tabIndex;
-
         auto args = ActionAndArgs::Deserialize(content);
-        // TODO! if the first action is a split pane and tabIndex > tabs.size,
-        // then remove it and insert an equivalent newTab
 
-        co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal); // may need to go to the top of _createNewTabFromContent
+        // If the first action is a split pane and tabIndex > tabs.size,
+        // then remove it and insert an equivalent newTab action instead.
+        // Otherwise, focus the tab they requested before starting the split.
+        if (args == nullptr ||
+            args.Size() == 0)
+        {
+            co_return;
+        }
+
+        // Switch to the UI thread before selecting a tab or dispatching actions.
+        co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
+
+        const auto& firstAction = args.GetAt(0);
+        const bool firstIsSplitPane{ firstAction.Action() == ShortcutAction::SplitPane };
+
+        // splitPane allows the user to specify which tab to split. in that
+        // case, split specifically the requested pane, If there's not enough
+        // tabs, then just turn this pane into a new tab. If the first action
+        // is newTab, the index is always going to be 0, so don't do anything in
+        // that case.
+        if (firstIsSplitPane && tabIndex < _tabs.Size())
+        {
+            _SelectTab(tabIndex);
+        }
+        else
+        {
+            const auto& firstAction = args.GetAt(0);
+            if (firstAction.Action() == ShortcutAction::SplitPane)
+            {
+                // Create the equivalent NewTab action.
+                const auto newAction = Settings::Model::ActionAndArgs{ Settings::Model::ShortcutAction::NewTab,
+                                                                       Settings::Model::NewTabArgs(firstAction.Args() ?
+                                                                                                       firstAction.Args().try_as<Settings::Model::SplitPaneArgs>().TerminalArgs() :
+                                                                                                       nullptr) };
+                args.SetAt(0, newAction);
+            }
+        }
+
         for (const auto& action : args)
         {
             _actionDispatch->DoAction(action);
         }
     }
-
-    // TODO!  look at 87c840b381870e45bcc9e625fb88a8bdf5106420. That's what I was starting here
 
     // Method Description:
     // - Split the focused pane either horizontally or vertically, and place the
@@ -2709,6 +2750,8 @@ namespace winrt::TerminalApp::implementation
             term.WindowVisibilityChanged(_visible);
         }
 
+        // Even in the case of re-attaching content from another window, this
+        // will correctly update the control's owning HWND
         if (_hostingHwnd.has_value())
         {
             term.OwningHwnd(reinterpret_cast<uint64_t>(*_hostingHwnd));
@@ -2736,6 +2779,20 @@ namespace winrt::TerminalApp::implementation
                                                   const winrt::TerminalApp::TabBase& sourceTab,
                                                   TerminalConnection::ITerminalConnection existingConnection)
     {
+        // First things first - Check for making a pane from content GUID.
+        if (newTerminalArgs &&
+            newTerminalArgs.ContentGuid() != winrt::guid{})
+        {
+            // Don't need to worry about duplicating or anything - we'll
+            // serialize the actual profile's GUID along with the content guid.
+            const auto& profile = _settings.GetProfileForArgs(newTerminalArgs);
+
+            const auto control = _InitControlFromContent(newTerminalArgs.ContentGuid());
+            _RegisterTerminalEvents(control);
+            auto resultPane = std::make_shared<Pane>(profile, control);
+            return resultPane;
+        }
+
         TerminalSettingsCreateResult controlSettings{ nullptr };
         Profile profile{ nullptr };
 
@@ -2759,15 +2816,6 @@ namespace winrt::TerminalApp::implementation
         {
             profile = _settings.GetProfileForArgs(newTerminalArgs);
             controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
-        }
-        // TODO! This should really be even above the block above, I'm just kludging it RN so I get a profile
-        // We'll probably want to not store just Interactivity's, but a {Profile, Interactivity, etc...} blob in ContentManager
-        if (newTerminalArgs && newTerminalArgs.ContentGuid() != winrt::guid{})
-        {
-            const auto control = _InitControlFromContent(newTerminalArgs.ContentGuid());
-            _RegisterTerminalEvents(control);
-            auto resultPane = std::make_shared<Pane>(profile, control);
-            return resultPane;
         }
 
         // Try to handle auto-elevation

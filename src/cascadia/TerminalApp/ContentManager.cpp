@@ -26,9 +26,6 @@ namespace winrt
 }
 namespace winrt::TerminalApp::implementation
 {
-    // TODO! These all probably need to be weak_refs, don't they, so that the
-    // ContentManager doesn't just keep every control around indefinitely.
-
     ControlInteractivity ContentManager::CreateCore(Microsoft::Terminal::Control::IControlSettings settings,
                                                     IControlAppearance unfocusedAppearance,
                                                     TerminalConnection::ITerminalConnection connection)

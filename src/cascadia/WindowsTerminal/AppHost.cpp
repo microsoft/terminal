@@ -89,8 +89,8 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
 
     _window->MakeWindow();
 
-    _GetWindowLayoutRequestedToken = _windowManager.GetWindowLayoutRequested([this](auto&&,
-                                                                                    const Remoting::GetWindowLayoutArgs& args) {
+    _GetWindowLayoutRequestedToken = _peasant.GetWindowLayoutRequested([this](auto&&,
+                                                                              const Remoting::GetWindowLayoutArgs& args) {
         // The peasants are running on separate threads, so they'll need to
         // swap what context they are in to the ui thread to get the actual layout.
         args.WindowLayoutJsonAsync(_GetWindowLayoutAsync());
@@ -226,11 +226,6 @@ void AppHost::_HandleCommandlineArgs()
         const auto numPeasants = _windowManager.GetNumberOfPeasants();
         if (numPeasants == 1)
         {
-            // TODO! this is vaguely off by one. Not sure, but if you restore 2
-            // windows, you seem to get two copies of the second. Yikes. And
-            // this wasn't just because I was setting the debug commandline to
-            // `nt ; nt`. Calling wtd with two persisted windows just creates
-            // two of the second persisted window, ew.
             const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
             if (_appLogic.ShouldUsePersistedLayout() &&
                 layouts &&
@@ -279,10 +274,7 @@ void AppHost::_HandleCommandlineArgs()
         _windowLogic.WindowName(_peasant.WindowName());
         _windowLogic.WindowId(_peasant.GetID());
 
-        // TODO! add revoker
-        _peasant.AttachRequested([this](auto&&, Remoting::AttachRequest args) {
-            _windowLogic.AttachContent(args.Content(), args.TabIndex());
-        });
+        _revokers.AttachRequested = _peasant.AttachRequested(winrt::auto_revoke, { this, &AppHost::_handleAttach });
     }
 }
 
@@ -391,12 +383,7 @@ void AppHost::Initialize()
     _revokers.OpenSystemMenu = _windowLogic.OpenSystemMenu(winrt::auto_revoke, { this, &AppHost::_OpenSystemMenu });
     _revokers.QuitRequested = _windowLogic.QuitRequested(winrt::auto_revoke, { this, &AppHost::_RequestQuitAll });
     _revokers.ShowWindowChanged = _windowLogic.ShowWindowChanged(winrt::auto_revoke, { this, &AppHost::_ShowWindowChanged });
-
-    // TODO! revoker
-    // TODO! move to member method
-    _windowLogic.RequestMoveContent([this](auto&&, winrt::TerminalApp::RequestMoveContentArgs args) {
-        _windowManager.RequestMoveContent(args.Window(), args.Content(), args.TabIndex());
-    });
+    _revokers.RequestMoveContent = _windowLogic.RequestMoveContent(winrt::auto_revoke, { this, &AppHost::_handleMoveContent });
 
     // BODGY
     // On certain builds of Windows, when Terminal is set as the default
@@ -461,7 +448,7 @@ void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /*
 void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::TerminalApp::LastTabClosedEventArgs& /*args*/)
 {
     // We don't want to try to save layouts if we are about to close.
-    _windowManager.GetWindowLayoutRequested(_GetWindowLayoutRequestedToken);
+    _peasant.GetWindowLayoutRequested(_GetWindowLayoutRequestedToken);
 
     // Remove ourself from the list of peasants so that we aren't included in
     // any future requests. This will also mean we block until any existing
@@ -1210,4 +1197,16 @@ void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspect
 winrt::TerminalApp::TerminalWindow AppHost::Logic()
 {
     return _windowLogic;
+}
+
+void AppHost::_handleMoveContent(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                 winrt::TerminalApp::RequestMoveContentArgs args)
+{
+    _windowManager.RequestMoveContent(args.Window(), args.Content(), args.TabIndex());
+}
+
+void AppHost::_handleAttach(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                            winrt::Microsoft::Terminal::Remoting::AttachRequest args)
+{
+    _windowLogic.AttachContent(args.Content(), args.TabIndex());
 }
