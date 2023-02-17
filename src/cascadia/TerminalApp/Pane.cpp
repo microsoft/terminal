@@ -179,17 +179,28 @@ NewTerminalArgs Pane::GetTerminalArgsForPane(const bool asContent) const
 // - The state from building the startup actions, includes a vector of commands,
 //   the original root pane, the id of the focused pane, and the number of panes
 //   created.
-Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t nextId, const bool asContent)
+Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t nextId, const bool asContent, const bool asMovePane)
 {
+    // TODO! I f'ed something up here recently. Just moving a single pane no longer seems to work.
+    //
+    // If we call this directly on a leaf, then CURRENTLY, we'll return {} for
+    // the actions. Moving that will just move nothing, cause obviously.
+    //
+    // But this all works fine for a _tab_, where there's a parent Tab to build
+    // a newTab action first.
+    //
+    // So if we're moving a pane, as content, then we need to special case here where even moving just us returns a splitPane
+
     // if we are a leaf then all there is to do is defer to the parent.
-    if (_IsLeaf())
+    if (!asMovePane && _IsLeaf())
     {
         if (_lastActive)
         {
-            return { {}, shared_from_this(), currentId, 0 };
+            // empty args, this is the first pane, currentId is
+            return { .args = {}, .firstPane = shared_from_this(), .focusedPaneId = currentId, .panesCreated = 0 };
         }
 
-        return { {}, shared_from_this(), std::nullopt, 0 };
+        return { .args = {}, .firstPane = shared_from_this(), .focusedPaneId = std::nullopt, .panesCreated = 0 };
     }
 
     auto buildSplitPane = [&](auto newPane) {
@@ -208,7 +219,12 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t n
 
     if (asContent && _IsLeaf())
     {
-        return { { buildSplitPane(shared_from_this()) }, shared_from_this(), currentId, 1 };
+        return {
+            .args = { buildSplitPane(shared_from_this()) },
+            .firstPane = shared_from_this(),
+            .focusedPaneId = currentId,
+            .panesCreated = 1
+        };
     }
 
     auto buildMoveFocus = [](auto direction) {
@@ -237,7 +253,12 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t n
             focusedPaneId = nextId;
         }
 
-        return { { actionAndArgs }, _firstChild, focusedPaneId, 1 };
+        return {
+            .args = { actionAndArgs },
+            .firstPane = _firstChild,
+            .focusedPaneId = focusedPaneId,
+            .panesCreated = 1
+        };
     }
 
     // We now need to execute the commands for each side of the tree
@@ -274,7 +295,12 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t n
     // mutually exclusive.
     const auto focusedPaneId = firstState.focusedPaneId.has_value() ? firstState.focusedPaneId : secondState.focusedPaneId;
 
-    return { actions, firstState.firstPane, focusedPaneId, firstState.panesCreated + secondState.panesCreated + 1 };
+    return {
+        .args = { actions },
+        .firstPane = firstState.firstPane,
+        .focusedPaneId = focusedPaneId,
+        .panesCreated = firstState.panesCreated + secondState.panesCreated + 1
+    };
 }
 
 // Method Description:

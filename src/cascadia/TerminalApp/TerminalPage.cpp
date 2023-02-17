@@ -1895,7 +1895,7 @@ namespace winrt::TerminalApp::implementation
             {
                 if (const auto pane{ terminalTab->GetActivePane() })
                 {
-                    auto startupActions = pane->BuildStartupActions(0, 1, true);
+                    auto startupActions = pane->BuildStartupActions(0, 1, true, true);
                     _DetachPaneFromWindow(pane);
                     _MoveContent(startupActions.args, args.Window(), args.TabIndex());
                     focusedTab->DetachPane();
@@ -1996,13 +1996,46 @@ namespace winrt::TerminalApp::implementation
 
     winrt::fire_and_forget TerminalPage::AttachContent(winrt::hstring content, uint32_t tabIndex)
     {
-        tabIndex;
-
         auto args = ActionAndArgs::Deserialize(content);
-        // TODO! if the first action is a split pane and tabIndex > tabs.size,
-        // then remove it and insert an equivalent newTab
 
+        // If the first action is a split pane and tabIndex > tabs.size,
+        // then remove it and insert an equivalent newTab action instead.
+        // Otherwise, focus the tab they requested before starting the split.
+        if (args == nullptr ||
+            args.Size() == 0)
+        {
+            co_return;
+        }
+
+        // Switch to the UI thread before selecting a tab or dispatching actions.
         co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
+
+        const auto& firstAction = args.GetAt(0);
+        const bool firstIsSplitPane{ firstAction.Action() == ShortcutAction::SplitPane };
+
+        // splitPane allows the user to specify which tab to split. in that
+        // case, split specifically the requested pane, If there's not enough
+        // tabs, then just turn this pane into a new tab. If the first action
+        // is newTab, the index is always going to be 0, so don't do anything in
+        // that case.
+        if (firstIsSplitPane && tabIndex < _tabs.Size())
+        {
+            _SelectTab(tabIndex);
+        }
+        else
+        {
+            const auto& firstAction = args.GetAt(0);
+            if (firstAction.Action() == ShortcutAction::SplitPane)
+            {
+                // Create the equivalent NewTab action.
+                const auto newAction = Settings::Model::ActionAndArgs{ Settings::Model::ShortcutAction::NewTab,
+                                                                       Settings::Model::NewTabArgs(firstAction.Args() ?
+                                                                                                       firstAction.Args().try_as<Settings::Model::SplitPaneArgs>().TerminalArgs() :
+                                                                                                       nullptr) };
+                args.SetAt(0, newAction);
+            }
+        }
+
         for (const auto& action : args)
         {
             _actionDispatch->DoAction(action);
@@ -2103,88 +2136,6 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    // <<<<<<< HEAD
-    // =======
-    //     winrt::fire_and_forget TerminalPage::_asyncSplitPaneActiveTab(const SplitDirection splitDirection,
-    //                                                                   const float splitSize,
-    //                                                                   PreparedContent preppedContent)
-    //     {
-    //         // _GetFocusedTabImpl requires us to be on the UI thread
-    //         co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
-    //         auto focusedTab{ _GetFocusedTabImpl() };
-
-    //         // Clever hack for a crash in startup, with multiple sub-commands. Say
-    //         // you have the following commandline:
-    //         //
-    //         //   wtd nt -p "elevated cmd" ; sp -p "elevated cmd" ; sp -p "Command Prompt"
-    //         //
-    //         // Where "elevated cmd" is an elevated profile.
-    //         //
-    //         // In that scenario, we won't dump off the commandline immediately to an
-    //         // elevated window, because it's got the final unelevated split in it.
-    //         // However, when we get to that command, there won't be a tab yet. So
-    //         // we'd crash right about here.
-    //         //
-    //         // Instead, let's just promote this first split to be a tab instead.
-    //         // Crash avoided, and we don't need to worry about inserting a new-tab
-    //         // command in at the start.
-    //         if (!focusedTab)
-    //         {
-    //             if (_tabs.Size() == 0)
-    //             {
-    //                 _createNewTabFromContent(preppedContent);
-    //             }
-    //             else
-    //             {
-    //                 // The focused tab isn't a terminal tab
-    //                 co_return;
-    //             }
-    //         }
-    //         else
-    //         {
-    //             _asyncSplitPaneOnTab(focusedTab, splitDirection, splitSize, preppedContent);
-    //         }
-    //     }
-    //     winrt::fire_and_forget TerminalPage::_asyncSplitPaneOnTab(winrt::com_ptr<TerminalTab> tab,
-    //                                                               const SplitDirection splitDirection,
-    //                                                               const float splitSize,
-    //                                                               PreparedContent preppedContent)
-    //     {
-    //         // calculate split type
-    //         const auto contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
-    //         const auto contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
-    //         const winrt::Windows::Foundation::Size availableSpace{ contentWidth, contentHeight };
-
-    //         const auto realSplitType = tab->PreCalculateCanSplit(splitDirection, splitSize, availableSpace);
-    //         if (!realSplitType)
-    //         {
-    //             co_return;
-    //         }
-
-    //         // unzoom
-    //         _UnZoomIfNeeded();
-
-    //         co_await winrt::resume_background();
-
-    //         auto content = co_await preppedContent.initContentProc;
-
-    //         co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
-
-    //         auto pane = _makePaneFromContent(content, preppedContent.controlSettings, preppedContent.profile);
-
-    //         tab->SplitPane(*realSplitType, splitSize, pane);
-
-    //         // Manually focus the new pane, if we've already initialized
-    //         if (_startupState == StartupState::Initialized)
-    //         {
-    //             if (const auto control = _GetActiveControl())
-    //             {
-    //                 control.Focus(FocusState::Programmatic);
-    //             }
-    //         }
-    //     }
-
-    // >>>>>>> 1f2bb760e (Pane officially opened via the serialized actions, via across the process boundary)
     // Method Description:
     // - Switches the split orientation of the currently focused pane.
     // Arguments:
@@ -2802,6 +2753,20 @@ namespace winrt::TerminalApp::implementation
                                                   const winrt::TerminalApp::TabBase& sourceTab,
                                                   TerminalConnection::ITerminalConnection existingConnection)
     {
+        // First things first - Check for making a pane from content GUID.
+        if (newTerminalArgs &&
+            newTerminalArgs.ContentGuid() != winrt::guid{})
+        {
+            // Don't need to worry about duplicating or anything - we'll
+            // serialize the actual profile's GUID along with the content guid.
+            const auto& profile = _settings.GetProfileForArgs(newTerminalArgs);
+
+            const auto control = _InitControlFromContent(newTerminalArgs.ContentGuid());
+            _RegisterTerminalEvents(control);
+            auto resultPane = std::make_shared<Pane>(profile, control);
+            return resultPane;
+        }
+
         TerminalSettingsCreateResult controlSettings{ nullptr };
         Profile profile{ nullptr };
 
@@ -2825,15 +2790,6 @@ namespace winrt::TerminalApp::implementation
         {
             profile = _settings.GetProfileForArgs(newTerminalArgs);
             controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
-        }
-        // TODO! This should really be even above the block above, I'm just kludging it RN so I get a profile
-        // We'll probably want to not store just Interactivity's, but a {Profile, Interactivity, etc...} blob in ContentManager
-        if (newTerminalArgs && newTerminalArgs.ContentGuid() != winrt::guid{})
-        {
-            const auto control = _InitControlFromContent(newTerminalArgs.ContentGuid());
-            _RegisterTerminalEvents(control);
-            auto resultPane = std::make_shared<Pane>(profile, control);
-            return resultPane;
         }
 
         // Try to handle auto-elevation
