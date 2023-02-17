@@ -1889,6 +1889,8 @@ namespace winrt::TerminalApp::implementation
             return false;
         }
 
+        // If there was a windowId in the action, try to move it to the
+        // specified window instead of moving it in our tab row.
         if (!windowId.empty())
         {
             if (const auto terminalTab{ _GetFocusedTabImpl() })
@@ -1934,6 +1936,8 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
+    // Detach a tree of panes from this terminal. Helper used for moving panes
+    // and tabs to other windows.
     void TerminalPage::_DetachPaneFromWindow(std::shared_ptr<Pane> pane)
     {
         pane->WalkTree([&](auto p) {
@@ -1946,13 +1950,18 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::_DetachTabFromWindow(const winrt::com_ptr<TerminalTab>& terminalTab)
     {
-        // Collect all the content we're about to detach.
+        // Detach the root pane, which will act like the whole tab got detached.
         if (const auto rootPane = terminalTab->GetRootPane())
         {
             _DetachPaneFromWindow(rootPane);
         }
     }
 
+    // Method Description:
+    // - Serialize these actions to json, and raise them as a RequestMoveContent
+    //   event. Our Window will raise that to the window manager / monarch, who
+    //   will dispatch this blob of json back to the window that should handle
+    //   this.
     void TerminalPage::_MoveContent(std::vector<Settings::Model::ActionAndArgs>& actions,
                                     const winrt::hstring& windowName,
                                     const uint32_t tabIndex)
@@ -1967,6 +1976,8 @@ namespace winrt::TerminalApp::implementation
 
     bool TerminalPage::_MoveTab(MoveTabArgs args)
     {
+        // If there was a windowId in the action, try to move it to the
+        // specified window instead of moving it in our tab row.
         const auto windowId{ args.Window() };
         if (!windowId.empty())
         {
@@ -1994,7 +2005,18 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
-    winrt::fire_and_forget TerminalPage::AttachContent(winrt::hstring content, uint32_t tabIndex)
+    // Method Description:
+    // - Called when it is determined that an existing tab or pane should be
+    //   attached to our window. content represents a blob of JSON describing
+    //   some startup actions for resbuilding the specified panes. They will
+    //   include `__content` properties with the GUID of the existing
+    //   ControlInteractivities we should use, rather than starting new ones.
+    // - _MakePane is already enlightened to use the ContentGuid property to
+    //   reattach instead of create new content, so this method simply needs to
+    //   parse the JSON and pump it into our action handler. Almost the same as
+    //   doing something like `wt -w 0 nt`.
+    winrt::fire_and_forget TerminalPage::AttachContent(winrt::hstring content,
+                                                       uint32_t tabIndex)
     {
         auto args = ActionAndArgs::Deserialize(content);
 

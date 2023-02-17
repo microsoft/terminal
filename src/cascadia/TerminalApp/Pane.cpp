@@ -175,23 +175,27 @@ NewTerminalArgs Pane::GetTerminalArgsForPane(const bool asContent) const
 // Arguments:
 // - currentId: the id to use for the current/first pane
 // - nextId: the id to use for a new pane if we split
+// - asContent: We're serializing this set of actions as content actions for
+//   moving to other windows, so we need to make sure to include ContentGuid's
+//   in the final actions.
+// - asMovePane: only used with asContent. When this is true, we're building
+//   these actions as a part of moving the pane to another window, but without
+//   the context of the hosting tab. In that case, we'll want to build a
+//   splitPane action even if we're just a single leaf, because there's no other
+//   parent to try and build an action for us.
 // Return Value:
 // - The state from building the startup actions, includes a vector of commands,
 //   the original root pane, the id of the focused pane, and the number of panes
 //   created.
-Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t nextId, const bool asContent, const bool asMovePane)
+Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId,
+                                                  uint32_t nextId,
+                                                  const bool asContent,
+                                                  const bool asMovePane)
 {
-    // TODO! I f'ed something up here recently. Just moving a single pane no longer seems to work.
-    //
-    // If we call this directly on a leaf, then CURRENTLY, we'll return {} for
-    // the actions. Moving that will just move nothing, cause obviously.
-    //
-    // But this all works fine for a _tab_, where there's a parent Tab to build
-    // a newTab action first.
-    //
-    // So if we're moving a pane, as content, then we need to special case here where even moving just us returns a splitPane
-
-    // if we are a leaf then all there is to do is defer to the parent.
+    // Normally, if we're a leaf, return an empt set of actions, because the
+    // parent pane will build the SplitPane action for us. If we're building
+    // actions for a movePane action though, we'll still need to include
+    // ourselves.
     if (!asMovePane && _IsLeaf())
     {
         if (_lastActive)

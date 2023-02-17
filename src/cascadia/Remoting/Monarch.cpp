@@ -1098,7 +1098,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                               TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
-            // TODO! create a window for that name / ID?
+            // TODO GH#5000
+            //
+            // In the case where window couldn't be found, then create a window
+            // for that name / ID. Do this as a part of tear-out (different than
+            // drag/drop)
         }
     }
 }
