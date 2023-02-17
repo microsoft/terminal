@@ -249,7 +249,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             if (auto value = wil::TryGetEnvironmentVariableW(variable.c_str()))
             {
-                save_to_map(variable, value.get());
+                save_to_map(std::move(variable), std::move(value.get()));
             }
         }
 
@@ -257,7 +257,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             if (auto value = til::details::wil_env::TryGetComputerNameW())
             {
-                save_to_map(std::wstring{ til::details::vars::computer_name }, value.get());
+                save_to_map(std::wstring{ til::details::vars::computer_name }, std::move(value.get()));
             }
         }
 
@@ -279,8 +279,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 SetLastError(ERROR_SUCCESS);
                 if (LookupAccountSidW(nullptr, user.get()->User.Sid, accountName.data(), &accountNameSize, userDomain.data(), &userDomainSize, &sidNameUse))
                 {
-                    save_to_map(std::wstring{ til::details::vars::user_name }, accountName);
-                    save_to_map(std::wstring{ til::details::vars::user_domain }, userDomain);
+                    save_to_map(std::wstring{ til::details::vars::user_name }, std::move(accountName));
+                    save_to_map(std::wstring{ til::details::vars::user_domain }, std::move(userDomain));
                 }
             }
         }
@@ -438,7 +438,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             value = expand_environment_strings(value);
             value = check_for_temp(var, value);
-            save_to_map(var, value);
+            save_to_map(std::move(var), std::move(value));
         }
 
         void concat_var(std::wstring var, std::wstring value)
@@ -452,11 +452,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                     existing->second.append(L";");
                 }
                 existing->second.append(value);
-                save_to_map(var, existing->second);
+                save_to_map(std::move(var), std::move(existing->second));
             }
             else
             {
-                save_to_map(var, value);
+                save_to_map(std::move(var), std::move(value));
             }
         }
 
@@ -464,7 +464,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             if (!var.empty() && !value.empty())
             {
-                _envMap.insert_or_assign(var, value);
+                _envMap.insert_or_assign(std::move(var), std::move(value));
             }
         }
 
