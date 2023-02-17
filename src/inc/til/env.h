@@ -489,8 +489,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         bool is_path_var(std::wstring_view input)
         {
             return til::details::compare_string_ordinal(input.data(), path.data()) == CSTR_EQUAL ||
-                til::details::compare_string_ordinal(input.data(), libPath.data()) == CSTR_EQUAL ||
-                til::details::compare_string_ordinal(input.data(), os2LibPath.data()) == CSTR_EQUAL;
+                   til::details::compare_string_ordinal(input.data(), libPath.data()) == CSTR_EQUAL ||
+                   til::details::compare_string_ordinal(input.data(), os2LibPath.data()) == CSTR_EQUAL;
         }
 
         void parse(wchar_t* block)
