@@ -93,11 +93,11 @@ These suggestions are populated by logic within PowerShell itself, and
 communicated to the Terminal. The Terminal can then display them in the
 Suggestions UI.
 
-The following gifs demonstrate a prototype of what that might look like for the
+The following demonstrate a prototype of what that might look like for the
 Terminal. These are meant to be informative, not normative, representations of
 what the UI would look like.
 
-![](shell-autocomplete-jul-2022-000.gif)
+![](shell-autocomplete-july-2022-000.gif)
 
 An prototype of the recent commands UI, powered by shell integration:
 ![](command-history-suggestions.gif)
@@ -110,7 +110,7 @@ In general, the Suggestions UI will present a list of elements to select from,
 near the text cursor. This control might be contain a text box for filtering
 these items (a "**palette**"), or it might not (a "**menu**").
 
-![An example of the menu mode](3121-sxn-menu-2023-000.gif)
+![An example of the menu mode](3121-suggestion-menu-2023-000.gif)
 
 #### Palette vs Menu
 
@@ -172,7 +172,7 @@ Suggestions UI, we'll instead want to make sure that the control appears
 relative to the current cursor position.
 
 We'll start by taking the command palette, and copying it over to a new control.
-This will allow us to remove large chunks of code dealing with diffent modes
+This will allow us to remove large chunks of code dealing with different modes
 (i.e. the tab switcher), and code dealing with prefix characters to switch
 modes.
 
@@ -225,7 +225,7 @@ Each of these different sources will build a different set of `Command`s,
 primarily populated with `sendInput` actions. We'll load those `Command`s into
 the Suggestions UI control, and open it at the text cursor.
 
-To drill in on a single example - the `commmandHistory` source. In that
+To drill in on a single example - the `commandHistory` source. In that
 particular case, the TerminalPage will query the active TermControl for a list
 of it's recent commands. If it knows these (via shell integration), then the
 TerminalPage will use that list of commands to build a list of `sendInput`
@@ -240,7 +240,7 @@ need to invoke themselves.
 Consider the following scenario. A user has typed `git c` in their shell, and
 has [shell integration] enabled for their shell. They want to open the
 Suggestions UI filtered to their recent history, but starting with what they've
-already typed. To support this scenario, we'll add an addional property:
+already typed. To support this scenario, we'll add an additional property:
 
 * `"useCommandline"`: `bool`
   * `true`: the current commandline the user has typed will pre-populate the
@@ -278,7 +278,7 @@ These actions are colloquially:
 
 This should cover most of the basic use cases for suggestions. 
 
-## Tenents
+## Tenets
 
 <table>
 
@@ -456,7 +456,7 @@ Here's a sample json schema for the settings discussed here.
 It would be beneficial for the Suggestions UI to display additional context to
 the user. Consider a extension that provides some commands for the user, like a
 hypothetical "Docker" extension. The extension author might be able to give the
-commands simplified names, but also want to expoose a more detailed description
+commands simplified names, but also want to expose a more detailed description
 of the commands to the user.
 
 Or consider the Suggestions UI when invoked by [shell-driven autocompletion].
@@ -482,7 +482,7 @@ specify the string that would be presented in that flyout.
 > where we might go with this UX in the future._
 
 Do want to support different _types_ of nesting? So instead of just the default,
-there could be something like `nesting: "source"`, to create a mune structured
+there could be something like `nesting: "source"`, to create a menu structured
 like:
 
 ```
@@ -508,7 +508,7 @@ Suggestions UI
 > **Note**
 > I'm using `Docker` as an example fragment extension that provides
 > some `docker` commands. When grouping by `"source"`, we could pull those into
-> a seperate top-level entry. When not grouping by `"source"`, those would still
+> a separate top-level entry. When not grouping by `"source"`, those would still
 > show up with the rest of `tasks`. )
 
 #### Store recent commands across sessions
@@ -564,7 +564,7 @@ feature.
 
 ### Rejected ideas
 
-These are musings from earlier verisons of the spec. 
+These are musings from earlier versions of the spec.
 * **Asynchronous prompting**: This was rejected because it was so fundamentally
   different from the rest of the UX of the Suggestions UI, it didn't make sense
   to try and also do that behavior. 
@@ -623,7 +623,7 @@ void AsyncSuggestions::InputChangedHandler(FilterChangedArgs args)
 ```
 
 That would basically _have_ to be special cased for this source, at least for
-now. We could refactor that later to beetter deal with extensions.
+now. We could refactor that later to better deal with extensions.
 
 Let's make sure this would work for something `fig`-like, where the "prompt" is
 literally the prompt, what the user has already typed at the commandline.
@@ -659,14 +659,13 @@ fully up to date.
 [#10436]: https://github.com/microsoft/terminal/issues/10436
 [#12927]: https://github.com/microsoft/terminal/issues/12927
 [#12863]: https://github.com/microsoft/terminal/issues/12863
-[#5790]: https://github.com/microsoft/terminal/issues/5790
 
 [#keep]: https://github.com/zadjii/keep
 [VsCode Tasks]: https://github.com/microsoft/terminal/blob/main/.vscode/tasks.json
 
 <!-- Note: This is its own spec in progress, but for the time being #12862 will do -->
 [Tasks]: https://github.com/microsoft/terminal/issues/12862
-<!-- Note: This is just a link to the PR that intoduced the shell integration spec -->
+<!-- Note: This is just a link to the PR that introduced the shell integration spec -->
 [shell integration]: https://github.com/microsoft/terminal/pull/14792
-<!-- Note: If I ever write a spec for this, go ahread and replace this link -->
+<!-- Note: If I ever write a spec for this, go ahead and replace this link -->
 [shell-driven autocompletion]: https://github.com/microsoft/terminal/issues/3121
