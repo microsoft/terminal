@@ -14,6 +14,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
     namespace details
     {
+
         //
         // A case-insensitive wide-character map is used to store environment variables
         // due to documented requirements:
@@ -24,11 +25,19 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         //      an environment variable."
         //      https://docs.microsoft.com/en-us/windows/desktop/ProcThread/changing-environment-variables
         //
+        // - Returns CSTR_LESS_THAN, CSTR_EQUAL or CSTR_GREATER_THAN
+        [[nodiscard]] int compare_string_ordinal(const std::wstring& lhs, const std::wstring& rhs) noexcept
+        {
+            int result = CompareStringOrdinal(lhs.c_str(), -1, rhs.c_str(), -1, 1);
+            FAIL_FAST_LAST_ERROR_IF(!result);
+            return result;
+        }
+
         struct wstring_case_insensitive_compare
         {
             [[nodiscard]] bool operator()(const std::wstring& lhs, const std::wstring& rhs) const noexcept
             {
-                return (::_wcsicmp(lhs.c_str(), rhs.c_str()) < 0);
+                return compare_string_ordinal(lhs, rhs) == CSTR_LESS_THAN;
             }
         };
 
@@ -463,8 +472,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         static constexpr std::wstring_view tmp{ L"tmp" };
         std::wstring check_for_temp(std::wstring_view var, std::wstring_view value)
         {
-            if (!_wcsicmp(var.data(), temp.data()) ||
-                !_wcsicmp(var.data(), tmp.data()))
+            if (til::details::compare_string_ordinal(var.data(), temp.data()) == CSTR_EQUAL ||
+                til::details::compare_string_ordinal(var.data(), tmp.data()) == CSTR_EQUAL)
             {
                 return til::details::wil_env::GetShortPathNameW<std::wstring, 256>(value.data());
             }
@@ -479,7 +488,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         static constexpr std::wstring_view os2LibPath{ L"Os2LibPath" };
         bool is_path_var(std::wstring_view input)
         {
-            return !_wcsicmp(input.data(), path.data()) || !_wcsicmp(input.data(), libPath.data()) || !_wcsicmp(input.data(), os2LibPath.data());
+            return til::details::compare_string_ordinal(input.data(), path.data()) == CSTR_EQUAL ||
+                til::details::compare_string_ordinal(input.data(), libPath.data()) == CSTR_EQUAL ||
+                til::details::compare_string_ordinal(input.data(), os2LibPath.data()) == CSTR_EQUAL;
         }
 
         void parse(wchar_t* block)
