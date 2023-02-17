@@ -2008,9 +2008,9 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Called when it is determined that an existing tab or pane should be
     //   attached to our window. content represents a blob of JSON describing
-    //   some startup actions for resbuilding the specified panes. They will
+    //   some startup actions for rebuilding the specified panes. They will
     //   include `__content` properties with the GUID of the existing
-    //   ControlInteractivities we should use, rather than starting new ones.
+    //   ControlInteractivity's we should use, rather than starting new ones.
     // - _MakePane is already enlightened to use the ContentGuid property to
     //   reattach instead of create new content, so this method simply needs to
     //   parse the JSON and pump it into our action handler. Almost the same as
