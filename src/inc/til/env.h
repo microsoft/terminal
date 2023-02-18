@@ -384,7 +384,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             std::wstring expanded;
             expanded.reserve(input.size());
-            bool isInEnvVarName = FALSE;
+            bool isInEnvVarName = false;
             std::wstring currentEnvVarName;
             for (const auto character : input)
             {
@@ -402,12 +402,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                             expanded.append(currentEnvVarName);
                             expanded.push_back(L'%');
                         }
-                        isInEnvVarName = FALSE;
+                        isInEnvVarName = false;
                         currentEnvVarName.clear();
                     }
                     else
                     {
-                        isInEnvVarName = TRUE;
+                        isInEnvVarName = true;
                     }
                 }
                 else
