@@ -13,6 +13,7 @@
 #include <LibraryResources.h>
 #include <TerminalCore/ControlKeyStates.hpp>
 #include <til/latch.h>
+#include <til/env.h>
 
 #include "../../types/inc/utils.hpp"
 #include "ColorHelper.h"
@@ -1280,6 +1281,16 @@ namespace winrt::TerminalApp::implementation
             auto guidWString = Utils::GuidToString(profile.Guid());
 
             StringMap envMap{};
+            if (settings.ReloadEnvironmentVariables())
+            {
+                til::env environment;
+                environment.regenerate();
+
+                for (const auto& [key, value] : environment.as_map())
+                {
+                    envMap.Insert(key, value);
+                }
+            }
             envMap.Insert(L"WT_PROFILE_ID", guidWString);
             envMap.Insert(L"WSLENV", L"WT_PROFILE_ID");
 

@@ -154,6 +154,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, bool, ForceFullRepaintRendering, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, SoftwareRendering, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, UseBackgroundImageForWindow, false);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, ReloadEnvironmentVariables, true);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, ForceVTInput, false);
 
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, PixelShaderPath);

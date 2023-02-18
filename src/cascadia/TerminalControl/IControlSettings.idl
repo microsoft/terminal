@@ -61,5 +61,6 @@ namespace Microsoft.Terminal.Control
         Boolean SoftwareRendering { get; };
         Boolean ShowMarks { get; };
         Boolean UseBackgroundImageForWindow { get; };
+        Boolean ReloadEnvironmentVariables { get; };
     };
 }
