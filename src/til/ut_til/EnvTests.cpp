@@ -41,6 +41,9 @@ class EnvTests
         for (const auto& [expectedKey, expectedValue] : expected.as_map())
         {
             Log::Comment(String().Format(L"Environment Variable: '%s'", expectedKey.data()));
+            Log::Comment(String().Format(L"Expected Value: '%s', length %u, trailing newline %u", expectedValue.data(), expectedValue.size(), expectedValue.back() == L'\0'));
+            const auto actualValue = actual.as_map()[expectedKey];
+            Log::Comment(String().Format(L"Actual Value: '%s', length %u, trailing newline %u", actualValue.data(), actualValue.size(), actualValue.back() == L'\0'));
             VERIFY_IS_TRUE(actual.as_map().find(expectedKey) != actual.as_map().end());
             VERIFY_ARE_EQUAL(expectedValue, actual.as_map()[expectedKey]);
         }
