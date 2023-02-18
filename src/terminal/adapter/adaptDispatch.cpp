@@ -82,8 +82,7 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
     const auto [leftMargin, rightMargin] = _GetHorizontalMargins(textBuffer.GetSize().Width());
 
     auto lineWidth = textBuffer.GetLineWidth(cursorPosition.y);
-    auto insideVerticalMargins = cursorPosition.y >= topMargin && cursorPosition.y <= bottomMargin;
-    if (insideVerticalMargins && cursorPosition.x <= rightMargin)
+    if (cursorPosition.x <= rightMargin && cursorPosition.y >= topMargin && cursorPosition.y <= bottomMargin)
     {
         lineWidth = std::min(lineWidth, rightMargin + 1);
     }
@@ -106,13 +105,11 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
             // different position from where the EOL was marked.
             if (delayedCursorPosition == cursorPosition)
             {
-                cursor.SetXPosition(insideVerticalMargins ? leftMargin : 0);
-                _DoLineFeed(textBuffer, false, true);
+                _DoLineFeed(textBuffer, true, true);
                 cursorPosition = cursor.GetPosition();
                 // We need to recalculate the width when moving to a new line.
                 lineWidth = textBuffer.GetLineWidth(cursorPosition.y);
-                insideVerticalMargins = cursorPosition.y >= topMargin && cursorPosition.y <= bottomMargin;
-                if (insideVerticalMargins)
+                if (cursorPosition.y >= topMargin && cursorPosition.y <= bottomMargin)
                 {
                     lineWidth = std::min(lineWidth, rightMargin + 1);
                 }
@@ -2284,9 +2281,10 @@ bool AdaptDispatch::CarriageReturn()
 void AdaptDispatch::_DoLineFeed(TextBuffer& textBuffer, const bool withReturn, const bool wrapForced)
 {
     const auto viewport = _api.GetViewport();
-    const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
     const auto bufferWidth = textBuffer.GetSize().Width();
     const auto bufferHeight = textBuffer.GetSize().Height();
+    const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(bufferWidth);
 
     auto& cursor = textBuffer.GetCursor();
     const auto currentPosition = cursor.GetPosition();
@@ -2296,18 +2294,30 @@ void AdaptDispatch::_DoLineFeed(TextBuffer& textBuffer, const bool withReturn, c
     // When explicitly moving down a row, clear the wrap status.
     textBuffer.GetRowByOffset(currentPosition.y).SetWrapForced(wrapForced);
 
-    if (currentPosition.y != bottomMargin)
+    // If a carriage return was requested, we move to the leftmost column or
+    // the left margin, depending on whether we started within the margins.
+    if (withReturn)
     {
-        // If we're not at the bottom margin then there's no scrolling,
-        // so we make sure we don't move past the bottom of the viewport.
+        const auto clampToMargin = currentPosition.y >= topMargin &&
+                                   currentPosition.y <= bottomMargin &&
+                                   currentPosition.x >= leftMargin;
+        newPosition.x = clampToMargin ? leftMargin : 0;
+    }
+
+    if (currentPosition.y != bottomMargin || newPosition.x < leftMargin || newPosition.x > rightMargin)
+    {
+        // If we're not at the bottom margin, or outside the horizontal margins,
+        // then there's no scrolling, so we make sure we don't move past the
+        // bottom of the viewport.
         newPosition.y = std::min(currentPosition.y + 1, viewport.bottom - 1);
         newPosition = textBuffer.ClampPositionWithinLine(newPosition);
     }
-    else if (topMargin > viewport.top)
+    else if (topMargin > viewport.top || leftMargin > 0 || rightMargin < bufferWidth - 1)
     {
-        // If the top margin isn't at the top of the viewport, then we're
-        // just scrolling the margin area and the cursor stays where it is.
-        _ScrollRectVertically(textBuffer, { 0, topMargin, bufferWidth, bottomMargin + 1 }, -1);
+        // If the top margin isn't at the top of the viewport, or the
+        // horizontal margins are set, then we're just scrolling the margin
+        // area and the cursor stays where it is.
+        _ScrollRectVertically(textBuffer, { leftMargin, topMargin, rightMargin + 1, bottomMargin + 1 }, -1);
     }
     else if (viewport.bottom < bufferHeight)
     {
@@ -2353,9 +2363,6 @@ void AdaptDispatch::_DoLineFeed(TextBuffer& textBuffer, const bool withReturn, c
             _ScrollRectVertically(textBuffer, { 0, bottomMargin, bufferWidth, bufferHeight }, 1);
         }
     }
-
-    // If a carriage return was requested, we also move to the leftmost column.
-    newPosition.x = withReturn ? 0 : newPosition.x;
 
     cursor.SetPosition(newPosition);
     _ApplyCursorMovementFlags(cursor);
