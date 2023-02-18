@@ -48,7 +48,7 @@ try
         std::wstring cmdline;
         if (runElevated)
         {
-            RETURN_IF_FAILED(wil::str_printf_nothrow(cmdline, LR"-("%s" -d %s)-", modulePath.replace_filename(ElevateShimExe).c_str(), QuoteAndEscapeCommandlineArg(pszName.get()).c_str()));
+            RETURN_IF_FAILED(wil::str_printf_nothrow(cmdline, LR"-(-d %s)-", QuoteAndEscapeCommandlineArg(pszName.get()).c_str()));
         }
         else
         {
