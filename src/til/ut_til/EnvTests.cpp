@@ -87,5 +87,4 @@ class EnvTests
             VERIFY_ARE_EQUAL(L"Foo%ENV", environment.expand_environment_strings(L"Foo%ENV"));
         }
     }
-
 };
