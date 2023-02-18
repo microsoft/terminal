@@ -279,6 +279,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 SetLastError(ERROR_SUCCESS);
                 if (LookupAccountSidW(nullptr, user.get()->User.Sid, accountName.data(), &accountNameSize, userDomain.data(), &userDomainSize, &sidNameUse))
                 {
+                    strip_trailing_null(accountName);
+                    strip_trailing_null(userDomain);
                     save_to_map(std::wstring{ til::details::vars::user_name }, std::move(accountName));
                     save_to_map(std::wstring{ til::details::vars::user_domain }, std::move(userDomain));
                 }
@@ -351,13 +353,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                                 // Because Registry data may or may not be null terminated... check if we've managed
                                 // to store an extra null in the wstring by telling it to create itself from pointer and size.
                                 // If we did, pull it off.
-                                if (!data.empty())
-                                {
-                                    if (data.back() == L'\0')
-                                    {
-                                        data = data.substr(0, data.size() - 1);
-                                    }
-                                }
+                                strip_trailing_null(data);
 
                                 if (!data.empty())
                                 {
@@ -491,6 +487,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return til::details::compare_string_ordinal(input.data(), path.data()) == CSTR_EQUAL ||
                    til::details::compare_string_ordinal(input.data(), libPath.data()) == CSTR_EQUAL ||
                    til::details::compare_string_ordinal(input.data(), os2LibPath.data()) == CSTR_EQUAL;
+        }
+
+        void strip_trailing_null(std::wstring& str)
+        {
+            if (!str.empty() && str.back() == L'\0')
+            {
+                str.pop_back();
+            }
         }
 
         void parse(wchar_t* block)
