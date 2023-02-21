@@ -80,6 +80,8 @@ public:
     void MarkOutputStart() override;
     void MarkCommandFinish(std::optional<unsigned int> error) override;
 
+    void InvokeMenu(std::wstring_view menuJson, int32_t replaceLength) override;
+
 private:
     Microsoft::Console::IIoProvider& _io;
     bool _bracketedPasteMode{ false };

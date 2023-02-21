@@ -46,7 +46,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Windows::Foundation::Size CharacterDimensions() const;
         Windows::Foundation::Size MinimumSize();
         float SnapDimensionToGrid(const bool widthOrHeight, const float dimension);
+
         void PreviewInput(const winrt::hstring& text);
+
+        Microsoft::Terminal::Core::Point CursorPositionInDips();
 
         void WindowVisibilityChanged(const bool showOrHide);
 
@@ -150,6 +153,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         PROJECTED_FORWARDED_TYPED_EVENT(ConnectionStateChanged, IInspectable, IInspectable, _core, ConnectionStateChanged);
         PROJECTED_FORWARDED_TYPED_EVENT(ShowWindowChanged,      IInspectable, Control::ShowWindowArgs, _core, ShowWindowChanged);
         PROJECTED_FORWARDED_TYPED_EVENT(CloseTerminalRequested, IInspectable, IInspectable, _core, CloseTerminalRequested);
+
+        PROJECTED_FORWARDED_TYPED_EVENT(MenuChanged           , IInspectable, Control::MenuChangedEventArgs, _core, MenuChanged);
 
         PROJECTED_FORWARDED_TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs, _interactivity, PasteFromClipboard);
 

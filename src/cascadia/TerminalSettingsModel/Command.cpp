@@ -635,4 +635,58 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         return newCommands;
     }
+
+    winrt::Windows::Foundation::Collections::IVector<Model::Command> Command::ParsePowerShellMenuComplete(winrt::hstring json, int32_t replaceLength)
+    {
+        if (json.empty())
+        {
+            return nullptr;
+        }
+        auto data = winrt::to_string(json);
+
+        std::string errs;
+        static std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+        Json::Value root;
+        if (!reader->parse(data.data(), data.data() + data.size(), &root, &errs))
+        {
+            throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
+        }
+
+        auto result = winrt::single_threaded_vector<Model::Command>();
+
+        auto backspaces = std::wstring(::base::saturated_cast<size_t>(replaceLength), L'\x7f');
+
+        const auto parseElement = [&](const auto& element) {
+            winrt::hstring completionText;
+            winrt::hstring listText;
+            JsonUtils::GetValueForKey(element, "CompletionText", completionText);
+            JsonUtils::GetValueForKey(element, "ListItemText", listText);
+
+            Model::SendInputArgs args{ winrt::hstring{ fmt::format(L"{}{}", backspaces, completionText.c_str()) } };
+            Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, args };
+            // Model::Command command{};
+            auto c = winrt::make_self<Command>();
+            c->_name = listText;
+            c->_ActionAndArgs = actionAndArgs;
+            // command.ActionAndArgs(actionAndArgs);
+            // command.Name(listText);
+
+            result.Append(*c);
+        };
+
+        if (root.isArray())
+        {
+            // If we got a whole array of suggestions, parse each one.
+            for (const auto& element : root)
+            {
+                parseElement(element);
+            }
+        }
+        else if (root.isObject())
+        {
+            // If we instead only got a single element back, just parse the root element.
+            parseElement(root);
+        }
+        return result;
+    }
 }

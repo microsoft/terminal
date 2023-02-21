@@ -467,3 +467,10 @@ void Terminal::NotifyAccessibilityChange(const til::rect& /*changedRect*/) noexc
 {
     // This is only needed in conhost. Terminal handles accessibility in another way.
 }
+void Terminal::InvokeMenu(std::wstring_view menuJson, int32_t replaceLength)
+{
+    if (_pfnMenuChanged)
+    {
+        _pfnMenuChanged(menuJson, replaceLength);
+    }
+}

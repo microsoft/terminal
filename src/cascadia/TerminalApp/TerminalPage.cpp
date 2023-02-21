@@ -287,6 +287,20 @@ namespace winrt::TerminalApp::implementation
         CommandPalette().SwitchToTabRequested({ this, &TerminalPage::_OnSwitchToTabRequested });
         CommandPalette().PreviewAction({ this, &TerminalPage::_PreviewActionHandler });
 
+        {
+            const auto& sxnUi{ SuggestionsUI() };
+            sxnUi.PositionManually(Windows::Foundation::Point{ 0, 0 }, Windows::Foundation::Size{ 200, 300 });
+            sxnUi.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
+                if (SuggestionsUI().Visibility() == Visibility::Collapsed)
+                {
+                    SuggestionsPopup().IsOpen(false);
+                    _FocusActiveControl(nullptr, nullptr);
+                }
+            });
+            sxnUi.DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
+            sxnUi.PreviewAction({ this, &TerminalPage::_PreviewActionHandler });
+        }
+
         // Settings AllowDependentAnimations will affect whether animations are
         // enabled application-wide, so we don't need to check it each time we
         // want to create an animation.
@@ -1474,6 +1488,11 @@ namespace winrt::TerminalApp::implementation
         {
             p.Visibility(Visibility::Collapsed);
         }
+        if (const auto p = SuggestionsUI(); p.Visibility() == Visibility::Visible &&
+                                            cmd.ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
+        {
+            p.Visibility(Visibility::Collapsed);
+        }
 
         // Let's assume the user has bound the dead key "^" to a sendInput command that sends "b".
         // If the user presses the two keys "^a" it'll produce "bâ", despite us marking the key event as handled.
@@ -1661,6 +1680,8 @@ namespace winrt::TerminalApp::implementation
         });
 
         term.ShowWindowChanged({ get_weak(), &TerminalPage::_ShowWindowChangedHandler });
+
+        term.MenuChanged({ get_weak(), &TerminalPage::_ControlMenuChangedHandler });
     }
 
     // Method Description:
@@ -4453,4 +4474,65 @@ namespace winrt::TerminalApp::implementation
         _activated = activated;
         _updateThemeColors();
     }
+
+    winrt::fire_and_forget TerminalPage::_ControlMenuChangedHandler(const IInspectable /*sender*/,
+                                                                    const winrt::Microsoft::Terminal::Control::MenuChangedEventArgs args)
+    {
+        co_await winrt::resume_background();
+
+        // May be able to fake this by not creating whole Commands for these
+        // actions, instead just binding them at the cmdpal layer (like tab item
+        // vs action item)
+        // auto entries = control.MenuEntries();
+
+        // parse json
+        try
+        {
+            auto commandsCollection = Command::ParsePowerShellMenuComplete(args.MenuJson(),
+                                                                           args.ReplacementLength());
+
+            _OpenSuggestions(commandsCollection, SuggestionsMode::Menu);
+        }
+        CATCH_LOG();
+    }
+
+    winrt::fire_and_forget TerminalPage::_OpenSuggestions(Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::Command> commandsCollection, winrt::TerminalApp::SuggestionsMode mode)
+    {
+        if (commandsCollection == nullptr)
+        {
+            co_return;
+        }
+        if (commandsCollection.Size() == 0)
+        {
+            SuggestionsPopup().IsOpen(false);
+            SuggestionsUI().Visibility(Visibility::Collapsed);
+
+            co_return;
+        }
+        co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
+        auto control{ _GetActiveControl() };
+        if (!control)
+        {
+            co_return;
+        }
+
+        // CommandPalette has an internal margin of 8, so set to -4,-4 to position closer to the actual line
+        SuggestionsUI().PositionManually(Windows::Foundation::Point{ -4, -4 }, Windows::Foundation::Size{ 300, 300 });
+        SuggestionsUI().Mode(mode);
+        // CommandPalette().EnableCommandPaletteMode(CommandPaletteLaunchMode::Action);
+
+        const til::point cursorPos{ control.CursorPositionInDips() };
+        const auto characterSize{ control.CharacterDimensions() };
+
+        // Position relative to the actual term control
+        SuggestionsPopup().HorizontalOffset(cursorPos.x);
+        SuggestionsPopup().VerticalOffset(cursorPos.y + characterSize.Height);
+
+        SuggestionsPopup().IsOpen(true);
+        // ~Make visible first, then set commands. Other way around and the list
+        // doesn't actually update the first time (weird)~
+        SuggestionsUI().SetCommands(commandsCollection);
+        SuggestionsUI().Visibility(commandsCollection.Size() > 0 ? Visibility::Visible : Visibility::Collapsed);
+    }
+
 }

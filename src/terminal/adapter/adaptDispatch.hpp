@@ -132,6 +132,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool DoFinalTermAction(const std::wstring_view string) override;
 
+        bool DoXtermJsAction(const std::wstring_view string) override;
+
         StringHandler DownloadDRCS(const VTInt fontNumber,
                                    const VTParameter startChar,
                                    const DispatchTypes::DrcsEraseControl eraseControl,
