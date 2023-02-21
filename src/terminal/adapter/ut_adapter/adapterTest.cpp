@@ -1912,6 +1912,36 @@ public:
         VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
     }
 
+    TEST_METHOD(LineFeedTest)
+    {
+        Log::Comment(L"Starting test...");
+
+        _testGetSet->PrepData();
+        auto& cursor = _testGetSet->_textBuffer->GetCursor();
+
+        Log::Comment(L"Test 1: Line feed without carriage return.");
+        cursor.SetPosition({ 10, 0 });
+        VERIFY_IS_TRUE(_pDispatch->LineFeed(DispatchTypes::LineFeedType::WithoutReturn));
+        VERIFY_ARE_EQUAL(til::point(10, 1), cursor.GetPosition());
+
+        Log::Comment(L"Test 2: Line feed with carriage return.");
+        cursor.SetPosition({ 10, 0 });
+        VERIFY_IS_TRUE(_pDispatch->LineFeed(DispatchTypes::LineFeedType::WithReturn));
+        VERIFY_ARE_EQUAL(til::point(0, 1), cursor.GetPosition());
+
+        Log::Comment(L"Test 3: Line feed depends on mode, and mode reset.");
+        _testGetSet->_getLineFeedModeResult = false;
+        cursor.SetPosition({ 10, 0 });
+        VERIFY_IS_TRUE(_pDispatch->LineFeed(DispatchTypes::LineFeedType::DependsOnMode));
+        VERIFY_ARE_EQUAL(til::point(10, 1), cursor.GetPosition());
+
+        Log::Comment(L"Test 4: Line feed depends on mode, and mode set.");
+        _testGetSet->_getLineFeedModeResult = true;
+        cursor.SetPosition({ 10, 0 });
+        VERIFY_IS_TRUE(_pDispatch->LineFeed(DispatchTypes::LineFeedType::DependsOnMode));
+        VERIFY_ARE_EQUAL(til::point(0, 1), cursor.GetPosition());
+    }
+
     TEST_METHOD(SetConsoleTitleTest)
     {
         Log::Comment(L"Starting test...");
