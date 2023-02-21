@@ -246,6 +246,11 @@ namespace winrt::TerminalApp::implementation
         _tabView.TabDragStarting({ this, &TerminalPage::_onTabDragStarting });
         _tabView.TabStripDragOver({ this, &TerminalPage::_onTabStripDragOver });
         _tabView.TabStripDrop({ this, &TerminalPage::_onTabStripDrop });
+        _tabView.TabDroppedOutside({ this, &TerminalPage::_onTabDroppedOutside });
+        _tabView.TabDragCompleted({ this, &TerminalPage::_onTabDroppedCompleted });
+        // TabRow().DragOver({ this, &TerminalPage::_onTabStripDragOver });
+        // TabRow().Drop({ this, &TerminalPage::_onTabStripDrop });
+        // TabRow().AllowDrop(true);
 
         _CreateNewTabFlyout();
 
@@ -412,6 +417,11 @@ namespace winrt::TerminalApp::implementation
 
     winrt::fire_and_forget TerminalPage::NewTerminalByDrop(winrt::Windows::UI::Xaml::DragEventArgs& e)
     {
+        if (!e.DataView().Contains(StandardDataFormats::StorageItems()))
+        {
+            co_return;
+        }
+
         Windows::Foundation::Collections::IVectorView<Windows::Storage::IStorageItem> items;
         try
         {
@@ -4461,6 +4471,12 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
+            uint32_t tabIndex{};
+            if (!_tabs.IndexOf(*terminalTab, tabIndex))
+            {
+                return;
+            }
+
             auto startupActions = terminalTab->BuildStartupActions(true);
             auto winRtActions{ winrt::single_threaded_vector<ActionAndArgs>(std::move(startupActions)) };
             auto str = ActionAndArgs::Serialize(winRtActions);
@@ -4468,25 +4484,38 @@ namespace winrt::TerminalApp::implementation
             e.Data().Properties().Insert(L"content", winrt::box_value(str));
             e.Data().RequestedOperation(DataPackageOperation::Move);
 
-            e.Data().OperationCompleted([weakThis = get_weak(), weakTab = terminalTab->get_weak()](auto&&, auto &&) -> winrt::fire_and_forget {
-                auto tab = weakTab.get();
-                auto page = weakThis.get();
-                if (tab && page)
+            e.Data().OperationCompleted([weakThis = get_weak(), weakTab = terminalTab->get_weak(), e](auto&&, auto args) -> winrt::fire_and_forget {
+                auto acceptedFormat = args.AcceptedFormatId();
+                auto operation = args.Operation();
+                acceptedFormat;
+                operation;
+
+                auto resultObj{ e.Data().Properties().TryLookup(L"result") };
+                if (resultObj)
                 {
-                    // TODO! this loop might be able to go outside the
-                    // OperationCompleted. If we put if before the
-                    // OperationCompleted, then we make sure we've got an extra
-                    // reference to the content, if the operation _is_ completed
-                    // before we hook up the Attached handlers. However,idk what
-                    // happens then if the operation never happens.
-                    //
-                    // Collect all the content we're about to detach.
-                    page->_DetachTab(tab);
-
-                    co_await wil::resume_foreground(page->Dispatcher(), CoreDispatcherPriority::Normal);
-
-                    page->_RemoveTab(*tab);
+                    auto resString{ winrt::unbox_value<winrt::hstring>(resultObj) };
+                    resString;
                 }
+
+                co_return;
+                //     auto tab = weakTab.get();
+                //     auto page = weakThis.get();
+                //     if (tab && page)
+                //     {
+                //         // TODO! this loop might be able to go outside the
+                //         // OperationCompleted. If we put if before the
+                //         // OperationCompleted, then we make sure we've got an extra
+                //         // reference to the content, if the operation _is_ completed
+                //         // before we hook up the Attached handlers. However,idk what
+                //         // happens then if the operation never happens.
+                //         //
+                //         // Collect all the content we're about to detach.
+                //         page->_DetachTabFromWindow(tab);
+
+                //         co_await wil::resume_foreground(page->Dispatcher(), CoreDispatcherPriority::Normal);
+
+                //         page->_RemoveTab(*tab);
+                //     }
             });
         }
     }
@@ -4506,9 +4535,17 @@ namespace winrt::TerminalApp::implementation
         {
             co_return;
         }
+
+        // winrt::hstring myIdString{ fmt::format(L"{}", this->WindowProperties().WindowId()) } ;
+        // auto val = winrt::box_value(myIdString);
+        // e.Data().Properties().Insert(L"result", val);
+
         auto contentString{ winrt::unbox_value<winrt::hstring>(contentObj) };
         if (!contentString.empty())
         {
+            e.Handled(true);
+            e.AcceptedOperation(DataPackageOperation::Move);
+
             auto args = ActionAndArgs::Deserialize(contentString);
             // TODO! if the first action is a split pane and tabIndex > tabs.size,
             // then remove it and insert an equivalent newTab
@@ -4519,6 +4556,51 @@ namespace winrt::TerminalApp::implementation
                 _actionDispatch->DoAction(action);
             }
         }
+    }
+
+    winrt::fire_and_forget TerminalPage::_onTabDroppedOutside(winrt::Microsoft::UI::Xaml::Controls::TabView sender,
+                                                              winrt::Microsoft::UI::Xaml::Controls::TabViewTabDroppedOutsideEventArgs e)
+    {
+        sender;
+        e;
+
+        co_return;
+    }
+    winrt::fire_and_forget TerminalPage::_onTabDroppedCompleted(winrt::Microsoft::UI::Xaml::Controls::TabView sender,
+                                                                winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragCompletedEventArgs e)
+    {
+        sender;
+        e;
+        const auto result = e.DropResult();
+        result;
+
+        if (result != DataPackageOperation::Move)
+        {
+            co_return;
+        }
+
+        // auto acceptedFormat = args.AcceptedFormatId();
+        // auto operation = args.Operation();
+        // acceptedFormat;
+        // operation;
+        //
+        // TODO! settings tabs
+
+        // MUST DO BEFORE _GetTabByTabViewItem because aPaReNtLy you need to be on the UI thread to get the tab index
+        co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
+
+        auto tabItem = e.Tab();
+        auto tab = _GetTabByTabViewItem(tabItem);
+        auto tabImpl = _GetTerminalTabImpl(tab);
+        if (tabImpl)
+        {
+            // Collect all the content we're about to detach.
+            _DetachTabFromWindow(tabImpl);
+
+            _RemoveTab(*tabImpl);
+        }
+
+        co_return;
     }
 
 }
