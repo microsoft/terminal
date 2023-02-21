@@ -482,8 +482,6 @@ namespace winrt::TerminalApp::implementation
         void _onTabStripDragOver(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::DragEventArgs e);
         winrt::fire_and_forget _onTabStripDrop(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::DragEventArgs e);
 
-        void _DetachTab(const winrt::com_ptr<TerminalTab>& terminalTab);
-
         void _DetachPaneFromWindow(std::shared_ptr<Pane> pane);
         void _DetachTabFromWindow(const winrt::com_ptr<TerminalTab>& terminalTab);
         void _MoveContent(std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions, const winrt::hstring& windowName, const uint32_t tabIndex);
