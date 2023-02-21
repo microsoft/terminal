@@ -57,7 +57,7 @@
 
                     <ContentPresenter Grid.Column="0"
                                       Width="16"
-                                      Height="12"
+                                      Height="16"
                                       Content="{x:Bind Item.ResolvedIcon, Mode=OneWay}" />
 
                     <local:HighlightedTextControl Grid.Column="1"
@@ -254,15 +254,15 @@
               Translation="0,0,32">
 
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" /> 
+                <RowDefinition Height="Auto" />
                 <!--  Top-down _searchBox  -->
-                <RowDefinition Height="Auto" /> 
+                <RowDefinition Height="Auto" />
                 <!--  Top-down ParentCommandName  -->
-                <RowDefinition Height="Auto" /> 
+                <RowDefinition Height="Auto" />
                 <!--  Top-down UNUSED????????  -->
-                <RowDefinition Height="*" /> 
+                <RowDefinition Height="*" />
                 <!--  _filteredActionsView  -->
-                <RowDefinition Height="Auto" /> 
+                <RowDefinition Height="Auto" />
                 <!--  bottom-up _searchBox  -->
             </Grid.RowDefinitions>
 

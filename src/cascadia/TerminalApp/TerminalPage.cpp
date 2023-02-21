@@ -4543,7 +4543,7 @@ namespace winrt::TerminalApp::implementation
         //
         // This needs to be done _after_ it is set to be visible. If not, then
         // the control won't have an ActualHeight yet.
-        SuggestionsPopup().HorizontalOffset(cursorPos.x);
+        SuggestionsPopup().HorizontalOffset(cursorPos.x - 40); // Scoot a little to the left, to align text with cursor
         if (direction == TerminalApp::SuggestionsDirection::TopDown)
         {
             // The control should open right below the cursor, with the list

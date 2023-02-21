@@ -668,8 +668,54 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto c = winrt::make_self<Command>();
             c->_name = listText;
             c->_ActionAndArgs = actionAndArgs;
-            // command.ActionAndArgs(actionAndArgs);
-            // command.Name(listText);
+
+            // Try to assign a sensible icon
+            if (const auto resultType{ JsonUtils::GetValueForKey<int>(element, "ResultType") })
+            {
+                switch (resultType)
+                {
+                case 1:
+                    // History             |    |e81c    History
+                    c->_iconPath = L"\ue81c";
+                    break;
+                case 2:
+                    // Command             |    |ecaa   AppIconDefault
+                    c->_iconPath = L"\uecaa";
+                    break;
+                case 3:
+                    // ProviderItem        |    |e8e4   AlignLeft
+                    c->_iconPath = L"\ue8e4";
+                    break;
+                case 4:
+                    // ProviderContainer   |    |e838    FolderOpen
+                    c->_iconPath = L"\ue838";
+                    break;
+                case 5:
+                    // Property            |    |e7c1 Flag
+                    c->_iconPath = L"\ue7c1";
+                    break;
+                case 6:
+                    // Method              |    |ecaa   AppIconDefault
+                    c->_iconPath = L"\uecaa";
+                    break;
+                case 7:
+                    // ParameterName       |    |e7c1 Flag
+                    c->_iconPath = L"\ue7c1";
+                    break;
+                case 8:
+                    // ParameterValue      |    |f000   KnowledgeArticle
+                    c->_iconPath = L"\uf000";
+                    break;
+                case 10:
+                    // Namespace           |   |e943   Code
+                    c->_iconPath = L"\ue943";
+                    break;
+                case 13:
+                    // DynamicKeyword      |   |e945   LightningBolt
+                    c->_iconPath = L"\ue945";
+                    break;
+                }
+            }
 
             result.Append(*c);
         };
