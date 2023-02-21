@@ -43,24 +43,34 @@ namespace winrt::TerminalApp::implementation
                 // Force immediate binding update so we can select an item
                 Bindings->Update();
 
+                // Select the correct element in the list, depending on which
+                // direction we were opened in.
+                //
+                // Make sure to use _scrollToIndex, to move the scrollbar too!
                 if (_direction == TerminalApp::SuggestionsDirection::TopDown)
                 {
-                    _filteredActionsView().SelectedIndex(0);
+                    _scrollToIndex(0);
                 }
                 else // BottomUp
                 {
-                    _filteredActionsView().SelectedIndex(_filteredActionsView().Items().Size() - 1);
+                    _scrollToIndex(_filteredActionsView().Items().Size() - 1);
                 }
 
                 if (_mode == SuggestionsMode::Palette)
                 {
+                    // Toss focus into the search box in palette mode
                     _searchBox().Visibility(Visibility::Visible);
                     _searchBox().Focus(FocusState::Programmatic);
                 }
                 else if (_mode == SuggestionsMode::Menu)
                 {
+                    // Toss focus onto the selected item in menu mode.
+                    // Don't just focus the _filteredActionsView, because that will always select the 0th element.
+
                     _searchBox().Visibility(Visibility::Collapsed);
-                    _filteredActionsView().Focus(FocusState::Programmatic);
+
+                    const auto dependencyObj = SelectedItem().try_as<winrt::Windows::UI::Xaml::DependencyObject>();
+                    Input::FocusManager::TryFocusAsync(dependencyObj, FocusState::Programmatic);
                 }
 
                 TraceLoggingWrite(
@@ -84,13 +94,9 @@ namespace winrt::TerminalApp::implementation
         // when the ListView has been measured out and is ready, and we'll immediately
         // revoke the handler because we only needed to handle it once on initialization.
         _sizeChangedRevoker = _filteredActionsView().SizeChanged(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
-            if (_mode == SuggestionsMode::Palette)
-            {
-            }
-            else if (_mode == SuggestionsMode::Menu)
-            {
-                _filteredActionsView().Focus(FocusState::Programmatic);
-            }
+            // This does only fire once, when the size changes, which is the
+            // very first time it's opened. It does not fire for subsequent
+            // openings.
 
             _sizeChangedRevoker.revoke();
         });
@@ -848,11 +854,19 @@ namespace winrt::TerminalApp::implementation
                 }
             }
         }
-
-        // We want to present the commands sorted
+        if (_mode == SuggestionsMode::Palette)
         {
-            // TODO! no?
-            // std::sort(actions.begin(), actions.end(), FilteredCommand::Compare);
+            // We want to present the commands sorted
+            std::sort(actions.begin(), actions.end(), FilteredCommand::Compare);
+        }
+
+        // Adjust the order of the results depending on if we're top-down or
+        // bottom up. This way, the "first" / "best" match is always closest to
+        // the cursor.
+        if (_direction == TerminalApp::SuggestionsDirection::BottomUp)
+        {
+            // Reverse the list
+            std::reverse(std::begin(actions), std::end(actions));
         }
 
         return actions;

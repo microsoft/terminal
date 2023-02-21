@@ -64,29 +64,6 @@
                                                   HorizontalAlignment="Left"
                                                   Text="{x:Bind HighlightedName, Mode=OneWay}" />
 
-                    <!--
-                        The block for the key chord is only visible
-                        when there's actual text set as the label. See
-                        CommandKeyChordVisibilityConverter for details.
-                        We're setting the accessibility view on the
-                        border and text block to Raw because otherwise,
-                        Narrator will read out the key chord. Problem is,
-                        it already did that because it was the list item's
-                        "AcceleratorKey". It's redundant.
-                    -->
-                    <!--<Border Grid.Column="2"
-                            Padding="2,0,2,0"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            AutomationProperties.AccessibilityView="Raw"
-                            Style="{ThemeResource KeyChordBorderStyle}"
-                            Visibility="{x:Bind Item.KeyChordText, Mode=OneWay, Converter={StaticResource CommandKeyChordVisibilityConverter}}">
-
-                        <TextBlock AutomationProperties.AccessibilityView="Raw"
-                                   FontSize="12"
-                                   Style="{ThemeResource KeyChordTextBlockStyle}"
-                                   Text="{x:Bind Item.KeyChordText, Mode=OneWay}" />
-                    </Border>-->
                 </Grid>
             </DataTemplate>
 
