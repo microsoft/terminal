@@ -481,8 +481,6 @@ namespace winrt::TerminalApp::implementation
         void _onTabDragStarting(winrt::Microsoft::UI::Xaml::Controls::TabView sender, winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragStartingEventArgs e);
         void _onTabStripDragOver(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::DragEventArgs e);
         winrt::fire_and_forget _onTabStripDrop(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::DragEventArgs e);
-        winrt::fire_and_forget _onTabDroppedOutside(winrt::Microsoft::UI::Xaml::Controls::TabView sender, winrt::Microsoft::UI::Xaml::Controls::TabViewTabDroppedOutsideEventArgs e);
-        winrt::fire_and_forget _onTabDroppedCompleted(winrt::Microsoft::UI::Xaml::Controls::TabView sender, winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragCompletedEventArgs e);
 
         void _DetachPaneFromWindow(std::shared_ptr<Pane> pane);
         void _DetachTabFromWindow(const winrt::com_ptr<TerminalTab>& terminalTab);
