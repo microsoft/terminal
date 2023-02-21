@@ -289,7 +289,7 @@ namespace winrt::TerminalApp::implementation
 
         {
             const auto& sxnUi{ SuggestionsUI() };
-            sxnUi.PositionManually(Windows::Foundation::Point{ 0, 0 }, Windows::Foundation::Size{ 200, 300 });
+            // sxnUi.PositionManually(Windows::Foundation::Point{ 0, 0 }, Windows::Foundation::Size{ 200, 300 });
             sxnUi.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
                 if (SuggestionsUI().Visibility() == Visibility::Collapsed)
                 {
@@ -4516,23 +4516,48 @@ namespace winrt::TerminalApp::implementation
             co_return;
         }
 
-        // CommandPalette has an internal margin of 8, so set to -4,-4 to position closer to the actual line
-        SuggestionsUI().PositionManually(Windows::Foundation::Point{ -4, -4 }, Windows::Foundation::Size{ 300, 300 });
+        const auto direction = TerminalApp::SuggestionsDirection::BottomUp;
+        const Windows::Foundation::Point origin{ -4, -4 };
+        const Windows::Foundation::Size size{ 300, 300 };
+
+        // CommandPalette has an internal margin of 8, so set to -4,-4 to
+        // position closer to the actual line.
+        //
+        // TODO! We may want to just remove this entirely and build it straight
+        // into the control.
+        SuggestionsUI().OpenAt(origin,
+                               size,
+                               direction);
         SuggestionsUI().Mode(mode);
-        // CommandPalette().EnableCommandPaletteMode(CommandPaletteLaunchMode::Action);
 
         const til::point cursorPos{ control.CursorPositionInDips() };
         const auto characterSize{ control.CharacterDimensions() };
-
-        // Position relative to the actual term control
-        SuggestionsPopup().HorizontalOffset(cursorPos.x);
-        SuggestionsPopup().VerticalOffset(cursorPos.y + characterSize.Height);
 
         SuggestionsPopup().IsOpen(true);
         // ~Make visible first, then set commands. Other way around and the list
         // doesn't actually update the first time (weird)~
         SuggestionsUI().SetCommands(commandsCollection);
         SuggestionsUI().Visibility(commandsCollection.Size() > 0 ? Visibility::Visible : Visibility::Collapsed);
+
+        // Position relative to the actual term control.
+        //
+        // This needs to be done _after_ it is set to be visible. If not, then
+        // the control won't have an ActualHeight yet.
+        SuggestionsPopup().HorizontalOffset(cursorPos.x);
+        if (direction == TerminalApp::SuggestionsDirection::TopDown)
+        {
+            // The control should open right below the cursor, with the list
+            // extending below. This is easy, we can just use the cursor as the
+            // origin (more or less)
+            SuggestionsPopup().VerticalOffset(cursorPos.y + characterSize.Height);
+        }
+        else
+        {
+            // Position above the cursor. We'll need to make sure
+            // (origin.y+sxnui.Height) = cursorPos.y.
+            const auto sxnUiHeight{ SuggestionsUI().ActualHeight() };
+            SuggestionsPopup().VerticalOffset(cursorPos.y - sxnUiHeight);
+        }
     }
 
 }

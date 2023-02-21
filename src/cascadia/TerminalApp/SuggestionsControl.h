@@ -34,7 +34,7 @@ namespace winrt::TerminalApp::implementation
         void ScrollToBottom();
 
         Windows::UI::Xaml::FrameworkElement SelectedItem();
-        void PositionManually(Windows::Foundation::Point origin, Windows::Foundation::Size size);
+        void OpenAt(Windows::Foundation::Point origin, Windows::Foundation::Size size, TerminalApp::SuggestionsDirection direction);
 
         TerminalApp::SuggestionsMode Mode() const;
         void Mode(TerminalApp::SuggestionsMode mode);
@@ -62,6 +62,7 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _commandsToFilter();
 
         TerminalApp::SuggestionsMode _mode{ TerminalApp::SuggestionsMode::Palette };
+        TerminalApp::SuggestionsDirection _direction{ TerminalApp::SuggestionsDirection::TopDown };
 
         bool _lastFilterTextWasEmpty{ true };
 

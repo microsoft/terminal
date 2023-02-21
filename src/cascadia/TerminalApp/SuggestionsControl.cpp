@@ -43,7 +43,14 @@ namespace winrt::TerminalApp::implementation
                 // Force immediate binding update so we can select an item
                 Bindings->Update();
 
-                _filteredActionsView().SelectedIndex(0);
+                if (_direction == TerminalApp::SuggestionsDirection::TopDown)
+                {
+                    _filteredActionsView().SelectedIndex(0);
+                }
+                else // BottomUp
+                {
+                    _filteredActionsView().SelectedIndex(_filteredActionsView().Items().Size() - 1);
+                }
 
                 if (_mode == SuggestionsMode::Palette)
                 {
@@ -1019,12 +1026,24 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void SuggestionsControl::PositionManually(Windows::Foundation::Point origin, Windows::Foundation::Size size)
+    void SuggestionsControl::OpenAt(Windows::Foundation::Point origin,
+                                    Windows::Foundation::Size size,
+                                    TerminalApp::SuggestionsDirection direction)
     {
+        _direction = direction;
         Controls::Grid::SetRow(_backdrop(), 0);
         Controls::Grid::SetColumn(_backdrop(), 0);
         Controls::Grid::SetRowSpan(_backdrop(), 2);
         Controls::Grid::SetColumnSpan(_backdrop(), 3);
+
+        if (_direction == TerminalApp::SuggestionsDirection::TopDown)
+        {
+            Controls::Grid::SetRow(_searchBox(), 0);
+        }
+        else // BottomUp
+        {
+            Controls::Grid::SetRow(_searchBox(), 4);
+        }
 
         // Set thie Max* versions here, otherwise when there are few results,
         // the cmdpal will _still_ be 300x300 and filled with empty space
@@ -1033,11 +1052,6 @@ namespace winrt::TerminalApp::implementation
 
         _backdrop().HorizontalAlignment(HorizontalAlignment::Stretch);
         _backdrop().VerticalAlignment(VerticalAlignment::Stretch);
-
-        // // We can fake this. We're only using this method for the autocomplete
-        // // version of the cmdpal. Set the BG to acrylic.
-        // const auto colorControlStyle{ Resources().Lookup(winrt::box_value(L"CommandPaletteAcrylicBackground")).as<Windows::UI::Xaml::Style>() };
-        // _backdrop().Style(colorControlStyle);
 
         Windows::UI::Xaml::Thickness margins{};
         margins.Left = origin.X;

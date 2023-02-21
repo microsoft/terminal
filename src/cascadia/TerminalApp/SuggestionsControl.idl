@@ -16,6 +16,11 @@ namespace TerminalApp
         // Inline,
     };
 
+    enum SuggestionsDirection {
+        TopDown,
+        BottomUp
+    };
+
     [default_interface] runtimeclass SuggestionsControl : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged, IDirectKeyListener
     {
         SuggestionsControl();
@@ -36,7 +41,7 @@ namespace TerminalApp
         void SetActionMap(Microsoft.Terminal.Settings.Model.IActionMapView actionMap);
         void SelectNextItem(Boolean moveDown);
 
-        void PositionManually(Windows.Foundation.Point origin, Windows.Foundation.Size size);
+        void OpenAt(Windows.Foundation.Point origin, Windows.Foundation.Size size, SuggestionsDirection direction);
 
         event Windows.Foundation.TypedEventHandler<SuggestionsControl, Microsoft.Terminal.Settings.Model.Command> DispatchCommandRequested;
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.Command> PreviewAction;
