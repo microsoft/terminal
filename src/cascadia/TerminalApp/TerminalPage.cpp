@@ -4460,53 +4460,46 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_onTabDragStarting(winrt::Microsoft::UI::Xaml::Controls::TabView sender,
                                           winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragStartingEventArgs e)
     {
+        // TODO! Use the `sender` as the active tab, you donkey
         if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
-            // First: stash the ~serialization of the~ tab we started dragging.
+            // First: stash the tab we started dragging.
             // We're going to be asked for this.
-            // auto startupActions = terminalTab->BuildStartupActions(true);
-            // auto winRtActions{ winrt::single_threaded_vector<ActionAndArgs>(std::move(startupActions)) };
-            // _stashedTabDragContent = ActionAndArgs::Serialize(winRtActions);
             _stashedDraggedTab = terminalTab;
 
-            // Into the datapackage, let's stash our own window ID.
-
+            // Into the DataPackage, let's stash our own window ID.
             const winrt::hstring id{ fmt::format(L"{}", _WindowProperties.WindowId()) };
 
             e.Data().Properties().Insert(L"windowId", winrt::box_value(id));
             e.Data().RequestedOperation(DataPackageOperation::Move);
 
-            // e.Data().OperationCompleted([weakThis = get_weak(), weakTab = terminalTab->get_weak()](auto&&, auto &&) -> winrt::fire_and_forget {
-            //     auto tab = weakTab.get();
-            //     auto page = weakThis.get();
-            //     if (tab && page)
-            //     {
-            //         // TODO! this loop might be able to go outside the
-            //         // OperationCompleted. If we put if before the
-            //         // OperationCompleted, then we make sure we've got an extra
-            //         // reference to the content, if the operation _is_ completed
-            //         // before we hook up the Attached handlers. However,idk what
-            //         // happens then if the operation never happens.
-            //         //
-            //         // Collect all the content we're about to detach.
-            //         page->_DetachTab(tab);
-
-            //         co_await wil::resume_foreground(page->Dispatcher(), CoreDispatcherPriority::Normal);
-
-            //         page->_RemoveTab(*tab);
-            //     }
-            // });
+            // The next thing that will happen:
+            //  * Another TerminalPage will get a TabStripDragOver, then get a
+            //    TabStripDrop
+            //    * This will be handled by the _other_ page asking the monarch
+            //      to ask us to send our content to them.
+            //  * We'll get a TabDroppedOutside to indicate that this tab was
+            //    dropped _not_ on a TabView.
+            //    * This we can't handle yet, and is the last point of TODO GH#5000
         }
     }
-    void TerminalPage::_onTabStripDragOver(winrt::Windows::Foundation::IInspectable sender,
+
+    void TerminalPage::_onTabStripDragOver(winrt::Windows::Foundation::IInspectable /*sender*/,
                                            winrt::Windows::UI::Xaml::DragEventArgs e)
     {
+        // We must mark that we can accept the drag/drop. The system will never
+        // call TabStripDrop on us if we don't indicate that we're willing.
         if (e.DataView().Properties().HasKey(L"windowId"))
         {
             e.AcceptedOperation(DataPackageOperation::Move);
         }
     }
-    winrt::fire_and_forget TerminalPage::_onTabStripDrop(winrt::Windows::Foundation::IInspectable sender,
+
+    // Method Description:
+    // - Called on the TARGET of a tab drag/drop. We'll unpack the DataPackage
+    //   to find who the tab came from. We'll then ask the Monarch to ask the
+    //   sender to move that tab to us.
+    winrt::fire_and_forget TerminalPage::_onTabStripDrop(winrt::Windows::Foundation::IInspectable /*sender*/,
                                                          winrt::Windows::UI::Xaml::DragEventArgs e)
     {
         // TODO! get PID and make sure it's the same as ours.
@@ -4527,10 +4520,11 @@ namespace winrt::TerminalApp::implementation
             co_return;
         }
 
-        // TODO! Figure out where in the tabstrip we're dropping this tab. Add
-        // that index to the reqest. I believe the WUI sample app has example
+        // TODO! Figure out where in the tab strip we're dropping this tab. Add
+        // that index to the request. I believe the WUI sample app has example
         // code for this
 
+        // Get off the drag/drop thread, but we don't need to be on our UI thread.
         auto weakThis{ get_weak() };
         co_await winrt::resume_background();
         if (const auto& page{ weakThis.get() })
@@ -4543,27 +4537,17 @@ namespace winrt::TerminalApp::implementation
             // RequestMoveContent to move their tab to us.
             _RequestReceiveContentHandlers(*this, *request);
         }
-
-        // if (!contentString.empty())
-        // {
-        //     auto args = ActionAndArgs::Deserialize(contentString);
-        //     // TODO! if the first action is a split pane and tabIndex > tabs.size,
-        //     // then remove it and insert an equivalent newTab
-
-        //     co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal); // may need to go to the top of _createNewTabFromContent
-        //     for (const auto& action : args)
-        //     {
-        //         _actionDispatch->DoAction(action);
-        //     }
-        // }
     }
+
+    // Method Description:
+    // - This is called on the drag/drop SOURCE TerminalPage, when the monarch has
+    //   requested that we send our tab to another window. We'll need to
+    //   serialize the tab, and send it to the monarch, who will then send it to
+    //   the destination window.
+    // - Fortunately, sending the tab is basically just a MoveTab action, so we
+    //   can largely reuse that.
     winrt::fire_and_forget TerminalPage::SendContentToOther(winrt::TerminalApp::RequestReceiveContentArgs args)
     {
-        // This is called on the source TerminalPage, when the monarch has
-        // requested that we send our tab to another window. We'll need to
-        // serialize the tab, and send it to the monarch, who will then send it
-        // to the destination window.
-
         // validate that we're the source window of the tab in this request
         if (args.SourceWindow() != _WindowProperties.WindowId())
         {
@@ -4574,17 +4558,18 @@ namespace winrt::TerminalApp::implementation
             co_return;
         }
 
+        // must do the work of adding/removing tabs on the UI thread.
         auto weakThis{ get_weak() };
         co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
         if (const auto& page{ weakThis.get() })
         {
-            // `this` is safe to use
+            // `this` is safe to use in here.
             auto startupActions = _stashedDraggedTab->BuildStartupActions(true);
             _DetachTabFromWindow(_stashedDraggedTab);
             _MoveContent(startupActions, winrt::hstring{ fmt::format(L"{}", args.TargetWindow()) }, 0);
             _RemoveTab(*_stashedDraggedTab);
 
-            // TODO! _whenever_ we close the stashed dragged tab, we should null it.
+            // TODO! _whenever_ we close the stashed dragged tab, we should null it. I think that's just _RemoveTab, but to the dilligence you donkey
             _stashedDraggedTab = nullptr;
         }
     }
