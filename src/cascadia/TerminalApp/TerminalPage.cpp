@@ -4519,17 +4519,24 @@ namespace winrt::TerminalApp::implementation
         const Windows::Foundation::Point origin{ -4, -4 };
         const Windows::Foundation::Size size{ 300, 300 };
 
-
-        const til::point cursorPos{ control.CursorPositionInDips() };
         const auto characterSize{ control.CharacterDimensions() };
+        // This is in control-relative space. We'll need to convert it to page-relative space.
+        const til::point cursorPos{ control.CursorPositionInDips() };
+        const auto controlTransform = control.TransformToVisual(this->Root());
+        const til::point controlOrigin{ til::math::rounding, controlTransform.TransformPoint(Windows::Foundation::Point{ 0, 0 }) };
+        const til::point realCursorPos = controlOrigin + cursorPos;
 
         const auto currentWindow = CoreWindow::GetForCurrentThread();
         const auto currentWindowBounds = currentWindow.Bounds();
+        // Using CoreWindow::GetForCurrentThread().Bounds().{Width, Height}
+        // seemed like a dead end. Those were both just 1. I suspect that
+        // doesn't work for XAML Islands at all.
         const til::point windowOrigin{ til::math::rounding, currentWindowBounds.X, currentWindowBounds.Y };
+        // Fortunately, we can just use the Actual{Width,Height} of ourselves.
         const til::size windowDimensions{ til::math::rounding, this->ActualWidth(), this->ActualHeight() };
 
         // Is there space in the window below the cursor to open the menu downwards?
-        const bool canOpenDownwards = cursorPos.y + characterSize.Height + size.Height < windowDimensions.height;
+        const bool canOpenDownwards = ((realCursorPos.y) + characterSize.Height + size.Height) < windowDimensions.height;
 
         const auto direction = canOpenDownwards ? TerminalApp::SuggestionsDirection::TopDown : TerminalApp::SuggestionsDirection::BottomUp;
 
@@ -4540,9 +4547,9 @@ namespace winrt::TerminalApp::implementation
         // into the control.
         SuggestionsUI().OpenAt(origin,
                                size,
+
                                direction);
         SuggestionsUI().Mode(mode);
-
 
         SuggestionsPopup().IsOpen(true);
         // ~Make visible first, then set commands. Other way around and the list
@@ -4554,20 +4561,20 @@ namespace winrt::TerminalApp::implementation
         //
         // This needs to be done _after_ it is set to be visible. If not, then
         // the control won't have an ActualHeight yet.
-        SuggestionsPopup().HorizontalOffset(cursorPos.x - 40); // Scoot a little to the left, to align text with cursor
+        SuggestionsPopup().HorizontalOffset(realCursorPos.x - 40); // Scoot a little to the left, to align text with cursor
         if (direction == TerminalApp::SuggestionsDirection::TopDown)
         {
             // The control should open right below the cursor, with the list
             // extending below. This is easy, we can just use the cursor as the
             // origin (more or less)
-            SuggestionsPopup().VerticalOffset(cursorPos.y + characterSize.Height);
+            SuggestionsPopup().VerticalOffset(realCursorPos.y + characterSize.Height);
         }
         else
         {
             // Position above the cursor. We'll need to make sure
             // (origin.y+sxnui.Height) = cursorPos.y.
             const auto sxnUiHeight{ SuggestionsUI().ActualHeight() };
-            SuggestionsPopup().VerticalOffset(cursorPos.y - sxnUiHeight);
+            SuggestionsPopup().VerticalOffset(realCursorPos.y - sxnUiHeight);
         }
     }
 
