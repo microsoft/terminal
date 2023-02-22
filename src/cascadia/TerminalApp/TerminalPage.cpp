@@ -7,6 +7,7 @@
 #include "TerminalPage.g.cpp"
 #include "RenameWindowRequestedArgs.g.cpp"
 #include "RequestMoveContentArgs.g.cpp"
+#include "RequestReceiveContentArgs.g.cpp"
 
 #include <filesystem>
 
@@ -4461,39 +4462,46 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
-            auto startupActions = terminalTab->BuildStartupActions(true);
-            auto winRtActions{ winrt::single_threaded_vector<ActionAndArgs>(std::move(startupActions)) };
-            auto str = ActionAndArgs::Serialize(winRtActions);
+            // First: stash the ~serialization of the~ tab we started dragging.
+            // We're going to be asked for this.
+            // auto startupActions = terminalTab->BuildStartupActions(true);
+            // auto winRtActions{ winrt::single_threaded_vector<ActionAndArgs>(std::move(startupActions)) };
+            // _stashedTabDragContent = ActionAndArgs::Serialize(winRtActions);
+            _stashedDraggedTab = terminalTab;
 
-            e.Data().Properties().Insert(L"content", winrt::box_value(str));
+            // Into the datapackage, let's stash our own window ID.
+
+            const winrt::hstring id{ fmt::format(L"{}", _WindowProperties.WindowId()) };
+
+            e.Data().Properties().Insert(L"windowId", winrt::box_value(id));
             e.Data().RequestedOperation(DataPackageOperation::Move);
 
-            e.Data().OperationCompleted([weakThis = get_weak(), weakTab = terminalTab->get_weak()](auto&&, auto &&) -> winrt::fire_and_forget {
-                auto tab = weakTab.get();
-                auto page = weakThis.get();
-                if (tab && page)
-                {
-                    // TODO! this loop might be able to go outside the
-                    // OperationCompleted. If we put if before the
-                    // OperationCompleted, then we make sure we've got an extra
-                    // reference to the content, if the operation _is_ completed
-                    // before we hook up the Attached handlers. However,idk what
-                    // happens then if the operation never happens.
-                    //
-                    // Collect all the content we're about to detach.
-                    page->_DetachTab(tab);
+            // e.Data().OperationCompleted([weakThis = get_weak(), weakTab = terminalTab->get_weak()](auto&&, auto &&) -> winrt::fire_and_forget {
+            //     auto tab = weakTab.get();
+            //     auto page = weakThis.get();
+            //     if (tab && page)
+            //     {
+            //         // TODO! this loop might be able to go outside the
+            //         // OperationCompleted. If we put if before the
+            //         // OperationCompleted, then we make sure we've got an extra
+            //         // reference to the content, if the operation _is_ completed
+            //         // before we hook up the Attached handlers. However,idk what
+            //         // happens then if the operation never happens.
+            //         //
+            //         // Collect all the content we're about to detach.
+            //         page->_DetachTab(tab);
 
-                    co_await wil::resume_foreground(page->Dispatcher(), CoreDispatcherPriority::Normal);
+            //         co_await wil::resume_foreground(page->Dispatcher(), CoreDispatcherPriority::Normal);
 
-                    page->_RemoveTab(*tab);
-                }
-            });
+            //         page->_RemoveTab(*tab);
+            //     }
+            // });
         }
     }
     void TerminalPage::_onTabStripDragOver(winrt::Windows::Foundation::IInspectable sender,
                                            winrt::Windows::UI::Xaml::DragEventArgs e)
     {
-        if (e.DataView().Properties().HasKey(L"content"))
+        if (e.DataView().Properties().HasKey(L"windowId"))
         {
             e.AcceptedOperation(DataPackageOperation::Move);
         }
@@ -4501,24 +4509,83 @@ namespace winrt::TerminalApp::implementation
     winrt::fire_and_forget TerminalPage::_onTabStripDrop(winrt::Windows::Foundation::IInspectable sender,
                                                          winrt::Windows::UI::Xaml::DragEventArgs e)
     {
-        auto contentObj{ e.DataView().Properties().TryLookup(L"content") };
-        if (contentObj == nullptr)
+        // TODO! get PID and make sure it's the same as ours.
+
+        auto windowIdObj{ e.DataView().Properties().TryLookup(L"windowId") };
+        if (windowIdObj == nullptr)
+        {
+            // No windowId? Bail.
+            co_return;
+        }
+        const auto windowId{ winrt::unbox_value<winrt::hstring>(windowIdObj) };
+
+        // Convert the windowId to a number
+        uint32_t src;
+        if (!Utils::StringToUint(windowId.c_str(), src))
+        {
+            // Failed to convert the windowId to a number. Bail.
+            co_return;
+        }
+
+        // TODO! Figure out where in the tabstrip we're dropping this tab. Add
+        // that index to the reqest. I believe the WUI sample app has example
+        // code for this
+
+        auto weakThis{ get_weak() };
+        co_await winrt::resume_background();
+        if (const auto& page{ weakThis.get() })
+        {
+            // `this` is safe to use
+            const auto request = winrt::make_self<RequestReceiveContentArgs>(src, _WindowProperties.WindowId());
+
+            // This will go up to the monarch, who will then dispatch the request
+            // back down to the source TerminalPage, who will then perform a
+            // RequestMoveContent to move their tab to us.
+            _RequestReceiveContentHandlers(*this, *request);
+        }
+
+        // if (!contentString.empty())
+        // {
+        //     auto args = ActionAndArgs::Deserialize(contentString);
+        //     // TODO! if the first action is a split pane and tabIndex > tabs.size,
+        //     // then remove it and insert an equivalent newTab
+
+        //     co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal); // may need to go to the top of _createNewTabFromContent
+        //     for (const auto& action : args)
+        //     {
+        //         _actionDispatch->DoAction(action);
+        //     }
+        // }
+    }
+    winrt::fire_and_forget TerminalPage::SendContentToOther(winrt::TerminalApp::RequestReceiveContentArgs args)
+    {
+        // This is called on the source TerminalPage, when the monarch has
+        // requested that we send our tab to another window. We'll need to
+        // serialize the tab, and send it to the monarch, who will then send it
+        // to the destination window.
+
+        // validate that we're the source window of the tab in this request
+        if (args.SourceWindow() != _WindowProperties.WindowId())
         {
             co_return;
         }
-        auto contentString{ winrt::unbox_value<winrt::hstring>(contentObj) };
-        if (!contentString.empty())
+        if (!_stashedDraggedTab)
         {
-            auto args = ActionAndArgs::Deserialize(contentString);
-            // TODO! if the first action is a split pane and tabIndex > tabs.size,
-            // then remove it and insert an equivalent newTab
+            co_return;
+        }
 
-            co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal); // may need to go to the top of _createNewTabFromContent
-            for (const auto& action : args)
-            {
-                _actionDispatch->DoAction(action);
-            }
+        auto weakThis{ get_weak() };
+        co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
+        if (const auto& page{ weakThis.get() })
+        {
+            // `this` is safe to use
+            auto startupActions = _stashedDraggedTab->BuildStartupActions(true);
+            _DetachTabFromWindow(_stashedDraggedTab);
+            _MoveContent(startupActions, winrt::hstring{ fmt::format(L"{}", args.TargetWindow()) }, 0);
+            _RemoveTab(*_stashedDraggedTab);
+
+            // TODO! _whenever_ we close the stashed dragged tab, we should null it.
+            _stashedDraggedTab = nullptr;
         }
     }
-
 }

@@ -6,7 +6,7 @@
     "C_Cpp.loggingLevel": "None",
     "files.associations": {
         "xstring": "cpp",
-        "*.idl": "cpp",
+        "*.idl": "midl3",
         "array": "cpp",
         "future": "cpp",
         "istream": "cpp",

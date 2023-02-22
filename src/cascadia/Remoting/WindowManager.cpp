@@ -434,4 +434,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         _monarch.RequestMoveContent(window, content, tabIndex);
     }
 
+    winrt::fire_and_forget WindowManager::RequestSendContent(Remoting::RequestReceiveContentArgs args)
+    {
+        co_await winrt::resume_background();
+        _monarch.RequestSendContent(args);
+    }
 }

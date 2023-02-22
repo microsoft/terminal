@@ -127,6 +127,7 @@ namespace winrt::TerminalApp::implementation
         bool IsQuakeWindow() const noexcept;
 
         void AttachContent(winrt::hstring content, uint32_t tabIndex);
+        void SendContentToOther(winrt::TerminalApp::RequestReceiveContentArgs args);
 
         // -------------------------------- WinRT Events ---------------------------------
         // PropertyChanged is surprisingly not a typed event, so we'll define that one manually.
@@ -206,6 +207,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(SettingsChanged, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SettingsLoadEventArgs);
 
         FORWARDED_TYPED_EVENT(RequestMoveContent, Windows::Foundation::IInspectable, winrt::TerminalApp::RequestMoveContentArgs, _root, RequestMoveContent);
+        FORWARDED_TYPED_EVENT(RequestReceiveContent, Windows::Foundation::IInspectable, winrt::TerminalApp::RequestReceiveContentArgs, _root, RequestReceiveContent);
 
 #ifdef UNIT_TESTING
         friend class TerminalAppLocalTests::CommandlineTest;

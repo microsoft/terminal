@@ -9,6 +9,7 @@
 #include "AppCommandlineArgs.h"
 #include "RenameWindowRequestedArgs.g.h"
 #include "RequestMoveContentArgs.g.h"
+#include "RequestReceiveContentArgs.g.h"
 #include "Toast.h"
 
 #define DECLARE_ACTION_HANDLER(action) void _Handle##action(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
@@ -62,6 +63,17 @@ namespace winrt::TerminalApp::implementation
             _Window{ window },
             _Content{ content },
             _TabIndex{ tabIndex } {};
+    };
+
+    struct RequestReceiveContentArgs : RequestReceiveContentArgsT<RequestReceiveContentArgs>
+    {
+        WINRT_PROPERTY(uint64_t, SourceWindow);
+        WINRT_PROPERTY(uint64_t, TargetWindow);
+
+    public:
+        RequestReceiveContentArgs(const uint64_t src, const uint64_t tgt) :
+            _SourceWindow{ src },
+            _TargetWindow{ tgt } {};
     };
 
     struct TerminalPage : TerminalPageT<TerminalPage>
@@ -149,6 +161,7 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget WindowNameChanged();
 
         winrt::fire_and_forget AttachContent(winrt::hstring content, uint32_t tabIndex);
+        winrt::fire_and_forget SendContentToOther(winrt::TerminalApp::RequestReceiveContentArgs args);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
@@ -174,6 +187,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(ShowWindowChanged, IInspectable, winrt::Microsoft::Terminal::Control::ShowWindowArgs)
 
         TYPED_EVENT(RequestMoveContent, Windows::Foundation::IInspectable, winrt::TerminalApp::RequestMoveContentArgs);
+        TYPED_EVENT(RequestReceiveContent, Windows::Foundation::IInspectable, winrt::TerminalApp::RequestReceiveContentArgs);
 
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, TitlebarBrush, _PropertyChangedHandlers, nullptr);
 
@@ -246,6 +260,9 @@ namespace winrt::TerminalApp::implementation
 
         TerminalApp::IWindowProperties _WindowProperties{ nullptr };
         TerminalApp::ContentManager _manager{ nullptr };
+
+        // winrt::hstring _stashedTabDragContent{};
+        winrt::com_ptr<winrt::TerminalApp::implementation::TerminalTab> _stashedDraggedTab{ nullptr };
 
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowDialogHelper(const std::wstring_view& name);
 
@@ -501,4 +518,5 @@ namespace winrt::TerminalApp::implementation
 namespace winrt::TerminalApp::factory_implementation
 {
     BASIC_FACTORY(TerminalPage);
+    BASIC_FACTORY(RequestReceiveContentArgs);
 }

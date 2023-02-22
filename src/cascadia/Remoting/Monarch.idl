@@ -41,8 +41,7 @@ namespace Microsoft.Terminal.Remoting
         Windows.Foundation.IReference<UInt64> WindowID;
     }
 
-    [default_interface] runtimeclass QuitAllRequestedArgs 
-    {
+    [default_interface] runtimeclass QuitAllRequestedArgs {
         QuitAllRequestedArgs();
         Windows.Foundation.IAsyncAction BeforeQuitAllAction;
     }
@@ -71,6 +70,7 @@ namespace Microsoft.Terminal.Remoting
         Windows.Foundation.Collections.IVector<String> GetAllWindowLayouts();
 
         void RequestMoveContent(String window, String content, UInt32 tabIndex);
+        void RequestSendContent(RequestReceiveContentArgs args);
 
         event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> ShowNotificationIconRequested;

@@ -123,6 +123,14 @@ private:
     void _handleAttach(const winrt::Windows::Foundation::IInspectable& sender,
                        winrt::Microsoft::Terminal::Remoting::AttachRequest args);
 
+    // Page -> us -> monarch
+    void _handleReceiveContent(const winrt::Windows::Foundation::IInspectable& sender,
+                               winrt::TerminalApp::RequestReceiveContentArgs args);
+
+    // monarch -> us -> Page
+    void _handleSendContent(const winrt::Windows::Foundation::IInspectable& sender,
+                            winrt::Microsoft::Terminal::Remoting::RequestReceiveContentArgs args);
+
     winrt::event_token _GetWindowLayoutRequestedToken;
 
     // Helper struct. By putting these all into one struct, we can revoke them
@@ -157,11 +165,13 @@ private:
         winrt::TerminalApp::TerminalWindow::QuitRequested_revoker QuitRequested;
         winrt::TerminalApp::TerminalWindow::ShowWindowChanged_revoker ShowWindowChanged;
         winrt::TerminalApp::TerminalWindow::RequestMoveContent_revoker RequestMoveContent;
+        winrt::TerminalApp::TerminalWindow::RequestReceiveContent_revoker RequestReceiveContent;
         winrt::TerminalApp::TerminalWindow::PropertyChanged_revoker PropertyChanged;
         winrt::TerminalApp::TerminalWindow::SettingsChanged_revoker SettingsChanged;
 
         winrt::Microsoft::Terminal::Remoting::WindowManager::ShowNotificationIconRequested_revoker ShowNotificationIconRequested;
         winrt::Microsoft::Terminal::Remoting::WindowManager::HideNotificationIconRequested_revoker HideNotificationIconRequested;
         winrt::Microsoft::Terminal::Remoting::WindowManager::QuitAllRequested_revoker QuitAllRequested;
+        winrt::Microsoft::Terminal::Remoting::Peasant::SendContentRequested_revoker SendContentRequested;
     } _revokers{};
 };
