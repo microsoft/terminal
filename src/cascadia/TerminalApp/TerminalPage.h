@@ -261,8 +261,7 @@ namespace winrt::TerminalApp::implementation
         TerminalApp::IWindowProperties _WindowProperties{ nullptr };
         TerminalApp::ContentManager _manager{ nullptr };
 
-        // winrt::hstring _stashedTabDragContent{};
-        winrt::com_ptr<winrt::TerminalApp::implementation::TerminalTab> _stashedDraggedTab{ nullptr };
+        winrt::com_ptr<winrt::TerminalApp::implementation::TabBase> _stashedDraggedTab{ nullptr };
 
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowDialogHelper(const std::wstring_view& name);
 
@@ -500,7 +499,7 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget _onTabStripDrop(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::DragEventArgs e);
 
         void _DetachPaneFromWindow(std::shared_ptr<Pane> pane);
-        void _DetachTabFromWindow(const winrt::com_ptr<TerminalTab>& terminalTab);
+        void _DetachTabFromWindow(const winrt::com_ptr<TabBase>& terminalTab);
         void _MoveContent(std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions, const winrt::hstring& windowName, const uint32_t tabIndex);
 
 #pragma region ActionHandlers

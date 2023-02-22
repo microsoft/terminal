@@ -1953,12 +1953,15 @@ namespace winrt::TerminalApp::implementation
         });
     }
 
-    void TerminalPage::_DetachTabFromWindow(const winrt::com_ptr<TerminalTab>& terminalTab)
+    void TerminalPage::_DetachTabFromWindow(const winrt::com_ptr<TabBase>& tab)
     {
-        // Detach the root pane, which will act like the whole tab got detached.
-        if (const auto rootPane = terminalTab->GetRootPane())
+        if (const auto terminalTab = tab.try_as<TerminalTab>())
         {
-            _DetachPaneFromWindow(rootPane);
+            // Detach the root pane, which will act like the whole tab got detached.
+            if (const auto rootPane = terminalTab->GetRootPane())
+            {
+                _DetachPaneFromWindow(rootPane);
+            }
         }
     }
 
@@ -4460,17 +4463,24 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_onTabDragStarting(winrt::Microsoft::UI::Xaml::Controls::TabView sender,
                                           winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragStartingEventArgs e)
     {
-        // TODO! Use the `sender` as the active tab, you donkey
-        if (const auto terminalTab{ _GetFocusedTabImpl() })
+        // Get the tab impl from this event.
+        auto tvi = _GetTabByTabViewItem(e.Tab());
+        winrt::com_ptr<TabBase> tabImpl;
+        tabImpl.copy_from(winrt::get_self<TabBase>(tvi));
+        if (tabImpl)
         {
             // First: stash the tab we started dragging.
             // We're going to be asked for this.
-            _stashedDraggedTab = terminalTab;
+            _stashedDraggedTab = tabImpl;
 
             // Into the DataPackage, let's stash our own window ID.
             const winrt::hstring id{ fmt::format(L"{}", _WindowProperties.WindowId()) };
 
+            // Get our PID
+            const winrt::hstring pid{ fmt::format(L"{}", GetCurrentProcessId()) };
+
             e.Data().Properties().Insert(L"windowId", winrt::box_value(id));
+            e.Data().Properties().Insert(L"pid", winrt::box_value(pid));
             e.Data().RequestedOperation(DataPackageOperation::Move);
 
             // The next thing that will happen:
@@ -4502,7 +4512,25 @@ namespace winrt::TerminalApp::implementation
     winrt::fire_and_forget TerminalPage::_onTabStripDrop(winrt::Windows::Foundation::IInspectable /*sender*/,
                                                          winrt::Windows::UI::Xaml::DragEventArgs e)
     {
-        // TODO! get PID and make sure it's the same as ours.
+        // Get the PID and make sure it is the same as ours.
+        if (auto pidObj{ e.DataView().Properties().TryLookup(L"pid") })
+        {
+            const auto pidStr{ winrt::unbox_value<winrt::hstring>(pidObj) };
+            uint32_t pidNum;
+            if (Utils::StringToUint(pidStr.c_str(), pidNum))
+            {
+                if (pidNum != GetCurrentProcessId())
+                {
+                    // The PID doesn't match ours. We can't handle this drop.
+                    co_return;
+                }
+            }
+        }
+        else
+        {
+            // No PID? We can't handle this drop. Bail.
+            co_return;
+        }
 
         auto windowIdObj{ e.DataView().Properties().TryLookup(L"windowId") };
         if (windowIdObj == nullptr)
