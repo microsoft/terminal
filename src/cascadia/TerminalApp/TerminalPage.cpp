@@ -4516,9 +4516,22 @@ namespace winrt::TerminalApp::implementation
             co_return;
         }
 
-        const auto direction = TerminalApp::SuggestionsDirection::BottomUp;
         const Windows::Foundation::Point origin{ -4, -4 };
         const Windows::Foundation::Size size{ 300, 300 };
+
+
+        const til::point cursorPos{ control.CursorPositionInDips() };
+        const auto characterSize{ control.CharacterDimensions() };
+
+        const auto currentWindow = CoreWindow::GetForCurrentThread();
+        const auto currentWindowBounds = currentWindow.Bounds();
+        const til::point windowOrigin{ til::math::rounding, currentWindowBounds.X, currentWindowBounds.Y };
+        const til::size windowDimensions{ til::math::rounding, this->ActualWidth(), this->ActualHeight() };
+
+        // Is there space in the window below the cursor to open the menu downwards?
+        const bool canOpenDownwards = cursorPos.y + characterSize.Height + size.Height < windowDimensions.height;
+
+        const auto direction = canOpenDownwards ? TerminalApp::SuggestionsDirection::TopDown : TerminalApp::SuggestionsDirection::BottomUp;
 
         // CommandPalette has an internal margin of 8, so set to -4,-4 to
         // position closer to the actual line.
@@ -4530,8 +4543,6 @@ namespace winrt::TerminalApp::implementation
                                direction);
         SuggestionsUI().Mode(mode);
 
-        const til::point cursorPos{ control.CursorPositionInDips() };
-        const auto characterSize{ control.CharacterDimensions() };
 
         SuggestionsPopup().IsOpen(true);
         // ~Make visible first, then set commands. Other way around and the list
