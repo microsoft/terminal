@@ -26,6 +26,8 @@ public:
 
     static void s_DisplayMessageBox(const winrt::TerminalApp::ParseCommandlineResult& message);
 
+    WINRT_CALLBACK(UpdateSettingsRequested, winrt::delegate<void()>);
+
 private:
     std::unique_ptr<IslandWindow> _window;
 
@@ -120,6 +122,8 @@ private:
                                  const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
 
     void _initialResizeAndRepositionWindow(const HWND hwnd, RECT proposedRect, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode);
+
+    void _requestUpdateSettings();
 
     winrt::event_token _GetWindowLayoutRequestedToken;
 
