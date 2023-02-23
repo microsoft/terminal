@@ -512,6 +512,11 @@ namespace winrt::TerminalApp::implementation
             _mruTabs.RemoveAt(mruIndex);
         }
 
+        if (_stashedDraggedTab && *_stashedDraggedTab == tab)
+        {
+            _stashedDraggedTab = nullptr;
+        }
+
         _tabs.RemoveAt(tabIndex);
         _tabView.TabItems().RemoveAt(tabIndex);
         _UpdateTabIndices();

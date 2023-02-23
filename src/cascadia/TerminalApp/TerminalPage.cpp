@@ -2071,6 +2071,10 @@ namespace winrt::TerminalApp::implementation
             _actionDispatch->DoAction(action);
         }
 
+        // After handling all the actions, then re-check the tabIndex. We might
+        // have been called as a part of a tab drag/drop. In that case, the
+        // tabIndex is actually relevant, and we need to move the tab we just
+        // made into position.
         if (!firstIsSplitPane && tabIndex != -1)
         {
             // Move the currently active tab to the requested index Use the
@@ -4639,10 +4643,8 @@ namespace winrt::TerminalApp::implementation
             auto startupActions = _stashedDraggedTab->BuildStartupActions(true);
             _DetachTabFromWindow(_stashedDraggedTab);
             _MoveContent(startupActions, winrt::hstring{ fmt::format(L"{}", args.TargetWindow()) }, args.TabIndex());
+            // _RemoveTab will make sure to null out the _stashedDraggedTab
             _RemoveTab(*_stashedDraggedTab);
-
-            // TODO! _whenever_ we close the stashed dragged tab, we should null it. I think that's just _RemoveTab, but to the dilligence you donkey
-            _stashedDraggedTab = nullptr;
         }
     }
 }
