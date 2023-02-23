@@ -220,6 +220,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _ScrollRectHorizontally(TextBuffer& textBuffer, const til::rect& scrollRect, const VTInt delta);
         void _InsertDeleteCharacterHelper(const VTInt delta);
         void _InsertDeleteLineHelper(const VTInt delta);
+        void _InsertDeleteColumnHelper(const VTInt delta);
         void _ScrollMovement(const VTInt delta);
 
         void _DoSetTopBottomScrollingMargins(const VTInt topMargin,

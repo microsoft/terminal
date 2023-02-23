@@ -2107,14 +2107,40 @@ bool AdaptDispatch::DeleteLine(const VTInt distance)
 }
 
 // Routine Description:
+// - Internal logic for adding or removing columns in the active screen buffer.
+// Parameters:
+// - delta - Number of columns to modify (positive if inserting, negative if deleting).
+// Return Value:
+// - <none>
+void AdaptDispatch::_InsertDeleteColumnHelper(const VTInt delta)
+{
+    const auto viewport = _api.GetViewport();
+    auto& textBuffer = _api.GetTextBuffer();
+    const auto bufferWidth = textBuffer.GetSize().Width();
+
+    const auto& cursor = textBuffer.GetCursor();
+    const auto col = cursor.GetPosition().x;
+    const auto row = cursor.GetPosition().y;
+
+    const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(bufferWidth);
+    if (row >= topMargin && row <= bottomMargin && col >= leftMargin && col <= rightMargin)
+    {
+        // We emulate inserting and deleting by scrolling the area between the cursor and the right margin.
+        _ScrollRectHorizontally(textBuffer, { col, topMargin, rightMargin + 1, bottomMargin + 1 }, delta);
+    }
+}
+
+// Routine Description:
 // - DECIC - This control function inserts one or more blank columns in the
 //    scrolling region, starting at the column that has the cursor.
 // Arguments:
 // - distance - number of columns to insert
 // Return Value:
 // - True.
-bool AdaptDispatch::InsertColumn(const VTInt /*distance*/)
+bool AdaptDispatch::InsertColumn(const VTInt distance)
 {
+    _InsertDeleteColumnHelper(gsl::narrow_cast<int32_t>(distance));
     return true;
 }
 
@@ -2125,8 +2151,9 @@ bool AdaptDispatch::InsertColumn(const VTInt /*distance*/)
 // - distance - number of columns to delete
 // Return Value:
 // - True.
-bool AdaptDispatch::DeleteColumn(const VTInt /*distance*/)
+bool AdaptDispatch::DeleteColumn(const VTInt distance)
 {
+    _InsertDeleteColumnHelper(-gsl::narrow_cast<int32_t>(distance));
     return true;
 }
 
