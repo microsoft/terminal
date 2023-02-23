@@ -4538,7 +4538,8 @@ namespace winrt::TerminalApp::implementation
         // Is there space in the window below the cursor to open the menu downwards?
         const bool canOpenDownwards = ((realCursorPos.y) + characterSize.Height + size.Height) < windowDimensions.height;
 
-        const auto direction = canOpenDownwards ? TerminalApp::SuggestionsDirection::TopDown : TerminalApp::SuggestionsDirection::BottomUp;
+        const auto direction = canOpenDownwards ? TerminalApp::SuggestionsDirection::TopDown :
+                                                  TerminalApp::SuggestionsDirection::BottomUp;
 
         // CommandPalette has an internal margin of 8, so set to -4,-4 to
         // position closer to the actual line.
@@ -4547,7 +4548,6 @@ namespace winrt::TerminalApp::implementation
         // into the control.
         SuggestionsUI().OpenAt(origin,
                                size,
-
                                direction);
         SuggestionsUI().Mode(mode);
 
@@ -4560,8 +4560,25 @@ namespace winrt::TerminalApp::implementation
         // Position relative to the actual term control.
         //
         // This needs to be done _after_ it is set to be visible. If not, then
-        // the control won't have an ActualHeight yet.
-        SuggestionsPopup().HorizontalOffset(realCursorPos.x - 40); // Scoot a little to the left, to align text with cursor
+        // the control won't have an Actual{Width, Height} yet.
+        const til::size actualSuggestionsSize{ til::math::rounding,
+                                               SuggestionsUI().ActualWidth(),
+                                               SuggestionsUI().ActualHeight() };
+
+        // First, position horizonally.
+        //
+        // We want to align the left edge of the text within the control to the
+        // cursor position. We'll need to scoot a little to the left, to align
+        // text with cursor
+        const auto proposedX = realCursorPos.x - 40;
+        // If the control is too wide to fit in the window, clamp it fit inside
+        // the window.
+        const auto maxX = gsl::narrow_cast<int>(windowDimensions.width - actualSuggestionsSize.width);
+        const auto clampedX = std::clamp(proposedX, 0, maxX);
+
+        SuggestionsPopup().HorizontalOffset(clampedX);
+
+        // Now, position vertically.
         if (direction == TerminalApp::SuggestionsDirection::TopDown)
         {
             // The control should open right below the cursor, with the list
@@ -4573,8 +4590,7 @@ namespace winrt::TerminalApp::implementation
         {
             // Position above the cursor. We'll need to make sure
             // (origin.y+sxnui.Height) = cursorPos.y.
-            const auto sxnUiHeight{ SuggestionsUI().ActualHeight() };
-            SuggestionsPopup().VerticalOffset(realCursorPos.y - sxnUiHeight);
+            SuggestionsPopup().VerticalOffset(realCursorPos.y - actualSuggestionsSize.height);
         }
     }
 
