@@ -196,6 +196,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                  bool& selectionNeedsToBeCopied);
 
         void AttachUiaEngine(::Microsoft::Console::Render::IRenderEngine* const pEngine);
+        void DetachUiaEngine(::Microsoft::Console::Render::IRenderEngine* const pEngine);
 
         bool IsInReadOnlyMode() const;
         void ToggleReadOnlyMode();

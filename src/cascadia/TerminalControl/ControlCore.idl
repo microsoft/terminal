@@ -71,8 +71,6 @@ namespace Microsoft.Terminal.Control
         void UpdateSettings(IControlSettings settings, IControlAppearance appearance);
         void ApplyAppearance(Boolean focused);
 
-        void Detach();
-
         IControlSettings Settings { get; };
         IControlAppearance FocusedAppearance { get; };
         IControlAppearance UnfocusedAppearance { get; };

@@ -61,9 +61,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _guid;
     }
 
+    void ControlInteractivity::Detach()
+    {
+        if (_uiaEngine)
+        {
+            LOG_IF_FAILED(_uiaEngine->Disable());
+        }
+
+        _core->Detach();
+    }
+
     void ControlInteractivity::Reparent(const Microsoft::Terminal::Control::IKeyBindings& keyBindings)
     {
         _core->Reparent(keyBindings);
+
+        /*if (_uiaEngine)
+        {
+            _uiaEngine->Reparent();
+        }*/
     }
 
     // Method Description:
@@ -677,7 +692,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     try
     {
         const auto autoPeer = winrt::make_self<implementation::InteractivityAutomationPeer>(this);
-
+        if (_uiaEngine)
+        {
+            _core->DetachUiaEngine(_uiaEngine.get());
+        }
         _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(autoPeer.get());
         _core->AttachUiaEngine(_uiaEngine.get());
         return *autoPeer;

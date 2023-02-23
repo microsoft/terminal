@@ -25,6 +25,7 @@ namespace Microsoft.Terminal.Control
 
         Guid Id { get; };
         void Reparent(Microsoft.Terminal.Control.IKeyBindings keyBindings);
+        void Detach();
         void Close();
 
         InteractivityAutomationPeer OnCreateAutomationPeer();
