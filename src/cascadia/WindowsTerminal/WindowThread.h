@@ -19,6 +19,7 @@ public:
 
     WINRT_CALLBACK(Started, winrt::delegate<>);
     WINRT_CALLBACK(Exited, winrt::delegate<uint64_t>);
+    WINRT_CALLBACK(UpdateSettingsRequested, winrt::delegate<void()>);
 
 private:
     winrt::Microsoft::Terminal::Remoting::Peasant _peasant{ nullptr };

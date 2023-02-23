@@ -122,9 +122,14 @@ void WindowEmperor::CreateNewWindowThread(Remoting::WindowRequestedArgs args, co
         // Add a callback to the window's logic to let us know when the window's
         // quake mode state changes. We'll use this to check if we need to add
         // or remove the notification icon.
-        sender->Logic().IsQuakeWindowChanged([this](auto&&, auto&&) -> winrt::fire_and_forget {
+        sender->Logic().IsQuakeWindowChanged([this](auto&&, auto &&) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(this->_dispatcher);
             this->_checkWindowsForNotificationIcon();
+        });
+        sender->UpdateSettingsRequested([this]() -> winrt::fire_and_forget {
+            // We MUST be on the main thread to update the settings. We will crash when trying to enumerate fragement extensions otherwise.
+            co_await wil::resume_foreground(this->_dispatcher);
+            _app.Logic().ReloadSettings();
         });
 
         // These come in on the sender's thread. Move back to our thread.
