@@ -4476,27 +4476,29 @@ namespace winrt::TerminalApp::implementation
     }
 
     winrt::fire_and_forget TerminalPage::_ControlMenuChangedHandler(const IInspectable /*sender*/,
-                                                                    const winrt::Microsoft::Terminal::Control::MenuChangedEventArgs args)
+                                                                    const MenuChangedEventArgs args)
     {
+        const auto& page{ weakThis.get() };
         co_await winrt::resume_background();
-
-        // May be able to fake this by not creating whole Commands for these
-        // actions, instead just binding them at the cmdpal layer (like tab item
-        // vs action item)
-        // auto entries = control.MenuEntries();
-
-        // parse json
-        try
+        if (const auto& page{ weakThis.get() })
         {
-            auto commandsCollection = Command::ParsePowerShellMenuComplete(args.MenuJson(),
-                                                                           args.ReplacementLength());
+            // `this` is safe to use
 
-            _OpenSuggestions(commandsCollection, SuggestionsMode::Menu);
+            // Parse the json
+            try
+            {
+                auto commandsCollection = Command::ParsePowerShellMenuComplete(args.MenuJson(),
+                                                                               args.ReplacementLength());
+
+                // Open the Suggestions UI with the commands from the control
+                _OpenSuggestions(commandsCollection, SuggestionsMode::Menu);
+            }
+            CATCH_LOG();
         }
-        CATCH_LOG();
     }
 
-    winrt::fire_and_forget TerminalPage::_OpenSuggestions(Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::Command> commandsCollection, winrt::TerminalApp::SuggestionsMode mode)
+    winrt::fire_and_forget TerminalPage::_OpenSuggestions(IVector<Command> commandsCollection,
+                                                          winrt::TerminalApp::SuggestionsMode mode)
     {
         if (commandsCollection == nullptr)
         {
@@ -4509,13 +4511,20 @@ namespace winrt::TerminalApp::implementation
 
             co_return;
         }
+        auto weakThis{ get_weak() };
         co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
-        auto control{ _GetActiveControl() };
+        const auto& page{ weakThis.get() };
+        if (!page)
+        {
+            co_return;
+        }
+        // page is now keeping `this` alive to use safely
+        const auto& control{ _GetActiveControl() };
         if (!control)
         {
             co_return;
         }
-
+        const auto& sxnUi{ SuggestionsUI() };
         const Windows::Foundation::Point origin{ -4, -4 };
         const Windows::Foundation::Size size{ 300, 300 };
 
@@ -4533,7 +4542,7 @@ namespace winrt::TerminalApp::implementation
         // doesn't work for XAML Islands at all.
         const til::point windowOrigin{ til::math::rounding, currentWindowBounds.X, currentWindowBounds.Y };
         // Fortunately, we can just use the Actual{Width,Height} of ourselves.
-        const til::size windowDimensions{ til::math::rounding, this->ActualWidth(), this->ActualHeight() };
+        const til::size windowDimensions{ til::math::rounding, ActualWidth(), ActualHeight() };
 
         // Is there space in the window below the cursor to open the menu downwards?
         const bool canOpenDownwards = ((realCursorPos.y) + characterSize.Height + size.Height) < windowDimensions.height;
@@ -4546,24 +4555,22 @@ namespace winrt::TerminalApp::implementation
         //
         // TODO! We may want to just remove this entirely and build it straight
         // into the control.
-        SuggestionsUI().OpenAt(origin,
-                               size,
-                               direction);
-        SuggestionsUI().Mode(mode);
+        sxnUi.OpenAt(origin,
+                     size,
+                     direction);
+        sxnUi.Mode(mode);
 
         SuggestionsPopup().IsOpen(true);
-        // ~Make visible first, then set commands. Other way around and the list
-        // doesn't actually update the first time (weird)~
-        SuggestionsUI().SetCommands(commandsCollection);
-        SuggestionsUI().Visibility(commandsCollection.Size() > 0 ? Visibility::Visible : Visibility::Collapsed);
+        sxnUi.SetCommands(commandsCollection);
+        sxnUi.Visibility(commandsCollection.Size() > 0 ? Visibility::Visible : Visibility::Collapsed);
 
-        // Position relative to the actual term control.
+        // Position the suggestions UI relative to the actual term control.
         //
         // This needs to be done _after_ it is set to be visible. If not, then
         // the control won't have an Actual{Width, Height} yet.
         const til::size actualSuggestionsSize{ til::math::rounding,
-                                               SuggestionsUI().ActualWidth(),
-                                               SuggestionsUI().ActualHeight() };
+                                               sxnUi.ActualWidth(),
+                                               sxnUi.ActualHeight() };
 
         // First, position horizonally.
         //
@@ -4589,7 +4596,7 @@ namespace winrt::TerminalApp::implementation
         else
         {
             // Position above the cursor. We'll need to make sure
-            // (origin.y+sxnui.Height) = cursorPos.y.
+            // (origin.y+sxnUi.Height) = cursorPos.y.
             SuggestionsPopup().VerticalOffset(realCursorPos.y - actualSuggestionsSize.height);
         }
     }
