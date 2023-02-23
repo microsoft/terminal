@@ -2070,6 +2070,21 @@ namespace winrt::TerminalApp::implementation
         {
             _actionDispatch->DoAction(action);
         }
+
+        if (!firstIsSplitPane && tabIndex != -1)
+        {
+            // Move the currently active tab to the requested index Use the
+            // currently focused tab index, because we don't know if the new tab
+            // opened at the end of the list, or adjacent to the previously
+            // active tab. This is affected by the user's "newTabPosition"
+            // setting.
+            if (auto focusedTabIndex = _GetFocusedTabIndex())
+            {
+                const auto source = *focusedTabIndex;
+                _TryMoveTab(source, tabIndex);
+            }
+            // else: This shouldn't really be possible, because the tab we _just_ opened should be active.
+        }
     }
 
     // Method Description:
@@ -4559,9 +4574,9 @@ namespace winrt::TerminalApp::implementation
             co_return;
         }
 
-        // TODO! Figure out where in the tab strip we're dropping this tab. Add
-        // that index to the request. I believe the WUI sample app has example
-        // code for this
+        // Figure out where in the tab strip we're dropping this tab. Add that
+        // index to the request. This is largely taken from the WinUIq sample
+        // app.
 
         // We need to be on OUR UI thread to figure out where we dropped
         auto weakThis{ get_weak() };
