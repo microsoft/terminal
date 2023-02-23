@@ -3087,7 +3087,9 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
 // - Performs a XtermJs action
 // - Ascribes to the ITermDispatch interface
 // - Currently, the actions we support are:
-//   * TODO!
+//   * Completions: An experimental protocol for passing shell completion
+//     information from the shell to the terminal. This sequence is still under
+//     active development, and subject to change.
 // - Not actually used in conhost
 // Arguments:
 // - string: contains the parameters that define which action we do
@@ -3100,6 +3102,11 @@ bool AdaptDispatch::DoXtermJsAction(const std::wstring_view string)
     {
         // Flush the frame manually, to make sure marks end up on the right line, like the alt buffer sequence.
         _renderer.TriggerFlush(false);
+        return false;
+    }
+
+    if constexpr (!Feature_ShellCompletions::IsEnabled())
+    {
         return false;
     }
 

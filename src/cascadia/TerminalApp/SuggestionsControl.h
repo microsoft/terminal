@@ -34,7 +34,7 @@ namespace winrt::TerminalApp::implementation
         void ScrollToBottom();
 
         Windows::UI::Xaml::FrameworkElement SelectedItem();
-        void OpenAt(Windows::Foundation::Point origin, Windows::Foundation::Size size, TerminalApp::SuggestionsDirection direction);
+        void Direction(TerminalApp::SuggestionsDirection direction);
 
         TerminalApp::SuggestionsMode Mode() const;
         void Mode(TerminalApp::SuggestionsMode mode);

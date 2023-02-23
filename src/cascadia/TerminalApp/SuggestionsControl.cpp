@@ -635,14 +635,6 @@ namespace winrt::TerminalApp::implementation
                     // palette like the Tab Switcher will be able to have the last laugh.
                     _close();
 
-                    // But make an exception for the Toggle Command Palette action: we don't want the dispatch
-                    // make the command palette - that was just closed - visible again.
-                    // All other actions can just be dispatched.
-                    if (actionPaletteItem.Command().ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette) // TODO!
-                    {
-                        _DispatchCommandRequestedHandlers(*this, actionPaletteItem.Command());
-                    }
-
                     TraceLoggingWrite(
                         g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
                         "SuggestionsControlDispatchedAction",
@@ -1040,16 +1032,9 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void SuggestionsControl::OpenAt(Windows::Foundation::Point origin,
-                                    Windows::Foundation::Size size,
-                                    TerminalApp::SuggestionsDirection direction)
+    void SuggestionsControl::Direction(TerminalApp::SuggestionsDirection direction)
     {
         _direction = direction;
-        Controls::Grid::SetRow(_backdrop(), 0);
-        Controls::Grid::SetColumn(_backdrop(), 0);
-        Controls::Grid::SetRowSpan(_backdrop(), 2);
-        Controls::Grid::SetColumnSpan(_backdrop(), 3);
-
         if (_direction == TerminalApp::SuggestionsDirection::TopDown)
         {
             Controls::Grid::SetRow(_searchBox(), 0);
@@ -1058,18 +1043,5 @@ namespace winrt::TerminalApp::implementation
         {
             Controls::Grid::SetRow(_searchBox(), 4);
         }
-
-        // Set thie Max* versions here, otherwise when there are few results,
-        // the cmdpal will _still_ be 300x300 and filled with empty space
-        _backdrop().MaxWidth(size.Width);
-        _backdrop().MaxHeight(size.Height);
-
-        _backdrop().HorizontalAlignment(HorizontalAlignment::Stretch);
-        _backdrop().VerticalAlignment(VerticalAlignment::Stretch);
-
-        Windows::UI::Xaml::Thickness margins{};
-        margins.Left = origin.X;
-        margins.Top = origin.Y;
-        _backdrop().Margin(margins);
     }
 }

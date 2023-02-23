@@ -4478,7 +4478,11 @@ namespace winrt::TerminalApp::implementation
     winrt::fire_and_forget TerminalPage::_ControlMenuChangedHandler(const IInspectable /*sender*/,
                                                                     const MenuChangedEventArgs args)
     {
-        const auto& page{ weakThis.get() };
+        if constexpr (!Feature_ShellCompletions::IsEnabled())
+        {
+            co_return;
+        }
+        auto weakThis{ get_weak() };
         co_await winrt::resume_background();
         if (const auto& page{ weakThis.get() })
         {
@@ -4525,8 +4529,9 @@ namespace winrt::TerminalApp::implementation
             co_return;
         }
         const auto& sxnUi{ SuggestionsUI() };
-        const Windows::Foundation::Point origin{ -4, -4 };
-        const Windows::Foundation::Size size{ 300, 300 };
+
+        // A handy local to know how much space the suggestions UI might take up.
+        static const Windows::Foundation::Size maxSize{ 300, 300 };
 
         const auto characterSize{ control.CharacterDimensions() };
         // This is in control-relative space. We'll need to convert it to page-relative space.
@@ -4545,19 +4550,12 @@ namespace winrt::TerminalApp::implementation
         const til::size windowDimensions{ til::math::rounding, ActualWidth(), ActualHeight() };
 
         // Is there space in the window below the cursor to open the menu downwards?
-        const bool canOpenDownwards = ((realCursorPos.y) + characterSize.Height + size.Height) < windowDimensions.height;
+        const bool canOpenDownwards = ((realCursorPos.y) + characterSize.Height + maxSize.Height) < windowDimensions.height;
 
         const auto direction = canOpenDownwards ? TerminalApp::SuggestionsDirection::TopDown :
                                                   TerminalApp::SuggestionsDirection::BottomUp;
 
-        // CommandPalette has an internal margin of 8, so set to -4,-4 to
-        // position closer to the actual line.
-        //
-        // TODO! We may want to just remove this entirely and build it straight
-        // into the control.
-        sxnUi.OpenAt(origin,
-                     size,
-                     direction);
+        sxnUi.Direction(direction);
         sxnUi.Mode(mode);
 
         SuggestionsPopup().IsOpen(true);
