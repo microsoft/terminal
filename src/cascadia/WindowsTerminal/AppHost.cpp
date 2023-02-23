@@ -1218,7 +1218,7 @@ void AppHost::_handleAttach(const winrt::Windows::Foundation::IInspectable& /*se
 void AppHost::_handleReceiveContent(const winrt::Windows::Foundation::IInspectable& /* sender */,
                                     winrt::TerminalApp::RequestReceiveContentArgs args)
 {
-    _windowManager.RequestSendContent(winrt::Microsoft::Terminal::Remoting::RequestReceiveContentArgs{ args.SourceWindow(), args.TargetWindow() });
+    _windowManager.RequestSendContent(winrt::Microsoft::Terminal::Remoting::RequestReceiveContentArgs{ args.SourceWindow(), args.TargetWindow(), args.TabIndex() });
 }
 
 // monarch -> Peasant -> us -> Page
@@ -1226,5 +1226,5 @@ void AppHost::_handleReceiveContent(const winrt::Windows::Foundation::IInspectab
 void AppHost::_handleSendContent(const winrt::Windows::Foundation::IInspectable& /* sender */,
                                  winrt::Microsoft::Terminal::Remoting::RequestReceiveContentArgs args)
 {
-    _windowLogic.SendContentToOther(winrt::TerminalApp::RequestReceiveContentArgs{ args.SourceWindow(), args.TargetWindow() });
+    _windowLogic.SendContentToOther(winrt::TerminalApp::RequestReceiveContentArgs{ args.SourceWindow(), args.TargetWindow(), args.TabIndex() });
 }

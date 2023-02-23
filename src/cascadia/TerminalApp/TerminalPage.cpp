@@ -4464,9 +4464,15 @@ namespace winrt::TerminalApp::implementation
                                           winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragStartingEventArgs e)
     {
         // Get the tab impl from this event.
-        auto tvi = _GetTabByTabViewItem(e.Tab());
+        auto eventTab = e.Tab();
+        // auto eventTabGood = e.Item().try_as<winrt::MUX::Controls::TabViewItem>();
+        auto iconBad = eventTab.IconSource();
+        iconBad;
+        // auto iconGood = eventTabGood.IconSource();
+        // iconGood;
+        auto tabBase = _GetTabByTabViewItem(eventTab);
         winrt::com_ptr<TabBase> tabImpl;
-        tabImpl.copy_from(winrt::get_self<TabBase>(tvi));
+        tabImpl.copy_from(winrt::get_self<TabBase>(tabBase));
         if (tabImpl)
         {
             // First: stash the tab we started dragging.
@@ -4503,6 +4509,11 @@ namespace winrt::TerminalApp::implementation
         {
             e.AcceptedOperation(DataPackageOperation::Move);
         }
+
+        // You may think to yourself, this is a great place to increase the
+        // width of the TabView artificially, to make room for the new tab item.
+        // However, we'll never get a message that the tab left the tab view
+        // (without being dropped). So there's no good way to resize back down.
     }
 
     // Method Description:
@@ -4552,13 +4563,31 @@ namespace winrt::TerminalApp::implementation
         // that index to the request. I believe the WUI sample app has example
         // code for this
 
-        // Get off the drag/drop thread, but we don't need to be on our UI thread.
+        // We need to be on OUR UI thread to figure out where we dropped
         auto weakThis{ get_weak() };
-        co_await winrt::resume_background();
+        co_await wil::resume_foreground(Dispatcher());
         if (const auto& page{ weakThis.get() })
         {
+            // First we need to get the position in the List to drop to
+            auto index = -1;
+
+            // Determine which items in the list our pointer is between.
+            for (auto i = 0u; i < _tabView.TabItems().Size(); i++)
+            {
+                if (auto item{ _tabView.ContainerFromIndex(i).try_as<winrt::MUX::Controls::TabViewItem>() })
+                {
+                    const auto posX{ e.GetPosition(item).X };
+                    const auto itemWidth{ item.ActualWidth() };
+                    if (posX - itemWidth < 0)
+                    {
+                        index = i;
+                        break;
+                    }
+                }
+            }
+
             // `this` is safe to use
-            const auto request = winrt::make_self<RequestReceiveContentArgs>(src, _WindowProperties.WindowId());
+            const auto request = winrt::make_self<RequestReceiveContentArgs>(src, _WindowProperties.WindowId(), index);
 
             // This will go up to the monarch, who will then dispatch the request
             // back down to the source TerminalPage, who will then perform a
@@ -4594,7 +4623,7 @@ namespace winrt::TerminalApp::implementation
             // `this` is safe to use in here.
             auto startupActions = _stashedDraggedTab->BuildStartupActions(true);
             _DetachTabFromWindow(_stashedDraggedTab);
-            _MoveContent(startupActions, winrt::hstring{ fmt::format(L"{}", args.TargetWindow()) }, 0);
+            _MoveContent(startupActions, winrt::hstring{ fmt::format(L"{}", args.TargetWindow()) }, args.TabIndex());
             _RemoveTab(*_stashedDraggedTab);
 
             // TODO! _whenever_ we close the stashed dragged tab, we should null it. I think that's just _RemoveTab, but to the dilligence you donkey

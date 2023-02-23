@@ -56,11 +56,11 @@ namespace Microsoft.Terminal.Remoting
         UInt32 TabIndex { get; };
     }
     [default_interface] runtimeclass RequestReceiveContentArgs {
-        RequestReceiveContentArgs(UInt64 src, UInt64 tgt);
+        RequestReceiveContentArgs(UInt64 src, UInt64 tgt, UInt32 tabIndex);
 
         UInt64 SourceWindow { get; };
         UInt64 TargetWindow { get; };
-        // TODO! UInt32 TabIndex { get; };
+        UInt32 TabIndex { get; };
     };
 
     interface IPeasant

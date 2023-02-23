@@ -69,11 +69,13 @@ namespace winrt::TerminalApp::implementation
     {
         WINRT_PROPERTY(uint64_t, SourceWindow);
         WINRT_PROPERTY(uint64_t, TargetWindow);
+        WINRT_PROPERTY(uint32_t, TabIndex);
 
     public:
-        RequestReceiveContentArgs(const uint64_t src, const uint64_t tgt) :
+        RequestReceiveContentArgs(const uint64_t src, const uint64_t tgt, const uint32_t tabIndex) :
             _SourceWindow{ src },
-            _TargetWindow{ tgt } {};
+            _TargetWindow{ tgt },
+            _TabIndex{ tabIndex } {};
     };
 
     struct TerminalPage : TerminalPageT<TerminalPage>

@@ -709,7 +709,8 @@ namespace winrt::TerminalApp::implementation
     winrt::TerminalApp::TabBase TerminalPage::_GetTabByTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem) const noexcept
     {
         uint32_t tabIndexFromControl{};
-        if (_tabView.TabItems().IndexOf(tabViewItem, tabIndexFromControl))
+        const auto items{ _tabView.TabItems() };
+        if (items.IndexOf(tabViewItem, tabIndexFromControl))
         {
             // If IndexOf returns true, we've actually got an index
             return _tabs.GetAt(tabIndexFromControl);
