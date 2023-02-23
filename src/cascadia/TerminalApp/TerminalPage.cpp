@@ -4579,7 +4579,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         // Figure out where in the tab strip we're dropping this tab. Add that
-        // index to the request. This is largely taken from the WinUIq sample
+        // index to the request. This is largely taken from the WinUI sample
         // app.
 
         // We need to be on OUR UI thread to figure out where we dropped
