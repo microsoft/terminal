@@ -1687,6 +1687,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // _renderer will always exist since it's introduced in the ctor
         _renderer->AddRenderEngine(pEngine);
     }
+    void ControlCore::DetachUiaEngine(::Microsoft::Console::Render::IRenderEngine* const pEngine)
+    {
+        _renderer->RemoveRenderEngine(pEngine);
+    }
 
     bool ControlCore::IsInReadOnlyMode() const
     {

@@ -45,6 +45,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Control::ControlCore Core();
 
         void Close();
+        void Detach();
 
         Control::InteractivityAutomationPeer OnCreateAutomationPeer();
         ::Microsoft::Console::Render::IRenderData* GetRenderData() const;

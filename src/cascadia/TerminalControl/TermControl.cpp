@@ -2068,7 +2068,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::Detach()
     {
         _revokers = {};
-        _core.Detach();
+        _interactivity.Detach();
         _detached = true;
     }
 
