@@ -2531,6 +2531,25 @@ bool AdaptDispatch::ReverseLineFeed()
 // - True.
 bool AdaptDispatch::BackIndex()
 {
+    const auto viewport = _api.GetViewport();
+    auto& textBuffer = _api.GetTextBuffer();
+    auto& cursor = textBuffer.GetCursor();
+    const auto cursorPosition = cursor.GetPosition();
+    const auto bufferWidth = textBuffer.GetSize().Width();
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(bufferWidth);
+    const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
+
+    // If the cursor is at the left of the margin area, we shift the buffer right.
+    if (cursorPosition.x == leftMargin && cursorPosition.y >= topMargin && cursorPosition.y <= bottomMargin)
+    {
+        _ScrollRectHorizontally(textBuffer, { leftMargin, topMargin, rightMargin + 1, bottomMargin + 1 }, 1);
+    }
+    // Otherwise we move the cursor left, but not past the start of the line.
+    else if (cursorPosition.x > 0)
+    {
+        cursor.SetXPosition(cursorPosition.x - 1);
+        _ApplyCursorMovementFlags(cursor);
+    }
     return true;
 }
 
@@ -2543,6 +2562,25 @@ bool AdaptDispatch::BackIndex()
 // - True.
 bool AdaptDispatch::ForwardIndex()
 {
+    const auto viewport = _api.GetViewport();
+    auto& textBuffer = _api.GetTextBuffer();
+    auto& cursor = textBuffer.GetCursor();
+    const auto cursorPosition = cursor.GetPosition();
+    const auto bufferWidth = textBuffer.GetSize().Width();
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(bufferWidth);
+    const auto [topMargin, bottomMargin] = _GetVerticalMargins(viewport, true);
+
+    // If the cursor is at the right of the margin area, we shift the buffer left.
+    if (cursorPosition.x == rightMargin && cursorPosition.y >= topMargin && cursorPosition.y <= bottomMargin)
+    {
+        _ScrollRectHorizontally(textBuffer, { leftMargin, topMargin, rightMargin + 1, bottomMargin + 1 }, -1);
+    }
+    // Otherwise we move the cursor right, but not past the end of the line.
+    else if (cursorPosition.x < textBuffer.GetLineWidth(cursorPosition.y) - 1)
+    {
+        cursor.SetXPosition(cursorPosition.x + 1);
+        _ApplyCursorMovementFlags(cursor);
+    }
     return true;
 }
 
