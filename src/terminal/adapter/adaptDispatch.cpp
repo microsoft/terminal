@@ -2523,6 +2523,30 @@ bool AdaptDispatch::ReverseLineFeed()
 }
 
 // Routine Description:
+// - DECBI - Moves the cursor back one column, scrolling the screen
+//    horizontally if it reaches the left margin.
+// Arguments:
+// - None
+// Return Value:
+// - True.
+bool AdaptDispatch::BackIndex()
+{
+    return true;
+}
+
+// Routine Description:
+// - DECFI - Moves the cursor forward one column, scrolling the screen
+//    horizontally if it reaches the right margin.
+// Arguments:
+// - None
+// Return Value:
+// - True.
+bool AdaptDispatch::ForwardIndex()
+{
+    return true;
+}
+
+// Routine Description:
 // - OSC Set Window Title - Sets the title of the window
 // Arguments:
 // - title - The string to set the title to. Must be null terminated.

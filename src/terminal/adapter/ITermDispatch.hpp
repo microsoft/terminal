@@ -61,6 +61,8 @@ public:
     virtual bool CarriageReturn() = 0; // CR
     virtual bool LineFeed(const DispatchTypes::LineFeedType lineFeedType) = 0; // IND, NEL, LF, FF, VT
     virtual bool ReverseLineFeed() = 0; // RI
+    virtual bool BackIndex() = 0; // DECBI
+    virtual bool ForwardIndex() = 0; // DECFI
     virtual bool SetWindowTitle(std::wstring_view title) = 0; // OscWindowTitle
     virtual bool HorizontalTabSet() = 0; // HTS
     virtual bool ForwardTab(const VTInt numTabs) = 0; // CHT, HT

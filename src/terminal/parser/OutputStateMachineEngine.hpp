@@ -71,8 +71,10 @@ namespace Microsoft::Console::VirtualTerminal
 
         enum EscActionCodes : uint64_t
         {
+            DECBI_BackIndex = VTID("6"),
             DECSC_CursorSave = VTID("7"),
             DECRC_CursorRestore = VTID("8"),
+            DECFI_ForwardIndex = VTID("9"),
             DECKPAM_KeypadApplicationMode = VTID("="),
             DECKPNM_KeypadNumericMode = VTID(">"),
             IND_Index = VTID("D"),

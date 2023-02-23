@@ -98,6 +98,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool CarriageReturn() override; // CR
         bool LineFeed(const DispatchTypes::LineFeedType lineFeedType) override; // IND, NEL, LF, FF, VT
         bool ReverseLineFeed() override; // RI
+        bool BackIndex() override; // DECBI
+        bool ForwardIndex() override; // DECFI
         bool SetWindowTitle(const std::wstring_view title) override; // OSCWindowTitle
         bool HorizontalTabSet() override; // HTS
         bool ForwardTab(const VTInt numTabs) override; // CHT, HT
