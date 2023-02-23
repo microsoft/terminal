@@ -83,6 +83,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool ScrollDown(const VTInt distance) override; // SD
         bool InsertLine(const VTInt distance) override; // IL
         bool DeleteLine(const VTInt distance) override; // DL
+        bool InsertColumn(const VTInt distance) override; // DECIC
+        bool DeleteColumn(const VTInt distance) override; // DECDC
         bool SetMode(const DispatchTypes::ModeParams param) override; // SM, DECSET
         bool ResetMode(const DispatchTypes::ModeParams param) override; // RM, DECRST
         bool RequestMode(const DispatchTypes::ModeParams param) override; // DECRQM

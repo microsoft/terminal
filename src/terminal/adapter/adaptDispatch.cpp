@@ -2106,6 +2106,30 @@ bool AdaptDispatch::DeleteLine(const VTInt distance)
     return true;
 }
 
+// Routine Description:
+// - DECIC - This control function inserts one or more blank columns in the
+//    scrolling region, starting at the column that has the cursor.
+// Arguments:
+// - distance - number of columns to insert
+// Return Value:
+// - True.
+bool AdaptDispatch::InsertColumn(const VTInt /*distance*/)
+{
+    return true;
+}
+
+// Routine Description:
+// - DECDC - This control function deletes one or more columns in the scrolling
+//    region, starting with the column that has the cursor.
+// Arguments:
+// - distance - number of columns to delete
+// Return Value:
+// - True.
+bool AdaptDispatch::DeleteColumn(const VTInt /*distance*/)
+{
+    return true;
+}
+
 // - DECANM - Sets the terminal emulation mode to either ANSI-compatible or VT52.
 // Arguments:
 // - ansiMode - set to true to enable the ANSI mode, false for VT52 mode.

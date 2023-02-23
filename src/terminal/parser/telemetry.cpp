@@ -293,6 +293,8 @@ void TermTelemetry::WriteFinalTraceLog() const
                                       TraceLoggingUInt32(_uiTimesUsed[DECFRA], "DECFRA"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECERA], "DECERA"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECSERA], "DECSERA"),
+                                      TraceLoggingUInt32(_uiTimesUsed[DECIC], "DECIC"),
+                                      TraceLoggingUInt32(_uiTimesUsed[DECDC], "DECDC"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECSACE], "DECSACE"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECRQCRA], "DECRQCRA"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECINVM], "DECINVM"),

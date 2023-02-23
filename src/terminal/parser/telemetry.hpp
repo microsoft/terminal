@@ -120,6 +120,8 @@ namespace Microsoft::Console::VirtualTerminal
             DECFRA,
             DECERA,
             DECSERA,
+            DECIC,
+            DECDC,
             DECSACE,
             DECRQCRA,
             DECINVM,

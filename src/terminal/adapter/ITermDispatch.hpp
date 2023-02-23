@@ -51,6 +51,8 @@ public:
     virtual bool ScrollDown(const VTInt distance) = 0; // SD
     virtual bool InsertLine(const VTInt distance) = 0; // IL
     virtual bool DeleteLine(const VTInt distance) = 0; // DL
+    virtual bool InsertColumn(const VTInt distance) = 0; // DECIC
+    virtual bool DeleteColumn(const VTInt distance) = 0; // DECDC
     virtual bool SetKeypadMode(const bool applicationMode) = 0; // DECKPAM, DECKPNM
     virtual bool SetAnsiMode(const bool ansiMode) = 0; // DECANM
     virtual bool SetTopBottomScrollingMargins(const VTInt topMargin, const VTInt bottomMargin) = 0; // DECSTBM

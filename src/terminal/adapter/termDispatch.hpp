@@ -44,6 +44,8 @@ public:
     bool ScrollDown(const VTInt /*distance*/) override { return false; } // SD
     bool InsertLine(const VTInt /*distance*/) override { return false; } // IL
     bool DeleteLine(const VTInt /*distance*/) override { return false; } // DL
+    bool InsertColumn(const VTInt /*distance*/) override { return false; } // DECIC
+    bool DeleteColumn(const VTInt /*distance*/) override { return false; } // DECDC
     bool SetKeypadMode(const bool /*applicationMode*/) override { return false; } // DECKPAM, DECKPNM
     bool SetAnsiMode(const bool /*ansiMode*/) override { return false; } // DECANM
     bool SetTopBottomScrollingMargins(const VTInt /*topMargin*/, const VTInt /*bottomMargin*/) override { return false; } // DECSTBM
