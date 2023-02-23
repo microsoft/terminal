@@ -14,6 +14,12 @@ import "ColorSchemesPageViewModel.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
+    runtimeclass NavigateToProfileArgs
+    {
+        ProfileViewModel Profile { get; };
+        IHostedInWindow WindowRoot { get; };
+    }
+
     runtimeclass DeleteProfileEventArgs
     {
         Guid ProfileGuid { get; };
@@ -35,7 +41,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         event Windows.Foundation.TypedEventHandler<ProfileViewModel, DeleteProfileEventArgs> DeleteProfile;
 
-        void SetupAppearances(Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> schemesList, IHostedInWindow windowRoot);
+        void SetupAppearances(Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> schemesList);
 
         void SetAcrylicOpacityPercentageValue(Double value);
         void SetPadding(Double value);
