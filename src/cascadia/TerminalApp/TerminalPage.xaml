@@ -195,17 +195,19 @@
                               PreviewKeyDown="_KeyDownHandler"
                               Visibility="Collapsed" />
 
-        <Popup x:Name="SuggestionsPopup"
+        <local:SuggestionsControl x:Name="SuggestionsUI"
+                                  Grid.Row="2"
+                                  HorizontalAlignment="Left"
+                                  VerticalAlignment="Top"
+                                  PreviewKeyDown="_KeyDownHandler"
+                                  Visibility="Collapsed" />
+        <!--<Popup x:Name="SuggestionsPopup"
                HorizontalOffset="200"
                IsOpen="False"
                ShouldConstrainToRootBounds="False"
                VerticalOffset="200">
-            <local:SuggestionsControl x:Name="SuggestionsUI"
-                                      VerticalAlignment="Stretch"
-                                      PreviewKeyDown="_KeyDownHandler"
-                                      Visibility="Collapsed" />
 
-        </Popup>
+        </Popup>-->
 
         <!--
             A TeachingTip with IsLightDismissEnabled="True" will immediately

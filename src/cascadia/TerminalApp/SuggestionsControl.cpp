@@ -1050,4 +1050,35 @@ namespace winrt::TerminalApp::implementation
             Controls::Grid::SetRow(_searchBox(), 4);
         }
     }
+
+    void SuggestionsControl::Anchor(Windows::Foundation::Point anchor, Windows::Foundation::Size space)
+    {
+        _anchor = anchor;
+        _space = space;
+
+        // TODO! do some clamping
+
+        // // Create a thickness for the new margins
+        auto newMargin = Windows::UI::Xaml::ThicknessHelper::FromLengths(_anchor.X, 0, 0, 0);
+
+        // // SuggestionsPopup().HorizontalOffset(clampedX);
+
+        // // Now, position vertically.
+        if (_direction == TerminalApp::SuggestionsDirection::TopDown)
+        {
+            //     // The control should open right below the cursor, with the list
+            //     // extending below. This is easy, we can just use the cursor as the
+            //     // origin (more or less)
+            //     // SuggestionsPopup().VerticalOffset(realCursorPos.y + characterSize.Height);
+            newMargin.Top = (_anchor.Y + 16); // TODO! 16 is cursor height
+        }
+        else
+        {
+            //     // Position at the cursor. The suggestions UI itself will maintian
+            //     // its own offset such that it's always above its origin
+            //     // SuggestionsPopup().VerticalOffset(realCursorPos.y);
+            newMargin.Top = (_anchor.Y - ActualHeight());
+        }
+        Margin(newMargin);
+    }
 }
