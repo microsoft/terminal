@@ -1752,54 +1752,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     Control::CommandHistoryContext ControlCore::CommandHistory() const
     {
         auto terminalLock = _terminal->LockForWriting();
-
         auto context = winrt::make_self<CommandHistoryContext>();
-
         const auto& textBuffer = _terminal->GetTextBuffer();
 
-        // std::wstringstream ss;
-
-        auto addRowText = [&context](auto&& row, std::wstring_view rowText) {
-            const auto strEnd = rowText.find_last_not_of(UNICODE_SPACE);
-            if (strEnd != std::string::npos)
-            {
-                context->History().Append(winrt::hstring{ rowText.substr(0, strEnd) });
-            }
-
-            auto wrapped = row.WasWrapForced();
-            // if (!wrapped)
-            // {
-            //     ss << UNICODE_CARRIAGERETURN << UNICODE_LINEFEED;
-            // }
-            return wrapped;
-        };
-
-        // const auto lastRow = textBuffer.GetLastNonSpaceCharacter().Y;
         for (const auto& mark : _terminal->GetScrollMarks())
         {
-            bool markHasCommand = mark.start != mark.end;
+            bool markHasCommand = mark.commandEnd.has_value() && mark.commandEnd != mark.end;
             if (!markHasCommand)
                 continue;
 
-            auto line = markHasCommand ? mark.end.y : mark.start.y;
+            const auto line = mark.end.y;
 
             const auto& row = textBuffer.GetRowByOffset(line);
-            // TODO! after the row refactor, the version of Row::GetText that took a start index got removed. Add something like that back.
-            // auto rowText = row.GetText(markHasCommand ? mark.end.x : 0);
-            auto rowText = row.GetText();
-            auto wrapped = addRowText(row, rowText);
-            wrapped;
-            // TODO! dea with wrapped commandlines.
-            line;
-            // while (wrapped)
-            // {
-            //     line++;
-            //     const auto& newRow = textBuffer.GetRowByOffset(line);
-            //     auto newRowText = newRow.GetText(0);
-            //     wrapped = addRowText(newRow, newRowText);
-            // }
+            const auto rowText = row.GetText();
+            const auto commandText = rowText.substr(mark.end.x, mark.commandEnd->x);
+            const auto strEnd = commandText.find_last_not_of(UNICODE_SPACE);
+            if (strEnd != std::string::npos)
+            {
+                const auto trimmed = commandText.substr(0, strEnd + 1);
+                context->History().Append(winrt::hstring{ trimmed });
+            }
         }
-
         return *context;
     }
 
