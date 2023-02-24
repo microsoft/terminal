@@ -635,6 +635,12 @@ namespace winrt::TerminalApp::implementation
                     // palette like the Tab Switcher will be able to have the last laugh.
                     _close();
 
+                    // A note: the command palette ignores
+                    // "ToggleCommandPalette" actions. We may want to do the
+                    // same with "Suggestions" actions in the future, should we
+                    // ever allow non-sendInput actions.
+                    _DispatchCommandRequestedHandlers(*this, actionPaletteItem.Command());
+
                     TraceLoggingWrite(
                         g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
                         "SuggestionsControlDispatchedAction",
