@@ -88,17 +88,17 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        // Focusing the ListView when the Command Palette control is set to Visible
-        // for the first time fails because the ListView hasn't finished loading by
-        // the time Focus is called. Luckily, We can listen to SizeChanged to know
-        // when the ListView has been measured out and is ready, and we'll immediately
-        // revoke the handler because we only needed to handle it once on initialization.
         _sizeChangedRevoker = _filteredActionsView().SizeChanged(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
-            // This does only fire once, when the size changes, which is the
-            // very first time it's opened. It does not fire for subsequent
-            // openings.
-
-            _sizeChangedRevoker.revoke();
+            // When we're in BottomUp mode, we need to adjust our own position
+            // so that our bottom is aligned with our origin. This will ensure
+            // that as the menu changes in size (as we filter results), the menu
+            // stays "attached" to the cursor.
+            if (Visibility() == Visibility::Visible && _direction == TerminalApp::SuggestionsDirection::BottomUp)
+            {
+                auto t = this->Translation();
+                t.y = gsl::narrow_cast<float>(-ActualHeight());
+                this->Translation(t);
+            }
         });
 
         _filteredActionsView().SelectionChanged({ this, &SuggestionsControl::_selectedCommandChanged });

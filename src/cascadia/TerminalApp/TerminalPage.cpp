@@ -4593,9 +4593,9 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            // Position above the cursor. We'll need to make sure
-            // (origin.y+sxnUi.Height) = cursorPos.y.
-            SuggestionsPopup().VerticalOffset(realCursorPos.y - actualSuggestionsSize.height);
+            // Position at the cursor. The suggestions UI itself will maintian
+            // its own offset such that it's always above its origin
+            SuggestionsPopup().VerticalOffset(realCursorPos.y);
         }
     }
 
