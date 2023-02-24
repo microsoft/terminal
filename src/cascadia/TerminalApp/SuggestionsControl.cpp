@@ -1060,15 +1060,28 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void SuggestionsControl::Anchor(Windows::Foundation::Point anchor, Windows::Foundation::Size space)
+    void SuggestionsControl::Anchor(Windows::Foundation::Point anchor,
+                                    Windows::Foundation::Size space)
     {
         _anchor = anchor;
         _space = space;
 
         // TODO! do some clamping
 
+        const til::size actualSize{ til::math::rounding, ActualWidth(), ActualHeight() };
+        // First, position horizonally.
+        //
+        // We want to align the left edge of the text within the control to the
+        // cursor position. We'll need to scoot a little to the left, to align
+        // text with cursor
+        const auto proposedX = gsl::narrow_cast<int>(_anchor.X - 40);
+        // If the control is too wide to fit in the window, clamp it fit inside
+        // the window.
+        const auto maxX = gsl::narrow_cast<int>(space.Width - actualSize.width);
+        const auto clampedX = std::clamp(proposedX, 0, maxX);
+
         // // Create a thickness for the new margins
-        auto newMargin = Windows::UI::Xaml::ThicknessHelper::FromLengths(_anchor.X, 0, 0, 0);
+        auto newMargin = Windows::UI::Xaml::ThicknessHelper::FromLengths(clampedX, 0, 0, 0);
 
         // // SuggestionsPopup().HorizontalOffset(clampedX);
 
@@ -1079,14 +1092,14 @@ namespace winrt::TerminalApp::implementation
             //     // extending below. This is easy, we can just use the cursor as the
             //     // origin (more or less)
             //     // SuggestionsPopup().VerticalOffset(realCursorPos.y + characterSize.Height);
-            newMargin.Top = (_anchor.Y + 16); // TODO! 16 is cursor height
+            newMargin.Top = (_anchor.Y);
         }
         else
         {
             //     // Position at the cursor. The suggestions UI itself will maintian
             //     // its own offset such that it's always above its origin
             //     // SuggestionsPopup().VerticalOffset(realCursorPos.y);
-            newMargin.Top = (_anchor.Y - ActualHeight());
+            newMargin.Top = (_anchor.Y - actualSize.height);
         }
         Margin(newMargin);
     }
