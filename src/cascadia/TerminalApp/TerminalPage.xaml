@@ -189,6 +189,14 @@
             </TextBlock>
         </ContentDialog>
 
+        <!--
+            TODO!
+            A lost comment from moons ago: Putting the SuggestionsUI in a Popup
+            creates all sorts of hacky weirdness. Notably, if it's in Palette
+            mode, and the user clicks on the text box to focus the Terminal
+            window, it'll seem as though it has, yet _not_ bring the Terminal to
+            the foreground.
+        -->
         <local:CommandPalette x:Name="CommandPalette"
                               Grid.Row="2"
                               VerticalAlignment="Stretch"
