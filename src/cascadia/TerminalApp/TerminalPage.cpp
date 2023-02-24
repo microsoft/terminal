@@ -4539,6 +4539,7 @@ namespace winrt::TerminalApp::implementation
         const auto controlTransform = control.TransformToVisual(this->Root());
         const til::point controlOrigin{ til::math::rounding, controlTransform.TransformPoint(Windows::Foundation::Point{ 0, 0 }) };
         const til::point realCursorPos = controlOrigin + cursorPos;
+        // const til::point anchor = realCursorPos + til::point{ 0, characterSize.Height };
 
         const auto currentWindow = CoreWindow::GetForCurrentThread();
         const auto currentWindowBounds = currentWindow.Bounds();
@@ -4550,18 +4551,28 @@ namespace winrt::TerminalApp::implementation
         const til::size windowDimensions{ til::math::rounding, ActualWidth(), ActualHeight() };
 
         // Is there space in the window below the cursor to open the menu downwards?
-        const bool canOpenDownwards = ((realCursorPos.y) + characterSize.Height + maxSize.Height) < windowDimensions.height;
+        // const bool canOpenDownwards = ((realCursorPos.y) + characterSize.Height + maxSize.Height) < windowDimensions.height;
 
-        const auto direction = canOpenDownwards ? TerminalApp::SuggestionsDirection::TopDown :
-                                                  TerminalApp::SuggestionsDirection::BottomUp;
-
-        sxnUi.Direction(direction);
-        sxnUi.Anchor(realCursorPos.to_winrt_point(), windowDimensions.to_winrt_size());
+        // const auto direction = canOpenDownwards ? TerminalApp::SuggestionsDirection::TopDown :
+        //                                           TerminalApp::SuggestionsDirection::BottomUp;
+        const til::size actualSuggestionsSizeBefore{ til::math::rounding, sxnUi.ActualWidth(), sxnUi.ActualHeight() };
+        actualSuggestionsSizeBefore;
+        // sxnUi.Direction(direction);
+        // sxnUi.Anchor(realCursorPos.to_winrt_point(), windowDimensions.to_winrt_size());
         sxnUi.Mode(mode);
 
         // SuggestionsPopup().IsOpen(true);
         sxnUi.SetCommands(commandsCollection);
         sxnUi.Visibility(commandsCollection.Size() > 0 ? Visibility::Visible : Visibility::Collapsed);
+        const til::size actualSuggestionsSizeAfter{ til::math::rounding, sxnUi.ActualWidth(), sxnUi.ActualHeight() };
+        actualSuggestionsSizeAfter;
+
+        const bool canOpenDownwards = ((realCursorPos.y) + characterSize.Height + actualSuggestionsSizeAfter.height) < windowDimensions.height;
+        const auto direction = canOpenDownwards ? TerminalApp::SuggestionsDirection::TopDown :
+                                                  TerminalApp::SuggestionsDirection::BottomUp;
+        const auto anchor = realCursorPos + til::point{ til::math::rounding, 0.0f, canOpenDownwards ? characterSize.Height : 0 };
+        sxnUi.Anchor(anchor.to_winrt_point(), windowDimensions.to_winrt_size());
+        sxnUi.Direction(direction);
 
         // // Position the suggestions UI relative to the actual term control.
         // //
