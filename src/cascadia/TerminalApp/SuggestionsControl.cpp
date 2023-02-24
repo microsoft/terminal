@@ -277,31 +277,15 @@ namespace winrt::TerminalApp::implementation
                 const auto description{ cmd.Description() };
                 if (!description.empty())
                 {
+                    // If it's already open, then just re-target it and update the content immediately.
                     if (DescriptionTip().IsOpen())
                     {
                         _openTooltip(cmd);
-
-                        // DescriptionTip().Target(SelectedItem());
-                        // DescriptionTip().Title(cmd.Name());
-                        // // DescriptionTip().Subtitle(description);
-
-                        // _toolTipContent().Inlines().Clear();
-                        // // First, replace all "\r\n" with "\n"
-                        // std::wstring filtered = description;
-                        // std::replace(filtered.begin(), filtered.end(), L"\r\n", L"\n");
-                        // // Split the filtered description on '\n`
-                        // std::vector<std::wstring> lines = Utils::SplitString(filtered.c_str(), L"\n");
-                        // // For each line, build a Run
-                        // for (const auto& line : lines)
-                        // {
-                        //     Documents::Run textRun;
-                        //     textRun.Text(line);
-                        //     _toolTipContent().Inlines().Append(textRun);
-                        // }
                     }
                     else
                     {
-                        co_await winrt::resume_after(500ms);
+                        // Otherwise, wait a bit before opening it.
+                        co_await winrt::resume_after(200ms);
                         co_await wil::resume_foreground(Dispatcher());
                         _openTooltip(cmd);
                         DescriptionTip().IsOpen(true);
@@ -309,17 +293,9 @@ namespace winrt::TerminalApp::implementation
                 }
                 else
                 {
+                    // If there's no description, then just close the tooltip.
                     DescriptionTip().IsOpen(false);
                 }
-
-                // _openTooltip(cmd);
-                // if (!cmd.Description().empty())
-                // {
-                //     DescriptionTip().Target(SelectedItem());
-                //     DescriptionTip().Title(cmd.Name());
-                //     DescriptionTip().Subtitle(cmd.Description());
-                //     DescriptionTip().IsOpen(true);
-                // }
             }
         }
     }
@@ -327,21 +303,23 @@ namespace winrt::TerminalApp::implementation
     winrt::fire_and_forget SuggestionsControl::_openTooltip(Command cmd)
     {
         const auto description{ cmd.Description() };
-        // co_await winrt::resume_after(500ms);
-        // co_await wil::resume_foreground(Dispatcher());
 
         if (!cmd.Description().empty())
         {
             DescriptionTip().Target(SelectedItem());
             DescriptionTip().Title(cmd.Name());
-            // DescriptionTip().Subtitle(description);
+
+            // If you try to put a newline in the Subtitle, it'll _immediately
+            // close the tooltip_. Instead, we'll need to build up the text as a
+            // series of runs, and put them in the content.
 
             _toolTipContent().Inlines().Clear();
+
             // First, replace all "\r\n" with "\n"
             std::wstring filtered = description.c_str();
 
             // replace all "\r\n" with "\n" in `filtered`
-            std::wstring::size_type pos = 0; // Must initialize
+            std::wstring::size_type pos = 0;
             while ((pos = filtered.find(L"\r\n", pos)) != std::wstring::npos)
             {
                 filtered.erase(pos, 1);
@@ -349,7 +327,8 @@ namespace winrt::TerminalApp::implementation
 
             // Split the filtered description on '\n`
             const auto lines = ::Microsoft::Console::Utils::SplitString(filtered.c_str(), L'\n');
-            // For each line, build a Run
+            // For each line, build a Run + LineBreak, and add them to the text
+            // block
             for (const auto& line : lines)
             {
                 if (line.empty())
@@ -359,8 +338,6 @@ namespace winrt::TerminalApp::implementation
                 _toolTipContent().Inlines().Append(textRun);
                 _toolTipContent().Inlines().Append(Documents::LineBreak{});
             }
-
-            // DescriptionTip().IsOpen(true);
         }
         co_return;
     }
