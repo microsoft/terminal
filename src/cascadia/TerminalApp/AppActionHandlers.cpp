@@ -1161,6 +1161,50 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleSuggestions(const IInspectable& /*sender*/,
+                                          const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<SuggestionsArgs>())
+            {
+                auto source = realArgs.Source();
+
+                switch (source)
+                {
+                // case TaskSource::Prompt:
+                // {
+                //     auto commandsCollection = _settings.GlobalSettings().ActionMap().FilterToSendInput();
+                //     _openTaskView(commandsCollection);
+                //     args.Handled(true);
+                // }
+                // break;
+                case SuggestionsSource::CommandHistory:
+                {
+                    if (const auto& control{ _GetActiveControl() })
+                    {
+                        const auto context = control.CommandHistory();
+                        _OpenSuggestions(Command::HistoryToCommands(context.History(), context.CurrentCommandline(), false), SuggestionsMode::Palette);
+                    }
+                    args.Handled(true);
+                }
+                break;
+                    // case TaskSource::DirectoryHistory:
+                    // {
+                    // }
+                    // break;
+
+                    // case TaskSource::Suggestions:
+                    // {
+                    //     _openSuggestionsPrompt();
+                    //     args.Handled(true);
+                    // }
+                    break;
+                }
+            }
+        }
+    }
+
     void TerminalPage::_HandleColorSelection(const IInspectable& /*sender*/,
                                              const ActionEventArgs& args)
     {

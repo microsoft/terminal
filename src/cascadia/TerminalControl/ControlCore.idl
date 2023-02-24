@@ -58,6 +58,12 @@ namespace Microsoft.Terminal.Control
         Boolean IsIndex16;
     };
 
+    [default_interface] runtimeclass CommandHistoryContext
+    {
+        IVector<String> History;
+        String CurrentCommandline;
+    };
+
     [default_interface] runtimeclass ControlCore : ICoreState
     {
         ControlCore(IControlSettings settings,
@@ -133,6 +139,7 @@ namespace Microsoft.Terminal.Control
         void EnablePainting();
 
         String ReadEntireBuffer();
+        CommandHistoryContext CommandHistory();
 
         void AdjustOpacity(Double Opacity, Boolean relative);
         void WindowVisibilityChanged(Boolean showOrHide);

@@ -89,6 +89,7 @@ namespace Microsoft.Terminal.Control
         void ToggleReadOnly();
 
         String ReadEntireBuffer();
+        CommandHistoryContext CommandHistory();
 
         void AdjustOpacity(Double Opacity, Boolean relative);
 

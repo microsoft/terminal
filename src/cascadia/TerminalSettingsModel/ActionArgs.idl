@@ -106,6 +106,12 @@ namespace Microsoft.Terminal.Settings.Model
         ToCurrent,
         ToMouse,
     };
+    enum SuggestionsSource
+    {
+        Tasks,
+        CommandHistory,
+        DirectoryHistory,
+    };
 
     [default_interface] runtimeclass NewTerminalArgs {
         NewTerminalArgs();
@@ -306,6 +312,13 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass ToggleCommandPaletteArgs : IActionArgs
     {
         CommandPaletteLaunchMode LaunchMode { get; };
+    };
+
+    [default_interface] runtimeclass SuggestionsArgs : IActionArgs
+    {
+        SuggestionsArgs();
+        SuggestionsArgs(SuggestionsSource source);
+        SuggestionsSource Source { get; };
     };
 
     [default_interface] runtimeclass FindMatchArgs : IActionArgs

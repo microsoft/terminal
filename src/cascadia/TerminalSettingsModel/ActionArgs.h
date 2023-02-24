@@ -34,6 +34,7 @@
 #include "AddMarkArgs.g.h"
 #include "MoveTabArgs.g.h"
 #include "ToggleCommandPaletteArgs.g.h"
+#include "SuggestionsArgs.g.h"
 #include "FindMatchArgs.g.h"
 #include "NewWindowArgs.g.h"
 #include "PrevTabArgs.g.h"
@@ -194,6 +195,10 @@ private:                                                                        
 ////////////////////////////////////////////////////////////////////////////////
 #define TOGGLE_COMMAND_PALETTE_ARGS(X) \
     X(CommandPaletteLaunchMode, LaunchMode, "launchMode", false, CommandPaletteLaunchMode::Action)
+
+////////////////////////////////////////////////////////////////////////////////
+#define SUGGESTIONS_ARGS(X) \
+    X(SuggestionsSource, Source, "source", false, SuggestionsSource::Tasks)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define FIND_MATCH_ARGS(X) \
@@ -649,6 +654,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     ACTION_ARGS_STRUCT(ToggleCommandPaletteArgs, TOGGLE_COMMAND_PALETTE_ARGS);
 
+    ACTION_ARGS_STRUCT(SuggestionsArgs, SUGGESTIONS_ARGS);
+
     ACTION_ARGS_STRUCT(FindMatchArgs, FIND_MATCH_ARGS);
 
     ACTION_ARGS_STRUCT(PrevTabArgs, PREV_TAB_ARGS);
@@ -771,4 +778,5 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(ClearBufferArgs);
     BASIC_FACTORY(MultipleActionsArgs);
     BASIC_FACTORY(AdjustOpacityArgs);
+    BASIC_FACTORY(SuggestionsArgs);
 }
