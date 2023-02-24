@@ -27,6 +27,7 @@ static constexpr std::string_view ArgsKey{ "args" };
 static constexpr std::string_view IterateOnKey{ "iterateOn" };
 static constexpr std::string_view CommandsKey{ "commands" };
 static constexpr std::string_view KeysKey{ "keys" };
+static constexpr std::string_view DescriptionKey{ "description" };
 
 static constexpr std::string_view ProfileNameToken{ "${profile.name}" };
 static constexpr std::string_view ProfileIconToken{ "${profile.icon}" };
@@ -40,6 +41,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         auto command{ winrt::make_self<Command>() };
         command->_name = _name;
+        command->_Description = _Description;
         command->_ActionAndArgs = *get_self<implementation::ActionAndArgs>(_ActionAndArgs)->Copy();
         command->_keyMappings = _keyMappings;
         command->_iconPath = _iconPath;
@@ -254,7 +256,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         auto nested = false;
         JsonUtils::GetValueForKey(json, IterateOnKey, result->_IterateOn);
-
+        JsonUtils::GetValueForKey(json, DescriptionKey, result->_Description);
         // For iterable commands, we'll make another pass at parsing them once
         // the json is patched. So ignore parsing sub-commands for now. Commands
         // will only be marked iterable on the first pass.
@@ -406,7 +408,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             Json::Value cmdJson{ Json::ValueType::objectValue };
             JsonUtils::SetValueForKey(cmdJson, IconKey, _iconPath);
             JsonUtils::SetValueForKey(cmdJson, NameKey, _name);
-
+            JsonUtils::SetValueForKey(cmdJson, DescriptionKey, _Description);
             if (_ActionAndArgs)
             {
                 cmdJson[JsonKey(ActionKey)] = ActionAndArgs::ToJson(_ActionAndArgs);
@@ -426,6 +428,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                     // First iteration also writes icon and name
                     JsonUtils::SetValueForKey(cmdJson, IconKey, _iconPath);
                     JsonUtils::SetValueForKey(cmdJson, NameKey, _name);
+                    JsonUtils::SetValueForKey(cmdJson, DescriptionKey, _Description);
                 }
 
                 if (_ActionAndArgs)
@@ -659,8 +662,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         const auto parseElement = [&](const auto& element) {
             winrt::hstring completionText;
             winrt::hstring listText;
+            winrt::hstring tooltipText;
             JsonUtils::GetValueForKey(element, "CompletionText", completionText);
             JsonUtils::GetValueForKey(element, "ListItemText", listText);
+            JsonUtils::GetValueForKey(element, "ToolTip", tooltipText);
 
             Model::SendInputArgs args{ winrt::hstring{ fmt::format(L"{}{}", backspaces, completionText.c_str()) } };
             Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, args };
@@ -668,6 +673,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto c = winrt::make_self<Command>();
             c->_name = listText;
             c->_ActionAndArgs = actionAndArgs;
+            c->_Description = tooltipText;
 
             // Try to assign a sensible icon
             if (const auto resultType{ JsonUtils::GetValueForKey<int>(element, "ResultType") })

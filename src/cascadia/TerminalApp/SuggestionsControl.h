@@ -74,8 +74,8 @@ namespace winrt::TerminalApp::implementation
         void _keyUpHandler(const Windows::Foundation::IInspectable& sender,
                            const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
 
-        void _selectedCommandChanged(const Windows::Foundation::IInspectable& sender,
-                                     const Windows::UI::Xaml::RoutedEventArgs& args);
+        winrt::fire_and_forget _selectedCommandChanged(const Windows::Foundation::IInspectable& sender,
+                                                       const Windows::UI::Xaml::RoutedEventArgs& args);
 
         void _updateUIForStackChange();
 
@@ -114,6 +114,8 @@ namespace winrt::TerminalApp::implementation
 
         void _scrollToIndex(uint32_t index);
         uint32_t _getNumVisibleItems();
+
+        winrt::fire_and_forget _openTooltip(Microsoft::Terminal::Settings::Model::Command cmd);
 
         void _choosingItemContainer(const Windows::UI::Xaml::Controls::ListViewBase& sender, const Windows::UI::Xaml::Controls::ChoosingItemContainerEventArgs& args);
         void _containerContentChanging(const Windows::UI::Xaml::Controls::ListViewBase& sender, const Windows::UI::Xaml::Controls::ContainerContentChangingEventArgs& args);
