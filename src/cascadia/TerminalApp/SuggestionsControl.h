@@ -38,6 +38,7 @@ namespace winrt::TerminalApp::implementation
 
         TerminalApp::SuggestionsMode Mode() const;
         void Mode(TerminalApp::SuggestionsMode mode);
+        void Anchor(Windows::Foundation::Point anchor, Windows::Foundation::Size space);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, NoMatchesText, _PropertyChangedHandlers);
@@ -65,6 +66,8 @@ namespace winrt::TerminalApp::implementation
         TerminalApp::SuggestionsDirection _direction{ TerminalApp::SuggestionsDirection::TopDown };
 
         bool _lastFilterTextWasEmpty{ true };
+        Windows::Foundation::Point _anchor;
+        Windows::Foundation::Size _space;
 
         void _filterTextChanged(const Windows::Foundation::IInspectable& sender,
                                 const Windows::UI::Xaml::RoutedEventArgs& args);
