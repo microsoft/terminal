@@ -446,6 +446,7 @@ bool AdaptDispatch::CursorSaveState()
     auto& savedCursorState = _savedCursorState.at(_usingAltBuffer);
     savedCursorState.Column = cursorPosition.x + 1;
     savedCursorState.Row = cursorPosition.y + 1;
+    savedCursorState.IsDelayedEOLWrap = textBuffer.GetCursor().IsDelayedEOLWrap();
     savedCursorState.IsOriginModeRelative = _modes.test(Mode::Origin);
     savedCursorState.Attributes = attributes;
     savedCursorState.TermOutput = _termOutput;
@@ -483,6 +484,12 @@ bool AdaptDispatch::CursorRestoreState()
     // The saved coordinates are always absolute, so we need reset the origin mode temporarily.
     _modes.reset(Mode::Origin);
     CursorPosition(row, col);
+
+    // If the delayed wrap flag was set when the cursor was saved, we need to restore than now.
+    if (savedCursorState.IsDelayedEOLWrap)
+    {
+        _api.GetTextBuffer().GetCursor().DelayEOLWrap();
+    }
 
     // Once the cursor position is restored, we can then restore the actual origin mode.
     _modes.set(Mode::Origin, savedCursorState.IsOriginModeRelative);
