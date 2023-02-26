@@ -600,6 +600,8 @@ void AdaptDispatch::_InsertDeleteCharacterHelper(const VTInt delta)
     const auto startCol = textBuffer.GetCursor().GetPosition().x;
     const auto endCol = textBuffer.GetLineWidth(row);
     _ScrollRectHorizontally(textBuffer, { startCol, row, endCol, row + 1 }, delta);
+    // The ICH and DCH controls are expected to reset the delayed wrap flag.
+    textBuffer.GetCursor().ResetDelayEOLWrap();
 }
 
 // Routine Description:
@@ -668,6 +670,9 @@ bool AdaptDispatch::EraseCharacters(const VTInt numChars)
     const auto startCol = textBuffer.GetCursor().GetPosition().x;
     const auto endCol = std::min<VTInt>(startCol + numChars, textBuffer.GetLineWidth(row));
 
+    // The ECH control is expected to reset the delayed wrap flag.
+    textBuffer.GetCursor().ResetDelayEOLWrap();
+
     auto eraseAttributes = textBuffer.GetCurrentAttributes();
     eraseAttributes.SetStandardErase();
     _FillRect(textBuffer, { startCol, row, endCol, row + 1 }, L' ', eraseAttributes);
@@ -721,6 +726,11 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
     const auto row = textBuffer.GetCursor().GetPosition().y;
     const auto col = textBuffer.GetCursor().GetPosition().x;
 
+    // The ED control is expected to reset the delayed wrap flag.
+    // The special case variants above ("erase all" and "erase scrollback")
+    // take care of that themselves when they set the cursor position.
+    textBuffer.GetCursor().ResetDelayEOLWrap();
+
     auto eraseAttributes = textBuffer.GetCurrentAttributes();
     eraseAttributes.SetStandardErase();
 
@@ -757,6 +767,9 @@ bool AdaptDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
     auto& textBuffer = _api.GetTextBuffer();
     const auto row = textBuffer.GetCursor().GetPosition().y;
     const auto col = textBuffer.GetCursor().GetPosition().x;
+
+    // The EL control is expected to reset the delayed wrap flag.
+    textBuffer.GetCursor().ResetDelayEOLWrap();
 
     auto eraseAttributes = textBuffer.GetCurrentAttributes();
     eraseAttributes.SetStandardErase();
@@ -822,6 +835,9 @@ bool AdaptDispatch::SelectiveEraseInDisplay(const DispatchTypes::EraseType erase
     const auto row = textBuffer.GetCursor().GetPosition().y;
     const auto col = textBuffer.GetCursor().GetPosition().x;
 
+    // The DECSED control is expected to reset the delayed wrap flag.
+    textBuffer.GetCursor().ResetDelayEOLWrap();
+
     switch (eraseType)
     {
     case DispatchTypes::EraseType::FromBeginning:
@@ -854,6 +870,9 @@ bool AdaptDispatch::SelectiveEraseInLine(const DispatchTypes::EraseType eraseTyp
     auto& textBuffer = _api.GetTextBuffer();
     const auto row = textBuffer.GetCursor().GetPosition().y;
     const auto col = textBuffer.GetCursor().GetPosition().x;
+
+    // The DECSEL control is expected to reset the delayed wrap flag.
+    textBuffer.GetCursor().ResetDelayEOLWrap();
 
     switch (eraseType)
     {
@@ -1606,6 +1625,11 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         return true;
     case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
         _api.SetAutoWrapMode(enable);
+        // Resetting DECAWM should also reset the delayed wrap flag.
+        if (!enable)
+        {
+            _api.GetTextBuffer().GetCursor().ResetDelayEOLWrap();
+        }
         return true;
     case DispatchTypes::ModeParams::DECARM_AutoRepeatMode:
         _terminalInput.SetInputMode(TerminalInput::Mode::AutoRepeat, enable);
