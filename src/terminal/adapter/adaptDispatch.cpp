@@ -149,7 +149,7 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
             cursor.SetPosition(cursorPosition);
             if (wrapAtEOL)
             {
-                cursor.DelayEOLWrap(cursorPosition);
+                cursor.DelayEOLWrap();
             }
         }
         else
@@ -2121,8 +2121,20 @@ bool AdaptDispatch::ForwardTab(const VTInt numTabs)
         }
     }
 
+    // While the STD 070 reference suggests that horizontal tabs should reset
+    // the delayed wrap, almost none of the DEC terminals actually worked that
+    // way, and most modern terminal emulators appear to have taken the same
+    // approach (i.e. they don't reset). For us this is a bit messy, since all
+    // cursor movement resets the flag automatically, so we need to save the
+    // original state here, and potentially reapply it after the move.
+    const auto delayedWrapOriginallySet = cursor.IsDelayedEOLWrap();
     cursor.SetXPosition(column);
     _ApplyCursorMovementFlags(cursor);
+    if (delayedWrapOriginallySet)
+    {
+        cursor.DelayEOLWrap();
+    }
+
     return true;
 }
 
