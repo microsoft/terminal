@@ -26,6 +26,8 @@ public:
 
     static void s_DisplayMessageBox(const winrt::TerminalApp::ParseCommandlineResult& message);
 
+    WINRT_CALLBACK(UpdateSettingsRequested, winrt::delegate<void()>);
+
 private:
     std::unique_ptr<IslandWindow> _window;
 
@@ -122,6 +124,8 @@ private:
                             winrt::TerminalApp::RequestMoveContentArgs args);
     void _handleAttach(const winrt::Windows::Foundation::IInspectable& sender,
                        winrt::Microsoft::Terminal::Remoting::AttachRequest args);
+
+    void _requestUpdateSettings();
 
     winrt::event_token _GetWindowLayoutRequestedToken;
 

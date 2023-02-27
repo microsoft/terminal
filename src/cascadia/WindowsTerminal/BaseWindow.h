@@ -214,7 +214,7 @@ protected:
     // - This method is called when the window receives the WM_NCCREATE message.
     // Return Value:
     // - The value returned from the window proc.
-    virtual [[nodiscard]] LRESULT OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept
+    [[nodiscard]] virtual LRESULT OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept
     {
         SetWindowLongPtr(_window.get(), GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 

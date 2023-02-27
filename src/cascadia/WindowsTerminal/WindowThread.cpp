@@ -24,7 +24,7 @@ void WindowThread::Start()
                                             _args,
                                             _manager,
                                             _peasant);
-
+        _host->UpdateSettingsRequested([this]() { _UpdateSettingsRequestedHandlers(); });
         // Enter the main window loop.
         const auto exitCode = WindowProc();
         _host = nullptr;

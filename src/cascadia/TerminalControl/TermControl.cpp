@@ -2774,7 +2774,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Just in case someone was holding a lock when they called us and
         // the handlers decide to do something that take another lock
         // (like ShellExecute pumping our messaging thread...GH#7994)
-        co_await Dispatcher();
+        co_await winrt::resume_foreground(Dispatcher());
 
         _OpenHyperlinkHandlers(*strongThis, args);
     }
@@ -2785,7 +2785,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                                    IInspectable /*args*/)
     {
         auto strongThis{ get_strong() };
-        co_await Dispatcher(); // pop up onto the UI thread
+        co_await winrt::resume_foreground(Dispatcher()); // pop up onto the UI thread
 
         if (auto loadedUiElement{ FindName(L"RendererFailedNotice") })
         {

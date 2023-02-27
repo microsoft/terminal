@@ -147,7 +147,7 @@ NewTerminalArgs Pane::GetTerminalArgsForPane(const bool asContent) const
             c = til::color(controlSettings.TabColor().Value());
         }
 
-        args.TabColor(winrt::Windows::Foundation::IReference<winrt::Windows::UI::Color>(c));
+        args.TabColor(winrt::Windows::Foundation::IReference<winrt::Windows::UI::Color>{ static_cast<winrt::Windows::UI::Color>(c) });
     }
 
     // TODO:GH#9800 - we used to be able to persist the color scheme that a

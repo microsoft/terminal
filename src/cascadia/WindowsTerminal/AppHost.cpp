@@ -335,7 +335,7 @@ void AppHost::Initialize()
     _window->DragRegionClicked([this]() { _windowLogic.TitlebarClicked(); });
 
     _window->WindowVisibilityChanged([this](bool showOrHide) { _windowLogic.WindowVisibilityChanged(showOrHide); });
-    _window->UpdateSettingsRequested([this]() { _appLogic.ReloadSettings(); });
+    _window->UpdateSettingsRequested({ this, &AppHost::_requestUpdateSettings });
 
     _revokers.RequestedThemeChanged = _windowLogic.RequestedThemeChanged(winrt::auto_revoke, { this, &AppHost::_UpdateTheme });
     _revokers.FullscreenChanged = _windowLogic.FullscreenChanged(winrt::auto_revoke, { this, &AppHost::_FullscreenChanged });
@@ -1209,4 +1209,12 @@ void AppHost::_handleAttach(const winrt::Windows::Foundation::IInspectable& /*se
                             winrt::Microsoft::Terminal::Remoting::AttachRequest args)
 {
     _windowLogic.AttachContent(args.Content(), args.TabIndex());
+}
+
+// Bubble the update settings request up to the emperor. We're being called on
+// the Window thread, but the Emperor needs to update the settings on the _main_
+// thread.
+void AppHost::_requestUpdateSettings()
+{
+    _UpdateSettingsRequestedHandlers();
 }

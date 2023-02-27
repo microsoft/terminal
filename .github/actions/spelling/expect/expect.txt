@@ -1575,6 +1575,7 @@ replatformed
 Replymessage
 repositorypath
 Requiresx
+rerasterize
 rescap
 Resequence
 RESETCONTENT

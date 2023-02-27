@@ -311,16 +311,20 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const til::CoordType c
                 }
                 break;
             case DbcsAttribute::Trailing:
-                // Handling the trailing half of wide chars ensures that we correctly restore
-                // wide characters when a user backs up and restores the viewport via CHAR_INFOs.
                 if (fillingFirstColumn)
                 {
                     // The wide char doesn't fit. Pad with whitespace.
                     // Ignore the character. There's no correct alternative way to handle this situation.
                     ClearCell(currentIndex);
                 }
-                else
+                else if (it.Position() == 0)
                 {
+                    // A common way to back up and restore the buffer is via `ReadConsoleOutputW` and
+                    // `WriteConsoleOutputW` respectively. But the area might bisect/intersect/clip wide characters and
+                    // only backup either their leading or trailing half. In general, in the rest of conhost, we're
+                    // throwing away the trailing half of all `CHAR_INFO`s (during text rendering, as well as during
+                    // `ReadConsoleOutputW`), so to make this code behave the same and prevent surprises, we need to
+                    // make sure to only look at the trailer if it's the first `CHAR_INFO` the user is trying to write.
                     ReplaceCharacters(currentIndex - 1, 2, chars);
                 }
                 ++it;
