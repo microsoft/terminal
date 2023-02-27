@@ -28,7 +28,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Profiles_Appearance::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _Profile = e.Parameter().as<Editor::ProfileViewModel>();
+        const auto args = e.Parameter().as<Editor::NavigateToProfileArgs>();
+        _Profile = args.Profile();
+        _windowRoot = args.WindowRoot();
 
         // generate the font list, if we don't have one
         if (_Profile.CompleteFontList() || !_Profile.MonospaceFontList())

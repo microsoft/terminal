@@ -56,7 +56,7 @@ Menu::Menu(HMENU hMenu, HMENU hHeirMenu) :
     auto pNewMenu = new (std::nothrow) Menu(hMenu, hHeirMenu);
     status = NT_TESTNULL(pNewMenu);
 
-    if (NT_SUCCESS(status))
+    if (SUCCEEDED_NTSTATUS(status))
     {
         int ItemLength;
         // Load the submenu to the system menu.

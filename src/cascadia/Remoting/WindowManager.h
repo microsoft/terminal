@@ -28,7 +28,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     public:
         WindowManager();
         ~WindowManager();
-        winrt::Microsoft::Terminal::Remoting::ProposeCommandlineResult ProposeCommandline2(const winrt::Microsoft::Terminal::Remoting::CommandlineArgs& args);
+        winrt::Microsoft::Terminal::Remoting::ProposeCommandlineResult ProposeCommandline(const winrt::Microsoft::Terminal::Remoting::CommandlineArgs& args, const bool isolatedMode);
         Remoting::Peasant CreatePeasant(Remoting::WindowRequestedArgs args);
 
         void SignalClose(Remoting::Peasant peasant);

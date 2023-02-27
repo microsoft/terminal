@@ -3164,15 +3164,15 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
 void doWriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view string, DWORD flags = 0)
 {
     auto dwNumBytes = string.size() * sizeof(wchar_t);
-    VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(screenInfo,
-                                             string.data(),
-                                             string.data(),
-                                             string.data(),
-                                             &dwNumBytes,
-                                             nullptr,
-                                             screenInfo.GetTextBuffer().GetCursor().GetPosition().x,
-                                             flags,
-                                             nullptr));
+    VERIFY_NT_SUCCESS(WriteCharsLegacy(screenInfo,
+                                       string.data(),
+                                       string.data(),
+                                       string.data(),
+                                       &dwNumBytes,
+                                       nullptr,
+                                       screenInfo.GetTextBuffer().GetCursor().GetPosition().x,
+                                       flags,
+                                       nullptr));
 }
 
 void ConptyRoundtripTests::WrapNewLineAtBottom()

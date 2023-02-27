@@ -77,7 +77,9 @@ bool WindowEmperor::HandleCommandlineArgs()
 
     Remoting::CommandlineArgs eventArgs{ { args }, { cwd } };
 
-    const auto result = _manager.ProposeCommandline2(eventArgs);
+    const auto isolatedMode{ _app.Logic().IsolatedMode() };
+
+    const auto result = _manager.ProposeCommandline(eventArgs, isolatedMode);
 
     if (result.ShouldCreateWindow())
     {

@@ -8,7 +8,7 @@ namespace Microsoft.Terminal.Remoting
     {
         WindowManager();
 
-        ProposeCommandlineResult ProposeCommandline2(CommandlineArgs args);
+        ProposeCommandlineResult ProposeCommandline(CommandlineArgs args, Boolean isolatedMode);
         Peasant CreatePeasant(WindowRequestedArgs args);
 
         void SignalClose(Peasant p);
