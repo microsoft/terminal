@@ -57,6 +57,7 @@ namespace winrt::TerminalApp::implementation
         WINRT_PROPERTY(winrt::hstring, Window);
         WINRT_PROPERTY(winrt::hstring, Content);
         WINRT_PROPERTY(uint32_t, TabIndex);
+        WINRT_PROPERTY(Windows::Foundation::IReference<Windows::Foundation::Point>, WindowPosition);
 
     public:
         RequestMoveContentArgs(const winrt::hstring window, const winrt::hstring content, uint32_t tabIndex) :
@@ -503,7 +504,10 @@ namespace winrt::TerminalApp::implementation
 
         void _DetachPaneFromWindow(std::shared_ptr<Pane> pane);
         void _DetachTabFromWindow(const winrt::com_ptr<TabBase>& terminalTab);
-        void _MoveContent(std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions, const winrt::hstring& windowName, const uint32_t tabIndex);
+        void _MoveContent(std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions,
+                          const winrt::hstring& windowName,
+                          const uint32_t tabIndex,
+                          Windows::Foundation::IReference<Windows::Foundation::Point> dragPoint = nullptr);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp

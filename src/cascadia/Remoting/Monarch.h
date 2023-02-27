@@ -48,12 +48,13 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             _args{ command.Commandline() },
             _CurrentDirectory{ command.CurrentDirectory() } {};
 
-        WindowRequestedArgs(const winrt::hstring& window, const winrt::hstring& content) :
+        WindowRequestedArgs(const winrt::hstring& window, const winrt::hstring& content, Windows::Foundation::IReference<Windows::Foundation::Rect> bounds) :
             _Id{ nullptr },
             _WindowName{ window },
             _args{},
             _CurrentDirectory{},
-            _Content{ content } {};
+            _Content{ content },
+            _InitialBounds{ bounds } {};
 
         void Commandline(const winrt::array_view<const winrt::hstring>& value) { _args = { value.begin(), value.end() }; };
         winrt::com_array<winrt::hstring> Commandline() { return winrt::com_array<winrt::hstring>{ _args.begin(), _args.end() }; }
@@ -90,7 +91,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> GetPeasantInfos();
         Windows::Foundation::Collections::IVector<winrt::hstring> GetAllWindowLayouts();
 
-        void RequestMoveContent(winrt::hstring window, winrt::hstring content, uint32_t tabIndex);
+        void RequestMoveContent(winrt::hstring window, winrt::hstring content, uint32_t tabIndex, Windows::Foundation::IReference<Windows::Foundation::Rect> windowBounds);
         void RequestSendContent(Remoting::RequestReceiveContentArgs args);
 
         TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);

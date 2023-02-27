@@ -28,6 +28,7 @@ namespace TerminalApp
         String Window { get; };
         String Content { get; };
         UInt32 TabIndex { get; };
+        Windows.Foundation.IReference<Windows.Foundation.Point> WindowPosition { get; };
     };
     [default_interface] runtimeclass RequestReceiveContentArgs {
         RequestReceiveContentArgs(UInt64 src, UInt64 tgt, UInt32 tabIndex);

@@ -453,10 +453,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     winrt::fire_and_forget WindowManager::RequestMoveContent(winrt::hstring window,
                                                              winrt::hstring content,
-                                                             uint32_t tabIndex)
+                                                             uint32_t tabIndex,
+                                                             Windows::Foundation::IReference<Windows::Foundation::Rect> windowBounds)
     {
         co_await winrt::resume_background();
-        _monarch.RequestMoveContent(window, content, tabIndex);
+        _monarch.RequestMoveContent(window, content, tabIndex, windowBounds);
     }
 
     winrt::fire_and_forget WindowManager::RequestSendContent(Remoting::RequestReceiveContentArgs args)

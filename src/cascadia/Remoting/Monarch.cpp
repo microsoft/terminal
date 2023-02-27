@@ -1054,7 +1054,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     void Monarch::RequestMoveContent(winrt::hstring window,
                                      winrt::hstring content,
-                                     uint32_t tabIndex)
+                                     uint32_t tabIndex,
+                                     Windows::Foundation::IReference<Windows::Foundation::Rect> windowBounds)
     {
         TraceLoggingWrite(g_hRemotingProvider,
                           "Monarch_MoveContent_Requested",
@@ -1103,7 +1104,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             // In the case where window couldn't be found, then create a window
             // for that name / ID. Do this as a part of tear-out (different than
             // drag/drop)
-            auto request = winrt::make_self<implementation::WindowRequestedArgs>(window, content);
+            auto request = winrt::make_self<implementation::WindowRequestedArgs>(window == L"-1" ? L"" : window, content, windowBounds);
             _RequestNewWindowHandlers(*this, *request);
         }
     }

@@ -181,7 +181,7 @@ void AppHost::_HandleCommandlineArgs(const Remoting::WindowRequestedArgs& window
 
         if (!windowArgs.Content().empty())
         {
-            _windowLogic.SetStartupContent(windowArgs.Content());
+            _windowLogic.SetStartupContent(windowArgs.Content(), windowArgs.InitialBounds());
             _shouldCreateWindow = true; // TODO! I don't think we actually use this anymore
         }
         else if (args)
@@ -212,7 +212,6 @@ void AppHost::_HandleCommandlineArgs(const Remoting::WindowRequestedArgs& window
             _windowLogic.HandoffToElevated();
             return;
         }
-
 
         // After handling the initial args, hookup the callback for handling
         // future commandline invocations. When our peasant is told to execute a
@@ -1210,7 +1209,28 @@ winrt::TerminalApp::TerminalWindow AppHost::Logic()
 void AppHost::_handleMoveContent(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                  winrt::TerminalApp::RequestMoveContentArgs args)
 {
-    _windowManager.RequestMoveContent(args.Window(), args.Content(), args.TabIndex());
+    if (args.WindowPosition() && _window)
+    {
+        const til::rect window{
+            _window->GetWindowRect()};
+
+        // const auto dpi = _window->GetCurrentDpi();
+        // const auto nonClientArea = _window->GetNonClientFrame(dpi);
+
+        // // The nonClientArea adjustment is negative, so subtract that out.
+        // // This way we save the user-visible location of the terminal.
+        // pos.X = window.left - nonClientArea.left;
+        // pos.Y = window.top;
+        winrt::Windows::Foundation::Rect rect{ static_cast<float>(args.WindowPosition().Value().X),
+                                               static_cast<float>(args.WindowPosition().Value().Y),
+                                        static_cast<float>(window.width()),
+                                        static_cast<float>(window.height()) };
+        _windowManager.RequestMoveContent(args.Window(), args.Content(), args.TabIndex(), { rect });
+    }
+    else
+    {
+        _windowManager.RequestMoveContent(args.Window(), args.Content(), args.TabIndex(), nullptr);
+    }
 }
 
 void AppHost::_handleAttach(const winrt::Windows::Foundation::IInspectable& /*sender*/,

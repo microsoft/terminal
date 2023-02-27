@@ -1973,13 +1973,18 @@ namespace winrt::TerminalApp::implementation
     //   this.
     void TerminalPage::_MoveContent(std::vector<Settings::Model::ActionAndArgs>& actions,
                                     const winrt::hstring& windowName,
-                                    const uint32_t tabIndex)
+                                    const uint32_t tabIndex,
+                                    Windows::Foundation::IReference<Windows::Foundation::Point> dragPoint)
     {
         const auto winRtActions{ winrt::single_threaded_vector<ActionAndArgs>(std::move(actions)) };
         const auto str{ ActionAndArgs::Serialize(winRtActions) };
         const auto request = winrt::make_self<RequestMoveContentArgs>(windowName,
                                                                       str,
                                                                       tabIndex);
+        if (dragPoint)
+        {
+            request->WindowPosition(dragPoint);
+        }
         _RequestMoveContentHandlers(*this, *request);
     }
 
@@ -4652,6 +4657,10 @@ namespace winrt::TerminalApp::implementation
     winrt::fire_and_forget TerminalPage::_onTabDroppedOutside(winrt::Windows::Foundation::IInspectable sender,
                                                               winrt::Microsoft::UI::Xaml::Controls::TabViewTabDroppedOutsideEventArgs e)
     {
+        // Get the curremt pointer point from the corewindow
+        auto pointerPoint{ CoreWindow::GetForCurrentThread().PointerPosition() };
+        pointerPoint;
+
         // This is called when a tab FROM OUR WINDOW was dropped outside the
         // tabview. We already know which tab was being dragged. We'll just
         // invoke a moveTab action with the target window being -1. That will
@@ -4672,7 +4681,14 @@ namespace winrt::TerminalApp::implementation
             _DetachTabFromWindow(_stashedDraggedTab);
             // -1 is the magic number for "new window"
             // 0 as the tab index, because we don't care. It's making a new window. It'll be the only tab.
-            _MoveContent(startupActions, winrt::hstring{ L"-1" }, 0);
+
+            // til::size actualSize{ til::math::rounding, ActualWidth(), ActualHeight() };
+            // til::rect bounds{ til::point{ til::math::rounding, pointerPoint }, actualSize };
+            // Windows::Foundation::Rect rect{ static_cast<float>(bounds.left),
+            //                                 static_cast<float>(bounds.top),
+            //                                 static_cast<float>(bounds.width()),
+            //                                 static_cast<float>(bounds.height()) };
+            _MoveContent(startupActions, winrt::hstring{ L"-1" }, 0, pointerPoint);
             // _RemoveTab will make sure to null out the _stashedDraggedTab
             _RemoveTab(*_stashedDraggedTab);
         }

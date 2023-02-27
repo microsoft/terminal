@@ -53,7 +53,7 @@ namespace winrt::TerminalApp::implementation
 
         bool HasCommandlineArguments() const noexcept;
         int32_t SetStartupCommandline(array_view<const winrt::hstring> actions);
-        void SetStartupContent(winrt::hstring content);
+        void SetStartupContent(winrt::hstring content, Windows::Foundation::IReference<Windows::Foundation::Rect> contentBounds);
         int32_t ExecuteCommandline(array_view<const winrt::hstring> actions, const winrt::hstring& cwd);
         void SetSettingsStartupArgs(const std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions);
         winrt::hstring ParseCommandlineMessage();
@@ -158,6 +158,7 @@ namespace winrt::TerminalApp::implementation
         ::TerminalApp::AppCommandlineArgs _appArgs;
         bool _gotSettingsStartupActions{ false };
         std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> _settingsStartupArgs{};
+        Windows::Foundation::IReference<Windows::Foundation::Rect> _contentBounds{ nullptr };
 
         winrt::hstring _WindowName{};
         uint64_t _WindowId{ 0 };

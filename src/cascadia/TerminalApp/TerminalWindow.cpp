@@ -626,6 +626,17 @@ namespace winrt::TerminalApp::implementation
                                                               commandlineSize.height);
         }
 
+        if (_contentBounds)
+        {
+            // If we're being launched in a snapped mode, then we'll need to
+            // resize ourselves to fit the content bounds of the window.
+            proposedSize = {
+                _contentBounds.Value().Width / scale,
+                _contentBounds.Value().Height / scale
+            };
+            return proposedSize;
+        }
+
         // GH#2061 - If the global setting "Always show tab bar" is
         // set or if "Show tabs in title bar" is set, then we'll need to add
         // the height of the tab bar here.
@@ -711,12 +722,21 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        // Commandline args trump everything else
+        // Commandline args trump everything except for content bounds (tear-out)
         if (_appArgs.GetPosition().has_value())
         {
             initialPosition = _appArgs.GetPosition().value();
         }
 
+        if (_contentBounds)
+        {
+            // If the user has specified a contentBounds, then we should use that
+            // to determine the initial position of the window. This is used when
+            // the user is dragging a tab out of the window, to create a new
+            // window.
+            const til::rect bounds = {til::math::rounding,  _contentBounds.Value()} ;
+            initialPosition = { bounds.left, bounds.top };
+        }
         return {
             initialPosition.X ? initialPosition.X.Value() : defaultInitialX,
             initialPosition.Y ? initialPosition.Y.Value() : defaultInitialY
@@ -1019,8 +1039,9 @@ namespace winrt::TerminalApp::implementation
         return result;
     }
 
-    void TerminalWindow::SetStartupContent(winrt::hstring content)
+    void TerminalWindow::SetStartupContent(winrt::hstring content, Windows::Foundation::IReference<Windows::Foundation::Rect> bounds)
     {
+        _contentBounds = bounds;
         try
         {
             auto args = ActionAndArgs::Deserialize(content);
