@@ -142,25 +142,36 @@ namespace winrt::TerminalApp::implementation
         _root->WindowProperties(*this);
         _dialog = ContentDialog{};
 
-        // Pass commandline args into the TerminalPage. If we were supposed to
-        // load from a persisted layout, do that instead.
-        auto foundLayout = false;
-        if (const auto& layout = LoadPersistedLayout())
+        // Pass in information about the initial state of the window.
+        // * If we were suppost to start from serialized "content", do that,
+        // * If we were supposed to load from a persisted layout, do that
+        //   instead.
+        // * if we have commandline arguments, Pass commandline args into the
+        //   TerminalPage.
+        if (!_initialContentArgs.empty())
         {
-            if (layout.TabLayout().Size() > 0)
-            {
-                std::vector<Settings::Model::ActionAndArgs> actions;
-                for (const auto& a : layout.TabLayout())
-                {
-                    actions.emplace_back(a);
-                }
-                _root->SetStartupActions(actions);
-                foundLayout = true;
-            }
+            _root->SetStartupActions(_initialContentArgs);
         }
-        if (!foundLayout)
+        else
         {
-            _root->SetStartupActions(_appArgs.GetStartupActions());
+            auto foundLayout = false;
+            if (const auto& layout = LoadPersistedLayout())
+            {
+                if (layout.TabLayout().Size() > 0)
+                {
+                    std::vector<Settings::Model::ActionAndArgs> actions;
+                    for (const auto& a : layout.TabLayout())
+                    {
+                        actions.emplace_back(a);
+                    }
+                    _root->SetStartupActions(actions);
+                    foundLayout = true;
+                }
+            }
+            if (!foundLayout)
+            {
+                _root->SetStartupActions(_appArgs.GetStartupActions());
+            }
         }
 
         // Check if we were started as a COM server for inbound connections of console sessions
@@ -1006,6 +1017,41 @@ namespace winrt::TerminalApp::implementation
             SetPersistedLayoutIdx(idx.value());
         }
         return result;
+    }
+
+    void TerminalWindow::SetStartupContent(winrt::hstring content)
+    {
+        try
+        {
+            auto args = ActionAndArgs::Deserialize(content);
+            if (args == nullptr ||
+                args.Size() == 0)
+            {
+                return;
+            }
+
+            const auto& firstAction = args.GetAt(0);
+            const bool firstIsSplitPane{ firstAction.Action() == ShortcutAction::SplitPane };
+            if (firstIsSplitPane)
+            {
+                // Create the equivalent NewTab action.
+                const auto newAction = Settings::Model::ActionAndArgs{ Settings::Model::ShortcutAction::NewTab,
+                                                                       Settings::Model::NewTabArgs(firstAction.Args() ?
+                                                                                                       firstAction.Args().try_as<Settings::Model::SplitPaneArgs>().TerminalArgs() :
+                                                                                                       nullptr) };
+                args.SetAt(0, newAction);
+            }
+
+            for (const auto& action : args)
+            {
+                _initialContentArgs.push_back(action);
+            }
+            // _initialContentArgs = std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>{ std::move(args) };
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+        }
     }
 
     // Method Description:

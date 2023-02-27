@@ -38,7 +38,7 @@ AppHost::AppHost(const winrt::TerminalApp::AppLogic& logic,
     _windowLogic{ nullptr },
     _window{ nullptr }
 {
-    _HandleCommandlineArgs();
+    _HandleCommandlineArgs(args);
 
     // _HandleCommandlineArgs will create a _windowLogic
     _useNonClientArea = _windowLogic.GetShowTabsInTitlebar();
@@ -169,7 +169,7 @@ void AppHost::s_DisplayMessageBox(const winrt::TerminalApp::ParseCommandlineResu
 // - <none>
 // Return Value:
 // - <none>
-void AppHost::_HandleCommandlineArgs()
+void AppHost::_HandleCommandlineArgs(const Remoting::WindowRequestedArgs& windowArgs)
 {
     // We did want to make a window, so let's instantiate it here.
     // We don't have XAML yet, but we do have other stuff.
@@ -178,7 +178,13 @@ void AppHost::_HandleCommandlineArgs()
     if (_peasant)
     {
         const auto& args{ _peasant.InitialArgs() };
-        if (args)
+
+        if (!windowArgs.Content().empty())
+        {
+            _windowLogic.SetStartupContent(windowArgs.Content());
+            _shouldCreateWindow = true; // TODO! I don't think we actually use this anymore
+        }
+        else if (args)
         {
             const auto result = _windowLogic.SetStartupCommandline(args.Commandline());
             const auto message = _windowLogic.ParseCommandlineMessage();
@@ -206,6 +212,7 @@ void AppHost::_HandleCommandlineArgs()
             _windowLogic.HandoffToElevated();
             return;
         }
+
 
         // After handling the initial args, hookup the callback for handling
         // future commandline invocations. When our peasant is told to execute a

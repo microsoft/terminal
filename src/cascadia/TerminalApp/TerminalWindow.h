@@ -53,6 +53,7 @@ namespace winrt::TerminalApp::implementation
 
         bool HasCommandlineArguments() const noexcept;
         int32_t SetStartupCommandline(array_view<const winrt::hstring> actions);
+        void SetStartupContent(winrt::hstring content);
         int32_t ExecuteCommandline(array_view<const winrt::hstring> actions, const winrt::hstring& cwd);
         void SetSettingsStartupArgs(const std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions);
         winrt::hstring ParseCommandlineMessage();
@@ -168,6 +169,7 @@ namespace winrt::TerminalApp::implementation
         TerminalApp::SettingsLoadEventArgs _initialLoadResult{ nullptr };
 
         TerminalApp::ContentManager _manager{ nullptr };
+        std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> _initialContentArgs;
 
         void _ShowLoadErrorsDialog(const winrt::hstring& titleKey,
                                    const winrt::hstring& contentKey,

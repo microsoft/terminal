@@ -48,12 +48,21 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             _args{ command.Commandline() },
             _CurrentDirectory{ command.CurrentDirectory() } {};
 
+        WindowRequestedArgs(const winrt::hstring& window, const winrt::hstring& content) :
+            _Id{ nullptr },
+            _WindowName{ window },
+            _args{},
+            _CurrentDirectory{},
+            _Content{ content } {};
+
         void Commandline(const winrt::array_view<const winrt::hstring>& value) { _args = { value.begin(), value.end() }; };
         winrt::com_array<winrt::hstring> Commandline() { return winrt::com_array<winrt::hstring>{ _args.begin(), _args.end() }; }
 
         WINRT_PROPERTY(Windows::Foundation::IReference<uint64_t>, Id);
         WINRT_PROPERTY(winrt::hstring, WindowName);
         WINRT_PROPERTY(winrt::hstring, CurrentDirectory);
+        WINRT_PROPERTY(winrt::hstring, Content);
+        WINRT_PROPERTY(Windows::Foundation::IReference<Windows::Foundation::Rect>, InitialBounds);
 
     private:
         winrt::com_array<winrt::hstring> _args;

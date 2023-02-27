@@ -58,7 +58,7 @@ namespace TerminalApp
         Boolean HasCommandlineArguments();
 
         Int32 SetStartupCommandline(String[] commands);
-
+        void SetStartupContent(String json);
         Int32 ExecuteCommandline(String[] commands, String cwd);
         String ParseCommandlineMessage { get; };
         Boolean ShouldExitEarly { get; };
