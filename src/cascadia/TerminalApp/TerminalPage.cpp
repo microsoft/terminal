@@ -1771,11 +1771,11 @@ namespace winrt::TerminalApp::implementation
         }
 
         // If the user set a custom name, save it
-        if (_WindowProperties.WindowName() != L"")
+        if (const auto windowName = _WindowProperties.WindowName(); !windowName.empty())
         {
             ActionAndArgs action;
             action.Action(ShortcutAction::RenameWindow);
-            RenameWindowArgs args{ _WindowProperties.WindowName() };
+            RenameWindowArgs args{ windowName };
             action.Args(args);
 
             actions.emplace_back(std::move(action));

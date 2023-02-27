@@ -262,10 +262,10 @@ namespace winrt::TerminalApp::implementation
                 return E_INVALIDARG;
             }
 
-            _warnings.Clear();
+            _warnings.clear();
             for (uint32_t i = 0; i < newSettings.Warnings().Size(); i++)
             {
-                _warnings.Append(newSettings.Warnings().GetAt(i));
+                _warnings.push_back(newSettings.Warnings().GetAt(i));
             }
 
             _hasSettingsStartupActions = false;
@@ -285,7 +285,7 @@ namespace winrt::TerminalApp::implementation
                 }
                 else
                 {
-                    _warnings.Append(SettingsLoadWarnings::FailedToParseStartupActions);
+                    _warnings.push_back(SettingsLoadWarnings::FailedToParseStartupActions);
                 }
             }
 
@@ -293,7 +293,7 @@ namespace winrt::TerminalApp::implementation
 
             _settings.ExpandCommands();
 
-            hr = (_warnings.Size()) == 0 ? S_OK : S_FALSE;
+            hr = (_warnings.size()) == 0u ? S_OK : S_FALSE;
         }
         catch (const winrt::hresult_error& e)
         {
@@ -490,7 +490,7 @@ namespace winrt::TerminalApp::implementation
                 auto ev = winrt::make_self<SettingsLoadEventArgs>(true,
                                                                   static_cast<uint64_t>(_settingsLoadedResult),
                                                                   _settingsLoadExceptionText,
-                                                                  _warnings,
+                                                                  winrt::multi_threaded_vector<SettingsLoadWarnings>(std::move(_warnings)),
                                                                   _settings);
                 _SettingsChangedHandlers(*this, *ev);
                 return;
@@ -514,7 +514,7 @@ namespace winrt::TerminalApp::implementation
         auto ev = winrt::make_self<SettingsLoadEventArgs>(!initialLoad,
                                                           _settingsLoadedResult,
                                                           _settingsLoadExceptionText,
-                                                          _warnings,
+                                                          winrt::multi_threaded_vector<SettingsLoadWarnings>(std::move(_warnings)),
                                                           _settings);
         _SettingsChangedHandlers(*this, *ev);
     }
@@ -667,7 +667,7 @@ namespace winrt::TerminalApp::implementation
         auto ev = winrt::make_self<SettingsLoadEventArgs>(false,
                                                           _settingsLoadedResult,
                                                           _settingsLoadExceptionText,
-                                                          _warnings,
+                                                          winrt::multi_threaded_vector<SettingsLoadWarnings>(std::move(_warnings)),
                                                           _settings);
 
         auto window = winrt::make_self<implementation::TerminalWindow>(*ev);

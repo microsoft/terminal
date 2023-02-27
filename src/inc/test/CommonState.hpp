@@ -20,8 +20,6 @@ unit testing projects in the codebase without a bunch of overhead.
 
 #pragma once
 
-#define VERIFY_SUCCESS_NTSTATUS(x) VERIFY_IS_TRUE(NT_SUCCESS(x))
-
 #include "../host/globals.h"
 #include "../host/inputReadHandleData.h"
 #include "../interactivity/inc/ServiceLocator.hpp"
