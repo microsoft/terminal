@@ -85,7 +85,7 @@ namespace winrt::TerminalApp::implementation
         std::shared_ptr<ThrottledFuncTrailing<>> _reloadSettings;
         til::throttled_func_trailing<> _reloadState;
 
-        winrt::Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> _warnings{ winrt::multi_threaded_vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings>() };
+        std::vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> _warnings{};
 
         // These fields invoke _reloadSettings and must be destroyed before _reloadSettings.
         // (C++ destroys members in reverse-declaration-order.)
