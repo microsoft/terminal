@@ -247,6 +247,7 @@ namespace winrt::TerminalApp::implementation
         _tabView.TabDragStarting({ this, &TerminalPage::_onTabDragStarting });
         _tabView.TabStripDragOver({ this, &TerminalPage::_onTabStripDragOver });
         _tabView.TabStripDrop({ this, &TerminalPage::_onTabStripDrop });
+        _tabView.TabDroppedOutside({ this, &TerminalPage::_onTabDroppedOutside });
 
         _CreateNewTabFlyout();
 
@@ -4643,6 +4644,35 @@ namespace winrt::TerminalApp::implementation
             auto startupActions = _stashedDraggedTab->BuildStartupActions(true);
             _DetachTabFromWindow(_stashedDraggedTab);
             _MoveContent(startupActions, winrt::hstring{ fmt::format(L"{}", args.TargetWindow()) }, args.TabIndex());
+            // _RemoveTab will make sure to null out the _stashedDraggedTab
+            _RemoveTab(*_stashedDraggedTab);
+        }
+    }
+
+    winrt::fire_and_forget TerminalPage::_onTabDroppedOutside(winrt::Windows::Foundation::IInspectable sender,
+                                                              winrt::Microsoft::UI::Xaml::Controls::TabViewTabDroppedOutsideEventArgs e)
+    {
+        // This is called when a tab FROM OUR WINDOW was dropped outside the
+        // tabview. We already know which tab was being dragged. We'll just
+        // invoke a moveTab action with the target window being -1. That will
+        // force the creation of a new window.
+
+        if (!_stashedDraggedTab)
+        {
+            co_return;
+        }
+
+        // must do the work of adding/removing tabs on the UI thread.
+        auto weakThis{ get_weak() };
+        co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
+        if (const auto& page{ weakThis.get() })
+        {
+            // `this` is safe to use in here.
+            auto startupActions = _stashedDraggedTab->BuildStartupActions(true);
+            _DetachTabFromWindow(_stashedDraggedTab);
+            // -1 is the magic number for "new window"
+            // 0 as the tab index, because we don't care. It's making a new window. It'll be the only tab.
+            _MoveContent(startupActions, winrt::hstring{ L"-1" }, 0);
             // _RemoveTab will make sure to null out the _stashedDraggedTab
             _RemoveTab(*_stashedDraggedTab);
         }
