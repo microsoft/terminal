@@ -628,11 +628,12 @@ namespace winrt::TerminalApp::implementation
 
         if (_contentBounds)
         {
-            // If we're being launched in a snapped mode, then we'll need to
-            // resize ourselves to fit the content bounds of the window.
+            // If we've been created as a torn-out window, then we'll need to
+            // use that size instead. _contentBounds is in raw pixels, so
+            // convert it to _our_ DIPs.
             proposedSize = {
-                _contentBounds.Value().Width / scale,
-                _contentBounds.Value().Height / scale
+                _contentBounds.Value().Width * scale,
+                _contentBounds.Value().Height * scale
             };
             return proposedSize;
         }
@@ -730,11 +731,14 @@ namespace winrt::TerminalApp::implementation
 
         if (_contentBounds)
         {
-            // If the user has specified a contentBounds, then we should use that
-            // to determine the initial position of the window. This is used when
-            // the user is dragging a tab out of the window, to create a new
-            // window.
-            const til::rect bounds = {til::math::rounding,  _contentBounds.Value()} ;
+            // If the user has specified a contentBounds, then we should use
+            // that to determine the initial position of the window. This is
+            // used when the user is dragging a tab out of the window, to create
+            // a new window.
+            //
+            // contentBounds is in screen pixels, but that's okay! we want to
+            // return screen pixels out of here. Nailed it.
+            const til::rect bounds = { til::math::rounding, _contentBounds.Value() };
             initialPosition = { bounds.left, bounds.top };
         }
         return {
@@ -1039,7 +1043,8 @@ namespace winrt::TerminalApp::implementation
         return result;
     }
 
-    void TerminalWindow::SetStartupContent(winrt::hstring content, Windows::Foundation::IReference<Windows::Foundation::Rect> bounds)
+    void TerminalWindow::SetStartupContent(winrt::hstring content,
+                                           Windows::Foundation::IReference<Windows::Foundation::Rect> bounds)
     {
         _contentBounds = bounds;
         try
@@ -1067,7 +1072,6 @@ namespace winrt::TerminalApp::implementation
             {
                 _initialContentArgs.push_back(action);
             }
-            // _initialContentArgs = std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>{ std::move(args) };
         }
         catch (...)
         {

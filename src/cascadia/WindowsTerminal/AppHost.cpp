@@ -1211,21 +1211,31 @@ void AppHost::_handleMoveContent(const winrt::Windows::Foundation::IInspectable&
 {
     if (args.WindowPosition() && _window)
     {
-        const til::rect window{
-            _window->GetWindowRect()};
+        // The WindowPosition is in DIPs. We need to convert it to pixels.
+        const til::point dragPositionInDips{ til::math::rounding, args.WindowPosition().Value() };
+        const auto scale = _window->GetCurrentDpiScale();
+        
+        const til::point dragPositionInPixels{
+            til::math::rounding,
+            dragPositionInDips.x * scale,
+            dragPositionInDips.y * scale,
+      };
 
-        // const auto dpi = _window->GetCurrentDpi();
-        // const auto nonClientArea = _window->GetNonClientFrame(dpi);
+        // Fortunately, the window position is already in pixels.
+        const til::rect windowBoundsInPixels{
+            _window->GetWindowRect()
+        };
 
-        // // The nonClientArea adjustment is negative, so subtract that out.
-        // // This way we save the user-visible location of the terminal.
-        // pos.X = window.left - nonClientArea.left;
-        // pos.Y = window.top;
-        winrt::Windows::Foundation::Rect rect{ static_cast<float>(args.WindowPosition().Value().X),
-                                               static_cast<float>(args.WindowPosition().Value().Y),
-                                        static_cast<float>(window.width()),
-                                        static_cast<float>(window.height()) };
-        _windowManager.RequestMoveContent(args.Window(), args.Content(), args.TabIndex(), { rect });
+        // Use the drag event as the new position, and the size of the actual window.
+        winrt::Windows::Foundation::Rect rect{ static_cast<float>(dragPositionInPixels.x),
+                                               static_cast<float>(dragPositionInPixels.y),
+                                               static_cast<float>(windowBoundsInPixels.width()),
+                                               static_cast<float>(windowBoundsInPixels.height()) };
+
+        _windowManager.RequestMoveContent(args.Window(),
+                                          args.Content(),
+                                          args.TabIndex(),
+                                          { rect });
     }
     else
     {
