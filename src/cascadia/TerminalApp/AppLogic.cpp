@@ -657,6 +657,16 @@ namespace winrt::TerminalApp::implementation
         return _settings.GlobalSettings().CurrentTheme();
     }
 
+    bool AppLogic::IsolatedMode()
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            ReloadSettings();
+        }
+        return _settings.GlobalSettings().IsolatedMode();
+    }
+
     TerminalApp::TerminalWindow AppLogic::CreateNewWindow()
     {
         if (_settings == nullptr)
@@ -682,7 +692,7 @@ namespace winrt::TerminalApp::implementation
 
     bool AppLogic::ShouldUsePersistedLayout() const
     {
-        return _settings.GlobalSettings().ShouldUsePersistedLayout();
+        return _settings.GlobalSettings().ShouldUsePersistedLayout() && !_settings.GlobalSettings().IsolatedMode();
     }
 
     void AppLogic::SaveWindowLayoutJsons(const Windows::Foundation::Collections::IVector<hstring>& layouts)

@@ -97,6 +97,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, ShowAdminShield);
         INHERITABLE_SETTING(IVector<NewTabMenuEntry>, NewTabMenu);
         INHERITABLE_SETTING(Boolean, EnableColorSelection);
+        INHERITABLE_SETTING(Boolean, IsolatedMode);
 
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);
