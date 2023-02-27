@@ -89,14 +89,21 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         _RequestNewWindowHandlers(sender, args);
     }
 
-    Remoting::ProposeCommandlineResult WindowManager::ProposeCommandline2(const Remoting::CommandlineArgs& args)
+    Remoting::ProposeCommandlineResult WindowManager::ProposeCommandline(const Remoting::CommandlineArgs& args, const bool isolatedMode)
     {
         bool shouldCreateWindow = false;
 
-        _createMonarch();
+        if (!isolatedMode)
+        {
+            // _createMonarch always attempts to connect an existing monarch. In
+            // isolated mode, we don't want to do that.
+            _createMonarch();
+        }
+
         if (_monarch)
         {
-            // We connected to a monarch instance, not us though.
+            // We connected to a monarch instance, not us though. This won't hit
+            // in isolated mode.
 
             shouldCreateWindow = false;
             std::optional<uint64_t> givenID;
@@ -155,15 +162,33 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 //
                 // Congrats! This is now THE PROCESS. It's the only one that's
                 // getting any windows.
-                _registerAsMonarch();
-                _createMonarch();
+
+                // In isolated mode, we don't want to register as the monarch,
+                // we just want to make a local one. So we'll skip this step.
+                // The condition below it will handle making the unregistered
+                // local monarch.
+
+                if (!isolatedMode)
+                {
+                    _registerAsMonarch();
+                    _createMonarch();
+                }
+                else
+                {
+                    TraceLoggingWrite(g_hRemotingProvider,
+                                      "WindowManager_IntentionallyIsolated",
+                                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                }
+
                 if (!_monarch)
                 {
-                    // Something catastrophically bad happened here. But we
-                    // don't want to just exit immediately. No, instead, we'll
-                    // just instantiate a local Monarch instance. We're firmly
-                    // in the realm of undefined behavior, but better to have
-                    // some window than not.
+                    // Something catastrophically bad happened here OR we were
+                    // intentionally in isolated mode. We don't want to just
+                    // exit immediately. Instead, we'll just instantiate a local
+                    // Monarch instance, without registering it. We're firmly in
+                    // the realm of undefined behavior, but better to have some
+                    // window than not.
                     _monarch = winrt::make<Monarch>();
                     TraceLoggingWrite(g_hRemotingProvider,
                                       "WindowManager_FailedToCoCreate",

@@ -552,7 +552,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         std::string errs; // This string will receive any error text from failing to parse.
-        std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+        std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };
 
         // First, get a string for the original Json::Value
         auto oldJsonString = expandable->_originalJson.toStyledString();

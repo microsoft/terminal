@@ -77,7 +77,9 @@ bool WindowEmperor::HandleCommandlineArgs()
 
     Remoting::CommandlineArgs eventArgs{ { args }, { cwd } };
 
-    const auto result = _manager.ProposeCommandline2(eventArgs);
+    const auto isolatedMode{ _app.Logic().IsolatedMode() };
+
+    const auto result = _manager.ProposeCommandline(eventArgs, isolatedMode);
 
     if (result.ShouldCreateWindow())
     {
@@ -125,6 +127,11 @@ void WindowEmperor::CreateNewWindowThread(Remoting::WindowRequestedArgs args, co
         sender->Logic().IsQuakeWindowChanged([this](auto&&, auto &&) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(this->_dispatcher);
             this->_checkWindowsForNotificationIcon();
+        });
+        sender->UpdateSettingsRequested([this]() -> winrt::fire_and_forget {
+            // We MUST be on the main thread to update the settings. We will crash when trying to enumerate fragement extensions otherwise.
+            co_await wil::resume_foreground(this->_dispatcher);
+            _app.Logic().ReloadSettings();
         });
 
         // These come in on the sender's thread. Move back to our thread.

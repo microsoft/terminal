@@ -80,7 +80,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         auto data = til::u16u8(str);
         std::string errs;
-        std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+        std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };
 
         Json::Value root;
         if (!reader->parse(data.data(), data.data() + data.size(), &root, &errs))
@@ -161,7 +161,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     try
     {
         std::string errs;
-        std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+        std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };
 
         // First get shared state out of `state.json`.
         const auto sharedData = _readSharedContents().value_or(std::string{});
@@ -228,7 +228,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         if (::Microsoft::Console::Utils::IsElevated())
         {
             std::string errs;
-            std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+            std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };
             Json::Value root;
 
             // First load the contents of state.json into a json blob. This will
