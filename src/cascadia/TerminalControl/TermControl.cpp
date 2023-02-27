@@ -2628,9 +2628,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                         }
                     }
 
-                    const auto containsSpaces = std::find(fullPath.begin(),
-                                                          fullPath.end(),
-                                                          L' ') != fullPath.end();
+                    const auto containsSpaces = fullPath.find(L' ') != fullPath.end();
 
                     if (containsSpaces)
                     {
