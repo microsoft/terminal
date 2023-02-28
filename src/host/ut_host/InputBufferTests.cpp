@@ -386,24 +386,24 @@ class InputBufferTests
 
         // read one record, hInputEvent should still be signaled
         std::deque<std::unique_ptr<IInputEvent>> outEvents;
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer.Read(outEvents,
-                                                 1,
-                                                 false,
-                                                 false,
-                                                 true,
-                                                 false));
+        VERIFY_NT_SUCCESS(inputBuffer.Read(outEvents,
+                                           1,
+                                           false,
+                                           false,
+                                           true,
+                                           false));
         VERIFY_ARE_EQUAL(outEvents.size(), 1u);
         VERIFY_IS_TRUE(waitEvent.is_signaled());
 
         // read the rest, hInputEvent should be reset
         waitEvent.SetEvent();
         outEvents.clear();
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer.Read(outEvents,
-                                                 RECORD_INSERT_COUNT - 1,
-                                                 false,
-                                                 false,
-                                                 true,
-                                                 false));
+        VERIFY_NT_SUCCESS(inputBuffer.Read(outEvents,
+                                           RECORD_INSERT_COUNT - 1,
+                                           false,
+                                           false,
+                                           true,
+                                           false));
         VERIFY_ARE_EQUAL(outEvents.size(), RECORD_INSERT_COUNT - 1);
         VERIFY_IS_FALSE(waitEvent.is_signaled());
     }
@@ -446,12 +446,12 @@ class InputBufferTests
 
         // read them out non-unicode style and compare
         std::deque<std::unique_ptr<IInputEvent>> outEvents;
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer.Read(outEvents,
-                                                 outRecordsExpected.size(),
-                                                 false,
-                                                 false,
-                                                 false,
-                                                 false));
+        VERIFY_NT_SUCCESS(inputBuffer.Read(outEvents,
+                                           outRecordsExpected.size(),
+                                           false,
+                                           false,
+                                           false,
+                                           false));
         VERIFY_ARE_EQUAL(outEvents.size(), outRecordsExpected.size());
         for (size_t i = 0; i < outEvents.size(); ++i)
         {
