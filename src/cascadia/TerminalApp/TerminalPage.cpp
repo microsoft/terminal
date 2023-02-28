@@ -4537,7 +4537,8 @@ namespace winrt::TerminalApp::implementation
             //      to ask us to send our content to them.
             //  * We'll get a TabDroppedOutside to indicate that this tab was
             //    dropped _not_ on a TabView.
-            //    * This we can't handle yet, and is the last point of TODO GH#5000
+            //    * This will be handled by _onTabDroppedOutside, which will
+            //      raise a MoveContent (to a new window) event.
         }
     }
 

@@ -1132,16 +1132,14 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         }
         else
         {
+            // We couldn't find the peasant that started the drag. Well that
+            // sure is weird, but that would indicate that the sender closed
+            // after starting the drag. No matter. We can just do nothing.
+
             TraceLoggingWrite(g_hRemotingProvider,
                               "Monarch_SendContent_NoWindow",
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                               TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-
-            // TODO GH#5000
-            //
-            // In the case where window couldn't be found, then create a window
-            // for that name / ID. Do this as a part of tear-out (different than
-            // drag/drop)
         }
     }
 }
