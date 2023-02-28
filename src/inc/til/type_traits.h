@@ -11,21 +11,14 @@ namespace til
         struct is_contiguous_view : std::false_type
         {
         };
-        // std::span remains largely unused in this code base so far.
-        //template<typename U, std::size_t E>
-        //struct is_contiguous_view<std::span<U, E>> : std::true_type
-        //{
-        //};
-        template<typename U, typename V>
-        struct is_contiguous_view<std::basic_string_view<U, V>> : std::true_type
-        {
-        };
-#ifdef GSL_SPAN_H
         template<typename U, std::size_t E>
         struct is_contiguous_view<std::span<U, E>> : std::true_type
         {
         };
-#endif
+        template<typename U, typename V>
+        struct is_contiguous_view<std::basic_string_view<U, V>> : std::true_type
+        {
+        };
 
         template<typename T>
         struct is_byte : std::false_type

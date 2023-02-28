@@ -128,8 +128,7 @@ try
 }
 catch (...)
 {
-    // There doesn't seem to be a way to just get the NT exception code with WIL.
-    *pReplyStatus = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+    *pReplyStatus = wil::StatusFromCaughtException();
     return true;
 }
 
