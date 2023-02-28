@@ -6268,33 +6268,38 @@ void ScreenBufferTests::CursorSaveRestore()
     VERIFY_SUCCEEDED(si.SetViewportOrigin(true, til::point(0, 0), true));
 
     Log::Comment(L"Restore after save.");
-    // Set the cursor position, attributes, and character set.
+    // Set the cursor position, delayed wrap, attributes, and character set.
     cursor.SetPosition({ 20, 10 });
+    cursor.DelayEOLWrap();
     si.SetAttributes(colorAttrs);
     stateMachine.ProcessString(selectGraphicsChars);
     // Save state.
     stateMachine.ProcessString(saveCursor);
-    // Reset the cursor position, attributes, and character set.
+    // Reset the cursor position, delayed wrap, attributes, and character set.
     cursor.SetPosition({ 0, 0 });
     si.SetAttributes(defaultAttrs);
     stateMachine.ProcessString(selectAsciiChars);
     // Restore state.
     stateMachine.ProcessString(restoreCursor);
-    // Verify initial position, colors, and graphic character set.
+    // Verify initial position, delayed wrap, colors, and graphic character set.
     VERIFY_ARE_EQUAL(til::point(20, 10), cursor.GetPosition());
+    VERIFY_IS_TRUE(cursor.IsDelayedEOLWrap());
+    cursor.ResetDelayEOLWrap();
     VERIFY_ARE_EQUAL(colorAttrs, si.GetAttributes());
     stateMachine.ProcessString(asciiText);
     VERIFY_IS_TRUE(_ValidateLineContains({ 20, 10 }, graphicText, colorAttrs));
 
     Log::Comment(L"Restore again without save.");
-    // Reset the cursor position, attributes, and character set.
+    // Reset the cursor position, delayed wrap, attributes, and character set.
     cursor.SetPosition({ 0, 0 });
     si.SetAttributes(defaultAttrs);
     stateMachine.ProcessString(selectAsciiChars);
     // Restore state.
     stateMachine.ProcessString(restoreCursor);
-    // Verify initial saved position, colors, and graphic character set.
+    // Verify initial saved position, delayed wrap, colors, and graphic character set.
     VERIFY_ARE_EQUAL(til::point(20, 10), cursor.GetPosition());
+    VERIFY_IS_TRUE(cursor.IsDelayedEOLWrap());
+    cursor.ResetDelayEOLWrap();
     VERIFY_ARE_EQUAL(colorAttrs, si.GetAttributes());
     stateMachine.ProcessString(asciiText);
     VERIFY_IS_TRUE(_ValidateLineContains({ 20, 10 }, graphicText, colorAttrs));
@@ -6302,14 +6307,16 @@ void ScreenBufferTests::CursorSaveRestore()
     Log::Comment(L"Restore after reset.");
     // Soft reset.
     stateMachine.ProcessString(L"\x1b[!p");
-    // Set the cursor position, attributes, and character set.
+    // Set the cursor position, delayed wrap, attributes, and character set.
     cursor.SetPosition({ 20, 10 });
+    cursor.DelayEOLWrap();
     si.SetAttributes(colorAttrs);
     stateMachine.ProcessString(selectGraphicsChars);
     // Restore state.
     stateMachine.ProcessString(restoreCursor);
-    // Verify home position, default attributes, and ascii character set.
+    // Verify home position, no delayed wrap, default attributes, and ascii character set.
     VERIFY_ARE_EQUAL(til::point(0, 0), cursor.GetPosition());
+    VERIFY_IS_FALSE(cursor.IsDelayedEOLWrap());
     VERIFY_ARE_EQUAL(defaultAttrs, si.GetAttributes());
     stateMachine.ProcessString(asciiText);
     VERIFY_IS_TRUE(_ValidateLineContains(til::point(0, 0), asciiText, defaultAttrs));
