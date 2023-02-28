@@ -4504,9 +4504,21 @@ namespace winrt::TerminalApp::implementation
             // We're going to be asked for this.
             _stashedDraggedTab = tabImpl;
 
-            // TODO! Stash the offset from where we started the drag to the
+            // Stash the offset from where we started the drag to the
             // tab's origin. We'll use that offset in the future to help
             // position the dropped window.
+
+            // First, the position of the pointer, from the CoreWindow
+            const til::point pointerPosition{ til::math::rounding, CoreWindow::GetForCurrentThread().PointerPosition() };
+            // Next, the position of the tab itself:
+            const til::point tabPosition{ til::math::rounding, eventTab.TransformToVisual(nullptr).TransformPoint({ 0, 0 }) };
+            // Now, we need to add the origin of our CoreWindow to the tab
+            // position.
+            const auto& coreWindowBounds{ CoreWindow::GetForCurrentThread().Bounds() };
+            const til::point windowOrigin{ til::math::rounding, coreWindowBounds.X, coreWindowBounds.Y };
+            const auto realTabPosition = windowOrigin + tabPosition;
+            // Subtract the two to get the offset.
+            _dragOffset = til::point{ pointerPosition - realTabPosition };
 
             // Into the DataPackage, let's stash our own window ID.
             const winrt::hstring id{ fmt::format(L"{}", _WindowProperties.WindowId()) };
@@ -4683,16 +4695,16 @@ namespace winrt::TerminalApp::implementation
             // `this` is safe to use in here.
             auto startupActions = _stashedDraggedTab->BuildStartupActions(true);
             _DetachTabFromWindow(_stashedDraggedTab);
+
+            // We need to convert the pointer point to a point that we can use
+            // to position the new window. We'll use the drag offset from before
+            // so that the tab in the new window is positioned so that it's
+            // basically still directly under the cursor.
+            til::point adjusted = til::point{ til::math::rounding, pointerPoint } - _dragOffset;
+
             // -1 is the magic number for "new window"
             // 0 as the tab index, because we don't care. It's making a new window. It'll be the only tab.
-
-            // til::size actualSize{ til::math::rounding, ActualWidth(), ActualHeight() };
-            // til::rect bounds{ til::point{ til::math::rounding, pointerPoint }, actualSize };
-            // Windows::Foundation::Rect rect{ static_cast<float>(bounds.left),
-            //                                 static_cast<float>(bounds.top),
-            //                                 static_cast<float>(bounds.width()),
-            //                                 static_cast<float>(bounds.height()) };
-            _MoveContent(startupActions, winrt::hstring{ L"-1" }, 0, pointerPoint);
+            _MoveContent(startupActions, winrt::hstring{ L"-1" }, 0, adjusted.to_winrt_point());
             // _RemoveTab will make sure to null out the _stashedDraggedTab
             _RemoveTab(*_stashedDraggedTab);
         }

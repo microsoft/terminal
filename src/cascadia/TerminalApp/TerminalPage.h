@@ -265,8 +265,10 @@ namespace winrt::TerminalApp::implementation
         TerminalApp::ContentManager _manager{ nullptr };
 
         winrt::com_ptr<winrt::TerminalApp::implementation::TabBase> _stashedDraggedTab{ nullptr };
+        til::point _dragOffset{ 0, 0 };
 
-        winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowDialogHelper(const std::wstring_view& name);
+        winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult>
+        _ShowDialogHelper(const std::wstring_view& name);
 
         void _ShowAboutDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowQuitDialog();

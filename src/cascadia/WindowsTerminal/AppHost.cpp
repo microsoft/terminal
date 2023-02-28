@@ -1206,6 +1206,16 @@ winrt::TerminalApp::TerminalWindow AppHost::Logic()
     return _windowLogic;
 }
 
+// Method Description:
+// - Raised from Page -> us -> manager -> monarch
+// - Called when the user attemtpts to move a tab or pane to another window.
+//   `args` will contain info about the structure of the content being moved,
+//   and where it should go.
+// - If the WindowPosition is filled in, then the user was dragging a tab out of
+//   this window and dropping it in empty space, indicating it should create a
+//   new window. In that case, we'll make some adjustments using that info and
+//   our own window info, so that the new window will be created in the right
+//   place and with the same size.
 void AppHost::_handleMoveContent(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                  winrt::TerminalApp::RequestMoveContentArgs args)
 {
@@ -1222,9 +1232,7 @@ void AppHost::_handleMoveContent(const winrt::Windows::Foundation::IInspectable&
         };
 
         // Fortunately, the window position is already in pixels.
-        til::rect windowBoundsInPixels{
-            _window->GetWindowRect()
-        };
+        til::rect windowBoundsInPixels{ _window->GetWindowRect() };
 
         // Adjust for the non-client bounds
         const auto dpi = _window->GetCurrentDpi();
