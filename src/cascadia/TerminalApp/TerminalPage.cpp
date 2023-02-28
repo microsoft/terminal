@@ -4482,13 +4482,6 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_onTabDragStarting(winrt::Microsoft::UI::Xaml::Controls::TabView sender,
                                           winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragStartingEventArgs e)
     {
-        // Get the tab impl from this event.
-        auto eventTab = e.Tab();
-        // auto eventTabGood = e.Item().try_as<winrt::MUX::Controls::TabViewItem>();
-        auto iconBad = eventTab.IconSource();
-        iconBad;
-        // auto iconGood = eventTabGood.IconSource();
-        // iconGood;
         auto tabBase = _GetTabByTabViewItem(eventTab);
         winrt::com_ptr<TabBase> tabImpl;
         tabImpl.copy_from(winrt::get_self<TabBase>(tabBase));
