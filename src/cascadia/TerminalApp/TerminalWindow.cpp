@@ -121,6 +121,9 @@ namespace winrt::TerminalApp::implementation
         _settings{ settingsLoadedResult.NewSettings() },
         _initialLoadResult{ settingsLoadedResult }
     {
+        // The TerminalPage has to be constructed during our construction, to
+        // make sure that there's a terminal page for callers of
+        // SetTitleBarContent
         _root = winrt::make_self<TerminalPage>();
         _root->WindowProperties(*this);
         _dialog = ContentDialog{};
@@ -131,10 +134,6 @@ namespace winrt::TerminalApp::implementation
         // cause you to chase down the rabbit hole of "why is App not
         // registered?" when it definitely is.
 
-        // The TerminalPage has to be constructed during our construction, to
-        // make sure that there's a terminal page for callers of
-        // SetTitleBarContent
-        _isElevated = ::Microsoft::Console::Utils::IsElevated();
     }
 
     // Method Description:
@@ -183,7 +182,25 @@ namespace winrt::TerminalApp::implementation
     // - True if UWP, false otherwise.
     bool TerminalWindow::IsUwp() const noexcept
     {
-        return _isUwp;
+        // use C++11 magic statics to make sure we only do this once.
+        // This won't change over the lifetime of the application
+
+        static const auto isUwp = []() {
+            // *** THIS IS A SINGLETON ***
+            auto result = false;
+
+            // GH#2455 - Make sure to try/catch calls to Application::Current,
+            // because that _won't_ be an instance of TerminalApp::App in the
+            // LocalTests
+            try
+            {
+                result = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsUwp();
+            }
+            CATCH_LOG();
+            return result;
+        }();
+
+        return isUwp;
     }
 
     // Method Description:
@@ -194,19 +211,25 @@ namespace winrt::TerminalApp::implementation
     // - True if elevated, false otherwise.
     bool TerminalWindow::IsElevated() const noexcept
     {
-        return _isElevated;
-    }
+        // use C++11 magic statics to make sure we only do this once.
+        // This won't change over the lifetime of the application
 
-    // Method Description:
-    // - Called by UWP context invoker to let us know that we may have to change some of our behaviors
-    //   for being a UWP
-    // Arguments:
-    // - <none> (sets to UWP = true, one way change)
-    // Return Value:
-    // - <none>
-    void TerminalWindow::RunAsUwp()
-    {
-        _isUwp = true;
+        static const auto isElevated = []() {
+            // *** THIS IS A SINGLETON ***
+            auto result = false;
+
+            // GH#2455 - Make sure to try/catch calls to Application::Current,
+            // because that _won't_ be an instance of TerminalApp::App in the
+            // LocalTests
+            try
+            {
+                result = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsElevated();
+            }
+            CATCH_LOG();
+            return result;
+        }();
+
+        return isElevated;
     }
 
     // Method Description:
@@ -221,13 +244,6 @@ namespace winrt::TerminalApp::implementation
     void TerminalWindow::Create()
     {
         _root->DialogPresenter(*this);
-
-        // In UWP mode, we cannot handle taking over the title bar for tabs,
-        // so this setting is overridden to false no matter what the preference is.
-        if (_isUwp)
-        {
-            _settings.GlobalSettings().ShowTabsInTitlebar(false);
-        }
 
         // Pay attention, that even if some command line arguments were parsed (like launch mode),
         // we will not use the startup actions from settings.
@@ -619,12 +635,10 @@ namespace winrt::TerminalApp::implementation
             //
             // We can't do that anymore, because this is now called _before_
             // we've initialized XAML for this thread. We can't start XAML till
-
             // we have an HWND, and we can't finish creating the window till we
             // know how big it should be.
             //
             // Instead, we'll just hardcode how big the titlebar should be. If
-
             // the titlebar / tab row ever change size, these numbers will have
             // to change accordingly.
 
@@ -950,9 +964,7 @@ namespace winrt::TerminalApp::implementation
         return _root ? _root->AlwaysOnTop() : false;
     }
 
-    ////////////////////////////////////////////////////////////////////////////
-
-    void TerminalWindow::SetSettingsStartupArgs(const std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions)
+    void TerminalWindow::SetSettingsStartupArgs(const std::vector<ActionAndArgs>& actions)
     {
         for (const auto& action : actions)
         {
@@ -1059,8 +1071,6 @@ namespace winrt::TerminalApp::implementation
         return winrt::to_hstring(_appArgs.GetExitMessage());
     }
 
-    ////////////////////////////////////////////////////////////////////////////
-
     hstring TerminalWindow::GetWindowLayoutJson(LaunchPosition position)
     {
         if (_root != nullptr)
@@ -1113,7 +1123,6 @@ namespace winrt::TerminalApp::implementation
             _root->SetNumberOfOpenWindows(num);
         }
     }
-    ////////////////////////////////////////////////////////////////////////////
 
     void TerminalWindow::IdentifyWindow()
     {
@@ -1220,7 +1229,6 @@ namespace winrt::TerminalApp::implementation
     {
         UpdateSettings(arg);
     }
-    ////////////////////////////////////////////////////////////////////////////
 
     bool TerminalWindow::ShouldImmediatelyHandoffToElevated()
     {
