@@ -126,7 +126,7 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
 
         const auto status = pScreen->_InitializeOutputStateMachine();
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             *ppScreen = pScreen;
         }
@@ -1562,7 +1562,7 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
         status = NTSTATUS_FROM_HRESULT(ResizeTraditional(coordNewScreenSize));
     }
 
-    if (NT_SUCCESS(status))
+    if (SUCCEEDED_NTSTATUS(status))
     {
         if (HasAccessibilityEventing())
         {
@@ -1901,7 +1901,7 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
                                                      GetPopupAttributes(),
                                                      Cursor::CURSOR_SMALL_SIZE,
                                                      ppsiNewScreenBuffer);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         // Update the alt buffer's cursor style, visibility, and position to match our own.
         auto& myCursor = GetTextBuffer().GetCursor();
@@ -2005,7 +2005,7 @@ void SCREEN_INFORMATION::_handleDeferredResize(SCREEN_INFORMATION& siMain)
 
     SCREEN_INFORMATION* psiNewAltBuffer;
     auto Status = _CreateAltBuffer(&psiNewAltBuffer);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         // if this is already an alternate buffer, we want to make the new
         // buffer the alt on our main buffer, not on ourself, because there

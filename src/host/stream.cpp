@@ -66,7 +66,7 @@ using Microsoft::Console::Interactivity::ServiceLocator;
                                     true, // unicode
                                     true); // stream
 
-        if (!NT_SUCCESS(Status))
+        if (FAILED_NTSTATUS(Status))
         {
             return Status;
         }

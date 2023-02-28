@@ -23,6 +23,22 @@ FontInfoDesired::FontInfoDesired(const FontInfo& fiFont) noexcept :
 {
 }
 
+void FontInfoDesired::SetCellSize(const CSSLengthPercentage& cellWidth, const CSSLengthPercentage& cellHeight) noexcept
+{
+    _cellWidth = cellWidth;
+    _cellHeight = cellHeight;
+}
+
+const CSSLengthPercentage& FontInfoDesired::GetCellWidth() const noexcept
+{
+    return _cellWidth;
+}
+
+const CSSLengthPercentage& FontInfoDesired::GetCellHeight() const noexcept
+{
+    return _cellHeight;
+}
+
 float FontInfoDesired::GetFontSize() const noexcept
 {
     return _fontSize;

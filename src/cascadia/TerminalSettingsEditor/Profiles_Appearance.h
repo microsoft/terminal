@@ -19,6 +19,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void CreateUnfocusedAppearance_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
         void DeleteUnfocusedAppearance_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
 
+        Editor::IHostedInWindow WindowRoot() { return _windowRoot; };
+
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
 
@@ -26,6 +28,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Microsoft::Terminal::Control::TermControl _previewControl;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _AppearanceViewModelChangedRevoker;
+        Editor::IHostedInWindow _windowRoot;
     };
 };
 
