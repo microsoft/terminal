@@ -1214,17 +1214,19 @@ void AppHost::_handleMoveContent(const winrt::Windows::Foundation::IInspectable&
         // The WindowPosition is in DIPs. We need to convert it to pixels.
         const til::point dragPositionInDips{ til::math::rounding, args.WindowPosition().Value() };
         const auto scale = _window->GetCurrentDpiScale();
-        
+
         const til::point dragPositionInPixels{
             til::math::rounding,
             dragPositionInDips.x * scale,
             dragPositionInDips.y * scale,
-      };
+        };
 
         // Fortunately, the window position is already in pixels.
         const til::rect windowBoundsInPixels{
             _window->GetWindowRect()
         };
+
+        // TODO!: adjust for the non-client bounds
 
         // Use the drag event as the new position, and the size of the actual window.
         winrt::Windows::Foundation::Rect rect{ static_cast<float>(dragPositionInPixels.x),

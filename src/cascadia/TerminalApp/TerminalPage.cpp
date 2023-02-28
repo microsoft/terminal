@@ -4504,6 +4504,10 @@ namespace winrt::TerminalApp::implementation
             // We're going to be asked for this.
             _stashedDraggedTab = tabImpl;
 
+            // TODO! Stash the offset from where we started the drag to the
+            // tab's origin. We'll use that offset in the future to help
+            // position the dropped window.
+
             // Into the DataPackage, let's stash our own window ID.
             const winrt::hstring id{ fmt::format(L"{}", _WindowProperties.WindowId()) };
 
