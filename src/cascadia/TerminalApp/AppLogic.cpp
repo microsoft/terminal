@@ -45,6 +45,17 @@ static const std::array settingsLoadErrorsLabels{
 };
 static_assert(settingsLoadErrorsLabels.size() == static_cast<size_t>(SettingsLoadErrors::ERRORS_SIZE));
 
+// Function Description:
+// - General-purpose helper for looking up a localized string for a
+//   warning/error. First will look for the given key in the provided map of
+//   keys->strings, where the values in the map are ResourceKeys. If it finds
+//   one, it will lookup the localized string from that ResourceKey.
+// - If it does not find a key, it'll return an empty string
+// Arguments:
+// - key: the value to use to look for a resource key in the given map
+// - map: A map of keys->Resource keys.
+// Return Value:
+// - the localized string for the given type, if it exists.
 template<typename T>
 winrt::hstring _GetMessageText(uint32_t index, const T& keys)
 {
@@ -66,7 +77,6 @@ static winrt::hstring _GetErrorText(SettingsLoadErrors error)
 {
     return _GetMessageText(static_cast<uint32_t>(error), settingsLoadErrorsLabels);
 }
-////////////////////////////////////////////////////////////////////////////////
 
 static constexpr std::wstring_view StartupTaskName = L"StartTerminalOnLoginTask";
 
@@ -118,9 +128,6 @@ namespace winrt::TerminalApp::implementation
         // cause you to chase down the rabbit hole of "why is App not
         // registered?" when it definitely is.
 
-        // The TerminalPage has to be constructed during our construction, to
-        // make sure that there's a terminal page for callers of
-        // SetTitleBarContent
         _isElevated = ::Microsoft::Console::Utils::IsElevated();
 
         _reloadSettings = std::make_shared<ThrottledFuncTrailing<>>(winrt::Windows::System::DispatcherQueue::GetForCurrentThread(), std::chrono::milliseconds(100), [weakSelf = get_weak()]() {
