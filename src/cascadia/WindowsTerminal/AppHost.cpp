@@ -389,7 +389,7 @@ void AppHost::Initialize()
     _revokers.ChangeMaximizeRequested = _windowLogic.ChangeMaximizeRequested(winrt::auto_revoke, { this, &AppHost::_ChangeMaximizeRequested });
 
     _window->MaximizeChanged([this](bool newMaximize) {
-        if (_appLogic)
+        if (_windowLogic)
         {
             _windowLogic.Maximized(newMaximize);
         }
@@ -814,14 +814,14 @@ void AppHost::_RaiseVisualBell(const winrt::Windows::Foundation::IInspectable&,
 // - <none>
 void AppHost::_WindowMouseWheeled(const til::point coord, const int32_t delta)
 {
-    if (_appLogic)
+    if (_windowLogic)
     {
         // Find all the elements that are underneath the mouse
-        auto elems = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::FindElementsInHostCoordinates(coord.to_winrt_point(), _windowLogic.GetRoot());
+        auto elems = Xaml::Media::VisualTreeHelper::FindElementsInHostCoordinates(coord.to_winrt_point(), _windowLogic.GetRoot());
         for (const auto& e : elems)
         {
             // If that element has implemented IMouseWheelListener, call OnMouseWheel on that element.
-            if (auto control{ e.try_as<winrt::Microsoft::Terminal::Control::IMouseWheelListener>() })
+            if (auto control{ e.try_as<Control::IMouseWheelListener>() })
             {
                 try
                 {
