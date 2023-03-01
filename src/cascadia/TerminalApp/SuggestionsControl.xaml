@@ -325,9 +325,6 @@
                              IsOpen="False"
                              PreferredPlacement="Right"
                              Subtitle="">
-                <!--                 <muxc:TeachingTip.IconSource>
-                    <muxc:SymbolIconSource Symbol="Refresh" />
-                </muxc:TeachingTip.IconSource>-->
                 <ScrollViewer HorizontalScrollBarVisibility="Hidden"
                               HorizontalScrollMode="Enabled">
                     <TextBlock x:Name="_toolTipContent" />

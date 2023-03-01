@@ -1016,6 +1016,7 @@ namespace winrt::TerminalApp::implementation
     void SuggestionsControl::_close()
     {
         Visibility(Visibility::Collapsed);
+        DescriptionTip().IsOpen(false);
 
         _PreviewActionHandlers(*this, nullptr);
 
