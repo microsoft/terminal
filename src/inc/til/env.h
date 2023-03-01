@@ -384,7 +384,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
         }
 
-        std::wstring expand_environment_strings(std::wstring input)
+        std::wstring expand_environment_strings(std::wstring_view input)
         {
             std::wstring expanded;
             expanded.reserve(input.size());
@@ -434,11 +434,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return expanded;
         }
 
-        void set_user_environment_var(std::wstring var, std::wstring value)
+        void set_user_environment_var(std::wstring_view var, std::wstring_view value)
         {
-            value = expand_environment_strings(value);
-            value = check_for_temp(var, value);
-            save_to_map(std::move(var), std::move(value));
+            auto value_string = expand_environment_strings(value);
+            value_string = check_for_temp(var, value);
+            save_to_map(std::wstring{ var }, std::move(value_string));
         }
 
         void concat_var(std::wstring var, std::wstring value)
