@@ -300,7 +300,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 for (auto& [keyName, varName] : til::details::vars::program_files_map)
                 {
                     auto value = til::details::wil_env::RegQueryValueExW<std::wstring, 256>(key.get(), keyName);
-                    set_user_environment_var(std::wstring{ varName }, value);
+                    set_user_environment_var(varName, value);
                 }
             }
         }
