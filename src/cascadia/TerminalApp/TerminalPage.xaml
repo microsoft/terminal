@@ -86,11 +86,11 @@
             ContentDialog a Row, I believe it's assigned Row 0 by default. So,
             when the dialog gets opened, the dialog seemingly causes a giant
             hole to appear in the body of the app.
-            
+
             Assigning all the dialogs to Row 2 (where the rest of the content
             is) makes the "hole" appear in the same space as the rest of the
             TabContent, fixing the issue.
-            
+
             Note that the actual content in a content dialog gets parented to
             the PopupRoot, so it actually always appeared in the correct place, it's
             just this weird hole that appeared in Row 0.
@@ -201,13 +201,6 @@
                                   VerticalAlignment="Top"
                                   PreviewKeyDown="_KeyDownHandler"
                                   Visibility="Collapsed" />
-        <!--<Popup x:Name="SuggestionsPopup"
-               HorizontalOffset="200"
-               IsOpen="False"
-               ShouldConstrainToRootBounds="False"
-               VerticalOffset="200">
-
-        </Popup>-->
 
         <!--
             A TeachingTip with IsLightDismissEnabled="True" will immediately

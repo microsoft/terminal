@@ -1038,7 +1038,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void SuggestionsControl::Direction(TerminalApp::SuggestionsDirection direction)
+    void SuggestionsControl::_setDirection(TerminalApp::SuggestionsDirection direction)
     {
         _direction = direction;
         if (_direction == TerminalApp::SuggestionsDirection::TopDown)
@@ -1052,14 +1052,20 @@ namespace winrt::TerminalApp::implementation
     }
 
     void SuggestionsControl::Anchor(Windows::Foundation::Point anchor,
-                                    Windows::Foundation::Size space)
+                                    Windows::Foundation::Size space,
+                                    float characterHeight)
     {
         _anchor = anchor;
         _space = space;
 
-        // TODO! do some clamping
-
         const til::size actualSize{ til::math::rounding, ActualWidth(), ActualHeight() };
+        // Is there space in the window below the cursor to open the menu downwards?
+        const bool canOpenDownwards = (_anchor.Y + characterHeight + actualSize.height) < space.Height;
+        _setDirection(canOpenDownwards ? TerminalApp::SuggestionsDirection::TopDown :
+                                         TerminalApp::SuggestionsDirection::BottomUp);
+        // Set the anchor below by a character height
+        _anchor.Y += canOpenDownwards ? characterHeight : 0;
+
         // First, position horizonally.
         //
         // We want to align the left edge of the text within the control to the
@@ -1071,25 +1077,20 @@ namespace winrt::TerminalApp::implementation
         const auto maxX = gsl::narrow_cast<int>(space.Width - actualSize.width);
         const auto clampedX = std::clamp(proposedX, 0, maxX);
 
-        // // Create a thickness for the new margins
+        // Create a thickness for the new margins
         auto newMargin = Windows::UI::Xaml::ThicknessHelper::FromLengths(clampedX, 0, 0, 0);
-
-        // // SuggestionsPopup().HorizontalOffset(clampedX);
-
-        // // Now, position vertically.
+        // Now, position vertically.
         if (_direction == TerminalApp::SuggestionsDirection::TopDown)
         {
-            //     // The control should open right below the cursor, with the list
-            //     // extending below. This is easy, we can just use the cursor as the
-            //     // origin (more or less)
-            //     // SuggestionsPopup().VerticalOffset(realCursorPos.y + characterSize.Height);
+            // The control should open right below the cursor, with the list
+            // extending below. This is easy, we can just use the cursor as the
+            // origin (more or less)
             newMargin.Top = (_anchor.Y);
         }
         else
         {
-            //     // Position at the cursor. The suggestions UI itself will maintian
-            //     // its own offset such that it's always above its origin
-            //     // SuggestionsPopup().VerticalOffset(realCursorPos.y);
+            // Position at the cursor. The suggestions UI itself will maintian
+            // its own offset such that it's always above its origin
             newMargin.Top = (_anchor.Y - actualSize.height);
         }
         Margin(newMargin);
