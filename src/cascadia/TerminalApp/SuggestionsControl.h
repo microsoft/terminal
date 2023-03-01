@@ -34,11 +34,10 @@ namespace winrt::TerminalApp::implementation
         void ScrollToBottom();
 
         Windows::UI::Xaml::FrameworkElement SelectedItem();
-        void Direction(TerminalApp::SuggestionsDirection direction);
 
         TerminalApp::SuggestionsMode Mode() const;
         void Mode(TerminalApp::SuggestionsMode mode);
-        void Anchor(Windows::Foundation::Point anchor, Windows::Foundation::Size space);
+        void Anchor(Windows::Foundation::Point anchor, Windows::Foundation::Size space, float characterHeight);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, NoMatchesText, _PropertyChangedHandlers);
@@ -103,6 +102,8 @@ namespace winrt::TerminalApp::implementation
         void _close();
 
         void _switchToMode();
+
+        void _setDirection(TerminalApp::SuggestionsDirection direction);
 
         std::wstring _getTrimmedInput();
 
