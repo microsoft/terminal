@@ -324,6 +324,7 @@
                              Title=""
                              IsOpen="False"
                              PreferredPlacement="Right"
+                             ShouldConstrainToRootBounds="False"
                              Subtitle="">
                 <ScrollViewer HorizontalScrollBarVisibility="Hidden"
                               HorizontalScrollMode="Enabled">
