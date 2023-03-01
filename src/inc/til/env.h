@@ -26,9 +26,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         //      https://docs.microsoft.com/en-us/windows/desktop/ProcThread/changing-environment-variables
         //
         // - Returns CSTR_LESS_THAN, CSTR_EQUAL or CSTR_GREATER_THAN
-        [[nodiscard]] int compare_string_ordinal(const std::wstring& lhs, const std::wstring& rhs) noexcept
+        [[nodiscard]] int compare_string_ordinal(const std::wstring_view& lhs, const std::wstring_view& rhs) noexcept
         {
-            int result = CompareStringOrdinal(lhs.c_str(), -1, rhs.c_str(), -1, 1);
+            int result = CompareStringOrdinal(lhs.data(),
+                                              ::base::saturated_cast<int>(lhs.size()),
+                                              rhs.data(),
+                                              ::base::saturated_cast<int>(rhs.size()),
+                                              TRUE);
             FAIL_FAST_LAST_ERROR_IF(!result);
             return result;
         }
@@ -43,53 +47,53 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         namespace vars
         {
-            static constexpr std::wstring_view system_root{ L"SystemRoot" };
-            static constexpr std::wstring_view system_drive{ L"SystemDrive" };
-            static constexpr std::wstring_view all_users_profile{ L"ALLUSERSPROFILE" };
-            static constexpr std::wstring_view public_var{ L"PUBLIC" };
-            static constexpr std::wstring_view program_data{ L"ProgramData" };
-            static constexpr std::wstring_view computer_name{ L"COMPUTERNAME" };
-            static constexpr std::wstring_view user_name{ L"USERNAME" };
-            static constexpr std::wstring_view user_domain{ L"USERDOMAIN" };
-            static constexpr std::wstring_view user_dns_domain{ L"USERDNSDOMAIN" };
-            static constexpr std::wstring_view home_drive{ L"HOMEDRIVE" };
-            static constexpr std::wstring_view home_share{ L"HOMESHARE" };
-            static constexpr std::wstring_view home_path{ L"HOMEPATH" };
-            static constexpr std::wstring_view user_profile{ L"USERPROFILE" };
-            static constexpr std::wstring_view app_data{ L"APPDATA" };
-            static constexpr std::wstring_view local_app_data{ L"LOCALAPPDATA" };
+            inline constexpr std::wstring_view system_root{ L"SystemRoot" };
+            inline constexpr std::wstring_view system_drive{ L"SystemDrive" };
+            inline constexpr std::wstring_view all_users_profile{ L"ALLUSERSPROFILE" };
+            inline constexpr std::wstring_view public_var{ L"PUBLIC" };
+            inline constexpr std::wstring_view program_data{ L"ProgramData" };
+            inline constexpr std::wstring_view computer_name{ L"COMPUTERNAME" };
+            inline constexpr std::wstring_view user_name{ L"USERNAME" };
+            inline constexpr std::wstring_view user_domain{ L"USERDOMAIN" };
+            inline constexpr std::wstring_view user_dns_domain{ L"USERDNSDOMAIN" };
+            inline constexpr std::wstring_view home_drive{ L"HOMEDRIVE" };
+            inline constexpr std::wstring_view home_share{ L"HOMESHARE" };
+            inline constexpr std::wstring_view home_path{ L"HOMEPATH" };
+            inline constexpr std::wstring_view user_profile{ L"USERPROFILE" };
+            inline constexpr std::wstring_view app_data{ L"APPDATA" };
+            inline constexpr std::wstring_view local_app_data{ L"LOCALAPPDATA" };
 
-            static constexpr std::wstring_view program_files{ L"ProgramFiles" };
-            static constexpr std::wstring_view program_files_x86{ L"ProgramFiles(x86)" };
-            static constexpr std::wstring_view program_files_arm64{ L"ProgramFiles(Arm)" };
-            static constexpr std::wstring_view program_w6432{ L"ProgramW6432" };
-            static constexpr std::wstring_view common_program_files{ L"CommonProgramFiles" };
-            static constexpr std::wstring_view common_program_files_x86{ L"CommonProgramFiles(x86)" };
-            static constexpr std::wstring_view common_program_files_arm64{ L"CommonProgramFiles(Arm)" };
-            static constexpr std::wstring_view common_program_w6432{ L"CommonProgramW6432" };
+            inline constexpr std::wstring_view program_files{ L"ProgramFiles" };
+            inline constexpr std::wstring_view program_files_x86{ L"ProgramFiles(x86)" };
+            inline constexpr std::wstring_view program_files_arm64{ L"ProgramFiles(Arm)" };
+            inline constexpr std::wstring_view program_w6432{ L"ProgramW6432" };
+            inline constexpr std::wstring_view common_program_files{ L"CommonProgramFiles" };
+            inline constexpr std::wstring_view common_program_files_x86{ L"CommonProgramFiles(x86)" };
+            inline constexpr std::wstring_view common_program_files_arm64{ L"CommonProgramFiles(Arm)" };
+            inline constexpr std::wstring_view common_program_w6432{ L"CommonProgramW6432" };
 
-            const std::map<std::wstring, std::wstring_view> program_files_map{
-                { L"ProgramFilesDir", program_files },
-                { L"CommonFilesDir", common_program_files },
+            const std::array program_files_map{
+                std::pair{ L"ProgramFilesDir", program_files },
+                std::pair{ L"CommonFilesDir", common_program_files },
 #ifdef _WIN64
 #ifdef _M_ARM64
-                { L"ProgramFilesDir (Arm)", program_files_arm64 },
-                { L"CommonFilesDir (Arm)", common_program_files_arm64 },
+                std::pair{ L"ProgramFilesDir (Arm)", program_files_arm64 },
+                std::pair{ L"CommonFilesDir (Arm)", common_program_files_arm64 },
 #endif
-                { L"ProgramFilesDir (x86)", program_files_x86 },
-                { L"CommonFilesDir (x86)", common_program_files_x86 },
-                { L"ProgramW6432Dir", program_w6432 },
-                { L"CommonW6432Dir", common_program_w6432 },
+                std::pair{ L"ProgramFilesDir (x86)", program_files_x86 },
+                std::pair{ L"CommonFilesDir (x86)", common_program_files_x86 },
+                std::pair{ L"ProgramW6432Dir", program_w6432 },
+                std::pair{ L"CommonW6432Dir", common_program_w6432 },
 #endif
             };
 
             namespace reg
             {
-                static constexpr std::wstring_view program_files_root{ LR"(Software\Microsoft\Windows\CurrentVersion)" };
-                static constexpr std::wstring_view system_env_var_root{ LR"(SYSTEM\CurrentControlSet\Control\Session Manager\Environment)" };
-                static constexpr std::wstring_view user_env_var_root{ LR"(Environment)" };
-                static constexpr std::wstring_view user_volatile_env_var_root{ LR"(Volatile Environment)" };
-                static constexpr std::wstring_view user_volatile_session_env_var_root_pattern{ LR"(Volatile Environment\{0:d})" };
+                inline constexpr std::wstring_view program_files_root{ LR"(Software\Microsoft\Windows\CurrentVersion)" };
+                inline constexpr std::wstring_view system_env_var_root{ LR"(SYSTEM\CurrentControlSet\Control\Session Manager\Environment)" };
+                inline constexpr std::wstring_view user_env_var_root{ LR"(Environment)" };
+                inline constexpr std::wstring_view user_volatile_env_var_root{ LR"(Volatile Environment)" };
+                inline constexpr std::wstring_view user_volatile_session_env_var_root_pattern{ LR"(Volatile Environment\{0:d})" };
             };
         };
 
@@ -295,7 +299,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             {
                 for (auto& [keyName, varName] : til::details::vars::program_files_map)
                 {
-                    auto value = til::details::wil_env::RegQueryValueExW<std::wstring, 256>(key.get(), keyName.c_str());
+                    auto value = til::details::wil_env::RegQueryValueExW<std::wstring, 256>(key.get(), keyName);
                     set_user_environment_var(std::wstring{ varName }, value);
                 }
             }
