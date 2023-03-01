@@ -3181,10 +3181,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core.ColorSelection(fg, bg, matchMode);
     }
 
+    // Returns the text cursor's position relative to our origin, in DIPs.
     Microsoft::Terminal::Core::Point TermControl::CursorPositionInDips()
     {
-        // const auto cursorPosition{ _core.CursorPosition() };
-
         const til::point cursorPos{ _core.CursorPosition() };
 
         const til::size fontSize{ til::math::flooring, CharacterDimensions() };
@@ -3198,7 +3197,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         const til::point clientCursorInDips{ til::math::flooring, clientCursorPos.x / scaleFactor, clientCursorPos.y / scaleFactor };
 
-        // + SwapChainPanel().Margin().Top
         auto padding{ GetPadding() };
         til::point relativeToOrigin{ til::math::flooring,
                                      clientCursorInDips.x + padding.Left,

@@ -2096,12 +2096,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::_terminalMenuChanged(std::wstring_view menuJson, int32_t replaceLength)
+    void ControlCore::_terminalMenuChanged(std::wstring_view menuJson,
+                                           int32_t replaceLength)
     {
-        // _updateMenu->Run(winrt::hstring{ menuJson }, replaceLength);
-        // _MenuChangedHandlers(*this, nullptr);
-
-        auto args = winrt::make_self<MenuChangedEventArgs>(winrt::hstring{ menuJson }, replaceLength);
+        auto args = winrt::make_self<MenuChangedEventArgs>(winrt::hstring{ menuJson },
+                                                           replaceLength);
         _MenuChangedHandlers(*this, *args);
     }
 

@@ -146,10 +146,6 @@ namespace winrt::TerminalApp::implementation
         const auto backup = _restorePreviewFuncs.empty();
 
         _ApplyToActiveControls([&](const auto& control) {
-            // // Stash a copy of the original opacity.
-            // auto originalOpacity{ control.BackgroundOpacity() };
-
-            // Apply the new opacity
             control.PreviewInput(args.Input());
 
             if (backup)
