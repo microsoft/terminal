@@ -437,7 +437,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         void set_user_environment_var(std::wstring_view var, std::wstring_view value)
         {
             auto valueString = expand_environment_strings(value);
-            valueString = check_for_temp(var, value);
+            valueString = check_for_temp(var, valueString);
             save_to_map(std::wstring{ var }, std::move(valueString));
         }
 
