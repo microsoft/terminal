@@ -41,7 +41,7 @@ namespace TerminalApp
         void SetActionMap(Microsoft.Terminal.Settings.Model.IActionMapView actionMap);
         void SelectNextItem(Boolean moveDown);
 
-        void Direction(SuggestionsDirection direction);
+        void Anchor(Windows.Foundation.Point anchor, Windows.Foundation.Size space, Single characterHeight);
 
         event Windows.Foundation.TypedEventHandler<SuggestionsControl, Microsoft.Terminal.Settings.Model.Command> DispatchCommandRequested;
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.Command> PreviewAction;

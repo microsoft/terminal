@@ -293,7 +293,7 @@ namespace winrt::TerminalApp::implementation
             sxnUi.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
                 if (SuggestionsUI().Visibility() == Visibility::Collapsed)
                 {
-                    SuggestionsPopup().IsOpen(false);
+                    // SuggestionsPopup().IsOpen(false);
                     _FocusActiveControl(nullptr, nullptr);
                 }
             });
@@ -4510,7 +4510,6 @@ namespace winrt::TerminalApp::implementation
         }
         if (commandsCollection.Size() == 0)
         {
-            SuggestionsPopup().IsOpen(false);
             SuggestionsUI().Visibility(Visibility::Collapsed);
 
             co_return;
@@ -4530,8 +4529,9 @@ namespace winrt::TerminalApp::implementation
         }
         const auto& sxnUi{ SuggestionsUI() };
 
-        // A handy local to know how much space the suggestions UI might take up.
-        static const Windows::Foundation::Size maxSize{ 300, 300 };
+        sxnUi.Mode(mode);
+        sxnUi.SetCommands(commandsCollection);
+        sxnUi.Visibility(commandsCollection.Size() > 0 ? Visibility::Visible : Visibility::Collapsed);
 
         const auto characterSize{ control.CharacterDimensions() };
         // This is in control-relative space. We'll need to convert it to page-relative space.
@@ -4539,64 +4539,9 @@ namespace winrt::TerminalApp::implementation
         const auto controlTransform = control.TransformToVisual(this->Root());
         const til::point controlOrigin{ til::math::rounding, controlTransform.TransformPoint(Windows::Foundation::Point{ 0, 0 }) };
         const til::point realCursorPos = controlOrigin + cursorPos;
-
-        const auto currentWindow = CoreWindow::GetForCurrentThread();
-        const auto currentWindowBounds = currentWindow.Bounds();
-        // Using CoreWindow::GetForCurrentThread().Bounds().{Width, Height}
-        // seemed like a dead end. Those were both just 1. I suspect that
-        // doesn't work for XAML Islands at all.
-        const til::point windowOrigin{ til::math::rounding, currentWindowBounds.X, currentWindowBounds.Y };
-        // Fortunately, we can just use the Actual{Width,Height} of ourselves.
         const til::size windowDimensions{ til::math::rounding, ActualWidth(), ActualHeight() };
 
-        // Is there space in the window below the cursor to open the menu downwards?
-        const bool canOpenDownwards = ((realCursorPos.y) + characterSize.Height + maxSize.Height) < windowDimensions.height;
-
-        const auto direction = canOpenDownwards ? TerminalApp::SuggestionsDirection::TopDown :
-                                                  TerminalApp::SuggestionsDirection::BottomUp;
-
-        sxnUi.Direction(direction);
-        sxnUi.Mode(mode);
-
-        SuggestionsPopup().IsOpen(true);
-        sxnUi.SetCommands(commandsCollection);
-        sxnUi.Visibility(commandsCollection.Size() > 0 ? Visibility::Visible : Visibility::Collapsed);
-
-        // Position the suggestions UI relative to the actual term control.
-        //
-        // This needs to be done _after_ it is set to be visible. If not, then
-        // the control won't have an Actual{Width, Height} yet.
-        const til::size actualSuggestionsSize{ til::math::rounding,
-                                               sxnUi.ActualWidth(),
-                                               sxnUi.ActualHeight() };
-
-        // First, position horizonally.
-        //
-        // We want to align the left edge of the text within the control to the
-        // cursor position. We'll need to scoot a little to the left, to align
-        // text with cursor
-        const auto proposedX = realCursorPos.x - 40;
-        // If the control is too wide to fit in the window, clamp it fit inside
-        // the window.
-        const auto maxX = gsl::narrow_cast<int>(windowDimensions.width - actualSuggestionsSize.width);
-        const auto clampedX = std::clamp(proposedX, 0, maxX);
-
-        SuggestionsPopup().HorizontalOffset(clampedX);
-
-        // Now, position vertically.
-        if (direction == TerminalApp::SuggestionsDirection::TopDown)
-        {
-            // The control should open right below the cursor, with the list
-            // extending below. This is easy, we can just use the cursor as the
-            // origin (more or less)
-            SuggestionsPopup().VerticalOffset(realCursorPos.y + characterSize.Height);
-        }
-        else
-        {
-            // Position above the cursor. We'll need to make sure
-            // (origin.y+sxnUi.Height) = cursorPos.y.
-            SuggestionsPopup().VerticalOffset(realCursorPos.y - actualSuggestionsSize.height);
-        }
+        sxnUi.Anchor(realCursorPos.to_winrt_point(), windowDimensions.to_winrt_size(), characterSize.Height);
     }
 
 }
