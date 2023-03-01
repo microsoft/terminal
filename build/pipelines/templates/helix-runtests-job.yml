@@ -14,8 +14,8 @@ parameters:
   platform: ''
   # if 'useBuildOutputFromBuildId' is set, we will default to using a build from this pipeline:
   useBuildOutputFromPipeline: $(System.DefinitionId)
-  openHelixTargetQueues: 'windows.10.amd64.client.open.reunion'
-  closedHelixTargetQueues: 'windows.10.amd64.client.reunion'
+  openHelixTargetQueues: 'windows.11.amd64.client.open.reunion'
+  closedHelixTargetQueues: 'windows.11.amd64.client.reunion'
 
 jobs:
 - job: ${{ parameters.name }}
