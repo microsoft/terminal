@@ -669,55 +669,49 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
             Model::SendInputArgs args{ winrt::hstring{ fmt::format(L"{}{}", backspaces, completionText.c_str()) } };
             Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, args };
-            // Model::Command command{};
+
             auto c = winrt::make_self<Command>();
             c->_name = listText;
             c->_ActionAndArgs = actionAndArgs;
             c->_Description = tooltipText;
 
-            // Try to assign a sensible icon
+            // Try to assign a sensible icon based on the result type. These are
+            // roughly chosen to align with the icons in
+            // https://github.com/PowerShell/PowerShellEditorServices/pull/1738
+            // as best as possible.
             if (const auto resultType{ JsonUtils::GetValueForKey<int>(element, "ResultType") })
             {
+                // PowerShell completion result -> Segoe Fluent icon value & name
                 switch (resultType)
                 {
-                case 1:
-                    // History             |    |e81c    History
+                case 1: // History          -> 0xe81c History
                     c->_iconPath = L"\ue81c";
                     break;
-                case 2:
-                    // Command             |    |ecaa   AppIconDefault
+                case 2: // Command          -> 0xecaa AppIconDefault
                     c->_iconPath = L"\uecaa";
                     break;
-                case 3:
-                    // ProviderItem        |    |e8e4   AlignLeft
+                case 3: // ProviderItem     -> 0xe8e4 AlignLeft
                     c->_iconPath = L"\ue8e4";
                     break;
-                case 4:
-                    // ProviderContainer   |    |e838    FolderOpen
+                case 4: // ProviderContainer  -> 0xe838 FolderOpen
                     c->_iconPath = L"\ue838";
                     break;
-                case 5:
-                    // Property            |    |e7c1 Flag
+                case 5: // Property         -> 0xe7c1 Flag
                     c->_iconPath = L"\ue7c1";
                     break;
-                case 6:
-                    // Method              |    |ecaa   AppIconDefault
+                case 6: // Method           -> 0xecaa AppIconDefault
                     c->_iconPath = L"\uecaa";
                     break;
-                case 7:
-                    // ParameterName       |    |e7c1 Flag
+                case 7: // ParameterName    -> 0xe7c1 Flag
                     c->_iconPath = L"\ue7c1";
                     break;
-                case 8:
-                    // ParameterValue      |    |f000   KnowledgeArticle
+                case 8: // ParameterValue   -> 0xf000 KnowledgeArticle
                     c->_iconPath = L"\uf000";
                     break;
-                case 10:
-                    // Namespace           |   |e943   Code
+                case 10: // Namespace       -> 0xe943 Code
                     c->_iconPath = L"\ue943";
                     break;
-                case 13:
-                    // DynamicKeyword      |   |e945   LightningBolt
+                case 13: // DynamicKeyword  -> 0xe945 LightningBolt
                     c->_iconPath = L"\ue945";
                     break;
                 }

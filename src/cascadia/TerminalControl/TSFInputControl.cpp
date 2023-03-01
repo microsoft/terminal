@@ -444,7 +444,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Canvas().Visibility(text.empty() ? Visibility::Collapsed : Visibility::Visible);
 
         _inputBuffer.clear();
-        // _editContext.NotifyFocusLeave();
         _activeTextStart = 0;
         _inComposition = false;
 
