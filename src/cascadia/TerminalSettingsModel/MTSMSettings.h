@@ -63,6 +63,7 @@ Author(s):
     X(bool, TrimPaste, "trimPaste", true)                                                                                                                                                             \
     X(bool, EnableColorSelection, "experimental.enableColorSelection", false)                                                                                                                         \
     X(winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry>, NewTabMenu, "newTabMenu", winrt::single_threaded_vector<Model::NewTabMenuEntry>({ Model::RemainingProfilesEntry{} })) \
+    X(bool, AllowHeadless, "compatibility.allowHeadless", true)                                                                                                                                       \
     X(bool, IsolatedMode, "compatibility.isolatedMode", false)
 
 #define MTSM_PROFILE_SETTINGS(X)                                                                                                                               \
