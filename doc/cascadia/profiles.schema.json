@@ -1822,7 +1822,7 @@
         "name": {
           "type": "string",
           "description": "The name of the theme. This will be displayed in the settings UI.",
-          "not": { 
+          "not": {
             "enum": [ "light", "dark", "system" ]
           }
         },
@@ -2090,6 +2090,11 @@
         "focusFollowMouse": {
           "default": false,
           "description": "When set to true, the terminal will focus the pane on mouse hover.",
+          "type": "boolean"
+        },
+        "compatibility.isolatedMode": {
+          "default": false,
+          "description": "When set to true, Terminal windows will not be able to interact with each other (including global hotkeys, tab drag/drop, running commandlines in existing windows, etc.). This is a compatibility escape hatch for users who are running into certain windowing issues.",
           "type": "boolean"
         },
         "copyFormatting": {

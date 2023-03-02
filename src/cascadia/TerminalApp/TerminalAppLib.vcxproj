@@ -144,6 +144,9 @@
     <ClInclude Include="TerminalWindow.h">
       <DependentUpon>TerminalWindow.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="SettingsLoadEventArgs.h">
+      <DependentUpon>TerminalWindow.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="Toast.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
