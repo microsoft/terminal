@@ -65,20 +65,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (_uiaEngine)
         {
+            // There's a potential race here where we've removed the TermControl
+            // from the UI tree, but the UIA engine is in the middle of a paint,
+            // and the UIA engine will try to dispatch to the
+            // TermControlAutomationPeer, which (is now)/(will very soon be) gone.
+            //
+            // To alleviate, make sure to disable the UIA engine and remove it,
+            // and ALSO disable the renderer. Core.Detach will take care of the
+            // WaitForPaintCompletionAndDisable (which will stop the renderer
+            // after all current engines are done painting).
+            //
+            // Simply disabling the UIA engine is not enough, because it's
+            // possible that it had already started presenting here.
             LOG_IF_FAILED(_uiaEngine->Disable());
+            _core->DetachUiaEngine(_uiaEngine.get());
         }
-
         _core->Detach();
     }
 
     void ControlInteractivity::Reparent(const Microsoft::Terminal::Control::IKeyBindings& keyBindings)
     {
         _core->Reparent(keyBindings);
-
-        /*if (_uiaEngine)
-        {
-            _uiaEngine->Reparent();
-        }*/
     }
 
     // Method Description:

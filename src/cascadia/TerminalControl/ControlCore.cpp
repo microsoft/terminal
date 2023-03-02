@@ -231,6 +231,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::Detach()
     {
+        // Disable the renderer, so that it doesn't try to start any new frames
+        // for our engines while we're not attached to anything.
+        _renderer->WaitForPaintCompletionAndDisable(INFINITE);
+
         _tsfTryRedrawCanvas.reset();
         _updatePatternLocations.reset();
         _updateScrollBar.reset();
@@ -243,6 +247,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto actualNewSize = _actualFont.GetSize();
         // Bubble this up, so our new control knows how big we want the font.
         _FontSizeChangedHandlers(actualNewSize.width, actualNewSize.height, true);
+
+        // Turn the rendering back on now that we're ready to go.
+        _renderer->EnablePainting();
         _AttachedHandlers(*this, nullptr);
     }
 
