@@ -55,6 +55,8 @@ GETMOUSEHOVERTIME
 Hashtable
 HIGHCONTRASTON
 HIGHCONTRASTW
+hinternet
+HINTERNET
 hotkeys
 href
 hrgn
@@ -215,6 +217,8 @@ Viewbox
 virtualalloc
 wcsstr
 wcstoui
+WDJ
+winhttp
 winmain
 winsta
 winstamin
@@ -222,6 +226,7 @@ wmemcmp
 wpc
 WSF
 wsregex
+WWH
 wwinmain
 xchg
 XDocument

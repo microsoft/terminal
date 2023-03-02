@@ -324,11 +324,9 @@ Json::Value Profile::ToJson() const
     MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_TO_JSON)
 #undef PROFILE_SETTINGS_TO_JSON
 
-    // Font settings
-    const auto fontInfoImpl = winrt::get_self<FontConfig>(_FontInfo);
-    if (fontInfoImpl->HasAnyOptionSet())
+    if (auto fontJSON = winrt::get_self<FontConfig>(_FontInfo)->ToJson(); !fontJSON.empty())
     {
-        json[JsonKey(FontInfoKey)] = winrt::get_self<FontConfig>(_FontInfo)->ToJson();
+        json[JsonKey(FontInfoKey)] = std::move(fontJSON);
     }
 
     if (_UnfocusedAppearance)

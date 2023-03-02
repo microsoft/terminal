@@ -6,7 +6,6 @@
 #include "_stream.h"
 #include "stream.h"
 
-#include "dbcs.h"
 #include "handle.h"
 #include "misc.h"
 #include "readDataRaw.hpp"
@@ -67,7 +66,7 @@ using Microsoft::Console::Interactivity::ServiceLocator;
                                     true, // unicode
                                     true); // stream
 
-        if (!NT_SUCCESS(Status))
+        if (FAILED_NTSTATUS(Status))
         {
             return Status;
         }
@@ -285,151 +284,38 @@ til::CoordType RetrieveNumberOfSpaces(_In_ til::CoordType sOriginalCursorPositio
                                                 size_t& bytesRead,
                                                 INPUT_READ_HANDLE_DATA& readHandleState,
                                                 const bool unicode)
+try
 {
-    // TODO: MSFT: 18047766 - Correct this method to not play byte counting games.
-    auto fAddDbcsLead = FALSE;
-    size_t NumToWrite = 0;
-    size_t NumToBytes = 0;
-    auto pBuffer = reinterpret_cast<wchar_t*>(buffer.data());
-    auto bufferRemaining = buffer.size_bytes();
     bytesRead = 0;
 
-    if (buffer.size_bytes() < sizeof(wchar_t))
-    {
-        return STATUS_BUFFER_TOO_SMALL;
-    }
-
-    const auto pending = readHandleState.GetPendingInput();
-    auto pendingBytes = pending.size() * sizeof(wchar_t);
-    auto Tmp = pending.cbegin();
+    auto pending = readHandleState.GetPendingInput();
 
     if (readHandleState.IsMultilineInput())
     {
-        if (!unicode)
+        const auto idx = pending.find(UNICODE_LINEFEED);
+        if (idx != decltype(pending)::npos)
         {
-            if (inputBuffer.IsReadPartialByteSequenceAvailable())
-            {
-                auto event = inputBuffer.FetchReadPartialByteSequence(false);
-                const auto pKeyEvent = static_cast<const KeyEvent* const>(event.get());
-                *pBuffer = static_cast<char>(pKeyEvent->GetCharData());
-                ++pBuffer;
-                bufferRemaining -= sizeof(wchar_t);
-                pendingBytes -= sizeof(wchar_t);
-                fAddDbcsLead = TRUE;
-            }
-
-            if (pendingBytes == 0 || bufferRemaining == 0)
-            {
-                readHandleState.CompletePending();
-                bytesRead = 1;
-                return STATUS_SUCCESS;
-            }
-            else
-            {
-                for (NumToWrite = 0, Tmp = pending.cbegin(), NumToBytes = 0;
-                     NumToBytes < pendingBytes &&
-                     NumToBytes < bufferRemaining / sizeof(wchar_t) &&
-                     *Tmp != UNICODE_LINEFEED;
-                     Tmp++, NumToWrite += sizeof(wchar_t))
-                {
-                    NumToBytes += IsGlyphFullWidth(*Tmp) ? 2 : 1;
-                }
-            }
-        }
-
-        NumToWrite = 0;
-        Tmp = pending.cbegin();
-        while (NumToWrite < pendingBytes &&
-               *Tmp != UNICODE_LINEFEED)
-        {
-            ++Tmp;
-            NumToWrite += sizeof(wchar_t);
-        }
-
-        NumToWrite += sizeof(wchar_t);
-        if (NumToWrite > bufferRemaining)
-        {
-            NumToWrite = bufferRemaining;
+            // +1 to include the newline.
+            pending = pending.substr(0, idx + 1);
         }
     }
-    else
-    {
-        if (!unicode)
-        {
-            if (inputBuffer.IsReadPartialByteSequenceAvailable())
-            {
-                auto event = inputBuffer.FetchReadPartialByteSequence(false);
-                const auto pKeyEvent = static_cast<const KeyEvent* const>(event.get());
-                *pBuffer = static_cast<char>(pKeyEvent->GetCharData());
-                ++pBuffer;
-                bufferRemaining -= sizeof(wchar_t);
-                pendingBytes -= sizeof(wchar_t);
-                fAddDbcsLead = TRUE;
-            }
 
-            if (pendingBytes == 0)
-            {
-                readHandleState.CompletePending();
-                bytesRead = 1;
-                return STATUS_SUCCESS;
-            }
-            else
-            {
-                for (NumToWrite = 0, Tmp = pending.cbegin(), NumToBytes = 0;
-                     NumToBytes < pendingBytes && NumToBytes < bufferRemaining / sizeof(wchar_t);
-                     Tmp++, NumToWrite += sizeof(wchar_t))
-                {
-                    NumToBytes += IsGlyphFullWidth(*Tmp) ? 2 : 1;
-                }
-            }
-        }
+    std::span writer{ buffer };
+    inputBuffer.Consume(unicode, pending, writer);
 
-        NumToWrite = (bufferRemaining < pendingBytes) ? bufferRemaining : pendingBytes;
-    }
-
-    memmove(pBuffer, pending.data(), NumToWrite);
-    pendingBytes -= NumToWrite;
-    if (pendingBytes != 0)
-    {
-        std::wstring_view remainingPending{ pending.data() + (NumToWrite / sizeof(wchar_t)), pendingBytes / sizeof(wchar_t) };
-        readHandleState.UpdatePending(remainingPending);
-    }
-    else
+    if (pending.empty())
     {
         readHandleState.CompletePending();
     }
-
-    if (!unicode)
+    else
     {
-        // if ansi, translate string.  we allocated the capture buffer
-        // large enough to handle the translated string.
-        auto tempBuffer = std::make_unique<char[]>(NumToBytes);
-        std::unique_ptr<IInputEvent> partialEvent;
-
-        NumToWrite = TranslateUnicodeToOem(pBuffer,
-                                           gsl::narrow<ULONG>(NumToWrite / sizeof(wchar_t)),
-                                           tempBuffer.get(),
-                                           gsl::narrow<ULONG>(NumToBytes),
-                                           partialEvent);
-        if (partialEvent.get())
-        {
-            inputBuffer.StoreReadPartialByteSequence(std::move(partialEvent));
-        }
-
-        // clang-format off
-#pragma prefast(suppress: __WARNING_POTENTIAL_BUFFER_OVERFLOW_HIGH_PRIORITY, "This access is fine but prefast can't follow it, evidently")
-        // clang-format on
-        memmove(pBuffer, tempBuffer.get(), NumToWrite);
-
-        if (fAddDbcsLead)
-        {
-            NumToWrite++;
-        }
+        readHandleState.UpdatePending(pending);
     }
 
-    bytesRead = NumToWrite;
+    bytesRead = buffer.size() - writer.size();
     return STATUS_SUCCESS;
 }
+NT_CATCH_RETURN()
 
 // Routine Description:
 // - read in characters until the buffer is full or return is read.
@@ -478,7 +364,7 @@ til::CoordType RetrieveNumberOfSpaces(_In_ til::CoordType sOriginalCursorPositio
                                                                  &readHandleState, // pInputReadHandleData
                                                                  screenInfo, // pScreenInfo
                                                                  buffer.size_bytes(), // UserBufferSize
-                                                                 reinterpret_cast<wchar_t*>(buffer.data()), // UserBuffer
+                                                                 buffer.data(), // UserBuffer
                                                                  ctrlWakeupMask, // CtrlWakeupMask
                                                                  exeName, // exe name
                                                                  initialData,
@@ -521,140 +407,51 @@ til::CoordType RetrieveNumberOfSpaces(_In_ til::CoordType sOriginalCursorPositio
 // populated.
 // - STATUS_SUCCESS on success
 // - Other NTSTATUS codes as necessary
-[[nodiscard]] static NTSTATUS _ReadCharacterInput(InputBuffer& inputBuffer,
-                                                  std::span<char> buffer,
-                                                  size_t& bytesRead,
-                                                  INPUT_READ_HANDLE_DATA& readHandleState,
-                                                  const bool unicode,
-                                                  std::unique_ptr<IWaitRoutine>& waiter)
+[[nodiscard]] NTSTATUS ReadCharacterInput(InputBuffer& inputBuffer,
+                                          std::span<char> buffer,
+                                          size_t& bytesRead,
+                                          INPUT_READ_HANDLE_DATA& readHandleState,
+                                          const bool unicode)
+try
 {
-    size_t NumToWrite = 0;
-    auto addDbcsLead = false;
-    auto Status = STATUS_SUCCESS;
-    auto pBuffer = reinterpret_cast<wchar_t*>(buffer.data());
-    auto bufferRemaining = buffer.size_bytes();
+    UNREFERENCED_PARAMETER(readHandleState);
+
     bytesRead = 0;
 
-    if (buffer.size() < 1)
+    const auto charSize = unicode ? sizeof(wchar_t) : sizeof(char);
+    std::span writer{ buffer };
+
+    if (writer.size() < charSize)
     {
         return STATUS_BUFFER_TOO_SMALL;
     }
 
-    if (bytesRead < bufferRemaining)
+    inputBuffer.ConsumeCached(unicode, writer);
+
+    // We don't need to wait for input if `ConsumeCached` read something already, which is
+    // indicated by the writer having been advanced (= it's shorter than the original buffer).
+    auto wait = writer.size() == buffer.size();
+    auto status = STATUS_SUCCESS;
+
+    while (writer.size() >= charSize)
     {
-        auto pwchBufferTmp = pBuffer;
-
-        NumToWrite = 0;
-
-        if (!unicode && inputBuffer.IsReadPartialByteSequenceAvailable())
+        wchar_t wch;
+        status = GetChar(&inputBuffer, &wch, wait, nullptr, nullptr, nullptr);
+        if (!NT_SUCCESS(status))
         {
-            auto event = inputBuffer.FetchReadPartialByteSequence(false);
-            const auto pKeyEvent = static_cast<const KeyEvent* const>(event.get());
-            *pBuffer = static_cast<char>(pKeyEvent->GetCharData());
-            ++pBuffer;
-            bufferRemaining -= sizeof(wchar_t);
-            addDbcsLead = true;
-
-            if (bufferRemaining == 0)
-            {
-                bytesRead = 1;
-                return STATUS_SUCCESS;
-            }
-        }
-        else
-        {
-            Status = GetChar(&inputBuffer,
-                             pBuffer,
-                             true,
-                             nullptr,
-                             nullptr,
-                             nullptr);
+            break;
         }
 
-        if (Status == CONSOLE_STATUS_WAIT)
-        {
-            waiter = std::make_unique<RAW_READ_DATA>(&inputBuffer,
-                                                     &readHandleState,
-                                                     gsl::narrow<ULONG>(buffer.size_bytes()),
-                                                     reinterpret_cast<wchar_t*>(buffer.data()));
-        }
+        std::wstring_view wchView{ &wch, 1 };
+        inputBuffer.Consume(unicode, wchView, writer);
 
-        if (!NT_SUCCESS(Status))
-        {
-            bytesRead = 0;
-            return Status;
-        }
-
-        if (!addDbcsLead)
-        {
-            bytesRead += IsGlyphFullWidth(*pBuffer) ? 2 : 1;
-            NumToWrite += sizeof(wchar_t);
-            pBuffer++;
-        }
-
-        while (NumToWrite < static_cast<ULONG>(bufferRemaining))
-        {
-            Status = GetChar(&inputBuffer,
-                             pBuffer,
-                             false,
-                             nullptr,
-                             nullptr,
-                             nullptr);
-            if (!NT_SUCCESS(Status))
-            {
-                break;
-            }
-            bytesRead += IsGlyphFullWidth(*pBuffer) ? 2 : 1;
-            NumToWrite += sizeof(wchar_t);
-            pBuffer++;
-        }
-
-        // if ansi, translate string.  we allocated the capture buffer large enough to handle the translated string.
-        if (!unicode)
-        {
-            std::unique_ptr<char[]> tempBuffer;
-            try
-            {
-                tempBuffer = std::make_unique<char[]>(bytesRead);
-            }
-            catch (...)
-            {
-                return STATUS_NO_MEMORY;
-            }
-
-            pBuffer = pwchBufferTmp;
-            std::unique_ptr<IInputEvent> partialEvent;
-
-            bytesRead = TranslateUnicodeToOem(pBuffer,
-                                              gsl::narrow<ULONG>(NumToWrite / sizeof(wchar_t)),
-                                              tempBuffer.get(),
-                                              gsl::narrow<ULONG>(bytesRead),
-                                              partialEvent);
-
-            if (partialEvent.get())
-            {
-                inputBuffer.StoreReadPartialByteSequence(std::move(partialEvent));
-            }
-
-#pragma prefast(suppress : 26053 26015, "PREfast claims read overflow. *pReadByteCount is the exact size of tempBuffer as allocated above.")
-            memmove(pBuffer, tempBuffer.get(), bytesRead);
-
-            if (addDbcsLead)
-            {
-                ++bytesRead;
-            }
-        }
-        else
-        {
-            // We always return the byte count for A & W modes, so in
-            // the Unicode case where we didn't translate back, set
-            // the return to the byte count that we assembled while
-            // pulling characters from the internal buffers.
-            bytesRead = NumToWrite;
-        }
+        wait = false;
     }
-    return STATUS_SUCCESS;
+
+    bytesRead = buffer.size() - writer.size();
+    return status;
 }
+NT_CATCH_RETURN()
 
 // Routine Description:
 // - This routine reads in characters for stream input and does the
@@ -730,12 +527,16 @@ til::CoordType RetrieveNumberOfSpaces(_In_ til::CoordType sOriginalCursorPositio
         }
         else
         {
-            return _ReadCharacterInput(inputBuffer,
-                                       buffer,
-                                       bytesRead,
-                                       readHandleState,
-                                       unicode,
-                                       waiter);
+            const auto status = ReadCharacterInput(inputBuffer,
+                                                   buffer,
+                                                   bytesRead,
+                                                   readHandleState,
+                                                   unicode);
+            if (status == CONSOLE_STATUS_WAIT)
+            {
+                waiter = std::make_unique<RAW_READ_DATA>(&inputBuffer, &readHandleState, gsl::narrow<ULONG>(buffer.size()), reinterpret_cast<wchar_t*>(buffer.data()));
+            }
+            return status;
         }
     }
     CATCH_RETURN();

@@ -1039,7 +1039,7 @@ winrt::fire_and_forget AppHost::_SaveWindowLayoutsRepeat()
     co_await _SaveWindowLayouts();
 
     // Don't need to save too frequently.
-    co_await 30s;
+    co_await winrt::resume_after(30s);
 
     // As long as we are supposed to keep saving, request another save.
     // This will be delayed by the throttler so that at most one save happens

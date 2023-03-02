@@ -24,6 +24,13 @@
       "pattern": "^(-?\\d+)?(,\\s?(-?\\d+)?)?$",
       "type": "string"
     },
+    "CSSLengthPercentage": {
+      "pattern": "^[+-]?\\d+(?:\\.\\d+)?(?:%|ch|pt|px)?$",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "DynamicProfileSource": {
       "enum": [
         "Windows.Terminal.Wsl",
@@ -314,6 +321,14 @@
             }
           },
           "additionalProperties": false
+        },
+        "cellWidth": {
+          "$ref": "#/$defs/CSSLengthPercentage",
+          "description": "Override the width of the terminal's cells. The override works similar to CSS' letter-spacing. It defaults to the natural glyph advance width of the primary font rounded to the nearest pixel."
+        },
+        "cellHeight": {
+          "$ref": "#/$defs/CSSLengthPercentage",
+          "description": "Override the height of the terminal's cells. The override works similar to CSS' line-height. Defaults to the sum of the natural glyph ascend, descend and line-gap of the primary font rounded to the nearest pixel. The default is usually quite close to setting this to 1.2."
         }
       },
       "type": "object"

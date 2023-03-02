@@ -1248,17 +1248,27 @@ namespace winrt::TerminalApp::implementation
         if (connectionType == TerminalConnection::AzureConnection::ConnectionType() &&
             TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
         {
-            // TODO GH#4661: Replace this with directly using the AzCon when our VT is better
             std::filesystem::path azBridgePath{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
             azBridgePath.replace_filename(L"TerminalAzBridge.exe");
-            className = winrt::name_of<TerminalConnection::ConptyConnection>();
-            connectionSettings = TerminalConnection::ConptyConnection::CreateSettings(azBridgePath.wstring(),
-                                                                                      L".",
-                                                                                      L"Azure",
-                                                                                      nullptr,
-                                                                                      settings.InitialRows(),
-                                                                                      settings.InitialCols(),
-                                                                                      winrt::guid());
+
+            if constexpr (Feature_AzureConnectionInProc::IsEnabled())
+            {
+                className = winrt::name_of<TerminalConnection::AzureConnection>();
+                // AzureConnection doesn't have any connection-specific config
+                // currently. Just use an empty blob.
+                connectionSettings = Windows::Foundation::Collections::ValueSet{};
+            }
+            else
+            {
+                className = winrt::name_of<TerminalConnection::ConptyConnection>();
+                connectionSettings = TerminalConnection::ConptyConnection::CreateSettings(azBridgePath.wstring(),
+                                                                                          L".",
+                                                                                          L"Azure",
+                                                                                          nullptr,
+                                                                                          settings.InitialRows(),
+                                                                                          settings.InitialCols(),
+                                                                                          winrt::guid());
+            }
 
             if constexpr (Feature_VtPassthroughMode::IsEnabled())
             {
@@ -2702,7 +2712,7 @@ namespace winrt::TerminalApp::implementation
 
         // If we need to create a new connection, do that now, from the settings
         // we just built.
-        const auto& connection = existingConnection ? existingConnection : _CreateConnectionFromInfo(connectionInfo);
+        auto connection = existingConnection ? existingConnection : _CreateConnectionFromInfo(connectionInfo);
 
         // Finalize some defterm properties
         if (existingConnection)
