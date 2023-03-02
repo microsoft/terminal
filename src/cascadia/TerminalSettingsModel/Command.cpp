@@ -731,7 +731,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     // Method description:
-    // * Comvert the list of recent commands into a list of sendInput actions to
+    // * Convert the list of recent commands into a list of sendInput actions to
     //   send those commands.
     // * We'll give each command a "history" icon.
     // * If directories is true, we'll prepend "cd " to each command, so that

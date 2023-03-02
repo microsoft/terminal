@@ -1749,7 +1749,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return hstring{ str };
     }
 
-    // Get all of our recent commmands. This will only really work if the user has enabled shell integration.
+    // Get all of our recent commands. This will only really work if the user has enabled shell integration.
     Control::CommandHistoryContext ControlCore::CommandHistory() const
     {
         auto terminalLock = _terminal->LockForWriting();
