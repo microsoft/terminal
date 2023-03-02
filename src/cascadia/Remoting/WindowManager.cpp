@@ -106,18 +106,15 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             // in isolated mode.
 
             shouldCreateWindow = false;
-            std::optional<uint64_t> givenID;
-            winrt::hstring givenName{};
-
             // Send the commandline over to the monarch process
-            if (_proposeToMonarch(args, givenID, givenName))
+            if (_proposeToMonarch(args))
             {
                 // If that succeeded, then we don't need to make a new window.
                 // Our job is done. Either the monarch is going to run the
                 // commandline in an existing window, or a new one, but either way,
                 // this process doesn't need to make a new window.
 
-                return *winrt::make_self<ProposeCommandlineResult>(shouldCreateWindow);
+                return winrt::make<ProposeCommandlineResult>(shouldCreateWindow);
             }
             // Otherwise, we'll try to handle this ourselves.
         }
@@ -153,7 +150,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 // either.
                 shouldCreateWindow = false;
 
-                return *winrt::make_self<ProposeCommandlineResult>(shouldCreateWindow);
+                return winrt::make<ProposeCommandlineResult>(shouldCreateWindow);
             }
             else
             {
@@ -214,9 +211,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - Helper attempting to call to the monarch multiple times. If the monarch
     //   fails to respond, or we encounter any sort of error, we'll try again
     //   until we find one, or decisively determine there isn't one.
-    bool WindowManager::_proposeToMonarch(const Remoting::CommandlineArgs& args,
-                                          std::optional<uint64_t>& /*givenID*/,
-                                          winrt::hstring& /*givenName*/)
+    bool WindowManager::_proposeToMonarch(const Remoting::CommandlineArgs& args)
     {
         // these two errors are Win32 errors, convert them to HRESULTS so we can actually compare below.
         static constexpr auto RPC_SERVER_UNAVAILABLE_HR = HRESULT_FROM_WIN32(RPC_S_SERVER_UNAVAILABLE);

@@ -688,6 +688,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             case WindowingBehaviorUseName:
                 windowID = _lookupPeasantIdForName(targetWindowName);
                 break;
+            case WindowingBehaviorUseNone:
+                // This should be impossible. The if statement above should have
+                // prevented WindowingBehaviorUseNone from falling in here.
+                // Explode, because this is a programming error.
+                THROW_HR(E_UNEXPECTED);
             default:
                 windowID = ::base::saturated_cast<uint64_t>(targetWindow);
                 break;

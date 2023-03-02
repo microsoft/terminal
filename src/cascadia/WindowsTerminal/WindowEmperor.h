@@ -5,7 +5,7 @@ Class Name:
 - WindowEmperor.h
 
 Abstract:
-- The WindowEmperor is our new class for managing the single Terminal process
+- The WindowEmperor is our class for managing the single Terminal process
   with all our windows. It will be responsible for handling the commandline
   arguments. It will initially try to find another terminal process to
   communicate with. If it does, it'll hand off to the existing process.
@@ -55,8 +55,8 @@ private:
     void _quitAllRequested(const winrt::Windows::Foundation::IInspectable&,
                            const winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs&);
 
-    winrt::Windows::Foundation::IAsyncAction _SaveWindowLayouts();
-    winrt::fire_and_forget _SaveWindowLayoutsRepeat();
+    winrt::Windows::Foundation::IAsyncAction _saveWindowLayouts();
+    winrt::fire_and_forget _saveWindowLayoutsRepeat();
 
     void _createMessageWindow();
 

@@ -10,6 +10,7 @@
 
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Control;
+using namespace winrt::Windows::Foundation::Collections;
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -118,7 +119,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     // Method Description:
     // - Retrieves a map of actions that can be bound to a key
-    Windows::Foundation::Collections::IMapView<hstring, Model::ActionAndArgs> ActionMap::AvailableActions()
+    IMapView<hstring, Model::ActionAndArgs> ActionMap::AvailableActions()
     {
         if (!_AvailableActionsCache)
         {
@@ -172,7 +173,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - Retrieves a map of command names to the commands themselves
     // - These commands should not be modified directly because they may result in
     //    an invalid state for the `ActionMap`
-    Windows::Foundation::Collections::IMapView<hstring, Model::Command> ActionMap::NameMap()
+    IMapView<hstring, Model::Command> ActionMap::NameMap()
     {
         if (!_NameMapCache)
         {
@@ -283,7 +284,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return cumulativeActions;
     }
 
-    Windows::Foundation::Collections::IMapView<Control::KeyChord, Model::Command> ActionMap::GlobalHotkeys()
+    IMapView<Control::KeyChord, Model::Command> ActionMap::GlobalHotkeys()
     {
         if (!_GlobalHotkeysCache)
         {
@@ -292,7 +293,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return _GlobalHotkeysCache.GetView();
     }
 
-    Windows::Foundation::Collections::IMapView<Control::KeyChord, Model::Command> ActionMap::KeyBindings()
+    IMapView<Control::KeyChord, Model::Command> ActionMap::KeyBindings()
     {
         if (!_KeyBindingMapCache)
         {
@@ -887,8 +888,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return leftName.compare(rightName) < 0;
     }
 
-    void ActionMap::ExpandCommands(const winrt::Windows::Foundation::Collections::IVectorView<Model::Profile>& profiles,
-                                   const winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, Model::ColorScheme>& schemes)
+    void ActionMap::ExpandCommands(const IVectorView<Model::Profile>& profiles,
+                                   const IMapView<winrt::hstring, Model::ColorScheme>& schemes)
     {
         // TODO in review - It's a little weird to stash the expanded commands
         // into a separate map. Is it possible to just replace the name map with
@@ -925,7 +926,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         _ExpandedMapCache = copyOfCommands;
     }
-    Windows::Foundation::Collections::IMapView<hstring, Model::Command> ActionMap::ExpandedCommands()
+    IMapView<hstring, Model::Command> ActionMap::ExpandedCommands()
     {
         return _ExpandedMapCache.GetView();
     }
