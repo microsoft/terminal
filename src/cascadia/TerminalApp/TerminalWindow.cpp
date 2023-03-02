@@ -122,22 +122,21 @@ namespace winrt::TerminalApp::implementation
         _manager{ manager },
         _initialLoadResult{ settingsLoadedResult }
     {
+        // The TerminalPage has to ABSOLUTELY NOT BE constructed during our
+        // construction. We can't do ANY xaml till Initialize() is called.
+
         // For your own sanity, it's better to do setup outside the ctor.
         // If you do any setup in the ctor that ends up throwing an exception,
         // then it might look like App just failed to activate, which will
         // cause you to chase down the rabbit hole of "why is App not
         // registered?" when it definitely is.
-
-        // The TerminalPage has to be constructed during our construction, to
-        // make sure that there's a terminal page for callers of
-        // SetTitleBarContent
-        _isElevated = ::Microsoft::Console::Utils::IsElevated();
     }
 
     // Method Description:
     // - Implements the IInitializeWithWindow interface from shobjidl_core.
     HRESULT TerminalWindow::Initialize(HWND hwnd)
     {
+        // Now that we know we can do XAML, build our page.
         _root = winrt::make_self<TerminalPage>(_manager);
         _root->WindowProperties(*this);
         _dialog = ContentDialog{};
@@ -195,7 +194,25 @@ namespace winrt::TerminalApp::implementation
     // - True if UWP, false otherwise.
     bool TerminalWindow::IsUwp() const noexcept
     {
-        return _isUwp;
+        // use C++11 magic statics to make sure we only do this once.
+        // This won't change over the lifetime of the application
+
+        static const auto isUwp = []() {
+            // *** THIS IS A SINGLETON ***
+            auto result = false;
+
+            // GH#2455 - Make sure to try/catch calls to Application::Current,
+            // because that _won't_ be an instance of TerminalApp::App in the
+            // LocalTests
+            try
+            {
+                result = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsUwp();
+            }
+            CATCH_LOG();
+            return result;
+        }();
+
+        return isUwp;
     }
 
     // Method Description:
@@ -206,19 +223,25 @@ namespace winrt::TerminalApp::implementation
     // - True if elevated, false otherwise.
     bool TerminalWindow::IsElevated() const noexcept
     {
-        return _isElevated;
-    }
+        // use C++11 magic statics to make sure we only do this once.
+        // This won't change over the lifetime of the application
 
-    // Method Description:
-    // - Called by UWP context invoker to let us know that we may have to change some of our behaviors
-    //   for being a UWP
-    // Arguments:
-    // - <none> (sets to UWP = true, one way change)
-    // Return Value:
-    // - <none>
-    void TerminalWindow::RunAsUwp()
-    {
-        _isUwp = true;
+        static const auto isElevated = []() {
+            // *** THIS IS A SINGLETON ***
+            auto result = false;
+
+            // GH#2455 - Make sure to try/catch calls to Application::Current,
+            // because that _won't_ be an instance of TerminalApp::App in the
+            // LocalTests
+            try
+            {
+                result = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsElevated();
+            }
+            CATCH_LOG();
+            return result;
+        }();
+
+        return isElevated;
     }
 
     // Method Description:
@@ -233,13 +256,6 @@ namespace winrt::TerminalApp::implementation
     void TerminalWindow::Create()
     {
         _root->DialogPresenter(*this);
-
-        // In UWP mode, we cannot handle taking over the title bar for tabs,
-        // so this setting is overridden to false no matter what the preference is.
-        if (_isUwp)
-        {
-            _settings.GlobalSettings().ShowTabsInTitlebar(false);
-        }
 
         // Pay attention, that even if some command line arguments were parsed (like launch mode),
         // we will not use the startup actions from settings.
@@ -772,32 +788,38 @@ namespace winrt::TerminalApp::implementation
         _RequestedThemeChangedHandlers(*this, Theme());
     }
 
+    // This may be called on a background thread, or the main thread, but almost
+    // definitely not on OUR UI thread.
     winrt::fire_and_forget TerminalWindow::UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args)
     {
         _settings = args.NewSettings();
         // Update the settings in TerminalPage
         _root->SetSettings(_settings, true);
 
+        const auto weakThis{ get_weak() };
         co_await wil::resume_foreground(_root->Dispatcher());
-
-        // Bubble the notification up to the AppHost, now that we've updated our _settings.
-        _SettingsChangedHandlers(*this, args);
-
-        if (FAILED(args.Result()))
+        // Back on our UI thread...
+        if (auto logic{ weakThis.get() })
         {
-            const winrt::hstring titleKey = USES_RESOURCE(L"ReloadJsonParseErrorTitle");
-            const winrt::hstring textKey = USES_RESOURCE(L"ReloadJsonParseErrorText");
-            _ShowLoadErrorsDialog(titleKey,
-                                  textKey,
-                                  gsl::narrow_cast<HRESULT>(args.Result()),
-                                  args.ExceptionText());
-            co_return;
+            // Bubble the notification up to the AppHost, now that we've updated our _settings.
+            _SettingsChangedHandlers(*this, args);
+
+            if (FAILED(args.Result()))
+            {
+                const winrt::hstring titleKey = USES_RESOURCE(L"ReloadJsonParseErrorTitle");
+                const winrt::hstring textKey = USES_RESOURCE(L"ReloadJsonParseErrorText");
+                _ShowLoadErrorsDialog(titleKey,
+                                      textKey,
+                                      gsl::narrow_cast<HRESULT>(args.Result()),
+                                      args.ExceptionText());
+                co_return;
+            }
+            else if (args.Result() == S_FALSE)
+            {
+                _ShowLoadWarningsDialog(args.Warnings());
+            }
+            _RefreshThemeRoutine();
         }
-        else if (args.Result() == S_FALSE)
-        {
-            _ShowLoadWarningsDialog(args.Warnings());
-        }
-        _RefreshThemeRoutine();
     }
 
     void TerminalWindow::_OpenSettingsUI()
@@ -990,7 +1012,6 @@ namespace winrt::TerminalApp::implementation
         return _root ? _root->AlwaysOnTop() : false;
     }
 
-    ////////////////////////////////////////////////////////////////////////////
     void TerminalWindow::SetSettingsStartupArgs(const std::vector<ActionAndArgs>& actions)
     {
         for (const auto& action : actions)
@@ -1133,8 +1154,6 @@ namespace winrt::TerminalApp::implementation
         return winrt::to_hstring(_appArgs.GetExitMessage());
     }
 
-    ////////////////////////////////////////////////////////////////////////////
-
     hstring TerminalWindow::GetWindowLayoutJson(LaunchPosition position)
     {
         if (_root != nullptr)
@@ -1187,7 +1206,7 @@ namespace winrt::TerminalApp::implementation
             _root->SetNumberOfOpenWindows(num);
         }
     }
-    ////////////////////////////////////////////////////////////////////////////
+
     void TerminalWindow::RequestExitFullscreen()
     {
         _root->SetFullscreen(false);
@@ -1203,8 +1222,6 @@ namespace winrt::TerminalApp::implementation
     {
         UpdateSettings(args);
     }
-
-    ////////////////////////////////////////////////////////////////////////////
 
     void TerminalWindow::IdentifyWindow()
     {
@@ -1295,7 +1312,6 @@ namespace winrt::TerminalApp::implementation
     {
         return _WindowName == QuakeWindowName;
     }
-    ////////////////////////////////////////////////////////////////////////////
 
     void TerminalWindow::AttachContent(winrt::hstring content, uint32_t tabIndex)
     {
