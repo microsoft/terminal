@@ -1168,39 +1168,28 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto& realArgs = args.ActionArgs().try_as<SuggestionsArgs>())
             {
-                auto source = realArgs.Source();
+                const auto source = realArgs.Source();
+                const auto commandsCollection = winrt::single_threaded_vector<Command>();
 
-                switch (source)
+                // Aggregate all the commands from the different sources that the user selected
+                if (WI_IsFlagSet(source, SuggestionsSource::Tasks))
                 {
-                // case TaskSource::Prompt:
-                // {
-                //     auto commandsCollection = _settings.GlobalSettings().ActionMap().FilterToSendInput();
-                //     _openTaskView(commandsCollection);
-                //     args.Handled(true);
-                // }
-                // break;
-                case SuggestionsSource::CommandHistory:
+                    const auto tasks = _settings.GlobalSettings().ActionMap().FilterToSendInput();
+                    commandsCollection.AddAll(tasks);
+                }
+                if (WI_IsFlagSet(source, SuggestionsSource::CommandHistory))
                 {
                     if (const auto& control{ _GetActiveControl() })
                     {
                         const auto context = control.CommandHistory();
-                        _OpenSuggestions(Command::HistoryToCommands(context.History(), context.CurrentCommandline(), false), SuggestionsMode::Palette);
+                        const auto recentCommands = Command::HistoryToCommands(context.History(), context.CurrentCommandline(), false);
+                        commandsCollection.AddAll(recentCommands);
                     }
-                    args.Handled(true);
                 }
-                break;
-                    // case TaskSource::DirectoryHistory:
-                    // {
-                    // }
-                    // break;
 
-                    // case TaskSource::Suggestions:
-                    // {
-                    //     _openSuggestionsPrompt();
-                    //     args.Handled(true);
-                    // }
-                    break;
-                }
+                // Open the palette with all these commands in it.
+                _OpenSuggestions(commandsCollection, SuggestionsMode::Palette);
+                args.Handled(true);
             }
         }
     }
