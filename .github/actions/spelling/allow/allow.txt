@@ -92,10 +92,8 @@ shcha
 slnt
 Sos
 ssh
-<<<<<<< HEAD
-=======
 stakeholders
->>>>>>> main
+sxn
 timeline
 timelines
 timestamped

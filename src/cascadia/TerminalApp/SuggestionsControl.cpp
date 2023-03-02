@@ -260,8 +260,6 @@ namespace winrt::TerminalApp::implementation
     void SuggestionsControl::_selectedCommandChanged(const IInspectable& /*sender*/,
                                                      const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
-        // const auto currentlyVisible{ Visibility() == Visibility::Visible };
-
         const auto selectedCommand = _filteredActionsView().SelectedItem();
         const auto filteredCommand{ selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>() };
 
@@ -280,11 +278,8 @@ namespace winrt::TerminalApp::implementation
                                                     const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
     {
         const auto key = e.OriginalKey();
-        // const auto scanCode = e.KeyStatus().ScanCode;
         const auto coreWindow = CoreWindow::GetForCurrentThread();
         const auto ctrlDown = WI_IsFlagSet(coreWindow.GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
-        // const auto altDown = WI_IsFlagSet(coreWindow.GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
-        // const auto shiftDown = WI_IsFlagSet(coreWindow.GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
 
         if (key == VirtualKey::Home && ctrlDown)
         {
@@ -298,25 +293,25 @@ namespace winrt::TerminalApp::implementation
         }
         else if (key == VirtualKey::Up)
         {
-            // Action Mode: Move focus to the next item in the list.
+            // Move focus to the next item in the list.
             SelectNextItem(false);
             e.Handled(true);
         }
         else if (key == VirtualKey::Down)
         {
-            // Action Mode: Move focus to the previous item in the list.
+            // Move focus to the previous item in the list.
             SelectNextItem(true);
             e.Handled(true);
         }
         else if (key == VirtualKey::PageUp)
         {
-            // Action Mode: Move focus to the first visible item in the list.
+            // Move focus to the first visible item in the list.
             ScrollPageUp();
             e.Handled(true);
         }
         else if (key == VirtualKey::PageDown)
         {
-            // Action Mode: Move focus to the last visible item in the list.
+            // Move focus to the last visible item in the list.
             ScrollPageDown();
             e.Handled(true);
         }
@@ -324,6 +319,10 @@ namespace winrt::TerminalApp::implementation
                  key == VirtualKey::Tab ||
                  key == VirtualKey::Right)
         {
+            // If the user pressed enter, tab, or the right arrow key, then
+            // we'll want to dispatch the command that's selected as they
+            // accepted the suggestion.
+
             if (const auto& button = e.OriginalSource().try_as<Button>())
             {
                 // Let the button handle the Enter key so an eventually attached click handler will be called
@@ -485,9 +484,6 @@ namespace winrt::TerminalApp::implementation
 
     void SuggestionsControl::_listItemSelectionChanged(const Windows::Foundation::IInspectable& /*sender*/, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& e)
     {
-        // We don't care about...
-        // - CommandlineMode: it doesn't have any selectable items in the list view
-        // - TabSwitchMode: focus and selected item are in sync
         if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(_searchBox()) })
         {
             if (const auto selectedList = e.AddedItems(); selectedList.Size() > 0)
@@ -501,7 +497,7 @@ namespace winrt::TerminalApp::implementation
                             Automation::Peers::AutomationNotificationKind::ItemAdded,
                             Automation::Peers::AutomationNotificationProcessing::MostRecent,
                             paletteItem.Name() + L" " + paletteItem.KeyChordText(),
-                            L"CommandPaletteSelectedItemChanged" /* unique name for this notification category */);
+                            L"SuggestionsControlSelectedItemChanged" /* unique name for this notification category */);
                     }
                 }
             }
@@ -577,7 +573,7 @@ namespace winrt::TerminalApp::implementation
                 Automation::Peers::AutomationNotificationKind::ActionCompleted,
                 Automation::Peers::AutomationNotificationProcessing::CurrentThenMostRecent,
                 fmt::format(std::wstring_view{ RS_(L"CommandPalette_NestedCommandAnnouncement") }, ParentCommandName()),
-                L"CommandPaletteNestingLevelChanged" /* unique name for this notification category */);
+                L"SuggestionsControlNestingLevelChanged" /* unique name for this notification category */);
         }
     }
 
@@ -801,7 +797,6 @@ namespace winrt::TerminalApp::implementation
         SearchBoxPlaceholderText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
         NoMatchesText(RS_(L"CommandPalette_NoMatchesText/Text"));
         ControlName(RS_(L"CommandPaletteControlName"));
-        // PrefixCharacter(L">");
         // modeAnnouncementResourceKey is already set to _ActionMode
         // We did this above to deduce the type (and make it easier on ourselves later).
 
@@ -959,9 +954,6 @@ namespace winrt::TerminalApp::implementation
 
         _PreviewActionHandlers(*this, nullptr);
 
-        // // Reset visibility in case anchor mode tab switcher just finished.
-        // _searchBox().Visibility(Visibility::Visible);
-
         // Clear the text box each time we close the dialog. This is consistent with VsCode.
         _searchBox().Text(L"");
 
@@ -1098,7 +1090,7 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            // Position at the cursor. The suggestions UI itself will maintian
+            // Position at the cursor. The suggestions UI itself will maintain
             // its own offset such that it's always above its origin
             newMargin.Top = (_anchor.Y - actualSize.height);
         }
