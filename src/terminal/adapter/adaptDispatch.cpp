@@ -3657,6 +3657,31 @@ void AdaptDispatch::_ReportDECSACESetting() const
 }
 
 // Routine Description:
+// - DECRQPSR - Queries the presentation state of the terminal. This can either
+//   be in the form of a cursor information report, or a tabulation stop report,
+//   depending on the requested format.
+// Arguments:
+// - format - the format of the report being requested.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::RequestPresentationStateReport(const DispatchTypes::PresentationReportFormat /*format*/)
+{
+    return false;
+}
+
+// Method Description:
+// - DECRSPS - Restores the presentation state from a stream of data previously
+//   saved with a DECRQPSR query.
+// Arguments:
+// - format - the format of the report being restored.
+// Return Value:
+// - a function to receive the data or nullptr if the format is unsupported.
+ITermDispatch::StringHandler AdaptDispatch::RestorePresentationState(const DispatchTypes::PresentationReportFormat /*format*/)
+{
+    return nullptr;
+}
+
+// Routine Description:
 // - DECPS - Plays a sequence of musical notes.
 // Arguments:
 // - params - The volume, duration, and note values to play.

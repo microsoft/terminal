@@ -116,6 +116,7 @@ namespace Microsoft::Console::VirtualTerminal
             DECCARA,
             DECRARA,
             DECCRA,
+            DECRQPSR,
             DECFRA,
             DECERA,
             DECSERA,

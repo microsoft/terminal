@@ -151,6 +151,9 @@ namespace Microsoft::Console::VirtualTerminal
 
         StringHandler RequestSetting() override; // DECRQSS
 
+        bool RequestPresentationStateReport(const DispatchTypes::PresentationReportFormat format) override; // DECRQPSR
+        StringHandler RestorePresentationState(const DispatchTypes::PresentationReportFormat format) override; // DECRSPS
+
         bool PlaySounds(const VTParameters parameters) override; // DECPS
 
     private:

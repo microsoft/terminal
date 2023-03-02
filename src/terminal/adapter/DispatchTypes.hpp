@@ -539,6 +539,12 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         ColorTableReport = 2
     };
 
+    enum class PresentationReportFormat : VTInt
+    {
+        CursorInformationReport = 1,
+        TabulationStopReport = 2
+    };
+
     constexpr VTInt s_sDECCOLMSetColumns = 132;
     constexpr VTInt s_sDECCOLMResetColumns = 80;
 
