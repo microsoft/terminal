@@ -30,10 +30,12 @@ using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::System;
+using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Xaml::Media;
 using namespace ::TerminalApp;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Terminal::Core;
@@ -4116,22 +4118,14 @@ namespace winrt::TerminalApp::implementation
         auto requestedTheme{ theme.RequestedTheme() };
 
         {
+            _updatePaneResources(requestedTheme);
+
             for (const auto& tab : _tabs)
             {
                 if (auto terminalTab{ _GetTerminalTabImpl(tab) })
                 {
-                    terminalTab->GetRootPane()->WalkTree([&](auto&& pane) {
-                        // TODO, but of middling priority. We probably shouldn't
-                        // SetupResources on _every_ pane. We can probably call
-                        // that on the root, and then have that back channel to
-                        // update the whole tree.
-
-                        // Update the brushes that Pane's use...
-                        pane->SetupResources(requestedTheme);
-                        // ... then trigger a visual update for all the pane borders to
-                        // apply the new ones.
-                        pane->UpdateVisuals();
-                    });
+                    // The root pane will propogate the theme change to all its children.
+                    terminalTab->GetRootPane()->UpdateResources(_paneResources);
                 }
             }
         }
@@ -4235,6 +4229,54 @@ namespace winrt::TerminalApp::implementation
                 _tabView.CloseButtonOverlayMode(MUX::Controls::TabViewCloseButtonOverlayMode::Always);
                 break;
             }
+        }
+    }
+
+    // Function Description:
+    // - Attempts to load some XAML resources that Panes will need. This includes:
+    //   * The Color they'll use for active Panes's borders - SystemAccentColor
+    //   * The Brush they'll use for inactive Panes - TabViewBackground (to match the
+    //     color of the titlebar)
+    // Arguments:
+    // - requestedTheme: this should be the currently active Theme for the app
+    // Return Value:
+    // - <none>
+    void TerminalPage::_updatePaneResources(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme)
+    {
+        const auto res = Application::Current().Resources();
+        const auto accentColorKey = winrt::box_value(L"SystemAccentColor");
+        if (res.HasKey(accentColorKey))
+        {
+            const auto colorFromResources = ThemeLookup(res, requestedTheme, accentColorKey);
+            // If SystemAccentColor is _not_ a Color for some reason, use
+            // Transparent as the color, so we don't do this process again on
+            // the next pane (by leaving s_focusedBorderBrush nullptr)
+            auto actualColor = winrt::unbox_value_or<Color>(colorFromResources, Colors::Black());
+            _paneResources.focusedBorderBrush = SolidColorBrush(actualColor);
+        }
+        else
+        {
+            // DON'T use Transparent here - if it's "Transparent", then it won't
+            // be able to hittest for clicks, and then clicking on the border
+            // will eat focus.
+            _paneResources.focusedBorderBrush = SolidColorBrush{ Colors::Black() };
+        }
+
+        const auto unfocusedBorderBrushKey = winrt::box_value(L"UnfocusedBorderBrush");
+        if (res.HasKey(unfocusedBorderBrushKey))
+        {
+            // MAKE SURE TO USE ThemeLookup, so that we get the correct resource for
+            // the requestedTheme, not just the value from the resources (which
+            // might not respect the settings' requested theme)
+            auto obj = ThemeLookup(res, requestedTheme, unfocusedBorderBrushKey);
+            _paneResources.unfocusedBorderBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
+        }
+        else
+        {
+            // DON'T use Transparent here - if it's "Transparent", then it won't
+            // be able to hittest for clicks, and then clicking on the border
+            // will eat focus.
+            _paneResources.unfocusedBorderBrush = SolidColorBrush{ Colors::Black() };
         }
     }
 
