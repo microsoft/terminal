@@ -43,8 +43,8 @@ namespace winrt::TerminalApp::implementation
         STDMETHODIMP Initialize(HWND hwnd);
 
         void Create();
+
         bool IsUwp() const noexcept;
-        void RunAsUwp();
         bool IsElevated() const noexcept;
 
         void Quit();
@@ -52,6 +52,7 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args);
 
         bool HasCommandlineArguments() const noexcept;
+
         int32_t SetStartupCommandline(array_view<const winrt::hstring> actions);
         int32_t ExecuteCommandline(array_view<const winrt::hstring> actions, const winrt::hstring& cwd);
         void SetSettingsStartupArgs(const std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions);
@@ -142,8 +143,6 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(RequestedThemeChanged, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Settings::Model::Theme);
 
     private:
-        bool _isUwp{ false };
-        bool _isElevated{ false };
         // If you add controls here, but forget to null them either here or in
         // the ctor, you're going to have a bad time. It'll mysteriously fail to
         // activate the AppLogic.
