@@ -151,11 +151,14 @@ void WindowEmperor::CreateNewWindowThread(Remoting::WindowRequestedArgs args, co
                        }),
                        _windows.end());
 
-        if (_windows.size() == 0)
+        if (_windows.size() == 0 &&
+            !_app.Logic().AllowHeadless())
         {
             _close();
         }
     });
+
+    // TODO! in AllowHeadless, if a window wants to _quit_, then we should exit when we get to 0 windows.
 
     window->Start();
 }

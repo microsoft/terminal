@@ -43,6 +43,7 @@ namespace TerminalApp
 
         Microsoft.Terminal.Settings.Model.Theme Theme { get; };
         Boolean IsolatedMode { get; };
+        Boolean AllowHeadless { get; };
 
         FindTargetWindowResult FindTargetWindow(String[] args);
 
