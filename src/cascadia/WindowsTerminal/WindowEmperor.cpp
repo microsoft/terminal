@@ -124,7 +124,7 @@ void WindowEmperor::CreateNewWindowThread(Remoting::WindowRequestedArgs args, co
         // Add a callback to the window's logic to let us know when the window's
         // quake mode state changes. We'll use this to check if we need to add
         // or remove the notification icon.
-        sender->Logic().IsQuakeWindowChanged([this](auto&&, auto&&) -> winrt::fire_and_forget {
+        sender->Logic().IsQuakeWindowChanged([this](auto&&, auto &&) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(this->_dispatcher);
             this->_checkWindowsForNotificationIcon();
         });
@@ -202,7 +202,7 @@ void WindowEmperor::_becomeMonarch()
 
     // The monarch should be monitoring if it should save the window layout.
     // We want at least some delay to prevent the first save from overwriting
-    _getWindowLayoutThrottler.emplace(std::move(std::chrono::seconds(10)), std::move([this]() { _SaveWindowLayoutsRepeat(); }));
+    _getWindowLayoutThrottler.emplace(std::move(std::chrono::seconds(10)), std::move([this]() { _saveWindowLayoutsRepeat(); }));
     _getWindowLayoutThrottler.value()();
 }
 
@@ -241,12 +241,12 @@ void WindowEmperor::_quitAllRequested(const winrt::Windows::Foundation::IInspect
 
     // Tell the monarch to wait for the window layouts to save before
     // everyone quits.
-    args.BeforeQuitAllAction(_SaveWindowLayouts());
+    args.BeforeQuitAllAction(_saveWindowLayouts());
 }
 
 #pragma region LayoutPersistence
 
-winrt::Windows::Foundation::IAsyncAction WindowEmperor::_SaveWindowLayouts()
+winrt::Windows::Foundation::IAsyncAction WindowEmperor::_saveWindowLayouts()
 {
     // Make sure we run on a background thread to not block anything.
     co_await winrt::resume_background();
@@ -285,12 +285,12 @@ winrt::Windows::Foundation::IAsyncAction WindowEmperor::_SaveWindowLayouts()
     co_return;
 }
 
-winrt::fire_and_forget WindowEmperor::_SaveWindowLayoutsRepeat()
+winrt::fire_and_forget WindowEmperor::_saveWindowLayoutsRepeat()
 {
     // Make sure we run on a background thread to not block anything.
     co_await winrt::resume_background();
 
-    co_await _SaveWindowLayouts();
+    co_await _saveWindowLayouts();
 
     // Don't need to save too frequently.
     co_await winrt::resume_after(30s);
