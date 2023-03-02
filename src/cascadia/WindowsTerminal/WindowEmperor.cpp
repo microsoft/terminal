@@ -129,7 +129,7 @@ void WindowEmperor::CreateNewWindowThread(Remoting::WindowRequestedArgs args, co
             this->_checkWindowsForNotificationIcon();
         });
         sender->UpdateSettingsRequested([this]() -> winrt::fire_and_forget {
-            // We MUST be on the main thread to update the settings. We will crash when trying to enumerate fragement extensions otherwise.
+            // We MUST be on the main thread to update the settings. We will crash when trying to enumerate fragment extensions otherwise.
             co_await wil::resume_foreground(this->_dispatcher);
             _app.Logic().ReloadSettings();
         });
@@ -293,7 +293,7 @@ winrt::fire_and_forget WindowEmperor::_SaveWindowLayoutsRepeat()
     co_await _SaveWindowLayouts();
 
     // Don't need to save too frequently.
-    co_await 30s;
+    co_await winrt::resume_after(30s);
 
     // As long as we are supposed to keep saving, request another save.
     // This will be delayed by the throttler so that at most one save happens
