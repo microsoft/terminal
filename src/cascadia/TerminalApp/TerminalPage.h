@@ -65,7 +65,6 @@ namespace winrt::TerminalApp::implementation
 
         bool ShouldImmediatelyHandoffToElevated(const Microsoft::Terminal::Settings::Model::CascadiaSettings& settings) const;
         void HandoffToElevated(const Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
-
         Microsoft::Terminal::Settings::Model::WindowLayout GetWindowLayout();
 
         winrt::fire_and_forget NewTerminalByDrop(winrt::Windows::UI::Xaml::DragEventArgs& e);
@@ -149,7 +148,6 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(Initialized, IInspectable, winrt::Windows::UI::Xaml::RoutedEventArgs);
         TYPED_EVENT(IdentifyWindowsRequested, IInspectable, IInspectable);
         TYPED_EVENT(RenameWindowRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs);
-
         TYPED_EVENT(SummonWindowRequested, IInspectable, IInspectable);
         TYPED_EVENT(CloseRequested, IInspectable, IInspectable);
         TYPED_EVENT(OpenSystemMenu, IInspectable, IInspectable);
