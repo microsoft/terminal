@@ -678,16 +678,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         switch (Source())
         {
-        case SuggestionsSource::Tasks:
-            return L"Open tasks...";
         case SuggestionsSource::CommandHistory:
-            return L"Recent commands...";
-        case SuggestionsSource::DirectoryHistory:
-            return L"Recent directories...";
-            // case SuggestionsSource::Suggestions:
-            //     return L"Get suggestions...";
+            return RS_(L"SuggestionsCommandHistoryCommandKey");
         }
-        return L"TODO!";
+        return RS_(L"SuggestionsCommandKey");
     }
 
     winrt::hstring FindMatchArgs::GenerateName() const

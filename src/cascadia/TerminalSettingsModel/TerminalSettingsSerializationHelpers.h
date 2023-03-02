@@ -504,8 +504,7 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::SuggestionsSourc
     JSON_MAPPINGS(3) = {
         pair_type{ "tasks", ValueType::Tasks },
         pair_type{ "commandHistory", ValueType::CommandHistory },
-        pair_type{ "directoryHistory", ValueType::DirectoryHistory },
-        // pair_type{ "suggestions", ValueType::Suggestions },
+        pair_type{ "directoryHistory", ValueType::DirectoryHistory }
     };
 };
 

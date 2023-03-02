@@ -95,9 +95,6 @@ namespace winrt::TerminalApp::implementation
             // stays "attached" to the cursor.
             if (Visibility() == Visibility::Visible && _direction == TerminalApp::SuggestionsDirection::BottomUp)
             {
-                // auto t = this->Translation();
-                // t.y = gsl::narrow_cast<float>(-ActualHeight());
-                // this->Translation(t);
                 auto m = this->Margin();
                 m.Top = (_anchor.Y - ActualHeight());
                 this->Margin(m);
@@ -851,10 +848,11 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        // TODO! Do we want sorting in the palette? I have it disabled, so
-        // results are flitered, but still in the original order. This seems
-        // more correct, but I could be convinced otherwise.
-        // It could maybe be a setting.
+        // TODO (for discussion):
+        //
+        // Do we want sorting in the palette? I have it disabled, so results are
+        // filtered, but still in the original order. This seems more correct,
+        // but I could be convinced otherwise. It could maybe be a setting.
 
         // if (_mode == SuggestionsMode::Palette)
         // {

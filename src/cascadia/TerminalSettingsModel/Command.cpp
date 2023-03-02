@@ -730,6 +730,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return result;
     }
 
+    // Method description:
+    // * Comvert the list of recent commands into a list of sendInput actions to
+    //   send those commands.
+    // * We'll give each command a "history" icon.
+    // * If directories is true, we'll prepend "cd " to each command, so that
+    //   the command will be run as a directory change instead.
     IVector<Model::Command> Command::HistoryToCommands(IVector<winrt::hstring> history,
                                                        winrt::hstring /*currentCommandline*/,
                                                        bool directories)
@@ -757,15 +763,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto command = winrt::make_self<Command>();
             command->_ActionAndArgs = actionAndArgs;
             command->_name = winrt::hstring{ line };
-            command->_iconPath = L"\ue81c"; // History icon
+            command->_iconPath = directories ?
+                                     L"\ue8da" : // OpenLocal (a folder with an arrow pointing up)
+                                     L"\ue81c"; // History icon
             result.Append(*command);
             foundCommands[line] = true;
         };
 
-        // iterate in reverse over the history, so that most recent commands are first
+        // Iterate in reverse over the history, so that most recent commands are first
         for (auto i = history.Size(); i > 0; i--)
         {
-            createAction(history.GetAt(i-1));
+            createAction(history.GetAt(i - 1));
         }
         return result;
     }

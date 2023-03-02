@@ -1172,13 +1172,6 @@ namespace winrt::TerminalApp::implementation
 
                 switch (source)
                 {
-                // case TaskSource::Prompt:
-                // {
-                //     auto commandsCollection = _settings.GlobalSettings().ActionMap().FilterToSendInput();
-                //     _openTaskView(commandsCollection);
-                //     args.Handled(true);
-                // }
-                // break;
                 case SuggestionsSource::CommandHistory:
                 {
                     if (const auto& control{ _GetActiveControl() })
@@ -1189,17 +1182,6 @@ namespace winrt::TerminalApp::implementation
                     args.Handled(true);
                 }
                 break;
-                    // case TaskSource::DirectoryHistory:
-                    // {
-                    // }
-                    // break;
-
-                    // case TaskSource::Suggestions:
-                    // {
-                    //     _openSuggestionsPrompt();
-                    //     args.Handled(true);
-                    // }
-                    break;
                 }
             }
         }
