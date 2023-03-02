@@ -751,32 +751,38 @@ namespace winrt::TerminalApp::implementation
         _RequestedThemeChangedHandlers(*this, Theme());
     }
 
+    // This may be called on a background thread, or the main thread, but almost
+    // definitely not on OUR UI thread.
     winrt::fire_and_forget TerminalWindow::UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args)
     {
         _settings = args.NewSettings();
         // Update the settings in TerminalPage
         _root->SetSettings(_settings, true);
 
+        const auto weakThis{ get_weak() };
         co_await wil::resume_foreground(_root->Dispatcher());
-
-        // Bubble the notification up to the AppHost, now that we've updated our _settings.
-        _SettingsChangedHandlers(*this, args);
-
-        if (FAILED(args.Result()))
+        // Back on our UI thread...
+        if (auto logic{ weakThis.get() })
         {
-            const winrt::hstring titleKey = USES_RESOURCE(L"ReloadJsonParseErrorTitle");
-            const winrt::hstring textKey = USES_RESOURCE(L"ReloadJsonParseErrorText");
-            _ShowLoadErrorsDialog(titleKey,
-                                  textKey,
-                                  gsl::narrow_cast<HRESULT>(args.Result()),
-                                  args.ExceptionText());
-            co_return;
+            // Bubble the notification up to the AppHost, now that we've updated our _settings.
+            _SettingsChangedHandlers(*this, args);
+
+            if (FAILED(args.Result()))
+            {
+                const winrt::hstring titleKey = USES_RESOURCE(L"ReloadJsonParseErrorTitle");
+                const winrt::hstring textKey = USES_RESOURCE(L"ReloadJsonParseErrorText");
+                _ShowLoadErrorsDialog(titleKey,
+                                      textKey,
+                                      gsl::narrow_cast<HRESULT>(args.Result()),
+                                      args.ExceptionText());
+                co_return;
+            }
+            else if (args.Result() == S_FALSE)
+            {
+                _ShowLoadWarningsDialog(args.Warnings());
+            }
+            _RefreshThemeRoutine();
         }
-        else if (args.Result() == S_FALSE)
-        {
-            _ShowLoadWarningsDialog(args.Warnings());
-        }
-        _RefreshThemeRoutine();
     }
 
     void TerminalWindow::_OpenSettingsUI()
