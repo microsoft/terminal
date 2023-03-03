@@ -674,6 +674,16 @@ namespace winrt::TerminalApp::implementation
         return _settings.GlobalSettings().IsolatedMode();
     }
 
+    bool AppLogic::AllowHeadless()
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            ReloadSettings();
+        }
+        return _settings.GlobalSettings().AllowHeadless();
+    }
+
     TerminalApp::TerminalWindow AppLogic::CreateNewWindow()
     {
         if (_settings == nullptr)

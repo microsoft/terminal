@@ -49,6 +49,7 @@ private:
     std::vector<winrt::Microsoft::Terminal::Settings::Model::GlobalSummonArgs> _hotkeys;
 
     std::unique_ptr<NotificationIcon> _notificationIcon;
+    bool _quitting{ false };
 
     void _becomeMonarch();
     void _numberOfWindowsChanged(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&);

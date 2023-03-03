@@ -48,7 +48,6 @@ namespace Microsoft.Terminal.Settings.Model
 
         static void ExpandCommands(Windows.Foundation.Collections.IMap<String, Command> commands,
                                    Windows.Foundation.Collections.IVectorView<Profile> profiles,
-                                   Windows.Foundation.Collections.IVectorView<ColorScheme> schemes,
-                                   Windows.Foundation.Collections.IVector<SettingsLoadWarnings> warnings);
+                                   Windows.Foundation.Collections.IVectorView<ColorScheme> schemes);
     }
 }

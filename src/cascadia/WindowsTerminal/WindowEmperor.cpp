@@ -151,7 +151,11 @@ void WindowEmperor::CreateNewWindowThread(Remoting::WindowRequestedArgs args, co
                        }),
                        _windows.end());
 
-        if (_windows.size() == 0)
+        // When we run out of windows, exit our process if and only if:
+        // * We're not allowed to run headless OR
+        // * we've explicitly been told to "quit", which should fully exit the Terminal.
+        if (_windows.size() == 0 &&
+            (_quitting || !_app.Logic().AllowHeadless()))
         {
             _close();
         }
@@ -232,6 +236,8 @@ void WindowEmperor::_numberOfWindowsChanged(const winrt::Windows::Foundation::II
 void WindowEmperor::_quitAllRequested(const winrt::Windows::Foundation::IInspectable&,
                                       const winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs& args)
 {
+    _quitting = true;
+
     // Make sure that the current timer is destroyed so that it doesn't attempt
     // to run while we are in the middle of quitting.
     if (_getWindowLayoutThrottler.has_value())
