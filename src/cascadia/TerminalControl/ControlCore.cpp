@@ -2101,6 +2101,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const til::point start = HasSelection() ? (goUp ? _terminal->GetSelectionAnchor() : _terminal->GetSelectionEnd()) :
                                                   _terminal->GetTextBuffer().GetCursor().GetPosition();
+        SelectCommandWithAnchor(goUp, start);
+    }
+    void ControlCore::SelectCommandWithAnchor(const bool goUp, const til::point start)
+    {
         std::optional<DispatchTypes::ScrollMark> nearest{ std::nullopt };
         const auto& marks{ _terminal->GetScrollMarks() };
         auto it = marks.rbegin();
@@ -2155,6 +2159,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const til::point start = HasSelection() ? (goUp ? _terminal->GetSelectionAnchor() : _terminal->GetSelectionEnd()) :
                                                   _terminal->GetTextBuffer().GetCursor().GetPosition();
+        SelectOutputWithAnchor(goUp, start);
+    }
+    void ControlCore::SelectOutputWithAnchor(const bool goUp, const til::point start)
+    {
         std::optional<DispatchTypes::ScrollMark> nearest{ std::nullopt };
         const auto& marks{ _terminal->GetScrollMarks() };
         auto it = marks.rbegin();
@@ -2238,4 +2246,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
         }
     }
+
+    void ControlCore::AnchorContextMenu(const til::point viewportRelativeCharacterPosition)
+    {
+        // TODO! adjust for viewport
+        _contextMenuBufferPosition = viewportRelativeCharacterPosition;
+    }
+    void ControlCore::ContextMenuSelectCommand()
+    {
+        SelectCommandWithAnchor(true, _contextMenuBufferPosition);
+    }
+    void ControlCore::ContextMenuSelectOutput()
+    {
+        SelectOutputWithAnchor(true, _contextMenuBufferPosition);
+    }
+
+    void SelectCommandWithAnchor(const bool goUp, const std::optional<til::point> anchor);
+    void SelectOutputWithAnchor(const bool goUp, const std::optional<til::point> anchor);
 }

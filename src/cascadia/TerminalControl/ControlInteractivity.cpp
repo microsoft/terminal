@@ -268,6 +268,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     }
                     singleString += line;
                 };
+                _core->AnchorContextMenu(terminalPosition);
                 auto contextArgs = winrt::make_self<ContextMenuRequestedEventArgs>(winrt::hstring{ singleString },
                                                                                    til::point{ pixelPosition }.to_winrt_point());
 

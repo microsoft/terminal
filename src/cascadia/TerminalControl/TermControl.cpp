@@ -3293,4 +3293,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         SearchMatch(false);
     }
 
+    void TermControl::_SelectCommandHandler(const IInspectable& /*sender*/,
+                                            const IInspectable& /*args*/)
+    {
+        ContextMenu().Hide();
+        SelectionContextMenu().Hide();
+        _core.ContextMenuSelectCommand();
+        // SearchMatch(false);
+        // TODO!
+    }
+
+    void TermControl::_SelectOutputHandler(const IInspectable& /*sender*/,
+                                           const IInspectable& /*args*/)
+    {
+        ContextMenu().Hide();
+        SelectionContextMenu().Hide();
+        _core.ContextMenuSelectOutput();
+        // SearchMatch(false);
+        // TODO!
+    }
 }

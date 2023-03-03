@@ -36,6 +36,14 @@
                           x:Uid="PasteCommandButton"
                           Click="_PasteCommandHandler"
                           Icon="Paste" />
+            <CommandBarFlyout.SecondaryCommands>
+                <AppBarButton x:Name="SelectCommandButton"
+                              x:Uid="SelectCommandButton"
+                              Click="_SelectCommandHandler" />
+                <AppBarButton x:Name="SelectOutputButton"
+                              x:Uid="SelectOutputButton"
+                              Click="_SelectOutputHandler" />
+            </CommandBarFlyout.SecondaryCommands>
         </CommandBarFlyout>
 
         <CommandBarFlyout x:Name="SelectionContextMenu">
