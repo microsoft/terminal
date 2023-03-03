@@ -211,6 +211,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void AnchorContextMenu(til::point viewportRelativeCharacterPosition);
         void SelectCommandWithAnchor(const bool goUp, const til::point anchor);
         void SelectOutputWithAnchor(const bool goUp, const til::point anchor);
+        bool ShouldShowSelectCommand();
+        bool ShouldShowSelectOutput();
 
         RUNTIME_SETTING(double, Opacity, _settings->Opacity());
         RUNTIME_SETTING(bool, UseAcrylic, _settings->UseAcrylic());

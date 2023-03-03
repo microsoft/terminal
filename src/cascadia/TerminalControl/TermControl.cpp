@@ -3260,6 +3260,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto pos = (absolutePointerPos - absoluteWindowOrigin - controlOrigin).to_winrt_point();
         myOption.Position(pos);
 
+        SelectCommandButton().Visibility(_core.ShouldShowSelectCommand() ? Visibility::Visible : Visibility::Collapsed);
+        SelectOutputButton().Visibility(_core.ShouldShowSelectOutput() ? Visibility::Visible : Visibility::Collapsed);
+
         if (args.SelectedText().empty())
         {
             ContextMenu().ShowAt(*this, myOption);

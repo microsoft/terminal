@@ -141,6 +141,8 @@ namespace Microsoft.Terminal.Control
 
         void ContextMenuSelectCommand();
         void ContextMenuSelectOutput();
+        Boolean ShouldShowSelectCommand();
+        Boolean ShouldShowSelectOutput();
 
         event FontSizeChangedEventArgs FontSizeChanged;
 

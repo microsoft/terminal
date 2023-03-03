@@ -2258,8 +2258,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
     void ControlCore::ContextMenuSelectOutput()
     {
-        // SelectOutputWithAnchor(true, _contextMenuBufferPosition);
-
         const auto& marks{ _terminal->GetScrollMarks() };
         for (auto&& m : marks)
         {
@@ -2283,7 +2281,48 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
         }
     }
-
-    void SelectCommandWithAnchor(const bool goUp, const std::optional<til::point> anchor);
-    void SelectOutputWithAnchor(const bool goUp, const std::optional<til::point> anchor);
+    bool ControlCore::ShouldShowSelectCommand()
+    {
+        // TODO!
+        // * Don't show this if the click wasn't on a mark with at least a command
+        // * Don't show this if the click was on the _current_ selection
+        // * Otherwise yea, show it.
+        const auto& marks{ _terminal->GetScrollMarks() };
+        for (auto&& m : marks)
+        {
+            if (!m.HasOutput())
+            {
+                continue;
+            }
+            const auto [start, end] = m.GetExtent();
+            if (start <= _contextMenuBufferPosition &&
+                end >= _contextMenuBufferPosition)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+    bool ControlCore::ShouldShowSelectOutput()
+    {
+        // TODO!
+        // * Don't show this if the click wasn't on a mark with output
+        // * Don't show this if the click was on the _current_ selection
+        // * Otherwise yea, show it.
+        const auto& marks{ _terminal->GetScrollMarks() };
+        for (auto&& m : marks)
+        {
+            if (!m.HasOutput())
+            {
+                continue;
+            }
+            const auto [start, end] = m.GetExtent();
+            if (start <= _contextMenuBufferPosition &&
+                end >= _contextMenuBufferPosition)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 }
