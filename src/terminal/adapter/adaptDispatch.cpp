@@ -485,7 +485,7 @@ bool AdaptDispatch::CursorRestoreState()
     _modes.reset(Mode::Origin);
     CursorPosition(row, col);
 
-    // If the delayed wrap flag was set when the cursor was saved, we need to restore than now.
+    // If the delayed wrap flag was set when the cursor was saved, we need to restore that now.
     if (savedCursorState.IsDelayedEOLWrap)
     {
         _api.GetTextBuffer().GetCursor().DelayEOLWrap();
