@@ -94,6 +94,8 @@
     ON_ALL_ACTIONS(AdjustOpacity)           \
     ON_ALL_ACTIONS(RestoreLastClosed)       \
     ON_ALL_ACTIONS(SelectAll)               \
+    ON_ALL_ACTIONS(SelectCommand)           \
+    ON_ALL_ACTIONS(SelectOutput)            \
     ON_ALL_ACTIONS(MarkMode)                \
     ON_ALL_ACTIONS(ToggleBlockSelection)    \
     ON_ALL_ACTIONS(SwitchSelectionEndpoint) \
@@ -140,4 +142,6 @@
     ON_ALL_ACTIONS_WITH_ARGS(ClearBuffer)          \
     ON_ALL_ACTIONS_WITH_ARGS(MultipleActions)      \
     ON_ALL_ACTIONS_WITH_ARGS(AdjustOpacity)        \
+    ON_ALL_ACTIONS_WITH_ARGS(SelectCommand)        \
+    ON_ALL_ACTIONS_WITH_ARGS(SelectOutput)         \
     ON_ALL_ACTIONS_WITH_ARGS(ColorSelection)

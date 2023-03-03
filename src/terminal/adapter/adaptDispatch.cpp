@@ -2948,6 +2948,18 @@ bool AdaptDispatch::DoConEmuAction(const std::wstring_view string)
             return true;
         }
     }
+    // 12: "Let ConEmu treat current cursor position as prompt start"
+    //
+    // Based on the official conemu docs:
+    // * https://conemu.github.io/en/ShellWorkDir.html#connector-ps1
+    // * https://conemu.github.io/en/ShellWorkDir.html#PowerShell
+    //
+    // This seems like basically the same as 133;B - the end of the prompt, the start of the commandline.
+    else if (subParam == 12)
+    {
+        _api.MarkCommandStart();
+        return true;
+    }
 
     return false;
 }
