@@ -63,7 +63,8 @@ parameters:
       - Win11
 
 variables:
-  TerminalInternalPackageVersion: "0.0.7"
+  MakeAppxPath: 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x86\MakeAppx.exe'
+  TerminalInternalPackageVersion: "0.0.8"
   # If we are building a branch called "release-*", change the NuGet suffix
   # to "preview". If we don't do that, XES will set the suffix to "release1"
   # because it truncates the value after the first period.
@@ -270,6 +271,28 @@ jobs:
       displayName: 'Generate SBOM manifest'
       inputs:
        BuildDropPath: '$(System.ArtifactsDirectory)/appx'
+
+    - pwsh: |-
+        $Package = (Get-ChildItem "$(Build.ArtifactStagingDirectory)/appx" -Recurse -Filter "Cascadia*.msix" | Select -First 1)
+        $PackageFilename = $Package.FullName
+        Write-Host "##vso[task.setvariable variable=WindowsTerminalPackagePath]${PackageFilename}"
+        & "$(MakeAppxPath)" unpack /p $PackageFilename /d "$(Build.SourcesDirectory)\UnpackedTerminalPackage"
+      displayName: Unpack the new Terminal package for signing
+
+    - task: EsrpCodeSigning@1
+      displayName: Submit Terminal's binaries for signing
+      inputs:
+        ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
+        FolderPath: '$(Build.SourcesDirectory)\UnpackedTerminalPackage'
+        signType: batchSigning
+        batchSignPolicyFile: '$(Build.SourcesDirectory)\build\config\ESRPSigning_Terminal.json'
+
+    - pwsh: |-
+        $PackageFilename = "$(WindowsTerminalPackagePath)"
+        Remove-Item "$(Build.SourcesDirectory)\UnpackedTerminalPackage\CodeSignSummary*"
+        & "$(MakeAppxPath)" pack /h SHA256 /o /p $PackageFilename /d "$(Build.SourcesDirectory)\UnpackedTerminalPackage"
+      displayName: Re-pack the new Terminal package after signing
+
     - task: PublishBuildArtifacts@1
       displayName: Publish Artifact (appx)
       inputs:

@@ -30,7 +30,7 @@ namespace Microsoft::Console::VirtualTerminal
         void AddSixelData(const wchar_t ch);
         bool FinalizeSixelData();
 
-        gsl::span<const uint16_t> GetBitPattern() const noexcept;
+        std::span<const uint16_t> GetBitPattern() const noexcept;
         til::size GetCellSize() const noexcept;
         size_t GetTextCenteringHint() const noexcept;
         VTID GetDesignation() const noexcept;

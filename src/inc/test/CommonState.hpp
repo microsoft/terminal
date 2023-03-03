@@ -20,8 +20,6 @@ unit testing projects in the codebase without a bunch of overhead.
 
 #pragma once
 
-#define VERIFY_SUCCESS_NTSTATUS(x) VERIFY_IS_TRUE(NT_SUCCESS(x))
-
 #include "../host/globals.h"
 #include "../host/inputReadHandleData.h"
 #include "../interactivity/inc/ServiceLocator.hpp"
@@ -98,12 +96,12 @@ public:
         Globals& g = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals();
         CONSOLE_INFORMATION& gci = g.getConsoleInformation();
         til::size coordWindowSize;
-        coordWindowSize.X = viewWidth;
-        coordWindowSize.Y = viewHeight;
+        coordWindowSize.width = viewWidth;
+        coordWindowSize.height = viewHeight;
 
         til::size coordScreenBufferSize;
-        coordScreenBufferSize.X = bufferWidth;
-        coordScreenBufferSize.Y = bufferHeight;
+        coordScreenBufferSize.width = bufferWidth;
+        coordScreenBufferSize.height = bufferHeight;
 
         UINT uiCursorSize = 12;
 
@@ -175,8 +173,8 @@ public:
         Globals& g = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals();
         CONSOLE_INFORMATION& gci = g.getConsoleInformation();
         til::size coordScreenBufferSize;
-        coordScreenBufferSize.X = bufferWidth;
-        coordScreenBufferSize.Y = bufferHeight;
+        coordScreenBufferSize.width = bufferWidth;
+        coordScreenBufferSize.height = bufferHeight;
 
         UINT uiCursorSize = 12;
 

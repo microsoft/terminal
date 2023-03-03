@@ -25,8 +25,6 @@ Abstract:
 
 #include <unknwn.h>
 
-#define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
-
 #include <windows.h>
 #include <UIAutomation.h>
 #include <cstdlib>

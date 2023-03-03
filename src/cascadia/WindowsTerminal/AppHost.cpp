@@ -463,6 +463,7 @@ void AppHost::Initialize()
     _window->DragRegionClicked([this]() { _logic.TitlebarClicked(); });
 
     _window->WindowVisibilityChanged([this](bool showOrHide) { _logic.WindowVisibilityChanged(showOrHide); });
+    _window->UpdateSettingsRequested([this]() { _logic.ReloadSettings(); });
 
     _revokers.RequestedThemeChanged = _logic.RequestedThemeChanged(winrt::auto_revoke, { this, &AppHost::_UpdateTheme });
     _revokers.FullscreenChanged = _logic.FullscreenChanged(winrt::auto_revoke, { this, &AppHost::_FullscreenChanged });
@@ -1111,7 +1112,7 @@ winrt::fire_and_forget AppHost::_SaveWindowLayoutsRepeat()
     co_await _SaveWindowLayouts();
 
     // Don't need to save too frequently.
-    co_await 30s;
+    co_await winrt::resume_after(30s);
 
     // As long as we are supposed to keep saving, request another save.
     // This will be delayed by the throttler so that at most one save happens
@@ -1416,23 +1417,51 @@ winrt::fire_and_forget AppHost::_RenameWindowRequested(const winrt::Windows::Fou
     }
 }
 
+static double _opacityFromBrush(const winrt::Windows::UI::Xaml::Media::Brush& brush)
+{
+    if (auto acrylic = brush.try_as<winrt::Windows::UI::Xaml::Media::AcrylicBrush>())
+    {
+        return acrylic.TintOpacity();
+    }
+    else if (auto solidColor = brush.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>())
+    {
+        return solidColor.Opacity();
+    }
+    return 1.0;
+}
+
+static bool _isActuallyDarkTheme(const auto requestedTheme)
+{
+    switch (requestedTheme)
+    {
+    case winrt::Windows::UI::Xaml::ElementTheme::Light:
+        return false;
+    case winrt::Windows::UI::Xaml::ElementTheme::Dark:
+        return true;
+    case winrt::Windows::UI::Xaml::ElementTheme::Default:
+    default:
+        return Theme::IsSystemInDarkTheme();
+    }
+}
+
 void AppHost::_updateTheme()
 {
     auto theme = _logic.Theme();
 
     _window->OnApplicationThemeChanged(theme.RequestedTheme());
 
-    // This block of code enables Mica for our window. By all accounts, this
-    // version of the code will only work on Windows 11, SV2. There's a slightly
-    // different API surface for enabling Mica on Windows 11 22000.0.
-    //
-    // This code is left here, commented out, for future enablement of Mica.
-    // We'll revisit this in GH#10509. Because we can't enable transparent
-    // titlebars for showing Mica currently, we're just gonna disable it
-    // entirely while we sort that out.
-    //
-    // const int attribute = theme.Window().UseMica() ? /*DWMSBT_MAINWINDOW*/ 2 : /*DWMSBT_NONE*/ 1;
-    // DwmSetWindowAttribute(_window->GetHandle(), /* DWMWA_SYSTEMBACKDROP_TYPE */ 38, &attribute, sizeof(attribute));
+    const auto b = _logic.TitlebarBrush();
+    const auto color = ThemeColor::ColorFromBrush(b);
+    const auto colorOpacity = b ? color.A / 255.0 : 0.0;
+    const auto brushOpacity = _opacityFromBrush(b);
+    const auto opacity = std::min(colorOpacity, brushOpacity);
+    _window->UseMica(theme.Window() ? theme.Window().UseMica() : false, opacity);
+
+    // This is a hack to make the window borders dark instead of light.
+    // It must be done before WM_NCPAINT so that the borders are rendered with
+    // the correct theme.
+    // For more information, see GH#6620.
+    LOG_IF_FAILED(TerminalTrySetDarkTheme(_window->GetHandle(), _isActuallyDarkTheme(theme.RequestedTheme())));
 }
 
 void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,
@@ -1699,6 +1728,7 @@ void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspect
         {
             auto nonClientWindow{ static_cast<NonClientIslandWindow*>(_window.get()) };
             nonClientWindow->SetTitlebarBackground(_logic.TitlebarBrush());
+            _updateTheme();
         }
     }
 }

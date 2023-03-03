@@ -39,10 +39,10 @@ Viewport Viewport::FromDimensions(const til::point origin,
                                   const til::CoordType height) noexcept
 {
     return Viewport(til::inclusive_rect{
-        origin.X,
-        origin.Y,
-        origin.X + width - 1,
-        origin.Y + height - 1,
+        origin.x,
+        origin.y,
+        origin.x + width - 1,
+        origin.y + height - 1,
     });
 }
 
@@ -58,10 +58,10 @@ Viewport Viewport::FromDimensions(const til::point origin,
                                   const til::size dimensions) noexcept
 {
     return Viewport(til::inclusive_rect{
-        origin.X,
-        origin.Y,
-        origin.X + dimensions.X - 1,
-        origin.Y + dimensions.Y - 1,
+        origin.x,
+        origin.y,
+        origin.x + dimensions.width - 1,
+        origin.y + dimensions.height - 1,
     });
 }
 
@@ -85,37 +85,37 @@ Viewport Viewport::FromDimensions(const til::size dimensions) noexcept
 // - a 1x1 Viewport at the given coordinate
 Viewport Viewport::FromCoord(const til::point origin) noexcept
 {
-    return FromInclusive(til::inclusive_rect{ origin.X, origin.Y, origin.X, origin.Y });
+    return FromInclusive(til::inclusive_rect{ origin.x, origin.y, origin.x, origin.y });
 }
 
 til::CoordType Viewport::Left() const noexcept
 {
-    return _sr.Left;
+    return _sr.left;
 }
 
 til::CoordType Viewport::RightInclusive() const noexcept
 {
-    return _sr.Right;
+    return _sr.right;
 }
 
 til::CoordType Viewport::RightExclusive() const noexcept
 {
-    return _sr.Right + 1;
+    return _sr.right + 1;
 }
 
 til::CoordType Viewport::Top() const noexcept
 {
-    return _sr.Top;
+    return _sr.top;
 }
 
 til::CoordType Viewport::BottomInclusive() const noexcept
 {
-    return _sr.Bottom;
+    return _sr.bottom;
 }
 
 til::CoordType Viewport::BottomExclusive() const noexcept
 {
-    return _sr.Bottom + 1;
+    return _sr.bottom + 1;
 }
 
 til::CoordType Viewport::Height() const noexcept
@@ -215,8 +215,8 @@ bool Viewport::IsInBounds(const til::point pos, bool allowEndExclusive) const no
         return true;
     }
 
-    return pos.X >= Left() && pos.X < RightExclusive() &&
-           pos.Y >= Top() && pos.Y < BottomExclusive();
+    return pos.x >= Left() && pos.x < RightExclusive() &&
+           pos.y >= Top() && pos.y < BottomExclusive();
 }
 
 // Method Description:
@@ -229,8 +229,8 @@ void Viewport::Clamp(til::point& pos) const
 {
     THROW_HR_IF(E_NOT_VALID_STATE, !IsValid()); // we can't clamp to an invalid viewport.
 
-    pos.X = std::clamp(pos.X, Left(), RightInclusive());
-    pos.Y = std::clamp(pos.Y, Top(), BottomInclusive());
+    pos.x = std::clamp(pos.x, Left(), RightInclusive());
+    pos.y = std::clamp(pos.y, Top(), BottomInclusive());
 }
 
 // Method Description:
@@ -243,10 +243,10 @@ Viewport Viewport::Clamp(const Viewport& other) const noexcept
 {
     auto clampMe = other.ToInclusive();
 
-    clampMe.Left = std::clamp(clampMe.Left, Left(), RightInclusive());
-    clampMe.Right = std::clamp(clampMe.Right, Left(), RightInclusive());
-    clampMe.Top = std::clamp(clampMe.Top, Top(), BottomInclusive());
-    clampMe.Bottom = std::clamp(clampMe.Bottom, Top(), BottomInclusive());
+    clampMe.left = std::clamp(clampMe.left, Left(), RightInclusive());
+    clampMe.right = std::clamp(clampMe.right, Left(), RightInclusive());
+    clampMe.top = std::clamp(clampMe.top, Top(), BottomInclusive());
+    clampMe.bottom = std::clamp(clampMe.bottom, Top(), BottomInclusive());
 
     return Viewport::FromInclusive(clampMe);
 }
@@ -375,11 +375,11 @@ int Viewport::CompareInBounds(const til::point first, const til::point second, b
     // First set the distance vertically
     //   If first is on row 4 and second is on row 6, first will be -2 rows behind second * an 80 character row would be -160.
     //   For the same row, it'll be 0 rows * 80 character width = 0 difference.
-    auto retVal = (first.Y - second.Y) * Width();
+    auto retVal = (first.y - second.y) * Width();
 
     // Now adjust for horizontal differences
     //   If first is in position 15 and second is in position 30, first is -15 left in relation to 30.
-    retVal += (first.X - second.X);
+    retVal += (first.x - second.x);
 
     // Further notes:
     //   If we already moved behind one row, this will help correct for when first is right of second.
@@ -437,71 +437,71 @@ bool Viewport::WalkInBoundsCircular(til::point& pos, const WalkDir dir, bool all
 
     if (dir.x == XWalk::LeftToRight)
     {
-        if (allowEndExclusive && pos.X == Left() && pos.Y == BottomExclusive())
+        if (allowEndExclusive && pos.x == Left() && pos.y == BottomExclusive())
         {
-            pos.Y = Top();
+            pos.y = Top();
             return false;
         }
-        else if (pos.X == RightInclusive())
+        else if (pos.x == RightInclusive())
         {
-            pos.X = Left();
+            pos.x = Left();
 
             if (dir.y == YWalk::TopToBottom)
             {
-                pos.Y++;
-                if (allowEndExclusive && pos.Y == BottomExclusive())
+                pos.y++;
+                if (allowEndExclusive && pos.y == BottomExclusive())
                 {
                     return true;
                 }
-                else if (pos.Y > BottomInclusive())
+                else if (pos.y > BottomInclusive())
                 {
-                    pos.Y = Top();
+                    pos.y = Top();
                     return false;
                 }
             }
             else
             {
-                pos.Y--;
-                if (pos.Y < Top())
+                pos.y--;
+                if (pos.y < Top())
                 {
-                    pos.Y = BottomInclusive();
+                    pos.y = BottomInclusive();
                     return false;
                 }
             }
         }
         else
         {
-            pos.X++;
+            pos.x++;
         }
     }
     else
     {
-        if (pos.X == Left())
+        if (pos.x == Left())
         {
-            pos.X = RightInclusive();
+            pos.x = RightInclusive();
 
             if (dir.y == YWalk::TopToBottom)
             {
-                pos.Y++;
-                if (pos.Y > BottomInclusive())
+                pos.y++;
+                if (pos.y > BottomInclusive())
                 {
-                    pos.Y = Top();
+                    pos.y = Top();
                     return false;
                 }
             }
             else
             {
-                pos.Y--;
-                if (pos.Y < Top())
+                pos.y--;
+                if (pos.y < Top())
                 {
-                    pos.Y = BottomInclusive();
+                    pos.y = BottomInclusive();
                     return false;
                 }
             }
         }
         else
         {
-            pos.X--;
+            pos.x--;
         }
     }
 
@@ -521,8 +521,8 @@ bool Viewport::WalkInBoundsCircular(til::point& pos, const WalkDir dir, bool all
 til::point Viewport::GetWalkOrigin(const WalkDir dir) const noexcept
 {
     til::point origin;
-    origin.X = dir.x == XWalk::LeftToRight ? Left() : RightInclusive();
-    origin.Y = dir.y == YWalk::TopToBottom ? Top() : BottomInclusive();
+    origin.x = dir.x == XWalk::LeftToRight ? Left() : RightInclusive();
+    origin.y = dir.y == YWalk::TopToBottom ? Top() : BottomInclusive();
     return origin;
 }
 
@@ -682,8 +682,8 @@ Viewport::WalkDir Viewport::DetermineWalkDirection(const Viewport& source, const
     const auto sourceOrigin = source.Origin();
     const auto targetOrigin = target.Origin();
 
-    return Viewport::WalkDir{ targetOrigin.X < sourceOrigin.X ? Viewport::XWalk::LeftToRight : Viewport::XWalk::RightToLeft,
-                              targetOrigin.Y < sourceOrigin.Y ? Viewport::YWalk::TopToBottom : Viewport::YWalk::BottomToTop };
+    return Viewport::WalkDir{ targetOrigin.x < sourceOrigin.x ? Viewport::XWalk::LeftToRight : Viewport::XWalk::RightToLeft,
+                              targetOrigin.y < sourceOrigin.y ? Viewport::YWalk::TopToBottom : Viewport::YWalk::BottomToTop };
 }
 
 // Method Description:
@@ -695,17 +695,17 @@ Viewport::WalkDir Viewport::DetermineWalkDirection(const Viewport& source, const
 // - true iff the clipped rectangle is valid (with a width and height both >0)
 bool Viewport::TrimToViewport(_Inout_ til::rect* psr) const noexcept
 {
-    psr->Left = std::max(psr->Left, Left());
-    psr->Right = std::min(psr->Right, RightExclusive());
-    psr->Top = std::max(psr->Top, Top());
-    psr->Bottom = std::min(psr->Bottom, BottomExclusive());
+    psr->left = std::max(psr->left, Left());
+    psr->right = std::min(psr->right, RightExclusive());
+    psr->top = std::max(psr->top, Top());
+    psr->bottom = std::min(psr->bottom, BottomExclusive());
 
-    return psr->Left < psr->Right && psr->Top < psr->Bottom;
+    return psr->left < psr->right && psr->top < psr->bottom;
 }
 
 // Method Description:
 // - Translates the input til::rect out of our coordinate space, whose origin is
-//      at (this.Left, this.Right)
+//      at (this.left, this.right)
 // Arguments:
 // - psr: a pointer to a til::rect the translate into our coordinate space.
 // Return Value:
@@ -714,15 +714,15 @@ void Viewport::ConvertToOrigin(_Inout_ til::rect* psr) const noexcept
 {
     const auto dx = Left();
     const auto dy = Top();
-    psr->Left -= dx;
-    psr->Right -= dx;
-    psr->Top -= dy;
-    psr->Bottom -= dy;
+    psr->left -= dx;
+    psr->right -= dx;
+    psr->top -= dy;
+    psr->bottom -= dy;
 }
 
 // Method Description:
 // - Translates the input til::inclusive_rect out of our coordinate space, whose origin is
-//      at (this.Left, this.Right)
+//      at (this.left, this.right)
 // Arguments:
 // - psr: a pointer to a til::inclusive_rect the translate into our coordinate space.
 // Return Value:
@@ -731,28 +731,28 @@ void Viewport::ConvertToOrigin(_Inout_ til::inclusive_rect* const psr) const noe
 {
     const auto dx = Left();
     const auto dy = Top();
-    psr->Left -= dx;
-    psr->Right -= dx;
-    psr->Top -= dy;
-    psr->Bottom -= dy;
+    psr->left -= dx;
+    psr->right -= dx;
+    psr->top -= dy;
+    psr->bottom -= dy;
 }
 
 // Method Description:
 // - Translates the input coordinate out of our coordinate space, whose origin is
-//      at (this.Left, this.Right)
+//      at (this.left, this.right)
 // Arguments:
 // - pcoord: a pointer to a coordinate the translate into our coordinate space.
 // Return Value:
 // - <none>
 void Viewport::ConvertToOrigin(_Inout_ til::point* const pcoord) const noexcept
 {
-    pcoord->X -= Left();
-    pcoord->Y -= Top();
+    pcoord->x -= Left();
+    pcoord->y -= Top();
 }
 
 // Method Description:
 // - Translates the input til::inclusive_rect to our coordinate space, whose origin is
-//      at (this.Left, this.Right)
+//      at (this.left, this.right)
 // Arguments:
 // - psr: a pointer to a til::inclusive_rect the translate into our coordinate space.
 // Return Value:
@@ -761,23 +761,23 @@ void Viewport::ConvertFromOrigin(_Inout_ til::inclusive_rect* const psr) const n
 {
     const auto dx = Left();
     const auto dy = Top();
-    psr->Left += dx;
-    psr->Right += dx;
-    psr->Top += dy;
-    psr->Bottom += dy;
+    psr->left += dx;
+    psr->right += dx;
+    psr->top += dy;
+    psr->bottom += dy;
 }
 
 // Method Description:
 // - Translates the input coordinate to our coordinate space, whose origin is
-//      at (this.Left, this.Right)
+//      at (this.left, this.right)
 // Arguments:
 // - pcoord: a pointer to a coordinate the translate into our coordinate space.
 // Return Value:
 // - <none>
 void Viewport::ConvertFromOrigin(_Inout_ til::point* const pcoord) const noexcept
 {
-    pcoord->X += Left();
-    pcoord->Y += Top();
+    pcoord->x += Left();
+    pcoord->y += Top();
 }
 
 // Method Description:
@@ -827,7 +827,7 @@ Viewport Viewport::ToOrigin() const noexcept
 // Arguments:
 // - other: the viewport to convert to this coordinate space
 // Return Value:
-// - the input viewport in a the coordinate space with origin at (this.Top, this.Left)
+// - the input viewport in a the coordinate space with origin at (this.top, this.left)
 [[nodiscard]] Viewport Viewport::ConvertToOrigin(const Viewport& other) const noexcept
 {
     auto returnVal = other;
@@ -863,10 +863,10 @@ Viewport Viewport::ToOrigin() const noexcept
 // - NOTE: Throws on safe math failure.
 [[nodiscard]] Viewport Viewport::Offset(const Viewport& original, const til::point delta) noexcept
 {
-    const auto newLeft = original._sr.Left + delta.X;
-    const auto newTop = original._sr.Top + delta.Y;
-    const auto newRight = original._sr.Right + delta.X;
-    const auto newBottom = original._sr.Bottom + delta.Y;
+    const auto newLeft = original._sr.left + delta.x;
+    const auto newTop = original._sr.top + delta.y;
+    const auto newRight = original._sr.right + delta.x;
+    const auto newBottom = original._sr.bottom + delta.y;
     return Viewport({ newLeft, newTop, newRight, newBottom });
 }
 

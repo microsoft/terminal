@@ -79,7 +79,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(til::color(0xFF, 0xFF, 0xFF, 255), til::color{ scheme->CursorColor() });
 
         std::array<COLORREF, COLOR_TABLE_SIZE> expectedCampbellTable;
-        const auto campbellSpan = gsl::make_span(expectedCampbellTable);
+        const auto campbellSpan = std::span{ expectedCampbellTable };
         Utils::InitializeColorTable(campbellSpan);
 
         for (size_t i = 0; i < expectedCampbellTable.size(); i++)
@@ -217,6 +217,30 @@ namespace SettingsModelLocalTests
                     {
                         "name": "Different reference",
                         "colorScheme": "One Half Dark"
+                    },
+                    {
+                        "name": "rename neither",
+                        "colorScheme":
+                        {
+                            "dark": "One Half Dark",
+                            "light": "One Half Light"
+                        }
+                    },
+                    {
+                        "name": "rename only light",
+                        "colorScheme":
+                        {
+                            "dark": "One Half Dark",
+                            "light": "Campbell"
+                        }
+                    },
+                    {
+                        "name": "rename only dark",
+                        "colorScheme":
+                        {
+                            "dark": "Campbell",
+                            "light": "One Half Light"
+                        }
                     }
                 ]
             },
@@ -289,6 +313,28 @@ namespace SettingsModelLocalTests
                     "selectionBackground": "#FFFFFF",
                     "white": "#DCDFE4",
                     "yellow": "#E5C07B"
+                },
+                {
+                    "name": "One Half Light",
+                    "foreground": "#383A42",
+                    "background": "#FAFAFA",
+                    "cursorColor": "#4F525D",
+                    "black": "#383A42",
+                    "red": "#E45649",
+                    "green": "#50A14F",
+                    "yellow": "#C18301",
+                    "blue": "#0184BC",
+                    "purple": "#A626A4",
+                    "cyan": "#0997B3",
+                    "white": "#FAFAFA",
+                    "brightBlack": "#4F525D",
+                    "brightRed": "#DF6C75",
+                    "brightGreen": "#98C379",
+                    "brightYellow": "#E4C07A",
+                    "brightBlue": "#61AFEF",
+                    "brightPurple": "#C577DD",
+                    "brightCyan": "#56B5C1",
+                    "brightWhite": "#FFFFFF"
                 }
             ]
         })json" };
@@ -296,31 +342,63 @@ namespace SettingsModelLocalTests
         const auto settings{ winrt::make_self<CascadiaSettings>(settingsString) };
 
         const auto newName{ L"Campbell (renamed)" };
+
         settings->UpdateColorSchemeReferences(L"Campbell", newName);
 
-        VERIFY_ARE_EQUAL(newName, settings->ProfileDefaults().DefaultAppearance().ColorSchemeName());
-        VERIFY_IS_TRUE(settings->ProfileDefaults().DefaultAppearance().HasColorSchemeName());
+        VERIFY_ARE_EQUAL(newName, settings->ProfileDefaults().DefaultAppearance().DarkColorSchemeName());
+        VERIFY_ARE_EQUAL(newName, settings->ProfileDefaults().DefaultAppearance().LightColorSchemeName());
+        VERIFY_IS_TRUE(settings->ProfileDefaults().DefaultAppearance().HasDarkColorSchemeName());
+        VERIFY_IS_TRUE(settings->ProfileDefaults().DefaultAppearance().HasLightColorSchemeName());
 
         const auto& profiles{ settings->AllProfiles() };
         {
             const auto& prof{ profiles.GetAt(0) };
-            VERIFY_ARE_EQUAL(newName, prof.DefaultAppearance().ColorSchemeName());
-            VERIFY_IS_TRUE(prof.DefaultAppearance().HasColorSchemeName());
+            VERIFY_ARE_EQUAL(newName, prof.DefaultAppearance().DarkColorSchemeName());
+            VERIFY_IS_TRUE(prof.DefaultAppearance().HasDarkColorSchemeName());
+            VERIFY_ARE_EQUAL(newName, prof.DefaultAppearance().LightColorSchemeName());
+            VERIFY_IS_TRUE(prof.DefaultAppearance().HasLightColorSchemeName());
         }
         {
             const auto& prof{ profiles.GetAt(1) };
-            VERIFY_ARE_EQUAL(newName, prof.DefaultAppearance().ColorSchemeName());
-            VERIFY_IS_TRUE(prof.DefaultAppearance().HasColorSchemeName());
+            VERIFY_ARE_EQUAL(newName, prof.DefaultAppearance().DarkColorSchemeName());
+            VERIFY_IS_TRUE(prof.DefaultAppearance().HasDarkColorSchemeName());
+            VERIFY_ARE_EQUAL(newName, prof.DefaultAppearance().LightColorSchemeName());
+            VERIFY_IS_TRUE(prof.DefaultAppearance().HasLightColorSchemeName());
         }
         {
             const auto& prof{ profiles.GetAt(2) };
-            VERIFY_ARE_EQUAL(newName, prof.DefaultAppearance().ColorSchemeName());
-            VERIFY_IS_FALSE(prof.DefaultAppearance().HasColorSchemeName());
+            VERIFY_ARE_EQUAL(newName, prof.DefaultAppearance().DarkColorSchemeName());
+            VERIFY_IS_FALSE(prof.DefaultAppearance().HasDarkColorSchemeName());
+            VERIFY_ARE_EQUAL(newName, prof.DefaultAppearance().LightColorSchemeName());
+            VERIFY_IS_FALSE(prof.DefaultAppearance().HasLightColorSchemeName());
         }
         {
             const auto& prof{ profiles.GetAt(3) };
-            VERIFY_ARE_EQUAL(L"One Half Dark", prof.DefaultAppearance().ColorSchemeName());
-            VERIFY_IS_TRUE(prof.DefaultAppearance().HasColorSchemeName());
+            VERIFY_ARE_EQUAL(L"One Half Dark", prof.DefaultAppearance().DarkColorSchemeName());
+            VERIFY_IS_TRUE(prof.DefaultAppearance().HasDarkColorSchemeName());
+            VERIFY_ARE_EQUAL(L"One Half Dark", prof.DefaultAppearance().LightColorSchemeName());
+            VERIFY_IS_TRUE(prof.DefaultAppearance().HasLightColorSchemeName());
+        }
+        {
+            const auto& prof{ profiles.GetAt(4) };
+            VERIFY_ARE_EQUAL(L"One Half Dark", prof.DefaultAppearance().DarkColorSchemeName());
+            VERIFY_ARE_EQUAL(L"One Half Light", prof.DefaultAppearance().LightColorSchemeName());
+            VERIFY_IS_TRUE(prof.DefaultAppearance().HasDarkColorSchemeName());
+            VERIFY_IS_TRUE(prof.DefaultAppearance().HasLightColorSchemeName());
+        }
+        {
+            const auto& prof{ profiles.GetAt(5) };
+            VERIFY_ARE_EQUAL(L"One Half Dark", prof.DefaultAppearance().DarkColorSchemeName());
+            VERIFY_ARE_EQUAL(newName, prof.DefaultAppearance().LightColorSchemeName());
+            VERIFY_IS_TRUE(prof.DefaultAppearance().HasDarkColorSchemeName());
+            VERIFY_IS_TRUE(prof.DefaultAppearance().HasLightColorSchemeName());
+        }
+        {
+            const auto& prof{ profiles.GetAt(6) };
+            VERIFY_ARE_EQUAL(newName, prof.DefaultAppearance().DarkColorSchemeName());
+            VERIFY_ARE_EQUAL(L"One Half Light", prof.DefaultAppearance().LightColorSchemeName());
+            VERIFY_IS_TRUE(prof.DefaultAppearance().HasDarkColorSchemeName());
+            VERIFY_IS_TRUE(prof.DefaultAppearance().HasLightColorSchemeName());
         }
     }
 }

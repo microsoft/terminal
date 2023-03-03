@@ -16,7 +16,7 @@
     X(winrt::Microsoft::Terminal::Core::AdjustTextMode, AdjustIndistinguishableColors, winrt::Microsoft::Terminal::Core::AdjustTextMode::Never)
 
 // --------------------------- Control Appearance ---------------------------
-//  All of these settings are defined in IControlSettings.
+//  All of these settings are defined in IControlAppearance.
 #define CONTROL_APPEARANCE_SETTINGS(X)                                                                                                          \
     X(til::color, SelectionBackground, DEFAULT_FOREGROUND)                                                                                      \
     X(double, Opacity, 1.0)                                                                                                                     \
@@ -61,6 +61,8 @@
     X(winrt::Windows::UI::Text::FontWeight, FontWeight)                                                                                                  \
     X(IFontFeatureMap, FontFeatures)                                                                                                                     \
     X(IFontAxesMap, FontAxes)                                                                                                                            \
+    X(winrt::hstring, CellWidth)                                                                                                                         \
+    X(winrt::hstring, CellHeight)                                                                                                                        \
     X(winrt::Microsoft::Terminal::Control::IKeyBindings, KeyBindings, nullptr)                                                                           \
     X(winrt::hstring, Commandline)                                                                                                                       \
     X(winrt::hstring, StartingDirectory)                                                                                                                 \

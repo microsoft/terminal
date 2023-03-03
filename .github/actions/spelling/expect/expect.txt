@@ -61,7 +61,6 @@ argb
 ARRAYSIZE
 ARROWKEYS
 asan
-ASBRST
 ASBSET
 ASDF
 asdfghjkl
@@ -252,6 +251,7 @@ conattrs
 conbufferout
 concfg
 conclnt
+concretizations
 conddkrefs
 condrv
 conechokey
@@ -311,7 +311,6 @@ CPLINFO
 cplusplus
 CPPCORECHECK
 cppcorecheckrules
-cpprest
 cpprestsdk
 cppwinrt
 CProc
@@ -410,20 +409,24 @@ DECAWM
 DECBKM
 DECCARA
 DECCKM
+DECCKSR
 DECCOLM
 DECCRA
 DECCTR
 DECDHL
 decdld
+DECDMAC
 DECDWL
 DECEKBD
 DECERA
 DECFRA
 DECID
+DECINVM
 DECKPAM
 DECKPM
 DECKPNM
 DECLRMM
+DECMSR
 DECNKM
 DECNRCM
 DECOM
@@ -433,6 +436,7 @@ DECRARA
 DECRC
 DECREQTPARM
 DECRLM
+DECRPM
 DECRQM
 DECRQSS
 DECRQTSR
@@ -453,6 +457,7 @@ DECSLRM
 DECSMKR
 DECSR
 DECSTBM
+DECSTGLT
 DECSTR
 DECSWL
 DECTCEM
@@ -811,6 +816,7 @@ HORZ
 hostable
 hostlib
 HPA
+hpcon
 HPCON
 hpj
 HPR
@@ -1430,7 +1436,6 @@ PPEB
 ppf
 ppguid
 ppidl
-pplx
 PPROC
 PPROCESS
 ppropvar
@@ -1570,6 +1575,7 @@ replatformed
 Replymessage
 repositorypath
 Requiresx
+rerasterize
 rescap
 Resequence
 RESETCONTENT
@@ -1818,6 +1824,7 @@ SYSCOMMAND
 SYSDEADCHAR
 SYSKEYDOWN
 SYSKEYUP
+SYSLIB
 SYSLINK
 SYSMENU
 sysparams
@@ -2106,7 +2113,6 @@ WDDMCONSOLECONTEXT
 wdm
 webpage
 websites
-websockets
 wekyb
 wex
 wextest
@@ -2183,6 +2189,7 @@ wnd
 WNDALLOC
 WNDCLASS
 WNDCLASSEX
+WNDCLASSEXW
 WNDCLASSW
 Wndproc
 WNegative
@@ -2288,6 +2295,7 @@ YOffset
 YSubstantial
 YVIRTUALSCREEN
 YWalk
+zabcd
 Zabcdefghijklmnopqrstuvwxyz
 ZCmd
 ZCtrl

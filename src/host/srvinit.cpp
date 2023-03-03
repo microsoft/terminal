@@ -116,7 +116,7 @@ static bool s_IsOnDesktop()
         const auto status = Microsoft::Console::Interactivity::ApiDetector::DetectNtUserWindow(&level);
         LOG_IF_NTSTATUS_FAILED(status);
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             switch (level)
             {
@@ -198,7 +198,7 @@ static bool s_IsOnDesktop()
         // We want everyone to be using VT by default anyways, so this is a
         // strong nudge in that direction. If an application _doesn't_ want VT
         // processing, it's free to disable this setting, even in conpty mode.
-        settings.SetVirtTermLevel(1);
+        settings.SetDefaultVirtTermLevel(1);
 
         // GH#9458 - In the case of a DefTerm handoff, the OriginalTitle might
         // be stashed in the lnk. We want to crack that lnk open, so we can get
@@ -255,7 +255,7 @@ static bool s_IsOnDesktop()
     // Allocate console will read the global ServiceLocator::LocateGlobals().getConsoleInformation
     // for the settings we just set.
     auto Status = CONSOLE_INFORMATION::AllocateConsole({ Title, TitleLength / sizeof(wchar_t) });
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         return Status;
     }
@@ -297,7 +297,7 @@ void ConsoleCheckDebug()
     wil::unique_hkey hConsole;
     auto status = RegistrySerialization::s_OpenConsoleKey(&hCurrentUser, &hConsole);
 
-    if (NT_SUCCESS(status))
+    if (SUCCEEDED_NTSTATUS(status))
     {
         DWORD dwData = 0;
         status = RegistrySerialization::s_QueryValue(hConsole.get(),
@@ -307,7 +307,7 @@ void ConsoleCheckDebug()
                                                      (BYTE*)&dwData,
                                                      nullptr);
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             if (dwData != 0)
             {
@@ -810,7 +810,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     CONSOLE_SERVER_MSG Data = { 0 };
     // Try to receive the data sent by the client.
     auto Status = NTSTATUS_FROM_HRESULT(Message->ReadMessageInput(0, &Data, sizeof(Data)));
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         return Status;
     }
@@ -904,7 +904,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     // CreateInstance method), and the TextBuffer needs to be constructed with
     // a reference to the renderer, so the renderer must be created first.
     auto Status = SetUpConsole(&p->ConsoleInfo, p->TitleLength, p->Title, p->CurDir, p->AppName);
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         return Status;
     }
@@ -912,7 +912,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     // Allow the renderer to paint once the rest of the console is hooked up.
     g.pRender->EnablePainting();
 
-    if (NT_SUCCESS(Status) && ConsoleConnectionDeservesVisibleWindow(p))
+    if (SUCCEEDED_NTSTATUS(Status) && ConsoleConnectionDeservesVisibleWindow(p))
     {
         HANDLE Thread = nullptr;
 
@@ -940,7 +940,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
 
             CloseHandle(Thread); // This doesn't stop the thread from running.
 
-            if (!NT_SUCCESS(g.ntstatusConsoleInputInitStatus))
+            if (FAILED_NTSTATUS(g.ntstatusConsoleInputInitStatus))
             {
                 Status = g.ntstatusConsoleInputInitStatus;
             }
@@ -973,7 +973,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     // Potentially start the VT IO (if needed)
     // Make sure to do this after the i/o buffers have been created.
     // We'll need the size of the screen buffer in the vt i/o initialization
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         auto hr = gci.GetVtIo()->CreateIoHandlers();
         if (hr == S_FALSE)

@@ -113,7 +113,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::hstring HoveredUriText() const;
         Windows::Foundation::IReference<Core::Point> HoveredCell() const;
 
-        ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
+        ::Microsoft::Console::Render::IRenderData* GetRenderData() const;
 
         void ColorSelection(const Control::SelectionColor& fg, const Control::SelectionColor& bg, Core::MatchMode matchMode);
 
@@ -233,6 +233,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(UpdateSelectionMarkers,    IInspectable, Control::UpdateSelectionMarkersEventArgs);
         TYPED_EVENT(OpenHyperlink,             IInspectable, Control::OpenHyperlinkEventArgs);
         TYPED_EVENT(SendNotification,          IInspectable, Control::SendNotificationArgs);
+        TYPED_EVENT(CloseTerminalRequested,    IInspectable, IInspectable);
         // clang-format on
 
     private:
@@ -258,6 +259,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
         winrt::hstring _actualFontFaceName;
+        CSSLengthPercentage _cellWidth;
+        CSSLengthPercentage _cellHeight;
 
         // storage location for the leading surrogate of a utf-16 surrogate pair
         std::optional<wchar_t> _leadingSurrogate{ std::nullopt };

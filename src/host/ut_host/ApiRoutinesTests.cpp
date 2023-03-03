@@ -222,7 +222,7 @@ class ApiRoutinesTests
         char pszTitle[MAX_PATH]; // most applications use MAX_PATH
         size_t cchWritten = 0;
         size_t cchNeeded = 0;
-        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleTitleAImpl(gsl::span<char>(pszTitle, ARRAYSIZE(pszTitle)), cchWritten, cchNeeded));
+        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleTitleAImpl(std::span<char>(pszTitle, ARRAYSIZE(pszTitle)), cchWritten, cchNeeded));
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
         // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
@@ -239,7 +239,7 @@ class ApiRoutinesTests
         wchar_t pwszTitle[MAX_PATH]; // most applications use MAX_PATH
         size_t cchWritten = 0;
         size_t cchNeeded = 0;
-        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleTitleWImpl(gsl::span<wchar_t>(pwszTitle, ARRAYSIZE(pwszTitle)), cchWritten, cchNeeded));
+        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleTitleWImpl(std::span<wchar_t>(pwszTitle, ARRAYSIZE(pwszTitle)), cchWritten, cchNeeded));
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
 
@@ -285,7 +285,7 @@ class ApiRoutinesTests
         char pszTitle[MAX_PATH]; // most applications use MAX_PATH
         size_t cchWritten = 0;
         size_t cchNeeded = 0;
-        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleOriginalTitleAImpl(gsl::span<char>(pszTitle, ARRAYSIZE(pszTitle)), cchWritten, cchNeeded));
+        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleOriginalTitleAImpl(std::span<char>(pszTitle, ARRAYSIZE(pszTitle)), cchWritten, cchNeeded));
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
         // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
@@ -302,7 +302,7 @@ class ApiRoutinesTests
         wchar_t pwszTitle[MAX_PATH]; // most applications use MAX_PATH
         size_t cchWritten = 0;
         size_t cchNeeded = 0;
-        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleOriginalTitleWImpl(gsl::span<wchar_t>(pwszTitle, ARRAYSIZE(pwszTitle)), cchWritten, cchNeeded));
+        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleOriginalTitleWImpl(std::span<wchar_t>(pwszTitle, ARRAYSIZE(pwszTitle)), cchWritten, cchNeeded));
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
 
@@ -519,8 +519,8 @@ class ApiRoutinesTests
 
         // Find the delta by comparing the scroll area to the destination point
         til::point delta;
-        delta.X = destPoint.X - scrollArea.Left();
-        delta.Y = destPoint.Y - scrollArea.Top();
+        delta.x = destPoint.x - scrollArea.Left();
+        delta.y = destPoint.y - scrollArea.Top();
 
         // Find the area where the scroll text should have gone by taking the scrolled area by the delta
         auto scrolledDestination = Viewport::Offset(scrollArea, delta);
@@ -646,7 +646,7 @@ class ApiRoutinesTests
         {
             // for scrolling up and down, we're going to clip to only modify the left half of the buffer
             auto clipRectDimensions = bufferSize.Dimensions();
-            clipRectDimensions.X /= 2;
+            clipRectDimensions.width /= 2;
 
             clipViewport = Viewport::FromDimensions({ 0, 0 }, clipRectDimensions);
             clipRectangle = clipViewport.value().ToInclusive();
@@ -670,7 +670,7 @@ class ApiRoutinesTests
         {
             // for scrolling left and right, we're going to clip to only modify the top half of the buffer
             auto clipRectDimensions = bufferSize.Dimensions();
-            clipRectDimensions.Y /= 2;
+            clipRectDimensions.height /= 2;
 
             clipViewport = Viewport::FromDimensions({ 0, 0 }, clipRectDimensions);
             clipRectangle = clipViewport.value().ToInclusive();
@@ -739,7 +739,7 @@ class ApiRoutinesTests
         {
             // for scrolling up and down, we're going to clip to only modify the left half of the buffer
             auto clipRectDimensions = bufferSize.Dimensions();
-            clipRectDimensions.X /= 2;
+            clipRectDimensions.width /= 2;
 
             clipViewport = Viewport::FromDimensions({ 0, 0 }, clipRectDimensions);
             clipRectangle = clipViewport.value().ToInclusive();
@@ -772,10 +772,10 @@ class ApiRoutinesTests
         }
 
         Log::Comment(L"Scroll a small portion of the screen in an overlapping fashion.");
-        scroll.Top = 1;
-        scroll.Bottom = 2;
-        scroll.Left = 1;
-        scroll.Right = 2;
+        scroll.top = 1;
+        scroll.bottom = 2;
+        scroll.left = 1;
+        scroll.right = 2;
 
         si.GetActiveBuffer().ClearTextData(); // Clean out screen
         si.GetActiveBuffer().Write(OutputCellIterator(background), { 0, 0 }); // Fill entire screen with green Zs.
@@ -801,7 +801,7 @@ class ApiRoutinesTests
         // ZZZZZ
 
         // We're going to move our little embedded rectangle of Blue Bs inside the field of Green Zs down and to the right just one.
-        destination = { scroll.Left + 1, scroll.Top + 1 };
+        destination = { scroll.left + 1, scroll.top + 1 };
 
         // Move rectangle and backfill with red As.
         VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, clipRectangle, fill.Char.UnicodeChar, fill.Attributes));
@@ -845,7 +845,7 @@ class ApiRoutinesTests
         // ZZZZZ
 
         // We're going to move our little embedded rectangle of Blue Bs inside the field of Green Zs down and to the right by two.
-        destination = { scroll.Left + 2, scroll.Top + 2 };
+        destination = { scroll.left + 2, scroll.top + 2 };
 
         // Move rectangle and backfill with red As.
         VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, clipRectangle, fill.Char.UnicodeChar, fill.Attributes));

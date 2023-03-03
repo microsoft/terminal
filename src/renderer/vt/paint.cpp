@@ -176,7 +176,7 @@ using namespace Microsoft::Console::Types;
 //   will be false.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT VtEngine::PaintBufferLine(const gsl::span<const Cluster> clusters,
+[[nodiscard]] HRESULT VtEngine::PaintBufferLine(const std::span<const Cluster> clusters,
                                                 const til::point coord,
                                                 const bool /*trimLeft*/,
                                                 const bool /*lineWrapped*/) noexcept
@@ -389,7 +389,7 @@ using namespace Microsoft::Console::Types;
 // - coord - character coordinate target to render within viewport
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT VtEngine::_PaintAsciiBufferLine(const gsl::span<const Cluster> clusters,
+[[nodiscard]] HRESULT VtEngine::_PaintAsciiBufferLine(const std::span<const Cluster> clusters,
                                                       const til::point coord) noexcept
 {
     try
@@ -409,7 +409,7 @@ using namespace Microsoft::Console::Types;
         RETURN_IF_FAILED(VtEngine::_WriteTerminalAscii(_bufferLine));
 
         // Update our internal tracker of the cursor's position
-        _lastText.X += totalWidth;
+        _lastText.x += totalWidth;
 
         return S_OK;
     }
@@ -424,11 +424,11 @@ using namespace Microsoft::Console::Types;
 // - coord - character coordinate target to render within viewport
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT VtEngine::_PaintUtf8BufferLine(const gsl::span<const Cluster> clusters,
+[[nodiscard]] HRESULT VtEngine::_PaintUtf8BufferLine(const std::span<const Cluster> clusters,
                                                      const til::point coord,
                                                      const bool lineWrapped) noexcept
 {
-    if (coord.Y < _virtualTop)
+    if (coord.y < _virtualTop)
     {
         return S_OK;
     }
@@ -484,7 +484,7 @@ using namespace Microsoft::Console::Types;
                               (!_newBottomLine) &&
                               (!_clearedAllThisFrame) &&
                               (!_lastTextAttributes.HasAnyVisualAttributes());
-    const auto printingBottomLine = coord.Y == _lastViewport.BottomInclusive();
+    const auto printingBottomLine = coord.y == _lastViewport.BottomInclusive();
 
     // GH#5502 - If the background color of the "new bottom line" is different
     // than when we emitted the line, we can't optimize out the spaces from it.
@@ -555,15 +555,15 @@ using namespace Microsoft::Console::Types;
     // line.
     if (lineWrapped)
     {
-        _wrappedRow = coord.Y;
-        _trace.TraceSetWrapped(coord.Y);
+        _wrappedRow = coord.y;
+        _trace.TraceSetWrapped(coord.y);
     }
 
     // Update our internal tracker of the cursor's position.
     // See MSFT:20266233 (which is also GH#357)
     // If the cursor is at the rightmost column of the terminal, and we write a
     //      space, the cursor won't actually move to the next cell (which would
-    //      be {0, _lastText.Y++}). The cursor will stay visibly in that last
+    //      be {0, _lastText.y++}). The cursor will stay visibly in that last
     //      cell until then next character is output.
     // If in that case, we increment the cursor position here (such that the X
     //      position would be one past the right of the terminal), when we come
@@ -575,9 +575,9 @@ using namespace Microsoft::Console::Types;
     // GH#1245: This needs to be RightExclusive, _not_ inclusive. Otherwise, we
     // won't update our internal cursor position tracker correctly at the last
     // character of the row.
-    if (_lastText.X < _lastViewport.RightExclusive())
+    if (_lastText.x < _lastViewport.RightExclusive())
     {
-        _lastText.X += columnsActual;
+        _lastText.x += columnsActual;
     }
     // GH#1245: If we wrote the exactly last char of the row, then we're in the
     // "delayed EOL wrap" state. Different terminals (conhost, gnome-terminal,
@@ -585,7 +585,7 @@ using namespace Microsoft::Console::Types;
     // Mark that we're in the delayed EOL wrap state - we don't want to be
     // clever about how we move the cursor in this state, since different
     // terminals will handle a backspace differently in this state.
-    if (_lastText.X >= _lastViewport.RightInclusive())
+    if (_lastText.x >= _lastViewport.RightInclusive())
     {
         _delayedEolWrap = true;
     }
@@ -598,9 +598,9 @@ using namespace Microsoft::Console::Types;
         //   cursor somewhere else before the end of the frame, we'll move the
         //   cursor to the deferred position at the end of the frame, or right
         //   before we need to print new text.
-        _deferredCursorPos = { _lastText.X + numSpaces, _lastText.Y };
+        _deferredCursorPos = { _lastText.x + numSpaces, _lastText.y };
 
-        if (_deferredCursorPos.X <= _lastViewport.RightInclusive())
+        if (_deferredCursorPos.x <= _lastViewport.RightInclusive())
         {
             RETURN_IF_FAILED(_EraseCharacter(numSpaces));
         }
@@ -615,7 +615,7 @@ using namespace Microsoft::Console::Types;
         //      line is already empty.
         if (optimalToUseECH)
         {
-            _deferredCursorPos = { _lastText.X + numSpaces, _lastText.Y };
+            _deferredCursorPos = { _lastText.x + numSpaces, _lastText.y };
         }
         else if (numSpaces > 0 && removeSpaces) // if we deleted the spaces... re-add them
         {
@@ -623,7 +623,7 @@ using namespace Microsoft::Console::Types;
             auto spaces = std::wstring(numSpaces, L' ');
             RETURN_IF_FAILED(VtEngine::_WriteTerminalUtf8(spaces));
 
-            _lastText.X += numSpaces;
+            _lastText.x += numSpaces;
         }
     }
 

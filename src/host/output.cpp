@@ -49,7 +49,7 @@ using namespace Microsoft::Console::Interactivity;
     // TODO: MSFT 9355013: This needs to be resolved. We increment it once with no handle to ensure it's never cleaned up
     // and one always exists for the renderer (and potentially other functions.)
     // It's currently a load-bearing piece of code. http://osgvsowi/9355013
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         gci.ScreenBuffers[0].IncrementOriginalScreenBuffer();
     }
@@ -80,11 +80,11 @@ static void _CopyRectangle(SCREEN_INFORMATION& screenInfo,
     //    row locations instead of copying or moving anything.
     {
         const auto bufferSize = screenInfo.GetBufferSize().Dimensions();
-        const auto sourceFullRows = source.Width() == bufferSize.X;
-        const auto verticalCopyOnly = source.Left() == 0 && targetOrigin.X == 0;
+        const auto sourceFullRows = source.Width() == bufferSize.width;
+        const auto verticalCopyOnly = source.Left() == 0 && targetOrigin.x == 0;
         if (sourceFullRows && verticalCopyOnly)
         {
-            const auto delta = targetOrigin.Y - source.Top();
+            const auto delta = targetOrigin.y - source.Top();
 
             screenInfo.GetTextBuffer().ScrollRows(source.Top(), source.Height(), delta);
 
@@ -102,12 +102,16 @@ static void _CopyRectangle(SCREEN_INFORMATION& screenInfo,
         auto sourcePos = source.GetWalkOrigin(walkDirection);
         auto targetPos = target.GetWalkOrigin(walkDirection);
 
+        // Note that we read two cells from the source before we start writing
+        // to the target, so a two-cell DBCS character can't accidentally delete
+        // itself when moving one cell horizontally.
+        auto next = OutputCell(*screenInfo.GetCellDataAt(sourcePos));
         do
         {
-            const auto data = OutputCell(*screenInfo.GetCellDataAt(sourcePos));
-            screenInfo.Write(OutputCellIterator({ &data, 1 }), targetPos);
-
+            const auto current = next;
             source.WalkInBounds(sourcePos, walkDirection);
+            next = OutputCell(*screenInfo.GetCellDataAt(sourcePos));
+            screenInfo.GetTextBuffer().WriteLine(OutputCellIterator({ &current, 1 }), targetPos);
         } while (target.WalkInBounds(targetPos, walkDirection));
     }
 }
@@ -276,7 +280,7 @@ static void _ScrollScreen(SCREEN_INFORMATION& screenInfo, const Viewport& source
         auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
         if (pNotifier != nullptr)
         {
-            pNotifier->NotifyConsoleUpdateScrollEvent(target.Origin().X - source.Left(), target.Origin().Y - source.RightInclusive());
+            pNotifier->NotifyConsoleUpdateScrollEvent(target.Origin().x - source.Left(), target.Origin().y - source.RightInclusive());
         }
     }
 
@@ -306,13 +310,13 @@ bool StreamScrollRegion(SCREEN_INFORMATION& screenInfo)
         if (screenInfo.IsActiveScreenBuffer())
         {
             til::point coordDelta;
-            coordDelta.Y = -1;
+            coordDelta.y = -1;
 
             auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
             if (pNotifier)
             {
                 // Notify accessibility that a scroll has occurred.
-                pNotifier->NotifyConsoleUpdateScrollEvent(coordDelta.X, coordDelta.Y);
+                pNotifier->NotifyConsoleUpdateScrollEvent(coordDelta.x, coordDelta.y);
             }
 
             if (ServiceLocator::LocateGlobals().pRender != nullptr)
@@ -402,8 +406,8 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
     // the target origin.
     {
         auto currentSourceOrigin = source.Origin();
-        targetOrigin.X += currentSourceOrigin.X - originalSourceOrigin.X;
-        targetOrigin.Y += currentSourceOrigin.Y - originalSourceOrigin.Y;
+        targetOrigin.x += currentSourceOrigin.x - originalSourceOrigin.x;
+        targetOrigin.y += currentSourceOrigin.y - originalSourceOrigin.y;
     }
 
     // And now the target viewport is the same size as the source viewport but at the different position.
@@ -420,8 +424,8 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
     {
         const auto currentTargetOrigin = target.Origin();
         auto sourceOrigin = source.Origin();
-        sourceOrigin.X += currentTargetOrigin.X - originalTargetOrigin.X;
-        sourceOrigin.Y += currentTargetOrigin.Y - originalTargetOrigin.Y;
+        sourceOrigin.x += currentTargetOrigin.x - originalTargetOrigin.x;
+        sourceOrigin.y += currentTargetOrigin.y - originalTargetOrigin.y;
 
         source = Viewport::FromDimensions(sourceOrigin, target.Dimensions());
     }
@@ -454,7 +458,7 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
 
         // If we're scrolling an area that encompasses the full buffer width,
         // then the filled rows should also have their line rendition reset.
-        if (view.Width() == buffer.Width() && destinationOriginGiven.X == 0)
+        if (view.Width() == buffer.Width() && destinationOriginGiven.x == 0)
         {
             screenInfo.GetTextBuffer().ResetLineRenditionRange(view.Top(), view.BottomExclusive());
         }
@@ -499,9 +503,6 @@ void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo)
 // TODO: MSFT 9450717 This should join the ProcessList class when CtrlEvents become moved into the server. https://osgvsowi/9450717
 void CloseConsoleProcessState()
 {
-    LockConsole();
-    const auto unlock = wil::scope_exit([] { UnlockConsole(); });
-
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     // If there are no connected processes, sending control events is pointless as there's no one do send them to. In

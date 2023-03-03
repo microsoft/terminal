@@ -82,7 +82,7 @@ OutputCellIterator::OutputCellIterator(const CHAR_INFO& charInfo, const size_t f
 // - This is an iterator over a range of text only. No color data will be modified as the text is inserted.
 // Arguments:
 // - utf16Text - UTF-16 text range
-OutputCellIterator::OutputCellIterator(const std::wstring_view utf16Text) :
+OutputCellIterator::OutputCellIterator(const std::wstring_view utf16Text) noexcept :
     _mode(Mode::LooseTextOnly),
     _currentView(s_GenerateView(utf16Text)),
     _run(utf16Text),
@@ -98,7 +98,7 @@ OutputCellIterator::OutputCellIterator(const std::wstring_view utf16Text) :
 // Arguments:
 // - utf16Text - UTF-16 text range
 // - attribute - Color to apply over the entire range
-OutputCellIterator::OutputCellIterator(const std::wstring_view utf16Text, const TextAttribute& attribute, const size_t fillLimit) :
+OutputCellIterator::OutputCellIterator(const std::wstring_view utf16Text, const TextAttribute& attribute, const size_t fillLimit) noexcept :
     _mode(Mode::Loose),
     _currentView(s_GenerateView(utf16Text, attribute)),
     _run(utf16Text),
@@ -113,7 +113,7 @@ OutputCellIterator::OutputCellIterator(const std::wstring_view utf16Text, const 
 // - This is an iterator over legacy colors only. The text is not modified.
 // Arguments:
 // - legacyAttrs - One legacy color item per cell
-OutputCellIterator::OutputCellIterator(const gsl::span<const WORD> legacyAttrs) noexcept :
+OutputCellIterator::OutputCellIterator(const std::span<const WORD> legacyAttrs) noexcept :
     _mode(Mode::LegacyAttr),
     _currentView(s_GenerateViewLegacyAttr(til::at(legacyAttrs, 0))),
     _run(legacyAttrs),
@@ -128,7 +128,7 @@ OutputCellIterator::OutputCellIterator(const gsl::span<const WORD> legacyAttrs) 
 // - This is an iterator over legacy cell data. We will use the unicode text and the legacy color attribute.
 // Arguments:
 // - charInfos - Multiple cell with unicode text and legacy color data.
-OutputCellIterator::OutputCellIterator(const gsl::span<const CHAR_INFO> charInfos) noexcept :
+OutputCellIterator::OutputCellIterator(const std::span<const CHAR_INFO> charInfos) noexcept :
     _mode(Mode::CharInfo),
     _currentView(s_GenerateView(til::at(charInfos, 0))),
     _run(charInfos),
@@ -143,7 +143,7 @@ OutputCellIterator::OutputCellIterator(const gsl::span<const CHAR_INFO> charInfo
 // - This is an iterator over existing OutputCells with full text and color data.
 // Arguments:
 // - cells - Multiple cells in a run
-OutputCellIterator::OutputCellIterator(const gsl::span<const OutputCell> cells) :
+OutputCellIterator::OutputCellIterator(const std::span<const OutputCell> cells) :
     _mode(Mode::Cell),
     _currentView(s_GenerateView(til::at(cells, 0))),
     _run(cells),
@@ -181,21 +181,26 @@ OutputCellIterator::operator bool() const noexcept
         }
         case Mode::Cell:
         {
-            return _pos < std::get<gsl::span<const OutputCell>>(_run).size();
+            return _pos < std::get<std::span<const OutputCell>>(_run).size();
         }
         case Mode::CharInfo:
         {
-            return _pos < std::get<gsl::span<const CHAR_INFO>>(_run).size();
+            return _pos < std::get<std::span<const CHAR_INFO>>(_run).size();
         }
         case Mode::LegacyAttr:
         {
-            return _pos < std::get<gsl::span<const WORD>>(_run).size();
+            return _pos < std::get<std::span<const WORD>>(_run).size();
         }
         default:
             FAIL_FAST_HR(E_NOTIMPL);
         }
     }
     CATCH_FAIL_FAST();
+}
+
+size_t OutputCellIterator::Position() const noexcept
+{
+    return _pos;
 }
 
 // Routine Description:
@@ -263,7 +268,7 @@ OutputCellIterator& OutputCellIterator::operator++()
         _pos++;
         if (operator bool())
         {
-            _currentView = s_GenerateView(til::at(std::get<gsl::span<const OutputCell>>(_run), _pos));
+            _currentView = s_GenerateView(til::at(std::get<std::span<const OutputCell>>(_run), _pos));
         }
         break;
     }
@@ -273,7 +278,7 @@ OutputCellIterator& OutputCellIterator::operator++()
         _pos++;
         if (operator bool())
         {
-            _currentView = s_GenerateView(til::at(std::get<gsl::span<const CHAR_INFO>>(_run), _pos));
+            _currentView = s_GenerateView(til::at(std::get<std::span<const CHAR_INFO>>(_run), _pos));
         }
         break;
     }
@@ -283,7 +288,7 @@ OutputCellIterator& OutputCellIterator::operator++()
         _pos++;
         if (operator bool())
         {
-            _currentView = s_GenerateViewLegacyAttr(til::at(std::get<gsl::span<const WORD>>(_run), _pos));
+            _currentView = s_GenerateViewLegacyAttr(til::at(std::get<std::span<const WORD>>(_run), _pos));
         }
         break;
     }
@@ -357,7 +362,7 @@ bool OutputCellIterator::_TryMoveTrailing() noexcept
 // - view - View representing characters corresponding to a single glyph
 // Return Value:
 // - Object representing the view into this cell
-OutputCellView OutputCellIterator::s_GenerateView(const std::wstring_view view)
+OutputCellView OutputCellIterator::s_GenerateView(const std::wstring_view view) noexcept
 {
     return s_GenerateView(view, InvalidTextAttribute, TextAttributeBehavior::Current);
 }
@@ -372,8 +377,7 @@ OutputCellView OutputCellIterator::s_GenerateView(const std::wstring_view view)
 // - attr - Color attributes to apply to the text
 // Return Value:
 // - Object representing the view into this cell
-OutputCellView OutputCellIterator::s_GenerateView(const std::wstring_view view,
-                                                  const TextAttribute attr)
+OutputCellView OutputCellIterator::s_GenerateView(const std::wstring_view view, const TextAttribute attr) noexcept
 {
     return s_GenerateView(view, attr, TextAttributeBehavior::Stored);
 }
@@ -389,9 +393,7 @@ OutputCellView OutputCellIterator::s_GenerateView(const std::wstring_view view,
 // - behavior - Behavior of the given text attribute (used when writing)
 // Return Value:
 // - Object representing the view into this cell
-OutputCellView OutputCellIterator::s_GenerateView(const std::wstring_view view,
-                                                  const TextAttribute attr,
-                                                  const TextAttributeBehavior behavior)
+OutputCellView OutputCellIterator::s_GenerateView(const std::wstring_view view, const TextAttribute attr, const TextAttributeBehavior behavior) noexcept
 {
     const auto glyph = til::utf16_next(view);
     const auto dbcsAttr = IsGlyphFullWidth(glyph) ? DbcsAttribute::Leading : DbcsAttribute::Single;

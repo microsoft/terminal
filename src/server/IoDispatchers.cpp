@@ -90,7 +90,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessa
         Status = STATUS_INVALID_PARAMETER;
     }
 
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         UnlockConsole();
         pMessage->SetReplyStatus(Status);
@@ -421,7 +421,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
     LockConsole();
 
     const auto cleanup = wil::scope_exit([&]() noexcept {
-        if (!NT_SUCCESS(Status))
+        if (FAILED_NTSTATUS(Status))
         {
             pReceiveMsg->SetReplyStatus(Status);
             if (ProcessData != nullptr)
@@ -440,7 +440,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
 
     CONSOLE_API_CONNECTINFO Cac;
     Status = ConsoleInitializeConnectInfo(pReceiveMsg, &Cac);
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         return pReceiveMsg;
     }
@@ -452,10 +452,9 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
     Status = NTSTATUS_FROM_HRESULT(gci.ProcessHandleList.AllocProcessData(dwProcessId,
                                                                           dwThreadId,
                                                                           Cac.ProcessGroupId,
-                                                                          nullptr,
                                                                           &ProcessData));
 
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         return pReceiveMsg;
     }
@@ -477,7 +476,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
     if (WI_IsFlagClear(gci.Flags, CONSOLE_INITIALIZED))
     {
         Status = ConsoleAllocateConsole(&Cac);
-        if (!NT_SUCCESS(Status))
+        if (FAILED_NTSTATUS(Status))
         {
             return pReceiveMsg;
         }
@@ -519,7 +518,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
                                                                       FILE_SHARE_READ | FILE_SHARE_WRITE,
                                                                       ProcessData->pInputHandle));
 
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         return pReceiveMsg;
     }
@@ -530,7 +529,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
                                                                FILE_SHARE_READ | FILE_SHARE_WRITE,
                                                                ProcessData->pOutputHandle));
 
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         return pReceiveMsg;
     }
