@@ -286,9 +286,9 @@ void Cursor::CopyProperties(const Cursor& OtherCursor) noexcept
     _cursorType = OtherCursor._cursorType;
 }
 
-void Cursor::DelayEOLWrap(const til::point coordDelayedAt) noexcept
+void Cursor::DelayEOLWrap() noexcept
 {
-    _coordDelayedAt = coordDelayedAt;
+    _coordDelayedAt = _cPosition;
     _fDelayedEolWrap = true;
 }
 

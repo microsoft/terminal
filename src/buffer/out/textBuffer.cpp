@@ -901,6 +901,11 @@ void TextBuffer::SetCurrentLineRendition(const LineRendition lineRendition)
         }
         TriggerRedraw(Viewport::FromDimensions({ 0, rowIndex }, { GetSize().Width(), 1 }));
     }
+    // There is some variation in how this was handled by the different DEC
+    // terminals, but the STD 070 reference (on page D-13) makes it clear that
+    // the delayed wrap (aka the Last Column Flag) was expected to be reset when
+    // line rendition controls were executed.
+    GetCursor().ResetDelayEOLWrap();
 }
 
 void TextBuffer::ResetLineRenditionRange(const til::CoordType startRow, const til::CoordType endRow) noexcept
