@@ -653,7 +653,6 @@ GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const std::span<const std::b
     return EndianSwap(newGuid);
 }
 
-// This is VERY bodgy.
 // * Elevated users cannot use the modern drag drop experience. This is
 //   specifically normal users running the Terminal as admin
 // * The Default Administrator, who does not have a split token, CAN drag drop
