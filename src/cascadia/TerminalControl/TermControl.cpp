@@ -3260,8 +3260,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto pos = (absolutePointerPos - absoluteWindowOrigin - controlOrigin).to_winrt_point();
         myOption.Position(pos);
 
-        SelectCommandButton().Visibility(_core.ShouldShowSelectCommand() ? Visibility::Visible : Visibility::Collapsed);
-        SelectOutputButton().Visibility(_core.ShouldShowSelectOutput() ? Visibility::Visible : Visibility::Collapsed);
+        // The "Select command" and "Select output" buttons should only be
+        // visible if shell integration is actually turned on.
+        const auto shouldShowSelectCommand{ _core.ShouldShowSelectCommand() };
+        const auto shouldShowSelectOutput{ _core.ShouldShowSelectOutput() };
+        SelectCommandButton().Visibility(shouldShowSelectCommand ? Visibility::Visible : Visibility::Collapsed);
+        SelectOutputButton().Visibility(shouldShowSelectOutput ? Visibility::Visible : Visibility::Collapsed);
+        SelectCommandWithSelectionButton().Visibility(shouldShowSelectCommand ? Visibility::Visible : Visibility::Collapsed);
+        SelectOutputWithSelectionButton().Visibility(shouldShowSelectOutput ? Visibility::Visible : Visibility::Collapsed);
 
         if (args.SelectedText().empty())
         {
@@ -3302,8 +3308,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ContextMenu().Hide();
         SelectionContextMenu().Hide();
         _core.ContextMenuSelectCommand();
-        // SearchMatch(false);
-        // TODO!
     }
 
     void TermControl::_SelectOutputHandler(const IInspectable& /*sender*/,
@@ -3312,7 +3316,5 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ContextMenu().Hide();
         SelectionContextMenu().Hide();
         _core.ContextMenuSelectOutput();
-        // SearchMatch(false);
-        // TODO!
     }
 }

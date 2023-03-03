@@ -2249,12 +2249,38 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::AnchorContextMenu(const til::point viewportRelativeCharacterPosition)
     {
-        // TODO! adjust for viewport
-        _contextMenuBufferPosition = viewportRelativeCharacterPosition;
+        // viewportRelativeCharacterPosition is relative to the current
+        // viewport, so adjust for that:
+        _contextMenuBufferPosition = _terminal->GetViewport().Origin() + viewportRelativeCharacterPosition;
     }
+
     void ControlCore::ContextMenuSelectCommand()
     {
-        SelectCommandWithAnchor(true, _contextMenuBufferPosition);
+        const auto& marks{ _terminal->GetScrollMarks() };
+        for (auto&& m : marks)
+        {
+            if (!m.HasCommand())
+            {
+                continue;
+            }
+            // If they clicked _anywhere_ in the mark...
+            const auto [markStart, markEnd] = m.GetExtent();
+            if (markStart <= _contextMenuBufferPosition &&
+                markEnd >= _contextMenuBufferPosition)
+            {
+                // Select the command
+                const auto start = m.end;
+                auto end = *m.commandEnd;
+
+                const auto bufferSize{ _terminal->GetTextBuffer().GetSize() };
+                bufferSize.DecrementInBounds(end);
+
+                auto lock = _terminal->LockForWriting();
+                _terminal->SelectNewRegion(start, end);
+                _renderer->TriggerSelection();
+                return;
+            }
+        }
     }
     void ControlCore::ContextMenuSelectOutput()
     {
@@ -2265,9 +2291,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 continue;
             }
-            if (*m.commandEnd <= _contextMenuBufferPosition &&
-                *m.outputEnd >= _contextMenuBufferPosition)
+            // If they clicked _anywhere_ in the mark...
+            const auto [markStart, markEnd] = m.GetExtent();
+            if (markStart <= _contextMenuBufferPosition &&
+                markEnd >= _contextMenuBufferPosition)
             {
+                // Select the output
                 const auto start = *m.commandEnd;
                 auto end = *m.outputEnd;
 
@@ -2281,12 +2310,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
         }
     }
+
+    // Method Description:
+    // * Don't show this if the click was on the _current_ selection
+    // * Don't show this if the click wasn't on a mark with at least a command
+    // * Otherwise yea, show it.
     bool ControlCore::ShouldShowSelectCommand()
     {
-        // TODO!
-        // * Don't show this if the click wasn't on a mark with at least a command
-        // * Don't show this if the click was on the _current_ selection
-        // * Otherwise yea, show it.
+        // Relies on the anchor set in AnchorContextMenu
+
+        // Don't show this if the click was on the selection
+        if (_terminal->IsSelectionActive() &&
+            _terminal->GetSelectionAnchor() <= _contextMenuBufferPosition &&
+            _terminal->GetSelectionEnd() >= _contextMenuBufferPosition)
+        {
+            return false;
+        }
+
+        // DO show this if the click was on a mark with a command
         const auto& marks{ _terminal->GetScrollMarks() };
         for (auto&& m : marks)
         {
@@ -2301,14 +2342,26 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 return true;
             }
         }
+
+        // Didn't click on a mark with a command - don't show.
         return false;
     }
+
+    // Method Description:
+    // * Same as ShouldShowSelectCommand, but with the mark needing output
     bool ControlCore::ShouldShowSelectOutput()
     {
-        // TODO!
-        // * Don't show this if the click wasn't on a mark with output
-        // * Don't show this if the click was on the _current_ selection
-        // * Otherwise yea, show it.
+        // Relies on the anchor set in AnchorContextMenu
+
+        // Don't show this if the click was on the selection
+        if (_terminal->IsSelectionActive() &&
+            _terminal->GetSelectionAnchor() <= _contextMenuBufferPosition &&
+            _terminal->GetSelectionEnd() >= _contextMenuBufferPosition)
+        {
+            return false;
+        }
+
+        // DO show this if the click was on a mark with output
         const auto& marks{ _terminal->GetScrollMarks() };
         for (auto&& m : marks)
         {
@@ -2323,6 +2376,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 return true;
             }
         }
+        // Didn't click on a mark with output - don't show.
         return false;
     }
 }
