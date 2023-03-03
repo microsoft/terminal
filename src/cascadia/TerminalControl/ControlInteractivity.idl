@@ -23,6 +23,12 @@ namespace Microsoft.Terminal.Control
         void GotFocus();
         void LostFocus();
 
+        Guid Id { get; };
+        void Reparent(Microsoft.Terminal.Control.IKeyBindings keyBindings);
+        void Detach();
+
+        void Close();
+
         InteractivityAutomationPeer OnCreateAutomationPeer();
 
         Boolean CopySelectionToClipboard(Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
@@ -65,6 +71,8 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, ScrollPositionChangedArgs> ScrollPositionChanged;
         event Windows.Foundation.TypedEventHandler<Object, PasteFromClipboardEventArgs> PasteFromClipboard;
 
+        event Windows.Foundation.TypedEventHandler<Object, Object> Closed;
 
+        event Windows.Foundation.TypedEventHandler<Object, Object> Attached;
     };
 }

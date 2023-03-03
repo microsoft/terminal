@@ -82,6 +82,7 @@ namespace Microsoft::Console::Render
         void WaitUntilCanRender();
 
         void AddRenderEngine(_In_ IRenderEngine* const pEngine);
+        void RemoveRenderEngine(_In_ IRenderEngine* const pEngine);
 
         void SetBackgroundColorChangedCallback(std::function<void()> pfn);
         void SetFrameColorChangedCallback(std::function<void()> pfn);

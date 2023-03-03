@@ -25,13 +25,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 {
     struct TermControl : TermControlT<TermControl>
     {
-        TermControl(IControlSettings settings,
-                    Control::IControlAppearance unfocusedAppearance,
-                    TerminalConnection::ITerminalConnection connection);
+        TermControl(Control::ControlInteractivity content);
+
+        TermControl(IControlSettings settings, Control::IControlAppearance unfocusedAppearance, TerminalConnection::ITerminalConnection connection);
+
+        static Control::TermControl AttachContent(Control::ControlInteractivity content, const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
 
         winrt::fire_and_forget UpdateControlSettings(Control::IControlSettings settings);
         winrt::fire_and_forget UpdateControlSettings(Control::IControlSettings settings, Control::IControlAppearance unfocusedAppearance);
         IControlSettings Settings() const;
+
+        winrt::guid ContentGuid() const;
 
         hstring GetProfileName() const;
 
@@ -136,21 +140,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void AdjustOpacity(const double opacity, const bool relative);
 
+        void Detach();
+
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
         WINRT_CALLBACK(FontSizeChanged, Control::FontSizeChangedEventArgs);
 
-        PROJECTED_FORWARDED_TYPED_EVENT(CopyToClipboard,        IInspectable, Control::CopyToClipboardEventArgs, _core, CopyToClipboard);
-        PROJECTED_FORWARDED_TYPED_EVENT(TitleChanged,           IInspectable, Control::TitleChangedEventArgs, _core, TitleChanged);
-        PROJECTED_FORWARDED_TYPED_EVENT(TabColorChanged,        IInspectable, IInspectable, _core, TabColorChanged);
-        PROJECTED_FORWARDED_TYPED_EVENT(SetTaskbarProgress,     IInspectable, IInspectable, _core, TaskbarProgressChanged);
-        PROJECTED_FORWARDED_TYPED_EVENT(ConnectionStateChanged, IInspectable, IInspectable, _core, ConnectionStateChanged);
-        PROJECTED_FORWARDED_TYPED_EVENT(ShowWindowChanged,      IInspectable, Control::ShowWindowArgs, _core, ShowWindowChanged);
-        PROJECTED_FORWARDED_TYPED_EVENT(CloseTerminalRequested, IInspectable, IInspectable, _core, CloseTerminalRequested);
+        // UNDER NO CIRCUMSTANCES SHOULD YOU ADD A (PROJECTED_)FORWARDED_TYPED_EVENT HERE
+        BUBBLED_FORWARDED_TYPED_EVENT(CopyToClipboard,        IInspectable, Control::CopyToClipboardEventArgs);
+        BUBBLED_FORWARDED_TYPED_EVENT(TitleChanged,           IInspectable, Control::TitleChangedEventArgs);
+        BUBBLED_FORWARDED_TYPED_EVENT(TabColorChanged,        IInspectable, IInspectable);
+        BUBBLED_FORWARDED_TYPED_EVENT(SetTaskbarProgress,     IInspectable, IInspectable);
+        BUBBLED_FORWARDED_TYPED_EVENT(ConnectionStateChanged, IInspectable, IInspectable);
+        BUBBLED_FORWARDED_TYPED_EVENT(ShowWindowChanged,      IInspectable, Control::ShowWindowArgs);
+        BUBBLED_FORWARDED_TYPED_EVENT(CloseTerminalRequested, IInspectable, IInspectable);
 
-        PROJECTED_FORWARDED_TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs, _interactivity, PasteFromClipboard);
+        BUBBLED_FORWARDED_TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
 
         TYPED_EVENT(OpenHyperlink,             IInspectable, Control::OpenHyperlinkEventArgs);
         TYPED_EVENT(RaiseNotice,               IInspectable, Control::NoticeEventArgs);
@@ -218,6 +225,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _showMarksInScrollbar{ false };
 
         bool _isBackgroundLight{ false };
+        bool _detached{ false };
 
         inline bool _IsClosing() const noexcept
         {
@@ -243,7 +251,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         static bool _isColorLight(til::color bg) noexcept;
         void _changeBackgroundOpacity();
 
-        bool _InitializeTerminal();
+        bool _InitializeTerminal(const bool reattach);
         void _SetFontSize(int fontSize);
         void _TappedHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& e);
         void _KeyDownHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
@@ -315,6 +323,36 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         til::point _toPosInDips(const Core::Point terminalCellPos);
         void _throttledUpdateScrollbar(const ScrollBarUpdate& update);
+
+        struct Revokers
+        {
+            Control::ControlCore::ScrollPositionChanged_revoker coreScrollPositionChanged;
+            Control::ControlCore::WarningBell_revoker WarningBell;
+            Control::ControlCore::CursorPositionChanged_revoker CursorPositionChanged;
+            Control::ControlCore::RendererEnteredErrorState_revoker RendererEnteredErrorState;
+            Control::ControlCore::BackgroundColorChanged_revoker BackgroundColorChanged;
+            Control::ControlCore::FontSizeChanged_revoker FontSizeChanged;
+            Control::ControlCore::TransparencyChanged_revoker TransparencyChanged;
+            Control::ControlCore::RaiseNotice_revoker RaiseNotice;
+            Control::ControlCore::HoveredHyperlinkChanged_revoker HoveredHyperlinkChanged;
+            Control::ControlCore::FoundMatch_revoker FoundMatch;
+            Control::ControlCore::UpdateSelectionMarkers_revoker UpdateSelectionMarkers;
+            Control::ControlCore::OpenHyperlink_revoker coreOpenHyperlink;
+            Control::ControlCore::CopyToClipboard_revoker CopyToClipboard;
+            Control::ControlCore::TitleChanged_revoker TitleChanged;
+            Control::ControlCore::TabColorChanged_revoker TabColorChanged;
+            Control::ControlCore::TaskbarProgressChanged_revoker TaskbarProgressChanged;
+            Control::ControlCore::ConnectionStateChanged_revoker ConnectionStateChanged;
+            Control::ControlCore::ShowWindowChanged_revoker ShowWindowChanged;
+            Control::ControlCore::CloseTerminalRequested_revoker CloseTerminalRequested;
+            // These are set up in _InitializeTerminal
+            Control::ControlCore::RendererWarning_revoker RendererWarning;
+            Control::ControlCore::SwapChainChanged_revoker SwapChainChanged;
+
+            Control::ControlInteractivity::OpenHyperlink_revoker interactivityOpenHyperlink;
+            Control::ControlInteractivity::ScrollPositionChanged_revoker interactivityScrollPositionChanged;
+            Control::ControlInteractivity::PasteFromClipboard_revoker PasteFromClipboard;
+        } _revokers{};
     };
 }
 

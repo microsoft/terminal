@@ -42,6 +42,17 @@ namespace TerminalAppLocalTests
     // an updated TAEF that will let us install framework packages when the test
     // package is deployed. Until then, these tests won't deploy in CI.
 
+    struct WindowProperties : winrt::implements<WindowProperties, winrt::TerminalApp::IWindowProperties>
+    {
+        WINRT_PROPERTY(winrt::hstring, WindowName);
+        WINRT_PROPERTY(uint64_t, WindowId);
+        WINRT_PROPERTY(winrt::hstring, WindowNameForDisplay);
+        WINRT_PROPERTY(winrt::hstring, WindowIdForDisplay);
+
+    public:
+        bool IsQuakeWindow() { return _WindowName == L"_quake"; };
+    };
+
     class TabTests
     {
         // For this set of tests, we need to activate some XAML content. For
@@ -110,6 +121,7 @@ namespace TerminalAppLocalTests
         void _initializeTerminalPage(winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page,
                                      CascadiaSettings initialSettings);
         winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> _commonSetup();
+        winrt::com_ptr<WindowProperties> _windowProperties;
     };
 
     template<typename TFunction>
@@ -239,11 +251,15 @@ namespace TerminalAppLocalTests
         // it's weird.
         winrt::TerminalApp::TerminalPage projectedPage{ nullptr };
 
+        _windowProperties = winrt::make_self<WindowProperties>();
+        winrt::TerminalApp::IWindowProperties iProps{ *_windowProperties };
+
         Log::Comment(NoThrowString().Format(L"Construct the TerminalPage"));
-        auto result = RunOnUIThread([&projectedPage, &page, initialSettings]() {
+        auto result = RunOnUIThread([&projectedPage, &page, initialSettings, iProps]() {
             projectedPage = winrt::TerminalApp::TerminalPage();
             page.copy_from(winrt::get_self<winrt::TerminalApp::implementation::TerminalPage>(projectedPage));
             page->_settings = initialSettings;
+            page->WindowProperties(iProps);
         });
         VERIFY_SUCCEEDED(result);
 
@@ -1242,10 +1258,13 @@ namespace TerminalAppLocalTests
         END_TEST_METHOD_PROPERTIES()
 
         auto page = _commonSetup();
-        page->RenameWindowRequested([&page](auto&&, const winrt::TerminalApp::RenameWindowRequestedArgs args) {
+        page->RenameWindowRequested([&page, this](auto&&, const winrt::TerminalApp::RenameWindowRequestedArgs args) {
             // In the real terminal, this would bounce up to the monarch and
             // come back down. Instead, immediately call back and set the name.
-            page->WindowName(args.ProposedName());
+            //
+            // This replicates how TerminalWindow works
+            _windowProperties->WindowName(args.ProposedName());
+            page->WindowNameChanged();
         });
 
         auto windowNameChanged = false;
@@ -1260,7 +1279,7 @@ namespace TerminalAppLocalTests
             page->_RequestWindowRename(winrt::hstring{ L"Foo" });
         });
         TestOnUIThread([&]() {
-            VERIFY_ARE_EQUAL(L"Foo", page->_WindowName);
+            VERIFY_ARE_EQUAL(L"Foo", page->WindowName());
             VERIFY_IS_TRUE(windowNameChanged,
                            L"The window name should have changed, and we should have raised a notification that WindowNameForDisplay changed");
         });

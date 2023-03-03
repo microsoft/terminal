@@ -76,6 +76,8 @@ namespace Microsoft.Terminal.Control
         IControlAppearance UnfocusedAppearance { get; };
         Boolean HasUnfocusedAppearance();
 
+        UInt64 SwapChainHandle { get; };
+
         Windows.Foundation.Size FontSize { get; };
         String FontFaceName { get; };
         UInt16 FontWeight { get; };
@@ -108,6 +110,7 @@ namespace Microsoft.Terminal.Control
         void AdjustFontSize(Single fontSizeDelta);
         void SizeChanged(Double width, Double height);
         void ScaleChanged(Double scale);
+        void SizeOrScaleChanged(Double width, Double height, Double scale);
 
         void ToggleShaderEffects();
         void ToggleReadOnlyMode();
@@ -126,7 +129,6 @@ namespace Microsoft.Terminal.Control
         String HoveredUriText { get; };
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Point> HoveredCell { get; };
 
-        void Close();
         void BlinkCursor();
         Boolean IsInReadOnlyMode { get; };
         Boolean CursorOn;
@@ -162,5 +164,7 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, UpdateSelectionMarkersEventArgs> UpdateSelectionMarkers;
         event Windows.Foundation.TypedEventHandler<Object, OpenHyperlinkEventArgs> OpenHyperlink;
         event Windows.Foundation.TypedEventHandler<Object, Object> CloseTerminalRequested;
+
+        event Windows.Foundation.TypedEventHandler<Object, Object> Attached;
     };
 }

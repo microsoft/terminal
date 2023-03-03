@@ -121,6 +121,7 @@ namespace RemotingUnitTests
         TYPED_EVENT(WindowCreated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(WindowClosed, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, Remoting::QuitAllRequestedArgs);
+        TYPED_EVENT(RequestNewWindow, winrt::Windows::Foundation::IInspectable, Remoting::WindowRequestedArgs);
     };
 
     class RemotingTests

@@ -44,7 +44,48 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _lastMouseClickPos{},
         _selectionNeedsToBeCopied{ false }
     {
+        _guid = ::Microsoft::Console::Utils::CreateGuid();
+
         _core = winrt::make_self<ControlCore>(settings, unfocusedAppearance, connection);
+
+        _core->Attached([weakThis = get_weak()](auto&&, auto&&) {
+            if (auto self{ weakThis.get() })
+            {
+                self->_AttachedHandlers(*self, nullptr);
+            }
+        });
+    }
+
+    winrt::guid ControlInteractivity::Id()
+    {
+        return _guid;
+    }
+
+    void ControlInteractivity::Detach()
+    {
+        if (_uiaEngine)
+        {
+            // There's a potential race here where we've removed the TermControl
+            // from the UI tree, but the UIA engine is in the middle of a paint,
+            // and the UIA engine will try to dispatch to the
+            // TermControlAutomationPeer, which (is now)/(will very soon be) gone.
+            //
+            // To alleviate, make sure to disable the UIA engine and remove it,
+            // and ALSO disable the renderer. Core.Detach will take care of the
+            // WaitForPaintCompletionAndDisable (which will stop the renderer
+            // after all current engines are done painting).
+            //
+            // Simply disabling the UIA engine is not enough, because it's
+            // possible that it had already started presenting here.
+            LOG_IF_FAILED(_uiaEngine->Disable());
+            _core->DetachUiaEngine(_uiaEngine.get());
+        }
+        _core->Detach();
+    }
+
+    void ControlInteractivity::Reparent(const Microsoft::Terminal::Control::IKeyBindings& keyBindings)
+    {
+        _core->Reparent(keyBindings);
     }
 
     // Method Description:
@@ -71,6 +112,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     Control::ControlCore ControlInteractivity::Core()
     {
         return *_core;
+    }
+
+    void ControlInteractivity::Close()
+    {
+        _ClosedHandlers(*this, nullptr);
+        if (_core)
+        {
+            _core->Close();
+        }
     }
 
     // Method Description:
@@ -649,7 +699,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     try
     {
         const auto autoPeer = winrt::make_self<implementation::InteractivityAutomationPeer>(this);
-
+        if (_uiaEngine)
+        {
+            _core->DetachUiaEngine(_uiaEngine.get());
+        }
         _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(autoPeer.get());
         _core->AttachUiaEngine(_uiaEngine.get());
         return *autoPeer;
