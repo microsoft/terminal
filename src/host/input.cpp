@@ -341,7 +341,7 @@ void ProcessCtrlEvents()
          * query. In this case, use best effort to send the close event but
          * ignore any errors.
          */
-        if (NT_SUCCESS(Status))
+        if (SUCCEEDED_NTSTATUS(Status))
         {
             Status = ServiceLocator::LocateConsoleControl()
                          ->EndTask(r.dwProcessID,

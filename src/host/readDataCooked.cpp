@@ -47,7 +47,7 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
                                    _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                    SCREEN_INFORMATION& screenInfo,
                                    _In_ size_t UserBufferSize,
-                                   _In_ PWCHAR UserBuffer,
+                                   _In_ char* UserBuffer,
                                    _In_ ULONG CtrlWakeupMask,
                                    _In_ const std::wstring_view exeName,
                                    _In_ const std::string_view initialData,
@@ -62,7 +62,7 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     _exeName{ exeName },
     _pdwNumBytes{ nullptr },
 
-    _commandHistory{ CommandHistory::s_Find((HANDLE)pClientProcess) },
+    _commandHistory{ CommandHistory::s_Find(pClientProcess) },
     _controlKeyState{ 0 },
     _ctrlWakeupMask{ CtrlWakeupMask },
     _visibleCharCount{ 0 },
@@ -536,7 +536,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                                               _originalCursorPosition.x,
                                               WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
                                               &ScrollY);
-                    if (NT_SUCCESS(status))
+                    if (SUCCEEDED_NTSTATUS(status))
                     {
                         _originalCursorPosition.y += ScrollY;
                     }
@@ -618,7 +618,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                                                   _originalCursorPosition.x,
                                                   WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
                                                   nullptr);
-                        if (!NT_SUCCESS(status))
+                        if (FAILED_NTSTATUS(status))
                         {
                             RIPMSG1(RIP_WARNING, "WriteCharsLegacy failed %x", status);
                         }
@@ -731,7 +731,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                                       _originalCursorPosition.x,
                                       dwFlags,
                                       &ScrollY);
-            if (!NT_SUCCESS(status))
+            if (FAILED_NTSTATUS(status))
             {
                 RIPMSG1(RIP_WARNING, "WriteCharsLegacy failed 0x%x", status);
                 _bytesRead = 0;
@@ -758,7 +758,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                 _originalCursorPosition.y += ScrollY;
                 CursorPosition.y += ScrollY;
                 status = AdjustCursorPosition(_screenInfo, CursorPosition, TRUE, nullptr);
-                if (!NT_SUCCESS(status))
+                if (FAILED_NTSTATUS(status))
                 {
                     _bytesRead = 0;
                     return true;
@@ -789,7 +789,7 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                                               _originalCursorPosition.x,
                                               WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_PRINTABLE_CONTROL_CHARS,
                                               nullptr);
-                    if (!NT_SUCCESS(status))
+                    if (FAILED_NTSTATUS(status))
                     {
                         RIPMSG1(RIP_WARNING, "WriteCharsLegacy failed 0x%x", status);
                     }
@@ -881,10 +881,10 @@ size_t COOKED_READ_DATA::SavePromptToUserBuffer(const size_t cch)
         try
         {
             const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-            const auto wstr = ConvertToW(gci.CP, { reinterpret_cast<char*>(_userBuffer), cch });
-            const auto copyAmount = std::min(wstr.size(), _userBufferSize / sizeof(wchar_t));
-            std::copy_n(wstr.begin(), copyAmount, _userBuffer);
-            return copyAmount * sizeof(wchar_t);
+            const auto wstr = ConvertToW(gci.CP, { _userBuffer, cch });
+            const auto copyAmount = std::min(wstr.size() * sizeof(wchar_t), _userBufferSize);
+            std::copy_n(reinterpret_cast<const char*>(wstr.data()), copyAmount, _userBuffer);
+            return copyAmount;
         }
         CATCH_LOG();
     }
@@ -936,7 +936,7 @@ void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline
                          &commandLineEditingKeys,
                          nullptr,
                          &keyState);
-        if (!NT_SUCCESS(Status))
+        if (FAILED_NTSTATUS(Status))
         {
             if (Status != CONSOLE_STATUS_WAIT)
             {
@@ -966,7 +966,7 @@ void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline
             {
                 break;
             }
-            if (!NT_SUCCESS(Status))
+            if (FAILED_NTSTATUS(Status))
             {
                 if (Status == CONSOLE_STATUS_WAIT_NO_BLOCK)
                 {
@@ -1003,211 +1003,55 @@ void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline
 // - Status code that indicates success, out of memory, etc.
 [[nodiscard]] NTSTATUS COOKED_READ_DATA::_handlePostCharInputLoop(const bool isUnicode, size_t& numBytes, ULONG& controlKeyState) noexcept
 {
+    std::span writer{ _userBuffer, _userBufferSize };
+    std::wstring_view input{ _backupLimit, _bytesRead / sizeof(wchar_t) };
     DWORD LineCount = 1;
 
     if (_echoInput)
     {
-        // Figure out where real string ends (at carriage return or end of buffer).
-        auto StringPtr = _backupLimit;
-        auto StringLength = _bytesRead / sizeof(WCHAR);
-        auto FoundCR = false;
-        for (size_t i = 0; i < StringLength; i++)
-        {
-            if (*StringPtr++ == UNICODE_CARRIAGERETURN)
-            {
-                StringLength = i;
-                FoundCR = true;
-                break;
-            }
-        }
-
-        if (FoundCR)
+        const auto idx = input.find(UNICODE_CARRIAGERETURN);
+        if (idx != decltype(input)::npos)
         {
             if (_commandHistory)
             {
-                // add to command line recall list if we have a history list.
                 auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-                LOG_IF_FAILED(_commandHistory->Add({ _backupLimit, StringLength },
-                                                   WI_IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP)));
+                LOG_IF_FAILED(_commandHistory->Add({ _backupLimit, idx }, WI_IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP)));
             }
 
-            Tracing::s_TraceCookedRead(_clientProcess,
-                                       _backupLimit,
-                                       base::saturated_cast<ULONG>(StringLength));
-
-            // check for alias
+            Tracing::s_TraceCookedRead(_clientProcess, _backupLimit, base::saturated_cast<ULONG>(idx));
             ProcessAliases(LineCount);
+
+            if (LineCount > 1)
+            {
+                input = input.substr(0, idx + 1);
+            }
         }
     }
 
-    auto fAddDbcsLead = false;
-    size_t NumBytes = 0;
-    // at this point, a->NumBytes contains the number of bytes in
-    // the UNICODE string read.  UserBufferSize contains the converted
-    // size of the app's buffer.
-    if (_bytesRead > _userBufferSize || LineCount > 1)
+    GetInputBuffer()->Consume(isUnicode, input, writer);
+
+    if (!input.empty())
     {
         if (LineCount > 1)
         {
-            PWSTR Tmp;
-            if (!isUnicode)
-            {
-                if (_pInputBuffer->IsReadPartialByteSequenceAvailable())
-                {
-                    fAddDbcsLead = true;
-                    auto event = GetInputBuffer()->FetchReadPartialByteSequence(false);
-                    const auto pKeyEvent = static_cast<const KeyEvent* const>(event.get());
-                    *_userBuffer = static_cast<char>(pKeyEvent->GetCharData());
-                    _userBuffer++;
-                    _userBufferSize -= sizeof(wchar_t);
-                }
-
-                NumBytes = 0;
-                for (Tmp = _backupLimit;
-                     *Tmp != UNICODE_LINEFEED && _userBufferSize / sizeof(WCHAR) > NumBytes;
-                     Tmp++)
-                {
-                    NumBytes += IsGlyphFullWidth(*Tmp) ? 2 : 1;
-                }
-            }
-
-            // clang-format off
-#pragma prefast(suppress: __WARNING_BUFFER_OVERFLOW, "LineCount > 1 means there's a UNICODE_LINEFEED")
-            // clang-format on
-            for (Tmp = _backupLimit; *Tmp != UNICODE_LINEFEED; Tmp++)
-            {
-                FAIL_FAST_IF(!(Tmp < (_backupLimit + _bytesRead)));
-            }
-
-            numBytes = (ULONG)(Tmp - _backupLimit + 1) * sizeof(*Tmp);
+            GetInputReadHandleData()->SaveMultilinePendingInput(input);
         }
         else
         {
-            if (!isUnicode)
-            {
-                PWSTR Tmp;
-
-                if (_pInputBuffer->IsReadPartialByteSequenceAvailable())
-                {
-                    fAddDbcsLead = true;
-                    auto event = GetInputBuffer()->FetchReadPartialByteSequence(false);
-                    const auto pKeyEvent = static_cast<const KeyEvent* const>(event.get());
-                    *_userBuffer = static_cast<char>(pKeyEvent->GetCharData());
-                    _userBuffer++;
-                    _userBufferSize -= sizeof(wchar_t);
-                }
-                NumBytes = 0;
-                auto NumToWrite = _bytesRead;
-                for (Tmp = _backupLimit;
-                     NumToWrite && _userBufferSize / sizeof(WCHAR) > NumBytes;
-                     Tmp++, NumToWrite -= sizeof(WCHAR))
-                {
-                    NumBytes += IsGlyphFullWidth(*Tmp) ? 2 : 1;
-                }
-            }
-            numBytes = _userBufferSize;
-        }
-
-        __analysis_assume(numBytes <= _userBufferSize);
-        memmove(_userBuffer, _backupLimit, numBytes);
-
-        const auto pInputReadHandleData = GetInputReadHandleData();
-        const std::wstring_view pending{ _backupLimit + (numBytes / sizeof(wchar_t)), (_bytesRead - numBytes) / sizeof(wchar_t) };
-        if (LineCount > 1)
-        {
-            pInputReadHandleData->SaveMultilinePendingInput(pending);
-        }
-        else
-        {
-            pInputReadHandleData->SavePendingInput(pending);
+            GetInputReadHandleData()->SavePendingInput(input);
         }
     }
-    else
-    {
-        if (!isUnicode)
-        {
-            PWSTR Tmp;
 
-            if (_pInputBuffer->IsReadPartialByteSequenceAvailable())
-            {
-                fAddDbcsLead = true;
-                auto event = GetInputBuffer()->FetchReadPartialByteSequence(false);
-                const auto pKeyEvent = static_cast<const KeyEvent* const>(event.get());
-                *_userBuffer = static_cast<char>(pKeyEvent->GetCharData());
-                _userBuffer++;
-                _userBufferSize -= sizeof(wchar_t);
-
-                if (_userBufferSize == 0)
-                {
-                    numBytes = 1;
-                    return STATUS_SUCCESS;
-                }
-            }
-            NumBytes = 0;
-            auto NumToWrite = _bytesRead;
-            for (Tmp = _backupLimit;
-                 NumToWrite && _userBufferSize / sizeof(WCHAR) > NumBytes;
-                 Tmp++, NumToWrite -= sizeof(WCHAR))
-            {
-                NumBytes += IsGlyphFullWidth(*Tmp) ? 2 : 1;
-            }
-        }
-
-        numBytes = _bytesRead;
-
-        if (numBytes > _userBufferSize)
-        {
-            return STATUS_BUFFER_OVERFLOW;
-        }
-
-        memmove(_userBuffer, _backupLimit, numBytes);
-    }
+    numBytes = _userBufferSize - writer.size();
     controlKeyState = _controlKeyState;
-
-    if (!isUnicode)
-    {
-        // if ansi, translate string.
-        std::unique_ptr<char[]> tempBuffer;
-        try
-        {
-            tempBuffer = std::make_unique<char[]>(NumBytes);
-        }
-        catch (...)
-        {
-            return STATUS_NO_MEMORY;
-        }
-
-        std::unique_ptr<IInputEvent> partialEvent;
-        numBytes = TranslateUnicodeToOem(_userBuffer,
-                                         gsl::narrow<ULONG>(numBytes / sizeof(wchar_t)),
-                                         tempBuffer.get(),
-                                         gsl::narrow<ULONG>(NumBytes),
-                                         partialEvent);
-
-        if (partialEvent.get())
-        {
-            GetInputBuffer()->StoreReadPartialByteSequence(std::move(partialEvent));
-        }
-
-        if (numBytes > _userBufferSize)
-        {
-            return STATUS_BUFFER_OVERFLOW;
-        }
-
-        memmove(_userBuffer, tempBuffer.get(), numBytes);
-        if (fAddDbcsLead)
-        {
-            numBytes++;
-        }
-    }
     return STATUS_SUCCESS;
 }
 
 void COOKED_READ_DATA::MigrateUserBuffersOnTransitionToBackgroundWait(const void* oldBuffer, void* newBuffer)
 {
     // See the comment in WaitBlock.cpp for more information.
-    if (_userBuffer == reinterpret_cast<const wchar_t*>(oldBuffer))
+    if (_userBuffer == oldBuffer)
     {
-        _userBuffer = reinterpret_cast<wchar_t*>(newBuffer);
+        _userBuffer = static_cast<char*>(newBuffer);
     }
 }

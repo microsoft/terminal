@@ -78,11 +78,6 @@ void FontConfig::LayerJson(const Json::Value& json)
     }
 }
 
-bool FontConfig::HasAnyOptionSet() const
-{
-    return HasFontFace() || HasFontSize() || HasFontWeight();
-}
-
 winrt::Microsoft::Terminal::Settings::Model::Profile FontConfig::SourceProfile()
 {
     return _sourceProfile.get();

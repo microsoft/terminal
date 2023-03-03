@@ -500,7 +500,7 @@ Json::Value SettingsLoader::_parseJSON(const std::string_view& content)
 {
     Json::Value json;
     std::string errs;
-    const std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+    const std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };
 
     if (!reader->parse(content.data(), content.data() + content.size(), &json, &errs))
     {
