@@ -160,6 +160,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(FocusFollowMouseRequested, IInspectable, IInspectable);
         TYPED_EVENT(Initialized,               Control::TermControl, Windows::UI::Xaml::RoutedEventArgs);
         TYPED_EVENT(WarningBell,               IInspectable, IInspectable);
+
         // clang-format on
 
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, BackgroundBrush, _PropertyChangedHandlers, nullptr);
@@ -216,8 +217,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
         bool _showMarksInScrollbar{ false };
+        bool _useRightClickContextMenu{ false };
+        bool _rightClickPressed{ false };
 
         bool _isBackgroundLight{ false };
+
+        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalPrimaryElements{ nullptr };
+        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalSecondaryElements{ nullptr };
+        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalSelectedPrimaryElements{ nullptr };
+        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::UI::Xaml::Controls::ICommandBarElement> _originalSelectedSecondaryElements{ nullptr };
 
         inline bool _IsClosing() const noexcept
         {
@@ -315,6 +323,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         til::point _toPosInDips(const Core::Point terminalCellPos);
         void _throttledUpdateScrollbar(const ScrollBarUpdate& update);
+
+        void _contextMenuHandler(IInspectable sender, Control::ContextMenuRequestedEventArgs args);
+
+        void _PasteCommandHandler(const IInspectable& sender, const IInspectable& args);
+        void _CopyCommandHandler(const IInspectable& sender, const IInspectable& args);
+        void _SearchCommandHandler(const IInspectable& sender, const IInspectable& args);
     };
 }
 
