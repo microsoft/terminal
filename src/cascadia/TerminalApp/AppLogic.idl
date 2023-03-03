@@ -48,7 +48,8 @@ namespace TerminalApp
 
         Boolean IsUwp();
         void RunAsUwp();
-        Boolean IsElevated();
+        Boolean IsRunningElevated();
+        Boolean CanDragDrop();
 
         Boolean HasCommandlineArguments();
         Boolean HasSettingsStartupActions();

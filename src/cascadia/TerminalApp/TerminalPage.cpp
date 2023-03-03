@@ -149,12 +149,12 @@ namespace winrt::TerminalApp::implementation
         _systemRowsToScroll = _ReadSystemRowsToScroll();
     }
 
-    bool TerminalPage::IsElevated() const noexcept
+    bool TerminalPage::IsRunningElevated() const noexcept
     {
         // use C++11 magic statics to make sure we only do this once.
         // This won't change over the lifetime of the application
 
-        static const auto isElevated = []() {
+        static const auto isRunningElevated = []() {
             // *** THIS IS A SINGLETON ***
             auto result = false;
 
@@ -163,13 +163,26 @@ namespace winrt::TerminalApp::implementation
             // LocalTests
             try
             {
-                result = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsElevated();
+                result = Application::Current().as<TerminalApp::App>().Logic().IsRunningElevated();
             }
             CATCH_LOG();
             return result;
         }();
 
-        return isElevated;
+        return isRunningElevated;
+    }
+    bool TerminalPage::CanDragDrop() const noexcept
+    {
+        static const auto canDragDrop = []() {
+            try
+            {
+                return Application::Current().as<TerminalApp::App>().Logic().CanDragDrop();
+            }
+            CATCH_LOG();
+            return true;
+        }();
+
+        return canDragDrop;
     }
 
     void TerminalPage::Create()
@@ -182,11 +195,11 @@ namespace winrt::TerminalApp::implementation
         _tabView = _tabRow.TabView();
         _rearranging = false;
 
-        const auto isElevated = IsElevated();
+        const auto canDragDrop = CanDragDrop();
 
         _tabRow.PointerMoved({ get_weak(), &TerminalPage::_RestorePointerCursorHandler });
-        _tabView.CanReorderTabs(!isElevated);
-        _tabView.CanDragTabs(!isElevated);
+        _tabView.CanReorderTabs(canDragDrop);
+        _tabView.CanDragTabs(canDragDrop);
         _tabView.TabDragStarting({ get_weak(), &TerminalPage::_TabDragStarted });
         _tabView.TabDragCompleted({ get_weak(), &TerminalPage::_TabDragCompleted });
 
@@ -308,7 +321,7 @@ namespace winrt::TerminalApp::implementation
         // Setup mouse vanish attributes
         SystemParametersInfoW(SPI_GETMOUSEVANISH, 0, &_shouldMouseVanish, false);
 
-        _tabRow.ShowElevationShield(IsElevated() && _settings.GlobalSettings().ShowAdminShield());
+        _tabRow.ShowElevationShield(IsRunningElevated() && _settings.GlobalSettings().ShowAdminShield());
 
         // Store cursor, so we can restore it, e.g., after mouse vanishing
         // (we'll need to adapt this logic once we make cursor context aware)
@@ -347,7 +360,7 @@ namespace winrt::TerminalApp::implementation
         // GH#12267: Don't forget about defterm handoff here. If we're being
         // created for embedding, then _yea_, we don't need to handoff to an
         // elevated window.
-        if (!_startupActions || IsElevated() || _shouldStartInboundListener)
+        if (!_startupActions || IsRunningElevated() || _shouldStartInboundListener)
         {
             // there aren't startup actions, or we're elevated. In that case, go for it.
             return false;
@@ -1172,7 +1185,7 @@ namespace winrt::TerminalApp::implementation
                         WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
                         WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
-        const auto dispatchToElevatedWindow = ctrlPressed && !IsElevated();
+        const auto dispatchToElevatedWindow = ctrlPressed && !IsRunningElevated();
 
         if ((shiftPressed || dispatchToElevatedWindow) && !debugTap)
         {
@@ -2920,7 +2933,7 @@ namespace winrt::TerminalApp::implementation
         // want to create an animation.
         WUX::Media::Animation::Timeline::AllowDependentAnimations(!_settings.GlobalSettings().DisableAnimations());
 
-        _tabRow.ShowElevationShield(IsElevated() && _settings.GlobalSettings().ShowAdminShield());
+        _tabRow.ShowElevationShield(IsRunningElevated() && _settings.GlobalSettings().ShowAdminShield());
 
         Media::SolidColorBrush transparent{ Windows::UI::Colors::Transparent() };
         _tabView.Background(transparent);
@@ -4164,7 +4177,7 @@ namespace winrt::TerminalApp::implementation
     {
         // Try to handle auto-elevation
         const auto requestedElevation = controlSettings.DefaultSettings().Elevate();
-        const auto currentlyElevated = IsElevated();
+        const auto currentlyElevated = IsRunningElevated();
 
         // We aren't elevated, but we want to be.
         if (requestedElevation && !currentlyElevated)
