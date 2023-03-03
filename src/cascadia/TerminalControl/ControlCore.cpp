@@ -2258,7 +2258,30 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
     void ControlCore::ContextMenuSelectOutput()
     {
-        SelectOutputWithAnchor(true, _contextMenuBufferPosition);
+        // SelectOutputWithAnchor(true, _contextMenuBufferPosition);
+
+        const auto& marks{ _terminal->GetScrollMarks() };
+        for (auto&& m : marks)
+        {
+            if (!m.HasOutput())
+            {
+                continue;
+            }
+            if (*m.commandEnd <= _contextMenuBufferPosition &&
+                *m.outputEnd >= _contextMenuBufferPosition)
+            {
+                const auto start = *m.commandEnd;
+                auto end = *m.outputEnd;
+
+                const auto bufferSize{ _terminal->GetTextBuffer().GetSize() };
+                bufferSize.DecrementInBounds(end);
+
+                auto lock = _terminal->LockForWriting();
+                _terminal->SelectNewRegion(start, end);
+                _renderer->TriggerSelection();
+                return;
+            }
+        }
     }
 
     void SelectCommandWithAnchor(const bool goUp, const std::optional<til::point> anchor);
