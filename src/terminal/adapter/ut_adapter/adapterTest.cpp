@@ -121,17 +121,6 @@ public:
         _textBuffer->SetCurrentAttributes(attrs);
     }
 
-    void SetScrollingRegion(const til::inclusive_rect& scrollMargins) override
-    {
-        Log::Comment(L"SetScrollingRegion MOCK called...");
-
-        if (_setScrollingRegionResult)
-        {
-            VERIFY_ARE_EQUAL(_expectedScrollRegion, scrollMargins);
-            _activeScrollRegion = scrollMargins;
-        }
-    }
-
     void WarningBell() override
     {
         Log::Comment(L"WarningBell MOCK called...");
@@ -141,14 +130,6 @@ public:
     {
         Log::Comment(L"GetLineFeedMode MOCK called...");
         return _getLineFeedModeResult;
-    }
-
-    void LineFeed(const bool withReturn, const bool /*wrapForced*/) override
-    {
-        Log::Comment(L"LineFeed MOCK called...");
-
-        THROW_HR_IF(E_FAIL, !_lineFeedResult);
-        VERIFY_ARE_EQUAL(_expectedLineFeedWithReturn, withReturn);
     }
 
     void SetWindowTitle(const std::wstring_view title)
@@ -243,6 +224,11 @@ public:
     void NotifyAccessibilityChange(const til::rect& /*changedRect*/) override
     {
         Log::Comment(L"NotifyAccessibilityChange MOCK called...");
+    }
+
+    void NotifyBufferRotation(const int /*delta*/) override
+    {
+        Log::Comment(L"NotifyBufferRotation MOCK called...");
     }
 
     void MarkPrompt(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& /*mark*/) override
@@ -366,15 +352,6 @@ public:
         VERIFY_ARE_EQUAL(pwszExpectedResponse, _response);
     }
 
-    void _SetMarginsHelper(til::inclusive_rect* rect, til::CoordType top, til::CoordType bottom)
-    {
-        rect->top = top;
-        rect->bottom = bottom;
-        //The rectangle is going to get converted from VT space to conhost space
-        _expectedScrollRegion.top = (top > 0) ? rect->top - 1 : rect->top;
-        _expectedScrollRegion.bottom = (bottom > 0) ? rect->bottom - 1 : rect->bottom;
-    }
-
     ~TestGetSet() = default;
 
     static const WCHAR s_wchErase = (WCHAR)0x20;
@@ -399,8 +376,6 @@ public:
     DummyRenderer _renderer;
     std::unique_ptr<TextBuffer> _textBuffer;
     til::inclusive_rect _viewport;
-    til::inclusive_rect _expectedScrollRegion;
-    til::inclusive_rect _activeScrollRegion;
 
     til::point _expectedCursorPos;
 
@@ -411,10 +386,7 @@ public:
     bool _setTextAttributesResult = false;
     bool _returnResponseResult = false;
 
-    bool _setScrollingRegionResult = false;
     bool _getLineFeedModeResult = false;
-    bool _lineFeedResult = false;
-    bool _expectedLineFeedWithReturn = false;
 
     bool _setWindowTitleResult = false;
     std::wstring_view _expectedWindowTitle{};
@@ -1880,119 +1852,94 @@ public:
         auto sScreenHeight = _testGetSet->_viewport.bottom - _testGetSet->_viewport.top;
 
         Log::Comment(L"Test 1: Verify having both values is valid.");
-        _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
-        _testGetSet->_setScrollingRegionResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.top, srTestMargins.bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(2, 6));
+        VERIFY_ARE_EQUAL(2, _pDispatch->_scrollMargins.top + 1);
+        VERIFY_ARE_EQUAL(6, _pDispatch->_scrollMargins.bottom + 1);
 
         Log::Comment(L"Test 2: Verify having only top is valid.");
-
-        _testGetSet->_SetMarginsHelper(&srTestMargins, 7, 0);
-        _testGetSet->_expectedScrollRegion.bottom = _testGetSet->_viewport.bottom - 1; // We expect the bottom to be the bottom of the viewport, exclusive.
-        _testGetSet->_setScrollingRegionResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.top, srTestMargins.bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(7, 0));
+        VERIFY_ARE_EQUAL(7, _pDispatch->_scrollMargins.top + 1);
+        VERIFY_ARE_EQUAL(sScreenHeight, _pDispatch->_scrollMargins.bottom + 1);
 
         Log::Comment(L"Test 3: Verify having only bottom is valid.");
-
-        _testGetSet->_SetMarginsHelper(&srTestMargins, 0, 7);
-        _testGetSet->_setScrollingRegionResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.top, srTestMargins.bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(0, 7));
+        VERIFY_ARE_EQUAL(1, _pDispatch->_scrollMargins.top + 1);
+        VERIFY_ARE_EQUAL(7, _pDispatch->_scrollMargins.bottom + 1);
 
         Log::Comment(L"Test 4: Verify having no values is valid.");
-
-        _testGetSet->_SetMarginsHelper(&srTestMargins, 0, 0);
-        _testGetSet->_setScrollingRegionResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.top, srTestMargins.bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(0, 0));
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
 
         Log::Comment(L"Test 5: Verify having both values, but bad bounds has no effect.");
-
-        _testGetSet->_SetMarginsHelper(&srTestMargins, 7, 3);
-        _testGetSet->_setScrollingRegionResult = TRUE;
-        _testGetSet->_activeScrollRegion = {};
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.top, srTestMargins.bottom));
-        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _testGetSet->_activeScrollRegion);
+        _pDispatch->_scrollMargins = {};
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(7, 3));
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
 
         Log::Comment(L"Test 6: Verify setting margins to (0, height) clears them");
         // First set,
-        _testGetSet->_setScrollingRegionResult = TRUE;
-        _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.top, srTestMargins.bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(2, 6));
         // Then clear
-        _testGetSet->_SetMarginsHelper(&srTestMargins, 0, sScreenHeight);
-        _testGetSet->_expectedScrollRegion.top = 0;
-        _testGetSet->_expectedScrollRegion.bottom = 0;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.top, srTestMargins.bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(0, sScreenHeight));
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
 
         Log::Comment(L"Test 7: Verify setting margins to (1, height) clears them");
         // First set,
-        _testGetSet->_setScrollingRegionResult = TRUE;
-        _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.top, srTestMargins.bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(2, 6));
         // Then clear
-        _testGetSet->_SetMarginsHelper(&srTestMargins, 1, sScreenHeight);
-        _testGetSet->_expectedScrollRegion.top = 0;
-        _testGetSet->_expectedScrollRegion.bottom = 0;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.top, srTestMargins.bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(1, sScreenHeight));
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
 
         Log::Comment(L"Test 8: Verify setting margins to (1, 0) clears them");
         // First set,
-        _testGetSet->_setScrollingRegionResult = TRUE;
-        _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.top, srTestMargins.bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(2, 6));
         // Then clear
-        _testGetSet->_SetMarginsHelper(&srTestMargins, 1, 0);
-        _testGetSet->_expectedScrollRegion.top = 0;
-        _testGetSet->_expectedScrollRegion.bottom = 0;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.top, srTestMargins.bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(1, 0));
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
 
         Log::Comment(L"Test 9: Verify having top and bottom margin the same has no effect.");
-
-        _testGetSet->_SetMarginsHelper(&srTestMargins, 4, 4);
-        _testGetSet->_setScrollingRegionResult = TRUE;
-        _testGetSet->_activeScrollRegion = {};
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.top, srTestMargins.bottom));
-        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _testGetSet->_activeScrollRegion);
+        _pDispatch->_scrollMargins = {};
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(4, 4));
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
 
         Log::Comment(L"Test 10: Verify having top margin out of bounds has no effect.");
-
-        _testGetSet->_SetMarginsHelper(&srTestMargins, sScreenHeight + 1, sScreenHeight + 10);
-        _testGetSet->_setScrollingRegionResult = TRUE;
-        _testGetSet->_activeScrollRegion = {};
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.top, srTestMargins.bottom));
-        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _testGetSet->_activeScrollRegion);
+        _pDispatch->_scrollMargins = {};
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(sScreenHeight + 1, sScreenHeight + 10));
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
 
         Log::Comment(L"Test 11: Verify having bottom margin out of bounds has no effect.");
-
-        _testGetSet->_SetMarginsHelper(&srTestMargins, 1, sScreenHeight + 1);
-        _testGetSet->_setScrollingRegionResult = TRUE;
-        _testGetSet->_activeScrollRegion = {};
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.top, srTestMargins.bottom));
-        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _testGetSet->_activeScrollRegion);
+        _pDispatch->_scrollMargins = {};
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(1, sScreenHeight + 1));
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
     }
 
     TEST_METHOD(LineFeedTest)
     {
         Log::Comment(L"Starting test...");
 
-        // All test cases need the LineFeed call to succeed.
-        _testGetSet->_lineFeedResult = TRUE;
+        _testGetSet->PrepData();
+        auto& cursor = _testGetSet->_textBuffer->GetCursor();
 
         Log::Comment(L"Test 1: Line feed without carriage return.");
-        _testGetSet->_expectedLineFeedWithReturn = false;
+        cursor.SetPosition({ 10, 0 });
         VERIFY_IS_TRUE(_pDispatch->LineFeed(DispatchTypes::LineFeedType::WithoutReturn));
+        VERIFY_ARE_EQUAL(til::point(10, 1), cursor.GetPosition());
 
         Log::Comment(L"Test 2: Line feed with carriage return.");
-        _testGetSet->_expectedLineFeedWithReturn = true;
+        cursor.SetPosition({ 10, 0 });
         VERIFY_IS_TRUE(_pDispatch->LineFeed(DispatchTypes::LineFeedType::WithReturn));
+        VERIFY_ARE_EQUAL(til::point(0, 1), cursor.GetPosition());
 
         Log::Comment(L"Test 3: Line feed depends on mode, and mode reset.");
         _testGetSet->_getLineFeedModeResult = false;
-        _testGetSet->_expectedLineFeedWithReturn = false;
+        cursor.SetPosition({ 10, 0 });
         VERIFY_IS_TRUE(_pDispatch->LineFeed(DispatchTypes::LineFeedType::DependsOnMode));
+        VERIFY_ARE_EQUAL(til::point(10, 1), cursor.GetPosition());
 
         Log::Comment(L"Test 4: Line feed depends on mode, and mode set.");
         _testGetSet->_getLineFeedModeResult = true;
-        _testGetSet->_expectedLineFeedWithReturn = true;
+        cursor.SetPosition({ 10, 0 });
         VERIFY_IS_TRUE(_pDispatch->LineFeed(DispatchTypes::LineFeedType::DependsOnMode));
+        VERIFY_ARE_EQUAL(til::point(0, 1), cursor.GetPosition());
     }
 
     TEST_METHOD(SetConsoleTitleTest)

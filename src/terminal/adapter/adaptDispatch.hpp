@@ -196,7 +196,7 @@ namespace Microsoft::Console::VirtualTerminal
         };
 
         void _WriteToBuffer(const std::wstring_view string);
-        std::pair<int, int> _GetVerticalMargins(const til::rect& viewport, const bool absolute);
+        std::pair<int, int> _GetVerticalMargins(const til::rect& viewport, const bool absolute) noexcept;
         bool _CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins);
         void _ApplyCursorMovementFlags(Cursor& cursor) noexcept;
         void _FillRect(TextBuffer& textBuffer, const til::rect& fillRect, const wchar_t fillChar, const TextAttribute fillAttrs);
@@ -204,8 +204,8 @@ namespace Microsoft::Console::VirtualTerminal
         void _ChangeRectAttributes(TextBuffer& textBuffer, const til::rect& changeRect, const ChangeOps& changeOps);
         void _ChangeRectOrStreamAttributes(const til::rect& changeArea, const ChangeOps& changeOps);
         til::rect _CalculateRectArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const til::size bufferSize);
-        void _EraseScrollback();
-        void _EraseAll();
+        bool _EraseScrollback();
+        bool _EraseAll();
         void _ScrollRectVertically(TextBuffer& textBuffer, const til::rect& scrollRect, const VTInt delta);
         void _ScrollRectHorizontally(TextBuffer& textBuffer, const til::rect& scrollRect, const VTInt delta);
         void _InsertDeleteCharacterHelper(const VTInt delta);
@@ -214,6 +214,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         void _DoSetTopBottomScrollingMargins(const VTInt topMargin,
                                              const VTInt bottomMargin);
+        void _DoLineFeed(TextBuffer& textBuffer, const bool withReturn, const bool wrapForced);
+
         void _OperatingStatus() const;
         void _CursorPositionReport(const bool extendedReport);
         void _MacroSpaceReport() const;
