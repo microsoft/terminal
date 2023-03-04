@@ -3664,9 +3664,16 @@ void AdaptDispatch::_ReportDECSACESetting() const
 // - format - the format of the report being requested.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::RequestPresentationStateReport(const DispatchTypes::PresentationReportFormat /*format*/)
+bool AdaptDispatch::RequestPresentationStateReport(const DispatchTypes::PresentationReportFormat format)
 {
-    return false;
+    switch (format)
+    {
+    case DispatchTypes::PresentationReportFormat::TabulationStopReport:
+        _ReportTabStops();
+        return true;
+    default:
+        return false;
+    }
 }
 
 // Method Description:
@@ -3676,9 +3683,95 @@ bool AdaptDispatch::RequestPresentationStateReport(const DispatchTypes::Presenta
 // - format - the format of the report being restored.
 // Return Value:
 // - a function to receive the data or nullptr if the format is unsupported.
-ITermDispatch::StringHandler AdaptDispatch::RestorePresentationState(const DispatchTypes::PresentationReportFormat /*format*/)
+ITermDispatch::StringHandler AdaptDispatch::RestorePresentationState(const DispatchTypes::PresentationReportFormat format)
 {
-    return nullptr;
+    switch (format)
+    {
+    case DispatchTypes::PresentationReportFormat::TabulationStopReport:
+        return _RestoreTabStops();
+    default:
+        return nullptr;
+    }
+}
+
+// Method Description:
+// - DECTABSR - Returns the Tabulation Stop Report in response to a DECRQPSR query.
+// Arguments:
+// - None
+// Return Value:
+// - None
+void AdaptDispatch::_ReportTabStops()
+{
+    // In order to be compatible with the original hardware terminals, we only
+    // report tab stops up to the current buffer width, even though there may
+    // be positions recorded beyond that limit.
+    const auto width = _api.GetTextBuffer().GetSize().Dimensions().width;
+    _InitTabStopsForWidth(width);
+
+    using namespace std::string_view_literals;
+
+    // A valid response always starts with DCS 2 $ u.
+    std::wstringstream response;
+    response << L"\033P2$u"sv;
+
+    auto need_separator = false;
+    for (auto column = 0; column < width; column++)
+    {
+        if (til::at(_tabStopColumns, column))
+        {
+            response << (need_separator ? L"/" : L"");
+            response << (column + 1);
+            need_separator = true;
+        }
+    }
+
+    // An ST ends the sequence.
+    response << L"\033\\"sv;
+
+    const auto response_string = response.str();
+    _api.ReturnResponse({ response_string.data(), response_string.size() });
+}
+
+// Method Description:
+// - DECTABSR - This is a parser for the Tabulation Stop Report received via DECRSPS.
+// Arguments:
+// - <none>
+// Return Value:
+// - a function to parse the report data.
+ITermDispatch::StringHandler AdaptDispatch::_RestoreTabStops()
+{
+    // In order to be compatible with the original hardware terminals, we need
+    // to be able to set tab stops up to at least 132 columns, even though the
+    // current buffer width may be less than that.
+    const auto width = std::max(_api.GetTextBuffer().GetSize().Dimensions().width, 132);
+    _ClearAllTabStops();
+    _InitTabStopsForWidth(width);
+
+    return [this, width, column = size_t{}](const auto ch) mutable {
+        if (ch >= L'0' && ch <= L'9')
+        {
+            column *= 10;
+            column += (ch - L'0');
+            column = std::min<size_t>(column, MAX_PARAMETER_VALUE);
+        }
+        else if (ch == L'/' || ch == AsciiChars::ESC)
+        {
+            // Note that column 1 is always a tab stop, so there is no
+            // need to record an entry at that offset.
+            if (column > 1 && column <= width)
+            {
+                _tabStopColumns.at(column - 1) = true;
+            }
+            column = 0;
+        }
+        else
+        {
+            // If we receive an unexpected character, we don't try and
+            // process any more of the input - we just abort.
+            return false;
+        }
+        return (ch != AsciiChars::ESC);
+    };
 }
 
 // Routine Description:

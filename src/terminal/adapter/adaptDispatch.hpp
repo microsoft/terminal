@@ -240,6 +240,9 @@ namespace Microsoft::Console::VirtualTerminal
         void _ReportDECSCASetting() const;
         void _ReportDECSACESetting() const;
 
+        void _ReportTabStops();
+        StringHandler _RestoreTabStops();
+
         StringHandler _CreateDrcsPassthroughHandler(const DispatchTypes::DrcsCharsetSize charsetSize);
         StringHandler _CreatePassthroughHandler();
 
