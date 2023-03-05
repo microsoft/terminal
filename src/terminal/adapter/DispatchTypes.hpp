@@ -21,6 +21,11 @@ namespace Microsoft::Console::VirtualTerminal
         {
         }
 
+        constexpr VTID() noexcept :
+            _value{ 0 }
+        {
+        }
+
         constexpr operator uint64_t() const
         {
             return _value;
@@ -51,6 +56,17 @@ namespace Microsoft::Console::VirtualTerminal
 
         uint64_t _value;
     };
+
+    inline std::wostream& operator<<(std::wostream& out, const VTID& id)
+    {
+        uint64_t value = id;
+        do
+        {
+            out << gsl::narrow_cast<char>(value & 0xFF);
+            value >>= CHAR_BIT;
+        } while (value);
+        return out;
+    }
 
     class VTIDBuilder
     {

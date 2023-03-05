@@ -2446,7 +2446,7 @@ bool AdaptDispatch::LockingShiftRight(const VTInt gsetNumber)
 // - gsetNumber - The G-set that will be invoked.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::SingleShift(const VTInt gsetNumber)
+bool AdaptDispatch::SingleShift(const VTInt gsetNumber) noexcept
 {
     return _termOutput.SingleShift(gsetNumber);
 }

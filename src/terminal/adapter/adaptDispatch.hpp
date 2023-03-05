@@ -104,7 +104,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool Designate96Charset(const VTInt gsetNumber, const VTID charset) override; // SCS
         bool LockingShift(const VTInt gsetNumber) override; // LS0, LS1, LS2, LS3
         bool LockingShiftRight(const VTInt gsetNumber) override; // LS1R, LS2R, LS3R
-        bool SingleShift(const VTInt gsetNumber) override; // SS2, SS3
+        bool SingleShift(const VTInt gsetNumber) noexcept override; // SS2, SS3
         bool AcceptC1Controls(const bool enabled) override; // DECAC1
         bool SoftReset() override; // DECSTR
         bool HardReset() override; // RIS
