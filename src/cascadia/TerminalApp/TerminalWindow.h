@@ -107,7 +107,6 @@ namespace winrt::TerminalApp::implementation
 
         bool GetMinimizeToNotificationArea();
         bool GetAlwaysShowNotificationIcon();
-        bool RequestsTrayIcon();
 
         bool GetShowTitleInTitlebar();
 

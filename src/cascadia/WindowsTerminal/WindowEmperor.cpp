@@ -124,7 +124,7 @@ void WindowEmperor::CreateNewWindowThread(Remoting::WindowRequestedArgs args, co
         // Add a callback to the window's logic to let us know when the window's
         // quake mode state changes. We'll use this to check if we need to add
         // or remove the notification icon.
-        sender->Logic().IsQuakeWindowChanged([this](auto&&, auto&&) -> winrt::fire_and_forget {
+        sender->Logic().IsQuakeWindowChanged([this](auto&&, auto &&) -> winrt::fire_and_forget {
             co_await wil::resume_foreground(this->_dispatcher);
             this->_checkWindowsForNotificationIcon();
         });
@@ -645,11 +645,15 @@ void WindowEmperor::_checkWindowsForNotificationIcon()
     // re-summon any hidden windows, but right now we're not keeping track of
     // who's hidden, so just summon them all. Tracking the work to do a "summon
     // all minimized" in GH#10448
-
-    bool needsIcon = false;
+    //
+    // To avoid races between us thinking the settings updated, and the windows
+    // themselves getting the new settings, only ask the app logic for the
+    // RequestsTrayIcon setting value, and combine that with the result of each
+    // window (which won't change during a settings reload).
+    bool needsIcon = _app.Logic().RequestsTrayIcon();
     for (const auto& _windowThread : _windows)
     {
-        needsIcon |= _windowThread->Logic().RequestsTrayIcon();
+        needsIcon |= _windowThread->Logic().IsQuakeWindow();
     }
 
     if (needsIcon)

@@ -265,7 +265,7 @@ namespace winrt::TerminalApp::implementation
             _root->SetStartupActions(_settingsStartupArgs);
         }
 
-        _root->SetSettings(_settings, false);
+        _root->SetSettings(_settings, false); // We're on our UI thread right now, so this is safe
         _root->Loaded({ this, &TerminalWindow::_OnLoaded });
         _root->Initialized([this](auto&&, auto&&) {
             // GH#288 - When we finish initialization, if the user wanted us
@@ -337,12 +337,6 @@ namespace winrt::TerminalApp::implementation
     bool TerminalWindow::GetAlwaysShowNotificationIcon()
     {
         return _settings.GlobalSettings().AlwaysShowNotificationIcon();
-    }
-    bool TerminalWindow::RequestsTrayIcon()
-    {
-        return _settings.GlobalSettings().AlwaysShowNotificationIcon() ||
-               _settings.GlobalSettings().MinimizeToNotificationArea() ||
-               IsQuakeWindow();
     }
 
     bool TerminalWindow::GetShowTitleInTitlebar()
@@ -793,14 +787,16 @@ namespace winrt::TerminalApp::implementation
     winrt::fire_and_forget TerminalWindow::UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args)
     {
         _settings = args.NewSettings();
-        // Update the settings in TerminalPage
-        _root->SetSettings(_settings, true);
 
         const auto weakThis{ get_weak() };
         co_await wil::resume_foreground(_root->Dispatcher());
         // Back on our UI thread...
         if (auto logic{ weakThis.get() })
         {
+            // Update the settings in TerminalPage
+            // We're on our UI thread right now, so this is safe
+            _root->SetSettings(_settings, true);
+
             // Bubble the notification up to the AppHost, now that we've updated our _settings.
             _SettingsChangedHandlers(*this, args);
 
