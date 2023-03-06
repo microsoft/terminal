@@ -82,9 +82,9 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
 
     // The width at which we wrap is determined by the line rendition attribute.
     auto lineWidth = textBuffer.GetLineWidth(cursorPosition.y);
+    auto stringIterator = string;
 
-    auto stringPosition = string.cbegin();
-    while (stringPosition < string.cend())
+    while (!stringIterator.empty())
     {
         if (cursor.IsDelayedEOLWrap() && wrapAtEOL)
         {
@@ -101,44 +101,30 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
             }
         }
 
-        const OutputCellIterator it(std::wstring_view{ stringPosition, string.cend() }, attributes);
         if (_modes.test(Mode::InsertReplace))
         {
             // If insert-replace mode is enabled, we first measure how many cells
             // the string will occupy, and scroll the target area right by that
             // amount to make space for the incoming text.
+            const OutputCellIterator it(stringIterator, attributes);
             auto measureIt = it;
             while (measureIt && measureIt.GetCellDistance(it) < lineWidth)
             {
-                measureIt++;
+                ++measureIt;
             }
             const auto row = cursorPosition.y;
             const auto cellCount = measureIt.GetCellDistance(it);
             _ScrollRectHorizontally(textBuffer, { cursorPosition.x, row, lineWidth, row + 1 }, cellCount);
         }
-        const auto itEnd = textBuffer.WriteLine(it, cursorPosition, wrapAtEOL, lineWidth - 1);
 
-        if (itEnd.GetInputDistance(it) == 0)
+        const auto newPosX = textBuffer.Write(cursorPosition.y, cursorPosition.x, til::CoordTypeMax, wrapAtEOL, attributes, stringIterator);
+
+        if (const til::rect changedRect{ cursorPosition.x, cursorPosition.y, newPosX, cursorPosition.y + 1 })
         {
-            // If we haven't written anything out because there wasn't enough space,
-            // we move the cursor to the end of the line so that it's forced to wrap.
-            cursorPosition.x = lineWidth;
-            // But if wrapping is disabled, we also need to move to the next string
-            // position, otherwise we'll be stuck in this loop forever.
-            if (!wrapAtEOL)
-            {
-                stringPosition++;
-            }
-        }
-        else
-        {
-            const auto cellCount = itEnd.GetCellDistance(it);
-            const auto changedRect = til::rect{ cursorPosition, til::size{ cellCount, 1 } };
             _api.NotifyAccessibilityChange(changedRect);
-
-            stringPosition += itEnd.GetInputDistance(it);
-            cursorPosition.x += cellCount;
         }
+
+        cursorPosition.x = newPosX;
 
         if (cursorPosition.x >= lineWidth)
         {

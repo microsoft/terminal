@@ -4,7 +4,10 @@
 #include "precomp.h"
 #include "Row.hpp"
 
+#include <til/unicode.h>
+
 #include "textBuffer.hpp"
+#include "../../types/inc/GlyphWidth.hpp"
 
 // The STL is missing a std::iota_n analogue for std::iota, so I made my own.
 template<typename OutIt, typename Diff, typename T>
@@ -63,6 +66,65 @@ constexpr OutIt copy_n_small(InIt first, Diff count, OutIt dest)
         *dest = *first;
     }
     return dest;
+}
+
+RowTextIterator::RowTextIterator(std::span<const wchar_t> chars, std::span<const uint16_t> charOffsets, uint16_t offset) noexcept :
+    _chars{ chars },
+    _charOffsets{ charOffsets },
+    _beg{ offset },
+    _end{ offset }
+{
+    operator++();
+}
+
+bool RowTextIterator::operator==(const RowTextIterator& other) const noexcept
+{
+    return _beg == other._beg;
+}
+
+RowTextIterator& RowTextIterator::operator++() noexcept
+{
+    _beg = _end;
+    while (++_end < _charOffsets.size() && _uncheckedIsTrailer(_end))
+    {
+    }
+    return *this;
+}
+
+const RowTextIterator& RowTextIterator::operator*() const noexcept
+{
+    return *this;
+}
+
+std::wstring_view RowTextIterator::Text() const noexcept
+{
+    const auto beg = _uncheckedCharOffset(_beg);
+    const auto end = _uncheckedCharOffset(_end);
+    return { _chars.begin() + beg, _chars.begin() + gsl::narrow_cast<size_t>(end - beg) };
+}
+
+til::CoordType RowTextIterator::Cols() const noexcept
+{
+    return _end - _beg;
+}
+
+DbcsAttribute RowTextIterator::DbcsAttr() const noexcept
+{
+    return Cols() == 2 ? DbcsAttribute::Leading : DbcsAttribute::Single;
+}
+
+// Safety: col must be [0, _columnCount].
+uint16_t RowTextIterator::_uncheckedCharOffset(size_t col) const noexcept
+{
+    assert(col <= _charOffsets.size());
+    return til::at(_charOffsets, col) & CharOffsetsMask;
+}
+
+// Safety: col must be [0, _columnCount].
+bool RowTextIterator::_uncheckedIsTrailer(size_t col) const noexcept
+{
+    assert(col <= _charOffsets.size());
+    return WI_IsFlagSet(til::at(_charOffsets, col), CharOffsetsTrailer);
 }
 
 // Routine Description:
@@ -126,6 +188,16 @@ void ROW::SetLineRendition(const LineRendition lineRendition) noexcept
 LineRendition ROW::GetLineRendition() const noexcept
 {
     return _lineRendition;
+}
+
+RowTextIterator ROW::Begin() const noexcept
+{
+    return { _chars, _charOffsets, 0 };
+}
+
+RowTextIterator ROW::End() const noexcept
+{
+    return { _chars, _charOffsets, _columnCount };
 }
 
 // Routine Description:
@@ -227,6 +299,36 @@ void ROW::TransferAttributes(const til::small_rle<TextAttribute, uint16_t, 1>& a
 {
     _attr = attr;
     _attr.resize_trailing_extent(gsl::narrow<uint16_t>(newWidth));
+}
+
+til::CoordType ROW::NavigateToPrevious(til::CoordType column) const noexcept
+{
+    return _adjustBackward(_clampedColumn(column - 1));
+}
+
+til::CoordType ROW::NavigateToNext(til::CoordType column) const noexcept
+{
+    return _adjustForward(_clampedColumn(column + 1));
+}
+
+uint16_t ROW::_adjustBackward(uint16_t column) const noexcept
+{
+    // Safety: This is a little bit more dangerous. The first column is supposed
+    // to never be a trailer and so this loop should exit if column == 0.
+    for (; _uncheckedIsTrailer(column); --column)
+    {
+    }
+    return column;
+}
+
+uint16_t ROW::_adjustForward(uint16_t column) const noexcept
+{
+    // Safety: This is a little bit more dangerous. The last column is supposed
+    // to never be a trailer and so this loop should exit if column == _columnCount.
+    for (; _uncheckedIsTrailer(column); ++column)
+    {
+    }
+    return column;
 }
 
 // Routine Description:
@@ -375,90 +477,213 @@ void ROW::ReplaceAttributes(const til::CoordType beginIndex, const til::CoordTyp
     _attr.replace(_clampedColumnInclusive(beginIndex), _clampedColumnInclusive(endIndex), newAttr);
 }
 
-void ROW::ReplaceCharacters(til::CoordType columnBegin, til::CoordType width, const std::wstring_view& chars)
+[[msvc::forceinline]] ROW::WriteHelper::WriteHelper(ROW& row, til::CoordType columnBegin, til::CoordType columnLimit, const std::wstring_view& chars) noexcept :
+    row{ row },
+    chars{ chars }
 {
-    const auto colBeg = _clampedUint16(columnBegin);
-    const auto colEnd = _clampedUint16(columnBegin + width);
+    colBeg = row._clampedColumnInclusive(columnBegin);
+    colLimit = row._clampedColumnInclusive(columnLimit);
+    chExtBeg = row._uncheckedCharOffset(colBeg);
+    colExtBeg = row._adjustBackward(colBeg);
+    leadingSpaces = colBeg - colExtBeg;
+    chBeg = chExtBeg + leadingSpaces;
+    colEnd = colBeg;
+    colExtEnd = 0;
+    charsConsumed = 0;
+}
 
-    if (colBeg >= colEnd || colEnd > _columnCount || chars.empty())
+[[msvc::forceinline]] bool ROW::WriteHelper::IsValid() const noexcept
+{
+    return colBeg < colLimit && !chars.empty();
+}
+
+void ROW::ReplaceCharacters(til::CoordType columnBegin, til::CoordType width, const std::wstring_view& chars)
+try
+{
+    WriteHelper h{ *this, columnBegin, _columnCount, chars };
+    if (!h.IsValid())
     {
         return;
     }
+    h.ReplaceCharacters(width);
+    h.Finish();
+}
+catch (...)
+{
+    // Due to this function writing _charOffsets first, then calling _resizeChars (which may throw) and only then finally
+    // filling in _chars, we might end up in a situation were _charOffsets contains offsets outside of the _chars array.
+    // --> Restore this row to a known "okay"-state.
+    Reset(TextAttribute{});
+    throw;
+}
 
-    // Safety:
-    // * colBeg is now [0, _columnCount)
-    // * colEnd is now (colBeg, _columnCount]
+[[msvc::forceinline]] void ROW::WriteHelper::ReplaceCharacters(til::CoordType width) noexcept
+{
+    const auto colEndNew = gsl::narrow_cast<uint16_t>(colEnd + width);
+    if (colEndNew > colLimit)
+    {
+        colExtEnd = colLimit;
+    }
+    else
+    {
+        til::at(row._charOffsets, colEnd++) = chBeg;
+        for (; colEnd < colEndNew; ++colEnd)
+        {
+            til::at(row._charOffsets, colEnd) = gsl::narrow_cast<uint16_t>(chBeg | CharOffsetsTrailer);
+        }
 
-    // Algorithm explanation
-    //
-    // Task:
-    //   Replace the characters in cells [colBeg, colEnd) with a single `width`-wide glyph consisting of `chars`.
-    //
-    // Problem:
-    //   Imagine that we have the following ROW contents:
-    //     "xxyyzz"
-    //   xx, yy, zz are 2 cell wide glyphs. We want to insert a 2 cell wide glyph ww at colBeg 1:
-    //       ^^
-    //       ww
-    //   An incorrect result would be:
-    //     "xwwyzz"
-    //   The half cut off x and y glyph wouldn't make much sense, so we need to fill them with whitespace:
-    //     " ww zz"
-    //
-    // Solution:
-    //   Given the range we want to replace [colBeg, colEnd), we "extend" it to encompass leading (preceding)
-    //   and trailing wide glyphs we partially overwrite resulting in the range [colExtBeg, colExtEnd), where
-    //   colExtBeg <= colBeg and colExtEnd >= colEnd. In other words, the to be replaced range has been "extended".
-    //   The amount of leading whitespace we need to insert is thus colBeg - colExtBeg
-    //   and the amount of trailing whitespace colExtEnd - colEnd.
+        colExtEnd = colEnd;
+        charsConsumed = chars.size();
+    }
+}
 
-    // Extend range downwards (leading whitespace)
-    uint16_t colExtBeg = colBeg;
-    // Safety: colExtBeg is [0, _columnCount], because colBeg is.
-    const uint16_t chExtBeg = _uncheckedCharOffset(colExtBeg);
-    // Safety: colExtBeg remains [0, _columnCount] due to colExtBeg != 0.
-    for (; colExtBeg != 0 && _uncheckedIsTrailer(colExtBeg); --colExtBeg)
+til::CoordType ROW::Write(til::CoordType columnBegin, til::CoordType columnLimit, std::wstring_view& chars)
+try
+{
+    WriteHelper h{ *this, columnBegin, columnLimit, chars };
+    if (!h.IsValid())
+    {
+        return h.colBeg;
+    }
+    h.Write();
+    h.Finish();
+
+    chars = chars.substr(h.charsConsumed);
+    return h.colExtEnd;
+}
+catch (...)
+{
+    Reset(TextAttribute{});
+    throw;
+}
+
+[[msvc::forceinline]] void ROW::WriteHelper::Write() noexcept
+{
+    size_t ch = chBeg;
+
+    for (const auto& s : til::utf16_iterator{ chars })
+    {
+        const auto wide = til::at(s, 0) < 0x80 ? false : IsGlyphFullWidth(s);
+        const auto colEndNew = gsl::narrow_cast<uint16_t>(colEnd + 1u + wide);
+        if (colEndNew > colLimit)
+        {
+            colExtEnd = colLimit;
+            break;
+        }
+
+        til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(ch);
+        if (wide)
+        {
+            til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(ch | CharOffsetsTrailer);
+        }
+
+        colExtEnd = colEnd;
+        ch += s.size();
+    }
+
+    charsConsumed = ch - chBeg;
+}
+
+til::CoordType ROW::WriteWithOffsets(til::CoordType columnBegin, til::CoordType columnLimit, std::wstring_view& chars, std::span<const uint16_t>& charOffsets)
+try
+{
+    WriteHelper h{ *this, columnBegin, columnLimit, chars };
+    if (!h.IsValid())
+    {
+        return h.colBeg;
+    }
+    // Any valid charOffsets array is at least 2 elements long (the 1st element is the start offset and the 2nd
+    // element is the length of the first glyph) and begins/ends with a non-trailer offset.  We don't really
+    // need to test for the end offset, since `WriteHelper::WriteWithOffsets` already takes care of that.
+    if (charOffsets.size() < 2 || WI_IsFlagSet(charOffsets.front(), CharOffsetsTrailer))
+    {
+        assert(false);
+        chars = {};
+        charOffsets = {};
+        return h.colBeg;
+    }
+    h.WriteWithOffsets(charOffsets);
+    h.Finish();
+
+    chars = chars.substr(h.charsConsumed);
+    charOffsets = charOffsets.subspan(h.colEnd - h.colBeg);
+    return h.colExtEnd;
+}
+catch (...)
+{
+    Reset(TextAttribute{});
+    throw;
+}
+
+[[msvc::forceinline]] void ROW::WriteHelper::WriteWithOffsets(const std::span<const uint16_t>& charOffsets) noexcept
+{
+    // Since our `charOffsets` input is already in columns (just like the `ROW::_charOffsets`),
+    // we can directly look up the end char-offset, but...
+    const auto colExtEndInput = std::min(gsl::narrow_cast<uint16_t>(colLimit - colBeg), gsl::narrow<uint16_t>(charOffsets.size()));
+
+    // ...since the colLimit might intersect with a wide glyph in `charOffset`, we need to adjust our input-colEnd.
+    auto colEndInput = colExtEndInput;
+    for (; WI_IsFlagSet(til::at(charOffsets, colEndInput), CharOffsetsTrailer); --colEndInput)
     {
     }
 
-    // Extend range upwards (trailing whitespace)
-    uint16_t colExtEnd = colEnd;
-    // Safety: colExtEnd cannot be incremented past _columnCount, because the last
-    // _charOffset at index _columnCount will never get the CharOffsetsTrailer flag.
-    for (; _uncheckedIsTrailer(colExtEnd); ++colExtEnd)
-    {
-    }
-    // Safety: After the previous loop colExtEnd is [0, _columnCount].
-    const uint16_t chExtEnd = _uncheckedCharOffset(colExtEnd);
+    const auto baseOffset = til::at(charOffsets, 0);
+    const auto endOffset = til::at(charOffsets, colEndInput);
+    const auto inToOutOffset = gsl::narrow_cast<uint16_t>(chBeg - baseOffset);
 
-    const uint16_t leadingSpaces = colBeg - colExtBeg;
+    // Now with the `colEndInput` figured out, we can easily copy the `charOffsets` into the `_charOffsets`.
+    // It's possible to use SIMD for this loop for extra perf gains. Something like this for SSE2 (~8x faster):
+    //   const auto in = _mm_loadu_si128(...);
+    //   const auto off = _mm_and_epi32(in, _mm_set1_epi16(CharOffsetsMask));
+    //   const auto trailer  = _mm_and_epi32(in, _mm_set1_epi16(CharOffsetsTrailer));
+    //   const auto out = _mm_or_epi32(_mm_add_epi16(off, _mm_set1_epi16(inToOutOffset)), trailer);
+    //   _mm_store_si128(..., out);
+    for (uint16_t i = 0; i < colEndInput; ++i, ++colEnd)
+    {
+        const auto ch = til::at(charOffsets, i);
+        const auto off = ch & CharOffsetsMask;
+        const auto trailer = ch & CharOffsetsTrailer;
+        til::at(row._charOffsets, colEnd) = gsl::narrow_cast<uint16_t>((off + inToOutOffset) | trailer);
+    }
+
+    colExtEnd = gsl::narrow_cast<uint16_t>(colExtEndInput + colBeg);
+    charsConsumed = endOffset - baseOffset;
+}
+
+[[msvc::forceinline]] void ROW::WriteHelper::Finish()
+{
+    colExtEnd = row._adjustForward(colExtEnd);
+
     const uint16_t trailingSpaces = colExtEnd - colEnd;
-    const size_t chExtEndNew = chars.size() + leadingSpaces + trailingSpaces + chExtBeg;
+    const uint16_t chExtEndOld = row._uncheckedCharOffset(colExtEnd);
+    const size_t chExtEndNew = charsConsumed + leadingSpaces + trailingSpaces + chExtBeg;
 
-    if (chExtEndNew != chExtEnd)
+    if (chExtEndNew != chExtEndOld)
     {
-        _resizeChars(colExtEnd, chExtBeg, chExtEnd, chExtEndNew);
+        row._resizeChars(colExtEnd, chExtBeg, chExtEndOld, chExtEndNew);
     }
 
-    // Add leading/trailing whitespace and copy chars
     {
-        auto it = _chars.begin() + chExtBeg;
+        auto it = row._chars.begin() + chExtBeg;
         it = fill_n_small(it, leadingSpaces, L' ');
-        it = copy_n_small(chars.begin(), chars.size(), it);
+        it = std::copy_n(chars.begin(), charsConsumed, it);
         it = fill_n_small(it, trailingSpaces, L' ');
+
+        iota_n(row._charOffsets.begin() + colExtBeg, leadingSpaces, chExtBeg);
+        iota_n(row._charOffsets.begin() + colEnd, trailingSpaces, gsl::narrow_cast<uint16_t>(chBeg + charsConsumed));
     }
-    // Update char offsets with leading/trailing whitespace and the chars columns.
+
+    // This updates `_doubleBytePadded` whenever we write the last column in the row. `_doubleBytePadded` tells our text
+    // reflow algorithm whether it should ignore the last column. This is important when writing wide characters into
+    // the terminal: If the last wide character in a row only fits partially, we should render whitespace, but
+    // during text reflow pretend as if no whitespace exists. After all, the user didn't write any whitespace there.
+    //
+    // The way this is written, it'll set `_doubleBytePadded` to `true` no matter whether a wide character didn't fit,
+    // or if the last 2 columns contain a wide character and a narrow character got written into the left half of it.
+    // In both cases `trailingSpaces` is 1 and fills the last column and `_doubleBytePadded` will be `true`.
+    if (colExtEnd == row._columnCount)
     {
-        auto chPos = chExtBeg;
-        auto it = _charOffsets.begin() + colExtBeg;
-
-        it = iota_n_mut(it, leadingSpaces, chPos);
-
-        *it++ = chPos;
-        it = fill_small(it, _charOffsets.begin() + colEnd, gsl::narrow_cast<uint16_t>(chPos | CharOffsetsTrailer));
-        chPos = gsl::narrow_cast<uint16_t>(chPos + chars.size());
-
-        it = iota_n_mut(it, trailingSpaces, chPos);
+        row.SetDoubleBytePadded(colEnd < row._columnCount);
     }
 }
 
@@ -466,15 +691,15 @@ void ROW::ReplaceCharacters(til::CoordType columnBegin, til::CoordType width, co
 // as it reallocates the backing buffer and shifts the char offsets.
 // The parameters are difficult to explain, but their names are identical to
 // local variables in ReplaceCharacters() which I've attempted to document there.
-void ROW::_resizeChars(uint16_t colExtEnd, uint16_t chExtBeg, uint16_t chExtEnd, size_t chExtEndNew)
+void ROW::_resizeChars(uint16_t colExtEnd, uint16_t chExtBeg, uint16_t chExtEndOld, size_t chExtEndNew)
 {
-    const auto diff = chExtEndNew - chExtEnd;
+    const auto diff = chExtEndNew - chExtEndOld;
     const auto currentLength = _charSize();
     const auto newLength = currentLength + diff;
 
     if (newLength <= _chars.size())
     {
-        std::copy_n(_chars.begin() + chExtEnd, currentLength - chExtEnd, _chars.begin() + chExtEndNew);
+        std::copy_n(_chars.begin() + chExtEndOld, currentLength - chExtEndOld, _chars.begin() + chExtEndNew);
     }
     else
     {
@@ -485,7 +710,7 @@ void ROW::_resizeChars(uint16_t colExtEnd, uint16_t chExtBeg, uint16_t chExtEnd,
         const std::span chars{ charsHeap.get(), newCapacity };
 
         std::copy_n(_chars.begin(), chExtBeg, chars.begin());
-        std::copy_n(_chars.begin() + chExtEnd, currentLength - chExtEnd, chars.begin() + chExtEndNew);
+        std::copy_n(_chars.begin() + chExtEndOld, currentLength - chExtEndOld, chars.begin() + chExtEndNew);
 
         _charsHeap = std::move(charsHeap);
         _chars = chars;
@@ -681,11 +906,13 @@ uint16_t ROW::_charSize() const noexcept
 // Safety: col must be [0, _columnCount].
 uint16_t ROW::_uncheckedCharOffset(size_t col) const noexcept
 {
+    assert(col < _charOffsets.size());
     return til::at(_charOffsets, col) & CharOffsetsMask;
 }
 
 // Safety: col must be [0, _columnCount].
 bool ROW::_uncheckedIsTrailer(size_t col) const noexcept
 {
+    assert(col < _charOffsets.size());
     return WI_IsFlagSet(til::at(_charOffsets, col), CharOffsetsTrailer);
 }

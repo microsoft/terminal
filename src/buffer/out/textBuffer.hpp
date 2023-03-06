@@ -89,6 +89,8 @@ public:
     TextBufferTextIterator GetTextDataAt(const til::point at, const Microsoft::Console::Types::Viewport limit) const;
 
     // Text insertion functions
+    til::CoordType Write(til::CoordType row, til::CoordType columnBegin, til::CoordType columnLimit, bool wrapAtEOL, const TextAttribute& attributes, std::wstring_view& chars);
+
     OutputCellIterator Write(const OutputCellIterator givenIt);
 
     OutputCellIterator Write(const OutputCellIterator givenIt,
