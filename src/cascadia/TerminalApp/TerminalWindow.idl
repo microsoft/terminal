@@ -102,7 +102,6 @@ namespace TerminalApp
 
         Boolean GetMinimizeToNotificationArea();
         Boolean GetAlwaysShowNotificationIcon();
-        Boolean RequestsTrayIcon();
         Boolean GetShowTitleInTitlebar();
 
         // These already have accessors as a part of IWindowProperties, but we

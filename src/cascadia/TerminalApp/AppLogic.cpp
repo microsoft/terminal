@@ -673,6 +673,18 @@ namespace winrt::TerminalApp::implementation
         }
         return _settings.GlobalSettings().IsolatedMode();
     }
+    bool AppLogic::RequestsTrayIcon()
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            ReloadSettings();
+        }
+
+        return _settings.GlobalSettings().AlwaysShowNotificationIcon() ||
+               _settings.GlobalSettings().MinimizeToNotificationArea();
+        ;
+    }
 
     TerminalApp::TerminalWindow AppLogic::CreateNewWindow()
     {
