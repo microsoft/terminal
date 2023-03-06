@@ -180,8 +180,6 @@ namespace Microsoft::Console::Render
         uint16_t _hyperlinkHoveredId;
 
         bool _firstFrame;
-        std::pmr::unsynchronized_pool_resource _pool;
-        til::pmr::bitmap _invalidMap;
         til::point _invalidScroll;
         bool _allInvalid;
 

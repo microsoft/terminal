@@ -4,7 +4,7 @@
 #pragma warning(disable : 4100) // '...': unreferenced formal parameter
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
 
-using namespace Microsoft::Console::Render;
+using namespace Microsoft::Console::Render::Atlas;
 
 TextAnalysisSource::TextAnalysisSource(const wchar_t* _text, const UINT32 _textLength) noexcept :
     _text{ _text },

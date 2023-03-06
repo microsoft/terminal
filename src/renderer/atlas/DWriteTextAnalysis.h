@@ -3,7 +3,7 @@
 
 #pragma once
 
-namespace Microsoft::Console::Render
+namespace Microsoft::Console::Render::Atlas
 {
     struct TextAnalysisSinkResult
     {

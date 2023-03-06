@@ -16,9 +16,14 @@ Author(s):
 
 #include "../inc/IConsoleWindow.hpp"
 
-namespace Microsoft::Console::Render
+namespace Microsoft::Console::Render::Atlas
 {
     class AtlasEngine;
+}
+
+namespace Microsoft::Console::Render
+{
+    using AtlasEngine = Atlas::AtlasEngine;
     class DxEngine;
     class GdiEngine;
 }

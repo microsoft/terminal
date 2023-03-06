@@ -913,55 +913,55 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
 }
 
 // Method Description:
-// - Generates a IRenderEngine::GridLines structure from the values in the
+// - Generates a GridLines structure from the values in the
 //      provided textAttribute
 // Arguments:
 // - textAttribute: the TextAttribute to generate GridLines from.
 // Return Value:
 // - a GridLineSet containing all the gridline info from the TextAttribute
-IRenderEngine::GridLineSet Renderer::s_GetGridlines(const TextAttribute& textAttribute) noexcept
+GridLineSet Renderer::s_GetGridlines(const TextAttribute& textAttribute) noexcept
 {
     // Convert console grid line representations into rendering engine enum representations.
-    IRenderEngine::GridLineSet lines;
+    GridLineSet lines;
 
     if (textAttribute.IsTopHorizontalDisplayed())
     {
-        lines.set(IRenderEngine::GridLines::Top);
+        lines.set(GridLines::Top);
     }
 
     if (textAttribute.IsBottomHorizontalDisplayed())
     {
-        lines.set(IRenderEngine::GridLines::Bottom);
+        lines.set(GridLines::Bottom);
     }
 
     if (textAttribute.IsLeftVerticalDisplayed())
     {
-        lines.set(IRenderEngine::GridLines::Left);
+        lines.set(GridLines::Left);
     }
 
     if (textAttribute.IsRightVerticalDisplayed())
     {
-        lines.set(IRenderEngine::GridLines::Right);
+        lines.set(GridLines::Right);
     }
 
     if (textAttribute.IsCrossedOut())
     {
-        lines.set(IRenderEngine::GridLines::Strikethrough);
+        lines.set(GridLines::Strikethrough);
     }
 
     if (textAttribute.IsUnderlined())
     {
-        lines.set(IRenderEngine::GridLines::Underline);
+        lines.set(GridLines::Underline);
     }
 
     if (textAttribute.IsDoublyUnderlined())
     {
-        lines.set(IRenderEngine::GridLines::DoubleUnderline);
+        lines.set(GridLines::DoubleUnderline);
     }
 
     if (textAttribute.IsHyperlink())
     {
-        lines.set(IRenderEngine::GridLines::HyperlinkUnderline);
+        lines.set(GridLines::HyperlinkUnderline);
     }
     return lines;
 }
@@ -995,7 +995,7 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
         {
             if (_pData->GetPatternId(coordTarget).size() > 0)
             {
-                lines.set(IRenderEngine::GridLines::Underline);
+                lines.set(GridLines::Underline);
             }
         }
     }
