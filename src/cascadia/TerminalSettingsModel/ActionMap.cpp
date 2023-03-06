@@ -898,8 +898,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // WHILE also making sure that upon re-saving the commands, we don't
         // actually serialize the results of the expansion. I don't think it is.
 
-        auto warnings{ winrt::single_threaded_vector<SettingsLoadWarnings>() };
-
         std::vector<Model::ColorScheme> sortedSchemes;
         sortedSchemes.reserve(schemes.Size());
 
@@ -921,8 +919,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         Command::ExpandCommands(copyOfCommands,
                                 profiles,
-                                winrt::param::vector_view<Model::ColorScheme>{ sortedSchemes },
-                                warnings);
+                                winrt::param::vector_view<Model::ColorScheme>{ sortedSchemes });
 
         _ExpandedMapCache = copyOfCommands;
     }

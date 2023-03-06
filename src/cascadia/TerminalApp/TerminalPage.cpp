@@ -100,37 +100,27 @@ namespace winrt::TerminalApp::implementation
         return S_OK;
     }
 
-    // This may be called on a background thread, or the main thread, but almost
-    // definitely not on OUR UI thread.
-    winrt::fire_and_forget TerminalPage::SetSettings(CascadiaSettings settings, bool needRefreshUI)
+    // INVARIANT: This needs to be called on OUR UI thread!
+    void TerminalPage::SetSettings(CascadiaSettings settings, bool needRefreshUI)
     {
         _settings = settings;
 
-        const auto weakThis{ get_weak() };
-        co_await wil::resume_foreground(Dispatcher());
-        // Back on our UI thread...
+        // Make sure to _UpdateCommandsForPalette before
+        // _RefreshUIForSettingsReload. _UpdateCommandsForPalette will make
+        // sure the KeyChordText of Commands is updated, which needs to
+        // happen before the Settings UI is reloaded and tries to re-read
+        // those values.
+        _UpdateCommandsForPalette();
+        CommandPalette().SetActionMap(_settings.ActionMap());
 
-        if (const auto page{ weakThis.get() })
+        if (needRefreshUI)
         {
-            // `this` is safe to use while `page` holds the strong ref
-
-            // Make sure to _UpdateCommandsForPalette before
-            // _RefreshUIForSettingsReload. _UpdateCommandsForPalette will make
-            // sure the KeyChordText of Commands is updated, which needs to
-            // happen before the Settings UI is reloaded and tries to re-read
-            // those values.
-            _UpdateCommandsForPalette();
-            CommandPalette().SetActionMap(_settings.ActionMap());
-
-            if (needRefreshUI)
-            {
-                _RefreshUIForSettingsReload();
-            }
-
-            // Upon settings update we reload the system settings for scrolling as well.
-            // TODO: consider reloading this value periodically.
-            _systemRowsToScroll = _ReadSystemRowsToScroll();
+            _RefreshUIForSettingsReload();
         }
+
+        // Upon settings update we reload the system settings for scrolling as well.
+        // TODO: consider reloading this value periodically.
+        _systemRowsToScroll = _ReadSystemRowsToScroll();
     }
 
     bool TerminalPage::IsElevated() const noexcept
