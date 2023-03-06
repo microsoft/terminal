@@ -645,11 +645,15 @@ void WindowEmperor::_checkWindowsForNotificationIcon()
     // re-summon any hidden windows, but right now we're not keeping track of
     // who's hidden, so just summon them all. Tracking the work to do a "summon
     // all minimized" in GH#10448
-
-    bool needsIcon = false;
+    //
+    // To avoid races between us thinking the settings updated, and the windows
+    // themselves getting the new settings, only ask the app logic for the
+    // RequestsTrayIcon setting value, and combine that with the result of each
+    // window (which won't change during a settings reload).
+    bool needsIcon = _app.Logic().RequestsTrayIcon();
     for (const auto& _windowThread : _windows)
     {
-        needsIcon |= _windowThread->Logic().RequestsTrayIcon();
+        needsIcon |= _windowThread->Logic().IsQuakeWindow();
     }
 
     if (needsIcon)
