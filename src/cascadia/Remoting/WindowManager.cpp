@@ -312,9 +312,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     Remoting::Peasant WindowManager::CreatePeasant(Remoting::WindowRequestedArgs args)
     {
         auto p = winrt::make_self<Remoting::implementation::Peasant>();
+        // This will be false if the Id is 0, which is our sentinel for "no specific ID was requested"
         if (const auto id = args.Id())
         {
-            p->AssignID(id.Value());
+            p->AssignID(id);
         }
 
         // If the name wasn't specified, this will be an empty string.
