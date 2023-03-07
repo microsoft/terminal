@@ -285,8 +285,8 @@ namespace Microsoft::Console::Render::Atlas
         std::wstring fontName;
         std::vector<DWRITE_FONT_FEATURE> fontFeatures;
         std::vector<DWRITE_FONT_AXIS_VALUE> fontAxisValues;
-        float baselineInDIP = 0.0f;
-        float fontSizeInDIP = 0.0f;
+        f32 baselineInDIP = 0.0f;
+        f32 fontSizeInDIP = 0.0f;
         f32 advanceScale = 0;
         u16x2 cellSize;
         u16 fontWeight = 0;
@@ -341,9 +341,7 @@ namespace Microsoft::Console::Render::Atlas
 
     struct FontDependents
     {
-        //wil::com_ptr<IDWriteTextFormat> textFormats[2][2];
         Buffer<DWRITE_FONT_AXIS_VALUE> textFormatAxes[2][2];
-        //wil::com_ptr<IDWriteTypography> typography;
         f32 dipPerPixel = 1.0f; // caches USER_DEFAULT_SCREEN_DPI / dpi
         f32 pixelPerDIP = 1.0f; // caches dpi / USER_DEFAULT_SCREEN_DPI
         f32x2 cellSizeDIP; // caches cellSize in DIP
@@ -386,11 +384,25 @@ namespace Microsoft::Console::Render::Atlas
             bottom = top + cellHeight;
         }
 
+        friend void swap(ShapedRow& lhs, ShapedRow& rhs) noexcept
+        {
+            std::swap(lhs.mappings, rhs.mappings);
+            std::swap(lhs.glyphIndices, rhs.glyphIndices);
+            std::swap(lhs.glyphAdvances, rhs.glyphAdvances);
+            std::swap(lhs.glyphOffsets, rhs.glyphOffsets);
+            std::swap(lhs.colors, rhs.colors);
+            std::swap(lhs.gridLineRanges, rhs.gridLineRanges);
+            std::swap(lhs.selectionFrom, rhs.selectionFrom);
+            std::swap(lhs.selectionTo, rhs.selectionTo);
+            std::swap(lhs.top, rhs.top);
+            std::swap(lhs.bottom, rhs.bottom);
+        }
+
         std::vector<FontMapping> mappings;
         std::vector<u16> glyphIndices;
         std::vector<f32> glyphAdvances; // same size as glyphIndices
         std::vector<DWRITE_GLYPH_OFFSET> glyphOffsets; // same size as glyphIndices
-        std::vector<u32> colors;
+        std::vector<u32> colors; // same size as glyphIndices
         std::vector<GridLineRange> gridLineRanges;
         u16 selectionFrom = 0;
         u16 selectionTo = 0;

@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "Backend.h"
 
+#include <dwmapi.h>
+
 TIL_FAST_MATH_BEGIN
 
 // Disable a bunch of warnings which get in the way of writing performant code.
@@ -32,19 +34,23 @@ void SwapChainManager::Present(const RenderingPayload& p)
         dirtyRectInPx.bottom *= p.s->font->cellSize.y;
 
         // This block will enlarge the dirtyRectInPx to handle glyphs that overlap their rows.
-        // TODO: This only works because we redraw the entire back buffer every frame.
         const auto actualDirtyTop = gsl::at(p.rows, p.dirtyRect.top).top;
         const auto actualDirtyBottom = gsl::at(p.rows, gsl::narrow_cast<size_t>(p.dirtyRect.bottom) - 1).bottom;
         // Since rows might be taller than their cells, they might have drawn outside of the viewport.
-        // This use of clamp() below avoids us from writing out of bounds coordinates into dirtyRectInPx.
-        dirtyRectInPx.top = clamp(actualDirtyTop, 0, dirtyRectInPx.top);
-        dirtyRectInPx.bottom = clamp(actualDirtyBottom, dirtyRectInPx.bottom, static_cast<til::CoordType>(_targetSize.y));
+        // FYI using std::clamp() here would be dangerous. If std::clamp() is given a "min" that is greater
+        // than "max" it'll return min, but our calculation of .bottom wants to do the exact opposite.
+        dirtyRectInPx.top = std::max(std::min(dirtyRectInPx.top, actualDirtyTop), 0);
+        dirtyRectInPx.bottom = std::min(std::max(dirtyRectInPx.bottom, actualDirtyBottom), static_cast<til::CoordType>(_targetSize.y));
+        // The swap chain might have a different size than the TextBuffer (due to the renderer running asynchronously) and so
+        // we have to ensure to clamp the bottom/right coordinates into _targetSize. The above already did so for bottom.
+        dirtyRectInPx.right = std::min(dirtyRectInPx.right, static_cast<til::CoordType>(_targetSize.x));
 
-        // TODO
-        //if (p.dirtyRect.right == fullRect.right)
-        //{
-        //    dirtyRectInPx.right = _targetSize.x;
-        //}
+        // If a row of text has been changed, it's width will equal the full rect. In that case we should
+        // also redraw the margin on the right, as overlapping glyphs might have previously drawn into it.
+        if (p.dirtyRect.left == fullRect.left && p.dirtyRect.right == fullRect.right)
+        {
+            dirtyRectInPx.right = _targetSize.x;
+        }
 
         RECT scrollRect{};
         POINT scrollOffset{};
@@ -56,7 +62,7 @@ void SwapChainManager::Present(const RenderingPayload& p)
         if (p.scrollOffset)
         {
             const auto offsetInPx = p.scrollOffset * p.s->font->cellSize.y;
-            const auto width = p.s->cellCount.x * p.s->font->cellSize.x;
+            const auto width = p.s->targetSize.x;
             const auto height = p.s->cellCount.y * p.s->font->cellSize.y;
             const auto top = std::max(0, offsetInPx);
             const auto bottom = height + std::min(0, offsetInPx);
@@ -68,11 +74,7 @@ void SwapChainManager::Present(const RenderingPayload& p)
             params.pScrollOffset = &scrollOffset;
         }
 
-        if (const auto hr = _swapChain->Present1(1, 0, &params); FAILED(hr))
-        {
-            __debugbreak();
-            THROW_HR(hr);
-        }
+        THROW_IF_FAILED(_swapChain->Present1(1, 0, &params));
     }
     else
     {

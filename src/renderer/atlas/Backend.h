@@ -24,7 +24,7 @@ namespace Microsoft::Console::Render::Atlas
             else if (_targetSize != p.s->targetSize)
             {
                 prepareResize();
-                THROW_IF_FAILED(_swapChain->ResizeBuffers(0, _targetSize.x, _targetSize.y, DXGI_FORMAT_UNKNOWN, flags));
+                THROW_IF_FAILED(_swapChain->ResizeBuffers(0, p.s->targetSize.x, p.s->targetSize.y, DXGI_FORMAT_UNKNOWN, flags));
                 _targetSize = p.s->targetSize;
             }
 
@@ -74,9 +74,9 @@ namespace Microsoft::Console::Render::Atlas
     // std::clamp<T, Predicate>(T, T, T, Predicate) with std::less{} as the argument,
     // which introduces branching. While not perfect, this is still better than std::clamp.
     template<typename T>
-    static constexpr T clamp(T val, T min, T max)
+    constexpr T clamp(T val, T min, T max)
     {
-        return std::max(min, std::min(max, val));
+        return val < min ? min : (max < val ? max : val);
     }
 
     f32r GetGlyphRunBlackBox(const DWRITE_GLYPH_RUN& glyphRun, f32 baselineX, f32 baselineY);

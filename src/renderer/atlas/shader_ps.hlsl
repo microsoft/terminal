@@ -35,12 +35,9 @@ Output main(PSData data) : SV_Target
     {
     case SHADING_TYPE_TEXT_BACKGROUND:
         float2 pos = data.texcoord / cellSize;
-        color = background[pos];
+        color = all(pos < cellCount) ? background[pos] : backgroundColor;
+        color.rgb *= color.a;
         weights = float4(1, 1, 1, 1);
-        if (any(pos >= cellCount))
-        {
-            color = backgroundColor;
-        }
         break;
     case SHADING_TYPE_TEXT_GRAYSCALE:
     {

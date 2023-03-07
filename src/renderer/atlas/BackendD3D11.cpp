@@ -591,7 +591,7 @@ void BackendD3D11::_recreateConstBuffer(const RenderingPayload& p)
     }
     {
         PSConstBuffer data;
-        data.backgroundColor = colorFromU32Premultiply<f32x4>(p.s->misc->backgroundColor);
+        data.backgroundColor = colorFromU32<f32x4>(p.s->misc->backgroundColor);
         data.cellCount = { static_cast<f32>(p.s->cellCount.x), static_cast<f32>(p.s->cellCount.y) };
         data.cellSize = { static_cast<f32>(p.s->font->cellSize.x), static_cast<f32>(p.s->font->cellSize.y) };
         DWrite_GetGammaRatios(_gamma, data.gammaRatios);

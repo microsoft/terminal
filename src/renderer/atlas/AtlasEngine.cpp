@@ -100,8 +100,8 @@ try
         if (offset < 0)
         {
             // Scroll up (for instance when new text is being written at the end of the buffer).
-            const u16 endRow = _p.s->cellCount.y + offset;
-            _api.invalidatedRows.x = nothingInvalid ? endRow : std::min<u16>(_api.invalidatedRows.x, endRow);
+            const u16 begRow = _p.s->cellCount.y + offset;
+            _api.invalidatedRows.x = nothingInvalid ? begRow : std::min<u16>(_api.invalidatedRows.x, begRow);
             _api.invalidatedRows.y = _p.s->cellCount.y;
 
             // scrollOffset/offset = -1
@@ -110,15 +110,20 @@ try
             // | xxxxxxxxx| -> |xxxxxxx   |  + src  |      < beg - offset
             // |xxxxxxx   |    |          |  |      v
             // +----------+    +----------+  v             < end
-            const auto dest = _p.rows.begin();
-            const auto last = _p.rows.end();
-            const auto first = dest - offset;
-            const auto end = std::move(first, last, dest);
+            const auto beg = _p.rows.begin();
+            const auto end = _p.rows.end();
+            auto first = beg - offset;
+            auto dest = beg;
 
-            for (auto it = dest; it != end; ++it)
+            // Same as std::move, but with std::swap to preserve std::vector allocations.
+            // Also, it allows to include the top/bottom adjustment.
+            for (; first != end; ++dest, (void)++first)
             {
-                it->top += deltaPx;
-                it->bottom += deltaPx;
+                using std::swap;
+                auto& d = *dest;
+                swap(*first, d);
+                d.top += deltaPx;
+                d.bottom += deltaPx;
             }
         }
         else
@@ -133,15 +138,20 @@ try
             // |xxxxxxx   | -> | xxxxxxxxx|  |      ^
             // |          |    |xxxxxxx   |  v      |      < end - offset
             // +----------+    +----------+         + dst  < end
-            const auto first = _p.rows.begin();
-            const auto dest = _p.rows.end();
-            const auto last = dest - offset;
-            const auto beg = std::move_backward(first, last, dest);
+            const auto beg = _p.rows.begin();
+            const auto end = _p.rows.end();
+            auto last = end - offset;
+            auto dest = end;
 
-            for (auto it = beg; it != dest; ++it)
+            // Same as std::move_backwards, but with std::swap to preserve std::vector allocations.
+            // Also, it allows to include the top/bottom adjustment.
+            while (last != beg)
             {
-                it->top += deltaPx;
-                it->bottom += deltaPx;
+                using std::swap;
+                auto& d = *--dest;
+                swap(*--last, d);
+                d.top += deltaPx;
+                d.bottom += deltaPx;
             }
         }
 
@@ -151,8 +161,8 @@ try
             const auto width = _p.s->cellCount.x;
             const auto beg = _p.backgroundBitmap.begin();
             const auto end = _p.backgroundBitmap.end();
-            const auto dst = beg + std::max<ptrdiff_t>(0, offset) * width;
             const auto src = beg - std::min<ptrdiff_t>(0, offset) * width;
+            const auto dst = beg + std::max<ptrdiff_t>(0, offset) * width;
             const auto count = end - std::max(src, dst);
             assert(dst >= beg && dst + count <= end);
             assert(src >= beg && src + count <= end);
@@ -164,9 +174,6 @@ try
     {
         _p.rows[y].clear(y, _p.s->font->cellSize.y);
     }
-
-    assert(_p.s->cellCount.x * _p.s->font->cellSize.x <= _p.s->targetSize.x);
-    assert(_p.s->cellCount.y * _p.s->font->cellSize.y <= _p.s->targetSize.y);
 
     _api.dirtyRect = til::rect{ 0, _api.invalidatedRows.x, _p.s->cellCount.x, _api.invalidatedRows.y };
     _p.dirtyRect = _api.dirtyRect;
