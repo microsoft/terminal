@@ -353,7 +353,7 @@ void AppHost::Initialize()
     _window->AutomaticShutdownRequested([this]() {
         // Raised when the OS is beginning an update of the app. We will quit,
         // to save our state, before the OS manually kills us.
-        _windowManager.RequestQuitAll(_peasant);
+        Remoting::WindowManager::RequestQuitAll(_peasant);
     });
 
     // Load bearing: make sure the PropertyChanged handler is added before we
@@ -1074,7 +1074,7 @@ winrt::fire_and_forget AppHost::_QuitRequested(const winrt::Windows::Foundation:
 void AppHost::_RequestQuitAll(const winrt::Windows::Foundation::IInspectable&,
                               const winrt::Windows::Foundation::IInspectable&)
 {
-    _windowManager.RequestQuitAll(_peasant);
+    Remoting::WindowManager::RequestQuitAll(_peasant);
 }
 
 void AppHost::_ShowWindowChanged(const winrt::Windows::Foundation::IInspectable&,

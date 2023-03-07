@@ -124,15 +124,8 @@ void WindowEmperor::CreateNewWindowThread(Remoting::WindowRequestedArgs args, co
         // Add a callback to the window's logic to let us know when the window's
         // quake mode state changes. We'll use this to check if we need to add
         // or remove the notification icon.
-        sender->Logic().IsQuakeWindowChanged([this](auto&&, auto &&) -> winrt::fire_and_forget {
-            co_await wil::resume_foreground(this->_dispatcher);
-            this->_checkWindowsForNotificationIcon();
-        });
-        sender->UpdateSettingsRequested([this]() -> winrt::fire_and_forget {
-            // We MUST be on the main thread to update the settings. We will crash when trying to enumerate fragment extensions otherwise.
-            co_await wil::resume_foreground(this->_dispatcher);
-            _app.Logic().ReloadSettings();
-        });
+        sender->Logic().IsQuakeWindowChanged({ this, &WindowEmperor::_windowIsQuakeWindowChanged });
+        sender->UpdateSettingsRequested({ this, &WindowEmperor::_windowRequestUpdateSettings });
 
         // These come in on the sender's thread. Move back to our thread.
         co_await wil::resume_foreground(_dispatcher);
@@ -604,7 +597,7 @@ winrt::fire_and_forget WindowEmperor::_setupGlobalHotkeys()
 }
 
 #pragma endregion
-////////////////////////////////////////////////////////////////////////////////
+
 #pragma region NotificationIcon
 // Method Description:
 // - Creates a Notification Icon and hooks up its handlers
@@ -688,3 +681,19 @@ void WindowEmperor::_hideNotificationIconRequested()
     }
 }
 #pragma endregion
+
+// A callback to the window's logic to let us know when the window's
+// quake mode state changes. We'll use this to check if we need to add
+// or remove the notification icon.
+winrt::fire_and_forget WindowEmperor::_windowIsQuakeWindowChanged(winrt::Windows::Foundation::IInspectable sender,
+                                                                  winrt::Windows::Foundation::IInspectable args)
+{
+    co_await wil::resume_foreground(this->_dispatcher);
+    _checkWindowsForNotificationIcon();
+}
+winrt::fire_and_forget WindowEmperor::_windowRequestUpdateSettings()
+{
+    // We MUST be on the main thread to update the settings. We will crash when trying to enumerate fragment extensions otherwise.
+    co_await wil::resume_foreground(this->_dispatcher);
+    _app.Logic().ReloadSettings();
+}

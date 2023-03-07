@@ -39,7 +39,6 @@ private:
     winrt::Microsoft::Terminal::Remoting::WindowManager _manager;
 
     std::vector<std::shared_ptr<WindowThread>> _windows;
-    std::vector<std::thread> _threads;
 
     std::optional<til::throttled_func_trailing<>> _getWindowLayoutThrottler;
 
@@ -54,6 +53,9 @@ private:
     void _numberOfWindowsChanged(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&);
     void _quitAllRequested(const winrt::Windows::Foundation::IInspectable&,
                            const winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs&);
+
+    winrt::fire_and_forget _windowIsQuakeWindowChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::Foundation::IInspectable args);
+    winrt::fire_and_forget _windowRequestUpdateSettings();
 
     winrt::Windows::Foundation::IAsyncAction _saveWindowLayouts();
     winrt::fire_and_forget _saveWindowLayoutsRepeat();

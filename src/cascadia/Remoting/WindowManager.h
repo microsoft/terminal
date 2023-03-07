@@ -36,9 +36,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void SummonAllWindows();
         Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> GetPeasantInfos();
         uint64_t GetNumberOfPeasants();
-        winrt::fire_and_forget RequestShowNotificationIcon(Remoting::Peasant peasant);
-        winrt::fire_and_forget RequestHideNotificationIcon(Remoting::Peasant peasant);
-        winrt::fire_and_forget RequestQuitAll(Remoting::Peasant peasant);
+
+        static winrt::fire_and_forget RequestQuitAll(Remoting::Peasant peasant);
         void UpdateActiveTabTitle(winrt::hstring title, Remoting::Peasant peasant);
         Windows::Foundation::Collections::IVector<winrt::hstring> GetAllWindowLayouts();
         bool DoesQuakeWindowExist();

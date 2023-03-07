@@ -102,6 +102,8 @@ namespace winrt::TerminalApp::implementation
     // INVARIANT: This needs to be called on OUR UI thread!
     void TerminalPage::SetSettings(CascadiaSettings settings, bool needRefreshUI)
     {
+        assert(Dispatcher().HasThreadAccess());
+
         _settings = settings;
 
         // Make sure to _UpdateCommandsForPalette before
