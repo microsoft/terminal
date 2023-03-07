@@ -467,21 +467,29 @@ namespace winrt::TerminalApp::implementation
         // TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
         // TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
 
+        // {
+        //     // Attempt 1
+        //     TabViewItem().Background(selectedTabBrush); // This does seem to colorize the selected tab correctly, but not the deselected one
+        //     TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
+        //     TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
+        //     // This sorta worked, but deselected tabs were broken.
+        //     // Everything was the selected tab color. yikes.
+        // }
+        // {
+        //     // Attempt 2
+        //     TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
+        //     TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
+        //     // This didn't work at all. Deslected tabs and selected ones were not colorized.
+        //     // * Selected were that default blackish color
+        //     // * Deselected were transparent
+        // }
         {
-            // Attempt 1
-            TabViewItem().Background(selectedTabBrush); // This does seem to colorize the selected tab correctly, but not the deselected one
+            // Attempt 3
             TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
             TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
-            // This sorta worked, but deselected tabs were broken.
-            // Everything was the selected tab color. yikes.
-        }
-        {
-            // Attempt 2
-            TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
-            TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
-            // This didn't work at all. Deslected tabs and selected ones were not colorized.
-            // * Selected were that default blackish color
-            // * Deselected were transparent
+            // Additionally,
+            // <Setter Target="TabContainer.Background" Value="{ThemeResource TabViewItemHeaderBackgroundSelected}" />
+            // in <VisualState x:Name="Selected">.Setters
         }
 
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
