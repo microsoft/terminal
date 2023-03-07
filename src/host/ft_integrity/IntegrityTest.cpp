@@ -312,7 +312,7 @@ PCWSTR IntegrityTest::s_GetMyIntegrityLevel()
     DWORD dwIntegrityLevel = 0;
 
     // Get the Integrity level.
-    wistd::unique_ptr<TOKEN_MANDATORY_LABEL> tokenLabel;
+    wil::unique_tokeninfo_ptr<TOKEN_MANDATORY_LABEL> tokenLabel;
     THROW_IF_FAILED(wil::GetTokenInformationNoThrow(tokenLabel, GetCurrentProcessToken()));
 
     dwIntegrityLevel = *GetSidSubAuthority(tokenLabel->Label.Sid,
