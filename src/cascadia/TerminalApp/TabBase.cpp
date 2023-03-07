@@ -462,8 +462,28 @@ namespace winrt::TerminalApp::implementation
         // In GH#11294 we thought we'd still need to set
         // TabViewItemHeaderBackground manually, but GH#11382 discovered that
         // Background() was actually okay after all.
-        TabViewItem().Background(deselectedTabBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
+        // TabViewItem().Background(deselectedTabBrush);
+        // TabViewItem().Background(selectedTabBrush); // This does seem to colorize the selected tab correctly, but not the deselected one
+        // TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
+        // TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
+
+        {
+            // Attempt 1
+            TabViewItem().Background(selectedTabBrush); // This does seem to colorize the selected tab correctly, but not the deselected one
+            TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
+            TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
+            // This sorta worked, but deselected tabs were broken.
+            // Everything was the selected tab color. yikes.
+        }
+        {
+            // Attempt 2
+            TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
+            TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
+            // This didn't work at all. Deslected tabs and selected ones were not colorized.
+            // * Selected were that default blackish color
+            // * Deselected were transparent
+        }
+
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
 
@@ -471,7 +491,7 @@ namespace winrt::TerminalApp::implementation
         // when the TabViewItem isn't selected, but not when it is hovered,
         // pressed, dragged, or selected, so we'll need to just set them all
         // anyways.
-        TabViewItem().Foreground(deselectedFontBrush);
+        // TabViewItem().Foreground(deselectedFontBrush); // TODO!
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForeground"), deselectedFontBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundSelected"), fontBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPointerOver"), fontBrush);
@@ -537,7 +557,7 @@ namespace winrt::TerminalApp::implementation
         // GH#11382 DON'T set the background to null. If you do that, then the
         // tab won't be hit testable at all. Transparent, however, is a totally
         // valid hit test target. That makes sense.
-        TabViewItem().Background(WUX::Media::SolidColorBrush{ Windows::UI::Colors::Transparent() });
+        // TabViewItem().Background(WUX::Media::SolidColorBrush{ Windows::UI::Colors::Transparent() });
 
         _RefreshVisualState();
     }
