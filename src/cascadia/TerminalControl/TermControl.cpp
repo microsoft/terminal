@@ -3250,14 +3250,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto pos = (absolutePointerPos - absoluteWindowOrigin - controlOrigin).to_winrt_point();
         myOption.Position(pos);
 
-        if (args.SelectedText().empty())
-        {
-            ContextMenu().ShowAt(*this, myOption);
-        }
-        else
-        {
-            SelectionContextMenu().ShowAt(*this, myOption);
-        }
+        (_core.HasSelection() ? SelectionContextMenu() :
+                                ContextMenu())
+            .ShowAt(*this, myOption);
     }
 
     void TermControl::_PasteCommandHandler(const IInspectable& /*sender*/,

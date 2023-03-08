@@ -57,10 +57,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     struct ContextMenuRequestedEventArgs : public ContextMenuRequestedEventArgsT<ContextMenuRequestedEventArgs>
     {
     public:
-        ContextMenuRequestedEventArgs(const hstring& selectedText, winrt::Windows::Foundation::Point point) :
-            _SelectedText(selectedText), _Point(point) {}
+        ContextMenuRequestedEventArgs(winrt::Windows::Foundation::Point point) :
+            _Point(point) {}
 
-        WINRT_PROPERTY(winrt::hstring, SelectedText, L"");
         WINRT_PROPERTY(winrt::Windows::Foundation::Point, Point);
     };
 

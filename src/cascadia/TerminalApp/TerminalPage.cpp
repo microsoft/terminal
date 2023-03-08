@@ -4459,12 +4459,12 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_ContextMenuOpened(const IInspectable& sender,
                                           const IInspectable& /*args*/)
     {
-        _PopulateContextMenu(sender, false);
+        _PopulateContextMenu(sender, false /*withSelection*/);
     }
     void TerminalPage::_SelectionMenuOpened(const IInspectable& sender,
                                             const IInspectable& /*args*/)
     {
-        _PopulateContextMenu(sender, true);
+        _PopulateContextMenu(sender, true /*withSelection*/);
     }
 
     void TerminalPage::_PopulateContextMenu(const IInspectable& sender,
@@ -4474,14 +4474,18 @@ namespace winrt::TerminalApp::implementation
         // selected text, like "search the web". In this initial draft, it's not
         // actually augmented by the TerminalPage, so it's left commented out.
 
-        auto menu = sender.try_as<WUX::Controls::CommandBarFlyout>();
+        const auto& menu{ sender.try_as<WUX::Controls::CommandBarFlyout>() };
+        if (!menu)
+        {
+            return;
+        }
 
         // Helper lambda for dispatching an ActionAndArgs onto the
         // ShortcutActionDispatch. Used below to wire up each menu entry to the
         // respective action.
 
         auto weak = get_weak();
-        auto makeCallback = [weak](const Microsoft::Terminal::Settings::Model::ActionAndArgs& actionAndArgs) {
+        auto makeCallback = [weak](const ActionAndArgs& actionAndArgs) {
             return [weak, actionAndArgs](auto&&, auto&&) {
                 if (auto page{ weak.get() })
                 {
@@ -4490,9 +4494,9 @@ namespace winrt::TerminalApp::implementation
             };
         };
 
-        auto makeItem = [menu, makeCallback](const winrt::hstring& label,
-                                             const winrt::hstring& icon,
-                                             const auto& action) {
+        auto makeItem = [&menu, &makeCallback](const winrt::hstring& label,
+                                               const winrt::hstring& icon,
+                                               const auto& action) {
             AppBarButton button{};
 
             if (!icon.empty())
