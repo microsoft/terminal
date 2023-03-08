@@ -38,7 +38,7 @@ private:
     winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };
     winrt::Microsoft::Terminal::Remoting::WindowManager _manager;
 
-    std::vector<std::shared_ptr<WindowThread>> _windows;
+    til::shared_mutex<std::vector<std::shared_ptr<WindowThread>>> _windows;
 
     std::optional<til::throttled_func_trailing<>> _getWindowLayoutThrottler;
 

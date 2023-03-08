@@ -120,7 +120,7 @@ void WindowEmperor::CreateNewWindowThread(Remoting::WindowRequestedArgs args)
 
     auto window{ std::make_shared<WindowThread>(_app.Logic(), args, _manager, peasant) };
 
-    window->Started([this, sender = window]() -> winrt::fire_and_forget {
+    window->Started([this, sender = window]() {
         // Add a callback to the window's logic to let us know when the window's
         // quake mode state changes. We'll use this to check if we need to add
         // or remove the notification icon.
@@ -128,23 +128,25 @@ void WindowEmperor::CreateNewWindowThread(Remoting::WindowRequestedArgs args)
         sender->UpdateSettingsRequested({ this, &WindowEmperor::_windowRequestUpdateSettings });
 
         // These come in on the sender's thread. Move back to our thread.
-        co_await wil::resume_foreground(_dispatcher);
-
-        _windows.push_back(std::move(sender));
+        {
+            auto lockedWindows{ _windows.lock() };
+            lockedWindows->push_back(sender);
+        }
     });
 
-    window->Exited([this](uint64_t senderID) -> winrt::fire_and_forget {
-        // These come in on the sender's thread. Move back to our thread.
-        co_await wil::resume_foreground(_dispatcher);
+    window->Exited([this](uint64_t senderID) {
+        // These come in on the sender's thread.
+
+        auto lockedWindows{ _windows.lock() };
 
         // find the window in _windows who's peasant's Id matches the peasant's Id
         // and remove it
-        _windows.erase(std::remove_if(_windows.begin(), _windows.end(), [&](const auto& w) {
-                           return w->Peasant().GetID() == senderID;
-                       }),
-                       _windows.end());
+        lockedWindows->erase(std::remove_if(lockedWindows->begin(), lockedWindows->end(), [&](const auto& w) {
+                                 return w->Peasant().GetID() == senderID;
+                             }),
+                             lockedWindows->end());
 
-        if (_windows.size() == 0)
+        if (lockedWindows->size() == 0)
         {
             _close();
         }
@@ -209,7 +211,8 @@ void WindowEmperor::_numberOfWindowsChanged(const winrt::Windows::Foundation::II
     }
 
     const auto& numWindows{ _manager.GetNumberOfPeasants() };
-    for (const auto& _windowThread : _windows)
+    auto windows{ _windows.lock_shared() };
+    for (const auto& _windowThread : *windows)
     {
         _windowThread->Logic().SetNumberOfOpenWindows(numWindows);
     }
@@ -644,7 +647,8 @@ void WindowEmperor::_checkWindowsForNotificationIcon()
     // RequestsTrayIcon setting value, and combine that with the result of each
     // window (which won't change during a settings reload).
     bool needsIcon = _app.Logic().RequestsTrayIcon();
-    for (const auto& _windowThread : _windows)
+    auto windows{ _windows.lock_shared() };
+    for (const auto& _windowThread : *windows)
     {
         needsIcon |= _windowThread->Logic().IsQuakeWindow();
     }
