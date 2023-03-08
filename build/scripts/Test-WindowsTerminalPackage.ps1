@@ -96,11 +96,6 @@ Try {
         Throw "Failed to find App.xbf (TerminalApp project) in resources.pri"
     }
 
-    If (($null -eq (Get-Item "$AppxPackageRootPath\cpprest142_2_10.dll" -EA:Ignore)) -And
-        ($null -eq (Get-Item "$AppxPackageRootPath\cpprest142_2_10d.dll" -EA:Ignore))) {
-        Throw "Failed to find cpprest142_2_10.dll -- check the WAP packaging project"
-    }
-
     If (($null -eq (Get-Item "$AppxPackageRootPath\wtd.exe" -EA:Ignore)) -And
         ($null -eq (Get-Item "$AppxPackageRootPath\wt.exe" -EA:Ignore))) {
         Throw "Failed to find wt.exe/wtd.exe -- check the WAP packaging project"

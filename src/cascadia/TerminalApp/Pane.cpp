@@ -148,7 +148,7 @@ NewTerminalArgs Pane::GetTerminalArgsForPane() const
             c = til::color(controlSettings.TabColor().Value());
         }
 
-        args.TabColor(winrt::Windows::Foundation::IReference<winrt::Windows::UI::Color>(c));
+        args.TabColor(winrt::Windows::Foundation::IReference<winrt::Windows::UI::Color>{ static_cast<winrt::Windows::UI::Color>(c) });
     }
 
     // TODO:GH#9800 - we used to be able to persist the color scheme that a
@@ -1296,7 +1296,7 @@ TermControl Pane::GetTerminalControl()
 }
 
 // Method Description:
-// - Recursively remove the "Active" state from this Pane and all it's children.
+// - Recursively remove the "Active" state from this Pane and all its children.
 // - Updates our visuals to match our new state, including highlighting our borders.
 // Arguments:
 // - <none>
@@ -2572,7 +2572,7 @@ void Pane::Maximize(std::shared_ptr<Pane> zoomedPane)
         }
 
         // Always recurse into both children. If the (un)zoomed pane was one of
-        // our direct children, we'll still want to update it's borders.
+        // our direct children, we'll still want to update its borders.
         _firstChild->Maximize(zoomedPane);
         _secondChild->Maximize(zoomedPane);
     }
@@ -2609,7 +2609,7 @@ void Pane::Restore(std::shared_ptr<Pane> zoomedPane)
         }
 
         // Always recurse into both children. If the (un)zoomed pane was one of
-        // our direct children, we'll still want to update it's borders.
+        // our direct children, we'll still want to update its borders.
         _firstChild->Restore(zoomedPane);
         _secondChild->Restore(zoomedPane);
     }

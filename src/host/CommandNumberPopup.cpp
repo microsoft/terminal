@@ -123,7 +123,7 @@ void CommandNumberPopup::_handleReturn(COOKED_READ_DATA& cookedReadData) noexcep
     for (;;)
     {
         Status = _getUserInput(cookedReadData, popupKeys, modifiers, wch);
-        if (!NT_SUCCESS(Status))
+        if (FAILED_NTSTATUS(Status))
         {
             return Status;
         }

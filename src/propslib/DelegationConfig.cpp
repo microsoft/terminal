@@ -32,7 +32,7 @@ using namespace ABI::Windows::ApplicationModel::AppExtensions;
 #define DELEGATION_CONSOLE_EXTENSION_NAME L"com.microsoft.windows.console.host"
 #define DELEGATION_TERMINAL_EXTENSION_NAME L"com.microsoft.windows.terminal.host"
 
-static [[nodiscard]] HRESULT _lookupCatalog(PCWSTR extensionName, std::vector<DelegationConfig::DelegationBase>& vec) noexcept
+[[nodiscard]] static HRESULT _lookupCatalog(PCWSTR extensionName, std::vector<DelegationConfig::DelegationBase>& vec) noexcept
 {
     ComPtr<IAppExtensionCatalogStatics> catalogStatics;
     RETURN_IF_FAILED(Windows::Foundation::GetActivationFactory(HStringReference(RuntimeClass_Windows_ApplicationModel_AppExtensions_AppExtensionCatalog).Get(), &catalogStatics));

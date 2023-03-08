@@ -311,7 +311,6 @@ CPLINFO
 cplusplus
 CPPCORECHECK
 cppcorecheckrules
-cpprest
 cpprestsdk
 cppwinrt
 CProc
@@ -1437,7 +1436,6 @@ PPEB
 ppf
 ppguid
 ppidl
-pplx
 PPROC
 PPROCESS
 ppropvar
@@ -1577,6 +1575,7 @@ replatformed
 Replymessage
 repositorypath
 Requiresx
+rerasterize
 rescap
 Resequence
 RESETCONTENT
@@ -1825,6 +1824,7 @@ SYSCOMMAND
 SYSDEADCHAR
 SYSKEYDOWN
 SYSKEYUP
+SYSLIB
 SYSLINK
 SYSMENU
 sysparams
@@ -2113,7 +2113,6 @@ WDDMCONSOLECONTEXT
 wdm
 webpage
 websites
-websockets
 wekyb
 wex
 wextest

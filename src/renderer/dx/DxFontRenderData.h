@@ -109,7 +109,7 @@ namespace Microsoft::Console::Render
 
         // The font axes to apply to the text
         std::vector<DWRITE_FONT_AXIS_VALUE> _axesVector;
-        gsl::span<DWRITE_FONT_AXIS_VALUE> _axesVectorWithoutWeight;
+        std::span<DWRITE_FONT_AXIS_VALUE> _axesVectorWithoutWeight;
 
         // We use this to identify font variants with different attributes.
         static FontAttributeMapKey _ToMapKey(DWRITE_FONT_WEIGHT weight, DWRITE_FONT_STYLE style, DWRITE_FONT_STRETCH stretch) noexcept

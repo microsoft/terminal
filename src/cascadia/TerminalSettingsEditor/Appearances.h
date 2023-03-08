@@ -51,29 +51,25 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         AppearanceViewModel(const Model::AppearanceConfig& appearance);
 
-        void SetFontWeightFromDouble(double fontWeight)
-        {
-            FontWeight(winrt::Microsoft::Terminal::Settings::Editor::Converters::DoubleToFontWeight(fontWeight));
-        }
-        void SetBackgroundImageOpacityFromPercentageValue(double percentageValue)
-        {
-            BackgroundImageOpacity(winrt::Microsoft::Terminal::Settings::Editor::Converters::PercentageValueToPercentage(percentageValue));
-        }
-        void SetBackgroundImagePath(winrt::hstring path)
-        {
-            BackgroundImagePath(path);
-        }
+        double LineHeight() const noexcept;
+        void LineHeight(const double value);
+        bool HasLineHeight() const;
+        void ClearLineHeight();
+        Model::FontConfig LineHeightOverrideSource() const;
+        void SetFontWeightFromDouble(double fontWeight);
+        void SetBackgroundImageOpacityFromPercentageValue(double percentageValue);
+        void SetBackgroundImagePath(winrt::hstring path);
 
         // background image
         bool UseDesktopBGImage();
         void UseDesktopBGImage(const bool useDesktop);
         bool BackgroundImageSettingsVisible();
 
-        Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> Schemes() { return _Schemes; }
-        void Schemes(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& val) { _Schemes = val; }
+        void ClearColorScheme();
+        Editor::ColorSchemeViewModel CurrentColorScheme();
+        void CurrentColorScheme(const Editor::ColorSchemeViewModel& val);
 
         WINRT_PROPERTY(bool, IsDefault, false);
-        WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
 
         // These settings are not defined in AppearanceConfig, so we grab them
         // from the source profile itself. The reason we still want them in the
@@ -95,11 +91,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_appearance, BackgroundImageAlignment);
         OBSERVABLE_PROJECTED_SETTING(_appearance, IntenseTextStyle);
         OBSERVABLE_PROJECTED_SETTING(_appearance, AdjustIndistinguishableColors);
+        WINRT_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel>, SchemesList, _propertyChangedHandlers, nullptr);
 
     private:
         Model::AppearanceConfig _appearance;
         winrt::hstring _lastBgImagePath;
-        Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> _Schemes;
     };
 
     struct Appearances : AppearancesT<Appearances>
@@ -112,9 +108,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // CursorShape visibility logic
         bool IsVintageCursor() const;
-
-        Model::ColorScheme CurrentColorScheme();
-        void CurrentColorScheme(const Model::ColorScheme& val);
 
         bool UsingMonospaceFont() const noexcept;
         bool ShowAllFonts() const noexcept;
@@ -132,11 +125,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         GETSET_BINDABLE_ENUM_SETTING(CursorShape, Microsoft::Terminal::Core::CursorStyle, Appearance().CursorShape);
         GETSET_BINDABLE_ENUM_SETTING(AdjustIndistinguishableColors, Microsoft::Terminal::Core::AdjustTextMode, Appearance().AdjustIndistinguishableColors);
-        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Model::ColorScheme>, ColorSchemeList, nullptr);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         DEPENDENCY_PROPERTY(Editor::AppearanceViewModel, Appearance);
         WINRT_PROPERTY(Editor::ProfileViewModel, SourceProfile, nullptr);
+        WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
 
         GETSET_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch, Appearance().BackgroundImageStretchMode);
 

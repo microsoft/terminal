@@ -49,7 +49,7 @@ using namespace Microsoft::Console::Interactivity;
     // TODO: MSFT 9355013: This needs to be resolved. We increment it once with no handle to ensure it's never cleaned up
     // and one always exists for the renderer (and potentially other functions.)
     // It's currently a load-bearing piece of code. http://osgvsowi/9355013
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         gci.ScreenBuffers[0].IncrementOriginalScreenBuffer();
     }
@@ -102,12 +102,16 @@ static void _CopyRectangle(SCREEN_INFORMATION& screenInfo,
         auto sourcePos = source.GetWalkOrigin(walkDirection);
         auto targetPos = target.GetWalkOrigin(walkDirection);
 
+        // Note that we read two cells from the source before we start writing
+        // to the target, so a two-cell DBCS character can't accidentally delete
+        // itself when moving one cell horizontally.
+        auto next = OutputCell(*screenInfo.GetCellDataAt(sourcePos));
         do
         {
-            const auto data = OutputCell(*screenInfo.GetCellDataAt(sourcePos));
-            screenInfo.Write(OutputCellIterator({ &data, 1 }), targetPos);
-
+            const auto current = next;
             source.WalkInBounds(sourcePos, walkDirection);
+            next = OutputCell(*screenInfo.GetCellDataAt(sourcePos));
+            screenInfo.GetTextBuffer().WriteLine(OutputCellIterator({ &current, 1 }), targetPos);
         } while (target.WalkInBounds(targetPos, walkDirection));
     }
 }

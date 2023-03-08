@@ -295,7 +295,7 @@ Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
     MTSM_PROFILE_SETTINGS(DUPLICATE_PROFILE_SETTINGS)
 #undef DUPLICATE_PROFILE_SETTINGS
 
-    // These two aren't in MTSM_PROFILE_SETTINGS because they're special
+    // These aren't in MTSM_PROFILE_SETTINGS because they're special
     DUPLICATE_SETTING_MACRO(TabColor);
     DUPLICATE_SETTING_MACRO(Padding);
 
@@ -1015,7 +1015,12 @@ winrt::hstring CascadiaSettings::ApplicationVersion()
     {
         const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
         const auto version{ package.Id().Version() };
-        winrt::hstring formatted{ wil::str_printf<std::wstring>(L"%u.%u.%u.%u", version.Major, version.Minor, version.Build, version.Revision) };
+        // As of about 2022, the ones digit of the Build of our version is a
+        // placeholder value to differentiate the Windows 10 build from the
+        // Windows 11 build. Let's trim that out. For additional clarity,
+        // let's omit the Revision, which _must_ be .0, and doesn't provide any
+        // value to report.
+        winrt::hstring formatted{ wil::str_printf<std::wstring>(L"%u.%u.%u", version.Major, version.Minor, version.Build / 10) };
         return formatted;
     }
     CATCH_LOG();
@@ -1167,7 +1172,8 @@ void CascadiaSettings::ExportFile(winrt::hstring path, winrt::hstring content)
 
 void CascadiaSettings::_validateThemeExists()
 {
-    if (_globals->Themes().Size() == 0)
+    const auto& themes{ _globals->Themes() };
+    if (themes.Size() == 0)
     {
         // We didn't even load the default themes. This should only be possible
         // if the defaults.json didn't include any themes, or if no
@@ -1178,14 +1184,33 @@ void CascadiaSettings::_validateThemeExists()
         auto newTheme = winrt::make_self<Theme>();
         newTheme->Name(L"system");
         _globals->AddTheme(*newTheme);
-        _globals->Theme(L"system");
+        _globals->Theme(Model::ThemePair{ L"system" });
     }
 
-    if (!_globals->Themes().HasKey(_globals->Theme()))
+    const auto& theme{ _globals->Theme() };
+    if (theme.DarkName() == theme.LightName())
     {
-        _warnings.Append(SettingsLoadWarnings::UnknownTheme);
-
-        // safely fall back to system as the theme.
-        _globals->Theme(L"system");
+        // Only one theme. We'll treat it as such.
+        if (!themes.HasKey(theme.DarkName()))
+        {
+            _warnings.Append(SettingsLoadWarnings::UnknownTheme);
+            // safely fall back to system as the theme.
+            _globals->Theme(*winrt::make_self<ThemePair>(L"system"));
+        }
+    }
+    else
+    {
+        // Two different themes. Check each separately, and fall back to a
+        // reasonable default contextually
+        if (!themes.HasKey(theme.LightName()))
+        {
+            _warnings.Append(SettingsLoadWarnings::UnknownTheme);
+            theme.LightName(L"light");
+        }
+        if (!themes.HasKey(theme.DarkName()))
+        {
+            _warnings.Append(SettingsLoadWarnings::UnknownTheme);
+            theme.DarkName(L"dark");
+        }
     }
 }

@@ -728,6 +728,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         auto lock = _terminal->LockForWriting();
 
+        _cellWidth = CSSLengthPercentage::FromString(_settings->CellWidth().c_str());
+        _cellHeight = CSSLengthPercentage::FromString(_settings->CellHeight().c_str());
         _runtimeOpacity = std::nullopt;
 
         // Manually turn off acrylic if they turn off transparency.
@@ -879,6 +881,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _desiredFont = { fontFace, 0, fontWeight.Weight, newSize, CP_UTF8 };
         _actualFont = { fontFace, 0, fontWeight.Weight, _desiredFont.GetEngineSize(), CP_UTF8, false };
         _actualFontFaceName = { fontFace };
+
+        _desiredFont.SetCellSize(_cellWidth, _cellHeight);
 
         const auto before = _actualFont.GetSize();
         _updateFont();
@@ -1255,7 +1259,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     Windows::Foundation::IReference<winrt::Windows::UI::Color> ControlCore::TabColor() noexcept
     {
         auto coreColor = _terminal->GetTabColor();
-        return coreColor.has_value() ? Windows::Foundation::IReference<winrt::Windows::UI::Color>(til::color{ coreColor.value() }) :
+        return coreColor.has_value() ? Windows::Foundation::IReference<winrt::Windows::UI::Color>{ static_cast<winrt::Windows::UI::Color>(coreColor.value()) } :
                                        nullptr;
     }
 
@@ -1767,7 +1771,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // switched to an unfocused appearance.
         //
         // IF WE DON'T HAVE AN UNFOCUSED APPEARANCE: then just ask the Terminal
-        // for it's current color table. That way, we can restore those colors
+        // for its current color table. That way, we can restore those colors
         // back.
         if (HasUnfocusedAppearance())
         {

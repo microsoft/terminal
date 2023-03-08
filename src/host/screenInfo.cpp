@@ -58,10 +58,11 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _desiredFont{ fontInfo },
     _ignoreLegacyEquivalentVTAttributes{ false }
 {
-    // Check if VT mode is enabled. Note that this can be true w/o calling
-    // SetConsoleMode, if VirtualTerminalLevel is set to !=0 in the registry.
+    // Check if VT mode should be enabled by default. This can be true if
+    // VirtualTerminalLevel is set to !=0 in the registry, or when conhost
+    // is started in conpty mode.
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    if (gci.GetVirtTermLevel() != 0)
+    if (gci.GetDefaultVirtTermLevel() != 0)
     {
         OutputMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
     }
@@ -125,7 +126,7 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
 
         const auto status = pScreen->_InitializeOutputStateMachine();
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             *ppScreen = pScreen;
         }
@@ -1561,7 +1562,7 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
         status = NTSTATUS_FROM_HRESULT(ResizeTraditional(coordNewScreenSize));
     }
 
-    if (NT_SUCCESS(status))
+    if (SUCCEEDED_NTSTATUS(status))
     {
         if (HasAccessibilityEventing())
         {
@@ -1900,7 +1901,7 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
                                                      GetPopupAttributes(),
                                                      Cursor::CURSOR_SMALL_SIZE,
                                                      ppsiNewScreenBuffer);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         // Update the alt buffer's cursor style, visibility, and position to match our own.
         auto& myCursor = GetTextBuffer().GetCursor();
@@ -1913,6 +1914,8 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
         auto altCursorPos = myCursor.GetPosition();
         altCursorPos.y -= GetVirtualViewport().Top();
         altCursor.SetPosition(altCursorPos);
+        // The alt buffer's output mode should match the main buffer.
+        createdBuffer->OutputMode = OutputMode;
 
         s_InsertScreenBuffer(createdBuffer);
 
@@ -2002,7 +2005,7 @@ void SCREEN_INFORMATION::_handleDeferredResize(SCREEN_INFORMATION& siMain)
 
     SCREEN_INFORMATION* psiNewAltBuffer;
     auto Status = _CreateAltBuffer(&psiNewAltBuffer);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         // if this is already an alternate buffer, we want to make the new
         // buffer the alt on our main buffer, not on ourself, because there
@@ -2077,6 +2080,9 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
         mainCursor.SetStyle(altCursor.GetSize(), altCursor.GetType());
         mainCursor.SetIsVisible(altCursor.IsVisible());
         mainCursor.SetBlinkingAllowed(altCursor.IsBlinkingAllowed());
+
+        // Copy the alt buffer's output mode back to the main buffer.
+        psiMain->OutputMode = psiAlt->OutputMode;
 
         s_RemoveScreenBuffer(psiAlt); // this will also delete the alt buffer
         // deleting the alt buffer will give the GetSet back to its main

@@ -97,7 +97,7 @@ int AppCommandlineArgs::ParseCommand(const Commandline& command)
 }
 
 // Method Description:
-// - Calls App::exit() for the provided command, and collects it's output into
+// - Calls App::exit() for the provided command, and collects its output into
 //   our _exitMessage buffer.
 // Arguments:
 // - command: Either the root App object, or a subcommand for which to call exit() on.
