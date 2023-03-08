@@ -967,35 +967,34 @@ bool BackendD3D11::_drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry,
     auto box = GetGlyphRunBlackBox(glyphRun, 0, 0);
     if (box.left >= box.right || box.top >= box.bottom)
     {
+        // This will indicate to BackendD3D11::_drawText that this glyph is whitespace.
         entry.shadingType = 0;
         return true;
     }
 
-    box.left *= p.d.font.pixelPerDIP;
-    box.top *= p.d.font.pixelPerDIP;
-    box.right *= p.d.font.pixelPerDIP;
-    box.bottom *= p.d.font.pixelPerDIP;
+    const auto l = lround(box.left * p.d.font.pixelPerDIP) - 1;
+    const auto t = lround(box.top * p.d.font.pixelPerDIP) - 1;
+    const auto r = lround(box.right * p.d.font.pixelPerDIP) + 1;
+    const auto b = lround(box.bottom * p.d.font.pixelPerDIP) + 1;
 
     // We'll add a 1px padding on all 4 sides, by adding +2px to the width and +1px to the baseline origin.
     // We do this to avoid neighboring glyphs from overlapping, since the blackbox measurement is only an estimate.
 
     stbrp_rect rect{};
-    rect.w = gsl::narrow_cast<int>(box.right - box.left + 2.5f);
-    rect.h = gsl::narrow_cast<int>(box.bottom - box.top + 2.5f);
+    rect.w = gsl::narrow_cast<int>(r - l);
+    rect.h = gsl::narrow_cast<int>(b - t);
     if (!stbrp_pack_rects(&_rectPacker, &rect, 1))
     {
         return false;
     }
 
-    const D2D1_POINT_2F baseline{
-        roundf(rect.x - box.left + 1.0f) * p.d.font.dipPerPixel,
-        roundf(rect.y - box.top + 1.0f) * p.d.font.dipPerPixel,
-    };
+    const D2D1_POINT_2F baseline{ (rect.x - l) * p.d.font.dipPerPixel, (rect.y - t) * p.d.font.dipPerPixel };
     const auto colorGlyph = DrawGlyphRun(_d2dRenderTarget.get(), _d2dRenderTarget4.get(), p.dwriteFactory4.get(), baseline, &glyphRun, _brush.get());
+    const auto shadingType = colorGlyph ? ShadingType::Passthrough : (p.s->font->antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE ? ShadingType::TextClearType : ShadingType::TextGrayscale);
 
-    entry.shadingType = gsl::narrow_cast<u16>(colorGlyph ? ShadingType::Passthrough : (p.s->font->antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE ? ShadingType::TextClearType : ShadingType::TextGrayscale));
-    entry.offset.x = gsl::narrow_cast<i32>(lround(box.left));
-    entry.offset.y = gsl::narrow_cast<i32>(lround(box.top));
+    entry.shadingType = gsl::narrow_cast<u16>(shadingType);
+    entry.offset.x = gsl::narrow_cast<i32>(l);
+    entry.offset.y = gsl::narrow_cast<i32>(t);
     entry.texcoord.left = rect.x;
     entry.texcoord.top = rect.y;
     entry.texcoord.right = rect.x + rect.w;
@@ -1281,8 +1280,6 @@ void BackendD3D11::_executeCustomShader(RenderingPayload& p)
     _deviceContext->Draw(4, 0);
 
     {
-        _deviceContext->OMSetRenderTargets(1, _renderTargetView.addressof(), nullptr);
-
         // IA: Input Assembler
         ID3D11Buffer* vertexBuffers[]{ _vertexBuffer.get(), _instanceBuffer.get() };
         static constexpr UINT strides[]{ sizeof(f32x2), sizeof(QuadInstance) };
@@ -1305,6 +1302,7 @@ void BackendD3D11::_executeCustomShader(RenderingPayload& p)
 
         // OM: Output Merger
         _deviceContext->OMSetBlendState(_blendState.get(), nullptr, 0xffffffff);
+        _deviceContext->OMSetRenderTargets(1, _renderTargetView.addressof(), nullptr);
     }
 
     // With custom shaders, everything might be invalidated, so we have to
