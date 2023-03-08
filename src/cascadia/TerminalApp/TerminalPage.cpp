@@ -2911,13 +2911,7 @@ namespace winrt::TerminalApp::implementation
     {
         // Update the command palette when settings reload
         const auto& expanded{ _settings.GlobalSettings().ActionMap().ExpandedCommands() };
-        auto commandsCollection = winrt::single_threaded_vector<Command>();
-        for (const auto& nameAndCommand : expanded)
-        {
-            commandsCollection.Append(nameAndCommand.Value());
-        }
-
-        CommandPalette().SetCommands(commandsCollection);
+        CommandPalette().SetCommands(expanded);
     }
 
     // Method Description:

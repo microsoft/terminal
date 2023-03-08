@@ -680,10 +680,9 @@ namespace winrt::TerminalApp::implementation
             // Load settings if we haven't already
             ReloadSettings();
         }
-
-        return _settings.GlobalSettings().AlwaysShowNotificationIcon() ||
-               _settings.GlobalSettings().MinimizeToNotificationArea();
-        ;
+        const auto& globals{ _settings.GlobalSettings() };
+        return globals.AlwaysShowNotificationIcon() ||
+               globals.MinimizeToNotificationArea();
     }
 
     TerminalApp::TerminalWindow AppLogic::CreateNewWindow()

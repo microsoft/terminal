@@ -478,7 +478,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //   appended to this vector.
     // Return Value:
     // - <none>
-    void Command::ExpandCommands(IMap<winrt::hstring, Model::Command> commands,
+    void Command::ExpandCommands(IMap<winrt::hstring, Model::Command>& commands,
                                  IVectorView<Model::Profile> profiles,
                                  IVectorView<Model::ColorScheme> schemes)
     {
@@ -486,14 +486,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::vector<Model::Command> commandsToAdd;
 
         // First, collect up all the commands that need replacing.
-        for (const auto& nameAndCmd : commands)
+        for (const auto& [name, command] : commands)
         {
-            auto cmd{ get_self<implementation::Command>(nameAndCmd.Value()) };
+            auto cmd{ get_self<implementation::Command>(command) };
 
             auto newCommands = _expandCommand(cmd, profiles, schemes);
             if (newCommands.size() > 0)
             {
-                commandsToRemove.push_back(nameAndCmd.Key());
+                commandsToRemove.push_back(name);
                 commandsToAdd.insert(commandsToAdd.end(), newCommands.begin(), newCommands.end());
             }
         }
