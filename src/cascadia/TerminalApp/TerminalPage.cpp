@@ -173,16 +173,12 @@ namespace winrt::TerminalApp::implementation
     }
     bool TerminalPage::CanDragDrop() const noexcept
     {
-        static const auto canDragDrop = []() {
-            try
-            {
-                return Application::Current().as<TerminalApp::App>().Logic().CanDragDrop();
-            }
-            CATCH_LOG();
-            return true;
-        }();
-
-        return canDragDrop;
+        try
+        {
+            return Application::Current().as<TerminalApp::App>().Logic().CanDragDrop();
+        }
+        CATCH_LOG();
+        return true;
     }
 
     void TerminalPage::Create()

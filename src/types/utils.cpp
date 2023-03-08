@@ -664,7 +664,7 @@ bool Utils::CanUwpDragDrop()
     // There's a lot of wacky double negatives here so that the logic is
     // basically the same as IsRunningElevated, but the end result semantically
     // makes sense as "CanDragDrop".
-    static auto cannotDragDrop = []() {
+    static auto isDragDropBroken = []() {
         try
         {
             wil::unique_handle processToken{ GetCurrentProcessToken() };
@@ -679,7 +679,7 @@ bool Utils::CanUwpDragDrop()
                 //
                 // See GH#7754, GH#11096
                 return false;
-                // They can not NOT drag drop -> they _can_ drag drop
+                // drag drop is _not_ broken -> they _can_ drag drop
             }
 
             // If they are running admin, they cannot drag drop.
@@ -688,11 +688,13 @@ bool Utils::CanUwpDragDrop()
         catch (...)
         {
             LOG_CAUGHT_EXCEPTION();
-            return false;
+            // This failed? That's very peculiar indeed. Let's err on the side
+            // of "drag drop is broken", just in case.
+            return true;
         }
     }();
 
-    return !cannotDragDrop;
+    return !isDragDropBroken;
 }
 
 // See CanUwpDragDrop, GH#13928 for why this is different.
