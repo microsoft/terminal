@@ -120,41 +120,68 @@ void WindowEmperor::CreateNewWindowThread(Remoting::WindowRequestedArgs args)
 
     auto window{ std::make_shared<WindowThread>(_app.Logic(), args, _manager, peasant) };
 
-    window->Started([this, sender = window]() {
-        // Add a callback to the window's logic to let us know when the window's
-        // quake mode state changes. We'll use this to check if we need to add
-        // or remove the notification icon.
-        sender->Logic().IsQuakeWindowChanged({ this, &WindowEmperor::_windowIsQuakeWindowChanged });
-        sender->UpdateSettingsRequested({ this, &WindowEmperor::_windowRequestUpdateSettings });
+    std::weak_ptr<WindowEmperor> weakThis{ weak_from_this() };
 
-        // These come in on the sender's thread. Move back to our thread.
+    window->Started([weakThis, sender = window]() {
+        // These come in on the sender's thread. Make sure we haven't died
+        // since then
+        if (auto self{ weakThis.lock() })
         {
-            auto lockedWindows{ _windows.lock() };
-            lockedWindows->push_back(sender);
+            self->_windowStartedHandler(sender);
         }
     });
 
-    window->Exited([this](uint64_t senderID) {
-        // These come in on the sender's thread.
-
-        auto lockedWindows{ _windows.lock() };
-
-        // find the window in _windows who's peasant's Id matches the peasant's Id
-        // and remove it
-        lockedWindows->erase(std::remove_if(lockedWindows->begin(), lockedWindows->end(), [&](const auto& w) {
-                                 return w->Peasant().GetID() == senderID;
-                             }),
-                             lockedWindows->end());
-
-        if (lockedWindows->size() == 0)
+    window->Exited([weakThis](uint64_t senderID) {
+        // These come in on the sender's thread. Make sure we haven't died
+        // since then
+        if (auto self{ weakThis.lock() })
         {
-            _close();
+            self->_windowExitedHandler(senderID);
         }
     });
 
     window->Start();
 }
 
+// Handler for a WindowThread's Started event, which it raises once the window
+// thread starts and XAML is ready to go on that thread. Set up some callbacks
+// now that we know this window is set up and ready to go.
+// Q: Why isn't adding these callbacks just a part of CreateNewWindowThread?
+// A: Until the thread actually starts, the AppHost (and its Logic()) haven't
+// been ctor'd or initialized, so trying to add callbacks immediately will A/V
+void WindowEmperor::_windowStartedHandler(const std::shared_ptr<WindowThread>& sender)
+{
+    // Add a callback to the window's logic to let us know when the window's
+    // quake mode state changes. We'll use this to check if we need to add
+    // or remove the notification icon.
+    sender->Logic().IsQuakeWindowChanged({ this, &WindowEmperor::_windowIsQuakeWindowChanged });
+    sender->UpdateSettingsRequested({ this, &WindowEmperor::_windowRequestUpdateSettings });
+
+    // Now that the window is ready to go, we can add it to our list of windows,
+    // because we know it will be well behaved.
+    //
+    // Be sure to only modify the list of windows under lock.
+    {
+        auto lockedWindows{ _windows.lock() };
+        lockedWindows->push_back(sender);
+    }
+}
+void WindowEmperor::_windowExitedHandler(uint64_t senderID)
+{
+    auto lockedWindows{ _windows.lock() };
+
+    // find the window in _windows who's peasant's Id matches the peasant's Id
+    // and remove it
+    lockedWindows->erase(std::remove_if(lockedWindows->begin(), lockedWindows->end(), [&](const auto& w) {
+                             return w->Peasant().GetID() == senderID;
+                         }),
+                         lockedWindows->end());
+
+    if (lockedWindows->size() == 0)
+    {
+        _close();
+    }
+}
 // Method Description:
 // - Set up all sorts of handlers now that we've determined that we're a process
 //   that will end up hosting the windows. These include:

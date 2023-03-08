@@ -114,9 +114,9 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     // doing that, we can safely init as STA before any WinRT dispatches.
     winrt::init_apartment(winrt::apartment_type::single_threaded);
 
-    ::WindowEmperor emperor{};
-    if (emperor.HandleCommandlineArgs())
+    const auto emperor = std::make_shared<::WindowEmperor>();
+    if (emperor->HandleCommandlineArgs())
     {
-        emperor.WaitForWindows();
+        emperor->WaitForWindows();
     }
 }

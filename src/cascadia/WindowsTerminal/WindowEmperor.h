@@ -20,7 +20,7 @@ Abstract:
 
 #include "WindowThread.h"
 
-class WindowEmperor
+class WindowEmperor : std::enable_shared_from_this<WindowEmperor>
 {
 public:
     WindowEmperor() noexcept;
@@ -48,6 +48,9 @@ private:
     std::vector<winrt::Microsoft::Terminal::Settings::Model::GlobalSummonArgs> _hotkeys;
 
     std::unique_ptr<NotificationIcon> _notificationIcon;
+
+    void _windowStartedHandler(const std::shared_ptr<WindowThread>& sender);
+    void _windowExitedHandler(uint64_t senderID);
 
     void _becomeMonarch();
     void _numberOfWindowsChanged(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&);
