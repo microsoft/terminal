@@ -651,13 +651,15 @@
                             <VisualStateGroup x:Name="CommonStates">
                                 <VisualState x:Name="Normal">
 
-                                    <VisualState.Setters>
-                                        <Setter Target="TabContainer.Background" Value="{ThemeResource TabViewItemHeaderBackground}" />
-                                    </VisualState.Setters>
+                                    <!-- <VisualState.Setters> -->
+                                    <!-- <Setter Target="SelectedBackgroundPath.Visibility" Value="Collapsed" /> -->
+                                    <!-- <Setter Target="TabContainer.Background" Value="{ThemeResource TabViewItemHeaderBackground}" /> -->
+                                    <!-- </VisualState.Setters>  -->
                                 </VisualState>
 
                                 <VisualState x:Name="PointerOver">
                                     <VisualState.Setters>
+
                                         <Setter Target="TabContainer.Background" Value="{ThemeResource TabViewItemHeaderBackgroundPointerOver}" />
 
                                         <Setter Target="ContentPresenter.Foreground" Value="{ThemeResource TabViewItemHeaderForegroundPointerOver}" />
@@ -670,7 +672,8 @@
 
                                 <VisualState x:Name="Pressed">
                                     <VisualState.Setters>
-                                        <!-- <Setter Target="TabContainer.Background" Value="{ThemeResource TabViewItemHeaderBackgroundPressed}" /> -->
+
+                                        <Setter Target="TabContainer.Background" Value="{ThemeResource TabViewItemHeaderBackgroundPressed}" />
 
                                         <Setter Target="ContentPresenter.Foreground" Value="{ThemeResource TabViewItemHeaderForegroundPressed}" />
                                         <Setter Target="IconControl.Foreground" Value="{ThemeResource TabViewItemIconForegroundPressed}" />
@@ -685,10 +688,13 @@
                                         <Setter Target="BottomBorderLine.Visibility" Value="Collapsed" />
                                         <Setter Target="RightRadiusRenderArc.Visibility" Value="Visible" />
                                         <Setter Target="LeftRadiusRenderArc.Visibility" Value="Visible" />
-                                        <Setter Target="SelectedBackgroundPath.Visibility" Value="Visible" />
-                                        <!--<Setter Target="SelectedBackgroundPath.Fill" Value="{ThemeResource TabViewItemHeaderBackgroundSelected}" />-->
 
+                                        <Setter Target="SelectedBackgroundPath.Visibility" Value="Visible" />
+                                        <Setter Target="SelectedBackgroundPath.Fill" Value="{ThemeResource TabViewItemHeaderBackgroundSelected}" />
                                         <Setter Target="TabContainer.Background" Value="{ThemeResource TabViewItemHeaderBackgroundSelected}" />
+
+                                        <!--  2.7  -->
+                                        <!-- <Setter Target="TabContainer.Background" Value="{ThemeResource TabViewItemHeaderBackgroundSelected}" /> -->
 
                                         <Setter Target="TabContainer.Margin" Value="{ThemeResource TabViewSelectedItemHeaderMargin}" />
                                         <Setter Target="TabContainer.BorderBrush" Value="{ThemeResource TabViewSelectedItemBorderBrush}" />
@@ -710,9 +716,11 @@
                                         <Setter Target="LeftRadiusRenderArc.Visibility" Value="Visible" />
 
                                         <Setter Target="SelectedBackgroundPath.Visibility" Value="Visible" />
-                                        <!--<Setter Target="SelectedBackgroundPath.Fill" Value="{ThemeResource TabViewItemHeaderBackgroundSelected}" />-->
-
+                                        <Setter Target="SelectedBackgroundPath.Fill" Value="{ThemeResource TabViewItemHeaderBackgroundSelected}" />
                                         <Setter Target="TabContainer.Background" Value="{ThemeResource TabViewItemHeaderBackgroundSelected}" />
+
+                                        <!--  2.7  -->
+                                        <!-- <Setter Target="TabContainer.Background" Value="{ThemeResource TabViewItemHeaderBackgroundSelected}" /> -->
 
                                         <Setter Target="TabContainer.Margin" Value="{ThemeResource TabViewSelectedItemHeaderMargin}" />
                                         <Setter Target="TabContainer.BorderBrush" Value="{ThemeResource TabViewSelectedItemBorderBrush}" />
@@ -734,8 +742,13 @@
                                         <Setter Target="LeftRadiusRenderArc.Visibility" Value="Visible" />
 
                                         <Setter Target="SelectedBackgroundPath.Visibility" Value="Visible" />
-                                        <!--<Setter Target="SelectedBackgroundPath.Fill" Value="{ThemeResource TabViewItemHeaderBackgroundSelected}" />-->
+                                        <Setter Target="SelectedBackgroundPath.Fill" Value="{ThemeResource TabViewItemHeaderBackgroundSelected}" />
                                         <Setter Target="TabContainer.Background" Value="{ThemeResource TabViewItemHeaderBackground}" />
+                                        <!--<Setter Target="TabContainer.Background" Value="{ThemeResource TabViewItemHeaderBackgroundPressed}" />-->
+
+                                        <!--  2.7  -->
+                                        <!-- <Setter Target="TabContainer.Background" Value="{ThemeResource TabViewItemHeaderBackgroundSelected}" /> -->
+
 
                                         <Setter Target="TabContainer.Margin" Value="{ThemeResource TabViewSelectedItemHeaderMargin}" />
                                         <Setter Target="TabContainer.BorderBrush" Value="{ThemeResource TabViewSelectedItemBorderBrush}" />
@@ -757,6 +770,10 @@
                                 <VisualState x:Name="Disabled">
                                     <VisualState.Setters>
                                         <!-- <Setter Target="TabContainer.Background" Value="{ThemeResource TabViewItemHeaderBackgroundDisabled}" /> -->
+
+                                        <!--  2.7  -->
+                                        <!--  n/a  -->
+
                                         <Setter Target="IconControl.Foreground" Value="{ThemeResource TabViewItemHeaderForegroundDisabled}" />
                                         <Setter Target="ContentPresenter.Foreground" Value="{ThemeResource TabViewItemHeaderForegroundDisabled}" />
                                         <Setter Target="IconControl.Foreground" Value="{ThemeResource TabViewButtonForegroundDisabled}" />

@@ -483,13 +483,23 @@ namespace winrt::TerminalApp::implementation
         //     // * Selected were that default blackish color
         //     // * Deselected were transparent
         // }
+
+        // {
+        //     // Attempt 3
+        //     TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
+        //     TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
+        //     // Additionally,
+        //     // <Setter Target="TabContainer.Background" Value="{ThemeResource TabViewItemHeaderBackgroundSelected}" />
+        //     // in <VisualState x:Name="Selected">.Setters
+        // }
+
         {
-            // Attempt 3
-            TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
+            // Attempt 4
+            // TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
             TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
-            // Additionally,
-            // <Setter Target="TabContainer.Background" Value="{ThemeResource TabViewItemHeaderBackgroundSelected}" />
-            // in <VisualState x:Name="Selected">.Setters
+
+            TabViewItem().Background(deselectedTabBrush);
+            // Additionally, changes to the XAML
         }
 
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
