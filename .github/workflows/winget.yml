@@ -4,23 +4,24 @@ on:
   release:
     types: [published]
 
+env:
+  REGEX: 'Microsoft\.WindowsTerminal(?:Preview)?_Win10_([\d.]+)_8wekyb3d8bbwe\.msixbundle$'
+
 jobs:
   publish:
     runs-on: windows-latest # Action can only run on Windows
     steps:
-      - name: Publish Stable
+      - name: Extract version from release asset
+        id: extract-version
+        run: |
+          $version = '${{ toJSON(github.event.release.assets.*.name) }}' | ConvertFrom-Json | Select-String -Pattern $env:REGEX | ForEach-Object { $_.Matches.Groups[1].Value }
+          Write-Output "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Publish ${{ github.event.release.prerelease && 'Preview' || 'Stable' }}
         uses: vedantmgoyal2009/winget-releaser@v2
-        if: ${{ !github.event.release.prerelease }}
         with:
-          identifier: Microsoft.WindowsTerminal
-          installers-regex: 'Microsoft\.WindowsTerminal_Win10_[\d.]+_8wekyb3d8bbwe\.msixbundle$'
-          token: ${{ secrets.WINGET_TOKEN }}
-          fork-user: DHowett
-      - name: Publish Preview
-        uses: vedantmgoyal2009/winget-releaser@v2
-        if: ${{ github.event.release.prerelease }}
-        with:
-          identifier: Microsoft.WindowsTerminal.Preview
-          installers-regex: 'Microsoft\.WindowsTerminalPreview_Win10_[\d.]+_8wekyb3d8bbwe\.msixbundle$'
+          identifier: Microsoft.WindowsTerminal${{ github.event.release.prerelease && '.Preview' || '' }}
+          version: ${{ steps.extract-version.outputs.version }}
+          installers-regex: ${{ env.REGEX }}
           token: ${{ secrets.WINGET_TOKEN }}
           fork-user: DHowett
