@@ -44,7 +44,16 @@ void WindowThread::Start()
                 ::DispatchMessageW(&msg);
             }
         }
+
+        // Raising our Exited event might cause the app to teardown. In the
+        // highly unlikely case that the main thread got scheduled before the
+        // event handler returns, it might release the WindowThread while it's
+        // still holding an outstanding reference to its own thread. That would
+        // cause a std::terminate. Let's just avoid that by releasing our
+        // thread.
+        this->_thread.detach();
         _ExitedHandlers(_peasant.GetID());
+
         return exitCode;
     });
     LOG_IF_FAILED(SetThreadDescription(_thread.native_handle(), L"Window Thread"));
