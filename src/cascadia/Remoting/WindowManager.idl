@@ -32,8 +32,6 @@ namespace Microsoft.Terminal.Remoting
         event Windows.Foundation.TypedEventHandler<Object, Object> WindowClosed;
         event Windows.Foundation.TypedEventHandler<Object, QuitAllRequestedArgs> QuitAllRequested;
         event Windows.Foundation.TypedEventHandler<Object, GetWindowLayoutArgs> GetWindowLayoutRequested;
-        event Windows.Foundation.TypedEventHandler<Object, Object> ShowNotificationIconRequested;
-        event Windows.Foundation.TypedEventHandler<Object, Object> HideNotificationIconRequested;
 
         event Windows.Foundation.TypedEventHandler<Object, WindowRequestedArgs> RequestNewWindow;
 

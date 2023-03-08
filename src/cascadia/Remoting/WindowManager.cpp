@@ -62,8 +62,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         _monarch.WindowCreated({ get_weak(), &WindowManager::_WindowCreatedHandlers });
         _monarch.WindowClosed({ get_weak(), &WindowManager::_WindowClosedHandlers });
         _monarch.FindTargetWindowRequested({ this, &WindowManager::_raiseFindTargetWindowRequested });
-        _monarch.ShowNotificationIconRequested([this](auto&&, auto&&) { _ShowNotificationIconRequestedHandlers(*this, nullptr); });
-        _monarch.HideNotificationIconRequested([this](auto&&, auto&&) { _HideNotificationIconRequestedHandlers(*this, nullptr); });
         _monarch.QuitAllRequested({ get_weak(), &WindowManager::_QuitAllRequestedHandlers });
 
         _monarch.RequestNewWindow({ get_weak(), &WindowManager::_raiseRequestNewWindow });
