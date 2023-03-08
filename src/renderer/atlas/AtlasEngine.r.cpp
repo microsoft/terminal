@@ -39,6 +39,7 @@ try
 
     if (_p.dxgiFactory && !_p.dxgiFactory->IsCurrent())
     {
+        _p.dxgiFactory.reset();
         _b.reset();
     }
 
@@ -52,18 +53,21 @@ try
 }
 catch (const wil::ResultException& exception)
 {
-    if (_p.warningCallback)
+    const auto hr = exception.GetErrorCode();
+    const auto isExpected = hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET || hr == D2DERR_RECREATE_TARGET;
+
+    if (!isExpected && _p.warningCallback)
     {
         try
         {
-            _p.warningCallback(exception.GetErrorCode());
+            _p.warningCallback(hr);
         }
         CATCH_LOG()
     }
 
     _p.dxgiFactory.reset();
     _b.reset();
-    return E_PENDING; // Indicate a retry to the renderer
+    return isExpected ? E_PENDING : hr;
 }
 CATCH_RETURN()
 
@@ -116,6 +120,7 @@ void AtlasEngine::_recreateBackend()
     static constexpr UINT flags = 0;
 #endif
 
+    // IID_PPV_ARGS doesn't work here for some reason.
     THROW_IF_FAILED(CreateDXGIFactory2(flags, __uuidof(_p.dxgiFactory), _p.dxgiFactory.put_void()));
 
     auto d2dMode = debugForceD2DMode;

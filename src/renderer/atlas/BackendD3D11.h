@@ -34,8 +34,8 @@ namespace Microsoft::Console::Render::Atlas
         struct alignas(16) PSConstBuffer
         {
             alignas(sizeof(f32x4)) f32x4 backgroundColor;
-            alignas(sizeof(f32x2)) f32x2 cellCount;
             alignas(sizeof(f32x2)) f32x2 cellSize;
+            alignas(sizeof(f32x2)) f32x2 cellCount;
             alignas(sizeof(f32x4)) f32 gammaRatios[4]{};
             alignas(sizeof(f32)) f32 enhancedContrast = 0;
             alignas(sizeof(f32)) f32 dashedLineLength = 0;
@@ -62,15 +62,14 @@ namespace Microsoft::Console::Render::Atlas
             SolidFill,
         };
 
-        struct alignas(16) QuadInstance
+        struct QuadInstance
         {
-            alignas(sizeof(i32r)) i32r position;
-            alignas(sizeof(i32r)) i32r texcoord;
-            alignas(sizeof(u32)) u32 color = 0;
+            alignas(sizeof(i16x2)) i16x2 position;
+            alignas(sizeof(i16x2)) i16x2 size;
+            alignas(sizeof(i16x2)) i16x2 texcoord;
             alignas(sizeof(u32)) u32 shadingType = 0;
-            alignas(sizeof(u32x2)) u32x2 padding;
+            alignas(sizeof(u32)) u32 color = 0;
         };
-        static_assert(sizeof(QuadInstance) == 48);
 
         struct GlyphCacheEntry
         {
@@ -145,19 +144,19 @@ namespace Microsoft::Console::Render::Atlas
         wil::com_ptr<ID3D11DeviceContext2> _deviceContext;
         wil::com_ptr<ID3D11RenderTargetView> _renderTargetView;
 
+        wil::com_ptr<ID3D11InputLayout> _inputLayout;
         wil::com_ptr<ID3D11VertexShader> _vertexShader;
         wil::com_ptr<ID3D11PixelShader> _pixelShader;
         wil::com_ptr<ID3D11BlendState> _blendState;
         wil::com_ptr<ID3D11BlendState> _blendStateInvert;
         wil::com_ptr<ID3D11Buffer> _vsConstantBuffer;
         wil::com_ptr<ID3D11Buffer> _psConstantBuffer;
+        wil::com_ptr<ID3D11Buffer> _vertexBuffer;
         wil::com_ptr<ID3D11Buffer> _indexBuffer;
         wil::com_ptr<ID3D11Buffer> _instanceBuffer;
-        wil::com_ptr<ID3D11ShaderResourceView> _instanceBufferView;
         size_t _instanceBufferSize = 0;
         Buffer<QuadInstance> _instances;
         size_t _instancesSize = 0;
-        DXGI_FORMAT _indicesFormat = DXGI_FORMAT_UNKNOWN;
 
         wil::com_ptr<ID3D11RenderTargetView> _customRenderTargetView;
         wil::com_ptr<ID3D11Texture2D> _customOffscreenTexture;

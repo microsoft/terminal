@@ -7,14 +7,13 @@
 cbuffer ConstBuffer : register(b0)
 {
     float4 backgroundColor;
-    float2 cellCount;
     float2 cellSize;
+    float2 cellCount;
     float4 gammaRatios;
     float enhancedContrast;
     float dashedLineLength;
 }
 
-SamplerState backgroundSampler : register(s0);
 Texture2D<float4> background : register(t0);
 Texture2D<float4> glyphAtlas : register(t1);
 

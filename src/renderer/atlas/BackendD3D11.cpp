@@ -128,6 +128,52 @@ BackendD3D11::BackendD3D11(wil::com_ptr<ID3D11Device2> device, wil::com_ptr<ID3D
     THROW_IF_FAILED(_device->CreatePixelShader(&shader_ps[0], sizeof(shader_ps), nullptr, _pixelShader.addressof()));
 
     {
+        static constexpr D3D11_INPUT_ELEMENT_DESC layout[]{
+            { "SV_Position", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+            { "position", 0, DXGI_FORMAT_R16G16_SINT, 1, offsetof(QuadInstance, position), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+            { "size", 0, DXGI_FORMAT_R16G16_SINT, 1, offsetof(QuadInstance, size), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+            { "texcoord", 0, DXGI_FORMAT_R16G16_SINT, 1, offsetof(QuadInstance, texcoord), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+            { "shadingType", 0, DXGI_FORMAT_R32_UINT, 1, offsetof(QuadInstance, shadingType), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+            { "color", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 1, offsetof(QuadInstance, color), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+        };
+        THROW_IF_FAILED(_device->CreateInputLayout(&layout[0], gsl::narrow_cast<UINT>(std::size(layout)), &shader_vs[0], sizeof(shader_vs), _inputLayout.addressof()));
+    }
+
+    {
+        static constexpr f32x2 vertices[]{
+            { 0, 0 },
+            { 1, 0 },
+            { 1, 1 },
+            { 0, 1 },
+        };
+        static constexpr D3D11_SUBRESOURCE_DATA initialData{ &vertices[0] };
+
+        D3D11_BUFFER_DESC desc{};
+        desc.ByteWidth = sizeof(vertices);
+        desc.Usage = D3D11_USAGE_IMMUTABLE;
+        desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+        THROW_IF_FAILED(_device->CreateBuffer(&desc, &initialData, _vertexBuffer.addressof()));
+    }
+
+    {
+        static constexpr u16 indices[]{
+            0, // { 0, 0 }
+            1, // { 1, 0 }
+            2, // { 1, 1 }
+            2, // { 1, 1 }
+            3, // { 0, 1 }
+            0, // { 0, 0 }
+        };
+        static constexpr D3D11_SUBRESOURCE_DATA initialData{ &indices[0] };
+
+        D3D11_BUFFER_DESC desc{};
+        desc.ByteWidth = sizeof(indices);
+        desc.Usage = D3D11_USAGE_IMMUTABLE;
+        desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+        THROW_IF_FAILED(_device->CreateBuffer(&desc, &initialData, _indexBuffer.addressof()));
+    }
+
+    {
         static constexpr D3D11_BUFFER_DESC desc{
             .ByteWidth = sizeof(VSConstBuffer),
             .Usage = D3D11_USAGE_DEFAULT,
@@ -592,8 +638,8 @@ void BackendD3D11::_recreateConstBuffer(const RenderingPayload& p)
     {
         PSConstBuffer data;
         data.backgroundColor = colorFromU32<f32x4>(p.s->misc->backgroundColor);
-        data.cellCount = { static_cast<f32>(p.s->cellCount.x), static_cast<f32>(p.s->cellCount.y) };
         data.cellSize = { static_cast<f32>(p.s->font->cellSize.x), static_cast<f32>(p.s->font->cellSize.y) };
+        data.cellCount = { static_cast<f32>(p.s->cellCount.x), static_cast<f32>(p.s->cellCount.y) };
         DWrite_GetGammaRatios(_gamma, data.gammaRatios);
         data.enhancedContrast = p.s->font->antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE ? _cleartypeEnhancedContrast : _grayscaleEnhancedContrast;
         data.dashedLineLength = p.s->font->underlineWidth * 3.0f;
@@ -604,13 +650,17 @@ void BackendD3D11::_recreateConstBuffer(const RenderingPayload& p)
 void BackendD3D11::_setupDeviceContextState(const RenderingPayload& p)
 {
     // IA: Input Assembler
+    ID3D11Buffer* vertexBuffers[]{ _vertexBuffer.get(), _instanceBuffer.get() };
+    static constexpr UINT strides[]{ sizeof(f32x2), sizeof(QuadInstance) };
+    static constexpr UINT offsets[]{ 0, 0 };
+    _deviceContext->IASetIndexBuffer(_indexBuffer.get(), DXGI_FORMAT_R16_UINT, 0);
+    _deviceContext->IASetInputLayout(_inputLayout.get());
     _deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    _deviceContext->IASetIndexBuffer(_indexBuffer.get(), _indicesFormat, 0);
+    _deviceContext->IASetVertexBuffers(0, 2, &vertexBuffers[0], &strides[0], &offsets[0]);
 
     // VS: Vertex Shader
     _deviceContext->VSSetShader(_vertexShader.get(), nullptr, 0);
     _deviceContext->VSSetConstantBuffers(0, 1, _vsConstantBuffer.addressof());
-    _deviceContext->VSSetShaderResources(0, 1, _instanceBufferView.addressof());
 
     // RS: Rasterizer Stage
     D3D11_VIEWPORT viewport{};
@@ -619,7 +669,7 @@ void BackendD3D11::_setupDeviceContextState(const RenderingPayload& p)
     _deviceContext->RSSetViewports(1, &viewport);
 
     // PS: Pixel Shader
-    ID3D11ShaderResourceView* const resources[]{ _backgroundBitmapView.get(), _glyphAtlasView.get() };
+    ID3D11ShaderResourceView* resources[]{ _backgroundBitmapView.get(), _glyphAtlasView.get() };
     _deviceContext->PSSetShader(_pixelShader.get(), nullptr, 0);
     _deviceContext->PSSetConstantBuffers(0, 1, _psConstantBuffer.addressof());
     _deviceContext->PSSetShaderResources(0, 2, &resources[0]);
@@ -707,7 +757,7 @@ void BackendD3D11::_resetGlyphAtlasAndBeginDraw(const RenderingPayload& p)
             THROW_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(&color, nullptr, _brush.put()));
         }
 
-        ID3D11ShaderResourceView* const resources[]{ _backgroundBitmapView.get(), _glyphAtlasView.get() };
+        ID3D11ShaderResourceView* resources[]{ _backgroundBitmapView.get(), _glyphAtlasView.get() };
         _deviceContext->PSSetShaderResources(0, 2, &resources[0]);
     }
 
@@ -737,7 +787,13 @@ void BackendD3D11::_appendQuad(i32r position, i32r texcoord, u32 color, ShadingT
         _bumpInstancesSize();
     }
 
-    _instances[_instancesSize++] = QuadInstance{ position, texcoord, color, static_cast<u32>(shadingType) };
+    static constexpr auto pack = [](i32 x, i32 y) {
+        return i16x2{ gsl::narrow_cast<i16>(x), gsl::narrow_cast<i16>(y) };
+    };
+    const i16x2 position2 = pack(position.left, position.top);
+    const i16x2 size2 = pack(position.right - position.left, position.bottom - position.top);
+    const i16x2 texcoord2 = pack(texcoord.left, texcoord.top);
+    _instances[_instancesSize++] = QuadInstance{ position2, size2, texcoord2, static_cast<u32>(shadingType), color };
 }
 
 void BackendD3D11::_bumpInstancesSize()
@@ -764,59 +820,25 @@ void BackendD3D11::_flushQuads(const RenderingPayload& p)
         _deviceContext->Unmap(_instanceBuffer.get(), 0);
     }
 
-    {
-        D3D11_MAPPED_SUBRESOURCE mapped{};
-        THROW_IF_FAILED(_deviceContext->Map(_indexBuffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
-
-        if (_indicesFormat == DXGI_FORMAT_R16_UINT)
-        {
-            auto data = static_cast<u16*>(mapped.pData);
-            const u16 vertices = gsl::narrow_cast<u16>(4 * _instancesSize);
-            for (u16 off = 0; off < vertices; off += 4)
-            {
-                *data++ = off + 0;
-                *data++ = off + 1;
-                *data++ = off + 2;
-                *data++ = off + 3;
-                *data++ = off + 2;
-                *data++ = off + 1;
-            }
-        }
-        else
-        {
-            assert(_indicesFormat == DXGI_FORMAT_R32_UINT);
-            auto data = static_cast<u32*>(mapped.pData);
-            const u32 vertices = gsl::narrow_cast<u32>(4 * _instancesSize);
-            for (u32 off = 0; off < vertices; off += 4)
-            {
-                *data++ = off + 0;
-                *data++ = off + 1;
-                *data++ = off + 2;
-                *data++ = off + 3;
-                *data++ = off + 2;
-                *data++ = off + 1;
-            }
-        }
-
-        _deviceContext->Unmap(_indexBuffer.get(), 0);
-    }
-
-    // I found 4 approaches to drawing lots of quads quickly.
+    // I found 4 approaches to drawing lots of quads quickly. There are probably even more.
     // They can often be found in discussions about "particle" or "point sprite" rendering in game development.
     // * Compute Shader: My understanding is that at the time of writing games are moving over to bucketing
     //   particles into "tiles" on the screen and drawing them with a compute shader. While this improves
     //   performance, it doesn't mix well with our goal of allowing arbitrary overlaps between glyphs.
     //   Additionally none of the next 3 approaches use any significant amount of GPU time in the first place.
-    // * Geometry Shader: Geometry shaders can generate vertices on the fly, which would neatly replace
-    //   our need for an index buffer. The reason this wasn't chosen is the same as for the next point.
-    // * DrawInstanced: On my own hardware (Nvidia RTX 4090) this seems to perform ~50% better than the final point,
-    //   but with no significant difference in power draw. However the popular "Vertex Shader Tricks" talk from
-    //   Bill Bilodeau at GDC 2014 suggests that this at least doesn't apply to 2014ish hardware, which supposedly
-    //   performs poorly with very small, instanced meshes. Furthermore, public feedback suggests that we still
-    //   have a lot of users with older hardware, so I've chosen the following approach, suggested in the talk.
-    // * DrawIndexed: This works about the same as DrawInstanced, but instead of using D3D11_INPUT_PER_INSTANCE_DATA,
-    //   it uses a SRV (shader resource view) for instance data and maps each SV_VertexID to a SRV slot.
-    _deviceContext->DrawIndexed(gsl::narrow_cast<UINT>(6 * _instancesSize), 0, 0);
+    // * Geometry Shader: Geometry shaders can generate vertices on the fly, which would neatly replace our need
+    //   for an index buffer. However, many sources claim they're significantly slower than the following approaches.
+    // * DrawIndexed & DrawInstanced: Again, many sources claim that GPU instancing (Draw(Indexed)Instanced) performs
+    //   poorly for small meshes, and instead indexed vertices with a SRV (shader resource view) should be used.
+    //   The popular "Vertex Shader Tricks" talk from Bill Bilodeau at GDC 2014 suggests this approach, explains
+    //   how it works (you divide the `SV_VertexID` by 4 and index into the SRV that contains the per-instance data;
+    //   it's basically manual instancing inside the vertex shader) and shows how it outperforms regular instancing.
+    //   However on my own limited test hardware (built around ~2020), I found that for at least our use case,
+    //   GPU instancing matches the performance of using a custom buffer. In fact on my Nvidia GPU in particular,
+    //   instancing with ~10k instances appears to be about 50% faster and so DrawInstanced was chosen.
+    //   Instead I found that packing instance data as tightly as possible made the biggest performance difference,
+    //   and packing 16 bit integers with ID3D11InputLayout is quite a bit more convenient too.
+    _deviceContext->DrawIndexedInstanced(6, gsl::narrow_cast<UINT>(_instancesSize), 0, 0, 0);
 
     _instancesSize = 0;
 }
@@ -831,41 +853,26 @@ void BackendD3D11::_recreateInstanceBuffers(const RenderingPayload& p)
     // std::bit_ceil will result in a nice exponential growth curve. I don't know exactly how structured buffers are treated
     // by various drivers, but I'm assuming that they prefer buffer sizes that are close to power-of-2 sizes as well.
     const auto newInstancesSize = std::bit_ceil(minSize * sizeof(QuadInstance)) / sizeof(QuadInstance);
-    const auto newIndicesSize = newInstancesSize * 6;
-    const auto vertices = newInstancesSize * 4;
-    const auto indicesFormat = vertices <= R16max ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT;
-    const auto indexSize = vertices <= R16max ? sizeof(u16) : sizeof(u32);
 
-    _indexBuffer.reset();
     _instanceBuffer.reset();
-    _instanceBufferView.reset();
-
-    {
-        D3D11_BUFFER_DESC desc{};
-        desc.ByteWidth = gsl::narrow<UINT>(newIndicesSize * indexSize);
-        desc.Usage = D3D11_USAGE_DYNAMIC;
-        desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-        desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-        THROW_IF_FAILED(_device->CreateBuffer(&desc, nullptr, _indexBuffer.addressof()));
-    }
 
     {
         D3D11_BUFFER_DESC desc{};
         desc.ByteWidth = gsl::narrow<UINT>(newInstancesSize * sizeof(QuadInstance));
         desc.Usage = D3D11_USAGE_DYNAMIC;
-        desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+        desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
         desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-        desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
         desc.StructureByteStride = sizeof(QuadInstance);
         THROW_IF_FAILED(_device->CreateBuffer(&desc, nullptr, _instanceBuffer.addressof()));
-        THROW_IF_FAILED(_device->CreateShaderResourceView(_instanceBuffer.get(), nullptr, _instanceBufferView.addressof()));
     }
 
-    _deviceContext->IASetIndexBuffer(_indexBuffer.get(), indicesFormat, 0);
-    _deviceContext->VSSetShaderResources(0, 1, _instanceBufferView.addressof());
+    // IA: Input Assembler
+    ID3D11Buffer* vertexBuffers[]{ _vertexBuffer.get(), _instanceBuffer.get() };
+    static constexpr UINT strides[]{ sizeof(f32x2), sizeof(QuadInstance) };
+    static constexpr UINT offsets[]{ 0, 0 };
+    _deviceContext->IASetVertexBuffers(0, 2, &vertexBuffers[0], &strides[0], &offsets[0]);
 
     _instanceBufferSize = newInstancesSize;
-    _indicesFormat = indicesFormat;
 }
 
 void BackendD3D11::_drawBackground(const RenderingPayload& p)
@@ -881,6 +888,11 @@ void BackendD3D11::_drawBackground(const RenderingPayload& p)
         }
         _deviceContext->Unmap(_backgroundBitmap.get(), 0);
     }
+    // In testing I found that on my AMD GPU separating the background pass out from the rest
+    // improves performance by ~20%, if a fullscreen triangle is used for it. However, I felt
+    // like the added code didn't justify the improvement (6.4% -> 5.2% GPU load at 60 FPS),
+    // given that AGS_PRIMITIVE_TOPOLOGY_SCREENRECTLIST and AGS_PRIMITIVE_TOPOLOGY_QUADLIST exist
+    // and would serve us much better. Finally, Chromium is still ~2.5x faster than us.
     {
         const i32r rect{ 0, 0, p.s->targetSize.x, p.s->targetSize.y };
         _appendQuad(rect, rect, 0, ShadingType::Background);
@@ -955,7 +967,7 @@ bool BackendD3D11::_drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry,
     auto box = GetGlyphRunBlackBox(glyphRun, 0, 0);
     if (box.left >= box.right || box.top >= box.bottom)
     {
-        entry = {};
+        entry.shadingType = 0;
         return true;
     }
 
@@ -1205,7 +1217,7 @@ void BackendD3D11::_drawSelection(const RenderingPayload& p)
             // The way this is implemented isn't very smart, but we also don't have very many rows to iterate through.
             if (row.selectionFrom == lastFrom && row.selectionTo == lastTo)
             {
-                _getLastQuad().position.bottom = p.s->font->cellSize.y * (y + 1);
+                _getLastQuad().size.y += p.s->font->cellSize.y;
             }
             else
             {
@@ -1247,19 +1259,14 @@ void BackendD3D11::_executeCustomShader(RenderingPayload& p)
         _deviceContext->OMSetRenderTargets(1, _customRenderTargetView.addressof(), nullptr);
 
         // IA: Input Assembler
+        _deviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
+        _deviceContext->IASetInputLayout(nullptr);
         _deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-        _deviceContext->IASetIndexBuffer(_indexBuffer.get(), _indicesFormat, 0);
+        _deviceContext->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
 
         // VS: Vertex Shader
         _deviceContext->VSSetShader(_customVertexShader.get(), nullptr, 0);
         _deviceContext->VSSetConstantBuffers(0, 0, nullptr);
-        _deviceContext->VSSetShaderResources(0, 0, nullptr);
-
-        // RS: Rasterizer Stage
-        D3D11_VIEWPORT viewport{};
-        viewport.Width = static_cast<f32>(p.s->targetSize.x);
-        viewport.Height = static_cast<f32>(p.s->targetSize.y);
-        _deviceContext->RSSetViewports(1, &viewport);
 
         // PS: Pixel Shader
         _deviceContext->PSSetShader(_customPixelShader.get(), nullptr, 0);
@@ -1269,11 +1276,36 @@ void BackendD3D11::_executeCustomShader(RenderingPayload& p)
 
         // OM: Output Merger
         _deviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
-
-        _deviceContext->Draw(4, 0);
     }
 
-    _setupDeviceContextState(p);
+    _deviceContext->Draw(4, 0);
+
+    {
+        _deviceContext->OMSetRenderTargets(1, _renderTargetView.addressof(), nullptr);
+
+        // IA: Input Assembler
+        ID3D11Buffer* vertexBuffers[]{ _vertexBuffer.get(), _instanceBuffer.get() };
+        static constexpr UINT strides[]{ sizeof(f32x2), sizeof(QuadInstance) };
+        static constexpr UINT offsets[]{ 0, 0 };
+        _deviceContext->IASetIndexBuffer(_indexBuffer.get(), DXGI_FORMAT_R16_UINT, 0);
+        _deviceContext->IASetInputLayout(_inputLayout.get());
+        _deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        _deviceContext->IASetVertexBuffers(0, 2, &vertexBuffers[0], &strides[0], &offsets[0]);
+
+        // VS: Vertex Shader
+        _deviceContext->VSSetShader(_vertexShader.get(), nullptr, 0);
+        _deviceContext->VSSetConstantBuffers(0, 1, _vsConstantBuffer.addressof());
+
+        // PS: Pixel Shader
+        ID3D11ShaderResourceView* resources[]{ _backgroundBitmapView.get(), _glyphAtlasView.get() };
+        _deviceContext->PSSetShader(_pixelShader.get(), nullptr, 0);
+        _deviceContext->PSSetConstantBuffers(0, 1, _psConstantBuffer.addressof());
+        _deviceContext->PSSetShaderResources(0, 2, &resources[0]);
+        _deviceContext->PSSetSamplers(0, 0, nullptr);
+
+        // OM: Output Merger
+        _deviceContext->OMSetBlendState(_blendState.get(), nullptr, 0xffffffff);
+    }
 
     // With custom shaders, everything might be invalidated, so we have to
     // indirectly disable Present1() and its dirty rects this way.
