@@ -1,0 +1,26 @@
+name: Publish to Winget
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: windows-latest # Action can only run on Windows
+    steps:
+      - name: Publish Stable
+        uses: vedantmgoyal2009/winget-releaser@v2
+        if: ${{ !github.event.release.prerelease }}
+        with:
+          identifier: Microsoft.WindowsTerminal
+          installers-regex: 'Microsoft\.WindowsTerminal_Win10_[\d.]+_8wekyb3d8bbwe\.msixbundle$'
+          token: ${{ secrets.WINGET_TOKEN }}
+          fork-user: DHowett
+      - name: Publish Preview
+        uses: vedantmgoyal2009/winget-releaser@v2
+        if: ${{ github.event.release.prerelease }}
+        with:
+          identifier: Microsoft.WindowsTerminal.Preview
+          installers-regex: 'Microsoft\.WindowsTerminalPreview_Win10_[\d.]+_8wekyb3d8bbwe\.msixbundle$'
+          token: ${{ secrets.WINGET_TOKEN }}
+          fork-user: DHowett
