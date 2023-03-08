@@ -24,8 +24,6 @@ Abstract:
 #define NOCOMM
 #include <unknwn.h>
 
-#define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
-
 #include <windows.h>
 
 #include "../inc/LibraryIncludes.h"

@@ -69,11 +69,11 @@ std::wstring _LoadString(const UINT id)
     LANGID LangId;
 
     const auto Status = GetConsoleLangId(gci.OutputCP, &LangId);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         ItemLength = s_LoadStringEx(ServiceLocator::LocateGlobals().hInstance, id, ItemString, ARRAYSIZE(ItemString), LangId);
     }
-    if (!NT_SUCCESS(Status) || ItemLength == 0)
+    if (FAILED_NTSTATUS(Status) || ItemLength == 0)
     {
         ItemLength = LoadStringW(ServiceLocator::LocateGlobals().hInstance, id, ItemString, ARRAYSIZE(ItemString));
     }
