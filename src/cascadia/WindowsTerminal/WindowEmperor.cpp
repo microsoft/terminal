@@ -83,10 +83,10 @@ bool WindowEmperor::HandleCommandlineArgs()
 
     if (result.ShouldCreateWindow())
     {
-        CreateNewWindowThread(Remoting::WindowRequestedArgs{ result, eventArgs }, true);
+        CreateNewWindowThread(Remoting::WindowRequestedArgs{ result, eventArgs });
 
         _manager.RequestNewWindow([this](auto&&, const Remoting::WindowRequestedArgs& args) {
-            CreateNewWindowThread(args, false);
+            CreateNewWindowThread(args);
         });
 
         _becomeMonarch();
@@ -114,7 +114,7 @@ void WindowEmperor::WaitForWindows()
     }
 }
 
-void WindowEmperor::CreateNewWindowThread(Remoting::WindowRequestedArgs args, const bool /*firstWindow*/)
+void WindowEmperor::CreateNewWindowThread(Remoting::WindowRequestedArgs args)
 {
     Remoting::Peasant peasant{ _manager.CreatePeasant(args) };
 

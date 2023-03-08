@@ -28,7 +28,7 @@ public:
     void WaitForWindows();
 
     bool HandleCommandlineArgs();
-    void CreateNewWindowThread(winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args, const bool firstWindow);
+    void CreateNewWindowThread(winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args);
 
     LRESULT MessageHandler(UINT const message, WPARAM const wParam, LPARAM const lParam) noexcept;
     wil::unique_hwnd _window;
