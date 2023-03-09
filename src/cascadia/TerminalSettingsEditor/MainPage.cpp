@@ -59,9 +59,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         InitializeComponent();
         _UpdateBackgroundForMica();
 
-        _SetupNavViewItems();
-        _InitializeProfilesList();
-
         _colorSchemesPageVM = winrt::make<ColorSchemesPageViewModel>(_settingsClone);
         _colorSchemesPageViewModelChangedRevoker = _colorSchemesPageVM.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
             const auto settingName{ args.PropertyName() };
@@ -538,7 +535,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::_InitializeProfilesList()
     {
-        const auto menuItems = SettingsNav().MenuItemsSource().try_as<Windows::Foundation::Collections::IVector<IInspectable>>();
+        const auto& itemSource{ SettingsNav().MenuItemsSource() };
+        if (!itemSource)
+        {
+            // There wasn't a MenuItemsSource set yet? The only way that's
+            // possible is if we haven't used
+            // _MoveXamlParsedNavItemsIntoItemSource to move the hardcoded menu
+            // entries from XAML into our runtime menu item source. Do that now.
+
+            _MoveXamlParsedNavItemsIntoItemSource();
+        }
+        const auto menuItems = SettingsNav().MenuItemsSource().try_as<IVector<IInspectable>>();
 
         // Manually create a NavigationViewItem for each profile
         // and keep a reference to them in a map so that we
@@ -568,7 +575,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         menuItems.Append(addProfileItem);
     }
 
-    void MainPage::_SetupNavViewItems()
+    // Does the very wacky business of moving all our MenuItems that we
+    // hardcoded in XAML into a runtime MenuItemsSource. We'll then use _that_
+    // MenuItemsSource as the source for our nave view entries instead. This
+    // lets us hardcode the initial entries in precompiled XAML, but then adjust
+    // the items at runtime. Without using a MenuItemsSource, the NavView just
+    // crashes when items are removed (see GH#13673)
+    void MainPage::_MoveXamlParsedNavItemsIntoItemSource()
     {
         if (SettingsNav().MenuItemsSource())
         {
