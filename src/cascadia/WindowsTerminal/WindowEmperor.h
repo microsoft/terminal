@@ -20,7 +20,7 @@ Abstract:
 
 #include "WindowThread.h"
 
-class WindowEmperor : std::enable_shared_from_this<WindowEmperor>
+class WindowEmperor : public std::enable_shared_from_this<WindowEmperor>
 {
 public:
     WindowEmperor() noexcept;
