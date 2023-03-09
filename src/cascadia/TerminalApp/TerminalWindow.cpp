@@ -1127,7 +1127,7 @@ namespace winrt::TerminalApp::implementation
                 // have at least one tab to restore. If we ever want to come
                 // back and make it so that you can persist position and size,
                 // but not the tabs themselves, we can revisit this assumption.
-                _cachedLayout = (layout.TabLayout().Size() > 0) ? layout : nullptr;
+                _cachedLayout = (layout.TabLayout() && layout.TabLayout().Size() > 0) ? layout : nullptr;
                 return *_cachedLayout;
             }
         }
