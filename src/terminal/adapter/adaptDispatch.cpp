@@ -144,7 +144,7 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
             else if (failedToWrite)
             {
                 // We want to wrap, but we're not allowed to and we failed to write even a single character into the row.
-                // This can only mean one thing! The DECAWM autowrap mode is disabled ("\x1b[?7l") and we tried writing a
+                // This can only mean one thing! The DECAWM Autowrap mode is disabled ("\x1b[?7l") and we tried writing a
                 // wide glyph into the last column. ROW::Write() returns the lineWidth and leaves stringIterator untouched.
                 // To prevent a deadlock, because stringIterator never advances, we need to throw that glyph away.
                 textBuffer.ConsumeGrapheme(stringIterator);
