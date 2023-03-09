@@ -72,7 +72,7 @@ namespace winrt::TerminalApp::implementation
         void RenameFailed();
 
         std::optional<uint32_t> LoadPersistedLayoutIdx() const;
-        winrt::Microsoft::Terminal::Settings::Model::WindowLayout LoadPersistedLayout() const;
+        winrt::Microsoft::Terminal::Settings::Model::WindowLayout LoadPersistedLayout();
 
         void SetPersistedLayoutIdx(const uint32_t idx);
         void SetNumberOfOpenWindows(const uint64_t num);
@@ -155,6 +155,7 @@ namespace winrt::TerminalApp::implementation
         uint64_t _WindowId{ 0 };
 
         std::optional<uint32_t> _loadFromPersistedLayoutIdx{};
+        std::optional<winrt::Microsoft::Terminal::Settings::Model::WindowLayout> _cachedLayout{ std::nullopt };
 
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
         TerminalApp::SettingsLoadEventArgs _initialLoadResult{ nullptr };

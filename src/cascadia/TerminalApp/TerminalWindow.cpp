@@ -141,21 +141,19 @@ namespace winrt::TerminalApp::implementation
     {
         // Pass commandline args into the TerminalPage. If we were supposed to
         // load from a persisted layout, do that instead.
-        auto foundLayout = false;
+
+        // layout will only ever be non-null if there were >0 tabs persisted in
+        // .TabLayout(). We can re-evaluate that as a part of TODO: GH#12633
         if (const auto& layout = LoadPersistedLayout())
         {
-            if (layout.TabLayout().Size() > 0)
+            std::vector<Settings::Model::ActionAndArgs> actions;
+            for (const auto& a : layout.TabLayout())
             {
-                std::vector<Settings::Model::ActionAndArgs> actions;
-                for (const auto& a : layout.TabLayout())
-                {
-                    actions.emplace_back(a);
-                }
-                _root->SetStartupActions(actions);
-                foundLayout = true;
+                actions.emplace_back(a);
             }
+            _root->SetStartupActions(actions);
         }
-        if (!foundLayout)
+        else
         {
             _root->SetStartupActions(_appArgs.GetStartupActions());
         }
@@ -1095,6 +1093,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalWindow::SetPersistedLayoutIdx(const uint32_t idx)
     {
         _loadFromPersistedLayoutIdx = idx;
+        _cachedLayout = std::nullopt;
     }
 
     // Method Description;
@@ -1109,18 +1108,31 @@ namespace winrt::TerminalApp::implementation
         return _settings.GlobalSettings().ShouldUsePersistedLayout() ? _loadFromPersistedLayoutIdx : std::nullopt;
     }
 
-    WindowLayout TerminalWindow::LoadPersistedLayout() const
+    WindowLayout TerminalWindow::LoadPersistedLayout()
     {
+        if (_cachedLayout.has_value())
+        {
+            return *_cachedLayout;
+        }
+
         if (const auto idx = LoadPersistedLayoutIdx())
         {
             const auto i = idx.value();
             const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
             if (layouts && layouts.Size() > i)
             {
-                return layouts.GetAt(i);
+                auto layout = layouts.GetAt(i);
+
+                // TODO: GH#12633: Right now, we're manually making sure that we
+                // have at least one tab to restore. If we ever want to come
+                // back and make it so that you can persist position and size,
+                // but not the tabs themselves, we can revisit this assumption.
+                _cachedLayout = (layout.TabLayout().Size() > 0) ? layout : nullptr;
+                return *_cachedLayout;
             }
         }
-        return nullptr;
+        _cachedLayout = nullptr;
+        return *_cachedLayout;
     }
 
     void TerminalWindow::IdentifyWindow()
