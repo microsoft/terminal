@@ -200,7 +200,8 @@ namespace winrt::TerminalApp::implementation
 
         // These used to be in `TerminalPage::Initialized`, so that they started
         // _after_ the Terminal window was started and displayed. These could
-        // theoretically move there again too.
+        // theoretically move there again too. TODO:GH#14957 - evaluate moving
+        // this after the Page is initialized
         {
             // Both LoadSettings and ReloadSettings are supposed to call this function,
             // but LoadSettings skips it, so that the UI starts up faster.
@@ -232,7 +233,7 @@ namespace winrt::TerminalApp::implementation
                     TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                     TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
             }
-        };
+        }
 
         _ApplyLanguageSettingChange();
         _ApplyStartupTaskStateChange();
@@ -298,7 +299,7 @@ namespace winrt::TerminalApp::implementation
 
             _settings = std::move(newSettings);
 
-            hr = (_warnings.size()) == 0u ? S_OK : S_FALSE;
+            hr = _warnings.empty() ? S_OK : S_FALSE;
         }
         catch (const winrt::hresult_error& e)
         {

@@ -1799,7 +1799,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         // If the user set a custom name, save it
-        if (const auto windowName = _WindowProperties.WindowName(); !windowName.empty())
+        if (const auto& windowName{ _WindowProperties.WindowName() }; !windowName.empty())
         {
             ActionAndArgs action;
             action.Action(ShortcutAction::RenameWindow);
@@ -3927,7 +3927,7 @@ namespace winrt::TerminalApp::implementation
         else if (key == Windows::System::VirtualKey::Escape)
         {
             // User wants to discard the changes they made
-            WindowRenamerTextBox().Text(WindowProperties().WindowName());
+            WindowRenamerTextBox().Text(_WindowProperties.WindowName());
             WindowRenamer().IsOpen(false);
             _renamerPressedEnter = false;
         }
