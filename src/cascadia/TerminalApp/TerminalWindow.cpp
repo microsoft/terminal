@@ -253,7 +253,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         _root->SetSettings(_settings, false); // We're on our UI thread right now, so this is safe
-        _root->Loaded({ this, &TerminalWindow::_OnLoaded });
+        _root->Loaded({ get_weak(), &TerminalWindow::_OnLoaded });
         _root->Initialized([this](auto&&, auto&&) {
             // GH#288 - When we finish initialization, if the user wanted us
             // launched _fullscreen_, toggle fullscreen mode. This will make sure

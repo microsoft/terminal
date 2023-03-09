@@ -42,9 +42,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     struct WindowRequestedArgs : public WindowRequestedArgsT<WindowRequestedArgs>
     {
     public:
-        WindowRequestedArgs(const Remoting::ProposeCommandlineResult& result, const Remoting::CommandlineArgs& command) :
-            _Id{ result.Id() ? result.Id().Value() : 0 }, // We'll use 0 as a sentinel, since no window will ever get to have that ID
-            _WindowName{ result.WindowName() },
+        WindowRequestedArgs(const Remoting::ProposeCommandlineResult& windowInfo, const Remoting::CommandlineArgs& command) :
+            _Id{ windowInfo.Id() ? windowInfo.Id().Value() : 0 }, // We'll use 0 as a sentinel, since no window will ever get to have that ID
+            _WindowName{ windowInfo.WindowName() },
             _args{ command.Commandline() },
             _CurrentDirectory{ command.CurrentDirectory() } {};
 

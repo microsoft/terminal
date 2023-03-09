@@ -19,7 +19,7 @@ namespace Microsoft.Terminal.Remoting
     }
 
     [default_interface] runtimeclass WindowRequestedArgs {
-        WindowRequestedArgs(ProposeCommandlineResult result, CommandlineArgs command);
+        WindowRequestedArgs(ProposeCommandlineResult windowInfo, CommandlineArgs command);
 
         UInt64 Id { get; };
         String WindowName { get; };

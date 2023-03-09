@@ -172,10 +172,10 @@ void WindowEmperor::_windowExitedHandler(uint64_t senderID)
 
     // find the window in _windows who's peasant's Id matches the peasant's Id
     // and remove it
-    lockedWindows->erase(std::remove_if(lockedWindows->begin(), lockedWindows->end(), [&](const auto& w) {
-                             return w->Peasant().GetID() == senderID;
-                         }),
-                         lockedWindows->end());
+    std::erase_if(*lockedWindows,
+                  [&](const auto& w) {
+                      return w->Peasant().GetID() == senderID;
+                  });
 
     if (lockedWindows->size() == 0)
     {
@@ -674,10 +674,12 @@ void WindowEmperor::_checkWindowsForNotificationIcon()
     // RequestsTrayIcon setting value, and combine that with the result of each
     // window (which won't change during a settings reload).
     bool needsIcon = _app.Logic().RequestsTrayIcon();
-    auto windows{ _windows.lock_shared() };
-    for (const auto& _windowThread : *windows)
     {
-        needsIcon |= _windowThread->Logic().IsQuakeWindow();
+        auto windows{ _windows.lock_shared() };
+        for (const auto& _windowThread : *windows)
+        {
+            needsIcon |= _windowThread->Logic().IsQuakeWindow();
+        }
     }
 
     if (needsIcon)
