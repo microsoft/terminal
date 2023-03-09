@@ -63,7 +63,7 @@ namespace winrt::TerminalApp::implementation
     struct TerminalPage : TerminalPageT<TerminalPage>
     {
     public:
-        TerminalPage();
+        TerminalPage(TerminalApp::WindowProperties properties);
 
         // This implements shobjidl's IInitializeWithWindow, but due to a XAML Compiler bug we cannot
         // put it in our inheritance graph. https://github.com/microsoft/microsoft-ui-xaml/issues/3331
@@ -124,11 +124,7 @@ namespace winrt::TerminalApp::implementation
                                                      const bool initial,
                                                      const winrt::hstring cwd = L"");
 
-        // For the sake of XAML binding:
-        winrt::hstring WindowName() const noexcept { return _WindowProperties.WindowName(); };
-        uint64_t WindowId() const noexcept { return _WindowProperties.WindowId(); };
-        winrt::hstring WindowIdForDisplay() const noexcept { return _WindowProperties.WindowIdForDisplay(); };
-        winrt::hstring WindowNameForDisplay() const noexcept { return _WindowProperties.WindowNameForDisplay(); };
+        TerminalApp::WindowProperties WindowProperties() const noexcept { return _WindowProperties; };
 
         bool IsElevated() const noexcept;
 
@@ -136,10 +132,6 @@ namespace winrt::TerminalApp::implementation
         void WindowActivated(const bool activated);
 
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
-
-        TerminalApp::IWindowProperties WindowProperties();
-        void WindowProperties(const TerminalApp::IWindowProperties& props);
-        winrt::fire_and_forget WindowNameChanged();
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
@@ -230,7 +222,7 @@ namespace winrt::TerminalApp::implementation
         int _renamerLayoutCount{ 0 };
         bool _renamerPressedEnter{ false };
 
-        TerminalApp::IWindowProperties _WindowProperties{ nullptr };
+        TerminalApp::WindowProperties _WindowProperties{ nullptr };
 
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowDialogHelper(const std::wstring_view& name);
 
@@ -463,6 +455,7 @@ namespace winrt::TerminalApp::implementation
         void _updateTabCloseButton(const winrt::Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem);
 
         winrt::fire_and_forget _ShowWindowChangedHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
+        winrt::fire_and_forget _windowPropertyChanged(const IInspectable& sender, const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp

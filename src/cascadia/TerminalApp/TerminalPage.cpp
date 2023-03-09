@@ -52,13 +52,16 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    TerminalPage::TerminalPage() :
+    TerminalPage::TerminalPage(TerminalApp::WindowProperties properties) :
         _tabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
         _mruTabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
         _startupActions{ winrt::single_threaded_vector<ActionAndArgs>() },
-        _hostingHwnd{}
+        _hostingHwnd{},
+        _WindowProperties{ properties }
     {
         InitializeComponent();
+
+        _WindowProperties.PropertyChanged({ get_weak(), &TerminalPage::_windowPropertyChanged });
     }
 
     // Method Description:
@@ -4302,27 +4305,21 @@ namespace winrt::TerminalApp::implementation
         _updateThemeColors();
     }
 
-    TerminalApp::IWindowProperties TerminalPage::WindowProperties()
+    // Handler for our WindowProperties's PropertyChanged event. We'll use this
+    // to pop the "Identify Window" toast when the user renames our window.
+    winrt::fire_and_forget TerminalPage::_windowPropertyChanged(const IInspectable& /*sender*/,
+                                                                const WUX::Data::PropertyChangedEventArgs& args)
     {
-        return _WindowProperties;
-    }
-    void TerminalPage::WindowProperties(const TerminalApp::IWindowProperties& props)
-    {
-        _WindowProperties = props;
-    }
-
-    winrt::fire_and_forget TerminalPage::WindowNameChanged()
-    {
+        if (args.PropertyName() != L"WindowName")
+        {
+            co_return;
+        }
         auto weakThis{ get_weak() };
         // On the foreground thread, raise property changed notifications, and
         // display the success toast.
         co_await wil::resume_foreground(Dispatcher());
         if (auto page{ weakThis.get() })
         {
-            _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowName" });
-            _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
-            _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowIdForDisplay" });
-
             // DON'T display the confirmation if this is the name we were
             // given on startup!
             if (page->_startupState == StartupState::Initialized)

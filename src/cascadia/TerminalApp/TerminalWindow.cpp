@@ -6,6 +6,7 @@
 #include "../inc/WindowingBehavior.h"
 #include "TerminalWindow.g.cpp"
 #include "SettingsLoadEventArgs.g.cpp"
+#include "WindowProperties.g.cpp"
 
 #include <LibraryResources.h>
 #include <WtExeUtils.h>
@@ -119,13 +120,13 @@ namespace winrt::TerminalApp::implementation
 {
     TerminalWindow::TerminalWindow(const TerminalApp::SettingsLoadEventArgs& settingsLoadedResult) :
         _settings{ settingsLoadedResult.NewSettings() },
-        _initialLoadResult{ settingsLoadedResult }
+        _initialLoadResult{ settingsLoadedResult },
+        _WindowProperties{ winrt::make_self<TerminalApp::implementation::WindowProperties>() }
     {
         // The TerminalPage has to be constructed during our construction, to
         // make sure that there's a terminal page for callers of
         // SetTitleBarContent
-        _root = winrt::make_self<TerminalPage>();
-        _root->WindowProperties(*this);
+        _root = winrt::make_self<TerminalPage>(*_WindowProperties);
         _dialog = ContentDialog{};
 
         // For your own sanity, it's better to do setup outside the ctor.
@@ -258,7 +259,7 @@ namespace winrt::TerminalApp::implementation
             // that the window size is _first_ set up as something sensible, so
             // leaving fullscreen returns to a reasonable size.
             const auto launchMode = this->GetLaunchMode();
-            if (IsQuakeWindow() || WI_IsFlagSet(launchMode, LaunchMode::FocusMode))
+            if (_WindowProperties->IsQuakeWindow() || WI_IsFlagSet(launchMode, LaunchMode::FocusMode))
             {
                 _root->SetFocusMode(true);
             }
@@ -270,7 +271,7 @@ namespace winrt::TerminalApp::implementation
                 _root->Maximized(true);
             }
 
-            if (WI_IsFlagSet(launchMode, LaunchMode::FullscreenMode) && !IsQuakeWindow())
+            if (WI_IsFlagSet(launchMode, LaunchMode::FullscreenMode) && !_WindowProperties->IsQuakeWindow())
             {
                 _root->SetFullscreen(true);
             }
@@ -1151,78 +1152,23 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::hstring TerminalWindow::WindowName() const noexcept
-    {
-        return _WindowName;
-    }
     void TerminalWindow::WindowName(const winrt::hstring& name)
     {
-        const auto oldIsQuakeMode = IsQuakeWindow();
-
-        const auto changed = _WindowName != name;
-        if (changed)
+        const auto oldIsQuakeMode = _WindowProperties->IsQuakeWindow();
+        _WindowProperties->WindowName(name);
+        const auto newIsQuakeMode = _WindowProperties->IsQuakeWindow();
+        if (newIsQuakeMode != oldIsQuakeMode)
         {
-            _WindowName = name;
-            if (_root)
-            {
-                _root->WindowNameChanged();
-
-                // If we're entering quake mode, or leaving it
-                if (IsQuakeWindow() != oldIsQuakeMode)
-                {
-                    // If we're entering Quake Mode from ~Focus Mode, then this will enter Focus Mode
-                    // If we're entering Quake Mode from Focus Mode, then this will do nothing
-                    // If we're leaving Quake Mode (we're already in Focus Mode), then this will do nothing
-                    _root->SetFocusMode(true);
-                    _IsQuakeWindowChangedHandlers(*this, nullptr);
-                }
-            }
+            // If we're entering Quake Mode from ~Focus Mode, then this will enter Focus Mode
+            // If we're entering Quake Mode from Focus Mode, then this will do nothing
+            // If we're leaving Quake Mode (we're already in Focus Mode), then this will do nothing
+            _root->SetFocusMode(true);
+            _IsQuakeWindowChangedHandlers(*this, nullptr);
         }
-    }
-    uint64_t TerminalWindow::WindowId() const noexcept
-    {
-        return _WindowId;
     }
     void TerminalWindow::WindowId(const uint64_t& id)
     {
-        if (_WindowId != id)
-        {
-            _WindowId = id;
-            if (_root)
-            {
-                _root->WindowNameChanged();
-            }
-        }
-    }
-
-    // Method Description:
-    // - Returns a label like "Window: 1234" for the ID of this window
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - a string for displaying the name of the window.
-    winrt::hstring TerminalWindow::WindowIdForDisplay() const noexcept
-    {
-        return winrt::hstring{ fmt::format(L"{}: {}",
-                                           std::wstring_view(RS_(L"WindowIdLabel")),
-                                           _WindowId) };
-    }
-
-    // Method Description:
-    // - Returns a label like "<unnamed window>" when the window has no name, or the name of the window.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - a string for displaying the name of the window.
-    winrt::hstring TerminalWindow::WindowNameForDisplay() const noexcept
-    {
-        return _WindowName.empty() ?
-                   winrt::hstring{ fmt::format(L"<{}>", RS_(L"UnnamedWindowName")) } :
-                   _WindowName;
-    }
-    bool TerminalWindow::IsQuakeWindow() const noexcept
-    {
-        return _WindowName == QuakeWindowName;
+        _WindowProperties->WindowId(id);
     }
 
     void TerminalWindow::RequestExitFullscreen()
@@ -1269,6 +1215,66 @@ namespace winrt::TerminalApp::implementation
             _root->HandoffToElevated(_settings);
             return;
         }
+    }
+
+    winrt::hstring WindowProperties::WindowName() const noexcept
+    {
+        return _WindowName;
+    }
+
+    void WindowProperties::WindowName(const winrt::hstring& value)
+    {
+        if (_WindowName != value)
+        {
+            _WindowName = value;
+            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowName" });
+            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
+        }
+    }
+    uint64_t WindowProperties::WindowId() const noexcept
+    {
+        return _WindowId;
+    }
+
+    void WindowProperties::WindowId(const uint64_t& value)
+    {
+        if (_WindowId != value)
+        {
+            _WindowId = value;
+            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowId" });
+            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowIdForDisplay" });
+        }
+    }
+
+    // Method Description:
+    // - Returns a label like "Window: 1234" for the ID of this window
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - a string for displaying the name of the window.
+    winrt::hstring WindowProperties::WindowIdForDisplay() const noexcept
+    {
+        return winrt::hstring{ fmt::format(L"{}: {}",
+                                           std::wstring_view(RS_(L"WindowIdLabel")),
+                                           _WindowId) };
+    }
+
+    // Method Description:
+    // - Returns a label like "<unnamed window>" when the window has no name, or the name of the window.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - a string for displaying the name of the window.
+    winrt::hstring WindowProperties::WindowNameForDisplay() const noexcept
+    {
+        return _WindowName.empty() ?
+                   winrt::hstring{ fmt::format(L"<{}>", RS_(L"UnnamedWindowName")) } :
+                   _WindowName;
+    }
+
+    bool WindowProperties::IsQuakeWindow() const noexcept
+    {
+        return _WindowName == QuakeWindowName;
     }
 
 };
