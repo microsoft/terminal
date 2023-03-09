@@ -5,7 +5,11 @@ import "IDirectKeyListener.idl";
 
 namespace TerminalApp
 {
-    delegate void LastTabClosedEventArgs();
+
+    [default_interface] runtimeclass LastTabClosedEventArgs
+    {
+        Boolean ClearPersistedState { get; };
+    };
 
     [default_interface] runtimeclass RenameWindowRequestedArgs
     {

@@ -77,7 +77,8 @@ namespace TerminalApp
 
         void IdentifyWindow();
         void SetPersistedLayoutIdx(UInt32 idx);
-        void SetNumberOfOpenWindows(UInt64 num);
+        void ClearPersistedWindowState();
+
         void RenameFailed();
         void RequestExitFullscreen();
 
@@ -91,7 +92,7 @@ namespace TerminalApp
         Boolean GetInitialAlwaysOnTop();
         Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
         void TitlebarClicked();
-        void CloseWindow(Microsoft.Terminal.Settings.Model.LaunchPosition position);
+        void CloseWindow(Microsoft.Terminal.Settings.Model.LaunchPosition position, Boolean isLastWindow);
         void WindowVisibilityChanged(Boolean showOrHide);
 
         TaskbarState TaskbarState{ get; };

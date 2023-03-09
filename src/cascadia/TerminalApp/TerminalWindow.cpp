@@ -882,13 +882,13 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalWindow::CloseWindow(LaunchPosition pos)
+    void TerminalWindow::CloseWindow(LaunchPosition pos, const bool isLastWindow)
     {
         if (_root)
         {
             // If persisted layout is enabled and we are the last window closing
             // we should save our state.
-            if (_settings.GlobalSettings().ShouldUsePersistedLayout() && _numOpenWindows == 1)
+            if (_settings.GlobalSettings().ShouldUsePersistedLayout() && isLastWindow)
             {
                 if (const auto layout = _root->GetWindowLayout())
                 {
@@ -899,6 +899,15 @@ namespace winrt::TerminalApp::implementation
             }
 
             _root->CloseWindow(false);
+        }
+    }
+
+    void TerminalWindow::ClearPersistedWindowState()
+    {
+        if (_settings.GlobalSettings().ShouldUsePersistedLayout())
+        {
+            auto state = ApplicationState::SharedInstance();
+            state.PersistedWindowLayouts(nullptr);
         }
     }
 
@@ -1112,15 +1121,6 @@ namespace winrt::TerminalApp::implementation
             }
         }
         return nullptr;
-    }
-
-    void TerminalWindow::SetNumberOfOpenWindows(const uint64_t num)
-    {
-        _numOpenWindows = num;
-        if (_root)
-        {
-            _root->SetNumberOfOpenWindows(num);
-        }
     }
 
     void TerminalWindow::IdentifyWindow()

@@ -7,6 +7,7 @@
 #include "TerminalTab.h"
 #include "AppKeyBindings.h"
 #include "AppCommandlineArgs.h"
+#include "LastTabClosedEventArgs.g.h"
 #include "RenameWindowRequestedArgs.g.h"
 #include "Toast.h"
 
@@ -39,6 +40,15 @@ namespace winrt::TerminalApp::implementation
     {
         ScrollUp = 0,
         ScrollDown = 1
+    };
+
+    struct LastTabClosedEventArgs : LastTabClosedEventArgsT<LastTabClosedEventArgs>
+    {
+        WINRT_PROPERTY(bool, ClearPersistedState);
+
+    public:
+        LastTabClosedEventArgs(const bool& shouldClear) :
+            _ClearPersistedState{ shouldClear } {};
     };
 
     struct RenameWindowRequestedArgs : RenameWindowRequestedArgsT<RenameWindowRequestedArgs>
@@ -120,8 +130,6 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring WindowIdForDisplay() const noexcept { return _WindowProperties.WindowIdForDisplay(); };
         winrt::hstring WindowNameForDisplay() const noexcept { return _WindowProperties.WindowNameForDisplay(); };
 
-        void SetNumberOfOpenWindows(const uint64_t value);
-
         bool IsElevated() const noexcept;
 
         void OpenSettingsUI();
@@ -188,7 +196,6 @@ namespace winrt::TerminalApp::implementation
         bool _isAlwaysOnTop{ false };
 
         std::optional<uint32_t> _loadFromPersistedLayoutIdx{};
-        uint64_t _numOpenWindows{ 0 };
 
         bool _maintainStateOnTabClose{ false };
         bool _rearranging{ false };

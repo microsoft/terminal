@@ -77,6 +77,7 @@ namespace winrt::TerminalApp::implementation
         void SetPersistedLayoutIdx(const uint32_t idx);
         void SetNumberOfOpenWindows(const uint64_t num);
         bool ShouldUsePersistedLayout() const;
+        void ClearPersistedWindowState();
 
         void RequestExitFullscreen();
 
@@ -95,7 +96,7 @@ namespace winrt::TerminalApp::implementation
         void TitlebarClicked();
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
-        void CloseWindow(Microsoft::Terminal::Settings::Model::LaunchPosition position);
+        void CloseWindow(Microsoft::Terminal::Settings::Model::LaunchPosition position, const bool isLastWindow);
         void WindowVisibilityChanged(const bool showOrHide);
 
         winrt::TerminalApp::TaskbarState TaskbarState();
@@ -153,7 +154,6 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring _WindowName{};
         uint64_t _WindowId{ 0 };
 
-        uint64_t _numOpenWindows{ 1 };
         std::optional<uint32_t> _loadFromPersistedLayoutIdx{};
 
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };

@@ -316,7 +316,6 @@ void AppHost::_HandleCommandlineArgs()
                                                            ));
                 }
             }
-            _windowLogic.SetNumberOfOpenWindows(numPeasants);
         }
         _windowLogic.WindowName(peasant.WindowName());
         _windowLogic.WindowId(peasant.GetID());
@@ -505,7 +504,7 @@ void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /*
 // - LastTabClosedEventArgs: unused
 // Return Value:
 // - <none>
-void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::TerminalApp::LastTabClosedEventArgs& /*args*/)
+void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::TerminalApp::LastTabClosedEventArgs& args)
 {
     if (_windowManager.IsMonarch() && _notificationIcon)
     {
@@ -524,10 +523,21 @@ void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*se
     _windowManager.WindowCreated(_WindowCreatedToken);
     _windowManager.WindowClosed(_WindowClosedToken);
 
+    // If the user closes the last tab, in the last window, _by closing the tab_
+    // (not by closing the whole window), we need to manually persist an empty
+    // window state here. That will cause the terminal to re-open with the usual
+    // settings (not the persisted state)
+    if (args.ClearPersistedState() &&
+        _windowManager.GetNumberOfPeasants() == 1)
+    {
+        _windowLogic.ClearPersistedWindowState();
+    }
+
     // Remove ourself from the list of peasants so that we aren't included in
     // any future requests. This will also mean we block until any existing
     // event handler finishes.
     _windowManager.SignalClose();
+
 
     _window->Close();
 }
@@ -973,22 +983,16 @@ void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*s
         _CreateNotificationIcon();
     }
 
-    // Set the number of open windows (so we know if we are the last window)
-    // and subscribe for updates if there are any changes to that number.
-    _windowLogic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants());
-
     _WindowCreatedToken = _windowManager.WindowCreated([this](auto&&, auto&&) {
         if (_getWindowLayoutThrottler) {
             _getWindowLayoutThrottler.value()();
-        }
-        _windowLogic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants()); });
+        } });
 
     _WindowClosedToken = _windowManager.WindowClosed([this](auto&&, auto&&) {
         if (_getWindowLayoutThrottler)
         {
             _getWindowLayoutThrottler.value()();
         }
-        _windowLogic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants());
     });
 
     // These events are coming from peasants that become or un-become quake windows.
@@ -1651,7 +1655,8 @@ void AppHost::_CloseRequested(const winrt::Windows::Foundation::IInspectable& /*
                               const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
     const auto pos = _GetWindowLaunchPosition();
-    _windowLogic.CloseWindow(pos);
+    const bool isLastWindow = _windowManager.GetNumberOfPeasants() == 1;
+    _windowLogic.CloseWindow(pos, isLastWindow);
 }
 
 void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,

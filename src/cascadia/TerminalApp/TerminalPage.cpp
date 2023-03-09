@@ -5,6 +5,7 @@
 #include "pch.h"
 #include "TerminalPage.h"
 #include "TerminalPage.g.cpp"
+#include "LastTabClosedEventArgs.g.cpp"
 #include "RenameWindowRequestedArgs.g.cpp"
 
 #include <filesystem>
@@ -3806,14 +3807,6 @@ namespace winrt::TerminalApp::implementation
                 page->_windowIdToast->Open();
             }
         }
-    }
-
-    void TerminalPage::SetNumberOfOpenWindows(const uint64_t num)
-    {
-        // This is used in TerminalPage::_RemoveTab, when we close a tab. If we
-        // close the last tab, and there's only one window open, then we will
-        // call to persist _no_ state.
-        _numOpenWindows = num;
     }
 
     // Method Description:
