@@ -117,30 +117,38 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
             _ScrollRectHorizontally(textBuffer, { cursorPosition.x, row, lineWidth, row + 1 }, cellCount);
         }
 
-        const auto newPosX = textBuffer.Write(cursorPosition.y, cursorPosition.x, til::CoordTypeMax, wrapAtEOL, attributes, stringIterator);
+        const auto positionBefore = stringIterator.data();
+        const auto newPosX = textBuffer.Write(cursorPosition.y, cursorPosition.x, lineWidth, wrapAtEOL, attributes, stringIterator);
+        const auto positionAfter = stringIterator.data();
+        const auto failedToWrite = positionBefore == positionAfter;
+        const auto isWrapping = newPosX >= lineWidth;
 
-        if (const til::rect changedRect{ cursorPosition.x, cursorPosition.y, newPosX, cursorPosition.y + 1 })
+        if (newPosX != cursorPosition.x)
         {
+            const til::rect changedRect{ cursorPosition.x, cursorPosition.y, newPosX, cursorPosition.y + 1 };
             _api.NotifyAccessibilityChange(changedRect);
         }
 
-        cursorPosition.x = newPosX;
+        // If we're past the end of the line, we need to clamp the cursor
+        // back into range, and if wrapping is enabled, set the delayed wrap
+        // flag. The wrapping only occurs once another character is output.
+        cursorPosition.x = isWrapping ? lineWidth - 1 : newPosX;
+        cursor.SetPosition(cursorPosition);
 
-        if (cursorPosition.x >= lineWidth)
+        if (isWrapping)
         {
-            // If we're past the end of the line, we need to clamp the cursor
-            // back into range, and if wrapping is enabled, set the delayed wrap
-            // flag. The wrapping only occurs once another character is output.
-            cursorPosition.x = lineWidth - 1;
-            cursor.SetPosition(cursorPosition);
             if (wrapAtEOL)
             {
                 cursor.DelayEOLWrap();
             }
-        }
-        else
-        {
-            cursor.SetPosition(cursorPosition);
+            else if (failedToWrite)
+            {
+                // We want to wrap, but we're not allowed to and we failed to write even a single character into the row.
+                // This can only mean one thing! The DECAWM autowrap mode is disabled ("\x1b[?7l") and we tried writing a
+                // wide glyph into the last column. ROW::Write() returns the lineWidth and leaves stringIterator untouched.
+                // To prevent a deadlock, because stringIterator never advances, we need to throw that glyph away.
+                textBuffer.ConsumeGrapheme(stringIterator);
+            }
         }
     }
 
