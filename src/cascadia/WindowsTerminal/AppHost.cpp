@@ -538,7 +538,6 @@ void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*se
     // event handler finishes.
     _windowManager.SignalClose();
 
-
     _window->Close();
 }
 
