@@ -3,12 +3,11 @@
 
 #include "pch.h"
 #include "ActionPaletteItem.h"
-#include "TabPaletteItem.h"
 #include "CommandLinePaletteItem.h"
-#include "CommandPalette.h"
+#include "SuggestionsControl.h"
 #include <LibraryResources.h>
 
-#include "CommandPalette.g.cpp"
+#include "SuggestionsControl.g.cpp"
 
 using namespace winrt;
 using namespace winrt::TerminalApp;
@@ -22,8 +21,7 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::TerminalApp::implementation
 {
-    CommandPalette::CommandPalette() :
-        _switcherStartIdx{ 0 }
+    SuggestionsControl::SuggestionsControl()
     {
         InitializeComponent();
 
@@ -34,10 +32,8 @@ namespace winrt::TerminalApp::implementation
         _nestedActionStack = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
         _currentNestedCommands = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
         _allCommands = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
-        _tabActions = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
-        _mruTabActions = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
 
-        _switchToMode(CommandPaletteMode::ActionMode);
+        _switchToMode();
 
         // Whatever is hosting us will enable us by setting our visibility to
         // "Visible". When that happens, set focus to our search box.
@@ -47,26 +43,39 @@ namespace winrt::TerminalApp::implementation
                 // Force immediate binding update so we can select an item
                 Bindings->Update();
 
-                if (_currentMode == CommandPaletteMode::TabSwitchMode)
+                // Select the correct element in the list, depending on which
+                // direction we were opened in.
+                //
+                // Make sure to use _scrollToIndex, to move the scrollbar too!
+                if (_direction == TerminalApp::SuggestionsDirection::TopDown)
                 {
-                    _searchBox().Visibility(Visibility::Collapsed);
-                    _filteredActionsView().SelectedIndex(_switcherStartIdx);
-                    _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
-                    _filteredActionsView().Focus(FocusState::Keyboard);
-
-                    // Do this right after becoming visible so we can quickly catch scenarios where
-                    // modifiers aren't held down (e.g. command palette invocation).
-                    _anchorKeyUpHandler();
+                    _scrollToIndex(0);
                 }
-                else
+                else // BottomUp
                 {
-                    _filteredActionsView().SelectedIndex(0);
+                    _scrollToIndex(_filteredActionsView().Items().Size() - 1);
+                }
+
+                if (_mode == SuggestionsMode::Palette)
+                {
+                    // Toss focus into the search box in palette mode
+                    _searchBox().Visibility(Visibility::Visible);
                     _searchBox().Focus(FocusState::Programmatic);
+                }
+                else if (_mode == SuggestionsMode::Menu)
+                {
+                    // Toss focus onto the selected item in menu mode.
+                    // Don't just focus the _filteredActionsView, because that will always select the 0th element.
+
+                    _searchBox().Visibility(Visibility::Collapsed);
+
+                    const auto dependencyObj = SelectedItem().try_as<winrt::Windows::UI::Xaml::DependencyObject>();
+                    Input::FocusManager::TryFocusAsync(dependencyObj, FocusState::Programmatic);
                 }
 
                 TraceLoggingWrite(
                     g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
-                    "CommandPaletteOpened",
+                    "SuggestionsControlOpened",
                     TraceLoggingDescription("Event emitted when the Command Palette is opened"),
                     TraceLoggingWideString(L"Action", "Mode", "which mode the palette was opened in"),
                     TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
@@ -85,16 +94,34 @@ namespace winrt::TerminalApp::implementation
         // when the ListView has been measured out and is ready, and we'll immediately
         // revoke the handler because we only needed to handle it once on initialization.
         _sizeChangedRevoker = _filteredActionsView().SizeChanged(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
-            if (_currentMode == CommandPaletteMode::TabSwitchMode)
-            {
-                _filteredActionsView().Focus(FocusState::Keyboard);
-            }
+            // This does only fire once, when the size changes, which is the
+            // very first time it's opened. It does not fire for subsequent
+            // openings.
+
             _sizeChangedRevoker.revoke();
         });
 
-        _filteredActionsView().SelectionChanged({ this, &CommandPalette::_selectedCommandChanged });
+        _filteredActionsView().SelectionChanged({ this, &SuggestionsControl::_selectedCommandChanged });
+    }
 
-        _appArgs.DisableHelpInExitMessage();
+    TerminalApp::SuggestionsMode SuggestionsControl::Mode() const
+    {
+        return _mode;
+    }
+    void SuggestionsControl::Mode(TerminalApp::SuggestionsMode mode)
+    {
+        _mode = mode;
+
+        if (_mode == SuggestionsMode::Palette)
+        {
+            _searchBox().Visibility(Visibility::Visible);
+            _searchBox().Focus(FocusState::Programmatic);
+        }
+        else if (_mode == SuggestionsMode::Menu)
+        {
+            _searchBox().Visibility(Visibility::Collapsed);
+            _filteredActionsView().Focus(FocusState::Programmatic);
+        }
     }
 
     // Method Description:
@@ -105,7 +132,7 @@ namespace winrt::TerminalApp::implementation
     //   list. Otherwise, we're attempting to move to the previous.
     // Return Value:
     // - <none>
-    void CommandPalette::SelectNextItem(const bool moveDown)
+    void SuggestionsControl::SelectNextItem(const bool moveDown)
     {
         auto selected = _filteredActionsView().SelectedIndex();
         const auto numItems = ::base::saturated_cast<int>(_filteredActionsView().Items().Size());
@@ -130,7 +157,7 @@ namespace winrt::TerminalApp::implementation
     // - index within a list view of commands
     // Return Value:
     // - <none>
-    void CommandPalette::_scrollToIndex(uint32_t index)
+    void SuggestionsControl::_scrollToIndex(uint32_t index)
     {
         auto numItems = _filteredActionsView().Items().Size();
 
@@ -151,7 +178,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - the approximate number of items visible in the list (in other words the size of the page)
-    uint32_t CommandPalette::_getNumVisibleItems()
+    uint32_t SuggestionsControl::_getNumVisibleItems()
     {
         if (const auto container = _filteredActionsView().ContainerFromIndex(0))
         {
@@ -171,7 +198,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void CommandPalette::ScrollPageUp()
+    void SuggestionsControl::ScrollPageUp()
     {
         auto selected = _filteredActionsView().SelectedIndex();
         auto numVisibleItems = _getNumVisibleItems();
@@ -184,7 +211,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void CommandPalette::ScrollPageDown()
+    void SuggestionsControl::ScrollPageDown()
     {
         auto selected = _filteredActionsView().SelectedIndex();
         auto numVisibleItems = _getNumVisibleItems();
@@ -197,7 +224,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void CommandPalette::ScrollToTop()
+    void SuggestionsControl::ScrollToTop()
     {
         _scrollToIndex(0);
     }
@@ -208,94 +235,48 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void CommandPalette::ScrollToBottom()
+    void SuggestionsControl::ScrollToBottom()
     {
         _scrollToIndex(_filteredActionsView().Items().Size() - 1);
     }
 
+    Windows::UI::Xaml::FrameworkElement SuggestionsControl::SelectedItem()
+    {
+        auto index = _filteredActionsView().SelectedIndex();
+        const auto container = _filteredActionsView().ContainerFromIndex(index);
+        const auto item = container.try_as<winrt::Windows::UI::Xaml::Controls::ListViewItem>();
+        return item;
+    }
+
     // Method Description:
-    // - Called when the command selection changes. We'll use this in the tab
-    //   switcher to "preview" tabs as the user navigates the list of tabs. To
-    //   do that, we'll dispatch the switch to tab command for this tab, but not
-    //   dismiss the switcher.
+    // - Called when the command selection changes. We'll use this to preview the selected action.
     // Arguments:
     // - <unused>
     // Return Value:
     // - <none>
-    void CommandPalette::_selectedCommandChanged(const IInspectable& /*sender*/,
-                                                 const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
+    void SuggestionsControl::_selectedCommandChanged(const IInspectable& /*sender*/,
+                                                     const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
-        const auto currentlyVisible{ Visibility() == Visibility::Visible };
-
         const auto selectedCommand = _filteredActionsView().SelectedItem();
         const auto filteredCommand{ selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>() };
-        if (_currentMode == CommandPaletteMode::TabSwitchMode)
+
+        _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"SelectedItem" });
+
+        if (filteredCommand != nullptr)
         {
-            _switchToTab(filteredCommand);
-        }
-        else if (_currentMode == CommandPaletteMode::ActionMode &&
-                 currentlyVisible)
-        {
-            // If we don't have a selected command, then end any previews we
-            // might currently be showing.
-            if (filteredCommand == nullptr)
-            {
-                _PreviewActionHandlers(*this, nullptr);
-            }
-            else if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
+            if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
             {
                 _PreviewActionHandlers(*this, actionPaletteItem.Command());
             }
         }
-        else if (_currentMode == CommandPaletteMode::CommandlineMode)
-        {
-            if (filteredCommand)
-            {
-                SearchBoxPlaceholderText(filteredCommand.Item().Name());
-            }
-            else
-            {
-                SearchBoxPlaceholderText(RS_(L"CmdPalCommandlinePrompt"));
-            }
-        }
     }
 
-    void CommandPalette::_previewKeyDownHandler(const IInspectable& /*sender*/,
-                                                const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
+    void SuggestionsControl::_previewKeyDownHandler(const IInspectable& /*sender*/,
+                                                    const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
     {
         const auto key = e.OriginalKey();
-        const auto scanCode = e.KeyStatus().ScanCode;
         const auto coreWindow = CoreWindow::GetForCurrentThread();
         const auto ctrlDown = WI_IsFlagSet(coreWindow.GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
-        const auto altDown = WI_IsFlagSet(coreWindow.GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
-        const auto shiftDown = WI_IsFlagSet(coreWindow.GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
-
-        // Some keypresses such as Tab, Return, Esc, and Arrow Keys are ignored by controls because
-        // they're not considered input key presses. While they don't raise KeyDown events,
-        // they do raise PreviewKeyDown events.
-        //
-        // Only give anchored tab switcher the ability to cycle through tabs with the tab button.
-        // For unanchored mode, accessibility becomes an issue when we try to hijack tab since it's
-        // a really widely used keyboard navigation key.
-        if (_currentMode == CommandPaletteMode::TabSwitchMode && _actionMap)
-        {
-            winrt::Microsoft::Terminal::Control::KeyChord kc{ ctrlDown, altDown, shiftDown, false, static_cast<int32_t>(key), static_cast<int32_t>(scanCode) };
-            if (const auto cmd{ _actionMap.GetActionByKeyChord(kc) })
-            {
-                if (cmd.ActionAndArgs().Action() == ShortcutAction::PrevTab)
-                {
-                    SelectNextItem(false);
-                    e.Handled(true);
-                    return;
-                }
-                else if (cmd.ActionAndArgs().Action() == ShortcutAction::NextTab)
-                {
-                    SelectNextItem(true);
-                    e.Handled(true);
-                    return;
-                }
-            }
-        }
 
         if (key == VirtualKey::Home && ctrlDown)
         {
@@ -309,30 +290,36 @@ namespace winrt::TerminalApp::implementation
         }
         else if (key == VirtualKey::Up)
         {
-            // Action Mode: Move focus to the next item in the list.
+            // Move focus to the next item in the list.
             SelectNextItem(false);
             e.Handled(true);
         }
         else if (key == VirtualKey::Down)
         {
-            // Action Mode: Move focus to the previous item in the list.
+            // Move focus to the previous item in the list.
             SelectNextItem(true);
             e.Handled(true);
         }
         else if (key == VirtualKey::PageUp)
         {
-            // Action Mode: Move focus to the first visible item in the list.
+            // Move focus to the first visible item in the list.
             ScrollPageUp();
             e.Handled(true);
         }
         else if (key == VirtualKey::PageDown)
         {
-            // Action Mode: Move focus to the last visible item in the list.
+            // Move focus to the last visible item in the list.
             ScrollPageDown();
             e.Handled(true);
         }
-        else if (key == VirtualKey::Enter)
+        else if (key == VirtualKey::Enter ||
+                 key == VirtualKey::Tab ||
+                 key == VirtualKey::Right)
         {
+            // If the user pressed enter, tab, or the right arrow key, then
+            // we'll want to dispatch the command that's selected as they
+            // accepted the suggestion.
+
             if (const auto& button = e.OriginalSource().try_as<Button>())
             {
                 // Let the button handle the Enter key so an eventually attached click handler will be called
@@ -360,14 +347,7 @@ namespace winrt::TerminalApp::implementation
 
             e.Handled(true);
         }
-        else if (key == VirtualKey::Back && _searchBox().Text().empty() && _lastFilterTextWasEmpty && _currentMode == CommandPaletteMode::ActionMode)
-        {
-            // If the last filter text was empty, and we're backspacing from
-            // that state, then the user "backspaced" the virtual '>' we're
-            // using as the action mode indicator. Switch into commandline mode.
-            _switchToMode(CommandPaletteMode::CommandlineMode);
-            e.Handled(true);
-        }
+
         else if (key == VirtualKey::C && ctrlDown)
         {
             _searchBox().CopySelectionToClipboard();
@@ -378,16 +358,13 @@ namespace winrt::TerminalApp::implementation
             _searchBox().PasteFromClipboard();
             e.Handled(true);
         }
-        else if (key == VirtualKey::Right && _currentMode == CommandPaletteMode::CommandlineMode)
+
+        // If the user types a character while the menu (not in palette mode)
+        // is open, then dismiss ourselves. That way, when you type a character,
+        // we'll instead send it to the TermControl.
+        if (_mode == SuggestionsMode::Menu && !e.Handled())
         {
-            if (const auto command{ _filteredActionsView().SelectedItem().try_as<winrt::TerminalApp::FilteredCommand>() })
-            {
-                _searchBox().Text(command.Item().Name());
-                _searchBox().Select(_searchBox().Text().size(), 0);
-                _searchBox().Focus(FocusState::Programmatic);
-                _filteredActionsView().SelectedIndex(-1);
-                e.Handled(true);
-            }
+            _dismissPalette();
         }
     }
 
@@ -395,52 +372,15 @@ namespace winrt::TerminalApp::implementation
     // - Implements the Alt handler
     // Return value:
     // - whether the key was handled
-    bool CommandPalette::OnDirectKeyEvent(const uint32_t vkey, const uint8_t /*scanCode*/, const bool down)
+    bool SuggestionsControl::OnDirectKeyEvent(const uint32_t /*vkey*/, const uint8_t /*scanCode*/, const bool /*down*/)
     {
         auto handled = false;
-        if (_currentMode == CommandPaletteMode::TabSwitchMode)
-        {
-            if (vkey == VK_MENU && !down)
-            {
-                _anchorKeyUpHandler();
-                handled = true;
-            }
-        }
         return handled;
     }
 
-    void CommandPalette::_keyUpHandler(const IInspectable& /*sender*/,
-                                       const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
+    void SuggestionsControl::_keyUpHandler(const IInspectable& /*sender*/,
+                                           const Windows::UI::Xaml::Input::KeyRoutedEventArgs& /*e*/)
     {
-        if (_currentMode == CommandPaletteMode::TabSwitchMode)
-        {
-            _anchorKeyUpHandler();
-            e.Handled(true);
-        }
-    }
-
-    // Method Description:
-    // - Handles anchor key ups during TabSwitchMode.
-    //   We assume that at least one modifier key should be held down in order to "anchor"
-    //   the ATS UI in place. So this function is called to check if any modifiers are
-    //   still held down, and if not, dispatch the selected tab action and close the ATS.
-    // Return value:
-    // - <none>
-    void CommandPalette::_anchorKeyUpHandler()
-    {
-        const auto coreWindow = CoreWindow::GetForCurrentThread();
-        const auto ctrlDown = WI_IsFlagSet(coreWindow.GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
-        const auto altDown = WI_IsFlagSet(coreWindow.GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
-        const auto shiftDown = WI_IsFlagSet(coreWindow.GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
-
-        if (!ctrlDown && !altDown && !shiftDown)
-        {
-            const auto selectedCommand = _filteredActionsView().SelectedItem();
-            if (const auto filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>())
-            {
-                _dispatchCommand(filteredCommand);
-            }
-        }
     }
 
     // Method Description:
@@ -451,8 +391,8 @@ namespace winrt::TerminalApp::implementation
     // - <unused>
     // Return Value:
     // - <none>
-    void CommandPalette::_rootPointerPressed(const Windows::Foundation::IInspectable& /*sender*/,
-                                             const Windows::UI::Xaml::Input::PointerRoutedEventArgs& /*e*/)
+    void SuggestionsControl::_rootPointerPressed(const Windows::Foundation::IInspectable& /*sender*/,
+                                                 const Windows::UI::Xaml::Input::PointerRoutedEventArgs& /*e*/)
     {
         if (Visibility() != Visibility::Collapsed)
         {
@@ -467,15 +407,15 @@ namespace winrt::TerminalApp::implementation
     // At this point we need to learn if the newly focused element belongs to this palette.
     // To achieve this:
     // - We start with the newly focused element and traverse its visual ancestors up to the Xaml root.
-    // - If one of the ancestors is this CommandPalette, then by our definition the focus is not lost
-    // - If we reach the Xaml root without meeting this CommandPalette,
+    // - If one of the ancestors is this SuggestionsControl, then by our definition the focus is not lost
+    // - If we reach the Xaml root without meeting this SuggestionsControl,
     // then the focus is not contained in it anymore and it should be dismissed
     // Arguments:
     // - <unused>
     // Return Value:
     // - <none>
-    void CommandPalette::_lostFocusHandler(const Windows::Foundation::IInspectable& /*sender*/,
-                                           const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
+    void SuggestionsControl::_lostFocusHandler(const Windows::Foundation::IInspectable& /*sender*/,
+                                               const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
         const auto flyout = _searchBox().ContextFlyout();
         if (flyout && flyout.IsOpen())
@@ -515,8 +455,8 @@ namespace winrt::TerminalApp::implementation
     // - e: the PointerRoutedEventArgs that we want to mark as handled
     // Return Value:
     // - <none>
-    void CommandPalette::_backdropPointerPressed(const Windows::Foundation::IInspectable& /*sender*/,
-                                                 const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e)
+    void SuggestionsControl::_backdropPointerPressed(const Windows::Foundation::IInspectable& /*sender*/,
+                                                     const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e)
     {
         e.Handled(true);
     }
@@ -529,8 +469,8 @@ namespace winrt::TerminalApp::implementation
     // - e: an ItemClickEventArgs who's ClickedItem() will be the command that was clicked on.
     // Return Value:
     // - <none>
-    void CommandPalette::_listItemClicked(const Windows::Foundation::IInspectable& /*sender*/,
-                                          const Windows::UI::Xaml::Controls::ItemClickEventArgs& e)
+    void SuggestionsControl::_listItemClicked(const Windows::Foundation::IInspectable& /*sender*/,
+                                              const Windows::UI::Xaml::Controls::ItemClickEventArgs& e)
     {
         const auto selectedCommand = e.ClickedItem();
         if (const auto filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>())
@@ -539,28 +479,22 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void CommandPalette::_listItemSelectionChanged(const Windows::Foundation::IInspectable& /*sender*/, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& e)
+    void SuggestionsControl::_listItemSelectionChanged(const Windows::Foundation::IInspectable& /*sender*/, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& e)
     {
-        // We don't care about...
-        // - CommandlineMode: it doesn't have any selectable items in the list view
-        // - TabSwitchMode: focus and selected item are in sync
-        if (_currentMode == CommandPaletteMode::ActionMode || _currentMode == CommandPaletteMode::TabSearchMode)
+        if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(_searchBox()) })
         {
-            if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(_searchBox()) })
+            if (const auto selectedList = e.AddedItems(); selectedList.Size() > 0)
             {
-                if (const auto selectedList = e.AddedItems(); selectedList.Size() > 0)
+                const auto selectedCommand = selectedList.GetAt(0);
+                if (const auto filteredCmd = selectedCommand.try_as<TerminalApp::FilteredCommand>())
                 {
-                    const auto selectedCommand = selectedList.GetAt(0);
-                    if (const auto filteredCmd = selectedCommand.try_as<TerminalApp::FilteredCommand>())
+                    if (const auto paletteItem = filteredCmd.Item().try_as<TerminalApp::PaletteItem>())
                     {
-                        if (const auto paletteItem = filteredCmd.Item().try_as<TerminalApp::PaletteItem>())
-                        {
-                            automationPeer.RaiseNotificationEvent(
-                                Automation::Peers::AutomationNotificationKind::ItemAdded,
-                                Automation::Peers::AutomationNotificationProcessing::MostRecent,
-                                paletteItem.Name() + L" " + paletteItem.KeyChordText(),
-                                L"CommandPaletteSelectedItemChanged" /* unique name for this notification category */);
-                        }
+                        automationPeer.RaiseNotificationEvent(
+                            Automation::Peers::AutomationNotificationKind::ItemAdded,
+                            Automation::Peers::AutomationNotificationProcessing::MostRecent,
+                            paletteItem.Name() + L" " + paletteItem.KeyChordText(),
+                            L"SuggestionsControlSelectedItemChanged" /* unique name for this notification category */);
                     }
                 }
             }
@@ -575,8 +509,8 @@ namespace winrt::TerminalApp::implementation
     // - sender: the button that got clicked
     // Return Value:
     // - <none>
-    void CommandPalette::_moveBackButtonClicked(const Windows::Foundation::IInspectable& /*sender*/,
-                                                const Windows::UI::Xaml::RoutedEventArgs&)
+    void SuggestionsControl::_moveBackButtonClicked(const Windows::Foundation::IInspectable& /*sender*/,
+                                                    const Windows::UI::Xaml::RoutedEventArgs&)
     {
         _PreviewActionHandlers(*this, nullptr);
         _searchBox().Focus(FocusState::Programmatic);
@@ -616,7 +550,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void CommandPalette::_updateUIForStackChange()
+    void SuggestionsControl::_updateUIForStackChange()
     {
         if (_searchBox().Text().empty())
         {
@@ -636,7 +570,7 @@ namespace winrt::TerminalApp::implementation
                 Automation::Peers::AutomationNotificationKind::ActionCompleted,
                 Automation::Peers::AutomationNotificationProcessing::CurrentThenMostRecent,
                 fmt::format(std::wstring_view{ RS_(L"CommandPalette_NestedCommandAnnouncement") }, ParentCommandName()),
-                L"CommandPaletteNestingLevelChanged" /* unique name for this notification category */);
+                L"SuggestionsControlNestingLevelChanged" /* unique name for this notification category */);
         }
     }
 
@@ -649,26 +583,14 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - A list of Commands to filter.
-    Collections::IVector<winrt::TerminalApp::FilteredCommand> CommandPalette::_commandsToFilter()
+    Collections::IVector<winrt::TerminalApp::FilteredCommand> SuggestionsControl::_commandsToFilter()
     {
-        switch (_currentMode)
+        if (_nestedActionStack.Size() > 0)
         {
-        case CommandPaletteMode::ActionMode:
-            if (_nestedActionStack.Size() > 0)
-            {
-                return _currentNestedCommands;
-            }
-
-            return _allCommands;
-        case CommandPaletteMode::TabSearchMode:
-            return _tabActions;
-        case CommandPaletteMode::TabSwitchMode:
-            return _tabSwitcherMode == TabSwitcherMode::MostRecentlyUsed ? _mruTabActions : _tabActions;
-        case CommandPaletteMode::CommandlineMode:
-            return _loadRecentCommands();
-        default:
-            return _allCommands;
+            return _currentNestedCommands;
         }
+
+        return _allCommands;
     }
 
     // Method Description:
@@ -680,18 +602,9 @@ namespace winrt::TerminalApp::implementation
     // - command: the Command to dispatch. This might be null.
     // Return Value:
     // - <none>
-    void CommandPalette::_dispatchCommand(const winrt::TerminalApp::FilteredCommand& filteredCommand)
+    void SuggestionsControl::_dispatchCommand(const winrt::TerminalApp::FilteredCommand& filteredCommand)
     {
-        if (_currentMode == CommandPaletteMode::CommandlineMode)
-        {
-            _dispatchCommandline(filteredCommand);
-        }
-        else if (_currentMode == CommandPaletteMode::TabSwitchMode || _currentMode == CommandPaletteMode::TabSearchMode)
-        {
-            _switchToTab(filteredCommand);
-            _close();
-        }
-        else if (filteredCommand)
+        if (filteredCommand)
         {
             if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
             {
@@ -718,17 +631,15 @@ namespace winrt::TerminalApp::implementation
                     // palette like the Tab Switcher will be able to have the last laugh.
                     _close();
 
-                    // But make an exception for the Toggle Command Palette action: we don't want the dispatch
-                    // make the command palette - that was just closed - visible again.
-                    // All other actions can just be dispatched.
-                    if (actionPaletteItem.Command().ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
-                    {
-                        _DispatchCommandRequestedHandlers(*this, actionPaletteItem.Command());
-                    }
+                    // A note: the command palette ignores
+                    // "ToggleCommandPalette" actions. We may want to do the
+                    // same with "Suggestions" actions in the future, should we
+                    // ever allow non-sendInput actions.
+                    _DispatchCommandRequestedHandlers(*this, actionPaletteItem.Command());
 
                     TraceLoggingWrite(
                         g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
-                        "CommandPaletteDispatchedAction",
+                        "SuggestionsControlDispatchedAction",
                         TraceLoggingDescription("Event emitted when the user selects an action in the Command Palette"),
                         TraceLoggingUInt32(searchTextLength, "SearchTextLength", "Number of characters in the search string"),
                         TraceLoggingUInt32(nestedCommandDepth, "NestedCommandDepth", "the depth in the tree of commands for the dispatched action"),
@@ -744,7 +655,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - the string of input following any number of leading spaces
-    std::wstring CommandPalette::_getTrimmedInput()
+    std::wstring SuggestionsControl::_getTrimmedInput()
     {
         const std::wstring input{ _searchBox().Text() };
         if (input.empty())
@@ -763,55 +674,7 @@ namespace winrt::TerminalApp::implementation
         return input.substr(firstNonSpace);
     }
 
-    // Method Description:
-    // - Dispatch switch to tab action.
-    // Arguments:
-    // - filteredCommand - Selected filtered command - might be null
-    // Return Value:
-    // - <none>
-    void CommandPalette::_switchToTab(const winrt::TerminalApp::FilteredCommand& filteredCommand)
-    {
-        if (filteredCommand)
-        {
-            if (const auto tabPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::TabPaletteItem>() })
-            {
-                if (const auto tab{ tabPaletteItem.Tab() })
-                {
-                    _SwitchToTabRequestedHandlers(*this, tab);
-                }
-            }
-        }
-    }
-
-    // Method Description:
-    // - Dispatch the current search text as a ExecuteCommandline action.
-    // Arguments:
-    // - filteredCommand - Selected filtered command - might be null
-    // Return Value:
-    // - <none>
-    void CommandPalette::_dispatchCommandline(const winrt::TerminalApp::FilteredCommand& command)
-    {
-        const auto filteredCommand = command ? command : _buildCommandLineCommand(winrt::hstring(_getTrimmedInput()));
-        if (filteredCommand.has_value())
-        {
-            _updateRecentCommands(filteredCommand.value().Item().Name());
-
-            TraceLoggingWrite(
-                g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
-                "CommandPaletteDispatchedCommandline",
-                TraceLoggingDescription("Event emitted when the user runs a commandline in the Command Palette"),
-                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-
-            if (const auto commandLinePaletteItem{ filteredCommand.value().Item().try_as<winrt::TerminalApp::CommandLinePaletteItem>() })
-            {
-                _CommandLineExecutionRequestedHandlers(*this, commandLinePaletteItem.CommandLine());
-                _close();
-            }
-        }
-    }
-
-    std::optional<TerminalApp::FilteredCommand> CommandPalette::_buildCommandLineCommand(const hstring& commandLine)
+    std::optional<TerminalApp::FilteredCommand> SuggestionsControl::_buildCommandLineCommand(const hstring& commandLine)
     {
         if (commandLine.empty())
         {
@@ -830,13 +693,13 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void CommandPalette::_dismissPalette()
+    void SuggestionsControl::_dismissPalette()
     {
         _close();
 
         TraceLoggingWrite(
             g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
-            "CommandPaletteDismissed",
+            "SuggestionsControlDismissed",
             TraceLoggingDescription("Event emitted when the user dismisses the Command Palette without selecting an action"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
@@ -849,14 +712,9 @@ namespace winrt::TerminalApp::implementation
     // - <unused>
     // Return Value:
     // - <none>
-    void CommandPalette::_filterTextChanged(const IInspectable& /*sender*/,
-                                            const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
+    void SuggestionsControl::_filterTextChanged(const IInspectable& /*sender*/,
+                                                const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
-        if (_currentMode == CommandPaletteMode::CommandlineMode)
-        {
-            _evaluatePrefix();
-        }
-
         // We're setting _lastFilterTextWasEmpty here, because if the user tries
         // to backspace the last character in the input, the Backspace KeyDown
         // event will fire _before_ _filterTextChanged does. Updating the value
@@ -866,92 +724,33 @@ namespace winrt::TerminalApp::implementation
         _updateFilteredActions();
 
         // In the command line mode we want the user to explicitly select the command
-        _filteredActionsView().SelectedIndex(_currentMode == CommandPaletteMode::CommandlineMode ? -1 : 0);
+        _filteredActionsView().SelectedIndex(0);
 
-        if (_currentMode == CommandPaletteMode::TabSearchMode || _currentMode == CommandPaletteMode::ActionMode)
+        const auto currentNeedleHasResults{ _filteredActions.Size() > 0 };
+        _noMatchesText().Visibility(currentNeedleHasResults ? Visibility::Collapsed : Visibility::Visible);
+        if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(_searchBox()) })
         {
-            const auto currentNeedleHasResults{ _filteredActions.Size() > 0 };
-            _noMatchesText().Visibility(currentNeedleHasResults ? Visibility::Collapsed : Visibility::Visible);
-            if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(_searchBox()) })
-            {
-                automationPeer.RaiseNotificationEvent(
-                    Automation::Peers::AutomationNotificationKind::ActionCompleted,
-                    Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
-                    currentNeedleHasResults ?
-                        winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"CommandPalette_MatchesAvailable") }, _filteredActions.Size()) } :
-                        NoMatchesText(), // what to announce if results were found
-                    L"CommandPaletteResultAnnouncement" /* unique name for this group of notifications */);
-            }
-        }
-        else
-        {
-            _noMatchesText().Visibility(Visibility::Collapsed);
-        }
-
-        if (_currentMode == CommandPaletteMode::CommandlineMode)
-        {
-            ParsedCommandLineText(L"");
-
-            const auto commandLine = _getTrimmedInput();
-            if (!commandLine.empty())
-            {
-                ExecuteCommandlineArgs args{ commandLine };
-                _appArgs.FullResetState();
-                if (_appArgs.ParseArgs(args) == 0)
-                {
-                    const auto& commands = _appArgs.GetStartupActions();
-                    if (commands.size() > 0)
-                    {
-                        std::wstring commandDescription{ RS_(L"CommandPalette_ParsedCommandLine") };
-                        for (const auto& command : commands)
-                        {
-                            commandDescription += L"\n\t" + command.Args().GenerateName();
-                        }
-                        ParsedCommandLineText(commandDescription.data());
-                    }
-                }
-                else
-                {
-                    ParsedCommandLineText(RS_(L"CommandPalette_FailedParsingCommandLine") + L"\n\t" + til::u8u16(_appArgs.GetExitMessage()));
-                }
-            }
+            automationPeer.RaiseNotificationEvent(
+                Automation::Peers::AutomationNotificationKind::ActionCompleted,
+                Automation::Peers::AutomationNotificationProcessing::ImportantMostRecent,
+                currentNeedleHasResults ?
+                    winrt::hstring{ fmt::format(std::wstring_view{ RS_(L"CommandPalette_MatchesAvailable") }, _filteredActions.Size()) } :
+                    NoMatchesText(), // what to announce if results were found
+                L"SuggestionsControlResultAnnouncement" /* unique name for this group of notifications */);
         }
     }
 
-    void CommandPalette::_evaluatePrefix()
-    {
-        // This will take you from commandline mode, into action mode. The
-        // backspace handler in _keyDownHandler will handle taking us from
-        // action mode to commandline mode.
-        auto newMode = CommandPaletteMode::CommandlineMode;
-
-        auto inputText = _getTrimmedInput();
-        if (inputText.size() > 0)
-        {
-            if (inputText[0] == L'>')
-            {
-                newMode = CommandPaletteMode::ActionMode;
-            }
-        }
-
-        if (newMode != _currentMode)
-        {
-            //_switchToMode will remove the '>' character from the input.
-            _switchToMode(newMode);
-        }
-    }
-
-    Collections::IObservableVector<winrt::TerminalApp::FilteredCommand> CommandPalette::FilteredActions()
+    Collections::IObservableVector<winrt::TerminalApp::FilteredCommand> SuggestionsControl::FilteredActions()
     {
         return _filteredActions;
     }
 
-    void CommandPalette::SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap)
+    void SuggestionsControl::SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap)
     {
         _actionMap = actionMap;
     }
 
-    void CommandPalette::SetCommands(const Collections::IVector<Command>& actions)
+    void SuggestionsControl::SetCommands(const Collections::IVector<Command>& actions)
     {
         _allCommands.Clear();
         for (const auto& action : actions)
@@ -961,55 +760,23 @@ namespace winrt::TerminalApp::implementation
             _allCommands.Append(filteredCommand);
         }
 
-        if (Visibility() == Visibility::Visible && _currentMode == CommandPaletteMode::ActionMode)
+        if (Visibility() == Visibility::Visible)
         {
             _updateFilteredActions();
         }
-    }
-
-    // Method Description:
-    // - Replaces a list of filtered commands in the target collection with new
-    //   commands based on the tabs in the source collection.
-    // Although the source observable we still don't register on it,
-    // so the palette user will need to reset the binding manually every time
-    // the source collection changes
-    // Arguments:
-    // - source: the tabs to use for creation filtered commands
-    // - target: the collection to store newly created filtered commands
-    // Return Value:
-    // - <none>
-    void CommandPalette::_bindTabs(
-        const Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::TabBase>& source,
-        const Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand>& target)
-    {
-        target.Clear();
-        for (const auto& tab : source)
+        else // THIS BRANCH IS NEW
         {
-            auto tabPaletteItem{ winrt::make<winrt::TerminalApp::implementation::TabPaletteItem>(tab) };
-            auto filteredCommand{ winrt::make<FilteredCommand>(tabPaletteItem) };
-            target.Append(filteredCommand);
+            auto actions = _collectFilteredActions();
+            _filteredActions.Clear();
+            for (const auto& action : actions)
+            {
+                _filteredActions.Append(action);
+            }
         }
     }
 
-    void CommandPalette::SetTabs(const Collections::IObservableVector<TabBase>& tabs, const Collections::IObservableVector<TabBase>& mruTabs)
+    void SuggestionsControl::_switchToMode()
     {
-        _bindTabs(tabs, _tabActions);
-        _bindTabs(mruTabs, _mruTabActions);
-    }
-
-    void CommandPalette::EnableCommandPaletteMode(const CommandPaletteLaunchMode launchMode)
-    {
-        const auto mode = (launchMode == CommandPaletteLaunchMode::CommandLine) ?
-                              CommandPaletteMode::CommandlineMode :
-                              CommandPaletteMode::ActionMode;
-
-        _switchToMode(mode);
-    }
-
-    void CommandPalette::_switchToMode(CommandPaletteMode mode)
-    {
-        _currentMode = mode;
-
         const auto currentlyVisible{ Visibility() == Visibility::Visible };
 
         auto modeAnnouncementResourceKey{ USES_RESOURCE(L"CommandPaletteModeAnnouncement_ActionMode") };
@@ -1023,35 +790,12 @@ namespace winrt::TerminalApp::implementation
         // Leaving this block of code outside the above if-statement
         // guarantees that the correct text is shown for the mode
         // whenever _switchToMode is called.
-        switch (_currentMode)
-        {
-        case CommandPaletteMode::TabSearchMode:
-        case CommandPaletteMode::TabSwitchMode:
-        {
-            SearchBoxPlaceholderText(RS_(L"TabSwitcher_SearchBoxText"));
-            NoMatchesText(RS_(L"TabSwitcher_NoMatchesText"));
-            ControlName(RS_(L"TabSwitcherControlName"));
-            PrefixCharacter(L"");
-            modeAnnouncementResourceKey = USES_RESOURCE(L"CommandPaletteModeAnnouncement_TabSearchSwitchMode");
-            break;
-        }
-        case CommandPaletteMode::CommandlineMode:
-            SearchBoxPlaceholderText(RS_(L"CmdPalCommandlinePrompt"));
-            NoMatchesText(L"");
-            ControlName(RS_(L"CommandPaletteControlName"));
-            PrefixCharacter(L"");
-            modeAnnouncementResourceKey = USES_RESOURCE(L"CommandPaletteModeAnnouncement_CommandlineMode");
-            break;
-        case CommandPaletteMode::ActionMode:
-        default:
-            SearchBoxPlaceholderText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
-            NoMatchesText(RS_(L"CommandPalette_NoMatchesText/Text"));
-            ControlName(RS_(L"CommandPaletteControlName"));
-            PrefixCharacter(L">");
-            // modeAnnouncementResourceKey is already set to _ActionMode
-            // We did this above to deduce the type (and make it easier on ourselves later).
-            break;
-        }
+
+        SearchBoxPlaceholderText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
+        NoMatchesText(RS_(L"CommandPalette_NoMatchesText/Text"));
+        ControlName(RS_(L"CommandPaletteControlName"));
+        // modeAnnouncementResourceKey is already set to _ActionMode
+        // We did this above to deduce the type (and make it easier on ourselves later).
 
         if (currentlyVisible)
         {
@@ -1061,7 +805,7 @@ namespace winrt::TerminalApp::implementation
                     Automation::Peers::AutomationNotificationKind::ActionCompleted,
                     Automation::Peers::AutomationNotificationProcessing::CurrentThenMostRecent,
                     GetLibraryResourceString(modeAnnouncementResourceKey),
-                    L"CommandPaletteModeSwitch" /* unique ID for this notification */);
+                    L"SuggestionsControlModeSwitch" /* unique ID for this notification */);
             }
         }
 
@@ -1080,7 +824,7 @@ namespace winrt::TerminalApp::implementation
     // - A collection that will receive the filtered actions
     // Return Value:
     // - <none>
-    std::vector<winrt::TerminalApp::FilteredCommand> CommandPalette::_collectFilteredActions()
+    std::vector<winrt::TerminalApp::FilteredCommand> SuggestionsControl::_collectFilteredActions()
     {
         std::vector<winrt::TerminalApp::FilteredCommand> actions;
 
@@ -1088,13 +832,6 @@ namespace winrt::TerminalApp::implementation
 
         auto commandsToFilter = _commandsToFilter();
 
-        if (_currentMode == CommandPaletteMode::TabSwitchMode)
-        {
-            std::copy(begin(commandsToFilter), end(commandsToFilter), std::back_inserter(actions));
-        }
-        else if (_currentMode == CommandPaletteMode::TabSearchMode ||
-                 _currentMode == CommandPaletteMode::ActionMode ||
-                 _currentMode == CommandPaletteMode::CommandlineMode)
         {
             for (const auto& action : commandsToFilter)
             {
@@ -1110,11 +847,19 @@ namespace winrt::TerminalApp::implementation
                 }
             }
         }
-
-        // We want to present the commands sorted
-        if (_currentMode == CommandPaletteMode::ActionMode)
+        if (_mode == SuggestionsMode::Palette)
         {
+            // We want to present the commands sorted
             std::sort(actions.begin(), actions.end(), FilteredCommand::Compare);
+        }
+
+        // Adjust the order of the results depending on if we're top-down or
+        // bottom up. This way, the "first" / "best" match is always closest to
+        // the cursor.
+        if (_direction == TerminalApp::SuggestionsDirection::BottomUp)
+        {
+            // Reverse the list
+            std::reverse(std::begin(actions), std::end(actions));
         }
 
         return actions;
@@ -1127,7 +872,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void CommandPalette::_updateFilteredActions()
+    void SuggestionsControl::_updateFilteredActions()
     {
         auto actions = _collectFilteredActions();
 
@@ -1173,7 +918,7 @@ namespace winrt::TerminalApp::implementation
     // - parentCommand: the command with an optional list of nested commands.
     // Return Value:
     // - <none>
-    void CommandPalette::_updateCurrentNestedCommands(const winrt::Microsoft::Terminal::Settings::Model::Command& parentCommand)
+    void SuggestionsControl::_updateCurrentNestedCommands(const winrt::Microsoft::Terminal::Settings::Model::Command& parentCommand)
     {
         _currentNestedCommands.Clear();
         for (const auto& nameAndCommand : parentCommand.NestedCommands())
@@ -1194,14 +939,11 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void CommandPalette::_close()
+    void SuggestionsControl::_close()
     {
         Visibility(Visibility::Collapsed);
 
         _PreviewActionHandlers(*this, nullptr);
-
-        // Reset visibility in case anchor mode tab switcher just finished.
-        _searchBox().Visibility(Visibility::Visible);
 
         // Clear the text box each time we close the dialog. This is consistent with VsCode.
         _searchBox().Text(L"");
@@ -1210,21 +952,6 @@ namespace winrt::TerminalApp::implementation
 
         ParentCommandName(L"");
         _currentNestedCommands.Clear();
-    }
-
-    void CommandPalette::EnableTabSwitcherMode(const uint32_t startIdx, TabSwitcherMode tabSwitcherMode)
-    {
-        // The _switcherStartIdx field allows us to select the current tab
-        // We need to take it into account only in the in-order mode,
-        // as an MRU mode the current tab is on top by definition.
-        _switcherStartIdx = tabSwitcherMode == TabSwitcherMode::InOrder ? startIdx : 0;
-        _tabSwitcherMode = tabSwitcherMode;
-        _switchToMode(CommandPaletteMode::TabSwitchMode);
-    }
-
-    void CommandPalette::EnableTabSearchMode()
-    {
-        _switchToMode(CommandPaletteMode::TabSearchMode);
     }
 
     // Method Description:
@@ -1239,7 +966,7 @@ namespace winrt::TerminalApp::implementation
     // system and replace it with another candidate if required.
     // Return Value:
     // - <none>
-    void CommandPalette::_choosingItemContainer(
+    void SuggestionsControl::_choosingItemContainer(
         const Windows::UI::Xaml::Controls::ListViewBase& /*sender*/,
         const Windows::UI::Xaml::Controls::ChoosingItemContainerEventArgs& args)
     {
@@ -1280,7 +1007,6 @@ namespace winrt::TerminalApp::implementation
         }
         args.IsContainerPrepared(true);
     }
-
     // Method Description:
     // - This event is triggered when the data item associate with filteredActionView list item is changing.
     //   We check if the item is being recycled. In this case we return it to the cache
@@ -1288,7 +1014,7 @@ namespace winrt::TerminalApp::implementation
     // - args: the ContainerContentChangingEventArgs describing the container change
     // Return Value:
     // - <none>
-    void CommandPalette::_containerContentChanging(
+    void SuggestionsControl::_containerContentChanging(
         const Windows::UI::Xaml::Controls::ListViewBase& /*sender*/,
         const Windows::UI::Xaml::Controls::ContainerContentChangingEventArgs& args)
     {
@@ -1304,80 +1030,61 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    // Method Description:
-    // - Reads the list of recent commands from the persistent application state
-    // Return Value:
-    // - The list of FilteredCommand representing the ones stored in the state
-    IVector<TerminalApp::FilteredCommand> CommandPalette::_loadRecentCommands()
+    void SuggestionsControl::_setDirection(TerminalApp::SuggestionsDirection direction)
     {
-        const auto recentCommands = ApplicationState::SharedInstance().RecentCommands();
-        // If this is the first time we've opened the commandline mode and
-        // there aren't any recent commands, then just return an empty vector.
-        if (!recentCommands)
+        _direction = direction;
+        if (_direction == TerminalApp::SuggestionsDirection::TopDown)
         {
-            return single_threaded_vector<TerminalApp::FilteredCommand>();
+            Controls::Grid::SetRow(_searchBox(), 0);
         }
-
-        std::vector<TerminalApp::FilteredCommand> parsedCommands;
-        parsedCommands.reserve(std::min(recentCommands.Size(), CommandLineHistoryLength));
-
-        for (const auto& c : recentCommands)
+        else // BottomUp
         {
-            if (parsedCommands.size() >= CommandLineHistoryLength)
-            {
-                // Don't load more than CommandLineHistoryLength commands
-                break;
-            }
-
-            if (const auto parsedCommand = _buildCommandLineCommand(c))
-            {
-                parsedCommands.push_back(*parsedCommand);
-            }
+            Controls::Grid::SetRow(_searchBox(), 4);
         }
-        return single_threaded_vector(std::move(parsedCommands));
     }
 
-    // Method Description:
-    // - Update recent commands by putting the provided command as most recent.
-    // Upon race condition might override an update made by another window.
-    // Return Value:
-    // - <none>
-    void CommandPalette::_updateRecentCommands(const hstring& command)
+    void SuggestionsControl::Anchor(Windows::Foundation::Point anchor,
+                                    Windows::Foundation::Size space,
+                                    float characterHeight)
     {
-        const auto recentCommands = ApplicationState::SharedInstance().RecentCommands();
-        // If this is the first time we've opened the commandline mode and
-        // there aren't any recent commands, then just store the new command.
-        if (!recentCommands)
+        _anchor = anchor;
+        _space = space;
+
+        const til::size actualSize{ til::math::rounding, ActualWidth(), ActualHeight() };
+        // Is there space in the window below the cursor to open the menu downwards?
+        const bool canOpenDownwards = (_anchor.Y + characterHeight + actualSize.height) < space.Height;
+        _setDirection(canOpenDownwards ? TerminalApp::SuggestionsDirection::TopDown :
+                                         TerminalApp::SuggestionsDirection::BottomUp);
+        // Set the anchor below by a character height
+        _anchor.Y += canOpenDownwards ? characterHeight : 0;
+
+        // First, position horizontally.
+        //
+        // We want to align the left edge of the text within the control to the
+        // cursor position. We'll need to scoot a little to the left, to align
+        // text with cursor
+        const auto proposedX = gsl::narrow_cast<int>(_anchor.X - 40);
+        // If the control is too wide to fit in the window, clamp it fit inside
+        // the window.
+        const auto maxX = gsl::narrow_cast<int>(space.Width - actualSize.width);
+        const auto clampedX = std::clamp(proposedX, 0, maxX);
+
+        // Create a thickness for the new margins
+        auto newMargin = Windows::UI::Xaml::ThicknessHelper::FromLengths(clampedX, 0, 0, 0);
+        // Now, position vertically.
+        if (_direction == TerminalApp::SuggestionsDirection::TopDown)
         {
-            ApplicationState::SharedInstance().RecentCommands(single_threaded_vector(std::move(std::vector{ command })));
-            return;
+            // The control should open right below the cursor, with the list
+            // extending below. This is easy, we can just use the cursor as the
+            // origin (more or less)
+            newMargin.Top = (_anchor.Y);
         }
-
-        const auto numNewRecentCommands = std::min(recentCommands.Size() + 1, CommandLineHistoryLength);
-
-        std::vector<hstring> newRecentCommands;
-        newRecentCommands.reserve(numNewRecentCommands);
-
-        std::unordered_set<hstring> uniqueCommands;
-        uniqueCommands.reserve(numNewRecentCommands);
-
-        newRecentCommands.push_back(command);
-        uniqueCommands.insert(command);
-
-        for (const auto& c : recentCommands)
+        else
         {
-            if (newRecentCommands.size() >= CommandLineHistoryLength)
-            {
-                // Don't store more than CommandLineHistoryLength commands
-                break;
-            }
-
-            if (uniqueCommands.emplace(c).second)
-            {
-                newRecentCommands.push_back(c);
-            }
+            // Position at the cursor. The suggestions UI itself will maintain
+            // its own offset such that it's always above its origin
+            newMargin.Top = (_anchor.Y - actualSize.height);
         }
-
-        ApplicationState::SharedInstance().RecentCommands(single_threaded_vector(std::move(newRecentCommands)));
+        Margin(newMargin);
     }
 }

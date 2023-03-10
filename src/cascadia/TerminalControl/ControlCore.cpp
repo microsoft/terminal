@@ -125,6 +125,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnPlayMidiNote = std::bind(&ControlCore::_terminalPlayMidiNote, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         _terminal->SetPlayMidiNoteCallback(pfnPlayMidiNote);
 
+        auto pfnMenuChanged = std::bind(&ControlCore::_terminalMenuChanged, this, std::placeholders::_1, std::placeholders::_2);
+        _terminal->MenuChangedCallback(pfnMenuChanged);
+
         // MSFT 33353327: Initialize the renderer in the ctor instead of Initialize().
         // We need the renderer to be ready to accept new engines before the SwapChainPanel is ready to go.
         // If we wait, a screen reader may try to get the AutomationPeer (aka the UIA Engine), and we won't be able to attach
@@ -2151,6 +2154,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _terminalScrollPositionChanged(0, viewHeight, bufferSize);
             }
         }
+    }
+
+    void ControlCore::_terminalMenuChanged(std::wstring_view menuJson,
+                                           int32_t replaceLength)
+    {
+        auto args = winrt::make_self<MenuChangedEventArgs>(winrt::hstring{ menuJson },
+                                                           replaceLength);
+        _MenuChangedHandlers(*this, *args);
     }
 
     void ControlCore::ColorSelection(const Control::SelectionColor& fg, const Control::SelectionColor& bg, Core::MatchMode matchMode)

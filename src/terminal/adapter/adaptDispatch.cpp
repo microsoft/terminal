@@ -484,7 +484,7 @@ bool AdaptDispatch::CursorRestoreState()
     _modes.reset(Mode::Origin);
     CursorPosition(row, col);
 
-    // If the delayed wrap flag was set when the cursor was saved, we need to restore than now.
+    // If the delayed wrap flag was set when the cursor was saved, we need to restore that now.
     if (savedCursorState.IsDelayedEOLWrap)
     {
         _api.GetTextBuffer().GetCursor().DelayEOLWrap();
@@ -1264,7 +1264,13 @@ bool AdaptDispatch::SelectAttributeChangeExtent(const DispatchTypes::ChangeExten
 // - True.
 bool AdaptDispatch::SetLineRendition(const LineRendition rendition)
 {
-    _api.GetTextBuffer().SetCurrentLineRendition(rendition);
+    auto& textBuffer = _api.GetTextBuffer();
+    textBuffer.SetCurrentLineRendition(rendition);
+    // There is some variation in how this was handled by the different DEC
+    // terminals, but the STD 070 reference (on page D-13) makes it clear that
+    // the delayed wrap (aka the Last Column Flag) was expected to be reset when
+    // line rendition controls were executed.
+    textBuffer.GetCursor().ResetDelayEOLWrap();
     return true;
 }
 
@@ -3225,6 +3231,73 @@ bool AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
     // simple state machine here to track the most recently emitted mark from
     // this set of sequences, and which sequence was emitted last, so we can
     // modify the state of that mark as we go.
+    return false;
+}
+// Method Description:
+// - Performs a XtermJs action
+// - Ascribes to the ITermDispatch interface
+// - Currently, the actions we support are:
+//   * Completions: An experimental protocol for passing shell completion
+//     information from the shell to the terminal. This sequence is still under
+//     active development, and subject to change.
+// - Not actually used in conhost
+// Arguments:
+// - string: contains the parameters that define which action we do
+// Return Value:
+// - false in conhost, true for the SetMark action, otherwise false.
+bool AdaptDispatch::DoXtermJsAction(const std::wstring_view string)
+{
+    // This is not implemented in conhost.
+    if (_api.IsConsolePty())
+    {
+        // Flush the frame manually, to make sure marks end up on the right line, like the alt buffer sequence.
+        _renderer.TriggerFlush(false);
+        return false;
+    }
+
+    if constexpr (!Feature_ShellCompletions::IsEnabled())
+    {
+        return false;
+    }
+
+    const auto parts = Utils::SplitString(string, L';');
+
+    if (parts.size() < 1)
+    {
+        return false;
+    }
+
+    const auto action = til::at(parts, 0);
+
+    if (action == L"Completions")
+    {
+        // The structure of the message is as follows:
+        // `e]633;
+        // 0:     Completions;
+        // 1:     $($completions.ReplacementIndex);
+        // 2:     $($completions.ReplacementLength);
+        // 3:     $($cursorIndex);
+        // 4:     $completions.CompletionMatches | ConvertTo-Json
+        unsigned int replacementIndex = 0;
+        unsigned int replacementLength = 0;
+        unsigned int cursorIndex = 0;
+
+        bool succeeded = (parts.size() >= 2) &&
+                         (Utils::StringToUint(til::at(parts, 1), replacementIndex));
+        succeeded &= (parts.size() >= 3) &&
+                     (Utils::StringToUint(til::at(parts, 2), replacementLength));
+        succeeded &= (parts.size() >= 4) &&
+                     (Utils::StringToUint(til::at(parts, 3), cursorIndex));
+
+        // VsCode is using cursorIndex and replacementIndex, but we aren't currently.
+        if (succeeded)
+        {
+            _api.InvokeMenu(parts.size() < 5 ? L"" : til::at(parts, 4),
+                            static_cast<int32_t>(replacementLength));
+        }
+
+        return true;
+    }
     return false;
 }
 

@@ -437,4 +437,26 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TSFInputControl::_formatUpdatingHandler(CoreTextEditContext sender, const CoreTextFormatUpdatingEventArgs& /*args*/)
     {
     }
+
+    void TSFInputControl::ManuallyDisplayText(const winrt::hstring& text)
+    {
+        _focused = !text.empty();
+        Canvas().Visibility(text.empty() ? Visibility::Collapsed : Visibility::Visible);
+
+        _inputBuffer.clear();
+        _activeTextStart = 0;
+        _inComposition = false;
+
+        // HACK trim off leading DEL chars.
+        std::wstring_view view{ text.c_str() };
+        const auto strBegin = view.find_first_not_of(L"\x7f");
+        if (strBegin != std::wstring::npos)
+        {
+            view = view.substr(strBegin * 2);
+        }
+
+        TextBlock().Text(winrt::hstring{ view });
+        TextBlock().UpdateLayout();
+        TryRedrawCanvas();
+    }
 }

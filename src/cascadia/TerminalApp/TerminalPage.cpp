@@ -274,6 +274,20 @@ namespace winrt::TerminalApp::implementation
         CommandPalette().SwitchToTabRequested({ this, &TerminalPage::_OnSwitchToTabRequested });
         CommandPalette().PreviewAction({ this, &TerminalPage::_PreviewActionHandler });
 
+        {
+            const auto& sxnUi{ SuggestionsUI() };
+            // sxnUi.PositionManually(Windows::Foundation::Point{ 0, 0 }, Windows::Foundation::Size{ 200, 300 });
+            sxnUi.RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
+                if (SuggestionsUI().Visibility() == Visibility::Collapsed)
+                {
+                    // SuggestionsPopup().IsOpen(false);
+                    _FocusActiveControl(nullptr, nullptr);
+                }
+            });
+            sxnUi.DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
+            sxnUi.PreviewAction({ this, &TerminalPage::_PreviewActionHandler });
+        }
+
         // Settings AllowDependentAnimations will affect whether animations are
         // enabled application-wide, so we don't need to check it each time we
         // want to create an animation.
@@ -1408,7 +1422,13 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        if (const auto p = CommandPalette(); p.Visibility() == Visibility::Visible && cmd.ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
+        if (const auto p = CommandPalette(); p.Visibility() == Visibility::Visible &&
+                                             cmd.ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
+        {
+            p.Visibility(Visibility::Collapsed);
+        }
+        if (const auto p = SuggestionsUI(); p.Visibility() == Visibility::Visible &&
+                                            cmd.ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
         {
             p.Visibility(Visibility::Collapsed);
         }
@@ -1599,6 +1619,8 @@ namespace winrt::TerminalApp::implementation
         });
 
         term.ShowWindowChanged({ get_weak(), &TerminalPage::_ShowWindowChangedHandler });
+
+        term.MenuChanged({ get_weak(), &TerminalPage::_ControlMenuChangedHandler });
     }
 
     // Method Description:
@@ -4493,23 +4515,91 @@ namespace winrt::TerminalApp::implementation
     winrt::fire_and_forget TerminalPage::_windowPropertyChanged(const IInspectable& /*sender*/,
                                                                 const WUX::Data::PropertyChangedEventArgs& args)
     {
+        auto weakThis{ get_weak() };
         if (args.PropertyName() != L"WindowName")
+        {
+            // On the foreground thread, raise property changed notifications, and
+            // display the success toast.
+            co_await wil::resume_foreground(Dispatcher());
+            if (auto page{ weakThis.get() })
+            {
+                // DON'T display the confirmation if this is the name we were
+                // given on startup!
+                if (page->_startupState == StartupState::Initialized)
+                {
+                    page->IdentifyWindow();
+                }
+            }
+        }
+    }
+
+    winrt::fire_and_forget TerminalPage::_ControlMenuChangedHandler(const IInspectable /*sender*/,
+                                                                    const MenuChangedEventArgs args)
+    {
+        if constexpr (!Feature_ShellCompletions::IsEnabled())
         {
             co_return;
         }
         auto weakThis{ get_weak() };
-        // On the foreground thread, raise property changed notifications, and
-        // display the success toast.
-        co_await wil::resume_foreground(Dispatcher());
-        if (auto page{ weakThis.get() })
+        co_await winrt::resume_background();
+        if (const auto& page{ weakThis.get() })
         {
-            // DON'T display the confirmation if this is the name we were
-            // given on startup!
-            if (page->_startupState == StartupState::Initialized)
+            // `this` is safe to use
+
+            // Parse the json
+            try
             {
-                page->IdentifyWindow();
+                auto commandsCollection = Command::ParsePowerShellMenuComplete(args.MenuJson(),
+                                                                               args.ReplacementLength());
+
+                // Open the Suggestions UI with the commands from the control
+                _OpenSuggestions(commandsCollection, SuggestionsMode::Menu);
             }
+            CATCH_LOG();
         }
+    }
+
+    winrt::fire_and_forget TerminalPage::_OpenSuggestions(IVector<Command> commandsCollection,
+                                                          winrt::TerminalApp::SuggestionsMode mode)
+    {
+        if (commandsCollection == nullptr)
+        {
+            co_return;
+        }
+        if (commandsCollection.Size() == 0)
+        {
+            SuggestionsUI().Visibility(Visibility::Collapsed);
+
+            co_return;
+        }
+        auto weakThis{ get_weak() };
+        co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
+        const auto& page{ weakThis.get() };
+        if (!page)
+        {
+            co_return;
+        }
+        // page is now keeping `this` alive to use safely
+        const auto& control{ _GetActiveControl() };
+        if (!control)
+        {
+            co_return;
+        }
+        const auto& sxnUi{ SuggestionsUI() };
+
+        sxnUi.Mode(mode);
+        sxnUi.SetCommands(commandsCollection);
+        sxnUi.Visibility(commandsCollection.Size() > 0 ? Visibility::Visible : Visibility::Collapsed);
+
+        const auto characterSize{ control.CharacterDimensions() };
+        // This is in control-relative space. We'll need to convert it to page-relative space.
+        const til::point cursorPos{ control.CursorPositionInDips() };
+        const auto controlTransform = control.TransformToVisual(this->Root());
+        const til::point controlOrigin{ til::math::rounding, controlTransform.TransformPoint(Windows::Foundation::Point{ 0, 0 }) };
+        const til::point realCursorPos = controlOrigin + cursorPos;
+        const til::size windowDimensions{ til::math::rounding, ActualWidth(), ActualHeight() };
+
+        sxnUi.Anchor(realCursorPos.to_winrt_point(), windowDimensions.to_winrt_size(), characterSize.Height);
     }
 
     void TerminalPage::_onTabDragStarting(winrt::Microsoft::UI::Xaml::Controls::TabView sender,

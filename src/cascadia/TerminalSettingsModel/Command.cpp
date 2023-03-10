@@ -632,4 +632,98 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         return newCommands;
     }
+
+    winrt::Windows::Foundation::Collections::IVector<Model::Command> Command::ParsePowerShellMenuComplete(winrt::hstring json, int32_t replaceLength)
+    {
+        if (json.empty())
+        {
+            return nullptr;
+        }
+        auto data = winrt::to_string(json);
+
+        std::string errs;
+        static std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+        Json::Value root;
+        if (!reader->parse(data.data(), data.data() + data.size(), &root, &errs))
+        {
+            throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
+        }
+
+        auto result = winrt::single_threaded_vector<Model::Command>();
+
+        auto backspaces = std::wstring(::base::saturated_cast<size_t>(replaceLength), L'\x7f');
+
+        const auto parseElement = [&](const auto& element) {
+            winrt::hstring completionText;
+            winrt::hstring listText;
+            JsonUtils::GetValueForKey(element, "CompletionText", completionText);
+            JsonUtils::GetValueForKey(element, "ListItemText", listText);
+
+            Model::SendInputArgs args{ winrt::hstring{ fmt::format(L"{}{}", backspaces, completionText.c_str()) } };
+            Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, args };
+
+            auto c = winrt::make_self<Command>();
+            c->_name = listText;
+            c->_ActionAndArgs = actionAndArgs;
+
+            // Try to assign a sensible icon based on the result type. These are
+            // roughly chosen to align with the icons in
+            // https://github.com/PowerShell/PowerShellEditorServices/pull/1738
+            // as best as possible.
+            if (const auto resultType{ JsonUtils::GetValueForKey<int>(element, "ResultType") })
+            {
+                // PowerShell completion result -> Segoe Fluent icon value & name
+                switch (resultType)
+                {
+                case 1: // History          -> 0xe81c History
+                    c->_iconPath = L"\ue81c";
+                    break;
+                case 2: // Command          -> 0xecaa AppIconDefault
+                    c->_iconPath = L"\uecaa";
+                    break;
+                case 3: // ProviderItem     -> 0xe8e4 AlignLeft
+                    c->_iconPath = L"\ue8e4";
+                    break;
+                case 4: // ProviderContainer  -> 0xe838 FolderOpen
+                    c->_iconPath = L"\ue838";
+                    break;
+                case 5: // Property         -> 0xe7c1 Flag
+                    c->_iconPath = L"\ue7c1";
+                    break;
+                case 6: // Method           -> 0xecaa AppIconDefault
+                    c->_iconPath = L"\uecaa";
+                    break;
+                case 7: // ParameterName    -> 0xe7c1 Flag
+                    c->_iconPath = L"\ue7c1";
+                    break;
+                case 8: // ParameterValue   -> 0xf000 KnowledgeArticle
+                    c->_iconPath = L"\uf000";
+                    break;
+                case 10: // Namespace       -> 0xe943 Code
+                    c->_iconPath = L"\ue943";
+                    break;
+                case 13: // DynamicKeyword  -> 0xe945 LightningBolt
+                    c->_iconPath = L"\ue945";
+                    break;
+                }
+            }
+
+            result.Append(*c);
+        };
+
+        if (root.isArray())
+        {
+            // If we got a whole array of suggestions, parse each one.
+            for (const auto& element : root)
+            {
+                parseElement(element);
+            }
+        }
+        else if (root.isObject())
+        {
+            // If we instead only got a single element back, just parse the root element.
+            parseElement(root);
+        }
+        return result;
+    }
 }

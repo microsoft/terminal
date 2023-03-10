@@ -507,3 +507,11 @@ void Terminal::NotifyBufferRotation(const int delta)
         _NotifyScrollEvent();
     }
 }
+
+void Terminal::InvokeMenu(std::wstring_view menuJson, int32_t replaceLength)
+{
+    if (_pfnMenuChanged)
+    {
+        _pfnMenuChanged(menuJson, replaceLength);
+    }
+}

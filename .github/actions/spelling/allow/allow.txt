@@ -93,6 +93,7 @@ slnt
 Sos
 ssh
 stakeholders
+sxn
 timeline
 timelines
 timestamped

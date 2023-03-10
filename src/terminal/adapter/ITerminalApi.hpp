@@ -81,5 +81,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual void MarkCommandStart() = 0;
         virtual void MarkOutputStart() = 0;
         virtual void MarkCommandFinish(std::optional<unsigned int> error) = 0;
+
+        virtual void InvokeMenu(std::wstring_view menuJson, int32_t replaceLength) = 0;
     };
 }

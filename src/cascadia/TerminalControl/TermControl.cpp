@@ -94,6 +94,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _revokers.ConnectionStateChanged = _core.ConnectionStateChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleConnectionStateChanged });
         _revokers.ShowWindowChanged = _core.ShowWindowChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleShowWindowChanged });
         _revokers.CloseTerminalRequested = _core.CloseTerminalRequested(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleCloseTerminalRequested });
+        _revokers.MenuChanged = _core.MenuChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleMenuChanged });
 
         _revokers.PasteFromClipboard = _interactivity.PasteFromClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_bubblePasteFromClipboard });
 
@@ -435,6 +436,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void TermControl::SendInput(const winrt::hstring& wstr)
     {
+        PreviewInput(L"");
         _core.SendInput(wstr);
     }
     void TermControl::ClearBuffer(Control::ClearBufferType clearType)
@@ -3212,6 +3214,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.OwningHwnd();
     }
 
+    void TermControl::PreviewInput(const winrt::hstring& text)
+    {
+        TSFInputControl().ManuallyDisplayText(text);
+    }
+
     void TermControl::AddMark(const Control::ScrollMark& mark)
     {
         _core.AddMark(mark);
@@ -3228,5 +3235,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::ColorSelection(Control::SelectionColor fg, Control::SelectionColor bg, Core::MatchMode matchMode)
     {
         _core.ColorSelection(fg, bg, matchMode);
+    }
+
+    // Returns the text cursor's position relative to our origin, in DIPs.
+    Microsoft::Terminal::Core::Point TermControl::CursorPositionInDips()
+    {
+        const til::point cursorPos{ _core.CursorPosition() };
+
+        const til::size fontSize{ til::math::flooring, CharacterDimensions() };
+
+        // Convert text buffer cursor position to client coordinate position
+        // within the window. This point is in _pixels_
+        const til::point clientCursorPos{ cursorPos * fontSize };
+
+        // Get scale factor for view
+        const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+
+        const til::point clientCursorInDips{ til::math::flooring, clientCursorPos.x / scaleFactor, clientCursorPos.y / scaleFactor };
+
+        auto padding{ GetPadding() };
+        til::point relativeToOrigin{ til::math::flooring,
+                                     clientCursorInDips.x + padding.Left,
+                                     clientCursorInDips.y + padding.Top };
+        return relativeToOrigin.to_core_point();
     }
 }

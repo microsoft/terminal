@@ -1279,6 +1279,11 @@ const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarProgress() const noe
     return _taskbarProgress;
 }
 
+void Microsoft::Terminal::Core::Terminal::MenuChangedCallback(std::function<void(std::wstring_view, int32_t)> pfn) noexcept
+{
+    _pfnMenuChanged.swap(pfn);
+}
+
 Scheme Terminal::GetColorScheme() const
 {
     Scheme s;

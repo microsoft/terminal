@@ -45,5 +45,8 @@ namespace Microsoft.Terminal.Settings.Model
 
         Boolean HasNestedCommands { get; };
         Windows.Foundation.Collections.IMapView<String, Command> NestedCommands { get; };
+
+        static IVector<Command> ParsePowerShellMenuComplete(String json, Int32 replaceLength);
+
     }
 }

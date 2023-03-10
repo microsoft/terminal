@@ -311,6 +311,7 @@ CPLINFO
 cplusplus
 CPPCORECHECK
 cppcorecheckrules
+cpprest
 cpprestsdk
 cppwinrt
 CProc
@@ -1436,6 +1437,7 @@ PPEB
 ppf
 ppguid
 ppidl
+pplx
 PPROC
 PPROCESS
 ppropvar
@@ -2113,6 +2115,7 @@ WDDMCONSOLECONTEXT
 wdm
 webpage
 websites
+websockets
 wekyb
 wex
 wextest
