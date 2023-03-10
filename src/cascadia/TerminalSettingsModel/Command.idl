@@ -45,9 +45,5 @@ namespace Microsoft.Terminal.Settings.Model
 
         Boolean HasNestedCommands { get; };
         Windows.Foundation.Collections.IMapView<String, Command> NestedCommands { get; };
-
-        static void ExpandCommands(Windows.Foundation.Collections.IMap<String, Command> commands,
-                                   Windows.Foundation.Collections.IVectorView<Profile> profiles,
-                                   Windows.Foundation.Collections.IVectorView<ColorScheme> schemes);
     }
 }

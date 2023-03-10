@@ -62,8 +62,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         _monarch.WindowCreated({ get_weak(), &WindowManager::_WindowCreatedHandlers });
         _monarch.WindowClosed({ get_weak(), &WindowManager::_WindowClosedHandlers });
         _monarch.FindTargetWindowRequested({ this, &WindowManager::_raiseFindTargetWindowRequested });
-        _monarch.ShowNotificationIconRequested([this](auto&&, auto&&) { _ShowNotificationIconRequestedHandlers(*this, nullptr); });
-        _monarch.HideNotificationIconRequested([this](auto&&, auto&&) { _HideNotificationIconRequestedHandlers(*this, nullptr); });
         _monarch.QuitAllRequested({ get_weak(), &WindowManager::_QuitAllRequestedHandlers });
 
         _monarch.RequestNewWindow({ get_weak(), &WindowManager::_raiseRequestNewWindow });
@@ -91,8 +89,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     Remoting::ProposeCommandlineResult WindowManager::ProposeCommandline(const Remoting::CommandlineArgs& args, const bool isolatedMode)
     {
-        bool shouldCreateWindow = false;
-
         if (!isolatedMode)
         {
             // _createMonarch always attempts to connect an existing monarch. In
@@ -105,7 +101,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             // We connected to a monarch instance, not us though. This won't hit
             // in isolated mode.
 
-            shouldCreateWindow = false;
             // Send the commandline over to the monarch process
             if (_proposeToMonarch(args))
             {
@@ -114,7 +109,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 // commandline in an existing window, or a new one, but either way,
                 // this process doesn't need to make a new window.
 
-                return winrt::make<ProposeCommandlineResult>(shouldCreateWindow);
+                return winrt::make<ProposeCommandlineResult>(false);
             }
             // Otherwise, we'll try to handle this ourselves.
         }
@@ -148,9 +143,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             {
                 // This commandline doesn't deserve a window. Don't make a monarch
                 // either.
-                shouldCreateWindow = false;
-
-                return winrt::make<ProposeCommandlineResult>(shouldCreateWindow);
+                return winrt::make<ProposeCommandlineResult>(false);
             }
             else
             {
@@ -314,12 +307,13 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return false;
     }
 
-    Remoting::Peasant WindowManager::CreatePeasant(Remoting::WindowRequestedArgs args)
+    Remoting::Peasant WindowManager::CreatePeasant(const Remoting::WindowRequestedArgs& args)
     {
         auto p = winrt::make_self<Remoting::implementation::Peasant>();
-        if (args.Id())
+        // This will be false if the Id is 0, which is our sentinel for "no specific ID was requested"
+        if (const auto id = args.Id())
         {
-            p->AssignID(args.Id().Value());
+            p->AssignID(id);
         }
 
         // If the name wasn't specified, this will be an empty string.
@@ -340,7 +334,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return *p;
     }
 
-    void WindowManager::SignalClose(Remoting::Peasant peasant)
+    void WindowManager::SignalClose(const Remoting::Peasant& peasant)
     {
         if (_monarch)
         {
@@ -386,31 +380,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     }
 
     // Method Description:
-    // - Ask the monarch to show a notification icon.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    winrt::fire_and_forget WindowManager::RequestShowNotificationIcon(Remoting::Peasant peasant)
-    {
-        co_await winrt::resume_background();
-        peasant.RequestShowNotificationIcon();
-    }
-
-    // Method Description:
-    // - Ask the monarch to hide its notification icon.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    winrt::fire_and_forget WindowManager::RequestHideNotificationIcon(Remoting::Peasant peasant)
-    {
-        auto strongThis{ get_strong() };
-        co_await winrt::resume_background();
-        peasant.RequestHideNotificationIcon();
-    }
-
-    // Method Description:
     // - Ask the monarch to quit all windows.
     // Arguments:
     // - <none>
@@ -418,7 +387,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - <none>
     winrt::fire_and_forget WindowManager::RequestQuitAll(Remoting::Peasant peasant)
     {
-        auto strongThis{ get_strong() };
         co_await winrt::resume_background();
         peasant.RequestQuitAll();
     }
@@ -428,7 +396,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return _monarch.DoesQuakeWindowExist();
     }
 
-    void WindowManager::UpdateActiveTabTitle(winrt::hstring title, Remoting::Peasant peasant)
+    void WindowManager::UpdateActiveTabTitle(const winrt::hstring& title, const Remoting::Peasant& peasant)
     {
         winrt::get_self<implementation::Peasant>(peasant)->ActiveTabTitle(title);
     }

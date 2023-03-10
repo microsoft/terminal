@@ -18,13 +18,13 @@ namespace winrt::TerminalApp::implementation
     public:
         SettingsLoadEventArgs(bool reload,
                               uint64_t result,
-                              const winrt::hstring& exceptionText,
-                              const winrt::Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings>& warnings,
-                              const Microsoft::Terminal::Settings::Model::CascadiaSettings& newSettings) :
+                              winrt::hstring exceptionText,
+                              winrt::Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> warnings,
+                              Microsoft::Terminal::Settings::Model::CascadiaSettings newSettings) :
             _Reload{ reload },
             _Result{ result },
-            _ExceptionText{ exceptionText },
-            _Warnings{ warnings },
-            _NewSettings{ newSettings } {};
+            _ExceptionText{ std::move(exceptionText) },
+            _Warnings{ std::move(warnings) },
+            _NewSettings{ std::move(newSettings) } {};
     };
 }

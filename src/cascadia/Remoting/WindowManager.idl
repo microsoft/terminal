@@ -12,10 +12,9 @@ namespace Microsoft.Terminal.Remoting
         Peasant CreatePeasant(WindowRequestedArgs args);
 
         void SignalClose(Peasant p);
-        void RequestShowNotificationIcon(Peasant p);
-        void RequestHideNotificationIcon(Peasant p);
+
         void UpdateActiveTabTitle(String title, Peasant p);
-        void RequestQuitAll(Peasant p);
+        static void RequestQuitAll(Peasant p);
 
         void SummonWindow(SummonWindowSelectionArgs args);
         void SummonAllWindows();
@@ -35,8 +34,6 @@ namespace Microsoft.Terminal.Remoting
         event Windows.Foundation.TypedEventHandler<Object, Object> WindowClosed;
         event Windows.Foundation.TypedEventHandler<Object, QuitAllRequestedArgs> QuitAllRequested;
         event Windows.Foundation.TypedEventHandler<Object, GetWindowLayoutArgs> GetWindowLayoutRequested;
-        event Windows.Foundation.TypedEventHandler<Object, Object> ShowNotificationIconRequested;
-        event Windows.Foundation.TypedEventHandler<Object, Object> HideNotificationIconRequested;
 
         event Windows.Foundation.TypedEventHandler<Object, WindowRequestedArgs> RequestNewWindow;
 
