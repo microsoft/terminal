@@ -172,6 +172,7 @@ namespace Microsoft::Console::VirtualTerminal
         {
             VTInt Row = 1;
             VTInt Column = 1;
+            bool IsDelayedEOLWrap = false;
             bool IsOriginModeRelative = false;
             TextAttribute Attributes = {};
             TerminalOutput TermOutput = {};

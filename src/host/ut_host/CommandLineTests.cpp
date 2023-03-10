@@ -77,7 +77,7 @@ class CommandLineTests
                             const size_t cchBuffer)
     {
         cookedReadData._commandHistory = pHistory;
-        cookedReadData._userBuffer = pBuffer;
+        cookedReadData._userBuffer = reinterpret_cast<char*>(pBuffer);
         cookedReadData._userBufferSize = cchBuffer * sizeof(wchar_t);
         cookedReadData._bufferSize = cchBuffer * sizeof(wchar_t);
         cookedReadData._backupLimit = pBuffer;

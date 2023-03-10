@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#include <precomp.h>
+#include "precomp.h"
 
 #include "adaptDispatch.hpp"
 #include "../../types/inc/utils.hpp"

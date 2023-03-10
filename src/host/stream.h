@@ -29,6 +29,12 @@ Revision History:
                                _Out_opt_ bool* const pPopupKeys,
                                _Out_opt_ DWORD* const pdwKeyState) noexcept;
 
+[[nodiscard]] NTSTATUS ReadCharacterInput(InputBuffer& inputBuffer,
+                                          std::span<char> buffer,
+                                          size_t& bytesRead,
+                                          INPUT_READ_HANDLE_DATA& readHandleState,
+                                          const bool unicode);
+
 // Routine Description:
 // - This routine returns the total number of screen spaces the characters up to the specified character take up.
 til::CoordType RetrieveTotalNumberOfSpaces(const til::CoordType sOriginalCursorPositionX,

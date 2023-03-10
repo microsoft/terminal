@@ -149,7 +149,7 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
             cursor.SetPosition(cursorPosition);
             if (wrapAtEOL)
             {
-                cursor.DelayEOLWrap(cursorPosition);
+                cursor.DelayEOLWrap();
             }
         }
         else
@@ -446,6 +446,7 @@ bool AdaptDispatch::CursorSaveState()
     auto& savedCursorState = _savedCursorState.at(_usingAltBuffer);
     savedCursorState.Column = cursorPosition.x + 1;
     savedCursorState.Row = cursorPosition.y + 1;
+    savedCursorState.IsDelayedEOLWrap = textBuffer.GetCursor().IsDelayedEOLWrap();
     savedCursorState.IsOriginModeRelative = _modes.test(Mode::Origin);
     savedCursorState.Attributes = attributes;
     savedCursorState.TermOutput = _termOutput;
@@ -483,6 +484,12 @@ bool AdaptDispatch::CursorRestoreState()
     // The saved coordinates are always absolute, so we need reset the origin mode temporarily.
     _modes.reset(Mode::Origin);
     CursorPosition(row, col);
+
+    // If the delayed wrap flag was set when the cursor was saved, we need to restore that now.
+    if (savedCursorState.IsDelayedEOLWrap)
+    {
+        _api.GetTextBuffer().GetCursor().DelayEOLWrap();
+    }
 
     // Once the cursor position is restored, we can then restore the actual origin mode.
     _modes.set(Mode::Origin, savedCursorState.IsOriginModeRelative);
@@ -600,6 +607,8 @@ void AdaptDispatch::_InsertDeleteCharacterHelper(const VTInt delta)
     const auto startCol = textBuffer.GetCursor().GetPosition().x;
     const auto endCol = textBuffer.GetLineWidth(row);
     _ScrollRectHorizontally(textBuffer, { startCol, row, endCol, row + 1 }, delta);
+    // The ICH and DCH controls are expected to reset the delayed wrap flag.
+    textBuffer.GetCursor().ResetDelayEOLWrap();
 }
 
 // Routine Description:
@@ -668,6 +677,9 @@ bool AdaptDispatch::EraseCharacters(const VTInt numChars)
     const auto startCol = textBuffer.GetCursor().GetPosition().x;
     const auto endCol = std::min<VTInt>(startCol + numChars, textBuffer.GetLineWidth(row));
 
+    // The ECH control is expected to reset the delayed wrap flag.
+    textBuffer.GetCursor().ResetDelayEOLWrap();
+
     auto eraseAttributes = textBuffer.GetCurrentAttributes();
     eraseAttributes.SetStandardErase();
     _FillRect(textBuffer, { startCol, row, endCol, row + 1 }, L' ', eraseAttributes);
@@ -721,6 +733,11 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
     const auto row = textBuffer.GetCursor().GetPosition().y;
     const auto col = textBuffer.GetCursor().GetPosition().x;
 
+    // The ED control is expected to reset the delayed wrap flag.
+    // The special case variants above ("erase all" and "erase scrollback")
+    // take care of that themselves when they set the cursor position.
+    textBuffer.GetCursor().ResetDelayEOLWrap();
+
     auto eraseAttributes = textBuffer.GetCurrentAttributes();
     eraseAttributes.SetStandardErase();
 
@@ -757,6 +774,9 @@ bool AdaptDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
     auto& textBuffer = _api.GetTextBuffer();
     const auto row = textBuffer.GetCursor().GetPosition().y;
     const auto col = textBuffer.GetCursor().GetPosition().x;
+
+    // The EL control is expected to reset the delayed wrap flag.
+    textBuffer.GetCursor().ResetDelayEOLWrap();
 
     auto eraseAttributes = textBuffer.GetCurrentAttributes();
     eraseAttributes.SetStandardErase();
@@ -822,6 +842,9 @@ bool AdaptDispatch::SelectiveEraseInDisplay(const DispatchTypes::EraseType erase
     const auto row = textBuffer.GetCursor().GetPosition().y;
     const auto col = textBuffer.GetCursor().GetPosition().x;
 
+    // The DECSED control is expected to reset the delayed wrap flag.
+    textBuffer.GetCursor().ResetDelayEOLWrap();
+
     switch (eraseType)
     {
     case DispatchTypes::EraseType::FromBeginning:
@@ -854,6 +877,9 @@ bool AdaptDispatch::SelectiveEraseInLine(const DispatchTypes::EraseType eraseTyp
     auto& textBuffer = _api.GetTextBuffer();
     const auto row = textBuffer.GetCursor().GetPosition().y;
     const auto col = textBuffer.GetCursor().GetPosition().x;
+
+    // The DECSEL control is expected to reset the delayed wrap flag.
+    textBuffer.GetCursor().ResetDelayEOLWrap();
 
     switch (eraseType)
     {
@@ -1251,7 +1277,13 @@ bool AdaptDispatch::SelectAttributeChangeExtent(const DispatchTypes::ChangeExten
 // - True.
 bool AdaptDispatch::SetLineRendition(const LineRendition rendition)
 {
-    _api.GetTextBuffer().SetCurrentLineRendition(rendition);
+    auto& textBuffer = _api.GetTextBuffer();
+    textBuffer.SetCurrentLineRendition(rendition);
+    // There is some variation in how this was handled by the different DEC
+    // terminals, but the STD 070 reference (on page D-13) makes it clear that
+    // the delayed wrap (aka the Last Column Flag) was expected to be reset when
+    // line rendition controls were executed.
+    textBuffer.GetCursor().ResetDelayEOLWrap();
     return true;
 }
 
@@ -1606,6 +1638,11 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         return true;
     case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
         _api.SetAutoWrapMode(enable);
+        // Resetting DECAWM should also reset the delayed wrap flag.
+        if (!enable)
+        {
+            _api.GetTextBuffer().GetCursor().ResetDelayEOLWrap();
+        }
         return true;
     case DispatchTypes::ModeParams::DECARM_AutoRepeatMode:
         _terminalInput.SetInputMode(TerminalInput::Mode::AutoRepeat, enable);
@@ -2097,8 +2134,20 @@ bool AdaptDispatch::ForwardTab(const VTInt numTabs)
         }
     }
 
+    // While the STD 070 reference suggests that horizontal tabs should reset
+    // the delayed wrap, almost none of the DEC terminals actually worked that
+    // way, and most modern terminal emulators appear to have taken the same
+    // approach (i.e. they don't reset). For us this is a bit messy, since all
+    // cursor movement resets the flag automatically, so we need to save the
+    // original state here, and potentially reapply it after the move.
+    const auto delayedWrapOriginallySet = cursor.IsDelayedEOLWrap();
     cursor.SetXPosition(column);
     _ApplyCursorMovementFlags(cursor);
+    if (delayedWrapOriginallySet)
+    {
+        cursor.DelayEOLWrap();
+    }
+
     return true;
 }
 
