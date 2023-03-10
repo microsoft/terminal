@@ -24,8 +24,6 @@ using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
 #define TERMINAL_MESSAGE_CLASS_NAME L"TERMINAL_MESSAGE_CLASS"
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
-const UINT WM_TASKBARCREATED = RegisterWindowMessage(L"TaskbarCreated");
-
 WindowEmperor::WindowEmperor() noexcept :
     _app{}
 {
@@ -217,8 +215,8 @@ void WindowEmperor::_becomeMonarch()
     // Set the number of open windows (so we know if we are the last window)
     // and subscribe for updates if there are any changes to that number.
 
-    _WindowCreatedToken = _manager.WindowCreated({ this, &WindowEmperor::_numberOfWindowsChanged });
-    _WindowClosedToken = _manager.WindowClosed({ this, &WindowEmperor::_numberOfWindowsChanged });
+    _revokers.WindowCreated = _manager.WindowCreated(winrt::auto_revoke, { this, &WindowEmperor::_numberOfWindowsChanged });
+    _revokers.WindowClosed = _manager.WindowClosed(winrt::auto_revoke, { this, &WindowEmperor::_numberOfWindowsChanged });
 
     // If the monarch receives a QuitAll event it will signal this event to be
     // ran before each peasant is closed.
@@ -228,6 +226,24 @@ void WindowEmperor::_becomeMonarch()
     // We want at least some delay to prevent the first save from overwriting
     _getWindowLayoutThrottler.emplace(std::move(std::chrono::seconds(10)), std::move([this]() { _saveWindowLayoutsRepeat(); }));
     _getWindowLayoutThrottler.value()();
+
+    // BODGY
+    //
+    // We've got a weird crash that happens terribly inconsistently, but pretty
+    // readily on migrie's laptop, only in Debug mode. Apparently, there's some
+    // weird ref-counting magic that goes on during teardown, and our
+    // Application doesn't get closed quite right, which can cause us to crash
+    // into the debugger. This of course, only happens on exit, and happens
+    // somewhere in the XamlHost.dll code.
+    //
+    // Crazily, if we _manually leak the Application_ here, then the crash
+    // doesn't happen. This doesn't matter, because we really want the
+    // Application to live for _the entire lifetime of the process_, so the only
+    // time when this object would actually need to get cleaned up is _during
+    // exit_. So we can safely leak this Application object, and have it just
+    // get cleaned up normally when our process exits.
+    auto a{ _app };
+    ::winrt::detach_abi(a);
 }
 
 // sender and args are always nullptr
@@ -383,6 +399,10 @@ void WindowEmperor::_createMessageWindow()
 
 LRESULT WindowEmperor::_messageHandler(UINT const message, WPARAM const wParam, LPARAM const lParam) noexcept
 {
+    // use C++11 magic statics to make sure we only do this once.
+    // This won't change over the lifetime of the application
+    static const UINT WM_TASKBARCREATED = []() { return RegisterWindowMessageW(L"TaskbarCreated"); }();
+
     switch (message)
     {
     case WM_HOTKEY:

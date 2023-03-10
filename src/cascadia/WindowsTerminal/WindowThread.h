@@ -4,7 +4,7 @@
 #include "pch.h"
 #include "AppHost.h"
 
-class WindowThread
+class WindowThread : public std::enable_shared_from_this<WindowThread>
 {
 public:
     WindowThread(winrt::TerminalApp::AppLogic logic,

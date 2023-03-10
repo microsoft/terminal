@@ -724,7 +724,7 @@ namespace winrt::TerminalApp::implementation
 
     bool AppLogic::ShouldUsePersistedLayout() const
     {
-        return _settings.GlobalSettings().ShouldUsePersistedLayout() && !_settings.GlobalSettings().IsolatedMode();
+        return _settings.GlobalSettings().ShouldUsePersistedLayout();
     }
 
     void AppLogic::SaveWindowLayoutJsons(const Windows::Foundation::Collections::IVector<hstring>& layouts)
