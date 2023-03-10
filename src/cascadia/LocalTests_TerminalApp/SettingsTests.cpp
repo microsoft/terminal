@@ -184,7 +184,6 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
         }
 
-        settings.ExpandCommands();
         const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
         _logCommands(expandedCommands);
 
@@ -311,7 +310,6 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
         }
 
-        settings.ExpandCommands();
         const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
         _logCommands(expandedCommands);
 
@@ -443,7 +441,6 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
         }
 
-        settings.ExpandCommands();
         const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
         _logCommands(expandedCommands);
 
@@ -565,7 +562,6 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        settings.ExpandCommands();
         const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
         _logCommands(expandedCommands);
 
@@ -661,7 +657,6 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        settings.ExpandCommands();
         const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
         _logCommands(expandedCommands);
 
@@ -787,7 +782,6 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        settings.ExpandCommands();
         const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
         _logCommands(expandedCommands);
 
@@ -929,7 +923,6 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        settings.ExpandCommands();
         const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
         _logCommands(expandedCommands);
 
@@ -1034,7 +1027,6 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        settings.ExpandCommands();
         const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
         _logCommands(expandedCommands);
 
@@ -1261,7 +1253,6 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${scheme.name}", realArgs.TerminalArgs().Profile());
         }
 
-        settings.ExpandCommands();
         const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
         _logCommands(expandedCommands);
 
