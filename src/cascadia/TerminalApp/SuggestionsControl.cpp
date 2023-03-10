@@ -1058,7 +1058,7 @@ namespace winrt::TerminalApp::implementation
         // Set the anchor below by a character height
         _anchor.Y += canOpenDownwards ? characterHeight : 0;
 
-        // First, position horizonally.
+        // First, position horizontally.
         //
         // We want to align the left edge of the text within the control to the
         // cursor position. We'll need to scoot a little to the left, to align
