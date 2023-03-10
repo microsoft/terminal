@@ -320,6 +320,17 @@
                       ItemsSource="{x:Bind FilteredActions}"
                       SelectionChanged="_listItemSelectionChanged"
                       SelectionMode="Single" />
+            <mux:TeachingTip x:Name="DescriptionTip"
+                             Title=""
+                             IsOpen="False"
+                             PreferredPlacement="Right"
+                             ShouldConstrainToRootBounds="False"
+                             Subtitle="">
+                <ScrollViewer HorizontalScrollBarVisibility="Hidden"
+                              HorizontalScrollMode="Enabled">
+                    <TextBlock x:Name="_toolTipContent" />
+                </ScrollViewer>
+            </mux:TeachingTip>
 
         </Grid>
 
