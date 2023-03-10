@@ -659,6 +659,13 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                           TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
+        if (targetWindow == WindowingBehaviorUseNone)
+        {
+            // In this case, the targetWindow was UseNone, which means that we
+            // want to make a message box, but otherwise not make a Terminal
+            // window.
+            return winrt::make<Remoting::implementation::ProposeCommandlineResult>(false);
+        }
         // If there's a valid ID returned, then let's try and find the peasant
         // that goes with it. Alternatively, if we were given a magic windowing
         // constant, we can use that to look up an appropriate peasant.
@@ -772,14 +779,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
                 return *result;
             }
-        }
-        else if (targetWindow == WindowingBehaviorUseNone)
-        {
-            // In this case, the targetWindow was UseNone, which means that we
-            // want to make a message box, but otherwise not make a Terminal
-            // window.
-            auto result = winrt::make_self<Remoting::implementation::ProposeCommandlineResult>(false);
-            return *result;
         }
 
         // If we get here, we couldn't find an existing window. Make a new one.

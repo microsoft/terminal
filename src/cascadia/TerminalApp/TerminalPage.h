@@ -7,6 +7,7 @@
 #include "TerminalTab.h"
 #include "AppKeyBindings.h"
 #include "AppCommandlineArgs.h"
+#include "LastTabClosedEventArgs.g.h"
 #include "RenameWindowRequestedArgs.g.h"
 #include "RequestMoveContentArgs.g.h"
 #include "RequestReceiveContentArgs.g.h"
@@ -41,6 +42,15 @@ namespace winrt::TerminalApp::implementation
     {
         ScrollUp = 0,
         ScrollDown = 1
+    };
+
+    struct LastTabClosedEventArgs : LastTabClosedEventArgsT<LastTabClosedEventArgs>
+    {
+        WINRT_PROPERTY(bool, ClearPersistedState);
+
+    public:
+        LastTabClosedEventArgs(const bool& shouldClear) :
+            _ClearPersistedState{ shouldClear } {};
     };
 
     struct RenameWindowRequestedArgs : RenameWindowRequestedArgsT<RenameWindowRequestedArgs>
@@ -81,7 +91,7 @@ namespace winrt::TerminalApp::implementation
     struct TerminalPage : TerminalPageT<TerminalPage>
     {
     public:
-        TerminalPage(const TerminalApp::ContentManager& manager);
+        TerminalPage(TerminalApp::WindowProperties properties, const TerminalApp::ContentManager& manager);
 
         // This implements shobjidl's IInitializeWithWindow, but due to a XAML Compiler bug we cannot
         // put it in our inheritance graph. https://github.com/microsoft/microsoft-ui-xaml/issues/3331
@@ -142,13 +152,7 @@ namespace winrt::TerminalApp::implementation
                                                      const bool initial,
                                                      const winrt::hstring cwd = L"");
 
-        // For the sake of XAML binding:
-        winrt::hstring WindowName() const noexcept { return _WindowProperties.WindowName(); };
-        uint64_t WindowId() const noexcept { return _WindowProperties.WindowId(); };
-        winrt::hstring WindowIdForDisplay() const noexcept { return _WindowProperties.WindowIdForDisplay(); };
-        winrt::hstring WindowNameForDisplay() const noexcept { return _WindowProperties.WindowNameForDisplay(); };
-
-        void SetNumberOfOpenWindows(const uint64_t value);
+        TerminalApp::WindowProperties WindowProperties() const noexcept { return _WindowProperties; };
 
         bool IsElevated() const noexcept;
 
@@ -156,10 +160,6 @@ namespace winrt::TerminalApp::implementation
         void WindowActivated(const bool activated);
 
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
-
-        TerminalApp::IWindowProperties WindowProperties();
-        void WindowProperties(const TerminalApp::IWindowProperties& props);
-        winrt::fire_and_forget WindowNameChanged();
 
         winrt::fire_and_forget AttachContent(winrt::hstring content, uint32_t tabIndex);
         winrt::fire_and_forget SendContentToOther(winrt::TerminalApp::RequestReceiveContentArgs args);
@@ -223,7 +223,6 @@ namespace winrt::TerminalApp::implementation
         bool _isAlwaysOnTop{ false };
 
         std::optional<uint32_t> _loadFromPersistedLayoutIdx{};
-        uint64_t _numOpenWindows{ 0 };
 
         bool _maintainStateOnTabClose{ false };
         bool _rearranging{ false };
@@ -258,7 +257,7 @@ namespace winrt::TerminalApp::implementation
         int _renamerLayoutCount{ 0 };
         bool _renamerPressedEnter{ false };
 
-        TerminalApp::IWindowProperties _WindowProperties{ nullptr };
+        TerminalApp::WindowProperties _WindowProperties{ nullptr };
 
         PaneResources _paneResources;
 
@@ -497,6 +496,7 @@ namespace winrt::TerminalApp::implementation
         void _updatePaneResources(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
 
         winrt::fire_and_forget _ShowWindowChangedHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
+        winrt::fire_and_forget _windowPropertyChanged(const IInspectable& sender, const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
 
         void _onTabDragStarting(winrt::Microsoft::UI::Xaml::Controls::TabView sender, winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragStartingEventArgs e);
         void _onTabStripDragOver(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::DragEventArgs e);

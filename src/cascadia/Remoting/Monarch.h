@@ -42,16 +42,16 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     struct WindowRequestedArgs : public WindowRequestedArgsT<WindowRequestedArgs>
     {
     public:
-        WindowRequestedArgs(const Remoting::ProposeCommandlineResult& result, const Remoting::CommandlineArgs& command) :
-            _Id{ result.Id() },
-            _WindowName{ result.WindowName() },
+        WindowRequestedArgs(const Remoting::ProposeCommandlineResult& windowInfo, const Remoting::CommandlineArgs& command) :
+            _Id{ windowInfo.Id() ? windowInfo.Id().Value() : 0 }, // We'll use 0 as a sentinel, since no window will ever get to have that ID
+            _WindowName{ windowInfo.WindowName() },
             _args{ command.Commandline() },
             _CurrentDirectory{ command.CurrentDirectory() } {};
 
         void Commandline(const winrt::array_view<const winrt::hstring>& value) { _args = { value.begin(), value.end() }; };
         winrt::com_array<winrt::hstring> Commandline() { return winrt::com_array<winrt::hstring>{ _args.begin(), _args.end() }; }
 
-        WINRT_PROPERTY(Windows::Foundation::IReference<uint64_t>, Id);
+        WINRT_PROPERTY(uint64_t, Id);
         WINRT_PROPERTY(winrt::hstring, WindowName);
         WINRT_PROPERTY(winrt::hstring, CurrentDirectory);
 

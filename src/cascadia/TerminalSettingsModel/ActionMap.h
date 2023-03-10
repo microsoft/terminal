@@ -75,7 +75,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void DeleteKeyBinding(const Control::KeyChord& keys);
         void RegisterKeyBinding(Control::KeyChord keys, Model::ActionAndArgs action);
 
-        Windows::Foundation::Collections::IMapView<hstring, Model::Command> ExpandedCommands();
+        Windows::Foundation::Collections::IVector<Model::Command> ExpandedCommands();
         void ExpandCommands(const Windows::Foundation::Collections::IVectorView<Model::Profile>& profiles,
                             const Windows::Foundation::Collections::IMapView<winrt::hstring, Model::ColorScheme>& schemes);
 
@@ -101,7 +101,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _GlobalHotkeysCache{ nullptr };
         Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _KeyBindingMapCache{ nullptr };
 
-        Windows::Foundation::Collections::IMap<hstring, Model::Command> _ExpandedMapCache{ nullptr };
+        Windows::Foundation::Collections::IVector<Model::Command> _ExpandedCommandsCache{ nullptr };
 
         std::unordered_map<winrt::hstring, Model::Command> _NestedCommands;
         std::vector<Model::Command> _IterableCommands;
