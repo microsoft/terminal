@@ -83,11 +83,7 @@ bool WindowEmperor::HandleCommandlineArgs()
 
     if (result.ShouldCreateWindow())
     {
-        CreateNewWindowThread(Remoting::WindowRequestedArgs{ result, eventArgs });
-
-        _manager.RequestNewWindow([this](auto&&, const Remoting::WindowRequestedArgs& args) {
-            CreateNewWindowThread(args);
-        });
+        _createNewWindowThread(Remoting::WindowRequestedArgs{ result, eventArgs });
 
         _becomeMonarch();
     }
@@ -106,15 +102,15 @@ bool WindowEmperor::HandleCommandlineArgs()
 
 void WindowEmperor::WaitForWindows()
 {
-    MSG message;
-    while (GetMessage(&message, nullptr, 0, 0))
+    MSG message{};
+    while (GetMessageW(&message, nullptr, 0, 0))
     {
         TranslateMessage(&message);
         DispatchMessage(&message);
     }
 }
 
-void WindowEmperor::CreateNewWindowThread(Remoting::WindowRequestedArgs args)
+void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& args)
 {
     Remoting::Peasant peasant{ _manager.CreatePeasant(args) };
 
@@ -146,7 +142,7 @@ void WindowEmperor::CreateNewWindowThread(Remoting::WindowRequestedArgs args)
 // Handler for a WindowThread's Started event, which it raises once the window
 // thread starts and XAML is ready to go on that thread. Set up some callbacks
 // now that we know this window is set up and ready to go.
-// Q: Why isn't adding these callbacks just a part of CreateNewWindowThread?
+// Q: Why isn't adding these callbacks just a part of _createNewWindowThread?
 // A: Until the thread actually starts, the AppHost (and its Logic()) haven't
 // been ctor'd or initialized, so trying to add callbacks immediately will A/V
 void WindowEmperor::_windowStartedHandler(const std::shared_ptr<WindowThread>& sender)
@@ -195,6 +191,12 @@ void WindowEmperor::_windowExitedHandler(uint64_t senderID)
 // - <none>
 void WindowEmperor::_becomeMonarch()
 {
+    // Add a callback to the window manager so that when the Monarch wants a new
+    // window made, they come to us
+    _manager.RequestNewWindow([this](auto&&, const Remoting::WindowRequestedArgs& args) {
+        _createNewWindowThread(args);
+    });
+
     _createMessageWindow();
 
     _setupGlobalHotkeys();
@@ -334,7 +336,7 @@ static WindowEmperor* GetThisFromHandle(HWND const window) noexcept
     const auto data = GetWindowLongPtr(window, GWLP_USERDATA);
     return reinterpret_cast<WindowEmperor*>(data);
 }
-[[nodiscard]] static LRESULT __stdcall MessageWndProc(HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
+[[nodiscard]] LRESULT __stdcall WindowEmperor::_wndProc(HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
 {
     WINRT_ASSERT(window);
 
@@ -349,7 +351,7 @@ static WindowEmperor* GetThisFromHandle(HWND const window) noexcept
     }
     else if (WindowEmperor* that = GetThisFromHandle(window))
     {
-        return that->MessageHandler(message, wparam, lparam);
+        return that->_messageHandler(message, wparam, lparam);
     }
 
     return DefWindowProc(window, message, wparam, lparam);
@@ -361,7 +363,7 @@ void WindowEmperor::_createMessageWindow()
     wc.hInstance = reinterpret_cast<HINSTANCE>(&__ImageBase);
     wc.lpszClassName = TERMINAL_MESSAGE_CLASS_NAME;
     wc.style = CS_HREDRAW | CS_VREDRAW;
-    wc.lpfnWndProc = MessageWndProc;
+    wc.lpfnWndProc = WindowEmperor::_wndProc;
     wc.hIcon = LoadIconW(wc.hInstance, MAKEINTRESOURCEW(IDI_APPICON));
     RegisterClass(&wc);
     WINRT_ASSERT(!_window);
@@ -379,7 +381,7 @@ void WindowEmperor::_createMessageWindow()
                               this));
 }
 
-LRESULT WindowEmperor::MessageHandler(UINT const message, WPARAM const wParam, LPARAM const lParam) noexcept
+LRESULT WindowEmperor::_messageHandler(UINT const message, WPARAM const wParam, LPARAM const lParam) noexcept
 {
     switch (message)
     {

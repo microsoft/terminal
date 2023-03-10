@@ -28,12 +28,14 @@ public:
     void WaitForWindows();
 
     bool HandleCommandlineArgs();
-    void CreateNewWindowThread(winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args);
-
-    LRESULT MessageHandler(UINT const message, WPARAM const wParam, LPARAM const lParam) noexcept;
-    wil::unique_hwnd _window;
 
 private:
+    void _createNewWindowThread(const winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs& args);
+
+    [[nodiscard]] static LRESULT __stdcall _wndProc(HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept;
+    LRESULT _messageHandler(UINT const message, WPARAM const wParam, LPARAM const lParam) noexcept;
+    wil::unique_hwnd _window;
+
     winrt::TerminalApp::App _app;
     winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };
     winrt::Microsoft::Terminal::Remoting::WindowManager _manager;

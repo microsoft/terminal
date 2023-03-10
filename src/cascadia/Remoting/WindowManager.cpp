@@ -307,7 +307,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return false;
     }
 
-    Remoting::Peasant WindowManager::CreatePeasant(Remoting::WindowRequestedArgs args)
+    Remoting::Peasant WindowManager::CreatePeasant(const Remoting::WindowRequestedArgs& args)
     {
         auto p = winrt::make_self<Remoting::implementation::Peasant>();
         // This will be false if the Id is 0, which is our sentinel for "no specific ID was requested"
@@ -334,7 +334,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return *p;
     }
 
-    void WindowManager::SignalClose(Remoting::Peasant peasant)
+    void WindowManager::SignalClose(const Remoting::Peasant& peasant)
     {
         if (_monarch)
         {
@@ -396,7 +396,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return _monarch.DoesQuakeWindowExist();
     }
 
-    void WindowManager::UpdateActiveTabTitle(winrt::hstring title, Remoting::Peasant peasant)
+    void WindowManager::UpdateActiveTabTitle(const winrt::hstring& title, const Remoting::Peasant& peasant)
     {
         winrt::get_self<implementation::Peasant>(peasant)->ActiveTabTitle(title);
     }

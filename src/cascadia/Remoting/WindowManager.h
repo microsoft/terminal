@@ -29,16 +29,16 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         WindowManager();
         ~WindowManager();
         winrt::Microsoft::Terminal::Remoting::ProposeCommandlineResult ProposeCommandline(const winrt::Microsoft::Terminal::Remoting::CommandlineArgs& args, const bool isolatedMode);
-        Remoting::Peasant CreatePeasant(Remoting::WindowRequestedArgs args);
+        Remoting::Peasant CreatePeasant(const Remoting::WindowRequestedArgs& args);
 
-        void SignalClose(Remoting::Peasant peasant);
+        void SignalClose(const Remoting::Peasant& peasant);
         void SummonWindow(const Remoting::SummonWindowSelectionArgs& args);
         void SummonAllWindows();
         Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> GetPeasantInfos();
         uint64_t GetNumberOfPeasants();
 
         static winrt::fire_and_forget RequestQuitAll(Remoting::Peasant peasant);
-        void UpdateActiveTabTitle(winrt::hstring title, Remoting::Peasant peasant);
+        void UpdateActiveTabTitle(const winrt::hstring& title, const Remoting::Peasant& peasant);
         Windows::Foundation::Collections::IVector<winrt::hstring> GetAllWindowLayouts();
         bool DoesQuakeWindowExist();
 
