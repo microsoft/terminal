@@ -4,6 +4,7 @@
 #include "pch.h"
 
 #include "../TerminalApp/TerminalPage.h"
+#include "../TerminalApp/TerminalWindow.h"
 #include "../TerminalApp/MinMaxCloseControl.h"
 #include "../TerminalApp/TabRowControl.h"
 #include "../TerminalApp/ShortcutActionDispatch.h"
@@ -41,17 +42,6 @@ namespace TerminalAppLocalTests
     // Unfortunately, these tests _WILL NOT_ work in our CI. We're waiting for
     // an updated TAEF that will let us install framework packages when the test
     // package is deployed. Until then, these tests won't deploy in CI.
-
-    struct WindowProperties : winrt::implements<WindowProperties, winrt::TerminalApp::IWindowProperties>
-    {
-        WINRT_PROPERTY(winrt::hstring, WindowName);
-        WINRT_PROPERTY(uint64_t, WindowId);
-        WINRT_PROPERTY(winrt::hstring, WindowNameForDisplay);
-        WINRT_PROPERTY(winrt::hstring, WindowIdForDisplay);
-
-    public:
-        bool IsQuakeWindow() { return _WindowName == L"_quake"; };
-    };
 
     class TabTests
     {
@@ -121,7 +111,7 @@ namespace TerminalAppLocalTests
         void _initializeTerminalPage(winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page,
                                      CascadiaSettings initialSettings);
         winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> _commonSetup();
-        winrt::com_ptr<WindowProperties> _windowProperties;
+        winrt::com_ptr<winrt::TerminalApp::implementation::WindowProperties> _windowProperties;
     };
 
     template<typename TFunction>
@@ -206,8 +196,11 @@ namespace TerminalAppLocalTests
     {
         winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
 
-        auto result = RunOnUIThread([&page]() {
-            page = winrt::make_self<winrt::TerminalApp::implementation::TerminalPage>();
+        _windowProperties = winrt::make_self<winrt::TerminalApp::implementation::WindowProperties>();
+        winrt::TerminalApp::WindowProperties props = *_windowProperties;
+
+        auto result = RunOnUIThread([&page, props]() {
+            page = winrt::make_self<winrt::TerminalApp::implementation::TerminalPage>(props);
             VERIFY_IS_NOT_NULL(page);
         });
         VERIFY_SUCCEEDED(result);
@@ -251,15 +244,13 @@ namespace TerminalAppLocalTests
         // it's weird.
         winrt::TerminalApp::TerminalPage projectedPage{ nullptr };
 
-        _windowProperties = winrt::make_self<WindowProperties>();
-        winrt::TerminalApp::IWindowProperties iProps{ *_windowProperties };
-
+        _windowProperties = winrt::make_self<winrt::TerminalApp::implementation::WindowProperties>();
+        winrt::TerminalApp::WindowProperties props = *_windowProperties;
         Log::Comment(NoThrowString().Format(L"Construct the TerminalPage"));
-        auto result = RunOnUIThread([&projectedPage, &page, initialSettings, iProps]() {
-            projectedPage = winrt::TerminalApp::TerminalPage();
+        auto result = RunOnUIThread([&projectedPage, &page, initialSettings, props]() {
+            projectedPage = winrt::TerminalApp::TerminalPage(props);
             page.copy_from(winrt::get_self<winrt::TerminalApp::implementation::TerminalPage>(projectedPage));
             page->_settings = initialSettings;
-            page->WindowProperties(iProps);
         });
         VERIFY_SUCCEEDED(result);
 
@@ -1264,11 +1255,10 @@ namespace TerminalAppLocalTests
             //
             // This replicates how TerminalWindow works
             _windowProperties->WindowName(args.ProposedName());
-            page->WindowNameChanged();
         });
 
         auto windowNameChanged = false;
-        page->PropertyChanged([&page, &windowNameChanged](auto&&, const winrt::WUX::Data::PropertyChangedEventArgs& args) mutable {
+        _windowProperties->PropertyChanged([&page, &windowNameChanged](auto&&, const winrt::WUX::Data::PropertyChangedEventArgs& args) mutable {
             if (args.PropertyName() == L"WindowNameForDisplay")
             {
                 windowNameChanged = true;
@@ -1279,7 +1269,7 @@ namespace TerminalAppLocalTests
             page->_RequestWindowRename(winrt::hstring{ L"Foo" });
         });
         TestOnUIThread([&]() {
-            VERIFY_ARE_EQUAL(L"Foo", page->WindowName());
+            VERIFY_ARE_EQUAL(L"Foo", page->WindowProperties().WindowName());
             VERIFY_IS_TRUE(windowNameChanged,
                            L"The window name should have changed, and we should have raised a notification that WindowNameForDisplay changed");
         });

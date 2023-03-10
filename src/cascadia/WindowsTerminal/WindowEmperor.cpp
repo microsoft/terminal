@@ -237,13 +237,6 @@ void WindowEmperor::_numberOfWindowsChanged(const winrt::Windows::Foundation::II
         _getWindowLayoutThrottler.value()();
     }
 
-    const auto& numWindows{ _manager.GetNumberOfPeasants() };
-    auto windows{ _windows.lock_shared() };
-    for (const auto& _windowThread : *windows)
-    {
-        _windowThread->Logic().SetNumberOfOpenWindows(numWindows);
-    }
-
     // If we closed out the quake window, and don't otherwise need the tray
     // icon, let's get rid of it.
     _checkWindowsForNotificationIcon();

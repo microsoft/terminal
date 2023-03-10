@@ -33,8 +33,12 @@ namespace winrt
 
 ////////////////////////////////////////////////////////////////////////////////
 // Error message handling. This is in this file rather than with the warnings in
-// TerminalWindow, because the error text might also just be a serialization
-// error message. So AppLogic needs to know the actual text of the error.
+// TerminalWindow, because the error text might be:
+// * A error we defined here
+// * An error from deserializing the json
+// * Any other fatal error loading the settings
+// So all we pass on is the actual text of the error, rather than the
+// combination of things that might have caused an error.
 
 // !!! IMPORTANT !!!
 // Make sure that these keys are in the same order as the
@@ -200,7 +204,8 @@ namespace winrt::TerminalApp::implementation
 
         // These used to be in `TerminalPage::Initialized`, so that they started
         // _after_ the Terminal window was started and displayed. These could
-        // theoretically move there again too.
+        // theoretically move there again too. TODO:GH#14957 - evaluate moving
+        // this after the Page is initialized
         {
             // Both LoadSettings and ReloadSettings are supposed to call this function,
             // but LoadSettings skips it, so that the UI starts up faster.
@@ -232,7 +237,7 @@ namespace winrt::TerminalApp::implementation
                     TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                     TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
             }
-        };
+        }
 
         _ApplyLanguageSettingChange();
         _ApplyStartupTaskStateChange();
@@ -300,7 +305,7 @@ namespace winrt::TerminalApp::implementation
 
             _settings.ExpandCommands();
 
-            hr = (_warnings.size()) == 0u ? S_OK : S_FALSE;
+            hr = _warnings.empty() ? S_OK : S_FALSE;
         }
         catch (const winrt::hresult_error& e)
         {
@@ -494,10 +499,15 @@ namespace winrt::TerminalApp::implementation
             }
             else
             {
+                auto warnings{ winrt::multi_threaded_vector<SettingsLoadWarnings>() };
+                for (auto&& warn : _warnings)
+                {
+                    warnings.Append(warn);
+                }
                 auto ev = winrt::make_self<SettingsLoadEventArgs>(true,
                                                                   static_cast<uint64_t>(_settingsLoadedResult),
                                                                   _settingsLoadExceptionText,
-                                                                  winrt::multi_threaded_vector<SettingsLoadWarnings>(std::move(_warnings)),
+                                                                  warnings,
                                                                   _settings);
                 _SettingsChangedHandlers(*this, *ev);
                 return;
@@ -518,10 +528,15 @@ namespace winrt::TerminalApp::implementation
         _ApplyStartupTaskStateChange();
         _ProcessLazySettingsChanges();
 
+        auto warnings{ winrt::multi_threaded_vector<SettingsLoadWarnings>() };
+        for (auto&& warn : _warnings)
+        {
+            warnings.Append(warn);
+        }
         auto ev = winrt::make_self<SettingsLoadEventArgs>(!initialLoad,
                                                           _settingsLoadedResult,
                                                           _settingsLoadExceptionText,
-                                                          winrt::multi_threaded_vector<SettingsLoadWarnings>(std::move(_warnings)),
+                                                          warnings,
                                                           _settings);
         _SettingsChangedHandlers(*this, *ev);
     }
@@ -692,10 +707,15 @@ namespace winrt::TerminalApp::implementation
             ReloadSettings();
         }
 
+        auto warnings{ winrt::multi_threaded_vector<SettingsLoadWarnings>() };
+        for (auto&& warn : _warnings)
+        {
+            warnings.Append(warn);
+        }
         auto ev = winrt::make_self<SettingsLoadEventArgs>(false,
                                                           _settingsLoadedResult,
                                                           _settingsLoadExceptionText,
-                                                          winrt::multi_threaded_vector<SettingsLoadWarnings>(std::move(_warnings)),
+                                                          warnings,
                                                           _settings);
 
         auto window = winrt::make_self<implementation::TerminalWindow>(*ev);

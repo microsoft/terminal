@@ -5,6 +5,7 @@
 #include "pch.h"
 #include "TerminalPage.h"
 #include "TerminalPage.g.cpp"
+#include "LastTabClosedEventArgs.g.cpp"
 #include "RenameWindowRequestedArgs.g.cpp"
 
 #include <filesystem>
@@ -53,13 +54,16 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    TerminalPage::TerminalPage() :
+    TerminalPage::TerminalPage(TerminalApp::WindowProperties properties) :
         _tabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
         _mruTabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
         _startupActions{ winrt::single_threaded_vector<ActionAndArgs>() },
-        _hostingHwnd{}
+        _hostingHwnd{},
+        _WindowProperties{ properties }
     {
         InitializeComponent();
+
+        _WindowProperties.PropertyChanged({ get_weak(), &TerminalPage::_windowPropertyChanged });
     }
 
     // Method Description:
@@ -1774,7 +1778,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         // If the user set a custom name, save it
-        if (const auto windowName = _WindowProperties.WindowName(); !windowName.empty())
+        if (const auto& windowName{ _WindowProperties.WindowName() }; !windowName.empty())
         {
             ActionAndArgs action;
             action.Action(ShortcutAction::RenameWindow);
@@ -3728,14 +3732,6 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::SetNumberOfOpenWindows(const uint64_t num)
-    {
-        // This is used in TerminalPage::_RemoveTab, when we close a tab. If we
-        // close the last tab, and there's only one window open, then we will
-        // call to persist _no_ state.
-        _numOpenWindows = num;
-    }
-
     // Method Description:
     // - Called when an attempt to rename the window has failed. This will open
     //   the toast displaying a message to the user that the attempt to rename
@@ -3847,7 +3843,7 @@ namespace winrt::TerminalApp::implementation
         else if (key == Windows::System::VirtualKey::Escape)
         {
             // User wants to discard the changes they made
-            WindowRenamerTextBox().Text(WindowProperties().WindowName());
+            WindowRenamerTextBox().Text(_WindowProperties.WindowName());
             WindowRenamer().IsOpen(false);
             _renamerPressedEnter = false;
         }
@@ -4274,27 +4270,21 @@ namespace winrt::TerminalApp::implementation
         _updateThemeColors();
     }
 
-    TerminalApp::IWindowProperties TerminalPage::WindowProperties()
+    // Handler for our WindowProperties's PropertyChanged event. We'll use this
+    // to pop the "Identify Window" toast when the user renames our window.
+    winrt::fire_and_forget TerminalPage::_windowPropertyChanged(const IInspectable& /*sender*/,
+                                                                const WUX::Data::PropertyChangedEventArgs& args)
     {
-        return _WindowProperties;
-    }
-    void TerminalPage::WindowProperties(const TerminalApp::IWindowProperties& props)
-    {
-        _WindowProperties = props;
-    }
-
-    winrt::fire_and_forget TerminalPage::WindowNameChanged()
-    {
+        if (args.PropertyName() != L"WindowName")
+        {
+            co_return;
+        }
         auto weakThis{ get_weak() };
         // On the foreground thread, raise property changed notifications, and
         // display the success toast.
         co_await wil::resume_foreground(Dispatcher());
         if (auto page{ weakThis.get() })
         {
-            _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowName" });
-            _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
-            _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowIdForDisplay" });
-
             // DON'T display the confirmation if this is the name we were
             // given on startup!
             if (page->_startupState == StartupState::Initialized)

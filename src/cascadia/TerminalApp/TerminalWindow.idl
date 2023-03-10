@@ -40,7 +40,7 @@ namespace TerminalApp
 
     // See IDialogPresenter and TerminalPage's DialogPresenter for more
     // information.
-    [default_interface] runtimeclass TerminalWindow : IDirectKeyListener, IDialogPresenter, IWindowProperties, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    [default_interface] runtimeclass TerminalWindow : IDirectKeyListener, IDialogPresenter, Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         TerminalWindow(SettingsLoadEventArgs result);
 
@@ -77,7 +77,8 @@ namespace TerminalApp
 
         void IdentifyWindow();
         void SetPersistedLayoutIdx(UInt32 idx);
-        void SetNumberOfOpenWindows(UInt64 num);
+        void ClearPersistedWindowState();
+
         void RenameFailed();
         void RequestExitFullscreen();
 
@@ -91,7 +92,7 @@ namespace TerminalApp
         Boolean GetInitialAlwaysOnTop();
         Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
         void TitlebarClicked();
-        void CloseWindow(Microsoft.Terminal.Settings.Model.LaunchPosition position);
+        void CloseWindow(Microsoft.Terminal.Settings.Model.LaunchPosition position, Boolean isLastWindow);
         void WindowVisibilityChanged(Boolean showOrHide);
 
         TaskbarState TaskbarState{ get; };
@@ -106,8 +107,10 @@ namespace TerminalApp
 
         // These already have accessors as a part of IWindowProperties, but we
         // also want to be able to set them.
-        String WindowName { set; };
-        UInt64 WindowId { set; };
+        WindowProperties WindowProperties { get; };
+        void WindowName(String name);
+        void WindowId(UInt64 id);
+        Boolean IsQuakeWindow();
 
         // See IDialogPresenter and TerminalPage's DialogPresenter for more
         // information.

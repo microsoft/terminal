@@ -5,6 +5,7 @@
 
 #include "TerminalWindow.g.h"
 #include "SystemMenuChangeArgs.g.h"
+#include "WindowProperties.g.h"
 
 #include "SettingsLoadEventArgs.h"
 #include "TerminalPage.h"
@@ -32,6 +33,26 @@ namespace winrt::TerminalApp::implementation
     public:
         SystemMenuChangeArgs(const winrt::hstring& name, SystemMenuChangeAction action, SystemMenuItemHandler handler = nullptr) :
             _Name{ name }, _Action{ action }, _Handler{ handler } {};
+    };
+
+    struct WindowProperties : WindowPropertiesT<WindowProperties>
+    {
+        // Normally, WindowName and WindowId would be
+        // WINRT_OBSERVABLE_PROPERTY's, but we want them to raise
+        // WindowNameForDisplay and WindowIdForDisplay instead
+        winrt::hstring WindowName() const noexcept;
+        void WindowName(const winrt::hstring& value);
+        uint64_t WindowId() const noexcept;
+        void WindowId(const uint64_t& value);
+        winrt::hstring WindowIdForDisplay() const noexcept;
+        winrt::hstring WindowNameForDisplay() const noexcept;
+        bool IsQuakeWindow() const noexcept;
+
+        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+
+    private:
+        winrt::hstring _WindowName{};
+        uint64_t _WindowId{ 0 };
     };
 
     struct TerminalWindow : TerminalWindowT<TerminalWindow, IInitializeWithWindow>
@@ -74,11 +95,12 @@ namespace winrt::TerminalApp::implementation
         void RenameFailed();
 
         std::optional<uint32_t> LoadPersistedLayoutIdx() const;
-        winrt::Microsoft::Terminal::Settings::Model::WindowLayout LoadPersistedLayout() const;
+        winrt::Microsoft::Terminal::Settings::Model::WindowLayout LoadPersistedLayout();
 
         void SetPersistedLayoutIdx(const uint32_t idx);
         void SetNumberOfOpenWindows(const uint64_t num);
         bool ShouldUsePersistedLayout() const;
+        void ClearPersistedWindowState();
 
         void RequestExitFullscreen();
 
@@ -97,7 +119,7 @@ namespace winrt::TerminalApp::implementation
         void TitlebarClicked();
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
-        void CloseWindow(Microsoft::Terminal::Settings::Model::LaunchPosition position);
+        void CloseWindow(Microsoft::Terminal::Settings::Model::LaunchPosition position, const bool isLastWindow);
         void WindowVisibilityChanged(const bool showOrHide);
 
         winrt::TerminalApp::TaskbarState TaskbarState();
@@ -115,16 +137,12 @@ namespace winrt::TerminalApp::implementation
         Microsoft::Terminal::Settings::Model::Theme Theme();
         void UpdateSettingsHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::TerminalApp::SettingsLoadEventArgs& arg);
 
-        // Normally, WindowName and WindowId would be
-        // WINRT_OBSERVABLE_PROPERTY's, but we want them to raise
-        // WindowNameForDisplay and WindowIdForDisplay instead
-        winrt::hstring WindowName() const noexcept;
         void WindowName(const winrt::hstring& value);
-        uint64_t WindowId() const noexcept;
         void WindowId(const uint64_t& value);
-        winrt::hstring WindowIdForDisplay() const noexcept;
-        winrt::hstring WindowNameForDisplay() const noexcept;
-        bool IsQuakeWindow() const noexcept;
+
+        bool IsQuakeWindow() const noexcept { return _WindowProperties->IsQuakeWindow(); }
+        TerminalApp::WindowProperties WindowProperties() { return *_WindowProperties; }
+
         // -------------------------------- WinRT Events ---------------------------------
         // PropertyChanged is surprisingly not a typed event, so we'll define that one manually.
         // Usually we'd just do
@@ -152,11 +170,10 @@ namespace winrt::TerminalApp::implementation
         bool _gotSettingsStartupActions{ false };
         std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> _settingsStartupArgs{};
 
-        winrt::hstring _WindowName{};
-        uint64_t _WindowId{ 0 };
+        winrt::com_ptr<TerminalApp::implementation::WindowProperties> _WindowProperties{ nullptr };
 
-        uint64_t _numOpenWindows{ 1 };
         std::optional<uint32_t> _loadFromPersistedLayoutIdx{};
+        std::optional<winrt::Microsoft::Terminal::Settings::Model::WindowLayout> _cachedLayout{ std::nullopt };
 
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
         TerminalApp::SettingsLoadEventArgs _initialLoadResult{ nullptr };
