@@ -41,9 +41,11 @@ namespace TerminalApp
 
         void ReloadSettings();
 
+        // Selected settings to expose
         Microsoft.Terminal.Settings.Model.Theme Theme { get; };
         Boolean IsolatedMode { get; };
         Boolean AllowHeadless { get; };
+        Boolean RequestsTrayIcon { get; };
 
         FindTargetWindowResult FindTargetWindow(String[] args);
 
@@ -52,6 +54,7 @@ namespace TerminalApp
         ParseCommandlineResult GetParseCommandlineMessage(String[] args);
 
         IMapView<Microsoft.Terminal.Control.KeyChord, Microsoft.Terminal.Settings.Model.Command> GlobalHotkeys();
+
 
         event Windows.Foundation.TypedEventHandler<Object, SettingsLoadEventArgs> SettingsChanged;
     }
