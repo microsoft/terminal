@@ -6,6 +6,7 @@
 #include "../inc/WindowingBehavior.h"
 #include "TerminalWindow.g.cpp"
 #include "SettingsLoadEventArgs.g.cpp"
+#include "WindowProperties.g.cpp"
 
 #include <LibraryResources.h>
 #include <WtExeUtils.h>
@@ -120,7 +121,8 @@ namespace winrt::TerminalApp::implementation
                                    const TerminalApp::ContentManager& manager) :
         _settings{ settingsLoadedResult.NewSettings() },
         _manager{ manager },
-        _initialLoadResult{ settingsLoadedResult }
+        _initialLoadResult{ settingsLoadedResult },
+        _WindowProperties{ winrt::make_self<TerminalApp::implementation::WindowProperties>() }
     {
         // The TerminalPage has to ABSOLUTELY NOT BE constructed during our
         // construction. We can't do ANY xaml till Initialize() is called.
@@ -137,27 +139,24 @@ namespace winrt::TerminalApp::implementation
     HRESULT TerminalWindow::Initialize(HWND hwnd)
     {
         // Now that we know we can do XAML, build our page.
-        _root = winrt::make_self<TerminalPage>(_manager);
-        _root->WindowProperties(*this);
+        _root = winrt::make_self<TerminalPage>(*_WindowProperties, _manager);
         _dialog = ContentDialog{};
 
         // Pass commandline args into the TerminalPage. If we were supposed to
         // load from a persisted layout, do that instead.
-        auto foundLayout = false;
+
+        // layout will only ever be non-null if there were >0 tabs persisted in
+        // .TabLayout(). We can re-evaluate that as a part of TODO: GH#12633
         if (const auto& layout = LoadPersistedLayout())
         {
-            if (layout.TabLayout().Size() > 0)
+            std::vector<Settings::Model::ActionAndArgs> actions;
+            for (const auto& a : layout.TabLayout())
             {
-                std::vector<Settings::Model::ActionAndArgs> actions;
-                for (const auto& a : layout.TabLayout())
-                {
-                    actions.emplace_back(a);
-                }
-                _root->SetStartupActions(actions);
-                foundLayout = true;
+                actions.emplace_back(a);
             }
+            _root->SetStartupActions(actions);
         }
-        if (!foundLayout)
+        else
         {
             _root->SetStartupActions(_appArgs.GetStartupActions());
         }
@@ -255,14 +254,14 @@ namespace winrt::TerminalApp::implementation
         }
 
         _root->SetSettings(_settings, false); // We're on our UI thread right now, so this is safe
-        _root->Loaded({ this, &TerminalWindow::_OnLoaded });
+        _root->Loaded({ get_weak(), &TerminalWindow::_OnLoaded });
         _root->Initialized([this](auto&&, auto&&) {
             // GH#288 - When we finish initialization, if the user wanted us
             // launched _fullscreen_, toggle fullscreen mode. This will make sure
             // that the window size is _first_ set up as something sensible, so
             // leaving fullscreen returns to a reasonable size.
             const auto launchMode = this->GetLaunchMode();
-            if (IsQuakeWindow() || WI_IsFlagSet(launchMode, LaunchMode::FocusMode))
+            if (_WindowProperties->IsQuakeWindow() || WI_IsFlagSet(launchMode, LaunchMode::FocusMode))
             {
                 _root->SetFocusMode(true);
             }
@@ -274,7 +273,7 @@ namespace winrt::TerminalApp::implementation
                 _root->Maximized(true);
             }
 
-            if (WI_IsFlagSet(launchMode, LaunchMode::FullscreenMode) && !IsQuakeWindow())
+            if (WI_IsFlagSet(launchMode, LaunchMode::FullscreenMode) && !_WindowProperties->IsQuakeWindow())
             {
                 _root->SetFullscreen(true);
             }
@@ -892,13 +891,13 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalWindow::CloseWindow(LaunchPosition pos)
+    void TerminalWindow::CloseWindow(LaunchPosition pos, const bool isLastWindow)
     {
         if (_root)
         {
             // If persisted layout is enabled and we are the last window closing
             // we should save our state.
-            if (_settings.GlobalSettings().ShouldUsePersistedLayout() && _numOpenWindows == 1)
+            if (_settings.GlobalSettings().ShouldUsePersistedLayout() && isLastWindow)
             {
                 if (const auto layout = _root->GetWindowLayout())
                 {
@@ -909,6 +908,15 @@ namespace winrt::TerminalApp::implementation
             }
 
             _root->CloseWindow(false);
+        }
+    }
+
+    void TerminalWindow::ClearPersistedWindowState()
+    {
+        if (_settings.GlobalSettings().ShouldUsePersistedLayout())
+        {
+            auto state = ApplicationState::SharedInstance();
+            state.PersistedWindowLayouts(nullptr);
         }
     }
 
@@ -1095,6 +1103,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalWindow::SetPersistedLayoutIdx(const uint32_t idx)
     {
         _loadFromPersistedLayoutIdx = idx;
+        _cachedLayout = std::nullopt;
     }
 
     // Method Description;
@@ -1109,27 +1118,31 @@ namespace winrt::TerminalApp::implementation
         return _settings.GlobalSettings().ShouldUsePersistedLayout() ? _loadFromPersistedLayoutIdx : std::nullopt;
     }
 
-    WindowLayout TerminalWindow::LoadPersistedLayout() const
+    WindowLayout TerminalWindow::LoadPersistedLayout()
     {
+        if (_cachedLayout.has_value())
+        {
+            return *_cachedLayout;
+        }
+
         if (const auto idx = LoadPersistedLayoutIdx())
         {
             const auto i = idx.value();
             const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
             if (layouts && layouts.Size() > i)
             {
-                return layouts.GetAt(i);
+                auto layout = layouts.GetAt(i);
+
+                // TODO: GH#12633: Right now, we're manually making sure that we
+                // have at least one tab to restore. If we ever want to come
+                // back and make it so that you can persist position and size,
+                // but not the tabs themselves, we can revisit this assumption.
+                _cachedLayout = (layout.TabLayout() && layout.TabLayout().Size() > 0) ? layout : nullptr;
+                return *_cachedLayout;
             }
         }
-        return nullptr;
-    }
-
-    void TerminalWindow::SetNumberOfOpenWindows(const uint64_t num)
-    {
-        _numOpenWindows = num;
-        if (_root)
-        {
-            _root->SetNumberOfOpenWindows(num);
-        }
+        _cachedLayout = nullptr;
+        return *_cachedLayout;
     }
 
     void TerminalWindow::RequestExitFullscreen()
@@ -1164,78 +1177,23 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::hstring TerminalWindow::WindowName() const noexcept
-    {
-        return _WindowName;
-    }
     void TerminalWindow::WindowName(const winrt::hstring& name)
     {
-        const auto oldIsQuakeMode = IsQuakeWindow();
-
-        const auto changed = _WindowName != name;
-        if (changed)
+        const auto oldIsQuakeMode = _WindowProperties->IsQuakeWindow();
+        _WindowProperties->WindowName(name);
+        const auto newIsQuakeMode = _WindowProperties->IsQuakeWindow();
+        if (newIsQuakeMode != oldIsQuakeMode)
         {
-            _WindowName = name;
-            if (_root)
-            {
-                _root->WindowNameChanged();
-
-                // If we're entering quake mode, or leaving it
-                if (IsQuakeWindow() != oldIsQuakeMode)
-                {
-                    // If we're entering Quake Mode from ~Focus Mode, then this will enter Focus Mode
-                    // If we're entering Quake Mode from Focus Mode, then this will do nothing
-                    // If we're leaving Quake Mode (we're already in Focus Mode), then this will do nothing
-                    _root->SetFocusMode(true);
-                    _IsQuakeWindowChangedHandlers(*this, nullptr);
-                }
-            }
+            // If we're entering Quake Mode from ~Focus Mode, then this will enter Focus Mode
+            // If we're entering Quake Mode from Focus Mode, then this will do nothing
+            // If we're leaving Quake Mode (we're already in Focus Mode), then this will do nothing
+            _root->SetFocusMode(true);
+            _IsQuakeWindowChangedHandlers(*this, nullptr);
         }
-    }
-    uint64_t TerminalWindow::WindowId() const noexcept
-    {
-        return _WindowId;
     }
     void TerminalWindow::WindowId(const uint64_t& id)
     {
-        if (_WindowId != id)
-        {
-            _WindowId = id;
-            if (_root)
-            {
-                _root->WindowNameChanged();
-            }
-        }
-    }
-
-    // Method Description:
-    // - Returns a label like "Window: 1234" for the ID of this window
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - a string for displaying the name of the window.
-    winrt::hstring TerminalWindow::WindowIdForDisplay() const noexcept
-    {
-        return winrt::hstring{ fmt::format(L"{}: {}",
-                                           std::wstring_view(RS_(L"WindowIdLabel")),
-                                           _WindowId) };
-    }
-
-    // Method Description:
-    // - Returns a label like "<unnamed window>" when the window has no name, or the name of the window.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - a string for displaying the name of the window.
-    winrt::hstring TerminalWindow::WindowNameForDisplay() const noexcept
-    {
-        return _WindowName.empty() ?
-                   winrt::hstring{ fmt::format(L"<{}>", RS_(L"UnnamedWindowName")) } :
-                   _WindowName;
-    }
-    bool TerminalWindow::IsQuakeWindow() const noexcept
-    {
-        return _WindowName == QuakeWindowName;
+        _WindowProperties->WindowId(id);
     }
 
     bool TerminalWindow::ShouldImmediatelyHandoffToElevated()
@@ -1266,6 +1224,61 @@ namespace winrt::TerminalApp::implementation
             _root->HandoffToElevated(_settings);
             return;
         }
+    }
+
+    winrt::hstring WindowProperties::WindowName() const noexcept
+    {
+        return _WindowName;
+    }
+
+    void WindowProperties::WindowName(const winrt::hstring& value)
+    {
+        if (_WindowName != value)
+        {
+            _WindowName = value;
+            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowName" });
+            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowNameForDisplay" });
+        }
+    }
+    uint64_t WindowProperties::WindowId() const noexcept
+    {
+        return _WindowId;
+    }
+
+    void WindowProperties::WindowId(const uint64_t& value)
+    {
+        _WindowId = value;
+    }
+
+    // Method Description:
+    // - Returns a label like "Window: 1234" for the ID of this window
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - a string for displaying the name of the window.
+    winrt::hstring WindowProperties::WindowIdForDisplay() const noexcept
+    {
+        return winrt::hstring{ fmt::format(L"{}: {}",
+                                           std::wstring_view(RS_(L"WindowIdLabel")),
+                                           _WindowId) };
+    }
+
+    // Method Description:
+    // - Returns a label like "<unnamed window>" when the window has no name, or the name of the window.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - a string for displaying the name of the window.
+    winrt::hstring WindowProperties::WindowNameForDisplay() const noexcept
+    {
+        return _WindowName.empty() ?
+                   winrt::hstring{ fmt::format(L"<{}>", RS_(L"UnnamedWindowName")) } :
+                   _WindowName;
+    }
+
+    bool WindowProperties::IsQuakeWindow() const noexcept
+    {
+        return _WindowName == QuakeWindowName;
     }
 
 };

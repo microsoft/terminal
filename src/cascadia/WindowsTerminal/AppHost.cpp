@@ -269,7 +269,6 @@ void AppHost::_HandleCommandlineArgs()
                 }
             }
         }
-        _windowLogic.SetNumberOfOpenWindows(numPeasants);
 
         _windowLogic.WindowName(_peasant.WindowName());
         _windowLogic.WindowId(_peasant.GetID());
@@ -353,7 +352,7 @@ void AppHost::Initialize()
     _window->AutomaticShutdownRequested([this]() {
         // Raised when the OS is beginning an update of the app. We will quit,
         // to save our state, before the OS manually kills us.
-        _windowManager.RequestQuitAll(_peasant);
+        Remoting::WindowManager::RequestQuitAll(_peasant);
     });
 
     // Load bearing: make sure the PropertyChanged handler is added before we
@@ -442,10 +441,20 @@ void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /*
 // - LastTabClosedEventArgs: unused
 // Return Value:
 // - <none>
-void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::TerminalApp::LastTabClosedEventArgs& /*args*/)
+void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::TerminalApp::LastTabClosedEventArgs& args)
 {
     // We don't want to try to save layouts if we are about to close.
     _peasant.GetWindowLayoutRequested(_GetWindowLayoutRequestedToken);
+
+    // If the user closes the last tab, in the last window, _by closing the tab_
+    // (not by closing the whole window), we need to manually persist an empty
+    // window state here. That will cause the terminal to re-open with the usual
+    // settings (not the persisted state)
+    if (args.ClearPersistedState() &&
+        _windowManager.GetNumberOfPeasants() == 1)
+    {
+        _windowLogic.ClearPersistedWindowState();
+    }
 
     // Remove ourself from the list of peasants so that we aren't included in
     // any future requests. This will also mean we block until any existing
@@ -1074,7 +1083,7 @@ winrt::fire_and_forget AppHost::_QuitRequested(const winrt::Windows::Foundation:
 void AppHost::_RequestQuitAll(const winrt::Windows::Foundation::IInspectable&,
                               const winrt::Windows::Foundation::IInspectable&)
 {
-    _windowManager.RequestQuitAll(_peasant);
+    Remoting::WindowManager::RequestQuitAll(_peasant);
 }
 
 void AppHost::_ShowWindowChanged(const winrt::Windows::Foundation::IInspectable&,
@@ -1174,7 +1183,8 @@ void AppHost::_CloseRequested(const winrt::Windows::Foundation::IInspectable& /*
                               const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
     const auto pos = _GetWindowLaunchPosition();
-    _windowLogic.CloseWindow(pos);
+    const bool isLastWindow = _windowManager.GetNumberOfPeasants() == 1;
+    _windowLogic.CloseWindow(pos, isLastWindow);
 }
 
 void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,

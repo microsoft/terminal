@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "AllShortcutActions.h"
 #include "ActionMap.h"
+#include "Command.h"
 #include "AllShortcutActions.h"
 
 #include "ActionMap.g.cpp"
@@ -858,11 +859,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void ActionMap::_recursiveUpdateCommandKeybindingLabels()
     {
-        const auto& commands{ _ExpandedMapCache };
+        const auto& commands{ _ExpandedCommandsCache };
 
-        for (const auto& nameAndCmd : commands)
+        for (const auto& command : commands)
         {
-            const auto& command = nameAndCmd.Value();
             if (command.HasNestedCommands())
             {
                 _recursiveUpdateCommandKeybindingLabels();
@@ -912,19 +912,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto copyOfCommands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
 
         const auto& commandsToExpand{ NameMap() };
-        for (const auto& nameAndCommand : commandsToExpand)
+        for (auto nameAndCommand : commandsToExpand)
         {
             copyOfCommands.Insert(nameAndCommand.Key(), nameAndCommand.Value());
         }
 
-        Command::ExpandCommands(copyOfCommands,
-                                profiles,
-                                winrt::param::vector_view<Model::ColorScheme>{ sortedSchemes });
+        implementation::Command::ExpandCommands(copyOfCommands,
+                                                profiles,
+                                                winrt::param::vector_view<Model::ColorScheme>{ sortedSchemes });
 
-        _ExpandedMapCache = copyOfCommands;
+        _ExpandedCommandsCache = winrt::single_threaded_vector<Model::Command>();
+        for (const auto& [_, command] : copyOfCommands)
+        {
+            _ExpandedCommandsCache.Append(command);
+        }
     }
-    IMapView<hstring, Model::Command> ActionMap::ExpandedCommands()
+    IVector<Model::Command> ActionMap::ExpandedCommands()
     {
-        return _ExpandedMapCache.GetView();
+        return _ExpandedCommandsCache;
     }
 }

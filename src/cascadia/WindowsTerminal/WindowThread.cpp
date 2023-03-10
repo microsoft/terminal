@@ -4,21 +4,21 @@
 #include "pch.h"
 #include "WindowThread.h"
 
-WindowThread::WindowThread(const winrt::TerminalApp::AppLogic& logic,
+WindowThread::WindowThread(winrt::TerminalApp::AppLogic logic,
                            winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args,
                            winrt::Microsoft::Terminal::Remoting::WindowManager manager,
                            winrt::Microsoft::Terminal::Remoting::Peasant peasant) :
-    _peasant{ peasant },
-    _appLogic{ logic },
-    _args{ args },
-    _manager{ manager }
+    _peasant{ std::move(peasant) },
+    _appLogic{ std::move(logic) },
+    _args{ std::move(args) },
+    _manager{ std::move(manager) }
 {
     // DO NOT start the AppHost here in the ctor, as that will start XAML on the wrong thread!
 }
 
 void WindowThread::Start()
 {
-    _thread = std::thread([this]() {
+    auto thread = std::thread([this]() {
         // Start the AppHost HERE, on the actual thread we want XAML to run on
         _host = std::make_unique<::AppHost>(_appLogic,
                                             _args,
@@ -26,7 +26,7 @@ void WindowThread::Start()
                                             _peasant);
         _host->UpdateSettingsRequested([this]() { _UpdateSettingsRequestedHandlers(); });
         // Enter the main window loop.
-        const auto exitCode = WindowProc();
+        const auto exitCode = _messagePump();
         _host = nullptr;
 
         // !! LOAD BEARING !!
@@ -44,10 +44,20 @@ void WindowThread::Start()
                 ::DispatchMessageW(&msg);
             }
         }
+
         _ExitedHandlers(_peasant.GetID());
+
         return exitCode;
     });
-    LOG_IF_FAILED(SetThreadDescription(_thread.native_handle(), L"Window Thread"));
+    LOG_IF_FAILED(SetThreadDescription(thread.native_handle(), L"Window Thread"));
+
+    // Raising our Exited event might cause the app to teardown. In the
+    // highly unlikely case that the main thread got scheduled before the
+    // event handler returns, it might release the WindowThread while it's
+    // still holding an outstanding reference to its own thread. That would
+    // cause a std::terminate. Let's just avoid that by releasing our
+    // thread.
+    thread.detach();
 }
 
 winrt::TerminalApp::TerminalWindow WindowThread::Logic()
@@ -68,7 +78,7 @@ static bool _messageIsAltSpaceKeypress(const MSG& message)
     return message.message == WM_SYSKEYDOWN && message.wParam == VK_SPACE;
 }
 
-int WindowThread::WindowProc()
+int WindowThread::_messagePump()
 {
     winrt::init_apartment(winrt::apartment_type::single_threaded);
 
@@ -80,9 +90,9 @@ int WindowThread::WindowProc()
     // Initialize, so that the windowLogic is ready to be used
     _StartedHandlers();
 
-    MSG message;
+    MSG message{};
 
-    while (GetMessage(&message, nullptr, 0, 0))
+    while (GetMessageW(&message, nullptr, 0, 0))
     {
         // GH#638 (Pressing F7 brings up both the history AND a caret browsing message)
         // The Xaml input stack doesn't allow an application to suppress the "caret browsing"
