@@ -24,8 +24,6 @@ using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
 #define TERMINAL_MESSAGE_CLASS_NAME L"TERMINAL_MESSAGE_CLASS"
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
-const UINT WM_TASKBARCREATED = RegisterWindowMessage(L"TaskbarCreated");
-
 WindowEmperor::WindowEmperor() noexcept :
     _app{}
 {
@@ -83,11 +81,7 @@ bool WindowEmperor::HandleCommandlineArgs()
 
     if (result.ShouldCreateWindow())
     {
-        CreateNewWindowThread(Remoting::WindowRequestedArgs{ result, eventArgs }, true);
-
-        _manager.RequestNewWindow([this](auto&&, const Remoting::WindowRequestedArgs& args) {
-            CreateNewWindowThread(args, false);
-        });
+        _createNewWindowThread(Remoting::WindowRequestedArgs{ result, eventArgs });
 
         _becomeMonarch();
     }
@@ -106,64 +100,86 @@ bool WindowEmperor::HandleCommandlineArgs()
 
 void WindowEmperor::WaitForWindows()
 {
-    MSG message;
-    while (GetMessage(&message, nullptr, 0, 0))
+    MSG message{};
+    while (GetMessageW(&message, nullptr, 0, 0))
     {
         TranslateMessage(&message);
         DispatchMessage(&message);
     }
 }
 
-void WindowEmperor::CreateNewWindowThread(Remoting::WindowRequestedArgs args, const bool /*firstWindow*/)
+void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& args)
 {
     Remoting::Peasant peasant{ _manager.CreatePeasant(args) };
 
     auto window{ std::make_shared<WindowThread>(_app.Logic(), args, _manager, peasant) };
 
-    window->Started([this, sender = window]() -> winrt::fire_and_forget {
-        // Add a callback to the window's logic to let us know when the window's
-        // quake mode state changes. We'll use this to check if we need to add
-        // or remove the notification icon.
-        sender->Logic().IsQuakeWindowChanged([this](auto&&, auto&&) -> winrt::fire_and_forget {
-            co_await wil::resume_foreground(this->_dispatcher);
-            this->_checkWindowsForNotificationIcon();
-        });
-        sender->UpdateSettingsRequested([this]() -> winrt::fire_and_forget {
-            // We MUST be on the main thread to update the settings. We will crash when trying to enumerate fragment extensions otherwise.
-            co_await wil::resume_foreground(this->_dispatcher);
-            _app.Logic().ReloadSettings();
-        });
+    std::weak_ptr<WindowEmperor> weakThis{ weak_from_this() };
 
-        // These come in on the sender's thread. Move back to our thread.
-        co_await wil::resume_foreground(_dispatcher);
-
-        _windows.push_back(std::move(sender));
+    window->Started([weakThis, sender = window]() {
+        // These come in on the sender's thread. Make sure we haven't died
+        // since then
+        if (auto self{ weakThis.lock() })
+        {
+            self->_windowStartedHandler(sender);
+        }
     });
 
-    window->Exited([this](uint64_t senderID) -> winrt::fire_and_forget {
-        // These come in on the sender's thread. Move back to our thread.
-        co_await wil::resume_foreground(_dispatcher);
-
-        // find the window in _windows who's peasant's Id matches the peasant's Id
-        // and remove it
-        _windows.erase(std::remove_if(_windows.begin(), _windows.end(), [&](const auto& w) {
-                           return w->Peasant().GetID() == senderID;
-                       }),
-                       _windows.end());
-
-        // When we run out of windows, exit our process if and only if:
-        // * We're not allowed to run headless OR
-        // * we've explicitly been told to "quit", which should fully exit the Terminal.
-        if (_windows.size() == 0 &&
-            (_quitting || !_app.Logic().AllowHeadless()))
+    window->Exited([weakThis](uint64_t senderID) {
+        // These come in on the sender's thread. Make sure we haven't died
+        // since then
+        if (auto self{ weakThis.lock() })
         {
-            _close();
+            self->_windowExitedHandler(senderID);
         }
     });
 
     window->Start();
 }
 
+// Handler for a WindowThread's Started event, which it raises once the window
+// thread starts and XAML is ready to go on that thread. Set up some callbacks
+// now that we know this window is set up and ready to go.
+// Q: Why isn't adding these callbacks just a part of _createNewWindowThread?
+// A: Until the thread actually starts, the AppHost (and its Logic()) haven't
+// been ctor'd or initialized, so trying to add callbacks immediately will A/V
+void WindowEmperor::_windowStartedHandler(const std::shared_ptr<WindowThread>& sender)
+{
+    // Add a callback to the window's logic to let us know when the window's
+    // quake mode state changes. We'll use this to check if we need to add
+    // or remove the notification icon.
+    sender->Logic().IsQuakeWindowChanged({ this, &WindowEmperor::_windowIsQuakeWindowChanged });
+    sender->UpdateSettingsRequested({ this, &WindowEmperor::_windowRequestUpdateSettings });
+
+    // Now that the window is ready to go, we can add it to our list of windows,
+    // because we know it will be well behaved.
+    //
+    // Be sure to only modify the list of windows under lock.
+    {
+        auto lockedWindows{ _windows.lock() };
+        lockedWindows->push_back(sender);
+    }
+}
+void WindowEmperor::_windowExitedHandler(uint64_t senderID)
+{
+    auto lockedWindows{ _windows.lock() };
+
+    // find the window in _windows who's peasant's Id matches the peasant's Id
+    // and remove it
+    std::erase_if(*lockedWindows,
+                  [&](const auto& w) {
+                      return w->Peasant().GetID() == senderID;
+                  });
+
+    // When we run out of windows, exit our process if and only if:
+    // * We're not allowed to run headless OR
+    // * we've explicitly been told to "quit", which should fully exit the Terminal.
+    if (lockedWindows->size() == 0 &&
+        (_quitting || !_app.Logic().AllowHeadless()))
+    {
+        _close();
+    }
+}
 // Method Description:
 // - Set up all sorts of handlers now that we've determined that we're a process
 //   that will end up hosting the windows. These include:
@@ -177,6 +193,12 @@ void WindowEmperor::CreateNewWindowThread(Remoting::WindowRequestedArgs args, co
 // - <none>
 void WindowEmperor::_becomeMonarch()
 {
+    // Add a callback to the window manager so that when the Monarch wants a new
+    // window made, they come to us
+    _manager.RequestNewWindow([this](auto&&, const Remoting::WindowRequestedArgs& args) {
+        _createNewWindowThread(args);
+    });
+
     _createMessageWindow();
 
     _setupGlobalHotkeys();
@@ -197,8 +219,8 @@ void WindowEmperor::_becomeMonarch()
     // Set the number of open windows (so we know if we are the last window)
     // and subscribe for updates if there are any changes to that number.
 
-    _WindowCreatedToken = _manager.WindowCreated({ this, &WindowEmperor::_numberOfWindowsChanged });
-    _WindowClosedToken = _manager.WindowClosed({ this, &WindowEmperor::_numberOfWindowsChanged });
+    _revokers.WindowCreated = _manager.WindowCreated(winrt::auto_revoke, { this, &WindowEmperor::_numberOfWindowsChanged });
+    _revokers.WindowClosed = _manager.WindowClosed(winrt::auto_revoke, { this, &WindowEmperor::_numberOfWindowsChanged });
 
     // If the monarch receives a QuitAll event it will signal this event to be
     // ran before each peasant is closed.
@@ -208,6 +230,24 @@ void WindowEmperor::_becomeMonarch()
     // We want at least some delay to prevent the first save from overwriting
     _getWindowLayoutThrottler.emplace(std::move(std::chrono::seconds(10)), std::move([this]() { _saveWindowLayoutsRepeat(); }));
     _getWindowLayoutThrottler.value()();
+
+    // BODGY
+    //
+    // We've got a weird crash that happens terribly inconsistently, but pretty
+    // readily on migrie's laptop, only in Debug mode. Apparently, there's some
+    // weird ref-counting magic that goes on during teardown, and our
+    // Application doesn't get closed quite right, which can cause us to crash
+    // into the debugger. This of course, only happens on exit, and happens
+    // somewhere in the XamlHost.dll code.
+    //
+    // Crazily, if we _manually leak the Application_ here, then the crash
+    // doesn't happen. This doesn't matter, because we really want the
+    // Application to live for _the entire lifetime of the process_, so the only
+    // time when this object would actually need to get cleaned up is _during
+    // exit_. So we can safely leak this Application object, and have it just
+    // get cleaned up normally when our process exits.
+    auto a{ _app };
+    ::winrt::detach_abi(a);
 }
 
 // sender and args are always nullptr
@@ -217,12 +257,6 @@ void WindowEmperor::_numberOfWindowsChanged(const winrt::Windows::Foundation::II
     if (_getWindowLayoutThrottler)
     {
         _getWindowLayoutThrottler.value()();
-    }
-
-    const auto& numWindows{ _manager.GetNumberOfPeasants() };
-    for (const auto& _windowThread : _windows)
-    {
-        _windowThread->Logic().SetNumberOfOpenWindows(numWindows);
     }
 
     // If we closed out the quake window, and don't otherwise need the tray
@@ -324,7 +358,7 @@ static WindowEmperor* GetThisFromHandle(HWND const window) noexcept
     const auto data = GetWindowLongPtr(window, GWLP_USERDATA);
     return reinterpret_cast<WindowEmperor*>(data);
 }
-[[nodiscard]] static LRESULT __stdcall MessageWndProc(HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
+[[nodiscard]] LRESULT __stdcall WindowEmperor::_wndProc(HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
 {
     WINRT_ASSERT(window);
 
@@ -339,7 +373,7 @@ static WindowEmperor* GetThisFromHandle(HWND const window) noexcept
     }
     else if (WindowEmperor* that = GetThisFromHandle(window))
     {
-        return that->MessageHandler(message, wparam, lparam);
+        return that->_messageHandler(message, wparam, lparam);
     }
 
     return DefWindowProc(window, message, wparam, lparam);
@@ -351,7 +385,7 @@ void WindowEmperor::_createMessageWindow()
     wc.hInstance = reinterpret_cast<HINSTANCE>(&__ImageBase);
     wc.lpszClassName = TERMINAL_MESSAGE_CLASS_NAME;
     wc.style = CS_HREDRAW | CS_VREDRAW;
-    wc.lpfnWndProc = MessageWndProc;
+    wc.lpfnWndProc = WindowEmperor::_wndProc;
     wc.hIcon = LoadIconW(wc.hInstance, MAKEINTRESOURCEW(IDI_APPICON));
     RegisterClass(&wc);
     WINRT_ASSERT(!_window);
@@ -369,8 +403,12 @@ void WindowEmperor::_createMessageWindow()
                               this));
 }
 
-LRESULT WindowEmperor::MessageHandler(UINT const message, WPARAM const wParam, LPARAM const lParam) noexcept
+LRESULT WindowEmperor::_messageHandler(UINT const message, WPARAM const wParam, LPARAM const lParam) noexcept
 {
+    // use C++11 magic statics to make sure we only do this once.
+    // This won't change over the lifetime of the application
+    static const UINT WM_TASKBARCREATED = []() { return RegisterWindowMessageW(L"TaskbarCreated"); }();
+
     switch (message)
     {
     case WM_HOTKEY:
@@ -610,7 +648,7 @@ winrt::fire_and_forget WindowEmperor::_setupGlobalHotkeys()
 }
 
 #pragma endregion
-////////////////////////////////////////////////////////////////////////////////
+
 #pragma region NotificationIcon
 // Method Description:
 // - Creates a Notification Icon and hooks up its handlers
@@ -651,11 +689,18 @@ void WindowEmperor::_checkWindowsForNotificationIcon()
     // re-summon any hidden windows, but right now we're not keeping track of
     // who's hidden, so just summon them all. Tracking the work to do a "summon
     // all minimized" in GH#10448
-
-    bool needsIcon = false;
-    for (const auto& _windowThread : _windows)
+    //
+    // To avoid races between us thinking the settings updated, and the windows
+    // themselves getting the new settings, only ask the app logic for the
+    // RequestsTrayIcon setting value, and combine that with the result of each
+    // window (which won't change during a settings reload).
+    bool needsIcon = _app.Logic().RequestsTrayIcon();
     {
-        needsIcon |= _windowThread->Logic().RequestsTrayIcon();
+        auto windows{ _windows.lock_shared() };
+        for (const auto& _windowThread : *windows)
+        {
+            needsIcon |= _windowThread->Logic().IsQuakeWindow();
+        }
     }
 
     if (needsIcon)
@@ -690,3 +735,19 @@ void WindowEmperor::_hideNotificationIconRequested()
     }
 }
 #pragma endregion
+
+// A callback to the window's logic to let us know when the window's
+// quake mode state changes. We'll use this to check if we need to add
+// or remove the notification icon.
+winrt::fire_and_forget WindowEmperor::_windowIsQuakeWindowChanged(winrt::Windows::Foundation::IInspectable sender,
+                                                                  winrt::Windows::Foundation::IInspectable args)
+{
+    co_await wil::resume_foreground(this->_dispatcher);
+    _checkWindowsForNotificationIcon();
+}
+winrt::fire_and_forget WindowEmperor::_windowRequestUpdateSettings()
+{
+    // We MUST be on the main thread to update the settings. We will crash when trying to enumerate fragment extensions otherwise.
+    co_await wil::resume_foreground(this->_dispatcher);
+    _app.Logic().ReloadSettings();
+}

@@ -29,18 +29,17 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         WindowManager();
         ~WindowManager();
         winrt::Microsoft::Terminal::Remoting::ProposeCommandlineResult ProposeCommandline(const winrt::Microsoft::Terminal::Remoting::CommandlineArgs& args, const bool isolatedMode);
-        Remoting::Peasant CreatePeasant(Remoting::WindowRequestedArgs args);
+        Remoting::Peasant CreatePeasant(const Remoting::WindowRequestedArgs& args);
 
-        void SignalClose(Remoting::Peasant peasant);
+        void SignalClose(const Remoting::Peasant& peasant);
         void SummonWindow(const Remoting::SummonWindowSelectionArgs& args);
         void SummonAllWindows();
         Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> GetPeasantInfos();
 
         uint64_t GetNumberOfPeasants();
-        winrt::fire_and_forget RequestShowNotificationIcon(Remoting::Peasant peasant);
-        winrt::fire_and_forget RequestHideNotificationIcon(Remoting::Peasant peasant);
-        winrt::fire_and_forget RequestQuitAll(Remoting::Peasant peasant);
-        void UpdateActiveTabTitle(winrt::hstring title, Remoting::Peasant peasant);
+
+        static winrt::fire_and_forget RequestQuitAll(Remoting::Peasant peasant);
+        void UpdateActiveTabTitle(const winrt::hstring& title, const Remoting::Peasant& peasant);
 
         Windows::Foundation::Collections::IVector<winrt::hstring> GetAllWindowLayouts();
         bool DoesQuakeWindowExist();
@@ -52,8 +51,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         TYPED_EVENT(WindowCreated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(WindowClosed, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(ShowNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(HideNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs);
         TYPED_EVENT(GetWindowLayoutRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::GetWindowLayoutArgs);
 

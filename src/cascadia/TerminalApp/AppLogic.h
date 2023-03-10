@@ -67,6 +67,7 @@ namespace winrt::TerminalApp::implementation
         Microsoft::Terminal::Settings::Model::Theme Theme();
         bool IsolatedMode();
         bool AllowHeadless();
+        bool RequestsTrayIcon();
 
         TerminalApp::TerminalWindow CreateNewWindow();
 

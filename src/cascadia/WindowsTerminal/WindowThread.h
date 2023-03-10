@@ -4,14 +4,13 @@
 #include "pch.h"
 #include "AppHost.h"
 
-class WindowThread
+class WindowThread : public std::enable_shared_from_this<WindowThread>
 {
 public:
-    WindowThread(const winrt::TerminalApp::AppLogic& logic,
+    WindowThread(winrt::TerminalApp::AppLogic logic,
                  winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args,
                  winrt::Microsoft::Terminal::Remoting::WindowManager manager,
                  winrt::Microsoft::Terminal::Remoting::Peasant peasant);
-    int WindowProc();
 
     winrt::TerminalApp::TerminalWindow Logic();
     void Start();
@@ -28,6 +27,7 @@ private:
     winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs _args{ nullptr };
     winrt::Microsoft::Terminal::Remoting::WindowManager _manager{ nullptr };
 
-    std::thread _thread;
     std::unique_ptr<::AppHost> _host{ nullptr };
+
+    int _messagePump();
 };
