@@ -1245,12 +1245,7 @@ namespace winrt::TerminalApp::implementation
 
     void WindowProperties::WindowId(const uint64_t& value)
     {
-        if (_WindowId != value)
-        {
-            _WindowId = value;
-            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowId" });
-            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowIdForDisplay" });
-        }
+        _WindowId = value;
     }
 
     // Method Description:

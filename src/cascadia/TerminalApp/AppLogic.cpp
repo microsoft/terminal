@@ -653,17 +653,13 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        // Any unsuccessful parse will be a new window. That new window will try
-        // to handle the commandline itself, and find that the commandline
-        // failed to parse. When that happens, the new window will display the
-        // message box.
+        // Any unsuccessful parse will result in _no_ window. We will indicate
+        // to the caller that they shouldn't make a window. They can still find
+        // the commandline failed to parse and choose to display the message
+        // box.
         //
         // This will also work for the case where the user specifies an invalid
-        // commandline in conjunction with `-w 0`. This function will determine
-        // that the commandline has a  parse error, and indicate that we should
-        // create a new window. Then, in that new window, we'll try to  set the
-        // StartupActions, which will again fail, returning the correct error
-        // message.
+        // commandline in conjunction with `-w 0`.
         return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseNone);
     }
 
