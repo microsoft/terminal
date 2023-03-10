@@ -17,7 +17,10 @@ namespace TerminalApp
         void Detach(Microsoft.Terminal.Control.TermControl control);
     }
 
-    delegate void LastTabClosedEventArgs();
+    [default_interface] runtimeclass LastTabClosedEventArgs
+    {
+        Boolean ClearPersistedState { get; };
+    };
 
     [default_interface] runtimeclass RenameWindowRequestedArgs
     {
@@ -43,18 +46,19 @@ namespace TerminalApp
         Windows.Foundation.IAsyncOperation<Windows.UI.Xaml.Controls.ContentDialogResult> ShowDialog(Windows.UI.Xaml.Controls.ContentDialog dialog);
     };
 
-    interface IWindowProperties
+    [default_interface] runtimeclass WindowProperties : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         String WindowName { get; };
         UInt64 WindowId { get; };
         String WindowNameForDisplay { get; };
         String WindowIdForDisplay { get; };
+
         Boolean IsQuakeWindow();
     };
 
     [default_interface] runtimeclass TerminalPage : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged, IDirectKeyListener
     {
-        TerminalPage(ContentManager manager);
+        TerminalPage(WindowProperties properties, ContentManager manager);
 
         // XAML bound properties
         String ApplicationDisplayName { get; };
@@ -64,7 +68,7 @@ namespace TerminalApp
         Boolean Fullscreen { get; };
         Boolean AlwaysOnTop { get; };
 
-        IWindowProperties WindowProperties { get; };
+        WindowProperties WindowProperties { get; };
         void IdentifyWindow();
         void RenameFailed();
 
@@ -81,11 +85,6 @@ namespace TerminalApp
         Windows.UI.Xaml.Media.Brush TitlebarBrush { get; };
         void WindowActivated(Boolean activated);
         void SendContentToOther(RequestReceiveContentArgs args);
-
-        String WindowName { get; };
-        UInt64 WindowId { get; };
-        String WindowNameForDisplay { get; };
-        String WindowIdForDisplay { get; };
 
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;

@@ -20,7 +20,7 @@ Abstract:
 
 #include "WindowThread.h"
 
-class WindowEmperor
+class WindowEmperor : public std::enable_shared_from_this<WindowEmperor>
 {
 public:
     WindowEmperor() noexcept;
@@ -28,18 +28,19 @@ public:
     void WaitForWindows();
 
     bool HandleCommandlineArgs();
-    void CreateNewWindowThread(winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs args, const bool firstWindow);
-
-    LRESULT MessageHandler(UINT const message, WPARAM const wParam, LPARAM const lParam) noexcept;
-    wil::unique_hwnd _window;
 
 private:
+    void _createNewWindowThread(const winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs& args);
+
+    [[nodiscard]] static LRESULT __stdcall _wndProc(HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept;
+    LRESULT _messageHandler(UINT const message, WPARAM const wParam, LPARAM const lParam) noexcept;
+    wil::unique_hwnd _window;
+
     winrt::TerminalApp::App _app;
     winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };
     winrt::Microsoft::Terminal::Remoting::WindowManager _manager;
 
-    std::vector<std::shared_ptr<WindowThread>> _windows;
-    std::vector<std::thread> _threads;
+    til::shared_mutex<std::vector<std::shared_ptr<WindowThread>>> _windows;
 
     std::optional<til::throttled_func_trailing<>> _getWindowLayoutThrottler;
 
@@ -50,10 +51,16 @@ private:
 
     std::unique_ptr<NotificationIcon> _notificationIcon;
 
+    void _windowStartedHandler(const std::shared_ptr<WindowThread>& sender);
+    void _windowExitedHandler(uint64_t senderID);
+
     void _becomeMonarch();
     void _numberOfWindowsChanged(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&);
     void _quitAllRequested(const winrt::Windows::Foundation::IInspectable&,
                            const winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs&);
+
+    winrt::fire_and_forget _windowIsQuakeWindowChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::Foundation::IInspectable args);
+    winrt::fire_and_forget _windowRequestUpdateSettings();
 
     winrt::Windows::Foundation::IAsyncAction _saveWindowLayouts();
     winrt::fire_and_forget _saveWindowLayoutsRepeat();
@@ -75,8 +82,8 @@ private:
 
     struct Revokers
     {
-        winrt::Microsoft::Terminal::Remoting::WindowManager::ShowNotificationIconRequested_revoker ShowNotificationIconRequested;
-        winrt::Microsoft::Terminal::Remoting::WindowManager::HideNotificationIconRequested_revoker HideNotificationIconRequested;
+        winrt::Microsoft::Terminal::Remoting::WindowManager::WindowCreated_revoker WindowCreated;
+        winrt::Microsoft::Terminal::Remoting::WindowManager::WindowClosed_revoker WindowClosed;
         winrt::Microsoft::Terminal::Remoting::WindowManager::QuitAllRequested_revoker QuitAllRequested;
     } _revokers{};
 };
