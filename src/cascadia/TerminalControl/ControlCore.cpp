@@ -2199,6 +2199,112 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _MenuChangedHandlers(*this, *args);
     }
 
+    void ControlCore::SelectCommand(const bool goUp)
+    {
+        const til::point start = HasSelection() ? (goUp ? _terminal->GetSelectionAnchor() : _terminal->GetSelectionEnd()) :
+                                                  _terminal->GetTextBuffer().GetCursor().GetPosition();
+        std::optional<DispatchTypes::ScrollMark> nearest{ std::nullopt };
+        const auto& marks{ _terminal->GetScrollMarks() };
+        auto it = marks.rbegin();
+        const auto end = marks.rend();
+        for (; it != end; ++it)
+        {
+            const auto& m = *it;
+            // If this mark doesn't know anything about the position of its
+            // command, OR it does but thinks that it was empty, then just skip
+            // it.
+            if (!m.HasCommand())
+            {
+                continue;
+            }
+            // If this mark is before/after the start of our search in the
+            // buffer, ...
+
+            const auto inTheRightDirection = (goUp && (m.commandEnd < start)) || // prev
+                                             (!goUp && (m.end > start)); // next
+            // (If we're going down, we need to compare the end, not the
+            // commandEnd, to actually find the next one. Otherwise we'll just
+            // find the mark of the current selection again.
+            if (inTheRightDirection)
+            {
+                // ... and we either haven't found a match, or the current nearest
+                // is after/before this mark in the buffer
+                if (!nearest.has_value() ||
+                    ((goUp && (*m.commandEnd > *nearest->commandEnd)) || // prev
+                     (!goUp && (m.end < *nearest->commandEnd)))) // next
+                {
+                    // stash this as the new match
+                    nearest = m;
+                }
+            }
+        }
+
+        if (nearest.has_value())
+        {
+            const auto start = nearest->end;
+            auto end = *nearest->commandEnd;
+
+            const auto bufferSize{ _terminal->GetTextBuffer().GetSize() };
+            bufferSize.DecrementInBounds(end);
+
+            auto lock = _terminal->LockForWriting();
+            _terminal->SelectNewRegion(start, end);
+            _renderer->TriggerSelection();
+        }
+    }
+
+    void ControlCore::SelectOutput(const bool goUp)
+    {
+        const til::point start = HasSelection() ? (goUp ? _terminal->GetSelectionAnchor() : _terminal->GetSelectionEnd()) :
+                                                  _terminal->GetTextBuffer().GetCursor().GetPosition();
+        std::optional<DispatchTypes::ScrollMark> nearest{ std::nullopt };
+        const auto& marks{ _terminal->GetScrollMarks() };
+        auto it = marks.rbegin();
+        const auto end = marks.rend();
+        for (; it != end; ++it)
+        {
+            const auto& m = *it;
+            // If this mark doesn't know anything about the position of its
+            // output, OR it does but thinks that it was empty, then just skip
+            // it.
+            if (!m.HasOutput())
+            {
+                continue;
+            }
+            // If this mark is before/after the start of our search in the buffer, ...
+            const auto inTheRightDirection = (goUp && (m.outputEnd < start)) || // prev
+                                             (!goUp && (m.commandEnd > start)); // next
+            // (If we're going down, we need to compare the commandEnd, not the
+            // outputEnd, to actually find the next one. Otherwise we'll just
+            // find the mark of the current selection again.)
+            if (inTheRightDirection)
+            {
+                // .. and we either haven't found a match, or the current
+                // nearest is after this mark in the buffer
+                if (!nearest.has_value() ||
+                    ((goUp && (*m.outputEnd > *nearest->outputEnd)) || // prev
+                     (!goUp && (*m.commandEnd < *nearest->outputEnd)))) // next
+                {
+                    // stash this as the new match
+                    nearest = m;
+                }
+            }
+        }
+
+        if (nearest.has_value())
+        {
+            const auto start = *nearest->commandEnd;
+            auto end = *nearest->outputEnd;
+
+            const auto bufferSize{ _terminal->GetTextBuffer().GetSize() };
+            bufferSize.DecrementInBounds(end);
+
+            auto lock = _terminal->LockForWriting();
+            _terminal->SelectNewRegion(start, end);
+            _renderer->TriggerSelection();
+        }
+    }
+
     void ControlCore::ColorSelection(const Control::SelectionColor& fg, const Control::SelectionColor& bg, Core::MatchMode matchMode)
     {
         if (HasSelection())

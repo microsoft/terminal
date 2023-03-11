@@ -46,6 +46,8 @@
 #include "ClearBufferArgs.g.h"
 #include "MultipleActionsArgs.g.h"
 #include "AdjustOpacityArgs.g.h"
+#include "SelectCommandArgs.g.h"
+#include "SelectOutputArgs.g.h"
 #include "ColorSelectionArgs.g.h"
 
 #include "JsonUtils.h"
@@ -248,6 +250,14 @@ private:                                                                        
 #define ADJUST_OPACITY_ARGS(X)               \
     X(int32_t, Opacity, "opacity", false, 0) \
     X(bool, Relative, "relative", false, true)
+
+////////////////////////////////////////////////////////////////////////////////
+#define SELECT_COMMAND_ARGS(X) \
+    X(SelectOutputDirection, Direction, "direction", false, SelectOutputDirection::Previous)
+
+////////////////////////////////////////////////////////////////////////////////
+#define SELECT_OUTPUT_ARGS(X) \
+    X(SelectOutputDirection, Direction, "direction", false, SelectOutputDirection::Previous)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define COLOR_SELECTION_ARGS(X)                                                                      \
@@ -756,6 +766,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     ACTION_ARGS_STRUCT(AdjustOpacityArgs, ADJUST_OPACITY_ARGS);
 
+    ACTION_ARGS_STRUCT(SelectCommandArgs, SELECT_COMMAND_ARGS);
+    ACTION_ARGS_STRUCT(SelectOutputArgs, SELECT_OUTPUT_ARGS);
+
     ACTION_ARGS_STRUCT(ColorSelectionArgs, COLOR_SELECTION_ARGS);
 
 }
@@ -794,4 +807,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(MultipleActionsArgs);
     BASIC_FACTORY(AdjustOpacityArgs);
     BASIC_FACTORY(SuggestionsArgs);
+    BASIC_FACTORY(SelectCommandArgs);
+    BASIC_FACTORY(SelectOutputArgs);
 }
