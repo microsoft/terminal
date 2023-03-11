@@ -1809,6 +1809,41 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return hstring{ str };
     }
 
+    // Get all of our recent commands. This will only really work if the user has enabled shell integration.
+    Control::CommandHistoryContext ControlCore::CommandHistory() const
+    {
+        auto terminalLock = _terminal->LockForWriting();
+        auto context = winrt::make_self<CommandHistoryContext>();
+        const auto& textBuffer = _terminal->GetTextBuffer();
+
+        for (const auto& mark : _terminal->GetScrollMarks())
+        {
+            // The command text is between the `end` (which denotes the end of
+            // the prompt) and the `commandEnd`.
+            bool markHasCommand = mark.commandEnd.has_value() &&
+                                  mark.commandEnd != mark.end;
+            if (!markHasCommand)
+                continue;
+
+            // Get the text of the command
+            const auto line = mark.end.y;
+            const auto& row = textBuffer.GetRowByOffset(line);
+            const auto rowText = row.GetText();
+            const auto commandText = rowText.substr(mark.end.x, mark.commandEnd->x);
+            // Trim off trailing spaces. In my experimentation, especially with
+            // cmd.exe, there was a lot of unexpected trailing whitespace.
+            // Probably from using autoMarkPrompts to mark the end of the
+            // commands
+            const auto strEnd = commandText.find_last_not_of(UNICODE_SPACE);
+            if (strEnd != std::string::npos)
+            {
+                const auto trimmed = commandText.substr(0, strEnd + 1);
+                context->History().Append(winrt::hstring{ trimmed });
+            }
+        }
+        return *context;
+    }
+
     Core::Scheme ControlCore::ColorScheme() const noexcept
     {
         Core::Scheme s;

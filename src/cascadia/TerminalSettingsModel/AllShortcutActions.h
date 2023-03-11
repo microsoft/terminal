@@ -97,6 +97,7 @@
     ON_ALL_ACTIONS(MarkMode)                \
     ON_ALL_ACTIONS(ToggleBlockSelection)    \
     ON_ALL_ACTIONS(SwitchSelectionEndpoint) \
+    ON_ALL_ACTIONS(Suggestions)             \
     ON_ALL_ACTIONS(ColorSelection)          \
     ON_ALL_ACTIONS(ExpandSelectionToWord)   \
     ON_ALL_ACTIONS(CloseOtherPanes)
@@ -140,4 +141,5 @@
     ON_ALL_ACTIONS_WITH_ARGS(ClearBuffer)          \
     ON_ALL_ACTIONS_WITH_ARGS(MultipleActions)      \
     ON_ALL_ACTIONS_WITH_ARGS(AdjustOpacity)        \
+    ON_ALL_ACTIONS_WITH_ARGS(Suggestions)          \
     ON_ALL_ACTIONS_WITH_ARGS(ColorSelection)
