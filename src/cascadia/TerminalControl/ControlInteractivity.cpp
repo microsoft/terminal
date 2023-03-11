@@ -255,7 +255,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // GH#9396: we prioritize hyper-link over VT mouse events
         auto hyperlink = _core->GetHyperlink(terminalPosition.to_core_point());
         if (WI_IsFlagSet(buttonState, MouseButtonState::IsLeftButtonDown) &&
-            ctrlEnabled && !hyperlink.empty())
+            ctrlEnabled &&
+            !hyperlink.empty())
         {
             const auto clickCount = _numberOfClicks(pixelPosition, timestamp);
             // Handle hyper-link only on the first click to prevent multiple activations
@@ -305,14 +306,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else if (WI_IsFlagSet(buttonState, MouseButtonState::IsRightButtonDown))
         {
-            // Try to copy the text and clear the selection
-            const auto successfulCopy = CopySelectionToClipboard(shiftEnabled, nullptr);
-            _core->ClearSelection();
-            if (_core->CopyOnSelect() || !successfulCopy)
+            if (_core->Settings().RightClickContextMenu())
             {
-                // CopyOnSelect: right click always pastes!
-                // Otherwise: no selection --> paste
-                RequestPasteTextFromClipboard();
+                auto contextArgs = winrt::make<ContextMenuRequestedEventArgs>(til::point{ pixelPosition }.to_winrt_point());
+                _ContextMenuRequestedHandlers(*this, contextArgs);
+            }
+            else
+            {
+                // Try to copy the text and clear the selection
+                const auto successfulCopy = CopySelectionToClipboard(shiftEnabled, nullptr);
+                _core->ClearSelection();
+                if (_core->CopyOnSelect() || !successfulCopy)
+                {
+                    // CopyOnSelect: right click always pastes!
+                    // Otherwise: no selection --> paste
+                    RequestPasteTextFromClipboard();
+                }
             }
         }
     }

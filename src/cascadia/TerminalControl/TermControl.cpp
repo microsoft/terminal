@@ -98,6 +98,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _revokers.PasteFromClipboard = _interactivity.PasteFromClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_bubblePasteFromClipboard });
 
+        _interactivity.ContextMenuRequested({ this, &TermControl::_contextMenuHandler });
+
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
         _layoutUpdatedRevoker = SwapChainPanel().LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
@@ -155,6 +157,57 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _autoScrollTimer.Tick({ get_weak(), &TermControl::_UpdateAutoScroll });
 
         _ApplyUISettings();
+
+        _originalPrimaryElements = winrt::single_threaded_observable_vector<Controls::ICommandBarElement>();
+        _originalSecondaryElements = winrt::single_threaded_observable_vector<Controls::ICommandBarElement>();
+        _originalSelectedPrimaryElements = winrt::single_threaded_observable_vector<Controls::ICommandBarElement>();
+        _originalSelectedSecondaryElements = winrt::single_threaded_observable_vector<Controls::ICommandBarElement>();
+        for (const auto& e : ContextMenu().PrimaryCommands())
+        {
+            _originalPrimaryElements.Append(e);
+        }
+        for (const auto& e : ContextMenu().SecondaryCommands())
+        {
+            _originalSecondaryElements.Append(e);
+        }
+        for (const auto& e : SelectionContextMenu().PrimaryCommands())
+        {
+            _originalSelectedPrimaryElements.Append(e);
+        }
+        for (const auto& e : SelectionContextMenu().SecondaryCommands())
+        {
+            _originalSelectedSecondaryElements.Append(e);
+        }
+        ContextMenu().Closed([weakThis = get_weak()](auto&&, auto&&) {
+            if (auto control{ weakThis.get() }; !control->_IsClosing())
+            {
+                control->ContextMenu().PrimaryCommands().Clear();
+                control->ContextMenu().SecondaryCommands().Clear();
+                for (const auto& e : control->_originalPrimaryElements)
+                {
+                    control->ContextMenu().PrimaryCommands().Append(e);
+                }
+                for (const auto& e : control->_originalSecondaryElements)
+                {
+                    control->ContextMenu().SecondaryCommands().Append(e);
+                }
+            }
+        });
+        SelectionContextMenu().Closed([weakThis = get_weak()](auto&&, auto&&) {
+            if (auto control{ weakThis.get() }; !control->_IsClosing())
+            {
+                control->SelectionContextMenu().PrimaryCommands().Clear();
+                control->SelectionContextMenu().SecondaryCommands().Clear();
+                for (const auto& e : control->_originalSelectedPrimaryElements)
+                {
+                    control->SelectionContextMenu().PrimaryCommands().Append(e);
+                }
+                for (const auto& e : control->_originalSelectedSecondaryElements)
+                {
+                    control->SelectionContextMenu().SecondaryCommands().Append(e);
+                }
+            }
+        });
     }
 
     Control::TermControl TermControl::AttachContent(Control::ControlInteractivity content, const Microsoft::Terminal::Control::IKeyBindings& keyBindings)
@@ -340,7 +393,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Given Settings having been updated, applies the settings to the current terminal.
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControl::UpdateControlSettings(IControlSettings settings, IControlAppearance unfocusedAppearance)
+    winrt::fire_and_forget TermControl::UpdateControlSettings(IControlSettings settings,
+                                                              IControlAppearance unfocusedAppearance)
     {
         auto weakThis{ get_weak() };
 
@@ -467,6 +521,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // settings might be out-of-proc in the future
         auto settings{ _core.Settings() };
+
+        _useRightClickContextMenu = settings.RightClickContextMenu();
 
         // Apply padding as swapChainPanel's margin
         const auto newMargin = ParseThicknessFromPadding(settings.Padding());
@@ -3273,4 +3329,52 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                      clientCursorInDips.y + padding.Top };
         return relativeToOrigin.to_core_point();
     }
+
+    void TermControl::_contextMenuHandler(IInspectable /*sender*/,
+                                          Control::ContextMenuRequestedEventArgs args)
+    {
+        Controls::Primitives::FlyoutShowOptions myOption{};
+        myOption.ShowMode(Controls::Primitives::FlyoutShowMode::Standard);
+        myOption.Placement(Controls::Primitives::FlyoutPlacementMode::TopEdgeAlignedLeft);
+
+        // Position the menu where the pointer is. This was the best way I found how.
+        const til::point absolutePointerPos{ til::math::rounding, CoreWindow::GetForCurrentThread().PointerPosition() };
+        const til::point absoluteWindowOrigin{ til::math::rounding,
+                                               CoreWindow::GetForCurrentThread().Bounds().X,
+                                               CoreWindow::GetForCurrentThread().Bounds().Y };
+        // Get the offset (margin + tabs, etc..) of the control within the window
+        const til::point controlOrigin{ til::math::flooring,
+                                        this->TransformToVisual(nullptr).TransformPoint(Windows::Foundation::Point(0, 0)) };
+
+        const auto pos = (absolutePointerPos - absoluteWindowOrigin - controlOrigin).to_winrt_point();
+        myOption.Position(pos);
+
+        (_core.HasSelection() ? SelectionContextMenu() :
+                                ContextMenu())
+            .ShowAt(*this, myOption);
+    }
+
+    void TermControl::_PasteCommandHandler(const IInspectable& /*sender*/,
+                                           const IInspectable& /*args*/)
+    {
+        _interactivity.RequestPasteTextFromClipboard();
+        ContextMenu().Hide();
+        SelectionContextMenu().Hide();
+    }
+    void TermControl::_CopyCommandHandler(const IInspectable& /*sender*/,
+                                          const IInspectable& /*args*/)
+    {
+        // formats = nullptr -> copy all formats
+        _interactivity.CopySelectionToClipboard(false, nullptr);
+        ContextMenu().Hide();
+        SelectionContextMenu().Hide();
+    }
+    void TermControl::_SearchCommandHandler(const IInspectable& /*sender*/,
+                                            const IInspectable& /*args*/)
+    {
+        ContextMenu().Hide();
+        SelectionContextMenu().Hide();
+        SearchMatch(false);
+    }
+
 }

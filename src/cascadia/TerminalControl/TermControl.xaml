@@ -31,6 +31,30 @@
              mc:Ignorable="d">
     <UserControl.Resources>
 
+        <CommandBarFlyout x:Name="ContextMenu">
+            <AppBarButton x:Name="PasteCommandButton"
+                          x:Uid="PasteCommandButton"
+                          Click="_PasteCommandHandler"
+                          Icon="Paste" />
+        </CommandBarFlyout>
+
+        <CommandBarFlyout x:Name="SelectionContextMenu">
+            <AppBarButton x:Name="CopyCommandButton"
+                          x:Uid="CopyCommandButton"
+                          Click="_CopyCommandHandler"
+                          Icon="Copy" />
+            <AppBarButton x:Name="PasteWithSelectionCommandButton"
+                          x:Uid="PasteWithSelectionCommandButton"
+                          Click="_PasteCommandHandler"
+                          Icon="Paste" />
+            <CommandBarFlyout.SecondaryCommands>
+                <AppBarButton x:Name="SearchCommandButton"
+                              x:Uid="SearchCommandButton"
+                              Click="_SearchCommandHandler"
+                              Icon="Find" />
+            </CommandBarFlyout.SecondaryCommands>
+        </CommandBarFlyout>
+
         <!--
             BODGY: ControlsV2 changed the size of the scrollbars from 16dips to
             12dips. This is harder for folks to hit with the mouse, and isn't
@@ -1183,6 +1207,7 @@
         <Grid.Lights>
             <local:VisualBellLight x:Name="BellLight" />
         </Grid.Lights>
+
         <Image x:Name="BackgroundImage"
                AutomationProperties.AccessibilityView="Raw" />
         <Grid>
@@ -1202,7 +1227,6 @@
                 <SwapChainPanel x:Name="SwapChainPanel"
                                 CompositionScaleChanged="_SwapChainScaleChanged"
                                 SizeChanged="_SwapChainSizeChanged">
-
                     <Canvas x:Name="OverlayCanvas"
                             Visibility="Visible">
                         <Border x:Name="HyperlinkTooltipBorder"

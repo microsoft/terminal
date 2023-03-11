@@ -1621,6 +1621,9 @@ namespace winrt::TerminalApp::implementation
         term.ShowWindowChanged({ get_weak(), &TerminalPage::_ShowWindowChangedHandler });
 
         term.MenuChanged({ get_weak(), &TerminalPage::_ControlMenuChangedHandler });
+
+        term.ContextMenu().Opening({ this, &TerminalPage::_ContextMenuOpened });
+        term.SelectionContextMenu().Opening({ this, &TerminalPage::_SelectionMenuOpened });
     }
 
     // Method Description:
@@ -4822,4 +4825,77 @@ namespace winrt::TerminalApp::implementation
             _RemoveTab(*_stashedDraggedTab);
         }
     }
+
+    void TerminalPage::_ContextMenuOpened(const IInspectable& sender,
+                                          const IInspectable& /*args*/)
+    {
+        _PopulateContextMenu(sender, false /*withSelection*/);
+    }
+    void TerminalPage::_SelectionMenuOpened(const IInspectable& sender,
+                                            const IInspectable& /*args*/)
+    {
+        _PopulateContextMenu(sender, true /*withSelection*/);
+    }
+
+    void TerminalPage::_PopulateContextMenu(const IInspectable& sender,
+                                            const bool /*withSelection*/)
+    {
+        // withSelection can be used to add actions that only appear if there's
+        // selected text, like "search the web". In this initial draft, it's not
+        // actually augmented by the TerminalPage, so it's left commented out.
+
+        const auto& menu{ sender.try_as<WUX::Controls::CommandBarFlyout>() };
+        if (!menu)
+        {
+            return;
+        }
+
+        // Helper lambda for dispatching an ActionAndArgs onto the
+        // ShortcutActionDispatch. Used below to wire up each menu entry to the
+        // respective action.
+
+        auto weak = get_weak();
+        auto makeCallback = [weak](const ActionAndArgs& actionAndArgs) {
+            return [weak, actionAndArgs](auto&&, auto&&) {
+                if (auto page{ weak.get() })
+                {
+                    page->_actionDispatch->DoAction(actionAndArgs);
+                }
+            };
+        };
+
+        auto makeItem = [&menu, &makeCallback](const winrt::hstring& label,
+                                               const winrt::hstring& icon,
+                                               const auto& action) {
+            AppBarButton button{};
+
+            if (!icon.empty())
+            {
+                auto iconElement = IconPathConverter::IconWUX(icon);
+                Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
+                button.Icon(iconElement);
+            }
+
+            button.Label(label);
+            button.Click(makeCallback(action));
+            menu.SecondaryCommands().Append(button);
+        };
+
+        // Wire up each item to the action that should be performed. By actually
+        // connecting these to actions, we ensure the implementation is
+        // consistent. This also leaves room for customizing this menu with
+        // actions in the future.
+
+        makeItem(RS_(L"SplitPaneText"), L"\xF246", ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate } });
+        makeItem(RS_(L"DuplicateTabText"), L"\xF5ED", ActionAndArgs{ ShortcutAction::DuplicateTab, nullptr });
+
+        // Only wire up "Close Pane" if there's multiple panes.
+        if (_GetFocusedTabImpl()->GetLeafPaneCount() > 1)
+        {
+            makeItem(RS_(L"PaneClose"), L"\xE89F", ActionAndArgs{ ShortcutAction::ClosePane, nullptr });
+        }
+
+        makeItem(RS_(L"TabClose"), L"\xE711", ActionAndArgs{ ShortcutAction::CloseTab, CloseTabArgs{ _GetFocusedTabIndex().value() } });
+    }
+
 }

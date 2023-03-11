@@ -22,6 +22,11 @@ namespace Microsoft.Terminal.Control
         Windows.Foundation.IReference<CopyFormat> Formats { get; };
     }
 
+    runtimeclass ContextMenuRequestedEventArgs
+    {
+        Windows.Foundation.Point Point { get; };
+    }
+
     runtimeclass TitleChangedEventArgs
     {
         String Title;
