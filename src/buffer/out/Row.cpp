@@ -584,9 +584,21 @@ catch (...)
     charsConsumed = ch - chBeg;
 }
 
-til::CoordType ROW::WriteWithOffsets(til::CoordType columnBegin, til::CoordType columnLimit, std::wstring_view& chars, std::span<const uint16_t>& charOffsets)
+til::CoordType ROW::CopyRangeFrom(til::CoordType columnBegin, til::CoordType columnLimit, const ROW& other, til::CoordType& otherBegin, til::CoordType otherLimit)
 try
 {
+    const auto otherColBeg = other._clampedColumnInclusive(otherBegin);
+    const auto otherColLimit = other._clampedColumnInclusive(otherLimit);
+    std::span<uint16_t> charOffsets;
+    std::wstring_view chars;
+
+    if (otherColBeg < otherColLimit)
+    {
+        charOffsets = other._charOffsets.subspan(otherColBeg, otherColLimit - otherColBeg + 1);
+        const auto charsOffset = charOffsets.front() & CharOffsetsMask;
+        chars = { other._chars.data() + charsOffset, other._chars.size() - charsOffset };
+    }
+    
     WriteHelper h{ *this, columnBegin, columnLimit, chars };
     if (!h.IsValid())
     {
@@ -595,18 +607,16 @@ try
     // Any valid charOffsets array is at least 2 elements long (the 1st element is the start offset and the 2nd
     // element is the length of the first glyph) and begins/ends with a non-trailer offset.  We don't really
     // need to test for the end offset, since `WriteHelper::WriteWithOffsets` already takes care of that.
-    if (charOffsets.size() < 2 || WI_IsFlagSet(charOffsets.front(), CharOffsetsTrailer))
+    if (charOffsets.size() < 2 || WI_IsFlagSet(charOffsets.front(), CharOffsetsTrailer) || WI_IsFlagSet(charOffsets.back(), CharOffsetsTrailer))
     {
         assert(false);
-        chars = {};
-        charOffsets = {};
+        otherBegin = other.size();
         return h.colBeg;
     }
-    h.WriteWithOffsets(charOffsets);
+    h.CopyRangeFrom(charOffsets);
     h.Finish();
 
-    chars = chars.substr(h.charsConsumed);
-    charOffsets = charOffsets.subspan(h.colEnd - h.colBeg);
+    otherBegin += h.colEnd - h.colBeg;
     return h.colExtEnd;
 }
 catch (...)
@@ -615,11 +625,11 @@ catch (...)
     throw;
 }
 
-[[msvc::forceinline]] void ROW::WriteHelper::WriteWithOffsets(const std::span<const uint16_t>& charOffsets) noexcept
+[[msvc::forceinline]] void ROW::WriteHelper::CopyRangeFrom(const std::span<const uint16_t>& charOffsets) noexcept
 {
     // Since our `charOffsets` input is already in columns (just like the `ROW::_charOffsets`),
     // we can directly look up the end char-offset, but...
-    const auto colExtEndInput = std::min(gsl::narrow_cast<uint16_t>(colLimit - colBeg), gsl::narrow<uint16_t>(charOffsets.size()));
+    const auto colExtEndInput = std::min(gsl::narrow_cast<uint16_t>(colLimit - colBeg), gsl::narrow<uint16_t>(charOffsets.size() - 1));
 
     // ...since the colLimit might intersect with a wide glyph in `charOffset`, we need to adjust our input-colEnd.
     auto colEndInput = colExtEndInput;
@@ -685,6 +695,33 @@ catch (...)
     {
         row.SetDoubleBytePadded(colEnd < row._columnCount);
     }
+
+    if constexpr (false) {
+        auto it = row._charOffsets.begin();
+        uint16_t expected = 0;
+
+        for (const auto& s : til::utf16_iterator{ row.GetText() })
+        {
+            const auto wide = til::at(s, 0) < 0x80 ? false : IsGlyphFullWidth(s);
+
+            if (*it != expected)
+            {
+                __debugbreak();
+            }
+            ++it;
+
+            if (wide)
+            {
+                if (*it != (expected | CharOffsetsTrailer))
+                {
+                    __debugbreak();
+                }
+                ++it;
+            }
+
+            expected = gsl::narrow_cast<uint16_t>(expected + s.size());
+        }
+    }
 }
 
 // This function represents the slow path of ReplaceCharacters(),
@@ -722,6 +759,11 @@ void ROW::_resizeChars(uint16_t colExtEnd, uint16_t chExtBeg, uint16_t chExtEndO
     {
         *it = gsl::narrow_cast<uint16_t>(*it + diff);
     }
+}
+
+til::small_rle<TextAttribute, uint16_t, 1>& ROW::Attributes() noexcept
+{
+    return _attr;
 }
 
 const til::small_rle<TextAttribute, uint16_t, 1>& ROW::Attributes() const noexcept

@@ -99,8 +99,9 @@ public:
     void ReplaceAttributes(til::CoordType beginIndex, til::CoordType endIndex, const TextAttribute& newAttr);
     void ReplaceCharacters(til::CoordType columnBegin, til::CoordType width, const std::wstring_view& chars);
     til::CoordType Write(til::CoordType columnBegin, til::CoordType columnLimit, std::wstring_view& chars);
-    til::CoordType WriteWithOffsets(til::CoordType columnBegin, til::CoordType columnLimit, std::wstring_view& chars, std::span<const uint16_t>& charOffsetsPtr);
-
+    til::CoordType CopyRangeFrom(til::CoordType columnBegin, til::CoordType columnLimit, const ROW& other, til::CoordType& otherBegin, til::CoordType otherLimit);
+    
+    til::small_rle<TextAttribute, uint16_t, 1>& Attributes() noexcept;
     const til::small_rle<TextAttribute, uint16_t, 1>& Attributes() const noexcept;
     TextAttribute GetAttrByColumn(til::CoordType column) const;
     std::vector<uint16_t> GetHyperlinks() const;
@@ -130,7 +131,7 @@ private:
         bool IsValid() const noexcept;
         void ReplaceCharacters(til::CoordType width) noexcept;
         void Write() noexcept;
-        void WriteWithOffsets(const std::span<const uint16_t>& charOffsets) noexcept;
+        void CopyRangeFrom(const std::span<const uint16_t>& charOffsets) noexcept;
         void Finish();
 
         ROW& row;

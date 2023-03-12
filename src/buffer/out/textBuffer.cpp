@@ -389,7 +389,7 @@ til::CoordType TextBuffer::Write(til::CoordType row, til::CoordType columnBegin,
 
     const auto columnEnd = r.Write(columnBegin, columnLimit, chars);
     r.ReplaceAttributes(columnBegin, columnEnd, attributes);
-    r.SetWrapForced(wrapAtEOL && columnEnd == r.size());
+    r.SetWrapForced(wrapAtEOL && columnEnd >= r.size());
 
     TriggerRedraw(Viewport::FromExclusive({ columnBegin, row, columnEnd, row + 1 }));
     return columnEnd;
