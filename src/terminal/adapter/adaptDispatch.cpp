@@ -1283,57 +1283,61 @@ bool AdaptDispatch::SelectAttributeChangeExtent(const DispatchTypes::ChangeExten
 bool AdaptDispatch::RequestChecksumRectangularArea(const VTInt id, const VTInt page, const VTInt top, const VTInt left, const VTInt bottom, const VTInt right)
 {
     uint16_t checksum = 0;
-    if (page == 1)
+    // If this feature is not enabled, we'll just report a zero checksum.
+    if constexpr (Feature_VtChecksumReport::IsEnabled())
     {
-        // As part of the checksum, we need to include the color indices of each
-        // cell, and in the case of default colors, those indices come from the
-        // color alias table. But if they're not in the bottom 16 range, we just
-        // fallback to using white on black (7 and 0).
-        auto defaultFgIndex = _renderSettings.GetColorAliasIndex(ColorAlias::DefaultForeground);
-        auto defaultBgIndex = _renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground);
-        defaultFgIndex = defaultFgIndex < 16 ? defaultFgIndex : 7;
-        defaultBgIndex = defaultBgIndex < 16 ? defaultBgIndex : 0;
-
-        const auto& textBuffer = _api.GetTextBuffer();
-        const auto eraseRect = _CalculateRectArea(top, left, bottom, right, textBuffer.GetSize().Dimensions());
-        for (auto row = eraseRect.top; row < eraseRect.bottom; row++)
+        if (page == 1)
         {
-            for (auto col = eraseRect.left; col < eraseRect.right; col++)
+            // As part of the checksum, we need to include the color indices of each
+            // cell, and in the case of default colors, those indices come from the
+            // color alias table. But if they're not in the bottom 16 range, we just
+            // fallback to using white on black (7 and 0).
+            auto defaultFgIndex = _renderSettings.GetColorAliasIndex(ColorAlias::DefaultForeground);
+            auto defaultBgIndex = _renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground);
+            defaultFgIndex = defaultFgIndex < 16 ? defaultFgIndex : 7;
+            defaultBgIndex = defaultBgIndex < 16 ? defaultBgIndex : 0;
+
+            const auto& textBuffer = _api.GetTextBuffer();
+            const auto eraseRect = _CalculateRectArea(top, left, bottom, right, textBuffer.GetSize().Dimensions());
+            for (auto row = eraseRect.top; row < eraseRect.bottom; row++)
             {
-                // The algorithm we're using here should match the DEC terminals
-                // for the ASCII and Latin-1 range. Their other character sets
-                // predate Unicode, though, so we'd need a custom mapping table
-                // to lookup the correct checksums. Considering this is only for
-                // testing at the moment, that doesn't seem worth the effort.
-                const auto cell = textBuffer.GetCellDataAt({ col, row });
-                for (auto ch : cell->Chars())
+                for (auto col = eraseRect.left; col < eraseRect.right; col++)
                 {
-                    // That said, I've made a special allowance for U+2426,
-                    // since that is widely used in a lot of character sets.
-                    checksum -= (ch == L'\u2426' ? 0x1B : ch);
+                    // The algorithm we're using here should match the DEC terminals
+                    // for the ASCII and Latin-1 range. Their other character sets
+                    // predate Unicode, though, so we'd need a custom mapping table
+                    // to lookup the correct checksums. Considering this is only for
+                    // testing at the moment, that doesn't seem worth the effort.
+                    const auto cell = textBuffer.GetCellDataAt({ col, row });
+                    for (auto ch : cell->Chars())
+                    {
+                        // That said, I've made a special allowance for U+2426,
+                        // since that is widely used in a lot of character sets.
+                        checksum -= (ch == L'\u2426' ? 0x1B : ch);
+                    }
+
+                    // Since we're attempting to match the DEC checksum algorithm,
+                    // the only attributes affecting the checksum are the ones that
+                    // were supported by DEC terminals.
+                    const auto attr = cell->TextAttr();
+                    checksum -= attr.IsProtected() ? 0x04 : 0;
+                    checksum -= attr.IsInvisible() ? 0x08 : 0;
+                    checksum -= attr.IsUnderlined() ? 0x10 : 0;
+                    checksum -= attr.IsReverseVideo() ? 0x20 : 0;
+                    checksum -= attr.IsBlinking() ? 0x40 : 0;
+                    checksum -= attr.IsIntense() ? 0x80 : 0;
+
+                    // For the same reason, we only care about the eight basic ANSI
+                    // colors, although technically we also report the 8-16 index
+                    // range. Everything else gets mapped to the default colors.
+                    const auto colorIndex = [](const auto color, const auto defaultIndex) {
+                        return color.IsLegacy() ? color.GetIndex() : defaultIndex;
+                    };
+                    const auto fgIndex = colorIndex(attr.GetForeground(), defaultFgIndex);
+                    const auto bgIndex = colorIndex(attr.GetBackground(), defaultBgIndex);
+                    checksum -= gsl::narrow_cast<uint16_t>(fgIndex << 4);
+                    checksum -= gsl::narrow_cast<uint16_t>(bgIndex);
                 }
-
-                // Since we're attempting to match the DEC checksum algorithm,
-                // the only attributes affecting the checksum are the ones that
-                // were supported by DEC terminals.
-                const auto attr = cell->TextAttr();
-                checksum -= attr.IsProtected() ? 0x04 : 0;
-                checksum -= attr.IsInvisible() ? 0x08 : 0;
-                checksum -= attr.IsUnderlined() ? 0x10 : 0;
-                checksum -= attr.IsReverseVideo() ? 0x20 : 0;
-                checksum -= attr.IsBlinking() ? 0x40 : 0;
-                checksum -= attr.IsIntense() ? 0x80 : 0;
-
-                // For the same reason, we only care about the eight basic ANSI
-                // colors, although technically we also report the 8-16 index
-                // range. Everything else gets mapped to the default colors.
-                const auto colorIndex = [](const auto color, const auto defaultIndex) {
-                    return color.IsLegacy() ? color.GetIndex() : defaultIndex;
-                };
-                const auto fgIndex = colorIndex(attr.GetForeground(), defaultFgIndex);
-                const auto bgIndex = colorIndex(attr.GetBackground(), defaultBgIndex);
-                checksum -= gsl::narrow_cast<uint16_t>(fgIndex << 4);
-                checksum -= gsl::narrow_cast<uint16_t>(bgIndex);
             }
         }
     }
