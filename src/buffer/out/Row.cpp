@@ -594,8 +594,13 @@ try
 
     if (otherColBeg < otherColLimit)
     {
-        charOffsets = other._charOffsets.subspan(otherColBeg, otherColLimit - otherColBeg + 1);
+        charOffsets = other._charOffsets.subspan(otherColBeg, static_cast<size_t>(otherColLimit) - otherColBeg + 1);
         const auto charsOffset = charOffsets.front() & CharOffsetsMask;
+        // _chars is a std::span (for performance and because it refers to raw, shared memory), whereas
+        // chars is a std::wstring_view, because that's what we use everywhere else for sharing strings.
+        // We can't trivially convert the two (C++ Committee be like: Having 2 span types is completely
+        // reasonable and normal. Also, they're not convertible. Because fu.) so we do pointer stuff.
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
         chars = { other._chars.data() + charsOffset, other._chars.size() - charsOffset };
     }
 
