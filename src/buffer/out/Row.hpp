@@ -100,7 +100,7 @@ public:
     void ReplaceCharacters(til::CoordType columnBegin, til::CoordType width, const std::wstring_view& chars);
     til::CoordType Write(til::CoordType columnBegin, til::CoordType columnLimit, std::wstring_view& chars);
     til::CoordType CopyRangeFrom(til::CoordType columnBegin, til::CoordType columnLimit, const ROW& other, til::CoordType& otherBegin, til::CoordType otherLimit);
-    
+
     til::small_rle<TextAttribute, uint16_t, 1>& Attributes() noexcept;
     const til::small_rle<TextAttribute, uint16_t, 1>& Attributes() const noexcept;
     TextAttribute GetAttrByColumn(til::CoordType column) const;

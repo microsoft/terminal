@@ -598,7 +598,7 @@ try
         const auto charsOffset = charOffsets.front() & CharOffsetsMask;
         chars = { other._chars.data() + charsOffset, other._chars.size() - charsOffset };
     }
-    
+
     WriteHelper h{ *this, columnBegin, columnLimit, chars };
     if (!h.IsValid())
     {
@@ -694,33 +694,6 @@ catch (...)
     if (colExtEnd == row._columnCount)
     {
         row.SetDoubleBytePadded(colEnd < row._columnCount);
-    }
-
-    if constexpr (false) {
-        auto it = row._charOffsets.begin();
-        uint16_t expected = 0;
-
-        for (const auto& s : til::utf16_iterator{ row.GetText() })
-        {
-            const auto wide = til::at(s, 0) < 0x80 ? false : IsGlyphFullWidth(s);
-
-            if (*it != expected)
-            {
-                __debugbreak();
-            }
-            ++it;
-
-            if (wide)
-            {
-                if (*it != (expected | CharOffsetsTrailer))
-                {
-                    __debugbreak();
-                }
-                ++it;
-            }
-
-            expected = gsl::narrow_cast<uint16_t>(expected + s.size());
-        }
     }
 }
 
