@@ -76,7 +76,6 @@
     <Manifest Include="WindowsTerminal.manifest" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
   </ItemGroup>
   <!-- Dependencies -->
   <ItemGroup>
