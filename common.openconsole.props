@@ -10,11 +10,4 @@
     <OpenConsoleDir>$(MSBuildThisFileDirectory)</OpenConsoleDir>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <!--
-    This version should be tracked in build/packages.config.
-    -->
-    <TerminalMUXVersion>2.7.3</TerminalMUXVersion>
-  </PropertyGroup>
-
 </Project>
