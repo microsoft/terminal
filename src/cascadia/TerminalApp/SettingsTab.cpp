@@ -47,8 +47,11 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Creates a list of actions that can be run to recreate the state of this tab
     // Arguments:
-    // - <none>
-    // Return Value:
+    // - asContent: unused. There's nothing different we need to do when
+    //   serializing the settings tab for moving to another window. If we ever
+    //   really want to support opening the SUI to a specific page, we can
+    //   re-evaluate including that arg in this action then.
+    //  Return Value:
     // - The list of actions.
     std::vector<ActionAndArgs> SettingsTab::BuildStartupActions(const bool /*asContent*/) const
     {
