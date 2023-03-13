@@ -1969,6 +1969,8 @@ namespace winrt::TerminalApp::implementation
     //   event. Our Window will raise that to the window manager / monarch, who
     //   will dispatch this blob of json back to the window that should handle
     //   this.
+    // - `actions` will be emptied into a winrt IVector as a part of this method
+    //   and should be expected to be empty after this call.
     void TerminalPage::_MoveContent(std::vector<Settings::Model::ActionAndArgs>& actions,
                                     const winrt::hstring& windowName,
                                     const uint32_t tabIndex)
@@ -1990,7 +1992,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto terminalTab{ _GetFocusedTabImpl() })
             {
-                const auto startupActions = terminalTab->BuildStartupActions(true);
+                auto startupActions = terminalTab->BuildStartupActions(true);
                 _DetachTabFromWindow(terminalTab);
                 _MoveContent(startupActions, args.Window(), 0);
                 _RemoveTab(*terminalTab);
