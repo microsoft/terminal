@@ -1204,8 +1204,6 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////
-
     bool TerminalWindow::ShouldImmediatelyHandoffToElevated()
     {
         return _root != nullptr ? _root->ShouldImmediatelyHandoffToElevated(_settings) : false;

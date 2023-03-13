@@ -167,7 +167,7 @@
     <comment>{0} will be replaced with a "forward" / "backward"</comment>
   </data>
   <data name="MoveTabToWindowCommandKey" xml:space="preserve">
-    <value>Move tab to window {0}</value>
+    <value>Move tab to window "{0}"</value>
     <comment>{0} will be replaced with a user-specified name of a window</comment>
   </data>
   <data name="MoveTabDirectionForward" xml:space="preserve">

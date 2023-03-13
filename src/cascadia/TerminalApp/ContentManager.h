@@ -18,6 +18,9 @@ Abstract:
   other threads.
 - When you want to create a new TermControl, call CreateCore to instantiate a
   new content with a GUID for later reparenting.
+- Detach can be used to temporarily remove a content from its hosted
+  TermControl. After detaching, you can still use LookupCore &
+  TermControl::AttachContent to re-attach to the content.
 --*/
 #pragma once
 

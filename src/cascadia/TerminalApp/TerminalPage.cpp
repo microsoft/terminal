@@ -1990,7 +1990,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto terminalTab{ _GetFocusedTabImpl() })
             {
-                auto startupActions = terminalTab->BuildStartupActions(true);
+                const auto startupActions = terminalTab->BuildStartupActions(true);
                 _DetachTabFromWindow(terminalTab);
                 _MoveContent(startupActions, args.Window(), 0);
                 _RemoveTab(*terminalTab);
@@ -1998,13 +1998,13 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        auto direction = args.Direction();
+        const auto direction = args.Direction();
         if (direction != MoveTabDirection::None)
         {
             if (auto focusedTabIndex = _GetFocusedTabIndex())
             {
-                auto currentTabIndex = focusedTabIndex.value();
-                auto delta = direction == MoveTabDirection::Forward ? 1 : -1;
+                const auto currentTabIndex = focusedTabIndex.value();
+                const auto delta = direction == MoveTabDirection::Forward ? 1 : -1;
                 _TryMoveTab(currentTabIndex, currentTabIndex + delta);
             }
         }
@@ -2053,8 +2053,7 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            const auto& firstAction = args.GetAt(0);
-            if (firstAction.Action() == ShortcutAction::SplitPane)
+            if (firstIsSplitPane)
             {
                 // Create the equivalent NewTab action.
                 const auto newAction = Settings::Model::ActionAndArgs{ Settings::Model::ShortcutAction::NewTab,
@@ -2792,8 +2791,7 @@ namespace winrt::TerminalApp::implementation
 
             const auto control = _InitControlFromContent(newTerminalArgs.ContentGuid());
             _RegisterTerminalEvents(control);
-            auto resultPane = std::make_shared<Pane>(profile, control);
-            return resultPane;
+            return std::make_shared<Pane>(profile, control);
         }
 
         TerminalSettingsCreateResult controlSettings{ nullptr };

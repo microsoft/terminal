@@ -98,7 +98,6 @@ namespace Microsoft.Terminal.Remoting
         event Windows.Foundation.TypedEventHandler<Object, Object> QuitRequested;
 
         event Windows.Foundation.TypedEventHandler<Object, AttachRequest> AttachRequested;
-
     };
 
     [default_interface] runtimeclass Peasant : IPeasant
