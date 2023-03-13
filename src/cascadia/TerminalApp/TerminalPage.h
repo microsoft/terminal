@@ -223,7 +223,6 @@ namespace winrt::TerminalApp::implementation
         bool _renamerPressedEnter{ false };
 
         TerminalApp::WindowProperties _WindowProperties{ nullptr };
-
         PaneResources _paneResources;
 
         TerminalApp::ContentManager _manager{ nullptr };
