@@ -9,6 +9,9 @@
 #include <thread>
 #include <sstream>
 
+#include <wrl.h>
+namespace wrl = Microsoft::WRL;
+
 #include <wil\result.h>
 #include <wil\resource.h>
 #include <wil\com.h>
@@ -30,6 +33,7 @@ void WINAPI ProcessEtwEvent(_In_ PEVENT_RECORD rawEvent)
     auto data = rawEvent->UserData;
     auto dataLen = rawEvent->UserDataLength;
     auto processId = rawEvent->EventHeader.ProcessId;
+    processId;
     auto task = rawEvent->EventHeader.EventDescriptor.Task;
 
     if (task == InitiateSpeaking)
@@ -47,7 +51,8 @@ void WINAPI ProcessEtwEvent(_In_ PEVENT_RECORD rawEvent)
         const auto stringLen = stringPayloadSize - 1;
         const auto payload = std::wstring(reinterpret_cast<wchar_t*>(static_cast<char*>(data) + 4), stringLen);
 
-        wprintf(L"[Narrator pid=%d]: %s\n", processId, payload.c_str());
+        // wprintf(L"[Narrator pid=%d]: %s\n", processId, payload.c_str());
+        wprintf(L"%s\n", payload.c_str());
         fflush(stdout);
 
         if (payload == L"Exiting Narrator")
@@ -59,6 +64,11 @@ void WINAPI ProcessEtwEvent(_In_ PEVENT_RECORD rawEvent)
 
 int __cdecl wmain(int argc, wchar_t* argv[])
 {
+    wprintf(L"Welcome to Narrator Buddy. Start up Narrator to start logging narrator output.\n");
+    wprintf(L"    Press ^C to exit\n");
+    wprintf(L"    If you start Narrator and don't see any output, make sure there's no leaked ETW traces with:\n\n");
+    wprintf(L"        logman query -ets\n\n");
+
     const bool runForever = (argc == 2) &&
                             std::wstring{ argv[1] } == L"-forever";
 
@@ -109,9 +119,20 @@ int __cdecl wmain(int argc, wchar_t* argv[])
     });
 
     constexpr GUID narratorProviderGuid = { 0x835b79e2, 0xe76a, 0x44c4, 0x98, 0x85, 0x26, 0xad, 0x12, 0x2d, 0x3b, 0x4d };
-    FAIL_FAST_IF(ERROR_SUCCESS != ::EnableTrace(TRUE /* enable */, 0 /* enableFlag */, TRACE_LEVEL_VERBOSE, &narratorProviderGuid, session));
+    auto hr = ::EnableTrace(TRUE /* enable */, 0 /* enableFlag */, TRACE_LEVEL_VERBOSE, &narratorProviderGuid, session);
+    if (hr == ERROR_NO_SYSTEM_RESOURCES)
+    {
+        wprintf(L"Looks like you ran out of ETW trace slots. You'll need to free one up\n");
+        return hr;
+    }
+
+    FAIL_FAST_IF(ERROR_SUCCESS != hr);
     auto disableTrace = wil::scope_exit([&]() {
-        ::EnableTrace(FALSE /* enable */, 0 /* enableFlag */, TRACE_LEVEL_VERBOSE, &narratorProviderGuid, session);
+        ::EnableTrace(FALSE /* enable */,
+                      0 /* enableFlag */,
+                      TRACE_LEVEL_VERBOSE,
+                      &narratorProviderGuid,
+                      session);
     });
 
     // Finally, start listening (OpenTrace/ProcessTrace/CloseTrace)...
