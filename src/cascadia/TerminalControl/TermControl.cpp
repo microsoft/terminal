@@ -2869,6 +2869,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _ReadOnlyChangedHandlers(*this, winrt::box_value(_core.IsInReadOnlyMode()));
     }
 
+    void TermControl::EnableReadOnly()
+    {
+        _core.EnableReadOnlyMode();
+        _ReadOnlyChangedHandlers(*this, winrt::box_value(_core.IsInReadOnlyMode()));
+    }
+
+    void TermControl::DisableReadOnly()
+    {
+        _core.DisableReadOnlyMode();
+        _ReadOnlyChangedHandlers(*this, winrt::box_value(_core.IsInReadOnlyMode()));
+    }
+
     // Method Description:
     // - Handle a mouse exited event, specifically clearing last hovered cell
     // and removing selection from hyper link if exists
