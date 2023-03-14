@@ -165,7 +165,8 @@ namespace winrt::TerminalApp::implementation
                 }
                 _root->SetStartupActions(actions);
             }
-            else {
+            else
+            {
                 _root->SetStartupActions(_appArgs.GetStartupActions());
             }
         }
