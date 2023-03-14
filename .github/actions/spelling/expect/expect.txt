@@ -193,7 +193,6 @@ chh
 chk
 CHT
 Cic
-CLA
 Clcompile
 CLE
 cleartype
@@ -479,7 +478,6 @@ defterm
 DELAYLOAD
 DELETEONRELEASE
 Delt
-demoable
 depersist
 deprioritized
 deserializers
@@ -536,7 +534,6 @@ DSSCL
 DSwap
 DTest
 DTTERM
-DUMMYUNIONNAME
 dup'ed
 dvi
 dwl
@@ -589,7 +586,6 @@ ETW
 EUDC
 EVENTID
 eventing
-everytime
 evflags
 evt
 execd
@@ -797,7 +793,6 @@ HIBYTE
 hicon
 HIDEWINDOW
 hinst
-Hirots
 HISTORYBUFS
 HISTORYNODUP
 HISTORYSIZE
@@ -898,7 +893,6 @@ INSERTMODE
 INTERACTIVITYBASE
 INTERCEPTCOPYPASTE
 INTERNALNAME
-inthread
 intsafe
 INVALIDARG
 INVALIDATERECT
@@ -1255,14 +1249,12 @@ ntm
 nto
 ntrtl
 ntstatus
-ntsubauth
 NTSYSCALLAPI
 nttree
 nturtl
 ntuser
 NTVDM
 ntverp
-NTWIN
 nugetversions
 nullability
 nullness
@@ -1301,8 +1293,6 @@ opencode
 opencon
 openconsole
 openconsoleproxy
-OPENIF
-OPENLINK
 openps
 openvt
 ORIGINALFILENAME
@@ -1355,9 +1345,7 @@ pcg
 pch
 PCIDLIST
 PCIS
-PCLIENT
 PCLONG
-PCOBJECT
 pcon
 PCONSOLE
 PCONSOLEENDTASK
@@ -1369,7 +1357,6 @@ pcshell
 PCSHORT
 PCSR
 PCSTR
-PCUNICODE
 PCWCH
 PCWCHAR
 PCWSTR
@@ -1418,7 +1405,6 @@ PLOGICAL
 pnm
 PNMLINK
 pntm
-PNTSTATUS
 POBJECT
 Podcast
 POINTSLIST
@@ -1437,7 +1423,6 @@ ppf
 ppguid
 ppidl
 PPROC
-PPROCESS
 ppropvar
 ppsi
 ppsl
@@ -1501,7 +1486,6 @@ ptrs
 ptsz
 PTYIn
 PUCHAR
-PUNICODE
 pwch
 PWDDMCONSOLECONTEXT
 pws
@@ -1563,7 +1547,6 @@ REGISTEROS
 REGISTERVDM
 regkey
 REGSTR
-reingest
 RELBINPATH
 remoting
 renamer
@@ -1858,6 +1841,7 @@ TDP
 TEAMPROJECT
 tearoff
 Teb
+Techo
 tellp
 teraflop
 terminalcore
@@ -2000,7 +1984,6 @@ unittesting
 unittests
 unk
 unknwn
-unmark
 UNORM
 unparseable
 unregistering

@@ -288,28 +288,36 @@ try
 {
     bytesRead = 0;
 
-    auto pending = readHandleState.GetPendingInput();
+    const auto pending = readHandleState.GetPendingInput();
+    auto input = pending;
 
+    // This is basically the continuation of COOKED_READ_DATA::_handlePostCharInputLoop.
     if (readHandleState.IsMultilineInput())
     {
-        const auto idx = pending.find(UNICODE_LINEFEED);
-        if (idx != decltype(pending)::npos)
-        {
-            // +1 to include the newline.
-            pending = pending.substr(0, idx + 1);
-        }
+        const auto firstLineEnd = input.find(UNICODE_LINEFEED) + 1;
+        input = input.substr(0, firstLineEnd);
+    }
+    
+    const auto inputSizeBefore = input.size();
+    std::span writer{ buffer };
+    inputBuffer.Consume(unicode, input, writer);
+    
+    // Since we truncated `input` to only include the first line,
+    // we need to restore `input` here to the entirety of the remaining input.
+    if (readHandleState.IsMultilineInput())
+    {
+        const auto inputSizeAfter = input.size();
+        const auto amountConsumed = inputSizeBefore - inputSizeAfter;
+        input = pending.substr(amountConsumed);
     }
 
-    std::span writer{ buffer };
-    inputBuffer.Consume(unicode, pending, writer);
-
-    if (pending.empty())
+    if (input.empty())
     {
         readHandleState.CompletePending();
     }
     else
     {
-        readHandleState.UpdatePending(pending);
+        readHandleState.UpdatePending(input);
     }
 
     bytesRead = buffer.size() - writer.size();
