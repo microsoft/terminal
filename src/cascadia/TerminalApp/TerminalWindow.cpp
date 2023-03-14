@@ -165,6 +165,9 @@ namespace winrt::TerminalApp::implementation
                 }
                 _root->SetStartupActions(actions);
             }
+            else {
+                _root->SetStartupActions(_appArgs.GetStartupActions());
+            }
         }
 
         // Check if we were started as a COM server for inbound connections of console sessions
