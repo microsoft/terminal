@@ -151,25 +151,15 @@ namespace winrt::TerminalApp::implementation
 
     bool TerminalPage::IsRunningElevated() const noexcept
     {
-        // use C++11 magic statics to make sure we only do this once.
-        // This won't change over the lifetime of the application
-
-        static const auto isRunningElevated = []() {
-            // *** THIS IS A SINGLETON ***
-            auto result = false;
-
-            // GH#2455 - Make sure to try/catch calls to Application::Current,
-            // because that _won't_ be an instance of TerminalApp::App in the
-            // LocalTests
-            try
-            {
-                result = Application::Current().as<TerminalApp::App>().Logic().IsRunningElevated();
-            }
-            CATCH_LOG();
-            return result;
-        }();
-
-        return isRunningElevated;
+        // GH#2455 - Make sure to try/catch calls to Application::Current,
+        // because that _won't_ be an instance of TerminalApp::App in the
+        // LocalTests
+        try
+        {
+            return Application::Current().as<TerminalApp::App>().Logic().IsRunningElevated();
+        }
+        CATCH_LOG();
+        return false;
     }
     bool TerminalPage::CanDragDrop() const noexcept
     {
