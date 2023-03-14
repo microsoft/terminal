@@ -1035,7 +1035,7 @@ void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline
             {
                 // ProcessAliases() is supposed to end each line with \r\n. If it doesn't we might as well fail-fast.
                 const auto firstLineEnd = input.find(UNICODE_LINEFEED) + 1;
-                input = input.substr(0, firstLineEnd);
+                input = input.substr(0, std::min(input.size(), firstLineEnd));
             }
         }
     }
@@ -1050,7 +1050,7 @@ void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline
         const auto inputSizeAfter = input.size();
         const auto amountConsumed = inputSizeBefore - inputSizeAfter;
         input = { _backupLimit, _bytesRead / sizeof(wchar_t) };
-        input = input.substr(amountConsumed);
+        input = input.substr(std::min(input.size(), amountConsumed));
         GetInputReadHandleData()->SaveMultilinePendingInput(input);
     }
     else if (!input.empty())

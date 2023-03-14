@@ -295,7 +295,7 @@ try
     if (readHandleState.IsMultilineInput())
     {
         const auto firstLineEnd = input.find(UNICODE_LINEFEED) + 1;
-        input = input.substr(0, firstLineEnd);
+        input = input.substr(0, std::min(input.size(), firstLineEnd));
     }
 
     const auto inputSizeBefore = input.size();
@@ -308,7 +308,7 @@ try
     {
         const auto inputSizeAfter = input.size();
         const auto amountConsumed = inputSizeBefore - inputSizeAfter;
-        input = pending.substr(amountConsumed);
+        input = pending.substr(std::min(pending.size(), amountConsumed));
     }
 
     if (input.empty())
