@@ -297,11 +297,11 @@ try
         const auto firstLineEnd = input.find(UNICODE_LINEFEED) + 1;
         input = input.substr(0, firstLineEnd);
     }
-    
+
     const auto inputSizeBefore = input.size();
     std::span writer{ buffer };
     inputBuffer.Consume(unicode, input, writer);
-    
+
     // Since we truncated `input` to only include the first line,
     // we need to restore `input` here to the entirety of the remaining input.
     if (readHandleState.IsMultilineInput())
