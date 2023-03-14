@@ -144,7 +144,7 @@ jobs:
     inputs:
       TargetPattern: guardianGlob
       # See https://aka.ms/gdn-globs for how to do match patterns
-      AnalyzeTargetGlob: $(Build.SourcesDirectory)\bin\**\*.dll;$(Build.SourcesDirectory)\bin\**\*.exe;-:file|**\Microsoft.UI.Xaml.dll;-:file|**\Microsoft.Toolkit.Win32.UI.XamlHost.dll;-:file|**\vcruntime*.dll;-:file|**\vcomp*.dll;-:file|**\vccorlib*.dll;-:file|**\vcamp*.dll;-:file|**\msvcp*.dll;-:file|**\concrt*.dll;-:file|**\TerminalThemeHelpers*.dll;-:file|**\cpprest*.dll
+      AnalyzeTargetGlob: $(Build.SourcesDirectory)\bin\**\*.dll;$(Build.SourcesDirectory)\bin\**\*.exe;-:file|**\Microsoft.UI.Xaml.dll;-:file|**\Microsoft.Toolkit.Win32.UI.XamlHost.dll;-:file|**\vcruntime*.dll;-:file|**\vcomp*.dll;-:file|**\vccorlib*.dll;-:file|**\vcamp*.dll;-:file|**\msvcp*.dll;-:file|**\concrt*.dll;-:file|**\TerminalThemeHelpers*.dll
     continueOnError: true
 
   # Set XES_SERIALPOSTBUILDREADY to run Security and Compliance task once per build

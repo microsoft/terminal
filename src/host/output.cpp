@@ -49,7 +49,7 @@ using namespace Microsoft::Console::Interactivity;
     // TODO: MSFT 9355013: This needs to be resolved. We increment it once with no handle to ensure it's never cleaned up
     // and one always exists for the renderer (and potentially other functions.)
     // It's currently a load-bearing piece of code. http://osgvsowi/9355013
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         gci.ScreenBuffers[0].IncrementOriginalScreenBuffer();
     }
