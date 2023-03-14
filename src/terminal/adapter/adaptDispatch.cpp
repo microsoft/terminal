@@ -3668,6 +3668,9 @@ bool AdaptDispatch::RequestPresentationStateReport(const DispatchTypes::Presenta
 {
     switch (format)
     {
+    case DispatchTypes::PresentationReportFormat::CursorInformationReport:
+        _ReportCursorInformation();
+        return true;
     case DispatchTypes::PresentationReportFormat::TabulationStopReport:
         _ReportTabStops();
         return true;
@@ -3687,11 +3690,234 @@ ITermDispatch::StringHandler AdaptDispatch::RestorePresentationState(const Dispa
 {
     switch (format)
     {
+    case DispatchTypes::PresentationReportFormat::CursorInformationReport:
+        return _RestoreCursorInformation();
     case DispatchTypes::PresentationReportFormat::TabulationStopReport:
         return _RestoreTabStops();
     default:
         return nullptr;
     }
+}
+
+// Method Description:
+// - DECCIR - Returns the Cursor Information Report in response to a DECRQPSR query.
+// Arguments:
+// - None
+// Return Value:
+// - None
+void AdaptDispatch::_ReportCursorInformation()
+{
+    const auto viewport = _api.GetViewport();
+    const auto& textBuffer = _api.GetTextBuffer();
+    const auto& cursor = textBuffer.GetCursor();
+    const auto attributes = textBuffer.GetCurrentAttributes();
+
+    // First pull the cursor position relative to the entire buffer out of the console.
+    til::point cursorPosition{ cursor.GetPosition() };
+
+    // Now adjust it for its position in respect to the current viewport top.
+    cursorPosition.y -= viewport.top;
+
+    // NOTE: 1,1 is the top-left corner of the viewport in VT-speak, so add 1.
+    cursorPosition.x++;
+    cursorPosition.y++;
+
+    // If the origin mode is relative, line numbers start at top of the scrolling region.
+    if (_modes.test(Mode::Origin))
+    {
+        cursorPosition.y -= _GetVerticalMargins(viewport, false).first;
+    }
+
+    // Paging is not supported yet (GH#13892).
+    const auto pageNumber = 1;
+
+    // Only some of the rendition attributes are reported.
+    auto renditionAttributes = L'@';
+    renditionAttributes += (attributes.IsIntense() ? 1 : 0);
+    renditionAttributes += (attributes.IsUnderlined() ? 2 : 0);
+    renditionAttributes += (attributes.IsBlinking() ? 4 : 0);
+    renditionAttributes += (attributes.IsReverseVideo() ? 8 : 0);
+    renditionAttributes += (attributes.IsInvisible() ? 16 : 0);
+
+    // There is only one character attribute.
+    const auto characterAttributes = attributes.IsProtected() ? L'A' : L'@';
+
+    // Miscellaneous flags and modes.
+    auto flags = L'@';
+    flags += (_modes.test(Mode::Origin) ? 1 : 0);
+    flags += (_termOutput.IsSingleShiftPending(2) ? 2 : 0);
+    flags += (_termOutput.IsSingleShiftPending(3) ? 4 : 0);
+    flags += (cursor.IsDelayedEOLWrap() ? 8 : 0);
+
+    // Character set designations.
+    const auto leftSetNumber = _termOutput.GetLeftSetNumber();
+    const auto rightSetNumber = _termOutput.GetRightSetNumber();
+    auto charsetSizes = L'@';
+    charsetSizes += (_termOutput.GetCharsetSize(0) == 96 ? 1 : 0);
+    charsetSizes += (_termOutput.GetCharsetSize(1) == 96 ? 2 : 0);
+    charsetSizes += (_termOutput.GetCharsetSize(2) == 96 ? 4 : 0);
+    charsetSizes += (_termOutput.GetCharsetSize(3) == 96 ? 8 : 0);
+    const auto charset0 = _termOutput.GetCharsetId(0);
+    const auto charset1 = _termOutput.GetCharsetId(1);
+    const auto charset2 = _termOutput.GetCharsetId(2);
+    const auto charset3 = _termOutput.GetCharsetId(3);
+
+    using namespace std::string_view_literals;
+
+    // A valid response always starts with DCS 1 $ u.
+    std::wstringstream response;
+    response << L"\033P1$u"sv
+             << cursorPosition.y << ';'
+             << cursorPosition.x << ';'
+             << pageNumber << ';'
+             << renditionAttributes << ';'
+             << characterAttributes << ';'
+             << flags << ';'
+             << leftSetNumber << ';'
+             << rightSetNumber << ';'
+             << charsetSizes << ';'
+             << charset0 << charset1 << charset2 << charset3
+             << L"\033\\"sv; // An ST ends the sequence.
+
+    const auto response_string = response.str();
+    _api.ReturnResponse({ response_string.data(), response_string.size() });
+}
+
+// Method Description:
+// - DECCIR - This is a parser for the Cursor Information Report received via DECRSPS.
+// Arguments:
+// - <none>
+// Return Value:
+// - a function to parse the report data.
+ITermDispatch::StringHandler AdaptDispatch::_RestoreCursorInformation()
+{
+    enum Field { Row, Column, Page, SGR, Attr, Flags, GL, GR, Sizes, G0, G1, G2, G3 };
+    constexpr til::enumset<Field> numeric{ Field::Row, Field::Column, Field::Page, Field::GL, Field::GR };
+    constexpr til::enumset<Field> flags{ Field::SGR, Field::Attr, Field::Flags, Field::Sizes };
+    constexpr til::enumset<Field> charset{ Field::G0, Field::G1, Field::G2, Field::G3 };
+    struct State {
+        Field field{ Field::Row };
+        VTInt value{ 0 };
+        VTIDBuilder charsetId{};
+        std::array<bool,4> charset96{};
+        VTParameter row{};
+        VTParameter column{};
+    };
+    auto& textBuffer = _api.GetTextBuffer();
+    return [&, state = State{}](const auto ch) mutable {
+        if (numeric.test(state.field))
+        {
+            if (ch >= '0' && ch <= '9')
+            {
+                state.value *= 10;
+                state.value += (ch - L'0');
+                state.value = std::min(state.value, MAX_PARAMETER_VALUE);
+            }
+            else if (ch == L';' || ch == AsciiChars::ESC)
+            {
+                if (state.field == Field::Row)
+                {
+                    state.row = state.value;
+                }
+                else if (state.field == Field::Column)
+                {
+                    state.column = state.value;
+                }
+                else if (state.field == Field::Page)
+                {
+                    // Paging is not supported yet (GH#13892).
+                }
+                else if (state.field == Field::GL && state.value <= 3)
+                {
+                    LockingShift(state.value);
+                }
+                else if (state.field == Field::GR && state.value <= 3)
+                {
+                    LockingShiftRight(state.value);
+                }
+                state.value = {};
+                state.field = static_cast<Field>(state.field + 1);
+            }
+        }
+        else if (flags.test(state.field))
+        {
+            if (ch >= L'@' && ch <= '~' && !state.value)
+            {
+                state.value = ch;
+                if (state.field == Field::SGR)
+                {
+                    auto attr = textBuffer.GetCurrentAttributes();
+                    attr.SetIntense(state.value & 1);
+                    attr.SetUnderlined(state.value & 2);
+                    attr.SetBlinking(state.value & 4);
+                    attr.SetReverseVideo(state.value & 8);
+                    attr.SetInvisible(state.value & 16);
+                    textBuffer.SetCurrentAttributes(attr);
+                }
+                else if (state.field == Field::Attr)
+                {
+                    auto attr = textBuffer.GetCurrentAttributes();
+                    attr.SetProtected(state.value & 1);
+                    textBuffer.SetCurrentAttributes(attr);
+                }
+                else if (state.field == Field::Sizes)
+                {
+                    state.charset96.at(0) = state.value & 1;
+                    state.charset96.at(1) = state.value & 2;
+                    state.charset96.at(2) = state.value & 4;
+                    state.charset96.at(3) = state.value & 8;
+                }
+                else if (state.field == Field::Flags)
+                {
+                    const bool originMode = state.value & 1;
+                    const bool ss2 = state.value & 2;
+                    const bool ss3 = state.value & 4;
+                    const bool delayedEOLWrap = state.value & 8;
+                    // The cursor position is parsed at the start of the sequence,
+                    // but we only set the position once we know the origin mode.
+                    _modes.set(Mode::Origin, originMode);
+                    CursorPosition(state.row, state.column);
+                    // There can only be one single shift applied at a time, so
+                    // we'll just apply the last one that is enabled.
+                    _termOutput.SingleShift(ss3 ? 3 : ss2 ? 2 : 0);
+                    // The EOL flag will always be reset by the cursor movement
+                    // above, so we only need to worry about setting it.
+                    if (delayedEOLWrap)
+                    {
+                        textBuffer.GetCursor().DelayEOLWrap();
+                    }
+                }
+            }
+            else if (ch == L';')
+            {
+                state.value = 0;
+                state.field = static_cast<Field>(state.field + 1);
+            }
+        }
+        else if (charset.test(state.field))
+        {
+            if (ch >= L' ' && ch <= L'/')
+            {
+                state.charsetId.AddIntermediate(ch);
+            }
+            else if (ch >= L'0' && ch <= L'~')
+            {
+                const auto id = state.charsetId.Finalize(ch);
+                const auto gset = state.field - Field::G0;
+                if (state.charset96.at(gset))
+                {
+                    Designate96Charset(gset, id);
+                }
+                else
+                {
+                    Designate94Charset(gset, id);
+                }
+                state.charsetId.Clear();
+                state.field = static_cast<Field>(state.field + 1);
+            }
+        }
+        return (ch != AsciiChars::ESC);
+    };
 }
 
 // Method Description:

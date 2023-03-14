@@ -240,6 +240,8 @@ namespace Microsoft::Console::VirtualTerminal
         void _ReportDECSCASetting() const;
         void _ReportDECSACESetting() const;
 
+        void _ReportCursorInformation();
+        StringHandler _RestoreCursorInformation();
         void _ReportTabStops();
         StringHandler _RestoreTabStops();
 
