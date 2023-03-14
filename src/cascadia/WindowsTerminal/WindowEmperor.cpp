@@ -174,8 +174,10 @@ void WindowEmperor::_windowExitedHandler(uint64_t senderID)
     // When we run out of windows, exit our process if and only if:
     // * We're not allowed to run headless OR
     // * we've explicitly been told to "quit", which should fully exit the Terminal.
-    if (lockedWindows->size() == 0 &&
-        (_quitting || !_app.Logic().AllowHeadless()))
+    const bool noMoreWindows{ lockedWindows->size() == 0 };
+    const bool quitWhenLastWindowExits{ !_app.Logic().AllowHeadless() };
+    if (noMoreWindows &&
+        (_quitting || quitWhenLastWindowExits))
     {
         _close();
     }
