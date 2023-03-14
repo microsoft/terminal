@@ -20,8 +20,6 @@ Revision History:
 
 #pragma once
 
-#include <span>
-
 #include <til/rle.h>
 
 #include "LineRendition.hpp"
@@ -35,6 +33,34 @@ enum class DelimiterClass
     ControlChar,
     DelimiterChar,
     RegularChar
+};
+
+struct RowTextIterator
+{
+    RowTextIterator(std::span<const wchar_t> chars, std::span<const uint16_t> charOffsets, uint16_t offset) noexcept;
+
+    bool operator==(const RowTextIterator& other) const noexcept;
+    RowTextIterator& operator++() noexcept;
+    const RowTextIterator& operator*() const noexcept;
+
+    std::wstring_view Text() const noexcept;
+    til::CoordType Cols() const noexcept;
+    DbcsAttribute DbcsAttr() const noexcept;
+
+private:
+    uint16_t _uncheckedCharOffset(size_t col) const noexcept;
+    bool _uncheckedIsTrailer(size_t col) const noexcept;
+
+    // To simplify the detection of wide glyphs, we don't just store the simple character offset as described
+    // for _charOffsets. Instead we use the most significant bit to indicate whether any column is the
+    // trailing half of a wide glyph. This simplifies many implementation details via _uncheckedIsTrailer.
+    static constexpr uint16_t CharOffsetsTrailer = 0x8000;
+    static constexpr uint16_t CharOffsetsMask = 0x7fff;
+
+    std::span<const wchar_t> _chars;
+    std::span<const uint16_t> _charOffsets;
+    uint16_t _beg;
+    uint16_t _end;
 };
 
 class ROW final
@@ -57,17 +83,25 @@ public:
     bool WasDoubleBytePadded() const noexcept;
     void SetLineRendition(const LineRendition lineRendition) noexcept;
     LineRendition GetLineRendition() const noexcept;
+    RowTextIterator Begin() const noexcept;
+    RowTextIterator End() const noexcept;
 
     void Reset(const TextAttribute& attr);
     void Resize(wchar_t* charsBuffer, uint16_t* charOffsetsBuffer, uint16_t rowWidth, const TextAttribute& fillAttribute);
     void TransferAttributes(const til::small_rle<TextAttribute, uint16_t, 1>& attr, til::CoordType newWidth);
+
+    til::CoordType NavigateToPrevious(til::CoordType column) const noexcept;
+    til::CoordType NavigateToNext(til::CoordType column) const noexcept;
 
     void ClearCell(til::CoordType column);
     OutputCellIterator WriteCells(OutputCellIterator it, til::CoordType columnBegin, std::optional<bool> wrap = std::nullopt, std::optional<til::CoordType> limitRight = std::nullopt);
     bool SetAttrToEnd(til::CoordType columnBegin, TextAttribute attr);
     void ReplaceAttributes(til::CoordType beginIndex, til::CoordType endIndex, const TextAttribute& newAttr);
     void ReplaceCharacters(til::CoordType columnBegin, til::CoordType width, const std::wstring_view& chars);
+    til::CoordType Write(til::CoordType columnBegin, til::CoordType columnLimit, std::wstring_view& chars);
+    til::CoordType CopyRangeFrom(til::CoordType columnBegin, til::CoordType columnLimit, const ROW& other, til::CoordType& otherBegin, til::CoordType otherLimit);
 
+    til::small_rle<TextAttribute, uint16_t, 1>& Attributes() noexcept;
     const til::small_rle<TextAttribute, uint16_t, 1>& Attributes() const noexcept;
     TextAttribute GetAttrByColumn(til::CoordType column) const;
     std::vector<uint16_t> GetHyperlinks() const;
@@ -89,6 +123,30 @@ public:
 #endif
 
 private:
+    // WriteHelper exists because other forms of abstracting this functionality away (like templates with lambdas)
+    // where only very poorly optimized by MSVC as it failed to inline the templates.
+    struct WriteHelper
+    {
+        explicit WriteHelper(ROW& row, til::CoordType columnBegin, til::CoordType columnLimit, const std::wstring_view& chars) noexcept;
+        bool IsValid() const noexcept;
+        void ReplaceCharacters(til::CoordType width) noexcept;
+        void Write() noexcept;
+        void CopyRangeFrom(const std::span<const uint16_t>& charOffsets) noexcept;
+        void Finish();
+
+        ROW& row;
+        const std::wstring_view& chars;
+        uint16_t colBeg;
+        uint16_t colLimit;
+        uint16_t chExtBeg;
+        uint16_t colExtBeg;
+        uint16_t leadingSpaces;
+        uint16_t chBeg;
+        uint16_t colEnd;
+        uint16_t colExtEnd;
+        size_t charsConsumed;
+    };
+
     // To simplify the detection of wide glyphs, we don't just store the simple character offset as described
     // for _charOffsets. Instead we use the most significant bit to indicate whether any column is the
     // trailing half of a wide glyph. This simplifies many implementation details via _uncheckedIsTrailer.
@@ -102,13 +160,16 @@ private:
     template<typename T>
     constexpr uint16_t _clampedColumnInclusive(T v) const noexcept;
 
+    uint16_t _adjustBackward(uint16_t column) const noexcept;
+    uint16_t _adjustForward(uint16_t column) const noexcept;
+
     wchar_t _uncheckedChar(size_t off) const noexcept;
     uint16_t _charSize() const noexcept;
     uint16_t _uncheckedCharOffset(size_t col) const noexcept;
     bool _uncheckedIsTrailer(size_t col) const noexcept;
 
     void _init() noexcept;
-    void _resizeChars(uint16_t colExtEnd, uint16_t chExtBeg, uint16_t chExtEnd, size_t chExtEndNew);
+    void _resizeChars(uint16_t colExtEnd, uint16_t chExtBeg, uint16_t chExtEndOld, size_t chExtEndNew);
 
     // These fields are a bit "wasteful", but it makes all this a bit more robust against
     // programming errors during initial development (which is when this comment was written).

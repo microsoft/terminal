@@ -147,6 +147,7 @@ class TextBufferTests
 
     TEST_METHOD(TestBurrito);
     TEST_METHOD(TestOverwriteChars);
+    TEST_METHOD(TestRowWrite);
 
     TEST_METHOD(TestAppendRTFText);
 
@@ -2044,6 +2045,51 @@ void TextBufferTests::TestOverwriteChars()
 #undef simple
 #undef complex2
 #undef complex1
+}
+
+void TextBufferTests::TestRowWrite()
+{
+    til::size bufferSize{ 10, 3 };
+    UINT cursorSize = 12;
+    TextAttribute attr{ 0x7f };
+    TextBuffer buffer{ bufferSize, attr, cursorSize, false, _renderer };
+    auto& row = buffer.GetRowByOffset(0);
+    std::wstring_view str;
+    til::CoordType pos = 0;
+
+#define complex L"\U0001F41B"
+
+    // Not enough space -> early exit
+    str = complex;
+    pos = row.Write(2, 2, str);
+    VERIFY_ARE_EQUAL(2, pos);
+    VERIFY_ARE_EQUAL(complex, str);
+    VERIFY_ARE_EQUAL(L"          ", row.GetText());
+
+    // Writing with the exact right amount of space
+    str = complex;
+    pos = row.Write(2, 4, str);
+    VERIFY_ARE_EQUAL(4, pos);
+    VERIFY_ARE_EQUAL(L"", str);
+    VERIFY_ARE_EQUAL(L"  " complex L"      ", row.GetText());
+
+    // Overwrite a wide character, but with not enough space left
+    str = complex complex;
+    pos = row.Write(0, 3, str);
+    // It's not quite clear what Write() should return in that case,
+    // so this simply asserts on what it happens to return right now.
+    VERIFY_ARE_EQUAL(4, pos);
+    VERIFY_ARE_EQUAL(complex, str);
+    VERIFY_ARE_EQUAL(complex L"        ", row.GetText());
+
+    // Various text, too much to fit into the row
+    str = L"a" complex L"b" complex L"c" complex L"foo";
+    pos = row.Write(1, til::CoordTypeMax, str);
+    VERIFY_ARE_EQUAL(10, pos);
+    VERIFY_ARE_EQUAL(L"foo", str);
+    VERIFY_ARE_EQUAL(L" a" complex L"b" complex L"c" complex, row.GetText());
+
+#undef complex
 }
 
 void TextBufferTests::TestAppendRTFText()

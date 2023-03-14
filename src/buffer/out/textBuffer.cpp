@@ -376,6 +376,25 @@ bool TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute
     return fSuccess;
 }
 
+void TextBuffer::ConsumeGrapheme(std::wstring_view& chars) noexcept
+{
+    // This function is supposed to mirror the behavior of ROW::Write, when it reads characters off of `chars`.
+    // (I know that a UTF-16 code point is not a grapheme, but that's what we're working towards.)
+    chars = til::utf16_pop(chars);
+}
+
+til::CoordType TextBuffer::Write(til::CoordType row, til::CoordType columnBegin, til::CoordType columnLimit, bool wrapAtEOL, const TextAttribute& attributes, std::wstring_view& chars)
+{
+    auto& r = GetRowByOffset(row);
+
+    const auto columnEnd = r.Write(columnBegin, columnLimit, chars);
+    r.ReplaceAttributes(columnBegin, columnEnd, attributes);
+    r.SetWrapForced(wrapAtEOL && columnEnd >= r.size());
+
+    TriggerRedraw(Viewport::FromExclusive({ columnBegin, row, columnEnd, row + 1 }));
+    return columnEnd;
+}
+
 // Routine Description:
 // - Writes cells to the output buffer. Writes at the cursor.
 // Arguments:
