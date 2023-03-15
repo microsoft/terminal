@@ -68,6 +68,14 @@
       <DependentUpon>TSFInputControl.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="XamlUiaTextRange.h" />
+
+    <ClInclude Include="BlockContent.h">
+      <DependentUpon>BlockContent.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="BlockControl.h">
+      <DependentUpon>BlockControl.xaml</DependentUpon>
+    </ClInclude>
+
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
@@ -110,6 +118,14 @@
       <DependentUpon>InteractivityAutomationPeer.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="XamlUiaTextRange.cpp" />
+
+    <ClCompile Include="BlockContent.cpp">
+      <DependentUpon>BlockContent.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="BlockControl.cpp">
+      <DependentUpon>BlockControl.xaml</DependentUpon>
+    </ClCompile>
+
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
@@ -136,6 +152,12 @@
     <Midl Include="TSFInputControl.idl">
       <DependentUpon>TSFInputControl.xaml</DependentUpon>
     </Midl>
+
+    <Midl Include="BlockContent.idl" />
+    <Midl Include="BlockControl.idl">
+      <DependentUpon>BlockControl.xaml</DependentUpon>
+    </Midl>
+
   </ItemGroup>
   <!-- ========================= XAML Files ======================== -->
   <ItemGroup>
@@ -148,6 +170,11 @@
     <Page Include="TSFInputControl.xaml">
       <SubType>Designer</SubType>
     </Page>
+
+    <Page Include="BlockControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>

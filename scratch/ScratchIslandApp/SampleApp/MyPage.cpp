@@ -28,22 +28,47 @@ namespace winrt::SampleApp::implementation
     {
         auto settings = winrt::make_self<implementation::MySettings>();
 
-        auto connectionSettings{ TerminalConnection::ConptyConnection::CreateSettings(L"cmd.exe /k echo This TermControl is hosted in-proc...",
-                                                                                      winrt::hstring{},
-                                                                                      L"",
-                                                                                      nullptr,
-                                                                                      32,
-                                                                                      80,
-                                                                                      winrt::guid()) };
+        {
+            auto connectionSettings{ TerminalConnection::ConptyConnection::CreateSettings(L"cmd.exe /k echo This TermControl is hosted in-proc...",
+                                                                                          winrt::hstring{},
+                                                                                          L"",
+                                                                                          nullptr,
+                                                                                          32,
+                                                                                          80,
+                                                                                          winrt::guid()) };
 
-        // "Microsoft.Terminal.TerminalConnection.ConptyConnection"
-        winrt::hstring myClass{ winrt::name_of<TerminalConnection::ConptyConnection>() };
-        TerminalConnection::ConnectionInformation connectInfo{ myClass, connectionSettings };
+            // "Microsoft.Terminal.TerminalConnection.ConptyConnection"
+            winrt::hstring myClass{ winrt::name_of<TerminalConnection::ConptyConnection>() };
+            TerminalConnection::ConnectionInformation connectInfo{ myClass, connectionSettings };
 
-        TerminalConnection::ITerminalConnection conn{ TerminalConnection::ConnectionInformation::CreateConnection(connectInfo) };
-        Control::TermControl control{ *settings, *settings, conn };
+            TerminalConnection::ITerminalConnection conn{ TerminalConnection::ConnectionInformation::CreateConnection(connectInfo) };
+            Control::TermControl control{ *settings, *settings, conn };
 
-        InProcContent().Children().Append(control);
+            InProcContent().Children().Append(control);
+        }
+
+        {
+            settings->DefaultBackground(til::color{ 0x25, 0x25, 0x25 });
+
+            auto connectionSettings{ TerminalConnection::ConptyConnection::CreateSettings(L"cmd.exe /k echo This is a BlockControl...",
+                                                                                          winrt::hstring{},
+                                                                                          L"",
+                                                                                          nullptr,
+                                                                                          32,
+                                                                                          80,
+                                                                                          winrt::guid()) };
+
+            // "Microsoft.Terminal.TerminalConnection.ConptyConnection"
+            winrt::hstring myClass{ winrt::name_of<TerminalConnection::ConptyConnection>() };
+            TerminalConnection::ConnectionInformation connectInfo{ myClass, connectionSettings };
+
+            TerminalConnection::ITerminalConnection conn{ TerminalConnection::ConnectionInformation::CreateConnection(connectInfo) };
+
+            Control::BlockContent content{ *settings, conn };
+            Control::BlockControl control{ content };
+
+            OutOfProcContent().Children().Append(control);
+        }
     }
 
     // Method Description:

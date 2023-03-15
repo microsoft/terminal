@@ -1,0 +1,123 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "IMouseWheelListener.idl";
+import "IControlSettings.idl";
+import "ControlInteractivity.idl";
+import "IDirectKeyListener.idl";
+import "EventArgs.idl";
+import "ICoreState.idl";
+import "BlockContent.idl";
+
+namespace Microsoft.Terminal.Control
+{
+
+    [default_interface] runtimeclass BlockControl : Windows.UI.Xaml.Controls.UserControl,
+                                                   // IDirectKeyListener,
+                                                   // IMouseWheelListener,
+                                                   // ICoreState,
+                                                   Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        BlockControl(BlockContent content);
+
+        // BlockControl(IControlSettings settings,
+        //             IControlAppearance unfocusedAppearance,
+        //             Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
+
+        // static TermControl AttachContent(ControlInteractivity content, Microsoft.Terminal.Control.IKeyBindings keyBindings);
+
+        // static Windows.Foundation.Size GetProposedDimensions(IControlSettings settings,
+        //                                                      UInt32 dpi,
+        //                                                      Int32 commandlineCols,
+        //                                                      Int32 commandlineRows);
+
+        // void UpdateControlSettings(IControlSettings settings);
+        // void UpdateControlSettings(IControlSettings settings, IControlAppearance unfocusedAppearance);
+
+        // Guid ContentGuid{ get; };
+
+        // Microsoft.Terminal.Control.IControlSettings Settings { get; };
+
+        // event FontSizeChangedEventArgs FontSizeChanged;
+        // event Windows.Foundation.TypedEventHandler<Object, TitleChangedEventArgs> TitleChanged;
+        // event Windows.Foundation.TypedEventHandler<Object, CopyToClipboardEventArgs> CopyToClipboard;
+        // event Windows.Foundation.TypedEventHandler<Object, PasteFromClipboardEventArgs> PasteFromClipboard;
+        // event Windows.Foundation.TypedEventHandler<Object, OpenHyperlinkEventArgs> OpenHyperlink;
+        // event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
+        // event Windows.Foundation.TypedEventHandler<Object, NoticeEventArgs> RaiseNotice;
+        // event Windows.Foundation.TypedEventHandler<Object, Object> WarningBell;
+        // event Windows.Foundation.TypedEventHandler<Object, Object> HidePointerCursor;
+        // event Windows.Foundation.TypedEventHandler<Object, Object> RestorePointerCursor;
+        // event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;
+        // event Windows.Foundation.TypedEventHandler<Object, Object> ReadOnlyChanged;
+        // event Windows.Foundation.TypedEventHandler<Object, Object> FocusFollowMouseRequested;
+        // event Windows.Foundation.TypedEventHandler<Object, MenuChangedEventArgs> MenuChanged;
+
+        // Windows.UI.Xaml.Controls.CommandBarFlyout ContextMenu { get; };
+        // Windows.UI.Xaml.Controls.CommandBarFlyout SelectionContextMenu { get; };
+
+        // event Windows.Foundation.TypedEventHandler<TermControl, Windows.UI.Xaml.RoutedEventArgs> Initialized;
+        // // This is an event handler forwarder for the underlying connection.
+        // // We expose this and ConnectionState here so that it might eventually be data bound.
+        // event Windows.Foundation.TypedEventHandler<Object, IInspectable> ConnectionStateChanged;
+
+        // event Windows.Foundation.TypedEventHandler<Object, ShowWindowArgs> ShowWindowChanged;
+
+        // event Windows.Foundation.TypedEventHandler<Object, Object> CloseTerminalRequested;
+
+        // Boolean CopySelectionToClipboard(Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
+        // void PasteTextFromClipboard();
+        // void SelectAll();
+        // Boolean ToggleBlockSelection();
+        // void ToggleMarkMode();
+        // Boolean SwitchSelectionEndpoint();
+        // Boolean ExpandSelectionToWord();
+        // void ClearBuffer(ClearBufferType clearType);
+        // void Close();
+        // Windows.Foundation.Size CharacterDimensions { get; };
+        // Windows.Foundation.Size MinimumSize { get; };
+        // Single SnapDimensionToGrid(Boolean widthOrHeight, Single dimension);
+
+        // void WindowVisibilityChanged(Boolean showOrHide);
+
+        // void ScrollViewport(Int32 viewTop);
+
+        // void CreateSearchBoxControl();
+        // Boolean SearchBoxEditInFocus();
+
+        // void SearchMatch(Boolean goForward);
+
+        // void AdjustFontSize(Single fontSizeDelta);
+        // void ResetFontSize();
+
+        // void ToggleShaderEffects();
+        // void SendInput(String input);
+
+        // void BellLightOn();
+
+        // Boolean ReadOnly { get; };
+        // void ToggleReadOnly();
+
+        // String ReadEntireBuffer();
+        // CommandHistoryContext CommandHistory();
+
+        // void AdjustOpacity(Double Opacity, Boolean relative);
+
+        // // You'd think this should just be "Opacity", but UIElement already
+        // // defines an "Opacity", which we're actually not setting at all. We're
+        // // not overriding or changing _that_ value. Callers that want the
+        // // opacity set by the settings should call this instead.
+        // Double BackgroundOpacity { get; };
+
+        // void PreviewInput(String text);
+
+        // Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
+
+        // void ColorSelection(SelectionColor fg, SelectionColor bg, Microsoft.Terminal.Core.MatchMode matchMode);
+
+        // void Detach();
+
+        // Microsoft.Terminal.Core.Point CursorPositionInDips { get; };
+
+    }
+}
