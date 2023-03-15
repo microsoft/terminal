@@ -65,6 +65,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // GH#8969: pre-seed working directory to prevent potential races
         _terminal->SetWorkingDirectory(_settings->StartingDirectory());
 
+        _newPromptRevoker = _terminal->NewPrompt({ get_weak(), &BlockContent::_newPromptHandler });
+
         // auto pfnCopyToClipboard = std::bind(&ControlCore::_terminalCopyToClipboard, this, std::placeholders::_1);
         // _terminal->SetCopyToClipboardCallback(pfnCopyToClipboard);
 
@@ -293,8 +295,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             _terminal->CreateFromSettings(*_settings, *_renderer);
 
-            _newPromptRevoker = _terminal->NewPrompt({ get_weak(), &BlockContent::_newPromptHandler });
-
             // IMPORTANT! Set this callback up sooner than later. If we do it
             // after Enable, then it'll be possible to paint the frame once
             // _before_ the warning handler is set up, and then warnings from
@@ -321,9 +321,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _initializedTerminal = true;
         } // scope for TerminalLock
 
-        // Start the connection outside of lock, because it could
-        // start writing output immediately.
-        _connection.Start();
+        if (_first == this->get_strong())
+        {
+            // Start the connection outside of lock, because it could
+            // start writing output immediately.
+            _connection.Start();
+        }
 
         return true;
     }
