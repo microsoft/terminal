@@ -87,6 +87,8 @@ namespace winrt::TerminalApp::implementation
         int GetLeafPaneCount() const noexcept;
 
         void TogglePaneReadOnly();
+        void EnablePaneReadOnly();
+        void DisablePaneReadOnly();
         std::shared_ptr<Pane> GetActivePane() const;
         winrt::TerminalApp::TaskbarState GetCombinedTaskbarState() const;
 

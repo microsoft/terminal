@@ -1587,6 +1587,62 @@ namespace winrt::TerminalApp::implementation
         });
     }
 
+    void TerminalTab::EnablePaneReadOnly()
+    {
+        auto hasReadOnly = false;
+        auto allReadOnly = true;
+        _activePane->WalkTree([&](auto p) {
+            if (const auto& control{ p->GetTerminalControl() })
+            {
+                hasReadOnly |= control.ReadOnly();
+                allReadOnly &= control.ReadOnly();
+            }
+        });
+        _activePane->WalkTree([&](auto p) {
+            if (const auto& control{ p->GetTerminalControl() })
+            {
+                // If all controls have the same read only state then just toggle
+                if (allReadOnly || !hasReadOnly)
+                {
+                    control.EnableReadOnly();
+                }
+                // otherwise set to all read only.
+                else if (!control.ReadOnly())
+                {
+                    control.EnableReadOnly();
+                }
+            }
+        });
+    }
+
+    void TerminalTab::DisablePaneReadOnly()
+    {
+        auto hasReadOnly = false;
+        auto allReadOnly = true;
+        _activePane->WalkTree([&](auto p) {
+            if (const auto& control{ p->GetTerminalControl() })
+            {
+                hasReadOnly |= control.ReadOnly();
+                allReadOnly &= control.ReadOnly();
+            }
+        });
+        _activePane->WalkTree([&](auto p) {
+            if (const auto& control{ p->GetTerminalControl() })
+            {
+                // If all controls have the same read only state then just toggle
+                if (allReadOnly || !hasReadOnly)
+                {
+                    control.DisableReadOnly();
+                }
+                // otherwise set to all read only.
+                else if (!control.ReadOnly())
+                {
+                    control.DisableReadOnly();
+                }
+            }
+        });
+    }
+
     // Method Description:
     // - Calculates if the tab is read-only.
     // The tab is considered read-only if one of the panes is read-only.
