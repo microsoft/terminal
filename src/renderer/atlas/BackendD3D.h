@@ -127,6 +127,7 @@ namespace Microsoft::Console::Render::Atlas
         void _d2dBeginDrawing() noexcept;
         void _d2dEndDrawing();
         void _resetGlyphAtlasAndBeginDraw(const RenderingPayload& p);
+        void _markStateChange(ID3D11BlendState* blendState);
         QuadInstance& _getLastQuad() noexcept;
         void _appendQuad(i16x2 position, u16x2 size, u32 color, ShadingType shadingType);
         void _appendQuad(i16x2 position, u16x2 size, u16x2 texcoord, u32 color, ShadingType shadingType);
@@ -159,9 +160,20 @@ namespace Microsoft::Console::Render::Atlas
         wil::com_ptr<ID3D11Buffer> _vertexBuffer;
         wil::com_ptr<ID3D11Buffer> _indexBuffer;
         wil::com_ptr<ID3D11Buffer> _instanceBuffer;
-        size_t _instanceBufferSize = 0;
+        size_t _instanceBufferCapacity = 0;
         Buffer<QuadInstance> _instances;
-        size_t _instancesSize = 0;
+        size_t _instancesCount = 0;
+
+        // This allows us to batch inverted cursors into the same
+        // _instanceBuffer upload as the rest of all other instances.
+        struct StateChange
+        {
+            ID3D11BlendState* blendState;
+            size_t offset;
+        };
+        // 3 allows for 1 state change to _blendStateInvert, followed by 1 change back to _blendState,
+        // and finally 1 entry to signal the past-the-end size, as used by _flushQuads.
+        til::small_vector<StateChange, 3> _instancesStateChanges;
 
         wil::com_ptr<ID3D11RenderTargetView> _customRenderTargetView;
         wil::com_ptr<ID3D11Texture2D> _customOffscreenTexture;

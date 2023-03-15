@@ -91,6 +91,13 @@ try
         _api.scrollOffset = gsl::narrow_cast<i16>(clamp<int>(_api.scrollOffset, -limit, limit));
     }
 
+    _p.dirtyRectInPx = {
+        til::CoordTypeMax,
+        til::CoordTypeMax,
+        til::CoordTypeMin,
+        til::CoordTypeMin,
+    };
+
     // Scroll the buffer by the given offset and mark the newly uncovered rows as "invalid".
     if (const auto offset = _api.scrollOffset)
     {
@@ -101,7 +108,7 @@ try
         {
             // Scroll up (for instance when new text is being written at the end of the buffer).
             const u16 begRow = _p.s->cellCount.y + offset;
-            _api.invalidatedRows.x = nothingInvalid ? begRow : std::min<u16>(_api.invalidatedRows.x, begRow);
+            _api.invalidatedRows.x = nothingInvalid ? begRow : std::min(_api.invalidatedRows.x, begRow);
             _api.invalidatedRows.y = _p.s->cellCount.y;
 
             // scrollOffset/offset = -1
@@ -125,12 +132,19 @@ try
                 d.top += deltaPx;
                 d.bottom += deltaPx;
             }
+
+            for (auto y = _api.invalidatedRows.x; y < begRow; ++y)
+            {
+                _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, _p.rows[y].top);
+            }
+            _p.dirtyRectInPx.bottom = _p.s->targetSize.y;
         }
         else
         {
             // Scroll down.
+            const u16 endRow = offset;
             _api.invalidatedRows.x = 0;
-            _api.invalidatedRows.y = nothingInvalid ? offset : std::max<u16>(_api.invalidatedRows.y, offset);
+            _api.invalidatedRows.y = nothingInvalid ? endRow : std::max(_api.invalidatedRows.y, endRow);
 
             // scrollOffset/offset = 1
             // +----------+    +----------+
@@ -153,6 +167,12 @@ try
                 d.top += deltaPx;
                 d.bottom += deltaPx;
             }
+
+            _p.dirtyRectInPx.top = 0;
+            for (auto y = endRow; y < _api.invalidatedRows.y; ++y)
+            {
+                _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.top, _p.rows[y].top);
+            }
         }
 
         // Scrolling the background bitmap is a lot easier because we can rely on memmove which works
@@ -169,6 +189,15 @@ try
             memmove(dst, src, count * sizeof(u32));
         }
     }
+    else
+    {
+        for (auto y = _api.invalidatedRows.x; y < _api.invalidatedRows.y; ++y)
+        {
+            const auto& r = _p.rows[y];
+            _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, r.top);
+            _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, r.bottom);
+        }
+    }
 
     for (auto y = _api.invalidatedRows.x; y < _api.invalidatedRows.y; ++y)
     {
@@ -176,7 +205,6 @@ try
     }
 
     _api.dirtyRect = til::rect{ 0, _api.invalidatedRows.x, _p.s->cellCount.x, _api.invalidatedRows.y };
-    _p.dirtyRect = _api.dirtyRect;
     _p.cursorRect = {};
     _p.scrollOffset = _api.scrollOffset;
 
@@ -281,9 +309,7 @@ try
     const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(coordTarget.x, 0, _p.s->cellCount.x - 1));
     const auto to = gsl::narrow_cast<u16>(clamp<size_t>(coordTarget.x + cchLine, from, _p.s->cellCount.x));
     const auto fg = gsl::narrow_cast<u32>(color) | 0xff000000;
-    auto& row = _p.rows[y];
-
-    row.gridLineRanges.emplace_back(lines, fg, from, to);
+    _p.rows[y].gridLineRanges.emplace_back(lines, fg, from, to);
     return S_OK;
 }
 CATCH_RETURN()
@@ -299,11 +325,15 @@ try
     const auto y = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.top, 0, _p.s->cellCount.y));
     const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.left, 0, _p.s->cellCount.x - 1));
     const auto to = gsl::narrow_cast<u16>(clamp<til::CoordType>(rect.right, from, _p.s->cellCount.x));
-    auto& row = _p.rows[y];
 
+    auto& row = _p.rows[y];
     row.selectionFrom = from;
     row.selectionTo = to;
-    _p.dirtyRect |= rect;
+
+    _p.dirtyRectInPx.left = std::min(_p.dirtyRectInPx.left, from * _p.s->font->cellSize.x);
+    _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, y * _p.s->font->cellSize.y);
+    _p.dirtyRectInPx.right = std::max(_p.dirtyRectInPx.right, to * _p.s->font->cellSize.x);
+    _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, _p.dirtyRectInPx.top + _p.s->font->cellSize.y);
     return S_OK;
 }
 CATCH_RETURN()
@@ -332,7 +362,10 @@ try
     // Clear the previous cursor
     if (const auto r = _api.invalidatedCursorArea; r.non_empty())
     {
-        _p.dirtyRect |= til::rect{ r.left, r.top, r.right, r.bottom };
+        _p.dirtyRectInPx.left = std::min(_p.dirtyRectInPx.left, r.left * _p.s->font->cellSize.x);
+        _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, r.top * _p.s->font->cellSize.y);
+        _p.dirtyRectInPx.right = std::max(_p.dirtyRectInPx.right, r.right * _p.s->font->cellSize.x);
+        _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, r.bottom * _p.s->font->cellSize.y);
     }
 
     if (options.isOn)
@@ -340,13 +373,16 @@ try
         const auto point = options.coordCursor;
         // TODO: options.coordCursor can contain invalid out of bounds coordinates when
         // the window is being resized and the cursor is on the last line of the viewport.
-        const auto x = gsl::narrow_cast<uint16_t>(clamp(point.x, 0, _p.s->cellCount.x - 1));
-        const auto y = gsl::narrow_cast<uint16_t>(clamp(point.y, 0, _p.s->cellCount.y - 1));
+        const auto x = gsl::narrow_cast<u16>(clamp(point.x, 0, _p.s->cellCount.x - 1));
+        const auto y = gsl::narrow_cast<u16>(clamp(point.y, 0, _p.s->cellCount.y - 1));
         const auto cursorWidth = 1 + (options.fIsDoubleWidth & (options.cursorType != CursorType::VerticalBar));
-        const auto right = gsl::narrow_cast<uint16_t>(clamp(x + cursorWidth, 0, _p.s->cellCount.x - 0));
-        const auto bottom = gsl::narrow_cast<uint16_t>(y + 1);
+        const auto right = gsl::narrow_cast<u16>(clamp(x + cursorWidth, 0, _p.s->cellCount.x - 0));
+        const auto bottom = gsl::narrow_cast<u16>(y + 1);
         _p.cursorRect = { x, y, right, bottom };
-        _p.dirtyRect |= til::rect{ x, y, right, bottom };
+        _p.dirtyRectInPx.left = std::min(_p.dirtyRectInPx.left, x * _p.s->font->cellSize.x);
+        _p.dirtyRectInPx.top = std::min(_p.dirtyRectInPx.top, y * _p.s->font->cellSize.y);
+        _p.dirtyRectInPx.right = std::max(_p.dirtyRectInPx.right, right * _p.s->font->cellSize.x);
+        _p.dirtyRectInPx.bottom = std::max(_p.dirtyRectInPx.bottom, bottom * _p.s->font->cellSize.y);
     }
 
     return S_OK;
@@ -410,6 +446,13 @@ void AtlasEngine::_handleSettingsUpdate()
     }
 
     _api.invalidatedRows = invalidatedRowsAll;
+
+    u16 y = 0;
+    for (auto& r : _p.rows)
+    {
+        r.clear(y, _p.s->font->cellSize.y);
+        ++y;
+    }
 }
 
 void AtlasEngine::_recreateFontDependentResources()

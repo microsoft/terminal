@@ -38,26 +38,6 @@
         <DisplayString>{{LT({Left}, {Top}) RB({Right}, {Bottom}) In:[{Right-Left+1} x {Bottom-Top+1}] Ex:[{Right-Left} x {Bottom-Top}]}}</DisplayString>
     </Type>
 
-    <Type Name="CharRowCell">
-        <DisplayString Condition="_attr._glyphStored">Stored Glyph, go to UnicodeStorage.</DisplayString>
-        <DisplayString Condition="_attr._attribute == 0">{_wch,X} Single</DisplayString>
-        <DisplayString Condition="_attr._attribute == 1">{_wch,X} Lead</DisplayString>
-        <DisplayString Condition="_attr._attribute == 2">{_wch,X} Trail</DisplayString>
-    </Type>
-
-    <Type Name="ATTR_ROW">
-        <Expand>
-            <ExpandedItem>_data</ExpandedItem>
-        </Expand>
-    </Type>
-
-    <Type Name="CharRow">
-        <DisplayString>{{ wrap={_wrapForced} padded={_doubleBytePadded} }}</DisplayString>
-        <Expand>
-            <ExpandedItem>_data</ExpandedItem>
-        </Expand>
-    </Type>
-
     <Type Name="ROW">
         <DisplayString>{{ id={_id} width={_rowWidth} }}</DisplayString>
         <Expand>
@@ -123,5 +103,25 @@
         <Expand>
             <Item Name="[ptr]">_ptr</Item>
         </Expand>
+    </Type>
+
+    <Type Name="Microsoft::Console::Render::Atlas::Buffer&lt;*&gt;">
+        <DisplayString>{{ size={_size} }}</DisplayString>
+        <Expand>
+            <Item Name="[size]" ExcludeView="simple">_size</Item>
+            <ArrayItems>
+                <Size>_size</Size>
+                <ValuePointer>_data</ValuePointer>
+            </ArrayItems>
+        </Expand>
+    </Type>
+
+    <Type Name="Microsoft::Console::Render::Atlas::ShapedRow">
+        <DisplayString>{{ top={top}, bottom={bottom} }}</DisplayString>
+    </Type>
+
+    <Type Name="Microsoft::Console::Render::Atlas::BackendD3D::GlyphCacheEntry">
+        <DisplayString Condition="fontFace == nullptr">(empty)</DisplayString>
+        <DisplayString Condition="fontFace != nullptr">{(void*)fontFace}, {glyphIndex}</DisplayString>
     </Type>
 </AutoVisualizer>

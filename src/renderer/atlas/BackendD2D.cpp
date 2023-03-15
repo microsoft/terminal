@@ -142,6 +142,9 @@ void BackendD2D::_drawBackground(const RenderingPayload& p) noexcept
 
 void BackendD2D::_drawText(RenderingPayload& p)
 {
+    til::CoordType dirtyTop = til::CoordTypeMax;
+    til::CoordType dirtyBottom = til::CoordTypeMin;
+
     // It is possible to create a "_foregroundBrush" similar to how the `_backgroundBrush` is created and
     // use that as the brush for text rendering below. That way we wouldn't have to search `row.colors` for color
     // changes and could draw entire lines of text in a single call. Unfortunately Direct2D is not particularly
@@ -152,6 +155,12 @@ void BackendD2D::_drawText(RenderingPayload& p)
     u16 y = 0;
     for (auto& row : p.rows)
     {
+        if (row.top > p.dirtyRectInPx.bottom || row.bottom < p.dirtyRectInPx.top)
+        {
+            ++y;
+            continue;
+        }
+
         f32 baselineX = 0.0f;
 
         for (const auto& m : row.mappings)
@@ -197,7 +206,17 @@ void BackendD2D::_drawText(RenderingPayload& p)
             } while (it != end);
         }
 
-        y++;
+        dirtyTop = std::min(dirtyTop, row.top);
+        dirtyBottom = std::max(dirtyBottom, row.bottom);
+        ++y;
+    }
+
+    if (dirtyTop < dirtyBottom)
+    {
+        p.dirtyRectInPx.left = 0;
+        p.dirtyRectInPx.top = std::min(p.dirtyRectInPx.top, dirtyTop);
+        p.dirtyRectInPx.right = p.s->targetSize.x;
+        p.dirtyRectInPx.bottom = std::max(p.dirtyRectInPx.bottom, dirtyBottom);
     }
 }
 
@@ -225,7 +244,7 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow& ro
     const auto pxToDIP = [&](til::CoordType i) {
         return i * p.d.font.dipPerPixel;
     };
-    
+
     const auto top = rowToDIP(y);
     const auto bottom = top + p.d.font.cellSizeDIP.y;
     const auto thinLineWidth = pxToDIP(p.s->font->thinLineWidth);
@@ -321,7 +340,7 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow& ro
 
 void BackendD2D::_drawCursor(const RenderingPayload& p)
 {
-    if (!p.cursorRect)
+    if (p.cursorRect.empty())
     {
         return;
     }

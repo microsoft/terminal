@@ -32,7 +32,7 @@ using namespace Microsoft::Console::Render::Atlas;
 [[nodiscard]] HRESULT AtlasEngine::Present() noexcept
 try
 {
-    if (!_p.dirtyRect)
+    if (!_p.dirtyRectInPx)
     {
         return S_OK;
     }
@@ -126,7 +126,7 @@ void AtlasEngine::_recreateBackend()
     auto d2dMode = debugForceD2DMode;
     auto deviceFlags = D3D11_CREATE_DEVICE_SINGLETHREADED
 #ifndef NDEBUG
-                       | D3D11_CREATE_DEVICE_DEBUG
+    //| D3D11_CREATE_DEVICE_DEBUG
 #endif
                        // This flag prevents the driver from creating a large thread pool for things like shader computations
                        // that would be advantageous for games. For us this has only a minimal performance benefit,
@@ -146,8 +146,6 @@ void AtlasEngine::_recreateBackend()
         {
             THROW_IF_FAILED(_p.dxgiFactory->EnumAdapters1(index++, dxgiAdapter.put()));
             THROW_IF_FAILED(dxgiAdapter->GetDesc1(&desc));
-
-            
 
             // If useSoftwareRendering is false we exit during the first iteration. Using the default adapter (index 0)
             // is the right thing to do under most circumstances, unless you _really_ want to get your hands dirty.

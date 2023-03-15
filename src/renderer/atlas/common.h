@@ -420,9 +420,9 @@ namespace Microsoft::Console::Render::Atlas
         // Parameters which change every frame.
         Buffer<ShapedRow> rows;
         Buffer<u32> backgroundBitmap;
-        til::rect dirtyRect;
-        til::rect cursorRect;
-        til::CoordType scrollOffset = 0;
+        til::rect dirtyRectInPx;
+        u16r cursorRect;
+        i16 scrollOffset = 0;
     };
 
     struct IBackend

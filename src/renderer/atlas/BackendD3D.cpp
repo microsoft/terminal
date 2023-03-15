@@ -112,7 +112,9 @@ void BackendD3D::GlyphCacheMap::_bumpSize()
 {
     const auto newMapSize = _map.size() * 2;
     const auto newMapMask = newMapSize - 1;
-    FAIL_FAST_IF(newMapSize >= INT32_MAX); // overflow/truncation protection
+
+    static constexpr auto sizeLimit = std::numeric_limits<size_t>::max() / 2;
+    THROW_HR_IF_MSG(E_OUTOFMEMORY, newMapSize >= sizeLimit, "GlyphCacheMap overflow");
 
     auto newMap = Buffer<GlyphCacheEntry>(newMapSize);
 
@@ -275,7 +277,7 @@ void BackendD3D::Render(RenderingPayload& p)
     {
         _handleSettingsUpdate(p);
     }
-    
+
 #ifndef NDEBUG
     _debugUpdateShaders(p);
 #endif
@@ -684,7 +686,7 @@ try
     {
         this->*filesPS[i].target = std::move(compiledPS[i]);
     }
-    
+
     _setupDeviceContextState(p);
 }
 CATCH_LOG()
@@ -746,9 +748,10 @@ void BackendD3D::_resetGlyphAtlasAndBeginDraw(const RenderingPayload& p)
         {
             const auto surface = _glyphAtlas.query<IDXGISurface>();
 
-            D2D1_RENDER_TARGET_PROPERTIES props{};
-            props.type = D2D1_RENDER_TARGET_TYPE_DEFAULT;
-            props.pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED };
+            const D2D1_RENDER_TARGET_PROPERTIES props{
+                .type = D2D1_RENDER_TARGET_TYPE_DEFAULT,
+                .pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED },
+            };
             wil::com_ptr<ID2D1RenderTarget> renderTarget;
             THROW_IF_FAILED(p.d2dFactory->CreateDxgiSurfaceRenderTarget(surface.get(), &props, renderTarget.addressof()));
             _d2dRenderTarget = renderTarget.query<ID2D1DeviceContext>();
@@ -780,10 +783,18 @@ void BackendD3D::_resetGlyphAtlasAndBeginDraw(const RenderingPayload& p)
     _d2dRenderTarget->Clear();
 }
 
+void BackendD3D::_markStateChange(ID3D11BlendState* blendState)
+{
+    _instancesStateChanges.emplace_back(StateChange{
+        .blendState = blendState,
+        .offset = _instancesCount,
+    });
+}
+
 BackendD3D::QuadInstance& BackendD3D::_getLastQuad() noexcept
 {
-    assert(_instancesSize != 0);
-    return _instances[_instancesSize - 1];
+    assert(_instancesCount != 0);
+    return _instances[_instancesCount - 1];
 }
 
 void BackendD3D::_appendQuad(i16x2 position, u16x2 size, u32 color, ShadingType shadingType)
@@ -793,12 +804,12 @@ void BackendD3D::_appendQuad(i16x2 position, u16x2 size, u32 color, ShadingType 
 
 void BackendD3D::_appendQuad(i16x2 position, u16x2 size, u16x2 texcoord, u32 color, ShadingType shadingType)
 {
-    if (_instancesSize >= _instances.size())
+    if (_instancesCount >= _instances.size())
     {
         _bumpInstancesSize();
     }
 
-    _instances[_instancesSize++] = QuadInstance{ position, size, texcoord, static_cast<u32>(shadingType), color };
+    _instances[_instancesCount++] = QuadInstance{ position, size, texcoord, static_cast<u32>(shadingType), color };
 }
 
 void BackendD3D::_bumpInstancesSize()
@@ -808,12 +819,12 @@ void BackendD3D::_bumpInstancesSize()
 
 void BackendD3D::_flushQuads(const RenderingPayload& p)
 {
-    if (!_instancesSize)
+    if (!_instancesCount)
     {
         return;
     }
 
-    if (_instancesSize > _instanceBufferSize)
+    if (_instancesCount > _instanceBufferCapacity)
     {
         _recreateInstanceBuffers(p);
     }
@@ -821,7 +832,7 @@ void BackendD3D::_flushQuads(const RenderingPayload& p)
     {
         D3D11_MAPPED_SUBRESOURCE mapped{};
         THROW_IF_FAILED(_deviceContext->Map(_instanceBuffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
-        memcpy(mapped.pData, _instances.data(), _instancesSize * sizeof(QuadInstance));
+        memcpy(mapped.pData, _instances.data(), _instancesCount * sizeof(QuadInstance));
         _deviceContext->Unmap(_instanceBuffer.get(), 0);
     }
 
@@ -843,9 +854,26 @@ void BackendD3D::_flushQuads(const RenderingPayload& p)
     //   instancing with ~10k instances appears to be about 50% faster and so DrawInstanced was chosen.
     //   Instead I found that packing instance data as tightly as possible made the biggest performance difference,
     //   and packing 16 bit integers with ID3D11InputLayout is quite a bit more convenient too.
-    _deviceContext->DrawIndexedInstanced(6, _instancesSize, 0, 0, 0);
 
-    _instancesSize = 0;
+    // This will cause the loop below to emit one final DrawIndexedInstanced() for the remainder of instances.
+    _markStateChange(nullptr);
+
+    size_t previousOffset = 0;
+    for (const auto& state : _instancesStateChanges)
+    {
+        if (const auto count = state.offset - previousOffset)
+        {
+            _deviceContext->DrawIndexedInstanced(6, count, 0, 0, previousOffset);
+        }
+        if (state.blendState)
+        {
+            _deviceContext->OMSetBlendState(state.blendState, nullptr, 0xffffffff);
+        }
+        previousOffset = state.offset;
+    }
+
+    _instancesStateChanges.clear();
+    _instancesCount = 0;
 }
 
 void BackendD3D::_recreateInstanceBuffers(const RenderingPayload& p)
@@ -854,16 +882,16 @@ void BackendD3D::_recreateInstanceBuffers(const RenderingPayload& p)
     // While the viewport size of the terminal is probably a good initial estimate for the amount of instances we'll see,
     // I feel like we should ensure that the estimate doesn't exceed the limit for a DXGI_FORMAT_R16_UINT index buffer.
     const auto estimatedInstances = std::min(R16max / 4, static_cast<size_t>(p.s->cellCount.x) * p.s->cellCount.y);
-    const auto minSize = std::max(_instancesSize, estimatedInstances);
+    const auto minSize = std::max(_instancesCount, estimatedInstances);
     // std::bit_ceil will result in a nice exponential growth curve. I don't know exactly how structured buffers are treated
     // by various drivers, but I'm assuming that they prefer buffer sizes that are close to power-of-2 sizes as well.
-    const auto newInstancesSize = std::bit_ceil(minSize * sizeof(QuadInstance)) / sizeof(QuadInstance);
+    const auto newInstancesCapacity = std::bit_ceil(minSize * sizeof(QuadInstance)) / sizeof(QuadInstance);
 
     _instanceBuffer.reset();
 
     {
         D3D11_BUFFER_DESC desc{};
-        desc.ByteWidth = gsl::narrow<UINT>(newInstancesSize * sizeof(QuadInstance));
+        desc.ByteWidth = gsl::narrow<UINT>(newInstancesCapacity * sizeof(QuadInstance));
         desc.Usage = D3D11_USAGE_DYNAMIC;
         desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
         desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -877,7 +905,7 @@ void BackendD3D::_recreateInstanceBuffers(const RenderingPayload& p)
     static constexpr UINT offsets[]{ 0, 0 };
     _deviceContext->IASetVertexBuffers(0, 2, &vertexBuffers[0], &strides[0], &offsets[0]);
 
-    _instanceBufferSize = newInstancesSize;
+    _instanceBufferCapacity = newInstancesCapacity;
 }
 
 void BackendD3D::_drawBackground(const RenderingPayload& p)
@@ -893,14 +921,8 @@ void BackendD3D::_drawBackground(const RenderingPayload& p)
         }
         _deviceContext->Unmap(_backgroundBitmap.get(), 0);
     }
-    // In testing I found that on my AMD GPU separating the background pass out from the rest
-    // improves performance by ~20%, if a fullscreen triangle is used for it. However, I felt
-    // like the added code didn't justify the improvement (6.4% -> 5.2% GPU load at 60 FPS),
-    // given that AGS_PRIMITIVE_TOPOLOGY_SCREENRECTLIST and AGS_PRIMITIVE_TOPOLOGY_QUADLIST exist
-    // and would serve us much better. Finally, Chromium is still ~2.5x faster than us.
-    {
-        _appendQuad({}, p.s->targetSize, 0, ShadingType::Background);
-    }
+
+    _appendQuad({}, p.s->targetSize, 0, ShadingType::Background);
 }
 
 void BackendD3D::_drawText(RenderingPayload& p)
@@ -911,10 +933,18 @@ void BackendD3D::_drawText(RenderingPayload& p)
         _resetGlyphAtlasNeeded = false;
     }
 
-    u16 y = 0;
+    til::CoordType dirtyTop = til::CoordTypeMax;
+    til::CoordType dirtyBottom = til::CoordTypeMin;
 
+    u16 y = 0;
     for (auto& row : p.rows)
     {
+        if (row.top >= p.dirtyRectInPx.bottom || row.bottom <= p.dirtyRectInPx.top)
+        {
+            ++y;
+            continue;
+        }
+
         const auto baselineY = y * p.d.font.cellSizeDIP.y + p.s->font->baselineInDIP;
         f32 cumulativeAdvance = 0;
 
@@ -951,7 +981,17 @@ void BackendD3D::_drawText(RenderingPayload& p)
             }
         }
 
+        dirtyTop = std::min(dirtyTop, row.top);
+        dirtyBottom = std::max(dirtyBottom, row.bottom);
         ++y;
+    }
+
+    if (dirtyTop < dirtyBottom)
+    {
+        p.dirtyRectInPx.left = 0;
+        p.dirtyRectInPx.top = std::min(p.dirtyRectInPx.top, dirtyTop);
+        p.dirtyRectInPx.right = p.s->targetSize.x;
+        p.dirtyRectInPx.bottom = std::max(p.dirtyRectInPx.bottom, dirtyBottom);
     }
 
     _d2dEndDrawing();
@@ -1026,7 +1066,7 @@ void BackendD3D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow& ro
     {
         // AtlasEngine.cpp shouldn't add any gridlines if they don't do anything.
         assert(r.lines.any());
-        
+
         const auto left = r.from * p.s->font->cellSize.x;
         const auto width = (r.to - r.from) * p.s->font->cellSize.x;
         i16x2 position;
@@ -1114,7 +1154,8 @@ void BackendD3D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow& ro
 void BackendD3D::_drawCursorPart1(const RenderingPayload& p)
 {
     _cursorRects.clear();
-    if (!p.cursorRect)
+
+    if (p.cursorRect.empty())
     {
         return;
     }
@@ -1213,7 +1254,7 @@ void BackendD3D::_drawCursorPart1(const RenderingPayload& p)
 
 void BackendD3D::_drawCursorPart2(const RenderingPayload& p)
 {
-    if (!p.cursorRect)
+    if (_cursorRects.empty())
     {
         return;
     }
@@ -1222,8 +1263,7 @@ void BackendD3D::_drawCursorPart2(const RenderingPayload& p)
 
     if (color == 0xffffffff)
     {
-        _flushQuads(p);
-        _deviceContext->OMSetBlendState(_blendStateInvert.get(), nullptr, 0xffffffff);
+        _markStateChange(_blendStateInvert.get());
     }
 
     for (const auto& c : _cursorRects)
@@ -1233,8 +1273,7 @@ void BackendD3D::_drawCursorPart2(const RenderingPayload& p)
 
     if (color == 0xffffffff)
     {
-        _flushQuads(p);
-        _deviceContext->OMSetBlendState(_blendState.get(), nullptr, 0xffffffff);
+        _markStateChange(_blendState.get());
     }
 }
 
@@ -1345,7 +1384,7 @@ void BackendD3D::_executeCustomShader(RenderingPayload& p)
 
     // With custom shaders, everything might be invalidated, so we have to
     // indirectly disable Present1() and its dirty rects this way.
-    p.dirtyRect = { 0, 0, p.s->cellCount.x, p.s->cellCount.y };
+    p.dirtyRectInPx = { 0, 0, p.s->targetSize.x, p.s->targetSize.y };
 }
 
 TIL_FAST_MATH_END
