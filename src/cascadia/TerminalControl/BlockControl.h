@@ -348,6 +348,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // void _CopyCommandHandler(const IInspectable& sender, const IInspectable& args);
         // void _SearchCommandHandler(const IInspectable& sender, const IInspectable& args);
 
+        ////////////////////////////////////////////////////////////////////////
+        BUBBLED_FORWARDED_TYPED_EVENT(NewBlock, IInspectable, Control::BlockContent);
+        ////////////////////////////////////////////////////////////////////////
+
         struct Revokers
         {
             Control::BlockContent::ScrollPositionChanged_revoker scrollPositionChanged;
@@ -370,6 +374,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Control::ControlCore::ShowWindowChanged_revoker ShowWindowChanged;
             // Control::ControlCore::CloseTerminalRequested_revoker CloseTerminalRequested;
             // Control::ControlCore::MenuChanged_revoker MenuChanged;
+            Control::BlockContent::NewBlock_revoker NewBlock;
+
             // // These are set up in _InitializeTerminal
             // Control::ControlCore::RendererWarning_revoker RendererWarning;
             Control::BlockContent::SwapChainChanged_revoker SwapChainChanged;

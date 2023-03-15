@@ -17,6 +17,8 @@
 
 #include <til/ticket_lock.h>
 
+#include "../../inc/cppwinrt_utils.h"
+
 static constexpr std::wstring_view linkPattern{ LR"(\b(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])" };
 static constexpr size_t TaskbarMinProgress{ 10 };
 
@@ -338,7 +340,7 @@ private:
 
     size_t _hyperlinkPatternId = 0;
 
-    std::wstring _workingDirectory;
+    std::wstring _workingDirectory{};
 
     // This default fake font value is only used to check if the font is a raster font.
     // Otherwise, the font is changed to a real value with the renderer via TriggerFontChange.
@@ -356,7 +358,7 @@ private:
     };
     std::optional<SelectionAnchors> _selection;
     bool _blockSelection = false;
-    std::wstring _wordDelimiters;
+    std::wstring _wordDelimiters{};
     SelectionExpansion _multiClickSelectionMode = SelectionExpansion::Char;
     SelectionInteractionMode _selectionMode = SelectionInteractionMode::None;
     bool _selectionIsTargetingUrl = false;
@@ -448,6 +450,8 @@ private:
     void _MoveByViewport(SelectionDirection direction, til::point& pos) noexcept;
     void _MoveByBuffer(SelectionDirection direction, til::point& pos) noexcept;
 #pragma endregion
+
+    WINRT_CALLBACK(NewPrompt, winrt::delegate<const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark&>);
 
 #ifdef UNIT_TESTING
     friend class TerminalCoreUnitTests::TerminalBufferTests;

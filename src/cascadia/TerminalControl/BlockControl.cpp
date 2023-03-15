@@ -101,6 +101,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // _revokers.MenuChanged = _core.MenuChanged(winrt::auto_revoke, { get_weak(), &BlockControl::_bubbleMenuChanged });
 
         // _revokers.PasteFromClipboard = _interactivity.PasteFromClipboard(winrt::auto_revoke, { get_weak(), &BlockControl::_bubblePasteFromClipboard });
+        _revokers.NewBlock = _content.NewBlock(winrt::auto_revoke, { get_weak(), &BlockControl::_bubbleNewBlock });
 
         // _interactivity.ContextMenuRequested({ this, &BlockControl::_contextMenuHandler });
 

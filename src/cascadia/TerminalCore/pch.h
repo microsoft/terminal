@@ -7,6 +7,8 @@
 // it after some of our C++/WinRT headers.
 #define BLOCK_TIL
 #include <LibraryIncludes.h>
+
+#include <wil/cppwinrt.h>
 #include "winrt/Windows.Foundation.h"
 
 #include "winrt/Microsoft.Terminal.Core.h"

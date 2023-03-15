@@ -19,6 +19,8 @@ namespace winrt::SampleApp::implementation
 
     private:
         friend struct MyPageT<MyPage>; // for Xaml to bind events
+
+        winrt::fire_and_forget _newBlockHandler(Windows::Foundation::IInspectable sender, Microsoft::Terminal::Control::BlockContent content);
     };
 }
 

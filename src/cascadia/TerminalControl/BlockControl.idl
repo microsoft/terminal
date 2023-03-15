@@ -119,5 +119,9 @@ namespace Microsoft.Terminal.Control
 
         // Microsoft.Terminal.Core.Point CursorPositionInDips { get; };
 
+
+        ////////////////////////////////////////////////////////////////////////
+        event Windows.Foundation.TypedEventHandler<Object, BlockContent> NewBlock;
+
     }
 }

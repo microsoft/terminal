@@ -330,6 +330,8 @@ void Terminal::MarkPrompt(const DispatchTypes::ScrollMark& mark)
     {
         _currentPromptState = PromptState::Prompt;
     }
+
+    _NewPromptHandlers(mark);
 }
 
 void Terminal::MarkCommandStart()

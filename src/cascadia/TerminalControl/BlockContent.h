@@ -278,6 +278,31 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // std::unique_ptr<til::throttled_func_trailing<>> _updatePatternLocations;
         std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> _updateScrollBar;
 
+        ////////////////////////////////////////////////////////////////////////
+        //                           NEW STUFF HERE                           //
+        ////////////////////////////////////////////////////////////////////////
+        bool _isRootBlock{ false };
+        bool _gotFirstPrompt{ false };
+        // mark?
+
+        winrt::com_ptr<BlockContent> _first{ this->get_strong() };
+        winrt::com_ptr<BlockContent> _next{ nullptr };
+        winrt::com_ptr<BlockContent> _last{ this->get_strong() };
+
+        winrt::fire_and_forget _newPromptHandler(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& mark);
+        winrt::event_token _newPromptRevoker;
+
+        winrt::com_ptr<BlockContent> _fork();
+
+    public:
+        BlockContent(TerminalConnection::ITerminalConnection connection,
+                     winrt::com_ptr<ControlSettings> settings,
+                     std::shared_ptr<::Microsoft::Terminal::Core::Terminal> terminal);
+        TYPED_EVENT(NewBlock, IInspectable, Control::BlockContent);
+
+    private:
+        ////////////////////////////////////////////////////////////////////////
+
         void _setupDispatcherAndCallbacks();
 
         bool _setFontSizeUnderLock(float fontSize);

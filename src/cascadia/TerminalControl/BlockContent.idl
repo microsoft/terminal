@@ -198,5 +198,10 @@ namespace Microsoft.Terminal.Control
         Int32 ScrollOffset { get; };
         Int32 ViewHeight { get; };
         Int32 BufferHeight { get; };
+
+
+        ////////////////////////////////////////////////////////////////////////
+        event Windows.Foundation.TypedEventHandler<Object, BlockContent> NewBlock;
+
     };
 }

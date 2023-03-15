@@ -68,16 +68,17 @@ namespace winrt::SampleApp::implementation
 
             Control::BlockContent content{ *settings, conn };
             Control::BlockControl control{ content };
+            control.NewBlock({ get_weak(), &MyPage::_newBlockHandler });
+
             control.Height(256);
             control.VerticalAlignment(WUX::VerticalAlignment::Top);
             control.HorizontalAlignment(WUX::HorizontalAlignment::Stretch);
-            control.CornerRadius(WUX::CornerRadiusHelper::FromRadii(6, 6, 6, 6));
+
             WUX::Controls::Grid wrapper{};
             wrapper.VerticalAlignment(WUX::VerticalAlignment::Top);
             wrapper.HorizontalAlignment(WUX::HorizontalAlignment::Stretch);
             wrapper.CornerRadius(WUX::CornerRadiusHelper::FromRadii(6, 6, 6, 6));
-            
-
+            wrapper.Margin(WUX::ThicknessHelper::FromLengths(0, 4, 0, 4));
             wrapper.Children().Append(control);
             OutOfProcContent().Children().Append(wrapper);
         }
@@ -95,4 +96,23 @@ namespace winrt::SampleApp::implementation
         return { L"Sample Application" };
     }
 
+    winrt::fire_and_forget MyPage::_newBlockHandler(IInspectable sender, Control::BlockContent content)
+    {
+        co_await winrt::resume_foreground(Dispatcher());
+
+        Control::BlockControl control{ content };
+        // control.NewBlock({ get_weak(), &MyPage::_newBlockHandler });
+
+        control.Height(256);
+        control.VerticalAlignment(WUX::VerticalAlignment::Top);
+        control.HorizontalAlignment(WUX::HorizontalAlignment::Stretch);
+
+        WUX::Controls::Grid wrapper{};
+        wrapper.VerticalAlignment(WUX::VerticalAlignment::Top);
+        wrapper.HorizontalAlignment(WUX::HorizontalAlignment::Stretch);
+        wrapper.CornerRadius(WUX::CornerRadiusHelper::FromRadii(6, 6, 6, 6));
+        wrapper.Margin(WUX::ThicknessHelper::FromLengths(0, 4, 0, 4));
+        wrapper.Children().Append(control);
+        OutOfProcContent().Children().Append(wrapper);
+    }
 }

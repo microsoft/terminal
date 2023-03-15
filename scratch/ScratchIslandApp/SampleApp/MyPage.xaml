@@ -45,14 +45,18 @@
                   HorizontalAlignment="Stretch"
                   VerticalAlignment="Stretch"
                   Background="#ff0000" />
+            <ScrollViewer Grid.Column="1"
+                          Padding="4"
+                          Background="#fff00f">
+                <StackPanel x:Name="OutOfProcContent"
+                            Padding="16"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"
+                            Background="#9090ff"
+                            CornerRadius="4"
+                            Orientation="Vertical" />
 
-            <Grid x:Name="OutOfProcContent"
-                  Grid.Column="1"
-                  Padding="16"
-                  HorizontalAlignment="Stretch"
-                  VerticalAlignment="Stretch"
-                  Background="#9090ff"
-                  CornerRadius="4" />
+            </ScrollViewer>
 
 
 

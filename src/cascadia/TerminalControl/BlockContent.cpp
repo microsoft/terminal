@@ -293,6 +293,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             _terminal->CreateFromSettings(*_settings, *_renderer);
 
+            _newPromptRevoker = _terminal->NewPrompt({ get_weak(), &BlockContent::_newPromptHandler });
+
             // IMPORTANT! Set this callback up sooner than later. If we do it
             // after Enable, then it'll be possible to paint the frame once
             // _before_ the warning handler is set up, and then warnings from
@@ -2309,4 +2311,86 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //         }
     //     }
     // }
+
+    ////////////////////////////////////////////////////////////////////////////
+    winrt::fire_and_forget BlockContent::_newPromptHandler(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& /*mark*/)
+    {
+        if (!_gotFirstPrompt)
+        {
+            _gotFirstPrompt = true;
+            co_return;
+        }
+
+        co_await wil::resume_foreground(_dispatcher);
+
+        // _newPromptRevoker.revoke();
+        // _terminal->NewPrompt(_newPromptRevoker);
+        _last = _last->_next = this->_fork();
+        _last->_first = this->get_strong();
+        // _next = this->_fork();
+
+        auto curr = this->get_strong();
+        do
+        {
+            curr->_renderer->TriggerRedrawAll();
+
+        } while (curr = curr->_next);
+
+        _NewBlockHandlers(*this, *_last);
+    }
+
+    winrt::com_ptr<BlockContent> BlockContent::_fork()
+    {
+        return winrt::make_self<BlockContent>(_connection, _settings, _terminal);
+    }
+
+    BlockContent::BlockContent(TerminalConnection::ITerminalConnection connection,
+                               winrt::com_ptr<ControlSettings> settings,
+                               std::shared_ptr<::Microsoft::Terminal::Core::Terminal> terminal) :
+        _connection{ connection },
+        _settings{ settings },
+        _terminal{ terminal },
+        _desiredFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, DEFAULT_FONT_SIZE, CP_UTF8 },
+        _actualFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false }
+    {
+        // // This event is explicitly revoked in the destructor: does not need weak_ref
+        // _connectionOutputEventToken = _connection.TerminalOutput({ this, &BlockContent::_connectionOutputHandler });
+
+        // auto f = _terminal->NewPrompt({ get_weak(), &BlockContent::_newPromptHandler });
+        _gotFirstPrompt = true;
+        // MSFT 33353327: Initialize the renderer in the ctor instead of Initialize().
+        // We need the renderer to be ready to accept new engines before the SwapChainPanel is ready to go.
+        // If we wait, a screen reader may try to get the AutomationPeer (aka the UIA Engine), and we won't be able to attach
+        // the UIA Engine to the renderer. This prevents us from signaling changes to the cursor or buffer.
+        {
+            // First create the render thread.
+            // Then stash a local pointer to the render thread so we can initialize it and enable it
+            // to paint itself *after* we hand off its ownership to the renderer.
+            // We split up construction and initialization of the render thread object this way
+            // because the renderer and render thread have circular references to each other.
+            auto renderThread = std::make_unique<::Microsoft::Console::Render::RenderThread>();
+            auto* const localPointerToThread = renderThread.get();
+
+            // Now create the renderer and initialize the render thread.
+            const auto& renderSettings = _terminal->GetRenderSettings();
+            _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(renderSettings, _terminal.get(), nullptr, 0, std::move(renderThread));
+
+            //_renderer->SetBackgroundColorChangedCallback([this]() { _rendererBackgroundColorChanged(); });
+            //_renderer->SetFrameColorChangedCallback([this]() { _rendererTabColorChanged(); });
+
+            // _renderer->SetRendererEnteredErrorStateCallback([weakThis = get_weak()]() {
+            //     if (auto strongThis{ weakThis.get() })
+            //     {
+            //         strongThis->_RendererEnteredErrorStateHandlers(*strongThis, nullptr);
+            //     }
+            // });
+
+            THROW_IF_FAILED(localPointerToThread->Initialize(_renderer.get()));
+        }
+        _setupDispatcherAndCallbacks();
+
+        // UpdateSettings():
+        _cellWidth = CSSLengthPercentage::FromString(_settings->CellWidth().c_str());
+        _cellHeight = CSSLengthPercentage::FromString(_settings->CellHeight().c_str());
+    }
 }
