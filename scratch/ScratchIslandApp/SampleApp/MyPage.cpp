@@ -49,11 +49,13 @@ namespace winrt::SampleApp::implementation
 
         {
             settings->DefaultBackground(til::color{ 0x25, 0x25, 0x25 });
-
+            settings->AutoMarkPrompts(true);
+            auto envMap = winrt::single_threaded_map<winrt::hstring, winrt::hstring>();
+            envMap.Insert(L"PROMPT", L"$e]133;D$e\\$e]133;A$e\\$e]9;9;$P$e\\$P$G$e]133;B$e\\");
             auto connectionSettings{ TerminalConnection::ConptyConnection::CreateSettings(L"cmd.exe /k echo This is a BlockControl...",
                                                                                           winrt::hstring{},
                                                                                           L"",
-                                                                                          nullptr,
+                                                                                          envMap.GetView(),
                                                                                           32,
                                                                                           80,
                                                                                           winrt::guid()) };
