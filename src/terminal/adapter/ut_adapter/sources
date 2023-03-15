@@ -144,7 +144,6 @@ DLOAD_ERROR_HANDLER = kernelbase
 
 #INCLUDES                        =   $(INCLUDES); \
 #                                    ..\..\..\inc; \
-#                                    $(SDKTOOLS_INC_PATH)\WexTest\Cue; \
 #
 #SOURCES                         =   $(SOURCES) \
 #
