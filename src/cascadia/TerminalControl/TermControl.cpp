@@ -2869,12 +2869,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _ReadOnlyChangedHandlers(*this, winrt::box_value(_core.IsInReadOnlyMode()));
     }
 
+    // Method Description:
+    // - Enables the read-only flag, raises event describing the value change
     void TermControl::EnableReadOnly()
     {
         _core.EnableReadOnlyMode();
         _ReadOnlyChangedHandlers(*this, winrt::box_value(_core.IsInReadOnlyMode()));
     }
 
+    // Method Description:
+    // - Disables the read-only flag, raises event describing the value change
     void TermControl::DisableReadOnly()
     {
         _core.DisableReadOnlyMode();
