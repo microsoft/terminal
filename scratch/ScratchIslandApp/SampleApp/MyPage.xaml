@@ -51,7 +51,8 @@
                   Padding="16"
                   HorizontalAlignment="Stretch"
                   VerticalAlignment="Stretch"
-                  Background="#0000ff" />
+                  Background="#9090ff"
+                  CornerRadius="4" />
 
 
 

@@ -68,8 +68,18 @@ namespace winrt::SampleApp::implementation
 
             Control::BlockContent content{ *settings, conn };
             Control::BlockControl control{ content };
+            control.Height(256);
+            control.VerticalAlignment(WUX::VerticalAlignment::Top);
+            control.HorizontalAlignment(WUX::HorizontalAlignment::Stretch);
+            control.CornerRadius(WUX::CornerRadiusHelper::FromRadii(6, 6, 6, 6));
+            WUX::Controls::Grid wrapper{};
+            wrapper.VerticalAlignment(WUX::VerticalAlignment::Top);
+            wrapper.HorizontalAlignment(WUX::HorizontalAlignment::Stretch);
+            wrapper.CornerRadius(WUX::CornerRadiusHelper::FromRadii(6, 6, 6, 6));
+            
 
-            OutOfProcContent().Children().Append(control);
+            wrapper.Children().Append(control);
+            OutOfProcContent().Children().Append(wrapper);
         }
     }
 
