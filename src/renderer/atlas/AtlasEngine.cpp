@@ -117,7 +117,7 @@ try
 
             // Same as std::move, but with std::swap to preserve std::vector allocations.
             // Also, it allows to include the top/bottom adjustment.
-            for (; first != end; ++dest, (void)++first)
+            for (; first != end; ++dest, ++first)
             {
                 using std::swap;
                 auto& d = *dest;

@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "BackendD3D11.h"
+#include "BackendD3D.h"
 
 #include <til/hash.h>
 
@@ -12,6 +12,13 @@
 
 TIL_FAST_MATH_BEGIN
 
+// This code packs various data into smaller-than-int types to save both CPU and GPU memory. This warning would force
+// us to add dozens upon dozens of gsl::narrow_cast<>s throughout the file which is more annoying than helpful.
+#pragma warning(disable : 4242) // '=': conversion from '...' to '...', possible loss of data
+#pragma warning(disable : 4244) // 'initializing': conversion from '...' to '...', possible loss of data
+#pragma warning(disable : 4267) // 'argument': conversion from '...' to '...', possible loss of data
+#pragma warning(disable : 4838) // conversion from '...' to '...' requires a narrowing conversion
+#pragma warning(disable : 26472) // Don't use a static_cast for arithmetic conversions. Use brace initialization, gsl::narrow_cast or gsl::narrow (type.1).
 // Disable a bunch of warnings which get in the way of writing performant code.
 #pragma warning(disable : 26429) // Symbol 'data' is never tested for nullness, it can be marked as not_null (f.23).
 #pragma warning(disable : 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).
@@ -21,12 +28,12 @@ TIL_FAST_MATH_BEGIN
 
 using namespace Microsoft::Console::Render::Atlas;
 
-BackendD3D11::GlyphCacheMap::~GlyphCacheMap()
+BackendD3D::GlyphCacheMap::~GlyphCacheMap()
 {
     Clear();
 }
 
-BackendD3D11::GlyphCacheMap& BackendD3D11::GlyphCacheMap::operator=(GlyphCacheMap&& other) noexcept
+BackendD3D::GlyphCacheMap& BackendD3D::GlyphCacheMap::operator=(GlyphCacheMap&& other) noexcept
 {
     _map = std::exchange(other._map, {});
     _mapMask = std::exchange(other._mapMask, 0);
@@ -35,7 +42,7 @@ BackendD3D11::GlyphCacheMap& BackendD3D11::GlyphCacheMap::operator=(GlyphCacheMa
     return *this;
 }
 
-void BackendD3D11::GlyphCacheMap::Clear() noexcept
+void BackendD3D::GlyphCacheMap::Clear() noexcept
 {
     if (_size)
     {
@@ -52,7 +59,7 @@ void BackendD3D11::GlyphCacheMap::Clear() noexcept
     }
 }
 
-BackendD3D11::GlyphCacheEntry& BackendD3D11::GlyphCacheMap::FindOrInsert(IDWriteFontFace* fontFace, u16 glyphIndex, bool& inserted)
+BackendD3D::GlyphCacheEntry& BackendD3D::GlyphCacheMap::FindOrInsert(IDWriteFontFace* fontFace, u16 glyphIndex, bool& inserted)
 {
     const auto hash = _hash(fontFace, glyphIndex);
 
@@ -72,14 +79,14 @@ BackendD3D11::GlyphCacheEntry& BackendD3D11::GlyphCacheMap::FindOrInsert(IDWrite
     }
 }
 
-size_t BackendD3D11::GlyphCacheMap::_hash(IDWriteFontFace* fontFace, u16 glyphIndex) noexcept
+size_t BackendD3D::GlyphCacheMap::_hash(IDWriteFontFace* fontFace, u16 glyphIndex) noexcept
 {
     // MSVC 19.33 produces surprisingly good assembly for this without stack allocation.
     const uintptr_t data[2]{ std::bit_cast<uintptr_t>(fontFace), glyphIndex };
     return til::hash(&data[0], sizeof(data));
 }
 
-BackendD3D11::GlyphCacheEntry& BackendD3D11::GlyphCacheMap::_insert(IDWriteFontFace* fontFace, u16 glyphIndex, size_t hash)
+BackendD3D::GlyphCacheEntry& BackendD3D::GlyphCacheMap::_insert(IDWriteFontFace* fontFace, u16 glyphIndex, size_t hash)
 {
     if (_size >= _capacity)
     {
@@ -101,7 +108,7 @@ BackendD3D11::GlyphCacheEntry& BackendD3D11::GlyphCacheMap::_insert(IDWriteFontF
     }
 }
 
-void BackendD3D11::GlyphCacheMap::_bumpSize()
+void BackendD3D::GlyphCacheMap::_bumpSize()
 {
     const auto newMapSize = _map.size() * 2;
     const auto newMapMask = newMapSize - 1;
@@ -120,7 +127,7 @@ void BackendD3D11::GlyphCacheMap::_bumpSize()
     _capacity = newMapSize / 2;
 }
 
-BackendD3D11::BackendD3D11(wil::com_ptr<ID3D11Device2> device, wil::com_ptr<ID3D11DeviceContext2> deviceContext) :
+BackendD3D::BackendD3D(wil::com_ptr<ID3D11Device2> device, wil::com_ptr<ID3D11DeviceContext2> deviceContext) :
     _device{ std::move(device) },
     _deviceContext{ std::move(deviceContext) }
 {
@@ -131,12 +138,12 @@ BackendD3D11::BackendD3D11(wil::com_ptr<ID3D11Device2> device, wil::com_ptr<ID3D
         static constexpr D3D11_INPUT_ELEMENT_DESC layout[]{
             { "SV_Position", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
             { "position", 0, DXGI_FORMAT_R16G16_SINT, 1, offsetof(QuadInstance, position), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
-            { "size", 0, DXGI_FORMAT_R16G16_SINT, 1, offsetof(QuadInstance, size), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
-            { "texcoord", 0, DXGI_FORMAT_R16G16_SINT, 1, offsetof(QuadInstance, texcoord), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+            { "size", 0, DXGI_FORMAT_R16G16_UINT, 1, offsetof(QuadInstance, size), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+            { "texcoord", 0, DXGI_FORMAT_R16G16_UINT, 1, offsetof(QuadInstance, texcoord), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
             { "shadingType", 0, DXGI_FORMAT_R32_UINT, 1, offsetof(QuadInstance, shadingType), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
             { "color", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 1, offsetof(QuadInstance, color), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
         };
-        THROW_IF_FAILED(_device->CreateInputLayout(&layout[0], gsl::narrow_cast<UINT>(std::size(layout)), &shader_vs[0], sizeof(shader_vs), _inputLayout.addressof()));
+        THROW_IF_FAILED(_device->CreateInputLayout(&layout[0], std::size(layout), &shader_vs[0], sizeof(shader_vs), _inputLayout.addressof()));
     }
 
     {
@@ -262,14 +269,16 @@ BackendD3D11::BackendD3D11(wil::com_ptr<ID3D11Device2> device, wil::com_ptr<ID3D
 #endif
 }
 
-void BackendD3D11::Render(RenderingPayload& p)
+void BackendD3D::Render(RenderingPayload& p)
 {
-    _debugUpdateShaders();
-
     if (_generation != p.s.generation())
     {
         _handleSettingsUpdate(p);
     }
+    
+#ifndef NDEBUG
+    _debugUpdateShaders(p);
+#endif
 
     // After a Present() the render target becomes unbound.
     _deviceContext->OMSetRenderTargets(1, _renderTargetView.addressof(), nullptr);
@@ -290,102 +299,17 @@ void BackendD3D11::Render(RenderingPayload& p)
     _swapChainManager.Present(p);
 }
 
-bool BackendD3D11::RequiresContinuousRedraw() noexcept
+bool BackendD3D::RequiresContinuousRedraw() noexcept
 {
     return _requiresContinuousRedraw;
 }
 
-void BackendD3D11::WaitUntilCanRender() noexcept
+void BackendD3D::WaitUntilCanRender() noexcept
 {
     _swapChainManager.WaitUntilCanRender();
 }
 
-void BackendD3D11::_debugUpdateShaders() noexcept
-try
-{
-#ifndef NDEBUG
-    const auto invalidationTime = _sourceCodeInvalidationTime.load(std::memory_order_relaxed);
-
-    if (invalidationTime == INT64_MAX || invalidationTime > std::chrono::steady_clock::now().time_since_epoch().count())
-    {
-        return;
-    }
-
-    _sourceCodeInvalidationTime.store(INT64_MAX, std::memory_order_relaxed);
-
-    static const auto compile = [](const std::filesystem::path& path, const char* target) {
-        wil::com_ptr<ID3DBlob> error;
-        wil::com_ptr<ID3DBlob> blob;
-        const auto hr = D3DCompileFromFile(
-            /* pFileName   */ path.c_str(),
-            /* pDefines    */ nullptr,
-            /* pInclude    */ D3D_COMPILE_STANDARD_FILE_INCLUDE,
-            /* pEntrypoint */ "main",
-            /* pTarget     */ target,
-            /* Flags1      */ D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR | D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_WARNINGS_ARE_ERRORS,
-            /* Flags2      */ 0,
-            /* ppCode      */ blob.addressof(),
-            /* ppErrorMsgs */ error.addressof());
-
-        if (error)
-        {
-            std::thread t{ [error = std::move(error)]() noexcept {
-                MessageBoxA(nullptr, static_cast<const char*>(error->GetBufferPointer()), "Compilation error", MB_ICONERROR | MB_OK);
-            } };
-            t.detach();
-        }
-
-        THROW_IF_FAILED(hr);
-        return blob;
-    };
-
-    struct FileVS
-    {
-        std::wstring_view filename;
-        wil::com_ptr<ID3D11VertexShader> BackendD3D11::*target;
-    };
-    struct FilePS
-    {
-        std::wstring_view filename;
-        wil::com_ptr<ID3D11PixelShader> BackendD3D11::*target;
-    };
-
-    static constexpr std::array filesVS{
-        FileVS{ L"shader_vs.hlsl", &BackendD3D11::_vertexShader },
-    };
-    static constexpr std::array filesPS{
-        FilePS{ L"shader_ps.hlsl", &BackendD3D11::_pixelShader },
-    };
-
-    std::array<wil::com_ptr<ID3D11VertexShader>, filesVS.size()> compiledVS;
-    std::array<wil::com_ptr<ID3D11PixelShader>, filesPS.size()> compiledPS;
-
-    // Compile our files before moving them into `this` below to ensure we're
-    // always in a consistent state where all shaders are seemingly valid.
-    for (size_t i = 0; i < filesVS.size(); ++i)
-    {
-        const auto blob = compile(_sourceDirectory / filesVS[i].filename, "vs_4_0");
-        THROW_IF_FAILED(_device->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, compiledVS[i].addressof()));
-    }
-    for (size_t i = 0; i < filesPS.size(); ++i)
-    {
-        const auto blob = compile(_sourceDirectory / filesPS[i].filename, "ps_4_0");
-        THROW_IF_FAILED(_device->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, compiledPS[i].addressof()));
-    }
-
-    for (size_t i = 0; i < filesVS.size(); ++i)
-    {
-        this->*filesVS[i].target = std::move(compiledVS[i]);
-    }
-    for (size_t i = 0; i < filesPS.size(); ++i)
-    {
-        this->*filesPS[i].target = std::move(compiledPS[i]);
-    }
-#endif
-}
-CATCH_LOG()
-
-void BackendD3D11::_handleSettingsUpdate(const RenderingPayload& p)
+void BackendD3D::_handleSettingsUpdate(const RenderingPayload& p)
 {
     _swapChainManager.UpdateSwapChainSettings(
         p,
@@ -448,7 +372,7 @@ void BackendD3D11::_handleSettingsUpdate(const RenderingPayload& p)
     _cellCount = p.s->cellCount;
 }
 
-void BackendD3D11::_recreateCustomShader(const RenderingPayload& p)
+void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
 {
     _customRenderTargetView.reset();
     _customOffscreenTexture.reset();
@@ -579,7 +503,7 @@ void BackendD3D11::_recreateCustomShader(const RenderingPayload& p)
     }
 }
 
-void BackendD3D11::_recreateCustomRenderTargetView(u16x2 targetSize)
+void BackendD3D::_recreateCustomRenderTargetView(u16x2 targetSize)
 {
     // Avoid memory usage spikes by releasing memory first.
     _customOffscreenTexture.reset();
@@ -602,7 +526,7 @@ void BackendD3D11::_recreateCustomRenderTargetView(u16x2 targetSize)
     THROW_IF_FAILED(_device->CreateRenderTargetView(_customOffscreenTexture.get(), nullptr, _renderTargetView.addressof()));
 }
 
-void BackendD3D11::_recreateBackgroundColorBitmap(u16x2 cellCount)
+void BackendD3D::_recreateBackgroundColorBitmap(u16x2 cellCount)
 {
     // Avoid memory usage spikes by releasing memory first.
     _backgroundBitmap.reset();
@@ -622,13 +546,13 @@ void BackendD3D11::_recreateBackgroundColorBitmap(u16x2 cellCount)
     THROW_IF_FAILED(_device->CreateShaderResourceView(_backgroundBitmap.get(), nullptr, _backgroundBitmapView.addressof()));
 }
 
-void BackendD3D11::_d2dRenderTargetUpdateFontSettings(const FontSettings& font) noexcept
+void BackendD3D::_d2dRenderTargetUpdateFontSettings(const FontSettings& font) noexcept
 {
     _d2dRenderTarget->SetDpi(font.dpi, font.dpi);
     _d2dRenderTarget->SetTextAntialiasMode(static_cast<D2D1_TEXT_ANTIALIAS_MODE>(font.antialiasingMode));
 }
 
-void BackendD3D11::_recreateConstBuffer(const RenderingPayload& p)
+void BackendD3D::_recreateConstBuffer(const RenderingPayload& p)
 {
     {
         VSConstBuffer data;
@@ -647,7 +571,7 @@ void BackendD3D11::_recreateConstBuffer(const RenderingPayload& p)
     }
 }
 
-void BackendD3D11::_setupDeviceContextState(const RenderingPayload& p)
+void BackendD3D::_setupDeviceContextState(const RenderingPayload& p)
 {
     // IA: Input Assembler
     ID3D11Buffer* vertexBuffers[]{ _vertexBuffer.get(), _instanceBuffer.get() };
@@ -679,7 +603,94 @@ void BackendD3D11::_setupDeviceContextState(const RenderingPayload& p)
     _deviceContext->OMSetRenderTargets(1, _renderTargetView.addressof(), nullptr);
 }
 
-void BackendD3D11::_d2dBeginDrawing() noexcept
+#ifndef NDEBUG
+void BackendD3D::_debugUpdateShaders(const RenderingPayload& p) noexcept
+try
+{
+    const auto invalidationTime = _sourceCodeInvalidationTime.load(std::memory_order_relaxed);
+
+    if (invalidationTime == INT64_MAX || invalidationTime > std::chrono::steady_clock::now().time_since_epoch().count())
+    {
+        return;
+    }
+
+    _sourceCodeInvalidationTime.store(INT64_MAX, std::memory_order_relaxed);
+
+    static const auto compile = [](const std::filesystem::path& path, const char* target) {
+        wil::com_ptr<ID3DBlob> error;
+        wil::com_ptr<ID3DBlob> blob;
+        const auto hr = D3DCompileFromFile(
+            /* pFileName   */ path.c_str(),
+            /* pDefines    */ nullptr,
+            /* pInclude    */ D3D_COMPILE_STANDARD_FILE_INCLUDE,
+            /* pEntrypoint */ "main",
+            /* pTarget     */ target,
+            /* Flags1      */ D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR | D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_WARNINGS_ARE_ERRORS,
+            /* Flags2      */ 0,
+            /* ppCode      */ blob.addressof(),
+            /* ppErrorMsgs */ error.addressof());
+
+        if (error)
+        {
+            std::thread t{ [error = std::move(error)]() noexcept {
+                MessageBoxA(nullptr, static_cast<const char*>(error->GetBufferPointer()), "Compilation error", MB_ICONERROR | MB_OK);
+            } };
+            t.detach();
+        }
+
+        THROW_IF_FAILED(hr);
+        return blob;
+    };
+
+    struct FileVS
+    {
+        std::wstring_view filename;
+        wil::com_ptr<ID3D11VertexShader> BackendD3D::*target;
+    };
+    struct FilePS
+    {
+        std::wstring_view filename;
+        wil::com_ptr<ID3D11PixelShader> BackendD3D::*target;
+    };
+
+    static constexpr std::array filesVS{
+        FileVS{ L"shader_vs.hlsl", &BackendD3D::_vertexShader },
+    };
+    static constexpr std::array filesPS{
+        FilePS{ L"shader_ps.hlsl", &BackendD3D::_pixelShader },
+    };
+
+    std::array<wil::com_ptr<ID3D11VertexShader>, filesVS.size()> compiledVS;
+    std::array<wil::com_ptr<ID3D11PixelShader>, filesPS.size()> compiledPS;
+
+    // Compile our files before moving them into `this` below to ensure we're
+    // always in a consistent state where all shaders are seemingly valid.
+    for (size_t i = 0; i < filesVS.size(); ++i)
+    {
+        const auto blob = compile(_sourceDirectory / filesVS[i].filename, "vs_4_0");
+        THROW_IF_FAILED(_device->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, compiledVS[i].addressof()));
+    }
+    for (size_t i = 0; i < filesPS.size(); ++i)
+    {
+        const auto blob = compile(_sourceDirectory / filesPS[i].filename, "ps_4_0");
+        THROW_IF_FAILED(_device->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, compiledPS[i].addressof()));
+    }
+
+    for (size_t i = 0; i < filesVS.size(); ++i)
+    {
+        this->*filesVS[i].target = std::move(compiledVS[i]);
+    }
+    for (size_t i = 0; i < filesPS.size(); ++i)
+    {
+        this->*filesPS[i].target = std::move(compiledPS[i]);
+    }
+    
+    _setupDeviceContextState(p);
+}
+CATCH_LOG()
+#endif
+
+void BackendD3D::_d2dBeginDrawing() noexcept
 {
     if (!_d2dBeganDrawing)
     {
@@ -688,7 +699,7 @@ void BackendD3D11::_d2dBeginDrawing() noexcept
     }
 }
 
-void BackendD3D11::_d2dEndDrawing()
+void BackendD3D::_d2dEndDrawing()
 {
     if (_d2dBeganDrawing)
     {
@@ -697,7 +708,7 @@ void BackendD3D11::_d2dEndDrawing()
     }
 }
 
-void BackendD3D11::_resetGlyphAtlasAndBeginDraw(const RenderingPayload& p)
+void BackendD3D::_resetGlyphAtlasAndBeginDraw(const RenderingPayload& p)
 {
     // This block of code calculates the size of a power-of-2 texture that has an area larger than the targetSize
     // of the swap chain. In other words for a 985x1946 pixel swap chain (area = 1916810) it would result in a u/v
@@ -763,45 +774,39 @@ void BackendD3D11::_resetGlyphAtlasAndBeginDraw(const RenderingPayload& p)
 
     _glyphCache.Clear();
     _rectPackerData = Buffer<stbrp_node>{ u };
-    stbrp_init_target(&_rectPacker, u, v, _rectPackerData.data(), gsl::narrow_cast<int>(_rectPackerData.size()));
+    stbrp_init_target(&_rectPacker, u, v, _rectPackerData.data(), _rectPackerData.size());
 
     _d2dBeginDrawing();
     _d2dRenderTarget->Clear();
 }
 
-BackendD3D11::QuadInstance& BackendD3D11::_getLastQuad() noexcept
+BackendD3D::QuadInstance& BackendD3D::_getLastQuad() noexcept
 {
     assert(_instancesSize != 0);
     return _instances[_instancesSize - 1];
 }
 
-void BackendD3D11::_appendQuad(i32r position, u32 color, ShadingType shadingType)
+void BackendD3D::_appendQuad(i16x2 position, u16x2 size, u32 color, ShadingType shadingType)
 {
-    _appendQuad(position, {}, color, shadingType);
+    _appendQuad(position, size, {}, color, shadingType);
 }
 
-void BackendD3D11::_appendQuad(i32r position, i32r texcoord, u32 color, ShadingType shadingType)
+void BackendD3D::_appendQuad(i16x2 position, u16x2 size, u16x2 texcoord, u32 color, ShadingType shadingType)
 {
     if (_instancesSize >= _instances.size())
     {
         _bumpInstancesSize();
     }
 
-    static constexpr auto pack = [](i32 x, i32 y) {
-        return i16x2{ gsl::narrow_cast<i16>(x), gsl::narrow_cast<i16>(y) };
-    };
-    const i16x2 position2 = pack(position.left, position.top);
-    const i16x2 size2 = pack(position.right - position.left, position.bottom - position.top);
-    const i16x2 texcoord2 = pack(texcoord.left, texcoord.top);
-    _instances[_instancesSize++] = QuadInstance{ position2, size2, texcoord2, static_cast<u32>(shadingType), color };
+    _instances[_instancesSize++] = QuadInstance{ position, size, texcoord, static_cast<u32>(shadingType), color };
 }
 
-void BackendD3D11::_bumpInstancesSize()
+void BackendD3D::_bumpInstancesSize()
 {
     _instances = Buffer<QuadInstance>{ std::max<size_t>(1024, _instances.size() << 1) };
 }
 
-void BackendD3D11::_flushQuads(const RenderingPayload& p)
+void BackendD3D::_flushQuads(const RenderingPayload& p)
 {
     if (!_instancesSize)
     {
@@ -838,12 +843,12 @@ void BackendD3D11::_flushQuads(const RenderingPayload& p)
     //   instancing with ~10k instances appears to be about 50% faster and so DrawInstanced was chosen.
     //   Instead I found that packing instance data as tightly as possible made the biggest performance difference,
     //   and packing 16 bit integers with ID3D11InputLayout is quite a bit more convenient too.
-    _deviceContext->DrawIndexedInstanced(6, gsl::narrow_cast<UINT>(_instancesSize), 0, 0, 0);
+    _deviceContext->DrawIndexedInstanced(6, _instancesSize, 0, 0, 0);
 
     _instancesSize = 0;
 }
 
-void BackendD3D11::_recreateInstanceBuffers(const RenderingPayload& p)
+void BackendD3D::_recreateInstanceBuffers(const RenderingPayload& p)
 {
     static constexpr size_t R16max = 1 << 16;
     // While the viewport size of the terminal is probably a good initial estimate for the amount of instances we'll see,
@@ -875,7 +880,7 @@ void BackendD3D11::_recreateInstanceBuffers(const RenderingPayload& p)
     _instanceBufferSize = newInstancesSize;
 }
 
-void BackendD3D11::_drawBackground(const RenderingPayload& p)
+void BackendD3D::_drawBackground(const RenderingPayload& p)
 {
     {
         D3D11_MAPPED_SUBRESOURCE mapped{};
@@ -894,12 +899,11 @@ void BackendD3D11::_drawBackground(const RenderingPayload& p)
     // given that AGS_PRIMITIVE_TOPOLOGY_SCREENRECTLIST and AGS_PRIMITIVE_TOPOLOGY_QUADLIST exist
     // and would serve us much better. Finally, Chromium is still ~2.5x faster than us.
     {
-        const i32r rect{ 0, 0, p.s->targetSize.x, p.s->targetSize.y };
-        _appendQuad(rect, rect, 0, ShadingType::Background);
+        _appendQuad({}, p.s->targetSize, 0, ShadingType::Background);
     }
 }
 
-void BackendD3D11::_drawText(RenderingPayload& p)
+void BackendD3D::_drawText(RenderingPayload& p)
 {
     if (_resetGlyphAtlasNeeded)
     {
@@ -938,12 +942,9 @@ void BackendD3D11::_drawText(RenderingPayload& p)
                 {
                     const auto l = static_cast<i32>((cumulativeAdvance + row.glyphOffsets[x].advanceOffset) * p.d.font.pixelPerDIP + 0.5f) + entry.offset.x;
                     const auto t = static_cast<i32>((baselineY - row.glyphOffsets[x].ascenderOffset) * p.d.font.pixelPerDIP + 0.5f) + entry.offset.y;
-                    const auto w = entry.texcoord.right - entry.texcoord.left;
-                    const auto h = entry.texcoord.bottom - entry.texcoord.top;
-                    const i32r rect{ l, t, l + w, t + h };
-                    row.top = std::min(row.top, rect.top);
-                    row.bottom = std::max(row.bottom, rect.bottom);
-                    _appendQuad(rect, entry.texcoord, row.colors[x], static_cast<ShadingType>(entry.shadingType));
+                    row.top = std::min(row.top, t);
+                    row.bottom = std::max(row.bottom, t + entry.size.y);
+                    _appendQuad({ static_cast<i16>(l), static_cast<i16>(t) }, entry.size, entry.texcoord, row.colors[x], static_cast<ShadingType>(entry.shadingType));
                 }
 
                 cumulativeAdvance += row.glyphAdvances[x];
@@ -956,7 +957,7 @@ void BackendD3D11::_drawText(RenderingPayload& p)
     _d2dEndDrawing();
 }
 
-bool BackendD3D11::_drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry, f32 fontEmSize)
+bool BackendD3D::_drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry, f32 fontEmSize)
 {
     DWRITE_GLYPH_RUN glyphRun{};
     glyphRun.fontFace = entry.fontFace;
@@ -964,25 +965,27 @@ bool BackendD3D11::_drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry,
     glyphRun.glyphCount = 1;
     glyphRun.glyphIndices = &entry.glyphIndex;
 
-    auto box = GetGlyphRunBlackBox(glyphRun, 0, 0);
-    if (box.left >= box.right || box.top >= box.bottom)
+    const auto box = GetGlyphRunBlackBox(glyphRun, 0, 0);
+    if (box.empty())
     {
-        // This will indicate to BackendD3D11::_drawText that this glyph is whitespace.
+        // This will indicate to BackendD3D::_drawText that this glyph is whitespace.
         entry.shadingType = 0;
         return true;
     }
+
+    // We'll add a 1px padding on all 4 sides to avoid neighboring glyphs
+    // from overlapping, since the blackbox measurement is only an estimate.
+    // We need to use round (and not ceil/floor) to ensure we pixel-snap individual
+    // glyphs correctly and form a consistent baseline across an entire run of glyphs.
 
     const auto l = lround(box.left * p.d.font.pixelPerDIP) - 1;
     const auto t = lround(box.top * p.d.font.pixelPerDIP) - 1;
     const auto r = lround(box.right * p.d.font.pixelPerDIP) + 1;
     const auto b = lround(box.bottom * p.d.font.pixelPerDIP) + 1;
 
-    // We'll add a 1px padding on all 4 sides, by adding +2px to the width and +1px to the baseline origin.
-    // We do this to avoid neighboring glyphs from overlapping, since the blackbox measurement is only an estimate.
-
     stbrp_rect rect{};
-    rect.w = gsl::narrow_cast<int>(r - l);
-    rect.h = gsl::narrow_cast<int>(b - t);
+    rect.w = r - l;
+    rect.h = b - t;
     if (!stbrp_pack_rects(&_rectPacker, &rect, 1))
     {
         return false;
@@ -992,17 +995,17 @@ bool BackendD3D11::_drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry,
     const auto colorGlyph = DrawGlyphRun(_d2dRenderTarget.get(), _d2dRenderTarget4.get(), p.dwriteFactory4.get(), baseline, &glyphRun, _brush.get());
     const auto shadingType = colorGlyph ? ShadingType::Passthrough : (p.s->font->antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE ? ShadingType::TextClearType : ShadingType::TextGrayscale);
 
-    entry.shadingType = gsl::narrow_cast<u16>(shadingType);
-    entry.offset.x = gsl::narrow_cast<i32>(l);
-    entry.offset.y = gsl::narrow_cast<i32>(t);
-    entry.texcoord.left = rect.x;
-    entry.texcoord.top = rect.y;
-    entry.texcoord.right = rect.x + rect.w;
-    entry.texcoord.bottom = rect.y + rect.h;
+    entry.shadingType = static_cast<u16>(shadingType);
+    entry.offset.x = l;
+    entry.offset.y = t;
+    entry.size.x = rect.w;
+    entry.size.y = rect.h;
+    entry.texcoord.x = rect.x;
+    entry.texcoord.y = rect.y;
     return true;
 }
 
-void BackendD3D11::_drawGridlines(const RenderingPayload& p)
+void BackendD3D::_drawGridlines(const RenderingPayload& p)
 {
     u16 y = 0;
     for (const auto& row : p.rows)
@@ -1015,78 +1018,100 @@ void BackendD3D11::_drawGridlines(const RenderingPayload& p)
     }
 }
 
-void BackendD3D11::_drawGridlineRow(const RenderingPayload& p, const ShapedRow& row, u16 y)
+void BackendD3D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow& row, u16 y)
 {
     const auto top = p.s->font->cellSize.y * y;
-    const auto bottom = top + p.s->font->cellSize.y;
 
     for (const auto& r : row.gridLineRanges)
     {
         // AtlasEngine.cpp shouldn't add any gridlines if they don't do anything.
         assert(r.lines.any());
-
-        i32r rect{ r.from * p.s->font->cellSize.x, top, r.to * p.s->font->cellSize.x, bottom };
+        
+        const auto left = r.from * p.s->font->cellSize.x;
+        const auto width = (r.to - r.from) * p.s->font->cellSize.x;
+        i16x2 position;
+        u16x2 size;
 
         if (r.lines.test(GridLines::Left))
         {
             for (auto i = r.from; i < r.to; ++i)
             {
-                rect.left = i * p.s->font->cellSize.x;
-                rect.right = rect.left + p.s->font->thinLineWidth;
-                _appendQuad(rect, r.color, ShadingType::SolidFill);
+                position.x = i * p.s->font->cellSize.x;
+                position.y = top;
+                size.x = p.s->font->thinLineWidth;
+                size.y = p.s->font->cellSize.y;
+                _appendQuad(position, size, r.color, ShadingType::SolidFill);
             }
         }
         if (r.lines.test(GridLines::Top))
         {
-            rect.bottom = rect.top + p.s->font->thinLineWidth;
-            _appendQuad(rect, r.color, ShadingType::SolidFill);
+            position.x = left;
+            position.y = top;
+            size.x = width;
+            size.y = p.s->font->thinLineWidth;
+            _appendQuad(position, size, r.color, ShadingType::SolidFill);
         }
         if (r.lines.test(GridLines::Right))
         {
             for (auto i = r.to; i > r.from; --i)
             {
-                rect.right = i * p.s->font->cellSize.x;
-                rect.left = rect.right - p.s->font->thinLineWidth;
-                _appendQuad(rect, r.color, ShadingType::SolidFill);
+                position.x = i * p.s->font->cellSize.x;
+                position.y = top;
+                size.x = p.s->font->thinLineWidth;
+                size.y = p.s->font->cellSize.y;
+                _appendQuad(position, size, r.color, ShadingType::SolidFill);
             }
         }
         if (r.lines.test(GridLines::Bottom))
         {
-            rect.top = rect.bottom - p.s->font->thinLineWidth;
-            _appendQuad(rect, r.color, ShadingType::SolidFill);
+            position.x = left;
+            position.y = top + p.s->font->cellSize.y - p.s->font->thinLineWidth;
+            size.x = width;
+            size.y = p.s->font->thinLineWidth;
+            _appendQuad(position, size, r.color, ShadingType::SolidFill);
         }
         if (r.lines.test(GridLines::Underline))
         {
-            rect.top += p.s->font->underlinePos;
-            rect.bottom = rect.top + p.s->font->underlineWidth;
-            _appendQuad(rect, r.color, ShadingType::SolidFill);
+            position.x = left;
+            position.y = top + p.s->font->underlinePos;
+            size.x = width;
+            size.y = p.s->font->underlineWidth;
+            _appendQuad(position, size, r.color, ShadingType::SolidFill);
         }
         if (r.lines.test(GridLines::HyperlinkUnderline))
         {
-            rect.top += p.s->font->underlinePos;
-            rect.bottom = rect.top + p.s->font->underlineWidth;
-            _appendQuad(rect, r.color, ShadingType::DashedLine);
+            position.x = left;
+            position.y = top + p.s->font->underlinePos;
+            size.x = width;
+            size.y = p.s->font->underlineWidth;
+            _appendQuad(position, size, r.color, ShadingType::DashedLine);
         }
         if (r.lines.test(GridLines::DoubleUnderline))
         {
-            rect.top = top + p.s->font->doubleUnderlinePos.x;
-            rect.bottom = rect.top + p.s->font->thinLineWidth;
-            _appendQuad(rect, r.color, ShadingType::SolidFill);
+            position.x = left;
+            position.y = top + p.s->font->doubleUnderlinePos.x;
+            size.x = width;
+            size.y = p.s->font->thinLineWidth;
+            _appendQuad(position, size, r.color, ShadingType::SolidFill);
 
-            rect.top = top + p.s->font->doubleUnderlinePos.y;
-            rect.bottom = rect.top + p.s->font->thinLineWidth;
-            _appendQuad(rect, r.color, ShadingType::SolidFill);
+            position.x = left;
+            position.y = top + p.s->font->doubleUnderlinePos.y;
+            size.x = width;
+            size.y = p.s->font->thinLineWidth;
+            _appendQuad(position, size, r.color, ShadingType::SolidFill);
         }
         if (r.lines.test(GridLines::Strikethrough))
         {
-            rect.top = top + p.s->font->strikethroughPos;
-            rect.bottom = rect.top + p.s->font->strikethroughWidth;
-            _appendQuad(rect, r.color, ShadingType::SolidFill);
+            position.x = left;
+            position.y = top + p.s->font->strikethroughPos;
+            size.x = width;
+            size.y = p.s->font->strikethroughWidth;
+            _appendQuad(position, size, r.color, ShadingType::SolidFill);
         }
     }
 }
 
-void BackendD3D11::_drawCursorPart1(const RenderingPayload& p)
+void BackendD3D::_drawCursorPart1(const RenderingPayload& p)
 {
     _cursorRects.clear();
     if (!p.cursorRect)
@@ -1094,8 +1119,8 @@ void BackendD3D11::_drawCursorPart1(const RenderingPayload& p)
         return;
     }
 
-    const auto color = p.s->cursor->cursorColor;
-    const auto offset = gsl::narrow_cast<size_t>(p.cursorRect.top * p.s->cellCount.x);
+    const auto cursorColor = p.s->cursor->cursorColor;
+    const auto offset = p.cursorRect.top * static_cast<size_t>(p.s->cellCount.x);
 
     for (auto x1 = p.cursorRect.left; x1 < p.cursorRect.right; ++x1)
     {
@@ -1106,27 +1131,32 @@ void BackendD3D11::_drawCursorPart1(const RenderingPayload& p)
         {
         }
 
-        auto& c0 = _cursorRects.emplace_back(CursorRect{
-            i32r{
-                p.s->font->cellSize.x * x0,
-                p.s->font->cellSize.y * p.cursorRect.top,
-                p.s->font->cellSize.x * x1,
-                p.s->font->cellSize.y * p.cursorRect.bottom,
-            },
-            color == 0xffffffff ? bg ^ 0x3f3f3f : color,
-        });
+        const i16x2 position{
+            p.s->font->cellSize.x * x0,
+            p.s->font->cellSize.y * p.cursorRect.top,
+        };
+        const u16x2 size{
+            static_cast<u16>(p.s->font->cellSize.x * (x1 - x0)),
+            p.s->font->cellSize.y,
+        };
+        const auto color = cursorColor == 0xffffffff ? bg ^ 0x3f3f3f : cursorColor;
+        auto& c0 = _cursorRects.emplace_back(CursorRect{ position, size, color });
 
         switch (static_cast<CursorType>(p.s->cursor->cursorType))
         {
         case CursorType::Legacy:
-            c0.rect.top = c0.rect.bottom - ((c0.rect.bottom - c0.rect.top) * p.s->cursor->heightPercentage + 50) / 100;
+        {
+            const auto height = (c0.size.y * p.s->cursor->heightPercentage + 50) / 100;
+            c0.position.y += c0.size.y - height;
+            c0.size.y = height;
             break;
+        }
         case CursorType::VerticalBar:
-            c0.rect.right = c0.rect.left + p.s->font->thinLineWidth;
+            c0.size.x = p.s->font->thinLineWidth;
             break;
         case CursorType::Underscore:
-            c0.rect.top += p.s->font->underlinePos;
-            c0.rect.bottom = c0.rect.top + p.s->font->underlineWidth;
+            c0.position.y += p.s->font->underlinePos;
+            c0.size.y = p.s->font->underlineWidth;
             break;
         case CursorType::EmptyBox:
         {
@@ -1134,19 +1164,25 @@ void BackendD3D11::_drawCursorPart1(const RenderingPayload& p)
             if (x0 == p.cursorRect.left)
             {
                 auto& c = _cursorRects.emplace_back(c0);
-                c.rect.top += p.s->font->thinLineWidth;
-                c.rect.bottom -= p.s->font->thinLineWidth;
-                c.rect.right = c.rect.left + p.s->font->thinLineWidth;
+                // Make line a little shorter vertically so it doesn't overlap with the top/bottom horizontal lines.
+                c.position.y += p.s->font->thinLineWidth;
+                c.size.y -= 2 * p.s->font->thinLineWidth;
+                // The actual adjustment...
+                c.size.x = p.s->font->thinLineWidth;
             }
             if (x1 == p.cursorRect.right)
             {
                 auto& c = _cursorRects.emplace_back(c0);
-                c.rect.top += p.s->font->thinLineWidth;
-                c.rect.bottom -= p.s->font->thinLineWidth;
-                c.rect.left = c.rect.right - p.s->font->thinLineWidth;
+                // Make line a little shorter vertically so it doesn't overlap with the top/bottom horizontal lines.
+                c.position.y += p.s->font->thinLineWidth;
+                c.size.y -= 2 * p.s->font->thinLineWidth;
+                // The actual adjustment...
+                c.position.x += c.size.x - p.s->font->thinLineWidth;
+                c.size.x = p.s->font->thinLineWidth;
             }
-            c0.rect.bottom = c0.rect.top + p.s->font->thinLineWidth;
-            c1.rect.top = c1.rect.bottom - p.s->font->thinLineWidth;
+            c0.size.y = p.s->font->thinLineWidth;
+            c1.position.y += c1.size.y - p.s->font->thinLineWidth;
+            c1.size.y = p.s->font->thinLineWidth;
             break;
         }
         case CursorType::FullBox:
@@ -1154,10 +1190,10 @@ void BackendD3D11::_drawCursorPart1(const RenderingPayload& p)
         case CursorType::DoubleUnderscore:
         {
             auto& c1 = _cursorRects.emplace_back(c0);
-            c0.rect.top += p.s->font->doubleUnderlinePos.x;
-            c0.rect.bottom = c0.rect.top + p.s->font->thinLineWidth;
-            c1.rect.top += p.s->font->doubleUnderlinePos.y;
-            c1.rect.bottom = c1.rect.top + p.s->font->thinLineWidth;
+            c0.position.y += p.s->font->doubleUnderlinePos.x;
+            c0.size.y = p.s->font->thinLineWidth;
+            c1.position.y += p.s->font->doubleUnderlinePos.y;
+            c1.size.y = p.s->font->thinLineWidth;
             break;
         }
         default:
@@ -1165,17 +1201,17 @@ void BackendD3D11::_drawCursorPart1(const RenderingPayload& p)
         }
     }
 
-    if (color == 0xffffffff)
+    if (cursorColor == 0xffffffff)
     {
         for (auto& c : _cursorRects)
         {
-            _appendQuad(c.rect, c.color, ShadingType::SolidFill);
+            _appendQuad(c.position, c.size, c.color, ShadingType::SolidFill);
             c.color = 0xffffffff;
         }
     }
 }
 
-void BackendD3D11::_drawCursorPart2(const RenderingPayload& p)
+void BackendD3D::_drawCursorPart2(const RenderingPayload& p)
 {
     if (!p.cursorRect)
     {
@@ -1192,7 +1228,7 @@ void BackendD3D11::_drawCursorPart2(const RenderingPayload& p)
 
     for (const auto& c : _cursorRects)
     {
-        _appendQuad(c.rect, c.color, ShadingType::SolidFill);
+        _appendQuad(c.position, c.size, c.color, ShadingType::SolidFill);
     }
 
     if (color == 0xffffffff)
@@ -1202,7 +1238,7 @@ void BackendD3D11::_drawCursorPart2(const RenderingPayload& p)
     }
 }
 
-void BackendD3D11::_drawSelection(const RenderingPayload& p)
+void BackendD3D::_drawSelection(const RenderingPayload& p)
 {
     u16 y = 0;
     u16 lastFrom = 0;
@@ -1220,13 +1256,15 @@ void BackendD3D11::_drawSelection(const RenderingPayload& p)
             }
             else
             {
-                const i32r rect{
+                const i16x2 position{
                     p.s->font->cellSize.x * row.selectionFrom,
                     p.s->font->cellSize.y * y,
-                    p.s->font->cellSize.x * row.selectionTo,
-                    p.s->font->cellSize.y * (y + 1),
                 };
-                _appendQuad(rect, p.s->misc->selectionColor, ShadingType::SolidFill);
+                const u16x2 size{
+                    (p.s->font->cellSize.x * (row.selectionTo - row.selectionFrom)),
+                    p.s->font->cellSize.y,
+                };
+                _appendQuad(position, size, p.s->misc->selectionColor, ShadingType::SolidFill);
                 lastFrom = row.selectionFrom;
                 lastTo = row.selectionTo;
             }
@@ -1236,7 +1274,7 @@ void BackendD3D11::_drawSelection(const RenderingPayload& p)
     }
 }
 
-void BackendD3D11::_executeCustomShader(RenderingPayload& p)
+void BackendD3D::_executeCustomShader(RenderingPayload& p)
 {
     {
         CustomConstBuffer data;

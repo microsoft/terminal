@@ -113,8 +113,8 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
         };
         const D2D1_SIZE_U size{ p.s->cellCount.x, p.s->cellCount.y };
         const D2D1_MATRIX_3X2_F transform{
-            ._11 = static_cast<f32>(p.s->font->cellSize.x),
-            ._22 = static_cast<f32>(p.s->font->cellSize.y),
+            .m11 = static_cast<f32>(p.s->font->cellSize.x),
+            .m22 = static_cast<f32>(p.s->font->cellSize.y),
         };
         THROW_IF_FAILED(_renderTarget->CreateBitmap(size, nullptr, 0, &props, _backgroundBitmap.put()));
         THROW_IF_FAILED(_renderTarget->CreateBitmapBrush(_backgroundBitmap.get(), _backgroundBrush.put()));
@@ -206,78 +206,116 @@ void BackendD2D::_drawGridlines(const RenderingPayload& p)
     u16 y = 0;
     for (const auto& row : p.rows)
     {
-        const auto top = p.d.font.cellSizeDIP.y * y;
-        const auto bottom = p.d.font.cellSizeDIP.y * (y + 1);
-
-        for (const auto& r : row.gridLineRanges)
+        if (!row.gridLineRanges.empty())
         {
-            // AtlasEngine.cpp shouldn't add any gridlines if they don't do anything.
-            assert(r.lines.any());
+            _drawGridlineRow(p, row, y);
+        }
+        y++;
+    }
+}
 
-            D2D1_RECT_F rect{ r.from * p.d.font.cellSizeDIP.x, top, r.to * p.d.font.cellSizeDIP.x, bottom };
+void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow& row, u16 y)
+{
+    const auto columnToDIP = [&](til::CoordType i) {
+        return i * p.d.font.cellSizeDIP.x;
+    };
+    const auto rowToDIP = [&](til::CoordType i) {
+        return i * p.d.font.cellSizeDIP.y;
+    };
+    const auto pxToDIP = [&](til::CoordType i) {
+        return i * p.d.font.dipPerPixel;
+    };
+    
+    const auto top = rowToDIP(y);
+    const auto bottom = top + p.d.font.cellSizeDIP.y;
+    const auto thinLineWidth = pxToDIP(p.s->font->thinLineWidth);
 
-            if (r.lines.test(GridLines::Left))
-            {
-                for (auto i = r.from; i < r.to; ++i)
-                {
-                    rect.left = i * p.d.font.cellSizeDIP.x;
-                    rect.right = rect.left + p.s->font->thinLineWidth * p.d.font.dipPerPixel;
-                    _fillRectangle(rect, r.color);
-                }
-            }
-            if (r.lines.test(GridLines::Top))
-            {
-                rect.bottom = rect.top + p.s->font->thinLineWidth * p.d.font.dipPerPixel;
-                _fillRectangle(rect, r.color);
-            }
-            if (r.lines.test(GridLines::Right))
-            {
-                for (auto i = r.to; i > r.from; --i)
-                {
-                    rect.right = i * p.d.font.cellSizeDIP.x;
-                    rect.left = rect.right - p.s->font->thinLineWidth * p.d.font.dipPerPixel;
-                    _fillRectangle(rect, r.color);
-                }
-            }
-            if (r.lines.test(GridLines::Bottom))
-            {
-                rect.top = rect.bottom - p.s->font->thinLineWidth * p.d.font.dipPerPixel;
-                _fillRectangle(rect, r.color);
-            }
-            if (r.lines.test(GridLines::Underline))
-            {
-                rect.top += p.s->font->underlinePos * p.d.font.dipPerPixel;
-                rect.bottom = rect.top + p.s->font->underlineWidth * p.d.font.dipPerPixel;
-                _fillRectangle(rect, r.color);
-            }
-            if (r.lines.test(GridLines::HyperlinkUnderline))
-            {
-                const auto w = p.s->font->underlineWidth * p.d.font.dipPerPixel;
-                const auto centerY = rect.top + p.s->font->underlinePos * p.d.font.dipPerPixel + w * 0.5f;
-                const auto brush = _brushWithColor(r.color);
-                const D2D1_POINT_2F point0{ rect.left, centerY };
-                const D2D1_POINT_2F point1{ rect.right, centerY };
-                _renderTarget->DrawLine(point0, point1, brush, w, _dottedStrokeStyle.get());
-            }
-            if (r.lines.test(GridLines::DoubleUnderline))
-            {
-                rect.top = top + p.s->font->doubleUnderlinePos.x * p.d.font.dipPerPixel;
-                rect.bottom = rect.top + p.s->font->thinLineWidth * p.d.font.dipPerPixel;
-                _fillRectangle(rect, r.color);
+    for (const auto& r : row.gridLineRanges)
+    {
+        // AtlasEngine.cpp shouldn't add any gridlines if they don't do anything.
+        assert(r.lines.any());
 
-                rect.top = top + p.s->font->doubleUnderlinePos.y * p.d.font.dipPerPixel;
-                rect.bottom = rect.top + p.s->font->thinLineWidth * p.d.font.dipPerPixel;
-                _fillRectangle(rect, r.color);
-            }
-            if (r.lines.test(GridLines::Strikethrough))
+        const auto left = columnToDIP(r.from);
+        const auto right = columnToDIP(r.to);
+        D2D1_RECT_F rect{};
+
+        if (r.lines.test(GridLines::Left))
+        {
+            rect.top = top;
+            rect.bottom = bottom;
+            for (auto i = r.from; i < r.to; ++i)
             {
-                rect.top = top + p.s->font->strikethroughPos * p.d.font.dipPerPixel;
-                rect.bottom = rect.top + p.s->font->strikethroughWidth * p.d.font.dipPerPixel;
+                rect.left = columnToDIP(i);
+                rect.right = rect.left + thinLineWidth;
                 _fillRectangle(rect, r.color);
             }
         }
+        if (r.lines.test(GridLines::Top))
+        {
+            rect.left = left;
+            rect.top = top;
+            rect.right = right;
+            rect.bottom = rect.top + thinLineWidth;
+            _fillRectangle(rect, r.color);
+        }
+        if (r.lines.test(GridLines::Right))
+        {
+            rect.top = top;
+            rect.bottom = bottom;
+            for (auto i = r.to; i > r.from; --i)
+            {
+                rect.right = columnToDIP(i);
+                rect.left = rect.right - thinLineWidth;
+                _fillRectangle(rect, r.color);
+            }
+        }
+        if (r.lines.test(GridLines::Bottom))
+        {
+            rect.left = left;
+            rect.top = bottom - thinLineWidth;
+            rect.right = right;
+            rect.bottom = bottom;
+            _fillRectangle(rect, r.color);
+        }
+        if (r.lines.test(GridLines::Underline))
+        {
+            rect.left = left;
+            rect.top = top + pxToDIP(p.s->font->underlinePos);
+            rect.right = right;
+            rect.bottom = rect.top + pxToDIP(p.s->font->underlineWidth);
+            _fillRectangle(rect, r.color);
+        }
+        if (r.lines.test(GridLines::HyperlinkUnderline))
+        {
+            const auto w = pxToDIP(p.s->font->underlineWidth);
+            const auto centerY = top + pxToDIP(p.s->font->underlinePos) + w * 0.5f;
+            const auto brush = _brushWithColor(r.color);
+            const D2D1_POINT_2F point0{ left, centerY };
+            const D2D1_POINT_2F point1{ right, centerY };
+            _renderTarget->DrawLine(point0, point1, brush, w, _dottedStrokeStyle.get());
+        }
+        if (r.lines.test(GridLines::DoubleUnderline))
+        {
+            rect.left = left;
+            rect.top = top + pxToDIP(p.s->font->doubleUnderlinePos.x);
+            rect.right = right;
+            rect.bottom = rect.top + thinLineWidth;
+            _fillRectangle(rect, r.color);
 
-        y++;
+            rect.left = left;
+            rect.top = top + pxToDIP(p.s->font->doubleUnderlinePos.y);
+            rect.right = right;
+            rect.bottom = rect.top + thinLineWidth;
+            _fillRectangle(rect, r.color);
+        }
+        if (r.lines.test(GridLines::Strikethrough))
+        {
+            rect.left = left;
+            rect.top = top + pxToDIP(p.s->font->strikethroughPos);
+            rect.right = right;
+            rect.bottom = rect.top + pxToDIP(p.s->font->strikethroughWidth);
+            _fillRectangle(rect, r.color);
+        }
     }
 }
 

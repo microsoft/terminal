@@ -7,9 +7,9 @@
 
 namespace Microsoft::Console::Render::Atlas
 {
-    struct BackendD3D11 : IBackend
+    struct BackendD3D : IBackend
     {
-        BackendD3D11(wil::com_ptr<ID3D11Device2> device, wil::com_ptr<ID3D11DeviceContext2> deviceContext);
+        BackendD3D(wil::com_ptr<ID3D11Device2> device, wil::com_ptr<ID3D11DeviceContext2> deviceContext);
 
         void Render(RenderingPayload& payload) override;
         bool RequiresContinuousRedraw() noexcept override;
@@ -52,7 +52,7 @@ namespace Microsoft::Console::Render::Atlas
 #pragma warning(suppress : 4324) // 'CustomConstBuffer': structure was padded due to alignment specifier
         };
 
-        enum class ShadingType
+        enum class ShadingType : u32
         {
             Background = 0,
             TextGrayscale,
@@ -64,9 +64,14 @@ namespace Microsoft::Console::Render::Atlas
 
         struct QuadInstance
         {
+            // `position` might clip outside of the bounds of the viewport and so it needs to be a
+            // signed coordinate. i16x2 is used as the size of the instance buffer made the largest
+            // impact on performance and power draw. If (when?) displays with >32k resolution make their
+            // appearance in the future, this should be changed to f32x2. But if you do so, please change
+            // all other occurrences of i16x2 positions/offsets throughout the class to keep it consistent.
             alignas(sizeof(i16x2)) i16x2 position;
-            alignas(sizeof(i16x2)) i16x2 size;
-            alignas(sizeof(i16x2)) i16x2 texcoord;
+            alignas(sizeof(i16x2)) u16x2 size;
+            alignas(sizeof(i16x2)) u16x2 texcoord;
             alignas(sizeof(u32)) u32 shadingType = 0;
             alignas(sizeof(u32)) u32 color = 0;
         };
@@ -79,10 +84,10 @@ namespace Microsoft::Console::Render::Atlas
             IDWriteFontFace* fontFace = nullptr;
             u16 glyphIndex = 0;
             u16 shadingType = 0;
-            i32x2 offset;
-            i32r texcoord;
+            i16x2 offset;
+            u16x2 size;
+            u16x2 texcoord;
         };
-        static_assert(sizeof(GlyphCacheEntry) == 40);
 
         struct GlyphCacheMap
         {
@@ -111,7 +116,6 @@ namespace Microsoft::Console::Render::Atlas
             size_t _size = 0;
         };
 
-        void _debugUpdateShaders() noexcept;
         __declspec(noinline) void _handleSettingsUpdate(const RenderingPayload& p);
         void _recreateCustomShader(const RenderingPayload& p);
         void _recreateCustomRenderTargetView(u16x2 targetSize);
@@ -119,12 +123,13 @@ namespace Microsoft::Console::Render::Atlas
         void _recreateBackgroundColorBitmap(u16x2 cellCount);
         void _recreateConstBuffer(const RenderingPayload& p);
         void _setupDeviceContextState(const RenderingPayload& p);
+        void _debugUpdateShaders(const RenderingPayload& p) noexcept;
         void _d2dBeginDrawing() noexcept;
         void _d2dEndDrawing();
         void _resetGlyphAtlasAndBeginDraw(const RenderingPayload& p);
         QuadInstance& _getLastQuad() noexcept;
-        void _appendQuad(i32r position, u32 color, ShadingType shadingType);
-        void _appendQuad(i32r position, i32r texcoord, u32 color, ShadingType shadingType);
+        void _appendQuad(i16x2 position, u16x2 size, u32 color, ShadingType shadingType);
+        void _appendQuad(i16x2 position, u16x2 size, u16x2 texcoord, u32 color, ShadingType shadingType);
         __declspec(noinline) void _bumpInstancesSize();
         void _flushQuads(const RenderingPayload& p);
         __declspec(noinline) void _recreateInstanceBuffers(const RenderingPayload& p);
@@ -197,7 +202,8 @@ namespace Microsoft::Console::Render::Atlas
         // background colors on each side results in 6 lines being drawn.
         struct CursorRect
         {
-            i32r rect;
+            i16x2 position;
+            u16x2 size;
             u32 color = 0;
         };
         til::small_vector<CursorRect, 6> _cursorRects;

@@ -9,26 +9,6 @@
 
 namespace Microsoft::Console::Render::Atlas
 {
-#define ATLAS_POD_OPS(type)                                           \
-    constexpr auto operator<=>(const type&) const noexcept = default; \
-                                                                      \
-    constexpr bool operator==(const type& rhs) const noexcept         \
-    {                                                                 \
-        if constexpr (std::has_unique_object_representations_v<type>) \
-        {                                                             \
-            return __builtin_memcmp(this, &rhs, sizeof(rhs)) == 0;    \
-        }                                                             \
-        else                                                          \
-        {                                                             \
-            return std::is_eq(*this <=> rhs);                         \
-        }                                                             \
-    }                                                                 \
-                                                                      \
-    constexpr bool operator!=(const type& rhs) const noexcept         \
-    {                                                                 \
-        return !(*this == rhs);                                       \
-    }
-
 #define ATLAS_FLAG_OPS(type, underlying)                                                       \
     friend constexpr type operator~(type v) noexcept                                           \
     {                                                                                          \
@@ -57,6 +37,19 @@ namespace Microsoft::Console::Render::Atlas
     friend constexpr void operator^=(type& lhs, type rhs) noexcept                             \
     {                                                                                          \
         lhs = lhs ^ rhs;                                                                       \
+    }
+
+#define ATLAS_POD_OPS(type)                                           \
+    constexpr auto operator<=>(const type&) const noexcept = default; \
+                                                                      \
+    constexpr bool operator==(const type& rhs) const noexcept         \
+    {                                                                 \
+        return __builtin_memcmp(this, &rhs, sizeof(rhs)) == 0;        \
+    }                                                                 \
+                                                                      \
+    constexpr bool operator!=(const type& rhs) const noexcept         \
+    {                                                                 \
+        return !(*this == rhs);                                       \
     }
 
     template<typename T>
@@ -89,9 +82,14 @@ namespace Microsoft::Console::Render::Atlas
 
         ATLAS_POD_OPS(rect)
 
+        constexpr bool empty() const noexcept
+        {
+            return (left >= right) || (top >= bottom);
+        }
+
         constexpr bool non_empty() const noexcept
         {
-            return (left < right) & (top < bottom);
+            return (left < right) && (top < bottom);
         }
     };
 
@@ -320,17 +318,6 @@ namespace Microsoft::Console::Render::Atlas
 
     struct Settings
     {
-        static auto invalidated() noexcept
-        {
-            return til::generational<Settings>{
-                til::generation_t{ 1 },
-                til::generational<TargetSettings>{ til::generation_t{ 1 } },
-                til::generational<FontSettings>{ til::generation_t{ 1 } },
-                til::generational<CursorSettings>{ til::generation_t{ 1 } },
-                til::generational<MiscellaneousSettings>{ til::generation_t{ 1 } },
-            };
-        }
-
         til::generational<TargetSettings> target;
         til::generational<FontSettings> font;
         til::generational<CursorSettings> cursor;

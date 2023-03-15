@@ -5,7 +5,7 @@
 #include "AtlasEngine.h"
 
 #include "BackendD2D.h"
-#include "BackendD3D11.h"
+#include "BackendD3D.h"
 
 // #### NOTE ####
 // If you see any code in here that contains "_api." you might be seeing a race condition.
@@ -98,7 +98,7 @@ void AtlasEngine::_recreateBackend()
             static constexpr GUID dxgiDebugAll{ 0xe48ae283, 0xda80, 0x490b, { 0x87, 0xe6, 0x43, 0xe9, 0xa9, 0xcf, 0xda, 0x8 } };
             for (const auto severity : { DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_WARNING, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_INFO })
             {
-                infoQueue->SetBreakOnSeverity(dxgiDebugAll, severity, true);
+                LOG_IF_FAILED(infoQueue->SetBreakOnSeverity(dxgiDebugAll, severity, true));
             }
         }
     }
@@ -110,7 +110,7 @@ void AtlasEngine::_recreateBackend()
     {
         if (const auto func = GetProcAddressByFunctionDeclaration(module, DXGIDeclareAdapterRemovalSupport))
         {
-            func();
+            LOG_IF_FAILED(func());
         }
     }
 
@@ -137,34 +137,30 @@ void AtlasEngine::_recreateBackend()
                        | D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 
     wil::com_ptr<IDXGIAdapter1> dxgiAdapter;
-    THROW_IF_FAILED(_p.dxgiFactory->EnumAdapters1(0, dxgiAdapter.addressof()));
-
     {
-        auto findSoftwareAdapter = _p.s->target->useSoftwareRendering;
-        auto adapter = dxgiAdapter;
-        UINT i = 0;
+        const auto useSoftwareRendering = _p.s->target->useSoftwareRendering;
+        DXGI_ADAPTER_DESC1 desc{};
+        UINT index = 0;
 
-        for (;;)
+        do
         {
-            DXGI_ADAPTER_DESC1 desc;
-            THROW_IF_FAILED(adapter->GetDesc1(&desc));
+            THROW_IF_FAILED(_p.dxgiFactory->EnumAdapters1(index++, dxgiAdapter.put()));
+            THROW_IF_FAILED(dxgiAdapter->GetDesc1(&desc));
 
-            // Switch to D2D mode if any adapter is a remote adapter (RDP).
-            d2dMode |= WI_IsFlagSet(desc.Flags, DXGI_ADAPTER_FLAG_REMOTE);
+            
 
-            // If useSoftwareRendering is true we search for the first WARP adapter.
-            if (findSoftwareAdapter && WI_IsFlagSet(desc.Flags, DXGI_ADAPTER_FLAG_SOFTWARE))
-            {
-                WI_ClearFlag(deviceFlags, D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS);
-                dxgiAdapter = std::move(adapter);
-                findSoftwareAdapter = false;
-            }
+            // If useSoftwareRendering is false we exit during the first iteration. Using the default adapter (index 0)
+            // is the right thing to do under most circumstances, unless you _really_ want to get your hands dirty.
+            // The alternative is to track the window rectangle in respect to all IDXGIOutputs and select the right
+            // IDXGIAdapter, while also considering the "graphics preference" override in the windows settings app, etc.
+            //
+            // If useSoftwareRendering is true we search until we find the first WARP adapter (usually the last adapter).
+        } while (useSoftwareRendering && WI_IsFlagClear(desc.Flags, DXGI_ADAPTER_FLAG_SOFTWARE));
 
-            ++i;
-            if (_p.dxgiFactory->EnumAdapters1(i, adapter.put()) == DXGI_ERROR_NOT_FOUND)
-            {
-                break;
-            }
+        if (WI_IsFlagSet(desc.Flags, DXGI_ADAPTER_FLAG_SOFTWARE))
+        {
+            WI_ClearFlag(deviceFlags, D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS);
+            d2dMode = true;
         }
     }
 
@@ -204,7 +200,7 @@ void AtlasEngine::_recreateBackend()
         {
             for (const auto severity : { D3D11_MESSAGE_SEVERITY_CORRUPTION, D3D11_MESSAGE_SEVERITY_ERROR, D3D11_MESSAGE_SEVERITY_WARNING, D3D11_MESSAGE_SEVERITY_INFO })
             {
-                d3dInfoQueue->SetBreakOnSeverity(severity, true);
+                LOG_IF_FAILED(d3dInfoQueue->SetBreakOnSeverity(severity, true));
             }
         }
     }
@@ -228,6 +224,6 @@ void AtlasEngine::_recreateBackend()
     }
     else
     {
-        _b = std::make_unique<BackendD3D11>(std::move(device), std::move(deviceContext));
+        _b = std::make_unique<BackendD3D>(std::move(device), std::move(deviceContext));
     }
 }

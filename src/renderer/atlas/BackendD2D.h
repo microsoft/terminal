@@ -17,6 +17,7 @@ namespace Microsoft::Console::Render::Atlas
         void _drawBackground(const RenderingPayload& p) noexcept;
         void _drawText(RenderingPayload& p);
         void _drawGridlines(const RenderingPayload& p);
+        void _drawGridlineRow(const RenderingPayload& p, const ShapedRow& row, u16 y);
         void _drawCursor(const RenderingPayload& p);
         void _drawSelection(const RenderingPayload& p);
         ID2D1Brush* _brushWithColor(u32 color);

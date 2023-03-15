@@ -25,39 +25,40 @@ void SwapChainManager::Present(const RenderingPayload& p)
 {
     const til::rect fullRect{ 0, 0, p.s->cellCount.x, p.s->cellCount.y };
 
+    DXGI_PRESENT_PARAMETERS params{};
+    RECT dirtyRect{};
+    RECT scrollRect{};
+    POINT scrollOffset{};
+
     if (p.dirtyRect != fullRect)
     {
-        auto dirtyRectInPx = p.dirtyRect;
-        dirtyRectInPx.left *= p.s->font->cellSize.x;
-        dirtyRectInPx.top *= p.s->font->cellSize.y;
-        dirtyRectInPx.right *= p.s->font->cellSize.x;
-        dirtyRectInPx.bottom *= p.s->font->cellSize.y;
+        dirtyRect = p.dirtyRect.to_win32_rect();
+        dirtyRect.left *= p.s->font->cellSize.x;
+        dirtyRect.top *= p.s->font->cellSize.y;
+        dirtyRect.right *= p.s->font->cellSize.x;
+        dirtyRect.bottom *= p.s->font->cellSize.y;
 
-        // This block will enlarge the dirtyRectInPx to handle glyphs that overlap their rows.
+        // This block will enlarge the dirtyRect to handle glyphs that overlap their rows vertically.
         const auto actualDirtyTop = gsl::at(p.rows, p.dirtyRect.top).top;
         const auto actualDirtyBottom = gsl::at(p.rows, gsl::narrow_cast<size_t>(p.dirtyRect.bottom) - 1).bottom;
         // Since rows might be taller than their cells, they might have drawn outside of the viewport.
         // FYI using std::clamp() here would be dangerous. If std::clamp() is given a "min" that is greater
         // than "max" it'll return min, but our calculation of .bottom wants to do the exact opposite.
-        dirtyRectInPx.top = std::max(std::min(dirtyRectInPx.top, actualDirtyTop), 0);
-        dirtyRectInPx.bottom = std::min(std::max(dirtyRectInPx.bottom, actualDirtyBottom), static_cast<til::CoordType>(_targetSize.y));
+        dirtyRect.top = std::max(std::min(dirtyRect.top, LONG{ actualDirtyTop }), 0l);
+        dirtyRect.bottom = std::min(std::max(dirtyRect.bottom, LONG{ actualDirtyBottom }), LONG{ _targetSize.y });
         // The swap chain might have a different size than the TextBuffer (due to the renderer running asynchronously) and so
         // we have to ensure to clamp the bottom/right coordinates into _targetSize. The above already did so for bottom.
-        dirtyRectInPx.right = std::min(dirtyRectInPx.right, static_cast<til::CoordType>(_targetSize.x));
+        dirtyRect.right = std::min(dirtyRect.right, LONG{ _targetSize.x });
 
         // If a row of text has been changed, it's width will equal the full rect. In that case we should
         // also redraw the margin on the right, as overlapping glyphs might have previously drawn into it.
         if (p.dirtyRect.left == fullRect.left && p.dirtyRect.right == fullRect.right)
         {
-            dirtyRectInPx.right = _targetSize.x;
+            dirtyRect.right = _targetSize.x;
         }
 
-        RECT scrollRect{};
-        POINT scrollOffset{};
-        DXGI_PRESENT_PARAMETERS params{
-            .DirtyRectsCount = 1,
-            .pDirtyRects = dirtyRectInPx.as_win32_rect(),
-        };
+        params.DirtyRectsCount = 1;
+        params.pDirtyRects = &dirtyRect;
 
         if (p.scrollOffset)
         {
@@ -73,14 +74,9 @@ void SwapChainManager::Present(const RenderingPayload& p)
             params.pScrollRect = &scrollRect;
             params.pScrollOffset = &scrollOffset;
         }
-
-        THROW_IF_FAILED(_swapChain->Present1(1, 0, &params));
-    }
-    else
-    {
-        THROW_IF_FAILED(_swapChain->Present(1, 0));
     }
 
+    THROW_IF_FAILED(_swapChain->Present1(1, 0, &params));
     _waitForPresentation = true;
 }
 

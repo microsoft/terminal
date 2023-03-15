@@ -10,14 +10,12 @@
 #define SHADING_TYPE_SOLID_FILL         5
 // clang-format on
 
-// Structured Buffers are tightly packed. Nvidia recommends padding them to avoid crossing 128-bit
-// cache lines: https://developer.nvidia.com/content/understanding-structured-buffer-performance
 struct VSData
 {
     float2 vertex : SV_Position;
     int2 position : position;
-    int2 size : size;
-    int2 texcoord : texcoord;
+    uint2 size : size;
+    uint2 texcoord : texcoord;
     uint shadingType : shadingType;
     float4 color : color;
 };
