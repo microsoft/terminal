@@ -228,9 +228,6 @@ namespace winrt::TerminalApp::implementation
         // Hookup our event handlers to the ShortcutActionDispatch
         _RegisterActionCallbacks();
 
-        // Hook up inbound connection event handler
-        ConptyConnection::NewConnection({ this, &TerminalPage::_OnNewConnection });
-
         //Event Bindings (Early)
         _newTabButton.Click([weakThis{ get_weak() }](auto&&, auto&&) {
             if (auto page{ weakThis.get() })
@@ -518,6 +515,9 @@ namespace winrt::TerminalApp::implementation
         if (_shouldStartInboundListener)
         {
             _shouldStartInboundListener = false;
+
+            // Hook up inbound connection event handler
+            _newConnectionRevoker = ConptyConnection::NewConnection(winrt::auto_revoke, { this, &TerminalPage::_OnNewConnection });
 
             try
             {
@@ -3326,6 +3326,8 @@ namespace winrt::TerminalApp::implementation
 
     HRESULT TerminalPage::_OnNewConnection(const ConptyConnection& connection)
     {
+        _newConnectionRevoker.revoke();
+
         // We need to be on the UI thread in order for _OpenNewTab to run successfully.
         // HasThreadAccess will return true if we're currently on a UI thread and false otherwise.
         // When we're on a COM thread, we'll need to dispatch the calls to the UI thread

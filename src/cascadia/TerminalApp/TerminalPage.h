@@ -226,6 +226,8 @@ namespace winrt::TerminalApp::implementation
 
         PaneResources _paneResources;
 
+        winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::NewConnection_revoker _newConnectionRevoker;
+
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult>
         _ShowDialogHelper(const std::wstring_view& name);
 
