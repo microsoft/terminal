@@ -4474,7 +4474,7 @@ namespace winrt::TerminalApp::implementation
         // selected text, like "search the web". In this initial draft, it's not
         // actually augmented by the TerminalPage, so it's left commented out.
 
-        const auto& menu{ sender.try_as<WUX::Controls::CommandBarFlyout>() };
+        const auto& menu{ sender.try_as<MUX::Controls::CommandBarFlyout>() };
         if (!menu)
         {
             return;

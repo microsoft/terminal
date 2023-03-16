@@ -10,6 +10,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="using:Microsoft.Terminal.Control"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:mux="using:Microsoft.UI.Xaml.Controls"
              HorizontalAlignment="Stretch"
              VerticalAlignment="Stretch"
              d:DesignHeight="768"
@@ -31,14 +32,14 @@
              mc:Ignorable="d">
     <UserControl.Resources>
 
-        <CommandBarFlyout x:Name="ContextMenu">
+        <mux:CommandBarFlyout x:Name="ContextMenu">
             <AppBarButton x:Name="PasteCommandButton"
                           x:Uid="PasteCommandButton"
                           Click="_PasteCommandHandler"
                           Icon="Paste" />
-        </CommandBarFlyout>
+        </mux:CommandBarFlyout>
 
-        <CommandBarFlyout x:Name="SelectionContextMenu">
+        <mux:CommandBarFlyout x:Name="SelectionContextMenu">
             <AppBarButton x:Name="CopyCommandButton"
                           x:Uid="CopyCommandButton"
                           Click="_CopyCommandHandler"
@@ -47,13 +48,13 @@
                           x:Uid="PasteWithSelectionCommandButton"
                           Click="_PasteCommandHandler"
                           Icon="Paste" />
-            <CommandBarFlyout.SecondaryCommands>
+            <mux:CommandBarFlyout.SecondaryCommands>
                 <AppBarButton x:Name="SearchCommandButton"
                               x:Uid="SearchCommandButton"
                               Click="_SearchCommandHandler"
                               Icon="Find" />
-            </CommandBarFlyout.SecondaryCommands>
-        </CommandBarFlyout>
+            </mux:CommandBarFlyout.SecondaryCommands>
+        </mux:CommandBarFlyout>
 
         <!--
             BODGY: ControlsV2 changed the size of the scrollbars from 16dips to
