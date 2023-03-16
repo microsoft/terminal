@@ -1243,20 +1243,43 @@ void AppHost::_handleMoveContent(const winrt::Windows::Foundation::IInspectable&
 
         // Fortunately, the window position is already in pixels.
         til::rect windowBoundsInPixels{ _window->GetWindowRect() };
+        til::size windowSize{ windowBoundsInPixels.size() };
+
+        const auto dpi = _window->GetCurrentDpi();
+        const auto nonClientFrame = _window->GetNonClientFrame(dpi);
+
+        // If this window is maximized, you don't _really_ want the new window
+        // showing up at the same size (the size of a maximized window). You
+        // want it to just make a normal-sized window. This logic was taken out
+        // of AppHost::_HandleCreateWindow.
+        if (IsZoomed(_window->GetHandle()))
+        {
+            auto initialSize = _windowLogic.GetLaunchDimensions(dpi);
+
+            const auto islandWidth = Utils::ClampToShortMax(static_cast<long>(ceil(initialSize.Width)), 1);
+            const auto islandHeight = Utils::ClampToShortMax(static_cast<long>(ceil(initialSize.Height)), 1);
+
+            // Get the size of a window we'd need to host that client rect. This will
+            // add the titlebar space.
+            const til::size nonClientSize{ _window->GetTotalNonClientExclusiveSize(dpi) };
+
+            auto adjustedWidth = islandWidth + nonClientSize.width;
+            auto adjustedHeight = islandHeight + nonClientSize.height;
+
+            windowSize = til::size{ Utils::ClampToShortMax(adjustedWidth, 1),
+                                    Utils::ClampToShortMax(adjustedHeight, 1) };
+        }
 
         // Adjust for the non-client bounds
-        const auto dpi = _window->GetCurrentDpi();
-        const auto nonClientArea = _window->GetNonClientFrame(dpi);
-        dragPositionInPixels.x -= nonClientArea.left;
-        dragPositionInPixels.y -= nonClientArea.top;
-        windowBoundsInPixels.right -= nonClientArea.width();
-        windowBoundsInPixels.bottom -= nonClientArea.height();
+        dragPositionInPixels.x -= nonClientFrame.left;
+        dragPositionInPixels.y -= nonClientFrame.top;
+        windowSize = windowSize - nonClientFrame.size();
 
         // Use the drag event as the new position, and the size of the actual window.
         winrt::Windows::Foundation::Rect rect{ static_cast<float>(dragPositionInPixels.x),
                                                static_cast<float>(dragPositionInPixels.y),
-                                               static_cast<float>(windowBoundsInPixels.width()),
-                                               static_cast<float>(windowBoundsInPixels.height()) };
+                                               static_cast<float>(windowSize.width),
+                                               static_cast<float>(windowSize.height) };
 
         _windowManager.RequestMoveContent(args.Window(),
                                           args.Content(),

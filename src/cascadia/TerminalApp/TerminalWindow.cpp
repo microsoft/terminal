@@ -638,13 +638,12 @@ namespace winrt::TerminalApp::implementation
         if (_contentBounds)
         {
             // If we've been created as a torn-out window, then we'll need to
-            // use that size instead. _contentBounds is in raw pixels, so
-            // convert it to _our_ DIPs.
-            proposedSize = {
-                _contentBounds.Value().Width * scale,
-                _contentBounds.Value().Height * scale
+            // use that size instead. _contentBounds is in raw pixels. Huzzah!
+            // Just return that.
+            return {
+                _contentBounds.Value().Width,
+                _contentBounds.Value().Height
             };
-            return proposedSize;
         }
 
         // GH#2061 - If the global setting "Always show tab bar" is
