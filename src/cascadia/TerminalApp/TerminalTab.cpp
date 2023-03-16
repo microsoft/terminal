@@ -1563,14 +1563,14 @@ namespace winrt::TerminalApp::implementation
     {
         auto hasReadOnly = false;
         auto allReadOnly = true;
-        _activePane->WalkTree([&](auto p) {
+        _activePane->WalkTree([&](const auto& p) {
             if (const auto& control{ p->GetTerminalControl() })
             {
                 hasReadOnly |= control.ReadOnly();
                 allReadOnly &= control.ReadOnly();
             }
         });
-        _activePane->WalkTree([&](auto p) {
+        _activePane->WalkTree([&](const auto& p) {
             if (const auto& control{ p->GetTerminalControl() })
             {
                 // If all controls have the same read only state then just toggle
@@ -1588,64 +1588,32 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Enable read-only mode on the active pane
+    // - Set read-only mode on the active pane
     // - If a parent pane is selected, this will ensure that all children have
     //   the same read-only status.
-    void TerminalTab::EnablePaneReadOnly()
+    void TerminalTab::SetPaneReadOnly(const bool readOnlyState)
     {
         auto hasReadOnly = false;
         auto allReadOnly = true;
-        _activePane->WalkTree([&](auto p) {
+        _activePane->WalkTree([&](const auto& p) {
             if (const auto& control{ p->GetTerminalControl() })
             {
                 hasReadOnly |= control.ReadOnly();
                 allReadOnly &= control.ReadOnly();
             }
         });
-        _activePane->WalkTree([&](auto p) {
-            if (const auto& control{ p->GetTerminalControl() })
-            {
-                // If all controls have the same read only state then just enable
-                if (allReadOnly || !hasReadOnly)
-                {
-                    control.EnableReadOnly();
-                }
-                // otherwise set to all read only.
-                else if (!control.ReadOnly())
-                {
-                    control.EnableReadOnly();
-                }
-            }
-        });
-    }
-
-    // Method Description:
-    // - Disable read-only mode on the active pane
-    // - If a parent pane is selected, this will ensure that all children have
-    //   the same read-only status.
-    void TerminalTab::DisablePaneReadOnly()
-    {
-        auto hasReadOnly = false;
-        auto allReadOnly = true;
-        _activePane->WalkTree([&](auto p) {
-            if (const auto& control{ p->GetTerminalControl() })
-            {
-                hasReadOnly |= control.ReadOnly();
-                allReadOnly &= control.ReadOnly();
-            }
-        });
-        _activePane->WalkTree([&](auto p) {
+        _activePane->WalkTree([&](const auto& p) {
             if (const auto& control{ p->GetTerminalControl() })
             {
                 // If all controls have the same read only state then just disable
                 if (allReadOnly || !hasReadOnly)
                 {
-                    control.DisableReadOnly();
+                    control.SetReadOnly(readOnlyState);
                 }
                 // otherwise set to all read only.
                 else if (!control.ReadOnly())
                 {
-                    control.DisableReadOnly();
+                    control.SetReadOnly(readOnlyState);
                 }
             }
         });

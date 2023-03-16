@@ -111,8 +111,7 @@ namespace Microsoft.Terminal.Control
 
         void ToggleShaderEffects();
         void ToggleReadOnlyMode();
-        void EnableReadOnlyMode();
-        void DisableReadOnlyMode();
+        void SetReadOnlyMode(Boolean readOnlyState);
 
         Microsoft.Terminal.Core.Point CursorPosition { get; };
         void ResumeRendering();

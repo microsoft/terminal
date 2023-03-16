@@ -124,8 +124,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool ReadOnly() const noexcept;
         void ToggleReadOnly();
-        void EnableReadOnly();
-        void DisableReadOnly();
+        void SetReadOnly(const bool readOnlyState);
 
         static Control::MouseButtonState GetPressedMouseButtons(const winrt::Windows::UI::Input::PointerPoint point);
         static unsigned int GetPointerUpdateKind(const winrt::Windows::UI::Input::PointerPoint point);

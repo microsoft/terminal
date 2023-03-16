@@ -1671,14 +1671,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _isReadOnly = !_isReadOnly;
     }
 
-    void ControlCore::EnableReadOnlyMode()
+    void ControlCore::SetReadOnlyMode(const bool keyDown)
     {
-        _isReadOnly = true;
-    }
-
-    void ControlCore::DisableReadOnlyMode()
-    {
-        _isReadOnly = false;
+        _isReadOnly = keyDown;
     }
 
     void ControlCore::_raiseReadOnlyWarning()

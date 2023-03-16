@@ -290,7 +290,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto activeTab{ _GetFocusedTabImpl() })
         {
-            activeTab->EnablePaneReadOnly();
+            activeTab->SetPaneReadOnly(true);
         }
 
         args.Handled(true);
@@ -301,7 +301,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto activeTab{ _GetFocusedTabImpl() })
         {
-            activeTab->DisablePaneReadOnly();
+            activeTab->SetPaneReadOnly(false);
         }
 
         args.Handled(true);
