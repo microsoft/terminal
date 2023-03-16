@@ -3791,15 +3791,18 @@ void AdaptDispatch::_ReportCursorInformation()
 // - a function to parse the report data.
 ITermDispatch::StringHandler AdaptDispatch::_RestoreCursorInformation()
 {
+    // clang-format off
     enum Field { Row, Column, Page, SGR, Attr, Flags, GL, GR, Sizes, G0, G1, G2, G3 };
+    // clang-format on
     constexpr til::enumset<Field> numeric{ Field::Row, Field::Column, Field::Page, Field::GL, Field::GR };
     constexpr til::enumset<Field> flags{ Field::SGR, Field::Attr, Field::Flags, Field::Sizes };
     constexpr til::enumset<Field> charset{ Field::G0, Field::G1, Field::G2, Field::G3 };
-    struct State {
+    struct State
+    {
         Field field{ Field::Row };
         VTInt value{ 0 };
         VTIDBuilder charsetId{};
-        std::array<bool,4> charset96{};
+        std::array<bool, 4> charset96{};
         VTParameter row{};
         VTParameter column{};
     };
@@ -3879,7 +3882,7 @@ ITermDispatch::StringHandler AdaptDispatch::_RestoreCursorInformation()
                     CursorPosition(state.row, state.column);
                     // There can only be one single shift applied at a time, so
                     // we'll just apply the last one that is enabled.
-                    _termOutput.SingleShift(ss3 ? 3 : ss2 ? 2 : 0);
+                    _termOutput.SingleShift(ss3 ? 3 : (ss2 ? 2 : 0));
                     // The EOL flag will always be reset by the cursor movement
                     // above, so we only need to worry about setting it.
                     if (delayedEOLWrap)
