@@ -222,8 +222,6 @@ public:
     FontInfoDesired& GetDesiredFont() noexcept;
     const FontInfoDesired& GetDesiredFont() const noexcept;
 
-    void InitializeCursorRowAttributes();
-
     void SetIgnoreLegacyEquivalentVTAttributes() noexcept;
     void ResetIgnoreLegacyEquivalentVTAttributes() noexcept;
 

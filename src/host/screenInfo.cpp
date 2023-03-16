@@ -2610,34 +2610,6 @@ void SCREEN_INFORMATION::UpdateBottom()
 }
 
 // Method Description:
-// - Initialize the row with the cursor on it to the standard erase attributes.
-//      This is executed when we move the cursor below the current viewport in
-//      VT mode. When that happens in a real terminal, the line is brand new,
-//      so it gets initialized for the first time with the current attributes.
-//      Our rows are usually pre-initialized, so re-initialize it here to
-//      emulate that behavior.
-// See MSFT:17415310.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void SCREEN_INFORMATION::InitializeCursorRowAttributes()
-{
-    if (_textBuffer)
-    {
-        const auto& cursor = _textBuffer->GetCursor();
-        auto& row = _textBuffer->GetRowByOffset(cursor.GetPosition().y);
-        // The VT standard requires that the new row is initialized with
-        // the current background color, but with no meta attributes set.
-        auto fillAttributes = GetAttributes();
-        fillAttributes.SetStandardErase();
-        row.SetAttrToEnd(0, fillAttributes);
-        // The row should also be single width to start with.
-        row.SetLineRendition(LineRendition::SingleWidth);
-    }
-}
-
-// Method Description:
 // - Returns the "virtual" Viewport - the viewport with its bottom at
 //      `_virtualBottom`. For VT operations, this is essentially the mutable
 //      section of the buffer.
