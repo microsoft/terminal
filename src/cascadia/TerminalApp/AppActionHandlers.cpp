@@ -297,7 +297,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     void TerminalPage::_HandleDisablePaneReadOnly(const IInspectable& /*sender*/,
-                                                 const ActionEventArgs& args)
+                                                  const ActionEventArgs& args)
     {
         if (const auto activeTab{ _GetFocusedTabImpl() })
         {
