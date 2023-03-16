@@ -1858,6 +1858,9 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
             textBuffer.ResetLineRenditionRange(viewport.top, viewport.bottom);
         }
         return true;
+    case DispatchTypes::ModeParams::DECECM_EraseColorMode:
+        _modes.set(Mode::EraseColor, enable);
+        return true;
     case DispatchTypes::ModeParams::VT200_MOUSE_MODE:
         _terminalInput.SetInputMode(TerminalInput::Mode::DefaultMouseTracking, enable);
         return !_PassThroughInputModes();
@@ -1988,6 +1991,9 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         break;
     case DispatchTypes::ModeParams::DECLRMM_LeftRightMarginMode:
         enabled = _modes.test(Mode::AllowDECSLRM);
+        break;
+    case DispatchTypes::ModeParams::DECECM_EraseColorMode:
+        enabled = _modes.test(Mode::EraseColor);
         break;
     case DispatchTypes::ModeParams::VT200_MOUSE_MODE:
         enabled = _terminalInput.GetInputMode(TerminalInput::Mode::DefaultMouseTracking);
