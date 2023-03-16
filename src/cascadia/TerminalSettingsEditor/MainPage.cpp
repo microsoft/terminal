@@ -575,9 +575,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         menuItems.Append(addProfileItem);
     }
 
+    // BODGY
     // Does the very wacky business of moving all our MenuItems that we
     // hardcoded in XAML into a runtime MenuItemsSource. We'll then use _that_
-    // MenuItemsSource as the source for our nave view entries instead. This
+    // MenuItemsSource as the source for our nav view entries instead. This
     // lets us hardcode the initial entries in precompiled XAML, but then adjust
     // the items at runtime. Without using a MenuItemsSource, the NavView just
     // crashes when items are removed (see GH#13673)
