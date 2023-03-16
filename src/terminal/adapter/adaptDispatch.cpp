@@ -3987,7 +3987,7 @@ ITermDispatch::StringHandler AdaptDispatch::_RestoreTabStops()
         {
             // Note that column 1 is always a tab stop, so there is no
             // need to record an entry at that offset.
-            if (column > 1 && column <= width)
+            if (column > 1u && column <= static_cast<size_t>(width))
             {
                 _tabStopColumns.at(column - 1) = true;
             }

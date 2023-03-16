@@ -2094,12 +2094,12 @@ public:
 
         Log::Comment(L"Restore charset configuration");
         stateMachine.ProcessString(L"\033P1$t1;1;1;@;@;@;3;1;H;ABCF\033\\");
-        VERIFY_ARE_EQUAL(3, termOutput.GetLeftSetNumber());
-        VERIFY_ARE_EQUAL(1, termOutput.GetRightSetNumber());
-        VERIFY_ARE_EQUAL(94, termOutput.GetCharsetSize(0));
-        VERIFY_ARE_EQUAL(94, termOutput.GetCharsetSize(1));
-        VERIFY_ARE_EQUAL(94, termOutput.GetCharsetSize(2));
-        VERIFY_ARE_EQUAL(96, termOutput.GetCharsetSize(3));
+        VERIFY_ARE_EQUAL(3u, termOutput.GetLeftSetNumber());
+        VERIFY_ARE_EQUAL(1u, termOutput.GetRightSetNumber());
+        VERIFY_ARE_EQUAL(94u, termOutput.GetCharsetSize(0));
+        VERIFY_ARE_EQUAL(94u, termOutput.GetCharsetSize(1));
+        VERIFY_ARE_EQUAL(94u, termOutput.GetCharsetSize(2));
+        VERIFY_ARE_EQUAL(96u, termOutput.GetCharsetSize(3));
         VERIFY_ARE_EQUAL(VTID("A"), termOutput.GetCharsetId(0));
         VERIFY_ARE_EQUAL(VTID("B"), termOutput.GetCharsetId(1));
         VERIFY_ARE_EQUAL(VTID("C"), termOutput.GetCharsetId(2));
