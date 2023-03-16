@@ -2164,7 +2164,7 @@
           "description": "When set to true, the background image for the currently focused profile is expanded to encompass the entire window, beneath other panes.",
           "type": "boolean"
         },
-        "experimental.reloadEnvironmentVariables": {
+        "compatibility.reloadEnvironmentVariables": {
           "default": true,
           "description": "When set to true, when opening a new tab or pane it will get reloaded environment variables.",
           "type": "boolean"
