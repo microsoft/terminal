@@ -1281,7 +1281,7 @@ namespace winrt::TerminalApp::implementation
             auto guidWString = Utils::GuidToString(profile.Guid());
 
             StringMap envMap{};
-            if (settings.ReloadEnvironmentVariables())
+            if (_settings.GlobalSettings().ReloadEnvironmentVariables())
             {
                 til::env environment;
                 environment.regenerate();
