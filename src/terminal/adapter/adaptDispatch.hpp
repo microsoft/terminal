@@ -219,6 +219,7 @@ namespace Microsoft::Console::VirtualTerminal
         til::rect _CalculateRectArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right, const til::size bufferSize);
         bool _EraseScrollback();
         bool _EraseAll();
+        TextAttribute _GetEraseAttributes(const TextBuffer& textBuffer) const noexcept;
         void _ScrollRectVertically(TextBuffer& textBuffer, const til::rect& scrollRect, const VTInt delta);
         void _ScrollRectHorizontally(TextBuffer& textBuffer, const til::rect& scrollRect, const VTInt delta);
         void _InsertDeleteCharacterHelper(const VTInt delta);

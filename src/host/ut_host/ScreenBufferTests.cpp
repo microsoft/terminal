@@ -8176,7 +8176,7 @@ void ScreenBufferTests::CopyDoubleWidthRectangularArea()
 
     // Make the second line (offset 1) double width.
     textBuffer.GetCursor().SetPosition({ 0, 1 });
-    textBuffer.SetCurrentLineRendition(LineRendition::DoubleWidth);
+    textBuffer.SetCurrentLineRendition(LineRendition::DoubleWidth, activeAttr);
 
     // Copy a segment of the top three lines with DECCRA.
     stateMachine.ProcessString(L"\033[1;31;3;50;1;4;31;1$v");
