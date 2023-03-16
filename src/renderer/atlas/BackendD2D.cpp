@@ -122,6 +122,7 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
         _backgroundBrush->SetExtendModeX(D2D1_EXTEND_MODE_MIRROR);
         _backgroundBrush->SetExtendModeY(D2D1_EXTEND_MODE_MIRROR);
         _backgroundBrush->SetTransform(&transform);
+        _backgroundBitmapGeneration = {};
     }
 
     _generation = p.s.generation();
@@ -131,11 +132,16 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
 
 void BackendD2D::_drawBackground(const RenderingPayload& p) noexcept
 {
+    if (_backgroundBitmapGeneration != p.backgroundBitmapGeneration)
+    {
+        _backgroundBitmap->CopyFromMemory(nullptr, p.backgroundBitmap.data(), p.s->cellCount.x * 4);
+        _backgroundBitmapGeneration = p.backgroundBitmapGeneration;
+    }
+
     // If the terminal was 120x30 cells and 1200x600 pixels large, this would draw the
     // background by upscaling a 120x30 pixel bitmap to fill the entire render target.
     const D2D1_RECT_F rect{ 0, 0, p.s->targetSize.x * p.d.font.dipPerPixel, p.s->targetSize.y * p.d.font.dipPerPixel };
     _renderTarget->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_COPY);
-    _backgroundBitmap->CopyFromMemory(nullptr, p.backgroundBitmap.data(), p.s->cellCount.x * 4);
     _renderTarget->FillRectangle(&rect, _backgroundBrush.get());
     _renderTarget->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
 }
@@ -146,26 +152,20 @@ void BackendD2D::_drawText(RenderingPayload& p)
     til::CoordType dirtyBottom = til::CoordTypeMin;
 
     // It is possible to create a "_foregroundBrush" similar to how the `_backgroundBrush` is created and
-    // use that as the brush for text rendering below. That way we wouldn't have to search `row.colors` for color
+    // use that as the brush for text rendering below. That way we wouldn't have to search `row->colors` for color
     // changes and could draw entire lines of text in a single call. Unfortunately Direct2D is not particularly
     // smart if you do this and chooses to draw the given text into a way too small offscreen texture first and
     // then blends it on the screen with the given bitmap brush. While this roughly doubles the performance
     // when drawing lots of colors, the extra latency drops performance by >10x when drawing fewer colors.
     // Since fewer colors are more common, I've chosen to go with regular solid-color brushes.
     u16 y = 0;
-    for (auto& row : p.rows)
+    for (const auto row : p.rows)
     {
-        if (row.top > p.dirtyRectInPx.bottom || row.bottom < p.dirtyRectInPx.top)
-        {
-            ++y;
-            continue;
-        }
-
         f32 baselineX = 0.0f;
 
-        for (const auto& m : row.mappings)
+        for (const auto& m : row->mappings)
         {
-            const auto colorsBegin = row.colors.begin();
+            const auto colorsBegin = row->colors.begin();
             auto it = colorsBegin + m.glyphsFrom;
             const auto end = colorsBegin + m.glyphsTo;
 
@@ -186,9 +186,9 @@ void BackendD2D::_drawText(RenderingPayload& p)
                     .fontFace = m.fontFace.get(),
                     .fontEmSize = m.fontEmSize,
                     .glyphCount = gsl::narrow_cast<UINT32>(count),
-                    .glyphIndices = &row.glyphIndices[off],
-                    .glyphAdvances = &row.glyphAdvances[off],
-                    .glyphOffsets = &row.glyphOffsets[off],
+                    .glyphIndices = &row->glyphIndices[off],
+                    .glyphAdvances = &row->glyphAdvances[off],
+                    .glyphOffsets = &row->glyphOffsets[off],
                 };
 
                 DrawGlyphRun(_renderTarget.get(), _renderTarget4.get(), p.dwriteFactory4.get(), { baselineX, baselineY }, &glyphRun, brush);
@@ -196,8 +196,8 @@ void BackendD2D::_drawText(RenderingPayload& p)
                 const auto blackBox = GetGlyphRunBlackBox(glyphRun, baselineX, baselineY);
                 // Add a 1px padding to avoid inaccuracies with the blackbox measurement.
                 // It's only an estimate based on the design size after all.
-                row.top = std::min(row.top, static_cast<i32>(lround(blackBox.top - 1.5f)));
-                row.bottom = std::max(row.bottom, static_cast<i32>(lround(blackBox.bottom + 1.5f)));
+                row->top = std::min(row->top, static_cast<i32>(lround(blackBox.top - 1.5f)));
+                row->bottom = std::max(row->bottom, static_cast<i32>(lround(blackBox.bottom + 1.5f)));
 
                 for (UINT32 i = 0; i < glyphRun.glyphCount; ++i)
                 {
@@ -206,16 +206,18 @@ void BackendD2D::_drawText(RenderingPayload& p)
             } while (it != end);
         }
 
-        dirtyTop = std::min(dirtyTop, row.top);
-        dirtyBottom = std::max(dirtyBottom, row.bottom);
+        if (row->top < p.dirtyRectInPx.bottom && p.dirtyRectInPx.top < row->bottom)
+        {
+            dirtyTop = std::min(dirtyTop, row->top);
+            dirtyBottom = std::max(dirtyBottom, row->bottom);
+        }
+
         ++y;
     }
 
     if (dirtyTop < dirtyBottom)
     {
-        p.dirtyRectInPx.left = 0;
         p.dirtyRectInPx.top = std::min(p.dirtyRectInPx.top, dirtyTop);
-        p.dirtyRectInPx.right = p.s->targetSize.x;
         p.dirtyRectInPx.bottom = std::max(p.dirtyRectInPx.bottom, dirtyBottom);
     }
 }
@@ -223,9 +225,9 @@ void BackendD2D::_drawText(RenderingPayload& p)
 void BackendD2D::_drawGridlines(const RenderingPayload& p)
 {
     u16 y = 0;
-    for (const auto& row : p.rows)
+    for (const auto row : p.rows)
     {
-        if (!row.gridLineRanges.empty())
+        if (!row->gridLineRanges.empty())
         {
             _drawGridlineRow(p, row, y);
         }
@@ -233,7 +235,7 @@ void BackendD2D::_drawGridlines(const RenderingPayload& p)
     }
 }
 
-void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow& row, u16 y)
+void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* row, u16 y)
 {
     const auto columnToDIP = [&](til::CoordType i) {
         return i * p.d.font.cellSizeDIP.x;
@@ -249,7 +251,7 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow& ro
     const auto bottom = top + p.d.font.cellSizeDIP.y;
     const auto thinLineWidth = pxToDIP(p.s->font->thinLineWidth);
 
-    for (const auto& r : row.gridLineRanges)
+    for (const auto& r : row->gridLineRanges)
     {
         // AtlasEngine.cpp shouldn't add any gridlines if they don't do anything.
         assert(r.lines.any());
@@ -345,6 +347,9 @@ void BackendD2D::_drawCursor(const RenderingPayload& p)
         return;
     }
 
+    // Inverted cursors could be implemented in the future using
+    // ID2D1DeviceContext::DrawImage and D2D1_COMPOSITE_MODE_MASK_INVERT.
+
     D2D1_RECT_F rect{
         p.d.font.cellSizeDIP.x * p.cursorRect.left,
         p.d.font.cellSizeDIP.y * p.cursorRect.top,
@@ -403,12 +408,12 @@ void BackendD2D::_drawSelection(const RenderingPayload& p)
     u16 y = 0;
     for (const auto& row : p.rows)
     {
-        if (row.selectionTo > row.selectionFrom)
+        if (row->selectionTo > row->selectionFrom)
         {
             const D2D1_RECT_F rect{
-                p.d.font.cellSizeDIP.x * row.selectionFrom,
+                p.d.font.cellSizeDIP.x * row->selectionFrom,
                 p.d.font.cellSizeDIP.y * y,
-                p.d.font.cellSizeDIP.x * row.selectionTo,
+                p.d.font.cellSizeDIP.x * row->selectionTo,
                 p.d.font.cellSizeDIP.y * (y + 1),
             };
             _fillRectangle(rect, p.s->misc->selectionColor);

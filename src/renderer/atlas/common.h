@@ -399,7 +399,7 @@ namespace Microsoft::Console::Render::Atlas
 
     struct RenderingPayload
     {
-        // Parameters which are constant across backends.
+        //// Parameters which are constant across backends.
         wil::com_ptr<ID2D1Factory> d2dFactory;
         wil::com_ptr<IDWriteFactory2> dwriteFactory;
         wil::com_ptr<IDWriteFactory4> dwriteFactory4; // optional, might be nullptr
@@ -410,16 +410,23 @@ namespace Microsoft::Console::Render::Atlas
         std::function<void(HRESULT)> warningCallback;
         std::function<void(HANDLE)> swapChainChangedCallback;
 
-        // Parameters which are constant for the existence of the backend.
+        //// Parameters which are constant for the existence of the backend.
         wil::com_ptr<IDXGIFactory2> dxgiFactory;
 
-        // Parameters which change seldom.
+        //// Parameters which change seldom.
         til::generational<Settings> s;
         Dependents d;
 
-        // Parameters which change every frame.
-        Buffer<ShapedRow> rows;
+        //// Parameters which change every frame.
+        // This is the backing buffer for `rows`.
+        Buffer<ShapedRow> unorderedRows;
+        // This is used as a scratch buffer during scrolling.
+        Buffer<ShapedRow*> rowsScratch;
+        Buffer<ShapedRow*> rows;
         Buffer<u32> backgroundBitmap;
+        // 1 ensures that the backends redraw the background, even if the background
+        // is entirely black, just like `backgroundBitmap` after it gets created.
+        til::generation_t backgroundBitmapGeneration{ 1 };
         til::rect dirtyRectInPx;
         u16r cursorRect;
         i16 scrollOffset = 0;

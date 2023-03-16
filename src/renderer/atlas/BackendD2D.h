@@ -17,7 +17,7 @@ namespace Microsoft::Console::Render::Atlas
         void _drawBackground(const RenderingPayload& p) noexcept;
         void _drawText(RenderingPayload& p);
         void _drawGridlines(const RenderingPayload& p);
-        void _drawGridlineRow(const RenderingPayload& p, const ShapedRow& row, u16 y);
+        void _drawGridlineRow(const RenderingPayload& p, const ShapedRow* row, u16 y);
         void _drawCursor(const RenderingPayload& p);
         void _drawSelection(const RenderingPayload& p);
         ID2D1Brush* _brushWithColor(u32 color);
@@ -34,6 +34,7 @@ namespace Microsoft::Console::Render::Atlas
         wil::com_ptr<ID2D1StrokeStyle> _dottedStrokeStyle;
         wil::com_ptr<ID2D1Bitmap> _backgroundBitmap;
         wil::com_ptr<ID2D1BitmapBrush> _backgroundBrush;
+        til::generation_t _backgroundBitmapGeneration;
 
         u32 _brushColor = 0;
 

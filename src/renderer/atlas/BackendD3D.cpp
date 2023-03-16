@@ -341,7 +341,8 @@ void BackendD3D::_handleSettingsUpdate(const RenderingPayload& p)
     if (fontChanged)
     {
         DWrite_GetRenderParams(p.dwriteFactory.get(), &_gamma, &_cleartypeEnhancedContrast, &_grayscaleEnhancedContrast, _textRenderingParams.put());
-        _resetGlyphAtlasNeeded = true;
+        // Clearing the atlas requires BeginDraw(), which is expensive. Defer this until we need Direct2D anyways.
+        _fontChangedResetGlyphAtlas = true;
 
         if (_d2dRenderTarget)
         {
@@ -546,6 +547,7 @@ void BackendD3D::_recreateBackgroundColorBitmap(u16x2 cellCount)
     desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
     THROW_IF_FAILED(_device->CreateTexture2D(&desc, nullptr, _backgroundBitmap.addressof()));
     THROW_IF_FAILED(_device->CreateShaderResourceView(_backgroundBitmap.get(), nullptr, _backgroundBitmapView.addressof()));
+    _backgroundBitmapGeneration = {};
 }
 
 void BackendD3D::_d2dRenderTargetUpdateFontSettings(const FontSettings& font) noexcept
@@ -710,16 +712,25 @@ void BackendD3D::_d2dEndDrawing()
     }
 }
 
+void BackendD3D::_handleFontChangedResetGlyphAtlas(RenderingPayload& p)
+{
+    _fontChangedResetGlyphAtlas = false;
+    _resetGlyphAtlasAndBeginDraw(p);
+}
+
 void BackendD3D::_resetGlyphAtlasAndBeginDraw(const RenderingPayload& p)
 {
-    // This block of code calculates the size of a power-of-2 texture that has an area larger than the targetSize
-    // of the swap chain. In other words for a 985x1946 pixel swap chain (area = 1916810) it would result in a u/v
-    // of 2048x1024 (area = 2097152). This has 2 benefits: GPUs like power-of-2 textures and it ensures that we don't
-    // resize the texture every time you resize the window by a pixel. Instead it only grows/shrinks by a factor of 2.
-    auto area = static_cast<u32>(p.s->targetSize.x) * static_cast<u32>(p.s->targetSize.y);
-    // The index returned by _BitScanReverse is undefined when the input is 0. We can simultaneously
-    // guard against this and avoid unreasonably small textures, by clamping the min. texture size.
-    area = std::max(uint32_t{ 256 * 256 }, area);
+    // The index returned by _BitScanReverse is undefined when the input is 0. We can simultaneously guard
+    // against that and avoid unreasonably small textures, by clamping the min. texture size to `minArea`.
+    static constexpr u32 minArea = 128 * 128;
+    const auto minAreaByFont = static_cast<u32>(p.s->font->cellSize.x) * p.s->font->cellSize.y * 64;
+    const auto minAreaByGrowth = static_cast<u32>(_rectPacker.width) * _rectPacker.height * 2;
+    const auto maxArea = static_cast<u32>(p.s->targetSize.x) * static_cast<u32>(p.s->targetSize.y);
+    const auto area = std::min(maxArea, std::max(minArea, std::max(minAreaByFont, minAreaByGrowth)));
+    // This block of code calculates the size of a power-of-2 texture that has an area larger than the given `area`.
+    // For instance, for an area of 985x1946 = 1916810 it would result in a u/v of 2048x1024 (area = 2097152).
+    // This has 2 benefits: GPUs like power-of-2 textures and it ensures that we don't resize the texture
+    // every time you resize the window by a pixel. Instead it only grows/shrinks by a factor of 2.
     unsigned long index;
     _BitScanReverse(&index, area - 1);
     const auto u = ::base::saturated_cast<u16>(1u << ((index + 2) / 2));
@@ -910,16 +921,20 @@ void BackendD3D::_recreateInstanceBuffers(const RenderingPayload& p)
 
 void BackendD3D::_drawBackground(const RenderingPayload& p)
 {
+    if (_backgroundBitmapGeneration != p.backgroundBitmapGeneration)
     {
         D3D11_MAPPED_SUBRESOURCE mapped{};
         THROW_IF_FAILED(_deviceContext->Map(_backgroundBitmap.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped));
+
         auto data = static_cast<char*>(mapped.pData);
         for (size_t i = 0; i < p.s->cellCount.y; ++i)
         {
             memcpy(data, p.backgroundBitmap.data() + i * p.s->cellCount.x, p.s->cellCount.x * sizeof(u32));
             data += mapped.RowPitch;
         }
+
         _deviceContext->Unmap(_backgroundBitmap.get(), 0);
+        _backgroundBitmapGeneration = p.backgroundBitmapGeneration;
     }
 
     _appendQuad({}, p.s->targetSize, 0, ShadingType::Background);
@@ -927,77 +942,61 @@ void BackendD3D::_drawBackground(const RenderingPayload& p)
 
 void BackendD3D::_drawText(RenderingPayload& p)
 {
-    if (_resetGlyphAtlasNeeded)
+    if (_fontChangedResetGlyphAtlas)
     {
-        _resetGlyphAtlasAndBeginDraw(p);
-        _resetGlyphAtlasNeeded = false;
+        _handleFontChangedResetGlyphAtlas(p);
     }
 
     til::CoordType dirtyTop = til::CoordTypeMax;
     til::CoordType dirtyBottom = til::CoordTypeMin;
 
     u16 y = 0;
-    for (auto& row : p.rows)
+    for (const auto row : p.rows)
     {
-        if (row.top >= p.dirtyRectInPx.bottom || row.bottom <= p.dirtyRectInPx.top)
-        {
-            ++y;
-            continue;
-        }
-
         const auto baselineY = y * p.d.font.cellSizeDIP.y + p.s->font->baselineInDIP;
         f32 cumulativeAdvance = 0;
 
-        for (const auto& m : row.mappings)
+        for (const auto& m : row->mappings)
         {
-            for (auto x = m.glyphsFrom; x < m.glyphsTo; ++x)
+            for (auto x = m.glyphsFrom; x < m.glyphsTo; cumulativeAdvance += row->glyphAdvances[x], ++x)
             {
                 bool inserted = false;
-                auto& entry = _glyphCache.FindOrInsert(m.fontFace.get(), row.glyphIndices[x], inserted);
+                auto& entry = _glyphCache.FindOrInsert(m.fontFace.get(), row->glyphIndices[x], inserted);
                 if (inserted)
                 {
-                    _d2dBeginDrawing();
-
-                    if (!_drawGlyph(p, entry, m.fontEmSize))
-                    {
-                        _d2dEndDrawing();
-                        _flushQuads(p);
-                        _resetGlyphAtlasAndBeginDraw(p);
-                        --x;
-                        continue; // retry
-                    }
+                    _drawGlyph(p, entry, m.fontEmSize);
                 }
 
                 if (entry.shadingType)
                 {
-                    const auto l = static_cast<i32>((cumulativeAdvance + row.glyphOffsets[x].advanceOffset) * p.d.font.pixelPerDIP + 0.5f) + entry.offset.x;
-                    const auto t = static_cast<i32>((baselineY - row.glyphOffsets[x].ascenderOffset) * p.d.font.pixelPerDIP + 0.5f) + entry.offset.y;
-                    row.top = std::min(row.top, t);
-                    row.bottom = std::max(row.bottom, t + entry.size.y);
-                    _appendQuad({ static_cast<i16>(l), static_cast<i16>(t) }, entry.size, entry.texcoord, row.colors[x], static_cast<ShadingType>(entry.shadingType));
+                    const auto l = static_cast<i32>((cumulativeAdvance + row->glyphOffsets[x].advanceOffset) * p.d.font.pixelPerDIP + 0.5f) + entry.offset.x;
+                    const auto t = static_cast<i32>((baselineY - row->glyphOffsets[x].ascenderOffset) * p.d.font.pixelPerDIP + 0.5f) + entry.offset.y;
+                    row->top = std::min(row->top, t);
+                    row->bottom = std::max(row->bottom, t + entry.size.y);
+                    _appendQuad({ static_cast<i16>(l), static_cast<i16>(t) }, entry.size, entry.texcoord, row->colors[x], static_cast<ShadingType>(entry.shadingType));
                 }
-
-                cumulativeAdvance += row.glyphAdvances[x];
             }
         }
 
-        dirtyTop = std::min(dirtyTop, row.top);
-        dirtyBottom = std::max(dirtyBottom, row.bottom);
+        if (row->top < p.dirtyRectInPx.bottom && p.dirtyRectInPx.top < row->bottom)
+        {
+            dirtyTop = std::min(dirtyTop, row->top);
+            dirtyBottom = std::max(dirtyBottom, row->bottom);
+        }
+
         ++y;
     }
 
     if (dirtyTop < dirtyBottom)
     {
-        p.dirtyRectInPx.left = 0;
         p.dirtyRectInPx.top = std::min(p.dirtyRectInPx.top, dirtyTop);
-        p.dirtyRectInPx.right = p.s->targetSize.x;
         p.dirtyRectInPx.bottom = std::max(p.dirtyRectInPx.bottom, dirtyBottom);
     }
 
     _d2dEndDrawing();
 }
 
-bool BackendD3D::_drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry, f32 fontEmSize)
+void BackendD3D::_drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry, f32 fontEmSize)
 {
     DWRITE_GLYPH_RUN glyphRun{};
     glyphRun.fontFace = entry.fontFace;
@@ -1010,47 +1009,57 @@ bool BackendD3D::_drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry, f
     {
         // This will indicate to BackendD3D::_drawText that this glyph is whitespace.
         entry.shadingType = 0;
-        return true;
+        return;
     }
 
-    // We'll add a 1px padding on all 4 sides to avoid neighboring glyphs
-    // from overlapping, since the blackbox measurement is only an estimate.
-    // We need to use round (and not ceil/floor) to ensure we pixel-snap individual
-    // glyphs correctly and form a consistent baseline across an entire run of glyphs.
-
-    const auto l = lround(box.left * p.d.font.pixelPerDIP) - 1;
-    const auto t = lround(box.top * p.d.font.pixelPerDIP) - 1;
-    const auto r = lround(box.right * p.d.font.pixelPerDIP) + 1;
-    const auto b = lround(box.bottom * p.d.font.pixelPerDIP) + 1;
-
-    stbrp_rect rect{};
-    rect.w = r - l;
-    rect.h = b - t;
-    if (!stbrp_pack_rects(&_rectPacker, &rect, 1))
+    bool retry = false;
+    for (;;)
     {
-        return false;
+        // We'll add a 1px padding on all 4 sides to avoid neighboring glyphs
+        // from overlapping, since the blackbox measurement is only an estimate.
+        // We need to use round (and not ceil/floor) to ensure we pixel-snap individual
+        // glyphs correctly and form a consistent baseline across an entire run of glyphs.
+        const auto l = lround(box.left * p.d.font.pixelPerDIP) - 1;
+        const auto t = lround(box.top * p.d.font.pixelPerDIP) - 1;
+        const auto r = lround(box.right * p.d.font.pixelPerDIP) + 1;
+        const auto b = lround(box.bottom * p.d.font.pixelPerDIP) + 1;
+
+        stbrp_rect rect{};
+        rect.w = r - l;
+        rect.h = b - t;
+        if (stbrp_pack_rects(&_rectPacker, &rect, 1))
+        {
+            _d2dBeginDrawing();
+
+            const D2D1_POINT_2F baseline{ (rect.x - l) * p.d.font.dipPerPixel, (rect.y - t) * p.d.font.dipPerPixel };
+            const auto colorGlyph = DrawGlyphRun(_d2dRenderTarget.get(), _d2dRenderTarget4.get(), p.dwriteFactory4.get(), baseline, &glyphRun, _brush.get());
+            const auto shadingType = colorGlyph ? ShadingType::Passthrough : (p.s->font->antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE ? ShadingType::TextClearType : ShadingType::TextGrayscale);
+
+            entry.shadingType = static_cast<u16>(shadingType);
+            entry.offset.x = l;
+            entry.offset.y = t;
+            entry.size.x = rect.w;
+            entry.size.y = rect.h;
+            entry.texcoord.x = rect.x;
+            entry.texcoord.y = rect.y;
+            return;
+        }
+
+        THROW_HR_IF_MSG(E_UNEXPECTED, retry, "BackendD3D::_drawGlyph deadlock");
+
+        _d2dEndDrawing();
+        _flushQuads(p);
+        _resetGlyphAtlasAndBeginDraw(p);
+        retry = true;
     }
-
-    const D2D1_POINT_2F baseline{ (rect.x - l) * p.d.font.dipPerPixel, (rect.y - t) * p.d.font.dipPerPixel };
-    const auto colorGlyph = DrawGlyphRun(_d2dRenderTarget.get(), _d2dRenderTarget4.get(), p.dwriteFactory4.get(), baseline, &glyphRun, _brush.get());
-    const auto shadingType = colorGlyph ? ShadingType::Passthrough : (p.s->font->antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE ? ShadingType::TextClearType : ShadingType::TextGrayscale);
-
-    entry.shadingType = static_cast<u16>(shadingType);
-    entry.offset.x = l;
-    entry.offset.y = t;
-    entry.size.x = rect.w;
-    entry.size.y = rect.h;
-    entry.texcoord.x = rect.x;
-    entry.texcoord.y = rect.y;
-    return true;
 }
 
 void BackendD3D::_drawGridlines(const RenderingPayload& p)
 {
     u16 y = 0;
-    for (const auto& row : p.rows)
+    for (const auto row : p.rows)
     {
-        if (!row.gridLineRanges.empty())
+        if (!row->gridLineRanges.empty())
         {
             _drawGridlineRow(p, row, y);
         }
@@ -1058,11 +1067,11 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p)
     }
 }
 
-void BackendD3D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow& row, u16 y)
+void BackendD3D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* row, u16 y)
 {
     const auto top = p.s->font->cellSize.y * y;
 
-    for (const auto& r : row.gridLineRanges)
+    for (const auto& r : row->gridLineRanges)
     {
         // AtlasEngine.cpp shouldn't add any gridlines if they don't do anything.
         assert(r.lines.any());
@@ -1285,27 +1294,27 @@ void BackendD3D::_drawSelection(const RenderingPayload& p)
 
     for (const auto& row : p.rows)
     {
-        if (row.selectionTo > row.selectionFrom)
+        if (row->selectionTo > row->selectionFrom)
         {
             // If the current selection line matches the previous one, we can just extend the previous quad downwards.
             // The way this is implemented isn't very smart, but we also don't have very many rows to iterate through.
-            if (row.selectionFrom == lastFrom && row.selectionTo == lastTo)
+            if (row->selectionFrom == lastFrom && row->selectionTo == lastTo)
             {
                 _getLastQuad().size.y += p.s->font->cellSize.y;
             }
             else
             {
                 const i16x2 position{
-                    p.s->font->cellSize.x * row.selectionFrom,
+                    p.s->font->cellSize.x * row->selectionFrom,
                     p.s->font->cellSize.y * y,
                 };
                 const u16x2 size{
-                    (p.s->font->cellSize.x * (row.selectionTo - row.selectionFrom)),
+                    (p.s->font->cellSize.x * (row->selectionTo - row->selectionFrom)),
                     p.s->font->cellSize.y,
                 };
                 _appendQuad(position, size, p.s->misc->selectionColor, ShadingType::SolidFill);
-                lastFrom = row.selectionFrom;
-                lastTo = row.selectionTo;
+                lastFrom = row->selectionFrom;
+                lastTo = row->selectionTo;
             }
         }
 

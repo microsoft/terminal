@@ -9,6 +9,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     {
         auto operator<=>(const generation_t&) const = default;
 
+        constexpr void bump() noexcept
+        {
+            _value++;
+        }
+
         uint32_t _value = 0;
     };
 
@@ -42,7 +47,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         [[nodiscard]] constexpr T* write() noexcept
         {
-            _generation = generation_t{ _generation._value + 1u };
+            _generation.bump();
             return &_value;
         }
 

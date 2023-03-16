@@ -126,6 +126,7 @@ namespace Microsoft::Console::Render::Atlas
         void _debugUpdateShaders(const RenderingPayload& p) noexcept;
         void _d2dBeginDrawing() noexcept;
         void _d2dEndDrawing();
+        void _handleFontChangedResetGlyphAtlas(RenderingPayload& p);
         void _resetGlyphAtlasAndBeginDraw(const RenderingPayload& p);
         void _markStateChange(ID3D11BlendState* blendState);
         QuadInstance& _getLastQuad() noexcept;
@@ -136,9 +137,9 @@ namespace Microsoft::Console::Render::Atlas
         __declspec(noinline) void _recreateInstanceBuffers(const RenderingPayload& p);
         void _drawBackground(const RenderingPayload& p);
         void _drawText(RenderingPayload& p);
-        bool _drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry, f32 fontEmSize);
+        __declspec(noinline) void _drawGlyph(const RenderingPayload& p, GlyphCacheEntry& entry, f32 fontEmSize);
         void _drawGridlines(const RenderingPayload& p);
-        void _drawGridlineRow(const RenderingPayload& p, const ShapedRow& row, u16 y);
+        void _drawGridlineRow(const RenderingPayload& p, const ShapedRow* row, u16 y);
         void _drawCursorPart1(const RenderingPayload& p);
         void _drawCursorPart2(const RenderingPayload& p);
         void _drawSelection(const RenderingPayload& p);
@@ -186,6 +187,7 @@ namespace Microsoft::Console::Render::Atlas
 
         wil::com_ptr<ID3D11Texture2D> _backgroundBitmap;
         wil::com_ptr<ID3D11ShaderResourceView> _backgroundBitmapView;
+        til::generation_t _backgroundBitmapGeneration;
 
         wil::com_ptr<ID3D11Texture2D> _glyphAtlas;
         wil::com_ptr<ID3D11ShaderResourceView> _glyphAtlasView;
@@ -197,7 +199,7 @@ namespace Microsoft::Console::Render::Atlas
         wil::com_ptr<ID2D1DeviceContext4> _d2dRenderTarget4; // Optional. Supported since Windows 10 14393.
         wil::com_ptr<ID2D1SolidColorBrush> _brush;
         bool _d2dBeganDrawing = false;
-        bool _resetGlyphAtlasNeeded = false;
+        bool _fontChangedResetGlyphAtlas = false;
 
         float _gamma = 0;
         float _cleartypeEnhancedContrast = 0;
