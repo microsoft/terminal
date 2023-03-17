@@ -77,7 +77,7 @@ Try {
     If ($depsHasVclibsDesktop -Eq $filesHasVclibsDesktop) {
         $eitherBoth = if ($depsHasVclibsDesktop) { "both" } else { "neither" }
         $neitherNor = if ($depsHasVclibsDesktop) { "and" } else { "nor" }
-        #Throw "Package has $eitherBoth Dependency $neitherNor Integrated Desktop VCLibs"
+        Throw "Package has $eitherBoth Dependency $neitherNor Integrated Desktop VCLibs"
     }
 
     If ($depsHasVclibsAppx -Eq $filesHasVclibsAppx) {
@@ -85,7 +85,7 @@ Try {
             # We've shipped like this forever, so downgrade to warning.
             Write-Warning "Package has both Dependency and Integrated AppX VCLibs"
         } else {
-            #Throw "Package has neither Dependency nor Integrated AppX VCLibs"
+            Throw "Package has neither Dependency nor Integrated AppX VCLibs"
         }
     }
 

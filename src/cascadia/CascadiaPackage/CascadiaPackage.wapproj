@@ -153,8 +153,6 @@
     <ItemGroup>
       <FrameworkSdkReference Remove="@(FrameworkSdkReference)" Condition="'%(FrameworkSdkReference.SimpleName)'=='Microsoft.VCLibs'" />
       <FrameworkSdkPackage Remove="@(FrameworkSdkPackage)" Condition="'%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00' or '%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00.Debug'" />
-      <FrameworkSdkReference Remove="@(FrameworkSdkReference)" Condition="'%(FrameworkSdkReference.SimpleName)'=='Microsoft.VCLibs.Desktop'" />
-      <FrameworkSdkPackage Remove="@(FrameworkSdkPackage)" Condition="'%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00.UWPDesktop' or '%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00.UWPDesktop.Debug'" />
     </ItemGroup>
   </Target>
 
@@ -163,8 +161,6 @@
     <ItemGroup>
       <FrameworkSdkReference Remove="@(FrameworkSdkReference)" Condition="'%(FrameworkSdkReference.SimpleName)'=='Microsoft.VCLibs'" />
       <FrameworkSdkPackage Remove="@(FrameworkSdkPackage)" Condition="'%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00' or '%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00.Debug'" />
-      <FrameworkSdkReference Remove="@(FrameworkSdkReference)" Condition="'%(FrameworkSdkReference.SimpleName)'=='Microsoft.VCLibs.Desktop'" />
-      <FrameworkSdkPackage Remove="@(FrameworkSdkPackage)" Condition="'%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00.UWPDesktop' or '%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00.UWPDesktop.Debug'" />
     </ItemGroup>
   </Target>
 
