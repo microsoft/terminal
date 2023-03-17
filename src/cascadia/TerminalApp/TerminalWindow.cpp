@@ -693,6 +693,11 @@ namespace winrt::TerminalApp::implementation
     // - LaunchMode enum that indicates the launch mode
     LaunchMode TerminalWindow::GetLaunchMode()
     {
+        if (_contentBounds)
+        {
+            return LaunchMode::DefaultMode;
+        }
+
         // GH#4620/#5801 - If the user passed --maximized or --fullscreen on the
         // commandline, then use that to override the value from the settings.
         const auto valueFromSettings = _settings.GlobalSettings().LaunchMode();
@@ -757,8 +762,11 @@ namespace winrt::TerminalApp::implementation
 
     bool TerminalWindow::CenterOnLaunch()
     {
-        // If the position has been specified on the commandline, don't center on launch
-        return _settings.GlobalSettings().CenterOnLaunch() && !_appArgs.GetPosition().has_value();
+        // If
+        // * the position has been specified on the commandline,
+        // * We're opening the window as a part of tearout (and _contentBounds were set)
+        // then don't center on launch
+        return !_contentBounds && _settings.GlobalSettings().CenterOnLaunch() && !_appArgs.GetPosition().has_value();
     }
 
     // Method Description:
