@@ -983,9 +983,11 @@ void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*s
     }
 
     _WindowCreatedToken = _windowManager.WindowCreated([this](auto&&, auto&&) {
-        if (_getWindowLayoutThrottler) {
+        if (_getWindowLayoutThrottler)
+        {
             _getWindowLayoutThrottler.value()();
-        } });
+        }
+    });
 
     _WindowClosedToken = _windowManager.WindowClosed([this](auto&&, auto&&) {
         if (_getWindowLayoutThrottler)

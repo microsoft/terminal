@@ -57,7 +57,7 @@ namespace winrt::TerminalApp::implementation
         _mruTabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
         _startupActions{ winrt::single_threaded_vector<ActionAndArgs>() },
         _hostingHwnd{},
-        _WindowProperties{ properties }
+        _WindowProperties{ std::move(properties) }
     {
         InitializeComponent();
 
