@@ -1753,6 +1753,30 @@ public:
         requestSetting(L"\"q");
         _testGetSet->ValidateInputEvent(L"\033P1$r1\"q\033\\");
 
+        // Initialize the color alias indices for the DECAC tests below.
+        _testGetSet->PrepData();
+        auto& renderSettings = _testGetSet->_renderer._renderSettings;
+        renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, 3);
+        renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, 5);
+        renderSettings.SetColorAliasIndex(ColorAlias::FrameForeground, 4);
+        renderSettings.SetColorAliasIndex(ColorAlias::FrameBackground, 6);
+
+        Log::Comment(L"Requesting DECAC colors (default).");
+        requestSetting(L",|");
+        _testGetSet->ValidateInputEvent(L"\033P1$r1;3;5,|\033\\");
+
+        Log::Comment(L"Requesting DECAC colors (normal text).");
+        requestSetting(L"1,|");
+        _testGetSet->ValidateInputEvent(L"\033P1$r1;3;5,|\033\\");
+
+        Log::Comment(L"Requesting DECAC colors (window frame).");
+        requestSetting(L"2,|");
+        _testGetSet->ValidateInputEvent(L"\033P1$r2;4;6,|\033\\");
+
+        Log::Comment(L"Requesting DECAC colors (invalid item).");
+        requestSetting(L"3,|");
+        _testGetSet->ValidateInputEvent(L"\033P0$r\033\\");
+
         Log::Comment(L"Requesting an unsupported setting.");
         _testGetSet->PrepData();
         requestSetting(L"x");
