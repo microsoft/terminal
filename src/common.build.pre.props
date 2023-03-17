@@ -81,12 +81,26 @@
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
 
+  <PropertyGroup>
+    <!--
+      We don't need to use HybridCRT for Fuzzing, so just skip it entirely.
+      Fuzzing requires the address sanitizer runtime library plus the fuzzing
+      harness. They're probably not compatible.
+
+      Audit, however, *does* require linking components built in Release mode...
+    -->
+    <ConfigurationSupportsHybridCRT Condition="'$(Configuration)'=='Fuzzing'">false</ConfigurationSupportsHybridCRT>
+    <ConfigurationSupportsHybridCRT Condition="'$(ConfigurationSupportsHybridCRT)'==''">true</ConfigurationSupportsHybridCRT>
+  </PropertyGroup>
+
   <!-- For ALL build types-->
   <PropertyGroup Label="Configuration">
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <LinkIncremental>false</LinkIncremental>
     <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+    <EnableHybridCRT Condition="'$(EnableHybridCRT)'=='' and '$(ConfigurationSupportsHybridCRT)'=='true'">true</EnableHybridCRT>
+    <UseCrtSDKReferenceStaticWarning Condition="'$(EnableHybridCRT)'=='true'">false</UseCrtSDKReferenceStaticWarning>
   </PropertyGroup>
 
   <ItemDefinitionGroup>
