@@ -161,30 +161,32 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ContextMenu().Closed([weakThis = get_weak()](auto&&, auto&&) {
             if (auto control{ weakThis.get() }; !control->_IsClosing())
             {
-                control->ContextMenu().PrimaryCommands().Clear();
-                control->ContextMenu().SecondaryCommands().Clear();
+                const auto& menu{ control->ContextMenu() };
+                menu.PrimaryCommands().Clear();
+                menu.SecondaryCommands().Clear();
                 for (const auto& e : control->_originalPrimaryElements)
                 {
-                    control->ContextMenu().PrimaryCommands().Append(e);
+                    menu.PrimaryCommands().Append(e);
                 }
                 for (const auto& e : control->_originalSecondaryElements)
                 {
-                    control->ContextMenu().SecondaryCommands().Append(e);
+                    menu.SecondaryCommands().Append(e);
                 }
             }
         });
         SelectionContextMenu().Closed([weakThis = get_weak()](auto&&, auto&&) {
             if (auto control{ weakThis.get() }; !control->_IsClosing())
             {
-                control->SelectionContextMenu().PrimaryCommands().Clear();
-                control->SelectionContextMenu().SecondaryCommands().Clear();
+                const auto& menu{ control->SelectionContextMenu() };
+                menu.PrimaryCommands().Clear();
+                menu.SecondaryCommands().Clear();
                 for (const auto& e : control->_originalSelectedPrimaryElements)
                 {
-                    control->SelectionContextMenu().PrimaryCommands().Append(e);
+                    menu.PrimaryCommands().Append(e);
                 }
                 for (const auto& e : control->_originalSelectedSecondaryElements)
                 {
-                    control->SelectionContextMenu().SecondaryCommands().Append(e);
+                    menu.SecondaryCommands().Append(e);
                 }
             }
         });
@@ -472,8 +474,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // settings might be out-of-proc in the future
         auto settings{ _core.Settings() };
-
-        _useRightClickContextMenu = settings.RightClickContextMenu();
 
         // Apply padding as swapChainPanel's margin
         const auto newMargin = ParseThicknessFromPadding(settings.Padding());

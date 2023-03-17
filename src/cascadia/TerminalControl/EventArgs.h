@@ -57,10 +57,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     struct ContextMenuRequestedEventArgs : public ContextMenuRequestedEventArgsT<ContextMenuRequestedEventArgs>
     {
     public:
-        ContextMenuRequestedEventArgs(winrt::Windows::Foundation::Point point) :
-            _Point(point) {}
+        ContextMenuRequestedEventArgs(winrt::Windows::Foundation::Point pos) :
+            _Position(pos) {}
 
-        WINRT_PROPERTY(winrt::Windows::Foundation::Point, Point);
+        WINRT_PROPERTY(winrt::Windows::Foundation::Point, Position);
     };
 
     struct PasteFromClipboardEventArgs : public PasteFromClipboardEventArgsT<PasteFromClipboardEventArgs>
