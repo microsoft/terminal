@@ -11,6 +11,7 @@
 #include "LibraryResources.h"
 #include "../../types/inc/Environment.hpp"
 #include "../../types/inc/utils.hpp"
+#include <til/env.h>
 
 #include "ConptyConnection.g.cpp"
 
@@ -95,7 +96,20 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         });
 
         // Populate the environment map with the current environment.
-        RETURN_IF_FAILED(Utils::UpdateEnvironmentMapW(environment));
+        if (_reloadEnvironmentVariables)
+        {
+            til::env refreshedEnvironment;
+            refreshedEnvironment.regenerate();
+
+            for (const auto& [key, value] : refreshedEnvironment.as_map())
+            {
+                environment.try_emplace(std::move(key), std::move(value));
+            }
+        }
+        else
+        {
+            RETURN_IF_FAILED(Utils::UpdateEnvironmentMapW(environment));
+        }
 
         {
             // Convert connection Guid to string and ignore the enclosing '{}'.
@@ -272,6 +286,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             {
                 _passthroughMode = winrt::unbox_value_or<bool>(settings.TryLookup(L"passthroughMode").try_as<Windows::Foundation::IPropertyValue>(), _passthroughMode);
             }
+            _reloadEnvironmentVariables = winrt::unbox_value_or<bool>(settings.TryLookup(L"reloadEnvironmentVariables").try_as<Windows::Foundation::IPropertyValue>(),
+                                                                      _reloadEnvironmentVariables);
         }
 
         if (_guid == guid{})

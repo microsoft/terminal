@@ -13,7 +13,6 @@
 #include <LibraryResources.h>
 #include <TerminalCore/ControlKeyStates.hpp>
 #include <til/latch.h>
-#include <til/env.h>
 
 #include "../../types/inc/utils.hpp"
 #include "ColorHelper.h"
@@ -1281,16 +1280,6 @@ namespace winrt::TerminalApp::implementation
             auto guidWString = Utils::GuidToString(profile.Guid());
 
             StringMap envMap{};
-            if (_settings.GlobalSettings().ReloadEnvironmentVariables())
-            {
-                til::env environment;
-                environment.regenerate();
-
-                for (const auto& [key, value] : environment.as_map())
-                {
-                    envMap.Insert(key, value);
-                }
-            }
             envMap.Insert(L"WT_PROFILE_ID", guidWString);
             envMap.Insert(L"WSLENV", L"WT_PROFILE_ID");
 
@@ -1329,6 +1318,8 @@ namespace winrt::TerminalApp::implementation
                                                                                  winrt::guid());
 
             valueSet.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
+            valueSet.Insert(L"reloadEnvironmentVariables",
+                            Windows::Foundation::PropertyValue::CreateBoolean(_settings.GlobalSettings().ReloadEnvironmentVariables()));
 
             conhostConn.Initialize(valueSet);
 
