@@ -65,7 +65,6 @@ namespace winrt::TerminalApp::implementation
         void Create();
 
         bool IsUwp() const noexcept;
-        bool IsElevated() const noexcept;
 
         void Quit();
 

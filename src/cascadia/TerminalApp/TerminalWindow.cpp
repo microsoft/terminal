@@ -202,35 +202,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Called around the codebase to discover if Terminal is running elevated
-    // Arguments:
-    // - <none> - reports internal state
-    // Return Value:
-    // - True if elevated, false otherwise.
-    bool TerminalWindow::IsElevated() const noexcept
-    {
-        // use C++11 magic statics to make sure we only do this once.
-        // This won't change over the lifetime of the application
-
-        static const auto isElevated = []() {
-            // *** THIS IS A SINGLETON ***
-            auto result = false;
-
-            // GH#2455 - Make sure to try/catch calls to Application::Current,
-            // because that _won't_ be an instance of TerminalApp::App in the
-            // LocalTests
-            try
-            {
-                result = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsElevated();
-            }
-            CATCH_LOG();
-            return result;
-        }();
-
-        return isElevated;
-    }
-
-    // Method Description:
     // - Build the UI for the terminal app. Before this method is called, it
     //   should not be assumed that the TerminalApp is usable. The Settings
     //   should be loaded before this is called, either with LoadSettings or

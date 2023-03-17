@@ -132,7 +132,12 @@ namespace winrt::TerminalApp::implementation
         // cause you to chase down the rabbit hole of "why is App not
         // registered?" when it definitely is.
 
-        _isElevated = ::Microsoft::Console::Utils::IsElevated();
+        // The TerminalPage has to be constructed during our construction, to
+        // make sure that there's a terminal page for callers of
+        // SetTitleBarContent
+
+        _isElevated = ::Microsoft::Console::Utils::IsRunningElevated();
+        _canDragDrop = ::Microsoft::Console::Utils::CanUwpDragDrop();
 
         _reloadSettings = std::make_shared<ThrottledFuncTrailing<>>(winrt::Windows::System::DispatcherQueue::GetForCurrentThread(), std::chrono::milliseconds(100), [weakSelf = get_weak()]() {
             if (auto self{ weakSelf.get() })
@@ -163,9 +168,13 @@ namespace winrt::TerminalApp::implementation
     // - <none> - reports internal state
     // Return Value:
     // - True if elevated, false otherwise.
-    bool AppLogic::IsElevated() const noexcept
+    bool AppLogic::IsRunningElevated() const noexcept
     {
         return _isElevated;
+    }
+    bool AppLogic::CanDragDrop() const noexcept
+    {
+        return _canDragDrop;
     }
 
     // Method Description:
