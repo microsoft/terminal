@@ -77,22 +77,7 @@ namespace winrt::TerminalApp::implementation
     /// <param name="e">Details about the launch request and process.</param>
     void App::OnLaunched(const LaunchActivatedEventArgs& /*e*/)
     {
-        // if this is a UWP... it means its our problem to hook up the content to the window here.
-        if (_isUwp)
-        {
-            auto content = Window::Current().Content();
-            if (content == nullptr)
-            {
-                auto logic = Logic();
-                logic.RunAsUwp(); // Must set UWP status first, settings might change based on it.
-                logic.ReloadSettings();
-                logic.Create();
-
-                auto page = logic.GetRoot().as<TerminalPage>();
-
-                Window::Current().Content(page);
-                Window::Current().Activate();
-            }
-        }
+        // We used to support a pure UWP version of the Terminal. This method
+        // was only ever used to do UWP-specific setup of our App.
     }
 }
