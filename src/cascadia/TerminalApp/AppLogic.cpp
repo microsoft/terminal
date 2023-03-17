@@ -47,6 +47,7 @@ static const std::array settingsLoadErrorsLabels{
     USES_RESOURCE(L"NoProfilesText"),
     USES_RESOURCE(L"AllProfilesHiddenText")
 };
+
 static_assert(settingsLoadErrorsLabels.size() == static_cast<size_t>(SettingsLoadErrors::ERRORS_SIZE));
 
 // Function Description:
@@ -677,7 +678,6 @@ namespace winrt::TerminalApp::implementation
     {
         if (!_loadedInitialSettings)
         {
-            // Load settings if we haven't already
             ReloadSettings();
         }
         return _settings.GlobalSettings().IsolatedMode();
@@ -749,4 +749,5 @@ namespace winrt::TerminalApp::implementation
         const auto r = _appArgs.ParseArgs(args);
         return TerminalApp::ParseCommandlineResult{ winrt::to_hstring(_appArgs.GetExitMessage()), r };
     }
+
 }

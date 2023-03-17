@@ -332,6 +332,7 @@ void AppHost::Initialize()
     _window->DragRegionClicked([this]() { _windowLogic.TitlebarClicked(); });
 
     _window->WindowVisibilityChanged([this](bool showOrHide) { _windowLogic.WindowVisibilityChanged(showOrHide); });
+
     _window->UpdateSettingsRequested({ this, &AppHost::_requestUpdateSettings });
 
     _revokers.RequestedThemeChanged = _windowLogic.RequestedThemeChanged(winrt::auto_revoke, { this, &AppHost::_UpdateTheme });
@@ -445,6 +446,16 @@ void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*se
 {
     // We don't want to try to save layouts if we are about to close.
     _peasant.GetWindowLayoutRequested(_GetWindowLayoutRequestedToken);
+
+    // If the user closes the last tab, in the last window, _by closing the tab_
+    // (not by closing the whole window), we need to manually persist an empty
+    // window state here. That will cause the terminal to re-open with the usual
+    // settings (not the persisted state)
+    if (args.ClearPersistedState() &&
+        _windowManager.GetNumberOfPeasants() == 1)
+    {
+        _windowLogic.ClearPersistedWindowState();
+    }
 
     // If the user closes the last tab, in the last window, _by closing the tab_
     // (not by closing the whole window), we need to manually persist an empty
