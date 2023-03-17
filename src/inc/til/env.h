@@ -32,13 +32,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         //      https://docs.microsoft.com/en-us/windows/desktop/ProcThread/changing-environment-variables
         //
         // - Returns CSTR_LESS_THAN, CSTR_EQUAL or CSTR_GREATER_THAN
-        [[nodiscard]] int compare_string_ordinal(const std::wstring_view& lhs, const std::wstring_view& rhs) noexcept
+        [[nodiscard]] inline int compare_string_ordinal(const std::wstring_view& lhs, const std::wstring_view& rhs) noexcept
         {
-            int result = CompareStringOrdinal(lhs.data(),
-                                              ::base::saturated_cast<int>(lhs.size()),
-                                              rhs.data(),
-                                              ::base::saturated_cast<int>(rhs.size()),
-                                              TRUE);
+            const auto result = CompareStringOrdinal(
+                lhs.data(),
+                ::base::saturated_cast<int>(lhs.size()),
+                rhs.data(),
+                ::base::saturated_cast<int>(rhs.size()),
+                TRUE);
             FAIL_FAST_LAST_ERROR_IF(!result);
             return result;
         }
@@ -107,33 +108,32 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             /** Looks up the computer name and fails if it is not found. */
             template<typename string_type, size_t initialBufferLength = MAX_COMPUTERNAME_LENGTH + 1>
-            inline HRESULT GetComputerNameW(string_type& result) WI_NOEXCEPT
+            HRESULT GetComputerNameW(string_type& result) WI_NOEXCEPT
             {
-                return wil::AdaptFixedSizeToAllocatedResult<string_type, initialBufferLength>(result,
-                                                                                              [&](_Out_writes_(valueLength) PWSTR value, size_t valueLength, _Out_ size_t* valueLengthNeededWithNul) -> HRESULT {
-                                                                                                  // If the function succeeds, the return value is the number of characters stored in the buffer
-                                                                                                  // pointed to by lpBuffer, not including the terminating null character.
-                                                                                                  //
-                                                                                                  // If lpBuffer is not large enough to hold the data, the return value is the buffer size, in
-                                                                                                  // characters, required to hold the string and its terminating null character and the contents of
-                                                                                                  // lpBuffer are undefined.
-                                                                                                  //
-                                                                                                  // If the function fails, the return value is zero. If the specified environment variable was not
-                                                                                                  // found in the environment block, GetLastError returns ERROR_ENVVAR_NOT_FOUND.
+                return wil::AdaptFixedSizeToAllocatedResult<string_type, initialBufferLength>(result, [&](_Out_writes_(valueLength) PWSTR value, size_t valueLength, _Out_ size_t* valueLengthNeededWithNul) -> HRESULT {
+                    // If the function succeeds, the return value is the number of characters stored in the buffer
+                    // pointed to by lpBuffer, not including the terminating null character.
+                    //
+                    // If lpBuffer is not large enough to hold the data, the return value is the buffer size, in
+                    // characters, required to hold the string and its terminating null character and the contents of
+                    // lpBuffer are undefined.
+                    //
+                    // If the function fails, the return value is zero. If the specified environment variable was not
+                    // found in the environment block, GetLastError returns ERROR_ENVVAR_NOT_FOUND.
 
-                                                                                                  ::SetLastError(ERROR_SUCCESS);
+                    ::SetLastError(ERROR_SUCCESS);
 
-                                                                                                  DWORD length = static_cast<DWORD>(valueLength);
+                    DWORD length = static_cast<DWORD>(valueLength);
 
-                                                                                                  auto result = ::GetComputerNameW(value, &length);
-                                                                                                  *valueLengthNeededWithNul = length;
-                                                                                                  RETURN_IF_WIN32_BOOL_FALSE_EXPECTED(result);
-                                                                                                  if (*valueLengthNeededWithNul < valueLength)
-                                                                                                  {
-                                                                                                      (*valueLengthNeededWithNul)++; // It fit, account for the null.
-                                                                                                  }
-                                                                                                  return S_OK;
-                                                                                              });
+                    const auto result = ::GetComputerNameW(value, &length);
+                    *valueLengthNeededWithNul = length;
+                    RETURN_IF_WIN32_BOOL_FALSE_EXPECTED(result);
+                    if (*valueLengthNeededWithNul < valueLength)
+                    {
+                        (*valueLengthNeededWithNul)++; // It fit, account for the null.
+                    }
+                    return S_OK;
+                });
             }
 
             /** Looks up the computer name and returns null if it is not found. */
@@ -167,18 +167,17 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             /** Looks up a registry value from 'key' and fails if it is not found. */
             template<typename string_type, size_t initialBufferLength = 256>
-            inline HRESULT RegQueryValueExW(HKEY key, PCWSTR valueName, string_type& result) WI_NOEXCEPT
+            HRESULT RegQueryValueExW(HKEY key, PCWSTR valueName, string_type& result) WI_NOEXCEPT
             {
-                return wil::AdaptFixedSizeToAllocatedResult<string_type, initialBufferLength>(result,
-                                                                                              [&](_Out_writes_(valueLength) PWSTR value, size_t valueLength, _Out_ size_t* valueLengthNeededWithNul) -> HRESULT {
-                                                                                                  auto length = gsl::narrow<DWORD>(valueLength * sizeof(wchar_t));
-                                                                                                  const auto status = ::RegQueryValueExW(key, valueName, 0, nullptr, reinterpret_cast<BYTE*>(value), &length);
-                                                                                                  // length will receive the number of bytes including trailing null byte. Convert to a number of wchar_t's.
-                                                                                                  // AdaptFixedSizeToAllocatedResult will then resize buffer to valueLengthNeededWithNull.
-                                                                                                  // We're rounding up to prevent infinite loops if the data isn't a REG_SZ and length isn't divisible by 2.
-                                                                                                  *valueLengthNeededWithNul = (length + sizeof(wchar_t) - 1) / sizeof(wchar_t);
-                                                                                                  return status == ERROR_MORE_DATA ? S_OK : HRESULT_FROM_WIN32(status);
-                                                                                              });
+                return wil::AdaptFixedSizeToAllocatedResult<string_type, initialBufferLength>(result, [&](_Out_writes_(valueLength) PWSTR value, size_t valueLength, _Out_ size_t* valueLengthNeededWithNul) -> HRESULT {
+                    auto length = gsl::narrow<DWORD>(valueLength * sizeof(wchar_t));
+                    const auto status = ::RegQueryValueExW(key, valueName, nullptr, nullptr, reinterpret_cast<BYTE*>(value), &length);
+                    // length will receive the number of bytes including trailing null byte. Convert to a number of wchar_t's.
+                    // AdaptFixedSizeToAllocatedResult will then resize buffer to valueLengthNeededWithNull.
+                    // We're rounding up to prevent infinite loops if the data isn't a REG_SZ and length isn't divisible by 2.
+                    *valueLengthNeededWithNul = (length + sizeof(wchar_t) - 1) / sizeof(wchar_t);
+                    return status == ERROR_MORE_DATA ? S_OK : HRESULT_FROM_WIN32(status);
+                });
             }
 
             /** Looks up a registry value from 'key' and returns null if it is not found. */
@@ -215,19 +214,18 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             template<typename string_type, size_t stackBufferLength = 256>
             HRESULT GetShortPathNameW(PCWSTR file, string_type& path)
             {
-                const auto hr = wil::AdaptFixedSizeToAllocatedResult<string_type, stackBufferLength>(path,
-                                                                                                     [&](_Out_writes_(valueLength) PWSTR value, size_t valueLength, _Out_ size_t* valueLengthNeededWithNull) -> HRESULT {
-                                                                                                         // Note that GetShortPathNameW() is not limited to MAX_PATH
-                                                                                                         // but it does take a fixed size buffer.
-                                                                                                         *valueLengthNeededWithNull = ::GetShortPathNameW(file, value, static_cast<DWORD>(valueLength));
-                                                                                                         RETURN_LAST_ERROR_IF(*valueLengthNeededWithNull == 0);
-                                                                                                         WI_ASSERT((*value != L'\0') == (*valueLengthNeededWithNull < valueLength));
-                                                                                                         if (*valueLengthNeededWithNull < valueLength)
-                                                                                                         {
-                                                                                                             (*valueLengthNeededWithNull)++; // it fit, account for the null
-                                                                                                         }
-                                                                                                         return S_OK;
-                                                                                                     });
+                const auto hr = wil::AdaptFixedSizeToAllocatedResult<string_type, stackBufferLength>(path, [&](_Out_writes_(valueLength) PWSTR value, size_t valueLength, _Out_ size_t* valueLengthNeededWithNull) -> HRESULT {
+                    // Note that GetShortPathNameW() is not limited to MAX_PATH
+                    // but it does take a fixed size buffer.
+                    *valueLengthNeededWithNull = ::GetShortPathNameW(file, value, static_cast<DWORD>(valueLength));
+                    RETURN_LAST_ERROR_IF(*valueLengthNeededWithNull == 0);
+                    WI_ASSERT((*value != L'\0') == (*valueLengthNeededWithNull < valueLength));
+                    if (*valueLengthNeededWithNull < valueLength)
+                    {
+                        (*valueLengthNeededWithNull)++; // it fit, account for the null
+                    }
+                    return S_OK;
+                });
                 return hr;
             }
 
@@ -274,8 +272,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         void get_user_name_and_domain()
         try
         {
-            auto token = wil::open_current_access_token();
-            auto user = wil::get_token_information<TOKEN_USER>(token.get());
+            const auto token = wil::open_current_access_token();
+            const auto user = wil::get_token_information<TOKEN_USER>(token.get());
 
             DWORD accountNameSize = 0, userDomainSize = 0;
             SID_NAME_USE sidNameUse;
@@ -335,7 +333,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
                         while (true)
                         {
-                            DWORD result = RegEnumValueW(key.get(), index, valueName.data(), &valueNameSize, nullptr, &type, valueData.data(), &valueDataSize);
+                            const DWORD result = RegEnumValueW(key.get(), index, valueName.data(), &valueNameSize, nullptr, &type, valueData.data(), &valueDataSize);
                             if (result != ERROR_SUCCESS)
                             {
                                 break;
@@ -369,11 +367,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                                 {
                                     if (is_path_var(valueName))
                                     {
-                                        concat_var(valueName, std::wstring{ data });
+                                        concat_var(valueName, std::move(data));
                                     }
                                     else
                                     {
-                                        set_user_environment_var(valueName, std::wstring{ data });
+                                        set_user_environment_var(valueName, std::move(data));
                                     }
                                 }
                             }
@@ -474,12 +472,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
         }
 
-        static constexpr std::wstring_view temp{ L"temp" };
-        static constexpr std::wstring_view tmp{ L"tmp" };
         std::wstring check_for_temp(std::wstring_view var, std::wstring_view value)
         {
-            if (til::details::compare_string_ordinal(var.data(), temp.data()) == CSTR_EQUAL ||
-                til::details::compare_string_ordinal(var.data(), tmp.data()) == CSTR_EQUAL)
+            static constexpr std::wstring_view temp{ L"temp" };
+            static constexpr std::wstring_view tmp{ L"tmp" };
+            if (til::details::compare_string_ordinal(var, temp) == CSTR_EQUAL ||
+                til::details::compare_string_ordinal(var, tmp) == CSTR_EQUAL)
             {
                 return til::details::wil_env::GetShortPathNameW<std::wstring, 256>(value.data());
             }
@@ -489,17 +487,17 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
         }
 
-        static constexpr std::wstring_view path{ L"Path" };
-        static constexpr std::wstring_view libPath{ L"LibPath" };
-        static constexpr std::wstring_view os2LibPath{ L"Os2LibPath" };
-        bool is_path_var(std::wstring_view input)
+        static bool is_path_var(std::wstring_view input) noexcept
         {
-            return til::details::compare_string_ordinal(input.data(), path.data()) == CSTR_EQUAL ||
-                   til::details::compare_string_ordinal(input.data(), libPath.data()) == CSTR_EQUAL ||
-                   til::details::compare_string_ordinal(input.data(), os2LibPath.data()) == CSTR_EQUAL;
+            static constexpr std::wstring_view path{ L"Path" };
+            static constexpr std::wstring_view libPath{ L"LibPath" };
+            static constexpr std::wstring_view os2LibPath{ L"Os2LibPath" };
+            return til::details::compare_string_ordinal(input, path) == CSTR_EQUAL ||
+                   til::details::compare_string_ordinal(input, libPath) == CSTR_EQUAL ||
+                   til::details::compare_string_ordinal(input, os2LibPath) == CSTR_EQUAL;
         }
 
-        void strip_trailing_null(std::wstring& str)
+        static void strip_trailing_null(std::wstring& str) noexcept
         {
             if (!str.empty() && str.back() == L'\0')
             {
@@ -507,9 +505,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
         }
 
-        void parse(wchar_t* block)
+        void parse(const wchar_t* lastCh)
         {
-            for (wchar_t const* lastCh{ block }; *lastCh != '\0'; ++lastCh)
+            for (; *lastCh != '\0'; ++lastCh)
             {
                 // Copy current entry into temporary map.
                 const size_t cchEntry{ ::wcslen(lastCh) };
@@ -529,11 +527,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
     public:
-        env()
-        {
-        }
+        env() = default;
 
-        env(wchar_t* block)
+        env(const wchar_t* block)
         {
             parse(block);
         }
@@ -577,7 +573,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return result;
         }
 
-        std::map<std::wstring, std::wstring, til::details::wstring_case_insensitive_compare>& as_map()
+        auto& as_map() noexcept
         {
             return _envMap;
         }

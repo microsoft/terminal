@@ -5,13 +5,13 @@
 #include "ConptyConnection.h"
 
 #include <conpty-static.h>
+#include <til/env.h>
 #include <winternl.h>
 
 #include "CTerminalHandoff.h"
 #include "LibraryResources.h"
 #include "../../types/inc/Environment.hpp"
 #include "../../types/inc/utils.hpp"
-#include <til/env.h>
 
 #include "ConptyConnection.g.cpp"
 
@@ -101,9 +101,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             til::env refreshedEnvironment;
             refreshedEnvironment.regenerate();
 
-            for (const auto& [key, value] : refreshedEnvironment.as_map())
+            for (auto& [key, value] : refreshedEnvironment.as_map())
             {
-                environment.try_emplace(std::move(key), std::move(value));
+                environment.try_emplace(key, std::move(value));
             }
         }
         else
