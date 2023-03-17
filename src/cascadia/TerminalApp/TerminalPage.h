@@ -458,6 +458,10 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget _ShowWindowChangedHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
         winrt::fire_and_forget _windowPropertyChanged(const IInspectable& sender, const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
 
+        void _ContextMenuOpened(const IInspectable& sender, const IInspectable& args);
+        void _SelectionMenuOpened(const IInspectable& sender, const IInspectable& args);
+        void _PopulateContextMenu(const IInspectable& sender, const bool withSelection);
+
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
 #define ON_ALL_ACTIONS(action) DECLARE_ACTION_HANDLER(action);
