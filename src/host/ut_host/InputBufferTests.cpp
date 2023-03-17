@@ -367,7 +367,7 @@ class InputBufferTests
 
     TEST_METHOD(EmptyingBufferDuringReadSetsResetWaitEvent)
     {
-        Log::Comment(L"ResetWaitEvent should be true if a read to the buffer completely empties it");
+        Log::Comment(L"hInputEvent should be reset if a read to the buffer completely empties it");
 
         InputBuffer inputBuffer;
 
@@ -381,48 +381,62 @@ class InputBufferTests
         }
         VERIFY_IS_GREATER_THAN(inputBuffer.Write(inEvents), 0u);
 
-        // read one record, make sure ResetWaitEvent isn't set
-        std::deque<std::unique_ptr<IInputEvent>> outEvents;
-        size_t eventsRead = 0;
-        auto resetWaitEvent = false;
-        inputBuffer._ReadBuffer(outEvents,
-                                1,
-                                eventsRead,
-                                false,
-                                resetWaitEvent,
-                                true,
-                                false);
-        VERIFY_ARE_EQUAL(eventsRead, 1u);
-        VERIFY_IS_FALSE(!!resetWaitEvent);
+        auto& waitEvent = ServiceLocator::LocateGlobals().hInputEvent;
+        waitEvent.SetEvent();
 
-        // read the rest, resetWaitEvent should be set to true
+        // read one record, hInputEvent should still be signaled
+        std::deque<std::unique_ptr<IInputEvent>> outEvents;
+        VERIFY_NT_SUCCESS(inputBuffer.Read(outEvents,
+                                           1,
+                                           false,
+                                           false,
+                                           true,
+                                           false));
+        VERIFY_ARE_EQUAL(outEvents.size(), 1u);
+        VERIFY_IS_TRUE(waitEvent.is_signaled());
+
+        // read the rest, hInputEvent should be reset
+        waitEvent.SetEvent();
         outEvents.clear();
-        inputBuffer._ReadBuffer(outEvents,
-                                RECORD_INSERT_COUNT - 1,
-                                eventsRead,
-                                false,
-                                resetWaitEvent,
-                                true,
-                                false);
-        VERIFY_ARE_EQUAL(eventsRead, RECORD_INSERT_COUNT - 1);
-        VERIFY_IS_TRUE(!!resetWaitEvent);
+        VERIFY_NT_SUCCESS(inputBuffer.Read(outEvents,
+                                           RECORD_INSERT_COUNT - 1,
+                                           false,
+                                           false,
+                                           true,
+                                           false));
+        VERIFY_ARE_EQUAL(outEvents.size(), RECORD_INSERT_COUNT - 1);
+        VERIFY_IS_FALSE(waitEvent.is_signaled());
     }
 
     TEST_METHOD(ReadingDbcsCharsPadsOutputArray)
     {
         Log::Comment(L"During a non-unicode read, the input buffer should count twice for each dbcs key event");
 
+        auto& codepage = ServiceLocator::LocateGlobals().getConsoleInformation().CP;
+        const auto restoreCP = wil::scope_exit([&, previous = codepage]() {
+            codepage = previous;
+        });
+
+        codepage = CP_JAPANESE;
+
         // write a mouse event, key event, dbcs key event, mouse event
         InputBuffer inputBuffer;
-        const unsigned int recordInsertCount = 4;
-        INPUT_RECORD inRecords[recordInsertCount];
+
+        std::array<INPUT_RECORD, 4> inRecords{};
         inRecords[0].EventType = MOUSE_EVENT;
         inRecords[1] = MakeKeyEvent(TRUE, 1, L'A', 0, L'A', 0);
         inRecords[2] = MakeKeyEvent(TRUE, 1, 0x3042, 0, 0x3042, 0); // U+3042 hiragana A
         inRecords[3].EventType = MOUSE_EVENT;
 
+        std::array<INPUT_RECORD, 5> outRecordsExpected{};
+        outRecordsExpected[0].EventType = MOUSE_EVENT;
+        outRecordsExpected[1] = MakeKeyEvent(TRUE, 1, L'A', 0, L'A', 0);
+        outRecordsExpected[2] = MakeKeyEvent(TRUE, 1, 0x3042, 0, 0x82, 0);
+        outRecordsExpected[3] = MakeKeyEvent(TRUE, 1, 0x3042, 0, 0xa0, 0);
+        outRecordsExpected[4].EventType = MOUSE_EVENT;
+
         std::deque<std::unique_ptr<IInputEvent>> inEvents;
-        for (size_t i = 0; i < recordInsertCount; ++i)
+        for (size_t i = 0; i < inRecords.size(); ++i)
         {
             inEvents.push_back(IInputEvent::Create(inRecords[i]));
         }
@@ -432,22 +446,16 @@ class InputBufferTests
 
         // read them out non-unicode style and compare
         std::deque<std::unique_ptr<IInputEvent>> outEvents;
-        size_t eventsRead = 0;
-        auto resetWaitEvent = false;
-        inputBuffer._ReadBuffer(outEvents,
-                                recordInsertCount,
-                                eventsRead,
-                                false,
-                                resetWaitEvent,
-                                false,
-                                false);
-        // the dbcs record should have counted for two elements in
-        // the array, making it so that we get less events read
-        VERIFY_ARE_EQUAL(eventsRead, recordInsertCount - 1);
-        VERIFY_ARE_EQUAL(eventsRead, outEvents.size());
-        for (size_t i = 0; i < eventsRead; ++i)
+        VERIFY_NT_SUCCESS(inputBuffer.Read(outEvents,
+                                           outRecordsExpected.size(),
+                                           false,
+                                           false,
+                                           false,
+                                           false));
+        VERIFY_ARE_EQUAL(outEvents.size(), outRecordsExpected.size());
+        for (size_t i = 0; i < outEvents.size(); ++i)
         {
-            VERIFY_ARE_EQUAL(outEvents[i]->ToInputRecord(), inRecords[i]);
+            VERIFY_ARE_EQUAL(outEvents[i]->ToInputRecord(), outRecordsExpected[i]);
         }
     }
 

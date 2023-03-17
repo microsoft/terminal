@@ -259,7 +259,6 @@ namespace winrt::TerminalApp::implementation
         bool _renamerPressedEnter{ false };
 
         TerminalApp::WindowProperties _WindowProperties{ nullptr };
-
         PaneResources _paneResources;
 
         TerminalApp::ContentManager _manager{ nullptr };
@@ -267,8 +266,9 @@ namespace winrt::TerminalApp::implementation
         winrt::com_ptr<winrt::TerminalApp::implementation::TabBase> _stashedDraggedTab{ nullptr };
         til::point _dragOffset{ 0, 0 };
 
-        winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult>
-        _ShowDialogHelper(const std::wstring_view& name);
+        winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::NewConnection_revoker _newConnectionRevoker;
+
+        winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowDialogHelper(const std::wstring_view& name);
 
         void _ShowAboutDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowQuitDialog();

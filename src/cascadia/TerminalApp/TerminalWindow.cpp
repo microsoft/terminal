@@ -53,6 +53,7 @@ static const std::array settingsLoadWarningsLabels{
     USES_RESOURCE(L"UnknownTheme"),
     USES_RESOURCE(L"DuplicateRemainingProfilesEntry"),
 };
+
 static_assert(settingsLoadWarningsLabels.size() == static_cast<size_t>(SettingsLoadWarnings::WARNINGS_SIZE));
 // Errors are defined in AppLogic.cpp
 
@@ -266,6 +267,7 @@ namespace winrt::TerminalApp::implementation
 
         _root->SetSettings(_settings, false); // We're on our UI thread right now, so this is safe
         _root->Loaded({ get_weak(), &TerminalWindow::_OnLoaded });
+
         _root->Initialized([this](auto&&, auto&&) {
             // GH#288 - When we finish initialization, if the user wanted us
             // launched _fullscreen_, toggle fullscreen mode. This will make sure
@@ -1072,6 +1074,7 @@ namespace winrt::TerminalApp::implementation
         {
             SetPersistedLayoutIdx(idx.value());
         }
+
         return result;
     }
 
@@ -1288,8 +1291,6 @@ namespace winrt::TerminalApp::implementation
             _root->SendContentToOther(args);
         }
     }
-
-    ////////////////////////////////////////////////////////////////////////////
 
     bool TerminalWindow::ShouldImmediatelyHandoffToElevated()
     {
