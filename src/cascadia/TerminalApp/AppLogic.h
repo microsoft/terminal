@@ -62,7 +62,7 @@ namespace winrt::TerminalApp::implementation
         bool IsUwp() const noexcept;
         void RunAsUwp();
         bool IsElevated() const noexcept;
-        void ReloadSettings();
+        void ReloadSettings(const bool keybindingsOnly = false);
 
         [[nodiscard]] Microsoft::Terminal::Settings::Model::CascadiaSettings GetSettings() const noexcept;
 
@@ -171,7 +171,7 @@ namespace winrt::TerminalApp::implementation
         ::TerminalApp::AppCommandlineArgs _appArgs;
         ::TerminalApp::AppCommandlineArgs _settingsAppArgs;
 
-        std::shared_ptr<ThrottledFuncTrailing<>> _reloadSettings;
+        std::shared_ptr<ThrottledFuncTrailing<const bool>> _reloadSettings;
         til::throttled_func_trailing<> _reloadState;
 
         // These fields invoke _reloadSettings and must be destroyed before _reloadSettings.
