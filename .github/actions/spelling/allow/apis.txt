@@ -34,7 +34,6 @@ DNE
 DONTADDTORECENT
 DWMSBT
 DWMWA
-DWMWA
 DWORDLONG
 endfor
 ENDSESSION
@@ -251,3 +250,4 @@ xtree
 xutility
 YIcon
 YMax
+zwstring
