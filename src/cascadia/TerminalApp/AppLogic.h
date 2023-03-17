@@ -65,8 +65,12 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IMapView<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::Command> GlobalHotkeys();
 
         Microsoft::Terminal::Settings::Model::Theme Theme();
+        bool IsolatedMode();
+        bool RequestsTrayIcon();
 
         TerminalApp::TerminalWindow CreateNewWindow();
+
+        TerminalApp::ParseCommandlineResult GetParseCommandlineMessage(array_view<const winrt::hstring> args);
 
         TYPED_EVENT(SettingsChanged, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SettingsLoadEventArgs);
 

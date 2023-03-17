@@ -6,6 +6,7 @@
 #include "../inc/WindowingBehavior.h"
 #include "AppLogic.g.cpp"
 #include "FindTargetWindowResult.g.cpp"
+#include "SettingsLoadEventArgs.h"
 
 #include <LibraryResources.h>
 #include <WtExeUtils.h>
@@ -594,7 +595,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (!appArgs.GetExitMessage().empty())
             {
-                return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseNew);
+                return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseNone);
             }
 
             const std::string parsedTarget{ appArgs.GetTargetWindow() };
@@ -662,18 +663,14 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        // Any unsuccessful parse will be a new window. That new window will try
-        // to handle the commandline itself, and find that the commandline
-        // failed to parse. When that happens, the new window will display the
-        // message box.
+        // Any unsuccessful parse will result in _no_ window. We will indicate
+        // to the caller that they shouldn't make a window. They can still find
+        // the commandline failed to parse and choose to display the message
+        // box.
         //
         // This will also work for the case where the user specifies an invalid
-        // commandline in conjunction with `-w 0`. This function will determine
-        // that the commandline has a  parse error, and indicate that we should
-        // create a new window. Then, in that new window, we'll try to  set the
-        // StartupActions, which will again fail, returning the correct error
-        // message.
-        return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseNew);
+        // commandline in conjunction with `-w 0`.
+        return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseNone);
     }
 
     Windows::Foundation::Collections::IMapView<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::Command> AppLogic::GlobalHotkeys()
@@ -684,6 +681,26 @@ namespace winrt::TerminalApp::implementation
     Microsoft::Terminal::Settings::Model::Theme AppLogic::Theme()
     {
         return _settings.GlobalSettings().CurrentTheme();
+    }
+
+    bool AppLogic::IsolatedMode()
+    {
+        if (!_loadedInitialSettings)
+        {
+            ReloadSettings();
+        }
+        return _settings.GlobalSettings().IsolatedMode();
+    }
+    bool AppLogic::RequestsTrayIcon()
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            ReloadSettings();
+        }
+        const auto& globals{ _settings.GlobalSettings() };
+        return globals.AlwaysShowNotificationIcon() ||
+               globals.MinimizeToNotificationArea();
     }
 
     TerminalApp::TerminalWindow AppLogic::CreateNewWindow()
@@ -734,4 +751,12 @@ namespace winrt::TerminalApp::implementation
 
         ApplicationState::SharedInstance().PersistedWindowLayouts(winrt::single_threaded_vector(std::move(converted)));
     }
+
+    TerminalApp::ParseCommandlineResult AppLogic::GetParseCommandlineMessage(array_view<const winrt::hstring> args)
+    {
+        ::TerminalApp::AppCommandlineArgs _appArgs;
+        const auto r = _appArgs.ParseArgs(args);
+        return TerminalApp::ParseCommandlineResult{ winrt::to_hstring(_appArgs.GetExitMessage()), r };
+    }
+
 }

@@ -123,11 +123,8 @@ namespace winrt::TerminalApp::implementation
         _initialLoadResult{ settingsLoadedResult },
         _WindowProperties{ winrt::make_self<TerminalApp::implementation::WindowProperties>() }
     {
-        // The TerminalPage has to be constructed during our construction, to
-        // make sure that there's a terminal page for callers of
-        // SetTitleBarContent
-        _root = winrt::make_self<TerminalPage>(*_WindowProperties);
-        _dialog = ContentDialog{};
+        // The TerminalPage has to ABSOLUTELY NOT BE constructed during our
+        // construction. We can't do ANY xaml till Initialize() is called.
 
         // For your own sanity, it's better to do setup outside the ctor.
         // If you do any setup in the ctor that ends up throwing an exception,
@@ -140,6 +137,10 @@ namespace winrt::TerminalApp::implementation
     // - Implements the IInitializeWithWindow interface from shobjidl_core.
     HRESULT TerminalWindow::Initialize(HWND hwnd)
     {
+        // Now that we know we can do XAML, build our page.
+        _root = winrt::make_self<TerminalPage>(*_WindowProperties);
+        _dialog = ContentDialog{};
+
         // Pass commandline args into the TerminalPage. If we were supposed to
         // load from a persisted layout, do that instead.
 
@@ -222,8 +223,9 @@ namespace winrt::TerminalApp::implementation
             _root->SetStartupActions(_settingsStartupArgs);
         }
 
-        _root->SetSettings(_settings, false);
-        _root->Loaded({ this, &TerminalWindow::_OnLoaded });
+        _root->SetSettings(_settings, false); // We're on our UI thread right now, so this is safe
+        _root->Loaded({ get_weak(), &TerminalWindow::_OnLoaded });
+
         _root->Initialized([this](auto&&, auto&&) {
             // GH#288 - When we finish initialization, if the user wanted us
             // launched _fullscreen_, toggle fullscreen mode. This will make sure
@@ -715,32 +717,40 @@ namespace winrt::TerminalApp::implementation
         _RequestedThemeChangedHandlers(*this, Theme());
     }
 
+    // This may be called on a background thread, or the main thread, but almost
+    // definitely not on OUR UI thread.
     winrt::fire_and_forget TerminalWindow::UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args)
     {
         _settings = args.NewSettings();
-        // Update the settings in TerminalPage
-        _root->SetSettings(_settings, true);
 
+        const auto weakThis{ get_weak() };
         co_await wil::resume_foreground(_root->Dispatcher());
-
-        // Bubble the notification up to the AppHost, now that we've updated our _settings.
-        _SettingsChangedHandlers(*this, args);
-
-        if (FAILED(args.Result()))
+        // Back on our UI thread...
+        if (auto logic{ weakThis.get() })
         {
-            const winrt::hstring titleKey = USES_RESOURCE(L"ReloadJsonParseErrorTitle");
-            const winrt::hstring textKey = USES_RESOURCE(L"ReloadJsonParseErrorText");
-            _ShowLoadErrorsDialog(titleKey,
-                                  textKey,
-                                  gsl::narrow_cast<HRESULT>(args.Result()),
-                                  args.ExceptionText());
-            co_return;
+            // Update the settings in TerminalPage
+            // We're on our UI thread right now, so this is safe
+            _root->SetSettings(_settings, true);
+
+            // Bubble the notification up to the AppHost, now that we've updated our _settings.
+            _SettingsChangedHandlers(*this, args);
+
+            if (FAILED(args.Result()))
+            {
+                const winrt::hstring titleKey = USES_RESOURCE(L"ReloadJsonParseErrorTitle");
+                const winrt::hstring textKey = USES_RESOURCE(L"ReloadJsonParseErrorText");
+                _ShowLoadErrorsDialog(titleKey,
+                                      textKey,
+                                      gsl::narrow_cast<HRESULT>(args.Result()),
+                                      args.ExceptionText());
+                co_return;
+            }
+            else if (args.Result() == S_FALSE)
+            {
+                _ShowLoadWarningsDialog(args.Warnings());
+            }
+            _RefreshThemeRoutine();
         }
-        else if (args.Result() == S_FALSE)
-        {
-            _ShowLoadWarningsDialog(args.Warnings());
-        }
-        _RefreshThemeRoutine();
     }
 
     void TerminalWindow::_OpenSettingsUI()
@@ -1107,6 +1117,22 @@ namespace winrt::TerminalApp::implementation
         return *_cachedLayout;
     }
 
+    void TerminalWindow::RequestExitFullscreen()
+    {
+        _root->SetFullscreen(false);
+    }
+
+    bool TerminalWindow::AutoHideWindow()
+    {
+        return _settings.GlobalSettings().AutoHideWindow();
+    }
+
+    void TerminalWindow::UpdateSettingsHandler(const winrt::IInspectable& /*sender*/,
+                                               const winrt::TerminalApp::SettingsLoadEventArgs& args)
+    {
+        UpdateSettings(args);
+    }
+
     void TerminalWindow::IdentifyWindow()
     {
         if (_root)
@@ -1140,22 +1166,6 @@ namespace winrt::TerminalApp::implementation
     void TerminalWindow::WindowId(const uint64_t& id)
     {
         _WindowProperties->WindowId(id);
-    }
-
-    void TerminalWindow::RequestExitFullscreen()
-    {
-        _root->SetFullscreen(false);
-    }
-
-    bool TerminalWindow::AutoHideWindow()
-    {
-        return _settings.GlobalSettings().AutoHideWindow();
-    }
-
-    void TerminalWindow::UpdateSettingsHandler(const winrt::IInspectable& /*sender*/,
-                                               const winrt::TerminalApp::SettingsLoadEventArgs& arg)
-    {
-        UpdateSettings(arg);
     }
 
     bool TerminalWindow::ShouldImmediatelyHandoffToElevated()
@@ -1209,12 +1219,7 @@ namespace winrt::TerminalApp::implementation
 
     void WindowProperties::WindowId(const uint64_t& value)
     {
-        if (_WindowId != value)
-        {
-            _WindowId = value;
-            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowId" });
-            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"WindowIdForDisplay" });
-        }
+        _WindowId = value;
     }
 
     // Method Description:

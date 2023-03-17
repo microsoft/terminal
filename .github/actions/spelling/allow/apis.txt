@@ -159,6 +159,7 @@ rcx
 REGCLS
 RETURNCMD
 rfind
+RLO
 ROOTOWNER
 roundf
 RSHIFT

@@ -240,7 +240,13 @@ winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::Microso
     return _themes.GetView();
 }
 
+void GlobalAppSettings::ExpandCommands(const winrt::Windows::Foundation::Collections::IVectorView<Model::Profile>& profiles,
+                                       const winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, Model::ColorScheme>& schemes)
+{
+    _actionMap->ExpandCommands(profiles, schemes);
+}
+
 bool GlobalAppSettings::ShouldUsePersistedLayout() const
 {
-    return FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout;
+    return FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout && !IsolatedMode();
 }

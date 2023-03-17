@@ -9,6 +9,7 @@
 
 #include "SettingsLoadEventArgs.h"
 #include "TerminalPage.h"
+#include "SettingsLoadEventArgs.h"
 
 #include <inc/cppwinrt_utils.h>
 #include <ThrottledFunc.h>
@@ -88,6 +89,7 @@ namespace winrt::TerminalApp::implementation
         bool AutoHideWindow();
 
         hstring GetWindowLayoutJson(Microsoft::Terminal::Settings::Model::LaunchPosition position);
+
         void IdentifyWindow();
         void RenameFailed();
 
@@ -125,6 +127,7 @@ namespace winrt::TerminalApp::implementation
 
         bool GetMinimizeToNotificationArea();
         bool GetAlwaysShowNotificationIcon();
+
         bool GetShowTitleInTitlebar();
 
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> ShowDialog(winrt::Windows::UI::Xaml::Controls::ContentDialog dialog);
@@ -135,6 +138,7 @@ namespace winrt::TerminalApp::implementation
 
         void WindowName(const winrt::hstring& value);
         void WindowId(const uint64_t& value);
+
         bool IsQuakeWindow() const noexcept { return _WindowProperties->IsQuakeWindow(); }
         TerminalApp::WindowProperties WindowProperties() { return *_WindowProperties; }
 
