@@ -23,8 +23,6 @@ struct CSSLengthPercentage
 
     static CSSLengthPercentage FromString(const wchar_t* str);
 
-    ReferenceFrame GetReferenceFrame() const noexcept;
-    float Resolve(float factor) const noexcept;
     float Resolve(float fallback, float dpi, float fontSize, float advanceWidth) const noexcept;
 
 private:

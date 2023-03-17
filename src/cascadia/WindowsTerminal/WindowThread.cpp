@@ -16,48 +16,46 @@ WindowThread::WindowThread(winrt::TerminalApp::AppLogic logic,
     // DO NOT start the AppHost here in the ctor, as that will start XAML on the wrong thread!
 }
 
-void WindowThread::Start()
+void WindowThread::CreateHost()
 {
-    auto thread = std::thread([this]() {
-        // Start the AppHost HERE, on the actual thread we want XAML to run on
-        _host = std::make_unique<::AppHost>(_appLogic,
-                                            _args,
-                                            _manager,
-                                            _peasant);
-        _host->UpdateSettingsRequested([this]() { _UpdateSettingsRequestedHandlers(); });
-        // Enter the main window loop.
-        const auto exitCode = _messagePump();
-        _host = nullptr;
+    // Start the AppHost HERE, on the actual thread we want XAML to run on
+    _host = std::make_unique<::AppHost>(_appLogic,
+                                        _args,
+                                        _manager,
+                                        _peasant);
+    _host->UpdateSettingsRequested([this]() { _UpdateSettingsRequestedHandlers(); });
 
-        // !! LOAD BEARING !!
-        //
-        // Make sure to finish pumping all the messages for our thread here. We
-        // may think we're all done, but we're not quite. XAML needs more time
-        // to pump the remaining events through, even at the point we're
-        // exiting. So do that now. If you don't, then the last tab to close
-        // will never actually destruct the last tab / TermControl / ControlCore
-        // / renderer.
+    winrt::init_apartment(winrt::apartment_type::single_threaded);
+
+    // Initialize the xaml content. This must be called AFTER the
+    // WindowsXamlManager is initialized.
+    _host->Initialize();
+}
+
+int WindowThread::RunMessagePump()
+{
+    // Enter the main window loop.
+    const auto exitCode = _messagePump();
+    // Here, the main window loop has exited.
+
+    _host = nullptr;
+    // !! LOAD BEARING !!
+    //
+    // Make sure to finish pumping all the messages for our thread here. We
+    // may think we're all done, but we're not quite. XAML needs more time
+    // to pump the remaining events through, even at the point we're
+    // exiting. So do that now. If you don't, then the last tab to close
+    // will never actually destruct the last tab / TermControl / ControlCore
+    // / renderer.
+    {
+        MSG msg = {};
+        while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
         {
-            MSG msg = {};
-            while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
-            {
-                ::DispatchMessageW(&msg);
-            }
+            ::DispatchMessageW(&msg);
         }
+    }
 
-        _ExitedHandlers(_peasant.GetID());
-
-        return exitCode;
-    });
-    LOG_IF_FAILED(SetThreadDescription(thread.native_handle(), L"Window Thread"));
-
-    // Raising our Exited event might cause the app to teardown. In the
-    // highly unlikely case that the main thread got scheduled before the
-    // event handler returns, it might release the WindowThread while it's
-    // still holding an outstanding reference to its own thread. That would
-    // cause a std::terminate. Let's just avoid that by releasing our
-    // thread.
-    thread.detach();
+    return exitCode;
 }
 
 winrt::TerminalApp::TerminalWindow WindowThread::Logic()
@@ -80,16 +78,6 @@ static bool _messageIsAltSpaceKeypress(const MSG& message)
 
 int WindowThread::_messagePump()
 {
-    winrt::init_apartment(winrt::apartment_type::single_threaded);
-
-    // Initialize the xaml content. This must be called AFTER the
-    // WindowsXamlManager is initialized.
-    _host->Initialize();
-
-    // Inform the emperor that we're ready to go. We need to do this after
-    // Initialize, so that the windowLogic is ready to be used
-    _StartedHandlers();
-
     MSG message{};
 
     while (GetMessageW(&message, nullptr, 0, 0))

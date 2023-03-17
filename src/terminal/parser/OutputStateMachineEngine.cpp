@@ -684,6 +684,10 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         success = _dispatch->SelectAttributeChangeExtent(parameters.at(0));
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSACE);
         break;
+    case CsiActionCodes::DECRQCRA_RequestChecksumRectangularArea:
+        success = _dispatch->RequestChecksumRectangularArea(parameters.at(0).value_or(0), parameters.at(1).value_or(0), parameters.at(2), parameters.at(3), parameters.at(4).value_or(0), parameters.at(5).value_or(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRQCRA);
+        break;
     case CsiActionCodes::DECINVM_InvokeMacro:
         success = _dispatch->InvokeMacro(parameters.at(0).value_or(0));
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECINVM);

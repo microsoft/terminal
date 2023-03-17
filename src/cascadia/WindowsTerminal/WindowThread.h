@@ -13,11 +13,11 @@ public:
                  winrt::Microsoft::Terminal::Remoting::Peasant peasant);
 
     winrt::TerminalApp::TerminalWindow Logic();
-    void Start();
+    void CreateHost();
+    int RunMessagePump();
+
     winrt::Microsoft::Terminal::Remoting::Peasant Peasant();
 
-    WINRT_CALLBACK(Started, winrt::delegate<>);
-    WINRT_CALLBACK(Exited, winrt::delegate<uint64_t>);
     WINRT_CALLBACK(UpdateSettingsRequested, winrt::delegate<void()>);
 
 private:
