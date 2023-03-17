@@ -653,9 +653,18 @@ GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const gsl::b
     return EndianSwap(newGuid);
 }
 
-bool Utils::IsElevated()
+// * Elevated users cannot use the modern drag drop experience. This is
+//   specifically normal users running the Terminal as admin
+// * The Default Administrator, who does not have a split token, CAN drag drop
+//   perfectly fine. So in that case, we want to return false.
+// * This has to be kept separate from IsRunningElevated, which is exclusively
+//   used for "is this instance running as admin".
+bool Utils::CanUwpDragDrop()
 {
-    static auto isElevated = []() {
+    // There's a lot of wacky double negatives here so that the logic is
+    // basically the same as IsRunningElevated, but the end result semantically
+    // makes sense as "CanDragDrop".
+    static auto isDragDropBroken = []() {
         try
         {
             wil::unique_handle processToken{ GetCurrentProcessToken() };
@@ -670,8 +679,30 @@ bool Utils::IsElevated()
                 //
                 // See GH#7754, GH#11096
                 return false;
+                // drag drop is _not_ broken -> they _can_ drag drop
             }
 
+            // If they are running admin, they cannot drag drop.
+            return wil::test_token_membership(nullptr, SECURITY_NT_AUTHORITY, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS);
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+            // This failed? That's very peculiar indeed. Let's err on the side
+            // of "drag drop is broken", just in case.
+            return true;
+        }
+    }();
+
+    return !isDragDropBroken;
+}
+
+// See CanUwpDragDrop, GH#13928 for why this is different.
+bool Utils::IsRunningElevated()
+{
+    static auto isElevated = []() {
+        try
+        {
             return wil::test_token_membership(nullptr, SECURITY_NT_AUTHORITY, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS);
         }
         catch (...)

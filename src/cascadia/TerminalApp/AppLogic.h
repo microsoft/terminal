@@ -61,7 +61,8 @@ namespace winrt::TerminalApp::implementation
         void Create();
         bool IsUwp() const noexcept;
         void RunAsUwp();
-        bool IsElevated() const noexcept;
+        bool IsRunningElevated() const noexcept;
+        bool CanDragDrop() const noexcept;
         void ReloadSettings();
 
         [[nodiscard]] Microsoft::Terminal::Settings::Model::CascadiaSettings GetSettings() const noexcept;
@@ -150,6 +151,7 @@ namespace winrt::TerminalApp::implementation
     private:
         bool _isUwp{ false };
         bool _isElevated{ false };
+        bool _canDragDrop{ false };
 
         // If you add controls here, but forget to null them either here or in
         // the ctor, you're going to have a bad time. It'll mysteriously fail to

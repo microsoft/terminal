@@ -96,7 +96,8 @@ namespace Microsoft::Console::Utils
 
     GUID CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const gsl::byte> name);
 
-    bool IsElevated();
+    bool CanUwpDragDrop();
+    bool IsRunningElevated();
 
     // This function is only ever used by the ConPTY connection in
     // TerminalConnection. However, that library does not have a good system of
