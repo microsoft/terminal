@@ -82,7 +82,11 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
 
   <PropertyGroup>
-    <!-- We don't need to use HybridCRT for Audit or Fuzzing, so just skip it entirely. -->
+    <!--
+      We don't need to use HybridCRT for Audit or Fuzzing, so just skip it entirely.
+      Audit is a compilation-only check, and Fuzzing requires the address
+      sanitizer runtime library plus the fuzzing harness. They're probably not compatible.
+    -->
     <ConfigurationSupportsHybridCRT Condition="'$(Configuration)'=='AuditMode' or '$(Configuration)'=='Fuzzing'">false</ConfigurationSupportsHybridCRT>
     <ConfigurationSupportsHybridCRT Condition="'$(ConfigurationSupportsHybridCRT)'==''">true</ConfigurationSupportsHybridCRT>
   </PropertyGroup>
