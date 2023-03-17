@@ -108,5 +108,6 @@ namespace Microsoft.Terminal.Settings.Model
         void AddTheme(Theme theme);
         INHERITABLE_SETTING(ThemePair, Theme);
         Theme CurrentTheme { get; };
+        Boolean ShouldUsePersistedLayout();
     }
 }

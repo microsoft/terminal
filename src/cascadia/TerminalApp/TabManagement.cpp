@@ -523,13 +523,7 @@ namespace winrt::TerminalApp::implementation
             // if the user manually closed all tabs.
             // Do this only if we are the last window; the monarch will notice
             // we are missing and remove us that way otherwise.
-            if (!_maintainStateOnTabClose && ShouldUsePersistedLayout(_settings) && _numOpenWindows == 1)
-            {
-                auto state = ApplicationState::SharedInstance();
-                state.PersistedWindowLayouts(nullptr);
-            }
-
-            _LastTabClosedHandlers(*this, nullptr);
+            _LastTabClosedHandlers(*this, winrt::make<LastTabClosedEventArgs>(!_maintainStateOnTabClose));
         }
         else if (focusedTabIndex.has_value() && focusedTabIndex.value() == gsl::narrow_cast<uint32_t>(tabIndex))
         {
