@@ -60,7 +60,7 @@ namespace winrt::TerminalApp::implementation
         _startupActions{ winrt::single_threaded_vector<ActionAndArgs>() },
         _manager{ manager },
         _hostingHwnd{},
-        _WindowProperties{ properties }
+        _WindowProperties{ std::move(properties) }
     {
         InitializeComponent();
 
@@ -228,9 +228,6 @@ namespace winrt::TerminalApp::implementation
 
         // Hookup our event handlers to the ShortcutActionDispatch
         _RegisterActionCallbacks();
-
-        // Hook up inbound connection event handler
-        ConptyConnection::NewConnection({ this, &TerminalPage::_OnNewConnection });
 
         //Event Bindings (Early)
         _newTabButton.Click([weakThis{ get_weak() }](auto&&, auto&&) {
@@ -520,6 +517,9 @@ namespace winrt::TerminalApp::implementation
         {
             _shouldStartInboundListener = false;
 
+            // Hook up inbound connection event handler
+            _newConnectionRevoker = ConptyConnection::NewConnection(winrt::auto_revoke, { this, &TerminalPage::_OnNewConnection });
+
             try
             {
                 winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::StartInboundListener();
@@ -636,7 +636,7 @@ namespace winrt::TerminalApp::implementation
         // have a tab yet, but will once we're initialized.
         if (_tabs.Size() == 0 && !(_shouldStartInboundListener || _isEmbeddingInboundListener))
         {
-            _LastTabClosedHandlers(*this, nullptr);
+            _LastTabClosedHandlers(*this, winrt::make<LastTabClosedEventArgs>(false));
         }
         else
         {
@@ -3330,6 +3330,8 @@ namespace winrt::TerminalApp::implementation
 
     HRESULT TerminalPage::_OnNewConnection(const ConptyConnection& connection)
     {
+        _newConnectionRevoker.revoke();
+
         // We need to be on the UI thread in order for _OpenNewTab to run successfully.
         // HasThreadAccess will return true if we're currently on a UI thread and false otherwise.
         // When we're on a COM thread, we'll need to dispatch the calls to the UI thread
