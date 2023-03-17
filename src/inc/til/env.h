@@ -6,6 +6,12 @@
 #include <wil/token_helpers.h>
 #include <winternl.h>
 
+#pragma warning(push)
+#pragma warning(disable : 26429) // Symbol '...' is never tested for nullness, it can be marked as not_null (f.23).
+#pragma warning(disable : 26472) // Don't use a static_cast for arithmetic conversions. Use brace initialization, gsl::narrow_cast or gsl::narrow (type.1).
+#pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+#pragma warning(disable : 26490) // Don't use reinterpret_cast (type.1).
+
 #ifdef UNIT_TESTING
 class EnvTests;
 #endif
@@ -577,3 +583,5 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
     };
 };
+
+#pragma warning(pop)
