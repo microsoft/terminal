@@ -62,7 +62,7 @@ namespace winrt::TerminalApp::implementation
         _startupActions{ winrt::single_threaded_vector<ActionAndArgs>() },
         _manager{ manager },
         _hostingHwnd{},
-        _WindowProperties{ properties }
+        _WindowProperties{ std::move(properties) }
     {
         InitializeComponent();
 
@@ -230,9 +230,6 @@ namespace winrt::TerminalApp::implementation
 
         // Hookup our event handlers to the ShortcutActionDispatch
         _RegisterActionCallbacks();
-
-        // Hook up inbound connection event handler
-        ConptyConnection::NewConnection({ this, &TerminalPage::_OnNewConnection });
 
         //Event Bindings (Early)
         _newTabButton.Click([weakThis{ get_weak() }](auto&&, auto&&) {
@@ -526,6 +523,9 @@ namespace winrt::TerminalApp::implementation
         {
             _shouldStartInboundListener = false;
 
+            // Hook up inbound connection event handler
+            _newConnectionRevoker = ConptyConnection::NewConnection(winrt::auto_revoke, { this, &TerminalPage::_OnNewConnection });
+
             try
             {
                 winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::StartInboundListener();
@@ -642,7 +642,7 @@ namespace winrt::TerminalApp::implementation
         // have a tab yet, but will once we're initialized.
         if (_tabs.Size() == 0 && !(_shouldStartInboundListener || _isEmbeddingInboundListener))
         {
-            _LastTabClosedHandlers(*this, nullptr);
+            _LastTabClosedHandlers(*this, winrt::make<LastTabClosedEventArgs>(false));
         }
         else
         {
@@ -1977,6 +1977,8 @@ namespace winrt::TerminalApp::implementation
     //   event. Our Window will raise that to the window manager / monarch, who
     //   will dispatch this blob of json back to the window that should handle
     //   this.
+    // - `actions` will be emptied into a winrt IVector as a part of this method
+    //   and should be expected to be empty after this call.
     void TerminalPage::_MoveContent(std::vector<Settings::Model::ActionAndArgs>& actions,
                                     const winrt::hstring& windowName,
                                     const uint32_t tabIndex)
@@ -2006,13 +2008,13 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        auto direction = args.Direction();
+        const auto direction = args.Direction();
         if (direction != MoveTabDirection::None)
         {
             if (auto focusedTabIndex = _GetFocusedTabIndex())
             {
-                auto currentTabIndex = focusedTabIndex.value();
-                auto delta = direction == MoveTabDirection::Forward ? 1 : -1;
+                const auto currentTabIndex = focusedTabIndex.value();
+                const auto delta = direction == MoveTabDirection::Forward ? 1 : -1;
                 _TryMoveTab(currentTabIndex, currentTabIndex + delta);
             }
         }
@@ -2061,8 +2063,7 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            const auto& firstAction = args.GetAt(0);
-            if (firstAction.Action() == ShortcutAction::SplitPane)
+            if (firstIsSplitPane)
             {
                 // Create the equivalent NewTab action.
                 const auto newAction = Settings::Model::ActionAndArgs{ Settings::Model::ShortcutAction::NewTab,
@@ -2754,7 +2755,7 @@ namespace winrt::TerminalApp::implementation
         // create here.
         // TermControl will copy the settings out of the settings passed to it.
 
-        auto content = _manager.CreateCore(settings.DefaultSettings(), settings.UnfocusedSettings(), connection);
+        const auto content = _manager.CreateCore(settings.DefaultSettings(), settings.UnfocusedSettings(), connection);
         return _InitControl(TermControl{ content });
     }
 
@@ -2819,8 +2820,7 @@ namespace winrt::TerminalApp::implementation
 
             const auto control = _InitControlFromContent(newTerminalArgs.ContentGuid());
             _RegisterTerminalEvents(control);
-            auto resultPane = std::make_shared<Pane>(profile, control);
-            return resultPane;
+            return std::make_shared<Pane>(profile, control);
         }
 
         TerminalSettingsCreateResult controlSettings{ nullptr };
@@ -3538,6 +3538,8 @@ namespace winrt::TerminalApp::implementation
 
     HRESULT TerminalPage::_OnNewConnection(const ConptyConnection& connection)
     {
+        _newConnectionRevoker.revoke();
+
         // We need to be on the UI thread in order for _OpenNewTab to run successfully.
         // HasThreadAccess will return true if we're currently on a UI thread and false otherwise.
         // When we're on a COM thread, we'll need to dispatch the calls to the UI thread

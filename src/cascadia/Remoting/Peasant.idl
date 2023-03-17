@@ -105,6 +105,7 @@ namespace Microsoft.Terminal.Remoting
         event Windows.Foundation.TypedEventHandler<Object, Object> QuitRequested;
 
         event Windows.Foundation.TypedEventHandler<Object, AttachRequest> AttachRequested;
+
         event Windows.Foundation.TypedEventHandler<Object, RequestReceiveContentArgs> SendContentRequested;
     };
 

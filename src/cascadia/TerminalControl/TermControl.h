@@ -149,6 +149,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         WINRT_CALLBACK(FontSizeChanged, Control::FontSizeChangedEventArgs);
 
         // UNDER NO CIRCUMSTANCES SHOULD YOU ADD A (PROJECTED_)FORWARDED_TYPED_EVENT HERE
+        // Those attach the handler to the core directly, and will explode if
+        // the core ever gets detached & reattached to another window.
         BUBBLED_FORWARDED_TYPED_EVENT(CopyToClipboard,        IInspectable, Control::CopyToClipboardEventArgs);
         BUBBLED_FORWARDED_TYPED_EVENT(TitleChanged,           IInspectable, Control::TitleChangedEventArgs);
         BUBBLED_FORWARDED_TYPED_EVENT(TabColorChanged,        IInspectable, IInspectable);
