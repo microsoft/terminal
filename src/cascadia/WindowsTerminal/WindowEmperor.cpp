@@ -111,30 +111,27 @@ void WindowEmperor::WaitForWindows()
 void WindowEmperor::_createNewWindowThread(const Remoting::WindowRequestedArgs& args)
 {
     Remoting::Peasant peasant{ _manager.CreatePeasant(args) };
-
     auto window{ std::make_shared<WindowThread>(_app.Logic(), args, _manager, peasant) };
-
     std::weak_ptr<WindowEmperor> weakThis{ weak_from_this() };
 
-    window->Started([weakThis, sender = window]() {
-        // These come in on the sender's thread. Make sure we haven't died
-        // since then
+    std::thread t([weakThis, window]() {
+        window->CreateHost();
+
         if (auto self{ weakThis.lock() })
         {
-            self->_windowStartedHandler(sender);
+            self->_windowStartedHandler(window);
         }
-    });
 
-    window->Exited([weakThis](uint64_t senderID) {
-        // These come in on the sender's thread. Make sure we haven't died
-        // since then
+        window->RunMessagePump();
+
         if (auto self{ weakThis.lock() })
         {
-            self->_windowExitedHandler(senderID);
+            self->_windowExitedHandler(window->Peasant().GetID());
         }
     });
+    LOG_IF_FAILED(SetThreadDescription(t.native_handle(), L"Window Thread"));
 
-    window->Start();
+    t.detach();
 }
 
 // Handler for a WindowThread's Started event, which it raises once the window
