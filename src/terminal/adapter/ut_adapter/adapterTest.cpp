@@ -1798,6 +1798,111 @@ public:
         _testGetSet->ValidateInputEvent(expectedResponse);
     }
 
+    TEST_METHOD(RequestChecksumReportTests)
+    {
+        const auto requestChecksumReport = [this](const auto length) {
+            wchar_t checksumQuery[30];
+            swprintf_s(checksumQuery, ARRAYSIZE(checksumQuery), L"\033[99;1;1;1;1;%zu*y", length);
+            _stateMachine->ProcessString(checksumQuery);
+        };
+
+        const auto verifyChecksumReport = [this](const auto checksum) {
+            wchar_t expectedResponse[20];
+            swprintf_s(expectedResponse, ARRAYSIZE(expectedResponse), L"\x1bP99!~%s\033\\", checksum);
+            _testGetSet->ValidateInputEvent(expectedResponse);
+        };
+
+        const auto outputText = [&](const auto text) {
+            _testGetSet->PrepData();
+            _pDispatch->PrintString(text);
+            requestChecksumReport(text.length());
+        };
+
+        const auto outputTextWithAttributes = [&](const auto text, const auto& attrCallback) {
+            _testGetSet->PrepData();
+            auto attr = TextAttribute{};
+            attrCallback(attr);
+            _testGetSet->_textBuffer->SetCurrentAttributes(attr);
+            _pDispatch->PrintString(text);
+            requestChecksumReport(text.length());
+        };
+
+        using namespace std::string_view_literals;
+
+        Log::Comment(L"Test 1: ASCII characters");
+        outputText(L"A"sv);
+        verifyChecksumReport(L"FF4F");
+        outputText(L" "sv);
+        verifyChecksumReport(L"FF70");
+        outputText(L"~"sv);
+        verifyChecksumReport(L"FF12");
+        outputText(L"ABC"sv);
+        verifyChecksumReport(L"FDEA");
+
+        Log::Comment(L"Test 2: Latin-1 characters");
+        outputText(L"Á"sv);
+        verifyChecksumReport(L"FECF");
+        outputText(L"¡"sv);
+        verifyChecksumReport(L"FEEF");
+        outputText(L"ÿ"sv);
+        verifyChecksumReport(L"FE91");
+        outputText(L"ÁÂÃ"sv);
+        verifyChecksumReport(L"FC6A");
+
+        Log::Comment(L"Test 3: Rendition attributes");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetIntense(true);
+        });
+        verifyChecksumReport(L"FECF");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetUnderlined(true);
+        });
+        verifyChecksumReport(L"FF3F");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetBlinking(true);
+        });
+        verifyChecksumReport(L"FF0F");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetReverseVideo(true);
+        });
+        verifyChecksumReport(L"FF2F");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetInvisible(true);
+        });
+        verifyChecksumReport(L"FF47");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetIntense(true);
+            attr.SetUnderlined(true);
+            attr.SetReverseVideo(true);
+        });
+        verifyChecksumReport(L"FE9F");
+
+        Log::Comment(L"Test 4: Selective erase");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetProtected(true);
+        });
+        verifyChecksumReport(L"FF4B");
+        outputTextWithAttributes(L"B"sv, [](auto& attr) {
+            attr.SetProtected(true);
+        });
+        verifyChecksumReport(L"FF4A");
+
+        Log::Comment(L"Test 5: Color attributes");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetIndexedForeground(TextColor::DARK_RED);
+        });
+        verifyChecksumReport(L"FFAF");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetIndexedBackground(TextColor::DARK_GREEN);
+        });
+        verifyChecksumReport(L"FF4D");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetIndexedForeground(TextColor::DARK_YELLOW);
+            attr.SetIndexedBackground(TextColor::DARK_BLUE);
+        });
+        verifyChecksumReport(L"FF8B");
+    }
+
     TEST_METHOD(CursorKeysModeTest)
     {
         Log::Comment(L"Starting test...");

@@ -604,7 +604,11 @@ using namespace Microsoft::Console::Types;
         {
             RETURN_IF_FAILED(_EraseCharacter(numSpaces));
         }
-        else
+        // If we're past the end of the row (i.e. in the "delayed EOL wrap"
+        // state), then there is no need to erase the rest of line. In fact
+        // if we did output an EL sequence at this point, it could reset the
+        // "delayed EOL wrap" state, breaking subsequent output.
+        else if (_lastText.x <= _lastViewport.RightInclusive())
         {
             RETURN_IF_FAILED(_EraseLine());
         }

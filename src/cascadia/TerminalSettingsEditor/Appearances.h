@@ -96,7 +96,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     private:
         Model::AppearanceConfig _appearance;
         winrt::hstring _lastBgImagePath;
-        float _cachedLineHeight = 0;
     };
 
     struct Appearances : AppearancesT<Appearances>
