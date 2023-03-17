@@ -54,30 +54,30 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         namespace vars
         {
-            inline constexpr std::wstring_view system_root{ L"SystemRoot" };
-            inline constexpr std::wstring_view system_drive{ L"SystemDrive" };
-            inline constexpr std::wstring_view all_users_profile{ L"ALLUSERSPROFILE" };
-            inline constexpr std::wstring_view public_var{ L"PUBLIC" };
-            inline constexpr std::wstring_view program_data{ L"ProgramData" };
-            inline constexpr std::wstring_view computer_name{ L"COMPUTERNAME" };
-            inline constexpr std::wstring_view user_name{ L"USERNAME" };
-            inline constexpr std::wstring_view user_domain{ L"USERDOMAIN" };
-            inline constexpr std::wstring_view user_dns_domain{ L"USERDNSDOMAIN" };
-            inline constexpr std::wstring_view home_drive{ L"HOMEDRIVE" };
-            inline constexpr std::wstring_view home_share{ L"HOMESHARE" };
-            inline constexpr std::wstring_view home_path{ L"HOMEPATH" };
-            inline constexpr std::wstring_view user_profile{ L"USERPROFILE" };
-            inline constexpr std::wstring_view app_data{ L"APPDATA" };
-            inline constexpr std::wstring_view local_app_data{ L"LOCALAPPDATA" };
+            inline constexpr wil::zwstring_view system_root{ L"SystemRoot" };
+            inline constexpr wil::zwstring_view system_drive{ L"SystemDrive" };
+            inline constexpr wil::zwstring_view all_users_profile{ L"ALLUSERSPROFILE" };
+            inline constexpr wil::zwstring_view public_var{ L"PUBLIC" };
+            inline constexpr wil::zwstring_view program_data{ L"ProgramData" };
+            inline constexpr wil::zwstring_view computer_name{ L"COMPUTERNAME" };
+            inline constexpr wil::zwstring_view user_name{ L"USERNAME" };
+            inline constexpr wil::zwstring_view user_domain{ L"USERDOMAIN" };
+            inline constexpr wil::zwstring_view user_dns_domain{ L"USERDNSDOMAIN" };
+            inline constexpr wil::zwstring_view home_drive{ L"HOMEDRIVE" };
+            inline constexpr wil::zwstring_view home_share{ L"HOMESHARE" };
+            inline constexpr wil::zwstring_view home_path{ L"HOMEPATH" };
+            inline constexpr wil::zwstring_view user_profile{ L"USERPROFILE" };
+            inline constexpr wil::zwstring_view app_data{ L"APPDATA" };
+            inline constexpr wil::zwstring_view local_app_data{ L"LOCALAPPDATA" };
 
-            inline constexpr std::wstring_view program_files{ L"ProgramFiles" };
-            inline constexpr std::wstring_view program_files_x86{ L"ProgramFiles(x86)" };
-            inline constexpr std::wstring_view program_files_arm64{ L"ProgramFiles(Arm)" };
-            inline constexpr std::wstring_view program_w6432{ L"ProgramW6432" };
-            inline constexpr std::wstring_view common_program_files{ L"CommonProgramFiles" };
-            inline constexpr std::wstring_view common_program_files_x86{ L"CommonProgramFiles(x86)" };
-            inline constexpr std::wstring_view common_program_files_arm64{ L"CommonProgramFiles(Arm)" };
-            inline constexpr std::wstring_view common_program_w6432{ L"CommonProgramW6432" };
+            inline constexpr wil::zwstring_view program_files{ L"ProgramFiles" };
+            inline constexpr wil::zwstring_view program_files_x86{ L"ProgramFiles(x86)" };
+            inline constexpr wil::zwstring_view program_files_arm64{ L"ProgramFiles(Arm)" };
+            inline constexpr wil::zwstring_view program_w6432{ L"ProgramW6432" };
+            inline constexpr wil::zwstring_view common_program_files{ L"CommonProgramFiles" };
+            inline constexpr wil::zwstring_view common_program_files_x86{ L"CommonProgramFiles(x86)" };
+            inline constexpr wil::zwstring_view common_program_files_arm64{ L"CommonProgramFiles(Arm)" };
+            inline constexpr wil::zwstring_view common_program_w6432{ L"CommonProgramW6432" };
 
             const std::array program_files_map{
                 std::pair{ L"ProgramFilesDir", program_files },
@@ -96,11 +96,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             namespace reg
             {
-                inline constexpr std::wstring_view program_files_root{ LR"(Software\Microsoft\Windows\CurrentVersion)" };
-                inline constexpr std::wstring_view system_env_var_root{ LR"(SYSTEM\CurrentControlSet\Control\Session Manager\Environment)" };
-                inline constexpr std::wstring_view user_env_var_root{ LR"(Environment)" };
-                inline constexpr std::wstring_view user_volatile_env_var_root{ LR"(Volatile Environment)" };
-                inline constexpr std::wstring_view user_volatile_session_env_var_root_pattern{ LR"(Volatile Environment\{0:d})" };
+                inline constexpr wil::zwstring_view program_files_root{ LR"(Software\Microsoft\Windows\CurrentVersion)" };
+                inline constexpr wil::zwstring_view system_env_var_root{ LR"(SYSTEM\CurrentControlSet\Control\Session Manager\Environment)" };
+                inline constexpr wil::zwstring_view user_env_var_root{ LR"(Environment)" };
+                inline constexpr wil::zwstring_view user_volatile_env_var_root{ LR"(Volatile Environment)" };
+                inline constexpr wil::zwstring_view user_volatile_session_env_var_root_pattern{ LR"(Volatile Environment\{0:d})" };
             };
         };
 
@@ -253,19 +253,19 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         std::map<std::wstring, std::wstring, til::details::wstring_case_insensitive_compare> _envMap{};
 
         // We make copies of the environment variable names to ensure they are null terminated.
-        void get(std::wstring variable)
+        void get(wil::zwstring_view variable)
         {
-            if (auto value = wil::TryGetEnvironmentVariableW(variable.c_str()))
+            if (auto value = wil::TryGetEnvironmentVariableW<std::wstring>(variable.c_str()); !value.empty())
             {
-                save_to_map(std::move(variable), std::move(value.get()));
+                save_to_map(std::wstring{ variable }, std::move(value));
             }
         }
 
         void get_computer_name()
         {
-            if (auto value = til::details::wil_env::TryGetComputerNameW())
+            if (auto value = til::details::wil_env::TryGetComputerNameW<std::wstring>(); !value.empty())
             {
-                save_to_map(std::wstring{ til::details::vars::computer_name }, std::move(value.get()));
+                save_to_map(std::wstring{ til::details::vars::computer_name }, std::move(value));
             }
         }
 
@@ -309,10 +309,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
         }
 
-        void get_vars_from_registry(HKEY rootKey, std::wstring_view subkey)
+        void get_vars_from_registry(HKEY rootKey, wil::zwstring_view subkey)
         {
             wil::unique_hkey key;
-            if (RegOpenKeyExW(rootKey, subkey.data(), 0, KEY_READ, &key) == ERROR_SUCCESS)
+            if (RegOpenKeyExW(rootKey, subkey.c_str(), 0, KEY_READ, &key) == ERROR_SUCCESS)
             {
                 DWORD maxValueNameSize = 0, maxValueDataSize = 0;
                 if (RegQueryInfoKeyW(key.get(), nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &maxValueNameSize, &maxValueDataSize, nullptr, nullptr) == ERROR_SUCCESS)
@@ -453,10 +453,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 // Otherwise, just take advantage of the one it has.
                 if (existing->second.back() != L';')
                 {
-                    existing->second.append(L";");
+                    existing->second.push_back(L';');
                 }
                 existing->second.append(value);
-                save_to_map(std::move(var), std::move(existing->second));
             }
             else
             {
@@ -537,20 +536,20 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         void regenerate()
         {
             // Generally replicates the behavior of shell32!RegenerateUserEnvironment
-            get(std::wstring{ til::details::vars::system_root });
-            get(std::wstring{ til::details::vars::system_drive });
-            get(std::wstring{ til::details::vars::all_users_profile });
-            get(std::wstring{ til::details::vars::public_var });
-            get(std::wstring{ til::details::vars::program_data });
+            get(til::details::vars::system_root);
+            get(til::details::vars::system_drive);
+            get(til::details::vars::all_users_profile);
+            get(til::details::vars::public_var);
+            get(til::details::vars::program_data);
             get_computer_name();
             get_user_name_and_domain();
-            get(std::wstring{ til::details::vars::user_dns_domain });
-            get(std::wstring{ til::details::vars::home_drive });
-            get(std::wstring{ til::details::vars::home_share });
-            get(std::wstring{ til::details::vars::home_path });
-            get(std::wstring{ til::details::vars::user_profile });
-            get(std::wstring{ til::details::vars::app_data });
-            get(std::wstring{ til::details::vars::local_app_data });
+            get(til::details::vars::user_dns_domain);
+            get(til::details::vars::home_drive);
+            get(til::details::vars::home_share);
+            get(til::details::vars::home_path);
+            get(til::details::vars::user_profile);
+            get(til::details::vars::app_data);
+            get(til::details::vars::local_app_data);
             get_program_files();
             get_vars_from_registry(HKEY_LOCAL_MACHINE, til::details::vars::reg::system_env_var_root);
             // not processing autoexec.bat
