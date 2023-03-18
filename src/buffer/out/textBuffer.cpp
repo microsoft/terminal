@@ -383,16 +383,15 @@ void TextBuffer::ConsumeGrapheme(std::wstring_view& chars) noexcept
     chars = til::utf16_pop(chars);
 }
 
-til::CoordType TextBuffer::Write(til::CoordType row, til::CoordType columnBegin, til::CoordType columnLimit, bool wrapAtEOL, const TextAttribute& attributes, std::wstring_view& chars)
+void TextBuffer::Write(til::CoordType row, bool wrapAtEOL, const TextAttribute& attributes, RowWriteState& state)
 {
     auto& r = GetRowByOffset(row);
 
-    const auto columnEnd = r.ReplaceText(columnBegin, columnLimit, chars);
-    r.ReplaceAttributes(columnBegin, columnEnd, attributes);
-    r.SetWrapForced(wrapAtEOL && columnEnd >= r.size());
+    r.ReplaceText(state);
+    r.ReplaceAttributes(state.columnBegin, state.columnEnd, attributes);
+    r.SetWrapForced(wrapAtEOL && state.columnEndDirty >= r.size());
 
-    TriggerRedraw(Viewport::FromExclusive({ columnBegin, row, columnEnd, row + 1 }));
-    return columnEnd;
+    TriggerRedraw(Viewport::FromExclusive({ state.columnBegin, row, state.columnEnd, row + 1 }));
 }
 
 // Routine Description:

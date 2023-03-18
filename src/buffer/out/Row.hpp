@@ -63,6 +63,25 @@ private:
     uint16_t _end;
 };
 
+struct RowWriteState
+{
+    // The text you want to write into the given ROW. When ReplaceText() returns,
+    // this is updated to remove all text from the beginning that was successfully written.
+    std::wstring_view text; // IN/OUT
+    // The column at which to start writing.
+    til::CoordType columnBegin = 0; // IN
+    // The first column which should not be written to anymore.
+    til::CoordType columnLimit = 0; // IN
+
+    // The column 1 past the last glyph that was successfully written into the row. If you need to call
+    // ReplaceAttributes() to colorize the written range, etc., this is the columnEnd parameter you want.
+    // If you want to continue writing where you left off, this is also the next columnBegin parameter.
+    til::CoordType columnEnd = 0; // OUT
+    // This is 1 past the last column that was modified and will be 1 past columnEnd if we overwrote
+    // the leading half of a wide glyph and had to fill the trailing half with whitespace.
+    til::CoordType columnEndDirty = 0; // OUT
+};
+
 class ROW final
 {
 public:
@@ -98,7 +117,7 @@ public:
     bool SetAttrToEnd(til::CoordType columnBegin, TextAttribute attr);
     void ReplaceAttributes(til::CoordType beginIndex, til::CoordType endIndex, const TextAttribute& newAttr);
     void ReplaceCharacters(til::CoordType columnBegin, til::CoordType width, const std::wstring_view& chars);
-    til::CoordType ReplaceText(til::CoordType columnBegin, til::CoordType columnLimit, std::wstring_view& chars);
+    void ReplaceText(RowWriteState& state);
     til::CoordType CopyRangeFrom(til::CoordType columnBegin, til::CoordType columnLimit, const ROW& other, til::CoordType& otherBegin, til::CoordType otherLimit);
 
     til::small_rle<TextAttribute, uint16_t, 1>& Attributes() noexcept;

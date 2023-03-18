@@ -90,7 +90,7 @@ public:
 
     // Text insertion functions
     static void ConsumeGrapheme(std::wstring_view& chars) noexcept;
-    til::CoordType Write(til::CoordType row, til::CoordType columnBegin, til::CoordType columnLimit, bool wrapAtEOL, const TextAttribute& attributes, std::wstring_view& chars);
+    void Write(til::CoordType row, bool wrapAtEOL, const TextAttribute& attributes, RowWriteState& state);
 
     OutputCellIterator Write(const OutputCellIterator givenIt);
 

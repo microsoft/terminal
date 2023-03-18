@@ -536,19 +536,22 @@ catch (...)
     }
 }
 
-til::CoordType ROW::ReplaceText(til::CoordType columnBegin, til::CoordType columnLimit, std::wstring_view& chars)
+void ROW::ReplaceText(RowWriteState& state)
 try
 {
-    WriteHelper h{ *this, columnBegin, columnLimit, chars };
+    WriteHelper h{ *this, state.columnBegin, state.columnLimit, state.text };
     if (!h.IsValid())
     {
-        return h.colBeg;
+        state.columnEnd = h.colBeg;
+        state.columnEndDirty = h.colBeg;
+        return;
     }
     h.ReplaceText();
     h.Finish();
 
-    chars = chars.substr(h.charsConsumed);
-    return h.colEndDirty;
+    state.text = state.text.substr(h.charsConsumed);
+    state.columnEnd = h.colEnd;
+    state.columnEndDirty = h.colEndDirty;
 }
 catch (...)
 {

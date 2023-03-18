@@ -82,9 +82,13 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
 
     // The width at which we wrap is determined by the line rendition attribute.
     auto lineWidth = textBuffer.GetLineWidth(cursorPosition.y);
-    auto stringIterator = string;
 
-    while (!stringIterator.empty())
+    RowWriteState state{
+        .text = string,
+        .columnLimit = lineWidth,
+    };
+
+    while (!state.text.empty())
     {
         if (cursor.IsDelayedEOLWrap() && wrapAtEOL)
         {
@@ -106,7 +110,7 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
             // If insert-replace mode is enabled, we first measure how many cells
             // the string will occupy, and scroll the target area right by that
             // amount to make space for the incoming text.
-            const OutputCellIterator it(stringIterator, attributes);
+            const OutputCellIterator it(state.text, attributes);
             auto measureIt = it;
             while (measureIt && measureIt.GetCellDistance(it) < lineWidth)
             {
@@ -117,22 +121,20 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
             _ScrollRectHorizontally(textBuffer, { cursorPosition.x, row, lineWidth, row + 1 }, cellCount);
         }
 
-        const auto positionBefore = stringIterator.data();
-        const auto newPosX = textBuffer.Write(cursorPosition.y, cursorPosition.x, lineWidth, wrapAtEOL, attributes, stringIterator);
-        const auto positionAfter = stringIterator.data();
-        const auto failedToWrite = positionBefore == positionAfter;
-        const auto isWrapping = newPosX >= lineWidth;
+        state.columnBegin = cursorPosition.x;
+        textBuffer.Write(cursorPosition.y, wrapAtEOL, attributes, state);
 
-        if (newPosX != cursorPosition.x)
+        if (state.columnEndDirty != cursorPosition.x)
         {
-            const til::rect changedRect{ cursorPosition.x, cursorPosition.y, newPosX, cursorPosition.y + 1 };
+            const til::rect changedRect{ cursorPosition.x, cursorPosition.y, state.columnEndDirty, cursorPosition.y + 1 };
             _api.NotifyAccessibilityChange(changedRect);
         }
 
         // If we're past the end of the line, we need to clamp the cursor
         // back into range, and if wrapping is enabled, set the delayed wrap
         // flag. The wrapping only occurs once another character is output.
-        cursorPosition.x = isWrapping ? lineWidth - 1 : newPosX;
+        const auto isWrapping = state.columnEndDirty >= lineWidth;
+        cursorPosition.x = isWrapping ? lineWidth - 1 : state.columnEnd;
         cursor.SetPosition(cursorPosition);
 
         if (isWrapping)
@@ -141,13 +143,13 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
             {
                 cursor.DelayEOLWrap();
             }
-            else if (failedToWrite)
+            else if (state.columnBegin == state.columnEnd)
             {
                 // We want to wrap, but we're not allowed to and we failed to write even a single character into the row.
                 // This can only mean one thing! The DECAWM Autowrap mode is disabled ("\x1b[?7l") and we tried writing a
                 // wide glyph into the last column. ROW::Write() returns the lineWidth and leaves stringIterator untouched.
                 // To prevent a deadlock, because stringIterator never advances, we need to throw that glyph away.
-                textBuffer.ConsumeGrapheme(stringIterator);
+                textBuffer.ConsumeGrapheme(state.text);
             }
         }
     }
