@@ -140,7 +140,7 @@ void TerminalOutput::EnableGrTranslation(boolean enabled)
 wchar_t TerminalOutput::TranslateKey(const wchar_t wch) const noexcept
 {
     auto wchFound = wch;
-    if (_ssSetNumber >= 2 && _ssSetNumber <= 3)
+    if (_ssSetNumber == 2 || _ssSetNumber == 3)
     {
         const auto ssTranslationTable = _gsetTranslationTables.at(_ssSetNumber);
         if (wch - 0x20u < ssTranslationTable.size())

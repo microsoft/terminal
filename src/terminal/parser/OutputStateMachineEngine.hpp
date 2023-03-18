@@ -172,7 +172,7 @@ namespace Microsoft::Console::VirtualTerminal
             DECDMAC_DefineMacro = VTID("!z"),
             DECRSTS_RestoreTerminalState = VTID("$p"),
             DECRQSS_RequestSetting = VTID("$q"),
-            DECRSPS_RestorePresentationState = VTID("$t")
+            DECRSPS_RestorePresentationState = VTID("$t"),
         };
 
         enum Vt52ActionCodes : uint64_t
