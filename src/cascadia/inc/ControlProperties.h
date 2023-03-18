@@ -73,4 +73,5 @@
     X(bool, SoftwareRendering, false)                                                                                                                    \
     X(bool, UseAtlasEngine, false)                                                                                                                       \
     X(bool, UseBackgroundImageForWindow, false)                                                                                                          \
-    X(bool, ShowMarks, false)
+    X(bool, ShowMarks, false)                                                                                                                            \
+    X(bool, RightClickContextMenu, false)

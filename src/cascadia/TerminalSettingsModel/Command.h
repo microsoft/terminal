@@ -41,10 +41,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static winrt::com_ptr<Command> FromJson(const Json::Value& json,
                                                 std::vector<SettingsLoadWarnings>& warnings);
 
-        static void ExpandCommands(Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command> commands,
+        static void ExpandCommands(Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command>& commands,
                                    Windows::Foundation::Collections::IVectorView<Model::Profile> profiles,
-                                   Windows::Foundation::Collections::IVectorView<Model::ColorScheme> schemes,
-                                   Windows::Foundation::Collections::IVector<SettingsLoadWarnings> warnings);
+                                   Windows::Foundation::Collections::IVectorView<Model::ColorScheme> schemes);
 
         static std::vector<SettingsLoadWarnings> LayerJson(Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command>& commands,
                                                            const Json::Value& json);
@@ -83,8 +82,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         static std::vector<Model::Command> _expandCommand(Command* const expandable,
                                                           Windows::Foundation::Collections::IVectorView<Model::Profile> profiles,
-                                                          Windows::Foundation::Collections::IVectorView<Model::ColorScheme> schemes,
-                                                          Windows::Foundation::Collections::IVector<SettingsLoadWarnings>& warnings);
+                                                          Windows::Foundation::Collections::IVectorView<Model::ColorScheme> schemes);
         friend class SettingsModelLocalTests::DeserializationTests;
         friend class SettingsModelLocalTests::CommandTests;
     };

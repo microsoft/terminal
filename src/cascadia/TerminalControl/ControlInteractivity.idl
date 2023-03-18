@@ -65,6 +65,9 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, ScrollPositionChangedArgs> ScrollPositionChanged;
         event Windows.Foundation.TypedEventHandler<Object, PasteFromClipboardEventArgs> PasteFromClipboard;
 
+        // Used to communicate to the TermControl, but not necessarily higher up in the stack
+        event Windows.Foundation.TypedEventHandler<Object, ContextMenuRequestedEventArgs> ContextMenuRequested;
+
 
     };
 }
