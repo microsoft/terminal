@@ -98,7 +98,7 @@ public:
     bool SetAttrToEnd(til::CoordType columnBegin, TextAttribute attr);
     void ReplaceAttributes(til::CoordType beginIndex, til::CoordType endIndex, const TextAttribute& newAttr);
     void ReplaceCharacters(til::CoordType columnBegin, til::CoordType width, const std::wstring_view& chars);
-    til::CoordType Write(til::CoordType columnBegin, til::CoordType columnLimit, std::wstring_view& chars);
+    til::CoordType ReplaceText(til::CoordType columnBegin, til::CoordType columnLimit, std::wstring_view& chars);
     til::CoordType CopyRangeFrom(til::CoordType columnBegin, til::CoordType columnLimit, const ROW& other, til::CoordType& otherBegin, til::CoordType otherLimit);
 
     til::small_rle<TextAttribute, uint16_t, 1>& Attributes() noexcept;
@@ -130,20 +130,37 @@ private:
         explicit WriteHelper(ROW& row, til::CoordType columnBegin, til::CoordType columnLimit, const std::wstring_view& chars) noexcept;
         bool IsValid() const noexcept;
         void ReplaceCharacters(til::CoordType width) noexcept;
-        void Write() noexcept;
+        void ReplaceText() noexcept;
         void CopyRangeFrom(const std::span<const uint16_t>& charOffsets) noexcept;
         void Finish();
 
+        // Parent pointer.
         ROW& row;
+        // The text given by the caller.
         const std::wstring_view& chars;
+
+        // This is the same as the columnBegin parameter for ReplaceText(), etc.,
+        // but clamped to a valid range via _clampedColumnInclusive.
         uint16_t colBeg;
+        // This is the same as the columnLimit parameter for ReplaceText(), etc.,
+        // but clamped to a valid range via _clampedColumnInclusive.
         uint16_t colLimit;
-        uint16_t chExtBeg;
-        uint16_t colExtBeg;
-        uint16_t leadingSpaces;
-        uint16_t chBeg;
+
+        // The column 1 past the last glyph that was successfully written into the row. If you need to call
+        // ReplaceAttributes() to colorize the written range, etc., this is the columnEnd parameter you want.
+        // If you want to continue writing where you left off, this is also the next columnBegin parameter.
         uint16_t colEnd;
-        uint16_t colExtEnd;
+        // The first column that got modified by this write operation. In case that the first glyph we write, overwrites
+        // the trailing half of a wide glyph, leadingSpaces will be 1 and this value will be 1 less than colBeg.
+        uint16_t colBegDirty;
+        // Similar to dirtyBeg, this is 1 past the last column that was modified and will be 1 past colEnd if
+        // we overwrote the leading half of a wide glyph and had to fill the trailing half with whitespace.
+        uint16_t colEndDirty;
+        // The offset in ROW::chars at which we start writing the contents of WriteHelper::chars.
+        uint16_t chBeg;
+        // The offset at which we start writing leadingSpaces-many whitespaces.
+        uint16_t chBegDirty;
+        // The amount of characters copied from WriteHelper::chars.
         size_t charsConsumed;
     };
 
@@ -169,7 +186,7 @@ private:
     bool _uncheckedIsTrailer(size_t col) const noexcept;
 
     void _init() noexcept;
-    void _resizeChars(uint16_t colExtEnd, uint16_t chExtBeg, uint16_t chExtEndOld, size_t chExtEndNew);
+    void _resizeChars(uint16_t colEndDirty, uint16_t chBegDirty, size_t chEndDirty, uint16_t chEndDirtyOld);
 
     // These fields are a bit "wasteful", but it makes all this a bit more robust against
     // programming errors during initial development (which is when this comment was written).

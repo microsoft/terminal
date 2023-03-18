@@ -387,7 +387,7 @@ til::CoordType TextBuffer::Write(til::CoordType row, til::CoordType columnBegin,
 {
     auto& r = GetRowByOffset(row);
 
-    const auto columnEnd = r.Write(columnBegin, columnLimit, chars);
+    const auto columnEnd = r.ReplaceText(columnBegin, columnLimit, chars);
     r.ReplaceAttributes(columnBegin, columnEnd, attributes);
     r.SetWrapForced(wrapAtEOL && columnEnd >= r.size());
 
