@@ -98,9 +98,12 @@ const RowTextIterator& RowTextIterator::operator*() const noexcept
 
 std::wstring_view RowTextIterator::Text() const noexcept
 {
-    const auto beg = _uncheckedCharOffset(_beg);
-    const auto end = _uncheckedCharOffset(_end);
-    return { _chars.begin() + beg, _chars.begin() + gsl::narrow_cast<size_t>(end - beg) };
+    const size_t beg = _uncheckedCharOffset(_beg);
+    const size_t end = _uncheckedCharOffset(_end);
+    // We _are_ using span. But C++ decided that string_view and span aren't convertible.
+    assert(end <= _chars.size() && end > beg);
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+    return { _chars.data() + beg, end - beg };
 }
 
 til::CoordType RowTextIterator::Cols() const noexcept
@@ -108,22 +111,17 @@ til::CoordType RowTextIterator::Cols() const noexcept
     return _end - _beg;
 }
 
-DbcsAttribute RowTextIterator::DbcsAttr() const noexcept
-{
-    return Cols() == 2 ? DbcsAttribute::Leading : DbcsAttribute::Single;
-}
-
 // Safety: col must be [0, _columnCount].
 uint16_t RowTextIterator::_uncheckedCharOffset(size_t col) const noexcept
 {
-    assert(col <= _charOffsets.size());
+    assert(col < _charOffsets.size());
     return til::at(_charOffsets, col) & CharOffsetsMask;
 }
 
 // Safety: col must be [0, _columnCount].
 bool RowTextIterator::_uncheckedIsTrailer(size_t col) const noexcept
 {
-    assert(col <= _charOffsets.size());
+    assert(col < _charOffsets.size());
     return WI_IsFlagSet(til::at(_charOffsets, col), CharOffsetsTrailer);
 }
 
@@ -543,6 +541,7 @@ try
     if (!h.IsValid())
     {
         state.columnEnd = h.colBeg;
+        state.columnBeginDirty = h.colBeg;
         state.columnEndDirty = h.colBeg;
         return;
     }
@@ -550,7 +549,8 @@ try
     h.Finish();
 
     state.text = state.text.substr(h.charsConsumed);
-    state.columnEnd = h.colEnd;
+    state.columnEnd = state.text.empty() ? h.colEnd : h.colLimit;
+    state.columnBeginDirty = h.colBegDirty;
     state.columnEndDirty = h.colEndDirty;
 }
 catch (...)
@@ -598,10 +598,8 @@ try
     {
         charOffsets = other._charOffsets.subspan(otherColBeg, static_cast<size_t>(otherColLimit) - otherColBeg + 1);
         const auto charsOffset = charOffsets.front() & CharOffsetsMask;
-        // _chars is a std::span (for performance and because it refers to raw, shared memory), whereas
-        // chars is a std::wstring_view, because that's what we use everywhere else for sharing strings.
-        // We can't trivially convert the two (C++ Committee be like: Having 2 span types is completely
-        // reasonable and normal. Also, they're not convertible. Because fu.) so we do pointer stuff.
+        // We _are_ using span. But C++ decided that string_view and span aren't convertible.
+        // _chars is a std::span for performance and because it refers to raw, shared memory.
 #pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
         chars = { other._chars.data() + charsOffset, other._chars.size() - charsOffset };
     }
@@ -781,6 +779,12 @@ std::vector<uint16_t> ROW::GetHyperlinks() const
 uint16_t ROW::size() const noexcept
 {
     return _columnCount;
+}
+
+til::CoordType ROW::LineRenditionColumns() const noexcept
+{
+    const auto scale = _lineRendition != LineRendition::SingleWidth ? 1 : 0;
+    return _columnCount >> scale;
 }
 
 til::CoordType ROW::MeasureLeft() const noexcept

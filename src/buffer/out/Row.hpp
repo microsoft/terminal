@@ -45,7 +45,6 @@ struct RowTextIterator
 
     std::wstring_view Text() const noexcept;
     til::CoordType Cols() const noexcept;
-    DbcsAttribute DbcsAttr() const noexcept;
 
 private:
     uint16_t _uncheckedCharOffset(size_t col) const noexcept;
@@ -77,6 +76,9 @@ struct RowWriteState
     // ReplaceAttributes() to colorize the written range, etc., this is the columnEnd parameter you want.
     // If you want to continue writing where you left off, this is also the next columnBegin parameter.
     til::CoordType columnEnd = 0; // OUT
+    // The first column that got modified by this write operation. In case that the first glyph we write overwrites
+    // the trailing half of a wide glyph, leadingSpaces will be 1 and this value will be 1 less than colBeg.
+    til::CoordType columnBeginDirty = 0; // OUT
     // This is 1 past the last column that was modified and will be 1 past columnEnd if we overwrote
     // the leading half of a wide glyph and had to fill the trailing half with whitespace.
     til::CoordType columnEndDirty = 0; // OUT
@@ -125,6 +127,7 @@ public:
     TextAttribute GetAttrByColumn(til::CoordType column) const;
     std::vector<uint16_t> GetHyperlinks() const;
     uint16_t size() const noexcept;
+    til::CoordType LineRenditionColumns() const noexcept;
     til::CoordType MeasureLeft() const noexcept;
     til::CoordType MeasureRight() const noexcept;
     bool ContainsText() const noexcept;
@@ -169,7 +172,7 @@ private:
         // ReplaceAttributes() to colorize the written range, etc., this is the columnEnd parameter you want.
         // If you want to continue writing where you left off, this is also the next columnBegin parameter.
         uint16_t colEnd;
-        // The first column that got modified by this write operation. In case that the first glyph we write, overwrites
+        // The first column that got modified by this write operation. In case that the first glyph we write overwrites
         // the trailing half of a wide glyph, leadingSpaces will be 1 and this value will be 1 less than colBeg.
         uint16_t colBegDirty;
         // Similar to dirtyBeg, this is 1 past the last column that was modified and will be 1 past colEnd if
