@@ -126,7 +126,8 @@ namespace winrt::TerminalApp::implementation
 
         TerminalApp::WindowProperties WindowProperties() const noexcept { return _WindowProperties; };
 
-        bool IsElevated() const noexcept;
+        bool CanDragDrop() const noexcept;
+        bool IsRunningElevated() const noexcept;
 
         void OpenSettingsUI();
         void WindowActivated(const bool activated);

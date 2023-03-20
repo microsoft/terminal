@@ -177,7 +177,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             //   from state.json. We'll then load the Local props from
             //   `elevated-state.json`
             // - If we're unelevated, then load _everything_ from state.json.
-            if (::Microsoft::Console::Utils::IsElevated())
+            if (::Microsoft::Console::Utils::IsRunningElevated())
             {
                 // Only load shared properties if we're elevated
                 FromJson(root, FileSource::Shared);
@@ -225,7 +225,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         //
         // After that's done, we'll write our Local properties into
         // elevated-state.json.
-        if (::Microsoft::Console::Utils::IsElevated())
+        if (::Microsoft::Console::Utils::IsRunningElevated())
         {
             std::string errs;
             std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };
@@ -353,7 +353,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //   permissions, so we don't potentially read malicious data.
     std::optional<std::string> ApplicationState::_readLocalContents() const
     {
-        return ::Microsoft::Console::Utils::IsElevated() ?
+        return ::Microsoft::Console::Utils::IsRunningElevated() ?
                    ReadUTF8FileIfExists(_elevatedPath, true) :
                    ReadUTF8FileIfExists(_sharedPath, false);
     }
@@ -374,7 +374,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //   will atomically write to `user-state.json`
     void ApplicationState::_writeLocalContents(const std::string_view content) const
     {
-        if (::Microsoft::Console::Utils::IsElevated())
+        if (::Microsoft::Console::Utils::IsRunningElevated())
         {
             // DON'T use WriteUTF8FileAtomic, which will write to a temporary file
             // then rename that file to the final filename. That actually lets us

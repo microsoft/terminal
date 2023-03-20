@@ -50,6 +50,7 @@ private:
     std::vector<winrt::Microsoft::Terminal::Settings::Model::GlobalSummonArgs> _hotkeys;
 
     std::unique_ptr<NotificationIcon> _notificationIcon;
+
     bool _quitting{ false };
 
     void _windowStartedHandler(const std::shared_ptr<WindowThread>& sender);
