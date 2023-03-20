@@ -37,7 +37,6 @@ namespace Microsoft::Console::VirtualTerminal
         ITerminalApi& operator=(const ITerminalApi&) = delete;
         ITerminalApi& operator=(ITerminalApi&&) = delete;
 
-        virtual void PrintString(const std::wstring_view string) = 0;
         virtual void ReturnResponse(const std::wstring_view response) = 0;
 
         virtual StateMachine& GetStateMachine() = 0;
@@ -55,7 +54,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual void SetScrollingRegion(const til::inclusive_rect& scrollMargins) = 0;
         virtual void WarningBell() = 0;
         virtual bool GetLineFeedMode() const = 0;
-        virtual void LineFeed(const bool withReturn) = 0;
+        virtual void LineFeed(const bool withReturn, const bool wrapForced) = 0;
         virtual void SetWindowTitle(const std::wstring_view title) = 0;
         virtual void UseAlternateScreenBuffer() = 0;
         virtual void UseMainScreenBuffer() = 0;

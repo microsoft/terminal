@@ -70,6 +70,11 @@
                   PreviewKeyDown="ListView_PreviewKeyDown"
                   SelectedItem="{x:Bind ViewModel.CurrentScheme, Mode=TwoWay}"
                   SelectionMode="Single">
+            <ListView.Resources>
+                <!--  We need this here because otherwise the background is blue in Windows 10  -->
+                <SolidColorBrush x:Key="ListViewItemBackgroundSelected"
+                                 Color="{ThemeResource SystemListLowColor}" />
+            </ListView.Resources>
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="local:ColorSchemeViewModel">
                     <Grid MaxWidth="1000"

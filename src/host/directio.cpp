@@ -169,75 +169,21 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-        std::deque<std::unique_ptr<IInputEvent>> partialEvents;
-        if (!IsUnicode)
-        {
-            if (inputBuffer.IsReadPartialByteSequenceAvailable())
-            {
-                partialEvents.push_back(inputBuffer.FetchReadPartialByteSequence(IsPeek));
-            }
-        }
-
-        size_t amountToRead;
-        if (FAILED(SizeTSub(eventReadCount, partialEvents.size(), &amountToRead)))
-        {
-            return STATUS_INTEGER_OVERFLOW;
-        }
-        std::deque<std::unique_ptr<IInputEvent>> readEvents;
-        auto Status = inputBuffer.Read(readEvents,
-                                       amountToRead,
-                                       IsPeek,
-                                       true,
-                                       IsUnicode,
-                                       false);
+        const auto Status = inputBuffer.Read(outEvents,
+                                             eventReadCount,
+                                             IsPeek,
+                                             true,
+                                             IsUnicode,
+                                             false);
 
         if (CONSOLE_STATUS_WAIT == Status)
         {
-            FAIL_FAST_IF(!(readEvents.empty()));
             // If we're told to wait until later, move all of our context
             // to the read data object and send it back up to the server.
             waiter = std::make_unique<DirectReadData>(&inputBuffer,
                                                       &readHandleState,
                                                       eventReadCount,
-                                                      std::move(partialEvents));
-        }
-        else if (NT_SUCCESS(Status))
-        {
-            // split key events to oem chars if necessary
-            if (!IsUnicode)
-            {
-                try
-                {
-                    SplitToOem(readEvents);
-                }
-                CATCH_LOG();
-            }
-
-            // combine partial and readEvents
-            while (!partialEvents.empty())
-            {
-                readEvents.push_front(std::move(partialEvents.back()));
-                partialEvents.pop_back();
-            }
-
-            // move events over
-            for (size_t i = 0; i < eventReadCount; ++i)
-            {
-                if (readEvents.empty())
-                {
-                    break;
-                }
-                outEvents.push_back(std::move(readEvents.front()));
-                readEvents.pop_front();
-            }
-
-            // store partial event if necessary
-            if (!readEvents.empty())
-            {
-                inputBuffer.StoreReadPartialByteSequence(std::move(readEvents.front()));
-                readEvents.pop_front();
-                FAIL_FAST_IF(!(readEvents.empty()));
-            }
+                                                      std::move(outEvents));
         }
         return Status;
     }
@@ -452,7 +398,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 // Return Value:
 // - HRESULT indicating success or failure
 [[nodiscard]] HRESULT ApiRoutines::WriteConsoleInputAImpl(InputBuffer& context,
-                                                          const gsl::span<const INPUT_RECORD> buffer,
+                                                          const std::span<const INPUT_RECORD> buffer,
                                                           size_t& written,
                                                           const bool append) noexcept
 {
@@ -496,7 +442,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 // Return Value:
 // - HRESULT indicating success or failure
 [[nodiscard]] HRESULT ApiRoutines::WriteConsoleInputWImpl(InputBuffer& context,
-                                                          const gsl::span<const INPUT_RECORD> buffer,
+                                                          const std::span<const INPUT_RECORD> buffer,
                                                           size_t& written,
                                                           const bool append) noexcept
 {
@@ -524,7 +470,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 // Return Value:
 // - Generally S_OK. Could be a memory or math error code.
 [[nodiscard]] static HRESULT _ConvertCellsToAInplace(const UINT codepage,
-                                                     const gsl::span<CHAR_INFO> buffer,
+                                                     const std::span<CHAR_INFO> buffer,
                                                      const Viewport rectangle) noexcept
 {
     try
@@ -601,7 +547,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 // Return Value:
 // - Generally S_OK. Could be a memory or math error code.
 [[nodiscard]] HRESULT _ConvertCellsToWInplace(const UINT codepage,
-                                              gsl::span<CHAR_INFO> buffer,
+                                              std::span<CHAR_INFO> buffer,
                                               const Viewport& rectangle) noexcept
 {
     try
@@ -671,7 +617,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
     CATCH_RETURN();
 }
 
-[[nodiscard]] static std::vector<CHAR_INFO> _ConvertCellsToMungedW(gsl::span<CHAR_INFO> buffer, const Viewport& rectangle)
+[[nodiscard]] static std::vector<CHAR_INFO> _ConvertCellsToMungedW(std::span<CHAR_INFO> buffer, const Viewport& rectangle)
 {
     std::vector<CHAR_INFO> result;
     result.reserve(buffer.size());
@@ -722,7 +668,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 }
 
 [[nodiscard]] static HRESULT _ReadConsoleOutputWImplHelper(const SCREEN_INFORMATION& context,
-                                                           gsl::span<CHAR_INFO> targetBuffer,
+                                                           std::span<CHAR_INFO> targetBuffer,
                                                            const Microsoft::Console::Types::Viewport& requestRectangle,
                                                            Microsoft::Console::Types::Viewport& readRectangle) noexcept
 {
@@ -812,7 +758,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 }
 
 [[nodiscard]] HRESULT ApiRoutines::ReadConsoleOutputAImpl(const SCREEN_INFORMATION& context,
-                                                          gsl::span<CHAR_INFO> buffer,
+                                                          std::span<CHAR_INFO> buffer,
                                                           const Microsoft::Console::Types::Viewport& sourceRectangle,
                                                           Microsoft::Console::Types::Viewport& readRectangle) noexcept
 {
@@ -834,7 +780,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 }
 
 [[nodiscard]] HRESULT ApiRoutines::ReadConsoleOutputWImpl(const SCREEN_INFORMATION& context,
-                                                          gsl::span<CHAR_INFO> buffer,
+                                                          std::span<CHAR_INFO> buffer,
                                                           const Microsoft::Console::Types::Viewport& sourceRectangle,
                                                           Microsoft::Console::Types::Viewport& readRectangle) noexcept
 {
@@ -858,7 +804,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 }
 
 [[nodiscard]] static HRESULT _WriteConsoleOutputWImplHelper(SCREEN_INFORMATION& context,
-                                                            gsl::span<CHAR_INFO> buffer,
+                                                            std::span<CHAR_INFO> buffer,
                                                             const Viewport& requestRectangle,
                                                             Viewport& writtenRectangle) noexcept
 {
@@ -942,7 +888,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
             const auto subspan = buffer.subspan(totalOffset, writeRectangle.Width());
 
             // Convert to a CHAR_INFO view to fit into the iterator
-            const auto charInfos = gsl::span<const CHAR_INFO>(subspan.data(), subspan.size());
+            const auto charInfos = std::span<const CHAR_INFO>(subspan.data(), subspan.size());
 
             // Make the iterator and write to the target position.
             OutputCellIterator it(charInfos);
@@ -958,7 +904,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 }
 
 [[nodiscard]] HRESULT ApiRoutines::WriteConsoleOutputAImpl(SCREEN_INFORMATION& context,
-                                                           gsl::span<CHAR_INFO> buffer,
+                                                           std::span<CHAR_INFO> buffer,
                                                            const Viewport& requestRectangle,
                                                            Viewport& writtenRectangle) noexcept
 {
@@ -979,7 +925,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 }
 
 [[nodiscard]] HRESULT ApiRoutines::WriteConsoleOutputWImpl(SCREEN_INFORMATION& context,
-                                                           gsl::span<CHAR_INFO> buffer,
+                                                           std::span<CHAR_INFO> buffer,
                                                            const Viewport& requestRectangle,
                                                            Viewport& writtenRectangle) noexcept
 {
@@ -1007,7 +953,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 
 [[nodiscard]] HRESULT ApiRoutines::ReadConsoleOutputAttributeImpl(const SCREEN_INFORMATION& context,
                                                                   const til::point origin,
-                                                                  gsl::span<WORD> buffer,
+                                                                  std::span<WORD> buffer,
                                                                   size_t& written) noexcept
 {
     written = 0;
@@ -1028,7 +974,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 
 [[nodiscard]] HRESULT ApiRoutines::ReadConsoleOutputCharacterAImpl(const SCREEN_INFORMATION& context,
                                                                    const til::point origin,
-                                                                   gsl::span<char> buffer,
+                                                                   std::span<char> buffer,
                                                                    size_t& written) noexcept
 {
     written = 0;
@@ -1057,7 +1003,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 
 [[nodiscard]] HRESULT ApiRoutines::ReadConsoleOutputCharacterWImpl(const SCREEN_INFORMATION& context,
                                                                    const til::point origin,
-                                                                   gsl::span<wchar_t> buffer,
+                                                                   std::span<wchar_t> buffer,
                                                                    size_t& written) noexcept
 {
     written = 0;
@@ -1125,7 +1071,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                                                      Cursor::CURSOR_SMALL_SIZE,
                                                      &ScreenInfo);
 
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         goto Exit;
     }
@@ -1135,7 +1081,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                                                                 Information->ShareMode,
                                                                 handle));
 
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         goto Exit;
     }
@@ -1143,7 +1089,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
     SCREEN_INFORMATION::s_InsertScreenBuffer(ScreenInfo);
 
 Exit:
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         delete ScreenInfo;
     }

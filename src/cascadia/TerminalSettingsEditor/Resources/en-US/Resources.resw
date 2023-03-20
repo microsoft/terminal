@@ -356,8 +356,8 @@
     <comment>The string to be displayed when there is no current value in the y-coordinate number box.</comment>
   </data>
   <data name="Globals_DefaultLaunchPositionCheckbox.Content" xml:space="preserve">
-    <value>Use system default</value>
-    <comment>A checkbox for the "launch position" setting. Toggling this control sets the launch position to the system default.</comment>
+    <value>Let Windows decide</value>
+    <comment>A checkbox for the "launch position" setting. Toggling this control sets the launch position to whatever the Windows operating system decides.</comment>
   </data>
   <data name="Globals_DefaultLaunchPositionCheckbox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>If enabled, use the system default launch position.</value>
@@ -874,6 +874,22 @@
     <value>Size of the font in points.</value>
     <comment>A description for what the "font size" setting does. Presented near "Profile_FontSize".</comment>
   </data>
+  <data name="Profile_LineHeight.Header" xml:space="preserve">
+    <value>Line height</value>
+    <comment>Header for a control that sets the text line height.</comment>
+  </data>
+  <data name="Profile_LineHeightBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Line height</value>
+    <comment>Header for a control that sets the text line height.</comment>
+  </data>
+  <data name="Profile_LineHeight.HelpText" xml:space="preserve">
+    <value>Sets the height of each line in the terminal as a multiple of the font size. The default depends on your font and is usually around 1.2.</value>
+    <comment>A description for what the "line height" setting does. Presented near "Profile_LineHeight".</comment>
+  </data>
+  <data name="Profile_LineHeightBox.PlaceholderText" xml:space="preserve">
+    <value>1.2</value>
+    <comment>"1.2" is a decimal number.</comment>
+  </data>
   <data name="Profile_FontWeightComboBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Font weight</value>
     <comment>Name for a control to select the weight (i.e. bold, thin, etc.) of the text in the app.</comment>
@@ -1047,7 +1063,7 @@
     <comment>The header for the section where the unfocused appearance settings can be changed.</comment>
   </data>
   <data name="Profile_AddAppearanceButton.Text" xml:space="preserve">
-    <value>Add</value>
+    <value>Create Appearance</value>
     <comment>Button label that adds an unfocused appearance for this profile.</comment>
   </data>
   <data name="Profile_DeleteAppearanceButton.Text" xml:space="preserve">
@@ -1435,7 +1451,7 @@
   </data>
   <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Create Appearance</value>
-    <comment>Name for a control which creates an the unfocused appearance settings for this profile.</comment>
+    <comment>Name for a control which creates an the unfocused appearance settings for this profile. Text must match that of "Profile_AddAppearanceButton.Text".</comment>
   </data>
   <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Create an unfocused appearance for this profile. This will be the appearance of the profile when it is inactive.</value>

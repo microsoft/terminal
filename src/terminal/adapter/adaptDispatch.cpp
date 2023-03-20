@@ -40,7 +40,7 @@ void AdaptDispatch::Print(const wchar_t wchPrintable)
     // a character is only output if the DEL is translated to something else.
     if (wchTranslated != AsciiChars::DEL)
     {
-        _api.PrintString({ &wchTranslated, 1 });
+        _WriteToBuffer({ &wchTranslated, 1 });
     }
 }
 
@@ -61,12 +61,110 @@ void AdaptDispatch::PrintString(const std::wstring_view string)
         {
             buffer.push_back(_termOutput.TranslateKey(wch));
         }
-        _api.PrintString(buffer);
+        _WriteToBuffer(buffer);
     }
     else
     {
-        _api.PrintString(string);
+        _WriteToBuffer(string);
     }
+}
+
+void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
+{
+    auto& textBuffer = _api.GetTextBuffer();
+    auto& cursor = textBuffer.GetCursor();
+    auto cursorPosition = cursor.GetPosition();
+    const auto wrapAtEOL = _api.GetAutoWrapMode();
+    const auto attributes = textBuffer.GetCurrentAttributes();
+
+    // Turn off the cursor until we're done, so it isn't refreshed unnecessarily.
+    cursor.SetIsOn(false);
+
+    // The width at which we wrap is determined by the line rendition attribute.
+    auto lineWidth = textBuffer.GetLineWidth(cursorPosition.y);
+
+    auto stringPosition = string.cbegin();
+    while (stringPosition < string.cend())
+    {
+        if (cursor.IsDelayedEOLWrap() && wrapAtEOL)
+        {
+            const auto delayedCursorPosition = cursor.GetDelayedAtPosition();
+            cursor.ResetDelayEOLWrap();
+            // Only act on a delayed EOL if we didn't move the cursor to a
+            // different position from where the EOL was marked.
+            if (delayedCursorPosition == cursorPosition)
+            {
+                _api.LineFeed(true, true);
+                cursorPosition = cursor.GetPosition();
+                // We need to recalculate the width when moving to a new line.
+                lineWidth = textBuffer.GetLineWidth(cursorPosition.y);
+            }
+        }
+
+        const OutputCellIterator it(std::wstring_view{ stringPosition, string.cend() }, attributes);
+        if (_modes.test(Mode::InsertReplace))
+        {
+            // If insert-replace mode is enabled, we first measure how many cells
+            // the string will occupy, and scroll the target area right by that
+            // amount to make space for the incoming text.
+            auto measureIt = it;
+            while (measureIt && measureIt.GetCellDistance(it) < lineWidth)
+            {
+                measureIt++;
+            }
+            const auto row = cursorPosition.y;
+            const auto cellCount = measureIt.GetCellDistance(it);
+            _ScrollRectHorizontally(textBuffer, { cursorPosition.x, row, lineWidth, row + 1 }, cellCount);
+        }
+        const auto itEnd = textBuffer.WriteLine(it, cursorPosition, wrapAtEOL, lineWidth - 1);
+
+        if (itEnd.GetInputDistance(it) == 0)
+        {
+            // If we haven't written anything out because there wasn't enough space,
+            // we move the cursor to the end of the line so that it's forced to wrap.
+            cursorPosition.x = lineWidth;
+            // But if wrapping is disabled, we also need to move to the next string
+            // position, otherwise we'll be stuck in this loop forever.
+            if (!wrapAtEOL)
+            {
+                stringPosition++;
+            }
+        }
+        else
+        {
+            const auto cellCount = itEnd.GetCellDistance(it);
+            const auto changedRect = til::rect{ cursorPosition, til::size{ cellCount, 1 } };
+            _api.NotifyAccessibilityChange(changedRect);
+
+            stringPosition += itEnd.GetInputDistance(it);
+            cursorPosition.x += cellCount;
+        }
+
+        if (cursorPosition.x >= lineWidth)
+        {
+            // If we're past the end of the line, we need to clamp the cursor
+            // back into range, and if wrapping is enabled, set the delayed wrap
+            // flag. The wrapping only occurs once another character is output.
+            cursorPosition.x = lineWidth - 1;
+            cursor.SetPosition(cursorPosition);
+            if (wrapAtEOL)
+            {
+                cursor.DelayEOLWrap();
+            }
+        }
+        else
+        {
+            cursor.SetPosition(cursorPosition);
+        }
+    }
+
+    _ApplyCursorMovementFlags(cursor);
+
+    // Notify UIA of new text.
+    // It's important to do this here instead of in TextBuffer, because here you
+    // have access to the entire line of text, whereas TextBuffer writes it one
+    // character at a time via the OutputCellIterator.
+    textBuffer.TriggerNewTextNotification(string);
 }
 
 // Routine Description:
@@ -348,6 +446,7 @@ bool AdaptDispatch::CursorSaveState()
     auto& savedCursorState = _savedCursorState.at(_usingAltBuffer);
     savedCursorState.Column = cursorPosition.x + 1;
     savedCursorState.Row = cursorPosition.y + 1;
+    savedCursorState.IsDelayedEOLWrap = textBuffer.GetCursor().IsDelayedEOLWrap();
     savedCursorState.IsOriginModeRelative = _modes.test(Mode::Origin);
     savedCursorState.Attributes = attributes;
     savedCursorState.TermOutput = _termOutput;
@@ -385,6 +484,12 @@ bool AdaptDispatch::CursorRestoreState()
     // The saved coordinates are always absolute, so we need reset the origin mode temporarily.
     _modes.reset(Mode::Origin);
     CursorPosition(row, col);
+
+    // If the delayed wrap flag was set when the cursor was saved, we need to restore that now.
+    if (savedCursorState.IsDelayedEOLWrap)
+    {
+        _api.GetTextBuffer().GetCursor().DelayEOLWrap();
+    }
 
     // Once the cursor position is restored, we can then restore the actual origin mode.
     _modes.set(Mode::Origin, savedCursorState.IsOriginModeRelative);
@@ -466,11 +571,16 @@ void AdaptDispatch::_ScrollRectHorizontally(TextBuffer& textBuffer, const til::r
         const auto walkDirection = Viewport::DetermineWalkDirection(source, target);
         auto sourcePos = source.GetWalkOrigin(walkDirection);
         auto targetPos = target.GetWalkOrigin(walkDirection);
+        // Note that we read two cells from the source before we start writing
+        // to the target, so a two-cell DBCS character can't accidentally delete
+        // itself when moving one cell horizontally.
+        auto next = OutputCell(*textBuffer.GetCellDataAt(sourcePos));
         do
         {
-            const auto data = OutputCell(*textBuffer.GetCellDataAt(sourcePos));
-            textBuffer.Write(OutputCellIterator({ &data, 1 }), targetPos);
+            const auto current = next;
             source.WalkInBounds(sourcePos, walkDirection);
+            next = OutputCell(*textBuffer.GetCellDataAt(sourcePos));
+            textBuffer.WriteLine(OutputCellIterator({ &current, 1 }), targetPos);
         } while (target.WalkInBounds(targetPos, walkDirection));
     }
 
@@ -497,6 +607,8 @@ void AdaptDispatch::_InsertDeleteCharacterHelper(const VTInt delta)
     const auto startCol = textBuffer.GetCursor().GetPosition().x;
     const auto endCol = textBuffer.GetLineWidth(row);
     _ScrollRectHorizontally(textBuffer, { startCol, row, endCol, row + 1 }, delta);
+    // The ICH and DCH controls are expected to reset the delayed wrap flag.
+    textBuffer.GetCursor().ResetDelayEOLWrap();
 }
 
 // Routine Description:
@@ -565,6 +677,9 @@ bool AdaptDispatch::EraseCharacters(const VTInt numChars)
     const auto startCol = textBuffer.GetCursor().GetPosition().x;
     const auto endCol = std::min<VTInt>(startCol + numChars, textBuffer.GetLineWidth(row));
 
+    // The ECH control is expected to reset the delayed wrap flag.
+    textBuffer.GetCursor().ResetDelayEOLWrap();
+
     auto eraseAttributes = textBuffer.GetCurrentAttributes();
     eraseAttributes.SetStandardErase();
     _FillRect(textBuffer, { startCol, row, endCol, row + 1 }, L' ', eraseAttributes);
@@ -618,6 +733,11 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
     const auto row = textBuffer.GetCursor().GetPosition().y;
     const auto col = textBuffer.GetCursor().GetPosition().x;
 
+    // The ED control is expected to reset the delayed wrap flag.
+    // The special case variants above ("erase all" and "erase scrollback")
+    // take care of that themselves when they set the cursor position.
+    textBuffer.GetCursor().ResetDelayEOLWrap();
+
     auto eraseAttributes = textBuffer.GetCurrentAttributes();
     eraseAttributes.SetStandardErase();
 
@@ -654,6 +774,9 @@ bool AdaptDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
     auto& textBuffer = _api.GetTextBuffer();
     const auto row = textBuffer.GetCursor().GetPosition().y;
     const auto col = textBuffer.GetCursor().GetPosition().x;
+
+    // The EL control is expected to reset the delayed wrap flag.
+    textBuffer.GetCursor().ResetDelayEOLWrap();
 
     auto eraseAttributes = textBuffer.GetCurrentAttributes();
     eraseAttributes.SetStandardErase();
@@ -719,6 +842,9 @@ bool AdaptDispatch::SelectiveEraseInDisplay(const DispatchTypes::EraseType erase
     const auto row = textBuffer.GetCursor().GetPosition().y;
     const auto col = textBuffer.GetCursor().GetPosition().x;
 
+    // The DECSED control is expected to reset the delayed wrap flag.
+    textBuffer.GetCursor().ResetDelayEOLWrap();
+
     switch (eraseType)
     {
     case DispatchTypes::EraseType::FromBeginning:
@@ -751,6 +877,9 @@ bool AdaptDispatch::SelectiveEraseInLine(const DispatchTypes::EraseType eraseTyp
     auto& textBuffer = _api.GetTextBuffer();
     const auto row = textBuffer.GetCursor().GetPosition().y;
     const auto col = textBuffer.GetCursor().GetPosition().x;
+
+    // The DECSEL control is expected to reset the delayed wrap flag.
+    textBuffer.GetCursor().ResetDelayEOLWrap();
 
     switch (eraseType)
     {
@@ -1017,16 +1146,21 @@ bool AdaptDispatch::CopyRectangularArea(const VTInt top, const VTInt left, const
         const auto walkDirection = Viewport::DetermineWalkDirection(srcView, dstView);
         auto srcPos = srcView.GetWalkOrigin(walkDirection);
         auto dstPos = dstView.GetWalkOrigin(walkDirection);
+        // Note that we read two cells from the source before we start writing
+        // to the target, so a two-cell DBCS character can't accidentally delete
+        // itself when moving one cell horizontally.
+        auto next = OutputCell(*textBuffer.GetCellDataAt(srcPos));
         do
         {
+            const auto current = next;
+            srcView.WalkInBounds(srcPos, walkDirection);
+            next = OutputCell(*textBuffer.GetCellDataAt(srcPos));
             // If the source position is offscreen (which can occur on double
             // width lines), then we shouldn't copy anything to the destination.
             if (srcPos.x < textBuffer.GetLineWidth(srcPos.y))
             {
-                const auto data = OutputCell(*textBuffer.GetCellDataAt(srcPos));
-                textBuffer.Write(OutputCellIterator({ &data, 1 }), dstPos);
+                textBuffer.WriteLine(OutputCellIterator({ &current, 1 }), dstPos);
             }
-            srcView.WalkInBounds(srcPos, walkDirection);
         } while (dstView.WalkInBounds(dstPos, walkDirection));
         _api.NotifyAccessibilityChange(dstRect);
     }
@@ -1135,6 +1269,84 @@ bool AdaptDispatch::SelectAttributeChangeExtent(const DispatchTypes::ChangeExten
 }
 
 // Routine Description:
+// - DECRQCRA - Computes and reports a checksum of the specified area of
+//   the buffer memory.
+// Arguments:
+// - id - a numeric label used to identify the request.
+// - page - The page number (unused for now).
+// - top - The first row of the area.
+// - left - The first column of the area.
+// - bottom - The last row of the area (inclusive).
+// - right - The last column of the area (inclusive).
+// Return value:
+// - True.
+bool AdaptDispatch::RequestChecksumRectangularArea(const VTInt id, const VTInt page, const VTInt top, const VTInt left, const VTInt bottom, const VTInt right)
+{
+    uint16_t checksum = 0;
+    // If this feature is not enabled, we'll just report a zero checksum.
+    if constexpr (Feature_VtChecksumReport::IsEnabled())
+    {
+        if (page == 1)
+        {
+            // As part of the checksum, we need to include the color indices of each
+            // cell, and in the case of default colors, those indices come from the
+            // color alias table. But if they're not in the bottom 16 range, we just
+            // fallback to using white on black (7 and 0).
+            auto defaultFgIndex = _renderSettings.GetColorAliasIndex(ColorAlias::DefaultForeground);
+            auto defaultBgIndex = _renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground);
+            defaultFgIndex = defaultFgIndex < 16 ? defaultFgIndex : 7;
+            defaultBgIndex = defaultBgIndex < 16 ? defaultBgIndex : 0;
+
+            const auto& textBuffer = _api.GetTextBuffer();
+            const auto eraseRect = _CalculateRectArea(top, left, bottom, right, textBuffer.GetSize().Dimensions());
+            for (auto row = eraseRect.top; row < eraseRect.bottom; row++)
+            {
+                for (auto col = eraseRect.left; col < eraseRect.right; col++)
+                {
+                    // The algorithm we're using here should match the DEC terminals
+                    // for the ASCII and Latin-1 range. Their other character sets
+                    // predate Unicode, though, so we'd need a custom mapping table
+                    // to lookup the correct checksums. Considering this is only for
+                    // testing at the moment, that doesn't seem worth the effort.
+                    const auto cell = textBuffer.GetCellDataAt({ col, row });
+                    for (auto ch : cell->Chars())
+                    {
+                        // That said, I've made a special allowance for U+2426,
+                        // since that is widely used in a lot of character sets.
+                        checksum -= (ch == L'\u2426' ? 0x1B : ch);
+                    }
+
+                    // Since we're attempting to match the DEC checksum algorithm,
+                    // the only attributes affecting the checksum are the ones that
+                    // were supported by DEC terminals.
+                    const auto attr = cell->TextAttr();
+                    checksum -= attr.IsProtected() ? 0x04 : 0;
+                    checksum -= attr.IsInvisible() ? 0x08 : 0;
+                    checksum -= attr.IsUnderlined() ? 0x10 : 0;
+                    checksum -= attr.IsReverseVideo() ? 0x20 : 0;
+                    checksum -= attr.IsBlinking() ? 0x40 : 0;
+                    checksum -= attr.IsIntense() ? 0x80 : 0;
+
+                    // For the same reason, we only care about the eight basic ANSI
+                    // colors, although technically we also report the 8-16 index
+                    // range. Everything else gets mapped to the default colors.
+                    const auto colorIndex = [](const auto color, const auto defaultIndex) {
+                        return color.IsLegacy() ? color.GetIndex() : defaultIndex;
+                    };
+                    const auto fgIndex = colorIndex(attr.GetForeground(), defaultFgIndex);
+                    const auto bgIndex = colorIndex(attr.GetBackground(), defaultBgIndex);
+                    checksum -= gsl::narrow_cast<uint16_t>(fgIndex << 4);
+                    checksum -= gsl::narrow_cast<uint16_t>(bgIndex);
+                }
+            }
+        }
+    }
+    const auto response = wil::str_printf<std::wstring>(L"\033P%d!~%04X\033\\", id, checksum);
+    _api.ReturnResponse(response);
+    return true;
+}
+
+// Routine Description:
 // - DECSWL/DECDWL/DECDHL - Sets the line rendition attribute for the current line.
 // Arguments:
 // - rendition - Determines whether the line will be rendered as single width, double
@@ -1143,7 +1355,13 @@ bool AdaptDispatch::SelectAttributeChangeExtent(const DispatchTypes::ChangeExten
 // - True.
 bool AdaptDispatch::SetLineRendition(const LineRendition rendition)
 {
-    _api.GetTextBuffer().SetCurrentLineRendition(rendition);
+    auto& textBuffer = _api.GetTextBuffer();
+    textBuffer.SetCurrentLineRendition(rendition);
+    // There is some variation in how this was handled by the different DEC
+    // terminals, but the STD 070 reference (on page D-13) makes it clear that
+    // the delayed wrap (aka the Last Column Flag) was expected to be reset when
+    // line rendition controls were executed.
+    textBuffer.GetCursor().ResetDelayEOLWrap();
     return true;
 }
 
@@ -1461,7 +1679,7 @@ bool AdaptDispatch::_PassThroughInputModes()
 }
 
 // Routine Description:
-// - Support routine for routing private mode parameters to be set/reset as flags
+// - Support routine for routing mode parameters to be set/reset as flags
 // Arguments:
 // - param - mode parameter to set/reset
 // - enable - True for set, false for unset.
@@ -1471,6 +1689,9 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
 {
     switch (param)
     {
+    case DispatchTypes::ModeParams::IRM_InsertReplaceMode:
+        _modes.set(Mode::InsertReplace, enable);
+        return true;
     case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
         _terminalInput.SetInputMode(TerminalInput::Mode::CursorKey, enable);
         return !_PassThroughInputModes();
@@ -1495,6 +1716,11 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         return true;
     case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
         _api.SetAutoWrapMode(enable);
+        // Resetting DECAWM should also reset the delayed wrap flag.
+        if (!enable)
+        {
+            _api.GetTextBuffer().GetCursor().ResetDelayEOLWrap();
+        }
         return true;
     case DispatchTypes::ModeParams::DECARM_AutoRepeatMode:
         _terminalInput.SetInputMode(TerminalInput::Mode::AutoRepeat, enable);
@@ -1553,7 +1779,7 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
 }
 
 // Routine Description:
-// - DECSET - Enables the given DEC private mode params.
+// - SM/DECSET - Enables the given mode parameter (both ANSI and private).
 // Arguments:
 // - param - mode parameter to set
 // Return Value:
@@ -1564,7 +1790,7 @@ bool AdaptDispatch::SetMode(const DispatchTypes::ModeParams param)
 }
 
 // Routine Description:
-// - DECRST - Disables the given DEC private mode params.
+// - RM/DECRST - Disables the given mode parameter (both ANSI and private).
 // Arguments:
 // - param - mode parameter to reset
 // Return Value:
@@ -1587,6 +1813,9 @@ bool AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
 
     switch (param)
     {
+    case DispatchTypes::ModeParams::IRM_InsertReplaceMode:
+        enabled = _modes.test(Mode::InsertReplace);
+        break;
     case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
         enabled = _terminalInput.GetInputMode(TerminalInput::Mode::CursorKey);
         break;
@@ -1882,13 +2111,13 @@ bool AdaptDispatch::LineFeed(const DispatchTypes::LineFeedType lineFeedType)
     switch (lineFeedType)
     {
     case DispatchTypes::LineFeedType::DependsOnMode:
-        _api.LineFeed(_api.GetLineFeedMode());
+        _api.LineFeed(_api.GetLineFeedMode(), false);
         return true;
     case DispatchTypes::LineFeedType::WithoutReturn:
-        _api.LineFeed(false);
+        _api.LineFeed(false, false);
         return true;
     case DispatchTypes::LineFeedType::WithReturn:
-        _api.LineFeed(true);
+        _api.LineFeed(true, false);
         return true;
     default:
         return false;
@@ -1983,8 +2212,20 @@ bool AdaptDispatch::ForwardTab(const VTInt numTabs)
         }
     }
 
+    // While the STD 070 reference suggests that horizontal tabs should reset
+    // the delayed wrap, almost none of the DEC terminals actually worked that
+    // way, and most modern terminal emulators appear to have taken the same
+    // approach (i.e. they don't reset). For us this is a bit messy, since all
+    // cursor movement resets the flag automatically, so we need to save the
+    // original state here, and potentially reapply it after the move.
+    const auto delayedWrapOriginallySet = cursor.IsDelayedEOLWrap();
     cursor.SetXPosition(column);
     _ApplyCursorMovementFlags(cursor);
+    if (delayedWrapOriginallySet)
+    {
+        cursor.DelayEOLWrap();
+    }
+
     return true;
 }
 
@@ -2228,7 +2469,7 @@ bool AdaptDispatch::AcceptC1Controls(const bool enabled)
 //   we actually perform. As the appropriate functionality is added to our ANSI support,
 //   we should update this.
 //  X Text cursor enable          DECTCEM     Cursor enabled.
-//    Insert/replace              IRM         Replace mode.
+//  X Insert/replace              IRM         Replace mode.
 //  X Origin                      DECOM       Absolute (cursor origin at upper-left of screen.)
 //  X Autowrap                    DECAWM      Autowrap enabled (matches XTerm behavior).
 //    National replacement        DECNRCM     Multinational set.
@@ -2256,7 +2497,7 @@ bool AdaptDispatch::AcceptC1Controls(const bool enabled)
 bool AdaptDispatch::SoftReset()
 {
     _api.GetTextBuffer().GetCursor().SetIsVisible(true); // Cursor enabled.
-    _modes.reset(Mode::Origin); // Absolute cursor addressing.
+    _modes.reset(Mode::InsertReplace, Mode::Origin); // Replace mode; Absolute cursor addressing.
     _api.SetAutoWrapMode(true); // Wrap at end of line.
     _terminalInput.SetInputMode(TerminalInput::Mode::CursorKey, false); // Normal characters.
     _terminalInput.SetInputMode(TerminalInput::Mode::Keypad, false); // Numeric characters.
@@ -3258,11 +3499,11 @@ ITermDispatch::StringHandler AdaptDispatch::RequestSetting()
     // this is the opposite of what is documented in most DEC manuals, which
     // say that 0 is for a valid response, and 1 is for an error. The correct
     // interpretation is documented in the DEC STD 070 reference.
-    const auto idBuilder = std::make_shared<VTIDBuilder>();
-    return [=](const auto ch) {
-        if (ch >= '\x40' && ch <= '\x7e')
+    return [this, parameter = VTInt{}, idBuilder = VTIDBuilder{}](const auto ch) mutable {
+        const auto isFinal = ch >= L'\x40' && ch <= L'\x7e';
+        if (isFinal)
         {
-            const auto id = idBuilder->Finalize(ch);
+            const auto id = idBuilder.Finalize(ch);
             switch (id)
             {
             case VTID("m"):
@@ -3277,6 +3518,9 @@ ITermDispatch::StringHandler AdaptDispatch::RequestSetting()
             case VTID("*x"):
                 _ReportDECSACESetting();
                 break;
+            case VTID(",|"):
+                _ReportDECACSetting(VTParameter{ parameter });
+                break;
             default:
                 _api.ReturnResponse(L"\033P0$r\033\\");
                 break;
@@ -3285,9 +3529,22 @@ ITermDispatch::StringHandler AdaptDispatch::RequestSetting()
         }
         else
         {
-            if (ch >= '\x20' && ch <= '\x2f')
+            // Although we don't yet support any operations with parameter
+            // prefixes, it's important that we still parse the prefix and
+            // include it in the ID. Otherwise we'll mistakenly respond to
+            // prefixed queries that we don't actually recognise.
+            const auto isParameterPrefix = ch >= L'<' && ch <= L'?';
+            const auto isParameter = ch >= L'0' && ch < L'9';
+            const auto isIntermediate = ch >= L'\x20' && ch <= L'\x2f';
+            if (isParameterPrefix || isIntermediate)
             {
-                idBuilder->AddIntermediate(ch);
+                idBuilder.AddIntermediate(ch);
+            }
+            else if (isParameter)
+            {
+                parameter *= 10;
+                parameter += (ch - L'0');
+                parameter = std::min(parameter, MAX_PARAMETER_VALUE);
             }
             return true;
         }
@@ -3424,6 +3681,44 @@ void AdaptDispatch::_ReportDECSACESetting() const
 
     // The '*x' indicates this is an DECSACE response, and ST ends the sequence.
     response.append(L"*x\033\\"sv);
+    _api.ReturnResponse({ response.data(), response.size() });
+}
+
+// Method Description:
+// - Reports the DECAC color assignments in response to a DECRQSS query.
+// Arguments:
+// - None
+// Return Value:
+// - None
+void AdaptDispatch::_ReportDECACSetting(const VTInt itemNumber) const
+{
+    using namespace std::string_view_literals;
+
+    size_t fgIndex = 0;
+    size_t bgIndex = 0;
+    switch (static_cast<DispatchTypes::ColorItem>(itemNumber))
+    {
+    case DispatchTypes::ColorItem::NormalText:
+        fgIndex = _renderSettings.GetColorAliasIndex(ColorAlias::DefaultForeground);
+        bgIndex = _renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground);
+        break;
+    case DispatchTypes::ColorItem::WindowFrame:
+        fgIndex = _renderSettings.GetColorAliasIndex(ColorAlias::FrameForeground);
+        bgIndex = _renderSettings.GetColorAliasIndex(ColorAlias::FrameBackground);
+        break;
+    default:
+        _api.ReturnResponse(L"\033P0$r\033\\");
+        return;
+    }
+
+    // A valid response always starts with DCS 1 $ r.
+    fmt::basic_memory_buffer<wchar_t, 64> response;
+    response.append(L"\033P1$r"sv);
+
+    fmt::format_to(std::back_inserter(response), FMT_COMPILE(L"{};{};{}"), itemNumber, fgIndex, bgIndex);
+
+    // The ',|' indicates this is a DECAC response, and ST ends the sequence.
+    response.append(L",|\033\\"sv);
     _api.ReturnResponse({ response.data(), response.size() });
 }
 

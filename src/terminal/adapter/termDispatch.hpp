@@ -74,6 +74,7 @@ public:
     bool EraseRectangularArea(const VTInt /*top*/, const VTInt /*left*/, const VTInt /*bottom*/, const VTInt /*right*/) override { return false; } // DECERA
     bool SelectiveEraseRectangularArea(const VTInt /*top*/, const VTInt /*left*/, const VTInt /*bottom*/, const VTInt /*right*/) override { return false; } // DECSERA
     bool SelectAttributeChangeExtent(const DispatchTypes::ChangeExtent /*changeExtent*/) override { return false; } // DECSACE
+    bool RequestChecksumRectangularArea(const VTInt /*id*/, const VTInt /*page*/, const VTInt /*top*/, const VTInt /*left*/, const VTInt /*bottom*/, const VTInt /*right*/) override { return false; } // DECRQCRA
 
     bool SetGraphicsRendition(const VTParameters /*options*/) override { return false; } // SGR
     bool SetLineRendition(const LineRendition /*rendition*/) override { return false; } // DECSWL, DECDWL, DECDHL
@@ -82,8 +83,8 @@ public:
     bool PushGraphicsRendition(const VTParameters /*options*/) override { return false; } // XTPUSHSGR
     bool PopGraphicsRendition() override { return false; } // XTPOPSGR
 
-    bool SetMode(const DispatchTypes::ModeParams /*param*/) override { return false; } // DECSET
-    bool ResetMode(const DispatchTypes::ModeParams /*param*/) override { return false; } // DECRST
+    bool SetMode(const DispatchTypes::ModeParams /*param*/) override { return false; } // SM, DECSET
+    bool ResetMode(const DispatchTypes::ModeParams /*param*/) override { return false; } // RM, DECRST
     bool RequestMode(const DispatchTypes::ModeParams /*param*/) override { return false; } // DECRQM
 
     bool DeviceStatusReport(const DispatchTypes::StatusType /*statusType*/, const VTParameter /*id*/) override { return false; } // DSR

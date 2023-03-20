@@ -130,7 +130,9 @@ namespace Microsoft::Console::VirtualTerminal
             VPR_VerticalPositionRelative = VTID("e"),
             HVP_HorizontalVerticalPosition = VTID("f"),
             TBC_TabClear = VTID("g"),
+            SM_SetMode = VTID("h"),
             DECSET_PrivateModeSet = VTID("?h"),
+            RM_ResetMode = VTID("l"),
             DECRST_PrivateModeReset = VTID("?l"),
             SGR_SetGraphicsRendition = VTID("m"),
             DSR_DeviceStatusReport = VTID("n"),
@@ -157,6 +159,7 @@ namespace Microsoft::Console::VirtualTerminal
             DECSERA_SelectiveEraseRectangularArea = VTID("${"),
             DECSCPP_SetColumnsPerPage = VTID("$|"),
             DECSACE_SelectAttributeChangeExtent = VTID("*x"),
+            DECRQCRA_RequestChecksumRectangularArea = VTID("*y"),
             DECINVM_InvokeMacro = VTID("*z"),
             DECAC_AssignColor = VTID(",|"),
             DECPS_PlaySound = VTID(",~")

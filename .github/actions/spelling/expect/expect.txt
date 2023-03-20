@@ -193,7 +193,6 @@ chh
 chk
 CHT
 Cic
-CLA
 Clcompile
 CLE
 cleartype
@@ -311,7 +310,6 @@ CPLINFO
 cplusplus
 CPPCORECHECK
 cppcorecheckrules
-cpprest
 cpprestsdk
 cppwinrt
 CProc
@@ -438,6 +436,7 @@ DECRC
 DECREQTPARM
 DECRLM
 DECRPM
+DECRQCRA
 DECRQM
 DECRQSS
 DECRQTSR
@@ -480,7 +479,6 @@ defterm
 DELAYLOAD
 DELETEONRELEASE
 Delt
-demoable
 depersist
 deprioritized
 deserializers
@@ -537,7 +535,6 @@ DSSCL
 DSwap
 DTest
 DTTERM
-DUMMYUNIONNAME
 dup'ed
 dvi
 dwl
@@ -590,7 +587,6 @@ ETW
 EUDC
 EVENTID
 eventing
-everytime
 evflags
 evt
 execd
@@ -612,8 +608,12 @@ FACESIZE
 FAILIFTHERE
 fastlink
 fcharset
+FDEA
 fdw
+FECF
+FEEF
 fesb
+FFAF
 FFDE
 FFrom
 fgbg
@@ -798,7 +798,6 @@ HIBYTE
 hicon
 HIDEWINDOW
 hinst
-Hirots
 HISTORYBUFS
 HISTORYNODUP
 HISTORYSIZE
@@ -817,6 +816,7 @@ HORZ
 hostable
 hostlib
 HPA
+hpcon
 HPCON
 hpj
 HPR
@@ -898,7 +898,6 @@ INSERTMODE
 INTERACTIVITYBASE
 INTERCEPTCOPYPASTE
 INTERNALNAME
-inthread
 intsafe
 INVALIDARG
 INVALIDATERECT
@@ -1255,14 +1254,12 @@ ntm
 nto
 ntrtl
 ntstatus
-ntsubauth
 NTSYSCALLAPI
 nttree
 nturtl
 ntuser
 NTVDM
 ntverp
-NTWIN
 nugetversions
 nullability
 nullness
@@ -1301,8 +1298,6 @@ opencode
 opencon
 openconsole
 openconsoleproxy
-OPENIF
-OPENLINK
 openps
 openvt
 ORIGINALFILENAME
@@ -1355,9 +1350,7 @@ pcg
 pch
 PCIDLIST
 PCIS
-PCLIENT
 PCLONG
-PCOBJECT
 pcon
 PCONSOLE
 PCONSOLEENDTASK
@@ -1369,7 +1362,6 @@ pcshell
 PCSHORT
 PCSR
 PCSTR
-PCUNICODE
 PCWCH
 PCWCHAR
 PCWSTR
@@ -1418,7 +1410,6 @@ PLOGICAL
 pnm
 PNMLINK
 pntm
-PNTSTATUS
 POBJECT
 Podcast
 POINTSLIST
@@ -1436,9 +1427,7 @@ PPEB
 ppf
 ppguid
 ppidl
-pplx
 PPROC
-PPROCESS
 ppropvar
 ppsi
 ppsl
@@ -1502,7 +1491,6 @@ ptrs
 ptsz
 PTYIn
 PUCHAR
-PUNICODE
 pwch
 PWDDMCONSOLECONTEXT
 pws
@@ -1564,7 +1552,6 @@ REGISTEROS
 REGISTERVDM
 regkey
 REGSTR
-reingest
 RELBINPATH
 remoting
 renamer
@@ -1576,6 +1563,7 @@ replatformed
 Replymessage
 repositorypath
 Requiresx
+rerasterize
 rescap
 Resequence
 RESETCONTENT
@@ -1824,6 +1812,7 @@ SYSCOMMAND
 SYSDEADCHAR
 SYSKEYDOWN
 SYSKEYUP
+SYSLIB
 SYSLINK
 SYSMENU
 sysparams
@@ -1857,6 +1846,7 @@ TDP
 TEAMPROJECT
 tearoff
 Teb
+Techo
 tellp
 teraflop
 terminalcore
@@ -1999,7 +1989,6 @@ unittesting
 unittests
 unk
 unknwn
-unmark
 UNORM
 unparseable
 unregistering
@@ -2112,7 +2101,6 @@ WDDMCONSOLECONTEXT
 wdm
 webpage
 websites
-websockets
 wekyb
 wex
 wextest

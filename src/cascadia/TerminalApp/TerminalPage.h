@@ -7,6 +7,7 @@
 #include "TerminalTab.h"
 #include "AppKeyBindings.h"
 #include "AppCommandlineArgs.h"
+#include "LastTabClosedEventArgs.g.h"
 #include "RenameWindowRequestedArgs.g.h"
 #include "Toast.h"
 
@@ -41,6 +42,15 @@ namespace winrt::TerminalApp::implementation
         ScrollDown = 1
     };
 
+    struct LastTabClosedEventArgs : LastTabClosedEventArgsT<LastTabClosedEventArgs>
+    {
+        WINRT_PROPERTY(bool, ClearPersistedState);
+
+    public:
+        LastTabClosedEventArgs(const bool& shouldClear) :
+            _ClearPersistedState{ shouldClear } {};
+    };
+
     struct RenameWindowRequestedArgs : RenameWindowRequestedArgsT<RenameWindowRequestedArgs>
     {
         WINRT_PROPERTY(winrt::hstring, ProposedName);
@@ -53,7 +63,7 @@ namespace winrt::TerminalApp::implementation
     struct TerminalPage : TerminalPageT<TerminalPage>
     {
     public:
-        TerminalPage();
+        TerminalPage(TerminalApp::WindowProperties properties);
 
         // This implements shobjidl's IInitializeWithWindow, but due to a XAML Compiler bug we cannot
         // put it in our inheritance graph. https://github.com/microsoft/microsoft-ui-xaml/issues/3331
@@ -63,11 +73,8 @@ namespace winrt::TerminalApp::implementation
 
         void Create();
 
-        bool ShouldUsePersistedLayout(Microsoft::Terminal::Settings::Model::CascadiaSettings& settings) const;
         bool ShouldImmediatelyHandoffToElevated(const Microsoft::Terminal::Settings::Model::CascadiaSettings& settings) const;
         void HandoffToElevated(const Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
-        std::optional<uint32_t> LoadPersistedLayoutIdx(Microsoft::Terminal::Settings::Model::CascadiaSettings& settings) const;
-        winrt::Microsoft::Terminal::Settings::Model::WindowLayout LoadPersistedLayout(Microsoft::Terminal::Settings::Model::CascadiaSettings& settings) const;
         Microsoft::Terminal::Settings::Model::WindowLayout GetWindowLayout();
 
         winrt::fire_and_forget NewTerminalByDrop(winrt::Windows::UI::Xaml::DragEventArgs& e);
@@ -117,21 +124,10 @@ namespace winrt::TerminalApp::implementation
                                                      const bool initial,
                                                      const winrt::hstring cwd = L"");
 
-        // Normally, WindowName and WindowId would be
-        // WINRT_OBSERVABLE_PROPERTY's, but we want them to raise
-        // WindowNameForDisplay and WindowIdForDisplay instead
-        winrt::hstring WindowName() const noexcept;
-        winrt::fire_and_forget WindowName(const winrt::hstring& value);
-        uint64_t WindowId() const noexcept;
-        void WindowId(const uint64_t& value);
+        TerminalApp::WindowProperties WindowProperties() const noexcept { return _WindowProperties; };
 
-        void SetNumberOfOpenWindows(const uint64_t value);
-        void SetPersistedLayoutIdx(const uint32_t value);
-
-        winrt::hstring WindowIdForDisplay() const noexcept;
-        winrt::hstring WindowNameForDisplay() const noexcept;
-        bool IsQuakeWindow() const noexcept;
-        bool IsElevated() const noexcept;
+        bool CanDragDrop() const noexcept;
+        bool IsRunningElevated() const noexcept;
 
         void OpenSettingsUI();
         void WindowActivated(const bool activated);
@@ -153,7 +149,6 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(Initialized, IInspectable, winrt::Windows::UI::Xaml::RoutedEventArgs);
         TYPED_EVENT(IdentifyWindowsRequested, IInspectable, IInspectable);
         TYPED_EVENT(RenameWindowRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs);
-        TYPED_EVENT(IsQuakeWindowChanged, IInspectable, IInspectable);
         TYPED_EVENT(SummonWindowRequested, IInspectable, IInspectable);
         TYPED_EVENT(CloseRequested, IInspectable, IInspectable);
         TYPED_EVENT(OpenSystemMenu, IInspectable, IInspectable);
@@ -192,10 +187,8 @@ namespace winrt::TerminalApp::implementation
         bool _isFullscreen{ false };
         bool _isMaximized{ false };
         bool _isAlwaysOnTop{ false };
-        winrt::hstring _WindowName{};
-        uint64_t _WindowId{ 0 };
+
         std::optional<uint32_t> _loadFromPersistedLayoutIdx{};
-        uint64_t _numOpenWindows{ 0 };
 
         bool _maintainStateOnTabClose{ false };
         bool _rearranging{ false };
@@ -230,6 +223,12 @@ namespace winrt::TerminalApp::implementation
         int _renamerLayoutCount{ 0 };
         bool _renamerPressedEnter{ false };
 
+        TerminalApp::WindowProperties _WindowProperties{ nullptr };
+
+        PaneResources _paneResources;
+
+        winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::NewConnection_revoker _newConnectionRevoker;
+
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowDialogHelper(const std::wstring_view& name);
 
         void _ShowAboutDialog();
@@ -246,7 +245,7 @@ namespace winrt::TerminalApp::implementation
 
         void _OpenNewTabDropdown();
         HRESULT _OpenNewTab(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
-        void _CreateNewTabFromPane(std::shared_ptr<Pane> pane);
+        void _CreateNewTabFromPane(std::shared_ptr<Pane> pane, uint32_t insertPosition = -1);
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(Microsoft::Terminal::Settings::Model::Profile profile, Microsoft::Terminal::Settings::Model::TerminalSettings settings);
 
         winrt::fire_and_forget _OpenNewWindow(const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
@@ -273,10 +272,6 @@ namespace winrt::TerminalApp::implementation
         void _UpdateCommandsForPalette();
         void _SetBackgroundImage(const winrt::Microsoft::Terminal::Settings::Model::IAppearanceConfig& newAppearance);
 
-        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, Microsoft::Terminal::Settings::Model::Command> _ExpandCommands(Windows::Foundation::Collections::IMapView<winrt::hstring, Microsoft::Terminal::Settings::Model::Command> commandsToExpand,
-                                                                                                                                            Windows::Foundation::Collections::IVectorView<Microsoft::Terminal::Settings::Model::Profile> profiles,
-                                                                                                                                            Windows::Foundation::Collections::IMapView<winrt::hstring, Microsoft::Terminal::Settings::Model::ColorScheme> schemes);
-
         void _DuplicateFocusedTab();
         void _DuplicateTab(const TerminalTab& tab);
 
@@ -288,7 +283,7 @@ namespace winrt::TerminalApp::implementation
         void _RemoveTab(const winrt::TerminalApp::TabBase& tab);
         winrt::fire_and_forget _RemoveTabs(const std::vector<winrt::TerminalApp::TabBase> tabs);
 
-        void _InitializeTab(winrt::com_ptr<TerminalTab> newTabImpl);
+        void _InitializeTab(winrt::com_ptr<TerminalTab> newTabImpl, uint32_t insertPosition = -1);
         void _RegisterTerminalEvents(Microsoft::Terminal::Control::TermControl term);
         void _RegisterTabEvents(TerminalTab& hostingTab);
 
@@ -388,7 +383,7 @@ namespace winrt::TerminalApp::implementation
         void _OnCommandLineExecutionRequested(const IInspectable& sender, const winrt::hstring& commandLine);
         void _OnSwitchToTabRequested(const IInspectable& sender, const winrt::TerminalApp::TabBase& tab);
 
-        void _Find();
+        void _Find(const TerminalTab& tab);
 
         winrt::Microsoft::Terminal::Control::TermControl _InitControl(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
                                                                       const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
@@ -459,8 +454,14 @@ namespace winrt::TerminalApp::implementation
 
         void _updateThemeColors();
         void _updateTabCloseButton(const winrt::Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem);
+        void _updatePaneResources(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
 
         winrt::fire_and_forget _ShowWindowChangedHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
+        winrt::fire_and_forget _windowPropertyChanged(const IInspectable& sender, const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
+
+        void _ContextMenuOpened(const IInspectable& sender, const IInspectable& args);
+        void _SelectionMenuOpened(const IInspectable& sender, const IInspectable& args);
+        void _PopulateContextMenu(const IInspectable& sender, const bool withSelection);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp

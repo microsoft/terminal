@@ -12,6 +12,7 @@
 #include "input.h"
 #include "getset.h"
 #include "_stream.h" // For WriteCharsLegacy
+#include "output.h" // For ScrollRegion
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../../inc/conattrs.hpp"
@@ -181,8 +182,10 @@ class ScreenBufferTests
     TEST_METHOD(DontResetColorsAboveVirtualBottom);
 
     TEST_METHOD(ScrollOperations);
+    TEST_METHOD(InsertReplaceMode);
     TEST_METHOD(InsertChars);
     TEST_METHOD(DeleteChars);
+    TEST_METHOD(ScrollingWideCharsHorizontally);
 
     TEST_METHOD(EraseScrollbackTests);
     TEST_METHOD(EraseTests);
@@ -249,6 +252,8 @@ class ScreenBufferTests
     TEST_METHOD(TestDeferredMainBufferResize);
 
     TEST_METHOD(RectangularAreaOperations);
+
+    TEST_METHOD(DelayedWrapReset);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -263,7 +268,7 @@ void ScreenBufferTests::SingleAlternateBufferCreationTest()
     VERIFY_IS_NULL(psiOriginal->_psiMainBuffer);
 
     auto Status = psiOriginal->UseAlternateScreenBuffer();
-    if (VERIFY_IS_TRUE(NT_SUCCESS(Status)))
+    if (VERIFY_NT_SUCCESS(Status))
     {
         Log::Comment(L"First alternate buffer successfully created");
         const auto psiFirstAlternate = &gci.GetActiveOutputBuffer();
@@ -296,7 +301,7 @@ void ScreenBufferTests::MultipleAlternateBufferCreationTest()
 
     const auto psiOriginal = &gci.GetActiveOutputBuffer();
     auto Status = psiOriginal->UseAlternateScreenBuffer();
-    if (VERIFY_IS_TRUE(NT_SUCCESS(Status)))
+    if (VERIFY_NT_SUCCESS(Status))
     {
         Log::Comment(L"First alternate buffer successfully created");
         const auto psiFirstAlternate = &gci.GetActiveOutputBuffer();
@@ -307,7 +312,7 @@ void ScreenBufferTests::MultipleAlternateBufferCreationTest()
         VERIFY_IS_NULL(psiFirstAlternate->_psiAlternateBuffer);
 
         Status = psiFirstAlternate->UseAlternateScreenBuffer();
-        if (VERIFY_IS_TRUE(NT_SUCCESS(Status)))
+        if (VERIFY_NT_SUCCESS(Status))
         {
             Log::Comment(L"Second alternate buffer successfully created");
             auto psiSecondAlternate = &gci.GetActiveOutputBuffer();
@@ -341,7 +346,7 @@ void ScreenBufferTests::MultipleAlternateBuffersFromMainCreationTest()
         L" alternate from the main, before returning to the main buffer.");
     const auto psiOriginal = &gci.GetActiveOutputBuffer();
     auto Status = psiOriginal->UseAlternateScreenBuffer();
-    if (VERIFY_IS_TRUE(NT_SUCCESS(Status)))
+    if (VERIFY_NT_SUCCESS(Status))
     {
         Log::Comment(L"First alternate buffer successfully created");
         const auto psiFirstAlternate = &gci.GetActiveOutputBuffer();
@@ -352,7 +357,7 @@ void ScreenBufferTests::MultipleAlternateBuffersFromMainCreationTest()
         VERIFY_IS_NULL(psiFirstAlternate->_psiAlternateBuffer);
 
         Status = psiOriginal->UseAlternateScreenBuffer();
-        if (VERIFY_IS_TRUE(NT_SUCCESS(Status)))
+        if (VERIFY_NT_SUCCESS(Status))
         {
             Log::Comment(L"Second alternate buffer successfully created");
             const auto psiSecondAlternate = &gci.GetActiveOutputBuffer();
@@ -2359,7 +2364,7 @@ void ScreenBufferTests::TestAltBufferCursorState()
     VERIFY_IS_NULL(original._psiMainBuffer);
 
     auto Status = original.UseAlternateScreenBuffer();
-    if (VERIFY_IS_TRUE(NT_SUCCESS(Status)))
+    if (VERIFY_NT_SUCCESS(Status))
     {
         Log::Comment(L"Alternate buffer successfully created");
         auto& alternate = gci.GetActiveOutputBuffer();
@@ -2404,7 +2409,7 @@ void ScreenBufferTests::TestAltBufferVtDispatching()
     VERIFY_IS_NULL(mainBuffer._psiMainBuffer);
 
     auto Status = mainBuffer.UseAlternateScreenBuffer();
-    if (VERIFY_IS_TRUE(NT_SUCCESS(Status)))
+    if (VERIFY_NT_SUCCESS(Status))
     {
         Log::Comment(L"Alternate buffer successfully created");
         auto& alternate = gci.GetActiveOutputBuffer();
@@ -2840,16 +2845,16 @@ void ScreenBufferTests::BackspaceDefaultAttrsWriteCharsLegacy()
     {
         auto str = L"X";
         size_t seqCb = 2;
-        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, writeCharsLegacyMode, nullptr));
-        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, writeCharsLegacyMode, nullptr));
+        VERIFY_NT_SUCCESS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, writeCharsLegacyMode, nullptr));
+        VERIFY_NT_SUCCESS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, writeCharsLegacyMode, nullptr));
         str = L"\x08";
-        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, writeCharsLegacyMode, nullptr));
+        VERIFY_NT_SUCCESS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, writeCharsLegacyMode, nullptr));
     }
     else
     {
         const auto str = L"XX\x08";
         size_t seqCb = 6;
-        VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, writeCharsLegacyMode, nullptr));
+        VERIFY_NT_SUCCESS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().x, writeCharsLegacyMode, nullptr));
     }
 
     TextAttribute expectedDefaults{};
@@ -3485,7 +3490,7 @@ void ScreenBufferTests::DontResetColorsAboveVirtualBottom()
     auto& cursor = si.GetTextBuffer().GetCursor();
     const auto& renderSettings = gci.GetRenderSettings();
 
-    VERIFY_SUCCESS_NTSTATUS(si.SetViewportOrigin(true, { 0, 1 }, true));
+    VERIFY_NT_SUCCESS(si.SetViewportOrigin(true, { 0, 1 }, true));
     cursor.SetPosition({ 0, si.GetViewport().BottomInclusive() });
     Log::Comment(NoThrowString().Format(
         L"cursor=%s", VerifyOutputTraits<til::point>::ToString(cursor.GetPosition()).GetBuffer()));
@@ -3518,7 +3523,7 @@ void ScreenBufferTests::DontResetColorsAboveVirtualBottom()
     }
 
     Log::Comment(NoThrowString().Format(L"Emulate scrolling up with the mouse"));
-    VERIFY_SUCCESS_NTSTATUS(si.SetViewportOrigin(true, { 0, 0 }, false));
+    VERIFY_NT_SUCCESS(si.SetViewportOrigin(true, { 0, 0 }, false));
 
     Log::Comment(NoThrowString().Format(
         L"cursor=%s", VerifyOutputTraits<til::point>::ToString(cursor.GetPosition()).GetBuffer()));
@@ -3778,6 +3783,82 @@ void ScreenBufferTests::ScrollOperations()
     const auto revealedStart = scrollDirection == Up ? viewportEnd - deletedLines : scrollStart;
     const auto revealedEnd = revealedStart + scrollMagnitude;
     VERIFY_IS_TRUE(_ValidateLinesContain(revealedStart, revealedEnd, L' ', expectedFillAttr));
+}
+
+void ScreenBufferTests::InsertReplaceMode()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    const auto bufferHeight = si.GetBufferSize().Height();
+    const auto viewport = si.GetViewport();
+    const auto targetRow = viewport.Top() + 5;
+    const auto targetCol = til::CoordType{ 10 };
+
+    // Fill the entire buffer with Zs. Blue on Green.
+    const auto bufferChar = L'Z';
+    const auto bufferAttr = TextAttribute{ FOREGROUND_BLUE | BACKGROUND_GREEN };
+    _FillLines(0, bufferHeight, bufferChar, bufferAttr);
+
+    // Fill the target row with asterisks and a range of letters at the start. Red on Blue.
+    const auto initialChars = L"ABCDEFGHIJKLMNOPQRST";
+    const auto initialAttr = TextAttribute{ FOREGROUND_RED | BACKGROUND_BLUE };
+    _FillLine(targetRow, L'*', initialAttr);
+    _FillLine(targetRow, initialChars, initialAttr);
+
+    // Set the attributes that will be used for the new content.
+    auto newAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
+    newAttr.SetCrossedOut(true);
+    newAttr.SetReverseVideo(true);
+    newAttr.SetUnderlined(true);
+    si.SetAttributes(newAttr);
+
+    Log::Comment(L"Write additional content into a line of text with IRM mode enabled.");
+
+    // Set the cursor position partway through the target row.
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ targetCol, targetRow }, true));
+    // Enable Insert/Replace mode.
+    stateMachine.ProcessString(L"\033[4h");
+    // Write out some new content.
+    const auto newChars = L"12345";
+    stateMachine.ProcessString(newChars);
+
+    VERIFY_IS_TRUE(_ValidateLineContains({ 0, targetRow }, L"ABCDEFGHIJ", initialAttr),
+                   L"First half of the line should remain unchanged.");
+    VERIFY_IS_TRUE(_ValidateLineContains({ targetCol, targetRow }, newChars, newAttr),
+                   L"New content should be inserted at the cursor position with active attributes.");
+    VERIFY_IS_TRUE(_ValidateLineContains({ targetCol + 5, targetRow }, L"KLMNOPQRST", initialAttr),
+                   L"Second half of the line should have moved 5 columns across.");
+    VERIFY_IS_TRUE(_ValidateLineContains({ targetCol + 25, targetRow }, L'*', initialAttr),
+                   L"With the remainder of the line filled with asterisks.");
+    VERIFY_IS_TRUE(_ValidateLineContains(targetRow + 1, bufferChar, bufferAttr),
+                   L"The following line should be unaffected.");
+
+    // Fill the target row with the initial content again.
+    _FillLine(targetRow, L'*', initialAttr);
+    _FillLine(targetRow, initialChars, initialAttr);
+
+    Log::Comment(L"Write additional content into a line of text with IRM mode disabled.");
+
+    // Set the cursor position partway through the target row.
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ targetCol, targetRow }, true));
+    // Disable Insert/Replace mode.
+    stateMachine.ProcessString(L"\033[4l");
+    // Write out some new content.
+    stateMachine.ProcessString(newChars);
+
+    VERIFY_IS_TRUE(_ValidateLineContains({ 0, targetRow }, L"ABCDEFGHIJ", initialAttr),
+                   L"First half of the line should remain unchanged.");
+    VERIFY_IS_TRUE(_ValidateLineContains({ targetCol, targetRow }, newChars, newAttr),
+                   L"New content should be added at the cursor position with active attributes.");
+    VERIFY_IS_TRUE(_ValidateLineContains({ targetCol + 5, targetRow }, L"PQRST", initialAttr),
+                   L"Second half of the line should have been partially overwritten.");
+    VERIFY_IS_TRUE(_ValidateLineContains({ targetCol + 25, targetRow }, L'*', initialAttr),
+                   L"With the remainder of the line filled with asterisks.");
+    VERIFY_IS_TRUE(_ValidateLineContains(targetRow + 1, bufferChar, bufferAttr),
+                   L"The following line should be unaffected.");
 }
 
 void ScreenBufferTests::InsertChars()
@@ -4086,6 +4167,54 @@ void ScreenBufferTests::DeleteChars()
     // Verify the updated structure of the line.
     VERIFY_IS_TRUE(_ValidateLineContains(deleteLine, L' ', expectedFillAttr),
                    L"A whole line of spaces was inserted from the right, erasing the line.");
+}
+
+void ScreenBufferTests::ScrollingWideCharsHorizontally()
+{
+    // The point of this test is to make sure wide characters can be
+    // moved horizontally by one cell without erasing themselves.
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    const auto viewport = si.GetViewport();
+    const auto testRow = viewport.Top();
+
+    Log::Comment(L"Fill the test row with content containing wide chars");
+    const auto testChars = L"こんにちは World";
+    const auto testAttr = TextAttribute{ FOREGROUND_RED | BACKGROUND_BLUE };
+    _FillLine(testRow, testChars, testAttr);
+
+    Log::Comment(L"Position the cursor at the start of the test row");
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ 0, testRow }, true));
+
+    Log::Comment(L"Insert 1 cell at the start of the test row");
+    stateMachine.ProcessString(L"\033[@");
+    VERIFY_IS_TRUE(_ValidateLineContains({ 1, testRow }, testChars, testAttr));
+
+    Log::Comment(L"Delete 1 cell from the start of the test row");
+    stateMachine.ProcessString(L"\033[P");
+    VERIFY_IS_TRUE(_ValidateLineContains(testRow, testChars, testAttr));
+
+    Log::Comment(L"Copy the test row 1 cell to the right");
+    stateMachine.ProcessString(L"\033[1;1;1;;;1;2$v");
+    VERIFY_IS_TRUE(_ValidateLineContains({ 1, testRow }, testChars, testAttr));
+
+    Log::Comment(L"Copy the test row 1 cell to the left");
+    stateMachine.ProcessString(L"\033[1;2;1;;;1;1$v");
+    VERIFY_IS_TRUE(_ValidateLineContains(testRow, testChars, testAttr));
+
+    Log::Comment(L"Scroll the test row 1 cell to the right");
+    const auto testRect = til::inclusive_rect{ 0, testRow, viewport.Width() - 2, testRow };
+    ScrollRegion(si, testRect, std::nullopt, { 1, testRow }, L' ', testAttr);
+    VERIFY_IS_TRUE(_ValidateLineContains({ 1, testRow }, testChars, testAttr));
+
+    Log::Comment(L"Scroll the test row 1 cell to the left");
+    const auto testRect2 = til::inclusive_rect{ 1, testRow, viewport.Width() - 1, testRow };
+    ScrollRegion(si, testRect2, std::nullopt, { 0, testRow }, L' ', testAttr);
+    VERIFY_IS_TRUE(_ValidateLineContains(testRow, testChars, testAttr));
 }
 
 void ScreenBufferTests::EraseScrollbackTests()
@@ -5216,7 +5345,7 @@ void ScreenBufferTests::RestoreDownAltBufferWithTerminalScrolling()
     VERIFY_IS_NULL(siMain._psiAlternateBuffer);
 
     Log::Comment(L"Create an alternate buffer");
-    if (VERIFY_IS_TRUE(NT_SUCCESS(siMain.UseAlternateScreenBuffer())))
+    if (VERIFY_NT_SUCCESS(siMain.UseAlternateScreenBuffer()))
     {
         VERIFY_IS_NOT_NULL(siMain._psiAlternateBuffer);
         auto& altBuffer = *siMain._psiAlternateBuffer;
@@ -5381,7 +5510,7 @@ void ScreenBufferTests::ClearAlternateBuffer()
     VerifyText(siMain.GetTextBuffer());
 
     Log::Comment(L"Create an alternate buffer");
-    if (VERIFY_IS_TRUE(NT_SUCCESS(siMain.UseAlternateScreenBuffer())))
+    if (VERIFY_NT_SUCCESS(siMain.UseAlternateScreenBuffer()))
     {
         VERIFY_IS_NOT_NULL(siMain._psiAlternateBuffer);
         auto& altBuffer = *siMain._psiAlternateBuffer;
@@ -6139,33 +6268,38 @@ void ScreenBufferTests::CursorSaveRestore()
     VERIFY_SUCCEEDED(si.SetViewportOrigin(true, til::point(0, 0), true));
 
     Log::Comment(L"Restore after save.");
-    // Set the cursor position, attributes, and character set.
+    // Set the cursor position, delayed wrap, attributes, and character set.
     cursor.SetPosition({ 20, 10 });
+    cursor.DelayEOLWrap();
     si.SetAttributes(colorAttrs);
     stateMachine.ProcessString(selectGraphicsChars);
     // Save state.
     stateMachine.ProcessString(saveCursor);
-    // Reset the cursor position, attributes, and character set.
+    // Reset the cursor position, delayed wrap, attributes, and character set.
     cursor.SetPosition({ 0, 0 });
     si.SetAttributes(defaultAttrs);
     stateMachine.ProcessString(selectAsciiChars);
     // Restore state.
     stateMachine.ProcessString(restoreCursor);
-    // Verify initial position, colors, and graphic character set.
+    // Verify initial position, delayed wrap, colors, and graphic character set.
     VERIFY_ARE_EQUAL(til::point(20, 10), cursor.GetPosition());
+    VERIFY_IS_TRUE(cursor.IsDelayedEOLWrap());
+    cursor.ResetDelayEOLWrap();
     VERIFY_ARE_EQUAL(colorAttrs, si.GetAttributes());
     stateMachine.ProcessString(asciiText);
     VERIFY_IS_TRUE(_ValidateLineContains({ 20, 10 }, graphicText, colorAttrs));
 
     Log::Comment(L"Restore again without save.");
-    // Reset the cursor position, attributes, and character set.
+    // Reset the cursor position, delayed wrap, attributes, and character set.
     cursor.SetPosition({ 0, 0 });
     si.SetAttributes(defaultAttrs);
     stateMachine.ProcessString(selectAsciiChars);
     // Restore state.
     stateMachine.ProcessString(restoreCursor);
-    // Verify initial saved position, colors, and graphic character set.
+    // Verify initial saved position, delayed wrap, colors, and graphic character set.
     VERIFY_ARE_EQUAL(til::point(20, 10), cursor.GetPosition());
+    VERIFY_IS_TRUE(cursor.IsDelayedEOLWrap());
+    cursor.ResetDelayEOLWrap();
     VERIFY_ARE_EQUAL(colorAttrs, si.GetAttributes());
     stateMachine.ProcessString(asciiText);
     VERIFY_IS_TRUE(_ValidateLineContains({ 20, 10 }, graphicText, colorAttrs));
@@ -6173,14 +6307,16 @@ void ScreenBufferTests::CursorSaveRestore()
     Log::Comment(L"Restore after reset.");
     // Soft reset.
     stateMachine.ProcessString(L"\x1b[!p");
-    // Set the cursor position, attributes, and character set.
+    // Set the cursor position, delayed wrap, attributes, and character set.
     cursor.SetPosition({ 20, 10 });
+    cursor.DelayEOLWrap();
     si.SetAttributes(colorAttrs);
     stateMachine.ProcessString(selectGraphicsChars);
     // Restore state.
     stateMachine.ProcessString(restoreCursor);
-    // Verify home position, default attributes, and ascii character set.
+    // Verify home position, no delayed wrap, default attributes, and ascii character set.
     VERIFY_ARE_EQUAL(til::point(0, 0), cursor.GetPosition());
+    VERIFY_IS_FALSE(cursor.IsDelayedEOLWrap());
     VERIFY_ARE_EQUAL(defaultAttrs, si.GetAttributes());
     stateMachine.ProcessString(asciiText);
     VERIFY_IS_TRUE(_ValidateLineContains(til::point(0, 0), asciiText, defaultAttrs));
@@ -6453,7 +6589,7 @@ void ScreenBufferTests::UpdateVirtualBottomWhenCursorMovesBelowIt()
     Log::Comment(L"Now write several lines of content using WriteCharsLegacy");
     const auto content = L"1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n";
     auto numBytes = wcslen(content) * sizeof(wchar_t);
-    VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, content, content, content, &numBytes, nullptr, 0, 0, nullptr));
+    VERIFY_NT_SUCCESS(WriteCharsLegacy(si, content, content, content, &numBytes, nullptr, 0, 0, nullptr));
 
     Log::Comment(L"Confirm that the cursor position has moved down 10 lines");
     const auto newCursorPos = til::point{ initialCursorPos.x, initialCursorPos.y + 10 };
@@ -7392,7 +7528,7 @@ void ScreenBufferTests::RectangularAreaOperations()
         _FillLines(viewport.Top() + 10, viewport.BottomExclusive(), expectedChar, expectedAttr);
         // Copy a rectangle from that lower part up to the top with DECCRA.
         stateMachine.ProcessString(L"\033[11;27;14;54;1;3;27;1;4$v");
-        // Reset the lower part back to it's original content.
+        // Reset the lower part back to its original content.
         _FillLines(viewport.Top() + 10, viewport.BottomExclusive(), bufferChar, bufferAttr);
         break;
     default:
@@ -7410,4 +7546,100 @@ void ScreenBufferTests::RectangularAreaOperations()
     const auto bufferChars = std::wstring(targetArea.left, bufferChar);
     VERIFY_IS_TRUE(_ValidateLinesContain(targetArea.top, targetArea.bottom, bufferChars, bufferAttr));
     VERIFY_IS_TRUE(_ValidateLinesContain(targetArea.right, targetArea.top, targetArea.bottom, bufferChar, bufferAttr));
+}
+
+void ScreenBufferTests::DelayedWrapReset()
+{
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+        TEST_METHOD_PROPERTY(L"Data:op", L"{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34}")
+    END_TEST_METHOD_PROPERTIES();
+
+    int opIndex;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"op", opIndex));
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    const auto width = si.GetTextBuffer().GetSize().Width();
+    const auto halfWidth = width / 2;
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    WI_SetFlag(si.OutputMode, DISABLE_NEWLINE_AUTO_RETURN);
+    stateMachine.ProcessString(L"\033[?40h"); // Make sure DECCOLM is allowed
+
+    const auto startRow = 5;
+    const auto startCol = width - 1;
+
+    // The operations below are all those that the DEC STD 070 reference has
+    // documented as needing to reset the Last Column Flag (see page D-13). The
+    // only controls that we haven't included are HT and SUB, because most DEC
+    // terminals did *not* trigger a reset after executing those sequences, and
+    // most modern terminals also seem to have agreed that that is the correct
+    // approach to take.
+    const struct
+    {
+        std::wstring_view name;
+        std::wstring_view sequence;
+        til::point expectedPos = {};
+        bool absolutePos = false;
+    } ops[] = {
+        { L"DECSTBM", L"\033[1;10r", { 0, 0 }, true },
+        { L"DECSWL", L"\033#5" },
+        { L"DECDWL", L"\033#6", { halfWidth - 1, startRow }, true },
+        { L"DECDHL (top)", L"\033#3", { halfWidth - 1, startRow }, true },
+        { L"DECDHL (bottom)", L"\033#4", { halfWidth - 1, startRow }, true },
+        { L"DECCOLM set", L"\033[?3h", { 0, 0 }, true },
+        { L"DECOM set", L"\033[?6h", { 0, 0 }, true },
+        { L"DECCOLM set", L"\033[?3l", { 0, 0 }, true },
+        { L"DECOM reset", L"\033[?6l", { 0, 0 }, true },
+        { L"DECAWM reset", L"\033[?7l" },
+        { L"CUU", L"\033[A", { 0, -1 } },
+        { L"CUD", L"\033[B", { 0, 1 } },
+        { L"CUF", L"\033[C" },
+        { L"CUB", L"\033[D", { -1, 0 } },
+        { L"CUP", L"\033[3;7H", { 6, 2 }, true },
+        { L"HVP", L"\033[3;7f", { 6, 2 }, true },
+        { L"BS", L"\b", { -1, 0 } },
+        { L"LF", L"\n", { 0, 1 } },
+        { L"VT", L"\v", { 0, 1 } },
+        { L"FF", L"\f", { 0, 1 } },
+        { L"CR", L"\r", { 0, startRow }, true },
+        { L"IND", L"\033D", { 0, 1 } },
+        { L"RI", L"\033M", { 0, -1 } },
+        { L"NEL", L"\033E", { 0, startRow + 1 }, true },
+        { L"ECH", L"\033[X" },
+        { L"DCH", L"\033[P" },
+        { L"ICH", L"\033[@" },
+        { L"EL", L"\033[K" },
+        { L"DECSEL", L"\033[?K" },
+        { L"DL", L"\033[M", { 0, startRow }, true },
+        { L"IL", L"\033[L", { 0, startRow }, true },
+        { L"ED", L"\033[J" },
+        { L"ED (all)", L"\033[2J" },
+        { L"ED (scrollback)", L"\033[3J" },
+        { L"DECSED", L"\033[?J" },
+    };
+    const auto& op = gsl::at(ops, opIndex);
+
+    Log::Comment(L"Writing a character at the end of the line should set delayed EOL wrap");
+    const auto startPos = til::point{ startCol, startRow };
+    si.GetTextBuffer().GetCursor().SetPosition(startPos);
+    stateMachine.ProcessCharacter(L'X');
+    {
+        auto& cursor = si.GetTextBuffer().GetCursor();
+        VERIFY_IS_TRUE(cursor.IsDelayedEOLWrap());
+        VERIFY_ARE_EQUAL(startPos, cursor.GetPosition());
+    }
+
+    Log::Comment(NoThrowString().Format(
+        L"Executing a %s control should reset delayed EOL wrap",
+        op.name.data()));
+    const auto expectedPos = op.absolutePos ? op.expectedPos : startPos + op.expectedPos;
+    stateMachine.ProcessString(op.sequence);
+    {
+        auto& cursor = si.GetTextBuffer().GetCursor();
+        const auto actualPos = cursor.GetPosition() - si.GetViewport().Origin();
+        VERIFY_IS_FALSE(cursor.IsDelayedEOLWrap());
+        VERIFY_ARE_EQUAL(expectedPos, actualPos);
+    }
 }

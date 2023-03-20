@@ -9,6 +9,7 @@
 #include <array>
 #include <filesystem>
 #include <optional>
+#include <span>
 #include <sstream>
 #include <string_view>
 #include <thread>
@@ -27,7 +28,6 @@
 
 #include <gsl/gsl_util>
 #include <gsl/pointers>
-#include <gsl/span>
 #include <wil/com.h>
 #include <wil/filesystem.h>
 #include <wil/result_macros.h>

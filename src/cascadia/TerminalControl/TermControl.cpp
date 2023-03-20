@@ -25,6 +25,7 @@ using namespace winrt::Windows::UI::ViewManagement;
 using namespace winrt::Windows::UI::Input;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
+using namespace winrt::Windows::Storage::Streams;
 
 // The minimum delay between updates to the scroll bar's values.
 // The updates are throttled to limit power usage.
@@ -87,6 +88,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _interactivity.OpenHyperlink({ this, &TermControl::_HyperlinkHandler });
         _interactivity.ScrollPositionChanged({ this, &TermControl::_ScrollPositionChanged });
 
+        _interactivity.ContextMenuRequested({ this, &TermControl::_contextMenuHandler });
+
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
         _layoutUpdatedRevoker = SwapChainPanel().LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
@@ -134,6 +137,59 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
 
         _ApplyUISettings();
+
+        _originalPrimaryElements = winrt::single_threaded_observable_vector<Controls::ICommandBarElement>();
+        _originalSecondaryElements = winrt::single_threaded_observable_vector<Controls::ICommandBarElement>();
+        _originalSelectedPrimaryElements = winrt::single_threaded_observable_vector<Controls::ICommandBarElement>();
+        _originalSelectedSecondaryElements = winrt::single_threaded_observable_vector<Controls::ICommandBarElement>();
+        for (const auto& e : ContextMenu().PrimaryCommands())
+        {
+            _originalPrimaryElements.Append(e);
+        }
+        for (const auto& e : ContextMenu().SecondaryCommands())
+        {
+            _originalSecondaryElements.Append(e);
+        }
+        for (const auto& e : SelectionContextMenu().PrimaryCommands())
+        {
+            _originalSelectedPrimaryElements.Append(e);
+        }
+        for (const auto& e : SelectionContextMenu().SecondaryCommands())
+        {
+            _originalSelectedSecondaryElements.Append(e);
+        }
+        ContextMenu().Closed([weakThis = get_weak()](auto&&, auto&&) {
+            if (auto control{ weakThis.get() }; !control->_IsClosing())
+            {
+                const auto& menu{ control->ContextMenu() };
+                menu.PrimaryCommands().Clear();
+                menu.SecondaryCommands().Clear();
+                for (const auto& e : control->_originalPrimaryElements)
+                {
+                    menu.PrimaryCommands().Append(e);
+                }
+                for (const auto& e : control->_originalSecondaryElements)
+                {
+                    menu.SecondaryCommands().Append(e);
+                }
+            }
+        });
+        SelectionContextMenu().Closed([weakThis = get_weak()](auto&&, auto&&) {
+            if (auto control{ weakThis.get() }; !control->_IsClosing())
+            {
+                const auto& menu{ control->SelectionContextMenu() };
+                menu.PrimaryCommands().Clear();
+                menu.SecondaryCommands().Clear();
+                for (const auto& e : control->_originalSelectedPrimaryElements)
+                {
+                    menu.PrimaryCommands().Append(e);
+                }
+                for (const auto& e : control->_originalSelectedSecondaryElements)
+                {
+                    menu.SecondaryCommands().Append(e);
+                }
+            }
+        });
     }
 
     void TermControl::_throttledUpdateScrollbar(const ScrollBarUpdate& update)
@@ -291,7 +347,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Given Settings having been updated, applies the settings to the current terminal.
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControl::UpdateControlSettings(IControlSettings settings, IControlAppearance unfocusedAppearance)
+    winrt::fire_and_forget TermControl::UpdateControlSettings(IControlSettings settings,
+                                                              IControlAppearance unfocusedAppearance)
     {
         auto weakThis{ get_weak() };
 
@@ -1801,7 +1858,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //        when the control is visible as the DPI changes.
     //      - The CompositionScale will be the new DPI. This happens when the
     //        control wasn't focused as the window's DPI changed, so it only got
-    //        these messages after XAML updated it's scaling.
+    //        these messages after XAML updated its scaling.
     //   - 3. Finally, a CompositionScaleChanged with the _new_ DPI.
     //   - 4. We'll usually get another SizeChanged some time after this last
     //     ScaleChanged. This usually seems to happen after something triggers
@@ -1989,6 +2046,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (!_IsClosing())
         {
             _closing = true;
+            if (_automationPeer)
+            {
+                auto autoPeerImpl{ winrt::get_self<implementation::TermControlAutomationPeer>(_automationPeer) };
+                autoPeerImpl->Close();
+            }
 
             _RestorePointerCursorHandlers(*this, nullptr);
 
@@ -2526,21 +2588,62 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             if (items.Size() > 0)
             {
-                std::wstring allPaths;
-                for (auto item : items)
+                std::vector<std::wstring> fullPaths;
+
+                // GH#14628: Workaround for GetStorageItemsAsync() only returning 16 items
+                // at most when dragging and dropping from archives (zip, 7z, rar, etc.)
+                if (items.Size() == 16 && e.DataView().Contains(winrt::hstring{ L"FileDrop" }))
+                {
+                    auto fileDropData = co_await e.DataView().GetDataAsync(winrt::hstring{ L"FileDrop" });
+                    if (fileDropData != nullptr)
+                    {
+                        auto stream = fileDropData.as<IRandomAccessStream>();
+                        stream.Seek(0);
+
+                        const uint32_t streamSize = gsl::narrow_cast<uint32_t>(stream.Size());
+                        const Buffer buf(streamSize);
+                        const auto buffer = co_await stream.ReadAsync(buf, streamSize, InputStreamOptions::None);
+
+                        const HGLOBAL hGlobal = buffer.data();
+                        const auto count = DragQueryFileW(static_cast<HDROP>(hGlobal), 0xFFFFFFFF, nullptr, 0);
+                        fullPaths.reserve(count);
+
+                        for (unsigned int i = 0; i < count; i++)
+                        {
+                            std::wstring path;
+                            path.resize(wil::max_path_length);
+                            const auto charsCopied = DragQueryFileW(static_cast<HDROP>(hGlobal), i, path.data(), wil::max_path_length);
+
+                            if (charsCopied > 0)
+                            {
+                                path.resize(charsCopied);
+                                fullPaths.emplace_back(std::move(path));
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    fullPaths.reserve(items.Size());
+                    for (const auto& item : items)
+                    {
+                        fullPaths.emplace_back(item.Path());
+                    }
+                }
+
+                std::wstring allPathsString;
+                for (auto& fullPath : fullPaths)
                 {
                     // Join the paths with spaces
-                    if (!allPaths.empty())
+                    if (!allPathsString.empty())
                     {
-                        allPaths += L" ";
+                        allPathsString += L" ";
                     }
-
-                    std::wstring fullPath{ item.Path() };
 
                     // Fix path for WSL
                     // In the fullness of time, we should likely plumb this up
                     // to the TerminalApp layer, and have it make the decision
-                    // if this control should have it's path mangled (and do the
+                    // if this control should have its path mangled (and do the
                     // mangling), rather than exposing the source concept to the
                     // Control layer.
                     //
@@ -2591,10 +2694,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                         fullPath += L"\"";
                     }
 
-                    allPaths += fullPath;
+                    allPathsString += fullPath;
                 }
 
-                _core.PasteText(winrt::hstring{ allPaths });
+                _core.PasteText(winrt::hstring{ allPathsString });
             }
         }
     }
@@ -2661,7 +2764,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Just in case someone was holding a lock when they called us and
         // the handlers decide to do something that take another lock
         // (like ShellExecute pumping our messaging thread...GH#7994)
-        co_await Dispatcher();
+        co_await winrt::resume_foreground(Dispatcher());
 
         _OpenHyperlinkHandlers(*strongThis, args);
     }
@@ -2672,7 +2775,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                                    IInspectable /*args*/)
     {
         auto strongThis{ get_strong() };
-        co_await Dispatcher(); // pop up onto the UI thread
+        co_await winrt::resume_foreground(Dispatcher()); // pop up onto the UI thread
 
         if (auto loadedUiElement{ FindName(L"RendererFailedNotice") })
         {
@@ -3137,4 +3240,52 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _core.ColorSelection(fg, bg, matchMode);
     }
+
+    void TermControl::_contextMenuHandler(IInspectable /*sender*/,
+                                          Control::ContextMenuRequestedEventArgs args)
+    {
+        Controls::Primitives::FlyoutShowOptions myOption{};
+        myOption.ShowMode(Controls::Primitives::FlyoutShowMode::Standard);
+        myOption.Placement(Controls::Primitives::FlyoutPlacementMode::TopEdgeAlignedLeft);
+
+        // Position the menu where the pointer is. This was the best way I found how.
+        const til::point absolutePointerPos{ til::math::rounding, CoreWindow::GetForCurrentThread().PointerPosition() };
+        const til::point absoluteWindowOrigin{ til::math::rounding,
+                                               CoreWindow::GetForCurrentThread().Bounds().X,
+                                               CoreWindow::GetForCurrentThread().Bounds().Y };
+        // Get the offset (margin + tabs, etc..) of the control within the window
+        const til::point controlOrigin{ til::math::flooring,
+                                        this->TransformToVisual(nullptr).TransformPoint(Windows::Foundation::Point(0, 0)) };
+
+        const auto pos = (absolutePointerPos - absoluteWindowOrigin - controlOrigin).to_winrt_point();
+        myOption.Position(pos);
+
+        (_core.HasSelection() ? SelectionContextMenu() :
+                                ContextMenu())
+            .ShowAt(*this, myOption);
+    }
+
+    void TermControl::_PasteCommandHandler(const IInspectable& /*sender*/,
+                                           const IInspectable& /*args*/)
+    {
+        _interactivity.RequestPasteTextFromClipboard();
+        ContextMenu().Hide();
+        SelectionContextMenu().Hide();
+    }
+    void TermControl::_CopyCommandHandler(const IInspectable& /*sender*/,
+                                          const IInspectable& /*args*/)
+    {
+        // formats = nullptr -> copy all formats
+        _interactivity.CopySelectionToClipboard(false, nullptr);
+        ContextMenu().Hide();
+        SelectionContextMenu().Hide();
+    }
+    void TermControl::_SearchCommandHandler(const IInspectable& /*sender*/,
+                                            const IInspectable& /*args*/)
+    {
+        ContextMenu().Hide();
+        SelectionContextMenu().Hide();
+        SearchMatch(false);
+    }
+
 }

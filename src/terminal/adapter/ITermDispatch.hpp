@@ -81,6 +81,7 @@ public:
     virtual bool EraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) = 0; // DECERA
     virtual bool SelectiveEraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) = 0; // DECSERA
     virtual bool SelectAttributeChangeExtent(const DispatchTypes::ChangeExtent changeExtent) = 0; // DECSACE
+    virtual bool RequestChecksumRectangularArea(const VTInt id, const VTInt page, const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) = 0; // DECRQCRA
 
     virtual bool SetGraphicsRendition(const VTParameters options) = 0; // SGR
     virtual bool SetLineRendition(const LineRendition rendition) = 0; // DECSWL, DECDWL, DECDHL
@@ -89,8 +90,8 @@ public:
     virtual bool PushGraphicsRendition(const VTParameters options) = 0; // XTPUSHSGR
     virtual bool PopGraphicsRendition() = 0; // XTPOPSGR
 
-    virtual bool SetMode(const DispatchTypes::ModeParams param) = 0; // DECSET
-    virtual bool ResetMode(const DispatchTypes::ModeParams param) = 0; // DECRST
+    virtual bool SetMode(const DispatchTypes::ModeParams param) = 0; // SM, DECSET
+    virtual bool ResetMode(const DispatchTypes::ModeParams param) = 0; // RM, DECRST
     virtual bool RequestMode(const DispatchTypes::ModeParams param) = 0; // DECRQM
 
     virtual bool DeviceStatusReport(const DispatchTypes::StatusType statusType, const VTParameter id) = 0; // DSR

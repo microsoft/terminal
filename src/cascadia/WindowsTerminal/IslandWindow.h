@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "BaseWindow.h"
-#include <winrt/TerminalApp.h>
 
 void SetWindowLongWHelper(const HWND hWnd, const int nIndex, const LONG dwNewLong) noexcept;
 
@@ -26,6 +25,9 @@ public:
     HWND GetInteropHandle() const;
 
     [[nodiscard]] virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
+
+    [[nodiscard]] LRESULT OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept override;
+
     void OnResize(const UINT width, const UINT height) override;
     void OnMinimize() override;
     void OnRestore() override;
@@ -48,9 +50,6 @@ public:
     void FlashTaskbar();
     void SetTaskbarProgress(const size_t state, const size_t progress);
 
-    void UnregisterHotKey(const int index) noexcept;
-    bool RegisterHotKey(const int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept;
-
     winrt::fire_and_forget SummonWindow(winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior args);
 
     bool IsQuakeWindow() const noexcept;
@@ -71,7 +70,6 @@ public:
     WINRT_CALLBACK(WindowCloseButtonClicked, winrt::delegate<>);
     WINRT_CALLBACK(MouseScrolled, winrt::delegate<void(til::point, int32_t)>);
     WINRT_CALLBACK(WindowActivated, winrt::delegate<void(bool)>);
-    WINRT_CALLBACK(HotkeyPressed, winrt::delegate<void(long)>);
     WINRT_CALLBACK(NotifyNotificationIconPressed, winrt::delegate<void()>);
     WINRT_CALLBACK(NotifyWindowHidden, winrt::delegate<void()>);
     WINRT_CALLBACK(NotifyShowNotificationIconContextMenu, winrt::delegate<void(til::point)>);

@@ -78,10 +78,6 @@
     <ClInclude Include="MainPage.h">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </ClInclude>
-    <ClInclude Include="Profiles.h">
-      <DependentUpon>Profiles.idl</DependentUpon>
-      <SubType>Code</SubType>
-    </ClInclude>
     <ClInclude Include="ProfileViewModel.h">
       <DependentUpon>ProfileViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
@@ -322,9 +318,6 @@
     </Midl>
     <Midl Include="MainPage.idl">
       <DependentUpon>MainPage.xaml</DependentUpon>
-    </Midl>
-    <Midl Include="Profiles.idl">
-      <SubType>Code</SubType>
     </Midl>
     <Midl Include="ProfileViewModel.idl" />
     <Midl Include="ColorSchemeViewModel.idl" />

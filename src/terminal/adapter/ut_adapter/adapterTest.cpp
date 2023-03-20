@@ -60,11 +60,6 @@ using namespace Microsoft::Console::VirtualTerminal;
 class TestGetSet final : public ITerminalApi
 {
 public:
-    void PrintString(const std::wstring_view string) override
-    {
-        _printed += string;
-    }
-
     void ReturnResponse(const std::wstring_view response) override
     {
         Log::Comment(L"ReturnResponse MOCK called...");
@@ -148,7 +143,7 @@ public:
         return _getLineFeedModeResult;
     }
 
-    void LineFeed(const bool withReturn) override
+    void LineFeed(const bool withReturn, const bool /*wrapForced*/) override
     {
         Log::Comment(L"LineFeed MOCK called...");
 
@@ -316,8 +311,6 @@ public:
 
         _response.clear();
         _retainResponse = false;
-
-        _printed.clear();
     }
 
     void PrepCursor(CursorX xact, CursorY yact)
@@ -408,8 +401,6 @@ public:
     til::inclusive_rect _viewport;
     til::inclusive_rect _expectedScrollRegion;
     til::inclusive_rect _activeScrollRegion;
-
-    std::wstring _printed;
 
     til::point _expectedCursorPos;
 
@@ -1762,6 +1753,30 @@ public:
         requestSetting(L"\"q");
         _testGetSet->ValidateInputEvent(L"\033P1$r1\"q\033\\");
 
+        // Initialize the color alias indices for the DECAC tests below.
+        _testGetSet->PrepData();
+        auto& renderSettings = _testGetSet->_renderer._renderSettings;
+        renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, 3);
+        renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, 5);
+        renderSettings.SetColorAliasIndex(ColorAlias::FrameForeground, 4);
+        renderSettings.SetColorAliasIndex(ColorAlias::FrameBackground, 6);
+
+        Log::Comment(L"Requesting DECAC colors (default).");
+        requestSetting(L",|");
+        _testGetSet->ValidateInputEvent(L"\033P1$r1;3;5,|\033\\");
+
+        Log::Comment(L"Requesting DECAC colors (normal text).");
+        requestSetting(L"1,|");
+        _testGetSet->ValidateInputEvent(L"\033P1$r1;3;5,|\033\\");
+
+        Log::Comment(L"Requesting DECAC colors (window frame).");
+        requestSetting(L"2,|");
+        _testGetSet->ValidateInputEvent(L"\033P1$r2;4;6,|\033\\");
+
+        Log::Comment(L"Requesting DECAC colors (invalid item).");
+        requestSetting(L"3,|");
+        _testGetSet->ValidateInputEvent(L"\033P0$r\033\\");
+
         Log::Comment(L"Requesting an unsupported setting.");
         _testGetSet->PrepData();
         requestSetting(L"x");
@@ -1805,6 +1820,111 @@ public:
 
         swprintf_s(expectedResponse, ARRAYSIZE(expectedResponse), L"\x1b[?%d;2$y", modeNumber);
         _testGetSet->ValidateInputEvent(expectedResponse);
+    }
+
+    TEST_METHOD(RequestChecksumReportTests)
+    {
+        const auto requestChecksumReport = [this](const auto length) {
+            wchar_t checksumQuery[30];
+            swprintf_s(checksumQuery, ARRAYSIZE(checksumQuery), L"\033[99;1;1;1;1;%zu*y", length);
+            _stateMachine->ProcessString(checksumQuery);
+        };
+
+        const auto verifyChecksumReport = [this](const auto checksum) {
+            wchar_t expectedResponse[20];
+            swprintf_s(expectedResponse, ARRAYSIZE(expectedResponse), L"\x1bP99!~%s\033\\", checksum);
+            _testGetSet->ValidateInputEvent(expectedResponse);
+        };
+
+        const auto outputText = [&](const auto text) {
+            _testGetSet->PrepData();
+            _pDispatch->PrintString(text);
+            requestChecksumReport(text.length());
+        };
+
+        const auto outputTextWithAttributes = [&](const auto text, const auto& attrCallback) {
+            _testGetSet->PrepData();
+            auto attr = TextAttribute{};
+            attrCallback(attr);
+            _testGetSet->_textBuffer->SetCurrentAttributes(attr);
+            _pDispatch->PrintString(text);
+            requestChecksumReport(text.length());
+        };
+
+        using namespace std::string_view_literals;
+
+        Log::Comment(L"Test 1: ASCII characters");
+        outputText(L"A"sv);
+        verifyChecksumReport(L"FF4F");
+        outputText(L" "sv);
+        verifyChecksumReport(L"FF70");
+        outputText(L"~"sv);
+        verifyChecksumReport(L"FF12");
+        outputText(L"ABC"sv);
+        verifyChecksumReport(L"FDEA");
+
+        Log::Comment(L"Test 2: Latin-1 characters");
+        outputText(L"Á"sv);
+        verifyChecksumReport(L"FECF");
+        outputText(L"¡"sv);
+        verifyChecksumReport(L"FEEF");
+        outputText(L"ÿ"sv);
+        verifyChecksumReport(L"FE91");
+        outputText(L"ÁÂÃ"sv);
+        verifyChecksumReport(L"FC6A");
+
+        Log::Comment(L"Test 3: Rendition attributes");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetIntense(true);
+        });
+        verifyChecksumReport(L"FECF");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetUnderlined(true);
+        });
+        verifyChecksumReport(L"FF3F");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetBlinking(true);
+        });
+        verifyChecksumReport(L"FF0F");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetReverseVideo(true);
+        });
+        verifyChecksumReport(L"FF2F");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetInvisible(true);
+        });
+        verifyChecksumReport(L"FF47");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetIntense(true);
+            attr.SetUnderlined(true);
+            attr.SetReverseVideo(true);
+        });
+        verifyChecksumReport(L"FE9F");
+
+        Log::Comment(L"Test 4: Selective erase");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetProtected(true);
+        });
+        verifyChecksumReport(L"FF4B");
+        outputTextWithAttributes(L"B"sv, [](auto& attr) {
+            attr.SetProtected(true);
+        });
+        verifyChecksumReport(L"FF4A");
+
+        Log::Comment(L"Test 5: Color attributes");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetIndexedForeground(TextColor::DARK_RED);
+        });
+        verifyChecksumReport(L"FFAF");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetIndexedBackground(TextColor::DARK_GREEN);
+        });
+        verifyChecksumReport(L"FF4D");
+        outputTextWithAttributes(L"A"sv, [](auto& attr) {
+            attr.SetIndexedForeground(TextColor::DARK_YELLOW);
+            attr.SetIndexedBackground(TextColor::DARK_BLUE);
+        });
+        verifyChecksumReport(L"FF8B");
     }
 
     TEST_METHOD(CursorKeysModeTest)
@@ -2534,44 +2654,50 @@ public:
         setMacroText(2, L"Macro 2");
         setMacroText(63, L"Macro 63");
 
+        const auto getBufferOutput = [&]() {
+            const auto& textBuffer = _testGetSet->GetTextBuffer();
+            const auto cursorPos = textBuffer.GetCursor().GetPosition();
+            return textBuffer.GetRowByOffset(cursorPos.y).GetText().substr(0, cursorPos.x);
+        };
+
         Log::Comment(L"Simple macro invoke");
-        _testGetSet->_printed.clear();
+        _testGetSet->PrepData();
         _stateMachine->ProcessString(L"\033[2*z");
-        VERIFY_ARE_EQUAL(L"Macro 2", _testGetSet->_printed);
+        VERIFY_ARE_EQUAL(L"Macro 2", getBufferOutput());
 
         Log::Comment(L"Default macro invoke");
-        _testGetSet->_printed.clear();
+        _testGetSet->PrepData();
         _stateMachine->ProcessString(L"\033[*z");
-        VERIFY_ARE_EQUAL(L"Macro 0", _testGetSet->_printed);
+        VERIFY_ARE_EQUAL(L"Macro 0", getBufferOutput());
 
         Log::Comment(L"Maximum ID number");
-        _testGetSet->_printed.clear();
+        _testGetSet->PrepData();
         _stateMachine->ProcessString(L"\033[63*z");
-        VERIFY_ARE_EQUAL(L"Macro 63", _testGetSet->_printed);
+        VERIFY_ARE_EQUAL(L"Macro 63", getBufferOutput());
 
         Log::Comment(L"Out of range ID number");
-        _testGetSet->_printed.clear();
+        _testGetSet->PrepData();
         _stateMachine->ProcessString(L"\033[64*z");
-        VERIFY_ARE_EQUAL(L"", _testGetSet->_printed);
+        VERIFY_ARE_EQUAL(L"", getBufferOutput());
 
         Log::Comment(L"Only one ID parameter allowed");
-        _testGetSet->_printed.clear();
+        _testGetSet->PrepData();
         _stateMachine->ProcessString(L"\033[2;0;1*z");
-        VERIFY_ARE_EQUAL(L"Macro 2", _testGetSet->_printed);
+        VERIFY_ARE_EQUAL(L"Macro 2", getBufferOutput());
 
         Log::Comment(L"DECDMAC ignored when inside a macro");
         setMacroText(10, L"[\033P1;0;0!zReplace Macro 1\033\\]");
-        _testGetSet->_printed.clear();
+        _testGetSet->PrepData();
         _stateMachine->ProcessString(L"\033[10*z");
         _stateMachine->ProcessString(L"\033[1*z");
-        VERIFY_ARE_EQUAL(L"[]Macro 1", _testGetSet->_printed);
+        VERIFY_ARE_EQUAL(L"[]Macro 1", getBufferOutput());
 
         Log::Comment(L"Maximum recursive depth is 16");
         setMacroText(0, L"<\033[1*z>");
         setMacroText(1, L"[\033[0*z]");
-        _testGetSet->_printed.clear();
+        _testGetSet->PrepData();
         _stateMachine->ProcessString(L"\033[0*z");
-        VERIFY_ARE_EQUAL(L"<[<[<[<[<[<[<[<[]>]>]>]>]>]>]>]>", _testGetSet->_printed);
+        VERIFY_ARE_EQUAL(L"<[<[<[<[<[<[<[<[]>]>]>]>]>]>]>]>", getBufferOutput());
 
         _pDispatch->_macroBuffer = nullptr;
     }

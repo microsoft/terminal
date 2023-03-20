@@ -34,7 +34,7 @@ DxSoftFont::DxSoftFont() noexcept :
     _colorMatrix.m[0][3] = 1;
 }
 
-void DxSoftFont::SetFont(const gsl::span<const uint16_t> bitPattern,
+void DxSoftFont::SetFont(const std::span<const uint16_t> bitPattern,
                          const til::size sourceSize,
                          const til::size targetSize,
                          const size_t centeringHint)
@@ -141,7 +141,7 @@ HRESULT DxSoftFont::SetColor(const D2D1_COLOR_F& color)
 }
 
 HRESULT DxSoftFont::Draw(const DrawingContext& drawingContext,
-                         const gsl::span<const Cluster> clusters,
+                         const std::span<const Cluster> clusters,
                          const float originX,
                          const float originY)
 {

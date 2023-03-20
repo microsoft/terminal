@@ -105,7 +105,6 @@ public:
 
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp
-    void PrintString(const std::wstring_view string) override;
     void ReturnResponse(const std::wstring_view response) override;
     Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine() noexcept override;
     TextBuffer& GetTextBuffer() noexcept override;
@@ -117,7 +116,7 @@ public:
     void SetScrollingRegion(const til::inclusive_rect& scrollMargins) noexcept override;
     void WarningBell() override;
     bool GetLineFeedMode() const noexcept override;
-    void LineFeed(const bool withReturn) override;
+    void LineFeed(const bool withReturn, const bool wrapForced) override;
     void SetWindowTitle(const std::wstring_view title) override;
     CursorType GetUserDefaultCursorStyle() const noexcept override;
     bool ResizeWindow(const til::CoordType width, const til::CoordType height) noexcept override;
@@ -284,7 +283,7 @@ public:
     void SelectHyperlink(const SearchDirection dir);
 
     using UpdateSelectionParams = std::optional<std::pair<SelectionDirection, SelectionExpansion>>;
-    UpdateSelectionParams ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const;
+    UpdateSelectionParams ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const noexcept;
     til::point SelectionStartForRendering() const;
     til::point SelectionEndForRendering() const;
     const SelectionEndpoint SelectionEndpointTarget() const noexcept;
@@ -412,7 +411,7 @@ private:
     static WORD _VirtualKeyFromCharacter(const wchar_t ch) noexcept;
     static wchar_t _CharacterFromKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states) noexcept;
 
-    void _StoreKeyEvent(const WORD vkey, const WORD scanCode);
+    void _StoreKeyEvent(const WORD vkey, const WORD scanCode) noexcept;
     WORD _TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept;
 
     int _VisibleStartIndex() const noexcept;
@@ -420,8 +419,6 @@ private:
 
     Microsoft::Console::Types::Viewport _GetMutableViewport() const noexcept;
     Microsoft::Console::Types::Viewport _GetVisibleViewport() const noexcept;
-
-    void _WriteBuffer(const std::wstring_view& stringView);
 
     void _AdjustCursorPosition(const til::point proposedPosition);
 
