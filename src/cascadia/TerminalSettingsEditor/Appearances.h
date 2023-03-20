@@ -51,18 +51,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         AppearanceViewModel(const Model::AppearanceConfig& appearance);
 
-        void SetFontWeightFromDouble(double fontWeight)
-        {
-            FontWeight(winrt::Microsoft::Terminal::Settings::Editor::Converters::DoubleToFontWeight(fontWeight));
-        }
-        void SetBackgroundImageOpacityFromPercentageValue(double percentageValue)
-        {
-            BackgroundImageOpacity(winrt::Microsoft::Terminal::Settings::Editor::Converters::PercentageValueToPercentage(percentageValue));
-        }
-        void SetBackgroundImagePath(winrt::hstring path)
-        {
-            BackgroundImagePath(path);
-        }
+        double LineHeight() const noexcept;
+        void LineHeight(const double value);
+        bool HasLineHeight() const;
+        void ClearLineHeight();
+        Model::FontConfig LineHeightOverrideSource() const;
+        void SetFontWeightFromDouble(double fontWeight);
+        void SetBackgroundImageOpacityFromPercentageValue(double percentageValue);
+        void SetBackgroundImagePath(winrt::hstring path);
 
         // background image
         bool UseDesktopBGImage();
