@@ -978,7 +978,7 @@ catch (...)
 // Arguments:
 // - vkey: The virtual key code.
 // - scanCode: The scan code.
-void Terminal::_StoreKeyEvent(const WORD vkey, const WORD scanCode)
+void Terminal::_StoreKeyEvent(const WORD vkey, const WORD scanCode) noexcept
 {
     _lastKeyEventCodes.emplace(KeyEventCodes{ vkey, scanCode });
 }
@@ -1411,7 +1411,7 @@ const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarProgress() const noe
     return _taskbarProgress;
 }
 
-void Microsoft::Terminal::Core::Terminal::MenuChangedCallback(std::function<void(std::wstring_view, int32_t)> pfn) noexcept
+void Microsoft::Terminal::Core::Terminal::MenuChangedCallback(std::function<void(std::wstring_view, unsigned int)> pfn) noexcept
 {
     _pfnMenuChanged.swap(pfn);
 }

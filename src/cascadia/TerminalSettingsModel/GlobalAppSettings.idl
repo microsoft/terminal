@@ -79,6 +79,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, ForceFullRepaintRendering);
         INHERITABLE_SETTING(Boolean, SoftwareRendering);
         INHERITABLE_SETTING(Boolean, UseBackgroundImageForWindow);
+        INHERITABLE_SETTING(Boolean, ReloadEnvironmentVariables);
         INHERITABLE_SETTING(Boolean, ForceVTInput);
         INHERITABLE_SETTING(Boolean, DebugFeaturesEnabled);
         INHERITABLE_SETTING(Boolean, StartOnUserLogin);
@@ -97,6 +98,8 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, ShowAdminShield);
         INHERITABLE_SETTING(IVector<NewTabMenuEntry>, NewTabMenu);
         INHERITABLE_SETTING(Boolean, EnableColorSelection);
+        INHERITABLE_SETTING(Boolean, EnableShellCompletionMenu);
+        INHERITABLE_SETTING(Boolean, IsolatedMode);
 
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);
@@ -108,5 +111,7 @@ namespace Microsoft.Terminal.Settings.Model
         void AddTheme(Theme theme);
         INHERITABLE_SETTING(ThemePair, Theme);
         Theme CurrentTheme { get; };
+
+        Boolean ShouldUsePersistedLayout();
     }
 }

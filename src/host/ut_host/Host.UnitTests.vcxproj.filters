@@ -54,9 +54,6 @@
     <ClCompile Include="InputBufferTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ReadWaitTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ConsoleArgumentsTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

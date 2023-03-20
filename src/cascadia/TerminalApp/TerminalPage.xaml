@@ -86,11 +86,11 @@
             ContentDialog a Row, I believe it's assigned Row 0 by default. So,
             when the dialog gets opened, the dialog seemingly causes a giant
             hole to appear in the body of the app.
-
+            
             Assigning all the dialogs to Row 2 (where the rest of the content
             is) makes the "hole" appear in the same space as the rest of the
             TabContent, fixing the issue.
-
+            
             Note that the actual content in a content dialog gets parented to
             the PopupRoot, so it actually always appeared in the correct place, it's
             just this weird hole that appeared in Row 0.
@@ -208,10 +208,10 @@
             tracked by MUX#4382
         -->
         <mux:TeachingTip x:Name="WindowIdToast"
-                         Title="{x:Bind WindowIdForDisplay}"
+                         Title="{x:Bind WindowProperties.WindowIdForDisplay}"
                          x:Load="False"
                          IsLightDismissEnabled="True"
-                         Subtitle="{x:Bind WindowNameForDisplay, Mode=OneWay}" />
+                         Subtitle="{x:Bind WindowProperties.WindowNameForDisplay, Mode=OneWay}" />
 
         <mux:TeachingTip x:Name="RenameFailedToast"
                          x:Uid="RenameFailedToast"
@@ -220,7 +220,7 @@
 
         <mux:TeachingTip x:Name="WindowRenamer"
                          x:Uid="WindowRenamer"
-                         Title="{x:Bind WindowIdForDisplay}"
+                         Title="{x:Bind WindowProperties.WindowIdForDisplay}"
                          x:Load="False"
                          ActionButtonClick="_WindowRenamerActionClick"
                          ActionButtonStyle="{ThemeResource AccentButtonStyle}"
@@ -229,7 +229,7 @@
                 <TextBox x:Name="WindowRenamerTextBox"
                          KeyDown="_WindowRenamerKeyDown"
                          KeyUp="_WindowRenamerKeyUp"
-                         Text="{x:Bind WindowName, Mode=OneWay}" />
+                         Text="{x:Bind WindowProperties.WindowName, Mode=OneWay}" />
             </mux:TeachingTip.Content>
         </mux:TeachingTip>
     </Grid>

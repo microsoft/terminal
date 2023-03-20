@@ -260,6 +260,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
         winrt::hstring _actualFontFaceName;
+        CSSLengthPercentage _cellWidth;
+        CSSLengthPercentage _cellHeight;
 
         // storage location for the leading surrogate of a utf-16 surrogate pair
         std::optional<wchar_t> _leadingSurrogate{ std::nullopt };
@@ -308,7 +310,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                    const int velocity,
                                    const std::chrono::microseconds duration);
 
-        void _terminalMenuChanged(std::wstring_view menuJson, int32_t replaceLength);
+        void _terminalMenuChanged(std::wstring_view menuJson, unsigned int replaceLength);
 
 #pragma endregion
 
