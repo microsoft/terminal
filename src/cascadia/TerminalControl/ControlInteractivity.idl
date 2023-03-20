@@ -76,5 +76,8 @@ namespace Microsoft.Terminal.Control
 
         event Windows.Foundation.TypedEventHandler<Object, Object> Closed;
 
+        // Used to communicate to the TermControl, but not necessarily higher up in the stack
+        event Windows.Foundation.TypedEventHandler<Object, ContextMenuRequestedEventArgs> ContextMenuRequested;
+
     };
 }

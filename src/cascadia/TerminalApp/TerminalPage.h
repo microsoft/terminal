@@ -140,7 +140,8 @@ namespace winrt::TerminalApp::implementation
 
         TerminalApp::WindowProperties WindowProperties() const noexcept { return _WindowProperties; };
 
-        bool IsElevated() const noexcept;
+        bool CanDragDrop() const noexcept;
+        bool IsRunningElevated() const noexcept;
 
         void OpenSettingsUI();
         void WindowActivated(const bool activated);
@@ -484,6 +485,11 @@ namespace winrt::TerminalApp::implementation
         void _DetachPaneFromWindow(std::shared_ptr<Pane> pane);
         void _DetachTabFromWindow(const winrt::com_ptr<TerminalTab>& terminalTab);
         void _MoveContent(std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions, const winrt::hstring& windowName, const uint32_t tabIndex);
+
+        void _ContextMenuOpened(const IInspectable& sender, const IInspectable& args);
+        void _SelectionMenuOpened(const IInspectable& sender, const IInspectable& args);
+        void _PopulateContextMenu(const IInspectable& sender, const bool withSelection);
+
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
 #define ON_ALL_ACTIONS(action) DECLARE_ACTION_HANDLER(action);

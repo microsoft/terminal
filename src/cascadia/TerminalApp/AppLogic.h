@@ -50,7 +50,8 @@ namespace winrt::TerminalApp::implementation
         void Create();
         bool IsUwp() const noexcept;
         void RunAsUwp();
-        bool IsElevated() const noexcept;
+        bool IsRunningElevated() const noexcept;
+        bool CanDragDrop() const noexcept;
         void ReloadSettings();
 
         bool HasSettingsStartupActions() const noexcept;
@@ -79,6 +80,7 @@ namespace winrt::TerminalApp::implementation
     private:
         bool _isUwp{ false };
         bool _isElevated{ false };
+        bool _canDragDrop{ false };
 
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
 

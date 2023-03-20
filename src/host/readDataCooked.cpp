@@ -1019,27 +1019,43 @@ void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline
             }
 
             Tracing::s_TraceCookedRead(_clientProcess, _backupLimit, base::saturated_cast<ULONG>(idx));
-            ProcessAliases(LineCount);
 
+            // Don't be fooled by ProcessAliases only taking one argument. It rewrites multiple
+            // class members on return, including `_bytesRead`, requiring us to reconstruct `input`.
+            ProcessAliases(LineCount);
+            input = { _backupLimit, _bytesRead / sizeof(wchar_t) };
+
+            // The exact reasons for this are unclear to me (the one writing this comment), but this code used to
+            // split the contents of a multiline alias (for instance `doskey test=echo foo$Techo bar$Techo baz`)
+            // into multiple separate read outputs, ensuring that the client receives them line by line.
+            //
+            // This code first truncates the `input` to only contain the first line, so that Consume() below only
+            // writes that line into the user buffer. We'll later store the remainder in SaveMultilinePendingInput().
             if (LineCount > 1)
             {
-                input = input.substr(0, idx + 1);
+                // ProcessAliases() is supposed to end each line with \r\n. If it doesn't we might as well fail-fast.
+                const auto firstLineEnd = input.find(UNICODE_LINEFEED) + 1;
+                input = input.substr(0, std::min(input.size(), firstLineEnd));
             }
         }
     }
 
+    const auto inputSizeBefore = input.size();
     GetInputBuffer()->Consume(isUnicode, input, writer);
 
-    if (!input.empty())
+    if (LineCount > 1)
     {
-        if (LineCount > 1)
-        {
-            GetInputReadHandleData()->SaveMultilinePendingInput(input);
-        }
-        else
-        {
-            GetInputReadHandleData()->SavePendingInput(input);
-        }
+        // This is a continuation of the above identical if condition.
+        // We've truncated the `input` slice and now we need to restore it.
+        const auto inputSizeAfter = input.size();
+        const auto amountConsumed = inputSizeBefore - inputSizeAfter;
+        input = { _backupLimit, _bytesRead / sizeof(wchar_t) };
+        input = input.substr(std::min(input.size(), amountConsumed));
+        GetInputReadHandleData()->SaveMultilinePendingInput(input);
+    }
+    else if (!input.empty())
+    {
+        GetInputReadHandleData()->SavePendingInput(input);
     }
 
     numBytes = _userBufferSize - writer.size();
