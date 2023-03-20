@@ -162,6 +162,7 @@
         <stage>AlwaysDisabled</stage>
         <alwaysEnabledBrandingTokens>
             <brandingToken>Dev</brandingToken>
+            <brandingToken>Preview</brandingToken>
         </alwaysEnabledBrandingTokens>
     </feature>
 

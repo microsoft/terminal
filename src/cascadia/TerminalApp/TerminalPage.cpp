@@ -4318,6 +4318,13 @@ namespace winrt::TerminalApp::implementation
         {
             co_return;
         }
+
+        // User must explicitly opt-in on Preview builds
+        if (!_settings.GlobalSettings().EnableShellCompletionMenu())
+        {
+            co_return;
+        }
+
         auto weakThis{ get_weak() };
         co_await winrt::resume_background();
         if (const auto& page{ weakThis.get() })
