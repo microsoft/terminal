@@ -94,6 +94,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(OpenHyperlink, IInspectable, Control::OpenHyperlinkEventArgs);
         TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
         TYPED_EVENT(ScrollPositionChanged, IInspectable, Control::ScrollPositionChangedArgs);
+        TYPED_EVENT(ContextMenuRequested, IInspectable, Control::ContextMenuRequestedEventArgs);
 
         TYPED_EVENT(Attached, IInspectable, IInspectable);
         TYPED_EVENT(Closed, IInspectable, IInspectable);

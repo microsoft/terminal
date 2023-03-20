@@ -31,7 +31,8 @@ namespace TerminalApp
 
         Boolean IsUwp();
         void RunAsUwp();
-        Boolean IsElevated();
+        Boolean IsRunningElevated();
+        Boolean CanDragDrop();
 
         ContentManager ContentManager { get; };
 

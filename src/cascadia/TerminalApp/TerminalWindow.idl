@@ -51,8 +51,6 @@ namespace TerminalApp
         // registered?" when it definitely is.
         void Create();
 
-        Boolean IsElevated();
-
         Boolean HasCommandlineArguments();
 
         Int32 SetStartupCommandline(String[] commands);

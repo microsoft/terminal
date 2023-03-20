@@ -236,6 +236,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _ReportDECSTBMSetting();
         void _ReportDECSCASetting() const;
         void _ReportDECSACESetting() const;
+        void _ReportDECACSetting(const VTInt itemNumber) const;
 
         StringHandler _CreateDrcsPassthroughHandler(const DispatchTypes::DrcsCharsetSize charsetSize);
         StringHandler _CreatePassthroughHandler();
