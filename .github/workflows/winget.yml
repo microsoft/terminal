@@ -24,4 +24,4 @@ jobs:
           version: ${{ steps.extract-version.outputs.version }}
           installers-regex: ${{ env.REGEX }}
           token: ${{ secrets.WINGET_TOKEN }}
-          fork-user: DHowett
+          fork-user: consvc
