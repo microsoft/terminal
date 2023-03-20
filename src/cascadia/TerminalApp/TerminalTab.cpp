@@ -1593,10 +1593,28 @@ namespace winrt::TerminalApp::implementation
     //   the same read-only status.
     void TerminalTab::SetPaneReadOnly(const bool readOnlyState)
     {
+        auto hasReadOnly = false;
+        auto allReadOnly = true;
         _activePane->WalkTree([&](const auto& p) {
             if (const auto& control{ p->GetTerminalControl() })
             {
-                control.SetReadOnly(readOnlyState);
+                hasReadOnly |= control.ReadOnly();
+                allReadOnly &= control.ReadOnly();
+            }
+        });
+        _activePane->WalkTree([&](const auto& p) {
+            if (const auto& control{ p->GetTerminalControl() })
+            {
+                // If all controls have the same read only state then just disable
+                if (allReadOnly || !hasReadOnly)
+                {
+                    control.SetReadOnly(readOnlyState);
+                }
+                // otherwise set to all read only.
+                else if (!control.ReadOnly())
+                {
+                    control.SetReadOnly(readOnlyState);
+                }
             }
         });
     }
