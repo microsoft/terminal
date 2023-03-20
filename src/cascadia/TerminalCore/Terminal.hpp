@@ -287,7 +287,7 @@ public:
     void SelectHyperlink(const SearchDirection dir);
 
     using UpdateSelectionParams = std::optional<std::pair<SelectionDirection, SelectionExpansion>>;
-    UpdateSelectionParams ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const;
+    UpdateSelectionParams ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const noexcept;
     til::point SelectionStartForRendering() const;
     til::point SelectionEndForRendering() const;
     const SelectionEndpoint SelectionEndpointTarget() const noexcept;
@@ -416,7 +416,7 @@ private:
     static WORD _VirtualKeyFromCharacter(const wchar_t ch) noexcept;
     static wchar_t _CharacterFromKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states) noexcept;
 
-    void _StoreKeyEvent(const WORD vkey, const WORD scanCode);
+    void _StoreKeyEvent(const WORD vkey, const WORD scanCode) noexcept;
     WORD _TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept;
 
     int _VisibleStartIndex() const noexcept;

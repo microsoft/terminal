@@ -18,51 +18,53 @@ Author(s):
 // Macro format (defaultArgs are optional):
 // (type, name, jsonKey, defaultArgs)
 
-#define MTSM_GLOBAL_SETTINGS(X)                                                                                                                            \
-    X(int32_t, InitialRows, "initialRows", 30)                                                                                                             \
-    X(int32_t, InitialCols, "initialCols", 80)                                                                                                             \
-    X(hstring, WordDelimiters, "wordDelimiters", DEFAULT_WORD_DELIMITERS)                                                                                  \
-    X(bool, CopyOnSelect, "copyOnSelect", false)                                                                                                           \
-    X(bool, FocusFollowMouse, "focusFollowMouse", false)                                                                                                   \
-    X(bool, ForceFullRepaintRendering, "experimental.rendering.forceFullRepaint", false)                                                                   \
-    X(bool, SoftwareRendering, "experimental.rendering.software", false)                                                                                   \
-    X(bool, UseBackgroundImageForWindow, "experimental.useBackgroundImageForWindow", false)                                                                \
-    X(bool, ForceVTInput, "experimental.input.forceVT", false)                                                                                             \
-    X(bool, TrimBlockSelection, "trimBlockSelection", true)                                                                                                \
-    X(bool, DetectURLs, "experimental.detectURLs", true)                                                                                                   \
-    X(bool, AlwaysShowTabs, "alwaysShowTabs", true)                                                                                                        \
-    X(Model::NewTabPosition, NewTabPosition, "newTabPosition", Model::NewTabPosition::AfterLastTab)                                                        \
-    X(bool, ShowTitleInTitlebar, "showTerminalTitleInTitlebar", true)                                                                                      \
-    X(bool, ConfirmCloseAllTabs, "confirmCloseAllTabs", true)                                                                                              \
-    X(Model::ThemePair, Theme, "theme")                                                                                                                    \
-    X(hstring, Language, "language")                                                                                                                       \
-    X(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, "tabWidthMode", winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal) \
-    X(bool, UseAcrylicInTabRow, "useAcrylicInTabRow", false)                                                                                               \
-    X(bool, ShowTabsInTitlebar, "showTabsInTitlebar", true)                                                                                                \
-    X(bool, InputServiceWarning, "inputServiceWarning", true)                                                                                              \
-    X(winrt::Microsoft::Terminal::Control::CopyFormat, CopyFormatting, "copyFormatting", 0)                                                                \
-    X(bool, WarnAboutLargePaste, "largePasteWarning", true)                                                                                                \
-    X(bool, WarnAboutMultiLinePaste, "multiLinePasteWarning", true)                                                                                        \
-    X(Model::LaunchPosition, InitialPosition, "initialPosition", nullptr, nullptr)                                                                         \
-    X(bool, CenterOnLaunch, "centerOnLaunch", false)                                                                                                       \
-    X(Model::FirstWindowPreference, FirstWindowPreference, "firstWindowPreference", FirstWindowPreference::DefaultProfile)                                 \
-    X(Model::LaunchMode, LaunchMode, "launchMode", LaunchMode::DefaultMode)                                                                                \
-    X(bool, SnapToGridOnResize, "snapToGridOnResize", true)                                                                                                \
-    X(bool, DebugFeaturesEnabled, "debugFeatures", debugFeaturesDefault)                                                                                   \
-    X(bool, StartOnUserLogin, "startOnUserLogin", false)                                                                                                   \
-    X(bool, AlwaysOnTop, "alwaysOnTop", false)                                                                                                             \
-    X(bool, AutoHideWindow, "autoHideWindow", false)                                                                                                       \
-    X(Model::TabSwitcherMode, TabSwitcherMode, "tabSwitcherMode", Model::TabSwitcherMode::InOrder)                                                         \
-    X(bool, DisableAnimations, "disableAnimations", false)                                                                                                 \
-    X(hstring, StartupActions, "startupActions", L"")                                                                                                      \
-    X(Model::WindowingMode, WindowingBehavior, "windowingBehavior", Model::WindowingMode::UseNew)                                                          \
-    X(bool, MinimizeToNotificationArea, "minimizeToNotificationArea", false)                                                                               \
-    X(bool, AlwaysShowNotificationIcon, "alwaysShowNotificationIcon", false)                                                                               \
-    X(winrt::Windows::Foundation::Collections::IVector<winrt::hstring>, DisabledProfileSources, "disabledProfileSources", nullptr)                         \
-    X(bool, ShowAdminShield, "showAdminShield", true)                                                                                                      \
-    X(bool, TrimPaste, "trimPaste", true)                                                                                                                  \
-    X(bool, EnableColorSelection, "experimental.enableColorSelection", false)                                                                              \
-    X(winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry>, NewTabMenu, "newTabMenu", winrt::single_threaded_vector<Model::NewTabMenuEntry>({ Model::RemainingProfilesEntry{} }))
+#define MTSM_GLOBAL_SETTINGS(X)                                                                                                                                                                       \
+    X(int32_t, InitialRows, "initialRows", 30)                                                                                                                                                        \
+    X(int32_t, InitialCols, "initialCols", 80)                                                                                                                                                        \
+    X(hstring, WordDelimiters, "wordDelimiters", DEFAULT_WORD_DELIMITERS)                                                                                                                             \
+    X(bool, CopyOnSelect, "copyOnSelect", false)                                                                                                                                                      \
+    X(bool, FocusFollowMouse, "focusFollowMouse", false)                                                                                                                                              \
+    X(bool, ForceFullRepaintRendering, "experimental.rendering.forceFullRepaint", false)                                                                                                              \
+    X(bool, SoftwareRendering, "experimental.rendering.software", false)                                                                                                                              \
+    X(bool, UseBackgroundImageForWindow, "experimental.useBackgroundImageForWindow", false)                                                                                                           \
+    X(bool, ReloadEnvironmentVariables, "compatibility.reloadEnvironmentVariables", true)                                                                                                             \
+    X(bool, ForceVTInput, "experimental.input.forceVT", false)                                                                                                                                        \
+    X(bool, TrimBlockSelection, "trimBlockSelection", true)                                                                                                                                           \
+    X(bool, DetectURLs, "experimental.detectURLs", true)                                                                                                                                              \
+    X(bool, AlwaysShowTabs, "alwaysShowTabs", true)                                                                                                                                                   \
+    X(Model::NewTabPosition, NewTabPosition, "newTabPosition", Model::NewTabPosition::AfterLastTab)                                                                                                   \
+    X(bool, ShowTitleInTitlebar, "showTerminalTitleInTitlebar", true)                                                                                                                                 \
+    X(bool, ConfirmCloseAllTabs, "confirmCloseAllTabs", true)                                                                                                                                         \
+    X(Model::ThemePair, Theme, "theme")                                                                                                                                                               \
+    X(hstring, Language, "language")                                                                                                                                                                  \
+    X(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, "tabWidthMode", winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal)                                            \
+    X(bool, UseAcrylicInTabRow, "useAcrylicInTabRow", false)                                                                                                                                          \
+    X(bool, ShowTabsInTitlebar, "showTabsInTitlebar", true)                                                                                                                                           \
+    X(bool, InputServiceWarning, "inputServiceWarning", true)                                                                                                                                         \
+    X(winrt::Microsoft::Terminal::Control::CopyFormat, CopyFormatting, "copyFormatting", 0)                                                                                                           \
+    X(bool, WarnAboutLargePaste, "largePasteWarning", true)                                                                                                                                           \
+    X(bool, WarnAboutMultiLinePaste, "multiLinePasteWarning", true)                                                                                                                                   \
+    X(Model::LaunchPosition, InitialPosition, "initialPosition", nullptr, nullptr)                                                                                                                    \
+    X(bool, CenterOnLaunch, "centerOnLaunch", false)                                                                                                                                                  \
+    X(Model::FirstWindowPreference, FirstWindowPreference, "firstWindowPreference", FirstWindowPreference::DefaultProfile)                                                                            \
+    X(Model::LaunchMode, LaunchMode, "launchMode", LaunchMode::DefaultMode)                                                                                                                           \
+    X(bool, SnapToGridOnResize, "snapToGridOnResize", true)                                                                                                                                           \
+    X(bool, DebugFeaturesEnabled, "debugFeatures", debugFeaturesDefault)                                                                                                                              \
+    X(bool, StartOnUserLogin, "startOnUserLogin", false)                                                                                                                                              \
+    X(bool, AlwaysOnTop, "alwaysOnTop", false)                                                                                                                                                        \
+    X(bool, AutoHideWindow, "autoHideWindow", false)                                                                                                                                                  \
+    X(Model::TabSwitcherMode, TabSwitcherMode, "tabSwitcherMode", Model::TabSwitcherMode::InOrder)                                                                                                    \
+    X(bool, DisableAnimations, "disableAnimations", false)                                                                                                                                            \
+    X(hstring, StartupActions, "startupActions", L"")                                                                                                                                                 \
+    X(Model::WindowingMode, WindowingBehavior, "windowingBehavior", Model::WindowingMode::UseNew)                                                                                                     \
+    X(bool, MinimizeToNotificationArea, "minimizeToNotificationArea", false)                                                                                                                          \
+    X(bool, AlwaysShowNotificationIcon, "alwaysShowNotificationIcon", false)                                                                                                                          \
+    X(winrt::Windows::Foundation::Collections::IVector<winrt::hstring>, DisabledProfileSources, "disabledProfileSources", nullptr)                                                                    \
+    X(bool, ShowAdminShield, "showAdminShield", true)                                                                                                                                                 \
+    X(bool, TrimPaste, "trimPaste", true)                                                                                                                                                             \
+    X(bool, EnableColorSelection, "experimental.enableColorSelection", false)                                                                                                                         \
+    X(winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry>, NewTabMenu, "newTabMenu", winrt::single_threaded_vector<Model::NewTabMenuEntry>({ Model::RemainingProfilesEntry{} })) \
+    X(bool, IsolatedMode, "compatibility.isolatedMode", false)
 
 #define MTSM_PROFILE_SETTINGS(X)                                                                                                                               \
     X(int32_t, HistorySize, "historySize", DEFAULT_HISTORY_SIZE)                                                                                               \
@@ -80,6 +82,7 @@ Author(s):
     X(hstring, TabTitle, "tabTitle")                                                                                                                           \
     X(Model::BellStyle, BellStyle, "bellStyle", BellStyle::Audible)                                                                                            \
     X(bool, UseAtlasEngine, "useAtlasEngine", Feature_AtlasEngine::IsEnabled())                                                                                \
+    X(bool, RightClickContextMenu, "experimental.rightClickContextMenu", false)                                                                                \
     X(Windows::Foundation::Collections::IVector<winrt::hstring>, BellSound, "bellSound", nullptr)                                                              \
     X(bool, Elevate, "elevate", false)                                                                                                                         \
     X(bool, VtPassthrough, "experimental.connection.passthroughMode", false)                                                                                   \
