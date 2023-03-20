@@ -261,6 +261,10 @@ public:
     {
         Log::Comment(L"MarkCommandFinish MOCK called...");
     }
+    void InvokeMenu(std::wstring_view /*menuJson*/, unsigned int /*replaceLength*/) override
+    {
+        Log::Comment(L"InvokeMenu MOCK called...");
+    }
 
     void PrepData()
     {
