@@ -51,6 +51,12 @@ enum class SplitState : int
     Vertical = 2
 };
 
+struct PaneResources
+{
+    winrt::Windows::UI::Xaml::Media::SolidColorBrush focusedBorderBrush{ nullptr };
+    winrt::Windows::UI::Xaml::Media::SolidColorBrush unfocusedBorderBrush{ nullptr };
+};
+
 class Pane : public std::enable_shared_from_this<Pane>
 {
 public:
@@ -136,7 +142,7 @@ public:
 
     bool ContainsReadOnly() const;
 
-    static void SetupResources(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
+    void UpdateResources(const PaneResources& resources);
 
     // Method Description:
     // - A helper method for ad-hoc recursion on a pane tree. Walks the pane
@@ -217,8 +223,8 @@ private:
     winrt::Windows::UI::Xaml::Controls::Grid _root{};
     winrt::Windows::UI::Xaml::Controls::Border _borderFirst{};
     winrt::Windows::UI::Xaml::Controls::Border _borderSecond{};
-    static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_focusedBorderBrush;
-    static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_unfocusedBorderBrush;
+
+    PaneResources _themeResources;
 
 #pragma region Properties that need to be transferred between child / parent panes upon splitting / closing
     std::shared_ptr<Pane> _firstChild{ nullptr };

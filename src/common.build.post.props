@@ -25,7 +25,7 @@
       <AdditionalOptions>%(AdditionalOptions) /defaultlib:ucrtd.lib</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(EnableHybridCRT)'=='true' and '$(Configuration)'=='Release'">
+  <ItemDefinitionGroup Condition="'$(EnableHybridCRT)'=='true' and ('$(Configuration)'=='Release' or '$(Configuration)'=='AuditMode')">
     <ClCompile>
       <!-- We use MultiThreaded, rather than MultiThreadedDLL, to avoid DLL dependencies on VCRUNTIME140.dll and MSVCP140.dll. -->
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
