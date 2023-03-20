@@ -2094,7 +2094,7 @@ namespace winrt::TerminalApp::implementation
             // opened at the end of the list, or adjacent to the previously
             // active tab. This is affected by the user's "newTabPosition"
             // setting.
-            if (auto focusedTabIndex = _GetFocusedTabIndex())
+            if (const auto focusedTabIndex = _GetFocusedTabIndex())
             {
                 const auto source = *focusedTabIndex;
                 _TryMoveTab(source, tabIndex);
@@ -4601,8 +4601,8 @@ namespace winrt::TerminalApp::implementation
                                           winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragStartingEventArgs e)
     {
         // Get the tab impl from this event.
-        auto eventTab = e.Tab();
-        auto tabBase = _GetTabByTabViewItem(eventTab);
+        const auto& eventTab = e.Tab();
+        const auto& tabBase = _GetTabByTabViewItem(eventTab);
         winrt::com_ptr<TabBase> tabImpl;
         tabImpl.copy_from(winrt::get_self<TabBase>(tabBase));
         if (tabImpl)
@@ -4656,7 +4656,7 @@ namespace winrt::TerminalApp::implementation
                                                          winrt::Windows::UI::Xaml::DragEventArgs e)
     {
         // Get the PID and make sure it is the same as ours.
-        if (auto pidObj{ e.DataView().Properties().TryLookup(L"pid") })
+        if (const auto& pidObj{ e.DataView().Properties().TryLookup(L"pid") })
         {
             const auto pidStr{ winrt::unbox_value<winrt::hstring>(pidObj) };
             uint32_t pidNum;
@@ -4675,7 +4675,7 @@ namespace winrt::TerminalApp::implementation
             co_return;
         }
 
-        auto windowIdObj{ e.DataView().Properties().TryLookup(L"windowId") };
+        const auto& windowIdObj{ e.DataView().Properties().TryLookup(L"windowId") };
         if (windowIdObj == nullptr)
         {
             // No windowId? Bail.
@@ -4706,7 +4706,7 @@ namespace winrt::TerminalApp::implementation
             // Determine which items in the list our pointer is between.
             for (auto i = 0u; i < _tabView.TabItems().Size(); i++)
             {
-                if (auto item{ _tabView.ContainerFromIndex(i).try_as<winrt::MUX::Controls::TabViewItem>() })
+                if (const auto& item{ _tabView.ContainerFromIndex(i).try_as<winrt::MUX::Controls::TabViewItem>() })
                 {
                     const auto posX{ e.GetPosition(item).X };
                     const auto itemWidth{ item.ActualWidth() };
