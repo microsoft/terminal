@@ -6,6 +6,7 @@
 #include "Monarch.g.h"
 #include "Peasant.h"
 #include "WindowActivatedArgs.h"
+#include "WindowRequestedArgs.g.h"
 #include <atomic>
 
 // We sure different GUIDs here depending on whether we're running a Release,
@@ -38,6 +39,26 @@ namespace RemotingUnitTests
 
 namespace winrt::Microsoft::Terminal::Remoting::implementation
 {
+    struct WindowRequestedArgs : public WindowRequestedArgsT<WindowRequestedArgs>
+    {
+    public:
+        WindowRequestedArgs(const Remoting::ProposeCommandlineResult& windowInfo, const Remoting::CommandlineArgs& command) :
+            _Id{ windowInfo.Id() ? windowInfo.Id().Value() : 0 }, // We'll use 0 as a sentinel, since no window will ever get to have that ID
+            _WindowName{ windowInfo.WindowName() },
+            _args{ command.Commandline() },
+            _CurrentDirectory{ command.CurrentDirectory() } {};
+
+        void Commandline(const winrt::array_view<const winrt::hstring>& value) { _args = { value.begin(), value.end() }; };
+        winrt::com_array<winrt::hstring> Commandline() { return winrt::com_array<winrt::hstring>{ _args.begin(), _args.end() }; }
+
+        WINRT_PROPERTY(uint64_t, Id);
+        WINRT_PROPERTY(winrt::hstring, WindowName);
+        WINRT_PROPERTY(winrt::hstring, CurrentDirectory);
+
+    private:
+        winrt::com_array<winrt::hstring> _args;
+    };
+
     struct Monarch : public MonarchT<Monarch>
     {
         Monarch();
@@ -66,6 +87,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         TYPED_EVENT(WindowCreated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(WindowClosed, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs);
+
+        TYPED_EVENT(RequestNewWindow, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::WindowRequestedArgs);
 
     private:
         uint64_t _ourPID;
@@ -191,4 +214,5 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 namespace winrt::Microsoft::Terminal::Remoting::factory_implementation
 {
     BASIC_FACTORY(Monarch);
+    BASIC_FACTORY(WindowRequestedArgs);
 }

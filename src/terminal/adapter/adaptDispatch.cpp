@@ -3487,11 +3487,11 @@ ITermDispatch::StringHandler AdaptDispatch::RequestSetting()
     // this is the opposite of what is documented in most DEC manuals, which
     // say that 0 is for a valid response, and 1 is for an error. The correct
     // interpretation is documented in the DEC STD 070 reference.
-    const auto idBuilder = std::make_shared<VTIDBuilder>();
-    return [=](const auto ch) {
-        if (ch >= '\x40' && ch <= '\x7e')
+    return [this, parameter = VTInt{}, idBuilder = VTIDBuilder{}](const auto ch) mutable {
+        const auto isFinal = ch >= L'\x40' && ch <= L'\x7e';
+        if (isFinal)
         {
-            const auto id = idBuilder->Finalize(ch);
+            const auto id = idBuilder.Finalize(ch);
             switch (id)
             {
             case VTID("m"):
@@ -3506,6 +3506,9 @@ ITermDispatch::StringHandler AdaptDispatch::RequestSetting()
             case VTID("*x"):
                 _ReportDECSACESetting();
                 break;
+            case VTID(",|"):
+                _ReportDECACSetting(VTParameter{ parameter });
+                break;
             default:
                 _api.ReturnResponse(L"\033P0$r\033\\");
                 break;
@@ -3514,9 +3517,22 @@ ITermDispatch::StringHandler AdaptDispatch::RequestSetting()
         }
         else
         {
-            if (ch >= '\x20' && ch <= '\x2f')
+            // Although we don't yet support any operations with parameter
+            // prefixes, it's important that we still parse the prefix and
+            // include it in the ID. Otherwise we'll mistakenly respond to
+            // prefixed queries that we don't actually recognise.
+            const auto isParameterPrefix = ch >= L'<' && ch <= L'?';
+            const auto isParameter = ch >= L'0' && ch < L'9';
+            const auto isIntermediate = ch >= L'\x20' && ch <= L'\x2f';
+            if (isParameterPrefix || isIntermediate)
             {
-                idBuilder->AddIntermediate(ch);
+                idBuilder.AddIntermediate(ch);
+            }
+            else if (isParameter)
+            {
+                parameter *= 10;
+                parameter += (ch - L'0');
+                parameter = std::min(parameter, MAX_PARAMETER_VALUE);
             }
             return true;
         }
@@ -3653,6 +3669,44 @@ void AdaptDispatch::_ReportDECSACESetting() const
 
     // The '*x' indicates this is an DECSACE response, and ST ends the sequence.
     response.append(L"*x\033\\"sv);
+    _api.ReturnResponse({ response.data(), response.size() });
+}
+
+// Method Description:
+// - Reports the DECAC color assignments in response to a DECRQSS query.
+// Arguments:
+// - None
+// Return Value:
+// - None
+void AdaptDispatch::_ReportDECACSetting(const VTInt itemNumber) const
+{
+    using namespace std::string_view_literals;
+
+    size_t fgIndex = 0;
+    size_t bgIndex = 0;
+    switch (static_cast<DispatchTypes::ColorItem>(itemNumber))
+    {
+    case DispatchTypes::ColorItem::NormalText:
+        fgIndex = _renderSettings.GetColorAliasIndex(ColorAlias::DefaultForeground);
+        bgIndex = _renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground);
+        break;
+    case DispatchTypes::ColorItem::WindowFrame:
+        fgIndex = _renderSettings.GetColorAliasIndex(ColorAlias::FrameForeground);
+        bgIndex = _renderSettings.GetColorAliasIndex(ColorAlias::FrameBackground);
+        break;
+    default:
+        _api.ReturnResponse(L"\033P0$r\033\\");
+        return;
+    }
+
+    // A valid response always starts with DCS 1 $ r.
+    fmt::basic_memory_buffer<wchar_t, 64> response;
+    response.append(L"\033P1$r"sv);
+
+    fmt::format_to(std::back_inserter(response), FMT_COMPILE(L"{};{};{}"), itemNumber, fgIndex, bgIndex);
+
+    // The ',|' indicates this is a DECAC response, and ST ends the sequence.
+    response.append(L",|\033\\"sv);
     _api.ReturnResponse({ response.data(), response.size() });
 }
 
