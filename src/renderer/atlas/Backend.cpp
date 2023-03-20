@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #include "pch.h"
 #include "Backend.h"
 
@@ -36,24 +39,27 @@ void SwapChainManager::Present(const RenderingPayload& p)
     dirtyRect.right = std::min(dirtyRect.right, til::CoordType{ _targetSize.x });
     dirtyRect.bottom = std::min(dirtyRect.bottom, til::CoordType{ _targetSize.y });
 
-    if (dirtyRect != fullRect)
+    if constexpr (!ATLAS_DEBUG_SHOW_DIRTY)
     {
-        params.DirtyRectsCount = 1;
-        params.pDirtyRects = dirtyRect.as_win32_rect();
-
-        if (p.scrollOffset)
+        if (dirtyRect != fullRect)
         {
-            const auto offsetInPx = p.scrollOffset * p.s->font->cellSize.y;
-            const auto width = p.s->targetSize.x;
-            const auto height = p.s->cellCount.y * p.s->font->cellSize.y;
-            const auto top = std::max(0, offsetInPx);
-            const auto bottom = height + std::min(0, offsetInPx);
+            params.DirtyRectsCount = 1;
+            params.pDirtyRects = dirtyRect.as_win32_rect();
 
-            scrollRect = { 0, top, width, bottom };
-            scrollOffset = { 0, offsetInPx };
+            if (p.scrollOffset)
+            {
+                const auto offsetInPx = p.scrollOffset * p.s->font->cellSize.y;
+                const auto width = p.s->targetSize.x;
+                const auto height = p.s->cellCount.y * p.s->font->cellSize.y;
+                const auto top = std::max(0, offsetInPx);
+                const auto bottom = height + std::min(0, offsetInPx);
 
-            params.pScrollRect = &scrollRect;
-            params.pScrollOffset = &scrollOffset;
+                scrollRect = { 0, top, width, bottom };
+                scrollOffset = { 0, offsetInPx };
+
+                params.pScrollRect = &scrollRect;
+                params.pScrollOffset = &scrollOffset;
+            }
         }
     }
 
@@ -66,7 +72,7 @@ void SwapChainManager::WaitUntilCanRender() noexcept
     // IDXGISwapChain2::GetFrameLatencyWaitableObject returns an auto-reset event.
     // Once we've waited on the event, waiting on it again will block until the timeout elapses.
     // _waitForPresentation guards against this.
-    if constexpr (!debugDisableFrameLatencyWaitableObject)
+    if constexpr (!ATLAS_DEBUG_DISABLE_FRAME_LATENCY_WAITABLE_OBJECT)
     {
         if (_waitForPresentation)
         {
@@ -153,64 +159,6 @@ void SwapChainManager::_updateMatrixTransform(const RenderingPayload& p) const
         };
         THROW_IF_FAILED(_swapChain->SetMatrixTransform(&matrix));
     }
-}
-
-// Returns the theoretical/design design size of the given `DWRITE_GLYPH_RUN`, relative the the given baseline origin.
-f32r Microsoft::Console::Render::Atlas::GetGlyphRunBlackBox(const DWRITE_GLYPH_RUN& glyphRun, f32 baselineX, f32 baselineY)
-{
-    DWRITE_FONT_METRICS fontMetrics;
-    glyphRun.fontFace->GetMetrics(&fontMetrics);
-
-    std::unique_ptr<DWRITE_GLYPH_METRICS[]> glyphRunMetricsHeap;
-    std::array<DWRITE_GLYPH_METRICS, 8> glyphRunMetricsStack;
-    DWRITE_GLYPH_METRICS* glyphRunMetrics = glyphRunMetricsStack.data();
-
-    if (glyphRun.glyphCount > glyphRunMetricsStack.size())
-    {
-        glyphRunMetricsHeap = std::make_unique_for_overwrite<DWRITE_GLYPH_METRICS[]>(glyphRun.glyphCount);
-        glyphRunMetrics = glyphRunMetricsHeap.get();
-    }
-
-    glyphRun.fontFace->GetDesignGlyphMetrics(glyphRun.glyphIndices, glyphRun.glyphCount, glyphRunMetrics, false);
-
-    f32 const fontScale = glyphRun.fontEmSize / fontMetrics.designUnitsPerEm;
-    f32r accumulatedBounds{
-        FLT_MAX,
-        FLT_MAX,
-        FLT_MIN,
-        FLT_MIN,
-    };
-
-    for (uint32_t i = 0; i < glyphRun.glyphCount; ++i)
-    {
-        const auto& glyphMetrics = glyphRunMetrics[i];
-        const auto glyphAdvance = glyphRun.glyphAdvances ? glyphRun.glyphAdvances[i] : glyphMetrics.advanceWidth * fontScale;
-
-        const auto left = static_cast<f32>(glyphMetrics.leftSideBearing) * fontScale;
-        const auto top = static_cast<f32>(glyphMetrics.topSideBearing - glyphMetrics.verticalOriginY) * fontScale;
-        const auto right = static_cast<f32>(gsl::narrow_cast<INT32>(glyphMetrics.advanceWidth) - glyphMetrics.rightSideBearing) * fontScale;
-        const auto bottom = static_cast<f32>(gsl::narrow_cast<INT32>(glyphMetrics.advanceHeight) - glyphMetrics.bottomSideBearing - glyphMetrics.verticalOriginY) * fontScale;
-
-        if (left < right && top < bottom)
-        {
-            auto glyphX = baselineX;
-            auto glyphY = baselineY;
-            if (glyphRun.glyphOffsets)
-            {
-                glyphX += glyphRun.glyphOffsets[i].advanceOffset;
-                glyphY -= glyphRun.glyphOffsets[i].ascenderOffset;
-            }
-
-            accumulatedBounds.left = std::min(accumulatedBounds.left, left + glyphX);
-            accumulatedBounds.top = std::min(accumulatedBounds.top, top + glyphY);
-            accumulatedBounds.right = std::max(accumulatedBounds.right, right + glyphX);
-            accumulatedBounds.bottom = std::max(accumulatedBounds.bottom, bottom + glyphY);
-        }
-
-        baselineX += glyphAdvance;
-    }
-
-    return accumulatedBounds;
 }
 
 // Draws a `DWRITE_GLYPH_RUN` at `baselineOrigin` into the given `ID2D1DeviceContext`.

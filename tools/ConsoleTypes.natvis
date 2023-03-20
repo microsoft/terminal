@@ -105,6 +105,13 @@
         </Expand>
     </Type>
 
+    <Type Name="til::generational&lt;*&gt;">
+        <DisplayString>{{ generation={_generation._value}}}</DisplayString>
+        <Expand>
+            <ExpandedItem>_value</ExpandedItem>
+        </Expand>
+    </Type>
+
     <Type Name="Microsoft::Console::Render::Atlas::Buffer&lt;*&gt;">
         <DisplayString>{{ size={_size} }}</DisplayString>
         <Expand>

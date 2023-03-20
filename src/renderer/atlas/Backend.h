@@ -1,13 +1,17 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #pragma once
 
 #include "common.h"
 
 namespace Microsoft::Console::Render::Atlas
 {
-    inline constexpr bool debugContinuousRedraw = false;
-    inline constexpr bool debugDisableFrameLatencyWaitableObject = false;
-    inline constexpr bool debugDisablePartialInvalidation = false;
-    inline constexpr bool debugForceD2DMode = false;
+#define ATLAS_DEBUG_CONTINUOUS_REDRAW 0
+#define ATLAS_DEBUG_DISABLE_FRAME_LATENCY_WAITABLE_OBJECT 0
+#define ATLAS_DEBUG_DISABLE_PARTIAL_INVALIDATION 0
+#define ATLAS_DEBUG_FORCE_D2D_MODE 0
+#define ATLAS_DEBUG_SHOW_DIRTY 0
 
     struct SwapChainManager
     {
@@ -39,7 +43,7 @@ namespace Microsoft::Console::Render::Atlas
         void _createSwapChain(const RenderingPayload& p, IUnknown* device);
         void _updateMatrixTransform(const RenderingPayload& p) const;
 
-        static constexpr DXGI_SWAP_CHAIN_FLAG flags = debugDisableFrameLatencyWaitableObject ? DXGI_SWAP_CHAIN_FLAG{} : DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
+        static constexpr DXGI_SWAP_CHAIN_FLAG flags = ATLAS_DEBUG_DISABLE_FRAME_LATENCY_WAITABLE_OBJECT ? DXGI_SWAP_CHAIN_FLAG{} : DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
 
         wil::com_ptr<IDXGISwapChain2> _swapChain;
         wil::unique_handle _swapChainHandle;

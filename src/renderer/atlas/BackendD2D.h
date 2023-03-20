@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #pragma once
 
 #include "Backend.h"
@@ -16,6 +19,7 @@ namespace Microsoft::Console::Render::Atlas
         __declspec(noinline) void _handleSettingsUpdate(const RenderingPayload& p);
         void _drawBackground(const RenderingPayload& p) noexcept;
         void _drawText(RenderingPayload& p);
+        f32r _getGlyphRunBlackBox(const DWRITE_GLYPH_RUN& glyphRun, f32 baselineX, f32 baselineY);
         void _drawGridlines(const RenderingPayload& p);
         void _drawGridlineRow(const RenderingPayload& p, const ShapedRow* row, u16 y);
         void _drawCursor(const RenderingPayload& p);
@@ -36,6 +40,7 @@ namespace Microsoft::Console::Render::Atlas
         wil::com_ptr<ID2D1BitmapBrush> _backgroundBrush;
         til::generation_t _backgroundBitmapGeneration;
 
+        Buffer<DWRITE_GLYPH_METRICS> _glyphMetrics;
         u32 _brushColor = 0;
 
         til::generation_t _generation;

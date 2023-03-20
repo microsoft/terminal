@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #pragma once
 
 #include <dwrite_3.h>
@@ -93,6 +96,15 @@ namespace Microsoft::Console::Render::Atlas
         }
     };
 
+    template<typename T>
+    struct range
+    {
+        T start{};
+        T end{};
+
+        ATLAS_POD_OPS(range)
+    };
+
     using u8 = uint8_t;
 
     using u16 = uint16_t;
@@ -146,7 +158,7 @@ namespace Microsoft::Console::Render::Atlas
             // be a good future extension, but not to improve security here.
             // You can trivially construct std::span's from invalid ranges.
             // Until then the raw-pointer style is more practical.
-#pragma warning(suppress : 26459) // You called an STL function '...' with a raw pointer parameter at position '3' that may be unsafe [...].
+#pragma warning(suppress : 26459) // You called an STL function '...' with a raw pointer parameter at position '...' that may be unsafe [...].
             std::uninitialized_copy_n(data, size, _data);
         }
 
@@ -161,7 +173,6 @@ namespace Microsoft::Console::Render::Atlas
         {
         }
 
-#pragma warning(suppress : 26432) // If you define or delete any default operation in the type '...', define or delete them all (c.21).
         Buffer& operator=(Buffer&& other) noexcept
         {
             destroy();
@@ -169,6 +180,40 @@ namespace Microsoft::Console::Render::Atlas
             _size = std::exchange(other._size, 0);
             return *this;
         }
+
+#if 0
+        Buffer(const Buffer& other) noexcept :
+            _data{ allocate(other._size) },
+            _size{ other._size }
+        {
+#pragma warning(suppress : 26459) // You called an STL function '...' with a raw pointer parameter at position '...' that may be unsafe [...].
+            std::uninitialized_copy_n(other._data, other._size, _data);
+        }
+
+        Buffer& operator=(const Buffer& other) noexcept
+        {
+            destroy();
+            _data = nullptr;
+            _size = 0;
+
+            _data = allocate(other._size);
+            _size = other._size;
+
+#pragma warning(suppress : 26459) // You called an STL function '...' with a raw pointer parameter at position '...' that may be unsafe [...].
+            std::uninitialized_copy_n(other._data, other._size, _data);
+            return *this;
+        }
+
+        bool operator==(const Buffer& other) const
+        {
+            return memcmp(_data, other._data, _size * sizeof(T)) == 0;
+        }
+
+        bool operator!=(const Buffer& other) const
+        {
+            return memcmp(_data, other._data, _size * sizeof(T)) != 0;
+        }
+#endif
 
         explicit operator bool() const noexcept
         {
@@ -234,6 +279,10 @@ namespace Microsoft::Console::Render::Atlas
 #pragma warning(disable : 26409) // Avoid calling new and delete explicitly, use std::make_unique<T> instead (r.11).
         static T* allocate(size_t size)
         {
+            if (!size)
+            {
+                return nullptr;
+            }
             if constexpr (Alignment <= __STDCPP_DEFAULT_NEW_ALIGNMENT__)
             {
                 return static_cast<T*>(::operator new(size * sizeof(T)));
@@ -428,6 +477,7 @@ namespace Microsoft::Console::Render::Atlas
         // is entirely black, just like `backgroundBitmap` after it gets created.
         til::generation_t backgroundBitmapGeneration{ 1 };
         til::rect dirtyRectInPx;
+        u16x2 invalidatedRows;
         u16r cursorRect;
         i16 scrollOffset = 0;
     };

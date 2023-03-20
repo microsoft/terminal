@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #include "pch.h"
 #include "BackendD2D.h"
 
@@ -193,11 +196,11 @@ void BackendD2D::_drawText(RenderingPayload& p)
 
                 DrawGlyphRun(_renderTarget.get(), _renderTarget4.get(), p.dwriteFactory4.get(), { baselineX, baselineY }, &glyphRun, brush);
 
-                const auto blackBox = GetGlyphRunBlackBox(glyphRun, baselineX, baselineY);
+                const auto blackBox = _getGlyphRunBlackBox(glyphRun, baselineX, baselineY);
                 // Add a 1px padding to avoid inaccuracies with the blackbox measurement.
                 // It's only an estimate based on the design size after all.
-                row->top = std::min(row->top, static_cast<i32>(lround(blackBox.top - 1.5f)));
-                row->bottom = std::max(row->bottom, static_cast<i32>(lround(blackBox.bottom + 1.5f)));
+                row->top = std::min(row->top, static_cast<i32>(lround(blackBox.top) - 1));
+                row->bottom = std::max(row->bottom, static_cast<i32>(lround(blackBox.bottom) + 1));
 
                 for (UINT32 i = 0; i < glyphRun.glyphCount; ++i)
                 {
@@ -205,8 +208,8 @@ void BackendD2D::_drawText(RenderingPayload& p)
                 }
             } while (it != end);
         }
-
-        if (row->top < p.dirtyRectInPx.bottom && p.dirtyRectInPx.top < row->bottom)
+        
+        if (y >= p.invalidatedRows.x && y < p.invalidatedRows.y)
         {
             dirtyTop = std::min(dirtyTop, row->top);
             dirtyBottom = std::max(dirtyBottom, row->bottom);
@@ -220,6 +223,66 @@ void BackendD2D::_drawText(RenderingPayload& p)
         p.dirtyRectInPx.top = std::min(p.dirtyRectInPx.top, dirtyTop);
         p.dirtyRectInPx.bottom = std::max(p.dirtyRectInPx.bottom, dirtyBottom);
     }
+}
+
+// Returns the theoretical/design design size of the given `DWRITE_GLYPH_RUN`, relative the the given baseline origin.
+// This algorithm replicates what DirectWrite does internally to provide `IDWriteTextLayout::GetMetrics`.
+f32r BackendD2D::_getGlyphRunBlackBox(const DWRITE_GLYPH_RUN& glyphRun, f32 baselineX, f32 baselineY)
+{
+    DWRITE_FONT_METRICS fontMetrics;
+    glyphRun.fontFace->GetMetrics(&fontMetrics);
+
+    if (glyphRun.glyphCount > _glyphMetrics.size())
+    {
+        // Growth factor 1.5x.
+        auto size = _glyphMetrics.size();
+        size = size + (size >> 1);
+        size = std::max<size_t>(size, glyphRun.glyphCount);
+        // Overflow check.
+        Expects(size > _glyphMetrics.size());
+        _glyphMetrics = Buffer<DWRITE_GLYPH_METRICS>{ size };
+    }
+
+    glyphRun.fontFace->GetDesignGlyphMetrics(glyphRun.glyphIndices, glyphRun.glyphCount, _glyphMetrics.data(), false);
+
+    const f32 fontScale = glyphRun.fontEmSize / fontMetrics.designUnitsPerEm;
+    f32r accumulatedBounds{
+        FLT_MAX,
+        FLT_MAX,
+        FLT_MIN,
+        FLT_MIN,
+    };
+
+    for (uint32_t i = 0; i < glyphRun.glyphCount; ++i)
+    {
+        const auto& glyphMetrics = _glyphMetrics[i];
+        const auto glyphAdvance = glyphRun.glyphAdvances ? glyphRun.glyphAdvances[i] : glyphMetrics.advanceWidth * fontScale;
+
+        const auto left = static_cast<f32>(glyphMetrics.leftSideBearing) * fontScale;
+        const auto top = static_cast<f32>(glyphMetrics.topSideBearing - glyphMetrics.verticalOriginY) * fontScale;
+        const auto right = static_cast<f32>(gsl::narrow_cast<INT32>(glyphMetrics.advanceWidth) - glyphMetrics.rightSideBearing) * fontScale;
+        const auto bottom = static_cast<f32>(gsl::narrow_cast<INT32>(glyphMetrics.advanceHeight) - glyphMetrics.bottomSideBearing - glyphMetrics.verticalOriginY) * fontScale;
+
+        if (left < right && top < bottom)
+        {
+            auto glyphX = baselineX;
+            auto glyphY = baselineY;
+            if (glyphRun.glyphOffsets)
+            {
+                glyphX += glyphRun.glyphOffsets[i].advanceOffset;
+                glyphY -= glyphRun.glyphOffsets[i].ascenderOffset;
+            }
+
+            accumulatedBounds.left = std::min(accumulatedBounds.left, left + glyphX);
+            accumulatedBounds.top = std::min(accumulatedBounds.top, top + glyphY);
+            accumulatedBounds.right = std::max(accumulatedBounds.right, right + glyphX);
+            accumulatedBounds.bottom = std::max(accumulatedBounds.bottom, bottom + glyphY);
+        }
+
+        baselineX += glyphAdvance;
+    }
+
+    return accumulatedBounds;
 }
 
 void BackendD2D::_drawGridlines(const RenderingPayload& p)

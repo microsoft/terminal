@@ -69,7 +69,7 @@ try
         _handleSettingsUpdate();
     }
 
-    if constexpr (debugDisablePartialInvalidation)
+    if constexpr (ATLAS_DEBUG_DISABLE_PARTIAL_INVALIDATION)
     {
         _api.invalidatedRows = invalidatedRowsAll;
         _api.scrollOffset = 0;

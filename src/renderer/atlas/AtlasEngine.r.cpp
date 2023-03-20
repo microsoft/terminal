@@ -73,7 +73,7 @@ CATCH_RETURN()
 
 [[nodiscard]] bool AtlasEngine::RequiresContinuousRedraw() noexcept
 {
-    return debugContinuousRedraw || (_b && _b->RequiresContinuousRedraw());
+    return ATLAS_DEBUG_CONTINUOUS_REDRAW || (_b && _b->RequiresContinuousRedraw());
 }
 
 void AtlasEngine::WaitUntilCanRender() noexcept
@@ -123,7 +123,7 @@ void AtlasEngine::_recreateBackend()
     // IID_PPV_ARGS doesn't work here for some reason.
     THROW_IF_FAILED(CreateDXGIFactory2(flags, __uuidof(_p.dxgiFactory), _p.dxgiFactory.put_void()));
 
-    auto d2dMode = debugForceD2DMode;
+    auto d2dMode = ATLAS_DEBUG_FORCE_D2D_MODE;
     auto deviceFlags = D3D11_CREATE_DEVICE_SINGLETHREADED
 #ifndef NDEBUG
     //| D3D11_CREATE_DEVICE_DEBUG

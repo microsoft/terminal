@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #pragma once
 
 #include <stb_rect_pack.h>
@@ -223,6 +226,11 @@ namespace Microsoft::Console::Render::Atlas
         til::small_vector<CursorRect, 6> _cursorRects;
 
         bool _requiresContinuousRedraw = false;
+        
+#if ATLAS_DEBUG_SHOW_DIRTY
+        til::rect _presentRects[9]{};
+        size_t _presentRectsPos = 0;
+#endif
 
 #ifndef NDEBUG
         std::filesystem::path _sourceDirectory;
