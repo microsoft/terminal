@@ -562,5 +562,14 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         MarkCategory category{ MarkCategory::Info };
         // Other things we may want to think about in the future are listed in
         // GH#11000
+
+        bool HasCommand() const noexcept
+        {
+            return commandEnd.has_value() && *commandEnd != end;
+        }
+        bool HasOutput() const noexcept
+        {
+            return outputEnd.has_value() && *outputEnd != *commandEnd;
+        }
     };
 }

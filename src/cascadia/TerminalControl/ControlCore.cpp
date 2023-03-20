@@ -12,7 +12,6 @@
 #include <unicode.hpp>
 #include <WinUser.h>
 #include <LibraryResources.h>
-#include <ranges>
 
 #include "EventArgs.h"
 #include "../../types/inc/GlyphWidth.hpp"
@@ -2103,21 +2102,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const til::point start = HasSelection() ? (goUp ? _terminal->GetSelectionAnchor() : _terminal->GetSelectionEnd()) :
                                                   _terminal->GetTextBuffer().GetCursor().GetPosition();
         std::optional<DispatchTypes::ScrollMark> nearest{ std::nullopt };
-        const auto marks{ std::ranges::reverse_view(_terminal->GetScrollMarks()) };
-        for (auto&& m : marks)
+        const auto& marks{ _terminal->GetScrollMarks() };
+        auto it = marks.rbegin();
+        const auto end = marks.rend();
+        for (; it != end; ++it)
         {
+            const auto& m = *it;
             // If this mark doesn't know anything about the position of its
             // command, OR it does but thinks that it was empty, then just skip
             // it.
-            if (!m.commandEnd.has_value() || *m.commandEnd == m.end)
+            if (!m.HasCommand())
             {
                 continue;
             }
             // If this mark is before/after the start of our search in the
             // buffer, ...
 
-            auto inTheRightDirection = (goUp && (m.commandEnd < start)) || // prev
-                                       (!goUp && (m.end > start)); // next
+            const auto inTheRightDirection = (goUp && (m.commandEnd < start)) || // prev
+                                             (!goUp && (m.end > start)); // next
             // (If we're going down, we need to compare the end, not the
             // commandEnd, to actually find the next one. Otherwise we'll just
             // find the mark of the current selection again.
@@ -2137,17 +2139,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (nearest.has_value())
         {
-            auto start = nearest->end;
+            const auto start = nearest->end;
             auto end = *nearest->commandEnd;
 
             const auto bufferSize{ _terminal->GetTextBuffer().GetSize() };
             bufferSize.DecrementInBounds(end);
-            // _renderer->TriggerSelection();
 
             auto lock = _terminal->LockForWriting();
             _terminal->SelectNewRegion(start, end);
             _renderer->TriggerSelection();
-            // _renderer->TriggerRedrawAll();
         }
     }
 
@@ -2156,19 +2156,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const til::point start = HasSelection() ? (goUp ? _terminal->GetSelectionAnchor() : _terminal->GetSelectionEnd()) :
                                                   _terminal->GetTextBuffer().GetCursor().GetPosition();
         std::optional<DispatchTypes::ScrollMark> nearest{ std::nullopt };
-        const auto marks{ std::ranges::reverse_view(_terminal->GetScrollMarks()) };
-        for (auto&& m : marks)
+        const auto& marks{ _terminal->GetScrollMarks() };
+        auto it = marks.rbegin();
+        const auto end = marks.rend();
+        for (; it != end; ++it)
         {
+            const auto& m = *it;
             // If this mark doesn't know anything about the position of its
             // output, OR it does but thinks that it was empty, then just skip
             // it.
-            if (!m.outputEnd.has_value() || *m.outputEnd == *m.commandEnd)
+            if (!m.HasOutput())
             {
                 continue;
             }
             // If this mark is before/after the start of our search in the buffer, ...
-            auto inTheRightDirection = (goUp && (m.outputEnd < start)) || // prev
-                                       (!goUp && (m.commandEnd > start)); // next
+            const auto inTheRightDirection = (goUp && (m.outputEnd < start)) || // prev
+                                             (!goUp && (m.commandEnd > start)); // next
             // (If we're going down, we need to compare the commandEnd, not the
             // outputEnd, to actually find the next one. Otherwise we'll just
             // find the mark of the current selection again.)
@@ -2188,17 +2191,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (nearest.has_value())
         {
-            auto start = *nearest->commandEnd;
+            const auto start = *nearest->commandEnd;
             auto end = *nearest->outputEnd;
 
             const auto bufferSize{ _terminal->GetTextBuffer().GetSize() };
             bufferSize.DecrementInBounds(end);
-            // _renderer->TriggerSelection();
 
             auto lock = _terminal->LockForWriting();
             _terminal->SelectNewRegion(start, end);
             _renderer->TriggerSelection();
-            // _renderer->TriggerRedrawAll();
         }
     }
 
