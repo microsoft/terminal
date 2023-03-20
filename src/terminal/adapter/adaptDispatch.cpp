@@ -3270,7 +3270,7 @@ bool AdaptDispatch::DoXtermJsAction(const std::wstring_view string)
         if (succeeded)
         {
             _api.InvokeMenu(parts.size() < 5 ? L"" : til::at(parts, 4),
-                            static_cast<int32_t>(replacementLength));
+                            replacementLength);
         }
 
         return true;

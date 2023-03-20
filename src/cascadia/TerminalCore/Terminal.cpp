@@ -1411,7 +1411,7 @@ const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarProgress() const noe
     return _taskbarProgress;
 }
 
-void Microsoft::Terminal::Core::Terminal::MenuChangedCallback(std::function<void(std::wstring_view, int32_t)> pfn) noexcept
+void Microsoft::Terminal::Core::Terminal::MenuChangedCallback(std::function<void(std::wstring_view, unsigned int)> pfn) noexcept
 {
     _pfnMenuChanged.swap(pfn);
 }
