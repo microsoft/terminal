@@ -24,8 +24,7 @@ namespace Microsoft.Terminal.Control
 
     runtimeclass ContextMenuRequestedEventArgs
     {
-        String SelectedText { get; };
-        Windows.Foundation.Point Point { get; };
+        Windows.Foundation.Point Position { get; };
     }
 
     runtimeclass TitleChangedEventArgs

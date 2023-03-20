@@ -1214,3 +1214,8 @@ void CascadiaSettings::_validateThemeExists()
         }
     }
 }
+
+void CascadiaSettings::ExpandCommands()
+{
+    _globals->ExpandCommands(ActiveProfiles().GetView(), GlobalSettings().ColorSchemes());
+}

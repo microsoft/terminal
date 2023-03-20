@@ -258,25 +258,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             if (_core->Settings().RightClickContextMenu())
             {
-                auto bufferText = _core->SelectedText(true);
-                std::wstring singleString = L"";
-                for (const auto& line : bufferText)
-                {
-                    if (!singleString.empty())
-                    {
-                        singleString += L"\r\n";
-                    }
-                    singleString += line;
-                };
-
                 // Let the core know we're about to open a menu here. It has
                 // some separate conditional logic based on _where_ the user
                 // wanted to open the menu.
                 _core->AnchorContextMenu(terminalPosition);
-                auto contextArgs = winrt::make_self<ContextMenuRequestedEventArgs>(winrt::hstring{ singleString },
-                                                                                   til::point{ pixelPosition }.to_winrt_point());
 
-                _ContextMenuRequestedHandlers(*this, *contextArgs);
+                auto contextArgs = winrt::make<ContextMenuRequestedEventArgs>(til::point{ pixelPosition }.to_winrt_point());
+                _ContextMenuRequestedHandlers(*this, contextArgs);
             }
             else
             {
