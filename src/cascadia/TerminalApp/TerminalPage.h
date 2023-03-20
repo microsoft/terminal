@@ -226,8 +226,9 @@ namespace winrt::TerminalApp::implementation
 
         PaneResources _paneResources;
 
-        winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult>
-        _ShowDialogHelper(const std::wstring_view& name);
+        winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::NewConnection_revoker _newConnectionRevoker;
+
+        winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowDialogHelper(const std::wstring_view& name);
 
         void _ShowAboutDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowQuitDialog();
@@ -456,6 +457,10 @@ namespace winrt::TerminalApp::implementation
 
         winrt::fire_and_forget _ShowWindowChangedHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
         winrt::fire_and_forget _windowPropertyChanged(const IInspectable& sender, const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
+
+        void _ContextMenuOpened(const IInspectable& sender, const IInspectable& args);
+        void _SelectionMenuOpened(const IInspectable& sender, const IInspectable& args);
+        void _PopulateContextMenu(const IInspectable& sender, const bool withSelection);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp

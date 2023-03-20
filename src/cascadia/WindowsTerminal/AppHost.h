@@ -158,6 +158,7 @@ private:
         winrt::TerminalApp::TerminalWindow::ShowWindowChanged_revoker ShowWindowChanged;
         winrt::TerminalApp::TerminalWindow::PropertyChanged_revoker PropertyChanged;
         winrt::TerminalApp::TerminalWindow::SettingsChanged_revoker SettingsChanged;
+
         winrt::Microsoft::Terminal::Remoting::WindowManager::QuitAllRequested_revoker QuitAllRequested;
     } _revokers{};
 };

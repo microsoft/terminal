@@ -67,6 +67,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool EraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) override; // DECERA
         bool SelectiveEraseRectangularArea(const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) override; // DECSERA
         bool SelectAttributeChangeExtent(const DispatchTypes::ChangeExtent changeExtent) noexcept override; // DECSACE
+        bool RequestChecksumRectangularArea(const VTInt id, const VTInt page, const VTInt top, const VTInt left, const VTInt bottom, const VTInt right) override; // DECRQCRA
         bool SetGraphicsRendition(const VTParameters options) override; // SGR
         bool SetLineRendition(const LineRendition rendition) override; // DECSWL, DECDWL, DECDHL
         bool SetCharacterProtectionAttribute(const VTParameters options) override; // DECSCA
@@ -170,6 +171,7 @@ namespace Microsoft::Console::VirtualTerminal
         {
             VTInt Row = 1;
             VTInt Column = 1;
+            bool IsDelayedEOLWrap = false;
             bool IsOriginModeRelative = false;
             TextAttribute Attributes = {};
             TerminalOutput TermOutput = {};
@@ -234,6 +236,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _ReportDECSTBMSetting();
         void _ReportDECSCASetting() const;
         void _ReportDECSACESetting() const;
+        void _ReportDECACSetting(const VTInt itemNumber) const;
 
         StringHandler _CreateDrcsPassthroughHandler(const DispatchTypes::DrcsCharsetSize charsetSize);
         StringHandler _CreatePassthroughHandler();

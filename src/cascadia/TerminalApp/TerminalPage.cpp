@@ -59,7 +59,7 @@ namespace winrt::TerminalApp::implementation
         _mruTabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
         _startupActions{ winrt::single_threaded_vector<ActionAndArgs>() },
         _hostingHwnd{},
-        _WindowProperties{ properties }
+        _WindowProperties{ std::move(properties) }
     {
         InitializeComponent();
 
@@ -227,9 +227,6 @@ namespace winrt::TerminalApp::implementation
 
         // Hookup our event handlers to the ShortcutActionDispatch
         _RegisterActionCallbacks();
-
-        // Hook up inbound connection event handler
-        ConptyConnection::NewConnection({ this, &TerminalPage::_OnNewConnection });
 
         //Event Bindings (Early)
         _newTabButton.Click([weakThis{ get_weak() }](auto&&, auto&&) {
@@ -519,6 +516,9 @@ namespace winrt::TerminalApp::implementation
         {
             _shouldStartInboundListener = false;
 
+            // Hook up inbound connection event handler
+            _newConnectionRevoker = ConptyConnection::NewConnection(winrt::auto_revoke, { this, &TerminalPage::_OnNewConnection });
+
             try
             {
                 winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::StartInboundListener();
@@ -635,7 +635,7 @@ namespace winrt::TerminalApp::implementation
         // have a tab yet, but will once we're initialized.
         if (_tabs.Size() == 0 && !(_shouldStartInboundListener || _isEmbeddingInboundListener))
         {
-            _LastTabClosedHandlers(*this, nullptr);
+            _LastTabClosedHandlers(*this, winrt::make<LastTabClosedEventArgs>(false));
         }
         else
         {
@@ -1249,6 +1249,8 @@ namespace winrt::TerminalApp::implementation
                                                                                  winrt::guid());
 
             valueSet.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
+            valueSet.Insert(L"reloadEnvironmentVariables",
+                            Windows::Foundation::PropertyValue::CreateBoolean(_settings.GlobalSettings().ReloadEnvironmentVariables()));
 
             conhostConn.Initialize(valueSet);
 
@@ -1591,6 +1593,9 @@ namespace winrt::TerminalApp::implementation
         });
 
         term.ShowWindowChanged({ get_weak(), &TerminalPage::_ShowWindowChangedHandler });
+
+        term.ContextMenu().Opening({ this, &TerminalPage::_ContextMenuOpened });
+        term.SelectionContextMenu().Opening({ this, &TerminalPage::_SelectionMenuOpened });
     }
 
     // Method Description:
@@ -2404,14 +2409,27 @@ namespace winrt::TerminalApp::implementation
             {
                 return true;
             }
+
+            // GH#10188: WSL paths are okay. We'll let those through.
+            if (host == L"wsl$" || host == L"wsl.localhost")
+            {
+                return true;
+            }
+
             // TODO: by the OSC 8 spec, if a hostname (other than localhost) is provided, we _should_ be
             // comparing that value against what is returned by GetComputerNameExW and making sure they match.
             // However, ShellExecute does not seem to be happy with file URIs of the form
             //          file://{hostname}/path/to/file.ext
             // and so while we could do the hostname matching, we do not know how to actually open the URI
             // if its given in that form. So for now we ignore all hostnames other than localhost
+            return false;
         }
-        return false;
+
+        // In this case, the app manually output a URI other than file:// or
+        // http(s)://. We'll trust the user knows what they're doing when
+        // clicking on those sorts of links.
+        // See discussion in GH#7562 for more details.
+        return true;
     }
 
     // Important! Don't take this eventArgs by reference, we need to extend the
@@ -3326,6 +3344,8 @@ namespace winrt::TerminalApp::implementation
 
     HRESULT TerminalPage::_OnNewConnection(const ConptyConnection& connection)
     {
+        _newConnectionRevoker.revoke();
+
         // We need to be on the UI thread in order for _OpenNewTab to run successfully.
         // HasThreadAccess will return true if we're currently on a UI thread and false otherwise.
         // When we're on a COM thread, we'll need to dispatch the calls to the UI thread
@@ -4270,6 +4290,78 @@ namespace winrt::TerminalApp::implementation
         _updateThemeColors();
     }
 
+    void TerminalPage::_ContextMenuOpened(const IInspectable& sender,
+                                          const IInspectable& /*args*/)
+    {
+        _PopulateContextMenu(sender, false /*withSelection*/);
+    }
+    void TerminalPage::_SelectionMenuOpened(const IInspectable& sender,
+                                            const IInspectable& /*args*/)
+    {
+        _PopulateContextMenu(sender, true /*withSelection*/);
+    }
+
+    void TerminalPage::_PopulateContextMenu(const IInspectable& sender,
+                                            const bool /*withSelection*/)
+    {
+        // withSelection can be used to add actions that only appear if there's
+        // selected text, like "search the web". In this initial draft, it's not
+        // actually augmented by the TerminalPage, so it's left commented out.
+
+        const auto& menu{ sender.try_as<MUX::Controls::CommandBarFlyout>() };
+        if (!menu)
+        {
+            return;
+        }
+
+        // Helper lambda for dispatching an ActionAndArgs onto the
+        // ShortcutActionDispatch. Used below to wire up each menu entry to the
+        // respective action.
+
+        auto weak = get_weak();
+        auto makeCallback = [weak](const ActionAndArgs& actionAndArgs) {
+            return [weak, actionAndArgs](auto&&, auto&&) {
+                if (auto page{ weak.get() })
+                {
+                    page->_actionDispatch->DoAction(actionAndArgs);
+                }
+            };
+        };
+
+        auto makeItem = [&menu, &makeCallback](const winrt::hstring& label,
+                                               const winrt::hstring& icon,
+                                               const auto& action) {
+            AppBarButton button{};
+
+            if (!icon.empty())
+            {
+                auto iconElement = IconPathConverter::IconWUX(icon);
+                Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
+                button.Icon(iconElement);
+            }
+
+            button.Label(label);
+            button.Click(makeCallback(action));
+            menu.SecondaryCommands().Append(button);
+        };
+
+        // Wire up each item to the action that should be performed. By actually
+        // connecting these to actions, we ensure the implementation is
+        // consistent. This also leaves room for customizing this menu with
+        // actions in the future.
+
+        makeItem(RS_(L"SplitPaneText"), L"\xF246", ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ SplitType::Duplicate } });
+        makeItem(RS_(L"DuplicateTabText"), L"\xF5ED", ActionAndArgs{ ShortcutAction::DuplicateTab, nullptr });
+
+        // Only wire up "Close Pane" if there's multiple panes.
+        if (_GetFocusedTabImpl()->GetLeafPaneCount() > 1)
+        {
+            makeItem(RS_(L"PaneClose"), L"\xE89F", ActionAndArgs{ ShortcutAction::ClosePane, nullptr });
+        }
+
+        makeItem(RS_(L"TabClose"), L"\xE711", ActionAndArgs{ ShortcutAction::CloseTab, CloseTabArgs{ _GetFocusedTabIndex().value() } });
+    }
+
     // Handler for our WindowProperties's PropertyChanged event. We'll use this
     // to pop the "Identify Window" toast when the user renames our window.
     winrt::fire_and_forget TerminalPage::_windowPropertyChanged(const IInspectable& /*sender*/,
@@ -4293,4 +4385,5 @@ namespace winrt::TerminalApp::implementation
             }
         }
     }
+
 }

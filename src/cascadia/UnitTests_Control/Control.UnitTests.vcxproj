@@ -12,6 +12,7 @@
 
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
+    <TerminalMUX>true</TerminalMUX>
   </PropertyGroup>
 
   <Import Project="$(SolutionDir)\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />

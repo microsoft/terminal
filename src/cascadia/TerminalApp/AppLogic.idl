@@ -16,7 +16,6 @@ namespace TerminalApp
         Int32 ExitCode;
     };
 
-
     // See IDialogPresenter and TerminalPage's DialogPresenter for more
     // information.
     [default_interface] runtimeclass AppLogic
@@ -55,7 +54,7 @@ namespace TerminalApp
 
         IMapView<Microsoft.Terminal.Control.KeyChord, Microsoft.Terminal.Settings.Model.Command> GlobalHotkeys();
 
-
         event Windows.Foundation.TypedEventHandler<Object, SettingsLoadEventArgs> SettingsChanged;
+
     }
 }
