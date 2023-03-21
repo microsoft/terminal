@@ -32,13 +32,16 @@ namespace winrt::TerminalApp::implementation
     {
         auto content = ControlInteractivity{ settings, unfocusedAppearance, connection };
         content.Closed({ get_weak(), &ContentManager::_closedHandler });
-        _content.insert(std::make_pair(content.Id(), content));
+
+        _content.emplace(content.Id(), content);
+
         return content;
     }
 
     ControlInteractivity ContentManager::LookupCore(uint64_t id)
     {
-        return _content.at(id);
+        const auto it = _content.find(id);
+        return it != _content.end() ? it->second : ControlInteractivity{ nullptr };
     }
 
     void ContentManager::Detach(const Microsoft::Terminal::Control::TermControl& control)
