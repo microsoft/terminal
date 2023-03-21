@@ -5,11 +5,26 @@
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
+    namespace details
+    {
+        template<typename T>
+        constexpr T winrt_empty_value() noexcept
+        {
+            if constexpr (std::is_base_of_v<winrt::Windows::Foundation::IUnknown, T>)
+            {
+                return nullptr;
+            }
+            else
+            {
+                return {};
+            }
+        }
+    };
+
     template<typename T>
     struct property
     {
-        property<T>() = default;
-        property<T>(T defaultValue) :
+        property<T>(const T& defaultValue = details::winrt_empty_value<T>()) :
             _value{ defaultValue } {}
 
         T operator()() const
@@ -41,6 +56,22 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         operator bool() const requires std::convertible_to<T, bool>
         {
             return _value;
+        }
+        bool operator==(const property<T>& other) const
+        {
+            return _value == other._value;
+        }
+        bool operator!=(const property<T>& other) const
+        {
+            return _value != other._value;
+        }
+        bool operator==(const T& other) const
+        {
+            return _value == other;
+        }
+        bool operator!=(const T& other) const
+        {
+            return _value != other;
         }
 
     private:

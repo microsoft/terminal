@@ -38,7 +38,8 @@ class TerminalCoreUnitTests::TilWinRtHelpersTests final
     TEST_METHOD(TestPropertySimple);
     TEST_METHOD(TestPropertyHString);
     TEST_METHOD(TestTruthiness);
-    TEST_METHOD(TestConstProperties);
+    TEST_METHOD(TestSimpleConstProperties);
+    TEST_METHOD(TestComposedConstProperties);
 
     TEST_METHOD(TestEvent);
     TEST_METHOD(TestForwardedEvent);
@@ -101,7 +102,7 @@ void TilWinRtHelpersTests::TestTruthiness()
     VERIFY_IS_TRUE(!FullString().empty());
 }
 
-void TilWinRtHelpersTests::TestConstProperties()
+void TilWinRtHelpersTests::TestSimpleConstProperties()
 {
     struct InnerType
     {
@@ -135,10 +136,58 @@ void TilWinRtHelpersTests::TestConstProperties()
 
     // None of this compiles.
     // Composed() doesn't return an l-value, it returns an _int_
-    // 
+    //
     // changeMe.Composed().first = 5;
     // VERIFY_ARE_EQUAL(5, changeMe.Composed().first);
     // noTouching.Composed().first = 0x0f; // will not compile
+
+    changeMe.MyString = L"Foo";
+    VERIFY_ARE_EQUAL(L"Foo", changeMe.MyString());
+    // noTouching.MyString = L"Bar"; // will not compile
+}
+void TilWinRtHelpersTests::TestComposedConstProperties()
+{
+    struct InnerType
+    {
+        til::property<int> first{ 3 };
+        til::property<int> second{ 2 };
+    };
+
+    struct Helper
+    {
+        til::property<int> Foo{ 0 };
+        til::property<struct InnerType> Composed;
+        til::property<winrt::hstring> MyString;
+    };
+
+    struct Helper changeMe;
+    const struct Helper noTouching;
+
+    VERIFY_ARE_EQUAL(0, changeMe.Foo());
+    VERIFY_ARE_EQUAL(3, changeMe.Composed().first);
+    VERIFY_ARE_EQUAL(2, changeMe.Composed().second);
+    VERIFY_ARE_EQUAL(L"", changeMe.MyString());
+
+    VERIFY_ARE_EQUAL(0, noTouching.Foo());
+    VERIFY_ARE_EQUAL(3, noTouching.Composed().first);
+    VERIFY_ARE_EQUAL(2, noTouching.Composed().second);
+    VERIFY_ARE_EQUAL(L"", noTouching.MyString());
+
+    changeMe.Foo = 42;
+    VERIFY_ARE_EQUAL(42, changeMe.Foo());
+    // noTouching.Foo = 123; // will not compile
+
+    // THIS IS A HUGE FOOTGUN
+    changeMe.Composed().first = 5;
+    VERIFY_ARE_NOT_EQUAL(5, changeMe.Composed().first());
+    // This roughly translates to:
+    //     auto copy = changeMe.Composed();
+    //     copy.first(5);
+    //     VERIFY_ARE_EQUAL(5, changeMe.Composed().first);
+    // (same with changeMe.Composed().first(5))
+
+    // This is okay, because technically, Composed itself isn't const. Only noTouching is.
+    noTouching.Composed().first = 0x0f;
 
     changeMe.MyString = L"Foo";
     VERIFY_ARE_EQUAL(L"Foo", changeMe.MyString());
