@@ -197,8 +197,9 @@ private:                                                                        
     X(CommandPaletteLaunchMode, LaunchMode, "launchMode", false, CommandPaletteLaunchMode::Action)
 
 ////////////////////////////////////////////////////////////////////////////////
-#define SUGGESTIONS_ARGS(X) \
-    X(SuggestionsSource, Source, "source", false, SuggestionsSource::Tasks)
+#define SUGGESTIONS_ARGS(X)                                                 \
+    X(SuggestionsSource, Source, "source", false, SuggestionsSource::Tasks) \
+    X(bool, UseCommandline, "useCommandline", false, false)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define FIND_MATCH_ARGS(X) \

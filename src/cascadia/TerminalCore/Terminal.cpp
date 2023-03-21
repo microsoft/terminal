@@ -1613,6 +1613,33 @@ til::color Terminal::GetColorForMark(const Microsoft::Console::VirtualTerminal::
     }
 }
 
+std::wstring_view Terminal::CurrentCommand() const
+{
+    if (_currentPromptState != PromptState::Command ||
+        _scrollMarks.size() == 0)
+    {
+        return L"";
+    }
+
+    const auto& curr{ _scrollMarks.back() };
+    const auto& start{ curr.end };
+    const auto& end{ _activeBuffer().GetCursor().GetPosition() };
+
+    const auto line = start.y;
+    const auto& row = _activeBuffer().GetRowByOffset(line);
+    const auto rowText = row.GetText();
+    const auto commandText = rowText.substr(start.x, end.x);
+
+    const auto strEnd = commandText.find_last_not_of(UNICODE_SPACE);
+    if (strEnd != std::string::npos)
+    {
+        const auto trimmed = commandText.substr(0, strEnd + 1);
+        return trimmed;
+    }
+
+    return L"";
+}
+
 void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode)
 {
     for (const auto [start, end] : _GetSelectionSpans())

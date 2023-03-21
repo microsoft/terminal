@@ -734,7 +734,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // * If directories is true, we'll prepend "cd " to each command, so that
     //   the command will be run as a directory change instead.
     IVector<Model::Command> Command::HistoryToCommands(IVector<winrt::hstring> history,
-                                                       winrt::hstring /*currentCommandline*/,
+                                                       winrt::hstring currentCommandline,
                                                        bool directories)
     {
         std::wstring cdText = directories ? L"cd " : L"";
@@ -743,7 +743,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // Use this map to discard duplicates.
         std::unordered_map<std::wstring_view, bool> foundCommands{};
 
-        auto backspaces = std::wstring(::base::saturated_cast<size_t>(0), L'\x7f');
+        auto backspaces = std::wstring(currentCommandline.size(), L'\x7f');
 
         auto createAction = [&](std::wstring_view line) {
             if (line.empty())

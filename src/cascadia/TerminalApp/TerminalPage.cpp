@@ -4338,14 +4338,15 @@ namespace winrt::TerminalApp::implementation
                                                                                args.ReplacementLength());
 
                 // Open the Suggestions UI with the commands from the control
-                _OpenSuggestions(commandsCollection, SuggestionsMode::Menu);
+                _OpenSuggestions(commandsCollection, SuggestionsMode::Menu, L"");
             }
             CATCH_LOG();
         }
     }
 
     winrt::fire_and_forget TerminalPage::_OpenSuggestions(IVector<Command> commandsCollection,
-                                                          winrt::TerminalApp::SuggestionsMode mode)
+                                                          winrt::TerminalApp::SuggestionsMode mode,
+                                                          winrt::hstring filterText)
     {
         if (commandsCollection == nullptr)
         {
@@ -4374,6 +4375,7 @@ namespace winrt::TerminalApp::implementation
 
         sxnUi.Mode(mode);
         sxnUi.SetCommands(commandsCollection);
+        sxnUi.FilterText(filterText);
         sxnUi.Visibility(commandsCollection.Size() > 0 ? Visibility::Visible : Visibility::Collapsed);
 
         const auto characterSize{ control.CharacterDimensions() };

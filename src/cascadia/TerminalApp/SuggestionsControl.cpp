@@ -1094,4 +1094,13 @@ namespace winrt::TerminalApp::implementation
         }
         Margin(newMargin);
     }
+
+    winrt::hstring SuggestionsControl::FilterText() 
+    {
+        return _searchBox().Text();
+    }
+    void SuggestionsControl::FilterText(winrt::hstring filter)
+    {
+        _searchBox().Text(filter);
+    }
 }

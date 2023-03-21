@@ -317,8 +317,9 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass SuggestionsArgs : IActionArgs
     {
         SuggestionsArgs();
-        SuggestionsArgs(SuggestionsSource source);
+        SuggestionsArgs(SuggestionsSource source, Boolean useCommandline);
         SuggestionsSource Source { get; };
+        Boolean UseCommandline { get; };
     };
 
     [default_interface] runtimeclass FindMatchArgs : IActionArgs

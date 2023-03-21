@@ -681,6 +681,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         case SuggestionsSource::CommandHistory:
             return RS_(L"SuggestionsCommandHistoryCommandKey");
         }
+
+        // TODO!: useCommandline
+
         return RS_(L"SuggestionsCommandKey");
     }
 

@@ -39,6 +39,9 @@ namespace winrt::TerminalApp::implementation
         void Mode(TerminalApp::SuggestionsMode mode);
         void Anchor(Windows::Foundation::Point anchor, Windows::Foundation::Size space, float characterHeight);
 
+        winrt::hstring FilterText();
+        void FilterText(winrt::hstring mode);
+
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, NoMatchesText, _PropertyChangedHandlers);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, SearchBoxPlaceholderText, _PropertyChangedHandlers);

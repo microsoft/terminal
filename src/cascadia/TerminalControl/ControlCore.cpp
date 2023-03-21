@@ -1785,6 +1785,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 context->History().Append(winrt::hstring{ trimmed });
             }
         }
+
+        context->CurrentCommandline(winrt::hstring{ _terminal->CurrentCommand() });
+
         return *context;
     }
 

@@ -36,6 +36,7 @@ namespace TerminalApp
         Windows.Foundation.Collections.IObservableVector<FilteredCommand> FilteredActions { get; };
 
         SuggestionsMode Mode { get; set; };
+        String FilterText { get; set; };
 
         void SetCommands(Windows.Foundation.Collections.IVector<Microsoft.Terminal.Settings.Model.Command> actions);
         void SetActionMap(Microsoft.Terminal.Settings.Model.IActionMapView actionMap);
