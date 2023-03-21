@@ -38,6 +38,7 @@ class TerminalCoreUnitTests::TilWinRtHelpersTests final
     TEST_METHOD(TestPropertySimple);
     TEST_METHOD(TestPropertyHString);
     TEST_METHOD(TestTruthiness);
+    TEST_METHOD(TestConstProperties);
 
     TEST_METHOD(TestEvent);
     TEST_METHOD(TestForwardedEvent);
@@ -98,6 +99,50 @@ void TilWinRtHelpersTests::TestTruthiness()
 
     VERIFY_IS_TRUE(FullString);
     VERIFY_IS_TRUE(!FullString().empty());
+}
+
+void TilWinRtHelpersTests::TestConstProperties()
+{
+    struct InnerType
+    {
+        int first{ 1 };
+        int second{ 2 };
+    };
+
+    struct Helper
+    {
+        til::property<int> Foo{ 0 };
+        til::property<struct InnerType> Composed;
+        til::property<winrt::hstring> MyString;
+    };
+
+    struct Helper changeMe;
+    const struct Helper noTouching;
+
+    VERIFY_ARE_EQUAL(0, changeMe.Foo());
+    VERIFY_ARE_EQUAL(1, changeMe.Composed().first);
+    VERIFY_ARE_EQUAL(2, changeMe.Composed().second);
+    VERIFY_ARE_EQUAL(L"", changeMe.MyString());
+
+    VERIFY_ARE_EQUAL(0, noTouching.Foo());
+    VERIFY_ARE_EQUAL(1, noTouching.Composed().first);
+    VERIFY_ARE_EQUAL(2, noTouching.Composed().second);
+    VERIFY_ARE_EQUAL(L"", noTouching.MyString());
+
+    changeMe.Foo = 42;
+    VERIFY_ARE_EQUAL(42, changeMe.Foo());
+    // noTouching.Foo = 123; // will not compile
+
+    // None of this compiles.
+    // Composed() doesn't return an l-value, it returns an _int_
+    // 
+    // changeMe.Composed().first = 5;
+    // VERIFY_ARE_EQUAL(5, changeMe.Composed().first);
+    // noTouching.Composed().first = 0x0f; // will not compile
+
+    changeMe.MyString = L"Foo";
+    VERIFY_ARE_EQUAL(L"Foo", changeMe.MyString());
+    // noTouching.MyString = L"Bar"; // will not compile
 }
 
 void TilWinRtHelpersTests::TestEvent()
