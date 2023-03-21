@@ -23,7 +23,7 @@ namespace Microsoft.Terminal.Control
         void GotFocus();
         void LostFocus();
 
-        Guid Id { get; };
+        UInt64 Id { get; };
 
         void Close();
 

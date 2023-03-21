@@ -36,7 +36,7 @@ namespace winrt::TerminalApp::implementation
         return content;
     }
 
-    ControlInteractivity ContentManager::LookupCore(winrt::guid id)
+    ControlInteractivity ContentManager::LookupCore(uint64_t id)
     {
         return _content.at(id);
     }
@@ -46,8 +46,8 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& content{ sender.try_as<winrt::Microsoft::Terminal::Control::ControlInteractivity>() })
         {
-            const auto& contentGuid{ content.Id() };
-            _content.erase(contentGuid);
+            const auto& contentId{ content.Id() };
+            _content.erase(contentId);
         }
     }
 }

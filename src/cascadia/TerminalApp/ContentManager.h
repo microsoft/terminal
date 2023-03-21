@@ -33,10 +33,10 @@ namespace winrt::TerminalApp::implementation
         Microsoft::Terminal::Control::ControlInteractivity CreateCore(Microsoft::Terminal::Control::IControlSettings settings,
                                                                       Microsoft::Terminal::Control::IControlAppearance unfocusedAppearance,
                                                                       Microsoft::Terminal::TerminalConnection::ITerminalConnection connection);
-        Microsoft::Terminal::Control::ControlInteractivity LookupCore(winrt::guid id);
+        Microsoft::Terminal::Control::ControlInteractivity LookupCore(uint64_t id);
 
     private:
-        std::unordered_map<winrt::guid, Microsoft::Terminal::Control::ControlInteractivity> _content;
+        std::unordered_map<uint64_t, Microsoft::Terminal::Control::ControlInteractivity> _content;
 
         void _closedHandler(winrt::Windows::Foundation::IInspectable sender,
                             winrt::Windows::Foundation::IInspectable e);

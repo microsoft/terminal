@@ -13,7 +13,7 @@ namespace TerminalApp
         Microsoft.Terminal.Control.ControlInteractivity CreateCore(Microsoft.Terminal.Control.IControlSettings settings,
                                                                    Microsoft.Terminal.Control.IControlAppearance unfocusedAppearance,
                                                                    Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
-        Microsoft.Terminal.Control.ControlInteractivity LookupCore(Guid id);
+        Microsoft.Terminal.Control.ControlInteractivity LookupCore(UInt64 id);
     }
 
     [default_interface] runtimeclass LastTabClosedEventArgs
