@@ -1628,16 +1628,9 @@ std::wstring_view Terminal::CurrentCommand() const
     const auto line = start.y;
     const auto& row = _activeBuffer().GetRowByOffset(line);
     const auto rowText = row.GetText();
-    const auto commandText = rowText.substr(start.x, end.x);
+    const auto commandText = rowText.substr(start.x, end.x-start.x);
 
-    const auto strEnd = commandText.find_last_not_of(UNICODE_SPACE);
-    if (strEnd != std::string::npos)
-    {
-        const auto trimmed = commandText.substr(0, strEnd + 1);
-        return trimmed;
-    }
-
-    return L"";
+    return commandText;
 }
 
 void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode)
