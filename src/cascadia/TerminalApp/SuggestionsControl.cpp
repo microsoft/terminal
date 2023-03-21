@@ -264,7 +264,7 @@ namespace winrt::TerminalApp::implementation
 
         // Make sure to not send the preview if we're collapsed. This can
         // sometimes fire after we've been closed, which can trigger us to
-        // preview the action for the empty text (as we've cloeared the search
+        // preview the action for the empty text (as we've cleared the search
         // text as a part of closing).
         const bool isVisible{ this->Visibility() == Visibility::Visible };
 
