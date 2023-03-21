@@ -20,7 +20,6 @@ namespace TerminalCoreUnitTests
 
     public:
 #define SETTINGS_GEN(type, name, ...) til::property<type> name{ __VA_ARGS__ };
-        // #define SETTINGS_GEN(type, name, ...) WINRT_PROPERTY(type, name, __VA_ARGS__);
         CORE_SETTINGS(SETTINGS_GEN)
         CORE_APPEARANCE_SETTINGS(SETTINGS_GEN)
 #undef SETTINGS_GEN

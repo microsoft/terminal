@@ -65,13 +65,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     TextColor SelectionColor::AsTextColor() const noexcept
     {
-        if (_IsIndex16)
+        if (IsIndex16())
         {
-            return { _Color.r, false };
+            return { Color().r, false };
         }
         else
         {
-            return { static_cast<COLORREF>(_Color) };
+            return { static_cast<COLORREF>(Color()) };
         }
     }
 

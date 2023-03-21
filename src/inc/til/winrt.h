@@ -12,7 +12,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         property<T>(T defaultValue) :
             _value{ defaultValue } {}
 
-        T operator()()
+        T operator()() const
         {
             return _value;
         }
@@ -115,64 +115,65 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // macros, which no one wants.
     //
     // Explanation can be found in the operator() below.
+    /*
+        template<typename T>
+        struct observable_property
+        {
+            observable_property<T>(property_changed_event e) :
+                _event{ e } {};
+            observable_property<T>(property_changed_event e, T defaultValue) :
+                _event{ e },
+                _value{ defaultValue } {}
 
-    //     template<typename T>
-    //     struct observable_property
-    //     {
-    //         observable_property<T>(property_changed_event e) :
-    //             _event{ e } {};
-    //         observable_property<T>(property_changed_event e, T defaultValue) :
-    //             _event{ e },
-    //             _value{ defaultValue } {}
+            T operator()()
+            {
+                return _value;
+            }
+            void operator()(const T& value)
+            {
+                if (_value != value)
+                {
+                    _value = value;
 
-    //         T operator()()
-    //         {
-    //             return _value;
-    //         }
-    //         void operator()(const T& value)
-    //         {
-    //             if (_value != value)
-    //             {
-    //                 _value = value;
+                    // This line right here is why we can't do this.
+                    _event(*sender, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L## #name })
+                    // 1. We don't know who the sender is, or would require `this` to
+                    //    always be the first parameter to one of these
+                    //    observable_property's.
+                    //
+                    // 2. We don't know what our own name is. We need to actually raise
+                    //    an event with the name of the variable as the parameter. Only
+                    //    way to do that is with something dumb like
+                    //
+                    // ```
+                    // til::observable<int> Foo(this, L"Foo", 42)
+                    // ```
+                    //
+                    // Which is just dang dumb
+                }
+            }
+            void operator()(const T&& value)
+            {
+                _value = value;
+            }
+            property<T>& operator=(const property<T>& other)
+            {
+                _value = other._value;
+                return *this;
+            }
+            property<T>& operator=(const T& newValue)
+            {
+                _value = newValue;
+                return *this;
+            }
 
-    //                 // This line right here is why we can't do this.
-    //                 _event(*sender, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L## #name })
-    //                 // 1. We don't know who the sender is, or would require `this` to
-    //                 //    always be the first parameter to one of these
-    //                 //    observable_property's.
-    //                 //
-    //                 // 2. We don't know what our own name is. We need to actually raise
-    //                 //    an event with the name of the variable as the parameter. Only
-    //                 //    way to do that is with something dumb like
-    //                 //
-    //                 // ```
-    //                 // til::observable<int> Foo(this, L"Foo", 42)
-    //                 // ```
-    //                 //
-    //                 // Which is just dang dumb
-    //             }
-    //         }
-    //         void operator()(const T&& value)
-    //         {
-    //             _value = value;
-    //         }
-    //         property<T>& operator=(const property<T>& other)
-    //         {
-    //             _value = other._value;
-    //             return *this;
-    //         }
-    //         property<T>& operator=(const T& newValue)
-    //         {
-    //             _value = newValue;
-    //             return *this;
-    //         }
+        private:
+            T _value;
+            property_changed_event& _event;
+        };
 
-    //     private:
-    //         T _value;
-    //         property_changed_event& _event;
-    //     };
-
-    // #define OBSERVABLE(type, name, ...) til::observable_property<type> name{ this, L## #name, this.PropertyChanged, __VA_ARGS__ };
+    #define OBSERVABLE(type, name, ...) til::observable_property<type> name{ this, L## #name, this.PropertyChanged, __VA_ARGS__ };
+    */
 
 #endif
 }

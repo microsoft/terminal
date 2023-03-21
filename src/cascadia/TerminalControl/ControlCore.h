@@ -46,8 +46,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         TextColor AsTextColor() const noexcept;
 
-        WINRT_PROPERTY(til::color, Color);
-        WINRT_PROPERTY(bool, IsIndex16);
+        til::property<til::color> Color;
+        til::property<bool> IsIndex16;
     };
 
     struct ControlCore : ControlCoreT<ControlCore>
