@@ -1773,11 +1773,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto line = mark.end.y;
             const auto& row = textBuffer.GetRowByOffset(line);
             const auto rowText = row.GetText();
-            const auto commandText = rowText.substr(mark.end.x, mark.commandEnd->x);
-            // Trim off trailing spaces. In my experimentation, especially with
-            // cmd.exe, there was a lot of unexpected trailing whitespace.
-            // Probably from using autoMarkPrompts to mark the end of the
-            // commands
+            const auto commandText = rowText.substr(mark.end.x, mark.commandEnd->x - mark.end.x);
+
+            // Trim off trailing spaces.
             const auto strEnd = commandText.find_last_not_of(UNICODE_SPACE);
             if (strEnd != std::string::npos)
             {
