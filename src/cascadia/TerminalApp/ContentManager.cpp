@@ -51,7 +51,7 @@ namespace winrt::TerminalApp::implementation
         {
             control.Detach();
             content.Attached({ get_weak(), &ContentManager::_finalizeDetach });
-            _recentlyDetachedContent.Insert(contentId, content);
+            _recentlyDetachedContent.emplace(contentId, content);
         }
     }
 
@@ -60,7 +60,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& content{ sender.try_as<winrt::Microsoft::Terminal::Control::ControlInteractivity>() })
         {
-            _recentlyDetachedContent.Remove(content.Id());
+            _recentlyDetachedContent.erase(content.Id());
         }
     }
 
@@ -71,7 +71,7 @@ namespace winrt::TerminalApp::implementation
         {
             const auto& contentId{ content.Id() };
             _content.erase(contentId);
-            _recentlyDetachedContent.TryRemove(contentId);
+            _recentlyDetachedContent.erase(contentId);
         }
     }
 }

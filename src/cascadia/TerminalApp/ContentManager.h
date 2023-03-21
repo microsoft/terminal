@@ -42,10 +42,7 @@ namespace winrt::TerminalApp::implementation
 
     private:
         std::unordered_map<uint64_t, Microsoft::Terminal::Control::ControlInteractivity> _content;
-
-        Windows::Foundation::Collections::IMap<uint64_t, Microsoft::Terminal::Control::ControlInteractivity> _recentlyDetachedContent{
-            winrt::multi_threaded_map<uint64_t, Microsoft::Terminal::Control::ControlInteractivity>()
-        };
+        std::unordered_map<uint64_t, Microsoft::Terminal::Control::ControlInteractivity> _recentlyDetachedContent;
 
         void _finalizeDetach(winrt::Windows::Foundation::IInspectable sender,
                              winrt::Windows::Foundation::IInspectable e);
